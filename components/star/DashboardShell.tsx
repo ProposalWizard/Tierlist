@@ -109,9 +109,9 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
         {/* Bottom nav */}
         <div className="grid grid-cols-5 gap-1 p-2 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50">
           <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => onNavigate("league")} />
-          <NavBtn label="Skills" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
+          <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
           <NavBtn label="Life" icon="👥" active={activeNav === "life"} onClick={() => onNavigate("life")} />
-          <NavBtn label="Feed" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
+          <NavBtn label="Media" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
           <NavBtn label="Play" icon="▶" active={activeNav === "play"} onClick={() => onNavigate("play")} highlight />
         </div>
       </div>

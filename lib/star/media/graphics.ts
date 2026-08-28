@@ -5,7 +5,7 @@ import { MONTH_NAMES, faceOf, monthOfCareer, monthRace, playerOf } from "../potm
 import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
 } from "./types";
-import { pick, surname } from "./grammar";
+import { pick, surname, groupedGoalLines } from "./grammar";
 
 /**
  * GRAPHIC DATA, NOT PICTURES.
@@ -37,8 +37,11 @@ export function buildGraphic(
       const home = r.home ? r.club : r.opponent;
       const away = r.home ? r.opponent : r.club;
       // Every goal on the record is one of ours — the opponent's are simulated
-      // and never named — so they all belong to whichever side we are.
-      const ours = r.goals.map(g => `${surname(g.scorer)} ${g.minute}'`);
+      // and never named — so they all belong to whichever side we are. A
+      // scorer's own name once, every minute after it — not a separate line
+      // per goal (see groupedGoalLines).
+      const ours = groupedGoalLines(r.goals, g => surname(g.scorer), g => g.minute)
+        .map(({ scorer, minutes }) => `${scorer} ${minutes.map(m => `${m}'`).join(", ")}`);
       return {
         type: "scoreline",
         home, away,

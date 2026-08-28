@@ -9,6 +9,7 @@ import {
   CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y, SIX_L, SIX_R, SIX_DEPTH,
   BOX_L, BOX_R, BOX_DEPTH, BALL_R, GOAL_H, ARC_R,
 } from "@/lib/star/pitch";
+import { kitsOf } from "@/lib/star/kits";
 import ContactBall from "./ContactBall";
 
 /**
@@ -95,7 +96,7 @@ const MIN_PULL = 0.04;
 /** How far you must pull for full power, as a fraction of the canvas height. */
 const FULL_POWER_PULL = 0.16;
 
-export default function TrialPenalty({ onScored }: { onScored: () => void }) {
+export default function TrialPenalty({ onScored, club }: { onScored: () => void; club: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const scRef = useRef<Scenario | null>(null);
@@ -366,6 +367,59 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     ctx.fillStyle = TC.line;
     ctx.fill();
 
+    // ── Decorative players, waiting outside the D for the rebound ──
+    //
+    // Requested directly: one player from each side, outside the arc, on
+    // both flanks of the box — purely for the scene, not the physics
+    // (never touched by `sc`/`ballRef`, and the ball can never reach them).
+    // Your own club's real kit; the trialist has no named opponent yet, so
+    // the other kit is a plain, unbranded away strip rather than inventing
+    // a rival that doesn't exist at this point in the career.
+    {
+      const kit = kitsOf(club).home;
+      const opponentKit = { shirt: "#374151", trim: "#e5e7eb" };
+      const drawDecorativePlayer = (x: number, y: number, shirt: string, trim: string) => {
+        const dpx = px(x), dpy = py(y);
+        const r = unit * 0.62;
+        ctx.save();
+        ctx.globalAlpha = 0.88;
+        ctx.beginPath();
+        ctx.ellipse(dpx, dpy + r * 0.9, r * 0.55, r * 0.18, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.28)";
+        ctx.fill();
+        // Legs.
+        ctx.strokeStyle = SKIN;
+        ctx.lineWidth = Math.max(1, r * 0.16);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(dpx - r * 0.14, dpy + r * 0.1);
+        ctx.lineTo(dpx - r * 0.18, dpy + r * 0.82);
+        ctx.moveTo(dpx + r * 0.14, dpy + r * 0.1);
+        ctx.lineTo(dpx + r * 0.18, dpy + r * 0.82);
+        ctx.stroke();
+        // Torso — the shirt.
+        ctx.fillStyle = shirt;
+        ctx.beginPath();
+        ctx.roundRect?.(dpx - r * 0.42, dpy - r * 0.55, r * 0.84, r * 0.7, r * 0.16);
+        if (!ctx.roundRect) ctx.rect(dpx - r * 0.42, dpy - r * 0.55, r * 0.84, r * 0.7);
+        ctx.fill();
+        ctx.strokeStyle = trim;
+        ctx.lineWidth = Math.max(1, r * 0.08);
+        ctx.stroke();
+        // Head.
+        ctx.beginPath();
+        ctx.arc(dpx, dpy - r * 0.78, r * 0.26, 0, Math.PI * 2);
+        ctx.fillStyle = SKIN;
+        ctx.fill();
+        ctx.restore();
+      };
+      // Just beyond the box's near corners, outside the D on both sides.
+      drawDecorativePlayer(BOX_L - 1.0, BOX_DEPTH - 0.9, kit.shirt, kit.trim);
+      drawDecorativePlayer(BOX_L - 1.0, BOX_DEPTH + 1.1, opponentKit.shirt, opponentKit.trim);
+      drawDecorativePlayer(BOX_R + 1.0, BOX_DEPTH - 0.9, kit.shirt, kit.trim);
+      drawDecorativePlayer(BOX_R + 1.0, BOX_DEPTH + 1.1, opponentKit.shirt, opponentKit.trim);
+    }
+
     // ── The goal — five surfaces, drawn back to front, exactly as a real
     // match renders it (CanvasMatch.tsx): a shadow on the grass, the floor
     // inside, a dimmer back net (deepest, seen through the mouth), a
@@ -538,8 +592,13 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
     const bx = b ? px(b.pos.x) : px(sc.ball.x);
     const by = b ? py(b.pos.y) : py(sc.ball.y);
     const lift = b ? Math.max(0, b.z) : 0;
-    // Height reads as size plus a shadow that stays on the grass.
-    const br = Math.max(3, unit * (BALL_R * 2.6) * (1 + lift * 0.16));
+    // Height reads as size plus a shadow that stays on the grass. Same
+    // baseline factor CanvasMatch.tsx's own BALL_PX uses for a real match
+    // ball (unit * 0.5) — this used to be unit * 0.286 (BALL_R * 2.6), a
+    // visibly smaller ball than the one you actually play with, reported
+    // directly as confusing on a screen whose whole point is to teach the
+    // real game's mechanics.
+    const br = Math.max(4.5, unit * 0.5 * (1 + lift * 0.16));
     ctx.fillStyle = "rgba(0,0,0,0.32)";
     ctx.beginPath();
     ctx.ellipse(bx, by, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);
@@ -564,7 +623,11 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
       const power = powerFrom(d, sc.ball, vp);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
-      const shown = power * (vp.y2 - vp.y1) * 0.30;
+      // Same lengths/thickness as CanvasMatch.tsx's real in-match arrow —
+      // this one never got the "half the previous length" pass that arrow
+      // did, so it used to draw ~2.7x longer and ~2x thicker than what you
+      // actually see once you're playing for real.
+      const shown = power * (vp.y2 - vp.y1) * 0.11;
       const ax = px(sc.ball.x), ay = py(sc.ball.y);
       const bx2 = px(sc.ball.x + (dx / len) * shown);
       const by2 = py(sc.ball.y + (dy / len) * shown);
@@ -573,9 +636,9 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
       const ux = Math.cos(ang), uy = Math.sin(ang);
       const nx = -uy, ny = ux;
       const arrowLen = Math.hypot(bx2 - ax, by2 - ay) || 1;
-      const headLen = clamp(W * 0.075, W * 0.03, arrowLen * 0.55);
-      const headHalf = W * 0.05;
-      const shaftW = W * 0.03;
+      const headLen = clamp(W * 0.045, W * 0.02, arrowLen * 0.45);
+      const headHalf = W * 0.022;
+      const shaftW = W * 0.014;
       const hbx = bx2 - ux * headLen, hby = by2 - uy * headLen;
 
       const shaftGrad = ctx.createLinearGradient(ax, ay, bx2, by2);
@@ -647,6 +710,21 @@ export default function TrialPenalty({ onScored }: { onScored: () => void }) {
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
           />
+
+          {/* A tip in the one part of this screen a drag never actually
+              reaches — full power only ever needs FULL_POWER_PULL (16%) of
+              the canvas's own height, so the bottom strip stays clear no
+              matter how the pull is aimed. `pointer-events-none` besides,
+              so it can never intercept a drag even if that assumption ever
+              stops holding. This is a career's very first screen — the one
+              moment a player genuinely might not know the mechanic yet. */}
+          {phase === "aim" && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-4">
+              <p className="rounded-lg bg-black/55 px-3 py-1.5 text-center text-[11px] font-bold text-white/85">
+                Drag back from the ball to aim, and pull further for more power.
+              </p>
+            </div>
+          )}
 
           {phase === "contact" && aim && (
             <ContactBall power={aim.power} onContact={handleContact} />

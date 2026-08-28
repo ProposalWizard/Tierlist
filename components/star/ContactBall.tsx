@@ -113,6 +113,15 @@ export default function ContactBall({ power, onContact }: Props) {
         </div>
       </div>
 
+      {/* A second tip, in the real gap this layout already leaves between
+          the badges above and the ball below — not overlapping the ball's
+          own tap target, which starts lower down inside the next block. */}
+      <div className="relative z-40 px-6 pt-3 text-center pointer-events-none">
+        <p className="text-[11px] font-bold text-white/75" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.7)" }}>
+          Now decide the angle — tap the part of the ball you want to send it away from, aiming for a corner the keeper isn&rsquo;t set for.
+        </p>
+      </div>
+
       {/* The ball — sitting ON the grass. It used to float in the middle of the
           sky with the turf a long way below it, which reads as a ball in the
           air, and this screen is you standing over a ball at your feet. */}

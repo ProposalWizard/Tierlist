@@ -47,14 +47,7 @@ export default function TrialReward({
   ) : (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 text-white flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm text-center">
-        <div className="text-5xl">🎉</div>
-        <h1 className="mt-3 text-2xl font-black leading-tight">Congratulations</h1>
-        <p className="mt-3 text-base font-bold text-emerald-200">
-          You have been offered a pro contract.
-        </p>
-        <p className="mt-1 text-sm text-white/70">
-          You are ready to join the first team.
-        </p>
+        <CongratulationsBanner />
 
         <SignaturePad name={playerName} club={club} signing={signing} onFinished={onDone} />
 
@@ -70,26 +63,81 @@ export default function TrialReward({
   );
 }
 
+/** A crisp black outline, the same layered-shadow trick VersusScreen's
+ *  player names and DeadlineDayRoundup's title already use. */
+const GOLD_TITLE_OUTLINE =
+  "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 8px rgba(0,0,0,0.6)";
+
+/**
+ * The top-of-page banner, matching the reference image directly: dark
+ * ground, a bold gold "CONGRATULATIONS!", a green line underneath it, a
+ * quieter white line under that, and a scatter of small gold flecks —
+ * static decoration, not the full falling-confetti burst a bigger moment
+ * (the Ballon d'Or) gets, since this is the top of a page you're about to
+ * read on, not the whole screen for a few seconds.
+ */
+function CongratulationsBanner() {
+  const flecks = [
+    { left: "6%", top: "22%", size: 10, rotate: 18 },
+    { left: "14%", top: "68%", size: 7, rotate: -25 },
+    { left: "88%", top: "20%", size: 9, rotate: -12 },
+    { left: "92%", top: "62%", size: 8, rotate: 30 },
+    { left: "24%", top: "10%", size: 6, rotate: 50 },
+    { left: "78%", top: "80%", size: 7, rotate: -40 },
+  ];
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-amber-400/25 px-4 py-6"
+      style={{ background: "linear-gradient(180deg, #0a1410 0%, #050805 100%)" }}
+    >
+      {flecks.map((f, i) => (
+        <div
+          key={i}
+          className="absolute rounded-[2px]"
+          style={{
+            left: f.left, top: f.top, width: f.size, height: f.size * 0.4,
+            background: i % 2 === 0 ? "#fbbf24" : "#f59e0b",
+            transform: `rotate(${f.rotate}deg)`,
+            boxShadow: "0 0 4px rgba(251,191,36,0.5)",
+          }}
+        />
+      ))}
+      <h1
+        className="text-3xl font-black uppercase tracking-tight text-amber-300"
+        style={{ textShadow: GOLD_TITLE_OUTLINE }}
+      >
+        Congratulations!
+      </h1>
+      <p className="mt-2 text-sm font-black text-emerald-300">
+        You have been offered a pro contract.
+      </p>
+      <p className="mt-1 text-xs font-bold text-white/70">
+        You are ready to join the first team.
+      </p>
+    </div>
+  );
+}
+
 /**
  * The contract, and a hand writing across it.
  *
  * A supplied document image (public/star/contract.png), the same pattern
  * NewspaperHeadline.tsx already established for the front page: real art
- * rather than anything drawn in CSS, with the one dynamic part — here, the
- * signature — positioned over it as a percentage of the image's own
- * dimensions. Falls back to a plain drawn placeholder (the box this
- * replaced) if that file doesn't exist yet, via the <img>'s own onError, so
- * the trial never breaks while the real asset is still being made — drop
- * the file in later and it upgrades automatically, no code change needed.
+ * rather than anything drawn in CSS, with the two dynamic parts — the
+ * club's name, and the signature — positioned over it as a percentage of
+ * the image's own dimensions. Falls back to a plain drawn placeholder (the
+ * box this replaced) if that file doesn't exist yet, via the <img>'s own
+ * onError, so the trial never breaks while the real asset is still being
+ * made — drop the file in later and it upgrades automatically, no code
+ * change needed.
  *
- * SIGNATURE_BOX below is a GUESS, not a measurement — unlike
- * NewspaperHeadline's BOX, which was measured directly off the real
- * template's pixels, there is no real contract image yet to measure. Once
- * there is one, replace these four numbers with where the signature line
- * actually sits, as a plain percentage of the image's width/height from
- * each edge (top/left/right/bottom, no inversion needed — simpler than
- * NewspaperHeadline's own convention on purpose, since this box only ever
- * needs recalibrating once).
+ * CLUB_NAME_BOX/SIGNATURE_BOX below are read directly off the given
+ * reference image — a two-column layout, "CLUB NAME" on the left above its
+ * own ruled line, "PLAYER SIGNATURE" on the right above its own — as a
+ * plain percentage of the image's width/height from each edge (top/left/
+ * right/bottom). Estimated from the reference rather than measured pixel by
+ * pixel, so worth a real visual check once the actual file is in place;
+ * nudge these four numbers per box if either sits off the ruled line by eye.
  *
  * The signature is a real stroke drawn over time rather than a fade-in of
  * finished text: `stroke-dashoffset` walking to zero along a hand-shaped path,
@@ -99,7 +147,8 @@ export default function TrialReward({
  * turned off.
  */
 const CONTRACT_SRC = "/star/contract.png";
-const SIGNATURE_BOX = { top: 78, left: 8, right: 42, bottom: 6 }; // % of the image — placeholder, see above
+const CLUB_NAME_BOX = { top: 71, left: 10, right: 55, bottom: 21 };
+const SIGNATURE_BOX = { top: 71, left: 55, right: 10, bottom: 21 };
 
 function SignaturePad({
   name, club, signing, onFinished,
@@ -155,6 +204,17 @@ function SignaturePad({
       <div className="relative mx-auto mt-6 w-full max-w-sm">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={CONTRACT_SRC} alt="" className="block w-full" onError={() => setImgOk(false)} />
+        <div
+          className="absolute flex items-end justify-center overflow-hidden px-1 pb-[6%]"
+          style={{
+            top: `${CLUB_NAME_BOX.top}%`, bottom: `${CLUB_NAME_BOX.bottom}%`,
+            left: `${CLUB_NAME_BOX.left}%`, right: `${CLUB_NAME_BOX.right}%`,
+          }}
+        >
+          <span className="truncate font-serif text-[3.2vw] italic text-[#151008] sm:text-[13px]">
+            {club}
+          </span>
+        </div>
         <div
           className="absolute"
           style={{

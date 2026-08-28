@@ -1073,7 +1073,7 @@ export default function StarDevPage() {
   }
 
   if (phase === "trial" && career) {
-    return <TrialPenalty onScored={() => setPhase("trial-reward")} />;
+    return <TrialPenalty club={career.player.club} onScored={() => setPhase("trial-reward")} />;
   }
 
   if (phase === "trial-reward" && career) {

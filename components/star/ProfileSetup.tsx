@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { STAR_FIFA_YEAR, STAR_EDITION_LABEL } from "@/lib/star/edition";
 import type { StarPlayer } from "@/lib/star/types";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "@/lib/star/clubs";
 import { leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { ALL_NATIONALITIES, getFlagUrl } from "@/lib/nationalities";
 import PortraitPicker from "./PortraitPicker";
 
 interface Props {
@@ -22,12 +23,14 @@ interface Props {
  * ever been in ITS archive's idea of the Premier League, across all editions.
  * This needs exactly this season's two divisions.
  */
+// Alphabetical — requested directly: the real table/promotion order these
+// two arrays live in everywhere else (clubs.ts, the league table, fixtures)
+// is not how a name should be found in a PICKER, where you already know
+// which club you want and are scanning for its letter.
 const DIVISIONS: { key: CareerDivision; clubs: readonly string[] }[] = [
-  { key: "premier", clubs: PREMIER_LEAGUE_CLUBS },
-  { key: "championship", clubs: CHAMPIONSHIP_CLUBS },
+  { key: "premier", clubs: [...PREMIER_LEAGUE_CLUBS].sort((a, b) => a.localeCompare(b)) },
+  { key: "championship", clubs: [...CHAMPIONSHIP_CLUBS].sort((a, b) => a.localeCompare(b)) },
 ];
-
-const NATIONALITIES = ["England", "France", "Spain", "Germany", "Brazil", "Argentina", "Portugal", "Netherlands", "Italy", "Belgium"];
 
 /**
  * There is nothing to choose here.
@@ -35,8 +38,11 @@ const NATIONALITIES = ["England", "France", "Spain", "Germany", "Brazil", "Argen
  * The league step offered exactly one league — England, the Premier League,
  * this edition — as a full screen with a single un-clickable answer on it, and
  * the position step asked a sixteen-year-old to name the position he plays
- * before he has kicked a ball. Both are gone; setup is now name/age/nation,
- * then club.
+ * before he has kicked a ball. Both are gone; setup is now name/nation, then
+ * club. Age went the same way: every career starts a sixteen-year-old, given
+ * directly rather than offered as 15/16/17 — a career already always reads
+ * `career.player.age` as the sixteen-year-old prospect the rest of setup
+ * (a debut season, a first pro contract) assumes he is.
  *
  * A position is still a thing a career HAS — `career.player.position` is read
  * everywhere from the team sheet to the scenario weighting — so it keeps a
@@ -44,14 +50,15 @@ const NATIONALITIES = ["England", "France", "Spain", "Germany", "Brazil", "Argen
  * defaulted to anyway.
  */
 const DEFAULT_POSITION = "ST";
+const STARTING_AGE = 16;
 
 export default function ProfileSetup({ onComplete }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [skin, setSkin] = useState<"light" | "dark">("light");
-  const [age, setAge] = useState(16);
   const [nationality, setNationality] = useState("England");
+  const [nationalitySearch, setNationalitySearch] = useState("");
   const [division, setDivision] = useState<CareerDivision>("premier");
   const [selectedClub, setSelectedClub] = useState("");
   const [portrait, setPortrait] = useState<string | undefined>(undefined);
@@ -67,6 +74,12 @@ export default function ProfileSetup({ onComplete }: Props) {
   const [withData, setWithData] = useState<Set<string> | null>(null);
 
   const clubs = DIVISIONS.find(d => d.key === division)!.clubs;
+
+  const filteredNationalities = useMemo(() => {
+    const q = nationalitySearch.trim().toLowerCase();
+    if (!q) return ALL_NATIONALITIES;
+    return ALL_NATIONALITIES.filter(n => n.toLowerCase().includes(q));
+  }, [nationalitySearch]);
 
   useEffect(() => {
     if (step !== 2 || withData) return;
@@ -97,7 +110,7 @@ export default function ProfileSetup({ onComplete }: Props) {
       {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        age,
+        age: STARTING_AGE,
         skinTone: skin,
         club: selectedClub,
         clubBadge: null,
@@ -162,31 +175,35 @@ export default function ProfileSetup({ onComplete }: Props) {
             </div>
 
             <div className="mt-4">
-              <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-2">Age</div>
-              <div className="grid grid-cols-3 gap-2">
-                {[15, 16, 17].map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setAge(a)}
-                    className={`py-3 rounded-lg font-black text-lg transition ${age === a ? "bg-emerald-500 text-white ring-2 ring-emerald-300" : "bg-gray-800 text-white/85"}`}
-                  >
-                    {a}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-4">
               <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-2">Nationality</div>
-              <select
-                value={nationality}
-                onChange={(e) => setNationality(e.target.value)}
-                className="w-full bg-white text-black font-bold py-2 rounded-lg text-center outline-none"
-              >
-                {NATIONALITIES.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
+              <input
+                value={nationalitySearch}
+                onChange={(e) => setNationalitySearch(e.target.value)}
+                placeholder={`Search ${ALL_NATIONALITIES.length} nationalities…`}
+                className="w-full bg-white text-black text-center font-bold py-2 rounded-lg outline-none placeholder:font-normal placeholder:text-black/40"
+              />
+              <div className="mt-1.5 max-h-40 overflow-y-auto rounded-lg bg-gray-800/60">
+                {filteredNationalities.length === 0 && (
+                  <div className="px-3 py-3 text-center text-xs font-bold text-white/40">No match.</div>
+                )}
+                {filteredNationalities.map((n) => {
+                  const flag = getFlagUrl(n);
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setNationality(n)}
+                      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm font-bold transition ${
+                        nationality === n ? "bg-emerald-500 text-white" : "text-white/85 hover:bg-gray-700"}`}
+                    >
+                      {flag && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={flag} alt="" className="h-[11px] w-4 shrink-0 rounded-[1px] object-cover shadow-[0_0_0_1px_rgba(0,0,0,0.4)]" />
+                      )}
+                      <span className="truncate">{n}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
