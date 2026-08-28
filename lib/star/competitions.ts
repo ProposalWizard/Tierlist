@@ -513,7 +513,7 @@ export function nationOf(career: CareerState): string {
  * knockout appends a round that was earned mid-season. Ordered by week, with
  * league football first when two land in the same one.
  */
-const KIND_ORDER: Record<string, number> = { league: 0, cup: 1, europe: 2, international: 3 };
+export const KIND_ORDER: Record<string, number> = { league: 0, cup: 1, europe: 2, international: 3 };
 
 export function nextFixtureFor(career: CareerState): Fixture | null {
   let best: Fixture | null = null;
@@ -530,6 +530,26 @@ export function nextFixtureFor(career: CareerState): Fixture | null {
 export function fixtureLabel(f: Fixture): string {
   if (!f.kind || f.kind === "league") return "League";
   return f.round ? `${f.competition} · ${f.round}` : f.competition ?? "Cup";
+}
+
+const COMPETITION_ABBREV: Record<Competition, string> = {
+  "FA Cup": "FA Cup",
+  "League Cup": "L Cup",
+  "Champions League": "UCL",
+  "Europa League": "UEL",
+  "Conference League": "UECL",
+  "Community Shield": "Shield",
+  "Super Cup": "S Cup",
+  "World Cup": "WC",
+  "European Championship": "Euros",
+  "Play-Offs": "Play-Off",
+};
+
+/** Short enough for a scoreboard badge — "Prem" / "UCL" / "L Cup" — rather
+ *  than the full competition name fixtureLabel reads out on the team sheet. */
+export function competitionAbbrev(f: Fixture, division: CareerDivision): string {
+  if (!f.kind || f.kind === "league") return division === "premier" ? "Prem" : "Champ";
+  return (f.competition && COMPETITION_ABBREV[f.competition]) || "Cup";
 }
 
 

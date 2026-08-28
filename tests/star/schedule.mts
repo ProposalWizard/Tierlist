@@ -64,6 +64,30 @@ const key = (a: string, b: string) => [a, b].sort().join(" v ");
   }
 }
 
+// ── Home and away actually alternate, not just balance out overall ─────────
+//
+// Reported directly, from a real fixture list: every club but one drifts
+// through the circle method's rotation in a way that used to keep
+// `(round + i) % 2` — the old venue formula — the SAME parity for many
+// consecutive rounds, so a real club's own season read as "home for the
+// first nineteen games, away for the second nineteen" rather than a
+// realistic mix. The old formula still passed "half your games are home"
+// (checked above) because that total is guaranteed by the mirrored second
+// half regardless of ORDER — this checks the order too, which is what a
+// fixture list is actually judged on.
+{
+  const fx = buildSeasonFixtures(CLUBS);
+  for (const c of CLUBS) {
+    const games = fx.filter(f => f.home === c || f.away === c).sort((a, b) => a.week - b.week);
+    let streak = 1, worst = 1;
+    for (let i = 1; i < games.length; i++) {
+      const prevHome = games[i - 1].home === c, curHome = games[i].home === c;
+      if (prevHome === curHome) { streak++; worst = Math.max(worst, streak); } else streak = 1;
+    }
+    check(worst <= 6, `${c}: no more than 6 straight games at the same venue (worst ${worst})`);
+  }
+}
+
 // ── Your own fixtures are read out of that same list ────────────────────────
 {
   const fx = buildSeasonFixtures(CLUBS);

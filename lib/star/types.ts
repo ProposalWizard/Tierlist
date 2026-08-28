@@ -596,6 +596,7 @@ export type StarPhase =
   /** The old club just relegated out of the Championship; pick a new one. */
   | "relegation-move"
   | "dashboard"
+  | "settings"
   | "league"
   | "life"
   | "skills"

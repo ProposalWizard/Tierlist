@@ -7,6 +7,7 @@ interface Props {
   onExit: () => void;
   children: React.ReactNode;
   onNavigate: (tab: NavTab) => void;
+  onSettings: () => void;
   activeNav?: NavTab | null;
   /** A dot on the Feed button when there is reaction the player has not read. */
   mediaUnread?: boolean;
@@ -15,9 +16,9 @@ interface Props {
   nextMatchDate?: string;
 }
 
-export type NavTab = "league" | "skills" | "life" | "media" | "play";
+export type NavTab = "league" | "skills" | "home" | "media" | "play";
 
-export default function DashboardShell({ career, onExit, children, onNavigate, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread }: Props) {
+export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -53,7 +54,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
           <div className="flex-1 mx-3 text-center bg-white/10 rounded-full py-1 text-white font-black text-sm truncate border border-white/20">
             {fullName}
           </div>
-          <button className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-black text-lg">?</button>
+          <button onClick={onSettings} className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-black text-lg">?</button>
         </div>
 
         {/* Star + Energy bars */}
@@ -74,12 +75,9 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
         </div>
 
         {/* Age / Cash strip */}
-        <div className="flex items-center px-3 pt-2 gap-2">
+        <div className="flex items-center justify-between px-3 pt-2 gap-2">
           <div className="bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-white border border-gray-600">
             Age {career.player.age}
-          </div>
-          <div className="flex-1 text-center text-[10px] font-black text-white/75 tracking-widest">
-            {career.player.club.toUpperCase()}
           </div>
           <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-yellow-300 border border-gray-600">
             <StarIcon small />
@@ -98,20 +96,20 @@ export default function DashboardShell({ career, onExit, children, onNavigate, a
             {/* The date, not just the week. This banner is the most-looked-at
                 strip in the game and it read "Week 25", which is a row number.
                 "Sat 14 Feb" is where you are in a season. */}
-            <div className="shrink-0 text-[10px] font-black text-white/85">
+            <div className="shrink-0 text-[10px] font-black text-white">
               {nextMatchDate ?? `Year ${career.season}`}
             </div>
             <div className="mx-2 truncate text-xs font-black text-white">{nextMatchLabel}</div>
-            <div className="shrink-0 text-[10px] font-black text-white/85">Week {career.week}</div>
+            <div className="shrink-0 text-[10px] font-black text-white">Week {career.week}</div>
           </div>
         )}
 
         {/* Bottom nav */}
         <div className="grid grid-cols-5 gap-1 p-2 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50">
           <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => onNavigate("league")} />
-          <NavBtn label="Skills" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
-          <NavBtn label="Life" icon="👥" active={activeNav === "life"} onClick={() => onNavigate("life")} />
-          <NavBtn label="Feed" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
+          <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
+          <NavBtn label="Home" icon="🏠" active={activeNav === "home"} onClick={() => onNavigate("home")} />
+          <NavBtn label="Media" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
           <NavBtn label="Play" icon="▶" active={activeNav === "play"} onClick={() => onNavigate("play")} highlight />
         </div>
       </div>

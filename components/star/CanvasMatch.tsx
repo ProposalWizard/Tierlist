@@ -38,6 +38,8 @@ import { castScenario, creatorOf } from "@/lib/star/lineup";
 import { startingTeammateIds, onPitchToday } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
+import { competitionAbbrev } from "@/lib/star/competitions";
+import { divisionOf } from "@/lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
@@ -2825,6 +2827,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     </div>
   );
 
+  const passPct = stats.passes > 0 ? Math.round((stats.passesCompleted / stats.passes) * 100) : 0;
+
+  // A crisp black outline around white club-name text, so it stays legible
+  // over a light kit (Fulham/Leeds white, a bright yellow away strip) the
+  // same way a plain white-on-white would not.
+  const NAME_OUTLINE = {
+    textShadow: "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000",
+  };
+
   return (
     <div className="w-full max-w-sm mx-auto">
       {/* Local keyframes; disabled wholesale under prefers-reduced-motion */}
@@ -2841,12 +2852,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       {/* Live match scoreboard (career mode only) */}
       {matchMode && (
         <div className="mb-2 flex items-center justify-between gap-1">
-          <div className="flex-1 bg-red-600 border border-red-500 rounded-l-lg px-2 py-1.5 text-white font-black text-xs truncate">
+          <div
+            className="flex-1 rounded-l-lg border px-2 py-1.5 text-white font-black text-xs truncate"
+            style={{ backgroundColor: kitsRef.current.home.shirt, borderColor: kitsRef.current.home.trim, ...NAME_OUTLINE }}
+          >
             {homeTeam.toUpperCase()}
           </div>
           <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{homeScore}</div>
           <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{awayScore}</div>
-          <div className="flex-1 bg-amber-500 border border-amber-400 rounded-r-lg px-2 py-1.5 text-white font-black text-xs truncate text-right">
+          <div
+            className="flex-1 rounded-r-lg border px-2 py-1.5 text-white font-black text-xs truncate text-right"
+            style={{ backgroundColor: kitsRef.current.away.shirt, borderColor: kitsRef.current.away.trim, ...NAME_OUTLINE }}
+          >
             {awayTeam.toUpperCase()}
           </div>
         </div>
@@ -2855,17 +2872,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       {/* Scoreboard plate */}
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
-          {/* PLUG-IN (optional asset): swap this monogram for /public/star/knowitball-badge.png */}
-          <div className="px-2.5 flex items-center bg-gradient-to-b from-amber-400 to-amber-500 text-gray-950 text-[11px] font-black tracking-tight">
-            KB
-          </div>
           <div className="px-2.5 flex items-center border-r border-white/5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300/90">
-            {matchMode ? `Wk ${fixture!.week}` : "Match Lab"}
+            {matchMode && career ? competitionAbbrev(fixture!, divisionOf(career)) : "Match Lab"}
           </div>
           <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
-            {statCell("Passes", `${stats.passesCompleted}/${stats.passes}`, "text-violet-300")}
+            {statCell("Pass", `${passPct}%`, "text-violet-300")}
             {statCell("Avg Rat", liveRating(stats.goals, stats.assists, stats.passesCompleted, score.user, score.opp).toFixed(1), "text-sky-300")}
           </div>
           <button

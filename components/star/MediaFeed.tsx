@@ -5,6 +5,7 @@ import type { Tag } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
 import PostCard from "./media/PostCard";
+import TransfersPanel from "./TransfersPanel";
 
 /**
  * THE FEED
@@ -35,6 +36,11 @@ const FILTERS: { id: string; label: string; tags?: Tag[] }[] = [
 
 export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
   const [filter, setFilter] = useState("all");
+  // Feed vs Transfers — a real top-level view, not another filter, since
+  // transfers are a different KIND of thing than a post. Dashboard only
+  // (mode === "browse"); the post-match "moment" reaction stays exactly the
+  // single-purpose screen it already was.
+  const [tab, setTab] = useState<"feed" | "transfers">("feed");
 
   const { posts, trends, now } = useMemo(
     () => feedFor(career, mode === "moment" ? "moment" : "settled"),
@@ -78,58 +84,82 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
           </div>
         </header>
 
-        {trends.length > 0 && (
-          <section className="mb-3 rounded-xl border border-white/12 bg-gray-800/80 p-3">
-            <div className="mb-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/70">
-              Trending in football
-            </div>
-            <ul className="space-y-1">
-              {trends.map((t, i) => (
-                <li key={t.label} className="flex items-baseline gap-2">
-                  <span className="w-3 text-[10px] font-black text-white/60">{i + 1}</span>
-                  <span className="flex-1 truncate text-[12px] font-black text-white">
-                    {t.label}{t.hot && <span className="ml-1">🔥</span>}
-                  </span>
-                  <span className="text-[10px] font-bold tabular-nums text-white/70">
-                    {formatVolume(t.volume)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
         {mode === "browse" && (
           <nav className="mb-3 flex gap-1.5">
-            {FILTERS.map(f => (
+            {(["feed", "transfers"] as const).map(t => (
               <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
+                key={t}
+                onClick={() => setTab(t)}
                 className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-black uppercase tracking-wide transition ${
-                  filter === f.id
-                    ? "bg-emerald-600 text-white"
+                  tab === t
+                    ? "bg-amber-500 text-black"
                     : "bg-white/10 text-white/80 hover:bg-white/20"
                 }`}
               >
-                {f.label}
+                {t === "feed" ? "Feed" : "Transfers"}
               </button>
             ))}
           </nav>
         )}
 
-        <div className="space-y-2.5">
-          {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
-          {shown.length === 0 && (
-            <div className="rounded-xl border border-white/12 bg-gray-800/80 px-3 py-8 text-center">
-              <div className="text-sm font-black text-white">Quiet out there.</div>
-              <p className="mt-1 text-[11px] font-bold text-white/70">
-                {posts.length === 0
-                  ? "Play a match and the world will have something to say about it."
-                  : "Nothing under this filter."}
-              </p>
+        {tab === "transfers" ? (
+          <TransfersPanel career={career} />
+        ) : (
+          <>
+            {trends.length > 0 && (
+              <section className="mb-3 rounded-xl border border-white/12 bg-gray-800/80 p-3">
+                <div className="mb-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/70">
+                  Trending in football
+                </div>
+                <ul className="space-y-1">
+                  {trends.map((t, i) => (
+                    <li key={t.label} className="flex items-baseline gap-2">
+                      <span className="w-3 text-[10px] font-black text-white/60">{i + 1}</span>
+                      <span className="flex-1 truncate text-[12px] font-black text-white">
+                        {t.label}{t.hot && <span className="ml-1">🔥</span>}
+                      </span>
+                      <span className="text-[10px] font-bold tabular-nums text-white/70">
+                        {formatVolume(t.volume)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {mode === "browse" && (
+              <nav className="mb-3 flex gap-1.5">
+                {FILTERS.map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilter(f.id)}
+                    className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-black uppercase tracking-wide transition ${
+                      filter === f.id
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white/10 text-white/80 hover:bg-white/20"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </nav>
+            )}
+
+            <div className="space-y-2.5">
+              {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
+              {shown.length === 0 && (
+                <div className="rounded-xl border border-white/12 bg-gray-800/80 px-3 py-8 text-center">
+                  <div className="text-sm font-black text-white">Quiet out there.</div>
+                  <p className="mt-1 text-[11px] font-bold text-white/70">
+                    {posts.length === 0
+                      ? "Play a match and the world will have something to say about it."
+                      : "Nothing under this filter."}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
         {mode === "moment" && onContinue && (
           <button

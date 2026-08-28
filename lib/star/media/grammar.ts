@@ -228,6 +228,30 @@ export function surname(full: string): string {
   return parts.length > 1 ? parts[parts.length - 1] : full;
 }
 
+/**
+ * "Barry 25', 59', 70'" instead of three separate "Barry 25'" lines.
+ *
+ * Requested directly, with a real broadcast graphic as the reference: a
+ * hat-trick (or any multi-goal game) used to repeat the scorer's own name
+ * once per goal, taking up real space for something a scoreboard never
+ * does — the name once, every minute after it. Used everywhere a goal
+ * list is shown (the Results tab, the Feed's own scoreline graphic), on
+ * whichever shape that screen's own goal events happen to already be in —
+ * hence the two small accessor functions rather than one fixed field name.
+ */
+export function groupedGoalLines<T>(
+  goals: T[], scorerOf: (g: T) => string, minuteOf: (g: T) => number,
+): { scorer: string; minutes: number[] }[] {
+  const order: string[] = [];
+  const byScorer = new Map<string, number[]>();
+  for (const g of goals) {
+    const s = scorerOf(g);
+    if (!byScorer.has(s)) { byScorer.set(s, []); order.push(s); }
+    byScorer.get(s)!.push(minuteOf(g));
+  }
+  return order.map(s => ({ scorer: s, minutes: byScorer.get(s)! }));
+}
+
 export function initialsOf(name: string): string {
   const parts = name.replace(/^@/, "").split(/[\s_]+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();

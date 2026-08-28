@@ -2,34 +2,18 @@
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
 import { actionsLeft, WEEK_ACTIONS, REST_ENERGY } from "@/lib/star/week";
-import { fanFeed, fanMood } from "@/lib/star/fanmail";
-import PortraitPicker from "./PortraitPicker";
 
 interface Props {
   career: CareerState;
-  onOpenShop: (kind: "nrg" | "boots" | "lifestyle") => void;
-  onOpenCasino: () => void;
-  onOpenSponsors: () => void;
-  onOpenAchievements: () => void;
-  onOpenTrophies: () => void;
   onOpenContract: () => void;
-  onUseDrink: (id: "basic" | "premium" | "elite") => void;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
   onRest: () => void;
-  /**
-   * Change the photograph on your graphics, or take it back off.
-   *
-   * Here rather than only at Profile Setup, because a career runs for years and
-   * the one decision you are most likely to want to revisit is the picture of
-   * yourself you chose in thirty seconds before your first match.
-   */
-  onSetPortrait?: (portrait: string | undefined) => void;
 }
 
 const TRAINING_ENERGY = 15;
 
 export default function LifeScreen({
-  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame, onRest, onSetPortrait,
+  career, onOpenContract, onPlayRelationshipGame, onRest,
 }: Props) {
   const left = actionsLeft(career);
   const canPlay = career.energy >= TRAINING_ENERGY && left > 0;
@@ -74,66 +58,6 @@ export default function LifeScreen({
         </div>
       </div>
 
-      {/* What they are saying. The fans relationship moved for fifteen seasons
-          and the player never once heard from them. */}
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300">The supporters</span>
-          <span className="text-[10px] font-bold text-white/80">{fanMood(career)}</span>
-        </div>
-        <div className="mt-2 space-y-1.5">
-          {fanFeed(career).map((p, i) => (
-            <div
-              key={i}
-              className={`rounded-lg px-2 py-1.5 text-[11px] ${
-                p.mood > 0 ? "bg-emerald-500/15 text-emerald-50"
-                  : p.mood < 0 ? "bg-red-500/15 text-red-50" : "bg-white/5 text-white"}`}
-            >
-              <span className="font-black text-white/70">{p.handle}</span> {p.text}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-2">
-        <QuickBtn label="NRG" icon="🥤" onClick={() => onOpenShop("nrg")} />
-        <QuickBtn label="Boots" icon="👟" onClick={() => onOpenShop("boots")} />
-        <QuickBtn label="Style" icon="💎" onClick={() => onOpenShop("lifestyle")} />
-        <QuickBtn label="Casino" icon="🎰" onClick={onOpenCasino} />
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <QuickBtn label="Sponsors" icon="🤝" onClick={onOpenSponsors} />
-        <QuickBtn label="Awards" icon="⭐" onClick={onOpenAchievements} />
-        <QuickBtn label="Trophies" icon="🏆" onClick={onOpenTrophies} />
-      </div>
-
-      {/* NRG drinks quick-use */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
-        <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">NRG Drinks</div>
-        <div className="grid grid-cols-3 gap-2">
-          {(["basic", "premium", "elite"] as const).map((k) => {
-            const count = career.nrgDrinks[k];
-            const label = k === "basic" ? "Basic" : k === "premium" ? "Premium" : "Elite";
-            const restore = k === "basic" ? 25 : k === "premium" ? 50 : 100;
-            const color = k === "basic" ? "bg-orange-500" : k === "premium" ? "bg-purple-500" : "bg-emerald-500";
-            return (
-              <button
-                key={k}
-                disabled={count === 0}
-                onClick={() => onUseDrink(k)}
-                className={`p-2 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
-              >
-                <div className={`w-8 h-10 mx-auto ${color} rounded border border-black/40 mb-1`} />
-                <div className="text-[10px] font-black text-white">{label}</div>
-                <div className="text-[9px] text-emerald-300 font-bold">+{restore}</div>
-                <div className="text-[9px] text-white/75">{count} owned</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Contract summary */}
       <button
         onClick={onOpenContract}
@@ -148,15 +72,6 @@ export default function LifeScreen({
           <div className="text-emerald-400 font-black">Renew →</div>
         </div>
       </button>
-
-      {onSetPortrait && (
-        <PortraitPicker
-          value={career.player.portrait}
-          onChange={onSetPortrait}
-          club={career.player.club}
-          number={career.squadNumber}
-        />
-      )}
     </div>
   );
 }
@@ -180,17 +95,5 @@ function RelationshipRow({ label, value, icon, onIconClick }: { label: string; v
         }`}
       >{icon}</IconEl>
     </div>
-  );
-}
-
-function QuickBtn({ label, icon, onClick }: { label: string; icon: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg py-2 flex flex-col items-center transition"
-    >
-      <div className="text-xl">{icon}</div>
-      <div className="text-[10px] font-black text-white mt-0.5">{label}</div>
-    </button>
   );
 }

@@ -142,6 +142,29 @@ const NATIONALITY_ISO: Record<string, string> = {
   "New Caledonia": "NC", "Tahiti": "PF",
 };
 
+/**
+ * Every nationality this map actually knows a flag for, one entry per real
+ * place — not the ~260 raw keys above, most of which are aliases for the
+ * same country ("USA"/"United States" both dedupe to one "United States").
+ * Deduped by flag identity (ISO code, or the subdivision's own name for
+ * England/Scotland/Wales/Northern Ireland, which have no plain ISO code),
+ * keeping whichever alias was listed FIRST above — the football/SoFIFA form
+ * where one exists ("Korea Republic", "Cote d'Ivoire"), consistent with how
+ * this game already names clubs elsewhere. Sorted alphabetically for a
+ * nationality picker to actually use.
+ */
+export const ALL_NATIONALITIES: string[] = (() => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of [...Object.keys(SUBDIVISION_FLAGS), ...Object.keys(NATIONALITY_ISO)]) {
+    const key = SUBDIVISION_FLAGS[name] ? `sub:${name}` : NATIONALITY_ISO[name];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out.sort((a, b) => a.localeCompare(b));
+})();
+
 // Canonicalise a nationality for lookup so casing, accents and apostrophe style
 // never cause a miss. Lowercases, strips diacritics (Türkiye → turkiye), and
 // normalises every apostrophe variant to a straight '. This fixes names with
