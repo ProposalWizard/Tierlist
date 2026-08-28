@@ -3,7 +3,7 @@ import { useState } from "react";
 import { fixtureDateLabel, isPostSeason, divisionOf } from "@/lib/star/calendar";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
-import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
+import { roundsFor, nationOf, internationalCallUp, KIND_ORDER } from "@/lib/star/competitions";
 import { exitRound } from "@/lib/star/cups";
 import { STAR_EDITION_LABEL } from "@/lib/star/edition";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
@@ -193,49 +193,70 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
 
       {view === "fixtures" && (
         <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md max-h-[460px] overflow-y-auto">
-          {career.fixtures.map((f, i) => (
-            <div
-              key={i}
-              className={`grid grid-cols-[58px_1fr_28px_28px_1fr] items-center py-2 px-2 gap-1 text-xs font-bold ${
-                f.week === career.week ? "bg-emerald-500 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
-              }`}
-            >
-              {/* The date, not the week number. A fixture list that says "W25"
-                  is a spreadsheet; one that says "Sat 14 Feb" is a season. The
-                  week is kept underneath because every other screen, and every
-                  message the game writes, still counts in them. */}
-              <div className="text-center text-[9px] font-black leading-none">
-                <div className="whitespace-nowrap">
-                  {fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}
-                </div>
-                <div className="mt-0.5 text-[8px] font-bold text-white/60">
-                  {isPostSeason(f.week, divisionOf(career)) ? "FINAL" : f.week === 0 ? "PRE" : `W${f.week}`}
-                </div>
-                {f.kind && f.kind !== "league" && (
-                  <div className={`text-[8px] font-black uppercase leading-none mt-0.5 ${
-                    f.kind === "international" ? "text-sky-300" : "text-violet-300"}`}
-                  >
-                    {f.kind === "cup" ? "CUP" : f.kind === "europe" ? "EUR" : "INT"}
+          {/* A cup round is always APPENDED to career.fixtures the moment its
+              draw lands (see careerFlow.ts) — never re-inserted among the
+              league weeks it's actually sandwiched between — so the raw
+              array reads "every league week, then every cup tie," even
+              though a cup tie's own week number already says exactly where
+              it belongs. Sorted here, not stored sorted: nextFixtureFor
+              (competitions.ts) already had to solve this same problem by
+              scanning rather than trusting array order, for the same
+              reason — the array itself is genuinely out of order after a
+              mid-season cup draw. League first when two land in the same
+              week, the same tie-break nextFixtureFor uses. */}
+          {[...career.fixtures]
+            .sort((a, b) => a.week - b.week || (KIND_ORDER[a.kind ?? "league"] ?? 0) - (KIND_ORDER[b.kind ?? "league"] ?? 0))
+            .map((f, i) => {
+              const yourScore = f.played ? (f.home ? f.homeScore : f.awayScore) : undefined;
+              const theirScore = f.played ? (f.home ? f.awayScore : f.homeScore) : undefined;
+              const resultColor = yourScore === undefined || theirScore === undefined ? ""
+                : yourScore > theirScore ? "text-emerald-400"
+                  : yourScore === theirScore ? "text-yellow-400" : "text-red-400";
+              return (
+              <div
+                key={i}
+                className={`grid grid-cols-[58px_1fr_60px_1fr] items-center py-2 px-2 gap-1 text-xs font-bold ${
+                  f.week === career.week ? "bg-emerald-500 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                }`}
+              >
+                {/* The week, not the date, on top now — reported directly:
+                    every other screen and message in the game counts in
+                    weeks, so that's the number that should read first and
+                    boldest here too. The actual date stays underneath it. */}
+                <div className="text-center leading-none">
+                  <div className="whitespace-nowrap text-[11px] font-black text-white">
+                    {isPostSeason(f.week, divisionOf(career)) ? "FINAL" : f.week === 0 ? "PRE" : `W${f.week}`}
                   </div>
-                )}
-              </div>
-              <div className={`text-right ${f.home ? "font-black" : ""}`}>{f.home ? sideFor(f) : f.opponent}</div>
-              <div className="text-center font-black">
-                {f.played ? f.homeScore : "-"}
-              </div>
-              <div className="text-center font-black">
-                {f.played ? f.awayScore : "-"}
-              </div>
-              <div className={`text-left ${!f.home ? "font-black" : ""}`}>
-                {f.home ? f.opponent : sideFor(f)}
-                {f.round && (
-                  <div className="truncate text-[8px] font-bold uppercase leading-none text-white/60">
-                    {f.round}
+                  <div className="mt-0.5 whitespace-nowrap text-[8px] font-bold text-white/60">
+                    {fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}
                   </div>
-                )}
+                  {f.kind && f.kind !== "league" && (
+                    <div className={`text-[8px] font-black uppercase leading-none mt-0.5 ${
+                      f.kind === "international" ? "text-sky-300" : "text-violet-300"}`}
+                    >
+                      {f.kind === "cup" ? "CUP" : f.kind === "europe" ? "EUR" : "INT"}
+                    </div>
+                  )}
+                </div>
+                <div className={`text-right ${f.home ? "font-black" : ""}`}>{f.home ? sideFor(f) : f.opponent}</div>
+                {/* A dash between the two scores, and the whole result in
+                    YOUR result's colour — green a win, yellow a draw, red a
+                    loss — rather than a neutral white that read the same
+                    whichever way the match actually went. */}
+                <div className={`text-center font-black tabular-nums ${resultColor}`}>
+                  {f.played ? `${f.homeScore} - ${f.awayScore}` : "-"}
+                </div>
+                <div className={`text-left ${!f.home ? "font-black" : ""}`}>
+                  {f.home ? f.opponent : sideFor(f)}
+                  {f.round && (
+                    <div className="truncate text-[8px] font-bold uppercase leading-none text-white/60">
+                      {f.round}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+              );
+            })}
         </div>
       )}
 

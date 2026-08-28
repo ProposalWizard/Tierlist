@@ -513,7 +513,7 @@ export function nationOf(career: CareerState): string {
  * knockout appends a round that was earned mid-season. Ordered by week, with
  * league football first when two land in the same one.
  */
-const KIND_ORDER: Record<string, number> = { league: 0, cup: 1, europe: 2, international: 3 };
+export const KIND_ORDER: Record<string, number> = { league: 0, cup: 1, europe: 2, international: 3 };
 
 export function nextFixtureFor(career: CareerState): Fixture | null {
   let best: Fixture | null = null;
