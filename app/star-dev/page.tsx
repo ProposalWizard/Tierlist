@@ -52,7 +52,7 @@ import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
-import DevSkipPanel from "@/components/star/DevSkipPanel";
+import SettingsScreen from "@/components/star/SettingsScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -83,6 +83,7 @@ export default function StarDevPage() {
   const [career, setCareer] = useState<CareerState | null>(null);
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);
+  const [trainingTab, setTrainingTab] = useState<"training" | "life">("training");
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
@@ -382,20 +383,24 @@ export default function StarDevPage() {
   const handleNavigate = useCallback((tab: NavTab) => {
     setActiveNav(tab);
     if (tab === "league") setPhase("league");
-    else if (tab === "skills") setPhase("skills");
-    else if (tab === "life") setPhase("life");
+    else if (tab === "skills") { setTrainingTab("training"); setPhase("skills"); }
+    else if (tab === "home") setPhase("dashboard");
     else if (tab === "media") setPhase("media");
     else if (tab === "play") setPhase("pre-match");
   }, []);
 
   const handleBackToDashboard = useCallback(() => {
-    setActiveNav(null);
+    setActiveNav("home");
     setPhase("dashboard");
   }, []);
 
+  // Back out of a Life-opened screen (shop, sponsors, contract…) onto the
+  // Life tab of the merged Training area, not the Training tab it shares a
+  // nav slot with.
   const handleBackToLife = useCallback(() => {
-    setActiveNav("life");
-    setPhase("life");
+    setActiveNav("skills");
+    setTrainingTab("life");
+    setPhase("skills");
   }, []);
 
   const handleTrain = useCallback((skill: keyof Skills) => {
@@ -452,7 +457,7 @@ export default function StarDevPage() {
     const { career: next, newlyUnlocked } = simulateMissedFixture(career, nextFixture);
     toastAchievements(newlyUnlocked);
     setCareer(next);
-    setActiveNav(null);
+    setActiveNav("home");
     setPhase("dashboard");
   }, [career, nextFixture]);
 
@@ -633,7 +638,7 @@ export default function StarDevPage() {
       }
     }
 
-    setActiveNav(null);
+    setActiveNav("home");
     setPhase("dashboard");
   }, [endSeason, playedFixture, lastMatchStats]);
 
@@ -680,7 +685,7 @@ export default function StarDevPage() {
     checkAndSetAchievements(next);
     setCareer(next);
     setCurrentDilemma(null);
-    setActiveNav(null);
+    setActiveNav("home");
     setPhase("dashboard");
   }, [career, currentDilemma]);
 
@@ -908,7 +913,7 @@ export default function StarDevPage() {
     if (!career) return;
     const { career: after } = skipTo(career, target);
     setCareer(after);
-    setActiveNav(null);
+    setActiveNav("home");
     setPhase("dashboard");
   }, [career]);
 
@@ -1003,8 +1008,9 @@ export default function StarDevPage() {
     checkAndSetAchievements(updated);
     setCareer(spendAction(updated));
     setRelationshipGameKind(null);
-    setActiveNav("life");
-    setPhase("life");
+    setActiveNav("skills");
+    setTrainingTab("life");
+    setPhase("skills");
   }, [career, relationshipGameKind]);
 
   const handleCasinoExit = useCallback((finalBank: number) => {
@@ -1012,8 +1018,9 @@ export default function StarDevPage() {
     // Clamped: the casino owns the bank for the length of a session and hands
     // back a number, and a career with negative money has no way to recover.
     setCareer({ ...career, money: Math.max(0, Math.round(finalBank)) });
-    setActiveNav("life");
-    setPhase("life");
+    setActiveNav("skills");
+    setTrainingTab("life");
+    setPhase("skills");
   }, [career]);
 
   const handleContractComplete = useCallback((newContract: CareerState["contract"] | null) => {
@@ -1027,7 +1034,7 @@ export default function StarDevPage() {
       setCareer(signed);
     }
     setContractOfferReason(null);
-    setActiveNav(null);
+    setActiveNav("home");
     setPhase("dashboard");
   }, [career]);
 
@@ -1082,7 +1089,7 @@ export default function StarDevPage() {
         playerName={`${career.player.firstName} ${career.player.lastName}`}
         surname={career.player.lastName}
         club={career.player.club}
-        onDone={() => { setActiveNav(null); setPhase("dashboard"); }}
+        onDone={() => { setActiveNav("home"); setPhase("dashboard"); }}
       />
     );
   }
@@ -1099,7 +1106,7 @@ export default function StarDevPage() {
     return (
       <LadderScreen
         career={career}
-        onContinue={() => { setActiveNav(null); setPhase("dashboard"); }}
+        onContinue={() => { setActiveNav("home"); setPhase("dashboard"); }}
       />
     );
   }
@@ -1268,6 +1275,18 @@ export default function StarDevPage() {
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToLife} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToLife} />;
+
+  if (phase === "settings") {
+    return (
+      <SettingsScreen
+        career={career}
+        onBack={handleBackToDashboard}
+        onSkip={handleDevSkip}
+        onNewCareer={handleFullReset}
+        onSetPortrait={handleSetPortrait}
+      />
+    );
+  }
   if (phase === "relationship-game" && relationshipGameKind) {
     const currentValue = relationshipGameKind === "happiness"
       ? career.happiness
@@ -1277,7 +1296,7 @@ export default function StarDevPage() {
         kind={relationshipGameKind}
         currentValue={currentValue}
         onComplete={handleRelationshipGameComplete}
-        onCancel={() => { setRelationshipGameKind(null); setActiveNav("life"); setPhase("life"); }}
+        onCancel={() => { setRelationshipGameKind(null); setActiveNav("skills"); setTrainingTab("life"); setPhase("skills"); }}
       />
     );
   }
@@ -1456,6 +1475,7 @@ export default function StarDevPage() {
       career={career}
       onExit={handleExit}
       onNavigate={handleNavigate}
+      onSettings={() => setPhase("settings")}
       activeNav={activeNav}
       mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
@@ -1496,49 +1516,31 @@ export default function StarDevPage() {
           onChange={setPlayAs}
         />
       )}
-      {phase === "dashboard" && <DevSkipPanel career={career} onSkip={handleDevSkip} />}
-      {phase === "dashboard" && (
-        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-center">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Start over</div>
-          <p className="mt-1 text-[11px] text-gray-200">
-            Exit leaves the career saved. This deletes it and begins a new one.
-          </p>
-          <button
-            onClick={handleFullReset}
-            className="mt-2 w-full rounded-lg border border-red-500/60 bg-red-500/15 py-2 text-xs font-black text-red-200 transition hover:bg-red-500/25"
-          >
-            New career
-          </button>
-        </div>
-      )}
       {phase === "league" && (
-        <div>
-          <BackChip onBack={handleBackToDashboard} />
-          <LeagueScreen career={career} onRefreshSquads={refreshSquads} refreshing={refreshing} />
-        </div>
-      )}
-      {phase === "life" && (
-        <div>
-          <BackChip onBack={handleBackToDashboard} />
-          <LifeScreen
-            career={career}
-            onOpenShop={(kind) => setPhase(kind === "nrg" ? "shop-nrg" : kind === "boots" ? "shop-boots" : "shop-lifestyle")}
-            onOpenCasino={() => setPhase("casino-menu")}
-            onOpenSponsors={() => setPhase("sponsors")}
-            onOpenAchievements={() => setPhase("achievements")}
-            onOpenTrophies={() => setPhase("trophies")}
-            onOpenContract={() => setPhase("contract-renewal")}
-            onUseDrink={handleUseDrink}
-            onPlayRelationshipGame={handleOpenRelationshipGame}
-            onRest={handleRest}
-            onSetPortrait={handleSetPortrait}
-          />
-        </div>
+        <LeagueScreen career={career} onRefreshSquads={refreshSquads} refreshing={refreshing} />
       )}
       {phase === "skills" && (
         <div>
-          <BackChip onBack={handleBackToDashboard} />
-          <SkillsScreen career={career} onTrain={handleTrain} />
+          <div className="mb-2 grid grid-cols-2 gap-1.5">
+            <TrainingTabBtn label="Training" active={trainingTab === "training"} onClick={() => setTrainingTab("training")} />
+            <TrainingTabBtn label="Life" active={trainingTab === "life"} onClick={() => setTrainingTab("life")} />
+          </div>
+          {trainingTab === "training" ? (
+            <SkillsScreen career={career} onTrain={handleTrain} />
+          ) : (
+            <LifeScreen
+              career={career}
+              onOpenShop={(kind) => setPhase(kind === "nrg" ? "shop-nrg" : kind === "boots" ? "shop-boots" : "shop-lifestyle")}
+              onOpenCasino={() => setPhase("casino-menu")}
+              onOpenSponsors={() => setPhase("sponsors")}
+              onOpenAchievements={() => setPhase("achievements")}
+              onOpenTrophies={() => setPhase("trophies")}
+              onOpenContract={() => setPhase("contract-renewal")}
+              onUseDrink={handleUseDrink}
+              onPlayRelationshipGame={handleOpenRelationshipGame}
+              onRest={handleRest}
+            />
+          )}
         </div>
       )}
       {/* Above every phase, because winning it can land on the post-match
@@ -1550,10 +1552,15 @@ export default function StarDevPage() {
   );
 }
 
-function BackChip({ onBack }: { onBack: () => void }) {
+function TrainingTabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onBack} className="mb-2 flex items-center gap-1 px-3 py-1 bg-gray-700 rounded-lg text-xs font-black text-white hover:bg-gray-600">
-      ← Home
+    <button
+      onClick={onClick}
+      className={`py-2 rounded-lg font-black text-xs transition ${
+        active ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+      }`}
+    >
+      {label}
     </button>
   );
 }

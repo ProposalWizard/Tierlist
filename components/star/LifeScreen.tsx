@@ -2,8 +2,6 @@
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
 import { actionsLeft, WEEK_ACTIONS, REST_ENERGY } from "@/lib/star/week";
-import { fanFeed, fanMood } from "@/lib/star/fanmail";
-import PortraitPicker from "./PortraitPicker";
 
 interface Props {
   career: CareerState;
@@ -16,20 +14,12 @@ interface Props {
   onUseDrink: (id: "basic" | "premium" | "elite") => void;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
   onRest: () => void;
-  /**
-   * Change the photograph on your graphics, or take it back off.
-   *
-   * Here rather than only at Profile Setup, because a career runs for years and
-   * the one decision you are most likely to want to revisit is the picture of
-   * yourself you chose in thirty seconds before your first match.
-   */
-  onSetPortrait?: (portrait: string | undefined) => void;
 }
 
 const TRAINING_ENERGY = 15;
 
 export default function LifeScreen({
-  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame, onRest, onSetPortrait,
+  career, onOpenShop, onOpenCasino, onOpenSponsors, onOpenAchievements, onOpenTrophies, onOpenContract, onUseDrink, onPlayRelationshipGame, onRest,
 }: Props) {
   const left = actionsLeft(career);
   const canPlay = career.energy >= TRAINING_ENERGY && left > 0;
@@ -71,27 +61,6 @@ export default function LifeScreen({
         <RelationshipRow label="Happiness" value={career.happiness} icon="😊" onIconClick={canPlay ? () => onPlayRelationshipGame("happiness") : undefined} />
         <div className="text-[9px] text-center text-emerald-300 mt-1">
           Tap an emoji to play a minigame and raise it (a day and {TRAINING_ENERGY} energy)
-        </div>
-      </div>
-
-      {/* What they are saying. The fans relationship moved for fifteen seasons
-          and the player never once heard from them. */}
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300">The supporters</span>
-          <span className="text-[10px] font-bold text-white/80">{fanMood(career)}</span>
-        </div>
-        <div className="mt-2 space-y-1.5">
-          {fanFeed(career).map((p, i) => (
-            <div
-              key={i}
-              className={`rounded-lg px-2 py-1.5 text-[11px] ${
-                p.mood > 0 ? "bg-emerald-500/15 text-emerald-50"
-                  : p.mood < 0 ? "bg-red-500/15 text-red-50" : "bg-white/5 text-white"}`}
-            >
-              <span className="font-black text-white/70">{p.handle}</span> {p.text}
-            </div>
-          ))}
         </div>
       </div>
 
@@ -148,15 +117,6 @@ export default function LifeScreen({
           <div className="text-emerald-400 font-black">Renew →</div>
         </div>
       </button>
-
-      {onSetPortrait && (
-        <PortraitPicker
-          value={career.player.portrait}
-          onChange={onSetPortrait}
-          club={career.player.club}
-          number={career.squadNumber}
-        />
-      )}
     </div>
   );
 }
