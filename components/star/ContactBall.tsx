@@ -4,10 +4,15 @@ import { useRef, useState } from "react";
 interface Props {
   power: number;
   onContact: (contact: { cx: number; cy: number }) => void;
+  /** The three "how to read the ball" badges and the explanatory line under
+   *  them — the tutorial copy, only actually needed the first time anyone
+   *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
+   *  a real match leaves it off, having already taught this once. */
+  tutorial?: boolean;
 }
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact }: Props) {
+export default function ContactBall({ power, onContact, tutorial }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const [spark, setSpark] = useState<{ left: number; top: number } | null>(null);
   const locked = useRef(false);
@@ -83,43 +88,49 @@ export default function ContactBall({ power, onContact }: Props) {
 
         {/* Three ways to read the ball, as chips rather than a run-on line —
             the run-on line asked you to parse three instructions in one
-            breath before you had even picked a spot. */}
-        <div className="mt-2.5 flex items-center justify-center gap-1.5 flex-wrap">
-          {badge("↕", "Bottom = high & far")}
-          {badge("↔", "Sides = curl")}
-          {badge("↓", "Top = low drive")}
-        </div>
-
-        {/* Power meter */}
-        <div className="mt-3 mx-auto w-40 max-w-full">
-          <div className="text-white text-[11px] font-black uppercase tracking-[0.15em] mb-1">
-            Power
+            breath before you had even picked a spot. Tutorial copy — the
+            trial only. */}
+        {tutorial && (
+          <div className="mt-2.5 flex items-center justify-center gap-1.5 flex-wrap">
+            {badge("↕", "Bottom = high & far")}
+            {badge("↔", "Sides = curl")}
+            {badge("↓", "Top = low drive")}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-2.5 rounded-full bg-black/50 border border-white/10 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-[width] duration-100"
-                style={{
-                  width: `${powerPct}%`,
-                  background: "linear-gradient(to right, #22c55e, #eab308, #ef4444)",
-                  boxShadow: `0 0 8px ${powerColor}99`,
-                }}
-              />
-            </div>
-            <span className="text-white font-black text-sm tabular-nums w-11 text-right">
-              {powerPct}%
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* A second tip, in the real gap this layout already leaves between
           the badges above and the ball below — not overlapping the ball's
-          own tap target, which starts lower down inside the next block. */}
-      <div className="relative z-40 px-6 pt-3 text-center pointer-events-none">
-        <p className="text-[11px] font-bold text-white/75" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.7)" }}>
-          Now decide the angle — tap the part of the ball you want to send it away from, aiming for a corner the keeper isn&rsquo;t set for.
-        </p>
+          own tap target, which starts lower down inside the next block.
+          Tutorial copy — the trial only. */}
+      {tutorial && (
+        <div className="relative z-40 px-6 pt-3 text-center pointer-events-none">
+          <p className="text-[11px] font-bold text-white/75" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.7)" }}>
+            Now decide the angle — tap the part of the ball you want to send it away from, aiming for a corner the keeper isn&rsquo;t set for.
+          </p>
+        </div>
+      )}
+
+      {/* Power — a vertical bar on the side rather than competing with the
+          header's own copy for room, and out of the way of the ball's own
+          tap target. */}
+      <div className="absolute right-2.5 top-1/2 z-40 -translate-y-1/2 flex flex-col items-center gap-1.5 pointer-events-none">
+        <span className="text-white text-[9px] font-black uppercase tracking-[0.15em]" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+          Power
+        </span>
+        <div className="relative h-28 w-3 rounded-full bg-black/50 border border-white/10 overflow-hidden">
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-full transition-[height] duration-100"
+            style={{
+              height: `${powerPct}%`,
+              background: "linear-gradient(to top, #22c55e, #eab308, #ef4444)",
+              boxShadow: `0 0 8px ${powerColor}99`,
+            }}
+          />
+        </div>
+        <span className="text-white font-black text-xs tabular-nums" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+          {powerPct}%
+        </span>
       </div>
 
       {/* The ball — sitting ON the grass. It used to float in the middle of the

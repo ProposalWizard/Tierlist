@@ -39,6 +39,7 @@ import { startingTeammateIds, onPitchToday } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
+import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
@@ -336,7 +337,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const [log, setLog] = useState<LogLine[]>([]);
   const [queue, setQueue] = useState<LogLine[]>([]);
   const [speed, setSpeed] = useState(1);
-  const [pause, setPause] = useState<{ label: string; cta: string; onContinue: () => void } | null>(null);
+  const [pause, setPause] = useState<{ label?: string; cta: string; onContinue: () => void } | null>(null);
   const halfTimeShownRef = useRef(false);
   /** What to do once the queue has emptied. */
   const simContinueRef = useRef<(() => void) | null>(null);
@@ -586,7 +587,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         setLog(l => [...l, logLine(
           `Half Time  ${userScoreRef.current} - ${oppScoreRef.current}`, "period", HALF_TIME_MINUTE)]);
         setPause({
-          label: "The half is over",
           cta: "Second half →",
           onContinue: () => setPause(null),
         });
@@ -1820,12 +1820,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const power = powerFromDrag(d, sc.ball);
       const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
       const len = Math.hypot(dx, dy) || 1;
-      // Half the previous length at full power. Purely the drawn length —
-      // `power` itself (and how far you actually have to drag to reach it) is
-      // untouched, since this is computed FROM `power`, not the other way
-      // round. Reported directly: "make it so that a hundred percent power is
-      // about half the length... you don't have to change the power."
-      const lineLen = power * (vp.y2 - vp.y1) * 0.11;
+      // Half the previous length at full power, then 20% longer again on top
+      // of that (0.11 * 1.2) — reported as reading a little short once the
+      // meter beside it was removed and the arrow became the only power
+      // readout. Purely the drawn length — `power` itself (and how far you
+      // actually have to drag to reach it) is untouched, since this is
+      // computed FROM `power`, not the other way round.
+      const lineLen = power * (vp.y2 - vp.y1) * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
@@ -1871,23 +1872,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       ctx.lineWidth = Math.max(1, unit * 0.22);
       ctx.strokeStyle = "rgba(124,45,18,0.6)";
       ctx.stroke();
-
-      // power meter (left) — sized off the canvas so it holds still as the camera zooms
-      const meterX = W * 0.045, meterTop = H * 0.15, meterH = H * 0.7, meterW = W * 0.055;
-      ctx.fillStyle = "rgba(2,6,23,0.55)";
-      ctx.fillRect(meterX, meterTop, meterW, meterH);
-      const fillH = meterH * power;
-      const grad = ctx.createLinearGradient(0, meterTop + meterH, 0, meterTop);
-      grad.addColorStop(0, "#22c55e"); grad.addColorStop(0.6, "#eab308"); grad.addColorStop(1, "#ef4444");
-      ctx.fillStyle = grad;
-      ctx.fillRect(meterX, meterTop + meterH - fillH, meterW, fillH);
-      ctx.strokeStyle = "rgba(251,191,36,0.5)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(meterX, meterTop, meterW, meterH);
-      ctx.fillStyle = C.goldSoft;
-      ctx.font = `bold ${Math.round(W * 0.05)}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.fillText(`${Math.round(power * 100)}%`, meterX + meterW / 2, meterTop - W * 0.022);
+      // The left-edge power meter that used to sit beside this arrow is gone
+      // — reported as redundant with the arrow's own length, which already
+      // is the power readout.
     }
 
     // --- Confetti (brand colours, goal only) ---
@@ -2531,7 +2518,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           `Full Time  ${userScoreRef.current} - ${oppScoreRef.current}`, "period", MATCH_DURATION)]);
         setMatchMinute(MATCH_DURATION);
         setPause({
-          label: "That's the whistle",
           cta: "Full time →",
           onContinue: () => {
             setPause(null);
@@ -2856,7 +2842,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             className="flex-1 rounded-l-lg border px-2 py-1.5 text-white font-black text-xs truncate"
             style={{ backgroundColor: kitsRef.current.home.shirt, borderColor: kitsRef.current.home.trim, ...NAME_OUTLINE }}
           >
-            {homeTeam.toUpperCase()}
+            {shortClub(homeTeam).toUpperCase()}
           </div>
           <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{homeScore}</div>
           <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{awayScore}</div>
@@ -2864,7 +2850,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             className="flex-1 rounded-r-lg border px-2 py-1.5 text-white font-black text-xs truncate text-right"
             style={{ backgroundColor: kitsRef.current.away.shirt, borderColor: kitsRef.current.away.trim, ...NAME_OUTLINE }}
           >
-            {awayTeam.toUpperCase()}
+            {shortClub(awayTeam).toUpperCase()}
           </div>
         </div>
       )}
@@ -2980,38 +2966,40 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         )}
       </div>
 
-      {/* Live commentary ticker — only while the pitch has the screen. The
-          commentary phase shows every line of this and more, and running both
-          is the same four lines twice. */}
-      <div className={`mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem] ${phase === "feed" ? "hidden" : ""}`}>
-        <div className="flex items-center gap-1.5 mb-1">
-          <span className="kib-live inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
-          <span className="text-[8px] font-black tracking-[0.22em] text-white/70 uppercase">Live Commentary</span>
-        </div>
-        <div className="space-y-0.5">
-          {feed.length === 0 && <div className="text-[11px] text-white/65 italic">Kick-off…</div>}
-          {feed.map((line, i) => (
-            <div
-              key={i}
-              className={`text-[11px] leading-snug pl-2 border-l-2 ${
-                i === feed.length - 1 ? "text-white font-bold border-emerald-500/80" : "text-white/70 border-transparent"
-              }`}
-            >
-              {line}
+      {/* Live commentary ticker and the situation hint — both only for the
+          standalone sandbox now. In a real match the commentary phase already
+          shows every one of these lines (and more) a moment later, so running
+          both was the same four lines twice; the hint was explanatory copy a
+          returning player does not need re-explained to them every single
+          chance. Reported directly: neither is wanted once you are actually
+          playing, only while learning the game. */}
+      {!matchMode && (
+        <>
+          <div className={`mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem] ${phase === "feed" ? "hidden" : ""}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="kib-live inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
+              <span className="text-[8px] font-black tracking-[0.22em] text-white/70 uppercase">Live Commentary</span>
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="space-y-0.5">
+              {feed.length === 0 && <div className="text-[11px] text-white/65 italic">Kick-off…</div>}
+              {feed.map((line, i) => (
+                <div
+                  key={i}
+                  className={`text-[11px] leading-snug pl-2 border-l-2 ${
+                    i === feed.length - 1 ? "text-white font-bold border-emerald-500/80" : "text-white/70 border-transparent"
+                  }`}
+                >
+                  {line}
+                </div>
+              ))}
+            </div>
+          </div>
 
-      {/* Hint */}
-      <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-white/85 text-center">
-        {matchMode && (
-          <span className="text-emerald-300 font-black mr-1">
-            {matchMinute}&#39; ·
-          </span>
-        )}
-        <span className="text-amber-300">💡</span> {scenarioLabel.hint}
-      </div>
+          <div className="mt-2 bg-gray-900/70 border border-gray-800 rounded-lg px-3 py-2 text-[10px] text-white/85 text-center">
+            <span className="text-amber-300">💡</span> {scenarioLabel.hint}
+          </div>
+        </>
+      )}
 
       {/* ── The armband ──
           Only for the captain, only while the ball is still at your feet, and

@@ -1,5 +1,7 @@
 "use client";
 import type { MatchStats } from "@/lib/star/types";
+import { kitsFor } from "@/lib/star/kits";
+import { shortClub } from "@/lib/star/media/grammar";
 
 interface Props {
   stats: MatchStats;
@@ -21,20 +23,44 @@ interface Props {
   knockout?: string | null;
 }
 
+// The same black outline the live scoreboard puts on its club-name text —
+// white over a light kit (Fulham/Leeds white, a bright yellow away strip)
+// needs it to stay legible.
+const NAME_OUTLINE = {
+  textShadow: "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000",
+};
+
 export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true }: Props) {
   const hs = youAreHome ? stats.homeScore : stats.awayScore;
   const as = youAreHome ? stats.awayScore : stats.homeScore;
+  const kits = kitsFor(homeTeam, awayTeam);
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex items-center justify-center px-3 py-4">
-      <div className="w-full max-w-sm">
-        <div className="bg-gray-700 rounded-t-xl border border-gray-600 py-2 px-3 text-center border-b-0">
-          <div className="text-[10px] uppercase tracking-widest font-black text-white/75">
-            {competition ? competition : "Full Time"}
+    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white px-3 py-4">
+      <div className="max-w-sm mx-auto">
+        <div className="text-center text-[10px] uppercase tracking-widest font-black text-white/75 mb-1.5">
+          {competition ? competition : "Full Time"}
+        </div>
+        {/* The same scoreboard-plate look the live match itself uses, real
+            kit colours included, instead of a plain "Home 2 — 0 Away" line
+            whose dash read oddly large next to two single-digit scores. */}
+        <div className="flex items-center justify-between gap-1">
+          <div
+            className="flex-1 rounded-l-lg border px-2 py-1.5 text-white font-black text-xs truncate"
+            style={{ backgroundColor: kits.home.shirt, borderColor: kits.home.trim, ...NAME_OUTLINE }}
+          >
+            {shortClub(homeTeam).toUpperCase()}
           </div>
-          <div className="text-lg font-black text-white mt-0.5 truncate">{homeTeam} {hs} — {as} {awayTeam}</div>
+          <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{hs}</div>
+          <div className="bg-white text-black font-black text-lg px-3 py-1 rounded shadow tabular-nums">{as}</div>
+          <div
+            className="flex-1 rounded-r-lg border px-2 py-1.5 text-white font-black text-xs truncate text-right"
+            style={{ backgroundColor: kits.away.shirt, borderColor: kits.away.trim, ...NAME_OUTLINE }}
+          >
+            {shortClub(awayTeam).toUpperCase()}
+          </div>
         </div>
         {knockout && (
-          <div className={`border-x border-gray-600 py-2.5 px-3 text-center text-sm font-black ${
+          <div className={`mt-2 rounded-t-xl border border-b-0 border-gray-600 py-2.5 px-3 text-center text-sm font-black ${
             knockout.startsWith("🏆") ? "bg-amber-400 text-gray-950"
               : knockout.startsWith("Into") || knockout.startsWith("Through") ? "bg-emerald-600 text-white"
                 : "bg-red-700 text-white"}`}
@@ -42,7 +68,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
             {knockout}
           </div>
         )}
-        <div className="bg-gray-800 border-x border-gray-600 py-3 text-center">
+        <div className={`bg-gray-800 border-x border-gray-600 py-3 text-center ${knockout ? "" : "mt-2 rounded-t-xl border-t"}`}>
           <div className="text-xl font-black text-white uppercase tracking-wider">Match Stats</div>
         </div>
 

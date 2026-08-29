@@ -33,7 +33,7 @@ interface Props {
    * time. Absent while it is streaming, which is most of the time and is the
    * whole point: you are watching a match, not clicking through one.
    */
-  pause?: { label: string; cta: string; onContinue: () => void } | null;
+  pause?: { label?: string; cta: string; onContinue: () => void } | null;
   /** Reveal everything queued at once. Absent when there is nothing waiting. */
   onSkip?: () => void;
 }
@@ -55,6 +55,20 @@ export default function MatchCommentary({
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col bg-gray-950">
+      {/* A goal line brightens for a moment when it lands, then settles to its
+          steady green — plays once on mount, which is exactly when a goal
+          line is new. */}
+      <style>{`
+        @keyframes kibGoalFlash {
+          0% { background-color: rgba(255,255,255,0.6); }
+          20% { background-color: rgba(5,150,105,0.95); }
+          100% { background-color: rgba(5,150,105,0.7); }
+        }
+        .kib-goal-flash { animation: kibGoalFlash 1.7s ease-out both; }
+        @media (prefers-reduced-motion: reduce) {
+          .kib-goal-flash { animation: none; }
+        }
+      `}</style>
       {/* ── The clock and the score ── */}
       <div className="shrink-0 border-b border-white/10 bg-gradient-to-b from-gray-900 to-gray-950">
         <div className="flex items-stretch">
@@ -100,9 +114,11 @@ export default function MatchCommentary({
       {/* ── Waiting on you ── */}
       {pause && (
         <div className="shrink-0 border-t border-amber-400/40 bg-amber-950/40 px-3 py-2.5">
-          <div className="text-center text-[11px] font-black uppercase tracking-widest text-amber-200">
-            {pause.label}
-          </div>
+          {pause.label && (
+            <div className="text-center text-[11px] font-black uppercase tracking-widest text-amber-200">
+              {pause.label}
+            </div>
+          )}
           <button
             onClick={pause.onContinue}
             className="mt-2 w-full rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99]"
@@ -149,29 +165,33 @@ function Line({ l }: { l: LogLine }) {
     return (
       <div className="flex items-center gap-2 border-y border-white/10 bg-gray-800/80 px-3 py-1.5">
         {l.minute !== undefined && (
-          <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white/60">{l.minute}</span>
+          <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white">{l.minute}</span>
         )}
-        <span className="flex-1 text-center text-[11px] font-black uppercase tracking-[0.18em] text-white/85">
+        <span className="flex-1 text-center text-[11px] font-black uppercase tracking-[0.18em] text-white">
           {l.text}
         </span>
       </div>
     );
   }
 
+  // Goal lines get a real green highlight, not a low-opacity tint that read
+  // as barely-there-over-black — reported directly: "instead of black, it's
+  // greenish." `kib-goal-flash` runs a brief brighten-then-settle pass so a
+  // goal reads as a moment, not just a differently-coloured row.
   const tone =
-    l.tone === "goal" ? "bg-emerald-600/25 text-emerald-100 font-black"
-      : l.tone === "oppGoal" ? "bg-red-600/20 text-red-100 font-black"
+    l.tone === "goal" ? "kib-goal-flash bg-emerald-600/70 text-white font-black"
+      : l.tone === "oppGoal" ? "bg-red-600/45 text-white font-black"
         // Follows straight under its goal — a lighter touch than the goal
         // itself, since it is the supporting fact rather than the headline,
         // and violet to match the Assists stat cell below.
         : l.tone === "assist" ? "pl-8 text-violet-200 font-bold"
-          : l.tone === "you" ? "bg-amber-500/15 text-amber-100 font-bold"
-            : l.tone === "chance" ? "text-white/95 font-bold"
-              : "text-white/85";
+          : l.tone === "you" ? "bg-amber-500/15 text-white font-bold"
+            : l.tone === "chance" ? "text-white font-bold"
+              : "text-white";
 
   return (
     <div className={`kib-line flex items-baseline gap-2 border-b border-white/[0.04] px-3 py-1.5 ${tone}`}>
-      <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white/45">
+      <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white/70">
         {l.minute !== undefined ? l.minute : ""}
       </span>
       <span className="flex-1 text-[12px] leading-snug">{l.text}</span>
@@ -182,7 +202,7 @@ function Line({ l }: { l: LogLine }) {
 function Cell({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
     <div className="px-1 py-1 text-center">
-      <div className="text-[8px] font-black uppercase tracking-wider text-white/50">{label}</div>
+      <div className="text-[8px] font-black uppercase tracking-wider text-white">{label}</div>
       <div className={`text-sm font-black tabular-nums ${tone}`}>{value}</div>
     </div>
   );
