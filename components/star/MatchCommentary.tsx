@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import type { LogLine } from "@/lib/star/matchLog";
+import { labelInk, type Kit } from "@/lib/star/kits";
 
 /**
  * THE MATCH, AS IT IS BEING PLAYED.
@@ -22,6 +23,10 @@ interface Props {
   awayTeam: string;
   homeScore: number;
   awayScore: number;
+  /** What your side and the opposition are wearing, for tinting a line about
+   *  either of them by that team's own colour. */
+  userKit: Kit;
+  oppKit: Kit;
   /** 0-100. Yours, not the team's. */
   energy: number;
   stats: { shots: number; goals: number; assists: number; passesCompleted: number };
@@ -39,7 +44,7 @@ interface Props {
 }
 
 export default function MatchCommentary({
-  lines, minute, homeTeam, awayTeam, homeScore, awayScore,
+  lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
   energy, stats, speed, onSpeed, pause, onSkip,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -107,7 +112,7 @@ export default function MatchCommentary({
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
       >
         <div className="flex min-h-full flex-col justify-end">
-          {lines.map(l => <Line key={l.id} l={l} />)}
+          {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} />)}
         </div>
       </div>
 
@@ -160,7 +165,7 @@ export default function MatchCommentary({
  * `linesFrom`. Everything else is a continuation of the passage above it, and a
  * number on each row turns one attack into four unrelated incidents.
  */
-function Line({ l }: { l: LogLine }) {
+function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit }) {
   if (l.tone === "period") {
     return (
       <div className="flex items-center gap-2 border-y border-white/10 bg-gray-800/80 px-3 py-1.5">
@@ -187,11 +192,35 @@ function Line({ l }: { l: LogLine }) {
         : l.tone === "assist" ? "pl-8 text-violet-200 font-bold"
           : l.tone === "you" ? "bg-amber-500/15 text-white font-bold"
             : l.tone === "chance" ? "text-white font-bold"
-              : "text-white";
+              // A plain line about a specific team's play (a near-miss, a
+              // blocked shot) is coloured further down, straight from that
+              // team's own shirt — a flat "text-white" here would fight the
+              // inline style rather than just staying out of its way.
+              : l.tone === "play" && l.isOpponent !== undefined ? "font-bold"
+                : "text-white";
+
+  // Reported directly: "lines about Liverpool should have a red background;
+  // lines about Spurs should have a white background." The line's own kit,
+  // near-solid so the colour actually reads, with ink picked the same way the
+  // scoreboard picks ink for a name printed on a shirt — dark on a light kit,
+  // white on a dark one — rather than one text colour fighting every club.
+  const teamStyle: CSSProperties | undefined =
+    l.tone === "play" && l.isOpponent !== undefined
+      ? (() => {
+          const kit = l.isOpponent ? oppKit : userKit;
+          return { backgroundColor: `${kit.shirt}E6`, color: labelInk(kit.shirt) };
+        })()
+      : undefined;
 
   return (
-    <div className={`kib-line flex items-baseline gap-2 border-b border-white/[0.04] px-3 py-1.5 ${tone}`}>
-      <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white/70">
+    <div
+      className={`kib-line flex items-baseline gap-2 border-b border-white/[0.04] px-3 py-1.5 ${tone}`}
+      style={teamStyle}
+    >
+      <span
+        className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white/70"
+        style={teamStyle ? { color: teamStyle.color, opacity: 0.75 } : undefined}
+      >
         {l.minute !== undefined ? l.minute : ""}
       </span>
       <span className="flex-1 text-[12px] leading-snug">{l.text}</span>

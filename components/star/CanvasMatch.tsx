@@ -248,14 +248,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
    * all reads as a mistake in the goal difference.
    */
   const nameTeamGoals = (
-    raw: { minute: number; text: string; isGoal?: boolean; teammateGoal?: boolean }[],
+    raw: { minute: number; text: string; isGoal?: boolean; teammateGoal?: boolean; isOpponent?: boolean }[],
     squad: SquadPlayer[],
     rng: () => number,
     announce: boolean,
   ): SimEvent[] => {
     const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
     return raw.flatMap((e): SimEvent[] => {
-      if (!e.isGoal) return [{ minute: e.minute, text: e.text }];
+      if (!e.isGoal) return [{ minute: e.minute, text: e.text, isOpponent: e.isOpponent }];
 
       if (!e.teammateGoal) {
         return [{ minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true, isOpponent: true }];
@@ -2961,6 +2961,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             awayTeam={awayTeam}
             homeScore={homeScore}
             awayScore={awayScore}
+            userKit={ourKit()}
+            oppKit={theirKit()}
             energy={energy}
             stats={stats}
             speed={speed}

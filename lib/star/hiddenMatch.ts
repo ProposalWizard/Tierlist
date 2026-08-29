@@ -82,6 +82,14 @@ export interface HiddenMatchEvent {
   isGoal?: boolean;
   /** Set when a squad member, rather than the player, scored it. */
   teammateGoal?: boolean;
+  /**
+   * Whose chance this line is reporting on, when the text is specifically
+   * about one side's play — a near-miss, a blocked shot. Absent for text with
+   * no team of its own (a quiet spell). Read by the commentary screen to tint
+   * a line by that team's kit colour instead of leaving every line the same
+   * shade regardless of who it is actually about.
+   */
+  isOpponent?: boolean;
 }
 
 export interface ScenarioRequest {
@@ -329,7 +337,7 @@ export function tick(
           state.momentum = clamp1(state.momentum + 0.3);
           events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
         } else {
-          events.push({ minute: state.minute, text: rng() < 0.5 ? "A chance at the far post — headed over." : "A shot from the edge is blocked." });
+          events.push({ minute: state.minute, text: rng() < 0.5 ? "A chance at the far post — headed over." : "A shot from the edge is blocked.", isOpponent: false });
         }
         endOfMove(state, scored, "user");
       } else {
@@ -339,7 +347,7 @@ export function tick(
           state.momentum = clamp1(state.momentum - 0.3);
           events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true });
         } else {
-          events.push({ minute: state.minute, text: rng() < 0.5 ? "They work a chance — the keeper holds it." : "A shot from distance flies wide." });
+          events.push({ minute: state.minute, text: rng() < 0.5 ? "They work a chance — the keeper holds it." : "A shot from distance flies wide.", isOpponent: true });
         }
         endOfMove(state, scored, "opponent");
       }

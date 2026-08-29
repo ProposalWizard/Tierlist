@@ -55,6 +55,13 @@ export interface LogLine {
   minute?: number;
   text: string;
   tone: LogTone;
+  /**
+   * Whose team this line is about — absent when the line is not about either
+   * side specifically (a quiet spell, a period marker). Lets the streaming
+   * screen tint a line by that team's own kit colour instead of leaving every
+   * line the same shade regardless of who the sentence is actually about.
+   */
+  isOpponent?: boolean;
 }
 
 /**
@@ -71,8 +78,8 @@ let nextId = 1;
 
 /** A fresh line. Ids are a counter rather than an index so a line keeps its
  *  identity when the list in front of it changes. */
-export function line(text: string, tone: LogTone = "play", minute?: number): LogLine {
-  return { id: nextId++, text, tone, minute };
+export function line(text: string, tone: LogTone = "play", minute?: number, isOpponent?: boolean): LogLine {
+  return { id: nextId++, text, tone, minute, isOpponent };
 }
 
 /**
@@ -100,7 +107,7 @@ export function linesFrom(
     // already printed the number — repeating it would say the same minute
     // twice for what reads as one moment.
     const showMinute = e.minute !== last && e.tone !== "assist";
-    out.push(line(e.text, tone, showMinute ? e.minute : undefined));
+    out.push(line(e.text, tone, showMinute ? e.minute : undefined, e.isOpponent));
     last = e.minute;
   }
   return out;
