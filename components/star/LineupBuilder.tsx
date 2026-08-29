@@ -5,7 +5,9 @@ import {
   FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, refit, bestFitness,
   type Pickable,
 } from "@/lib/star/formations";
-import { loadLineup, saveLineup, exportAll, importAll } from "@/lib/star/lineupStore";
+import {
+  loadLineup, saveLineup, exportAll, importAll, fetchSharedLineups, pushLineupShared, pushAllShared,
+} from "@/lib/star/lineupStore";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 
 /**
@@ -60,6 +62,15 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   const [showBackup, setShowBackup] = useState(false);
   const { formationId, xi, bench7, manager } = sheet;
 
+  // Pull the shared table down into the local cache before anything reads
+  // it — otherwise the very first render's "load the saved side" effect
+  // below would run against whatever (possibly nothing, possibly stale)
+  // happened to already be in this browser's storage.
+  const [synced, setSynced] = useState(false);
+  useEffect(() => {
+    fetchSharedLineups().finally(() => setSynced(true));
+  }, []);
+
   // ── One screen ──
   const shellRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -88,9 +99,12 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     }));
   }, [club, squads]);
 
-  // Load the saved side, or pick one. Runs on every club change.
+  // Load the saved side, or pick one. Runs on every club change — but not
+  // before the shared-table sync above has landed, or a device with an
+  // empty local cache would build a side from scratch and never see the
+  // real one that's already on the server.
   useEffect(() => {
-    if (squad.length === 0) return;
+    if (!synced || squad.length === 0) return;
     const saved = loadLineup(club);
     const known = new Set(squad.map(p => p.id));
     if (saved && saved.xi.some(id => id && known.has(id))) {
@@ -121,16 +135,27 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     }
     setHeld(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [club, squad.length]);
+  }, [club, squad.length, synced]);
 
-  // Save whenever it settles.
+  // Save whenever it settles — locally first (instant, always works), then
+  // pushed to the shared table so it's the same lineup everyone else's
+  // career reads too. Only the second half can actually fail (not signed in
+  // as admin, offline), so that's the half whose result gets shown.
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   useEffect(() => {
     if (!sheet.club || sheet.xi.length === 0) return;
-    const t = window.setTimeout(() => {
-      saveLineup(sheet.club, { formation: sheet.formationId, xi: sheet.xi, bench: sheet.bench7, manager: sheet.manager });
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 1400);
+    const t = window.setTimeout(async () => {
+      const lineup = { formation: sheet.formationId, xi: sheet.xi, bench: sheet.bench7, manager: sheet.manager };
+      saveLineup(sheet.club, lineup);
+      const result = await pushLineupShared(sheet.club, lineup);
+      if (result.ok) {
+        setSaveError(null);
+        setSaved(true);
+        window.setTimeout(() => setSaved(false), 1400);
+      } else {
+        setSaveError(result.error ?? "Save failed");
+      }
     }, 250);
     return () => window.clearTimeout(t);
   }, [sheet]);
@@ -458,9 +483,15 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
           <div className="flex shrink-0 items-center justify-between gap-2 text-[10px] font-bold">
             <span className="text-white/55">{squad.length} in squad · {bench7Players.length} on bench · {reserves.length} reserves</span>
             <span className="min-w-0 flex-1 truncate text-center text-white/60">{hintText}</span>
-            <span className={`transition-opacity ${saved ? "text-emerald-400 opacity-100" : "opacity-0"}`}>
-              Saved ✓
-            </span>
+            {saveError ? (
+              <span className="min-w-0 max-w-[45%] truncate text-red-400" title={saveError}>
+                ⚠ {saveError}
+              </span>
+            ) : (
+              <span className={`transition-opacity ${saved ? "text-emerald-400 opacity-100" : "opacity-0"}`}>
+                Saved ✓
+              </span>
+            )}
           </div>
         </>
       )}
@@ -471,17 +502,19 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
 }
 
 /**
- * Every saved lineup, as one block of JSON — copy it somewhere safe, or
- * paste it straight into this same box on another device (see
- * exportAll/importAll in lineupStore.ts for why this exists at all: the
- * data is localStorage-only, so a phone and a laptop are two completely
- * separate stores with no cloud copy joining them).
+ * Every lineup as one block of JSON — the shared database's own copy, since
+ * this browser's local cache mirrors it (see the sync-on-mount effect in
+ * LineupBuilder above). Worth keeping a copy of outside any database, and
+ * the Restore box below is a genuine bulk-write tool: it pushes every club
+ * it's given back up to the shared table, admin access permitting — not
+ * just back into this one browser.
  */
 function BackupModal({ onClose }: { onClose: () => void }) {
   const [dump] = useState(() => exportAll());
   const [copied, setCopied] = useState(false);
   const [pasted, setPasted] = useState("");
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const copy = async () => {
     try {
@@ -494,12 +527,25 @@ function BackupModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const doImport = () => {
+  const doImport = async () => {
     const r = importAll(pasted);
-    setResult({
-      ok: r.ok,
-      text: r.ok ? `Restored ${r.count} club${r.count === 1 ? "" : "s"}. Refresh this page to see it.` : (r.error ?? "Import failed."),
-    });
+    if (!r.ok || !r.entries) {
+      setResult({ ok: false, text: r.error ?? "Import failed." });
+      return;
+    }
+    setRestoring(true);
+    const { succeeded, failed } = await pushAllShared(r.entries);
+    setRestoring(false);
+    if (failed.length === 0) {
+      setResult({ ok: true, text: `Restored ${succeeded.length} club${succeeded.length === 1 ? "" : "s"} — live for everyone now.` });
+    } else {
+      setResult({
+        ok: succeeded.length > 0,
+        text: `${succeeded.length} club${succeeded.length === 1 ? "" : "s"} restored; ${failed.length} failed`
+          + ` (${failed[0].error}${failed.length > 1 ? `, and ${failed.length - 1} more` : ""}).`
+          + " Failed clubs only saved locally — make sure you're signed in as admin.",
+      });
+    }
   };
 
   return (
@@ -514,9 +560,9 @@ function BackupModal({ onClose }: { onClose: () => void }) {
 
         <div>
           <div className="mb-1 text-[11px] font-bold text-white/70">
-            Every club&apos;s saved formation, eleven, bench and manager, as text. Copy it
-            somewhere safe — a notes app, an email to yourself — so a reset never means
-            rebuilding it all again.
+            Every club&apos;s formation, eleven, bench and manager, as text. Copy it
+            somewhere safe — a notes app, an email to yourself — as a copy outside the
+            database, in case anything ever needs rebuilding from scratch.
           </div>
           <textarea
             readOnly
@@ -534,9 +580,9 @@ function BackupModal({ onClose }: { onClose: () => void }) {
 
         <div className="border-t border-gray-700 pt-3">
           <div className="mb-1 text-[11px] font-bold text-white/70">
-            Paste a backup back in — on this device after a reset, or on a different
-            device to bring its lineups across. Clubs not mentioned in the paste are left
-            untouched.
+            Paste a backup back in and it&apos;s pushed live to every club it covers —
+            visible to everyone, not just this browser. Clubs not mentioned in the paste
+            are left untouched. Requires admin access.
           </div>
           <textarea
             value={pasted}
@@ -546,10 +592,10 @@ function BackupModal({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={doImport}
-            disabled={!pasted.trim()}
+            disabled={!pasted.trim() || restoring}
             className="mt-1.5 w-full rounded-lg bg-gray-700 py-1.5 text-[11px] font-black uppercase text-white transition hover:bg-gray-600 disabled:opacity-40"
           >
-            Restore
+            {restoring ? "Restoring…" : "Restore"}
           </button>
           {result && (
             <div className={`mt-1.5 text-[11px] font-bold ${result.ok ? "text-emerald-400" : "text-red-300"}`}>

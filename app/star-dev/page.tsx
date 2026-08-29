@@ -13,7 +13,7 @@ import { fixtureDateLabel, divisionOf, leagueNameFor, type CareerDivision } from
 import { sortLeague } from "@/lib/star/season";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { matchdayFor } from "@/lib/star/teamsheet";
-import { loadLineup } from "@/lib/star/lineupStore";
+import { loadLineup, fetchSharedLineups } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
@@ -129,6 +129,13 @@ export default function StarDevPage() {
       setCloudLoading(false);
       if (!saved) return;
       setCareer(saved);
+
+      // ── One shared set of team sheets, not whichever this device happens
+      // to have cached ── see lib/star/lineupStore.ts. Fired the same way the
+      // squad fetches below are: in the background, not blocking anything —
+      // by the time a team sheet is actually drawn this has almost always
+      // already landed.
+      fetchSharedLineups();
 
     // ── An existing career gets the real dressing room too ──
     //
@@ -294,6 +301,7 @@ export default function StarDevPage() {
     // closes halfway through. Both squad fetches below still run during it,
     // which is time the trial is spending anyway.
     setPhase("trial");
+    fetchSharedLineups();
     fetchRealSquad(player.club).then((squad) => {
       setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
     });
@@ -354,6 +362,7 @@ export default function StarDevPage() {
         fetchRealSquad(career.player.club),
         fetchLeagueSquads(career.league.map(t => t.name)),
         fetchFreeAgents(),
+        fetchSharedLineups(),
       ]);
       setCareer(c => {
         if (!c) return c;

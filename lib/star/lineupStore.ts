@@ -10,6 +10,20 @@ import { DEFAULT_FORMATION } from "./formations";
  *
  * Stored as slot index → player id, so it survives a squad being re-fetched:
  * the ids are SoFIFA ids for a real squad and stable generated ones otherwise.
+ *
+ * ── One shared answer, not one per browser ──
+ *
+ * These used to live ONLY here — localStorage, one browser, gone the moment
+ * a different device (or a different player) opened the same career. Every
+ * lineup is now also a row in Supabase's `star_lineups` table (see
+ * app/api/star/lineups/route.ts and supabase/migrations/star_lineups.sql),
+ * which is the real, shared answer everyone reads. localStorage is now just
+ * a synchronous read cache in front of it: `loadLineup` below still reads
+ * from here directly, because team-sheet generation (lib/star/teamsheet.ts)
+ * needs an answer mid-render with no `await` to spare — but the cache is
+ * kept full by `fetchSharedLineups`, fired at app load the same way the
+ * career's own squads already are, and every save now also pushes to the
+ * server so it is visible everywhere, not just here.
  */
 
 const KEY = "star-lineups-v1";
@@ -67,14 +81,64 @@ export function clearLineup(club: string): void {
 }
 
 /**
+ * Pull every club's lineup down from the shared table and replace the local
+ * cache with it wholesale — a REPLACE, not a merge, because the server is
+ * now the actual source of truth and a stale local copy should not survive
+ * a successful sync. Fire this at app load (see app/star-dev/page.tsx,
+ * alongside the career's own squad fetches) and once on mount of the
+ * Lineups page, both fire-and-forget the same way squad data already is —
+ * `loadLineup` stays synchronous either way, reading whatever is in the
+ * cache at the moment it's called.
+ */
+export async function fetchSharedLineups(): Promise<{ ok: boolean }> {
+  try {
+    const res = await fetch("/api/star/lineups", { cache: "no-store" });
+    if (!res.ok) return { ok: false };
+    const data = await res.json() as { lineups?: Store };
+    if (data.lineups && typeof data.lineups === "object") {
+      localStorage.setItem(KEY, JSON.stringify(data.lineups));
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export interface PushResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Write one club's lineup to the shared table — the server checks admin
+ * access itself (see the route), so a non-admin caller gets a real error
+ * back here rather than a save that silently only ever affected them.
+ */
+export async function pushLineupShared(club: string, lineup: SavedLineup): Promise<PushResult> {
+  try {
+    const res = await fetch("/api/star/lineups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ club, ...lineup }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      return { ok: false, error: body.error ?? `Save failed (${res.status})` };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error — the save only landed locally, not on the server." };
+  }
+}
+
+/**
  * A COPY YOU KEEP YOURSELF.
  *
- * Every saved lineup lives only in this one browser's localStorage — there is
- * no cloud copy, and a club built on one device is invisible to the same
- * career opened on another (a laptop and a phone are two different stores
- * entirely). `exportAll` hands back the whole thing as one block of JSON, so
- * it can be pasted somewhere safe — or straight into another device's Import
- * box — instead of being rebuilt by hand a second time.
+ * The lineups themselves now live in the shared database (see the note at
+ * the top of this file) — but `exportAll` is still worth having: a plain
+ * text copy you hold yourself, outside any database, for the day something
+ * needs rebuilding from scratch anyway. Hands back the whole local cache as
+ * one block of JSON.
  */
 export function exportAll(): string {
   return JSON.stringify(read(), null, 2);
@@ -85,14 +149,19 @@ export interface ImportResult {
   /** How many clubs were actually written. */
   count?: number;
   error?: string;
+  /** What was actually written, normalised — for pushAllShared below. */
+  entries?: [string, SavedLineup][];
 }
 
 /**
- * The other half of exportAll — reads back exactly what it wrote.
+ * The other half of exportAll — reads back exactly what it wrote, into the
+ * LOCAL cache only. Merges rather than replaces: a club not mentioned in the
+ * pasted JSON is left exactly as it was, so importing a backup that only
+ * covers two clubs can never wipe out everything else already saved here.
  *
- * Merges rather than replaces: a club not mentioned in the pasted JSON is
- * left exactly as it was, so importing a backup that only covers two clubs
- * can never wipe out everything else already saved on this device.
+ * This does not touch the shared database by itself — see `pushAllShared`,
+ * which the Backup panel calls right after this succeeds, so a restore is
+ * visible everywhere and not just back in this one browser.
  */
 export function importAll(json: string): ImportResult {
   let parsed: unknown;
@@ -110,19 +179,35 @@ export function importAll(json: string): ImportResult {
   if (entries.length === 0) {
     return { ok: false, error: "No valid lineups found in that JSON." };
   }
+  const normalised: [string, SavedLineup][] = entries.map(([club, lineup]) => [club, {
+    formation: lineup.formation || DEFAULT_FORMATION,
+    xi: lineup.xi,
+    bench: Array.isArray(lineup.bench) ? lineup.bench : undefined,
+    manager: typeof lineup.manager === "string" ? lineup.manager : "",
+  }]);
   try {
     const all = read();
-    for (const [club, lineup] of entries) {
-      all[club] = {
-        formation: lineup.formation || DEFAULT_FORMATION,
-        xi: lineup.xi,
-        bench: Array.isArray(lineup.bench) ? lineup.bench : undefined,
-        manager: typeof lineup.manager === "string" ? lineup.manager : "",
-      };
-    }
+    for (const [club, lineup] of normalised) all[club] = lineup;
     localStorage.setItem(KEY, JSON.stringify(all));
-    return { ok: true, count: entries.length };
+    return { ok: true, count: normalised.length, entries: normalised };
   } catch {
     return { ok: false, error: "Couldn't write to this browser's storage." };
   }
+}
+
+/**
+ * Push every entry from a successful `importAll` up to the shared table, one
+ * request per club (the route only takes one at a time). Best-effort — a
+ * club that fails (most likely: not signed in as admin) is reported by name
+ * rather than aborting the rest.
+ */
+export async function pushAllShared(entries: [string, SavedLineup][]): Promise<{ succeeded: string[]; failed: { club: string; error: string }[] }> {
+  const succeeded: string[] = [];
+  const failed: { club: string; error: string }[] = [];
+  for (const [club, lineup] of entries) {
+    const r = await pushLineupShared(club, lineup);
+    if (r.ok) succeeded.push(club);
+    else failed.push({ club, error: r.error ?? "Save failed" });
+  }
+  return { succeeded, failed };
 }
