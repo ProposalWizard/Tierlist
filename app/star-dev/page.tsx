@@ -504,6 +504,7 @@ export default function StarDevPage() {
         { ...next, media: next.media },
         {
           kind: "award",
+          won: potmAwarded.isYou,
           award: `${potmAwarded.monthName} Player of the Month`,
           detail: potmAwarded.isYou
             ? `${potmAwarded.goals} goals and ${potmAwarded.assists} assists in ${potmAwarded.monthName}.`
@@ -799,7 +800,7 @@ export default function StarDevPage() {
     const honours = (next.awards ?? []).filter(a => a.season === from.season);
     for (const a of honours) {
       next.media = generateForCareer({ ...next, media: next.media },
-        { kind: "award", award: a.kind, detail: a.detail }, `award-${a.kind}`);
+        { kind: "award", won: true, award: a.kind, detail: a.detail }, `award-${a.kind}`);
     }
     if (next.managerNews && next.manager) {
       next.media = generateForCareer({ ...next, media: next.media },

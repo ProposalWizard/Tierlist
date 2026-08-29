@@ -58,6 +58,15 @@ const CONTRACT: CareerDetector = (r) => {
 const AWARD: CareerDetector = (r) => {
   if (r.moment.kind !== "award") return null;
   const m = r.moment;
+  // A month you were merely shortlisted for — 3rd on the vote, say — is not a
+  // month you won. Reported directly: your own club's account posting "BREAKING
+  // — Player of the Month, one of our own" the same month the stats account
+  // correctly showed someone else lifting it. This moment used to skip straight
+  // to "award-won" for every Player of the Month result regardless of outcome;
+  // the real winner/shortlist split (lib/star/potm.ts) already exists, it just
+  // never reached this event. The shortlist mention itself still reaches the
+  // feed — it is the caption on the stats-account graphic in record.ts.
+  if (!m.won) return null;
   const big = /Season|Golden Boot/i.test(m.award);
   return make("award-won", { kind: "you", name: r.you.name }, big ? 88 : 64, ["award", "trophy"], {
     ...base(r), award: m.award, detail: m.detail,

@@ -204,7 +204,7 @@ export interface CareerRecord {
   moment:
     | { kind: "transfer"; from: string; to: string; fee: number }
     | { kind: "contract"; club: string; wage: number; seasons: number }
-    | { kind: "award"; award: string; detail: string }
+    | { kind: "award"; award: string; detail: string; won: boolean }
     | { kind: "ballon-dor"; won: boolean; total: number }
     | { kind: "manager-out"; name: string; incoming: string; reason: string }
     | { kind: "call-up"; nation: string; caps: number }

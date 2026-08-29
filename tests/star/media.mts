@@ -1,12 +1,12 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { generateForMatch, generateForCareer, feedFor, mediaOf, hasFreshMedia } from "../../lib/star/media/feed";
 import { templateCount } from "../../lib/star/media/templates";
-import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch } from "../../lib/star/media/detect";
+import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch, detectCareer } from "../../lib/star/media/detect";
 import { buildMatchRecord } from "../../lib/star/media/record";
 import { emptyMemory, absorbMatch } from "../../lib/star/media/memory";
 import { mulberry32 } from "../../lib/star/season";
 import type { CareerState, GoalEvent, MatchStats, StarPlayer } from "../../lib/star/types";
-import type { Archetype, StoredPost } from "../../lib/star/media/types";
+import type { Archetype, CareerRecord, StoredPost } from "../../lib/star/media/types";
 
 /**
  * THE FOOTBALL MEDIA ENGINE
@@ -468,6 +468,43 @@ const RUN_ROW = (rows: { label: string; value: string }[]) =>
   }
   check(checked > 3, `run cards were produced (${checked})`);
   check(mismatched === 0, `none of them sits under a scoreline-and-rating line (${mismatched})`);
+}
+
+// ── A shortlisted-but-not-won award never becomes an "award-won" event ─────
+//
+// Reported directly, more than once: your own club's account posting
+// "BREAKING — Player of the Month, one of our own" the same month the stats
+// account correctly showed someone else lifting it. Player of the Month
+// always produced an `award` career moment, win or merely shortlisted, and
+// the club-congratulation template (lib/star/media/templates/club.ts's
+// "club-award") fires off nothing but that moment existing — see the AWARD
+// detector in lib/star/media/detect/career.ts. Tested at the detector level,
+// not the full probabilistic feed, because which account actually gets
+// picked to post about a given event is randomised and not what is being
+// fixed here — what has to hold is that the event itself never exists for a
+// month you did not win.
+{
+  const c = newCareer(72);
+  const baseRecord: Omit<CareerRecord, "moment"> = {
+    id: "potm-test", season: c.season, week: c.week, club: c.player.club,
+    you: {
+      name: `${c.player.firstName} ${c.player.lastName}`, shortName: c.player.lastName,
+      position: c.player.position, squadNumber: c.squadNumber ?? 0,
+    },
+    context: { fame: c.fame, starRating: c.starRating, fansStanding: c.relationships.fans },
+  };
+
+  const lost = detectCareer({
+    ...baseRecord,
+    moment: { kind: "award", won: false, award: "August Player of the Month", detail: "You were 3rd." },
+  }, emptyMemory());
+  check(!lost.some(e => e.id === "award-won"), `finishing 3rd does not raise an award-won event (${lost.map(e => e.id).join(", ")})`);
+
+  const won = detectCareer({
+    ...baseRecord,
+    moment: { kind: "award", won: true, award: "August Player of the Month", detail: "3 goals, 1 assist." },
+  }, emptyMemory());
+  check(won.some(e => e.id === "award-won"), "actually winning it still raises award-won");
 }
 
 if (problems.length) {
