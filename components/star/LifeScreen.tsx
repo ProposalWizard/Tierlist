@@ -5,7 +5,6 @@ import { actionsLeft, WEEK_ACTIONS, REST_ENERGY } from "@/lib/star/week";
 
 interface Props {
   career: CareerState;
-  onOpenContract: () => void;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
   onRest: () => void;
 }
@@ -13,7 +12,7 @@ interface Props {
 const TRAINING_ENERGY = 15;
 
 export default function LifeScreen({
-  career, onOpenContract, onPlayRelationshipGame, onRest,
+  career, onPlayRelationshipGame, onRest,
 }: Props) {
   const left = actionsLeft(career);
   const canPlay = career.energy >= TRAINING_ENERGY && left > 0;
@@ -57,21 +56,6 @@ export default function LifeScreen({
           Tap an emoji to play a minigame and raise it (a day and {TRAINING_ENERGY} energy)
         </div>
       </div>
-
-      {/* Contract summary */}
-      <button
-        onClick={onOpenContract}
-        className="w-full bg-gray-800 rounded-lg border border-gray-700 p-3 text-left hover:bg-gray-700"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[10px] font-black uppercase text-white/85 tracking-widest">Contract</div>
-            <div className="font-black text-white text-sm">{career.contract.club}</div>
-            <div className="text-[10px] text-white/75">★{career.contract.wage}/match · {career.contract.seasonsRemaining} seasons left</div>
-          </div>
-          <div className="text-emerald-400 font-black">Renew →</div>
-        </div>
-      </button>
     </div>
   );
 }

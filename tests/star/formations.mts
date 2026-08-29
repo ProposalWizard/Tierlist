@@ -5,7 +5,7 @@ import {
 import { buildLeagueSquad, type RosterRow } from "../../lib/star/leagueSquads";
 
 /**
- * Thirty shapes, eleven men in each.
+ * Thirty-one shapes, eleven men in each.
  *
  * A formation is a list of slots, and everything downstream trusts two things
  * about it: that there are eleven, and that exactly one of them is a
@@ -25,12 +25,12 @@ function mulberry(a: number) {
   };
 }
 
-/** The thirty the player asked for, by name. */
+/** The thirty-one the player asked for, by name. */
 const WANTED = [
   "3142", "3412", "3421", "343", "352", "41212", "41212(2)", "4132", "4141",
   "4213", "4222", "4231", "4231(2)", "424", "4312", "4321", "433", "433(2)",
-  "433(3)", "433(4)", "4411(2)", "442", "442(2)", "451", "451(2)", "5212",
-  "5221", "523", "532", "541",
+  "433(3)", "433(4)", "433(5)", "4411(2)", "442", "442(2)", "451", "451(2)",
+  "5212", "5221", "523", "532", "541",
 ];
 
 // ── Every shape is a football team ──────────────────────────────────────────
@@ -187,10 +187,99 @@ const WANTED = [
   check(loadLineup("Leeds United") === null, "and it can be cleared");
 }
 
+// ── A copy you can carry between devices ────────────────────────────────────
+{
+  const store = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, String(v)); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+  };
+  const { loadLineup, saveLineup, exportAll, importAll } = await import("../../lib/star/lineupStore");
+
+  saveLineup("Arsenal", { formation: "352", xi: ["a", "b", null], manager: "Mikel Arteta" });
+  saveLineup("Everton", { formation: "442", xi: ["x"], manager: "David Moyes" });
+  const dump = exportAll();
+  check(JSON.parse(dump).Arsenal.manager === "Mikel Arteta", "export round-trips as real JSON");
+
+  // A fresh "device" — nothing saved yet — imports the dump wholesale.
+  store.clear();
+  const first = importAll(dump);
+  check(first.ok && first.count === 2, `imports both clubs (${JSON.stringify(first)})`);
+  check(loadLineup("Arsenal")!.formation === "352", "…the formation");
+  check(loadLineup("Everton")!.manager === "David Moyes", "…and the manager, on the new device");
+
+  // Importing a backup that only covers one club never wipes the other.
+  const partial = importAll(JSON.stringify({ Arsenal: { formation: "433", xi: ["z"], manager: "Someone New" } }));
+  check(partial.ok && partial.count === 1, "a partial import reports just what it touched");
+  check(loadLineup("Arsenal")!.manager === "Someone New", "the mentioned club is overwritten");
+  check(loadLineup("Everton")!.manager === "David Moyes", "…but the untouched club survives");
+
+  check(importAll("not json at all").ok === false, "garbage text is refused, not swallowed");
+  check(importAll("[1,2,3]").ok === false, "a JSON array is refused — a backup is an object keyed by club");
+  check(importAll("{}").ok === false, "an empty object has nothing to restore");
+  check(loadLineup("Everton")!.manager === "David Moyes", "…and none of the three bad imports touched real data");
+}
+
+// ── The shared table, not just this browser ─────────────────────────────────
+{
+  const store = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, String(v)); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+  };
+  const { loadLineup, fetchSharedLineups, pushLineupShared, pushAllShared } =
+    await import("../../lib/star/lineupStore");
+
+  const realFetch = globalThis.fetch;
+
+  // GET replaces the local cache wholesale — a stale local entry not present
+  // on the server should NOT survive a successful sync.
+  store.set("star-lineups-v1", JSON.stringify({ Stale: { formation: "433", xi: ["x"] } }));
+  (globalThis as { fetch?: unknown }).fetch = async () => {
+    return { ok: true, json: async () => ({ lineups: { Liverpool: { formation: "4231", xi: ["l"], manager: "Arne Slot" } } }) };
+  };
+  const synced = await fetchSharedLineups();
+  check(synced.ok, "a successful sync reports ok");
+  check(loadLineup("Liverpool")?.manager === "Arne Slot", "the server's lineup lands in the local cache");
+  check(loadLineup("Stale") === null, "…and a REPLACE, not a merge — nothing left over from before the sync");
+
+  // A failed GET (network down, server error) leaves the cache exactly as it was.
+  (globalThis as { fetch?: unknown }).fetch = async () => ({ ok: false });
+  const failedSync = await fetchSharedLineups();
+  check(failedSync.ok === false, "a failed sync reports that plainly");
+  check(loadLineup("Liverpool")?.manager === "Arne Slot", "…and does not clear what was already cached");
+
+  // POST — the 403 an admin-gated write actually returns.
+  (globalThis as { fetch?: unknown }).fetch = async () => {
+    return { ok: false, status: 403, json: async () => ({ error: "Forbidden" }) };
+  };
+  const denied = await pushLineupShared("Chelsea", { formation: "343", xi: ["c"] });
+  check(denied.ok === false && denied.error === "Forbidden", `a non-admin push reports why (${JSON.stringify(denied)})`);
+
+  // pushAllShared reports per club rather than stopping at the first failure.
+  (globalThis as { fetch?: unknown }).fetch = async (_url: string, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { club?: string };
+    if (body.club === "Chelsea") return { ok: false, status: 403, json: async () => ({ error: "Forbidden" }) };
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+  const bulk = await pushAllShared([
+    ["Liverpool", { formation: "4231", xi: ["l"] }],
+    ["Chelsea", { formation: "343", xi: ["c"] }],
+  ]);
+  check(bulk.succeeded.length === 1 && bulk.succeeded[0] === "Liverpool", "one club pushes through");
+  check(bulk.failed.length === 1 && bulk.failed[0].club === "Chelsea", "…and the other is reported, not silently dropped");
+
+  (globalThis as { fetch?: unknown }).fetch = realFetch;
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);
   if (problems.length > 15) console.error(`  …and ${problems.length - 15} more`);
   process.exit(1);
 }
-console.log("PASS — thirty shapes, eleven men in each, and changing shape keeps your side");
+console.log("PASS — thirty-one shapes, eleven men in each, and changing shape keeps your side");
