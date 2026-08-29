@@ -236,22 +236,38 @@ const WANTED = [
 
   const realFetch = globalThis.fetch;
 
-  // GET replaces the local cache wholesale — a stale local entry not present
-  // on the server should NOT survive a successful sync.
-  store.set("star-lineups-v1", JSON.stringify({ Stale: { formation: "433", xi: ["x"] } }));
+  // GET merges into the local cache — it must never be able to make things
+  // WORSE than not syncing at all. A club the server does not have yet
+  // (exactly the state right after the table is first created) must survive
+  // a sync untouched, not get wiped by an empty server response — this is
+  // the actual bug reported: running the migration, then opening the app,
+  // deleted every real lineup that had only ever lived in localStorage.
+  store.set("star-lineups-v1", JSON.stringify({
+    "Not On Server Yet": { formation: "433", xi: ["x"] },
+    Chelsea: { formation: "OLD", xi: ["stale"] },
+  }));
   (globalThis as { fetch?: unknown }).fetch = async () => {
-    return { ok: true, json: async () => ({ lineups: { Liverpool: { formation: "4231", xi: ["l"], manager: "Arne Slot" } } }) };
+    return { ok: true, json: async () => ({ lineups: { Liverpool: { formation: "4231", xi: ["l"], manager: "Arne Slot" }, Chelsea: { formation: "343", xi: ["c"] } } }) };
   };
   const synced = await fetchSharedLineups();
   check(synced.ok, "a successful sync reports ok");
   check(loadLineup("Liverpool")?.manager === "Arne Slot", "the server's lineup lands in the local cache");
-  check(loadLineup("Stale") === null, "…and a REPLACE, not a merge — nothing left over from before the sync");
+  check(loadLineup("Chelsea")?.formation === "343", "the server's copy wins where both have one");
+  check(loadLineup("Not On Server Yet")?.formation === "433", "…but a club the server doesn't have yet is left alone, not deleted");
 
   // A failed GET (network down, server error) leaves the cache exactly as it was.
   (globalThis as { fetch?: unknown }).fetch = async () => ({ ok: false });
   const failedSync = await fetchSharedLineups();
   check(failedSync.ok === false, "a failed sync reports that plainly");
   check(loadLineup("Liverpool")?.manager === "Arne Slot", "…and does not clear what was already cached");
+
+  // A genuinely empty table (a migration that just ran, nothing pushed to it
+  // yet) is exactly the state that caused real data loss — this is the
+  // regression test for it.
+  (globalThis as { fetch?: unknown }).fetch = async () => ({ ok: true, json: async () => ({ lineups: {} }) });
+  const emptySync = await fetchSharedLineups();
+  check(emptySync.ok, "a sync against an empty table still reports ok");
+  check(loadLineup("Liverpool")?.manager === "Arne Slot", "…and every locally-built lineup survives it untouched");
 
   // POST — the 403 an admin-gated write actually returns.
   (globalThis as { fetch?: unknown }).fetch = async () => {
