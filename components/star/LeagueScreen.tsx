@@ -482,15 +482,8 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                   <div className={`text-xs font-black ${a.isYou ? "text-amber-300" : "text-white"}`}>
                     {a.winner} <span className="font-bold text-white">· {a.club}</span>
                   </div>
-                  {/* The shortlist is the interesting part of somebody ELSE
-                      winning it — it is where you came and who else was close.
-                      On a month you won, it is a list of people you beat, and
-                      printing it under YOU WON IT reads as a consolation. */}
                   <div className="text-[10px] font-bold text-white">
                     {a.goals}G {a.assists}A
-                    {!a.isYou && a.nominees.length > 1 && (
-                      <> · shortlist: {a.nominees.map(n => n.name).join(", ")}</>
-                    )}
                   </div>
                 </div>
               ))}

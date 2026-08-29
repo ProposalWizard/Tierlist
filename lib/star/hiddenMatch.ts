@@ -82,6 +82,14 @@ export interface HiddenMatchEvent {
   isGoal?: boolean;
   /** Set when a squad member, rather than the player, scored it. */
   teammateGoal?: boolean;
+  /**
+   * Whose chance this line is reporting on, when the text is specifically
+   * about one side's play — a near-miss, a blocked shot. Absent for text with
+   * no team of its own (a quiet spell). Read by the commentary screen to tint
+   * a line by that team's kit colour instead of leaving every line the same
+   * shade regardless of who it is actually about.
+   */
+  isOpponent?: boolean;
 }
 
 export interface ScenarioRequest {
@@ -161,6 +169,20 @@ const DRIBBLE_CHANCE = 0.26;
 /** How often a chance ends in the net when the player is not the one taking it. */
 const CONVERT_DEEP = 0.09;
 const CONVERT_BOX = 0.16;
+/**
+ * A flat conversion rate meant nobody but you ever had a moment of real
+ * quality: every teammate-fallback goal and every opponent goal landed at the
+ * same routine rate forever, match after match, however good the side taking
+ * it was. Reported directly — a match felt safe to control after one or two
+ * of your own goals, because nothing on the other flat-rate paths could ever
+ * punish you the way your own skill-driven finishing already can. This gives
+ * both of those paths an occasional clinical finish instead — the same shape
+ * of upside your own play already gets through the aim/contact minigame when
+ * you are the one on the end of the chance.
+ */
+const QUALITY_CHANCE = 0.16;
+const QUALITY_CONVERT = 0.36;
+const convertRate = (base: number, rng: () => number) => (rng() < QUALITY_CHANCE ? QUALITY_CONVERT : base);
 
 const QUIET = [
   "The ball is worked patiently across the back.",
@@ -309,23 +331,23 @@ export function tick(
 
         // It fell to someone else. Reported either way, so the match reads as a
         // match rather than as a highlight reel of your own touches.
-        const scored = rng() < (inBox ? CONVERT_BOX : CONVERT_DEEP);
+        const scored = rng() < convertRate(inBox ? CONVERT_BOX : CONVERT_DEEP, rng);
         if (scored) {
           state.userScore += 1;
           state.momentum = clamp1(state.momentum + 0.3);
           events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
         } else {
-          events.push({ minute: state.minute, text: rng() < 0.5 ? "A chance at the far post — headed over." : "A shot from the edge is blocked." });
+          events.push({ minute: state.minute, text: rng() < 0.5 ? "A chance at the far post — headed over." : "A shot from the edge is blocked.", isOpponent: false });
         }
         endOfMove(state, scored, "user");
       } else {
-        const scored = rng() < (inBox ? CONVERT_BOX : CONVERT_DEEP);
+        const scored = rng() < convertRate(inBox ? CONVERT_BOX : CONVERT_DEEP, rng);
         if (scored) {
           state.oppScore += 1;
           state.momentum = clamp1(state.momentum - 0.3);
           events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true });
         } else {
-          events.push({ minute: state.minute, text: rng() < 0.5 ? "They work a chance — the keeper holds it." : "A shot from distance flies wide." });
+          events.push({ minute: state.minute, text: rng() < 0.5 ? "They work a chance — the keeper holds it." : "A shot from distance flies wide.", isOpponent: true });
         }
         endOfMove(state, scored, "opponent");
       }

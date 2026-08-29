@@ -8,6 +8,7 @@ import VersusScreen from "@/components/star/VersusScreen";
 import PositionPicker from "@/components/star/PositionPicker";
 import MatchCommentary from "@/components/star/MatchCommentary";
 import { line as logLine } from "@/lib/star/matchLog";
+import { kitsFor } from "@/lib/star/kits";
 import { SAMPLE_MATCHDAY, SAMPLE_CAREER, SAMPLE_FIXTURE } from "@/components/star/media/sampleMatchday";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import type { Role } from "@/lib/star/formations";
@@ -214,6 +215,8 @@ export default function MediaLab() {
               awayTeam="Man Utd"
               homeScore={1}
               awayScore={1}
+              userKit={kitsFor("Liverpool", "Man Utd").home}
+              oppKit={kitsFor("Liverpool", "Man Utd").away}
               energy={62}
               stats={{ shots: 3, goals: 1, assists: 0, passesCompleted: 14 }}
               speed={feedSpeed}
@@ -292,14 +295,14 @@ const PLACEHOLDER_PHOTO =
  */
 const SAMPLE_COMMENTARY = [
   logLine("Kick Off", "period", 0),
-  logLine("Liverpool get us under way", "play", 1),
-  logLine("They are passing it around well", "play"),
+  logLine("Liverpool get us under way", "play", 1, false),
+  logLine("They are passing it around well", "play", undefined, false),
   logLine("The move works its way to Vass", "you", 12),
-  logLine("They push forward", "play"),
+  logLine("They push forward", "play", undefined, true),
   logLine("Man Utd have a chance to score...", "chance", 18),
-  logLine("But the shot goes wide", "play"),
+  logLine("But the shot goes wide", "play", undefined, true),
   logLine("\u26bd Man Utd score!", "oppGoal", 23),
-  logLine("Liverpool are taking it easy", "play", 31),
+  logLine("Liverpool are taking it easy", "play", 31, false),
   logLine("Half Time  0 - 1", "period", 45),
   logLine("The move works its way to Vass", "you", 49),
   logLine("\u26bd Vass scores!", "goal", 54),

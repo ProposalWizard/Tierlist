@@ -70,6 +70,16 @@ export interface Ball {
    */
   settling?: boolean;
   /**
+   * Shot over the bar. The move is over the instant the outcome is
+   * classified, which used to freeze the ball exactly where that
+   * classification happened — just above the bar, since that is the
+   * definition of "over" — instead of letting it carry on its own
+   * trajectory off the top of the frame. Same idea as `settling`: the
+   * result phase keeps stepping it a little further so it visibly leaves,
+   * rather than the shot appearing to just stop in mid-air.
+   */
+  overBar?: boolean;
+  /**
    * YOU struck this ball at goal.
    *
    * Decided once, at your contact, and never touched again. `shot` cannot answer
@@ -3778,7 +3788,13 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     if (dead) { move(f, fetch(dist)); f.active = true; }
     else if (!f.shot && dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
 
-    if (!f.shot && f.active && ball.loose && !ball.inNet && ball.z < 1.6
+    // Raised from 1.6 — a keeper's parry launches a loose ball from dive/reach
+    // height (roughly 1.8-2.2m) with real upward pace, so it was spending
+    // most of its bounce above this gate: legally uncontestable, nobody
+    // running for it, the chance just fizzling to commentary. A striker
+    // meets a bouncing rebound at chest or head height in real football;
+    // this now covers that.
+    if (!f.shot && f.active && ball.loose && !ball.inNet && ball.z < 2.3
         && ball.pos.y < BOX_DEPTH && ball.contactCd <= 0
         && Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y) < CONTROL_R
         // Flagged at the last touch and now playing the ball: position plus
@@ -4344,7 +4360,11 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // it slows down has it. Your poacher already races for these in the box; this
   // is the other half of that race, and it is why leaving a rebound rolling in
   // front of a defender costs you the ball.
-  if (ball.loose && !ball.inNet && ball.contactCd <= 0 && ball.z < 1.4 && speed < LOOSE_CONTEST_SPEED && ball.pos.y > 0.2) {
+  // Same reasoning as the poacher's own gate above (1.6 → raised here too,
+  // 1.4 → 2.3): a parry can keep a loose ball above head height through
+  // most of its bounce, which used to make it uncontestable by either side
+  // for that whole time.
+  if (ball.loose && !ball.inNet && ball.contactCd <= 0 && ball.z < 2.3 && speed < LOOSE_CONTEST_SPEED && ball.pos.y > 0.2) {
     let dDef = Infinity;
     for (const d of scenario.defenders) {
       dDef = Math.min(dDef, Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y));
@@ -4601,7 +4621,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const zCross = prevZ + (ball.z - prevZ) * frac;
     const crossbar = scenario.crossbar;
     if (insideGoalMouth(xCross)) {
-      if (zCross > crossbar + BALL_R) return "over";
+      if (zCross > crossbar + BALL_R) { ball.overBar = true; return "over"; }
       if (zCross > crossbar - BALL_R) {
         // Off the underside of the bar. It comes back down and stays live.
         const again = reboundOffFrame(ball, xCross, rng, scenario);
@@ -4699,6 +4719,19 @@ export function stepBallInNet(ball: Ball, dt: number) {
   const inL = POST_L + BALL_R, inR = POST_R - BALL_R;
   if (ball.pos.x < inL) { ball.pos.x = inL; ball.vel.x = Math.abs(ball.vel.x) * 0.25; }
   else if (ball.pos.x > inR) { ball.pos.x = inR; ball.vel.x = -Math.abs(ball.vel.x) * 0.25; }
+}
+
+// Keep a ball shot over the bar carrying on its own way after the outcome
+// has resolved — purely cosmetic, same idea as stepBallInNet, so it visibly
+// leaves the frame instead of appearing to stop dead in mid-air exactly
+// where "over" was decided. Simple ballistic continuation, no bounce or
+// drag: it only has to clear the visible pitch, not land anywhere real.
+export function stepBallPastBar(ball: Ball, dt: number) {
+  if (!ball.overBar) return;
+  ball.pos.x += ball.vel.x * dt;
+  ball.pos.y += ball.vel.y * dt;
+  ball.vz -= G * dt;
+  ball.z += ball.vz * dt;
 }
 
 export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass" | "miss" | "neutral" }> = {

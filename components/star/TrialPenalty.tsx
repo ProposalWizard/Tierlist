@@ -727,7 +727,7 @@ export default function TrialPenalty({ onScored, club }: { onScored: () => void;
           )}
 
           {phase === "contact" && aim && (
-            <ContactBall power={aim.power} onContact={handleContact} />
+            <ContactBall power={aim.power} onContact={handleContact} tutorial />
           )}
 
           {phase === "missed" && missText && (
