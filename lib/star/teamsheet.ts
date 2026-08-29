@@ -235,6 +235,49 @@ function fillGaps(pool: Candidate[], formation: Formation, chosen: (string | nul
 }
 
 /**
+ * The same real footballer, however this pool happens to spell his id.
+ *
+ * `career.squad` keys on `sf_<sofifaId>` (see realSquad.ts); a `LeagueSquad`
+ * — the /lineups builder's own pool, and career.leagueSquads — keys on the
+ * bare sofifaId. Strip the prefix either way and two candidates for the
+ * same man compare equal.
+ */
+function bareSofifaId(id: string): string {
+  return id.startsWith("sf_") ? id.slice(3) : id;
+}
+
+/**
+ * Your OWN club's full real roster, folded in behind your curated squad.
+ *
+ * `career.squad` is not your whole roster — buildSquadFromRoster (realSquad.ts)
+ * walks a fixed 20-slot template and keeps only the single best fit for each
+ * slot, so a squad player who loses that competition (a depth midfielder
+ * behind two better-rated ones, say) is not benched or injured, he simply
+ * does not exist in `career.squad` at all. The /lineups builder has no such
+ * limit — it offers your whole real roster, from the same `LeagueSquad` data
+ * every other club's pool already is — so a manager could save a lineup
+ * naming a player their own career had already quietly dropped, and every
+ * slot he was placed in (the bench included) would silently fall back to
+ * someone else with no explanation. Reported directly: a real 70-rated
+ * midfielder who would not appear on the team sheet "no matter where I put
+ * him," read by the player as the game refusing specific POSITIONS (a
+ * centre-back placement working for one man and not another) when the actual
+ * cause had nothing to do with position at all — it was which twenty men
+ * happened to survive the slot competition.
+ *
+ * Your own club's full roster is already sitting in `career.leagueSquads`
+ * (needed for the rest of the division regardless), so a saved lineup's
+ * player search is widened to include it — only when there IS a saved
+ * lineup to resolve, so a career with nothing saved keeps drawing its
+ * ordinary auto-pick eleven from the same twenty it always has.
+ */
+function withFullRosterFallback(squadPool: Candidate[], fullRoster: Candidate[]): Candidate[] {
+  const known = new Set(squadPool.map(p => bareSofifaId(p.id)));
+  const missing = fullRoster.filter(p => !known.has(bareSofifaId(p.id)));
+  return [...squadPool, ...missing];
+}
+
+/**
  * A saved id, translated into whatever namespace this pool actually uses.
  *
  * The lineup builder (`/lineups`) reads a club's squad through `LeagueSquad`
@@ -430,7 +473,15 @@ export function matchdayFor(
 
   // Your own squad, minus any duplicate of you: a career whose squad was
   // fetched from the database can contain the real player whose shirt you took.
-  const ownPool = fromSquad(career.squad ?? []).filter(p => p.short !== you.short);
+  let ownPool = fromSquad(career.squad ?? []).filter(p => p.short !== you.short);
+  // A saved lineup can name someone your own curated squad already dropped —
+  // see withFullRosterFallback's own note. Only widened when there is
+  // actually something saved to resolve; an ordinary auto-picked eleven
+  // keeps drawing from the same twenty it always has.
+  if (savedXI || savedBench) {
+    const ownFullRoster = fromLeagueSquad((career.leagueSquads ?? []).find(s => s.club === mine));
+    ownPool = withFullRosterFallback(ownPool, ownFullRoster);
+  }
   let ours = build(mine, starting ? [...ownPool, you] : ownPool, true, savedBench, savedXI);
   if (starting) ours = forceIntoXI(ours, you);
 
