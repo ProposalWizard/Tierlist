@@ -81,14 +81,24 @@ export function clearLineup(club: string): void {
 }
 
 /**
- * Pull every club's lineup down from the shared table and replace the local
- * cache with it wholesale — a REPLACE, not a merge, because the server is
- * now the actual source of truth and a stale local copy should not survive
- * a successful sync. Fire this at app load (see app/star-dev/page.tsx,
- * alongside the career's own squad fetches) and once on mount of the
- * Lineups page, both fire-and-forget the same way squad data already is —
- * `loadLineup` stays synchronous either way, reading whatever is in the
- * cache at the moment it's called.
+ * Pull every club's lineup down from the shared table and merge it into the
+ * local cache — the server's copy of a club wins over the local one where
+ * both exist, but a club the server does not have (yet) is left exactly as
+ * it was here, never deleted. This used to be a wholesale REPLACE, on the
+ * theory that the server is the real source of truth so a stale local copy
+ * should never survive a successful sync — but that is only true once the
+ * server actually has the data. Run right after the table itself is first
+ * created, with nothing in it yet, a REPLACE wiped the one and only real
+ * copy of every lineup — which had been sitting safely in localStorage the
+ * whole time — the moment the page next loaded, on every device, before any
+ * of it had a chance to get pushed up first. A sync must never be able to
+ * make things WORSE than not syncing at all; merge cannot.
+ *
+ * Fire this at app load (see app/star-dev/page.tsx, alongside the career's
+ * own squad fetches) and once on mount of the Lineups page, both
+ * fire-and-forget the same way squad data already is — `loadLineup` stays
+ * synchronous either way, reading whatever is in the cache at the moment
+ * it's called.
  */
 export async function fetchSharedLineups(): Promise<{ ok: boolean }> {
   try {
@@ -96,7 +106,8 @@ export async function fetchSharedLineups(): Promise<{ ok: boolean }> {
     if (!res.ok) return { ok: false };
     const data = await res.json() as { lineups?: Store };
     if (data.lineups && typeof data.lineups === "object") {
-      localStorage.setItem(KEY, JSON.stringify(data.lineups));
+      const merged = { ...read(), ...data.lineups };
+      localStorage.setItem(KEY, JSON.stringify(merged));
     }
     return { ok: true };
   } catch {
