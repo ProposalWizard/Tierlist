@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
-  launch, stepBall, stepBallInNet, settleBall,
+  launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
   stepKeeper, stepDefenders, stepReactions, initDefenders,
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
@@ -1364,7 +1364,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // read as football. The line to reach is now a band of turf, and the sides
     // of the corridor are just the edges of the frame.
     const dr = dribbleRef.current;
-    if (phaseRef.current === "dribble" && dr) {
+    // Also drawn (frozen — nothing steps it once phase leaves "dribble", see
+    // the physics update below) through "result": a run that ends in a
+    // tackle sets phase to "result" without clearing the ref (finishDribble),
+    // specifically so this branch keeps catching it instead of falling
+    // through to whatever `sc` (a stale, unrelated scenario) happens to
+    // still be. Reported directly: after losing the ball to a tackle, the
+    // pitch flashed a completely different situation for about a second
+    // before cutting to commentary.
+    if ((phaseRef.current === "dribble" || phaseRef.current === "result") && dr) {
       // The line. A lit band of grass rather than a rule drawn over the top.
       {
         const a1 = P(dr.minX - 6, dr.targetY), a2 = P(dr.maxX + 6, dr.targetY);
@@ -2046,6 +2054,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       if (phaseRef.current === "result" && ballRef.current?.settling) {
         settleBall(ballRef.current, dt, scenarioRef.current);
       }
+      // …and a ball shot over the bar keeps flying, so it visibly leaves the
+      // frame instead of stopping dead exactly where "over" was decided.
+      if (phaseRef.current === "result" && ballRef.current?.overBar) {
+        stepBallPastBar(ballRef.current, dt);
+      }
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)
       if (kickPoseRef.current > 0) kickPoseRef.current = Math.max(0, kickPoseRef.current - dt);
@@ -2352,7 +2365,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
    */
   const finishDribble = (out: "through" | "lost" | "out") => {
     const s = dribbleRef.current;
-    dribbleRef.current = null;
+    // Left set, deliberately, when the run ends in a tackle — see the draw
+    // loop's own note on why "result" still reads it. Overwritten wholesale
+    // the next time a dribble actually starts (newDribble, below), so there
+    // is nothing to leak into a scenario that never uses it.
+    if (out === "through") dribbleRef.current = null;
     attemptsRef.current += 1;
 
     if (out === "through" && s) {
