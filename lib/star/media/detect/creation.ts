@@ -1,4 +1,4 @@
-import type { Detector } from "../types";
+import type { Detector, FootballEvent } from "../types";
 import { base, ev, userGoals, you } from "./kit";
 
 /**
@@ -46,6 +46,30 @@ const ASSIST_MILESTONE: Detector = (r) => {
   }, "hour");
 };
 
+/**
+ * A single goal from a single team-mate, named.
+ *
+ * Nothing else in this file gives a lone team-mate's goal its own event with
+ * his name attached — TEAMMATE_HAUL, just below, only fires at two or more.
+ * This exists so a real player's own goal chant (see media/chants.ts) has a
+ * `scorer` fact to match against every time he scores, not only on a brace.
+ * One event per distinct scorer per match, not one per goal — the chant is
+ * about the player, not a running tally, and posting the same tweet twice in
+ * one cycle is already blocked downstream regardless.
+ */
+const TEAMMATE_GOAL: Detector = (r) => {
+  const seen = new Set<string>();
+  const out: FootballEvent[] = [];
+  for (const g of r.goals) {
+    if (g.isUser || seen.has(g.scorer)) continue;
+    seen.add(g.scorer);
+    out.push(ev("teammate-goal", { kind: "teammate", name: g.scorer }, 26, ["goal"], {
+      ...base(r), scorer: g.scorer,
+    }, "instant"));
+  }
+  return out.length ? out : null;
+};
+
 /** Somebody else had the day. The club account still has to post about it. */
 const TEAMMATE_HAUL: Detector = (r) => {
   const counts = new Map<string, number>();
@@ -61,5 +85,5 @@ const TEAMMATE_HAUL: Detector = (r) => {
 };
 
 export const CREATION_DETECTORS: Detector[] = [
-  ASSISTS, GOAL_AND_ASSIST, INVOLVED_IN_ALL, ASSIST_MILESTONE, TEAMMATE_HAUL,
+  ASSISTS, GOAL_AND_ASSIST, INVOLVED_IN_ALL, ASSIST_MILESTONE, TEAMMATE_GOAL, TEAMMATE_HAUL,
 ];

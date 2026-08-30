@@ -4,6 +4,7 @@ import { CLUB_TEMPLATES } from "./club";
 import { PRESS_TEMPLATES } from "./press";
 import { SOCIAL_TEMPLATES } from "./social";
 import { DATA_TEMPLATES } from "./data";
+import { CHANT_TEMPLATES } from "./chants";
 
 /**
  * THE TEMPLATE LIBRARY
@@ -31,6 +32,17 @@ export interface Template {
   /** Fact keys that must be present and non-empty. */
   requires?: string[];
   /**
+   * Exact-value gates, for a line that is not just "a goal" but a specific
+   * real chant — "One-Nil to the Arsenal" is only ever sung by Arsenal, only
+   * at 1-0. `club` matches `facts.club`, `score` matches `facts.score`
+   * ("us-them", the same format `base()` already writes), `player` matches
+   * `facts.scorer`. Unlike `requires`, which only checks a fact exists, these
+   * check it equals a specific value.
+   */
+  club?: string;
+  score?: string;
+  player?: string;
+  /**
    * Fact keys that must be ABSENT.
    *
    * The safety valve for a word like "today". `goals: 7` on a hat-trick means
@@ -53,6 +65,7 @@ const ALL: Template[] = [
   ...PRESS_TEMPLATES,
   ...SOCIAL_TEMPLATES,
   ...DATA_TEMPLATES,
+  ...CHANT_TEMPLATES,
 ];
 
 const BY_ARCHETYPE = new Map<Archetype, Template[]>();
@@ -105,7 +118,10 @@ export function chooseTemplate(
     has(event, t.requires)
     && !(t.excludes ?? []).some(k => event.facts[k] !== undefined)
     && (!t.frames || t.frames.includes(frame))
-    && (!wantThread || !!t.threadBody || t.id.endsWith("-generic")));
+    && (!wantThread || !!t.threadBody || t.id.endsWith("-generic"))
+    && (t.club === undefined || event.facts.club === t.club)
+    && (t.score === undefined || event.facts.score === t.score)
+    && (t.player === undefined || event.facts.scorer === t.player));
 
   const exact = usable.filter(t => t.events?.includes(event.id));
   const tagged = usable.filter(t => !t.events && t.tags?.some(tag => event.tags.includes(tag)));

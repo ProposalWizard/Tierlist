@@ -4,9 +4,10 @@ import { templateCount } from "../../lib/star/media/templates";
 import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch, detectCareer } from "../../lib/star/media/detect";
 import { buildMatchRecord } from "../../lib/star/media/record";
 import { emptyMemory, absorbMatch } from "../../lib/star/media/memory";
+import { chooseTemplate } from "../../lib/star/media/templates";
 import { mulberry32 } from "../../lib/star/season";
 import type { CareerState, GoalEvent, MatchStats, StarPlayer } from "../../lib/star/types";
-import type { Archetype, CareerRecord, StoredPost } from "../../lib/star/media/types";
+import type { Archetype, CareerRecord, FootballEvent, StoredPost } from "../../lib/star/media/types";
 
 /**
  * THE FOOTBALL MEDIA ENGINE
@@ -505,6 +506,63 @@ const RUN_ROW = (rows: { label: string; value: string }[]) =>
     moment: { kind: "award", won: true, award: "August Player of the Month", detail: "3 goals, 1 assist." },
   }, emptyMemory());
   check(won.some(e => e.id === "award-won"), "actually winning it still raises award-won");
+}
+
+// ── Real chants only ever fire for the exact club or player they belong to ──
+//
+// lib/star/media/chants.ts gives a handful of clubs and real players an
+// actual terrace chant instead of generated text. These have to stay exact:
+// Chelsea never sings Arsenal's, and a scorer nobody wrote a chant for never
+// borrows someone else's.
+{
+  const winEvent = (clubName: string, score: string): FootballEvent => ({
+    id: "win", subject: { kind: "club", name: clubName }, tags: ["table"], baseImportance: 34,
+    window: "instant", facts: { club: clubName, score },
+  });
+  const resultEvent = (id: "win" | "draw", clubName: string): FootballEvent => ({
+    id, subject: { kind: "club", name: clubName }, tags: ["table"],
+    baseImportance: id === "win" ? 34 : 22, window: "instant",
+    facts: { club: clubName, score: id === "win" ? "2-0" : "1-1" },
+  });
+  const goalEvent = (scorer: string): FootballEvent => ({
+    id: "teammate-goal", subject: { kind: "teammate", name: scorer }, tags: ["goal"], baseImportance: 26,
+    window: "instant", facts: { scorer, club: "Real Madrid" },
+  });
+  const rng = mulberry32(901);
+  const CHANT_TEXT = /North London|Mauled by the Tigers|Chelsea! Chelsea|Allez, Allez|Glory Glory|Spurs|Bubbles|Whites|Walk Alone/;
+  const sample = (event: FootballEvent, archetype: Archetype, n = 40) => {
+    const seen = new Set<string>();
+    for (let i = 0; i < n; i++) {
+      const t = chooseTemplate(event, archetype, "report", emptyMemory(), rng, false);
+      if (t) seen.add(t.body);
+    }
+    return seen;
+  };
+
+  const arsenalPlain = sample(winEvent("Arsenal", "2-1"), "fan");
+  check(arsenalPlain.size > 0 && [...arsenalPlain].every(b => b === "North London Forever"),
+    `Arsenal's 2-1 win only ever picks Arsenal's own chant (${[...arsenalPlain].join(" | ")})`);
+
+  const arsenalOneNil = sample(winEvent("Arsenal", "1-0"), "fan");
+  check(arsenalOneNil.has("One-Nil to the Arsenal"), "a 1-0 Arsenal win can produce \"One-Nil to the Arsenal\"");
+
+  const everton = sample(winEvent("Everton", "2-1"), "fan");
+  check(![...everton].some(b => CHANT_TEXT.test(b)), `a club with no chant of its own never borrows one (${[...everton].join(" | ")})`);
+
+  const liverpoolDraw = sample(resultEvent("draw", "Liverpool"), "fan");
+  check(liverpoolDraw.has("You'll Never Walk Alone"), "a Liverpool draw can produce \"You'll Never Walk Alone\"");
+  check(![...liverpoolDraw].includes("Allez, Allez, Allez"), "…but never the win-only chant");
+
+  const liverpoolWin = sample(resultEvent("win", "Liverpool"), "fan");
+  check(liverpoolWin.has("Allez, Allez, Allez"), "a Liverpool win can produce \"Allez, Allez, Allez\"");
+  check(![...liverpoolWin].includes("You'll Never Walk Alone"), "…but never the draw/loss-only chant");
+
+  const bellingham = sample(goalEvent("Jude Bellingham"), "fan");
+  check(bellingham.has("Hey Jude!"), "Bellingham scoring can produce \"Hey Jude!\"");
+
+  const unnamedScorer = sample(goalEvent("Some Random Player"), "fan");
+  check(![...unnamedScorer].some(b => /Hey Jude|Mo Salah|Cold Palmer|Starboy|BOOM BOOM|Siuuu|Sporting|60 MILLION/.test(b)),
+    `an unnamed scorer never gets a real player's chant (${[...unnamedScorer].join(" | ")})`);
 }
 
 if (problems.length) {
