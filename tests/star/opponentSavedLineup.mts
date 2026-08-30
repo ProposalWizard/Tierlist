@@ -153,6 +153,57 @@ const FIXTURE: Fixture = { week: 1, opponent: "Liverpool", home: true, played: f
   clearLineup("AFC Bournemouth");
 }
 
+// ── A cup opponent from OUTSIDE your division still fields its saved lineup ──
+//
+// Reported directly: a real saved lineup for Wigan Athletic — a
+// PROMOTION_POOL_CLUBS club that can turn up as a domestic cup opponent —
+// still showed "Unable to scout opponent's team" in a real match. Root
+// cause: a club drawn from outside your own division is only ever fetched
+// into `career.externalSquads`, never `leagueSquads` — and matchdayFor's
+// opponent-squad lookup only ever checked the latter, so the saved lineup's
+// player ids had no real roster to resolve against and the sheet came back
+// empty regardless of what had actually been saved.
+{
+  function wiganSquad(): LeagueSquad {
+    return {
+      club: "Wigan Athletic",
+      players: POSITIONS.map((position, i) => ({
+        id: `w${i}`, name: `Wigan Player ${i}`, position, overall: 70 - i, goals: 0, assists: 0,
+      })),
+    };
+  }
+
+  function careerWithExternalOnly(): CareerState {
+    const base = makeInitialCareer(
+      {
+        firstName: "Test", lastName: "Player", age: 16, skinTone: "light",
+        club: "AFC Bournemouth", clubBadge: null, position: "ST",
+        nationality: "England", startYear: 2027,
+      },
+      CLUBS,
+    );
+    // Deliberately NOT in leagueSquads — externalSquads is where a
+    // promotion-pool/Other club's roster actually lives.
+    return { ...base, leagueSquads: [], externalSquads: [wiganSquad()] };
+  }
+
+  const cupFixture: Fixture = { week: 5, opponent: "Wigan Athletic", home: true, played: false, kind: "cup" };
+  const shape = formationOf("433");
+  const sq = wiganSquad().players;
+  const worstKeeper = sq.filter(p => p.position === "GK").slice(-1)[0];
+  const gkSlot = shape.slots.findIndex(s => s.role === "GK");
+  const chosen: (string | null)[] = shape.slots.map(() => null);
+  chosen[gkSlot] = worstKeeper.id;
+
+  saveLineup("Wigan Athletic", { formation: shape.id, xi: chosen });
+  const md = matchdayFor(careerWithExternalOnly(), cupFixture, false).away;
+
+  check(md.xi.length === 11, `Wigan still fields a full eleven, not an unscouted blank (${md.xi.length})`);
+  check(md.xi[gkSlot]?.id === worstKeeper.id,
+    `and it is the actual saved lineup, not an auto-pick (${md.xi[gkSlot]?.id}, wanted ${worstKeeper.id})`);
+  clearLineup("Wigan Athletic");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);

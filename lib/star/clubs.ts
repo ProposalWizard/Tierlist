@@ -127,6 +127,31 @@ export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
 ];
 
 /**
+ * Whichever of the twenty Premier League clubs actually start this real
+ * 2026/27 season already qualified for Europe — the English entries drawn
+ * straight out of CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS above, not a
+ * second hand-typed list that could quietly drift from them.
+ *
+ * Read once, at career creation (`makeInitialCareer`, careerFlow.ts) — a
+ * season-1 career used to never have a European campaign at all, even for a
+ * club that has genuinely already qualified in real life, because
+ * `europeanQualification` otherwise only ever gets computed from a season
+ * this career hasn't played yet. Every later season's qualification is
+ * still earned properly through the league table — this only seeds the
+ * ONE season that has no table to earn it from.
+ */
+export const STARTING_EUROPEAN_QUALIFICATION: Record<string, "Champions League" | "Europa League"> = {
+  "Arsenal": "Champions League",
+  "Aston Villa": "Champions League",
+  "Liverpool": "Champions League",
+  "Manchester City": "Champions League",
+  "Manchester United": "Champions League",
+  "AFC Bournemouth": "Europa League",
+  "Crystal Palace": "Europa League",
+  "Sunderland": "Europa League",
+};
+
+/**
  * The shortened name for every club on the English ladder, given directly —
  * not the generic "drop United/City/Town" heuristic `shortClub` (grammar.ts)
  * otherwise falls back to, which gets Nottingham Forest ("Forest" was never

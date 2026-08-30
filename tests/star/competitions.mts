@@ -50,8 +50,12 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   check(states.some(x => x.competition === "FA Cup"), "the FA Cup runs from your first season");
   check(states.some(x => x.competition === "League Cup"), "…and so does the League Cup");
   check(states.every(x => x.rounds[0].ties.length === 16), "thirty-two clubs, sixteen ties");
+  // Europe's own knockout draw specifically — as opposed to its league
+  // phase, which CAN already be running from week one (see the block
+  // below): nothing has been won yet to earn a knockout tie, and the
+  // league phase itself hasn't reached the point a knockout gets drawn.
   check(!runs.some(r => r.kind === "europe"),
-    "…but not Europe, which you have not finished a season to qualify for");
+    "…and no European knockout tie either, nothing has been won yet to earn one");
 
   const cupFixtures = c.fixtures.filter(f => f.kind === "cup");
   check(cupFixtures.length === 2,
@@ -60,6 +64,36 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   check(cupFixtures[0].week > 1 && cupFixtures[0].week <= leagueWeeks(CLUBS.length),
     `the cup tie is inside the season (week ${cupFixtures[0].week} of ${leagueWeeks(CLUBS.length)})`);
   check(typeof cupFixtures[0].opponentStrength === "number", "the tie carries its opponent's strength");
+}
+
+// ── A club that has genuinely already qualified starts Europe from week one ─
+//
+// Reported directly: picking Manchester United — a real Champions League
+// club this season — did not put you in the Champions League. Season 1 used
+// to never have a European campaign at all, on the (correct, for every OTHER
+// club) assumption that nothing has been earned yet — but a club that
+// qualified in real life did not earn it through THIS career either, and
+// still has to actually play it.
+{
+  const unitedCareer = makeInitialCareer({ ...PLAYER, club: "Manchester United" }, CLUBS);
+  check(unitedCareer.europeanQualification === "Champions League",
+    "a real Champions League club starts a new career already qualified");
+  check(!!unitedCareer.euroState, "and its European campaign is open from the very first season");
+  check(unitedCareer.euroState?.competition === "Champions League", "in the competition it actually qualified for");
+  const unitedEuro = unitedCareer.fixtures.filter(f => f.kind === "europe");
+  check(unitedEuro.length === 8, `all eight league-phase games on the calendar from week one (${unitedEuro.length})`);
+  check(new Set(unitedEuro.map(f => f.week)).size === 8, "no two of them in the same week");
+
+  const bournemouthCareer = makeInitialCareer({ ...PLAYER, club: "AFC Bournemouth" }, CLUBS);
+  check(bournemouthCareer.europeanQualification === "Europa League",
+    "a real Europa League club starts a new career already qualified for the right competition");
+
+  // A club with no real European place this season gets none — the fix only
+  // seeds what a club has actually earned in real life, not Europe for
+  // everyone.
+  const chelseaCareer = makeInitialCareer({ ...PLAYER, club: "Chelsea" }, CLUBS);
+  check(chelseaCareer.europeanQualification === null, "a club with no real European place this season starts with none");
+  check(chelseaCareer.fixtures.filter(f => f.kind === "europe").length === 0, "…and no European fixtures either");
 }
 
 // ── Winning puts the next round on the calendar; losing does not ───────────
@@ -256,8 +290,17 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   check(qualificationFor(1, 10, false, true) === "Champions League", "League Cup win can't demote a CL side");
   check(qualificationFor(4, 10, false, true) === "Europa League", "League Cup win can't demote an EL side");
 
+  // A club of its own, not qualified for Europe already (unlike Arsenal —
+  // base()'s club — since Aug 2026: see the season-1 European seeding
+  // below). This block is testing qualification EARNED through the table,
+  // and a club that starts the season already mid-Champions-League would
+  // leave a European campaign this simple win-every-fixture loop cannot
+  // finish (its knockout stage is drawn one round at a time through the
+  // real app, not through creditMatchResult alone) still open when
+  // advanceSeason runs — a real limitation of this loop, not of the game.
+  const CHELSEA: StarPlayer = { ...PLAYER, club: "Chelsea" };
   const done = (() => {
-    let c = base();
+    let c = makeInitialCareer(CHELSEA, CLUBS);
     let guard = 0;
     while (nextFixtureFor(c) && guard++ < 100) c = play(c, 3, 0);
     return c;

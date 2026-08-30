@@ -23,6 +23,7 @@ import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
   qualificationFor, leaguePosition, seasonQualifiers,
 } from "./competitions";
+import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner } from "./cups";
 import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
@@ -92,7 +93,7 @@ export function makeInitialCareer(
     squad: generateSquad(clubNameSeed(player.club)),
     contractStarMilestones: [],
     contractFormOfferSeason: -1,
-    europeanQualification: null,
+    europeanQualification: STARTING_EUROPEAN_QUALIFICATION[player.club] ?? null,
     weekActions: WEEK_ACTIONS,
     awards: [],
     captain: false,
@@ -126,8 +127,14 @@ export function makeInitialCareer(
   const drawn = seedCups(state);
   state.cupState = drawn.states;
   state.fixtures = [...state.fixtures, ...seeded.fixtures, ...drawn.fixtures];
-  // No European campaign here on purpose: a first season cannot have qualified
-  // for one, any more than it can have a Community Shield or a Super Cup.
+  // Real life doesn't wait for a Community Shield or a Super Cup to exist —
+  // those genuinely can't happen in a season 1 with no prior trophy to seed
+  // them from — but a club that has actually already qualified for Europe
+  // this real season has to start playing it from week one, same as any
+  // later season earned through the league table.
+  const euro = seedEurope(state);
+  state.euroState = euro.state ?? undefined;
+  state.fixtures = [...state.fixtures, ...euro.fixtures];
   return state;
 }
 
