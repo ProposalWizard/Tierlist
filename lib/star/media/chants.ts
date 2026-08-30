@@ -65,4 +65,26 @@ export const PLAYER_GOAL_CHANTS: Record<string, string[]> = {
   "Marcus Rashford": ["And he's smashed it in!"],
   "Amadou Onana": ["Andre at it again"],
   "Anthony Elanga": ["Ryhthm is a dancer ANTHONY ELANGA scoring goals from everywhere"],
+  // Eleven lines for one scorer — same array-of-lines shape Spurs' two win
+  // chants already use, `chooseTemplate` already picks one at random and
+  // never repeats one in a cycle, which is exactly what a full song's worth
+  // of lines needs.
+  "Sam Smith": [
+    "Smith up the table, he's putting smith up the table",
+    "I wanna be in that template",
+    "Sam-oh, Sam-oh, Sam-oh",
+    "Samuel is a Smither, Whelan is a Wither",
+    "Smithing the templates, Smithing the templates",
+    "Wheeling Smithers in your Sam Smith house",
+    "Sam Smith on the wing, Sam Sam Smith Smith on the wing",
+    "Mr Burns said he had no chance",
+    "50 templates down the drain!",
+    "he goes by the name of Sam Smitty, Sam Smitty, he goes by the name of Sam Smitty",
+    "he's smithing up the templates and he's doing it so right",
+  ],
+  "Kylian Mbappe": ["Ballon d'or"],
+  "Lamine Yamal": ["Classique"],
+  "Bradley Barcola": ["Fonsu Que"],
+  "Paul Pogba": ["pog"],
+  "Vinicius": ["Chini"],
 };
