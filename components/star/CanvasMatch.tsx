@@ -378,35 +378,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // loadScenario() so the scenario matches the football that led to it.
   const pendingRequestRef = useRef<ScenarioRequest | null>(null);
 
-  // ── Legs ──
-  // Energy was a pre-match number that never moved: you finished the ninetieth
-  // minute exactly as fresh as you started the first. It now drains with the
-  // clock and with every chance you actually take, and it costs you power and
-  // touch — never accuracy of intent, only execution. Match fitness decides how
-  // fast it goes, which is what training it is for.
-  const energyRef = useRef(career?.energy ?? 85);
-  const [energy, setEnergyState] = useState(energyRef.current);
-  const setEnergy = (v: number) => { energyRef.current = clamp(v, 0, 100); setEnergyState(energyRef.current); };
-  const fitness = career?.matchFitness ?? 80;
-  const drainPerMinute = 0.10 * (1.5 - clamp(fitness, 0, 100) / 100);
-  const DRAIN_PER_CHANCE = 1.6;
-
-  // What your legs are actually capable of right now. A tired player strikes the
-  // ball less cleanly; he does not aim somewhere else.
-  const tiredSkills = (): KickSkills => {
-    const e = clamp(energyRef.current, 0, 100) / 100;
-    return {
-      power: skills.power * (0.82 + 0.18 * e),
-      technique: skills.technique * (0.80 + 0.20 * e),
-    };
-  };
-
   const hiddenInputs = (): HiddenMatchInputs => {
     const car = careerRef.current;
     return {
       teamStrength: teamRef.current,
       oppStrength: oppStrengthRef.current,
-      energy: energyRef.current,
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
@@ -857,7 +833,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   }, []);
 
   const powerFromDrag = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
-    return clamp(screenPull(drag, ball) / dragForFullPower(tiredSkills().power), 0, 1);
+    return clamp(screenPull(drag, ball) / dragForFullPower(skills.power), 0, 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2474,20 +2450,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       events.push({ minute: st.minute, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
     }
 
-    // The minutes you were not playing still cost you.
-    setEnergy(energyRef.current - (st.minute - matchMinuteRef.current) * drainPerMinute);
-
     // ── Being taken off ──
     // Checked here, between chances, because that is where the clock actually
-    // moves. Your legs and your afternoon decide it; the game being won decides
-    // the flattering version of it.
+    // moves. Your afternoon decides it; the game being won decides the
+    // flattering version of it.
     if (!hookedRef.current && !step.fullTime) {
       const t = tallyRef.current;
       const decision = hookCheck({
         minute: st.minute,
         startMinute: startMinuteRef.current,
         liveRating: liveRating(t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
-        energy: energyRef.current,
         scoreDiff: st.userScore - st.oppScore,
         rng,
       });
@@ -2631,7 +2603,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // defence gets the time your first touch cost them. A heavy touch and they
     // are on you before you look up; a good one and you have a moment.
     let heavyTouch = 0;
-    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, tiredSkills().technique, rng);
+    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, skills.technique, rng);
 
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
@@ -2675,7 +2647,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     goalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
-    setEnergy(career?.energy ?? 85);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     simContinueRef.current = null;
     pendingRequestRef.current = null;
@@ -2803,12 +2774,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // A dead ball is struck with your free-kick rating, not your general
     // technique — the one strike in football that is purely placement and curl.
     const strikeWith = setPieceSkills(
-      tiredSkills(),
+      skills,
       careerRef.current?.skills.freeKick ?? skills.technique,
       scenarioRef.current.kind,
     );
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
-    setEnergy(energyRef.current - DRAIN_PER_CHANCE);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     playKick();
@@ -2963,7 +2933,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             awayScore={awayScore}
             userKit={ourKit()}
             oppKit={theirKit()}
-            energy={energy}
             stats={stats}
             speed={speed}
             onSpeed={() => setSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}

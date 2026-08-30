@@ -217,7 +217,6 @@ export default function MediaLab() {
               awayScore={1}
               userKit={kitsFor("Liverpool", "Man Utd").home}
               oppKit={kitsFor("Liverpool", "Man Utd").away}
-              energy={62}
               stats={{ shots: 3, goals: 1, assists: 0, passesCompleted: 14 }}
               speed={feedSpeed}
               onSpeed={() => setFeedSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}

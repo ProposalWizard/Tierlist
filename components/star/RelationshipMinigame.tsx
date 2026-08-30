@@ -7,7 +7,7 @@ export type RelationshipKind = "boss" | "team" | "fans" | "sponsors" | "happines
 interface Props {
   kind: RelationshipKind;
   currentValue: number;
-  onComplete: (relationshipGain: number, energyCost: number) => void;
+  onComplete: (relationshipGain: number) => void;
   onCancel: () => void;
 }
 
@@ -27,8 +27,6 @@ const LABELS: Record<RelationshipKind, string> = {
   sponsors:  "Sponsor Event",
   happiness: "Take a Break",
 };
-
-const ENERGY_COST = 15;
 
 interface CardState {
   id: number;
@@ -92,7 +90,7 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
   const finalise = () => {
     // Reward: 15 on win, 5 on loss (participation), scale by remaining lives
     const gain = phase === "won" ? 12 + lives * 2 : 4;
-    onComplete(gain, ENERGY_COST);
+    onComplete(gain);
   };
 
   return (
@@ -115,7 +113,6 @@ export default function RelationshipMinigame({ kind, currentValue, onComplete, o
           <div className="text-xs text-white/85">
             Match all pairs. Every miss costs a life. 3 misses and you go home tired.
           </div>
-          <div className="text-[10px] text-white/65 mt-1">Costs ★{ENERGY_COST} energy</div>
         </div>
 
         <div className="grid grid-cols-4 gap-1 max-w-[280px] mx-auto w-full">

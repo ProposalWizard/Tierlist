@@ -216,10 +216,6 @@ export default function DashboardStats({ career, onRenew }: Props) {
             </div>
           </div>
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-            <div className="font-black text-xs text-white mb-1">NRG Drinks: {career.nrgDrinks.basic + career.nrgDrinks.premium + career.nrgDrinks.elite}</div>
-            <div className="text-[10px] text-white/85">Restores energy before a match. Manage on the Life screen.</div>
-          </div>
-          <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
             <div className="font-black text-xs text-white mb-1">Boots — {career.currentBoot.name}</div>
             <div className="text-[10px] text-white/85">
               {career.currentBoot.matches} matches remaining · Pace +{career.currentBoot.pace} · Pow +{career.currentBoot.power} · Tec +{career.currentBoot.technique}

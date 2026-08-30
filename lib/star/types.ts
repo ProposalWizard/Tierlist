@@ -250,7 +250,7 @@ export interface MatchStats {
   /** Minutes actually played. Under 90 when you came off the bench. */
   minutes?: number;
   /** Why you were taken off, when you were. */
-  hooked?: "form" | "legs" | "rested" | null;
+  hooked?: "form" | "rested" | null;
   chances: number;
   goals: number;
   assists: number;
@@ -369,7 +369,6 @@ export interface CareerState {
     playOffFinal?: { home: string; away: string; hs: number; as: number; winner: string };
   };
   week: number;
-  energy: number;
   matchFitness: number;
   happiness: number;
   money: number;
@@ -382,7 +381,6 @@ export interface CareerState {
   achievements: string[];
   status: "1st Team" | "Substitute" | "Squad";
   currentBoot: Boot;
-  nrgDrinks: { basic: number; premium: number; elite: number };
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];
@@ -606,7 +604,6 @@ export type StarPhase =
   | "post-match"
   | "media"
   | "ballon-dor"
-  | "shop-nrg"
   | "shop-boots"
   | "shop-lifestyle"
   | "casino-menu"

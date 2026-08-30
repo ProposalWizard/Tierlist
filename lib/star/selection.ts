@@ -125,7 +125,6 @@ export function selectionFor(career: CareerState): SelectionVerdict {
  */
 export const MISSED_WEEK = {
   matchFitness: -7,
-  energy: +25,
   boss: +3,
 } as const;
 
@@ -137,11 +136,11 @@ export const MISSED_WEEK = {
  * you stayed on the pitch. You played every minute of every match you started,
  * however badly it was going and however empty you were.
  *
- * Three reasons a manager takes a player off, and this models all three,
- * including the flattering one — being rested with the game won is not a
- * punishment and should not read as one.
+ * Two reasons a manager takes a player off, and this models both, including
+ * the flattering one — being rested with the game won is not a punishment
+ * and should not read as one.
  */
-export type HookReason = "form" | "legs" | "rested";
+export type HookReason = "form" | "rested";
 
 export interface HookDecision {
   hooked: boolean;
@@ -157,7 +156,6 @@ export function hookCheck(args: {
   minute: number;
   startMinute: number;
   liveRating: number;
-  energy: number;
   /** Your goals minus theirs. */
   scoreDiff: number;
   rng: () => number;
@@ -166,18 +164,9 @@ export function hookCheck(args: {
   if (args.minute < HOOK_EARLIEST) return none;
   if (args.minute - args.startMinute < HOOK_SETTLE_IN) return none;
 
-  // Later is likelier, in all three cases — a manager who was going to change it
+  // Later is likelier, in both cases — a manager who was going to change it
   // has more reason to as the clock runs down.
   const late = Math.max(0, Math.min(1, (args.minute - HOOK_EARLIEST) / 30));
-
-  // Empty legs. The steepest of the three, because it is the one the player can
-  // see coming in the bar on the HUD and could have managed during the week.
-  if (args.energy < 28) {
-    const p = (0.16 + late * 0.3) * (1 - args.energy / 28);
-    if (args.rng() < p) {
-      return { hooked: true, reason: "legs", message: "You are out on your feet — the manager takes you off." };
-    }
-  }
 
   // A bad afternoon.
   //

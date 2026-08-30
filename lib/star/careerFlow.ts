@@ -23,6 +23,7 @@ import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
   qualificationFor, leaguePosition, seasonQualifiers,
 } from "./competitions";
+import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner } from "./cups";
 import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
@@ -63,7 +64,6 @@ export function makeInitialCareer(
     season: 1,
     division,
     week: 1,
-    energy: 100,
     matchFitness: 80,
     happiness: 60,
     money: 3,
@@ -76,7 +76,6 @@ export function makeInitialCareer(
     achievements: ["first-contract"],
     status: "1st Team",
     currentBoot: starterBoot,
-    nrgDrinks: { basic: 2, premium: 0, elite: 0 },
     ownedItems: [],
     girlfriend: null,
     sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, perMatch: 0, active: false })),
@@ -94,7 +93,7 @@ export function makeInitialCareer(
     squad: generateSquad(clubNameSeed(player.club)),
     contractStarMilestones: [],
     contractFormOfferSeason: -1,
-    europeanQualification: null,
+    europeanQualification: STARTING_EUROPEAN_QUALIFICATION[player.club] ?? null,
     weekActions: WEEK_ACTIONS,
     awards: [],
     captain: false,
@@ -128,8 +127,14 @@ export function makeInitialCareer(
   const drawn = seedCups(state);
   state.cupState = drawn.states;
   state.fixtures = [...state.fixtures, ...seeded.fixtures, ...drawn.fixtures];
-  // No European campaign here on purpose: a first season cannot have qualified
-  // for one, any more than it can have a Community Shield or a Super Cup.
+  // Real life doesn't wait for a Community Shield or a Super Cup to exist —
+  // those genuinely can't happen in a season 1 with no prior trophy to seed
+  // them from — but a club that has actually already qualified for Europe
+  // this real season has to start playing it from week one, same as any
+  // later season earned through the league table.
+  const euro = seedEurope(state);
+  state.euroState = euro.state ?? undefined;
+  state.fixtures = [...state.fixtures, ...euro.fixtures];
   return state;
 }
 
@@ -454,10 +459,7 @@ export function creditMatchResult(
     money: career.money + stats.totalCash
       + (isInternational ? 0 : appearanceMoney(career.contract))
       + progressed.earned,
-    // Twenty minutes off the bench does not take as much out of you as ninety,
-    // and does not sharpen you as much either. The week that follows gives some
-    // of it back — see startNewWeek, applied below.
-    energy: Math.max(15, career.energy - 40 * minuteShare),
+    // Twenty minutes off the bench does not sharpen you as much as ninety.
     matchFitness: Math.min(100, career.matchFitness + 3 * minuteShare),
     relationships: {
       ...career.relationships,
@@ -479,9 +481,9 @@ export function creditMatchResult(
   // appearances would hand it to a signing on his first day.
   next.clubAppearances = (career.clubAppearances ?? 0) + (isInternational ? 0 : 1);
 
-  // The match is over, so a new week starts: some energy back, and three things
-  // you can do with it before the next one.
-  Object.assign(next, startNewWeek(next.energy));
+  // The match is over, so a new week starts: three things you can do before
+  // the next one.
+  Object.assign(next, startNewWeek());
 
   // The armband, once the dressing room and the manager are both behind you and
   // you have actually been here a while. Once given it is not taken away for a
@@ -756,7 +758,6 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
       (career.leagueSquads ?? []).filter(s => clubs.includes(s.club)),
     ),
     seasonStats: { ...EMPTY_SEASON_STATS },
-    energy: 100,
     matchFitness: 85,
     form: [],
     contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
@@ -924,7 +925,6 @@ export function simulateMissedFixture(
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
     money: career.money + career.contract.wage,
-    energy: Math.min(100, career.energy + MISSED_WEEK.energy),
     weekActions: WEEK_ACTIONS,
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
     relationships: {

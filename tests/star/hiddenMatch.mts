@@ -90,9 +90,9 @@ function run(inputs: HiddenMatchInputs, n = 2000, seed0 = 1): Sample[] {
 
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-const EVEN: HiddenMatchInputs = { teamStrength: 70, oppStrength: 70, energy: 80, playerSkill: 65 };
-const STRONG: HiddenMatchInputs = { teamStrength: 88, oppStrength: 58, energy: 80, playerSkill: 65 };
-const WEAK: HiddenMatchInputs = { teamStrength: 55, oppStrength: 88, energy: 80, playerSkill: 65 };
+const EVEN: HiddenMatchInputs = { teamStrength: 70, oppStrength: 70, playerSkill: 65 };
+const STRONG: HiddenMatchInputs = { teamStrength: 88, oppStrength: 58, playerSkill: 65 };
+const WEAK: HiddenMatchInputs = { teamStrength: 55, oppStrength: 88, playerSkill: 65 };
 
 const even = run(EVEN);
 const strong = run(STRONG);
@@ -182,13 +182,12 @@ const weak = run(WEAK);
   check(strongWins < 0.9, `nothing is a foregone conclusion (${(strongWins * 100).toFixed(1)}%)`);
 }
 
-// ── Effort buys involvement, not better football ────────────────────────────
+// ── Skill buys involvement, not better football ─────────────────────────────
+//
+// Energy used to be a second input here too (effort buys involvement, a
+// tired player got fewer chances not worse ones) — removed along with the
+// rest of energy's gameplay effect, see CLAUDE.md's Future Work note.
 {
-  const fresh = mean(run({ ...EVEN, energy: 100 }, 800).map(s => s.requests));
-  const spent = mean(run({ ...EVEN, energy: 10 }, 800).map(s => s.requests));
-  check(fresh > spent, `tired legs see less of the ball (${spent.toFixed(1)} vs ${fresh.toFixed(1)})`);
-  check(spent > 1, `an exhausted player is not frozen out entirely (${spent.toFixed(1)})`);
-
   const great = mean(run({ ...EVEN, playerSkill: 95 }, 800).map(s => s.requests));
   const poor = mean(run({ ...EVEN, playerSkill: 25 }, 800).map(s => s.requests));
   check(great > poor, `better players are found more often (${poor.toFixed(1)} vs ${great.toFixed(1)})`);

@@ -154,7 +154,6 @@ const stats = (rating: number): MatchStats => ({
   check(after.money > c.money, "and you are still paid");
   check(after.form.length === c.form.length,
     "a match you did not play does not go into your form — otherwise being dropped would drop you further");
-  check(after.energy >= c.energy, "a week off is a week's rest");
 
   // Every club plays exactly one game — the same invariant the played path holds.
   const games = after.league.reduce((n, t) => n + t.played, 0);

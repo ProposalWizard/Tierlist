@@ -1,5 +1,5 @@
 import {
-  WEEK_ACTIONS, WEEK_RECOVERY, REST_ENERGY, actionsLeft, canAct, spendAction, rest, startNewWeek,
+  WEEK_ACTIONS, actionsLeft, canAct, spendAction, rest, startNewWeek,
 } from "../../lib/star/week";
 import { hookCheck } from "../../lib/star/selection";
 import { liveRating, finaliseMatch } from "../../lib/star/matchStats";
@@ -10,15 +10,16 @@ import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types";
 /**
  * The week between matches, and being taken off during one.
  *
- * Energy was a one-way street: it started at 100, cost 40 a match and 15 a
- * training session, and outside a drink or a dilemma never came back. Eighteen
- * league matches drain 720 against a pool of 100, so by the third week of the
- * first season you sat pinned at the floor and could never train again — the one
- * currency the whole life side of the game runs on was unspendable.
+ * Energy used to be the budget this whole file tested against — it gated
+ * training, it gated Rest, it gated being subbed off for tired legs. It has
+ * been pulled out of the game for now (see CLAUDE.md's Future Work note for
+ * the real New-Star-Soccer-style plan), so what remains here is the
+ * three-actions-a-week structure and the two other reasons a manager takes a
+ * player off.
  *
- * And your rating and your legs decided nothing about how long you stayed on the
- * pitch. You played every minute of every match you started, however badly it
- * was going and however empty you were.
+ * Your rating decided nothing about how long you stayed on the pitch either,
+ * before this. You played every minute of every match you started, however
+ * badly it was going.
  */
 
 const problems: string[] = [];
@@ -39,8 +40,6 @@ const PLAYER: StarPlayer = {
 } as StarPlayer;
 const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Man City", "Man Utd", "Spurs", "Newcastle", "Aston Villa", "Brighton", "West Ham"];
 const base = () => makeInitialCareer(PLAYER, CLUBS);
-
-const TRAINING_COST = 15;
 
 const matchResult = (minutes = 90): MatchStats => ({
   minutes, chances: 5, goals: 1, assists: 0, passes: 12, rating: 7.2, starMan: false,
@@ -66,49 +65,36 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(actionsLeft(legacy) === WEEK_ACTIONS, "a career saved before weeks existed opens with a full one");
 }
 
-// ── Rest costs a day and buys real energy ──────────────────────────────────
+// ── Rest costs a day and buys some happiness ────────────────────────────────
 {
-  const tired: CareerState = { ...base(), energy: 40, happiness: 50 };
-  const rested = rest(tired);
-  check(rested.energy === 40 + REST_ENERGY, `resting is worth ${REST_ENERGY} energy`);
-  check(rested.happiness > tired.happiness, "and does you good besides");
+  const c: CareerState = { ...base(), happiness: 50 };
+  const rested = rest(c);
+  check(rested.happiness > c.happiness, "resting does you good");
   check(actionsLeft(rested) === WEEK_ACTIONS - 1, "and costs a day");
-
-  const full: CareerState = { ...base(), energy: 95 };
-  check(rest(full).energy === 100, "energy never goes over 100");
 
   let none = base();
   for (let i = 0; i < WEEK_ACTIONS; i++) none = spendAction(none);
-  const spent = { ...none, energy: 40 };
-  check(rest(spent).energy === 40, "you cannot rest on a day you do not have");
+  check(rest(none).happiness === none.happiness, "you cannot rest on a day you do not have");
 }
 
-// ── The bug this fixes: a season you can actually train in ─────────────────
+// ── Training is no longer a budget you can run out of ──────────────────────
 //
-// Before, energy only went down. This plays a whole season doing nothing but
-// playing and training whenever there is a day and the energy for it, and
-// asserts you are still training in the final weeks.
+// Nothing gates a training session but the three days a week — this plays a
+// whole season training every single day available and asserts it never once
+// runs out of anything to spend.
 {
   let c = base();
   let sessions = 0;
   let sessionsInLastThird = 0;
   let weeks = 0;
-  let floored = 0;
   const total = c.fixtures.filter(f => (f.kind ?? "league") === "league").length;
 
   while (nextFixtureFor(c) && weeks < 60) {
-    // Spend the week: train while there is a day and the energy for it, rest
-    // when there is not, exactly as a player would.
     while (canAct(c)) {
-      if (c.energy >= TRAINING_COST + 25) {
-        c = spendAction({ ...c, energy: c.energy - TRAINING_COST });
-        sessions++;
-        if (weeks > total * 0.66) sessionsInLastThird++;
-      } else {
-        c = rest(c);
-      }
+      c = spendAction(c);
+      sessions++;
+      if (weeks > total * 0.66) sessionsInLastThird++;
     }
-    if (c.energy <= 16) floored++;
     const f = nextFixtureFor(c)!;
     c = creditMatchResult(c, f, matchResult()).career;
     weeks++;
@@ -117,36 +103,18 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(weeks > 15, `a whole season is played (${weeks} weeks)`);
   check(sessions > 20, `and you can actually train through it (${sessions} sessions)`);
   check(sessionsInLastThird > 3,
-    `including in the closing weeks (${sessionsInLastThird}) — the old model had you pinned at the floor by week three`);
-  check(floored === 0, `and you never arrive at a match empty (${floored} weeks at the floor)`);
-  check(c.energy > 20, `finishing the season with something left (${Math.round(c.energy)})`);
-}
-
-// ── …but you cannot have everything ────────────────────────────────────────
-//
-// Training three times a week costs more than a week gives back. That is the
-// tension: a budget you can always afford is not a budget.
-{
-  const cost = WEEK_ACTIONS * TRAINING_COST + 40;   // three sessions plus a match
-  check(cost > WEEK_RECOVERY,
-    `three sessions and a match cost more than a week returns (${cost} vs ${WEEK_RECOVERY})`);
-  check(TRAINING_COST * 2 + 40 > WEEK_RECOVERY,
-    "and so do two — you have to rest sometimes, or buy the energy");
-  check(REST_ENERGY + WEEK_RECOVERY - 40 > 0,
-    "resting and playing leaves you better off, so recovery is always reachable");
+    `including in the closing weeks (${sessionsInLastThird}) — nothing pins you at a floor by week three`);
 }
 
 // ── Every week rolls over, played or not ───────────────────────────────────
 {
-  const c = { ...base(), energy: 30, weekActions: 0 };
+  const c = { ...base(), weekActions: 0 };
   const f = nextFixtureFor(c)!;
   const after = creditMatchResult(c, f, matchResult()).career;
   check(actionsLeft(after) === WEEK_ACTIONS, "playing a match starts a new week");
-  check(after.energy > 30 - 40, `and the week gives energy back (${Math.round(after.energy)})`);
 
-  const roll = startNewWeek(50);
-  check(roll.energy === 50 + WEEK_RECOVERY && roll.weekActions === WEEK_ACTIONS, "the rollover is one place");
-  check(startNewWeek(95).energy === 100, "and never overfills you");
+  const roll = startNewWeek();
+  check(roll.weekActions === WEEK_ACTIONS, "the rollover is one place");
 }
 
 // ── Being taken off ────────────────────────────────────────────────────────
@@ -154,32 +122,29 @@ const matchResult = (minutes = 90): MatchStats => ({
   const rng = mulberry32(7);
   const never = (over: Partial<Parameters<typeof hookCheck>[0]>) =>
     Array.from({ length: 400 }, (_, i) => hookCheck({
-      minute: 70, startMinute: 0, liveRating: 7.5, energy: 80, scoreDiff: 0,
+      minute: 70, startMinute: 0, liveRating: 7.5, scoreDiff: 0,
       rng: mulberry32(i + 1), ...over,
     })).filter(d => d.hooked).length;
 
-  check(never({}) === 0, "a player having a good game on full legs is never taken off");
-  check(never({ minute: 50, liveRating: 5.7, energy: 5 }) === 0, "nobody is hooked before the hour");
-  check(never({ minute: 66, startMinute: 60, liveRating: 5.7, energy: 5 }) === 0,
+  check(never({}) === 0, "a player having a good game is never taken off");
+  check(never({ minute: 50, liveRating: 5.7 }) === 0, "nobody is hooked before the hour");
+  check(never({ minute: 66, startMinute: 60, liveRating: 5.7 }) === 0,
     "and not within a quarter of an hour of coming on");
 
   // 5.8 is what a real contributionless defeat scores — the formula starts at
   // 6.0 and only a defeat pulls it down, so nothing lower is reachable in play.
   const bad = never({ liveRating: 5.8 });
   check(bad > 0 && bad < 400, `a bad afternoon can get you hooked, and does not always (${bad}/400)`);
-  const empty = never({ energy: 8 });
-  check(empty > 0, `empty legs can too (${empty}/400)`);
-  check(empty > bad, `and the legs are the steeper of the two (${empty} vs ${bad}) — you could see that one coming`);
 
   const won = never({ scoreDiff: 4, minute: 80 });
   check(won > 0, `and being rested with the game won is a thing (${won}/400)`);
   const restedReasons = Array.from({ length: 200 }, (_, i) => hookCheck({
-    minute: 80, startMinute: 0, liveRating: 8, energy: 90, scoreDiff: 4, rng: mulberry32(i + 500),
+    minute: 80, startMinute: 0, liveRating: 8, scoreDiff: 4, rng: mulberry32(i + 500),
   })).filter(d => d.hooked);
   check(restedReasons.every(d => d.reason === "rested"), "…and it is not dressed up as a punishment");
   check(restedReasons.every(d => !d.message.includes("number is up")), "the message matches the reason");
 
-  // Later is likelier, for all of them.
+  // Later is likelier, for both.
   const early = never({ liveRating: 5.8, minute: 62 });
   const late = never({ liveRating: 5.8, minute: 88 });
   check(late > early, `the longer it goes the likelier it gets (${early} at 62' vs ${late} at 88')`);

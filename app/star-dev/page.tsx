@@ -33,7 +33,6 @@ import RelegationMove from "@/components/star/RelegationMove";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
-import { NRG_DRINKS, type NrgDrink } from "@/lib/star/shopData";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialPenalty from "@/components/star/TrialPenalty";
 import TrialReward from "@/components/star/TrialReward";
@@ -46,7 +45,7 @@ import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
 import PositionPicker from "@/components/star/PositionPicker";
-import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
+import SkillsScreen from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
@@ -418,8 +417,7 @@ export default function StarDevPage() {
     setPhase("training");
   }, [career]);
 
-  // Put your feet up. Costs a day of the week and buys back real energy — the
-  // only reliable way to have any left by the end of a season.
+  // Put your feet up. Costs a day of the week, buys back some happiness.
   const handleRest = useCallback(() => {
     if (!career) return;
     setCareer(rest(career));
@@ -445,7 +443,6 @@ export default function StarDevPage() {
     const updated: CareerState = {
       ...career,
       skills: { ...career.skills, [trainingSkill]: currentVal + gain },
-      energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
       starRating: Math.min(5, career.starRating + gain * 0.005),
     };
     checkAndSetAchievements(updated);
@@ -504,6 +501,7 @@ export default function StarDevPage() {
         { ...next, media: next.media },
         {
           kind: "award",
+          won: potmAwarded.isYou,
           award: `${potmAwarded.monthName} Player of the Month`,
           detail: potmAwarded.isYou
             ? `${potmAwarded.goals} goals and ${potmAwarded.assists} assists in ${potmAwarded.monthName}.`
@@ -799,7 +797,7 @@ export default function StarDevPage() {
     const honours = (next.awards ?? []).filter(a => a.season === from.season);
     for (const a of honours) {
       next.media = generateForCareer({ ...next, media: next.media },
-        { kind: "award", award: a.kind, detail: a.detail }, `award-${a.kind}`);
+        { kind: "award", won: true, award: a.kind, detail: a.detail }, `award-${a.kind}`);
     }
     if (next.managerNews && next.manager) {
       next.media = generateForCareer({ ...next, media: next.media },
@@ -936,25 +934,6 @@ export default function StarDevPage() {
   };
 
   // Shop buys
-  const handleBuyNrg = useCallback((drink: NrgDrink) => {
-    if (!career || career.money < drink.price) return;
-    setCareer({
-      ...career,
-      money: career.money - drink.price,
-      nrgDrinks: { ...career.nrgDrinks, [drink.id]: career.nrgDrinks[drink.id] + 1 },
-    });
-  }, [career]);
-
-  const handleUseDrink = useCallback((id: "basic" | "premium" | "elite") => {
-    if (!career || career.nrgDrinks[id] === 0) return;
-    const drink = NRG_DRINKS.find((d) => d.id === id)!;
-    setCareer({
-      ...career,
-      nrgDrinks: { ...career.nrgDrinks, [id]: career.nrgDrinks[id] - 1 },
-      energy: Math.min(100, career.energy + drink.restore),
-    });
-  }, [career]);
-
   const handleBuyBoot = useCallback((boot: Boot) => {
     if (!career || career.money < boot.price) return;
     setCareer({
@@ -1000,12 +979,9 @@ export default function StarDevPage() {
     setPhase("relationship-game");
   }, []);
 
-  const handleRelationshipGameComplete = useCallback((gain: number, energyCost: number) => {
+  const handleRelationshipGameComplete = useCallback((gain: number) => {
     if (!career || !relationshipGameKind) return;
-    let updated: CareerState = {
-      ...career,
-      energy: Math.max(0, career.energy - energyCost),
-    };
+    let updated: CareerState = { ...career };
     if (relationshipGameKind === "happiness") {
       updated.happiness = Math.min(100, career.happiness + gain);
     } else {
@@ -1262,14 +1238,13 @@ export default function StarDevPage() {
     return <ContractRenewal career={career} offerReason={contractOfferReason ?? undefined} onComplete={handleContractComplete} />;
   }
 
-  if (phase === "shop-nrg" || phase === "shop-boots" || phase === "shop-lifestyle") {
-    const kind = phase === "shop-nrg" ? "nrg" : phase === "shop-boots" ? "boots" : "lifestyle";
+  if (phase === "shop-boots" || phase === "shop-lifestyle") {
+    const kind = phase === "shop-boots" ? "boots" : "lifestyle";
     return (
       <Shop
         career={career}
         kind={kind}
         onBack={handleBackToDashboard}
-        onBuyNrg={handleBuyNrg}
         onBuyBoot={handleBuyBoot}
         onBuyItem={handleBuyItem}
       />
@@ -1383,11 +1358,7 @@ export default function StarDevPage() {
             <div className="text-lg font-black text-white">{home}</div>
             <div className="my-3 text-white/75 font-black">vs</div>
             <div className="text-lg font-black text-white">{away}</div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-white/75 text-[10px] font-bold">Your Energy</div>
-                <div className="font-black text-emerald-300 text-lg">{Math.round(career.energy)}%</div>
-              </div>
+            <div className="mt-4 text-xs">
               <div className="bg-gray-700 rounded-lg py-2">
                 <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
                 <div className="font-black text-emerald-300 text-lg">{Math.round(career.matchFitness)}%</div>
@@ -1402,9 +1373,6 @@ export default function StarDevPage() {
             <div className="mt-3 rounded-lg bg-gray-700 px-2 py-1.5 text-[10px] text-white">
               {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
             </div>
-            {career.energy < 40 && (
-              <div className="mt-3 text-red-300 text-xs font-bold">⚠ Low energy — you may underperform</div>
-            )}
           </div>
 
           {/* Which position you play this match — moved here from the
@@ -1529,8 +1497,7 @@ export default function StarDevPage() {
       )}
       {phase === "dashboard" && (
         <>
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            <QuickBtn label="NRG" icon="🥤" onClick={() => setPhase("shop-nrg")} />
+          <div className="mt-3 grid grid-cols-3 gap-2">
             <QuickBtn label="Boots" icon="👟" onClick={() => setPhase("shop-boots")} />
             <QuickBtn label="Style" icon="💎" onClick={() => setPhase("shop-lifestyle")} />
             <QuickBtn label="Casino" icon="🎰" onClick={() => setPhase("casino-menu")} />
@@ -1539,30 +1506,6 @@ export default function StarDevPage() {
             <QuickBtn label="Sponsors" icon="🤝" onClick={() => setPhase("sponsors")} />
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
-          </div>
-          <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
-            <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">NRG Drinks</div>
-            <div className="grid grid-cols-3 gap-2">
-              {(["basic", "premium", "elite"] as const).map((k) => {
-                const count = career.nrgDrinks[k];
-                const label = k === "basic" ? "Basic" : k === "premium" ? "Premium" : "Elite";
-                const restore = k === "basic" ? 25 : k === "premium" ? 50 : 100;
-                const color = k === "basic" ? "bg-orange-500" : k === "premium" ? "bg-purple-500" : "bg-emerald-500";
-                return (
-                  <button
-                    key={k}
-                    disabled={count === 0}
-                    onClick={() => handleUseDrink(k)}
-                    className={`p-2 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
-                  >
-                    <div className={`w-8 h-10 mx-auto ${color} rounded border border-black/40 mb-1`} />
-                    <div className="text-[10px] font-black text-white">{label}</div>
-                    <div className="text-[9px] text-emerald-300 font-bold">+{restore}</div>
-                    <div className="text-[9px] text-white/75">{count} owned</div>
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </>
       )}

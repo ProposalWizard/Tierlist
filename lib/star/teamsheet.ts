@@ -485,7 +485,15 @@ export function matchdayFor(
   let ours = build(mine, starting ? [...ownPool, you] : ownPool, true, savedBench, savedXI);
   if (starting) ours = forceIntoXI(ours, you);
 
-  const oppSquad = (career.leagueSquads ?? []).find(s => s.club === theirs);
+  // A cup draw can hand you a club outside your own division entirely — a
+  // promotion-pool or "Other" side like Wigan Athletic — whose squad was
+  // never fetched into leagueSquads at all, only into externalSquads (see
+  // externalClubsFor in app/star-dev/page.tsx). Reported directly: a real
+  // saved lineup for exactly this kind of opponent still read as "Unable to
+  // scout opponent's team", because this lookup only ever checked the one
+  // store a league-table club's squad lives in.
+  const oppSquad = (career.leagueSquads ?? []).find(s => s.club === theirs)
+    ?? (career.externalSquads ?? []).find(s => s.club === theirs);
   // A lineup saved for the OPPONENT in the /lineups builder — the same
   // per-club store your own side reads a few lines up. Reported directly,
   // with a real example (a Chelsea eleven set by hand, a completely

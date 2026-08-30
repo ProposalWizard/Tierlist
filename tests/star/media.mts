@@ -1,12 +1,13 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { generateForMatch, generateForCareer, feedFor, mediaOf, hasFreshMedia } from "../../lib/star/media/feed";
 import { templateCount } from "../../lib/star/media/templates";
-import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch } from "../../lib/star/media/detect";
+import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch, detectCareer } from "../../lib/star/media/detect";
 import { buildMatchRecord } from "../../lib/star/media/record";
 import { emptyMemory, absorbMatch } from "../../lib/star/media/memory";
+import { chooseTemplate } from "../../lib/star/media/templates";
 import { mulberry32 } from "../../lib/star/season";
 import type { CareerState, GoalEvent, MatchStats, StarPlayer } from "../../lib/star/types";
-import type { Archetype, StoredPost } from "../../lib/star/media/types";
+import type { Archetype, CareerRecord, FootballEvent, StoredPost } from "../../lib/star/media/types";
 
 /**
  * THE FOOTBALL MEDIA ENGINE
@@ -468,6 +469,100 @@ const RUN_ROW = (rows: { label: string; value: string }[]) =>
   }
   check(checked > 3, `run cards were produced (${checked})`);
   check(mismatched === 0, `none of them sits under a scoreline-and-rating line (${mismatched})`);
+}
+
+// ── A shortlisted-but-not-won award never becomes an "award-won" event ─────
+//
+// Reported directly, more than once: your own club's account posting
+// "BREAKING — Player of the Month, one of our own" the same month the stats
+// account correctly showed someone else lifting it. Player of the Month
+// always produced an `award` career moment, win or merely shortlisted, and
+// the club-congratulation template (lib/star/media/templates/club.ts's
+// "club-award") fires off nothing but that moment existing — see the AWARD
+// detector in lib/star/media/detect/career.ts. Tested at the detector level,
+// not the full probabilistic feed, because which account actually gets
+// picked to post about a given event is randomised and not what is being
+// fixed here — what has to hold is that the event itself never exists for a
+// month you did not win.
+{
+  const c = newCareer(72);
+  const baseRecord: Omit<CareerRecord, "moment"> = {
+    id: "potm-test", season: c.season, week: c.week, club: c.player.club,
+    you: {
+      name: `${c.player.firstName} ${c.player.lastName}`, shortName: c.player.lastName,
+      position: c.player.position, squadNumber: c.squadNumber ?? 0,
+    },
+    context: { fame: c.fame, starRating: c.starRating, fansStanding: c.relationships.fans },
+  };
+
+  const lost = detectCareer({
+    ...baseRecord,
+    moment: { kind: "award", won: false, award: "August Player of the Month", detail: "You were 3rd." },
+  }, emptyMemory());
+  check(!lost.some(e => e.id === "award-won"), `finishing 3rd does not raise an award-won event (${lost.map(e => e.id).join(", ")})`);
+
+  const won = detectCareer({
+    ...baseRecord,
+    moment: { kind: "award", won: true, award: "August Player of the Month", detail: "3 goals, 1 assist." },
+  }, emptyMemory());
+  check(won.some(e => e.id === "award-won"), "actually winning it still raises award-won");
+}
+
+// ── Real chants only ever fire for the exact club or player they belong to ──
+//
+// lib/star/media/chants.ts gives a handful of clubs and real players an
+// actual terrace chant instead of generated text. These have to stay exact:
+// Chelsea never sings Arsenal's, and a scorer nobody wrote a chant for never
+// borrows someone else's.
+{
+  const winEvent = (clubName: string, score: string): FootballEvent => ({
+    id: "win", subject: { kind: "club", name: clubName }, tags: ["table"], baseImportance: 34,
+    window: "instant", facts: { club: clubName, score },
+  });
+  const resultEvent = (id: "win" | "draw", clubName: string): FootballEvent => ({
+    id, subject: { kind: "club", name: clubName }, tags: ["table"],
+    baseImportance: id === "win" ? 34 : 22, window: "instant",
+    facts: { club: clubName, score: id === "win" ? "2-0" : "1-1" },
+  });
+  const goalEvent = (scorer: string): FootballEvent => ({
+    id: "teammate-goal", subject: { kind: "teammate", name: scorer }, tags: ["goal"], baseImportance: 26,
+    window: "instant", facts: { scorer, club: "Real Madrid" },
+  });
+  const rng = mulberry32(901);
+  const CHANT_TEXT = /North London|Mauled by the Tigers|Chelsea! Chelsea|Allez, Allez|Glory Glory|Spurs|Bubbles|Whites|Walk Alone/;
+  const sample = (event: FootballEvent, archetype: Archetype, n = 40) => {
+    const seen = new Set<string>();
+    for (let i = 0; i < n; i++) {
+      const t = chooseTemplate(event, archetype, "report", emptyMemory(), rng, false);
+      if (t) seen.add(t.body);
+    }
+    return seen;
+  };
+
+  const arsenalPlain = sample(winEvent("Arsenal", "2-1"), "fan");
+  check(arsenalPlain.size > 0 && [...arsenalPlain].every(b => b === "North London Forever"),
+    `Arsenal's 2-1 win only ever picks Arsenal's own chant (${[...arsenalPlain].join(" | ")})`);
+
+  const arsenalOneNil = sample(winEvent("Arsenal", "1-0"), "fan");
+  check(arsenalOneNil.has("One-Nil to the Arsenal"), "a 1-0 Arsenal win can produce \"One-Nil to the Arsenal\"");
+
+  const everton = sample(winEvent("Everton", "2-1"), "fan");
+  check(![...everton].some(b => CHANT_TEXT.test(b)), `a club with no chant of its own never borrows one (${[...everton].join(" | ")})`);
+
+  const liverpoolDraw = sample(resultEvent("draw", "Liverpool"), "fan");
+  check(liverpoolDraw.has("You'll Never Walk Alone"), "a Liverpool draw can produce \"You'll Never Walk Alone\"");
+  check(![...liverpoolDraw].includes("Allez, Allez, Allez"), "…but never the win-only chant");
+
+  const liverpoolWin = sample(resultEvent("win", "Liverpool"), "fan");
+  check(liverpoolWin.has("Allez, Allez, Allez"), "a Liverpool win can produce \"Allez, Allez, Allez\"");
+  check(![...liverpoolWin].includes("You'll Never Walk Alone"), "…but never the draw/loss-only chant");
+
+  const bellingham = sample(goalEvent("Jude Bellingham"), "fan");
+  check(bellingham.has("Hey Jude!"), "Bellingham scoring can produce \"Hey Jude!\"");
+
+  const unnamedScorer = sample(goalEvent("Some Random Player"), "fan");
+  check(![...unnamedScorer].some(b => /Hey Jude|Mo Salah|Cold Palmer|Starboy|BOOM BOOM|Siuuu|Sporting|60 MILLION/.test(b)),
+    `an unnamed scorer never gets a real player's chant (${[...unnamedScorer].join(" | ")})`);
 }
 
 if (problems.length) {
