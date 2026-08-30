@@ -55,4 +55,14 @@ export const PLAYER_GOAL_CHANTS: Record<string, string[]> = {
   "Cristiano Ronaldo": ["Siuuu"],
   "Bruno Fernandes": ["He Comes From Sporting Like Cristiano"],
   "Kai Havertz": ["60 MILLION DOWN THE DRAIN"],
+  "Bryan Mbeumo": ["Shake your bum bum for me and my crew"],
+  "Declan Rice": ["Rice Rice Baby!"],
+  "Leon Goretzka": ["GORETZKAAAAAAA!"],
+  // Given exactly as "Kevin" — matched against the scorer's name as-is, same
+  // as every other entry here; if no squad player is named exactly that,
+  // this one simply never fires, same as Ronaldo outside the PL.
+  "Kevin": ["Moffi's eating good tonight"],
+  "Marcus Rashford": ["And he's smashed it in!"],
+  "Amadou Onana": ["Andre at it again"],
+  "Anthony Elanga": ["Ryhthm is a dancer ANTHONY ELANGA scoring goals from everywhere"],
 };
