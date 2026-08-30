@@ -467,6 +467,13 @@ export interface CareerState {
   externalSquads?: LeagueSquad[];
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
+  /**
+   * Asked to play somewhere other than your real position — set on the
+   * matchday screen (`PositionPicker.tsx`) and applies to every match from
+   * then on, not just the next one, until you change it again or pick your
+   * real position. `null`/absent means your real position.
+   */
+  playAs?: SquadPlayer["position"] | null;
   /** Every move you made, for the legacy screen. */
   transfers?: { season: number; from: string; to: string; fee: number }[];
   /** Hung up. The career is over and only the legacy screen remains. */

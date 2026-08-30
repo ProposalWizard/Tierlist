@@ -41,21 +41,21 @@ export default function PositionPicker({ club, realPosition, playAs, onChange }:
         >
           {realName} (your position)
         </button>
-        {alternates.map(role => (
+        {alternates.map(({ role, label }) => (
           <button
             key={role}
             onClick={() => onChange(role)}
             className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
               playAs === role ? "bg-amber-400 text-gray-950" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
           >
-            {POSITION_NAMES[role]}
+            {label}
           </button>
         ))}
       </div>
       <p className="mt-1.5 text-[10px] font-bold text-white/60">
         {playAs
-          ? `Your side's best ${realName.toLowerCase()} starts in your place. Resets after the match.`
-          : "Applies to your next league or cup match, then resets to your own position."}
+          ? `Your side's best ${realName.toLowerCase()} starts in your place. Stays this way until you change it.`
+          : "Applies from your next match onward, until you change it again."}
       </p>
     </div>
   );
