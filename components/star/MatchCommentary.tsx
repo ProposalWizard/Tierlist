@@ -27,8 +27,6 @@ interface Props {
    *  either of them by that team's own colour. */
   userKit: Kit;
   oppKit: Kit;
-  /** 0-100. Yours, not the team's. */
-  energy: number;
   stats: { shots: number; goals: number; assists: number; passesCompleted: number };
   /** How fast the commentary is running. 1, 2 or 4. */
   speed: number;
@@ -45,7 +43,7 @@ interface Props {
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
-  energy, stats, speed, onSpeed, pause, onSkip,
+  stats, speed, onSpeed, pause, onSkip,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -140,18 +138,6 @@ export default function MatchCommentary({
           <Cell label="Goals" value={stats.goals} tone="text-amber-300" />
           <Cell label="Assists" value={stats.assists} tone="text-emerald-300" />
           <Cell label="Passes" value={stats.passesCompleted} tone="text-violet-300" />
-        </div>
-        <div className="px-2 pb-1.5">
-          <div className="relative h-3.5 overflow-hidden rounded-full bg-gray-950 ring-1 ring-white/10">
-            <div
-              className={`h-full transition-[width] duration-500 ${
-                energy > 55 ? "bg-emerald-500" : energy > 28 ? "bg-amber-400" : "bg-red-500"}`}
-              style={{ width: `${Math.max(0, Math.min(100, energy))}%` }}
-            />
-            <span className="absolute inset-0 grid place-items-center text-[9px] font-black uppercase tracking-widest text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-              Energy
-            </span>
-          </div>
         </div>
       </div>
     </div>

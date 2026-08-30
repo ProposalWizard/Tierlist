@@ -54,8 +54,6 @@ export interface HiddenMatchInputs {
   /** 0-100. Your team versus theirs decides who tends to control play. */
   teamStrength: number;
   oppStrength: number;
-  /** 0-100. Tired legs get you involved less — the doc's effort relationship. */
-  energy: number;
   /** 0-100 average of the player's own skills. Better players see more ball. */
   playerSkill: number;
   /** 0-100. A quicker player is handed the ball to run at them more often. */
@@ -314,12 +312,14 @@ export function tick(
     if (rng() < rate) {
       if (userHasIt) {
         // Your team has worked one. Are you the one on the end of it?
-        // Energy and skill raise how often the move finds you, which is the
-        // doc's effort relationship: effort buys involvement, not better
-        // football — a tired player gets fewer chances, not worse ones.
-        const involvement = 0.34
+        // Skill raises how often the move finds you. This used to also read
+        // energy (effort buys involvement, not better football — a tired
+        // player got fewer chances, not worse ones), removed along with the
+        // rest of energy's gameplay effect — see CLAUDE.md's Future Work note.
+        // The base absorbs roughly what a mid-match energy value used to
+        // contribute, so involvement frequency does not silently shift.
+        const involvement = 0.44
           + (inputs.playerSkill / 100) * 0.26
-          + (inputs.energy / 100) * 0.16
           // A long spell without the ball nudges it up, so you are never
           // stranded watching for a quarter of an hour.
           + Math.min(0.3, Math.max(0, state.sinceInvolved - 10) * 0.025);

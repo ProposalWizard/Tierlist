@@ -417,8 +417,7 @@ export default function StarDevPage() {
     setPhase("training");
   }, [career]);
 
-  // Put your feet up. Costs a day of the week and buys back real energy — the
-  // only reliable way to have any left by the end of a season.
+  // Put your feet up. Costs a day of the week, buys back some happiness.
   const handleRest = useCallback(() => {
     if (!career) return;
     setCareer(rest(career));
@@ -980,12 +979,9 @@ export default function StarDevPage() {
     setPhase("relationship-game");
   }, []);
 
-  const handleRelationshipGameComplete = useCallback((gain: number, energyCost: number) => {
+  const handleRelationshipGameComplete = useCallback((gain: number) => {
     if (!career || !relationshipGameKind) return;
-    let updated: CareerState = {
-      ...career,
-      energy: Math.max(0, career.energy - energyCost),
-    };
+    let updated: CareerState = { ...career };
     if (relationshipGameKind === "happiness") {
       updated.happiness = Math.min(100, career.happiness + gain);
     } else {
@@ -1362,11 +1358,7 @@ export default function StarDevPage() {
             <div className="text-lg font-black text-white">{home}</div>
             <div className="my-3 text-white/75 font-black">vs</div>
             <div className="text-lg font-black text-white">{away}</div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-white/75 text-[10px] font-bold">Your Energy</div>
-                <div className="font-black text-emerald-300 text-lg">{Math.round(career.energy)}%</div>
-              </div>
+            <div className="mt-4 text-xs">
               <div className="bg-gray-700 rounded-lg py-2">
                 <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
                 <div className="font-black text-emerald-300 text-lg">{Math.round(career.matchFitness)}%</div>
@@ -1381,9 +1373,6 @@ export default function StarDevPage() {
             <div className="mt-3 rounded-lg bg-gray-700 px-2 py-1.5 text-[10px] text-white">
               {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
             </div>
-            {career.energy < 40 && (
-              <div className="mt-3 text-red-300 text-xs font-bold">⚠ Low energy — you may underperform</div>
-            )}
           </div>
 
           {/* Which position you play this match — moved here from the

@@ -78,7 +78,7 @@ export default function DilemmaModal({ dilemma, onChoose }: Props) {
 function formatEffects(effects: DilemmaEffect): React.ReactElement[] {
   const entries: React.ReactElement[] = [];
   const labels: Record<string, string> = {
-    energy: "Energy", money: "★", happiness: "Happy", matchFitness: "Fit",
+    money: "★", happiness: "Happy", matchFitness: "Fit",
     boss: "Boss", team: "Team", fans: "Fans", sponsors: "Sponsors", fame: "Fame",
     pace: "Pace", power: "Power", technique: "Tech", vision: "Vision", freeKick: "FK",
   };

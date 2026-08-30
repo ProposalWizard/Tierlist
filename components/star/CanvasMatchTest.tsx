@@ -403,7 +403,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   // clock and with every chance you actually take, and it costs you power and
   // touch — never accuracy of intent, only execution. Match fitness decides how
   // fast it goes, which is what training it is for.
-  const energyRef = useRef(career?.energy ?? 85);
+  const energyRef = useRef(85);
   const [energy, setEnergyState] = useState(energyRef.current);
   const setEnergy = (v: number) => { energyRef.current = clamp(v, 0, 100); setEnergyState(energyRef.current); };
   const fitness = career?.matchFitness ?? 80;
@@ -2475,7 +2475,6 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
         minute: st.minute,
         startMinute: startMinuteRef.current,
         liveRating: liveRating(t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
-        energy: energyRef.current,
         scoreDiff: st.userScore - st.oppScore,
         rng,
       });
@@ -2664,7 +2663,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
     goalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
-    setEnergy(career?.energy ?? 85);
+    setEnergy(85);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     simContinueRef.current = null;
     pendingRequestRef.current = null;
@@ -2941,7 +2940,6 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
             awayScore={awayScore}
             userKit={ourKit()}
             oppKit={theirKit()}
-            energy={energy}
             stats={stats}
             speed={speed}
             onSpeed={() => setSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}

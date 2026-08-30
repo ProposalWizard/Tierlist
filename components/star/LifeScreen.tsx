@@ -1,7 +1,7 @@
 "use client";
 import type { CareerState } from "@/lib/star/types";
 import type { RelationshipKind } from "./RelationshipMinigame";
-import { actionsLeft, WEEK_ACTIONS, REST_ENERGY } from "@/lib/star/week";
+import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
 
 interface Props {
   career: CareerState;
@@ -9,22 +9,15 @@ interface Props {
   onRest: () => void;
 }
 
-const TRAINING_ENERGY = 15;
-
 export default function LifeScreen({
   career, onPlayRelationshipGame, onRest,
 }: Props) {
   const left = actionsLeft(career);
-  const canPlay = career.energy >= TRAINING_ENERGY && left > 0;
+  const canPlay = left > 0;
   return (
     <div className="mt-2 space-y-3">
-      {/* The week between matches. Energy used to be a one-way street — it never
-          came back, so after two or three games you could never train again. */}
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">This week</span>
-          <span className="text-[10px] font-bold text-white/70">Energy {Math.round(career.energy)}%</span>
-        </div>
+        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">This week</div>
         <div className="mt-2 flex items-center gap-1.5">
           {Array.from({ length: WEEK_ACTIONS }, (_, i) => (
             <span key={i} className={`h-2.5 flex-1 rounded-full ${i < left ? "bg-emerald-400" : "bg-white/15"}`} />
@@ -37,13 +30,13 @@ export default function LifeScreen({
         </div>
         <button
           onClick={onRest}
-          disabled={left === 0 || career.energy >= 100}
+          disabled={left === 0}
           className={`mt-2 w-full py-2 rounded-lg font-black text-sm transition ${
-            left === 0 || career.energy >= 100
+            left === 0
               ? "bg-gray-700 text-white/65"
               : "bg-emerald-600 hover:bg-emerald-500 text-white active:scale-[0.98]"}`}
         >
-          {career.energy >= 100 ? "Fully rested" : `Rest — +${REST_ENERGY} energy 😴`}
+          Rest 😴
         </button>
       </div>
       <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
@@ -53,7 +46,7 @@ export default function LifeScreen({
         <RelationshipRow label="Sponsors" value={career.relationships.sponsors} icon="🤝" onIconClick={canPlay ? () => onPlayRelationshipGame("sponsors") : undefined} />
         <RelationshipRow label="Happiness" value={career.happiness} icon="😊" onIconClick={canPlay ? () => onPlayRelationshipGame("happiness") : undefined} />
         <div className="text-[9px] text-center text-emerald-300 mt-1">
-          Tap an emoji to play a minigame and raise it (a day and {TRAINING_ENERGY} energy)
+          Tap an emoji to play a minigame and raise it (costs a day)
         </div>
       </div>
     </div>
