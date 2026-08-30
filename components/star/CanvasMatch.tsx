@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
@@ -308,7 +308,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const userScoreRef = useRef(0);
   const oppScoreRef = useRef(0);
   const goalEventsRef = useRef<GoalEvent[]>([]);
-  const [score, setScore] = useState({ user: 0, opp: 0 });
   const [finalStats, setFinalStats] = useState<MatchStats | null>(null);
 
   // --- Simulation between chances ---
@@ -336,6 +335,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // computes a whole passage at once, but you watch it.
   const [log, setLog] = useState<LogLine[]>([]);
   const [queue, setQueue] = useState<LogLine[]>([]);
+  // The number painted on the scoreboard — read off what has actually been
+  // REVEALED so far, not off the simulation's own running total. Those two
+  // used to be the same `score` state, set the instant a whole simulated
+  // passage resolved, well before the queue above had streamed out the goal
+  // line that passage contained — reported directly: the scoreline jumped to
+  // 3-1 minutes (sometimes a whole half-time pause) before the commentary
+  // ever showed the goal that made it 3-1. A goal you score yourself, or come
+  // on as a substitute already trailing by, still updates instantly — those
+  // lines are pushed straight into `log`, never queued, so there is nothing
+  // to lag behind.
+  const displayScore = useMemo(() => ({
+    user: log.filter(l => l.tone === "goal").length,
+    opp: log.filter(l => l.tone === "oppGoal").length,
+  }), [log]);
   const [speed, setSpeed] = useState(1);
   const [pause, setPause] = useState<{ label?: string; cta: string; onContinue: () => void } | null>(null);
   const halfTimeShownRef = useRef(false);
@@ -693,7 +706,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
-        setScore({ user: st.userScore, opp: st.oppScore });
         matchMinuteRef.current = st.minute;
         setMatchMinute(st.minute);
         // The hour you were not on for, read out rather than summarised — the
@@ -2138,7 +2150,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // teammate you set up (same rule the old DOM match used: goal || assist).
     if (kind === "goal") {
       userScoreRef.current += 1;
-      setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
     }
 
     // Hand the outcome back to the match. Without this it would carry on as
@@ -2442,7 +2453,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
     userScoreRef.current = st.userScore;
     oppScoreRef.current = st.oppScore;
-    setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
 
     // Nothing at all happened in the skipped minutes — say so rather than
     // showing an empty panel.
@@ -2483,7 +2493,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         events.push(...nameTeamGoals(after, onPitch(careerRef.current?.squad ?? []), rng, false));
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
-        setScore({ user: st.userScore, opp: st.oppScore });
         step = { ...step, request: null, fullTime: true };
       }
     }
@@ -2655,7 +2664,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     hookedRef.current = null;
     hookedAtRef.current = null;
     chainRef.current = null;
-    setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
     setFinalStats(null);
     setFeed([]);
@@ -2790,8 +2798,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // Match-mode scoreboard (user's club vs opponent, mapped to home/away)
   const homeTeam = matchMode ? (fixture!.home ? career?.player.club ?? "You" : fixture!.opponent) : "";
   const awayTeam = matchMode ? (fixture!.home ? fixture!.opponent : career?.player.club ?? "You") : "";
-  const homeScore = matchMode ? (fixture!.home ? score.user : score.opp) : 0;
-  const awayScore = matchMode ? (fixture!.home ? score.opp : score.user) : 0;
+  const homeScore = matchMode ? (fixture!.home ? displayScore.user : displayScore.opp) : 0;
+  const awayScore = matchMode ? (fixture!.home ? displayScore.opp : displayScore.user) : 0;
 
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="px-1.5 py-1 text-center">
@@ -2852,7 +2860,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
-            {statCell("Avg Rat", liveRating(stats.goals, stats.assists, stats.passesCompleted, score.user, score.opp).toFixed(1), "text-sky-300")}
+            {statCell("Avg Rat", liveRating(stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp).toFixed(1), "text-sky-300")}
           </div>
           <button
             onClick={toggleMuted}
