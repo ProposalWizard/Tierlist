@@ -1,19 +1,5 @@
 import type { Boot, OwnedItem } from "./types";
 
-export interface NrgDrink {
-  id: "basic" | "premium" | "elite";
-  name: string;
-  price: number;
-  restore: number;
-  color: string;
-}
-
-export const NRG_DRINKS: NrgDrink[] = [
-  { id: "basic", name: "Basic Drink", price: 3, restore: 25, color: "bg-orange-400" },
-  { id: "premium", name: "Premium Drink", price: 6, restore: 50, color: "bg-purple-400" },
-  { id: "elite", name: "Elite Drink", price: 12, restore: 100, color: "bg-emerald-400" },
-];
-
 export const BOOTS_CATALOGUE: Boot[] = [
   { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, matches: 3, price: 3 },
   { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, matches: 5, price: 5 },

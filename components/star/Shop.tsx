@@ -1,24 +1,22 @@
 "use client";
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { NRG_DRINKS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type NrgDrink } from "@/lib/star/shopData";
+import { BOOTS_CATALOGUE, LIFESTYLE_ITEMS } from "@/lib/star/shopData";
 
 interface Props {
   career: CareerState;
-  kind: "nrg" | "boots" | "lifestyle";
+  kind: "boots" | "lifestyle";
   onBack: () => void;
-  onBuyNrg: (drink: NrgDrink) => void;
   onBuyBoot: (boot: Boot) => void;
   onBuyItem: (item: OwnedItem) => void;
 }
 
-export default function Shop({ career, kind, onBack, onBuyNrg, onBuyBoot, onBuyItem }: Props) {
+export default function Shop({ career, kind, onBack, onBuyBoot, onBuyItem }: Props) {
   const [tab, setTab] = useState<"item" | "vehicle" | "property">("item");
   const [selectedBoot, setSelectedBoot] = useState<Boot | null>(BOOTS_CATALOGUE[0]);
-  const [selectedDrink, setSelectedDrink] = useState<NrgDrink | null>(NRG_DRINKS[0]);
   const [selectedItem, setSelectedItem] = useState<OwnedItem | null>(null);
 
-  const title = kind === "nrg" ? "NRG Drinks" : kind === "boots" ? "Boots" : "Lifestyle";
+  const title = kind === "boots" ? "Boots" : "Lifestyle";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col items-center py-3 px-3">
@@ -31,44 +29,6 @@ export default function Shop({ career, kind, onBack, onBuyNrg, onBuyBoot, onBuyI
             <span className="font-black text-yellow-300">{career.money}</span>
           </div>
         </div>
-
-        {kind === "nrg" && (
-          <div className="space-y-2">
-            {NRG_DRINKS.map((d) => {
-              const canBuy = career.money >= d.price;
-              return (
-                <button
-                  key={d.id}
-                  onClick={() => setSelectedDrink(d)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition ${
-                    selectedDrink?.id === d.id ? "border-emerald-400 bg-gray-700" : "border-gray-700 bg-gray-800"
-                  }`}
-                >
-                  <div className={`w-10 h-14 ${d.color} rounded-lg border-2 border-black/40 flex items-center justify-center`}>
-                    <span className="text-[8px] font-black text-white">NRG</span>
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-black text-white text-sm">{d.name}</div>
-                    <div className="text-[10px] text-emerald-300 font-bold">+{d.restore} energy</div>
-                    <div className="text-[10px] text-white/75">Owned: {career.nrgDrinks[d.id]}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                      <StarIcon /> {d.price}
-                    </div>
-                    <button
-                      disabled={!canBuy}
-                      onClick={(e) => { e.stopPropagation(); onBuyNrg(d); }}
-                      className={`mt-1 px-3 py-1 rounded text-[10px] font-black ${canBuy ? "bg-emerald-500 text-white" : "bg-gray-600 text-white/75"}`}
-                    >
-                      Buy
-                    </button>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {kind === "boots" && (
           <>

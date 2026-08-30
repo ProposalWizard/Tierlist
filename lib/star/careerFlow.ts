@@ -76,7 +76,6 @@ export function makeInitialCareer(
     achievements: ["first-contract"],
     status: "1st Team",
     currentBoot: starterBoot,
-    nrgDrinks: { basic: 2, premium: 0, elite: 0 },
     ownedItems: [],
     girlfriend: null,
     sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, perMatch: 0, active: false })),

@@ -382,7 +382,6 @@ export interface CareerState {
   achievements: string[];
   status: "1st Team" | "Substitute" | "Squad";
   currentBoot: Boot;
-  nrgDrinks: { basic: number; premium: number; elite: number };
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];
@@ -606,7 +605,6 @@ export type StarPhase =
   | "post-match"
   | "media"
   | "ballon-dor"
-  | "shop-nrg"
   | "shop-boots"
   | "shop-lifestyle"
   | "casino-menu"
