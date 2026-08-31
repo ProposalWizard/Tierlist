@@ -2603,6 +2603,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     const chain = chainRef.current;
     chainRef.current = null;
 
+    // A finished run is kept around deliberately through its own "result"
+    // phase (see the draw function's note above the dribble branch) so a
+    // tackle or a run out of play doesn't flash a stale unrelated scenario
+    // for a moment. But finishDribble only ever clears it back to null on
+    // the "through" outcome — a "lost"/"out" ending left it sitting here
+    // untouched, and the draw function keys off phase alone, not off which
+    // scenario is actually current. The result: every scenario after that
+    // point — a shot included — silently rendered the frozen dribble (its
+    // chasers, its progress bar) the moment ITS OWN phase reached "result",
+    // for as long as no new dribble came along to overwrite the ref.
+    // Reported directly: kicking a ball "cut to a different scene" with a
+    // bar across the top, and it kept doing it "onto the next highlight".
+    // A new scenario loading is exactly the point its lifetime is over.
+    dribbleRef.current = null;
+
     // A run at the defence rather than a ball to strike.
     if (!attacking && request?.dribble) {
       dribbleRef.current = newDribble({
