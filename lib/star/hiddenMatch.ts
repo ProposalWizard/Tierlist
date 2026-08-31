@@ -182,15 +182,30 @@ const QUALITY_CHANCE = 0.16;
 const QUALITY_CONVERT = 0.36;
 const convertRate = (base: number, rng: () => number) => (rng() < QUALITY_CHANCE ? QUALITY_CONVERT : base);
 
-const QUIET = [
-  "The ball is worked patiently across the back.",
-  "A spell of midfield football.",
-  "Play switches to the far side.",
-  "The tempo drops for a moment.",
-  "A long ball is headed clear.",
-  "Both sides feeling each other out.",
-  "A promising move breaks down in the middle.",
-  "The crowd try to lift them.",
+// A quiet minute used to read as pure narration — nobody's, about nothing —
+// which was reported directly as "we don't want any text here that's
+// general, all of it should be about one team or the other." Two banks, kept
+// in the same order so each line has a real opposite number, chosen by who
+// actually has the ball rather than left unattributed.
+const QUIET_USER = [
+  "Your side work it patiently across the back.",
+  "A good spell of possession for your team.",
+  "Play is switched to the far side, still looking for the gap.",
+  "The tempo drops, but your side keep the ball moving.",
+  "A long ball forward is headed clear.",
+  "Your team have the better of this spell.",
+  "A promising move for your side breaks down in the middle.",
+  "Your fans try to lift the team.",
+];
+const QUIET_OPP = [
+  "They work it patiently across the back.",
+  "A good spell of possession for them.",
+  "Play is switched to their far side, still looking for the gap.",
+  "The tempo drops, but they keep the ball moving.",
+  "A long ball forward for them is headed clear.",
+  "They have the better of this spell.",
+  "A promising move for them breaks down in the middle.",
+  "Their fans try to lift the team.",
 ];
 
 export function newMatch(rng: () => number = Math.random): HiddenMatchState {
@@ -374,8 +389,10 @@ export function tick(
   }
 
   // Quiet minute. Reported sparingly — a line every minute would be noise.
+  // Attributed to whoever actually has the ball right now, not to nobody.
   if (rng() < 0.22) {
-    events.push({ minute: state.minute, text: QUIET[Math.floor(rng() * QUIET.length)] });
+    const bank = userHasIt ? QUIET_USER : QUIET_OPP;
+    events.push({ minute: state.minute, text: bank[Math.floor(rng() * bank.length)], isOpponent: !userHasIt });
   }
 
   return { events, request: null };

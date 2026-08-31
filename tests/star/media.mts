@@ -565,6 +565,47 @@ const RUN_ROW = (rows: { label: string; value: string }[]) =>
     `an unnamed scorer never gets a real player's chant (${[...unnamedScorer].join(" | ")})`);
 }
 
+// ── Your own account never celebrates a result you did not get ─────────────
+//
+// Reported directly, with a real example: your own account ("teammate"
+// archetype — it is the only account left using it, see accounts.ts) posted
+// "big three points" about your own goal the same afternoon the team
+// actually lost. A personal goal now reads differently depending on the
+// real result, and none of the win-flavoured lines are reachable outside a
+// real win.
+{
+  const personalGoal = (result: "win" | "draw" | "loss"): FootballEvent => ({
+    id: "scored", subject: { kind: "you", name: "Test Player" }, tags: ["goal"], baseImportance: 34,
+    window: "instant", facts: { result },
+  });
+  const rng = mulberry32(904);
+  const sample = (event: FootballEvent, n = 60) => {
+    const seen = new Set<string>();
+    for (let i = 0; i < n; i++) {
+      const t = chooseTemplate(event, "teammate", "celebrate", emptyMemory(), rng, false);
+      if (t) seen.add(t.body);
+    }
+    return seen;
+  };
+
+  const win = sample(personalGoal("win"));
+  check(win.has("buzzing to score and get the three points 🔥"), "a personal goal in a win can produce the win-flavoured line");
+
+  const loss = sample(personalGoal("loss"));
+  check(!loss.has("buzzing to score and get the three points 🔥"),
+    `a personal goal in a loss never claims the three points (${[...loss].join(" | ")})`);
+  check(loss.has("gutted we didn't get the result today, but happy to chip in with a goal. we go again."),
+    "…and can produce the loss-appropriate line instead");
+
+  const draw = sample(personalGoal("draw"));
+  check(!draw.has("buzzing to score and get the three points 🔥"),
+    `…nor does a draw (${[...draw].join(" | ")})`);
+
+  // Never your own name, in any of the three.
+  const NAME = /Test Player|Player\b/;
+  check([...win, ...loss, ...draw].every(b => !NAME.test(b)), "none of these ever say your own name");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log("  ✗ " + p);

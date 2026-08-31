@@ -411,21 +411,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     return "saved";
   };
 
-  const SIM_COMMENTARY = [
-    "Possession is being shared evenly in midfield.",
-    "The defense holds firm under pressure.",
-    "A counter-attack breaks down in the final third.",
-    "A tidy passing move comes to nothing.",
-    "The ball is being recycled patiently at the back.",
-    "A promising run down the wing is halted by a strong tackle.",
-    "The keeper comes out to claim a hopeful cross.",
-    "A long ball finds nobody — easily dealt with.",
-    "Neat footwork in the middle of the park creates some space.",
-    "The crowd are starting to get restless.",
-    "A crunching challenge in midfield draws a free kick — nothing comes of it.",
-    "The tempo drops as both sides look to regroup.",
-    "A lovely piece of skill on the touchline, but the final ball lets them down.",
-    "Chances have been at a premium here.",
+  // Two banks, not one shared neutral set — reported directly, same as
+  // hiddenMatch.ts's QUIET lines: nothing here should read as about nobody.
+  // Attributed to whoever actually has the ball when this fires (SEE the
+  // call site's `st.possession` check), which this rare fallback path — a
+  // whole skipped batch producing no events at all — otherwise had no way
+  // to say.
+  const SIM_COMMENTARY_USER = [
+    "Your side share the ball around patiently in midfield.",
+    "Your defence holds firm under pressure.",
+    "Your counter-attack breaks down in the final third.",
+    "A tidy passing move from your side comes to nothing.",
+    "The ball is recycled patiently at the back for your team.",
+    "A promising run down the wing for your side is halted by a strong tackle.",
+    "Your keeper comes out to claim a hopeful cross.",
+    "A long ball forward for your side finds nobody — easily dealt with.",
+    "Neat footwork from your side in the middle of the park creates some space.",
+    "Your fans are starting to get restless.",
+    "A crunching challenge from your side draws a free kick — nothing comes of it.",
+    "The tempo drops as your side look to regroup.",
+    "A lovely piece of skill from your side on the touchline, but the final ball lets them down.",
+    "Chances have been at a premium for your team here.",
+  ];
+  const SIM_COMMENTARY_OPP = [
+    "They share the ball around patiently in midfield.",
+    "Their defence holds firm under pressure.",
+    "Their counter-attack breaks down in the final third.",
+    "A tidy passing move from them comes to nothing.",
+    "The ball is recycled patiently at the back for them.",
+    "A promising run down the wing for them is halted by a strong tackle.",
+    "Their keeper comes out to claim a hopeful cross.",
+    "A long ball forward for them finds nobody — easily dealt with.",
+    "Neat footwork from them in the middle of the park creates some space.",
+    "Their fans are starting to get restless.",
+    "A crunching challenge from them draws a free kick — nothing comes of it.",
+    "The tempo drops as they look to regroup.",
+    "A lovely piece of skill from them on the touchline, but the final ball lets them down.",
+    "Chances have been at a premium for them here.",
   ];
 
   // --- Sound: muted by default until primed by the first user gesture ---
@@ -2457,7 +2479,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Nothing at all happened in the skipped minutes — say so rather than
     // showing an empty panel.
     if (events.length === 0) {
-      events.push({ minute: st.minute, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
+      const bank = st.possession === "user" ? SIM_COMMENTARY_USER : SIM_COMMENTARY_OPP;
+      events.push({ minute: st.minute, text: bank[Math.floor(rng() * bank.length)], isOpponent: st.possession !== "user" });
     }
 
     // ── Being taken off ──
@@ -2803,7 +2826,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="px-1.5 py-1 text-center">
-      <div className="text-[8px] uppercase tracking-widest text-white/70 font-bold leading-none">{label}</div>
+      <div className="text-[8px] uppercase tracking-widest text-white font-bold leading-none">{label}</div>
       <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
     </div>
   );
