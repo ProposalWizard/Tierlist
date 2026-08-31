@@ -1944,7 +1944,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // readout. Purely the drawn length — `power` itself (and how far you
       // actually have to drag to reach it) is untouched, since this is
       // computed FROM `power`, not the other way round.
-      const lineLen = power * (vp.y2 - vp.y1) * 0.132;
+      //
+      // The metre span used here has to be whichever axis actually fills the
+      // screen's HEIGHT — vp.y2-vp.y1 in the ordinary "up" view, where pitch
+      // Y genuinely is that axis, but in a turned crossing view the frame is
+      // rotated a quarter turn and it is pitch X that fills the height (see
+      // toPx). Always reading vp.y2-vp.y1 drew the arrow against the
+      // turned frame's WIDTH-sized span instead — about 60% of the metres
+      // it should have had — so the exact same power looked visibly shorter
+      // on every corner and cross. Reported directly.
+      const heightSpan = facingRef.current === "up" ? vp.y2 - vp.y1 : vp.x2 - vp.x1;
+      const lineLen = power * heightSpan * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
@@ -2098,13 +2108,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       if (ballRef.current && facingRef.current !== "up") {
         const sc = scenarioRef.current;
         const at = sc.crossSwitchY ?? 0;
-        if (sc.crossSwitchView && ballRef.current.pos.y < at) {
+        const view = sc.crossSwitchView;
+        // Y alone used to be the whole test. A corner is struck from a few
+        // metres off the touchline and has to travel fifteen to thirty
+        // METRES sideways to reach the delivery frame's own width — and a
+        // hard, fairly straight strike crosses the switch line in depth long
+        // before it has covered that ground. The cut (and the viewport
+        // reassignment with it — see the comment below on why the engine
+        // reads this too) used to fire on depth alone, dropping the ball
+        // into a frame narrower than where it actually was: reported
+        // directly as the ball "never appearing" after a firm, well-lofted
+        // cross, and it is worse than a camera glitch — stepBall rules a
+        // ball outside `scenario.viewport` OUT OF PLAY, so the chance was
+        // being wasted the instant the cut happened, not just badly framed.
+        // Held in the wide side view — which the whole delivery already
+        // fits inside — until the ball has ALSO drawn level with the
+        // narrower frame's own width, same margin stepBall itself uses.
+        const withinX = view ? ballRef.current.pos.x > view.x1 - 1 && ballRef.current.pos.x < view.x2 + 1 : false;
+        if (view && ballRef.current.pos.y < at && withinX) {
           facingRef.current = "up";
-          viewportRef.current = { ...sc.crossSwitchView };
-          baseViewportRef.current = { ...sc.crossSwitchView };
+          viewportRef.current = { ...view };
+          baseViewportRef.current = { ...view };
           // The engine reads the frame too — out of it is out of the game — so
           // the situation moves with the picture.
-          sc.viewport = { ...sc.crossSwitchView };
+          sc.viewport = { ...view };
         }
       }
 

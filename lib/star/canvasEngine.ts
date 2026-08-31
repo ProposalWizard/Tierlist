@@ -3139,6 +3139,34 @@ export function dragForFullPower(power: number): number {
 const VZ_POWER_FLOOR = 0.88;
 const VZ_POWER_WEIGHT = 0.12;
 
+/**
+ * A CORNER OR CROSS HIT AT MAX POWER AND MAX LIFT USED TO BE UNPLAYABLE, ALWAYS.
+ *
+ * Reported: "I put as much power as I can... and also the most amount of
+ * lift... and almost every single time, I never even see the ball" once the
+ * camera cut to the main angle. Traced with a full physics replay
+ * (stepDefenders/stepKeeper/stepReactions/stepBall, the same loop
+ * CanvasMatch.tsx actually runs): a max-power, max-lift corner reaches a
+ * ~6.2 m apex — the ball is still above 4 m when it passes directly over
+ * the runner it was aimed at (0.95 m away in the flat plane, well inside
+ * PASS_CONTROL_R). Reception (stepBallRaw, "Pass reception") is gated at
+ * `ball.z < 2.6` — nobody, attacker or defender, can control a ball that far
+ * over their head — and by the time it finally descends below that, it has
+ * already drifted past the edge of the framed delivery area. Every one of 15
+ * seeds tested, with or without curl, resolved "out" or "wide" — never
+ * delivered, never a shot, never a save. This is not a hard shot to pull
+ * off; it was a shot with no possible outcome except a wasted chance.
+ *
+ * A driven corner/cross is untouched — this only clips the TOP of the lift
+ * range, the ball ballooned in high enough that nobody in the box could
+ * realistically get to it. Capped so the apex stays under ~3.5 m even at
+ * full lift and full power: high enough to still be a real floated ball
+ * over a near-post defender, low enough that a jumping teammate can
+ * actually attack it before it drifts out of frame.
+ */
+const CROSS_DELIVERY_KINDS: ScenarioKind[] = ["corner", "byline_cross"];
+const CROSS_VZ_CAP = 8.3;
+
 // Launch the ball from a slingshot aim + a contact point.
 export function launch(
   scenario: Scenario,
@@ -3209,7 +3237,8 @@ export function launch(
   // Vertical launch speed from how low on the ball it was struck. Deliberately
   // NOT `loft * power * ...` — see VZ_POWER_FLOOR/VZ_POWER_WEIGHT above. How
   // hard you struck it only nudges the height; where you struck it decides it.
-  const vz = lift * (7.5 + skills.power * 0.035) * (VZ_POWER_FLOOR + power * VZ_POWER_WEIGHT);
+  const vzRaw = lift * (7.5 + skills.power * 0.035) * (VZ_POWER_FLOOR + power * VZ_POWER_WEIGHT);
+  const vz = CROSS_DELIVERY_KINDS.includes(scenario.kind) ? Math.min(vzRaw, CROSS_VZ_CAP) : vzRaw;
   // Curl from striking the side of the ball. Technique decides how much of that
   // side is available to you at all, which is what makes a curled finish
   // something you unlock rather than something you are simply better at.
