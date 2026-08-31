@@ -126,6 +126,23 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   const benched = matchdayFor(c, fixture("Everton", true), false);
   check(!benched.home.xi.some(p => p.isYou), "left out, you are not on the pitch");
   check(benched.home.xi.length === 11, "and somebody else fills the shirt");
+
+  // Named among the substitutes — not starting, but part of the eighteen —
+  // your own name has to actually be drawn among the nine. Reported directly:
+  // "on the substitutes out of the nine, I don't see my name anywhere."
+  // `onBench` is the only thing that changes here versus the "benched" case
+  // just above; everything else about the call is identical.
+  const subbed = matchdayFor(c, fixture("Everton", true), false, undefined, undefined, undefined, true);
+  check(!subbed.home.xi.some(p => p.isYou), "still not in the starting eleven");
+  const onBench = subbed.home.bench.filter(p => p.isYou);
+  check(onBench.length === 1, `and you ARE drawn among the substitutes (${onBench.length})`);
+  check(onBench[0]?.short === "Vass", `under your own name there too (${onBench[0]?.short})`);
+  check(subbed.home.bench.length === 9, `the bench stays nine deep (${subbed.home.bench.length})`);
+  check(!subbed.away.bench.some(p => p.isYou), "never on the opposition's bench");
+
+  // Dropped from the matchday squad altogether — no `onBench` flag — and the
+  // old, honest "you are nowhere on this sheet" behaviour is untouched.
+  check(!benched.home.bench.some(p => p.isYou), "…and truly dropped, you are nowhere on the sheet at all");
 }
 
 // ── Home and away are the way round the fixture says ────────────────────────

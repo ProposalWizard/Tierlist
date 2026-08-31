@@ -1302,7 +1302,7 @@ export default function StarDevPage() {
       : undefined;
     const matchday = nextFixture.kind === "international"
       ? null
-      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI);
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI, selection?.status === "Substitute");
     // Whether YOUR side is drawable — the bar the button decides on now. An
     // under-scouted OPPONENT no longer holds the screen back at all: it gets
     // its own "Unable to scout" half instead (see VersusScreen). Only an

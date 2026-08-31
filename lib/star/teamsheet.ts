@@ -430,6 +430,34 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
 }
 
 /**
+ * Put you on the bench, in your own shirt.
+ *
+ * Named a substitute for this match and nowhere on the sheet — reported
+ * directly: "I don't see my name anywhere" among the nine. `matchdayFor`
+ * only ever added you to the player pool when you were STARTING, so a
+ * substitute appearance had you competing for a place nowhere at all, not
+ * even against the bench's own weakest name.
+ *
+ * Mirrors `forceIntoXI`: does nothing if you already made the bench (or the
+ * XI) on your own rating, and otherwise drops the weakest man on it for you
+ * — the manager named you among the substitutes, so you take a place on the
+ * sheet the same way a starter does, rather than simply not being drawn.
+ */
+function forceOntoBench(sheet: TeamSheet, me: Candidate): TeamSheet {
+  if (sheet.xi.some(p => p.isYou) || sheet.bench.some(p => p.isYou)) return sheet;
+
+  const meSheet: SheetPlayer = {
+    id: me.id, name: me.name, short: me.short, role: me.position, slot: me.position,
+    overall: me.overall, face: me.face, nation: me.nation, isYou: true, x: 0, y: 0,
+  };
+  if (sheet.bench.length < 9) return { ...sheet, bench: [...sheet.bench, meSheet] };
+
+  const weakest = sheet.bench.reduce((worst, p, i, all) =>
+    ((p.overall ?? 0) < (all[worst].overall ?? 999) ? i : worst), 0);
+  return { ...sheet, bench: sheet.bench.map((p, i) => (i === weakest ? meSheet : p)) };
+}
+
+/**
  * Both sides for the match about to be played.
  *
  * `starting` comes from the manager's selection — see lib/star/selection. When
@@ -454,6 +482,13 @@ export function matchdayFor(
   savedBench?: string[],
   /** Saved starting XI + shape from the lineup builder — overrides autoPick. */
   savedXI?: SavedXI,
+  /**
+   * Named among the substitutes for this match — see `forceOntoBench`.
+   * Ignored when `starting` is true. Not the same as simply missing the
+   * squad altogether (dropped, or injured): those get no place on the
+   * sheet at all, which is the honest answer for them.
+   */
+  onBench?: boolean,
 ): Matchday {
   const mine = career.player.club;
   const theirs = fixture.opponent;
@@ -482,8 +517,15 @@ export function matchdayFor(
     const ownFullRoster = fromLeagueSquad((career.leagueSquads ?? []).find(s => s.club === mine));
     ownPool = withFullRosterFallback(ownPool, ownFullRoster);
   }
+  // `you` only joins the pool `autoPick` competes over when you are actually
+  // starting — a substitute must never be able to win a starting slot on
+  // rating alone, since the manager already decided this week that you're
+  // not fit enough to start. Bench placement is forced on afterward instead,
+  // the same way forceIntoXI forces a start afterward rather than relying on
+  // autoPick to have picked you.
   let ours = build(mine, starting ? [...ownPool, you] : ownPool, true, savedBench, savedXI);
   if (starting) ours = forceIntoXI(ours, you);
+  else if (onBench) ours = forceOntoBench(ours, you);
 
   // A cup draw can hand you a club outside your own division entirely — a
   // promotion-pool or "Other" side like Wigan Athletic — whose squad was

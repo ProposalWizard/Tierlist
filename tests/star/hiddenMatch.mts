@@ -206,6 +206,28 @@ const weak = run(WEAK);
     `omitting energy entirely reads as fully fresh, same as every other test in this file (${omitted.toFixed(2)} vs ${fresh.toFixed(2)})`);
 }
 
+// ── Coming off the bench is a real edge, not just fewer minutes ─────────────
+//
+// Reported directly: one chance in nineteen minutes on as a substitute read
+// as nothing to show for coming on at all. `impactSub` boosts the
+// PER-MINUTE involvement rate — it says nothing about total minutes played,
+// which this harness doesn't model — so it's checked the same way skill and
+// energy are: request rate over a fixed number of minutes, not goals.
+{
+  // Not the full 1.5x on this metric — `sinceInvolved`'s own catch-up bonus
+  // resets more often when involvement is already boosted, which eats back
+  // some of the raw multiplier over a full 90 simulated minutes. Still a
+  // real, meaningful lift, which is what's actually asserted here.
+  const normal = mean(run({ ...EVEN }, 800).map(s => s.requests));
+  const impact = mean(run({ ...EVEN, impactSub: true }, 800).map(s => s.requests));
+  check(impact > normal * 1.15,
+    `a substitute is found on the ball noticeably more per minute than a starter with the same skill (${normal.toFixed(2)} vs ${impact.toFixed(2)})`);
+
+  // Never a certainty, whatever else is stacked on top of it.
+  const maxedOut = mean(run({ ...EVEN, playerSkill: 100, energy: 100, impactSub: true }, 800).map(s => s.requests));
+  check(maxedOut < FULL_TIME, `even the best case stays short of a request every single minute (${maxedOut.toFixed(2)})`);
+}
+
 // ── Time compression returns the same match, just faster ────────────────────
 {
   const rng = mulberry32(4242);

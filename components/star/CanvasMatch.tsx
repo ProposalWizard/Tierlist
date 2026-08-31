@@ -453,6 +453,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
       energy: liveEnergyAt(matchMinuteRef.current),
+      impactSub: startMinuteRef.current > 0,
     };
   };
 
