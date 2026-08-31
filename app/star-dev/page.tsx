@@ -1354,21 +1354,7 @@ export default function StarDevPage() {
             <div className="text-lg font-black text-white">{home}</div>
             <div className="my-3 text-white/75 font-black">vs</div>
             <div className="text-lg font-black text-white">{away}</div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
-                <div className="font-black text-emerald-300 text-lg">{Math.round(career.matchFitness)}%</div>
-              </div>
-              <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-white/75 text-[10px] font-bold">Energy</div>
-                <div className={`font-black text-lg ${
-                  career.energy >= 70 ? "text-emerald-300" : career.energy >= 40 ? "text-amber-300" : "text-red-400"}`}
-                >
-                  {Math.round(career.energy)}%
-                </div>
-              </div>
-            </div>
-            <div className="mt-3 text-[10px] text-white/75">
+            <div className="mt-4 text-[10px] text-white/75">
               Boot: <span className="text-white font-bold">{career.currentBoot.name}</span> ({career.currentBoot.matches} matches left)
             </div>
             {career.currentBoot.matches === 0 && (
@@ -1419,40 +1405,31 @@ export default function StarDevPage() {
                   : "border-red-500/50 bg-red-500/10"}`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
-                  Team sheet · #{career.squadNumber ?? "—"}{career.captain ? " (C)" : ""}
-                </span>
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Your role</span>
                 <span className={`text-xs font-black ${
                   selection.status === "1st Team" ? "text-emerald-300"
                     : selection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
                 >
-                  {selection.status === "Substitute" ? `Bench (on ~${selection.onAt}')` : selection.status}
+                  {selection.status === "1st Team" ? "Starting Eleven"
+                    : selection.status === "Substitute" ? `Bench (on ~${selection.onAt}')`
+                      : selection.status === "Injured" ? "Injured"
+                        : "Out of Squad"}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-white/90">{selection.reason}</p>
-              {career.manager && (
-                <p className="mt-0.5 text-[10px] text-white/70">
-                  {career.manager.name} · {career.manager.style}
-                </p>
-              )}
-              <div className="mt-2 h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${
-                    selection.standing >= 55 ? "bg-emerald-400" : selection.standing >= 34 ? "bg-amber-400" : "bg-red-500"}`}
-                  style={{ width: `${Math.max(3, selection.standing)}%` }}
-                />
-              </div>
-              <div className="mt-1 text-[10px] text-white/60">Standing with the manager</div>
-              {duties && selection.status !== "Squad" && (
-                <div className="mt-2 flex gap-1.5 text-[10px] font-bold">
-                  <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-white/10 text-white/50"}`}>
-                    Free kicks {duties.freeKicks ? "✓" : `(FK ${duties.freeKickNeeded})`}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-white/10 text-white/50"}`}>
-                    Penalties {duties.penalties ? "✓" : `(FK ${duties.penaltyNeeded})`}
-                  </span>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-black/20 rounded-lg py-2 text-center">
+                  <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
+                  <div className="font-black text-emerald-300 text-base">{Math.round(career.matchFitness)}%</div>
                 </div>
-              )}
+                <div className="bg-black/20 rounded-lg py-2 text-center">
+                  <div className="text-white/75 text-[10px] font-bold">Energy</div>
+                  <div className={`font-black text-base ${
+                    career.energy >= 70 ? "text-emerald-300" : career.energy >= 40 ? "text-amber-300" : "text-red-400"}`}
+                  >
+                    {Math.round(career.energy)}%
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
