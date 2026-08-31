@@ -250,7 +250,7 @@ export interface MatchStats {
   /** Minutes actually played. Under 90 when you came off the bench. */
   minutes?: number;
   /** Why you were taken off, when you were. */
-  hooked?: "form" | "rested" | null;
+  hooked?: "form" | "rested" | "legs" | null;
   chances: number;
   goals: number;
   assists: number;
@@ -267,6 +267,11 @@ export interface MatchStats {
   homeScore: number;
   awayScore: number;
   goalEvents?: GoalEvent[];
+  /** The live, in-match energy value at the final whistle (or at the
+   *  moment you were hooked) — see CanvasMatch's liveEnergyRef. Feeds the
+   *  injury roll in creditMatchResult; falls back to the pre-match energy
+   *  value when a caller doesn't supply it. */
+  endEnergy?: number;
 }
 
 export interface Boot {
@@ -370,6 +375,23 @@ export interface CareerState {
   };
   week: number;
   matchFitness: number;
+  /**
+   * How much you have left in the tank — spent by playing, given back only by
+   * a deliberate choice (Rest, or skipping the rest of the week), never by
+   * the week simply turning over. That last part is the whole point: energy
+   * was cut once already because an automatic weekly top-up made it nothing
+   * but a number that went down and then back up on its own. See
+   * lib/star/selection.ts (the two gates it enforces on team selection) and
+   * lib/star/week.ts (the two ways to earn it back).
+   */
+  energy: number;
+  /**
+   * Set the moment a match-fatigue roll goes against you (creditMatchResult),
+   * cleared the moment `weeksRemaining` counts down to it. While this is
+   * set, `selectionFor` returns "Injured" unconditionally — energy and form
+   * stop mattering, you simply cannot be selected. See lib/star/selection.ts.
+   */
+  injury: { weeksRemaining: number; note: string } | null;
   happiness: number;
   money: number;
   starRating: number;
@@ -379,7 +401,7 @@ export interface CareerState {
   fixtures: Fixture[];
   league: LeagueTeam[];
   achievements: string[];
-  status: "1st Team" | "Substitute" | "Squad";
+  status: "1st Team" | "Substitute" | "Squad" | "Injured";
   currentBoot: Boot;
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;

@@ -326,6 +326,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // --- Simulation between chances ---
   const matchMinuteRef = useRef(0);
   const [matchMinute, setMatchMinute] = useState(0);
+  /**
+   * Energy at kickoff, seeded once (React's lazy useRef initializer, not
+   * re-synced like careerRef) — the career's own value isn't touched again
+   * until this whole match reports back via onComplete, so there's nothing
+   * to re-seed from mid-match. Falls back to fully fresh for the sandbox,
+   * which has no real career (or no energy tracking) to seed from at all.
+   */
+  const startEnergyRef = useRef(career?.energy ?? 100);
   // Where a completed pass left the move, and how many passes deep it is. The
   // next scenario is built from this rather than drawn at random, so a move can
   // actually be built instead of every chance starting from nothing.
@@ -404,6 +412,38 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // loadScenario() so the scenario matches the football that led to it.
   const pendingRequestRef = useRef<ScenarioRequest | null>(null);
 
+  /**
+   * How much you have left, RIGHT NOW, at this point in the match — not the
+   * pre-match value creditMatchResult will drain once, but a transient,
+   * match-local figure that eases down over the ninety minutes on its own.
+   * Deliberately a pure function of the match clock rather than a
+   * separately-ticked ref: it can be read at any point (hiddenInputs,
+   * hookCheck, tiredSkills) and is always exactly consistent with whatever
+   * minute the game currently considers itself at, with nothing to
+   * desynchronise. Loses up to ENERGY_MATCH_DECAY points by full time.
+   */
+  const ENERGY_MATCH_DECAY = 20;
+  const liveEnergyAt = (minute: number) => {
+    const decay = Math.min(ENERGY_MATCH_DECAY, (Math.max(0, minute) / MATCH_DURATION) * ENERGY_MATCH_DECAY);
+    return Math.max(0, startEnergyRef.current - decay);
+  };
+
+  /**
+   * Power/technique, shaved down as the live match-local energy above
+   * depletes — a tired player is less sharp, not a different player, so the
+   * cut tops out modest (15% at fully spent) rather than dramatic. Read only
+   * at the moment of contact (handleContact) — the aim arrow itself
+   * deliberately keeps using the raw, static `skills` prop so the gesture's
+   * required drag distance never becomes a moving target mid-match; see the
+   * note by dragForFullPower's call site.
+   */
+  const TIRED_SKILLS_MAX_CUT = 0.15;
+  const tiredSkills = (): KickSkills => {
+    const energy = liveEnergyAt(matchMinuteRef.current);
+    const cut = (1 - energy / 100) * TIRED_SKILLS_MAX_CUT;
+    return { power: skills.power * (1 - cut), technique: skills.technique * (1 - cut) };
+  };
+
   const hiddenInputs = (): HiddenMatchInputs => {
     const car = careerRef.current;
     return {
@@ -412,6 +452,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
+      energy: liveEnergyAt(matchMinuteRef.current),
     };
   };
 
@@ -2367,11 +2408,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       if (attemptsRef.current >= 6) {
         const careerForStats = careerRef.current ?? FALLBACK_CAREER;
         const t = tallyRef.current;
-        const stats = finaliseMatch(
-          attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-          90, userScoreRef.current, oppScoreRef.current, careerForStats,
-          goalEventsRef.current,
-        );
+        const stats = {
+          ...finaliseMatch(
+            attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+            90, userScoreRef.current, oppScoreRef.current, careerForStats,
+            goalEventsRef.current,
+          ),
+          endEnergy: liveEnergyAt(matchMinuteRef.current),
+        };
         const gen = sceneGenRef.current;
         window.setTimeout(() => { if (sceneGenRef.current === gen) { setFinalStats(stats); setPhase("postmatch"); } }, 1800);
       } else {
@@ -2518,6 +2562,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         liveRating: liveRating(t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
         scoreDiff: st.userScore - st.oppScore,
         rng,
+        liveEnergy: liveEnergyAt(st.minute),
       });
       if (decision.hooked) {
         hookedRef.current = decision.reason;
@@ -2567,12 +2612,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             setPause(null);
             const careerForStats = careerRef.current ?? FALLBACK_CAREER;
             const t = tallyRef.current;
-            const stats = finaliseMatch(
-              attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-              Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
-              userScoreRef.current, oppScoreRef.current, careerForStats,
-              goalEventsRef.current, hookedRef.current,
-            );
+            const stats = {
+              ...finaliseMatch(
+                attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+                userScoreRef.current, oppScoreRef.current, careerForStats,
+                goalEventsRef.current, hookedRef.current,
+              ),
+              // The moment the match actually ended for you — full time, or
+              // the minute you were hooked — not necessarily 90.
+              endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
+            };
             if (matchModeRef.current && onCompleteRef.current) {
               onCompleteRef.current(stats);
             } else {
@@ -2674,7 +2724,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // defence gets the time your first touch cost them. A heavy touch and they
     // are on you before you look up; a good one and you have a moment.
     let heavyTouch = 0;
-    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, skills.technique, rng);
+    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, tiredSkills().technique, rng);
 
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
@@ -2844,9 +2894,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     if (!aim) return;
     // A dead ball is struck with your free-kick rating, not your general
     // technique — the one strike in football that is purely placement and curl.
+    const tired = tiredSkills();
     const strikeWith = setPieceSkills(
-      skills,
-      careerRef.current?.skills.freeKick ?? skills.technique,
+      tired,
+      careerRef.current?.skills.freeKick ?? tired.technique,
       scenarioRef.current.kind,
     );
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);

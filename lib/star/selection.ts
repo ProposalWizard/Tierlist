@@ -54,6 +54,17 @@ function recentForm(form: number[]): number {
 const START_AT = 55;    // standing needed to be in the starting eleven
 const BENCH_AT = 34;    // …and to make the bench at all
 
+// ── Energy's two hard gates ──────────────────────────────────────────────
+//
+// Applied on TOP of the standing-based verdict above, not blended into it —
+// matchFitness already has a soft 10% say in `selectionStanding`, but these
+// two are meant to be an actual floor: no amount of boss goodwill or good
+// form talks a manager into starting a player who cannot physically get
+// through ninety minutes. A player just short of MIN_ENERGY_TO_START can
+// still be trusted with a cameo; short of MIN_ENERGY_TO_SUB, not even that.
+export const MIN_ENERGY_TO_START = 35;
+export const MIN_ENERGY_TO_SUB = 15;
+
 export function selectionStanding(career: CareerState): number {
   const form = recentForm(career.form);
   return Math.max(0, Math.min(100,
@@ -71,6 +82,18 @@ export function selectionStanding(career: CareerState): number {
  * seeded off the week so it does not change under a re-render.
  */
 export function selectionFor(career: CareerState): SelectionVerdict {
+  // A medical decision, not a footballing one — overrides everything below,
+  // including a red-hot standing. See CareerState.injury's doc comment.
+  if (career.injury) {
+    const weeks = career.injury.weeksRemaining;
+    return {
+      status: "Injured",
+      onAt: 90,
+      standing: 0,
+      reason: `${career.injury.note}. Out for ${weeks} more week${weeks === 1 ? "" : "s"}.`,
+    };
+  }
+
   const standing = selectionStanding(career);
   const form = recentForm(career.form);
 
@@ -81,9 +104,17 @@ export function selectionFor(career: CareerState): SelectionVerdict {
   const START = START_AT + bend.start;
   const BENCH = BENCH_AT + bend.bench;
 
-  if (standing >= START) {
+  let status: Selection = standing >= START ? "1st Team" : standing >= BENCH ? "Substitute" : "Squad";
+
+  // Energy's two floors, applied on top of the standing verdict just picked —
+  // never upgrading it, only ever pulling it down. See the constants' own
+  // comment above.
+  if (status === "1st Team" && career.energy < MIN_ENERGY_TO_START) status = "Substitute";
+  if (status === "Substitute" && career.energy < MIN_ENERGY_TO_SUB) status = "Squad";
+
+  if (status === "1st Team") {
     return {
-      status: "1st Team",
+      status,
       onAt: 0,
       standing,
       reason: standing >= 78
@@ -92,24 +123,28 @@ export function selectionFor(career: CareerState): SelectionVerdict {
     };
   }
 
-  if (standing >= BENCH) {
+  if (status === "Substitute") {
     // Somewhere in the last half hour. Seeded off the week so it is stable.
     const onAt = 58 + ((career.week * 37 + career.season * 11) % 15);
     return {
-      status: "Substitute",
+      status,
       onAt,
       standing,
-      reason: career.relationships.boss < 40
+      reason: career.energy < MIN_ENERGY_TO_START
+        ? "Too fatigued to start — fit enough for the bench, not for ninety minutes."
+        : career.relationships.boss < 40
         ? "The manager has left you out. You are on the bench."
         : `Form has dipped (${form.toFixed(1)} avg). You start on the bench.`,
     };
   }
 
   return {
-    status: "Squad",
+    status,
     onAt: 90,
     standing,
-    reason: career.relationships.boss < 30
+    reason: career.energy < MIN_ENERGY_TO_SUB
+      ? "Running on empty — not fit enough to risk, even off the bench."
+      : career.relationships.boss < 30
       ? "You are not in the squad. The manager has made his feelings clear."
       : "You are not in the squad this week.",
   };
@@ -126,21 +161,21 @@ export function selectionFor(career: CareerState): SelectionVerdict {
 export const MISSED_WEEK = {
   matchFitness: -7,
   boss: +3,
+  energy: +15,
 } as const;
 
 /**
  * BEING TAKEN OFF
  *
- * The other half of the manager picking the side, and the half that was
- * completely absent: your rating and your legs decided nothing about how long
- * you stayed on the pitch. You played every minute of every match you started,
- * however badly it was going and however empty you were.
- *
- * Two reasons a manager takes a player off, and this models both, including
- * the flattering one — being rested with the game won is not a punishment
- * and should not read as one.
+ * The manager has three reasons to take a player off, and this models all
+ * three, including the flattering one — being rested with the game won is
+ * not a punishment and should not read as one.
  */
-export type HookReason = "form" | "rested";
+export type HookReason = "form" | "rested" | "legs";
+
+/** Below this live, in-match energy, tired legs start to become a real risk
+ *  of being hooked — see hookCheck's `args.liveEnergy`. */
+const HOOK_LEGS_FLOOR = 28;
 
 export interface HookDecision {
   hooked: boolean;
@@ -159,6 +194,11 @@ export function hookCheck(args: {
   /** Your goals minus theirs. */
   scoreDiff: number;
   rng: () => number;
+  /** The live, in-match energy value at this point (see CanvasMatch's
+   *  liveEnergyRef). Optional and defaults to fully fresh — a caller that
+   *  does not track it (the star-match-dev fork, older tests) simply never
+   *  sees a "legs" hook, the same as before this was reinstated. */
+  liveEnergy?: number;
 }): HookDecision {
   const none: HookDecision = { hooked: false, reason: null, message: "" };
   if (args.minute < HOOK_EARLIEST) return none;
@@ -167,6 +207,17 @@ export function hookCheck(args: {
   // Later is likelier, in both cases — a manager who was going to change it
   // has more reason to as the clock runs down.
   const late = Math.max(0, Math.min(1, (args.minute - HOOK_EARLIEST) / 30));
+
+  // Legs gone. Checked ahead of form/rested — a knackered player is the
+  // manager's first read on why the game got away from him, not a symptom
+  // he waits to see reflected in the rating.
+  const liveEnergy = args.liveEnergy ?? 100;
+  if (liveEnergy < HOOK_LEGS_FLOOR) {
+    const p = (0.16 + late * 0.3) * (1 - liveEnergy / HOOK_LEGS_FLOOR);
+    if (args.rng() < p) {
+      return { hooked: true, reason: "legs", message: "Legs gone — you are withdrawn before you get injured." };
+    }
+  }
 
   // A bad afternoon.
   //

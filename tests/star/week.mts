@@ -1,5 +1,5 @@
 import {
-  WEEK_ACTIONS, actionsLeft, canAct, spendAction, rest, startNewWeek,
+  WEEK_ACTIONS, REST_ENERGY, SKIP_ENERGY, actionsLeft, canAct, spendAction, rest, skipToMatchDay, startNewWeek,
 } from "../../lib/star/week";
 import { hookCheck } from "../../lib/star/selection";
 import { liveRating, finaliseMatch } from "../../lib/star/matchStats";
@@ -10,16 +10,16 @@ import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types";
 /**
  * The week between matches, and being taken off during one.
  *
- * Energy used to be the budget this whole file tested against — it gated
- * training, it gated Rest, it gated being subbed off for tired legs. It has
- * been pulled out of the game for now (see CLAUDE.md's Future Work note for
- * the real New-Star-Soccer-style plan), so what remains here is the
- * three-actions-a-week structure and the two other reasons a manager takes a
- * player off.
+ * Energy is back, rebuilt against the real design: a budget spent by playing
+ * and earned back only by a deliberate choice — Rest, or giving up the rest
+ * of the week outright — never by the week simply turning over. What remains
+ * here from the earlier no-energy era is the three-actions-a-week structure
+ * itself and two of the three reasons a manager takes a player off; the
+ * third, tired legs, is energy's own.
  *
  * Your rating decided nothing about how long you stayed on the pitch either,
- * before this. You played every minute of every match you started, however
- * badly it was going.
+ * before any of this. You played every minute of every match you started,
+ * however badly it was going.
  */
 
 const problems: string[] = [];
@@ -65,16 +65,37 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(actionsLeft(legacy) === WEEK_ACTIONS, "a career saved before weeks existed opens with a full one");
 }
 
-// ── Rest costs a day and buys some happiness ────────────────────────────────
+// ── Rest costs a day and buys some happiness and energy ─────────────────────
 {
-  const c: CareerState = { ...base(), happiness: 50 };
+  const c: CareerState = { ...base(), happiness: 50, energy: 50 };
   const rested = rest(c);
   check(rested.happiness > c.happiness, "resting does you good");
+  check(rested.energy === 50 + REST_ENERGY, `and gives some energy back too (${rested.energy})`);
   check(actionsLeft(rested) === WEEK_ACTIONS - 1, "and costs a day");
+  check(rest({ ...c, energy: 95 }).energy === 100, "energy still caps at 100");
 
   let none = base();
   for (let i = 0; i < WEEK_ACTIONS; i++) none = spendAction(none);
   check(rest(none).happiness === none.happiness, "you cannot rest on a day you do not have");
+  check(rest(none).energy === none.energy, "…or gain energy from trying to");
+}
+
+// ── Skip to Match Day: the real "regenerates on skipping" ───────────────────
+//
+// The literal design brief: energy comes back when you skip to the end of
+// the week, not on its own. Bigger than Rest's top-up, because it costs
+// everything else the week could have been spent on, not just one day of it.
+{
+  const c: CareerState = { ...base(), energy: 20 };
+  const skipped = skipToMatchDay(c);
+  check(skipped.energy === 20 + SKIP_ENERGY, `a real top-up (${skipped.energy})`);
+  check(SKIP_ENERGY > REST_ENERGY, "skipping the week buys back more than resting once does");
+  check(actionsLeft(skipped) === 0, "…because it gives up everything else the week could have been");
+  check(skipToMatchDay({ ...c, energy: 90 }).energy === 100, "energy still caps at 100");
+
+  let none = { ...base(), energy: 20 };
+  for (let i = 0; i < WEEK_ACTIONS; i++) none = spendAction(none);
+  check(skipToMatchDay(none).energy === none.energy, "nothing left to give up, nothing gained");
 }
 
 // ── Training is no longer a budget you can run out of ──────────────────────
@@ -150,6 +171,33 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(late > early, `the longer it goes the likelier it gets (${early} at 62' vs ${late} at 88')`);
 
   check(rng() >= 0, "the rng helper is used");
+}
+
+// ── Tired legs — the third reason, energy's own ─────────────────────────────
+{
+  const fresh = (over: Partial<Parameters<typeof hookCheck>[0]>) =>
+    Array.from({ length: 400 }, (_, i) => hookCheck({
+      minute: 70, startMinute: 0, liveRating: 7.5, scoreDiff: 0,
+      rng: mulberry32(i + 1), ...over,
+    })).filter(d => d.hooked).length;
+
+  check(fresh({ liveEnergy: 100 }) === 0, "fresh legs, playing well, never a fatigue hook");
+  check(fresh({}) === 0, "and omitting energy entirely defaults to fresh, same as before this existed");
+
+  const knackered = fresh({ liveEnergy: 8 });
+  check(knackered > 0 && knackered < 400, `running on empty is a real risk, not a certainty (${knackered}/400)`);
+
+  const legsReasons = Array.from({ length: 200 }, (_, i) => hookCheck({
+    minute: 75, startMinute: 0, liveRating: 7.5, scoreDiff: 0, liveEnergy: 5,
+    rng: mulberry32(i + 900),
+  })).filter(d => d.hooked);
+  check(legsReasons.length > 0, "a knackered player having a fine game can still be pulled");
+  check(legsReasons.every(d => d.reason === "legs"), "…and it is not mistaken for a bad-form hook");
+
+  // Later is likelier here too.
+  const earlyTired = fresh({ liveEnergy: 10, minute: 62 });
+  const lateTired = fresh({ liveEnergy: 10, minute: 88 });
+  check(lateTired > earlyTired, `the longer he runs on empty the likelier it gets (${earlyTired} at 62' vs ${lateTired} at 88')`);
 }
 
 // ── Coming off early is judged on the minutes you played ───────────────────

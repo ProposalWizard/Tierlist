@@ -1,4 +1,6 @@
-import { selectionFor, selectionStanding, MISSED_WEEK } from "../../lib/star/selection";
+import {
+  selectionFor, selectionStanding, MISSED_WEEK, MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB,
+} from "../../lib/star/selection";
 import { setPieceDuties, setPieceSkills } from "../../lib/star/setPieces";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture } from "../../lib/star/careerFlow";
 import { finaliseMatch } from "../../lib/star/matchStats";
@@ -73,6 +75,12 @@ const stats = (rating: number): MatchStats => ({
   for (let i = 0; i < 5; i++) {
     const f = c.fixtures.find(x => !x.played)!;
     c = creditMatchResult(c, f, bad).career;
+    // Topped up between matches — five full ninety-minute games in a row
+    // with no recovery would run energy down on its own and pull the
+    // manager's verdict all the way to Squad regardless of form, which is
+    // its own real behaviour (see tests/star/energy.mts) but not what this
+    // block is isolating.
+    c = { ...c, energy: 100 };
     seen.push(selectionFor(c).status);
   }
   check(seen[0] === "1st Team", `one bad game does not cost you your place (${seen[0]})`);
@@ -113,6 +121,60 @@ const stats = (rating: number): MatchStats => ({
   const v = selectionFor(flying);
   check(v.status === "1st Team", "a player in form starts");
   check(v.reason.includes("First name"), `and is told as much ("${v.reason}")`);
+}
+
+// ── Energy is a floor, not another weighted input ───────────────────────────
+//
+// Applied ON TOP of the standing-based verdict — never upgrading it, only
+// ever pulling it down — so a red-hot standing cannot talk the manager into
+// starting a player who cannot physically get through ninety minutes.
+{
+  const inForm = () => withState({
+    relationships: { ...base().relationships, boss: 92 },
+    form: [8.4, 7.9, 8.8, 9.1, 8.0], starRating: 4.2,
+  });
+
+  const rested = selectionFor({ ...inForm(), energy: 100 });
+  check(rested.status === "1st Team", "plenty of energy, nothing changes");
+
+  const leggy = selectionFor({ ...inForm(), energy: MIN_ENERGY_TO_START - 1 });
+  check(leggy.status === "Substitute",
+    `too fatigued to start, even in career-best form (${leggy.status}, energy ${MIN_ENERGY_TO_START - 1})`);
+  check(leggy.reason.toLowerCase().includes("fatigu"), `and told why ("${leggy.reason}")`);
+
+  const shattered = selectionFor({ ...inForm(), energy: MIN_ENERGY_TO_SUB - 1 });
+  check(shattered.status === "Squad",
+    `running on empty is not even trusted off the bench (${shattered.status}, energy ${MIN_ENERGY_TO_SUB - 1})`);
+  check(shattered.onAt === 90, "…and does not play a minute");
+
+  // The other direction must never happen: energy cannot upgrade a verdict
+  // standing alone would not have earned.
+  const outOfFormButFresh = selectionFor(withState({
+    relationships: { ...base().relationships, boss: 10 },
+    form: [3.5, 3.8, 3.2, 3.6, 3.4], starRating: 1.5, matchFitness: 60, energy: 100,
+  }));
+  check(outOfFormButFresh.status === "Squad", "full energy does not rescue a player nobody wants to pick");
+}
+
+// ── A real injury overrides everything, energy included ────────────────────
+{
+  const starButInjured = withState({
+    relationships: { ...base().relationships, boss: 95 },
+    form: [9, 9, 9, 9, 9], starRating: 5, energy: 100,
+    injury: { weeksRemaining: 3, note: "Hamstring strain" },
+  });
+  const v = selectionFor(starButInjured);
+  check(v.status === "Injured", `nothing else matters while injured (${v.status})`);
+  check(v.onAt === 90, "…and you do not play a minute");
+  check(v.reason.includes("Hamstring strain") && v.reason.includes("3 more week"),
+    `the reason names the injury and the timeline ("${v.reason}")`);
+
+  const oneWeekLeft = selectionFor({ ...starButInjured, injury: { weeksRemaining: 1, note: "Knock" } });
+  check(oneWeekLeft.reason.includes("1 more week") && !oneWeekLeft.reason.includes("1 more weeks"),
+    `singular when it is down to the last week ("${oneWeekLeft.reason}")`);
+
+  const notInjured = selectionFor({ ...starButInjured, injury: null });
+  check(notInjured.status === "1st Team", "and clearing it hands the verdict straight back to form and energy");
 }
 
 // ── It must not be a trap you cannot climb out of ──────────────────────────

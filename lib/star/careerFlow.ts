@@ -50,6 +50,38 @@ const EMPTY_SEASON_STATS = {
   appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0,
 };
 
+/** What a full ninety minutes costs — see nextEnergy in creditMatchResult. */
+export const ENERGY_MATCH_COST = 32;
+
+// ── Injury risk ──────────────────────────────────────────────────────────
+//
+// A real chance on every appearance — a fresh pair of legs still picks up a
+// freak knock now and then — that climbs sharply once you are running on
+// empty. INJURY_RISK_BASE is what a fully-rested player faces;
+// INJURY_RISK_FATIGUE_EXTRA is the most fatigue alone can add on top, phased
+// in as end-of-match energy falls through INJURY_FATIGUE_FLOOR.
+export const INJURY_RISK_BASE = 0.015;
+export const INJURY_FATIGUE_FLOOR = 20;
+export const INJURY_RISK_FATIGUE_EXTRA = 0.085;
+
+/**
+ * How long it keeps you out. Weighted toward a knock rather than a
+ * lay-off — most injuries in a real season are the former.
+ */
+function rollInjury(rng: () => number): { weeksRemaining: number; note: string } {
+  const r = rng();
+  if (r < 0.6) {
+    const weeks = 1 + Math.floor(rng() * 2); // 1-2
+    return { weeksRemaining: weeks, note: `Knock — expected back in ${weeks} week${weeks === 1 ? "" : "s"}` };
+  }
+  if (r < 0.9) {
+    const weeks = 3 + Math.floor(rng() * 2); // 3-4
+    return { weeksRemaining: weeks, note: `Injury — expected back in ${weeks} weeks` };
+  }
+  const weeks = 5 + Math.floor(rng() * 4); // 5-8
+  return { weeksRemaining: weeks, note: `Serious injury — expected back in ${weeks} weeks` };
+}
+
 export function makeInitialCareer(
   player: StarPlayer, clubs: string[], division: CareerDivision = "premier",
 ): CareerState {
@@ -66,6 +98,8 @@ export function makeInitialCareer(
     division,
     week: 1,
     matchFitness: 80,
+    energy: 100,
+    injury: null,
     happiness: 60,
     money: 3,
     starRating: 2.5,
@@ -290,6 +324,35 @@ export function creditMatchResult(
   );
 
   const minuteShare = Math.max(0.25, Math.min(1, (stats.minutes ?? 90) / 90));
+
+  // ── Energy: spent by playing, never given back by the week just turning
+  //    over — see the field's own doc comment on CareerState. A full ninety
+  //    costs ENERGY_MATCH_COST; twenty minutes off the bench costs a
+  //    quarter of that, same minuteShare a cameo already uses for
+  //    matchFitness above it. Guarded on `alreadyPlayed` the same way
+  //    `accrue` above is — a replayed fixture must not spend the budget
+  //    twice.
+  const nextEnergy = alreadyPlayed
+    ? career.energy
+    : Math.max(0, career.energy - Math.round(ENERGY_MATCH_COST * minuteShare));
+
+  // ── Injuries: a real risk on every single appearance, not just a tired
+  //    one — real footballers pick up freak knocks on a fresh pair of legs
+  //    too — but one fatigue makes considerably more likely. `endEnergy` is
+  //    the live, in-match value CanvasMatch tracked as the game wore on
+  //    (see tiredSkills/liveEnergyRef there); it falls back to the
+  //    pre-match value for any caller that doesn't supply it (the sandbox,
+  //    dev tooling) rather than skipping the roll outright. Also guarded on
+  //    `alreadyPlayed` — the roll's own seed would reproduce the same
+  //    outcome on a replay regardless, but the energy it is weighed against
+  //    must not have silently drifted from the double-drain above.
+  const fatigueAtFullTime = stats.endEnergy ?? career.energy;
+  const injuryRisk = INJURY_RISK_BASE
+    + Math.max(0, (INJURY_FATIGUE_FLOOR - fatigueAtFullTime) / INJURY_FATIGUE_FLOOR) * INJURY_RISK_FATIGUE_EXTRA;
+  const injuryRng = mulberry32(career.season * 8191 + fixture.week * 97 + fixture.opponent.length * 3);
+  const nextInjury = !alreadyPlayed && !career.injury && injuryRng() < injuryRisk
+    ? rollInjury(injuryRng)
+    : career.injury;
   // A rivalry changes nothing about how it was played and everything about
   // what it was worth. Applied to the relationships only — never to the
   // football. Scaled by how much the fixture actually means (see
@@ -479,6 +542,8 @@ export function creditMatchResult(
       + progressed.earned,
     // Twenty minutes off the bench does not sharpen you as much as ninety.
     matchFitness: Math.min(100, career.matchFitness + 3 * minuteShare),
+    energy: nextEnergy,
+    injury: nextInjury,
     relationships: {
       ...career.relationships,
       boss: clamp01to100(career.relationships.boss + Math.round(stats.bossChange * derbyScale.boss)),
@@ -780,6 +845,10 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     ),
     seasonStats: { ...EMPTY_SEASON_STATS },
     matchFitness: 85,
+    // A summer off resets both — nobody carries a knock or a tired pair of
+    // legs into a new season untreated.
+    energy: 100,
+    injury: null,
     form: [],
     contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
@@ -948,6 +1017,12 @@ export function simulateMissedFixture(
     money: career.money + career.contract.wage,
     weekActions: WEEK_ACTIONS,
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
+    // Not playing does not cost you energy — it is the one thing every week
+    // off is actually good for.
+    energy: Math.min(100, career.energy + MISSED_WEEK.energy),
+    injury: career.injury
+      ? (career.injury.weeksRemaining - 1 <= 0 ? null : { ...career.injury, weeksRemaining: career.injury.weeksRemaining - 1 })
+      : null,
     relationships: {
       ...career.relationships,
       boss: clamp01to100(career.relationships.boss + MISSED_WEEK.boss),

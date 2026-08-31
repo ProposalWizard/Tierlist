@@ -119,6 +119,11 @@ function backfill(c: CareerState): CareerState {
   if (!out.manager) out.manager = makeManager(out, out.player.club, out.season);
   if (out.squadNumber === undefined) out.squadNumber = assignSquadNumber(out, out.player.club);
   if (out.clubAppearances === undefined) out.clubAppearances = out.careerStats.appearances;
+  // A career saved before energy existed has no meter to have run down —
+  // treated the same as a fresh one, full, rather than 0 (which `energy -=`
+  // would otherwise silently corrupt into NaN from here on).
+  if (out.energy === undefined) out.energy = 100;
+  if (out.injury === undefined) out.injury = null;
   // ── …and the squad, which is the third of exactly the same kind ──
   //
   // A squad is only ever created when a career is created or when you sign for
