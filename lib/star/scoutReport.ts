@@ -1,4 +1,4 @@
-import type { CareerState, LeagueSquad, LeaguePlayer, SquadPlayer } from "./types";
+import type { CareerState, LeagueSquad, LeaguePlayer, LeagueResult, LeagueTeam } from "./types";
 import { sortLeague } from "./season";
 import { groundFor, crowdFor } from "./stadiums";
 
@@ -7,36 +7,49 @@ import { groundFor, crowdFor } from "./stadiums";
  *
  * What the pre-match screen tells you about who you're about to play —
  * requested directly, with a real-game screenshot as the reference for the
- * shape of it: top scorer, assist king, best player, a couple of strengths
- * and weaknesses, a tactical hint, where they sit in the table, the ground,
- * and your own history against them.
+ * shape of it: top scorer, assist king, best player (each with a form strip
+ * — did they actually score/assist in their last few games), the
+ * opponent's own last five results, where they sit in the table, and your
+ * own history against them.
  *
- * Everything here is either read straight off data the game already tracks
- * (leagueSquads/externalSquads, the league table, headToHead) or DERIVED
- * from it — nothing is invented. Strengths/weaknesses specifically: no stat
- * called "Attacking Width" or "Press Resistance" exists anywhere in this
- * game, and inventing one to look FM-authentic would just be a more
- * convincing-looking lie than the plain truth. What genuinely exists is a
- * squad of players with real overalls and real positions, so that's what
- * gets compared — attack/midfield/defence/depth, each versus the division's
- * own average — which is honest and still reads exactly like a scout's
- * verdict.
+ * Everything here is read straight off data the game already tracks —
+ * leagueSquads/externalSquads, career.results (the division's own weekly
+ * results log, which already names every scorer and assister — see
+ * LeagueResult), the league table, headToHead. An earlier version of this
+ * derived "strengths and weaknesses" from squad overalls; dropped on
+ * request in favour of this — real results are a stronger, less
+ * second-guessable scouting story than a derived stat category anyway.
  */
-
-const ATTACK: SquadPlayer["position"][] = ["ST", "LW", "RW", "CAM"];
-const MIDFIELD: SquadPlayer["position"][] = ["CDM", "CM"];
-const DEFENCE: SquadPlayer["position"][] = ["GK", "CB", "LB", "RB"];
 
 export interface ScoutPlayer {
   name: string;
   value: number;
   position: string;
+  image?: string;
+  /**
+   * Did this player do the thing the card is about (score, for the top
+   * scorer; assist, for the assist king) in each of the club's last few
+   * league games this season — oldest first, most recent last. As many
+   * entries as games actually played, 0-5; absent for the best-player card,
+   * which has no single relevant per-match event to track.
+   */
+  form?: boolean[];
 }
 
-export interface ScoutFactor {
-  label: string;
-  /** +1..+3 a real strength, -1..-3 a real weakness, magnitude only used for the bar. */
-  level: number;
+export interface RecentResult {
+  week: number;
+  opponent: string;
+  result: "W" | "D" | "L";
+  scoreFor: number;
+  scoreAgainst: number;
+}
+
+export interface TableRow {
+  position: number;
+  club: string;
+  points: number;
+  played: number;
+  isOpponent: boolean;
 }
 
 export interface ScoutReport {
@@ -48,9 +61,13 @@ export interface ScoutReport {
   topScorer: ScoutPlayer | null;
   topAssister: ScoutPlayer | null;
   bestPlayer: ScoutPlayer | null;
-  strengths: ScoutFactor[];
-  weaknesses: ScoutFactor[];
-  tacticalHint: string;
+  /** Oldest first, most recent last — same order VersusScreen's own form
+   *  chips read. However many league games the opponent has actually
+   *  played this season, 0-5. */
+  recentResults: RecentResult[];
+  /** A few rows of the table either side of the opponent — empty when
+   *  they're not in it (see `table`). */
+  tableSnippet: TableRow[];
   headToHead: { wins: number; draws: number; losses: number } | null;
 }
 
@@ -59,101 +76,84 @@ function squadFor(career: CareerState, club: string): LeagueSquad | undefined {
     ?? (career.externalSquads ?? []).find(s => s.club === club);
 }
 
-function avgOverall(players: LeaguePlayer[], positions: SquadPlayer["position"][]): number | null {
-  const in_ = players.filter(p => positions.includes(p.position));
-  if (!in_.length) return null;
-  return in_.reduce((s, p) => s + p.overall, 0) / in_.length;
+function best(players: LeaguePlayer[], value: (p: LeaguePlayer) => number): LeaguePlayer | null {
+  return players.reduce<LeaguePlayer | null>((top, p) => (top === null || value(p) > value(top) ? p : top), null);
 }
 
-function best<T>(items: T[], value: (t: T) => number): T | null {
-  return items.reduce<T | null>((top, item) => (top === null || value(item) > value(top) ? item : top), null);
+/** The club's own league games this season, oldest first, capped at the
+ *  last five — the same slice both recentResultsFor and formFor read. */
+function lastFive(club: string, results: LeagueResult[]): LeagueResult[] {
+  return results
+    .filter(r => r.home === club || r.away === club)
+    .sort((a, b) => a.week - b.week)
+    .slice(-5);
 }
 
-/** The four things a squad can be judged on, for one club — null for any
- *  metric its available squad data can't support. */
-function ratingsFor(squad: LeagueSquad | undefined): Record<"Attack" | "Midfield" | "Defence" | "Depth", number | null> {
-  if (!squad || !squad.players.length) return { Attack: null, Midfield: null, Defence: null, Depth: null };
-  const overall = squad.players.reduce((s, p) => s + p.overall, 0) / squad.players.length;
-  return {
-    Attack: avgOverall(squad.players, ATTACK),
-    Midfield: avgOverall(squad.players, MIDFIELD),
-    Defence: avgOverall(squad.players, DEFENCE),
-    Depth: overall,
-  };
+function recentResultsFor(club: string, results: LeagueResult[]): RecentResult[] {
+  return lastFive(club, results).map(r => {
+    const home = r.home === club;
+    const scoreFor = home ? r.hs : r.as;
+    const scoreAgainst = home ? r.as : r.hs;
+    const result: RecentResult["result"] = scoreFor > scoreAgainst ? "W" : scoreFor === scoreAgainst ? "D" : "L";
+    return { week: r.week, opponent: home ? r.away : r.home, result, scoreFor, scoreAgainst };
+  });
 }
 
-const HINTS: Record<string, string> = {
-  Attack: "They don't carry much of a goal threat — a clean sheet is well within reach.",
-  Midfield: "They get overrun through the middle — press them high and win the ball back.",
-  Defence: "Their back line is there to be got at — a direct ball in behind could pay off.",
-  Depth: "Their squad is thin — keep the tempo high and it'll show late on.",
-  Form: "They're out of form and there for the taking.",
-};
+/** Did this named player score (or assist) in each of the club's last five
+ *  league games — read off the same `hg`/`ag` scorer log the results page
+ *  itself is built from, not a separate per-player history nothing else
+ *  tracks. */
+function formFor(playerName: string, club: string, results: LeagueResult[], kind: "scored" | "assisted"): boolean[] {
+  return lastFive(club, results).map(r => {
+    const goals = r.home === club ? r.hg : r.ag;
+    if (!goals) return false;
+    return goals.some(g => (kind === "scored" ? g.s === playerName : g.a === playerName));
+  });
+}
 
-/** How far apart two ratings have to be before it's worth calling out, and
- *  how many "levels" apart maps to the bar's 1-3 segments. */
-const FACTOR_STEP = 3;
+function tableSnippetFor(table: LeagueTeam[], opponentIdx: number, radius = 2): TableRow[] {
+  if (opponentIdx < 0) return [];
+  const start = Math.max(0, opponentIdx - radius);
+  const end = Math.min(table.length, opponentIdx + radius + 1);
+  return table.slice(start, end).map((t, i) => ({
+    position: start + i + 1, club: t.name, points: t.points, played: t.played,
+    isOpponent: i + start === opponentIdx,
+  }));
+}
 
 export function scoutReportFor(career: CareerState, opponent: string, week: number): ScoutReport {
   const squad = squadFor(career, opponent);
   const table = sortLeague(career.league);
   const idx = table.findIndex(t => t.name === opponent);
   const team = idx >= 0 ? table[idx] : null;
+  const results = career.results ?? [];
 
   const topScorer = squad ? best(squad.players, p => p.goals) : null;
   const topAssister = squad ? best(squad.players, p => p.assists) : null;
   const bestPlayer = squad ? best(squad.players, p => p.overall) : null;
-
-  // League-wide averages, over whichever clubs actually have squad data —
-  // a partial roll-out (some clubs fetched, some not yet) still produces a
-  // meaningful comparison rather than none at all.
-  const clubRatings = career.league
-    .map(t => ratingsFor(squadFor(career, t.name)))
-    .filter(r => r.Attack !== null || r.Midfield !== null || r.Defence !== null || r.Depth !== null);
-  const leagueAvg = (key: "Attack" | "Midfield" | "Defence" | "Depth"): number | null => {
-    const vals = clubRatings.map(r => r[key]).filter((v): v is number => v !== null);
-    return vals.length >= 3 ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
-  };
-
-  const mine = ratingsFor(squad);
-  const factors: { label: string; diff: number }[] = [];
-  for (const key of ["Attack", "Midfield", "Defence", "Depth"] as const) {
-    const avg = leagueAvg(key);
-    if (mine[key] === null || avg === null) continue;
-    factors.push({ label: key, diff: mine[key]! - avg });
-  }
-  // Form: points per game so far, against the division's own average —
-  // meaningless in week 1, when nobody has played anything yet.
-  if (team && team.played > 0) {
-    const leaguePpg = table.filter(t => t.played > 0);
-    if (leaguePpg.length >= 3) {
-      const avgPpg = leaguePpg.reduce((s, t) => s + t.points / t.played, 0) / leaguePpg.length;
-      factors.push({ label: "Form", diff: (team.points / team.played - avgPpg) * 2.5 });
-    }
-  }
-
-  const toFactor = (f: { label: string; diff: number }): ScoutFactor => ({
-    label: f.label,
-    level: Math.max(1, Math.min(3, Math.round(Math.abs(f.diff) / FACTOR_STEP))),
-  });
-  const sorted = [...factors].sort((a, b) => b.diff - a.diff);
-  const strengths = sorted.filter(f => f.diff > FACTOR_STEP * 0.5).slice(0, 2).map(toFactor);
-  const weaknesses = sorted.filter(f => f.diff < -FACTOR_STEP * 0.5).slice(-2).reverse().map(toFactor);
-
-  const worst = weaknesses[0];
-  const tacticalHint = worst ? HINTS[worst.label] : "Nothing obvious to exploit — this one will be earned.";
 
   const g = groundFor(opponent);
   return {
     club: opponent,
     ground: { name: g.name, crowd: crowdFor(opponent, week) },
     table: team ? { position: idx + 1, of: table.length } : null,
-    topScorer: topScorer && topScorer.goals > 0 ? { name: topScorer.name, value: topScorer.goals, position: topScorer.position } : null,
-    topAssister: topAssister && topAssister.assists > 0 ? { name: topAssister.name, value: topAssister.assists, position: topAssister.position } : null,
-    bestPlayer: bestPlayer ? { name: bestPlayer.name, value: bestPlayer.overall, position: bestPlayer.position } : null,
-    strengths,
-    weaknesses,
-    tacticalHint,
+    topScorer: topScorer && topScorer.goals > 0
+      ? {
+        name: topScorer.name, value: topScorer.goals, position: topScorer.position, image: topScorer.image,
+        form: formFor(topScorer.name, opponent, results, "scored"),
+      }
+      : null,
+    topAssister: topAssister && topAssister.assists > 0
+      ? {
+        name: topAssister.name, value: topAssister.assists, position: topAssister.position, image: topAssister.image,
+        form: formFor(topAssister.name, opponent, results, "assisted"),
+      }
+      : null,
+    bestPlayer: bestPlayer
+      ? { name: bestPlayer.name, value: bestPlayer.overall, position: bestPlayer.position, image: bestPlayer.image }
+      : null,
+    recentResults: recentResultsFor(opponent, results),
+    tableSnippet: tableSnippetFor(table, idx),
     headToHead: career.headToHead?.[opponent] ?? null,
   };
 }

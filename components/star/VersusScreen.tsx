@@ -2,12 +2,13 @@
 import { useState } from "react";
 import type { Matchday, SheetPlayer, TeamSheet } from "@/lib/star/teamsheet";
 import type { LeagueResult } from "@/lib/star/types";
-import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
+import { kitsFor, kitLabelOnDark, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { place, across } from "@/lib/star/pitchLayout";
+import ClubCrest from "./ClubCrest";
 
 /**
  * THE TEAM SHEETS.
@@ -313,35 +314,8 @@ function FormRow({ form }: { form: Result[] }) {
   );
 }
 
-/**
- * A club, as a badge.
- *
- * There are no crest files, and a wrong crest is worse than none — so it is the
- * club's own shirt with its initials on it, which is the same device the
- * shortlist tiles use and is at least always right.
- */
-function Crest({ club, kit }: { club: string; kit: Kit }) {
-  return (
-    <div className="flex min-w-0 flex-col items-center gap-0.5">
-      <div
-        className="grid h-9 w-9 place-items-center rounded-full border-2 text-[11px] font-black"
-        style={{ backgroundColor: kit.shirt, borderColor: kit.trim, color: labelInk(kit.shirt) }}
-      >
-        {initials(club)}
-      </div>
-      <div className="w-full truncate text-center text-[10px] font-black leading-tight text-white">
-        {shortClub(club)}
-      </div>
-    </div>
-  );
-}
-
-function initials(club: string): string {
-  const skip = new Set(["fc", "afc", "united", "city", "the", "and", "&", "hove", "albion"]);
-  const words = club.split(/\s+/).filter(w => !skip.has(w.toLowerCase()));
-  if (words.length >= 2) return words.slice(0, 3).map(w => w[0]).join("").toUpperCase();
-  return club.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
-}
+/** See components/star/ClubCrest.tsx — shared with the match-day header now. */
+const Crest = ClubCrest;
 
 /**
  * The gold star over your own head.

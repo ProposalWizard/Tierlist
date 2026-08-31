@@ -255,7 +255,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   ): SimEvent[] => {
     const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW", "CM"].includes(p.position));
     return raw.flatMap((e): SimEvent[] => {
-      if (!e.isGoal) return [{ minute: e.minute, text: e.text, isOpponent: e.isOpponent }];
+      if (!e.isGoal) return [{ minute: e.minute, text: attributeClub(e.text, e.isOpponent), isOpponent: e.isOpponent }];
 
       if (!e.teammateGoal) {
         return [{ minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true, isOpponent: true }];
@@ -472,20 +472,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // whole skipped batch producing no events at all — otherwise had no way
   // to say.
   const SIM_COMMENTARY_USER = [
-    "Your side share the ball around patiently in midfield.",
-    "Your defence holds firm under pressure.",
-    "Your counter-attack breaks down in the final third.",
-    "A tidy passing move from your side comes to nothing.",
-    "The ball is recycled patiently at the back for your team.",
-    "A promising run down the wing for your side is halted by a strong tackle.",
-    "Your keeper comes out to claim a hopeful cross.",
-    "A long ball forward for your side finds nobody — easily dealt with.",
-    "Neat footwork from your side in the middle of the park creates some space.",
-    "Your fans are starting to get restless.",
-    "A crunching challenge from your side draws a free kick — nothing comes of it.",
-    "The tempo drops as your side look to regroup.",
-    "A lovely piece of skill from your side on the touchline, but the final ball lets them down.",
-    "Chances have been at a premium for your team here.",
+    "{club} share the ball around patiently in midfield.",
+    "{club}'s defence holds firm under pressure.",
+    "{club}'s counter-attack breaks down in the final third.",
+    "A tidy passing move from {club} comes to nothing.",
+    "The ball is recycled patiently at the back for {club}.",
+    "A promising run down the wing for {club} is halted by a strong tackle.",
+    "{club}'s keeper comes out to claim a hopeful cross.",
+    "A long ball forward for {club} finds nobody — easily dealt with.",
+    "Neat footwork from {club} in the middle of the park creates some space.",
+    "{club}'s fans are starting to get restless.",
+    "A crunching challenge from {club} draws a free kick — nothing comes of it.",
+    "The tempo drops as {club} look to regroup.",
+    "A lovely piece of skill from {club} on the touchline, but the final ball lets them down.",
+    "Chances have been at a premium for {club} here.",
   ];
   const SIM_COMMENTARY_OPP = [
     "They share the ball around patiently in midfield.",
@@ -625,6 +625,52 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
    *  never the second person. The sandbox has no career and so no name; "you"
    *  is right there, since there is nobody else it could mean. */
   const playerLabel = () => careerRef.current?.player.lastName || "you";
+
+  /**
+   * The ball reaching you — one line, once per chance, and it used to be the
+   * exact same sentence every single time ("The move works its way to X."),
+   * which stood out precisely because everything AROUND it (QUIET_USER/OPP,
+   * SIM_COMMENTARY_USER/OPP) already had a real pool to draw from. `X` is
+   * always the OBJECT of these, never the subject — `playerLabel()` can read
+   * "you" (the sandbox, with no career to name), and "you is picked out"
+   * is not a sentence, so every line here is built to take that safely.
+   */
+  const momentPool = (): string[] => {
+    const you = playerLabel();
+    return [
+      `The move works its way to ${you}.`,
+      `It breaks for ${you}.`,
+      `The ball is worked through to ${you}.`,
+      `It's picked out for ${you}.`,
+      `The move reaches ${you}.`,
+      `It comes to ${you}.`,
+      `A gap opens up for ${you}.`,
+      `The ball finds its way to ${you}.`,
+    ];
+  };
+  const momentLine = () => {
+    const pool = momentPool();
+    return pool[Math.floor(rngRef.current() * pool.length)];
+  };
+
+  /**
+   * A real commentator never says "your team" — he names the side. Reported
+   * directly, with "Your team have the better of this spell" as the example:
+   * it reads as the game talking AT the player rather than describing the
+   * match. `QUIET_USER`/`SIM_COMMENTARY_USER` (below, and in hiddenMatch.ts)
+   * carry a `{club}` token instead of hardcoding "your"/"you"; this is the
+   * one place that token gets resolved, so every line that flows through it
+   * — whichever bank it came from — ends up naming the actual club. The
+   * sandbox has no real career to name, so it falls back to a plain "Your
+   * Side" there, same reasoning as `playerLabel`'s "you".
+   */
+  const attributeClub = (text: string, isOpponent?: boolean): string => {
+    if (!text.includes("{club}")) return text;
+    const club = isOpponent
+      ? shortClub(fixtureOpponentRef.current)
+      : careerRef.current ? shortClub(careerRef.current.player.club) : "Your Side";
+    return text.replaceAll("{club}", club);
+  };
 
   /**
    * Read out the next line, and stop when the queue is empty.
@@ -1898,7 +1944,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // readout. Purely the drawn length — `power` itself (and how far you
       // actually have to drag to reach it) is untouched, since this is
       // computed FROM `power`, not the other way round.
-      const lineLen = power * (vp.y2 - vp.y1) * 0.132;
+      //
+      // The metre span used here has to be whichever axis actually fills the
+      // screen's HEIGHT — vp.y2-vp.y1 in the ordinary "up" view, where pitch
+      // Y genuinely is that axis, but in a turned crossing view the frame is
+      // rotated a quarter turn and it is pitch X that fills the height (see
+      // toPx). Always reading vp.y2-vp.y1 drew the arrow against the
+      // turned frame's WIDTH-sized span instead — about 60% of the metres
+      // it should have had — so the exact same power looked visibly shorter
+      // on every corner and cross. Reported directly.
+      const heightSpan = facingRef.current === "up" ? vp.y2 - vp.y1 : vp.x2 - vp.x1;
+      const lineLen = power * heightSpan * 0.132;
       const ex = sc.ball.x + (dx / len) * lineLen;
       const ey = sc.ball.y + (dy / len) * lineLen;
       const a = toPx(sc.ball.x, sc.ball.y);
@@ -2052,13 +2108,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       if (ballRef.current && facingRef.current !== "up") {
         const sc = scenarioRef.current;
         const at = sc.crossSwitchY ?? 0;
-        if (sc.crossSwitchView && ballRef.current.pos.y < at) {
+        const view = sc.crossSwitchView;
+        // Y alone used to be the whole test. A corner is struck from a few
+        // metres off the touchline and has to travel fifteen to thirty
+        // METRES sideways to reach the delivery frame's own width — and a
+        // hard, fairly straight strike crosses the switch line in depth long
+        // before it has covered that ground. The cut (and the viewport
+        // reassignment with it — see the comment below on why the engine
+        // reads this too) used to fire on depth alone, dropping the ball
+        // into a frame narrower than where it actually was: reported
+        // directly as the ball "never appearing" after a firm, well-lofted
+        // cross, and it is worse than a camera glitch — stepBall rules a
+        // ball outside `scenario.viewport` OUT OF PLAY, so the chance was
+        // being wasted the instant the cut happened, not just badly framed.
+        // Held in the wide side view — which the whole delivery already
+        // fits inside — until the ball has ALSO drawn level with the
+        // narrower frame's own width, same margin stepBall itself uses.
+        const withinX = view ? ballRef.current.pos.x > view.x1 - 1 && ballRef.current.pos.x < view.x2 + 1 : false;
+        if (view && ballRef.current.pos.y < at && withinX) {
           facingRef.current = "up";
-          viewportRef.current = { ...sc.crossSwitchView };
-          baseViewportRef.current = { ...sc.crossSwitchView };
+          viewportRef.current = { ...view };
+          baseViewportRef.current = { ...view };
           // The engine reads the frame too — out of it is out of the game — so
           // the situation moves with the picture.
-          sc.viewport = { ...sc.crossSwitchView };
+          sc.viewport = { ...view };
         }
       }
 
@@ -2546,8 +2619,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // Nothing at all happened in the skipped minutes — say so rather than
     // showing an empty panel.
     if (events.length === 0) {
-      const bank = st.possession === "user" ? SIM_COMMENTARY_USER : SIM_COMMENTARY_OPP;
-      events.push({ minute: st.minute, text: bank[Math.floor(rng() * bank.length)], isOpponent: st.possession !== "user" });
+      const isOpponent = st.possession !== "user";
+      const bank = isOpponent ? SIM_COMMENTARY_OPP : SIM_COMMENTARY_USER;
+      const text = bank[Math.floor(rng() * bank.length)];
+      // This fallback fires AFTER nameTeamGoals already ran (only when it
+      // produced nothing at all), so it never gets nameTeamGoals' own
+      // {club} resolution for free — has to do it itself.
+      events.push({ minute: st.minute, text: attributeClub(text, isOpponent), isOpponent });
     }
 
     // ── Being taken off ──
@@ -2686,7 +2764,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       setPhase("dribble");
-      logMoment(`The move works its way to ${playerLabel()}.`, "you");
+      logMoment(momentLine(), "you");
       pushLine(request.reason);
       pushLine("Swipe the way you want to run. Get past them to the line.");
       playWhistle();
@@ -2748,7 +2826,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // One line, once per chance — see logMoment. This is the single thing kept
     // from what used to be an unbroken flood of buildup commentary: the moment
     // the ball actually reaches a player of yours to do something with.
-    logMoment(`The move works its way to ${playerLabel()}.`, "you");
+    logMoment(momentLine(), "you");
     // Say where the chance came from before describing it, so it reads as the
     // end of a move rather than as a situation that appeared from nowhere.
     if (request) pushLine(request.reason);

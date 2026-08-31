@@ -31,7 +31,7 @@ export default function PositionPicker({ club, realPosition, playAs, onChange }:
   return (
     <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
       <div className="text-[10px] font-black uppercase tracking-widest text-white/85">
-        Position for your next match
+        Choose your position
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
         <button
@@ -39,7 +39,7 @@ export default function PositionPicker({ club, realPosition, playAs, onChange }:
           className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
             !playAs ? "bg-emerald-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
         >
-          {realName} (your position)
+          {realName}
         </button>
         {alternates.map(({ role, label }) => (
           <button
@@ -52,11 +52,6 @@ export default function PositionPicker({ club, realPosition, playAs, onChange }:
           </button>
         ))}
       </div>
-      <p className="mt-1.5 text-[10px] font-bold text-white/60">
-        {playAs
-          ? `Your side's best ${realName.toLowerCase()} starts in your place. Stays this way until you change it.`
-          : "Applies from your next match onward, until you change it again."}
-      </p>
     </div>
   );
 }

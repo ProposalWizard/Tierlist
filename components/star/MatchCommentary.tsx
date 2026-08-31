@@ -210,10 +210,11 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
       className={`kib-line flex items-baseline gap-2 border-b border-white/[0.04] px-3 py-1.5 ${tone}`}
       style={teamStyle}
     >
-      <span
-        className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white/70"
-        style={teamStyle ? { color: teamStyle.color, opacity: 0.75 } : undefined}
-      >
+      {/* The clock, not the commentary — reported directly: sitting in
+          whichever team's colour the row happened to be made the timings
+          hard to read at a glance. A fixed black chip keeps it legible and
+          visibly separate from the line it's timing, on every row. */}
+      <span className="w-6 shrink-0 rounded bg-black/70 py-0.5 text-center text-[10px] font-black tabular-nums text-white">
         {l.minute !== undefined ? l.minute : ""}
       </span>
       <span className="flex-1 text-[12px] leading-snug">{l.text}</span>

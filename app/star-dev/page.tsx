@@ -47,6 +47,9 @@ import VersusScreen from "@/components/star/VersusScreen";
 import PositionPicker from "@/components/star/PositionPicker";
 import ScoutReportCard from "@/components/star/ScoutReport";
 import { scoutReportFor } from "@/lib/star/scoutReport";
+import ClubCrest from "@/components/star/ClubCrest";
+import { kitsFor } from "@/lib/star/kits";
+import { groundFor, crowdFor } from "@/lib/star/stadiums";
 import SkillsScreen from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
@@ -1350,45 +1353,55 @@ export default function StarDevPage() {
               </p>
             )}
           </div>
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 text-center shadow-lg">
-            <div className="text-lg font-black text-white">{home}</div>
-            <div className="my-3 text-white/75 font-black">vs</div>
-            <div className="text-lg font-black text-white">{away}</div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
-                <div className="font-black text-emerald-300 text-lg">{Math.round(career.matchFitness)}%</div>
-              </div>
-              <div className="bg-gray-700 rounded-lg py-2">
-                <div className="text-white/75 text-[10px] font-bold">Energy</div>
-                <div className={`font-black text-lg ${
-                  career.energy >= 70 ? "text-emerald-300" : career.energy >= 40 ? "text-amber-300" : "text-red-400"}`}
-                >
-                  {Math.round(career.energy)}%
+          {(() => {
+            const kits = kitsFor(home, away);
+            // Whoever is HOME hosts it — `home` is already the real home
+            // side of this fixture, not necessarily you.
+            const ground = groundFor(home);
+            const crowd = crowdFor(home, nextFixture.week);
+            return (
+              <div
+                className="relative overflow-hidden rounded-xl border border-emerald-800/60 shadow-lg"
+                // Night-match-under-floodlights, the same identity the live
+                // match screen already uses — a real stadium photo behind
+                // this is the plan (supplied later), so the gradient is built
+                // to sit comfortably underneath one rather than being the
+                // whole background forever.
+                style={{ background: "linear-gradient(180deg, #0b2a1f 0%, #0a1f27 55%, #071318 100%)" }}
+              >
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{ background: "radial-gradient(120% 55% at 50% -10%, rgba(16,185,129,0.30), transparent 60%)" }}
+                />
+                <div className="relative z-10 p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <ClubCrest club={home} kit={kits.home} size={56} />
+                    <div className="flex flex-col items-center gap-1 px-1 pt-3">
+                      <div className="text-xs font-black text-white/60 tracking-widest">VS</div>
+                    </div>
+                    <ClubCrest club={away} kit={kits.away} size={56} />
+                  </div>
+                  <div className="mt-3 text-center text-[10px] text-white/70">
+                    🏟️ {ground.name} · Crowd: {crowd.toLocaleString()}
+                  </div>
+                  {!career.injury && career.energy < MIN_ENERGY_TO_START && (
+                    <div className="mt-3 text-center text-amber-300 text-[10px] font-bold">⚠ Too fatigued to start — the manager will only risk you off the bench</div>
+                  )}
+                  {career.injury && (
+                    <div className="mt-3 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-2 text-left">
+                      <div className="text-red-300 text-[10px] font-black uppercase tracking-wide">🩹 {career.injury.note}</div>
+                      <div className="mt-0.5 text-[10px] text-white/80">
+                        Out for {career.injury.weeksRemaining} more week{career.injury.weeksRemaining === 1 ? "" : "s"} — you cannot be selected until you are fit.
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-3 rounded-lg bg-black/25 px-2 py-1.5 text-[10px] text-white text-center">
+                    {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="mt-3 text-[10px] text-white/75">
-              Boot: <span className="text-white font-bold">{career.currentBoot.name}</span> ({career.currentBoot.matches} matches left)
-            </div>
-            {career.currentBoot.matches === 0 && (
-              <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Boots need replacing</div>
-            )}
-            {!career.injury && career.energy < MIN_ENERGY_TO_START && (
-              <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Too fatigued to start — the manager will only risk you off the bench</div>
-            )}
-            {career.injury && (
-              <div className="mt-3 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-2 text-left">
-                <div className="text-red-300 text-[10px] font-black uppercase tracking-wide">🩹 {career.injury.note}</div>
-                <div className="mt-0.5 text-[10px] text-white/80">
-                  Out for {career.injury.weeksRemaining} more week{career.injury.weeksRemaining === 1 ? "" : "s"} — you cannot be selected until you are fit.
-                </div>
-              </div>
-            )}
-            <div className="mt-3 rounded-lg bg-gray-700 px-2 py-1.5 text-[10px] text-white">
-              {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Who you're actually about to play — requested directly, with a
               real scouting-app screenshot as the reference. Club opponents
@@ -1419,40 +1432,31 @@ export default function StarDevPage() {
                   : "border-red-500/50 bg-red-500/10"}`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
-                  Team sheet · #{career.squadNumber ?? "—"}{career.captain ? " (C)" : ""}
-                </span>
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Your role</span>
                 <span className={`text-xs font-black ${
                   selection.status === "1st Team" ? "text-emerald-300"
                     : selection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
                 >
-                  {selection.status === "Substitute" ? `Bench (on ~${selection.onAt}')` : selection.status}
+                  {selection.status === "1st Team" ? "Starting Eleven"
+                    : selection.status === "Substitute" ? `Bench (on ~${selection.onAt}')`
+                      : selection.status === "Injured" ? "Injured"
+                        : "Out of Squad"}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-white/90">{selection.reason}</p>
-              {career.manager && (
-                <p className="mt-0.5 text-[10px] text-white/70">
-                  {career.manager.name} · {career.manager.style}
-                </p>
-              )}
-              <div className="mt-2 h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${
-                    selection.standing >= 55 ? "bg-emerald-400" : selection.standing >= 34 ? "bg-amber-400" : "bg-red-500"}`}
-                  style={{ width: `${Math.max(3, selection.standing)}%` }}
-                />
-              </div>
-              <div className="mt-1 text-[10px] text-white/60">Standing with the manager</div>
-              {duties && selection.status !== "Squad" && (
-                <div className="mt-2 flex gap-1.5 text-[10px] font-bold">
-                  <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-white/10 text-white/50"}`}>
-                    Free kicks {duties.freeKicks ? "✓" : `(FK ${duties.freeKickNeeded})`}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-white/10 text-white/50"}`}>
-                    Penalties {duties.penalties ? "✓" : `(FK ${duties.penaltyNeeded})`}
-                  </span>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-black/20 rounded-lg py-2 text-center">
+                  <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
+                  <div className="font-black text-emerald-300 text-base">{Math.round(career.matchFitness)}%</div>
                 </div>
-              )}
+                <div className="bg-black/20 rounded-lg py-2 text-center">
+                  <div className="text-white/75 text-[10px] font-bold">Energy</div>
+                  <div className={`font-black text-base ${
+                    career.energy >= 70 ? "text-emerald-300" : career.energy >= 40 ? "text-amber-300" : "text-red-400"}`}
+                  >
+                    {Math.round(career.energy)}%
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

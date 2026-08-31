@@ -2,15 +2,17 @@ import { scoutReportFor } from "../../lib/star/scoutReport";
 import { groundFor, crowdFor, GROUNDS } from "../../lib/star/stadiums";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
-import type { CareerState, Fixture, LeagueSquad, MatchStats, StarPlayer } from "../../lib/star/types";
+import type { CareerState, Fixture, LeagueResult, LeagueSquad, MatchStats, StarPlayer } from "../../lib/star/types";
 
 /**
  * THE SCOUT REPORT.
  *
  * The arithmetic under test: top scorer/assist king/best player read
- * straight off the opponent's real squad data, strengths/weaknesses are
- * genuinely derived (not just always populated), a club with no squad
- * data degrades to "not enough scouted" rather than crashing or lying, and
+ * straight off the opponent's real squad data, their form strips read the
+ * same scorer/assister log the results page itself is built from (not a
+ * separate history nothing else tracks), recent results and the table
+ * snippet are genuinely centred on the opponent, a club with no squad data
+ * degrades to "not enough scouted" rather than crashing or lying, and
  * headToHead actually accumulates across matches the way a real record
  * would. Presentation (ScoutReport.tsx) isn't tested here — just the data
  * it's handed.
@@ -57,7 +59,10 @@ function squadFor(club: string, offset: number): LeagueSquad {
   check(r.club === "Chelsea", "the report is about the right club");
   check(r.topScorer === null && r.topAssister === null && r.bestPlayer === null,
     "no squad data means no player-level scouting");
-  check(r.strengths.length === 0 && r.weaknesses.length === 0, "and no invented strengths/weaknesses either");
+  check(r.recentResults.length === 0, "and no games to report on before any have been played");
+  // The table itself is independent of squad data — every club is in
+  // career.league from the start, even at 0 played.
+  check(r.tableSnippet.some(row => row.club === "Chelsea"), "the table snippet still works with no squad data at all");
   check(r.headToHead === null, "no history yet against a club never played");
 }
 
@@ -77,34 +82,63 @@ function squadFor(club: string, offset: number): LeagueSquad {
     `the real top scorer is found (${r.topScorer?.name} vs ${realTopScorer.name})`);
   check(r.topAssister?.name === realTopAssister.name, "…and the real top assister");
   check(r.bestPlayer?.name === realBest.name && r.bestPlayer?.value === realBest.overall, "…and the real best player, by OVR");
+  check(r.bestPlayer?.form === undefined, "the top-rated card has no single event to track a form strip against");
 }
 
-// ── Strengths and weaknesses are genuinely relative, not always the same two ─
+// ── Form strips read the real scorer/assister log, not a separate history ──
 {
   let c = base();
-  // Every club identical bar one, which is clearly stronger up front and
-  // clearly weaker at the back — the derivation should find exactly that,
-  // not some fixed pair of categories regardless of the numbers.
-  const flat = c.league.map(t => squadFor(t.name, 0));
-  const standout = flat.map(s => s.club === c.league[5].name
-    ? {
-      ...s,
-      players: s.players.map(p =>
-        ["ST", "LW", "RW", "CAM"].includes(p.position) ? { ...p, overall: p.overall + 25 }
-          : ["GK", "CB", "LB", "RB"].includes(p.position) ? { ...p, overall: Math.max(30, p.overall - 25) }
-            : p),
-    }
-    : s);
-  c = { ...c, leagueSquads: standout };
+  const opponent = "Chelsea";
+  c = { ...c, leagueSquads: c.league.map((t, i) => squadFor(t.name, i * 3)) };
+  const squad = c.leagueSquads!.find(s => s.club === opponent)!.players;
+  const scorer = squad.reduce((a, b) => (b.goals > a.goals ? b : a));
+  const assister = squad.reduce((a, b) => (b.assists > a.assists ? b : a));
 
-  const r = scoutReportFor(c, c.league[5].name, 1);
-  check(r.strengths.some(f => f.label === "Attack"), `a genuinely stronger attack is flagged as a strength (${JSON.stringify(r.strengths)})`);
-  check(r.weaknesses.some(f => f.label === "Defence"), `a genuinely weaker defence is flagged as a weakness (${JSON.stringify(r.weaknesses)})`);
-  check(r.tacticalHint.length > 0, "and there's a hint to go with it");
+  // Three league games for Chelsea this season: scored in the 1st and 3rd,
+  // not the 2nd; the assist king sets up the 3rd only. Mix of home and away
+  // so the home/away goal-log split is actually exercised.
+  const results: LeagueResult[] = [
+    { week: 1, home: opponent, away: "Fulham FC", hs: 1, as: 0, hg: [{ m: 30, s: scorer.name }] },
+    { week: 2, home: "Everton", away: opponent, hs: 2, as: 1, ag: [{ m: 60, s: "Someone Else" }] },
+    { week: 3, home: opponent, away: "Brentford", hs: 2, as: 0, hg: [{ m: 10, s: "Someone Else" }, { m: 70, s: scorer.name, a: assister.name }] },
+  ];
+  c = { ...c, results };
 
-  const balanced = scoutReportFor({ ...c, leagueSquads: flat }, c.league[3].name, 1);
-  check(balanced.strengths.length === 0 && balanced.weaknesses.length === 0,
-    `a genuinely balanced squad gets no invented factors either way (${JSON.stringify(balanced.strengths)} / ${JSON.stringify(balanced.weaknesses)})`);
+  const r = scoutReportFor(c, opponent, 4);
+  check(r.topScorer?.form?.length === 3, `three league games played, three entries (${r.topScorer?.form?.length})`);
+  check(JSON.stringify(r.topScorer?.form) === JSON.stringify([true, false, true]),
+    `scored games 1 and 3, not 2, oldest first (${JSON.stringify(r.topScorer?.form)})`);
+  check(JSON.stringify(r.topAssister?.form) === JSON.stringify([false, false, true]),
+    `the assist king only actually assisted the third (${JSON.stringify(r.topAssister?.form)})`);
+
+  // Recent results themselves: real scores, real opponents, oldest first.
+  check(r.recentResults.length === 3, "one row per game played");
+  check(r.recentResults[0].result === "W" && r.recentResults[0].opponent === "Fulham FC" && r.recentResults[0].scoreFor === 1,
+    `game 1 read correctly (${JSON.stringify(r.recentResults[0])})`);
+  check(r.recentResults[1].result === "L" && r.recentResults[1].opponent === "Everton" && r.recentResults[1].scoreFor === 1 && r.recentResults[1].scoreAgainst === 2,
+    `game 2 read correctly as the away side (${JSON.stringify(r.recentResults[1])})`);
+  check(r.recentResults[2].result === "W" && r.recentResults[2].opponent === "Brentford",
+    `game 3 read correctly (${JSON.stringify(r.recentResults[2])})`);
+}
+
+// ── The table snippet is genuinely centred on the opponent, clamped at the edges ─
+{
+  let c = base();
+  const table = c.league.map(t => t.name);
+  const topClub = table[0], midClub = table[10], bottomClub = table[table.length - 1];
+
+  const top = scoutReportFor(c, topClub, 1);
+  check(top.tableSnippet[0].position === 1, `clamped at the top, not showing a negative position (${top.tableSnippet[0].position})`);
+  check(top.tableSnippet.some(r => r.isOpponent && r.club === topClub), "the opponent is marked within it");
+
+  const mid = scoutReportFor(c, midClub, 1);
+  const oppRow = mid.tableSnippet.find(r => r.isOpponent)!;
+  check(mid.tableSnippet.length === 5, `two either side in the middle of the table (${mid.tableSnippet.length})`);
+  check(oppRow.club === midClub, "…genuinely centred on the opponent, not some fixed slice");
+
+  const bottom = scoutReportFor(c, bottomClub, 1);
+  check(bottom.tableSnippet[bottom.tableSnippet.length - 1].position === table.length,
+    `clamped at the bottom too, not running past the last club (${bottom.tableSnippet[bottom.tableSnippet.length - 1].position})`);
 }
 
 // ── Head-to-head actually accumulates, and only for club matches ───────────
