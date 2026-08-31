@@ -346,11 +346,16 @@ export default function StarDevPage() {
   /** The team sheets, shown between the pre-match screen and kick-off. */
   const [showTeams, setShowTeams] = useState(false);
   /**
-   * Asked to play somewhere other than your named position, for the match about
-   * to be played. Reset the moment you kick off, so the next match always
-   * offers your real position first rather than quietly keeping today's choice.
+   * Asked to play somewhere other than your named position. Lives on the
+   * career now, not component state — it used to reset the moment you
+   * kicked off, so a choice never survived past the match it was made for,
+   * reported directly as "it should stay until I change it again". Applies
+   * to every match from here on, not just the next one.
    */
-  const [playAs, setPlayAs] = useState<Role | null>(null);
+  const playAs = career?.playAs ?? null;
+  const setPlayAs = useCallback((role: Role | null) => {
+    setCareer(c => (c ? { ...c, playAs: role } : c));
+  }, []);
 
   const [refreshing, setRefreshing] = useState(false);
   const refreshSquads = useCallback(async () => {
@@ -1125,7 +1130,7 @@ export default function StarDevPage() {
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
             keeperStrength={oppStrength}
-            position={career.player.position}
+            position={career.playAs ?? career.player.position}
             teamRelationship={career.relationships.team}
             career={career}
             fixture={nextFixture}
@@ -1323,7 +1328,7 @@ export default function StarDevPage() {
               ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`
               : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
           }
-          onKickOff={() => { setShowTeams(false); setPlayAs(null); handlePlayMatch(); }}
+          onKickOff={() => { setShowTeams(false); handlePlayMatch(); }}
           onBack={() => setShowTeams(false)}
         />
       );

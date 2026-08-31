@@ -366,6 +366,12 @@ export function speak(
   let out = text.trim().replace(/\s+/g, " ").replace(/\s+([,.!?])/g, "$1");
 
   if (rng() < voice.lowercase) out = out.toLowerCase();
+
+  // Even the deliberately-casual, all-lowercase voices still start a
+  // sentence with a capital — reported directly: "usually the first letter
+  // of a post is capitalized." A no-op on anything that already starts with
+  // an emoji, a number or a symbol.
+  out = out.charAt(0).toUpperCase() + out.slice(1);
   if (voice.punctuation === "none") out = out.replace(/[.]$/, "");
 
   // An emoji is already punctuation. Adding "!" after one, or a second emoji

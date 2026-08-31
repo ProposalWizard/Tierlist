@@ -71,52 +71,46 @@ export default function MatchCommentary({
         @media (prefers-reduced-motion: reduce) {
           .kib-goal-flash { animation: none; }
         }
+        /* The screen above this one already has a scoreboard — a second one
+           here just repeated it. The minute/speed control still needs
+           somewhere to live, so it floats over the feed instead of owning a
+           header row of its own; on a desktop-width viewport the feed's own
+           scrollbar is hidden too, since it visibly shoved the whole panel
+           over and nothing here needs it drawn — the div still scrolls. */
+        .kib-feed::-webkit-scrollbar { display: none; }
+        .kib-feed { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
-      {/* ── The clock and the score ── */}
-      <div className="shrink-0 border-b border-white/10 bg-gradient-to-b from-gray-900 to-gray-950">
-        <div className="flex items-stretch">
-          <div className="flex min-w-0 flex-1 items-center bg-emerald-800/60 px-2 py-1.5">
-            <span className="truncate text-[11px] font-black uppercase text-white">{homeTeam}</span>
-          </div>
-          <div className="flex shrink-0 items-center gap-1 bg-gray-950 px-2.5">
-            <span className="text-lg font-black tabular-nums text-white">{homeScore}</span>
-            <span className="text-white/40">-</span>
-            <span className="text-lg font-black tabular-nums text-white">{awayScore}</span>
-          </div>
-          <div className="flex min-w-0 flex-1 items-center justify-end bg-gray-800/80 px-2 py-1.5">
-            <span className="truncate text-[11px] font-black uppercase text-white">{awayTeam}</span>
-          </div>
-          {/* The minute, and the speed control on the same plate — the number
-              and how fast it is moving are one idea. */}
-          <button
-            onClick={onSpeed}
-            aria-label={`Commentary speed ${speed}x`}
-            className="flex w-14 shrink-0 flex-col items-center justify-center border-l border-white/10 bg-gray-900 transition hover:bg-gray-800"
-          >
-            <span className="text-sm font-black leading-none tabular-nums text-white">{minute}&#39;</span>
-            <span className={`mt-0.5 text-[9px] font-black leading-none ${
-              speed > 1 ? "text-amber-300" : "text-white/45"}`}
-            >
-              {"▶".repeat(speed === 4 ? 3 : speed)}
-            </span>
-          </button>
-        </div>
-      </div>
 
       {/* ── The commentary ── */}
       <div
         ref={bodyRef}
         onClick={onSkip}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        className="kib-feed min-h-0 flex-1 overflow-y-auto overscroll-contain"
       >
         <div className="flex min-h-full flex-col justify-end">
           {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} />)}
         </div>
       </div>
 
+      {/* The minute, and the speed control on the same plate — the number and
+          how fast it is moving are one idea. Floats over the feed rather than
+          reserving its own row, so the panel underneath scrolls past it. */}
+      <button
+        onClick={onSpeed}
+        aria-label={`Commentary speed ${speed}x`}
+        className="absolute right-2 top-2 z-20 flex w-12 flex-col items-center justify-center rounded-lg border border-white/10 bg-gray-900/85 py-1 shadow-md backdrop-blur-sm transition hover:bg-gray-800"
+      >
+        <span className="text-sm font-black leading-none tabular-nums text-white">{minute}&#39;</span>
+        <span className={`mt-0.5 text-[9px] font-black leading-none ${
+          speed > 1 ? "text-amber-300" : "text-white/45"}`}
+        >
+          {"▶".repeat(speed === 4 ? 3 : speed)}
+        </span>
+      </button>
+
       {/* ── Waiting on you ── */}
       {pause && (
-        <div className="shrink-0 border-t border-amber-400/40 bg-amber-950/40 px-3 py-2.5">
+        <div className="shrink-0 border-t border-amber-400/40 bg-amber-950/40 px-3 pt-2 pb-2.5">
           {pause.label && (
             <div className="text-center text-[11px] font-black uppercase tracking-widest text-amber-200">
               {pause.label}
@@ -124,7 +118,8 @@ export default function MatchCommentary({
           )}
           <button
             onClick={pause.onContinue}
-            className="mt-2 w-full rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99]"
+            className={`w-full rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99] ${
+              pause.label ? "mt-2.5" : ""}`}
           >
             {pause.cta}
           </button>
@@ -161,9 +156,27 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
         <span className="flex-1 text-center text-[11px] font-black uppercase tracking-[0.18em] text-white">
           {l.text}
         </span>
+        {/* Balances the minute badge on the left — otherwise "text-center"
+            only centres in the space left over after it, and the line reads
+            visibly off-centre. */}
+        {l.minute !== undefined && <span className="w-6 shrink-0" aria-hidden />}
       </div>
     );
   }
+
+  // Every tone that is about one specific side reads in that side's own kit
+  // colour — reported directly, with a real example: Manchester City scoring
+  // showed in a flat red instead of their own blue, and a line about your
+  // own play sat in a fixed amber regardless of what you actually wear.
+  // `goal` (your own team scoring) is the one deliberate exception, kept a
+  // fixed celebratory green rather than your kit — it already reads as a
+  // highlight moment on its own and the flash animation is built around that
+  // green, not a per-club colour.
+  const kit: Kit | null =
+    l.tone === "oppGoal" ? oppKit
+      : l.tone === "you" ? userKit
+        : l.tone === "play" && l.isOpponent !== undefined ? (l.isOpponent ? oppKit : userKit)
+          : null;
 
   // Goal lines get a real green highlight, not a low-opacity tint that read
   // as barely-there-over-black — reported directly: "instead of black, it's
@@ -171,32 +184,26 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
   // goal reads as a moment, not just a differently-coloured row.
   const tone =
     l.tone === "goal" ? "kib-goal-flash bg-emerald-600/70 text-white font-black"
-      : l.tone === "oppGoal" ? "bg-red-600/45 text-white font-black"
+      : l.tone === "oppGoal" ? "font-black"
         // Follows straight under its goal — a lighter touch than the goal
         // itself, since it is the supporting fact rather than the headline,
         // and violet to match the Assists stat cell below.
         : l.tone === "assist" ? "pl-8 text-violet-200 font-bold"
-          : l.tone === "you" ? "bg-amber-500/15 text-white font-bold"
+          : l.tone === "you" ? "font-bold"
             : l.tone === "chance" ? "text-white font-bold"
               // A plain line about a specific team's play (a near-miss, a
               // blocked shot) is coloured further down, straight from that
               // team's own shirt — a flat "text-white" here would fight the
               // inline style rather than just staying out of its way.
-              : l.tone === "play" && l.isOpponent !== undefined ? "font-bold"
+              : kit ? "font-bold"
                 : "text-white";
 
-  // Reported directly: "lines about Liverpool should have a red background;
-  // lines about Spurs should have a white background." The line's own kit,
-  // near-solid so the colour actually reads, with ink picked the same way the
+  // Near-solid so the colour actually reads, with ink picked the same way the
   // scoreboard picks ink for a name printed on a shirt — dark on a light kit,
   // white on a dark one — rather than one text colour fighting every club.
-  const teamStyle: CSSProperties | undefined =
-    l.tone === "play" && l.isOpponent !== undefined
-      ? (() => {
-          const kit = l.isOpponent ? oppKit : userKit;
-          return { backgroundColor: `${kit.shirt}E6`, color: labelInk(kit.shirt) };
-        })()
-      : undefined;
+  const teamStyle: CSSProperties | undefined = kit
+    ? { backgroundColor: `${kit.shirt}E6`, color: labelInk(kit.shirt) }
+    : undefined;
 
   return (
     <div

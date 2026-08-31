@@ -241,7 +241,7 @@ export default function VersusScreen({ matchday, date, competition, results, onK
               anchored, height growing) instead of adding height below it,
               and pressing it again collapses it straight back down to just
               the tab. */}
-          <div className="absolute inset-x-0 -bottom-2.5 z-10 overflow-hidden rounded-b-xl border border-white/15 bg-gray-950/95 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.5)] backdrop-blur-sm">
+          <div className="absolute inset-x-0 -bottom-4 z-10 overflow-hidden rounded-b-xl border border-white/15 bg-gray-950/95 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.5)] backdrop-blur-sm">
             <button
               onClick={() => setShowSubs(s => !s)}
               className="flex w-full items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-white/80"

@@ -530,34 +530,32 @@ export function sheetReady(m: Matchday): boolean {
 // ── Asking to play somewhere else ───────────────────────────────────────────
 
 /**
- * Where a man in this position could plausibly be asked to play instead.
- *
- * Not the fitness graph in formations.ts — that one is tuned for "who is an
- * acceptable emergency fill-in for an empty slot", which is a different
- * question and a more forgiving one. This is "what a manager would actually ask
- * a specialist to do": a striker drops into the hole or goes wide, a winger
- * cuts inside or swaps flanks, a deep midfielder pushes on. A centre-back or a
- * goalkeeper gets nothing — that is not a request anyone makes.
- *
- * `LM`/`RM` are not separate values here because they are not a separate `Role`
- * — every formation that plays a flat midfield four labels the `LW`/`RW` slot
- * that way already (see formations.ts), so asking for `LW` is asking for
- * "the left of midfield" in whichever shape actually has one.
+ * The only positions ever worth asking to play instead — Striker, Attacking
+ * Mid, or either wing. Given directly, replacing a per-position neighbour
+ * table (a deep midfielder could be offered CDM, a full-back could be
+ * offered a wing) with a single fixed menu: whatever your real position is,
+ * this is the whole menu there is, not something that changes shape
+ * depending on what you nominally play.
  */
-const ALTERNATE_POSITIONS: Partial<Record<Role, Role[]>> = {
-  ST: ["CAM", "LW", "RW", "CM"],
-  CAM: ["ST", "LW", "RW", "CM"],
-  LW: ["ST", "RW", "CAM", "CM"],
-  RW: ["ST", "LW", "CAM", "CM"],
-  CM: ["CAM", "CDM", "LW", "RW"],
-  CDM: ["CM", "CB"],
-  LB: ["LW", "CM"],
-  RB: ["RW", "CM"],
-  CB: ["CDM"],
-};
+const OFFERABLE_ROLES: Role[] = ["ST", "CAM", "LW", "RW"];
 
 export function alternatePositions(realPosition: string): Role[] {
-  return ALTERNATE_POSITIONS[realPosition as Role] ?? [];
+  // Nothing is offered unless your real position is itself one of the four —
+  // the same "a centre-back gets nothing, that is not a request anyone
+  // makes" principle the old neighbour table used, just applied uniformly
+  // rather than to defenders and goalkeepers alone.
+  if (!OFFERABLE_ROLES.includes(realPosition as Role)) return [];
+  return OFFERABLE_ROLES.filter(r => r !== realPosition);
+}
+
+/** A role offered by the picker, with what the formation actually calls the
+ *  slot it would seat you in. */
+export interface OfferedPosition {
+  role: Role;
+  /** "LM"/"RM" for a flat wide midfielder — the same `LW`/`RW` Role
+   *  underneath, see `Slot.label` in formations.ts — otherwise the role's
+   *  own name. */
+  label: string;
 }
 
 /**
@@ -570,9 +568,11 @@ export function alternatePositions(realPosition: string): Role[] {
  * for a winger. That is not what asking to play wide should do, so the picker
  * never offers a role the shape cannot seat you in to begin with.
  */
-export function offeredPositions(realPosition: string, formation: Formation): Role[] {
-  const has = new Set(formation.slots.map(s => s.role));
-  return alternatePositions(realPosition).filter(r => has.has(r));
+export function offeredPositions(realPosition: string, formation: Formation): OfferedPosition[] {
+  return alternatePositions(realPosition).flatMap((role): OfferedPosition[] => {
+    const slot = formation.slots.find(s => s.role === role);
+    return slot ? [{ role, label: slot.label ?? POSITION_NAMES[role] }] : [];
+  });
 }
 
 /** What to call a role in a picker — not what the pitch calls the SLOT, which

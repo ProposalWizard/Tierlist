@@ -42,6 +42,9 @@ export interface Template {
   club?: string;
   score?: string;
   player?: string;
+  /** Matches `facts.result` ("win"/"draw"/"loss") — a personal goal reads
+   *  differently depending on whether it actually helped you win. */
+  result?: "win" | "draw" | "loss";
   /**
    * Fact keys that must be ABSENT.
    *
@@ -121,7 +124,8 @@ export function chooseTemplate(
     && (!wantThread || !!t.threadBody || t.id.endsWith("-generic"))
     && (t.club === undefined || event.facts.club === t.club)
     && (t.score === undefined || event.facts.score === t.score)
-    && (t.player === undefined || event.facts.scorer === t.player));
+    && (t.player === undefined || event.facts.scorer === t.player)
+    && (t.result === undefined || event.facts.result === t.result));
 
   const exact = usable.filter(t => t.events?.includes(event.id));
   const tagged = usable.filter(t => !t.events && t.tags?.some(tag => event.tags.includes(tag)));

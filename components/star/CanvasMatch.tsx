@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
@@ -303,12 +303,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   fixtureHomeRef.current = fixture?.home !== false;
 
   // --- Session / scoreline tracking ---
+  /**
+   * Bumped every time a new scenario or simulation pass actually starts
+   * (`loadScenario`/`startSimulation`). The result screen schedules its own
+   * advance a second or two later with a bare `setTimeout` — nothing was
+   * ever cancelling one of those if the tab went to the background and it
+   * fired late, well after something else had already moved the match on.
+   * Reported directly: leave the app mid-result and come back to find it has
+   * silently "cut to a different scene" — a stale timer finally firing on
+   * top of whatever you had already moved on to. Each timer captures the
+   * generation at the moment it is scheduled and checks it is still current
+   * before doing anything; a late one that lost the race is a no-op.
+   */
+  const sceneGenRef = useRef(0);
   const attemptsRef = useRef(0);
   const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
   const userScoreRef = useRef(0);
   const oppScoreRef = useRef(0);
   const goalEventsRef = useRef<GoalEvent[]>([]);
-  const [score, setScore] = useState({ user: 0, opp: 0 });
   const [finalStats, setFinalStats] = useState<MatchStats | null>(null);
 
   // --- Simulation between chances ---
@@ -336,6 +348,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // computes a whole passage at once, but you watch it.
   const [log, setLog] = useState<LogLine[]>([]);
   const [queue, setQueue] = useState<LogLine[]>([]);
+  // The number painted on the scoreboard — read off what has actually been
+  // REVEALED so far, not off the simulation's own running total. Those two
+  // used to be the same `score` state, set the instant a whole simulated
+  // passage resolved, well before the queue above had streamed out the goal
+  // line that passage contained — reported directly: the scoreline jumped to
+  // 3-1 minutes (sometimes a whole half-time pause) before the commentary
+  // ever showed the goal that made it 3-1. A goal you score yourself, or come
+  // on as a substitute already trailing by, still updates instantly — those
+  // lines are pushed straight into `log`, never queued, so there is nothing
+  // to lag behind.
+  const displayScore = useMemo(() => ({
+    user: log.filter(l => l.tone === "goal").length,
+    opp: log.filter(l => l.tone === "oppGoal").length,
+  }), [log]);
   const [speed, setSpeed] = useState(1);
   const [pause, setPause] = useState<{ label?: string; cta: string; onContinue: () => void } | null>(null);
   const halfTimeShownRef = useRef(false);
@@ -398,21 +424,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     return "saved";
   };
 
-  const SIM_COMMENTARY = [
-    "Possession is being shared evenly in midfield.",
-    "The defense holds firm under pressure.",
-    "A counter-attack breaks down in the final third.",
-    "A tidy passing move comes to nothing.",
-    "The ball is being recycled patiently at the back.",
-    "A promising run down the wing is halted by a strong tackle.",
-    "The keeper comes out to claim a hopeful cross.",
-    "A long ball finds nobody — easily dealt with.",
-    "Neat footwork in the middle of the park creates some space.",
-    "The crowd are starting to get restless.",
-    "A crunching challenge in midfield draws a free kick — nothing comes of it.",
-    "The tempo drops as both sides look to regroup.",
-    "A lovely piece of skill on the touchline, but the final ball lets them down.",
-    "Chances have been at a premium here.",
+  // Two banks, not one shared neutral set — reported directly, same as
+  // hiddenMatch.ts's QUIET lines: nothing here should read as about nobody.
+  // Attributed to whoever actually has the ball when this fires (SEE the
+  // call site's `st.possession` check), which this rare fallback path — a
+  // whole skipped batch producing no events at all — otherwise had no way
+  // to say.
+  const SIM_COMMENTARY_USER = [
+    "Your side share the ball around patiently in midfield.",
+    "Your defence holds firm under pressure.",
+    "Your counter-attack breaks down in the final third.",
+    "A tidy passing move from your side comes to nothing.",
+    "The ball is recycled patiently at the back for your team.",
+    "A promising run down the wing for your side is halted by a strong tackle.",
+    "Your keeper comes out to claim a hopeful cross.",
+    "A long ball forward for your side finds nobody — easily dealt with.",
+    "Neat footwork from your side in the middle of the park creates some space.",
+    "Your fans are starting to get restless.",
+    "A crunching challenge from your side draws a free kick — nothing comes of it.",
+    "The tempo drops as your side look to regroup.",
+    "A lovely piece of skill from your side on the touchline, but the final ball lets them down.",
+    "Chances have been at a premium for your team here.",
+  ];
+  const SIM_COMMENTARY_OPP = [
+    "They share the ball around patiently in midfield.",
+    "Their defence holds firm under pressure.",
+    "Their counter-attack breaks down in the final third.",
+    "A tidy passing move from them comes to nothing.",
+    "The ball is recycled patiently at the back for them.",
+    "A promising run down the wing for them is halted by a strong tackle.",
+    "Their keeper comes out to claim a hopeful cross.",
+    "A long ball forward for them finds nobody — easily dealt with.",
+    "Neat footwork from them in the middle of the park creates some space.",
+    "Their fans are starting to get restless.",
+    "A crunching challenge from them draws a free kick — nothing comes of it.",
+    "The tempo drops as they look to regroup.",
+    "A lovely piece of skill from them on the touchline, but the final ball lets them down.",
+    "Chances have been at a premium for them here.",
   ];
 
   // --- Sound: muted by default until primed by the first user gesture ---
@@ -693,7 +741,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
-        setScore({ user: st.userScore, opp: st.oppScore });
         matchMinuteRef.current = st.minute;
         setMatchMinute(st.minute);
         // The hour you were not on for, read out rather than summarised — the
@@ -2138,7 +2185,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     // teammate you set up (same rule the old DOM match used: goal || assist).
     if (kind === "goal") {
       userScoreRef.current += 1;
-      setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
     }
 
     // Hand the outcome back to the match. Without this it would carry on as
@@ -2307,13 +2353,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     // The move continues: no simulation, straight into the next link.
     if (chainRef.current) {
-      window.setTimeout(() => loadScenario(true), 1600);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1600);
       return;
     }
 
     // In career/match mode, enter simulation phase. In sandbox, go directly.
     if (matchModeRef.current) {
-      window.setTimeout(() => startSimulation(), 1800);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1800);
     } else {
       // Sandbox mode: after 6 chances, show post-match
       if (attemptsRef.current >= 6) {
@@ -2324,9 +2372,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           90, userScoreRef.current, oppScoreRef.current, careerForStats,
           goalEventsRef.current,
         );
-        window.setTimeout(() => { setFinalStats(stats); setPhase("postmatch"); }, 1800);
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) { setFinalStats(stats); setPhase("postmatch"); } }, 1800);
       } else {
-        window.setTimeout(() => loadScenario(false), 1800);
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1800);
       }
     }
   };
@@ -2355,7 +2405,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // the same way the ambitious pass is.
       chainRef.current = { pos: { x: s.pos.x, y: s.pos.y }, depth: 0, ambition: 1 };
       if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
-      window.setTimeout(() => loadScenario(true), 1200);
+      {
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1200);
+      }
       return;
     }
 
@@ -2367,9 +2420,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     t.chances += 1;
     setStats({ ...t });
     if (matchModeRef.current) {
-      window.setTimeout(() => startSimulation(), 1600);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1600);
     } else {
-      window.setTimeout(() => loadScenario(false), 1600);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1600);
     }
   };
 
@@ -2382,6 +2437,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // your side works the ball into a dangerous area, and the situation you get
   // is whatever that area justifies.
   const startSimulation = () => {
+    sceneGenRef.current += 1;
     seedRef.current += 1;
     const rng = mulberry32(seedRef.current);
     rngRef.current = rng;
@@ -2442,12 +2498,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
     userScoreRef.current = st.userScore;
     oppScoreRef.current = st.oppScore;
-    setScore({ user: userScoreRef.current, opp: oppScoreRef.current });
 
     // Nothing at all happened in the skipped minutes — say so rather than
     // showing an empty panel.
     if (events.length === 0) {
-      events.push({ minute: st.minute, text: SIM_COMMENTARY[Math.floor(rng() * SIM_COMMENTARY.length)] });
+      const bank = st.possession === "user" ? SIM_COMMENTARY_USER : SIM_COMMENTARY_OPP;
+      events.push({ minute: st.minute, text: bank[Math.floor(rng() * bank.length)], isOpponent: st.possession !== "user" });
     }
 
     // ── Being taken off ──
@@ -2483,7 +2539,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         events.push(...nameTeamGoals(after, onPitch(careerRef.current?.squad ?? []), rng, false));
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
-        setScore({ user: st.userScore, opp: st.oppScore });
         step = { ...step, request: null, fullTime: true };
       }
     }
@@ -2534,6 +2589,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   // Load a new scenario onto the canvas and enter aim phase.
   const loadScenario = (attacking: boolean) => {
+    sceneGenRef.current += 1;
     seedRef.current += 1;
     rngRef.current = mulberry32(seedRef.current);
     const rng = rngRef.current;
@@ -2546,6 +2602,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     const chain = chainRef.current;
     chainRef.current = null;
+
+    // A finished run is kept around deliberately through its own "result"
+    // phase (see the draw function's note above the dribble branch) so a
+    // tackle or a run out of play doesn't flash a stale unrelated scenario
+    // for a moment. But finishDribble only ever clears it back to null on
+    // the "through" outcome — a "lost"/"out" ending left it sitting here
+    // untouched, and the draw function keys off phase alone, not off which
+    // scenario is actually current. The result: every scenario after that
+    // point — a shot included — silently rendered the frozen dribble (its
+    // chasers, its progress bar) the moment ITS OWN phase reached "result",
+    // for as long as no new dribble came along to overwrite the ref.
+    // Reported directly: kicking a ball "cut to a different scene" with a
+    // bar across the top, and it kept doing it "onto the next highlight".
+    // A new scenario loading is exactly the point its lifetime is over.
+    dribbleRef.current = null;
 
     // A run at the defence rather than a ball to strike.
     if (!attacking && request?.dribble) {
@@ -2640,6 +2711,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   };
 
   const restartSession = () => {
+    sceneGenRef.current += 1;
     attemptsRef.current = 0;
     tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
     userScoreRef.current = 0;
@@ -2655,7 +2727,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     hookedRef.current = null;
     hookedAtRef.current = null;
     chainRef.current = null;
-    setScore({ user: 0, opp: 0 });
     setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
     setFinalStats(null);
     setFeed([]);
@@ -2790,12 +2861,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // Match-mode scoreboard (user's club vs opponent, mapped to home/away)
   const homeTeam = matchMode ? (fixture!.home ? career?.player.club ?? "You" : fixture!.opponent) : "";
   const awayTeam = matchMode ? (fixture!.home ? fixture!.opponent : career?.player.club ?? "You") : "";
-  const homeScore = matchMode ? (fixture!.home ? score.user : score.opp) : 0;
-  const awayScore = matchMode ? (fixture!.home ? score.opp : score.user) : 0;
+  const homeScore = matchMode ? (fixture!.home ? displayScore.user : displayScore.opp) : 0;
+  const awayScore = matchMode ? (fixture!.home ? displayScore.opp : displayScore.user) : 0;
 
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="px-1.5 py-1 text-center">
-      <div className="text-[8px] uppercase tracking-widest text-white/70 font-bold leading-none">{label}</div>
+      <div className="text-[8px] uppercase tracking-widest text-white font-bold leading-none">{label}</div>
       <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
     </div>
   );
@@ -2852,7 +2923,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
-            {statCell("Avg Rat", liveRating(stats.goals, stats.assists, stats.passesCompleted, score.user, score.opp).toFixed(1), "text-sky-300")}
+            {statCell("Avg Rat", liveRating(stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp).toFixed(1), "text-sky-300")}
           </div>
           <button
             onClick={toggleMuted}

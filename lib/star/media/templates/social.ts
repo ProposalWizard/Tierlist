@@ -189,47 +189,67 @@ export const SOCIAL_TEMPLATES: Template[] = [
   //
   // Archetype "teammate" is now only ever your own account — buildRoster no
   // longer creates one for a real squad player (see accounts.ts and
-  // tests/star/noRealPlayerAccounts.mts). Every template below is still
-  // written as one team-mate reacting to something ELSE that happened
-  // (a goal, a debut, a trophy) rather than to its own author's event, which
-  // is exactly right for your own account congratulating a real team-mate —
-  // narrate.ts has no reason to ever pick one of these for an event whose
-  // subject IS the author.
+  // tests/star/noRealPlayerAccounts.mts): a real, currently-playing
+  // footballer does not consent to a fictional social account putting words
+  // in his mouth. These used to be written as one team-mate reacting to
+  // someone ELSE's goal/trophy/debut in third person — which read, once this
+  // became the only account left using the archetype, as your own account
+  // congratulating YOU, using your own surname, in the third person.
+  // Reported directly, with a real example: your own account posting "big
+  // three points" about yourself the same afternoon you actually lost.
+  // Rewritten in first person throughout, and never says your own name — you
+  // do not refer to yourself by it — and a personal goal now reads
+  // differently depending on whether it actually helped you win.
   {
-    id: "mate-goal", archetype: "teammate", tags: ["goal"], requires: ["short"],
-    body: "big three points. {short} 🔥🔥",
-    weight: 3,
-  },
-  {
-    id: "mate-hattrick", archetype: "teammate", events: ["hat-trick", "four-goals", "five-goals"],
-    body: "matchball for the big man 🎯 unreal",
-    weight: 3,
-  },
-  {
-    id: "mate-win", archetype: "teammate", events: ["win", "rout", "derby-win"],
-    body: "job done. onto the next 💪 {club}",
+    id: "self-goal", archetype: "teammate", tags: ["goal"],
+    body: "buzzing to get on the scoresheet today ⚽",
     weight: 2,
   },
   {
-    id: "mate-loss", archetype: "teammate", events: ["loss", "hammered"],
-    body: "not good enough today. we'll be better. thanks for travelling 🙏",
+    id: "self-goal-win", archetype: "teammate", tags: ["goal"], result: "win",
+    body: "buzzing to score and get the three points 🔥",
+    weight: 3,
   },
   {
-    id: "mate-milestone", archetype: "teammate", tags: ["milestone", "award"],
-    body: "deserves everything he gets. proud of you brother 🤝",
+    id: "self-goal-draw", archetype: "teammate", tags: ["goal"], result: "draw",
+    body: "happy to chip in with a goal. not the three points, but we take the point.",
+    weight: 3,
+  },
+  {
+    id: "self-goal-loss", archetype: "teammate", tags: ["goal"], result: "loss",
+    body: "gutted we didn't get the result today, but happy to chip in with a goal. we go again.",
+    weight: 3,
+  },
+  {
+    id: "self-hattrick", archetype: "teammate", events: ["hat-trick", "four-goals", "five-goals"],
+    body: "buzzing with the matchball today 🎯 what a feeling",
+    weight: 3,
+  },
+  {
+    id: "self-win", archetype: "teammate", events: ["win", "rout", "derby-win"],
+    body: "get in! job done. onto the next one 💪",
     weight: 2,
   },
   {
-    id: "mate-trophy", archetype: "teammate", events: ["trophy", "champions"],
-    body: "CHAMPIONS 🏆🏆🏆 what a group of lads",
+    id: "self-loss", archetype: "teammate", events: ["loss", "hammered"],
+    body: "not good enough from us today. we'll be better. thanks for coming out and supporting us 🙏",
+  },
+  {
+    id: "self-milestone", archetype: "teammate", tags: ["milestone", "award"],
+    body: "buzzing to reach that one. couldn't do it without the lads 🤝",
+    weight: 2,
+  },
+  {
+    id: "self-trophy", archetype: "teammate", events: ["trophy", "champions"],
+    body: "CHAMPIONS 🏆🏆🏆 what a group to do it with",
     weight: 4,
   },
   {
-    id: "mate-debut", archetype: "teammate", events: ["debut", "club-debut"],
-    body: "welcome to it 🤝 first of many",
+    id: "self-debut", archetype: "teammate", events: ["debut", "club-debut"],
+    body: "buzzing for my debut today 🤝 first of many",
   },
   {
-    id: "mate-generic", archetype: "teammate",
+    id: "self-generic", archetype: "teammate",
     body: "onto the next one 💪",
     weight: 0.5,
   },
