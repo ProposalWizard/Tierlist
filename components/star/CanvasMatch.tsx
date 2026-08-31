@@ -303,6 +303,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   fixtureHomeRef.current = fixture?.home !== false;
 
   // --- Session / scoreline tracking ---
+  /**
+   * Bumped every time a new scenario or simulation pass actually starts
+   * (`loadScenario`/`startSimulation`). The result screen schedules its own
+   * advance a second or two later with a bare `setTimeout` — nothing was
+   * ever cancelling one of those if the tab went to the background and it
+   * fired late, well after something else had already moved the match on.
+   * Reported directly: leave the app mid-result and come back to find it has
+   * silently "cut to a different scene" — a stale timer finally firing on
+   * top of whatever you had already moved on to. Each timer captures the
+   * generation at the moment it is scheduled and checks it is still current
+   * before doing anything; a late one that lost the race is a no-op.
+   */
+  const sceneGenRef = useRef(0);
   const attemptsRef = useRef(0);
   const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
   const userScoreRef = useRef(0);
@@ -2340,13 +2353,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
     // The move continues: no simulation, straight into the next link.
     if (chainRef.current) {
-      window.setTimeout(() => loadScenario(true), 1600);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1600);
       return;
     }
 
     // In career/match mode, enter simulation phase. In sandbox, go directly.
     if (matchModeRef.current) {
-      window.setTimeout(() => startSimulation(), 1800);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1800);
     } else {
       // Sandbox mode: after 6 chances, show post-match
       if (attemptsRef.current >= 6) {
@@ -2357,9 +2372,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           90, userScoreRef.current, oppScoreRef.current, careerForStats,
           goalEventsRef.current,
         );
-        window.setTimeout(() => { setFinalStats(stats); setPhase("postmatch"); }, 1800);
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) { setFinalStats(stats); setPhase("postmatch"); } }, 1800);
       } else {
-        window.setTimeout(() => loadScenario(false), 1800);
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1800);
       }
     }
   };
@@ -2388,7 +2405,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // the same way the ambitious pass is.
       chainRef.current = { pos: { x: s.pos.x, y: s.pos.y }, depth: 0, ambition: 1 };
       if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
-      window.setTimeout(() => loadScenario(true), 1200);
+      {
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1200);
+      }
       return;
     }
 
@@ -2400,9 +2420,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     t.chances += 1;
     setStats({ ...t });
     if (matchModeRef.current) {
-      window.setTimeout(() => startSimulation(), 1600);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1600);
     } else {
-      window.setTimeout(() => loadScenario(false), 1600);
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1600);
     }
   };
 
@@ -2415,6 +2437,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // your side works the ball into a dangerous area, and the situation you get
   // is whatever that area justifies.
   const startSimulation = () => {
+    sceneGenRef.current += 1;
     seedRef.current += 1;
     const rng = mulberry32(seedRef.current);
     rngRef.current = rng;
@@ -2566,6 +2589,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   // Load a new scenario onto the canvas and enter aim phase.
   const loadScenario = (attacking: boolean) => {
+    sceneGenRef.current += 1;
     seedRef.current += 1;
     rngRef.current = mulberry32(seedRef.current);
     const rng = rngRef.current;
@@ -2672,6 +2696,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   };
 
   const restartSession = () => {
+    sceneGenRef.current += 1;
     attemptsRef.current = 0;
     tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
     userScoreRef.current = 0;
