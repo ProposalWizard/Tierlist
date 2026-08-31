@@ -3084,14 +3084,38 @@ export function loftRange(technique: number): number {
  * them. Reported as "it's hard to actually pull the power arrow back to anywhere
  * near 100% on mobile".
  *
- * 0.18 fits inside that worst-case 20% with a little room to spare, so every
- * situation in the game can be struck at full power with the thumb still on the
- * pitch. The cost, accepted knowingly, is resolution: the same range of power now
- * lives in about half the travel, so choosing 60% rather than 70% is a finer
- * movement than it was.
+ * 0.18 fits inside that worst-case 20% — but only just. Two percentage points of
+ * cushion between "guaranteed available" and "required" is the gap between a
+ * gesture that is mathematically reachable and one that FEELS reachable: real
+ * canvas chrome (rounding, a device's own edge gestures eating the last few
+ * pixels, a thumb that pulls a hair short of its own intent) can burn through
+ * two points without the drag itself doing anything wrong. Reported again,
+ * after the first fix: "if the ball is close to the edge of the screen it's
+ * quite difficult to actually pull back the arrow and do it right" — the
+ * reference given for the feel this should have (New Star Soccer) frames every
+ * situation with the ball sitting well clear of the edge, not just clear of it.
+ *
+ * Widening the ball's own guaranteed clearance (`fitToView`'s 20%) was tried
+ * first and reverted: for the situations already framed tightest against it —
+ * a shot from distance, a through-ball, a corner, all of them already sitting
+ * exactly on that 20% floor — asking for MORE clearance does not create room
+ * that was not there, it pulls the ball artificially closer to goal on a frame
+ * whose height never changes (see VIEW_H), measurably shortening exactly those
+ * shots and breaking two independently-tuned physics tests that were
+ * measuring something real. There was no slack to give.
+ *
+ * The room this DOES have slack in is the gap on the other side of the same
+ * inequality — how much of that 20% a drag is actually asked to use. 0.14
+ * (down from 0.18) still respects tests/star/aiming.mts's own floor
+ * (dragForFullPower must stay >= 0.11, a deliberate line past which the arrow
+ * would be too twitchy to aim with), and it triples the cushion against the
+ * worst-case 20% from two points to six — without moving a single defender,
+ * keeper or ball position, so it costs nothing in the two tests above. The
+ * accepted cost, same shape as before: the same range of power lives in a bit
+ * less travel, a slightly finer movement than 0.18 asked for.
  */
 export function dragForFullPower(power: number): number {
-  return 0.18 - clamp(power, 0, 100) / 100 * 0.06;
+  return 0.14 - clamp(power, 0, 100) / 100 * 0.025;
 }
 
 /**
