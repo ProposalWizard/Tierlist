@@ -196,14 +196,14 @@ const convertRate = (base: number, rng: () => number) => (rng() < QUALITY_CHANCE
 // in the same order so each line has a real opposite number, chosen by who
 // actually has the ball rather than left unattributed.
 const QUIET_USER = [
-  "Your side work it patiently across the back.",
-  "A good spell of possession for your team.",
-  "Play is switched to the far side, still looking for the gap.",
-  "The tempo drops, but your side keep the ball moving.",
-  "A long ball forward is headed clear.",
-  "Your team have the better of this spell.",
-  "A promising move for your side breaks down in the middle.",
-  "Your fans try to lift the team.",
+  "{club} work it patiently across the back.",
+  "A good spell of possession for {club}.",
+  "Play is switched to {club}'s far side, still looking for the gap.",
+  "The tempo drops, but {club} keep the ball moving.",
+  "A long ball forward for {club} is headed clear.",
+  "{club} have the better of this spell.",
+  "A promising move for {club} breaks down in the middle.",
+  "{club}'s fans try to lift the team.",
 ];
 const QUIET_OPP = [
   "They work it patiently across the back.",
@@ -214,6 +214,31 @@ const QUIET_OPP = [
   "They have the better of this spell.",
   "A promising move for them breaks down in the middle.",
   "Their fans try to lift the team.",
+];
+
+// A chance that fell to a team-mate and did not go in — two lines each was
+// thin enough to repeat inside a single match. Same pairing as the QUIET
+// banks above: kept in the same order so each line has a real opposite
+// number, one bank per side rather than one shared neutral set.
+const MISS_USER = [
+  "A chance at the far post for {club} — headed over.",
+  "A shot from the edge for {club} is blocked.",
+  "{club} force a smart save from the keeper.",
+  "An effort from {club} flies wide of the far post.",
+  "{club} crash a shot back off the crossbar.",
+  "A goal-bound effort from {club} is cleared off the line.",
+  "{club} can't quite direct a header on target.",
+  "The keeper gets down well to smother {club}'s effort.",
+];
+const MISS_OPP = [
+  "They work a chance — the keeper holds it.",
+  "A shot from distance flies wide.",
+  "They force a good save from your keeper.",
+  "An effort from the edge of the box drifts just wide.",
+  "They crash a shot back off the crossbar.",
+  "A goal-bound effort is cleared off the line.",
+  "They can't quite direct a header on target.",
+  "Your keeper gets down well to smother their effort.",
 ];
 
 export function newMatch(rng: () => number = Math.random): HiddenMatchState {
@@ -364,7 +389,7 @@ export function tick(
           state.momentum = clamp1(state.momentum + 0.3);
           events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
         } else {
-          events.push({ minute: state.minute, text: rng() < 0.5 ? "A chance at the far post — headed over." : "A shot from the edge is blocked.", isOpponent: false });
+          events.push({ minute: state.minute, text: MISS_USER[Math.floor(rng() * MISS_USER.length)], isOpponent: false });
         }
         endOfMove(state, scored, "user");
       } else {
@@ -374,7 +399,7 @@ export function tick(
           state.momentum = clamp1(state.momentum - 0.3);
           events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true });
         } else {
-          events.push({ minute: state.minute, text: rng() < 0.5 ? "They work a chance — the keeper holds it." : "A shot from distance flies wide.", isOpponent: true });
+          events.push({ minute: state.minute, text: MISS_OPP[Math.floor(rng() * MISS_OPP.length)], isOpponent: true });
         }
         endOfMove(state, scored, "opponent");
       }
