@@ -45,6 +45,8 @@ import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
 import PositionPicker from "@/components/star/PositionPicker";
+import ScoutReportCard from "@/components/star/ScoutReport";
+import { scoutReportFor } from "@/lib/star/scoutReport";
 import SkillsScreen from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
@@ -1387,6 +1389,14 @@ export default function StarDevPage() {
               {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
             </div>
           </div>
+
+          {/* Who you're actually about to play — requested directly, with a
+              real scouting-app screenshot as the reference. Club opponents
+              only: an international opponent is a nation, not a squad to
+              scout the way this reads. */}
+          {nextFixture.kind !== "international" && (
+            <ScoutReportCard report={scoutReportFor(career, nextFixture.opponent, nextFixture.week)} />
+          )}
 
           {/* Which position you play this match — moved here from the
               dashboard: it's a decision for the build-up to THIS match, not
