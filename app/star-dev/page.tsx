@@ -18,7 +18,7 @@ import { formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
-import { pressQuestionFor, type PressQuestion, type PressOption } from "@/lib/star/media";
+import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
@@ -31,7 +31,7 @@ import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
 import RelegationMove from "@/components/star/RelegationMove";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
-import { pickDilemma, applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
+import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialPenalty from "@/components/star/TrialPenalty";
@@ -214,12 +214,6 @@ export default function StarDevPage() {
         setPhase("season-transfer");
         return;
       }
-    }
-    if (pending?.phase === "dilemma") {
-      // Re-derived rather than stored: the seed is the week and season, neither
-      // of which has moved, so this is the same dilemma you were looking at.
-      const d = pickDilemma(saved, mulberry32(saved.week * 131 + saved.season));
-      if (d) { setCurrentDilemma(d); setPhase("dilemma"); return; }
     }
     setPhase("dashboard");
     };
@@ -551,15 +545,10 @@ export default function StarDevPage() {
    * just moved were silently rolled back.
    */
   const continueAfterMatch = useCallback((from: CareerState, askPress: boolean, skipDraw = false) => {
-    // The press get you on the way out of the ground, before the week rolls on.
-    // Only when the match gave them something to ask about.
-    if (askPress && playedFixture && lastMatchStats) {
-      const q = pressQuestionFor(
-        from, playedFixture, lastMatchStats, !!playedFixture.derby,
-        mulberry32(from.season * 613 + from.week * 29),
-      );
-      if (q) { setPressQuestion(q); setPhase("press"); return; }
-    }
+    // Press conferences turned off for now, on request — the plumbing
+    // (pressQuestionFor, PressConference, phase "press") is untouched and
+    // ready to switch back on by restoring the askPress check this used to
+    // open with.
 
     // A transfer window just closed — the whole division's business, all at
     // once, exactly the "Deadline Day" moment the real calendar builds
@@ -639,16 +628,9 @@ export default function StarDevPage() {
       return;
     }
 
-    // A dilemma between weeks, about a third of the time.
-    const rng = mulberry32(from.week * 131 + from.season);
-    if (rng() < 0.35) {
-      const d = pickDilemma(from, rng);
-      if (d) {
-        setCurrentDilemma(d);
-        setPhase("dilemma");
-        return;
-      }
-    }
+    // Dilemmas turned off for now, on request — the plumbing (pickDilemma,
+    // DilemmaModal, phase "dilemma") is untouched and ready to switch back on
+    // by restoring the roll this used to make here.
 
     setActiveNav("home");
     setPhase("dashboard");

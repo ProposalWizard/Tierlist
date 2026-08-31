@@ -438,6 +438,25 @@ export interface CareerState {
    */
   leagueSeasonStats?: { goals: number; assists: number };
   /**
+   * The same goals/assists tally, plus appearances, but never reset at a
+   * season rollover — league-only, same as `leagueSeasonStats`, so it is the
+   * one the CAREER-scoped entries in the Records tab (lib/star/records.ts)
+   * read directly, with no rollover snapshot needed. Absent on a career saved
+   * before Records existed; reads as zero.
+   */
+  careerLeagueStats?: { goals: number; assists: number; appearances: number };
+  /**
+   * Your best-ever showing against each entry in the Records tab, keyed by
+   * `RecordDef.id` — see lib/star/records.ts.
+   *
+   * `leagueSeasonStats` (above) is wiped every rollover; a real record is
+   * measured against your best SEASON EVER, not just the one in progress, so
+   * `advanceSeason` folds that season's number in here (taking the higher of
+   * the two) right before it resets. Absent on a career saved before Records
+   * existed, or one that has never had a qualifying season yet — reads as 0.
+   */
+  personalBests?: Record<string, number>;
+  /**
    * The other clubs' players, and what they have done this season.
    *
    * Absent on a career saved before the division had squads — the Golden Boot

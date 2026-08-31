@@ -5,6 +5,7 @@ import { clauseSummary, offerClauses } from "@/lib/star/contracts";
 import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
+import { RECORDS, recordBeaten } from "@/lib/star/records";
 
 // ---------- SPONSORS ----------
 function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }) {
@@ -74,35 +75,94 @@ export function SponsorsScreen({ career, onBack }: { career: CareerState; onBack
 }
 
 // ---------- ACHIEVEMENTS ----------
+//
+// Two tabs sharing one screen: Achievements is "did you ever do this at all"
+// (a fixed list, checked off for good, see ACHIEVEMENTS). Records is a
+// different question — "have you ever done it BETTER THAN THE REAL PREMIER
+// LEAGUE EVER HAS" — so it needs a progress bar rather than a checkmark, and
+// a source (RECORDS, records.ts) that carries the real number to chase, not
+// just a boolean.
 export function AchievementsScreen({ career, onBack }: { career: CareerState; onBack: () => void }) {
+  const [tab, setTab] = useState<"achievements" | "records">("achievements");
+  const beaten = RECORDS.filter(r => recordBeaten(career, r)).length;
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col py-3 px-3">
       <div className="w-full max-w-sm mx-auto flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-3">
           <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
-          <div className="font-black text-white text-lg">Achievements</div>
+          <div className="font-black text-white text-lg">{tab === "achievements" ? "Achievements" : "Records"}</div>
           <div />
         </div>
 
-        <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden flex-1 overflow-y-auto max-h-[560px]">
-          {ACHIEVEMENTS.map((a, i) => {
-            const unlocked = career.achievements.includes(a.id);
-            return (
-              <div key={a.id} className={`flex items-center gap-3 p-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
-                <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`}>⭐</div>
-                <div className="flex-1">
-                  <div className={`font-black text-sm ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
-                  <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
-                </div>
-                {unlocked && <div className="text-emerald-400 font-black text-lg">✓</div>}
-              </div>
-            );
-          })}
+        <div className="mb-3 flex rounded-lg bg-gray-900/60 p-1 border border-gray-700">
+          {(["achievements", "records"] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 rounded-md py-1.5 text-xs font-black uppercase tracking-wide transition ${
+                tab === t ? "bg-yellow-500 text-black" : "text-white/60 hover:text-white/90"
+              }`}
+            >
+              {t === "achievements" ? "Achievements" : "Records"}
+            </button>
+          ))}
         </div>
 
-        <div className="mt-2 text-xs text-center text-white/75 font-bold">
-          {career.achievements.length} / {ACHIEVEMENTS.length} unlocked
-        </div>
+        {tab === "achievements" ? (
+          <>
+            <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden flex-1 overflow-y-auto max-h-[560px]">
+              {ACHIEVEMENTS.map((a, i) => {
+                const unlocked = career.achievements.includes(a.id);
+                return (
+                  <div key={a.id} className={`flex items-center gap-3 p-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
+                    <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`}>⭐</div>
+                    <div className="flex-1">
+                      <div className={`font-black text-sm ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
+                      <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
+                    </div>
+                    {unlocked && <div className="text-emerald-400 font-black text-lg">✓</div>}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-xs text-center text-white/75 font-bold">
+              {career.achievements.length} / {ACHIEVEMENTS.length} unlocked
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden flex-1 overflow-y-auto max-h-[560px]">
+              {RECORDS.map((r, i) => {
+                const progress = r.progress(career);
+                const won = progress >= r.value;
+                const pct = Math.min(100, Math.round((progress / r.value) * 100));
+                return (
+                  <div key={r.id} className={`p-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`text-3xl ${won ? "" : "opacity-20 grayscale"}`}>🏅</div>
+                      <div className="flex-1">
+                        <div className={`font-black text-sm ${won ? "text-yellow-300" : "text-white/65"}`}>{r.label}</div>
+                        <div className={`text-[10px] ${won ? "text-white/85" : "text-white/65"}`}>
+                          {r.holder} · {r.value} {r.unit} ({r.achieved})
+                        </div>
+                      </div>
+                      {won && <div className="text-emerald-400 font-black text-lg">✓</div>}
+                    </div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/40">
+                      <div className={`h-full rounded-full ${won ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${Math.max(3, pct)}%` }} />
+                    </div>
+                    <div className="mt-1 text-[9px] font-bold text-white/70">
+                      Your best: {progress} / {r.value} {r.unit}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-xs text-center text-white/75 font-bold">
+              {beaten} / {RECORDS.length} beaten
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

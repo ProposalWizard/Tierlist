@@ -221,7 +221,6 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
             deals list below (its own flex-1 + scroll) gives up the room. ── */}
         <div className="relative z-10 mt-1 flex flex-wrap content-start gap-1.5 px-3 pb-2 pl-9">
           {business.map(b => {
-            const mine = b.club === career.player.club;
             const isActive = b.club === selected;
             const kit = kitsOf(b.club).home;
             const count = b.in.length + b.out.length;
@@ -238,8 +237,20 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                 }`}
               >
                 <span className="h-2 w-2 shrink-0 rounded-full border border-white/30" style={{ backgroundColor: kit.shirt }} />
-                <span className="max-w-[5.5rem] truncate">{shortClub(b.club)}{mine ? " (You)" : ""}</span>
-                <span className={`rounded-full px-1.5 text-[9px] ${isActive ? "bg-amber-400 text-black" : count > 0 ? "bg-white/10 text-white/60" : "bg-white/5 text-white/35"}`}>
+                {/* The active chip is already solid black behind amber text,
+                    plenty legible on its own — the outline is only for the
+                    white/grey text of the inactive chips, which wrap onto
+                    the gold panel as often as the black ground and vanish
+                    into it without one. Same trick as NAME_OUTLINE, applied
+                    unconditionally: a black shadow on a black background is
+                    simply invisible, so it costs the active chip nothing. */}
+                <span className="max-w-[5.5rem] truncate" style={isActive ? undefined : { textShadow: NAME_OUTLINE }}>
+                  {shortClub(b.club)}
+                </span>
+                <span
+                  className={`rounded-full px-1.5 text-[9px] ${isActive ? "bg-amber-400 text-black" : count > 0 ? "bg-white/10 text-white/60" : "bg-white/5 text-white/35"}`}
+                  style={isActive ? undefined : { textShadow: NAME_OUTLINE }}
+                >
                   {count}
                 </span>
               </button>
