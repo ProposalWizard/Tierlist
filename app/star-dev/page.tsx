@@ -47,6 +47,9 @@ import VersusScreen from "@/components/star/VersusScreen";
 import PositionPicker from "@/components/star/PositionPicker";
 import ScoutReportCard from "@/components/star/ScoutReport";
 import { scoutReportFor } from "@/lib/star/scoutReport";
+import ClubCrest from "@/components/star/ClubCrest";
+import { kitsFor } from "@/lib/star/kits";
+import { groundFor, crowdFor } from "@/lib/star/stadiums";
 import SkillsScreen from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
@@ -1350,31 +1353,55 @@ export default function StarDevPage() {
               </p>
             )}
           </div>
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 text-center shadow-lg">
-            <div className="text-lg font-black text-white">{home}</div>
-            <div className="my-3 text-white/75 font-black">vs</div>
-            <div className="text-lg font-black text-white">{away}</div>
-            <div className="mt-4 text-[10px] text-white/75">
-              Boot: <span className="text-white font-bold">{career.currentBoot.name}</span> ({career.currentBoot.matches} matches left)
-            </div>
-            {career.currentBoot.matches === 0 && (
-              <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Boots need replacing</div>
-            )}
-            {!career.injury && career.energy < MIN_ENERGY_TO_START && (
-              <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Too fatigued to start — the manager will only risk you off the bench</div>
-            )}
-            {career.injury && (
-              <div className="mt-3 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-2 text-left">
-                <div className="text-red-300 text-[10px] font-black uppercase tracking-wide">🩹 {career.injury.note}</div>
-                <div className="mt-0.5 text-[10px] text-white/80">
-                  Out for {career.injury.weeksRemaining} more week{career.injury.weeksRemaining === 1 ? "" : "s"} — you cannot be selected until you are fit.
+          {(() => {
+            const kits = kitsFor(home, away);
+            // Whoever is HOME hosts it — `home` is already the real home
+            // side of this fixture, not necessarily you.
+            const ground = groundFor(home);
+            const crowd = crowdFor(home, nextFixture.week);
+            return (
+              <div
+                className="relative overflow-hidden rounded-xl border border-emerald-800/60 shadow-lg"
+                // Night-match-under-floodlights, the same identity the live
+                // match screen already uses — a real stadium photo behind
+                // this is the plan (supplied later), so the gradient is built
+                // to sit comfortably underneath one rather than being the
+                // whole background forever.
+                style={{ background: "linear-gradient(180deg, #0b2a1f 0%, #0a1f27 55%, #071318 100%)" }}
+              >
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{ background: "radial-gradient(120% 55% at 50% -10%, rgba(16,185,129,0.30), transparent 60%)" }}
+                />
+                <div className="relative z-10 p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <ClubCrest club={home} kit={kits.home} size={56} />
+                    <div className="flex flex-col items-center gap-1 px-1 pt-3">
+                      <div className="text-xs font-black text-white/60 tracking-widest">VS</div>
+                    </div>
+                    <ClubCrest club={away} kit={kits.away} size={56} />
+                  </div>
+                  <div className="mt-3 text-center text-[10px] text-white/70">
+                    🏟️ {ground.name} · Crowd: {crowd.toLocaleString()}
+                  </div>
+                  {!career.injury && career.energy < MIN_ENERGY_TO_START && (
+                    <div className="mt-3 text-center text-amber-300 text-[10px] font-bold">⚠ Too fatigued to start — the manager will only risk you off the bench</div>
+                  )}
+                  {career.injury && (
+                    <div className="mt-3 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-2 text-left">
+                      <div className="text-red-300 text-[10px] font-black uppercase tracking-wide">🩹 {career.injury.note}</div>
+                      <div className="mt-0.5 text-[10px] text-white/80">
+                        Out for {career.injury.weeksRemaining} more week{career.injury.weeksRemaining === 1 ? "" : "s"} — you cannot be selected until you are fit.
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-3 rounded-lg bg-black/25 px-2 py-1.5 text-[10px] text-white text-center">
+                    {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
+                  </div>
                 </div>
               </div>
-            )}
-            <div className="mt-3 rounded-lg bg-gray-700 px-2 py-1.5 text-[10px] text-white">
-              {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Who you're actually about to play — requested directly, with a
               real scouting-app screenshot as the reference. Club opponents
