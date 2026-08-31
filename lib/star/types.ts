@@ -479,6 +479,16 @@ export interface CareerState {
    */
   personalBests?: Record<string, number>;
   /**
+   * Your record against every club you have faced, keyed by opponent name —
+   * built up match by match as a real career would remember it, never reset
+   * at a season rollover. Covers every club fixture (league and cup alike),
+   * not internationals — a head-to-head is a rivalry with a CLUB. Read by
+   * the scout report (lib/star/scoutReport.ts); absent on a career saved
+   * before it existed, or against a club never yet played, reads as no
+   * history rather than a clean 0-0-0.
+   */
+  headToHead?: Record<string, { wins: number; draws: number; losses: number }>;
+  /**
    * The other clubs' players, and what they have done this season.
    *
    * Absent on a career saved before the division had squads — the Golden Boot

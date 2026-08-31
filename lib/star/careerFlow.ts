@@ -353,6 +353,21 @@ export function creditMatchResult(
   const nextInjury = !alreadyPlayed && !career.injury && injuryRng() < injuryRisk
     ? rollInjury(injuryRng)
     : career.injury;
+
+  // ── Head-to-head: a rivalry with a CLUB, not a fixture kind ──
+  //
+  // Every club match counts — league and cup alike, an FA Cup shock against
+  // a rival still belongs in "your record against them" — but not
+  // internationals, whose opponent is a nation. `stats.homeScore` is YOURS
+  // regardless of ground (see the note above `scored`/`conceded`), so the
+  // result reads the same way here.
+  const nextHeadToHead = (() => {
+    if (kind === "international" || alreadyPlayed) return career.headToHead ?? {};
+    const prior = career.headToHead?.[fixture.opponent] ?? { wins: 0, draws: 0, losses: 0 };
+    const result = stats.homeScore > stats.awayScore ? "wins" : stats.homeScore < stats.awayScore ? "losses" : "draws";
+    return { ...(career.headToHead ?? {}), [fixture.opponent]: { ...prior, [result]: prior[result] + 1 } };
+  })();
+
   // A rivalry changes nothing about how it was played and everything about
   // what it was worth. Applied to the relationships only — never to the
   // football. Scaled by how much the fixture actually means (see
@@ -544,6 +559,7 @@ export function creditMatchResult(
     matchFitness: Math.min(100, career.matchFitness + 3 * minuteShare),
     energy: nextEnergy,
     injury: nextInjury,
+    headToHead: nextHeadToHead,
     relationships: {
       ...career.relationships,
       boss: clamp01to100(career.relationships.boss + Math.round(stats.bossChange * derbyScale.boss)),
