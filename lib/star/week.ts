@@ -4,15 +4,24 @@ import type { CareerState } from "./types";
  * THE WEEK BETWEEN MATCHES
  *
  * Three things a week between matches — train a skill, work on a relationship,
- * or actually rest. Energy used to be the currency this budget was spent
- * against; it has been pulled out of the game for now (see CLAUDE.md's Future
- * Work note), so the three-actions-a-week structure is what remains of the
- * tension — you still cannot do everything, you still pick.
+ * or actually rest. Energy is spent by playing (see creditMatchResult) and
+ * earned back only by a deliberate choice here — Rest, or skipping the rest
+ * of the week outright — never by the week simply turning over on its own.
+ * That distinction is the whole point of this build: an earlier version of
+ * energy topped itself up automatically every week regardless of what you
+ * did, which made it a number that moved on its own rather than something
+ * you managed. See CareerState.energy's own doc comment.
  */
 
 /** How many things you can do between matches. */
 export const WEEK_ACTIONS = 3;
 export const REST_HAPPINESS = 6;
+/** What Rest buys back, alongside happiness — a modest top-up since it only
+ *  costs one of the three actions and leaves the rest of the week free. */
+export const REST_ENERGY = 20;
+/** What skipping the rest of the week buys back — bigger, because it costs
+ *  everything else you could have done this week instead. */
+export const SKIP_ENERGY = 45;
 
 export function actionsLeft(career: CareerState): number {
   return career.weekActions ?? WEEK_ACTIONS;
@@ -35,12 +44,31 @@ export function spendAction(career: CareerState): CareerState {
   return { ...career, weekActions: left - 1 };
 }
 
-/** Put your feet up. Costs a day, buys back some happiness. */
+/** Put your feet up. Costs a day, buys back some happiness and energy. */
 export function rest(career: CareerState): CareerState {
   if (!canAct(career)) return career;
   return {
     ...spendAction(career),
     happiness: Math.min(100, career.happiness + REST_HAPPINESS),
+    energy: Math.min(100, career.energy + REST_ENERGY),
+  };
+}
+
+/**
+ * Give up on the rest of this week's actions and coast to matchday instead.
+ *
+ * The literal "regenerates when skipping to the end of the week" — a real
+ * trade against training or working on a relationship this week, not a free
+ * top-up. Guarded on `canAct` the same way `rest` is: with no actions left
+ * there is nothing left to give up, so this is a no-op rather than a second
+ * helping of energy on top of whatever the week already spent.
+ */
+export function skipToMatchDay(career: CareerState): CareerState {
+  if (!canAct(career)) return career;
+  return {
+    ...career,
+    weekActions: 0,
+    energy: Math.min(100, career.energy + SKIP_ENERGY),
   };
 }
 

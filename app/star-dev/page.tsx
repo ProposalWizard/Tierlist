@@ -4,7 +4,7 @@ import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, Owne
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
-import { selectionFor } from "@/lib/star/selection";
+import { selectionFor, MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
@@ -15,7 +15,7 @@ import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup, fetchSharedLineups } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
-import { spendAction, rest, canAct } from "@/lib/star/week";
+import { spendAction, rest, canAct, skipToMatchDay } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
@@ -420,6 +420,13 @@ export default function StarDevPage() {
   const handleRest = useCallback(() => {
     if (!career) return;
     setCareer(rest(career));
+  }, [career]);
+
+  // Give up on the rest of this week's actions in exchange for real energy
+  // back — the trade point 3 of the energy design asks for.
+  const handleSkipToMatchDay = useCallback(() => {
+    if (!career) return;
+    setCareer(skipToMatchDay(career));
   }, [career]);
 
   /**
@@ -1345,10 +1352,18 @@ export default function StarDevPage() {
             <div className="text-lg font-black text-white">{home}</div>
             <div className="my-3 text-white/75 font-black">vs</div>
             <div className="text-lg font-black text-white">{away}</div>
-            <div className="mt-4 text-xs">
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
               <div className="bg-gray-700 rounded-lg py-2">
                 <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
                 <div className="font-black text-emerald-300 text-lg">{Math.round(career.matchFitness)}%</div>
+              </div>
+              <div className="bg-gray-700 rounded-lg py-2">
+                <div className="text-white/75 text-[10px] font-bold">Energy</div>
+                <div className={`font-black text-lg ${
+                  career.energy >= 70 ? "text-emerald-300" : career.energy >= 40 ? "text-amber-300" : "text-red-400"}`}
+                >
+                  {Math.round(career.energy)}%
+                </div>
               </div>
             </div>
             <div className="mt-3 text-[10px] text-white/75">
@@ -1356,6 +1371,17 @@ export default function StarDevPage() {
             </div>
             {career.currentBoot.matches === 0 && (
               <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Boots need replacing</div>
+            )}
+            {!career.injury && career.energy < MIN_ENERGY_TO_START && (
+              <div className="mt-1 text-red-300 text-[10px] font-bold">⚠ Too fatigued to start — the manager will only risk you off the bench</div>
+            )}
+            {career.injury && (
+              <div className="mt-3 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-2 text-left">
+                <div className="text-red-300 text-[10px] font-black uppercase tracking-wide">🩹 {career.injury.note}</div>
+                <div className="mt-0.5 text-[10px] text-white/80">
+                  Out for {career.injury.weeksRemaining} more week{career.injury.weeksRemaining === 1 ? "" : "s"} — you cannot be selected until you are fit.
+                </div>
+              </div>
             )}
             <div className="mt-3 rounded-lg bg-gray-700 px-2 py-1.5 text-[10px] text-white">
               {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
@@ -1422,7 +1448,7 @@ export default function StarDevPage() {
 
           <div className="grid grid-cols-2 gap-2 mt-4">
             <button onClick={handleBackToDashboard} className="py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-black">← Back</button>
-            {selection?.status === "Squad" ? (
+            {selection?.status === "Squad" || selection?.status === "Injured" ? (
               <button onClick={handleWatchFromStands} className="py-3 bg-gray-600 hover:bg-gray-500 rounded-xl font-black">Watch from the stands</button>
             ) : (
               <button
@@ -1512,6 +1538,7 @@ export default function StarDevPage() {
               career={career}
               onPlayRelationshipGame={handleOpenRelationshipGame}
               onRest={handleRest}
+              onSkipToMatchDay={handleSkipToMatchDay}
             />
           )}
         </div>

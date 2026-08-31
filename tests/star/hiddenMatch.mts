@@ -183,14 +183,27 @@ const weak = run(WEAK);
 }
 
 // ── Skill buys involvement, not better football ─────────────────────────────
-//
-// Energy used to be a second input here too (effort buys involvement, a
-// tired player got fewer chances not worse ones) — removed along with the
-// rest of energy's gameplay effect, see CLAUDE.md's Future Work note.
 {
   const great = mean(run({ ...EVEN, playerSkill: 95 }, 800).map(s => s.requests));
   const poor = mean(run({ ...EVEN, playerSkill: 25 }, 800).map(s => s.requests));
   check(great > poor, `better players are found more often (${poor.toFixed(1)} vs ${great.toFixed(1)})`);
+}
+
+// ── So does energy — effort buys involvement, not better football either ────
+//
+// Reinstated: a tired player gets fewer CHANCES, not worse ones — this is
+// the involvement rate only, never shot quality. Omitting `energy` entirely
+// must read exactly as fully fresh (100), which is what makes it safe for
+// every OTHER caller in this file (all of which omit it) to be unaffected
+// by this reintroduction — see hiddenMatch.ts's own comment on the formula.
+{
+  const fresh = mean(run({ ...EVEN, energy: 100 }, 800).map(s => s.requests));
+  const gassed = mean(run({ ...EVEN, energy: 5 }, 800).map(s => s.requests));
+  check(fresh > gassed, `a fresh player is found more often than a gassed one (${gassed.toFixed(1)} vs ${fresh.toFixed(1)})`);
+
+  const omitted = mean(run({ ...EVEN }, 800).map(s => s.requests));
+  check(Math.abs(omitted - fresh) < 0.5,
+    `omitting energy entirely reads as fully fresh, same as every other test in this file (${omitted.toFixed(2)} vs ${fresh.toFixed(2)})`);
 }
 
 // ── Time compression returns the same match, just faster ────────────────────

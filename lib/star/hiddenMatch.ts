@@ -59,6 +59,14 @@ export interface HiddenMatchInputs {
   /** 0-100. A quicker player is handed the ball to run at them more often. */
   pace?: number;
   /**
+   * 0-100, the live in-match energy value (see CanvasMatch's liveEnergyRef).
+   * Effort buys involvement, not better football — a tired player gets
+   * fewer chances, not worse ones. Optional; a caller that omits it (the
+   * star-match-dev fork, older tests) gets the same involvement rate this
+   * had before energy was reintroduced. See the `involvement` calc below.
+   */
+  energy?: number;
+  /**
    * MATCH CONTEXT (specification §2.9).
    *
    * "The Hidden Match Simulation must also understand the broader match
@@ -327,14 +335,18 @@ export function tick(
     if (rng() < rate) {
       if (userHasIt) {
         // Your team has worked one. Are you the one on the end of it?
-        // Skill raises how often the move finds you. This used to also read
-        // energy (effort buys involvement, not better football — a tired
-        // player got fewer chances, not worse ones), removed along with the
-        // rest of energy's gameplay effect — see CLAUDE.md's Future Work note.
-        // The base absorbs roughly what a mid-match energy value used to
-        // contribute, so involvement frequency does not silently shift.
-        const involvement = 0.44
+        // Skill raises how often the move finds you; so, again, does energy —
+        // effort buys involvement, not better football, so a tired player
+        // gets fewer chances, not worse ones. A caller that does not track
+        // energy (`inputs.energy` absent — the star-match-dev fork, older
+        // tests) is treated as permanently fresh, which reconstructs exactly
+        // the flat 0.44 this was before energy came back: 0.36 base +
+        // (100/100)*0.08. A real match starts there too and eases down as
+        // the player tires, rather than jumping — see CanvasMatch's
+        // liveEnergyRef, seeded from the same 100.
+        const involvement = 0.36
           + (inputs.playerSkill / 100) * 0.26
+          + ((inputs.energy ?? 100) / 100) * 0.08
           // A long spell without the ball nudges it up, so you are never
           // stranded watching for a quarter of an hour.
           + Math.min(0.3, Math.max(0, state.sinceInvolved - 10) * 0.025);

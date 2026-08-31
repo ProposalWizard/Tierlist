@@ -115,7 +115,7 @@ export default function DashboardStats({ career, onRenew }: Props) {
           {/* Derived, not read off the stored field: an old save was stamped
               "1st Team" when the career was created and never updated. */}
           <div className="grid grid-cols-2 gap-2">
-            <div className={`py-2 rounded-lg font-black text-sm text-center ${
+            <div className={`col-span-2 py-2 rounded-lg font-black text-sm text-center ${
               selection.status === "1st Team" ? "bg-emerald-500 text-white"
                 : selection.status === "Substitute" ? "bg-amber-500 text-gray-950" : "bg-red-600 text-white"}`}
             >
@@ -123,6 +123,11 @@ export default function DashboardStats({ career, onRenew }: Props) {
             </div>
             <div className={`py-2 rounded-lg font-black text-sm text-center ${career.matchFitness >= 70 ? "bg-emerald-500 text-white" : "bg-gray-700 text-white/75"}`}>
               Match Fit ({Math.round(career.matchFitness)}%)
+            </div>
+            <div className={`py-2 rounded-lg font-black text-sm text-center ${
+              career.energy >= 70 ? "bg-emerald-500 text-white" : career.energy >= 40 ? "bg-amber-500 text-gray-950" : "bg-red-600 text-white"}`}
+            >
+              Energy ({Math.round(career.energy)}%)
             </div>
           </div>
           <div className="flex items-center gap-2">
