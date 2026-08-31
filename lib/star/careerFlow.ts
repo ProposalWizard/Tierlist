@@ -28,6 +28,7 @@ import { finishCupToWinner } from "./cups";
 import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
+import { updatePersonalBests } from "./records";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
@@ -408,6 +409,22 @@ export function creditMatchResult(
     ? { goals: priorLeague.goals + stats.goals, assists: priorLeague.assists + stats.assists }
     : priorLeague;
 
+  // The same tally again, but never reset at rollover — the running total the
+  // career-long Records (lib/star/records.ts) are measured against. Golden
+  // Boot/Assist King logic never reads this one; leagueSeasonStats above is
+  // still theirs, untouched. Guarded on `alreadyPlayed` (unlike
+  // leagueSeasonStats above, which predates this field) — a real record
+  // comparison is exactly the place a replay silently doubling a season's
+  // numbers would actually matter.
+  const priorCareerLeague = career.careerLeagueStats ?? { goals: 0, assists: 0, appearances: 0 };
+  const careerLeagueStats = kind === "league" && !alreadyPlayed
+    ? {
+      goals: priorCareerLeague.goals + stats.goals,
+      assists: priorCareerLeague.assists + stats.assists,
+      appearances: priorCareerLeague.appearances + 1,
+    }
+    : priorCareerLeague;
+
   // ── Player of the Month ──
   //
   // Awarded once the last league week of a month has been played. It reads
@@ -443,6 +460,7 @@ export function creditMatchResult(
     seasonStats: isInternational ? career.seasonStats : accrue(career.seasonStats),
     careerStats: isInternational ? career.careerStats : accrue(career.careerStats),
     leagueSeasonStats,
+    careerLeagueStats,
     caps: (career.caps ?? 0) + (isInternational ? 1 : 0),
     internationalGoals: (career.internationalGoals ?? 0) + (isInternational ? stats.goals : 0),
     cups,
@@ -749,6 +767,9 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
     // Last season's results belong to last season.
     results: [],
     leagueSeasonStats: { goals: 0, assists: 0 },
+    // Read off `career` (this season's numbers, not yet wiped) before the
+    // reset above takes them away — see updatePersonalBests.
+    personalBests: updatePersonalBests(career),
     // Only the clubs you are actually playing next season. Going up or down
     // replaces most of the division, and a squad for a club that is no longer
     // in it is dead weight the team sheet would never read; the ones now
