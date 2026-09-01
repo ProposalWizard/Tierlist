@@ -13,7 +13,7 @@ import { selectionFor, MISSED_WEEK } from "./selection";
 import { startNewWeek, WEEK_ACTIONS } from "./week";
 import { judgeSeason } from "./expectations";
 import {
-  monthlyAward, seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
+  seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
 } from "./recognition";
 import { makeManager, sackCheck, bossOnArrival, reputationTier } from "./manager";
 import { rivalryMultiplier } from "./rivalries";
@@ -375,14 +375,19 @@ export function creditMatchResult(
   // rivalry moves the needle further than a lesser one, and a plain
   // geographical derby with no rated history still moves it some.
   const derbyScale = rivalryMultiplier(career.player.club, fixture.opponent);
-  const currentBoot = { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
+  // Both guarded on `alreadyPlayed` — a replay must not wear the boots down
+  // a second time, or rest the horse a second time either.
+  const currentBoot = alreadyPlayed ? career.currentBoot
+    : { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
 
   // A rested week for the stable: the horse regains some energy between matches.
-  const horse = career.horse
-    ? { ...career.horse, energy: Math.min(100, career.horse.energy + 20) }
-    : career.horse;
+  const horse = alreadyPlayed || !career.horse ? career.horse
+    : { ...career.horse, energy: Math.min(100, career.horse.energy + 20) };
 
-  const sponsorGain = Math.max(0, Math.floor(stats.fansChange / 3));
+  // Guarded on `alreadyPlayed` throughout — a replay must not grow the
+  // sponsor relationship, unlock a deal, or progress/complete an objective
+  // a second time off the same match.
+  const sponsorGain = alreadyPlayed ? 0 : Math.max(0, Math.floor(stats.fansChange / 3));
   const newSponsorRel = Math.min(100, career.relationships.sponsors + sponsorGain);
   const dealsUnlocked = Math.floor(newSponsorRel / 10);
   const activated = career.sponsors.map((s, i) =>
@@ -391,13 +396,17 @@ export function creditMatchResult(
   // A new deal comes with something to ask for — a sponsor who wants nothing is
   // just a number going up on its own.
   const withObjectives = attachObjective(career, activated);
-  const progressed = progressObjectives(withObjectives, stats, accrue(career.seasonStats));
+  const progressed = alreadyPlayed
+    ? { sponsors: withObjectives, earned: 0, completed: [] as string[] }
+    : progressObjectives(withObjectives, stats, accrue(career.seasonStats));
   const sponsors = progressed.sponsors;
 
   // Update squad player stats from this match's goal events.
   // Chain teammate goals (isUserGoal: false) → scorer gets a goal.
   // User direct goals (isUserGoal: true) → assister (if any) gets an assist.
-  const goalEvents = stats.goalEvents ?? [];
+  // Guarded on `alreadyPlayed` the same way `accrue` is — a replay must not
+  // double a team-mate's goal/assist tally either.
+  const goalEvents = alreadyPlayed ? [] : (stats.goalEvents ?? []);
   const updatedSquad = (career.squad ?? []).map(p => {
     const scored = goalEvents.filter(e => !e.isUserGoal && e.scorer === p.name).length;
     const assisted = goalEvents.filter(e => e.assist === p.name).length;
@@ -425,7 +434,14 @@ export function creditMatchResult(
   let knockoutMessage: string | null = null;
   let cupState = career.cupState;
   let euroState = career.euroState;
-  if (kind !== "league" && fixture.competition) {
+  // Guarded on `alreadyPlayed` for the same reason the league round is
+  // (see the top of this function): unguarded, a replayed knockout leg
+  // found the competition's state already advanced past this tie by the
+  // FIRST credit, and settled the tie a second time against whatever round
+  // had been drawn NEXT — auto-winning or auto-eliminating a round never
+  // actually played, and potentially minting a duplicate trophy if that
+  // phantom result happened to land on the final.
+  if (kind !== "league" && fixture.competition && !alreadyPlayed) {
     // Europe first: a league-phase night and a two-legged tie are neither a
     // domestic cup round nor a counter-style run, and asking the other two
     // handlers about it would have them answer for a competition they do not
@@ -480,10 +496,13 @@ export function creditMatchResult(
   // the Ballon d'Or and the club achievements read.
   const isInternational = kind === "international";
 
-  // Your own league-only tally, for the same reason.
+  // Your own league-only tally, for the same reason — guarded on
+  // `alreadyPlayed` too (it wasn't; a replayed league match silently
+  // inflated the in-season Golden Boot/Assist King standing this drives,
+  // while every other stat store for the same match stayed correct).
   const priorLeague = career.leagueSeasonStats
     ?? { goals: career.seasonStats.goals, assists: career.seasonStats.assists };
-  const leagueSeasonStats = kind === "league"
+  const leagueSeasonStats = kind === "league" && !alreadyPlayed
     ? { goals: priorLeague.goals + stats.goals, assists: priorLeague.assists + stats.assists }
     : priorLeague;
 
@@ -539,8 +558,11 @@ export function creditMatchResult(
     careerStats: isInternational ? career.careerStats : accrue(career.careerStats),
     leagueSeasonStats,
     careerLeagueStats,
-    caps: (career.caps ?? 0) + (isInternational ? 1 : 0),
-    internationalGoals: (career.internationalGoals ?? 0) + (isInternational ? stats.goals : 0),
+    // Guarded on `alreadyPlayed`, same as every other tally in this
+    // function — international caps/goals are no different from a club
+    // appearance in that regard.
+    caps: (career.caps ?? 0) + (isInternational && !alreadyPlayed ? 1 : 0),
+    internationalGoals: (career.internationalGoals ?? 0) + (isInternational && !alreadyPlayed ? stats.goals : 0),
     cups,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
@@ -552,15 +574,21 @@ export function creditMatchResult(
     fixtures: [...fixtures, ...extraFixtures],
     // Match-day money: the wage and bonuses the result produced, an appearance
     // fee if the deal has one, and anything a sponsor objective just paid out.
-    money: career.money + stats.totalCash
+    // Guarded on `alreadyPlayed` — none of this was earned twice.
+    money: alreadyPlayed ? career.money : career.money + stats.totalCash
       + (isInternational ? 0 : appearanceMoney(career.contract))
       + progressed.earned,
-    // Twenty minutes off the bench does not sharpen you as much as ninety.
-    matchFitness: Math.min(100, career.matchFitness + 3 * minuteShare),
+    // Twenty minutes off the bench does not sharpen you as much as ninety —
+    // and a replay does not sharpen you again.
+    matchFitness: alreadyPlayed ? career.matchFitness : Math.min(100, career.matchFitness + 3 * minuteShare),
     energy: nextEnergy,
     injury: nextInjury,
     headToHead: nextHeadToHead,
-    relationships: {
+    // Guarded on `alreadyPlayed`: a replay must not move the relationships a
+    // second time either — a derby win credited twice inflated exactly the
+    // numbers the manager/dressing-room/fanbase systems are built to track
+    // honestly.
+    relationships: alreadyPlayed ? { ...career.relationships, sponsors: newSponsorRel } : {
       ...career.relationships,
       boss: clamp01to100(career.relationships.boss + Math.round(stats.bossChange * derbyScale.boss)),
       team: clamp01to100(career.relationships.team + Math.round(stats.teamChange * derbyScale.team)),
@@ -568,46 +596,69 @@ export function creditMatchResult(
       sponsors: newSponsorRel,
     },
     sponsors,
-    starRating: Math.min(5, career.starRating + (stats.rating >= 8 ? 0.03 : stats.rating >= 7 ? 0.01 : 0)),
-    fame: career.fame + Math.max(0, Math.floor(stats.fansChange / 2)),
-    week: career.week + 1,
+    starRating: alreadyPlayed ? career.starRating
+      : Math.min(5, career.starRating + (stats.rating >= 8 ? 0.03 : stats.rating >= 7 ? 0.01 : 0)),
+    fame: alreadyPlayed ? career.fame : career.fame + Math.max(0, Math.floor(stats.fansChange / 2)),
+    // The single most important guard in this function — see `alreadyPlayed`'s
+    // own doc at the top. A replay must not advance the calendar; it already
+    // did that the first time this match was credited, and a second advance
+    // permanently skips a real week for the rest of the career.
+    week: alreadyPlayed ? career.week : career.week + 1,
     currentBoot,
     horse,
     squad: updatedSquad,
-    form: [stats.rating, ...career.form].slice(0, 5),
+    form: alreadyPlayed ? career.form : [stats.rating, ...career.form].slice(0, 5),
   };
   // Appearances at THIS club, which is what the armband is judged on — career
-  // appearances would hand it to a signing on his first day.
-  next.clubAppearances = (career.clubAppearances ?? 0) + (isInternational ? 0 : 1);
+  // appearances would hand it to a signing on his first day. Guarded like
+  // every other appearance tally above.
+  next.clubAppearances = (career.clubAppearances ?? 0) + (isInternational || alreadyPlayed ? 0 : 1);
 
   // The match is over, so a new week starts: three things you can do before
-  // the next one.
-  Object.assign(next, startNewWeek());
+  // the next one — except on a replay, which already started that week the
+  // first time this match was credited. Unguarded, a replay granted a free
+  // set of weekly actions on top of whatever the player had already spent.
+  if (!alreadyPlayed) Object.assign(next, startNewWeek());
 
   // The armband, once the dressing room and the manager are both behind you and
   // you have actually been here a while. Once given it is not taken away for a
-  // bad month — only a transfer resets it.
-  if (!next.captain && captaincyEarned(next)) {
+  // bad month — only a transfer resets it. Both bumps guarded on
+  // `alreadyPlayed` — the per-match captain's bonus is real, but only once
+  // per match actually played.
+  if (!next.captain && !alreadyPlayed && captaincyEarned(next)) {
     next.captain = true;
     next.relationships = { ...next.relationships, team: clamp01to100(next.relationships.team + 3) };
   }
-  if (next.captain) {
+  if (next.captain && !alreadyPlayed) {
     next.relationships = { ...next.relationships, team: clamp01to100(next.relationships.team + CAPTAIN_TEAM_BONUS) };
   }
 
-  // Player of the Month, checked on the four-week boundary.
-  const monthly = monthlyAward(next);
-  if (monthly) next.awards = [...(next.awards ?? []), monthly];
+  // ── Player of the Month: one system, not two ──
+  //
+  // Reported directly: a second, contradictory Player of the Month could
+  // land on the SAME month the real vote (`voteMonth`/potm.ts, above —
+  // division-wide, calendar-accurate, gated on `endsMonthOn`/
+  // `alreadyAwarded`) had already given to someone else, or to the player
+  // twice over. `recognition.ts`'s `monthlyAward` is the mechanic it
+  // replaced: purely the player's own last-four-match average against a
+  // fixed bar, on a `week % 4 === 0` boundary that has nothing to do with
+  // the real calendar — calendar.ts's own comment documents that this
+  // exact block-based month logic was replaced for being simply wrong, but
+  // this call was never disconnected when the real vote was built. Left in
+  // recognition.ts (and its own test) as a pure function; just no longer
+  // wired into what actually gets credited to a career.
   if (progressed.completed.length > 0) {
     next.sponsorNews = [...(career.sponsorNews ?? []), ...progressed.completed].slice(-4);
   }
   // Being hooked for your form is a message from the manager as well as a
   // scoreline — it costs you a little more of him than the rating alone.
-  if (stats.hooked === "form") {
+  if (stats.hooked === "form" && !alreadyPlayed) {
     next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss - 3) };
   }
   // The manager's view going into next week, so the dashboard's status is live
   // rather than the "1st Team" it was stamped with when the career was created.
+  // Not guarded — this is a read of the CURRENT state, not an accrual, so
+  // recomputing it on a replay is harmless and correct either way.
   next.status = selectionFor(next).status;
 
   // ── The play-offs ──
@@ -616,7 +667,11 @@ export function creditMatchResult(
   // exist before the next screen renders; settled here too when the match
   // just played was one of them. Both are no-ops outside a Championship
   // season in which you finished third to sixth. See lib/star/playoffs.
-  if (fixture.kind === "playoff") {
+  // Guarded on `alreadyPlayed`, same reason as the cup/Europe settlement
+  // above — settlePlayOffFixture has no replay protection of its own.
+  // seedPlayOffs (the other branch) already guards itself on
+  // `career.playOffState` being set, so it needs nothing extra here.
+  if (fixture.kind === "playoff" && !alreadyPlayed) {
     const settled = settlePlayOffFixture(career, fixture, stats.homeScore, stats.awayScore);
     if (settled) {
       next.playOffState = settled.state;
@@ -757,7 +812,23 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
 // aging decline), reset season stats/energy/form, tick the contract down, bank a
 // Ballon d'Or if won. Whether the contract now needs renewing is the caller's call
 // via next.contract.seasonsRemaining.
-export function advanceSeason(career: CareerState, userWonBallonDor: boolean): { career: CareerState; newlyUnlocked: string[] } {
+export function advanceSeason(
+  career: CareerState,
+  userWonBallonDor: boolean,
+  /**
+   * True when `career` already reflects a transfer accepted THIS rollover —
+   * a forced relegation move, or the transfer window screen. Reported
+   * directly, and confirmed in the code: `career.contract` is overwritten
+   * with the NEW club's deal the instant a transfer is accepted (see
+   * acceptOffer in transfers.ts), and both real call sites of this function
+   * hand that already-swapped contract straight to `advanceSeason` — so
+   * `loyaltyMoney`, "the one thing in the career that pays you for NOT
+   * moving" per its own doc comment, was reading the very deal the player
+   * just signed and paying the stayed-all-season bonus for leaving.
+   * Loyalty simply does not apply this rollover when this is true.
+   */
+  justTransferred = false,
+): { career: CareerState; newlyUnlocked: string[] } {
   // A loan spell is exactly the season it was made in — home before
   // anything else this rollover touches a squad, so every squad-carrying
   // computation below (promotion/relegation's strength reads, the fresh
@@ -793,8 +864,11 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   // makes an objective worth chasing rather than ignoring.
   const sponsorRoll = rollSponsorSeason(career);
   // Loyalty is the one thing in the career that pays you for NOT moving. Taken
-  // here, before the transfer window, because you were here for the season.
-  const loyalty = loyaltyMoney(career.contract, true);
+  // here, before the transfer window, because you were here for the season —
+  // unless `career.contract` is only here because a transfer was JUST
+  // accepted this rollover (see `justTransferred`'s own doc), in which case
+  // there is no loyalty to pay: the player didn't stay, they just arrived.
+  const loyalty = justTransferred ? 0 : loyaltyMoney(career.contract, true);
 
   // The board's view of the manager, taken on the season the CLUB had rather
   // than the one you had — nobody is sacked because a forward was quiet.
@@ -954,6 +1028,25 @@ export function simulateMissedFixture(
   career: CareerState,
   fixture: Fixture,
 ): { career: CareerState; newlyUnlocked: string[]; homeScore: number; awayScore: number } {
+  // ── Has this one already been simulated? ──
+  //
+  // The same class of bug creditMatchResult's own `alreadyPlayed` guard
+  // exists for — this function had none of it. Matched on week/kind/
+  // opponent, not object identity, for the same reason: a caller working
+  // off a stale `career` hands over a stale fixture OBJECT too, and
+  // `f === fixture` alone (further down) missed it.
+  const kind = fixture.kind ?? "league";
+  const sameFixture = (f: Fixture) =>
+    f.week === fixture.week && (f.kind ?? "league") === kind && f.opponent === fixture.opponent;
+  const alreadyPlayed = career.fixtures.some(f => sameFixture(f) && f.played);
+  if (alreadyPlayed) {
+    const existing = career.fixtures.find(sameFixture)!;
+    return {
+      career, newlyUnlocked: [],
+      homeScore: existing.homeScore ?? 0, awayScore: existing.awayScore ?? 0,
+    };
+  }
+
   const rng = mulberry32(career.season * 1000 + career.week + 7717);
   const strength = (name: string) => career.league.find((t) => t.name === name)?.strength ?? 65;
   const mine = strength(career.player.club);
@@ -966,7 +1059,6 @@ export function simulateMissedFixture(
   const userScore = fixture.home ? score.home : score.away;
   const oppScore = fixture.home ? score.away : score.home;
 
-  const kind = fixture.kind ?? "league";
   let league = career.league;
   let weekResults = career.results ?? [];
   let leagueSquads = career.leagueSquads;
@@ -1008,7 +1100,7 @@ export function simulateMissedFixture(
   }
 
   const fixtures = career.fixtures.map((f) =>
-    f === fixture
+    (f === fixture || sameFixture(f))
       ? {
           ...f,
           played: true,

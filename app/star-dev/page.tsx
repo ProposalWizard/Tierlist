@@ -786,8 +786,12 @@ export default function StarDevPage() {
 
   // Rolling into the next season, once anything that happens BETWEEN seasons is
   // out of the way. Split out because three different screens end here.
-  const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false) => {
-    const { career: next, newlyUnlocked } = advanceSeason(from, userWon);
+  // `justTransferred` is separate from `forcedRelegationMove` — a plain,
+  // voluntary transfer-window acceptance is ALSO "just transferred" even
+  // though it never touches the relegation-move screen. See advanceSeason's
+  // own doc on why this has to reach it.
+  const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false, justTransferred = false) => {
+    const { career: next, newlyUnlocked } = advanceSeason(from, userWon, justTransferred);
     toastAchievements(newlyUnlocked);
     // ── A club you just SIGNED for is not "promoted" ──
     //
@@ -920,7 +924,10 @@ export default function StarDevPage() {
       { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.signingFee }, "transfer");
     setCareer(moved);
     setTransferOffers([]);
-    rollOverSeason(moved, wonBallonDor, forcedRelegationMove);
+    // `justTransferred: true` — `moved.contract` is the new club's deal, not
+    // one stayed on for the season; see advanceSeason's own doc on why this
+    // has to be told rather than inferred from `moved` alone.
+    rollOverSeason(moved, wonBallonDor, forcedRelegationMove, true);
   }, [career, phase, wonBallonDor, rollOverSeason]);
 
   const handleStayPut = useCallback(() => {

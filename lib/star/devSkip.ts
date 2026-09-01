@@ -125,7 +125,10 @@ function rollOverSilently(career: CareerState): CareerState {
     }
   }
 
-  const { career: rolled } = advanceSeason(cur, false);
+  // `justTransferred` — a forced relegation move just swapped `cur.contract`
+  // to the new club's deal; without this, advanceSeason would pay the
+  // stayed-all-season loyalty bonus for the club just left. See its own doc.
+  const { career: rolled } = advanceSeason(cur, false, forcedRelegationMove);
   cur = rolled;
   if (forcedRelegationMove && cur.ladderNews) {
     cur = { ...cur, ladderNews: { ...cur.ladderNews, yourMove: null } };
