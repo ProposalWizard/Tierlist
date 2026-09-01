@@ -1,4 +1,4 @@
-import { makeInitialCareer, creditMatchResult, advanceSeason } from "../../lib/star/careerFlow";
+import { makeInitialCareer, creditMatchResult, advanceSeason, simulateMissedFixture } from "../../lib/star/careerFlow";
 import { generateSquad, clubNameSeed } from "../../lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, LeagueSquad, LeaguePlayer, MatchStats, StarPlayer } from "../../lib/star/types";
@@ -223,7 +223,60 @@ function auditCareer(c: CareerState, when: string): void {
   const playedTwice = twice.league.reduce((s, t) => s + t.played, 0);
   check(playedOnce === playedTwice,
     `re-crediting the same match does not advance the table again (${playedOnce} -> ${playedTwice})`);
+  // The calendar, the wallet, and this match's own tallies — reported
+  // directly: only a subset of what creditMatchResult touches was ever
+  // actually guarded against a replay. `week` is the one that matters
+  // most — advancing it twice permanently skips a real week for the rest
+  // of the career.
+  check(twice.week === once.week,
+    `a replay does not advance the calendar week again (${once.week} -> ${twice.week})`);
+  check(twice.money === once.money,
+    `a replay does not pay the match again (${once.money} -> ${twice.money})`);
+  check(twice.leagueSeasonStats?.goals === once.leagueSeasonStats?.goals,
+    `a replay does not inflate the in-season Golden Boot tally either (${once.leagueSeasonStats?.goals} -> ${twice.leagueSeasonStats?.goals})`);
+  check(twice.matchFitness === once.matchFitness && twice.starRating === once.starRating && twice.fame === once.fame,
+    "…nor fitness, star rating or fame");
   auditCareer(twice, "after a replayed match");
+}
+
+// ── Replaying the REAL, career-seeded FA Cup tie must not re-settle it ──────
+//
+// A fabricated cup fixture/run doesn't exercise this at all (an empty
+// `cups` array — the state before a knockout run has actually started —
+// skips the whole settlement block, `idx < 0`, trivially "passing" either
+// way), so this uses the actual FA Cup tie `makeInitialCareer` seeds.
+{
+  const c = freshCareer();
+  const fixture = c.fixtures.find(f => f.kind === "cup" && f.competition === "FA Cup")!;
+  const stats = statsFor(2, 0, fixture.home, 2);
+
+  const once = creditMatchResult(c, fixture, stats).career;
+  const twice = creditMatchResult(once, fixture, stats).career;
+
+  check(twice.fixtures.length === once.fixtures.length,
+    `a replayed cup tie does not draw a second, never-played next round (${once.fixtures.length} -> ${twice.fixtures.length})`);
+  check(twice.trophies.length === once.trophies.length,
+    "…and cannot mint a duplicate trophy off a phantom result");
+  check(JSON.stringify(twice.cups) === JSON.stringify(once.cups),
+    "…and the run itself is identical either way");
+}
+
+// ── The same is true of a fixture watched from the stands ──────────────────
+//
+// simulateMissedFixture had no replay guard of its own at all — not even
+// creditMatchResult's original, partial one.
+{
+  const c = freshCareer();
+  const fixture = c.fixtures.find(f => !f.played)!;
+
+  const once = simulateMissedFixture(c, fixture).career;
+  const twice = simulateMissedFixture(once, fixture).career;
+
+  check(twice.week === once.week, `watching it again does not advance the week again (${once.week} -> ${twice.week})`);
+  check(twice.money === once.money, `…or pay the wage again (${once.money} -> ${twice.money})`);
+  const playedOnce = once.league.reduce((s, t) => s + t.played, 0);
+  const playedTwice = twice.league.reduce((s, t) => s + t.played, 0);
+  check(playedOnce === playedTwice, `…or advance the table again (${playedOnce} -> ${playedTwice})`);
 }
 
 if (problems.length) {

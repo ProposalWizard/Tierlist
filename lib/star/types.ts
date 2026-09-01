@@ -1,3 +1,33 @@
+import type { Scenario, Vec2, Contact, KickSkills } from "./canvasEngine";
+
+/**
+ * Everything needed to watch a goal you scored happen again, exactly as it
+ * did — the physics are a real simulation seeded off `mulberry32`, so the
+ * SAME scenario, rng state and strike inputs always resolve the SAME way.
+ * See CanvasMatch.tsx's rngCallCountRef for why `callsBeforeStrike` matters:
+ * `launch()` and everything after it draws from the rng too, so watching it
+ * again has to put the rng back in the exact state it was in at the strike,
+ * not just start a fresh stream from `seed`.
+ */
+export interface GoalReplay {
+  id: string;
+  /** ISO timestamp, for sorting the recent-goals list newest first. */
+  savedAt: string;
+  /** e.g. "FREE KICK · 63'" — see CanvasMatch's SCENARIO_LABEL. */
+  label: string;
+  seed: number;
+  callsBeforeStrike: number;
+  /** The fully-built scenario at the instant of the strike — defenders,
+   *  keeper, runner, viewport, all of it. A plain snapshot, not rebuilt from
+   *  the seed, because the keeper can drift during aiming (real elapsed
+   *  time, not seed-derived) before the strike ever happens. */
+  scenario: Scenario;
+  dir: Vec2;
+  power: number;
+  contact: Contact;
+  skills: KickSkills;
+}
+
 export interface StarPlayer {
   firstName: string;
   lastName: string;
@@ -583,11 +613,30 @@ export interface CareerState {
   /** Appearances at the CURRENT club, reset on a transfer. */
   clubAppearances?: number;
   /** The man in the job. He can be sacked, and the next one has never picked you. */
-  manager?: { name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string };
+  manager?: {
+    name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string;
+    /** 0-100, his own standing as a free agent — see manager.ts's reputationTier. */
+    reputation: number;
+  };
   /** What happened in the dugout at the end of last season. */
   managerNews?: string | null;
   /** Sponsor objectives settled at the last rollover, for the dashboard. */
   sponsorNews?: string[];
+  /**
+   * Your last few goals, in enough detail to watch each one happen again —
+   * see GoalReplay. Newest first, capped (see RECENT_GOALS_MAX in
+   * careerFlow.ts) — not a full career highlight reel, just enough of a
+   * pool to pick a couple of favourites from. Currently surfaced only in
+   * Settings' admin-only "Goal Replays" section, for testing.
+   */
+  recentGoals?: GoalReplay[];
+  /**
+   * Up to 3 goals deliberately kept from `recentGoals` — a real choice, not
+   * everything you've ever scored. Decoupled from `recentGoals`'s own churn
+   * (a saved one survives falling out of the recent pool) rather than a
+   * list of ids into it, which would dangle the moment it did.
+   */
+  savedReplays?: GoalReplay[];
   /**
    * What the rest of the division did with itself, the moment a transfer
    * window last opened. Replaced whole by the next window, never appended —
@@ -689,4 +738,6 @@ export type StarPhase =
   /** The opening: one penalty, taken until it goes in. See TrialPenalty. */
   | "trial"
   /** …and what it earns you — the card, then the contract. See TrialReward. */
-  | "trial-reward";
+  | "trial-reward"
+  /** Watching a saved goal happen again — see GoalReplay, goalReplays.ts. */
+  | "goal-replay";

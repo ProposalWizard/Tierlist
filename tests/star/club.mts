@@ -1,4 +1,7 @@
-import { makeManager, sackCheck, bossOnArrival, STYLE_SELECTION, styleBlurb } from "../../lib/star/manager";
+import {
+  makeManager, sackCheck, bossOnArrival, STYLE_SELECTION, styleBlurb, reputationTier,
+} from "../../lib/star/manager";
+import { clubExpectation } from "../../lib/star/expectations";
 import { primaryRivalOf, isDerby, strongestTier, rivalryMultiplier } from "../../lib/star/rivalries";
 import { pressQuestionFor } from "../../lib/star/media";
 import { selectionFor } from "../../lib/star/selection";
@@ -119,6 +122,59 @@ function finishNth(c: CareerState, place: number): CareerState {
   const good = advanceSeason(finishNth({ ...c, season: 4, manager: { ...c.manager!, since: 1 } }, 1), false).career;
   check(good.manager?.name === c.manager?.name, "a good season keeps him in the job");
   check(!good.managerNews, "and there is no news to report");
+}
+
+// ── A free agent's own name is worth something ──────────────────────────────
+{
+  const c = base();
+
+  // Deterministic, same as his name and style.
+  check(makeManager(c, "Arsenal", 1).reputation === makeManager(c, "Arsenal", 1).reputation,
+    "the same appointment has the same reputation every time");
+
+  // Bucket every club in this league by the job's own prestige, then compare
+  // the AVERAGE reputation the job attracts over many independent hires
+  // (varying the season, which is part of the RNG seed) — a single hire can
+  // land anywhere in the range, on purpose, but the tiers should separate on
+  // average or the "weighted by prestige" design isn't actually doing anything.
+  const byAmbition = new Map<string, string[]>();
+  for (const club of CLUBS) {
+    const amb = clubExpectation({ ...c, player: { ...c.player, club } }).ambition;
+    byAmbition.set(amb, [...(byAmbition.get(amb) ?? []), club]);
+  }
+  const meanReputationFor = (club: string) => {
+    let total = 0, n = 0;
+    for (let season = 1; season <= 40; season++) { total += makeManager(c, club, season).reputation; n++; }
+    return total / n;
+  };
+  const meanFor = (amb: string) => {
+    const clubs = byAmbition.get(amb) ?? [];
+    if (clubs.length === 0) return null;
+    return clubs.reduce((s, club) => s + meanReputationFor(club), 0) / clubs.length;
+  };
+  const title = meanFor("Title"), survival = meanFor("Survival");
+  if (title !== null && survival !== null) {
+    check(title > survival,
+      `a title-chasing job attracts a bigger name on average than a relegation fight (${survival.toFixed(0)} vs ${title.toFixed(0)})`);
+  }
+
+  // Tiers read off the same 0-100 scale everything else in the game uses.
+  check(reputationTier(90) === "Elite" && reputationTier(60) === "Proven"
+    && reputationTier(40) === "Rising" && reputationTier(10) === "Journeyman",
+    "reputation reads back as the tier it was rolled into");
+
+  // A big name is under more pressure in year one, not less; a project
+  // appointment gets more patience, not the same amount. Small and bounded —
+  // never harder on a big name than a settled manager's own ordinary bar.
+  const firstSeasonManager = (reputation: number) => ({ ...c, manager: { ...c.manager!, since: 1, reputation } });
+  check(sackCheck(firstSeasonManager(100), -0.6).sacked,
+    "an elite name brought in gets sacked on a season that would have been forgiven from an unknown");
+  check(!sackCheck(firstSeasonManager(0), -0.6).sacked,
+    "…while a journeyman project appointment survives that exact same season");
+  check(!sackCheck(firstSeasonManager(100), -0.5).sacked,
+    "…but even the biggest name is never judged harder than a settled manager's own ordinary bar");
+  check(sackCheck(firstSeasonManager(50), -0.72).sacked && !sackCheck(firstSeasonManager(50), -0.71).sacked,
+    "a neutral, average reputation reproduces the original first-season bar exactly");
 }
 
 // ── Rivalries, for real ──────────────────────────────────────────────────────

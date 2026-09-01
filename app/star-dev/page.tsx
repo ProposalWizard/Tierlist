@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture } from "@/lib/star/types";
+import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
+import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
@@ -447,6 +448,23 @@ export default function StarDevPage() {
       : c));
   }, []);
 
+  // Which saved goal replay is currently on screen — see the "goal-replay"
+  // phase below and SettingsScreen's admin-only "Goal Replays" section.
+  const [watchingReplay, setWatchingReplay] = useState<GoalReplay | null>(null);
+  const handleGoalScored = useCallback((replay: GoalReplay) => {
+    setCareer(c => (c ? addRecentGoal(c, replay) : c));
+  }, []);
+  const handleWatchReplay = useCallback((replay: GoalReplay) => {
+    setWatchingReplay(replay);
+    setPhase("goal-replay");
+  }, []);
+  const handleSaveReplay = useCallback((index: number, replay: GoalReplay) => {
+    setCareer(c => (c ? saveReplayToSlot(c, index, replay) : c));
+  }, []);
+  const handleDeleteSavedReplay = useCallback((id: string) => {
+    setCareer(c => (c ? deleteSavedReplay(c, id) : c));
+  }, []);
+
   const handleTrainingComplete = useCallback((xp: number) => {
     if (!career || !trainingSkill) return;
     const currentVal = career.skills[trainingSkill];
@@ -768,8 +786,12 @@ export default function StarDevPage() {
 
   // Rolling into the next season, once anything that happens BETWEEN seasons is
   // out of the way. Split out because three different screens end here.
-  const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false) => {
-    const { career: next, newlyUnlocked } = advanceSeason(from, userWon);
+  // `justTransferred` is separate from `forcedRelegationMove` — a plain,
+  // voluntary transfer-window acceptance is ALSO "just transferred" even
+  // though it never touches the relegation-move screen. See advanceSeason's
+  // own doc on why this has to reach it.
+  const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false, justTransferred = false) => {
+    const { career: next, newlyUnlocked } = advanceSeason(from, userWon, justTransferred);
     toastAchievements(newlyUnlocked);
     // ── A club you just SIGNED for is not "promoted" ──
     //
@@ -902,7 +924,10 @@ export default function StarDevPage() {
       { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.signingFee }, "transfer");
     setCareer(moved);
     setTransferOffers([]);
-    rollOverSeason(moved, wonBallonDor, forcedRelegationMove);
+    // `justTransferred: true` — `moved.contract` is the new club's deal, not
+    // one stayed on for the season; see advanceSeason's own doc on why this
+    // has to be told rather than inferred from `moved` alone.
+    rollOverSeason(moved, wonBallonDor, forcedRelegationMove, true);
   }, [career, phase, wonBallonDor, rollOverSeason]);
 
   const handleStayPut = useCallback(() => {
@@ -1134,6 +1159,30 @@ export default function StarDevPage() {
             duties={duties ?? undefined}
             conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
+            onGoalScored={handleGoalScored}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "goal-replay" && watchingReplay) {
+    return (
+      <div
+        className="min-h-screen bg-gray-950 text-white py-4 px-3"
+        style={{ backgroundImage: "radial-gradient(70% 45% at 50% 0%, rgba(16,185,129,0.16), transparent 70%)" }}
+      >
+        <div className="max-w-sm mx-auto">
+          <button
+            onClick={() => { setWatchingReplay(null); setPhase("settings"); }}
+            className="mb-2 flex items-center gap-1 px-3 py-1.5 bg-gray-700 rounded-lg text-xs font-black text-white hover:bg-gray-600"
+          >
+            ← Back to Settings
+          </button>
+          <CanvasMatch
+            key={watchingReplay.id}
+            career={career}
+            replayOf={watchingReplay}
           />
         </div>
       </div>
@@ -1266,6 +1315,9 @@ export default function StarDevPage() {
         onSkip={handleDevSkip}
         onNewCareer={handleFullReset}
         onSetPortrait={handleSetPortrait}
+        onWatchReplay={handleWatchReplay}
+        onSaveReplay={handleSaveReplay}
+        onDeleteSavedReplay={handleDeleteSavedReplay}
       />
     );
   }
@@ -1302,7 +1354,7 @@ export default function StarDevPage() {
       : undefined;
     const matchday = nextFixture.kind === "international"
       ? null
-      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI);
+      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI, selection?.status === "Substitute");
     // Whether YOUR side is drawable — the bar the button decides on now. An
     // under-scouted OPPONENT no longer holds the screen back at all: it gets
     // its own "Unable to scout" half instead (see VersusScreen). Only an

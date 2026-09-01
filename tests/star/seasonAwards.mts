@@ -172,6 +172,49 @@ function baseCareer(): CareerState {
   check(stats.teamOfSeason.some(m => m.role === "GK"), "…including a goalkeeper");
 }
 
+// ── Team of the Season agrees with Player of the Season ────────────────────
+//
+// Reported directly: Team of the Season used to rank purely on overall, a
+// DIFFERENT number from the one Player of the Season is actually decided
+// on (overall plus real goals/assists — see compositeScore) — so the
+// reigning Player of the Season could miss his own team of the season
+// entirely. A real season's end product has to count in both places the
+// same way, or the two awards visibly disagree about who had the season.
+{
+  // A full, ordinary division to fill the other ten slots from, so the
+  // striker's slot is decided on its own merits rather than by an empty
+  // pool — every outfielder has SOME fitness for every outfield slot (see
+  // formations.ts's fitness), so a thin pool gets eaten by the back four
+  // before the forwards are ever reached.
+  const filler: LeagueSquad[] = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal").map((club, i) => ({
+    club,
+    players: Array.from({ length: 12 }, (_, j) => ({
+      id: `${club}-${j}`, name: `${club} Player ${j}`,
+      position: (["GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM", "RW", "LW", "CAM"] as const)[j % 11],
+      overall: 60 + ((i * 5 + j * 3) % 20), goals: 0, assists: 0,
+    })),
+  }));
+  const career: CareerState = {
+    ...baseCareer(),
+    // Your own modest-overall striker, but a season nobody at the position
+    // can match on end product.
+    squad: [squadPlayer({ id: "star", name: "Prolific Forward", position: "ST", overall: 74, leagueGoals: 22, leagueAssists: 6 })],
+    leagueSquads: [
+      // A much higher-rated striker elsewhere, but a blank season — exactly
+      // the case raw overall alone used to pick over the real Player of the
+      // Season.
+      { club: "Real Highflier", players: [{ id: "h1", name: "Highly Rated Nobody", position: "ST", overall: 92, goals: 0, assists: 0 }] },
+      ...filler,
+    ],
+  };
+  const stats = computeSeasonAwardStats(career);
+  check(stats.playerOfSeason?.name === "Prolific Forward",
+    `the real season wins Player of the Season (got ${stats.playerOfSeason?.name})`);
+  const stSlot = stats.teamOfSeason.find(m => m.role === "ST");
+  check(stSlot?.name === "Prolific Forward",
+    `…and the SAME player takes the striker slot in Team of the Season, not the higher-rated blank season (got ${stSlot?.name})`);
+}
+
 // ── Trophy winners: yours, the division's, and honestly unknown ────────────
 {
   const trophies: Trophy[] = [

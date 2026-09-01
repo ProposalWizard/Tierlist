@@ -67,6 +67,14 @@ export interface HiddenMatchInputs {
    */
   energy?: number;
   /**
+   * True for the whole time you are on the pitch having come on as a
+   * substitute this match — not just the moment of the substitution. See
+   * the `involvement` calc below. Optional; a caller that omits it (the
+   * star-match-dev fork, older tests, and every minute before you're
+   * actually subbed on) behaves exactly as it always has.
+   */
+  impactSub?: boolean;
+  /**
    * MATCH CONTEXT (specification §2.9).
    *
    * "The Hidden Match Simulation must also understand the broader match
@@ -369,12 +377,18 @@ export function tick(
         // (100/100)*0.08. A real match starts there too and eases down as
         // the player tires, rather than jumping — see CanvasMatch's
         // liveEnergyRef, seeded from the same 100.
-        const involvement = 0.36
+        const baseInvolvement = 0.36
           + (inputs.playerSkill / 100) * 0.26
           + ((inputs.energy ?? 100) / 100) * 0.08
           // A long spell without the ball nudges it up, so you are never
           // stranded watching for a quarter of an hour.
           + Math.min(0.3, Math.max(0, state.sinceInvolved - 10) * 0.025);
+        // Coming off the bench: fresh legs against tired opponents, and a
+        // real impact sub gets on the ball MORE than his share in the time
+        // he's got, not less. Reported directly — one chance in nineteen
+        // minutes on as a substitute read as nothing to show for coming on
+        // at all. Capped so it stays a real edge and not a guarantee.
+        const involvement = inputs.impactSub ? Math.min(0.92, baseInvolvement * 1.5) : baseInvolvement;
 
         if (rng() < involvement) {
           state.sinceInvolved = 0;

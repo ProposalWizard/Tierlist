@@ -4,6 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { expectationStatus, personalDuty } from "@/lib/star/expectations";
+import { reputationTier } from "@/lib/star/manager";
 import { leadingScorer } from "@/lib/star/recognition";
 import { clauseSummary } from "@/lib/star/contracts";
 import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
@@ -134,39 +135,41 @@ export default function DashboardStats({ career, onRenew }: Props) {
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-gray-600 bg-gray-800">
               <span className="text-2xl font-black tabular-nums text-white">{career.squadNumber ?? "—"}</span>
             </div>
-            <div className="flex-1 rounded-lg border border-gray-600 bg-gray-700 p-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Standing</div>
+            <div className="flex-1 rounded-lg border-l-4 border-yellow-400 bg-gray-800 p-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-yellow-300">Standing</div>
               <div className="text-xs font-black text-white">
                 {career.captain ? "🅲 Club captain" : "Not the captain"}
                 {leadingScorer(career) && career.seasonStats.goals > 0 ? " · leading the scoring charts" : ""}
               </div>
-              <div className="text-[10px] text-white/85">
+              <div className="text-[10px] text-white">
                 {(career.clubAppearances ?? 0)} appearance{(career.clubAppearances ?? 0) === 1 ? "" : "s"} for {career.player.club}
               </div>
             </div>
           </div>
 
           {(career.sponsorNews ?? []).length > 0 && (
-            <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-              <div className="font-black text-xs text-white mb-1">Sponsors</div>
-              {(career.sponsorNews ?? []).map((n, i) => (
-                <div key={i} className={`text-[10px] ${n.includes("not delivered") ? "text-red-300" : "text-emerald-300"}`}>{n}</div>
-              ))}
+            <div className="rounded-lg border-l-4 border-violet-400 bg-gray-800 p-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-violet-300">💰 Sponsors</div>
+              <div className="mt-1 space-y-0.5">
+                {(career.sponsorNews ?? []).map((n, i) => (
+                  <div key={i} className={`text-[11px] font-bold ${n.includes("not delivered") ? "text-red-300" : "text-white"}`}>{n}</div>
+                ))}
+              </div>
             </div>
           )}
 
           {(career.awards ?? []).length > 0 && (
-            <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-              <div className="font-black text-xs text-white mb-1">Individual honours</div>
-              <div className="space-y-0.5">
+            <div className="rounded-lg border-l-4 border-amber-400 bg-gray-800 p-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">🏅 Individual honours</div>
+              <div className="mt-1 space-y-0.5">
                 {[...(career.awards ?? [])].reverse().slice(0, 5).map((a, i) => (
-                  <div key={i} className="text-[10px] text-gray-200">
-                    <span className="font-black text-amber-300">{a.kind}</span>
+                  <div key={i} className="text-[11px] text-white">
+                    <span className="font-black text-amber-200">{a.kind}</span>
                     {" · S"}{a.season}{a.week ? ` wk ${a.week}` : ""} — {a.detail}
                   </div>
                 ))}
                 {(career.awards ?? []).length > 5 && (
-                  <div className="text-[10px] text-white/85">…and {(career.awards ?? []).length - 5} more</div>
+                  <div className="text-[10px] text-white">…and {(career.awards ?? []).length - 5} more</div>
                 )}
               </div>
             </div>
@@ -174,36 +177,45 @@ export default function DashboardStats({ career, onRenew }: Props) {
 
           {/* What the board actually wants. Finishing sixth used to be worth
               the same at every club in the division. */}
-          <div className={`rounded-lg p-3 border ${onTrack ? "border-emerald-600 bg-emerald-600/15" : "border-amber-500 bg-amber-500/10"}`}>
+          <div className={`rounded-lg border-l-4 p-3 ${onTrack ? "border-emerald-400 bg-gray-800" : "border-red-400 bg-gray-800"}`}>
             <div className="flex items-center justify-between">
-              <span className="font-black text-xs text-white">Board expectation</span>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${onTrack ? "text-emerald-300" : "text-amber-200"}`}>
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">📋 Board expectation</span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${onTrack ? "text-emerald-300" : "text-red-300"}`}>
                 {exp.ambition}
               </span>
             </div>
-            <div className="mt-1 text-[10px] text-gray-200">{exp.summary}</div>
-            <div className="mt-1 text-[10px] text-white">
+            <div className="mt-1.5 text-[11px] font-bold text-white">{exp.summary}</div>
+            <div className="mt-1 text-[11px] text-white">
               {pos}{pos === 1 ? "st" : pos === 2 ? "nd" : pos === 3 ? "rd" : "th"} of {career.league.length}
               {" · "}target {exp.targetPosition}{exp.targetPosition === 1 ? "st" : exp.targetPosition === 2 ? "nd" : exp.targetPosition === 3 ? "rd" : "th"} or better
             </div>
-            <div className="mt-1 text-[10px] text-gray-200">
-              <span className="font-black text-white">{duty.duty}.</span> {duty.summary} Target {duty.goalTarget} goals — you have {career.seasonStats.goals}.
+            <div className="mt-1 text-[11px] text-white">
+              <span className="font-black">{duty.duty}.</span> {duty.summary} Target {duty.goalTarget} goals — you have {career.seasonStats.goals}.
             </div>
           </div>
 
           {career.lastSeasonJudgement && (
-            <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-              <div className="font-black text-xs text-white mb-0.5">Last season</div>
-              <div className={`text-[11px] font-bold ${career.lastSeasonJudgement.score >= 0 ? "text-emerald-300" : "text-amber-200"}`}>
+            <div className="rounded-lg border-l-4 border-sky-400 bg-gray-800 p-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">📅 Last season</div>
+              <div className={`mt-1 text-[12px] font-black ${career.lastSeasonJudgement.score >= 0 ? "text-emerald-300" : "text-amber-300"}`}>
                 {career.lastSeasonJudgement.headline}
               </div>
-              <div className="text-[10px] text-gray-200">{career.lastSeasonJudgement.detail}</div>
+              <div className="mt-0.5 text-[11px] text-white">{career.lastSeasonJudgement.detail}</div>
             </div>
           )}
 
-          <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-            <div className="font-black text-xs text-white mb-1">The manager</div>
-            <div className="text-[10px] text-white/85">{selection.reason}</div>
+          <div className="rounded-lg border-l-4 border-blue-400 bg-gray-800 p-3">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-black uppercase tracking-widest text-blue-300">
+                👔 The manager{career.manager ? ` — ${career.manager.name}` : ""}
+              </div>
+              {career.manager && (
+                <span className="text-[9px] font-black uppercase tracking-widest text-blue-200">
+                  {reputationTier(career.manager.reputation)}
+                </span>
+              )}
+            </div>
+            <div className="mt-1 text-[11px] font-bold text-white">{selection.reason}</div>
             <div className="mt-2 h-1.5 w-full rounded-full bg-black/30 overflow-hidden">
               <div
                 className={`h-full rounded-full ${
@@ -211,28 +223,28 @@ export default function DashboardStats({ career, onRenew }: Props) {
                 style={{ width: `${Math.max(3, selection.standing)}%` }}
               />
             </div>
-            <div className="mt-1 flex gap-1.5 text-[10px] font-bold">
-              <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-white/85"}`}>
+            <div className="mt-1.5 flex gap-1.5 text-[10px] font-bold">
+              <span className={`px-2 py-0.5 rounded-full ${duties.freeKicks ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-white"}`}>
                 Free kicks {duties.freeKicks ? "✓" : `need FK ${duties.freeKickNeeded}`}
               </span>
-              <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-white/85"}`}>
+              <span className={`px-2 py-0.5 rounded-full ${duties.penalties ? "bg-emerald-500/25 text-emerald-200" : "bg-black/30 text-white"}`}>
                 Penalties {duties.penalties ? "✓" : `need FK ${duties.penaltyNeeded}`}
               </span>
             </div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-            <div className="font-black text-xs text-white mb-1">Boots — {career.currentBoot.name}</div>
-            <div className="text-[10px] text-white/85">
+          <div className="rounded-lg border-l-4 border-orange-400 bg-gray-800 p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-orange-300">👟 Boots — {career.currentBoot.name}</div>
+            <div className="mt-1 text-[11px] font-bold text-white">
               {career.currentBoot.matches} matches remaining · Pace +{career.currentBoot.pace} · Pow +{career.currentBoot.power} · Tec +{career.currentBoot.technique}
             </div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-            <div className="font-black text-xs text-white mb-2">Skills</div>
+          <div className="rounded-lg border-l-4 border-emerald-400 bg-gray-800 p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300 mb-2">⚡ Skills</div>
             <div className="grid grid-cols-5 gap-1 text-center">
               {(["pace", "power", "technique", "vision", "freeKick"] as const).map((k) => (
                 <div key={k}>
-                  <div className="text-[9px] text-white/75 uppercase font-bold">{k === "freeKick" ? "FK" : k.slice(0, 4)}</div>
-                  <div className="text-sm font-black text-emerald-400">{career.skills[k]}</div>
+                  <div className="text-[9px] text-white uppercase font-bold">{k === "freeKick" ? "FK" : k.slice(0, 4)}</div>
+                  <div className="text-sm font-black text-emerald-300">{career.skills[k]}</div>
                 </div>
               ))}
             </div>

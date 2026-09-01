@@ -228,6 +228,18 @@ const result = (goals: number, rating = 7.2): MatchStats => ({
   const before = c.money;
   const next = advanceSeason(c, false).career;
   check(next.money >= before + 15, `the loyalty bonus is paid at the rollover (${before} → ${next.money})`);
+
+  // Reported directly: a transfer accepted this rollover pays the STAYED
+  // bonus for the club just left, because `career.contract` is already the
+  // new club's deal (acceptOffer overwrites it) by the time advanceSeason
+  // runs. `justTransferred: true` — set by both real callers, the transfer
+  // window and a forced relegation move — withholds it. `c` here still
+  // carries the same loyaltyBonus: 15 contract on paper; only the flag
+  // changes.
+  const beforeTransfer = c.money;
+  const transferred = advanceSeason(c, false, true).career;
+  check(transferred.money < beforeTransfer + 15,
+    `a transfer accepted this rollover does not also pay the stayed-all-season bonus (${beforeTransfer} → ${transferred.money})`);
 }
 
 if (problems.length) {

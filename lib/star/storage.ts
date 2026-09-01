@@ -117,6 +117,11 @@ export function loadCareer(): CareerState | null {
 function backfill(c: CareerState): CareerState {
   const out = { ...c };
   if (!out.manager) out.manager = makeManager(out, out.player.club, out.season);
+  // A manager saved before reputation existed has no free-agent standing on
+  // file — treated as an unremarkable, average appointment rather than left
+  // `undefined` (which `reputationTier`/`sackCheck` both guard against
+  // anyway, but a real number here is honest and avoids relying on that).
+  else if (out.manager.reputation === undefined) out.manager = { ...out.manager, reputation: 50 };
   if (out.squadNumber === undefined) out.squadNumber = assignSquadNumber(out, out.player.club);
   if (out.clubAppearances === undefined) out.clubAppearances = out.careerStats.appearances;
   // A career saved before energy existed has no meter to have run down —
