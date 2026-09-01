@@ -41,7 +41,7 @@ import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
 import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
-import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
+import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
@@ -86,6 +86,21 @@ interface Props {
   fixture?: Fixture;
   oppStrength?: number;
   onComplete?: (stats: MatchStats) => void;
+  /**
+   * Watch a previously-saved goal happen again, exactly as it did — see
+   * GoalReplay and lib/star/season's mulberry32. When set, this ignores
+   * `fixture`/`onComplete` entirely (sandbox rules: no hidden match, no
+   * career crediting, no auto-advance to a new chance once it resolves) and
+   * jumps straight from mount to the saved strike, skipping aim and contact.
+   */
+  replayOf?: GoalReplay;
+  /**
+   * Fired once, right when a personal goal (not a team-mate's) is confirmed
+   * — everything needed to watch this exact goal again, bit-for-bit. Never
+   * fired while replaying one (`replayOf` set): re-watching a replay is not
+   * itself a new goal to capture.
+   */
+  onGoalScored?: (replay: GoalReplay) => void;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -204,12 +219,25 @@ function makeGrassTile(): HTMLCanvasElement | null {
   return c;
 }
 
+/**
+ * A fresh rng from `seed`, wrapped to count its own draws into `counter` —
+ * see rngCallCountRef's own comment on why the count matters. `counter` is
+ * reset to 0 here, at the moment this rng is created, so it always reads
+ * "draws since THIS scenario's rng started" rather than accumulating
+ * forever across a whole match.
+ */
+function countedRng(seed: number, counter: { current: number }): () => number {
+  const raw = mulberry32(seed);
+  counter.current = 0;
+  return () => { counter.current++; return raw(); };
+}
+
 /** How long "PASS" / "GOAL" stays on screen after the action. */
 const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
 
   // ── Who else is actually out there ──
   //
@@ -294,6 +322,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   matchModeRef.current = matchMode;
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const replayOfRef = useRef(replayOf);
+  replayOfRef.current = replayOf;
+  const onGoalScoredRef = useRef(onGoalScored);
+  onGoalScoredRef.current = onGoalScored;
+  // Everything needed to watch the goal that is about to be attempted again,
+  // captured right before the strike — see the GoalReplay prop doc and
+  // rngCallCountRef below. Only ever surfaced (via onGoalScored) if this
+  // particular strike actually goes in.
+  const pendingReplayRef = useRef<Omit<GoalReplay, "id" | "savedAt" | "label"> | null>(null);
   const oppStrengthRef = useRef(oppStrength ?? 65);
   oppStrengthRef.current = oppStrength ?? 65;
   const fixtureOpponent = fixture?.opponent ?? "The opposition";
@@ -555,7 +592,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship, career?.skills.vision ?? 55));
   const ballRef = useRef<Ball | null>(null);
-  const rngRef = useRef<() => number>(mulberry32(seed));
+  /**
+   * How many times THIS scenario's rng has been drawn from, since it was
+   * (re)seeded — reset to 0 every time rngRef itself is reassigned. Exists
+   * for exactly one reason: a goal replay has to reproduce the rng in the
+   * exact state it was in the instant `launch()` was called, not just start
+   * a fresh stream from the same seed — see `launch`'s own noise term and
+   * every rng draw the physics loop makes after it. Nothing between a
+   * scenario being (re)seeded and the strike depends on real elapsed time
+   * (stepKeeper takes no rng; nothing runs during aim but stepKeeper), so
+   * this count is exactly reproducible on replay regardless of how long the
+   * player actually took to aim.
+   */
+  const rngCallCountRef = useRef(0);
+  const rngRef = useRef<() => number>(countedRng(seed, rngCallCountRef));
   const seedRef = useRef(seed);
 
   const phaseRef = useRef<Phase>("aim");
@@ -807,6 +857,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
 
   // --- Announce the very first scenario + set its viewport ---
   useEffect(() => {
+    // Watching a saved goal: skip the whole opening entirely. The scenario,
+    // rng and strike are all already decided — see GoalReplay — so this
+    // restores that exact moment and goes straight to the flight that
+    // follows it, rather than building a new random chance and waiting on
+    // aim/contact input nobody is going to give it.
+    if (replayOfRef.current) {
+      const r = replayOfRef.current;
+      scenarioRef.current = JSON.parse(JSON.stringify(r.scenario));
+      facingRef.current = scenarioRef.current.facing ?? "up";
+      viewportRef.current = { ...scenarioRef.current.viewport };
+      baseViewportRef.current = { ...scenarioRef.current.viewport };
+      const replayRng = countedRng(r.seed, rngCallCountRef);
+      for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
+      rngRef.current = replayRng;
+      ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      setLog([logLine("Replay", "period", 0)]);
+      setPhase("flight");
+      return;
+    }
     // The opening scenario is built before this component mounts, so it needs
     // its defensive shape assigning here too.
     scenarioRef.current.conditions = conditionsRef.current;
@@ -823,7 +892,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // the scoreline you inherit rather than starting a fresh 0-0 at the hour.
       if (startMinuteRef.current > 0) {
         seedRef.current += 1;
-        const rng = mulberry32(seedRef.current);
+        const rng = countedRng(seedRef.current, rngCallCountRef);
         rngRef.current = rng;
         const st = matchStateRef.current;
         const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
@@ -2429,6 +2498,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
       }
+
+      // A goal that's yours — not a team-mate's, which the first branch
+      // above claims — is exactly what a saved replay is for. Never during a
+      // replay itself: watching a saved goal again is not a new goal to
+      // capture. `pendingReplayRef` is only ever set right before a real
+      // strike (handleContact), so it is naturally absent for anything that
+      // scored without you having personally struck it.
+      if (!(d.assists === 1 && sc.receiver) && pendingReplayRef.current && !replayOfRef.current) {
+        const verb = SCENARIO_LABEL[sc.kind]?.verb.replace("!", "") ?? sc.kind;
+        onGoalScoredRef.current?.({
+          id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+          savedAt: new Date().toISOString(),
+          label: `${verb} · ${matchMinuteRef.current}'`,
+          ...pendingReplayRef.current,
+        });
+      }
     }
 
     // ── The two questions the commentary is asking ──
@@ -2472,6 +2557,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1600);
       return;
     }
+
+    // Watching a saved goal ends here — no next chance to load, no match to
+    // simulate onward, no sandbox chance count ticking over. The parent
+    // decides what happens next (watch it again, by remounting with the
+    // same replayOf; or close).
+    if (replayOfRef.current) return;
 
     // In career/match mode, enter simulation phase. In sandbox, go directly.
     if (matchModeRef.current) {
@@ -2557,7 +2648,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const startSimulation = () => {
     sceneGenRef.current += 1;
     seedRef.current += 1;
-    const rng = mulberry32(seedRef.current);
+    const rng = countedRng(seedRef.current, rngCallCountRef);
     rngRef.current = rng;
 
     // The refs are the authority on the scoreline (the HUD reads them, and your
@@ -2720,7 +2811,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const loadScenario = (attacking: boolean) => {
     sceneGenRef.current += 1;
     seedRef.current += 1;
-    rngRef.current = mulberry32(seedRef.current);
+    rngRef.current = countedRng(seedRef.current, rngCallCountRef);
     const rng = rngRef.current;
 
     // What the match has just handed you, if anything. Its zone narrows the
@@ -2979,6 +3070,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       careerRef.current?.skills.freeKick ?? tired.technique,
       scenarioRef.current.kind,
     );
+    // Snapshot everything a replay would need to reproduce this exact strike
+    // — see GoalReplay and rngCallCountRef. Cheap and thrown away unless the
+    // ball actually ends up in the net (resolveOutcome), so this costs
+    // nothing on the far more common outcome of a shot that doesn't score.
+    pendingReplayRef.current = {
+      seed: seedRef.current,
+      callsBeforeStrike: rngCallCountRef.current,
+      scenario: JSON.parse(JSON.stringify(scenarioRef.current)),
+      dir: aim.dir,
+      power: aim.power,
+      contact,
+      skills: strikeWith,
+    };
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));

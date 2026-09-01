@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture } from "@/lib/star/types";
+import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
+import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
@@ -445,6 +446,23 @@ export default function StarDevPage() {
     setCareer(c => (c
       ? { ...c, player: { ...c.player, ...(portrait ? { portrait } : { portrait: undefined }) } }
       : c));
+  }, []);
+
+  // Which saved goal replay is currently on screen — see the "goal-replay"
+  // phase below and SettingsScreen's admin-only "Goal Replays" section.
+  const [watchingReplay, setWatchingReplay] = useState<GoalReplay | null>(null);
+  const handleGoalScored = useCallback((replay: GoalReplay) => {
+    setCareer(c => (c ? addRecentGoal(c, replay) : c));
+  }, []);
+  const handleWatchReplay = useCallback((replay: GoalReplay) => {
+    setWatchingReplay(replay);
+    setPhase("goal-replay");
+  }, []);
+  const handleSaveReplay = useCallback((index: number, replay: GoalReplay) => {
+    setCareer(c => (c ? saveReplayToSlot(c, index, replay) : c));
+  }, []);
+  const handleDeleteSavedReplay = useCallback((id: string) => {
+    setCareer(c => (c ? deleteSavedReplay(c, id) : c));
   }, []);
 
   const handleTrainingComplete = useCallback((xp: number) => {
@@ -1134,6 +1152,30 @@ export default function StarDevPage() {
             duties={duties ?? undefined}
             conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
+            onGoalScored={handleGoalScored}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "goal-replay" && watchingReplay) {
+    return (
+      <div
+        className="min-h-screen bg-gray-950 text-white py-4 px-3"
+        style={{ backgroundImage: "radial-gradient(70% 45% at 50% 0%, rgba(16,185,129,0.16), transparent 70%)" }}
+      >
+        <div className="max-w-sm mx-auto">
+          <button
+            onClick={() => { setWatchingReplay(null); setPhase("settings"); }}
+            className="mb-2 flex items-center gap-1 px-3 py-1.5 bg-gray-700 rounded-lg text-xs font-black text-white hover:bg-gray-600"
+          >
+            ← Back to Settings
+          </button>
+          <CanvasMatch
+            key={watchingReplay.id}
+            career={career}
+            replayOf={watchingReplay}
           />
         </div>
       </div>
@@ -1266,6 +1308,9 @@ export default function StarDevPage() {
         onSkip={handleDevSkip}
         onNewCareer={handleFullReset}
         onSetPortrait={handleSetPortrait}
+        onWatchReplay={handleWatchReplay}
+        onSaveReplay={handleSaveReplay}
+        onDeleteSavedReplay={handleDeleteSavedReplay}
       />
     );
   }
