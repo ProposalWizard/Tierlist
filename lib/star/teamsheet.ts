@@ -628,7 +628,8 @@ export const POSITION_NAMES: Record<Role, string> = {
 // ── Who is actually out there ───────────────────────────────────────────────
 
 /**
- * The ids of your own club's OTHER ten starters, for a given fixture.
+ * The other ten starters, for a given fixture — each mapped to the ROLE the
+ * formation actually has him playing, not his own natural position.
  *
  * Every place that puts a name to a team-mate's goal — a goal scored while you
  * were off the ball, an assist credited on one you scored yourself, the man a
@@ -643,12 +644,25 @@ export const POSITION_NAMES: Record<Role, string> = {
  * taken), so the eleven a goal can be credited to is the same eleven you were
  * shown before kick-off.
  *
- * Null rather than an empty set when there is nothing to restrict to — an
+ * The role (not just the id) matters just as much — reported directly,
+ * repeatably: a player deliberately deployed at CDM in the lineup builder,
+ * whose own SquadPlayer.position is something else entirely, kept losing
+ * every CDM-shaped moment in the match itself to whoever's OWN position
+ * happened to say "CDM" (a bench player), because `castScenario` (lineup.ts)
+ * casts by each squad member's static position field and had no idea the
+ * lineup had overridden it for this match. He was never actually dropped —
+ * he simply couldn't be cast into the shape the situation was asking for,
+ * every single time, which reads exactly like being benched without ever
+ * being benched. `onPitchToday` below applies this map to override each
+ * player's effective position before casting, so "who's playing where"
+ * follows the lineup you actually set, not each man's day job.
+ *
+ * Null rather than an empty map when there is nothing to restrict to — an
  * international fixture (no club sheet exists for it) or a squad too thin to
  * draw eleven from — so a caller can tell "nobody is eligible" apart from
  * "everybody is", and fall back to the full squad rather than to nobody.
  */
-export function startingTeammateIds(career: CareerState, fixture: Fixture): Set<string> | null {
+export function startingTeammateRoles(career: CareerState, fixture: Fixture): Map<string, Role> | null {
   if (fixture.kind === "international") return null;
   try {
     // Read the same saved eleven the pre-match sheet does, or the two disagree
@@ -663,14 +677,33 @@ export function startingTeammateIds(career: CareerState, fixture: Fixture): Set<
     const md = matchdayFor(career, fixture, true, undefined, saved?.bench, savedXI);
     const mine = md.home.yours ? md.home : md.away;
     if (!sheetReady(md) && mine.xi.length < 9) return null;
-    return new Set(mine.xi.filter(p => !p.isYou).map(p => p.id));
+    const roles = new Map<string, Role>();
+    for (const p of mine.xi) {
+      if (p.isYou) continue;
+      roles.set(p.id, p.role);
+    }
+    return roles;
   } catch {
     return null;
   }
 }
 
-/** The full squad, narrowed to whoever is actually out there — or the full
- *  squad, when there is nothing to narrow by. See startingTeammateIds. */
-export function onPitchToday<T extends { id: string }>(squad: T[], ids: Set<string> | null): T[] {
-  return ids ? squad.filter(p => ids.has(p.id)) : squad;
+/**
+ * The full squad, narrowed to whoever is actually out there and — the part
+ * this exists for — with each man's `position` overridden to the ROLE he is
+ * actually playing this match, per `startingTeammateRoles`. Casting a
+ * situation (`castScenario`, lineup.ts) reads `position` alone; without this
+ * override it would keep matching a "CDM-shaped" moment against each
+ * player's own natural position instead of the lineup's own deliberate
+ * choice. Returns the full squad, untouched, when there is nothing to
+ * narrow by (see startingTeammateRoles) — the pre-lineup, auto-pick
+ * behaviour this had before saved lineups existed at all.
+ */
+export function onPitchToday<T extends { id: string; position: Role }>(
+  squad: T[], roles: Map<string, Role> | null,
+): T[] {
+  if (!roles) return squad;
+  return squad
+    .filter(p => roles.has(p.id))
+    .map(p => (roles.get(p.id) === p.position ? p : { ...p, position: roles.get(p.id)! }));
 }
