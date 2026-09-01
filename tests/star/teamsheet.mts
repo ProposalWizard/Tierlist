@@ -1,6 +1,6 @@
 import {
   matchdayFor, sheetReady, formationForClub, alternatePositions, offeredPositions,
-  startingTeammateRoles, onPitchToday,
+  startingTeammateRoles, onPitchToday, fillMissingFromFullRoster,
 } from "../../lib/star/teamsheet";
 import { formationOf } from "../../lib/star/formations";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -277,14 +277,6 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
     "and neither is a squad of eight");
 }
 
-if (problems.length) {
-  console.error("FAIL");
-  for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);
-  if (problems.length > 15) console.error(`  …and ${problems.length - 15} more`);
-  process.exit(1);
-}
-console.log("PASS — two elevens, one goalkeeper each, everybody in a shirt that fits");
-
 // ── A team-mate's goal can only be credited to a team-mate who is playing ────
 //
 // The bug this exists to catch: a goal your side scores while you are off the
@@ -383,3 +375,64 @@ console.log("PASS — two elevens, one goalkeeper each, everybody in a shirt tha
   // The original object is never mutated — only the returned copy differs.
   check(midfielder.position === "CM", "the source squad record itself is left exactly as it was");
 }
+
+// ── The deeper version of the same bug: the player isn't even in the pool ──
+//
+// Reported after the CDM-casting fix above shipped and the exact same match
+// still broke the same way: `career.squad` is not the whole club — it's a
+// fixed 20-slot template (buildSquadFromRoster, realSquad.ts) that keeps only
+// the single best fit per slot, so a real player the lineup builder started
+// can lose that slot competition and simply never exist in `career.squad` at
+// all. `onPitchToday` can only re-cast someone already in the pool it's
+// handed; it can't conjure a player nobody gave it. `fillMissingFromFullRoster`
+// is the fix — pulling the missing starter in from `career.leagueSquads`'s
+// own-club roster (the same untrimmed source `matchdayFor` already widens the
+// pre-match sheet with) before `onPitchToday` ever runs.
+{
+  const c = career(); // Liverpool; c.squad ids are "sp_N" (generateSquad),
+                       // c.leagueSquads' own-club roster ids are "Liverpool-N"
+                       // (the roster() helper above) — deliberately disjoint,
+                       // so every roster player is "missing" from the squad.
+  const ownRoster = c.leagueSquads!.find(s => s.club === "Liverpool")!;
+  const missingPlayer = ownRoster.players[3]; // a real player never in c.squad
+  check(!(c.squad ?? []).some(p => p.id === missingPlayer.id),
+    "sanity check: this player really is absent from career.squad");
+
+  // Started at CDM by the lineup builder — not necessarily his own position —
+  // exactly the shape startingTeammateRoles hands onPitchToday for a real
+  // saved lineup.
+  const roles = new Map<string, "CDM" | "CB">([
+    [missingPlayer.id, "CDM"],
+    [(c.squad ?? [])[0].id, "CB"], // an ordinary squad player, for contrast
+  ]);
+
+  const filled = fillMissingFromFullRoster(c.squad ?? [], roles, c);
+  check(filled.length === (c.squad ?? []).length + 1,
+    "exactly the one missing starter is appended, nobody else");
+  const added = filled.find(p => p.id === `sf_${missingPlayer.id}`);
+  check(!!added, "he's added under the squad's own sf_-prefixed id convention");
+  check(added?.name === missingPlayer.name, "…with his real name carried over");
+  check(added?.overall === missingPlayer.overall, "…and his real rating, not a placeholder");
+
+  // The whole point: cast him at the role the lineup actually gave him.
+  const cast = onPitchToday(filled, roles);
+  const castMissing = cast.find(p => p.id === `sf_${missingPlayer.id}`);
+  check(castMissing?.position === "CDM",
+    `a starter absent from career.squad is filled in AND cast at his lineup role, not dropped (got ${castMissing?.position})`);
+  check(cast.length === 2, "narrowed to exactly the two starters named in roles");
+
+  // A career with nothing to fill (no roles, or nobody missing) is untouched.
+  check(fillMissingFromFullRoster(c.squad ?? [], null, c).length === (c.squad ?? []).length,
+    "no restriction means nothing is added");
+  const noneMissing = new Map<string, "CB">([[(c.squad ?? [])[0].id, "CB"]]);
+  check(fillMissingFromFullRoster(c.squad ?? [], noneMissing, c).length === (c.squad ?? []).length,
+    "nobody missing means nothing is added");
+}
+
+if (problems.length) {
+  console.error("FAIL");
+  for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);
+  if (problems.length > 15) console.error(`  …and ${problems.length - 15} more`);
+  process.exit(1);
+}
+console.log("PASS — two elevens, one goalkeeper each, everybody in a shirt that fits");

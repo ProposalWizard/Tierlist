@@ -599,16 +599,19 @@ export default function TrialPenalty({ onScored, club }: { onScored: () => void;
     // directly as confusing on a screen whose whole point is to teach the
     // real game's mechanics.
     //
-    // Capped, though — reported directly, and it checks out: a well-struck,
-    // well-lofted penalty can carry the ball five or six metres up, and
-    // uncapped this term more than doubled the ball's size right as it
-    // closed on the goal, which read as "very odd… very hard" rather than
-    // as a subtle depth cue. Clamping the HEIGHT this reads (not the
-    // ball's real height, which is untouched) to a believable head-height
-    // ceiling keeps the cue for an ordinary shot and stops it running away
-    // on a towering one.
-    const sizeLift = Math.min(2.5, lift);
-    const br = Math.max(4.5, unit * 0.5 * (1 + sizeLift * 0.16));
+    // Reported twice, the second time after a first attempt that only capped
+    // how HIGH the growth term could read (at 2.5m) rather than how STEEP
+    // it was: this screen's own coefficient (0.16, capped at 2.5m — max
+    // +40%) was three times steeper than the real match's own drawBall
+    // (0.055, capped at 8m — also +44%, but hardly ever reached, since most
+    // shots never climb anywhere near 8m). A perfectly ordinary penalty —
+    // apex well under the old 2.5m cap — was still visibly ballooning,
+    // because the STEEP coefficient did the damage long before the cap ever
+    // engaged. Matched to the real match's own numbers exactly rather than
+    // re-tuning a second set from scratch: same +5.5%-per-metre rate, same
+    // 8m ceiling, so a shot looks the same height cue here as it does in a
+    // real match instead of a more dramatic, screen-specific one.
+    const br = Math.max(4.5, unit * 0.5 * (1 + Math.min(lift, 8) * 0.055));
     ctx.fillStyle = "rgba(0,0,0,0.32)";
     ctx.beginPath();
     ctx.ellipse(bx, by, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);

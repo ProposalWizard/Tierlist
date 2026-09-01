@@ -703,7 +703,71 @@ export function onPitchToday<T extends { id: string; position: Role }>(
   squad: T[], roles: Map<string, Role> | null,
 ): T[] {
   if (!roles) return squad;
+  // `roles`' own keys are not consistently `sf_`-prefixed — see
+  // startingTeammateRoles: a starter drawn from career.squad keeps his
+  // `sf_`-id, but one only found via matchdayFor's own full-roster fallback
+  // (fromLeagueSquad) carries the bare sofifaId instead. Comparing bare ids
+  // on both sides means either spelling of the same real man matches.
+  const byBareId = new Map<string, Role>();
+  for (const [id, role] of Array.from(roles.entries())) byBareId.set(bareSofifaId(id), role);
   return squad
-    .filter(p => roles.has(p.id))
-    .map(p => (roles.get(p.id) === p.position ? p : { ...p, position: roles.get(p.id)! }));
+    .filter(p => byBareId.has(bareSofifaId(p.id)))
+    .map(p => {
+      const role = byBareId.get(bareSofifaId(p.id))!;
+      return role === p.position ? p : { ...p, position: role };
+    });
+}
+
+/**
+ * Any starting-XI team-mate named in `roles` but missing from `squad`.
+ *
+ * `career.squad` is not your whole roster — buildSquadFromRoster (realSquad.ts)
+ * walks a fixed 20-slot template and keeps only the single best fit per slot,
+ * so a real player the lineup builder placed in the XI can lose that
+ * competition and simply not exist in `career.squad` at all. `onPitchToday`
+ * can only override the position of someone already IN the pool it is
+ * handed — it cannot conjure a player nobody gave it. Reported directly: a
+ * player deployed at CDM in the lineup never actually took the pitch there,
+ * a bench player with CDM as his own natural position kept starting there
+ * instead, and the man he should have made way for never even reappeared on
+ * the bench — because he was never in `career.squad` to begin with, on the
+ * pitch or off it.
+ *
+ * Pulled from `career.leagueSquads`'s own-club entry — the same full,
+ * untrimmed roster `matchdayFor`/`withFullRosterFallback` already widen the
+ * pre-match team sheet with — and appended as ordinary SquadPlayer-shaped
+ * stand-ins so casting (`castScenario`) sees a real candidate for the role.
+ */
+export function fillMissingFromFullRoster(
+  squad: SquadPlayer[], roles: Map<string, Role> | null, career: CareerState | null,
+): SquadPlayer[] {
+  if (!roles || !career) return squad;
+  const known = new Set(squad.map(p => bareSofifaId(p.id)));
+  const missingIds = Array.from(roles.keys()).filter(id => !known.has(bareSofifaId(id)));
+  if (missingIds.length === 0) return squad;
+  const ownRoster = (career.leagueSquads ?? []).find(s => s.club === career.player.club)?.players ?? [];
+  const additions: SquadPlayer[] = [];
+  for (const id of missingIds) {
+    const lp = ownRoster.find(p => bareSofifaId(p.id) === bareSofifaId(id));
+    if (!lp) continue;
+    additions.push({
+      id: `sf_${bareSofifaId(lp.id)}`,
+      name: lp.name,
+      shortName: shortNameOf(lp.name),
+      position: lp.position,
+      positions: lp.positions,
+      seasonGoals: lp.goals,
+      seasonAssists: lp.assists,
+      careerGoals: 0,
+      careerAssists: 0,
+      leagueGoals: lp.goals,
+      leagueAssists: lp.assists,
+      sofifaId: lp.id,
+      overall: lp.overall,
+      imageUrl: lp.image,
+      nationality: lp.nation,
+      age: lp.age,
+    });
+  }
+  return additions.length > 0 ? [...squad, ...additions] : squad;
 }

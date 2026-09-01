@@ -64,8 +64,8 @@ export default function MatchCommentary({
       <style>{`
         @keyframes kibGoalFlash {
           0% { background-color: rgba(255,255,255,0.6); }
-          20% { background-color: rgba(5,150,105,0.95); }
-          100% { background-color: rgba(5,150,105,0.7); }
+          20% { background-color: var(--kib-flash-mid, rgba(5,150,105,0.95)); }
+          100% { background-color: var(--kib-flash-end, rgba(5,150,105,0.7)); }
         }
         .kib-goal-flash { animation: kibGoalFlash 1.7s ease-out both; }
         @media (prefers-reduced-motion: reduce) {
@@ -176,27 +176,33 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
   // colour — reported directly, with a real example: Manchester City scoring
   // showed in a flat red instead of their own blue, and a line about your
   // own play sat in a fixed amber regardless of what you actually wear.
-  // `goal` (your own team scoring) is the one deliberate exception, kept a
-  // fixed celebratory green rather than your kit — it already reads as a
-  // highlight moment on its own and the flash animation is built around that
-  // green, not a per-club colour.
+  // `goal` and `assist` used to be the deliberate exception — a fixed
+  // celebratory green and a fixed violet, on the reasoning that a goal
+  // "already reads as a highlight moment on its own." Reported directly as
+  // wrong, with a concrete example: a goal and its assist stayed green/black
+  // regardless of which club actually scored — "it all stays for the
+  // team," i.e. it should be that team's own colour like every other tinted
+  // line, not a fixed pair. `goal`/`assist` mean "your side" by definition
+  // (see LogTone) — an opponent's goal is always tone "oppGoal" instead —
+  // so both simply read in `userKit`, no `isOpponent` check needed.
   const kit: Kit | null =
-    l.tone === "oppGoal" ? oppKit
-      : l.tone === "you" ? userKit
+    l.tone === "goal" || l.tone === "assist" || l.tone === "you" ? userKit
+      : l.tone === "oppGoal" ? oppKit
         : l.tone === "play" && l.isOpponent !== undefined ? (l.isOpponent ? oppKit : userKit)
           : null;
 
-  // Goal lines get a real green highlight, not a low-opacity tint that read
-  // as barely-there-over-black — reported directly: "instead of black, it's
-  // greenish." `kib-goal-flash` runs a brief brighten-then-settle pass so a
-  // goal reads as a moment, not just a differently-coloured row.
+  // Goal lines still get the brief brighten-then-settle flash
+  // (`kib-goal-flash`) so a goal reads as a moment and not just a
+  // differently-coloured row — it now settles into the scoring team's own
+  // kit colour (via the `--kib-flash-*` custom properties below) instead of
+  // a fixed green.
   const tone =
-    l.tone === "goal" ? "kib-goal-flash bg-emerald-600/70 text-white font-black"
+    l.tone === "goal" ? "kib-goal-flash font-black"
       : l.tone === "oppGoal" ? "font-black"
-        // Follows straight under its goal — a lighter touch than the goal
-        // itself, since it is the supporting fact rather than the headline,
-        // and violet to match the Assists stat cell below.
-        : l.tone === "assist" ? "pl-8 text-violet-200 font-bold"
+        // Follows straight under its goal, indented as the supporting fact
+        // rather than the headline — same team colour as the goal above it
+        // now, not its own fixed shade.
+        : l.tone === "assist" ? "pl-8 font-bold"
           : l.tone === "you" ? "font-bold"
             : l.tone === "chance" ? "text-white font-bold"
               // A plain line about a specific team's play (a near-miss, a
@@ -210,7 +216,18 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
   // scoreboard picks ink for a name printed on a shirt — dark on a light kit,
   // white on a dark one — rather than one text colour fighting every club.
   const teamStyle: CSSProperties | undefined = kit
-    ? { backgroundColor: `${kit.shirt}E6`, color: labelInk(kit.shirt) }
+    ? {
+      backgroundColor: `${kit.shirt}E6`,
+      color: labelInk(kit.shirt),
+      // Read only by the `goal` tone's flash animation — the CSS custom
+      // property syntax isn't in React's CSSProperties typing, hence the cast.
+      ...(l.tone === "goal"
+        ? {
+          "--kib-flash-mid": `color-mix(in srgb, ${kit.shirt} 75%, white)`,
+          "--kib-flash-end": `${kit.shirt}E6`,
+        }
+        : {}),
+    } as CSSProperties
     : undefined;
 
   return (
