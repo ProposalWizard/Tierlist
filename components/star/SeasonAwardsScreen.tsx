@@ -4,6 +4,8 @@ import { trophyWinners, type AwardWinner } from "@/lib/star/seasonAwards";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
 import { formationOf } from "@/lib/star/formations";
+import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 /**
  * WHAT THE SEASON HANDED OUT.
@@ -27,6 +29,20 @@ interface Props {
   onContinue: () => void;
 }
 
+/** A real face when the database has one, the shared silhouette otherwise —
+ *  never a fabricated player. */
+function Face({ image, size }: { image?: string; size: number }) {
+  return (
+    <ImageWithFallback
+      src={image || SILHOUETTE_SRC}
+      fallbackSrc={SILHOUETTE_SRC}
+      alt=""
+      className="shrink-0 rounded-full border border-white/20 bg-white/10 object-cover"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
 function Crest({ club, size = 22 }: { club: string; size?: number }) {
   const kit = kitsOf(club).home;
   return (
@@ -47,29 +63,23 @@ const TROPHY_ICON: Record<string, string> = {
   "Community Shield": "🛡️", "Super Cup": "🛡️",
 };
 
-function TrophyCard({ competition, club, isYou, isGuess }: {
-  competition: string; club: string | null; isYou: boolean; isGuess: boolean;
+function TrophyCard({ competition, club, isYou }: {
+  competition: string; club: string | null; isYou: boolean;
 }) {
   return (
     <div className={`rounded-xl border p-2.5 ${isYou ? "border-amber-400/50 bg-amber-500/10" : "border-white/12 bg-white/[0.04]"}`}>
-      <div className="text-[9px] font-black uppercase tracking-widest text-white/50">
+      <div className="text-[9px] font-black uppercase tracking-widest text-amber-300/90">
         {TROPHY_ICON[competition] ?? "🏆"} {competition}
       </div>
       {club ? (
-        <>
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <Crest club={club} size={20} />
-            <span className="min-w-0 flex-1 truncate text-[12px] font-black text-white">
-              {shortClub(club)}{isYou ? " (You)" : ""}
-            </span>
-          </div>
-          {/* A Community Shield/Super Cup you were not in is a genuine
-              estimate, not a settled result — said outright rather than
-              presented with the same confidence as a real score. */}
-          {isGuess && <div className="mt-1 text-[8px] font-bold uppercase tracking-wide text-white/35">Estimated — not your match</div>}
-        </>
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <Crest club={club} size={20} />
+          <span className="min-w-0 flex-1 truncate text-[12px] font-black text-white">
+            {shortClub(club)}{isYou ? " (You)" : ""}
+          </span>
+        </div>
       ) : (
-        <div className="mt-1.5 text-[11px] font-bold text-white/35">Not contested this season</div>
+        <div className="mt-1.5 text-[11px] font-bold text-white">Not contested this season</div>
       )}
     </div>
   );
@@ -87,25 +97,28 @@ function AwardCard({ id, winner }: { id: keyof typeof AWARD_META; winner: AwardW
   const meta = AWARD_META[id];
   return (
     <div className={`rounded-xl border p-3 ${winner?.isYou ? "border-amber-400/50 bg-amber-500/10" : "border-white/12 bg-white/[0.04]"}`}>
-      <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/60">
+      <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300/90">
         <span>{meta.icon}</span> {meta.label}
       </div>
       {winner ? (
         <div className="mt-1.5 flex items-center gap-2">
-          <Crest club={winner.club} size={24} />
+          <Face image={winner.image} size={34} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-black text-white">
               {winner.name}{winner.isYou ? " (You)" : ""}
             </div>
-            <div className="truncate text-[10px] font-bold text-white/50">{shortClub(winner.club)}</div>
+            <div className="flex items-center gap-1">
+              <Crest club={winner.club} size={13} />
+              <span className="truncate text-[10px] font-bold text-white">{shortClub(winner.club)}</span>
+            </div>
           </div>
           <div className="shrink-0 text-right">
             <div className="text-base font-black tabular-nums text-amber-300">{winner.value}</div>
-            <div className="text-[8px] font-bold uppercase tracking-wide text-white/40">{meta.unit}</div>
+            <div className="text-[8px] font-bold uppercase tracking-wide text-white">{meta.unit}</div>
           </div>
         </div>
       ) : (
-        <div className="mt-1.5 text-[11px] font-bold text-white/35">No qualifying player this season</div>
+        <div className="mt-1.5 text-[11px] font-bold text-white">No qualifying player this season</div>
       )}
     </div>
   );
@@ -118,8 +131,8 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between">
-        <div className="text-[10px] font-black uppercase tracking-widest text-white/60">Team of the Season</div>
-        <div className="text-[9px] font-bold text-white/35">{formation.name}</div>
+        <div className="text-[10px] font-black uppercase tracking-widest text-amber-300/90">Team of the Season</div>
+        <div className="text-[9px] font-bold text-white">{formation.name}</div>
       </div>
       <div
         className="relative aspect-[3/4] overflow-hidden rounded-xl border-2 border-emerald-900/70"
@@ -131,32 +144,41 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
           <div className="absolute left-1/2 top-0 h-[13%] w-[52%] -translate-x-1/2 border-x border-b border-white/30" />
           <div className="absolute bottom-0 left-1/2 h-[13%] w-[52%] -translate-x-1/2 border-x border-t border-white/30" />
         </div>
-        {team.map((m, i) => {
-          const kit = kitsOf(m.club).home;
-          return (
-            <div
-              key={`${m.role}-${i}`}
-              className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-              style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%`, width: "26%" }}
-              title={`${m.name} — ${shortClub(m.club)}`}
-            >
-              <div
-                className="grid h-8 w-8 place-items-center rounded-full border-2 border-white/70 text-[9px] font-black shadow-md"
-                style={{ backgroundColor: kit.shirt, color: labelInk(kit.shirt) }}
-              >
-                {m.label ?? m.role}
-              </div>
-              <div className="mt-0.5 flex w-full flex-col items-center px-0.5">
-                <span className="truncate text-[9px] font-black leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
-                  {m.isYou ? "YOU" : m.name}
-                </span>
-                <span className="truncate text-[7px] font-bold leading-tight text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
-                  {shortClub(m.club)}
-                </span>
-              </div>
+        {/* The face, not a kit-coloured initial — requested directly: these
+            are eleven real footballers and the photo is the thing that says
+            so. The club moves to a small crest tucked against the photo,
+            with his name under both. */}
+        {team.map((m, i) => (
+          <div
+            key={`${m.role}-${i}`}
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
+            style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%`, width: "26%" }}
+            title={`${m.name} — ${shortClub(m.club)}`}
+          >
+            <div className="relative">
+              <ImageWithFallback
+                src={m.image || SILHOUETTE_SRC}
+                fallbackSrc={SILHOUETTE_SRC}
+                alt=""
+                className={`h-9 w-9 rounded-full border-2 bg-black/40 object-cover shadow-md ${
+                  m.isYou ? "border-amber-300" : "border-white/80"}`}
+              />
+              <span className="absolute -bottom-0.5 -right-0.5">
+                <Crest club={m.club} size={14} />
+              </span>
             </div>
-          );
-        })}
+            <div className="mt-0.5 flex w-full flex-col items-center px-0.5">
+              <span className={`truncate text-[9px] font-black leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] ${
+                m.isYou ? "text-amber-300" : "text-white"}`}
+              >
+                {m.isYou ? "YOU" : m.name}
+              </span>
+              <span className="truncate text-[7px] font-bold leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
+                {shortClub(m.club)}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -178,16 +200,16 @@ export default function SeasonAwardsScreen({ career, onContinue }: Props) {
         </div>
 
         <div className="mt-4">
-          <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-white/60">Trophies</div>
+          <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300/90">Trophies</div>
           <div className="grid grid-cols-2 gap-2">
             {trophies.map(t => (
-              <TrophyCard key={t.competition} competition={t.competition} club={t.club} isYou={t.isYou} isGuess={t.isGuess} />
+              <TrophyCard key={t.competition} competition={t.competition} club={t.club} isYou={t.isYou} />
             ))}
           </div>
         </div>
 
         <div className="mt-4 space-y-2">
-          <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-white/60">{stats.leagueName} Awards</div>
+          <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300/90">{stats.leagueName} Awards</div>
           <AwardCard id="goldenBoot" winner={stats.goldenBoot} />
           <AwardCard id="assistKing" winner={stats.assistKing} />
           <AwardCard id="goldenGlove" winner={stats.goldenGlove} />

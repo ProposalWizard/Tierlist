@@ -60,6 +60,10 @@ export interface AwardWinner {
   /** Goals, assists, clean sheets or the composite score — whatever this
    *  particular award is ranked on. */
   value: number;
+  /** His real photo, when the database has one; your own is
+   *  `career.player.portrait`. Absent for a generated squad — the UI falls
+   *  back to the shared silhouette, never a fabricated player. */
+  image?: string;
 }
 
 export interface TeamOfSeasonMan {
@@ -71,6 +75,7 @@ export interface TeamOfSeasonMan {
   club: string;
   overall: number;
   isYou: boolean;
+  image?: string;
 }
 
 export interface SeasonAwardStats {
@@ -115,6 +120,7 @@ interface Candidate {
   age: number | null;
   isYou: boolean;
   position: Role;
+  image?: string;
 }
 
 /**
@@ -139,6 +145,7 @@ function candidatePool(career: CareerState): Candidate[] {
     age: career.player.age,
     isYou: true,
     position: asRole(career.player.position),
+    image: career.player.portrait,
   });
 
   for (const p of career.squad ?? []) {
@@ -151,6 +158,7 @@ function candidatePool(career: CareerState): Candidate[] {
       age: p.age ?? null,
       isYou: false,
       position: p.position,
+      image: p.imageUrl,
     });
   }
 
@@ -165,6 +173,7 @@ function candidatePool(career: CareerState): Candidate[] {
         age: p.age ?? null,
         isYou: false,
         position: p.position,
+        image: p.image,
       });
     }
   }
@@ -173,7 +182,7 @@ function candidatePool(career: CareerState): Candidate[] {
 }
 
 function toWinner(c: Candidate, value: number): AwardWinner {
-  return { name: c.name, club: c.club, isYou: c.isYou, value };
+  return { name: c.name, club: c.club, isYou: c.isYou, value, image: c.image };
 }
 
 /** Clean sheets, tallied straight off this season's results log — the only
@@ -192,19 +201,38 @@ function cleanSheetsByClub(career: CareerState): Map<string, number> {
 function findGoalkeeper(career: CareerState, club: string): Candidate | null {
   if (club === career.player.club) {
     const gk = (career.squad ?? []).find(p => p.position === "GK");
-    return gk ? { name: gk.name, club, overall: gk.overall ?? 65, leagueGoals: 0, leagueAssists: 0, age: gk.age ?? null, isYou: false, position: "GK" } : null;
+    return gk ? { name: gk.name, club, overall: gk.overall ?? 65, leagueGoals: 0, leagueAssists: 0, age: gk.age ?? null, isYou: false, position: "GK", image: gk.imageUrl } : null;
   }
   const sq = (career.leagueSquads ?? []).find(s => s.club === club);
   const gk = sq?.players.find(p => p.position === "GK");
-  return gk ? { name: gk.name, club, overall: gk.overall, leagueGoals: 0, leagueAssists: 0, age: gk.age ?? null, isYou: false, position: "GK" } : null;
+  return gk ? { name: gk.name, club, overall: gk.overall, leagueGoals: 0, leagueAssists: 0, age: gk.age ?? null, isYou: false, position: "GK", image: gk.image } : null;
 }
 
 const TEAM_OF_SEASON_FORMATION = "433";
 
+/**
+ * The same composite Player of the Season is ranked on — overall plus real
+ * end product, weighted toward goals slightly more than assists. Team of
+ * the Season used to rank on raw overall alone, a DIFFERENT number from the
+ * one Player of the Season actually wins on — so the reigning Player of the
+ * Season could, and did, miss out on his own team of the season, which read
+ * as the team picking itself by looks rather than by the season anyone
+ * actually had. Goals and assists barely move this for a centre-back or a
+ * keeper (ATTACK_WEIGHT-shaped end product mostly belongs to attackers and
+ * creators), so a defender is still judged mostly on his rating — there is
+ * no clean-sheets-per-defender stat this career tracks to judge him on
+ * instead — but a striker or a creator's actual season now counts here the
+ * same way it counts everywhere else.
+ */
+function compositeScore(c: Candidate): number {
+  return c.overall + c.leagueGoals * 1.5 + c.leagueAssists;
+}
+
 /** Best available player for each slot, in turn — a real player never
- *  fills two slots, and a slot takes the highest overall who can actually
- *  play there (`fitness`, the same closeness score the team sheet itself
- *  uses) rather than the highest overall full stop. */
+ *  fills two slots, and a slot takes the best composite score (see
+ *  compositeScore) among whoever can actually play there (`fitness`, the
+ *  same closeness score the team sheet itself uses) rather than the
+ *  highest number full stop. */
 function pickTeamOfSeason(pool: Candidate[]): TeamOfSeasonMan[] {
   const formation = formationOf(TEAM_OF_SEASON_FORMATION);
   const used = new Set<Candidate>();
@@ -216,12 +244,16 @@ function pickTeamOfSeason(pool: Candidate[]): TeamOfSeasonMan[] {
       if (used.has(c)) continue;
       const fit = fitness(slot.role, c.position);
       if (fit <= 0) continue;
-      const score = c.overall * (fit / 100);
+      const score = compositeScore(c) * (fit / 100);
       if (score > bestScore) { bestScore = score; best = c; }
     }
     if (best) {
       used.add(best);
-      team.push({ role: slot.role, x: slot.x, y: slot.y, label: slot.label, name: best.name, club: best.club, overall: best.overall, isYou: best.isYou });
+      team.push({
+        role: slot.role, x: slot.x, y: slot.y, label: slot.label,
+        name: best.name, club: best.club, overall: best.overall, isYou: best.isYou,
+        image: best.image,
+      });
     }
   }
   return team;
@@ -353,13 +385,14 @@ export function computeSeasonAwardStats(career: CareerState): SeasonAwardStats {
   // ballot leans the same way, and unlike a match rating this is the one
   // number every candidate genuinely has (a squad rating plus a real
   // season's goals and assists), rather than something only your own
-  // matches ever produced.
-  const score = (c: Candidate) => c.overall + c.leagueGoals * 1.5 + c.leagueAssists;
-  const byScore = [...pool].sort((a, b) => score(b) - score(a));
-  const playerOfSeason = byScore[0] ? toWinner(byScore[0], Math.round(score(byScore[0]))) : null;
+  // matches ever produced. The SAME composite (compositeScore, above) also
+  // decides Team of the Season now — see its own doc for why that used to
+  // be a different number.
+  const byScore = [...pool].sort((a, b) => compositeScore(b) - compositeScore(a));
+  const playerOfSeason = byScore[0] ? toWinner(byScore[0], Math.round(compositeScore(byScore[0]))) : null;
 
   const youngPool = byScore.filter(c => c.age !== null && c.age <= YOUNG_AGE_CUTOFF);
-  const youngPlayerOfSeason = youngPool[0] ? toWinner(youngPool[0], Math.round(score(youngPool[0]))) : null;
+  const youngPlayerOfSeason = youngPool[0] ? toWinner(youngPool[0], Math.round(compositeScore(youngPool[0]))) : null;
 
   return {
     season: career.season,

@@ -126,6 +126,10 @@ export interface BallonDorEntry {
   ratingIsReal: boolean;
   trophies: string[];
   score: number;
+  /** His real photo, when the database has one — see LeaguePlayer.image.
+   *  Your own is `career.player.portrait`. Absent for a generated squad or
+   *  an unphotographed player; the UI falls back to the silhouette. */
+  image?: string;
 }
 
 interface Candidate {
@@ -134,6 +138,7 @@ interface Candidate {
   rating: number; ratingIsReal: boolean;
   starMan: number;
   isPlayer: boolean;
+  image?: string;
 }
 
 function ratingProxy(overall: number): number {
@@ -183,6 +188,7 @@ function you(career: CareerState): Candidate {
     rating: avgRating, ratingIsReal: stats.ratingCount > 0,
     starMan: stats.starMan,
     isPlayer: true,
+    image: career.player.portrait,
   };
 }
 
@@ -196,6 +202,7 @@ function domesticRivals(career: CareerState): Candidate[] {
         goals: p.goals, assists: p.assists,
         rating: ratingProxy(p.overall), ratingIsReal: false,
         starMan: 0, isPlayer: false,
+        image: p.image,
       });
     }
   }
@@ -216,6 +223,7 @@ function internationalRivals(career: CareerState, season: number): Candidate[] {
       goals: sim.goals, assists: sim.assists,
       rating: ratingProxy(best.overall), ratingIsReal: false,
       starMan: 0, isPlayer: false,
+      image: best.image,
     });
   }
   return out;
@@ -281,6 +289,7 @@ export function computeBallonDorShortlist(career: CareerState): BallonDorResult 
       ? [...t.trophyNames, ...yourInternationalTrophies.map(tr => tr.competition)]
       : t.trophyNames,
     score: Math.round(t.score),
+    image: t.c.image,
   }));
 
   const playerIdx = entries.findIndex(e => e.isPlayer);
