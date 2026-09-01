@@ -39,7 +39,7 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
-import { startingTeammateIds, onPitchToday } from "@/lib/star/teamsheet";
+import { startingTeammateRoles, onPitchToday } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
@@ -235,7 +235,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
   // lib/star/teamsheet.ts — this is the same eleven the pre-match team sheet
   // showed, and every place that puts a name to a team-mate's goal reads from
   // it instead of from the full squad list.
-  const startingXI = career && fixture ? startingTeammateIds(career, fixture) : null;
+  const startingXI = career && fixture ? startingTeammateRoles(career, fixture) : null;
   const onPitch = (squad: SquadPlayer[]): SquadPlayer[] => onPitchToday(squad, startingXI);
 
   /**

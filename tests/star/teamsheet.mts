@@ -1,6 +1,6 @@
 import {
   matchdayFor, sheetReady, formationForClub, alternatePositions, offeredPositions,
-  startingTeammateIds, onPitchToday,
+  startingTeammateRoles, onPitchToday,
 } from "../../lib/star/teamsheet";
 import { formationOf } from "../../lib/star/formations";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -296,29 +296,47 @@ console.log("PASS — two elevens, one goalkeeper each, everybody in a shirt tha
   const c = career();   // you are ST at Liverpool, per the fixture helper above
   const fx = fixture("Everton", true);
 
-  const ids = startingTeammateIds(c, fx);
-  check(ids !== null, "a normal club fixture has a restriction to compute");
-  check(ids !== null && !ids.has("you"), "you are never in your OWN team-mates list");
-  check(ids !== null && ids.size === 10, `ten other starters, not the whole squad (${ids?.size})`);
+  const roles = startingTeammateRoles(c, fx);
+  check(roles !== null, "a normal club fixture has a restriction to compute");
+  check(roles !== null && !roles.has("you"), "you are never in your OWN team-mates list");
+  check(roles !== null && roles.size === 10, `ten other starters, not the whole squad (${roles?.size})`);
 
   const md = matchdayFor(c, fx, true);
-  const startersXI = md.home.xi.filter(p => !p.isYou).map(p => p.id);
-  check(startersXI.every(id => ids?.has(id)), "every id is one of the eleven the team sheet actually showed");
-  check(new Set(startersXI).size === startersXI.size, "…with no starter counted twice");
+  const startersXI = md.home.xi.filter(p => !p.isYou);
+  check(startersXI.every(p => roles?.has(p.id)), "every id is one of the eleven the team sheet actually showed");
+  check(new Set(startersXI.map(p => p.id)).size === startersXI.length, "…with no starter counted twice");
+  check(startersXI.every(p => roles?.get(p.id) === p.role),
+    "…and each one is mapped to the SLOT the team sheet actually has him in");
 
   // The full squad is twenty-plus; restricted to today's XI it is ten.
-  const wholeSquad = (c.squad ?? []).map(p => ({ id: p.id }));
+  const wholeSquad = (c.squad ?? []).map(p => ({ id: p.id, position: p.position }));
   check(wholeSquad.length > 15, `the squad itself is much bigger than eleven (${wholeSquad.length})`);
-  const restricted = onPitchToday(wholeSquad, ids);
+  const restricted = onPitchToday(wholeSquad, roles);
   check(restricted.length === 10, `narrowed down to the ten actually playing (${restricted.length})`);
-  check(restricted.every(p => ids?.has(p.id)), "and every one of them is a genuine starter");
+  check(restricted.every(p => roles?.has(p.id)), "and every one of them is a genuine starter");
 
   // A reserve who did not make today's eleven must not survive the narrowing.
   const benchIds = new Set(md.home.bench.map(p => p.id));
   const benchInWholeSquad = wholeSquad.filter(p => benchIds.has(p.id));
   check(benchInWholeSquad.length > 0, "the sample squad does have substitutes to test against");
-  check(!onPitchToday(wholeSquad, ids).some(p => benchIds.has(p.id)),
+  check(!onPitchToday(wholeSquad, roles).some(p => benchIds.has(p.id)),
     "…and none of them come back out of the restriction");
+
+  // The bug this whole map exists for: a man deployed at a slot other than
+  // his own natural position must be cast as that slot, not his day job —
+  // reported directly and repeatably: a player started at CDM kept losing
+  // every CDM-shaped moment to a bench player whose OWN position happened
+  // to say "CDM", because casting read `position` alone and had no idea
+  // the lineup had put someone else there.
+  const outOfPosition = startersXI.find(p => {
+    const real = (c.squad ?? []).find(sq => sq.id === p.id);
+    return real && real.position !== p.role;
+  });
+  if (outOfPosition) {
+    const cast = onPitchToday(wholeSquad, roles).find(p => p.id === outOfPosition.id);
+    check(cast?.position === outOfPosition.role,
+      `a player started out of his own position is cast AS the slot he's playing, not his own (${cast?.position} vs ${outOfPosition.role})`);
+  }
 
   // With no restriction at all (international, or the sandbox with no fixture),
   // nothing is narrowed — the credit-restriction costs nothing when there is
@@ -327,6 +345,41 @@ console.log("PASS — two elevens, one goalkeeper each, everybody in a shirt tha
     "no restriction means the full squad is still eligible");
 
   // An international fixture has no club sheet to restrict by.
-  const intl = startingTeammateIds(c, { ...fx, kind: "international" });
+  const intl = startingTeammateRoles(c, { ...fx, kind: "international" });
   check(intl === null, "an international fixture is not restricted at all");
+}
+
+// ── The exact bug, reproduced deterministically ─────────────────────────────
+//
+// Reported directly, repeatably, across two separate matches: a player
+// deliberately started at CDM in the lineup builder — whose own real
+// position is something else entirely, not even listed among his
+// `positions` — kept losing every CDM-shaped moment in the match itself to
+// a bench player whose OWN position happened to say "CDM". `loadLineup` is
+// localStorage-backed and returns null in this test environment, so
+// `startingTeammateRoles` above only ever exercises the AUTOPICK path —
+// this constructs the override map directly instead, the same shape
+// `startingTeammateRoles` hands `onPitchToday` for a real saved lineup, so
+// the fix itself is pinned regardless of what any one career's autopick
+// happens to produce.
+{
+  const midfielder = { id: "p1", position: "CM" as const };
+  const centreBack = { id: "p2", position: "CB" as const };
+  const squad = [midfielder, centreBack];
+
+  // The lineup builder put the CM at CDM this match — a real tactical
+  // choice, and CDM is not even among a plain `{position}` record's
+  // options for him, exactly the case reported.
+  const roles = new Map<string, "CDM" | "CB">([["p1", "CDM"], ["p2", "CB"]]);
+  const cast = onPitchToday(squad, roles);
+
+  const castMidfielder = cast.find(p => p.id === "p1");
+  check(castMidfielder?.position === "CDM",
+    `deployed at CDM this match, he is CAST as a CDM — not his own natural CM (got ${castMidfielder?.position})`);
+  const castCentreBack = cast.find(p => p.id === "p2");
+  check(castCentreBack?.position === "CB",
+    "…and a player whose slot matches his own position is untouched either way");
+
+  // The original object is never mutated — only the returned copy differs.
+  check(midfielder.position === "CM", "the source squad record itself is left exactly as it was");
 }

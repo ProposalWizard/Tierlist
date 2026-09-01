@@ -35,7 +35,7 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
-import { startingTeammateIds, onPitchToday } from "@/lib/star/teamsheet";
+import { startingTeammateRoles, onPitchToday } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
@@ -250,7 +250,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // lib/star/teamsheet.ts — this is the same eleven the pre-match team sheet
   // showed, and every place that puts a name to a team-mate's goal reads from
   // it instead of from the full squad list.
-  const startingXI = career && fixture ? startingTeammateIds(career, fixture) : null;
+  const startingXI = career && fixture ? startingTeammateRoles(career, fixture) : null;
   const onPitch = (squad: SquadPlayer[]): SquadPlayer[] => onPitchToday(squad, startingXI);
 
   /**
@@ -746,8 +746,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // which runs 1 to 90 and has never had an interval. See matchLog.
       if (!halfTimeShownRef.current && next.minute !== undefined && next.minute > HALF_TIME_MINUTE) {
         halfTimeShownRef.current = true;
+        // Real scoreline order — home side's goals first — not "yours,
+        // then theirs" regardless of ground. Reported directly: away at
+        // Sunderland, losing 0-1, read as "Half Time 0-1" — which, printed
+        // in that order, reads as the AWAY side (you) leading 1-0, the
+        // opposite of what was actually happening.
+        const homeHalfScore = fixtureHomeRef.current ? userScoreRef.current : oppScoreRef.current;
+        const awayHalfScore = fixtureHomeRef.current ? oppScoreRef.current : userScoreRef.current;
         setLog(l => [...l, logLine(
-          `Half Time  ${userScoreRef.current} - ${oppScoreRef.current}`, "period", HALF_TIME_MINUTE)]);
+          `Half Time  ${homeHalfScore} - ${awayHalfScore}`, "period", HALF_TIME_MINUTE)]);
         setPause({
           cta: "Second half →",
           onContinue: () => setPause(null),
@@ -2773,8 +2780,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         // Full time stops the match rather than sliding into the summary: a
         // final whistle you did not notice is a result you find out about on a
         // stats screen.
-        setLog(l => [...l, logLine(
-          `Full Time  ${userScoreRef.current} - ${oppScoreRef.current}`, "period", MATCH_DURATION)]);
+        // Real scoreline order — home side first — same fix and same reason
+        // as Half Time above.
+        {
+          const homeFinal = fixtureHomeRef.current ? userScoreRef.current : oppScoreRef.current;
+          const awayFinal = fixtureHomeRef.current ? oppScoreRef.current : userScoreRef.current;
+          setLog(l => [...l, logLine(
+            `Full Time  ${homeFinal} - ${awayFinal}`, "period", MATCH_DURATION)]);
+        }
         setMatchMinute(MATCH_DURATION);
         setPause({
           cta: "Full time →",

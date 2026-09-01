@@ -87,7 +87,15 @@ export default function MatchCommentary({
         onClick={onSkip}
         className="kib-feed min-h-0 flex-1 overflow-y-auto overscroll-contain"
       >
-        <div className="flex min-h-full flex-col justify-end">
+        {/* Starts filling from the TOP — kick-off is the first thing you see,
+            at the top of the panel, and the match builds down from there.
+            Reported directly: `justify-end` pinned sparse content (kick-off
+            alone, early on) to the BOTTOM of the panel instead, which read
+            as the commentary "building up" from the bottom rather than
+            playing out downward. The auto-scroll effect above (pinning
+            `scrollTop` to the newest line once there's enough of it to
+            overflow) is untouched and still does its job either way. */}
+        <div className="flex min-h-full flex-col justify-start">
           {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} />)}
         </div>
       </div>

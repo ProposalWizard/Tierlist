@@ -1411,15 +1411,24 @@ export default function StarDevPage() {
             // side of this fixture, not necessarily you.
             const ground = groundFor(home);
             const crowd = crowdFor(home, nextFixture.week);
+            // The real stadium photo the gradient was always built to sit
+            // underneath — supplied directly. Europe's own three nights
+            // (Champions League, Europa League, and the Super Cup, which is
+            // contested BETWEEN two European winners) get the UEFA-branded
+            // shot; everything else — league, FA Cup, League Cup, Community
+            // Shield, internationals — gets the ordinary floodlit ground.
+            const isEuropeanNight = nextFixture.competition === "Champions League"
+              || nextFixture.competition === "Europa League"
+              || nextFixture.competition === "Super Cup";
+            const stadiumPhoto = isEuropeanNight ? "/star/stadium-europe.png" : "/star/stadium-domestic.png";
             return (
               <div
                 className="relative overflow-hidden rounded-xl border border-emerald-800/60 shadow-lg"
-                // Night-match-under-floodlights, the same identity the live
-                // match screen already uses — a real stadium photo behind
-                // this is the plan (supplied later), so the gradient is built
-                // to sit comfortably underneath one rather than being the
-                // whole background forever.
-                style={{ background: "linear-gradient(180deg, #0b2a1f 0%, #0a1f27 55%, #071318 100%)" }}
+                style={{
+                  backgroundImage: `linear-gradient(180deg, rgba(11,42,31,0.55) 0%, rgba(10,31,39,0.7) 55%, rgba(7,19,24,0.88) 100%), url(${stadiumPhoto})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
               >
                 <div
                   className="pointer-events-none absolute inset-0"
