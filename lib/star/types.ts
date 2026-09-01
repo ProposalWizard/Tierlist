@@ -583,7 +583,11 @@ export interface CareerState {
   /** Appearances at the CURRENT club, reset on a transfer. */
   clubAppearances?: number;
   /** The man in the job. He can be sacked, and the next one has never picked you. */
-  manager?: { name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string };
+  manager?: {
+    name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string;
+    /** 0-100, his own standing as a free agent — see manager.ts's reputationTier. */
+    reputation: number;
+  };
   /** What happened in the dugout at the end of last season. */
   managerNews?: string | null;
   /** Sponsor objectives settled at the last rollover, for the dashboard. */

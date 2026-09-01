@@ -4,6 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { expectationStatus, personalDuty } from "@/lib/star/expectations";
+import { reputationTier } from "@/lib/star/manager";
 import { leadingScorer } from "@/lib/star/recognition";
 import { clauseSummary } from "@/lib/star/contracts";
 import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
@@ -202,7 +203,16 @@ export default function DashboardStats({ career, onRenew }: Props) {
           )}
 
           <div className="bg-gray-700 rounded-lg p-3 border border-gray-600">
-            <div className="font-black text-xs text-white mb-1">The manager</div>
+            <div className="flex items-center justify-between">
+              <div className="font-black text-xs text-white">
+                The manager{career.manager ? ` — ${career.manager.name}` : ""}
+              </div>
+              {career.manager && (
+                <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">
+                  {reputationTier(career.manager.reputation)}
+                </span>
+              )}
+            </div>
             <div className="text-[10px] text-white/85">{selection.reason}</div>
             <div className="mt-2 h-1.5 w-full rounded-full bg-black/30 overflow-hidden">
               <div

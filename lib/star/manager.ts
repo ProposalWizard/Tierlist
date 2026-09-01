@@ -2,6 +2,7 @@ import type { CareerState } from "./types";
 import { mulberry32 } from "./season";
 import { clubNameSeed } from "./squadData";
 import { loadLineup } from "./lineupStore";
+import { clubExpectation } from "./expectations";
 
 /**
  * THE MANAGER
@@ -20,6 +21,18 @@ import { loadLineup } from "./lineupStore";
  * to drop you and slower to bring you back; one who rotates is the opposite.
  * That is the whole of it — no hidden tactics, nothing you cannot see on the
  * dashboard.
+ *
+ * ── Reputation ──
+ *
+ * The board's own expectation (see expectations.ts) already judges the CLUB's
+ * season against a target that scales with the job — but every incoming
+ * manager, big club or small, used to be drawn from exactly the same blind
+ * roll. A free agent's own name is worth something too: a title-chasing job
+ * mostly attracts a name to match, and a relegation fight mostly gets someone
+ * with a point to prove — never a certainty either way, since an ambitious
+ * small club can tempt a bigger name than the job deserves, and a giant can
+ * just as easily take a punt on someone unproven. It also decides how much
+ * rope the incoming man himself gets in his first season — see sackCheck.
  */
 
 const FIRST = ["Alan", "Roberto", "Klaus", "Diego", "Sean", "Marcelo", "Henrik", "Paul", "Gianluca", "Owen", "Bruno", "Terry"];
@@ -34,12 +47,52 @@ export interface Manager {
   since: number;
   /** How he described the job when he arrived. */
   arrival: string;
+  /**
+   * 0-100, how well-regarded he is in the game — a free agent's own
+   * standing, not his standing with YOU (that's `relationships.boss`). See
+   * `reputationTier`/`reputationBlurb`. Weighted by the prestige of the job
+   * he's taken (`makeManager`), and it sets how much first-season patience
+   * he himself gets from the board (`sackCheck`) — a big name is brought in
+   * to fix things now, not to be given time to learn the job.
+   */
+  reputation: number;
 }
 
 const STYLE_BLURB: Record<ManagerStyle, string> = {
   trusting: "Picks a side and sticks with it. Slow to drop you, slow to bring you back.",
   demanding: "Expects a lot, every week. Form is the only currency with him.",
   rotational: "Rotates freely. Nobody is guaranteed, and nobody is frozen out.",
+};
+
+export type ReputationTier = "Elite" | "Proven" | "Rising" | "Journeyman";
+
+const REPUTATION_TIERS: { tier: ReputationTier; min: number; blurb: string }[] = [
+  { tier: "Elite", min: 80, blurb: "A genuine box-office name — the kind of appointment that makes the back pages." },
+  { tier: "Proven", min: 55, blurb: "Has done this before, somewhere that mattered." },
+  { tier: "Rising", min: 30, blurb: "Making a name for himself. This could be the job that does it." },
+  { tier: "Journeyman", min: 0, blurb: "Not a name anyone outside the game would know. Everyone starts somewhere." },
+];
+
+export function reputationTier(reputation: number): ReputationTier {
+  return (REPUTATION_TIERS.find(t => reputation >= t.min) ?? REPUTATION_TIERS[REPUTATION_TIERS.length - 1]).tier;
+}
+
+export function reputationBlurb(reputation: number): string {
+  return (REPUTATION_TIERS.find(t => reputation >= t.min) ?? REPUTATION_TIERS[REPUTATION_TIERS.length - 1]).blurb;
+}
+
+/**
+ * The reputation range a club's own prestige can plausibly hire from —
+ * genuinely overlapping between tiers, so nothing here is a hard ceiling or
+ * floor, just where the odds lean. Read off the same four ambition tiers
+ * `clubExpectation` already buckets every club into, rather than a second,
+ * separate notion of "how big is this club."
+ */
+const REPUTATION_RANGE: Record<ReturnType<typeof clubExpectation>["ambition"], { min: number; max: number }> = {
+  Title: { min: 55, max: 100 },
+  Europe: { min: 35, max: 90 },
+  "Mid-table": { min: 15, max: 75 },
+  Survival: { min: 0, max: 55 },
 };
 
 /**
@@ -62,17 +115,22 @@ export function makeManager(career: CareerState, club: string, season: number): 
   const generatedName = `${FIRST[Math.floor(rng() * FIRST.length)]} ${LAST[Math.floor(rng() * LAST.length)]}`;
   const roll = rng();
   const style: ManagerStyle = roll < 0.38 ? "trusting" : roll < 0.72 ? "demanding" : "rotational";
+  // Weighted by the prestige of THIS job — `club`, not necessarily wherever
+  // `career.player` currently plays — see REPUTATION_RANGE.
+  const range = REPUTATION_RANGE[clubExpectation({ ...career, player: { ...career.player, club } }).ambition];
+  const reputation = Math.round(range.min + rng() * (range.max - range.min));
   // Typed in for this club on the Squad Builder / Lineups screen (see
   // lineupStore.ts) — use the real name on the touchline instead of a
   // fictional one when there is one on file. Everything else about him
-  // (style, tenure, whether he gets sacked) is still simulated; only the
-  // database has no real managers, not the game.
+  // (style, tenure, reputation, whether he gets sacked) is still simulated;
+  // only the database has no real managers, not the game.
   const real = loadLineup(club)?.manager?.trim();
   return {
     name: real || generatedName,
     style,
     since: season,
     arrival: STYLE_BLURB[style],
+    reputation,
   };
 }
 
@@ -104,12 +162,24 @@ export interface SackVerdict {
  * gets more rope, because sacking someone after nine months for a squad he
  * inherited is the kind of thing that reads as arbitrary even when it is
  * realistic.
+ *
+ * That rope is not the same length for everyone, though: a genuine name was
+ * brought in to fix things NOW, not to be given a season to learn the job,
+ * so reputation trims his first-season grace back down; a journeyman "project"
+ * appointment gets extra, on the same logic a board that signed up for a long
+ * rebuild does not panic after nine months. Reputation only touches the
+ * FIRST-season bar — small and bounded (±0.15 at the extremes, well short of
+ * the 0.27 gap to the second-season bar) so a legendary reputation can make
+ * year one genuinely tense without ever being judged harder than a settled
+ * manager in year two. By his second season everyone answers to the same bar
+ * regardless of what he arrived with.
  */
 export function sackCheck(career: CareerState, seasonScore: number): SackVerdict {
   const m = career.manager;
   if (!m) return { sacked: false, reason: "" };
   const firstSeason = career.season - m.since < 1;
-  const bar = firstSeason ? -0.72 : -0.45;
+  const reputationAdjust = firstSeason ? (((m.reputation ?? 50) - 50) / 100) * 0.3 : 0;
+  const bar = (firstSeason ? -0.72 : -0.45) + reputationAdjust;
   if (seasonScore <= bar) {
     return {
       sacked: true,

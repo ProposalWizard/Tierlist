@@ -15,7 +15,7 @@ import { judgeSeason } from "./expectations";
 import {
   monthlyAward, seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
 } from "./recognition";
-import { makeManager, sackCheck, bossOnArrival } from "./manager";
+import { makeManager, sackCheck, bossOnArrival, reputationTier } from "./manager";
 import { rivalryMultiplier } from "./rivalries";
 import { attachObjective, progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
@@ -907,7 +907,7 @@ export function advanceSeason(career: CareerState, userWonBallonDor: boolean): {
   if (sack.sacked) {
     const incoming = makeManager(next, next.player.club, next.season);
     next.manager = incoming;
-    next.managerNews = `${sack.reason} ${incoming.name} takes over. "${incoming.arrival}"`;
+    next.managerNews = `${sack.reason} ${incoming.name} (${reputationTier(incoming.reputation)}) takes over. "${incoming.arrival}"`;
     next.relationships = { ...next.relationships, boss: bossOnArrival(next) };
     next.captain = false;
   } else {
