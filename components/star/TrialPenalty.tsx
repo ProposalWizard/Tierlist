@@ -598,7 +598,17 @@ export default function TrialPenalty({ onScored, club }: { onScored: () => void;
     // visibly smaller ball than the one you actually play with, reported
     // directly as confusing on a screen whose whole point is to teach the
     // real game's mechanics.
-    const br = Math.max(4.5, unit * 0.5 * (1 + lift * 0.16));
+    //
+    // Capped, though — reported directly, and it checks out: a well-struck,
+    // well-lofted penalty can carry the ball five or six metres up, and
+    // uncapped this term more than doubled the ball's size right as it
+    // closed on the goal, which read as "very odd… very hard" rather than
+    // as a subtle depth cue. Clamping the HEIGHT this reads (not the
+    // ball's real height, which is untouched) to a believable head-height
+    // ceiling keeps the cue for an ordinary shot and stops it running away
+    // on a towering one.
+    const sizeLift = Math.min(2.5, lift);
+    const br = Math.max(4.5, unit * 0.5 * (1 + sizeLift * 0.16));
     ctx.fillStyle = "rgba(0,0,0,0.32)";
     ctx.beginPath();
     ctx.ellipse(bx, by, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);

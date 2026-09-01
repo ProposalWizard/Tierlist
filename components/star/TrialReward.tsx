@@ -148,8 +148,12 @@ function CongratulationsBanner() {
  * turned off.
  */
 const CONTRACT_SRC = "/star/contract.png";
-const CLUB_NAME_BOX = { top: 81, left: 13.7, right: 55, bottom: 15.4 };
-const SIGNATURE_BOX = { top: 81, left: 55.2, right: 13.1, bottom: 15.4 };
+// Nudged down from the original measurement — reported directly, with a
+// screenshot: the club name and signature sat almost touching the "CLUB
+// NAME"/"PLAYER SIGNATURE" pills above them, when a real signature sits
+// down on the ruled line below it, not centred in the whole gap.
+const CLUB_NAME_BOX = { top: 83, left: 13.7, right: 55, bottom: 13.4 };
+const SIGNATURE_BOX = { top: 83, left: 55.2, right: 13.1, bottom: 13.4 };
 
 function SignaturePad({
   name, club, signing, onFinished,

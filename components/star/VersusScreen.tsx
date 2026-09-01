@@ -261,9 +261,18 @@ export default function VersusScreen({ matchday, date, competition, results, onK
           </div>
         </div>
 
+        {/* The substitutes bar above is `position: absolute`, so it takes up
+            no space of its own in this flow — the "Substitutes +9" tab
+            (always visible, even collapsed) actually sits `-bottom-4` PLUS
+            its own height below the pitch, and a small `mt` here read as if
+            that space were empty and sat Kick Off right on top of the tab.
+            Reported directly, with a screenshot: the tab and the button were
+            overlapping, both partly unpressable. Cleared with margin, not a
+            layout rewrite — the drawer's own docked-to-the-pitch design
+            (see its comment above) is worth keeping. */}
         <button
           onClick={onKickOff}
-          className="mt-1.5 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-2.5 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
+          className="mt-12 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-2.5 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
         >
           Kick Off
         </button>

@@ -137,10 +137,14 @@ export function halfTimeSplit(lines: LogLine[], alreadyShown: boolean): number {
  * forward" is how you miss it. Divided by the speed the player has chosen.
  */
 export function dwellFor(tone: LogTone, speed: number): number {
-  const base = tone === "goal" || tone === "oppGoal" ? 1500
-    : tone === "assist" ? 1000
-      : tone === "period" ? 1200
-        : tone === "chance" ? 900
-          : 620;
+  // Base (1x) nudged up a little across the board — reported directly, "it
+  // goes a bit quickly" at the default pace, with the speed button already
+  // there for anyone who wants it faster. Proportions between tones kept
+  // the same; only the shared base moved.
+  const base = tone === "goal" || tone === "oppGoal" ? 1700
+    : tone === "assist" ? 1100
+      : tone === "period" ? 1350
+        : tone === "chance" ? 1000
+          : 700;
   return Math.max(60, Math.round(base / Math.max(1, speed)));
 }

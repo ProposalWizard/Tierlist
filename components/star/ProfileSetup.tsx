@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { STAR_FIFA_YEAR, STAR_EDITION_LABEL } from "@/lib/star/edition";
 import type { StarPlayer } from "@/lib/star/types";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "@/lib/star/clubs";
@@ -62,6 +62,13 @@ export default function ProfileSetup({ onComplete }: Props) {
   const [division, setDivision] = useState<CareerDivision>("premier");
   const [selectedClub, setSelectedClub] = useState("");
   const [portrait, setPortrait] = useState<string | undefined>(undefined);
+  // Scrolled to your own default nationality once, on mount — reported
+  // directly: alphabetical means "Afghanistan, Albania, Algeria..." greets
+  // you first, when the one actually pre-selected (England) is several
+  // screens of scrolling away. The order stays alphabetical; only the
+  // starting scroll position changes.
+  const nationalityListRef = useRef<HTMLDivElement>(null);
+  const selectedNationalityRef = useRef<HTMLButtonElement>(null);
   /**
    * Which clubs the database actually has a squad for this edition.
    *
@@ -101,6 +108,17 @@ export default function ProfileSetup({ onComplete }: Props) {
   useEffect(() => {
     setSelectedClub(prev => (clubs.includes(prev) ? prev : clubs[0] ?? ""));
   }, [clubs]);
+
+  // Land the nationality list on the one already picked, not on the top of
+  // the alphabet — see the refs' own doc. Manual scrollTop rather than
+  // `scrollIntoView`, which would also drag the whole page's scroll
+  // position along with it.
+  useEffect(() => {
+    const list = nationalityListRef.current;
+    const selected = selectedNationalityRef.current;
+    if (list && selected) list.scrollTop = selected.offsetTop;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canProceed1 = firstName.trim().length > 0 && lastName.trim().length > 0;
   const canFinish = selectedClub.length > 0;
@@ -182,7 +200,7 @@ export default function ProfileSetup({ onComplete }: Props) {
                 placeholder={`Search ${ALL_NATIONALITIES.length} nationalities…`}
                 className="w-full bg-white text-black text-center font-bold py-2 rounded-lg outline-none placeholder:font-normal placeholder:text-black/40"
               />
-              <div className="mt-1.5 max-h-40 overflow-y-auto rounded-lg bg-gray-800/60">
+              <div ref={nationalityListRef} className="mt-1.5 max-h-40 overflow-y-auto rounded-lg bg-gray-800/60">
                 {filteredNationalities.length === 0 && (
                   <div className="px-3 py-3 text-center text-xs font-bold text-white/40">No match.</div>
                 )}
@@ -191,6 +209,7 @@ export default function ProfileSetup({ onComplete }: Props) {
                   return (
                     <button
                       key={n}
+                      ref={n === nationality ? selectedNationalityRef : undefined}
                       onClick={() => setNationality(n)}
                       className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm font-bold transition ${
                         nationality === n ? "bg-emerald-500 text-white" : "text-white/85 hover:bg-gray-700"}`}
