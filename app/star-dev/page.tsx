@@ -5,6 +5,7 @@ import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/g
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { signSponsor } from "@/lib/star/sponsors";
 import { selectionFor, MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
@@ -1069,6 +1070,11 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  const handleSignSponsor = useCallback((category: string) => {
+    if (!career) return;
+    setCareer(signSponsor(career, category));
+  }, [career]);
+
   const handleBuyHorse = useCallback((horse: Horse, price: number) => {
     if (!career || career.money < price || career.horse) return;
     setCareer({ ...career, money: career.money - price, horse });
@@ -1406,7 +1412,7 @@ export default function StarDevPage() {
     return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} />;
   }
 
-  if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} />;
+  if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToDashboard} />;
 

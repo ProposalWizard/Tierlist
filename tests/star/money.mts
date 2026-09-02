@@ -1,5 +1,6 @@
 import {
   makeObjective, progressObjectives, rollSponsorSeason, attachObjective, objectiveLabel,
+  sponsorEligible, sponsorFee, signSponsor, lifestyleScore,
 } from "../../lib/star/sponsors";
 import { offerClauses, clauseSummary, canTriggerClause, appearanceMoney, loyaltyMoney } from "../../lib/star/contracts";
 import { testimonialFor, retire, TESTIMONIAL_APPEARANCES } from "../../lib/star/retirement";
@@ -65,7 +66,7 @@ const result = (goals: number, rating = 7.2): MatchStats => ({
   check(big.bonus > small.bonus, "and paid more for it");
 
   // Progress, and the payment when it lands.
-  let deals = attachObjective(c, c.sponsors.map(s => ({ ...s, active: true, perMatch: 1 })));
+  let deals = attachObjective(c, c.sponsors.map(s => ({ ...s, active: true })));
   check(deals.every(d => !!d.objective), "every active deal has something to ask");
   const goalDeals = deals.map(d => ({ ...d, objective: { ...d.objective!, kind: "goals" as const, target: 3, progress: 0 } }));
   let earned = 0;
@@ -87,36 +88,101 @@ const result = (goals: number, rating = 7.2): MatchStats => ({
   const undelivered: CareerState = {
     ...c,
     sponsors: c.sponsors.map((s, i) => i === 0
-      ? { ...s, active: true, perMatch: 3, objective: { kind: "goals" as const, target: 30, progress: 1, seasonsLeft: 1, bonus: 20, done: false } }
+      ? { ...s, active: true, objective: { kind: "goals" as const, target: 30, progress: 1, seasonsLeft: 1, bonus: 20, done: false } }
       : s),
   };
   const rolled = rollSponsorSeason(undelivered);
   check(rolled.lapsed.length === 1, "a term that ran out unmet lapses");
-  check(!rolled.sponsors[0].active && rolled.sponsors[0].perMatch === 0, "and the retainer goes with it");
+  check(!rolled.sponsors[0].active, "and the deal itself goes with it");
   check(rolled.standingHit > 0, "and it costs you with the next sponsor who looks at you");
+  check(!rolled.seasonFees.some(f => f.category === rolled.sponsors[0].category),
+    "a lapsed deal does not pay next season's fee");
 
   // A multi-season target carries on rather than lapsing at the first rollover.
   const twoYear: CareerState = {
     ...c,
     sponsors: c.sponsors.map((s, i) => i === 0
-      ? { ...s, active: true, perMatch: 3, objective: { kind: "goals" as const, target: 30, progress: 5, seasonsLeft: 2, bonus: 20, done: false } }
+      ? { ...s, active: true, objective: { kind: "goals" as const, target: 30, progress: 5, seasonsLeft: 2, bonus: 20, done: false } }
       : s),
   };
   const carried = rollSponsorSeason(twoYear);
   check(carried.lapsed.length === 0, "a two-season target is not judged after one");
   check(carried.sponsors[0].objective?.seasonsLeft === 1, "the term simply runs down");
   check(carried.sponsors[0].objective?.progress === 5, "and the progress carries with it");
+  check(carried.seasonFees.some(f => f.category === carried.sponsors[0].category),
+    "and a deal still standing is paid its season fee");
 
   // One delivered is cleared out rather than lingering.
   const done: CareerState = {
     ...c,
     sponsors: c.sponsors.map((s, i) => i === 0
-      ? { ...s, active: true, perMatch: 3, objective: { kind: "goals" as const, target: 3, progress: 9, seasonsLeft: 1, bonus: 20, done: true } }
+      ? { ...s, active: true, objective: { kind: "goals" as const, target: 3, progress: 9, seasonsLeft: 1, bonus: 20, done: true } }
       : s),
   };
   const cleared = rollSponsorSeason(done);
   check(cleared.lapsed.length === 0 && cleared.sponsors[0].active, "a delivered deal is kept");
   check(!cleared.sponsors[0].objective, "and is ready to be given a new target");
+}
+
+// ── Every category wants fame, plus something that actually fits it ────────
+{
+  const fresh = base(); // fame: 5, no trophies, no lifestyle spend, no fans built
+  check(!sponsorEligible("Boots", fresh), "a brand-new career has not earned even the easiest deal yet");
+  check(sponsorFee("Boots", fresh) > 0, "but a fee is always computable, eligible or not — for display");
+
+  // Boots: fame plus real output — a name alone is not enough.
+  const famousButQuiet: CareerState = { ...fresh, fame: 50 };
+  check(!sponsorEligible("Boots", famousButQuiet), "fame alone does not sign a boot deal");
+  const provenScorer: CareerState = {
+    ...famousButQuiet,
+    seasonStats: { ...fresh.seasonStats, goals: 2, assists: 2 },
+  };
+  check(sponsorEligible("Boots", provenScorer), "fame plus real goal involvements does");
+
+  // Car: the luxury end — fame, lifestyle spend, AND a club that matters.
+  // League built explicitly, Arsenal weakest by far, so `clubExpectation`
+  // reads a deterministic "Survival" ambition rather than whatever
+  // `makeInitialCareer`'s own random strengths happened to draw.
+  const strugglingLeague = fresh.league.map(t => ({ ...t, strength: t.name === "Arsenal" ? 10 : 80 }));
+  const flushButSmallClub: CareerState = {
+    ...fresh,
+    fame: 80,
+    league: strugglingLeague,
+    ownedItems: [{ id: "yacht", name: "Yacht", category: "vehicle", price: 500, lifestyleValue: 200 }],
+  };
+  check(lifestyleScore(flushButSmallClub) === 200, "lifestyleScore sums every purchase's own value");
+  check(!sponsorEligible("Car", flushButSmallClub),
+    "fame and money do not buy the car deal at a club going nowhere");
+
+  // Fee scales with fame — the same category is worth more to a more famous player.
+  const lowFame: CareerState = { ...fresh, fame: 10 };
+  const highFame: CareerState = { ...fresh, fame: 90 };
+  check(sponsorFee("Boots", highFame) > sponsorFee("Boots", lowFame),
+    "the same category pays a more famous player more");
+}
+
+// ── Signing is a real action, not a threshold crossed in the background ────
+{
+  const c: CareerState = {
+    ...base(),
+    fame: 50,
+    seasonStats: { ...base().seasonStats, goals: 3 },
+  };
+  check(sponsorEligible("Boots", c), "eligible before signing");
+  const before = c.money;
+  const signed = signSponsor(c, "Boots");
+  const deal = signed.sponsors.find(s => s.category === "Boots")!;
+  check(deal.active, "signing activates the deal");
+  check(!!deal.objective, "and gives it something to ask for, same as an auto-unlocked deal used to");
+  check(signed.money === before + sponsorFee("Boots", c), "and pays the fee immediately");
+
+  // Signing again (already active) or signing something you are not
+  // eligible for are both no-ops — never a free deal, never a duplicate one.
+  const signedAgain = signSponsor(signed, "Boots");
+  check(signedAgain.money === signed.money, "signing an already-active deal changes nothing");
+  const ineligible = signSponsor(base(), "Car");
+  check(!ineligible.sponsors.find(s => s.category === "Car")!.active,
+    "and signing something you don't qualify for does nothing either");
 }
 
 // ── Contract clauses ────────────────────────────────────────────────────────
