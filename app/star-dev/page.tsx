@@ -25,7 +25,7 @@ import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
-import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
+import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
 import { CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, OTHER_CLUBS, PROMOTION_POOL_CLUBS } from "@/lib/star/clubs";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
@@ -332,15 +332,6 @@ export default function StarDevPage() {
   }, []);
 
   /**
-   * Pull the squads down again, keeping everything that has happened in them.
-   *
-   * A career holds a snapshot of the database taken when it was created, which
-   * is right — the alternative is a squad that changes under you mid-season.
-   * But FC 27 is being written by hand while careers are being played, so there
-   * has to be a way to say "I have made my edits, bring them in". Goals and
-   * assists survive; see mergeSquadStats.
-   */
-  /**
    * The month you won, held until you dismiss it.
    *
    * Only ever set when the winner is you. Somebody else taking it is news and
@@ -360,36 +351,6 @@ export default function StarDevPage() {
   const setPlayAs = useCallback((role: Role | null) => {
     setCareer(c => (c ? { ...c, playAs: role } : c));
   }, []);
-
-  const [refreshing, setRefreshing] = useState(false);
-  const refreshSquads = useCallback(async () => {
-    if (!career || refreshing) return;
-    setRefreshing(true);
-    try {
-      const [mine, division, freeAgents] = await Promise.all([
-        fetchRealSquad(career.player.club),
-        fetchLeagueSquads(career.league.map(t => t.name)),
-        fetchFreeAgents(),
-        fetchSharedLineups(),
-      ]);
-      setCareer(c => {
-        if (!c) return c;
-        const leagueSquads = mergeLeagueSquadStats(division, c.leagueSquads ?? []);
-        return {
-          ...c,
-          squad: mergeSquadStats(mine, c.squad ?? []),
-          leagueSquads,
-          league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
-          // No stats to merge/preserve here, unlike squad/leagueSquads — a
-          // free agent is not playing matches for anyone, so a fresh fetch
-          // simply replaces the list wholesale.
-          freeAgents,
-        };
-      });
-    } finally {
-      setRefreshing(false);
-    }
-  }, [career, refreshing]);
 
   const handleExit = useCallback(() => {
     if (confirm("Leave the career? It stays saved — you will come back to exactly this. To delete it and start again, use New career on the dashboard.")) {
@@ -1746,7 +1707,7 @@ export default function StarDevPage() {
         </>
       )}
       {phase === "league" && (
-        <LeagueScreen career={career} onRefreshSquads={refreshSquads} refreshing={refreshing} />
+        <LeagueScreen career={career} />
       )}
       {phase === "media" && activeNav === "media" && (
         <MediaFeed career={career} mode="browse" />
