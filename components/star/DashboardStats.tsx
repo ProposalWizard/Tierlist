@@ -130,6 +130,17 @@ export default function DashboardStats({ career, onRenew }: Props) {
             >
               Energy ({Math.round(career.energy)}%)
             </div>
+            {/* Was written from all over the career (a good match, a trophy,
+                a lifestyle purchase) and read from all over it too (transfer
+                interest, international call-ups, sponsors), but never once
+                shown to the player who was earning it — reported directly:
+                "I assume fame... exists in this game" (it did, invisibly).
+                Sponsors is the screen that actually spends this number now
+                (see sponsorEligible in lib/star/sponsors.ts), so this tile
+                sits right where the player would go looking for it. */}
+            <div className="col-span-2 py-2 rounded-lg font-black text-sm text-center bg-gray-700 text-white/75">
+              ★ Fame ({career.fame})
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-gray-600 bg-gray-800">

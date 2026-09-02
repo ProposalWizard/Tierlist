@@ -353,7 +353,6 @@ export interface Girlfriend {
 
 export interface SponsorDeal {
   category: string;
-  perMatch: number;
   active: boolean;
   /** What they want for the money. Absent on a deal signed before this existed. */
   objective?: {

@@ -17,7 +17,7 @@ import {
 } from "./recognition";
 import { makeManager, sackCheck, bossOnArrival, reputationTier } from "./manager";
 import { rivalryMultiplier } from "./rivalries";
-import { attachObjective, progressObjectives, rollSponsorSeason } from "./sponsors";
+import { progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
@@ -45,6 +45,18 @@ export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
   "Cosmetics", "Watch", "Electronics", "Jewelry", "Car",
 ];
+
+/** Fame handed out for a season's silverware, at rollover — see the
+ *  `trophyFame` computation in advanceSeason. A league title (or a European
+ *  Cup) means more than a Community Shield, so the trophy itself decides how
+ *  much; anything not listed (Play-Offs, an unnamed cup) still counts a
+ *  little rather than nothing. */
+const TROPHY_FAME: Record<string, number> = {
+  "Premier League": 25, "Championship": 20,
+  "Champions League": 22, "Europa League": 12, "Conference League": 8,
+  "FA Cup": 14, "League Cup": 9,
+  "Community Shield": 4, "Super Cup": 4,
+};
 
 const EMPTY_SEASON_STATS = {
   appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0,
@@ -114,7 +126,7 @@ export function makeInitialCareer(
     kibCans: { basic: 2, premium: 0, elite: 0 },
     ownedItems: [],
     girlfriend: null,
-    sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, perMatch: 0, active: false })),
+    sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, active: false })),
     trophies: [],
     form: [],
     // Your club's actual colours. These were `#ff0000` and `#ffffff` for every
@@ -386,20 +398,20 @@ export function creditMatchResult(
     : { ...career.horse, energy: Math.min(100, career.horse.energy + 20) };
 
   // Guarded on `alreadyPlayed` throughout — a replay must not grow the
-  // sponsor relationship, unlock a deal, or progress/complete an objective
-  // a second time off the same match.
+  // sponsor relationship or progress/complete an objective a second time off
+  // the same match.
+  //
+  // Eligibility for a NEW deal is no longer this relationship crossing a
+  // threshold — see sponsorEligible/signSponsor in sponsors.ts, each
+  // category with its own themed requirement (fame plus whatever actually
+  // fits the brand). This relationship now only tracks how deals you have
+  // ALREADY signed are doing: good matches keep sponsors happy, which is
+  // what actually being progressed/lapsed reads off.
   const sponsorGain = alreadyPlayed ? 0 : Math.max(0, Math.floor(stats.fansChange / 3));
   const newSponsorRel = Math.min(100, career.relationships.sponsors + sponsorGain);
-  const dealsUnlocked = Math.floor(newSponsorRel / 10);
-  const activated = career.sponsors.map((s, i) =>
-    i < dealsUnlocked && !s.active ? { ...s, active: true, perMatch: 1 + Math.floor(i / 2) } : s,
-  );
-  // A new deal comes with something to ask for — a sponsor who wants nothing is
-  // just a number going up on its own.
-  const withObjectives = attachObjective(career, activated);
   const progressed = alreadyPlayed
-    ? { sponsors: withObjectives, earned: 0, completed: [] as string[] }
-    : progressObjectives(withObjectives, stats, accrue(career.seasonStats));
+    ? { sponsors: career.sponsors, earned: 0, completed: [] as string[] }
+    : progressObjectives(career.sponsors, stats, accrue(career.seasonStats));
   const sponsors = progressed.sponsors;
 
   // Update squad player stats from this match's goal events.
@@ -861,9 +873,12 @@ export function advanceSeason(
   };
 
   // Sponsor terms run down. A deal that was not delivered lapses, which costs
-  // the retainer and some standing with everybody else — the only thing that
-  // makes an objective worth chasing rather than ignoring.
+  // next season's fee and some standing with everybody else — the only thing
+  // that makes an objective worth chasing rather than ignoring. Everything
+  // still standing is paid again here too — the "start of every season" half
+  // of the fee (see sponsors.ts's own file note).
   const sponsorRoll = rollSponsorSeason(career);
+  const seasonFeeTotal = sponsorRoll.seasonFees.reduce((sum, f) => sum + f.fee, 0);
   // Loyalty is the one thing in the career that pays you for NOT moving. Taken
   // here, before the transfer window, because you were here for the season —
   // unless `career.contract` is only here because a transfer was JUST
@@ -889,6 +904,14 @@ export function advanceSeason(
   // in a higher competition keeps the better one (so an FA Cup win for a top-
   // four side stays Champions League, not Europa League).
   const thisSeason = career.trophies.filter(t => t.season === career.season);
+  // Fame from silverware and individual recognition — requested directly:
+  // trophies and records should feed the same reputation sponsors actually
+  // look at (see sponsorEligible in sponsors.ts), not sit next to it doing
+  // nothing. `honours` (above) is already filtered to awards that are
+  // YOURS — seasonAwards only ever returns your own Player/Young Player of
+  // the Season, Golden Boot etc., never a team-mate's or a rival's.
+  const trophyFame = thisSeason.reduce((sum, t) => sum + (TROPHY_FAME[t.competition] ?? 6), 0);
+  const honourFame = honours.length * 4;
   const wonFaCup = thisSeason.some(t => t.competition === "FA Cup");
   const wonLeagueCup = thisSeason.some(t => t.competition === "League Cup");
   const wonEuroComp = thisSeason.some(t => t.competition === "Champions League" || t.competition === "Europa League");
@@ -958,8 +981,17 @@ export function advanceSeason(
     lastSeasonJudgement: judgement,
     awards: honours.length > 0 ? [...(career.awards ?? []), ...honours] : career.awards,
     sponsors: sponsorRoll.sponsors,
-    sponsorNews: sponsorRoll.lapsed.length > 0 ? sponsorRoll.lapsed : [],
-    money: career.money + loyalty,
+    // Both halves of what a sponsor did to you this rollover — a deal that
+    // lapsed, and a deal that just paid its "start of the season" fee — on
+    // the same feed the dashboard already reads (DashboardStats.tsx).
+    sponsorNews: [
+      ...sponsorRoll.lapsed,
+      ...sponsorRoll.seasonFees.map(f => `${f.category}: Season fee — ★${f.fee}`),
+    ],
+    // Silverware and individual recognition feed the same reputation
+    // sponsors actually check — see trophyFame/honourFame above.
+    fame: career.fame + trophyFame + honourFame,
+    money: career.money + loyalty + seasonFeeTotal,
   };
   if (sponsorRoll.standingHit > 0) {
     next.relationships = {

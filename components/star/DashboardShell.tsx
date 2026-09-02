@@ -9,16 +9,27 @@ interface Props {
   onNavigate: (tab: NavTab) => void;
   onSettings: () => void;
   activeNav?: NavTab | null;
-  /** A dot on the Feed button when there is reaction the player has not read. */
+  /** A dot on the Phone button when there is reaction the player has not read. */
   mediaUnread?: boolean;
   nextMatchLabel?: string;
   /** "Sat 14 Feb" — see lib/star/calendar. */
   nextMatchDate?: string;
+  /**
+   * Skip the identity header, Star/Energy bars, Age/Cash strip and next-match
+   * banner — just `children` (given the full body height) and the bottom nav.
+   *
+   * Built for the phone (see MediaFeed.tsx): reported directly — "the whole
+   * screen should be the phone" — the usual stat strip above it was exactly
+   * the room the phone needed to stop looking cramped, and losing the back
+   * button it used to need is fine because the bottom nav is right there to
+   * leave by instead.
+   */
+  fullBleed?: boolean;
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play";
 
-export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread }: Props) {
+export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -48,52 +59,57 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
       style={{ height: shellH !== null ? `${shellH}px` : "calc(100dvh - 64px)" }}
     >
       <div className="flex-1 min-h-0 flex flex-col max-w-md w-full mx-auto">
-        {/* Top header */}
-        <div className="bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
-          <button onClick={onExit} className="w-8 h-8 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-lg">✕</button>
-          <div className="flex-1 mx-3 text-center bg-white/10 rounded-full py-1 text-white font-black text-sm truncate border border-white/20">
-            {fullName}
-          </div>
-          <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
-            <GearIcon />
-          </button>
-        </div>
-
-        {/* Star + Energy bars */}
-        <div className="grid grid-cols-2 gap-2 px-3 pt-2">
-          <div className="flex items-center gap-2 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-lg px-2 py-1.5 shadow border border-yellow-400">
-            <StarIcon />
-            <span className="text-white font-black text-sm">Star Rating</span>
-            <span className="ml-auto text-white font-black text-sm">{career.starRating.toFixed(1)}</span>
-          </div>
-          <div className="relative bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500" style={{ width: `${energyPct}%` }} />
-            <div className="relative flex items-center gap-1 px-2 py-1.5">
-              <HeartIcon />
-              <span className="text-white font-black text-sm">Energy</span>
-              <span className="ml-auto text-white font-black text-sm">{Math.round(energyPct)}</span>
+        {!fullBleed && (
+          <>
+            {/* Top header */}
+            <div className="bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
+              <button onClick={onExit} className="w-8 h-8 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-lg">✕</button>
+              <div className="flex-1 mx-3 text-center bg-white/10 rounded-full py-1 text-white font-black text-sm truncate border border-white/20">
+                {fullName}
+              </div>
+              <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
+                <GearIcon />
+              </button>
             </div>
-          </div>
-        </div>
 
-        {/* Age / Cash strip */}
-        <div className="flex items-center justify-between px-3 pt-2 gap-2">
-          <div className="bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-white border border-gray-600">
-            Age {career.player.age}
-          </div>
-          <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-yellow-300 border border-gray-600">
-            <StarIcon small />
-            {career.money}
-          </div>
-        </div>
+            {/* Star + Energy bars */}
+            <div className="grid grid-cols-2 gap-2 px-3 pt-2">
+              <div className="flex items-center gap-2 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-lg px-2 py-1.5 shadow border border-yellow-400">
+                <StarIcon />
+                <span className="text-white font-black text-sm">Star Rating</span>
+                <span className="ml-auto text-white font-black text-sm">{career.starRating.toFixed(1)}</span>
+              </div>
+              <div className="relative bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500" style={{ width: `${energyPct}%` }} />
+                <div className="relative flex items-center gap-1 px-2 py-1.5">
+                  <HeartIcon />
+                  <span className="text-white font-black text-sm">Energy</span>
+                  <span className="ml-auto text-white font-black text-sm">{Math.round(energyPct)}</span>
+                </div>
+              </div>
+            </div>
 
-        {/* Body — the only scrollable region; header + bottom nav stay fixed */}
-        <div className="flex-1 min-h-0 px-3 py-2 overflow-y-auto">
+            {/* Age / Cash strip */}
+            <div className="flex items-center justify-between px-3 pt-2 gap-2">
+              <div className="bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-white border border-gray-600">
+                Age {career.player.age}
+              </div>
+              <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-yellow-300 border border-gray-600">
+                <StarIcon small />
+                {career.money}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Body — the only scrollable region; header + bottom nav stay fixed.
+            No padding in fullBleed — the phone gets every pixel of it. */}
+        <div className={`flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : "px-3 py-2"}`}>
           {children}
         </div>
 
         {/* Next match banner */}
-        {nextMatchLabel && (
+        {!fullBleed && nextMatchLabel && (
           <div className="mx-3 mb-1 bg-gradient-to-r from-gray-700 to-gray-600 border border-gray-500 rounded-lg px-3 py-1.5 flex items-center justify-between">
             {/* The date, not just the week. This banner is the most-looked-at
                 strip in the game and it read "Week 25", which is a row number.
@@ -111,7 +127,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
           <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => onNavigate("league")} />
           <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
           <NavBtn label="Home" icon="🏠" active={activeNav === "home"} onClick={() => onNavigate("home")} />
-          <NavBtn label="Media" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
+          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
           <NavBtn label="Play" icon="▶" active={activeNav === "play"} onClick={() => onNavigate("play")} highlight />
         </div>
       </div>

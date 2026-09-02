@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { objectiveLabel } from "@/lib/star/sponsors";
+import { objectiveLabel, sponsorEligible, sponsorFee, sponsorRequirementText } from "@/lib/star/sponsors";
 import { clauseSummary, offerClauses } from "@/lib/star/contracts";
 import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
@@ -31,35 +31,53 @@ function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }
   );
 }
 
-export function SponsorsScreen({ career, onBack }: { career: CareerState; onBack: () => void }) {
-  const total = career.sponsors.reduce((s, sp) => s + (sp.active ? sp.perMatch : 0), 0);
+export function SponsorsScreen({ career, onBack, onSign }: {
+  career: CareerState; onBack: () => void; onSign: (category: string) => void;
+}) {
+  const total = career.sponsors.reduce((s, sp) => s + (sp.active ? sponsorFee(sp.category, career) : 0), 0);
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col py-3 px-3">
       <div className="w-full max-w-sm mx-auto flex-1">
         <div className="flex items-center justify-between mb-3">
           <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
           <div className="font-black text-white text-lg">Sponsors</div>
-          <div />
+          <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-2.5 py-1.5 border border-gray-600 text-[11px] font-black text-amber-300">
+            ★ {career.fame} fame
+          </div>
         </div>
 
         <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden">
-          {career.sponsors.map((sp, i) => (
-            <div key={sp.category} className={`py-2.5 px-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
-              <div className="flex items-center">
-                <div className="font-black text-white text-sm flex-1">{sp.category}</div>
-                {sp.active ? (
-                  <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                    <StarIcon />{sp.perMatch}
-                  </div>
-                ) : (
-                  <div className="text-[10px] text-white/85 uppercase font-black">Not Signed</div>
+          {career.sponsors.map((sp, i) => {
+            const eligible = !sp.active && sponsorEligible(sp.category, career);
+            return (
+              <div key={sp.category} className={`py-2.5 px-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
+                <div className="flex items-center gap-2">
+                  <div className="font-black text-white text-sm flex-1">{sp.category}</div>
+                  {sp.active ? (
+                    <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
+                      <StarIcon />{sponsorFee(sp.category, career)}
+                      <span className="ml-0.5 text-[9px] font-bold text-white/60">/season</span>
+                    </div>
+                  ) : eligible ? (
+                    <button
+                      onClick={() => onSign(sp.category)}
+                      className="rounded px-3 py-1 text-[10px] font-black bg-emerald-500 text-white hover:bg-emerald-400 active:scale-[0.97]"
+                    >
+                      Sign — ★{sponsorFee(sp.category, career)}
+                    </button>
+                  ) : (
+                    <div className="text-[10px] text-white/85 uppercase font-black">Locked</div>
+                  )}
+                </div>
+                {!sp.active && (
+                  <div className="mt-1 text-[10px] text-white/60">{sponsorRequirementText(sp.category)}</div>
                 )}
+                <ObjectiveRow deal={sp} />
               </div>
-              <ObjectiveRow deal={sp} />
-            </div>
-          ))}
+            );
+          })}
           <div className="bg-emerald-700 py-2.5 px-3 flex items-center border-t border-black/30">
-            <div className="font-black text-white text-sm flex-1">Total Per Match</div>
+            <div className="font-black text-white text-sm flex-1">Total Per Season</div>
             <div className="flex items-center gap-1 font-black text-white text-sm">
               <StarIcon />{total}
             </div>
@@ -67,7 +85,11 @@ export function SponsorsScreen({ career, onBack }: { career: CareerState; onBack
         </div>
 
         <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-700 text-[10px] text-white/75 text-center leading-tight">
-          Grow your fame and performances to unlock sponsors. Each ★20 of Sponsor relationship = ★1/match.
+          Every brand wants fame — plus something that actually fits them: goals for
+          your boot deal, a big fanbase for a clothing line, a trophy for the tech
+          brands, the lifestyle to match for the luxury ones. Sign an eligible deal
+          and the fee lands immediately — then again at the start of every season
+          you keep it.
         </div>
       </div>
     </div>

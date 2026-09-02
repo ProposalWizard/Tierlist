@@ -45,7 +45,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                     selectedCan?.id === c.id ? "border-emerald-400 bg-gray-700" : "border-gray-700 bg-gray-800"
                   }`}
                 >
-                  <KibCanIcon can={c} />
+                  <KibCanIcon can={c} className="h-20 w-14" />
                   <div className="flex-1 text-left">
                     <div className="font-black text-white text-sm">{c.name}</div>
                     <div className="text-[10px] text-emerald-300 font-bold">+{c.restore} energy</div>

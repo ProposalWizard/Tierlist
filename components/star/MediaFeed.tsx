@@ -4,6 +4,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { Tag } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
+import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar";
 import PostCard from "./media/PostCard";
 import TransfersPanel from "./TransfersPanel";
 import PhoneFrame from "./PhoneFrame";
@@ -12,25 +13,26 @@ import PhoneFrame from "./PhoneFrame";
  * THE FEED — ON YOUR PHONE.
  *
  * Two moments, one screen. Straight out of the ground it shows the immediate
- * reaction and a Continue button; from the dashboard it shows the whole cycle
- * with filters and no way onward except back.
+ * reaction and a Continue button; reached from the bottom nav it IS the
+ * screen — full-bleed inside DashboardShell (see its own `fullBleed` prop),
+ * no header of its own, because the bottom nav is already right there to
+ * leave by. Requested directly, after the phone shipped a size too small:
+ * "the whole screen should be the phone" — the back button and the "Your
+ * phone / Season X · Week Y" header this used to carry were exactly the
+ * room it needed.
  *
  * It reads and never generates — everything on it was written at full time by
  * lib/star/media, and what is visible is decided by the virtual clock in
- * schedule.ts. This file only decides how it's PRESENTED, and that changed:
- * requested directly, a plain scrolling report never read as your own phone
- * the way pulling it out between matches should. PhoneFrame is the device —
- * the body, the notch, the home indicator; everything below is one app
- * running inside it, Feed and Transfers as its own two tabs the way a real
- * phone keeps two screens in one app rather than two separate apps.
+ * schedule.ts. This file only decides how it's PRESENTED.
  */
 
 interface Props {
   career: CareerState;
-  /** Post-match: the first wave, then a Continue. Dashboard: everything. */
+  /** Post-match: the first wave, then a Continue, its own full standalone
+   *  screen. From the bottom nav: everything, full-bleed inside
+   *  DashboardShell — no header, no Continue, the bottom nav is the way out. */
   mode: "moment" | "browse";
   onContinue?: () => void;
-  onBack?: () => void;
 }
 
 const FILTERS: { id: string; label: string; tags?: Tag[] }[] = [
@@ -40,7 +42,7 @@ const FILTERS: { id: string; label: string; tags?: Tag[] }[] = [
   { id: "fans", label: "Fans", tags: ["derby", "shame", "goal", "opinion"] },
 ];
 
-export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
+export default function MediaFeed({ career, mode, onContinue }: Props) {
   const [filter, setFilter] = useState("all");
   // Feed vs Transfers — two tabs of the one app on the phone, not two
   // separate screens. Dashboard only (mode === "browse"); the post-match
@@ -64,127 +66,131 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
       || (f.id === "stats" && p.author.archetype === "stats"));
   }, [posts, filter]);
 
+  // The status bar's own clock, reading real — "22/08/26", not a fixed
+  // "9:41" — the Saturday of whatever week the career is on, its own week
+  // granularity being the finest date this game tracks.
+  const dateLabel = formatDateNumeric(
+    fixtureDate(career.player.startYear, career.season, career.week, "saturday", divisionOf(career)),
+  );
+
+  const phone = (
+    <PhoneFrame statusLabel={dateLabel}>
+      {/* App bar — the one constant across both tabs. */}
+      <div className="flex shrink-0 items-center gap-1.5 border-b border-white/10 px-3 pb-2 pt-1">
+        <AppMark />
+        <span className="text-[13px] font-black tracking-tight text-white">Matchday</span>
+      </div>
+
+      {tab === "transfers" ? (
+        <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
+          <TransfersPanel career={career} />
+        </div>
+      ) : (
+        <>
+          {trends.length > 0 && (
+            <div className="kib-noscroll shrink-0 overflow-x-auto border-b border-white/10 px-2.5 py-2">
+              <div className="flex gap-1.5">
+                {trends.map((t, i) => (
+                  <div
+                    key={t.label}
+                    className="flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1"
+                  >
+                    <span className="text-[9px] font-black text-white/50">{i + 1}</span>
+                    <span className="whitespace-nowrap text-[10.5px] font-black text-white">
+                      {t.label}{t.hot && " 🔥"}
+                    </span>
+                    <span className="text-[9px] font-bold tabular-nums text-white/50">
+                      {formatVolume(t.volume)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {mode === "browse" && (
+            <div className="kib-noscroll shrink-0 overflow-x-auto px-2.5 pb-1 pt-2">
+              <div className="flex gap-1.5">
+                {FILTERS.map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilter(f.id)}
+                    className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wide transition ${
+                      filter === f.id
+                        ? "bg-emerald-500 text-black"
+                        : "bg-white/10 text-white/75 hover:bg-white/20"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
+            <div className="space-y-2">
+              {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
+              {shown.length === 0 && (
+                <div className="rounded-xl border border-white/12 bg-white/[0.04] px-3 py-8 text-center">
+                  <div className="text-sm font-black text-white">Quiet out there.</div>
+                  <p className="mt-1 text-[11px] font-bold text-white/60">
+                    {posts.length === 0
+                      ? "Play a match and the world will have something to say about it."
+                      : "Nothing under this filter."}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* In-app tab bar — Feed and Transfers, the two screens of the one
+          app, the way a real phone app keeps its own sections in one
+          bottom bar rather than as two separate apps. Only in "browse":
+          the post-match reaction is a single-purpose read, not something
+          to navigate around in. */}
+      {mode === "browse" && (
+        <div className="grid shrink-0 grid-cols-2 border-t border-white/10 bg-black/40 px-2 pb-1 pt-1.5">
+          <TabButton active={tab === "feed"} label="Feed" onClick={() => setTab("feed")}>
+            <FeedIcon />
+          </TabButton>
+          <TabButton active={tab === "transfers"} label="Transfers" onClick={() => setTab("transfers")}>
+            <TransferIcon />
+          </TabButton>
+        </div>
+      )}
+    </PhoneFrame>
+  );
+
+  // Reached from the bottom nav: full-bleed inside DashboardShell already —
+  // just fill whatever room it gave us, no screen of our own to build.
+  if (mode === "browse") {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(120%_80%_at_50%_-10%,#1f2937_0%,#0b0f14_55%,#05070a_100%)] p-2">
+        <div className="h-full w-full max-w-md">{phone}</div>
+      </div>
+    );
+  }
+
+  // Straight out of the ground: its own standalone screen, same as it
+  // always was — a real moment with a Continue, not a place to navigate
+  // around in.
   return (
     <div className="flex min-h-screen flex-col items-center bg-[radial-gradient(120%_80%_at_50%_-10%,#1f2937_0%,#0b0f14_55%,#05070a_100%)] px-3 py-4 text-white">
       <header className="mb-3 flex w-full max-w-md items-center gap-2">
-        {mode === "browse" && onBack && (
-          <button
-            onClick={onBack}
-            aria-label="Back"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/10 font-black text-white transition hover:bg-white/20"
-          >
-            ←
-          </button>
-        )}
         <div className="flex-1">
-          <h1 className="text-base font-black uppercase tracking-wide text-white">
-            {mode === "moment" ? "Full-time reaction" : "Your phone"}
-          </h1>
-          <p className="text-[10px] font-bold text-white/55">
-            {mode === "moment"
-              ? "What they made of that"
-              : `Season ${career.season} · Week ${career.week}`}
-          </p>
+          <h1 className="text-base font-black uppercase tracking-wide text-white">Full-time reaction</h1>
+          <p className="text-[10px] font-bold text-white/55">What they made of that</p>
         </div>
       </header>
 
-      {/* The device fills whatever room is left between the header above and
-          the Continue button / hint line below — capped so it never grows
-          into an implausibly huge phone on a tall desktop viewport. */}
       <div className="flex w-full flex-1 items-center justify-center py-1" style={{ minHeight: 0 }}>
-        <div className="w-full max-w-md" style={{ height: "min(80vh, 780px)" }}>
-          <PhoneFrame>
-            {/* App bar — the one constant across both tabs. */}
-            <div className="flex shrink-0 items-center gap-1.5 border-b border-white/10 px-3 pb-2 pt-1">
-              <AppMark />
-              <span className="text-[13px] font-black tracking-tight text-white">Matchday</span>
-            </div>
-
-            {tab === "transfers" ? (
-              <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
-                <TransfersPanel career={career} />
-              </div>
-            ) : (
-              <>
-                {trends.length > 0 && (
-                  <div className="kib-noscroll shrink-0 overflow-x-auto border-b border-white/10 px-2.5 py-2">
-                    <div className="flex gap-1.5">
-                      {trends.map((t, i) => (
-                        <div
-                          key={t.label}
-                          className="flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1"
-                        >
-                          <span className="text-[9px] font-black text-white/50">{i + 1}</span>
-                          <span className="whitespace-nowrap text-[10.5px] font-black text-white">
-                            {t.label}{t.hot && " 🔥"}
-                          </span>
-                          <span className="text-[9px] font-bold tabular-nums text-white/50">
-                            {formatVolume(t.volume)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {mode === "browse" && (
-                  <div className="kib-noscroll shrink-0 overflow-x-auto px-2.5 pb-1 pt-2">
-                    <div className="flex gap-1.5">
-                      {FILTERS.map(f => (
-                        <button
-                          key={f.id}
-                          onClick={() => setFilter(f.id)}
-                          className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wide transition ${
-                            filter === f.id
-                              ? "bg-emerald-500 text-black"
-                              : "bg-white/10 text-white/75 hover:bg-white/20"
-                          }`}
-                        >
-                          {f.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
-                  <div className="space-y-2">
-                    {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
-                    {shown.length === 0 && (
-                      <div className="rounded-xl border border-white/12 bg-white/[0.04] px-3 py-8 text-center">
-                        <div className="text-sm font-black text-white">Quiet out there.</div>
-                        <p className="mt-1 text-[11px] font-bold text-white/60">
-                          {posts.length === 0
-                            ? "Play a match and the world will have something to say about it."
-                            : "Nothing under this filter."}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* In-app tab bar — Feed and Transfers, the two screens of the one
-                app, the way a real phone app keeps its own sections in one
-                bottom bar rather than as two separate apps. Only in "browse":
-                the post-match reaction is a single-purpose read, not something
-                to navigate around in. */}
-            {mode === "browse" && (
-              <div className="grid shrink-0 grid-cols-2 border-t border-white/10 bg-black/40 px-2 pb-1 pt-1.5">
-                <TabButton active={tab === "feed"} label="Feed" onClick={() => setTab("feed")}>
-                  <FeedIcon />
-                </TabButton>
-                <TabButton active={tab === "transfers"} label="Transfers" onClick={() => setTab("transfers")}>
-                  <TransferIcon />
-                </TabButton>
-              </div>
-            )}
-          </PhoneFrame>
-        </div>
+        <div className="w-full max-w-md" style={{ height: "min(80vh, 780px)" }}>{phone}</div>
       </div>
 
-      {mode === "moment" && onContinue && (
+      {onContinue && (
         <button
           onClick={onContinue}
           className="mt-4 flex w-full max-w-md items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-black text-white transition hover:from-emerald-500 hover:to-emerald-400"
@@ -194,11 +200,6 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
             <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-      )}
-      {mode === "browse" && (
-        <p className="mt-3 max-w-md text-center text-[10px] font-bold text-white/45">
-          The rest of the week&apos;s reaction arrives as it happens.
-        </p>
       )}
     </div>
   );

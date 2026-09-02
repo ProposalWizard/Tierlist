@@ -5,6 +5,7 @@ import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/g
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt } from "@/lib/star/storage";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { signSponsor } from "@/lib/star/sponsors";
 import { selectionFor, MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
@@ -1069,6 +1070,11 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  const handleSignSponsor = useCallback((category: string) => {
+    if (!career) return;
+    setCareer(signSponsor(career, category));
+  }, [career]);
+
   const handleBuyHorse = useCallback((horse: Horse, price: number) => {
     if (!career || career.money < price || career.horse) return;
     setCareer({ ...career, money: career.money - price, horse });
@@ -1325,12 +1331,13 @@ export default function StarDevPage() {
     );
   }
 
-  // Straight out of the ground it is a moment with a Continue; reached from the
-  // nav it is a place you can browse and leave.
-  if (phase === "media") {
-    return activeNav === "media"
-      ? <MediaFeed career={career} mode="browse" onBack={handleBackToDashboard} />
-      : <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} />;
+  // Straight out of the ground it is a moment with a Continue — its own
+  // standalone screen, same as it always was. Reached from the nav
+  // ("browse") it falls through to the DashboardShell render below instead
+  // — full-bleed (see DashboardShell's own prop), so the bottom nav stays
+  // on screen under it and there's nothing left needing a back button.
+  if (phase === "media" && activeNav !== "media") {
+    return <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} />;
   }
 
   if (phase === "legacy") {
@@ -1406,7 +1413,7 @@ export default function StarDevPage() {
     return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} />;
   }
 
-  if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} />;
+  if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToDashboard} />;
 
@@ -1672,6 +1679,7 @@ export default function StarDevPage() {
       mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
       nextMatchDate={nextMatchDate ?? undefined}
+      fullBleed={phase === "media" && activeNav === "media"}
     >
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
@@ -1722,12 +1730,14 @@ export default function StarDevPage() {
                     key={c.id}
                     disabled={count === 0}
                     onClick={() => handleUseCan(c.id)}
-                    className={`p-2 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
+                    className={`p-1.5 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
                   >
-                    <KibCanIcon can={c} className="h-10 w-8 mx-auto mb-1" />
+                    <KibCanIcon can={c} className="h-24 w-full mb-1.5" />
                     <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
-                    <div className="text-[9px] text-emerald-300 font-bold">+{c.restore}</div>
-                    <div className="text-[9px] text-white/75">{count} owned</div>
+                    <div className="text-[9px] font-bold">
+                      <span className="text-emerald-300">+{c.restore}</span>
+                      <span className="text-white/60"> · {count} owned</span>
+                    </div>
                   </button>
                 );
               })}
@@ -1737,6 +1747,9 @@ export default function StarDevPage() {
       )}
       {phase === "league" && (
         <LeagueScreen career={career} onRefreshSquads={refreshSquads} refreshing={refreshing} />
+      )}
+      {phase === "media" && activeNav === "media" && (
+        <MediaFeed career={career} mode="browse" />
       )}
       {phase === "skills" && (
         <div>
