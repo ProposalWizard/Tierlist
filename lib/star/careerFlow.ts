@@ -306,11 +306,19 @@ export function creditMatchResult(
     const yours = (stats.goalEvents ?? []).map(e => ({
       m: e.minute, s: surname(e.scorer), ...(e.assist ? { a: surname(e.assist) } : {}),
     }));
+    // …and now so are theirs, when the live match named them — see
+    // playLeagueWeek's own note on `oppGoals`.
+    const theirs = (stats.oppGoalEvents ?? []).map(e => ({
+      id: e.scorerId, m: e.minute, s: surname(e.scorer),
+      ...(e.assistId ? { assistId: e.assistId } : {}),
+      ...(e.assist ? { a: surname(e.assist) } : {}),
+    }));
     // The squads are mutated in place as goals are named, so they come back out
     // of the call with this week's tallies already on them.
     const squads = (career.leagueSquads ?? []).map(sq => ({ ...sq, players: sq.players.map(p => ({ ...p })) }));
     const round = playLeagueWeek(league, fixture.week, {
-      club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded, goals: yours,
+      club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded,
+      goals: yours, oppGoals: theirs,
     }, rng, squads);
     league = round.league;
     leagueSquads = squads;

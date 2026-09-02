@@ -1,5 +1,5 @@
 import type { LeagueTeam, Fixture, LeagueFixture, LeagueResult, LeagueSquad } from "./types";
-import { nameGoals } from "./leagueSquads";
+import { nameGoals, creditNamedGoals, type NamedOppGoal } from "./leagueSquads";
 import { primaryRivalOf } from "./rivalries";
 
 // Deterministic PRNG so a career's season sim is reproducible
@@ -127,7 +127,19 @@ export function buildFixtures(clubs: string[], userClub: string): Fixture[] {
 export function playLeagueWeek(
   league: LeagueTeam[],
   week: number,
-  user: { club: string; opponent: string; home: boolean; scored: number; conceded: number; goals?: LeagueResult["hg"] },
+  user: {
+    club: string; opponent: string; home: boolean; scored: number; conceded: number;
+    goals?: LeagueResult["hg"];
+    /**
+     * The opponent's goals, already named live — see CanvasMatch.tsx's
+     * opponent-goal branch and NamedOppGoal's own note. When given (and
+     * covers every conceded goal — a partial list, from a career saved
+     * before this existed, is treated the same as none), these are
+     * credited directly instead of `nameGoals` rolling a fresh, different
+     * scorer for a goal the player already watched named.
+     */
+    oppGoals?: NamedOppGoal[];
+  },
   rng: () => number,
   squads?: LeagueSquad[],
 ): { league: LeagueTeam[]; results: LeagueResult[] } {
@@ -143,8 +155,13 @@ export function playLeagueWeek(
   // onto that player's season the same as it would be if you weren't there.
   // Reported directly: a live match tracked your own goals and every other
   // fixture's, but a goal scored against your own team vanished into a bare
-  // scoreline with nobody credited.
-  const theirGoals = nameGoals(squadOf.get(user.opponent), user.conceded, rng);
+  // scoreline with nobody credited. Now split in two: a goal the player
+  // actually watched named live is CREDITED, not re-rolled (see oppGoals'
+  // own note above); anything short of the full count still falls back to
+  // the original random naming, same as it always has.
+  const theirGoals = user.oppGoals && user.oppGoals.length === user.conceded
+    ? creditNamedGoals(squadOf.get(user.opponent), user.oppGoals)
+    : nameGoals(squadOf.get(user.opponent), user.conceded, rng);
 
   const results: LeagueResult[] = [{
     week,

@@ -196,14 +196,18 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
   // wrong, with a concrete example: a goal and its assist stayed green/black
   // regardless of which club actually scored — "it all stays for the
   // team," i.e. it should be that team's own colour like every other tinted
-  // line, not a fixed pair. `goal`/`assist` mean "your side" by definition
-  // (see LogTone) — an opponent's goal is always tone "oppGoal" instead —
-  // so both simply read in `userKit`, no `isOpponent` check needed.
+  // line, not a fixed pair. `goal` means "your side" by definition (see
+  // LogTone) — an opponent's goal is always tone "oppGoal" instead — so it
+  // simply reads in `userKit`, no `isOpponent` check needed. `assist` is the
+  // one tone either side can carry now that the opponent's own goals are
+  // named too (CanvasMatch.tsx's opponent-goal branch), so it reads
+  // `isOpponent` the same way a plain "play" line already does.
   const kit: Kit | null =
-    l.tone === "goal" || l.tone === "assist" || l.tone === "you" ? userKit
-      : l.tone === "oppGoal" ? oppKit
-        : l.tone === "play" && l.isOpponent !== undefined ? (l.isOpponent ? oppKit : userKit)
-          : null;
+    l.tone === "goal" || l.tone === "you" ? userKit
+      : l.tone === "assist" ? (l.isOpponent ? oppKit : userKit)
+        : l.tone === "oppGoal" ? oppKit
+          : l.tone === "play" && l.isOpponent !== undefined ? (l.isOpponent ? oppKit : userKit)
+            : null;
 
   // Goal lines still get the brief brighten-then-settle flash
   // (`kib-goal-flash`) so a goal reads as a moment and not just a

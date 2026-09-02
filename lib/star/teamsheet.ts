@@ -732,6 +732,35 @@ export function startingTeammateRoles(career: CareerState, fixture: Fixture): Ma
 }
 
 /**
+ * The other lot, the same way — the eleven actually starting for whoever
+ * you're playing, not their whole scouted roster.
+ *
+ * Built for naming the opponent's own goals live (see CanvasMatch.tsx):
+ * "They score!" with no name attached used to be the whole of it, while a
+ * goal your own side scored got a real man's name off the exact XI shown
+ * before kick-off. Requested directly, once the reason for the gap was
+ * traced — build the same restriction `startingTeammateRoles` already does
+ * for your side, just read the other half of the same `matchdayFor` call.
+ * `null` for the same reasons that function returns null: an international
+ * fixture, or a side too thin to draw an XI from — "unable to scout" is the
+ * honest answer there too, not an invented name.
+ */
+export function opponentStartingXI(career: CareerState, fixture: Fixture): SheetPlayer[] | null {
+  if (fixture.kind === "international") return null;
+  try {
+    const saved = loadLineup(career.player.club);
+    const savedXI = saved && saved.xi.some(Boolean)
+      ? { formation: formationOf(saved.formation), xi: saved.xi }
+      : undefined;
+    const md = matchdayFor(career, fixture, true, undefined, saved?.bench, savedXI);
+    const theirs = md.home.yours ? md.away : md.home;
+    return theirs.xi.length >= 9 ? theirs.xi : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The full squad, narrowed to whoever is actually out there and — the part
  * this exists for — with each man's `position` overridden to the ROLE he is
  * actually playing this match, per `startingTeammateRoles`. Casting a

@@ -299,6 +299,27 @@ export interface GoalEvent {
   distance?: number;
 }
 
+/**
+ * A goal the OPPONENT scored, named live rather than invented afterwards.
+ *
+ * `playLeagueWeek` (season.ts) used to name every one of the opponent's
+ * goals itself, after the match, off a fresh weighted pick against their
+ * squad — completely disconnected from whatever name the live commentary
+ * had already shown for that exact goal. Requested directly: make the
+ * opponent's goals show a name live, "the same thing as when someone from
+ * my team scores" — which also means the result you see afterwards has to
+ * agree with what you watched, not re-roll a second, different scorer.
+ * Carries the id (to credit the right real player's season tally, the same
+ * side effect `nameGoals` already has) alongside the display name.
+ */
+export interface OppGoalEvent {
+  minute: number;
+  scorerId: string;
+  scorer: string;
+  assistId?: string;
+  assist?: string;
+}
+
 export interface MatchStats {
   /** Minutes actually played. Under 90 when you came off the bench. */
   minutes?: number;
@@ -320,6 +341,8 @@ export interface MatchStats {
   homeScore: number;
   awayScore: number;
   goalEvents?: GoalEvent[];
+  /** The opponent's goals, named live — see OppGoalEvent. */
+  oppGoalEvents?: OppGoalEvent[];
   /** The live, in-match energy value at the final whistle (or at the
    *  moment you were hooked) — see CanvasMatch's liveEnergyRef. Feeds the
    *  injury roll in creditMatchResult; falls back to the pre-match energy
