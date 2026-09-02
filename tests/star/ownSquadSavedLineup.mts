@@ -24,10 +24,12 @@ import type { CareerState, Fixture, LeagueSquad } from "../../lib/star/types";
  * (realSquad.ts) keeps only the single best fit per slot in a fixed
  * 20-slot template, so a squad player who loses that competition does not
  * exist in `career.squad` at all, even though the /lineups builder (reading
- * the unrestricted LeagueSquad data) happily offers him. matchdayFor now
- * widens the search to your own club's full roster — already sitting in
- * career.leagueSquads — but only when there is actually something saved to
- * resolve.
+ * the unrestricted LeagueSquad data) happily offers him. matchdayFor widens
+ * the search to your own club's full roster — already sitting in
+ * career.leagueSquads — for a saved lineup naming him directly, and
+ * (reported again, separately: a real transfer selling your only man at a
+ * position, with nothing left in the curated twenty to replace him) for an
+ * ordinary auto-picked eleven too, unconditionally now.
  */
 
 const problems: string[] = [];
@@ -63,7 +65,11 @@ function careerWith(): CareerState {
     club: "AFC Bournemouth",
     players: [
       ...base.squad.map(p => ({ id: p.id, name: p.name, position: p.position, overall: p.overall ?? 65, goals: 0, assists: 0 })),
-      { id: "70001", name: "Sean Stern", position: "CM", overall: 70, goals: 0, assists: 0 },
+      // Rated well clear of anything `generateSquad`'s random spread could
+      // produce, so his showing up here is decided by the widened pool
+      // existing at all, not by winning a close, non-deterministic contest
+      // against whichever generated CM happened to roll the higher number.
+      { id: "70001", name: "Sean Stern", position: "CM", overall: 95, goals: 0, assists: 0 },
     ],
   };
   return { ...base, leagueSquads: [ownFullRoster] };
@@ -71,12 +77,12 @@ function careerWith(): CareerState {
 
 const FIXTURE: Fixture = { week: 1, opponent: "Liverpool", home: true, played: false, kind: "league" };
 
-// ── Nothing saved: the dropped player stays dropped, exactly as before ─────
+// ── Nothing saved: the wider roster is available anyway ────────────────────
 {
   const md = matchdayFor(careerWith(), FIXTURE, false);
   const mine = md.home;
-  check(!mine.xi.some(p => p.id === "70001") && !mine.bench.some(p => p.id === "70001"),
-    "with nothing saved, auto-pick still draws from the same twenty it always has");
+  check(mine.xi.some(p => p.id === "70001") || mine.bench.some(p => p.id === "70001"),
+    "with nothing saved, an ordinary auto-picked eleven still reaches the wider roster");
 }
 
 // ── Saved into the STARTING XI, he actually starts ──────────────────────────
