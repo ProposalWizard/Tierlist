@@ -129,6 +129,10 @@ function backfill(c: CareerState): CareerState {
   // would otherwise silently corrupt into NaN from here on).
   if (out.energy === undefined) out.energy = 100;
   if (out.injury === undefined) out.injury = null;
+  // A career saved before KIB Cans came back has no shelf of them to have
+  // been buying — zero, not the two-basic starter grant a brand new career
+  // gets, since this career is well past its trial.
+  if (!out.kibCans) out.kibCans = { basic: 0, premium: 0, elite: 0 };
   // ── …and the squad, which is the third of exactly the same kind ──
   //
   // A squad is only ever created when a career is created or when you sign for

@@ -8,6 +8,26 @@ import type { Scenario, Vec2, Contact, KickSkills } from "./canvasEngine";
  * `launch()` and everything after it draws from the rng too, so watching it
  * again has to put the rng back in the exact state it was in at the strike,
  * not just start a fresh stream from `seed`.
+ *
+ * `seed`/`callsBeforeStrike`/`scenario`/`dir`/`power`/`contact`/`skills` are
+ * not actually the whole story, though — reported directly, twice, with
+ * real before/after outcomes: a goal watched back from the replay list hit
+ * the post instead, another was intercepted instead of going in, both after
+ * following "the exact same movement" up to that point. The physics loop
+ * substeps the flight three times a frame at `dt / 3`, and `dt` is real
+ * elapsed device time — a fresh replay session runs its own
+ * requestAnimationFrame loop with its own frame timing, so it very rarely
+ * lands on the exact same NUMBER of substeps (and therefore the same number
+ * of in-flight rng draws, and the same Euler-integration step sizes) that
+ * the original live match happened to run through before the ball reached
+ * its outcome. `flightDtLog` is the fix: every substep `h` actually used,
+ * from the strike to the moment the flight resolves, recorded in order.
+ * Replaying with this queue instead of a fresh device's own dt makes the
+ * substep count, the rng draws inside it, and the integration itself
+ * bit-for-bit identical to the original — not just "the same inputs," but
+ * the same physics. Optional only so an already-saved replay from before
+ * this existed still opens (falling back to live device timing, imperfectly,
+ * exactly as it always has) rather than refusing to play at all.
  */
 export interface GoalReplay {
   id: string;
@@ -26,6 +46,9 @@ export interface GoalReplay {
   power: number;
   contact: Contact;
   skills: KickSkills;
+  /** See the file note above — every physics substep size actually used
+   *  between the strike and the flight resolving, in order. */
+  flightDtLog?: number[];
 }
 
 export interface StarPlayer {
@@ -433,6 +456,11 @@ export interface CareerState {
   achievements: string[];
   status: "1st Team" | "Substitute" | "Squad" | "Injured";
   currentBoot: Boot;
+  /** Owned energy drinks, bought from the shop — see lib/star/shopData.ts's
+   *  KIB_CANS. A can is spent to top up `energy` on demand, from the
+   *  dashboard's own KIB Cans card — a second lever on top of Rest/Skip to
+   *  Match Day, not a replacement for either. */
+  kibCans: { basic: number; premium: number; elite: number };
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];
@@ -711,6 +739,7 @@ export type StarPhase =
   | "post-match"
   | "media"
   | "ballon-dor"
+  | "shop-kib"
   | "shop-boots"
   | "shop-lifestyle"
   | "casino-menu"
@@ -740,4 +769,7 @@ export type StarPhase =
   /** …and what it earns you — the card, then the contract. See TrialReward. */
   | "trial-reward"
   /** Watching a saved goal happen again — see GoalReplay, goalReplays.ts. */
-  | "goal-replay";
+  | "goal-replay"
+  /** Signing for a new club at the end of a season — the same contract
+   *  moment "trial-reward" ends on, reused. See TransferSigning.tsx. */
+  | "transfer-signing";

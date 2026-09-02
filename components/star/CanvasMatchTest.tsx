@@ -292,7 +292,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       return assister
         ? [
             { minute: e.minute, text: goalLine, isGoal: true },
-            { minute: e.minute, text: `A: ${assister.shortName}`, tone: "assist" },
+            { minute: e.minute, text: `🎯 ${assister.shortName} assists!`, tone: "assist" },
           ]
         : [{ minute: e.minute, text: goalLine, isGoal: true }];
     });
@@ -2258,7 +2258,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
           isUserGoal: false, how, distance: Math.round(distance),
         });
         logMoment(`⚽ ${scorerLabel} scores!`, "goal");
-        logMoment(`A: ${playerLabel()}`, "assist");
+        logMoment(`🎯 ${playerLabel()} assists!`, "assist");
       } else if (d.goals === 1) {
         // ── And an assist is somebody who was actually in the move ──
         //
@@ -2276,7 +2276,7 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
           isUserGoal: true, how, distance: Math.round(distance),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
-        if (assister) logMoment(`A: ${assister.shortName}`, "assist");
+        if (assister) logMoment(`🎯 ${assister.shortName} assists!`, "assist");
       } else {
         // The scoreline has gone up and neither branch claimed it. It is still a
         // goal, and a goal with nobody's name on it is a goal missing from the

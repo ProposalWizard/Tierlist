@@ -20,6 +20,7 @@ export type NavTab = "league" | "skills" | "home" | "media" | "play";
 
 export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
+  const energyPct = Math.max(0, Math.min(100, career.energy));
 
   // The site's GlobalNav sits above this shell. Measure the shell's own document
   // position and fill exactly the rest of the viewport, so the bottom nav bar is
@@ -58,12 +59,20 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
           </button>
         </div>
 
-        {/* Star rating */}
-        <div className="px-3 pt-2">
+        {/* Star + Energy bars */}
+        <div className="grid grid-cols-2 gap-2 px-3 pt-2">
           <div className="flex items-center gap-2 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-lg px-2 py-1.5 shadow border border-yellow-400">
             <StarIcon />
             <span className="text-white font-black text-sm">Star Rating</span>
             <span className="ml-auto text-white font-black text-sm">{career.starRating.toFixed(1)}</span>
+          </div>
+          <div className="relative bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-500" style={{ width: `${energyPct}%` }} />
+            <div className="relative flex items-center gap-1 px-2 py-1.5">
+              <HeartIcon />
+              <span className="text-white font-black text-sm">Energy</span>
+              <span className="ml-auto text-white font-black text-sm">{Math.round(energyPct)}</span>
+            </div>
           </div>
         </div>
 
@@ -134,6 +143,14 @@ function StarIcon({ small }: { small?: boolean } = {}) {
   return (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" className="text-white">
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#dc2626">
+      <path d="M12 21s-7-4.5-9.5-9.5C.5 7 4 3 8 3c2 0 3.5 1 4 2 .5-1 2-2 4-2 4 0 7.5 4 5.5 8.5C19 16.5 12 21 12 21z" />
     </svg>
   );
 }

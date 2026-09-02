@@ -70,13 +70,22 @@ const GOLD_TITLE_OUTLINE =
 
 /**
  * The top-of-page banner, matching the reference image directly: dark
- * ground, a bold gold "CONGRATULATIONS!", a green line underneath it, a
- * quieter white line under that, and a scatter of small gold flecks —
- * static decoration, not the full falling-confetti burst a bigger moment
- * (the Ballon d'Or) gets, since this is the top of a page you're about to
- * read on, not the whole screen for a few seconds.
+ * ground, a bold gold headline, a green line underneath it, a quieter white
+ * line under that, and a scatter of small gold flecks — static decoration,
+ * not the full falling-confetti burst a bigger moment (the Ballon d'Or)
+ * gets, since this is the top of a page you're about to read on, not the
+ * whole screen for a few seconds.
+ *
+ * Exported and parameterised — see TransferSigning.tsx, which reuses this
+ * exact banner (and the SignaturePad below it) for signing with a NEW club
+ * at the end of a season, with its own wording rather than "ready to join
+ * the first team," which is specific to the very first contract.
  */
-function CongratulationsBanner() {
+export function CongratulationsBanner({
+  title = "Congratulations!",
+  subtitle = "You have been offered a pro contract.",
+  detail = "You are ready to join the first team.",
+}: { title?: string; subtitle?: string; detail?: string } = {}) {
   const flecks = [
     { left: "6%", top: "22%", size: 10, rotate: 18 },
     { left: "14%", top: "68%", size: 7, rotate: -25 },
@@ -106,13 +115,13 @@ function CongratulationsBanner() {
         className="text-3xl font-black uppercase tracking-tight text-amber-300"
         style={{ textShadow: GOLD_TITLE_OUTLINE }}
       >
-        Congratulations!
+        {title}
       </h1>
       <p className="mt-2 text-sm font-black text-emerald-300">
-        You have been offered a pro contract.
+        {subtitle}
       </p>
       <p className="mt-1 text-xs font-bold text-white/70">
-        You are ready to join the first team.
+        {detail}
       </p>
     </div>
   );
@@ -155,7 +164,7 @@ const CONTRACT_SRC = "/star/contract.png";
 const CLUB_NAME_BOX = { top: 83, left: 13.7, right: 55, bottom: 13.4 };
 const SIGNATURE_BOX = { top: 83, left: 55.2, right: 13.1, bottom: 13.4 };
 
-function SignaturePad({
+export function SignaturePad({
   name, club, signing, onFinished,
 }: {
   name: string; club: string; signing: boolean; onFinished: () => void;

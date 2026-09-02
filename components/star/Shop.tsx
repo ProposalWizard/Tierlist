@@ -1,22 +1,24 @@
 "use client";
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { BOOTS_CATALOGUE, LIFESTYLE_ITEMS } from "@/lib/star/shopData";
+import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan } from "@/lib/star/shopData";
 
 interface Props {
   career: CareerState;
-  kind: "boots" | "lifestyle";
+  kind: "kib" | "boots" | "lifestyle";
   onBack: () => void;
+  onBuyKib: (can: KibCan) => void;
   onBuyBoot: (boot: Boot) => void;
   onBuyItem: (item: OwnedItem) => void;
 }
 
-export default function Shop({ career, kind, onBack, onBuyBoot, onBuyItem }: Props) {
+export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem }: Props) {
   const [tab, setTab] = useState<"item" | "vehicle" | "property">("item");
   const [selectedBoot, setSelectedBoot] = useState<Boot | null>(BOOTS_CATALOGUE[0]);
+  const [selectedCan, setSelectedCan] = useState<KibCan | null>(KIB_CANS[0]);
   const [selectedItem, setSelectedItem] = useState<OwnedItem | null>(null);
 
-  const title = kind === "boots" ? "Boots" : "Lifestyle";
+  const title = kind === "kib" ? "KIB Cans" : kind === "boots" ? "Boots" : "Lifestyle";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col items-center py-3 px-3">
@@ -29,6 +31,44 @@ export default function Shop({ career, kind, onBack, onBuyBoot, onBuyItem }: Pro
             <span className="font-black text-yellow-300">{career.money}</span>
           </div>
         </div>
+
+        {kind === "kib" && (
+          <div className="space-y-2">
+            {KIB_CANS.map((c) => {
+              const canBuy = career.money >= c.price;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCan(c)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition ${
+                    selectedCan?.id === c.id ? "border-emerald-400 bg-gray-700" : "border-gray-700 bg-gray-800"
+                  }`}
+                >
+                  <div className={`w-10 h-14 ${c.color} rounded-lg border-2 border-black/40 flex items-center justify-center`}>
+                    <span className="text-[8px] font-black text-white">KIB</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="font-black text-white text-sm">{c.name}</div>
+                    <div className="text-[10px] text-emerald-300 font-bold">+{c.restore} energy</div>
+                    <div className="text-[10px] text-white/75">Owned: {career.kibCans[c.id]}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
+                      <StarIcon /> {c.price}
+                    </div>
+                    <button
+                      disabled={!canBuy}
+                      onClick={(e) => { e.stopPropagation(); onBuyKib(c); }}
+                      className={`mt-1 px-3 py-1 rounded text-[10px] font-black ${canBuy ? "bg-emerald-500 text-white" : "bg-gray-600 text-white/75"}`}
+                    >
+                      Buy
+                    </button>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {kind === "boots" && (
           <>
