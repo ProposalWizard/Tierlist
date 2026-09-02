@@ -16,6 +16,8 @@ const SKILL_LABELS: [keyof Skills, string, string, string][] = [
   ["freeKick", "Free Kick", "🎪", "Set-piece accuracy, curl — and who takes them"],
 ];
 
+const ENERGY_COST = 15;
+
 export default function SkillsScreen({ career, onTrain }: Props) {
   const duties = setPieceDuties(career);
   const left = actionsLeft(career);
@@ -23,7 +25,7 @@ export default function SkillsScreen({ career, onTrain }: Props) {
     <div className="mt-2 space-y-2">
       <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3 text-center">
         <div className="text-[10px] font-black text-emerald-300 uppercase tracking-widest">Training</div>
-        <div className="text-sm text-white mt-0.5">Each session costs a day</div>
+        <div className="text-sm text-white mt-0.5">Each session costs a day and {ENERGY_COST} energy</div>
         <div className="mt-2 flex items-center justify-center gap-1.5">
           {Array.from({ length: WEEK_ACTIONS }, (_, i) => (
             <span
@@ -55,7 +57,7 @@ export default function SkillsScreen({ career, onTrain }: Props) {
 
       {SKILL_LABELS.map(([key, label, icon, desc]) => {
         const val = career.skills[key];
-        const canTrain = val < 100 && left > 0;
+        const canTrain = career.energy >= ENERGY_COST && val < 100 && left > 0;
         return (
           <button
             key={key}
@@ -82,3 +84,5 @@ export default function SkillsScreen({ career, onTrain }: Props) {
     </div>
   );
 }
+
+export { ENERGY_COST as TRAINING_ENERGY_COST };

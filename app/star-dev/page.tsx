@@ -31,6 +31,7 @@ import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
 import RelegationMove from "@/components/star/RelegationMove";
+import TransferSigning from "@/components/star/TransferSigning";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
@@ -51,7 +52,7 @@ import { scoutReportFor } from "@/lib/star/scoutReport";
 import ClubCrest from "@/components/star/ClubCrest";
 import { kitsFor } from "@/lib/star/kits";
 import { groundFor, crowdFor } from "@/lib/star/stadiums";
-import SkillsScreen from "@/components/star/SkillsScreen";
+import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
@@ -61,6 +62,7 @@ import SettingsScreen from "@/components/star/SettingsScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
+import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
 import Casino from "@/components/star/Casino";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
@@ -472,6 +474,7 @@ export default function StarDevPage() {
     const updated: CareerState = {
       ...career,
       skills: { ...career.skills, [trainingSkill]: currentVal + gain },
+      energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
       starRating: Math.min(5, career.starRating + gain * 0.005),
     };
     checkAndSetAchievements(updated);
@@ -742,6 +745,52 @@ export default function StarDevPage() {
     // changes rather than on every state change.
   }, [career?.league?.map(t => t.name).join("|"), career?.leagueSquads?.length]);
 
+  // ── Your own club's full roster, not just its best twenty-ish ──
+  //
+  // Every entry in career.leagueSquads — the fetch above included — is built
+  // with buildLeagueSquad's DEFAULT keepAll=false: a fixed slot template that
+  // keeps only the single best fit per position, same lossy shape
+  // career.squad itself uses. Fine for the other nineteen clubs, which only
+  // ever need to answer "who's good enough to start or rotate in" — wrong for
+  // your OWN club, because matchdayFor/fillMissingFromFullRoster fall back to
+  // THIS exact entry to find a real player the /lineups builder placed in the
+  // XI who lost the twenty-slot competition. The lineup builder itself has no
+  // such limit (it fetches with keepAll=true — see app/lineups/page.tsx), so
+  // it can save a lineup naming someone your own club's entry never kept —
+  // and there was nowhere left to find him. Reported directly, twice, on a
+  // brand new career: the lineup's own CDM never took the pitch, and the man
+  // he should have replaced was never even on the bench.
+  //
+  // Re-fetched (merged, not replaced — goals/assists already on the books
+  // survive via mergeLeagueSquadStats) every time the club you play for is
+  // seen, which covers a fresh career, an existing save reopened, and a
+  // transfer to a new club in one mechanism rather than three. Cheap: one
+  // extra single-club request, and only when the club actually changes.
+  const upgradedOwnClubRef = useRef<string | null>(null);
+  useEffect(() => {
+    const club = career?.player.club;
+    if (!club || upgradedOwnClubRef.current === club) return;
+    upgradedOwnClubRef.current = club;
+    let alive = true;
+    fetchLeagueSquads([club], undefined, true).then(([full]) => {
+      // A failed fetch falls back to a fully INVENTED squad (generatedSquad,
+      // ids prefixed "gen:") — better than nothing for a club with no
+      // dressing room at all, but not something that should ever overwrite a
+      // real, already-fetched roster just because this one request hiccuped.
+      if (!alive || !full || full.players.some(p => p.id.startsWith("gen:"))) return;
+      setCareer(c => {
+        if (!c || c.player.club !== club) return c;
+        const merged = mergeLeagueSquadStats([full], c.leagueSquads ?? [])[0];
+        const already = (c.leagueSquads ?? []).some(s => s.club === club);
+        const leagueSquads = already
+          ? (c.leagueSquads ?? []).map(s => (s.club === club ? merged : s))
+          : [...(c.leagueSquads ?? []), merged];
+        return { ...c, leagueSquads };
+      });
+    });
+    return () => { alive = false; };
+  }, [career?.player.club]);
+
   // ── Free agents, for a save that predates them ──
   //
   // handleProfileComplete already fetches these for a brand new career; this
@@ -907,9 +956,30 @@ export default function StarDevPage() {
     openTransferWindowOrRoll(career, wonBallonDor);
   }, [career, wonBallonDor, openTransferWindowOrRoll]);
 
-  const handleAcceptTransfer = useCallback((offer: TransferOffer) => {
-    if (!career) return;
-    const forcedRelegationMove = phase === "relegation-move";
+  // A club picked, but not yet signed for — see handleChooseTransfer/
+  // handleSigningDone below. `wasRelegationMove` is captured at the moment
+  // of picking, not read off `phase` when signing actually completes: by
+  // then `phase` is "transfer-signing", not "relegation-move", so reading it
+  // fresh there would always read false and silently drop the forced-move
+  // handling for a relegated player.
+  const [pendingSignOffer, setPendingSignOffer] = useState<{ offer: TransferOffer; wasRelegationMove: boolean } | null>(null);
+
+  // Choosing a club used to complete the move immediately — no contract, no
+  // signature, nothing that looked like the moment your very first pro deal
+  // got. Requested directly: a transfer should "do the exact same contract
+  // thing" TrialReward's own signing step does. This just records which club
+  // you picked and hands off to that same signing moment (TransferSigning,
+  // built on TrialReward's exported SignaturePad/CongratulationsBanner); the
+  // move itself only actually happens once you press Sign it — see
+  // handleSigningDone.
+  const handleChooseTransfer = useCallback((offer: TransferOffer) => {
+    setPendingSignOffer({ offer, wasRelegationMove: phase === "relegation-move" });
+    setPhase("transfer-signing");
+  }, [phase]);
+
+  const handleSigningDone = useCallback(() => {
+    if (!career || !pendingSignOffer) return;
+    const { offer, wasRelegationMove } = pendingSignOffer;
     const moved = acceptOffer(career, offer);
     // New club, new team-mates. Same best-effort rule as career creation: the
     // move completes immediately with the generated squad acceptOffer gives it,
@@ -924,11 +994,12 @@ export default function StarDevPage() {
       { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.signingFee }, "transfer");
     setCareer(moved);
     setTransferOffers([]);
+    setPendingSignOffer(null);
     // `justTransferred: true` — `moved.contract` is the new club's deal, not
     // one stayed on for the season; see advanceSeason's own doc on why this
     // has to be told rather than inferred from `moved` alone.
-    rollOverSeason(moved, wonBallonDor, forcedRelegationMove, true);
-  }, [career, phase, wonBallonDor, rollOverSeason]);
+    rollOverSeason(moved, wonBallonDor, wasRelegationMove, true);
+  }, [career, pendingSignOffer, wonBallonDor, rollOverSeason]);
 
   const handleStayPut = useCallback(() => {
     if (!career) return;
@@ -958,6 +1029,25 @@ export default function StarDevPage() {
   };
 
   // Shop buys
+  const handleBuyKib = useCallback((can: KibCan) => {
+    if (!career || career.money < can.price) return;
+    setCareer({
+      ...career,
+      money: career.money - can.price,
+      kibCans: { ...career.kibCans, [can.id]: career.kibCans[can.id] + 1 },
+    });
+  }, [career]);
+
+  const handleUseCan = useCallback((id: "basic" | "premium" | "elite") => {
+    if (!career || career.kibCans[id] === 0) return;
+    const can = KIB_CANS.find((c) => c.id === id)!;
+    setCareer({
+      ...career,
+      kibCans: { ...career.kibCans, [id]: career.kibCans[id] - 1 },
+      energy: Math.min(100, career.energy + can.restore),
+    });
+  }, [career]);
+
   const handleBuyBoot = useCallback((boot: Boot) => {
     if (!career || career.money < boot.price) return;
     setCareer({
@@ -1069,6 +1159,7 @@ export default function StarDevPage() {
       || (phase === "press" && !pressQuestion)
       || (phase === "dilemma" && !currentDilemma)
       || (phase === "season-transfer" && transferOffers.length === 0)
+      || (phase === "transfer-signing" && !pendingSignOffer)
       || (phase === "relationship-game" && !relationshipGameKind)
       || (phase === "retirement" && !retirementCheck(career).canRetire);
     if (missing) {
@@ -1076,7 +1167,7 @@ export default function StarDevPage() {
       setPhase("dashboard");
     }
   }, [career, phase, trainingSkill, nextFixture, lastMatchStats, playedFixture,
-      pressQuestion, currentDilemma, transferOffers, relationshipGameKind, pendingDraw]);
+      pressQuestion, currentDilemma, transferOffers, pendingSignOffer, relationshipGameKind, pendingDraw]);
 
   // ---------- RENDER ----------
   if (cloudLoading) {
@@ -1249,12 +1340,22 @@ export default function StarDevPage() {
     return <RetirementChoice career={career} onRetire={handleRetire} onPlayOn={handlePlayOn} />;
   }
 
+  if (phase === "transfer-signing" && pendingSignOffer) {
+    return (
+      <TransferSigning
+        playerName={`${career.player.firstName} ${career.player.lastName}`}
+        club={pendingSignOffer.offer.club}
+        onDone={handleSigningDone}
+      />
+    );
+  }
+
   if (phase === "season-transfer" && transferOffers.length > 0) {
     return (
       <TransferWindow
         career={career}
         offers={transferOffers}
-        onAccept={handleAcceptTransfer}
+        onAccept={handleChooseTransfer}
         onStay={handleStayPut}
       />
     );
@@ -1265,7 +1366,7 @@ export default function StarDevPage() {
       <RelegationMove
         career={career}
         offers={transferOffers}
-        onAccept={handleAcceptTransfer}
+        onAccept={handleChooseTransfer}
       />
     );
   }
@@ -1286,13 +1387,14 @@ export default function StarDevPage() {
     return <ContractRenewal career={career} offerReason={contractOfferReason ?? undefined} onComplete={handleContractComplete} />;
   }
 
-  if (phase === "shop-boots" || phase === "shop-lifestyle") {
-    const kind = phase === "shop-boots" ? "boots" : "lifestyle";
+  if (phase === "shop-kib" || phase === "shop-boots" || phase === "shop-lifestyle") {
+    const kind = phase === "shop-kib" ? "kib" : phase === "shop-boots" ? "boots" : "lifestyle";
     return (
       <Shop
         career={career}
         kind={kind}
         onBack={handleBackToDashboard}
+        onBuyKib={handleBuyKib}
         onBuyBoot={handleBuyBoot}
         onBuyItem={handleBuyItem}
       />
@@ -1598,7 +1700,8 @@ export default function StarDevPage() {
       )}
       {phase === "dashboard" && (
         <>
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            <QuickBtn label="KIB" icon="🥤" onClick={() => setPhase("shop-kib")} />
             <QuickBtn label="Boots" icon="👟" onClick={() => setPhase("shop-boots")} />
             <QuickBtn label="Style" icon="💎" onClick={() => setPhase("shop-lifestyle")} />
             <QuickBtn label="Casino" icon="🎰" onClick={() => setPhase("casino-menu")} />
@@ -1607,6 +1710,30 @@ export default function StarDevPage() {
             <QuickBtn label="Sponsors" icon="🤝" onClick={() => setPhase("sponsors")} />
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
+          </div>
+          <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
+            <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>
+            <div className="grid grid-cols-3 gap-2">
+              {(["basic", "premium", "elite"] as const).map((k) => {
+                const count = career.kibCans[k];
+                const label = k === "basic" ? "Basic" : k === "premium" ? "Premium" : "Elite";
+                const restore = k === "basic" ? 25 : k === "premium" ? 50 : 100;
+                const color = k === "basic" ? "bg-orange-500" : k === "premium" ? "bg-purple-500" : "bg-emerald-500";
+                return (
+                  <button
+                    key={k}
+                    disabled={count === 0}
+                    onClick={() => handleUseCan(k)}
+                    className={`p-2 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
+                  >
+                    <div className={`w-8 h-10 mx-auto ${color} rounded border border-black/40 mb-1`} />
+                    <div className="text-[10px] font-black text-white">{label}</div>
+                    <div className="text-[9px] text-emerald-300 font-bold">+{restore}</div>
+                    <div className="text-[9px] text-white/75">{count} owned</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </>
       )}

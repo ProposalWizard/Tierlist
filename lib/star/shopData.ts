@@ -1,5 +1,29 @@
 import type { Boot, OwnedItem } from "./types";
 
+/**
+ * KIB CANS.
+ *
+ * Restored — energy itself was rebuilt for real (a hard floor on selection,
+ * regen only from a deliberate Rest/Skip choice, never automatic), and a can
+ * is the third lever on top of those two: pay for a top-up rather than
+ * spending one of the week's actions on it. Same three tiers and numbers the
+ * old NRG Drinks shipped with; only the branding changed on request — "NRG"
+ * to "KIB Cans" (KIB capitalised).
+ */
+export interface KibCan {
+  id: "basic" | "premium" | "elite";
+  name: string;
+  price: number;
+  restore: number;
+  color: string;
+}
+
+export const KIB_CANS: KibCan[] = [
+  { id: "basic", name: "Basic KIB Can", price: 3, restore: 25, color: "bg-orange-400" },
+  { id: "premium", name: "Premium KIB Can", price: 6, restore: 50, color: "bg-purple-400" },
+  { id: "elite", name: "Elite KIB Can", price: 12, restore: 100, color: "bg-emerald-400" },
+];
+
 export const BOOTS_CATALOGUE: Boot[] = [
   { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, matches: 3, price: 3 },
   { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, matches: 5, price: 5 },

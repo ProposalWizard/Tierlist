@@ -307,7 +307,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       return assister
         ? [
             { minute: e.minute, text: goalLine, isGoal: true },
-            { minute: e.minute, text: `A: ${assister.shortName}`, tone: "assist" },
+            { minute: e.minute, text: `🎯 ${assister.shortName} assists!`, tone: "assist" },
           ]
         : [{ minute: e.minute, text: goalLine, isGoal: true }];
     });
@@ -331,7 +331,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // captured right before the strike — see the GoalReplay prop doc and
   // rngCallCountRef below. Only ever surfaced (via onGoalScored) if this
   // particular strike actually goes in.
-  const pendingReplayRef = useRef<Omit<GoalReplay, "id" | "savedAt" | "label"> | null>(null);
+  const pendingReplayRef = useRef<Omit<GoalReplay, "id" | "savedAt" | "label" | "flightDtLog"> | null>(null);
+  // Every physics substep size actually used while `pendingReplayRef` is
+  // live — see GoalReplay.flightDtLog's own note for why this exists at
+  // all. Reset alongside `pendingReplayRef` in handleContact, and folded
+  // into the saved GoalReplay only if the strike actually scores.
+  const flightDtLogRef = useRef<number[]>([]);
+  // The other half of the same fix, read during a replay instead of a live
+  // strike: the recorded substep queue to draw `h` from instead of this
+  // session's own device timing, and how far into it playback has got.
+  // `null` for an older saved replay with no log to draw from, which falls
+  // back to live device timing exactly as replay always used to.
+  const replaySubstepsRef = useRef<number[] | null>(null);
+  const replaySubstepIdxRef = useRef(0);
   const oppStrengthRef = useRef(oppStrength ?? 65);
   oppStrengthRef.current = oppStrength ?? 65;
   const fixtureOpponent = fixture?.opponent ?? "The opposition";
@@ -880,6 +892,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
       ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      // Draw the flight's substep sizes from the recorded queue instead of
+      // this session's own frame timing — see GoalReplay.flightDtLog. Absent
+      // on a replay saved before this existed, which falls back to live
+      // device timing the way replay always used to (imperfectly).
+      replaySubstepsRef.current = r.flightDtLog ?? null;
+      replaySubstepIdxRef.current = 0;
       setLog([logLine("Replay", "period", 0)]);
       setPhase("flight");
       return;
@@ -2214,10 +2232,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       }
 
       if (phaseRef.current === "flight" && ballRef.current) {
-        // Substep for stable physics
+        // Substep for stable physics. The substep SIZE matters for more than
+        // smoothness during a live strike — see GoalReplay.flightDtLog: `dt`
+        // is real device frame timing, which a later replay session's own
+        // requestAnimationFrame loop essentially never reproduces frame for
+        // frame, so a fresh live `h` here would silently desync a replay's
+        // substep count (and therefore its rng draws and its Euler
+        // integration) from what actually happened. A replay in progress
+        // (`replaySubstepsRef.current`) draws `h` from the queue recorded
+        // during the real strike instead, one value per substep, until it
+        // runs out — which should land almost exactly on the recorded
+        // outcome, since that is exactly the sequence that produced it.
         const steps = 3;
-        const h = dt / steps;
         for (let i = 0; i < steps; i++) {
+          const recorded = replaySubstepsRef.current;
+          let h: number;
+          if (recorded && replaySubstepIdxRef.current < recorded.length) {
+            h = recorded[replaySubstepIdxRef.current];
+            replaySubstepIdxRef.current++;
+          } else {
+            h = dt / steps;
+          }
+          // Recording the other half of the same fix — only while a live
+          // strike (not a replay) is pending one, see handleContact and
+          // GoalReplay.flightDtLog.
+          if (pendingReplayRef.current && !replayOfRef.current) flightDtLogRef.current.push(h);
+
           // Everyone reacts to the ball, and only to the ball: a player moves
           // when it comes inside his radius and not before, slowly, and both
           // sides at the same pace. See stepReactions.
@@ -2476,7 +2516,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           isUserGoal: false, how, distance: Math.round(distance),
         });
         logMoment(`⚽ ${scorerLabel} scores!`, "goal");
-        logMoment(`A: ${playerLabel()}`, "assist");
+        logMoment(`🎯 ${playerLabel()} assists!`, "assist");
       } else if (d.goals === 1) {
         // ── And an assist is somebody who was actually in the move ──
         //
@@ -2494,7 +2534,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           isUserGoal: true, how, distance: Math.round(distance),
         });
         logMoment(`⚽ ${playerLabel()} scores!`, "goal");
-        if (assister) logMoment(`A: ${assister.shortName}`, "assist");
+        if (assister) logMoment(`🎯 ${assister.shortName} assists!`, "assist");
       } else {
         // The scoreline has gone up and neither branch claimed it. It is still a
         // goal, and a goal with nobody's name on it is a goal missing from the
@@ -2520,6 +2560,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           savedAt: new Date().toISOString(),
           label: `${verb} · ${matchMinuteRef.current}'`,
           ...pendingReplayRef.current,
+          flightDtLog: flightDtLogRef.current.slice(),
         });
       }
     }
@@ -3097,6 +3138,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       contact,
       skills: strikeWith,
     };
+    // Starts recording this strike's own substep sizes — see
+    // GoalReplay.flightDtLog. Reset here, alongside pendingReplayRef, so a
+    // follow-up strike on a loose ball starts its own log rather than
+    // carrying over the shot that came before it.
+    flightDtLogRef.current = [];
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
     setPhase("flight");
     pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
