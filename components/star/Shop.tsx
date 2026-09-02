@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan } from "@/lib/star/shopData";
+import KibCanIcon from "./KibCanIcon";
 
 interface Props {
   career: CareerState;
@@ -44,9 +45,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                     selectedCan?.id === c.id ? "border-emerald-400 bg-gray-700" : "border-gray-700 bg-gray-800"
                   }`}
                 >
-                  <div className={`w-10 h-14 ${c.color} rounded-lg border-2 border-black/40 flex items-center justify-center`}>
-                    <span className="text-[8px] font-black text-white">KIB</span>
-                  </div>
+                  <KibCanIcon can={c} />
                   <div className="flex-1 text-left">
                     <div className="font-black text-white text-sm">{c.name}</div>
                     <div className="text-[10px] text-emerald-300 font-bold">+{c.restore} energy</div>

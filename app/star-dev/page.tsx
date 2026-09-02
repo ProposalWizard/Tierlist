@@ -63,6 +63,7 @@ import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
 import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
+import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
@@ -1714,21 +1715,18 @@ export default function StarDevPage() {
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>
             <div className="grid grid-cols-3 gap-2">
-              {(["basic", "premium", "elite"] as const).map((k) => {
-                const count = career.kibCans[k];
-                const label = k === "basic" ? "Basic" : k === "premium" ? "Premium" : "Elite";
-                const restore = k === "basic" ? 25 : k === "premium" ? 50 : 100;
-                const color = k === "basic" ? "bg-orange-500" : k === "premium" ? "bg-purple-500" : "bg-emerald-500";
+              {KIB_CANS.map((c) => {
+                const count = career.kibCans[c.id];
                 return (
                   <button
-                    key={k}
+                    key={c.id}
                     disabled={count === 0}
-                    onClick={() => handleUseCan(k)}
+                    onClick={() => handleUseCan(c.id)}
                     className={`p-2 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
                   >
-                    <div className={`w-8 h-10 mx-auto ${color} rounded border border-black/40 mb-1`} />
-                    <div className="text-[10px] font-black text-white">{label}</div>
-                    <div className="text-[9px] text-emerald-300 font-bold">+{restore}</div>
+                    <KibCanIcon can={c} className="h-10 w-8 mx-auto mb-1" />
+                    <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
+                    <div className="text-[9px] text-emerald-300 font-bold">+{c.restore}</div>
                     <div className="text-[9px] text-white/75">{count} owned</div>
                   </button>
                 );
