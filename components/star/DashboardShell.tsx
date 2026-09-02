@@ -103,8 +103,21 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
         )}
 
         {/* Body — the only scrollable region; header + bottom nav stay fixed.
-            No padding in fullBleed — the phone gets every pixel of it. */}
-        <div className={`flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : "px-3 py-2"}`}>
+            No padding in fullBleed — the phone gets every pixel of it.
+            Scrollbar hidden, same as the phone's own feed already is
+            (PhoneFrame.tsx's .kib-noscroll) — reported directly, again:
+            "I never want to see scroll wheels", this time on the shell
+            EVERY screen but the phone renders inside (Home, League's
+            Table/Results/Fixtures/Squad — none of them scroll on their
+            own, see LeagueScreen.tsx's own note, so this one class covers
+            all of them). Only now visibly overflowing because the KIB
+            Cans card grew taller in its own redesign — the content itself
+            still scrolls, only the track/thumb chrome is hidden. */}
+        <style>{`
+          .kib-shell-noscroll::-webkit-scrollbar { display: none; }
+          .kib-shell-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+        `}</style>
+        <div className={`kib-shell-noscroll flex-1 min-h-0 overflow-y-auto ${fullBleed ? "" : "px-3 py-2"}`}>
           {children}
         </div>
 
