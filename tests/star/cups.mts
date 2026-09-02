@@ -228,7 +228,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   let c: CareerState = makeInitialCareer(player, CLUBS);
 

@@ -34,23 +34,47 @@ export default function Graphic({ spec }: { spec: GraphicSpec }) {
   }
 }
 
+/** A crisp black outline around white club-name text, the same treatment
+ *  the live in-match scoreboard uses to stay legible over a light kit — see
+ *  CanvasMatch.tsx's own NAME_OUTLINE. Duplicated rather than imported: this
+ *  file draws nothing from a live match, it only borrows the look. */
+const NAME_OUTLINE = {
+  textShadow: "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000",
+};
+
 function Scoreline({ s }: { s: Extract<GraphicSpec, { type: "scoreline" }> }) {
   // `scorers` is the old single list, saved into careers before the goals were
   // split by side. It was always printed under the left-hand team, so that is
   // where it stays.
   const homeScorers = s.homeScorers ?? s.scorers ?? [];
   const awayScorers = s.awayScorers ?? [];
+  // Requested directly: read like the scoreboard the match itself uses
+  // (CanvasMatch.tsx) — each side's own kit colour as a plate, not a plain
+  // pair of names either side of a neutral score chip.
+  const homeKit = kitsOf(s.home).home;
+  const awayKit = kitsOf(s.away).home;
   return (
     <div className={PANEL}>
       <div className="bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-white/85">
         {s.competition}
       </div>
-      <div className="flex items-center gap-2 px-3 py-3">
-        <div className="flex-1 text-right text-sm font-black text-white leading-tight">{s.home}</div>
-        <div className="rounded-lg bg-white/10 px-3 py-1 text-xl font-black tabular-nums text-white">
-          {s.hs}<span className="px-1 text-white/60">–</span>{s.as}
+      <div className="flex items-stretch gap-1 px-3 py-2.5">
+        <div
+          className="flex flex-1 items-center justify-end truncate rounded-l-lg border px-2 py-1.5 text-right text-xs font-black text-white"
+          style={{ backgroundColor: homeKit.shirt, borderColor: homeKit.trim, ...NAME_OUTLINE }}
+        >
+          {shortClub(s.home).toUpperCase()}
         </div>
-        <div className="flex-1 text-left text-sm font-black text-white leading-tight">{s.away}</div>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <span className="rounded bg-white px-2 py-1 text-base font-black tabular-nums text-black">{s.hs}</span>
+          <span className="rounded bg-white px-2 py-1 text-base font-black tabular-nums text-black">{s.as}</span>
+        </div>
+        <div
+          className="flex flex-1 items-center justify-start truncate rounded-r-lg border px-2 py-1.5 text-left text-xs font-black text-white"
+          style={{ backgroundColor: awayKit.shirt, borderColor: awayKit.trim, ...NAME_OUTLINE }}
+        >
+          {shortClub(s.away).toUpperCase()}
+        </div>
       </div>
       {(homeScorers.length > 0 || awayScorers.length > 0) && (
         // Under the team that scored them: home on the left, away on the right,

@@ -1,4 +1,4 @@
-import type { CareerState, MatchStats, GoalEvent } from "./types";
+import type { CareerState, MatchStats, GoalEvent, OppGoalEvent } from "./types";
 
 // Canonical end-of-match scoring for career mode: turns a match tally
 // (chances/goals/assists/passes + the final scoreline) into the MatchStats the
@@ -34,6 +34,7 @@ export function finaliseMatch(
   career: CareerState,
   goalEvents: GoalEvent[] = [],
   hooked: MatchStats["hooked"] = null,
+  oppGoalEvents: OppGoalEvent[] = [],
 ): MatchStats {
   let rating = liveRating(goals, assists, passes, userScore, oppScore);
 
@@ -83,5 +84,6 @@ export function finaliseMatch(
     homeScore: userScore,
     awayScore: oppScore,
     goalEvents,
+    oppGoalEvents,
   };
 }

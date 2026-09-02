@@ -79,6 +79,20 @@ export default function MatchCommentary({
            over and nothing here needs it drawn — the div still scrolls. */
         .kib-feed::-webkit-scrollbar { display: none; }
         .kib-feed { scrollbar-width: none; -ms-overflow-style: none; }
+        /* Each line its own panel, not just a colour change that runs
+           several rows together into one slab — reported directly, with a
+           real NSS screenshot for comparison: theirs beveled every row so a
+           run of same-toned lines still read as separate incidents, ours
+           only had a border so faint (4% white) it was invisible the moment
+           two rows shared a colour. A soft gloss top-to-bottom plus a hard
+           inset seam at the very bottom of each row does the same job here
+           — layered as its own background-image/box-shadow rather than
+           touching background-color, so it sits over a team-tinted row,
+           a neutral one, and the goal-flash animation identically. */
+        .kib-line {
+          background-image: linear-gradient(to bottom, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 45%, rgba(0,0,0,0.16) 100%);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.4);
+        }
       `}</style>
 
       {/* ── The commentary ── */}
@@ -157,7 +171,7 @@ export default function MatchCommentary({
 function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit }) {
   if (l.tone === "period") {
     return (
-      <div className="flex items-center gap-2 border-y border-white/10 bg-gray-800/80 px-3 py-1.5">
+      <div className="kib-line flex items-center gap-2 border-y border-white/10 bg-gray-800/80 px-3 py-1.5">
         {l.minute !== undefined && (
           <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white">{l.minute}</span>
         )}
@@ -182,14 +196,18 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
   // wrong, with a concrete example: a goal and its assist stayed green/black
   // regardless of which club actually scored — "it all stays for the
   // team," i.e. it should be that team's own colour like every other tinted
-  // line, not a fixed pair. `goal`/`assist` mean "your side" by definition
-  // (see LogTone) — an opponent's goal is always tone "oppGoal" instead —
-  // so both simply read in `userKit`, no `isOpponent` check needed.
+  // line, not a fixed pair. `goal` means "your side" by definition (see
+  // LogTone) — an opponent's goal is always tone "oppGoal" instead — so it
+  // simply reads in `userKit`, no `isOpponent` check needed. `assist` is the
+  // one tone either side can carry now that the opponent's own goals are
+  // named too (CanvasMatch.tsx's opponent-goal branch), so it reads
+  // `isOpponent` the same way a plain "play" line already does.
   const kit: Kit | null =
-    l.tone === "goal" || l.tone === "assist" || l.tone === "you" ? userKit
-      : l.tone === "oppGoal" ? oppKit
-        : l.tone === "play" && l.isOpponent !== undefined ? (l.isOpponent ? oppKit : userKit)
-          : null;
+    l.tone === "goal" || l.tone === "you" ? userKit
+      : l.tone === "assist" ? (l.isOpponent ? oppKit : userKit)
+        : l.tone === "oppGoal" ? oppKit
+          : l.tone === "play" && l.isOpponent !== undefined ? (l.isOpponent ? oppKit : userKit)
+            : null;
 
   // Goal lines still get the brief brighten-then-settle flash
   // (`kib-goal-flash`) so a goal reads as a moment and not just a
@@ -232,7 +250,7 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
 
   return (
     <div
-      className={`kib-line flex items-baseline gap-2 border-b border-white/[0.04] px-3 py-1.5 ${tone}`}
+      className={`kib-line flex items-baseline gap-2 px-3 py-1.5 ${tone}`}
       style={teamStyle}
     >
       {/* The clock, not the commentary — reported directly: sitting in

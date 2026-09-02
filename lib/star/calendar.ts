@@ -203,15 +203,27 @@ export type MatchDay = "saturday" | "tuesday" | "wednesday";
  *
  * The eight are on TUESDAY, always, and that is a guarantee rather than a
  * preference: both domestic cups are drawn on Wednesday (see `dayFor`), and
- * a Championship club plays no European football at all — which is what
- * frees Tuesday up in the first place. So a midweek league round can never
- * collide with a cup tie, by construction, without anybody having to check
- * the two lists against each other.
+ * a Championship club playing Europe is rare enough (see below) that the
+ * eight weekends were simply chosen clear of it too — so a midweek league
+ * round can never collide with a cup tie OR a European fixture, by
+ * construction, without anybody having to check the lists against each
+ * other at runtime.
  *
- * The weeks below were chosen to spread the extra games across the season
- * and to sit clear of the cup weekends either side of them.
+ * The weeks below were chosen to spread the extra games across the season,
+ * to sit clear of the cup weekends either side of them, AND clear of
+ * `EURO_LEAGUE_PHASE_WEEKS`/`EURO_KO_SLOTS_*` — weekend 7 was originally
+ * one of these and is also a European league-phase weekend, so a
+ * Championship club that has somehow retained a European place (won a
+ * qualifying trophy the season it went down — see the file note on
+ * `fixtureDate`'s `kind` parameter) would otherwise have its own extra
+ * league round and its European tie land on the exact same Tuesday. Moved
+ * to weekend 6, which nothing else uses — verified this only changes which
+ * two of the forty-six ROUND numbers fall on that Tuesday (8 and 9), and
+ * neither is referenced by CHAMPIONSHIP_LEAGUE_CUP_SLOTS/
+ * CHAMPIONSHIP_FA_CUP_SLOTS, so every existing cup-round-to-weekend mapping
+ * is unaffected.
  */
-const CHAMPIONSHIP_MIDWEEK_WEEKS = [2, 7, 10, 14, 19, 24, 27, 33];
+const CHAMPIONSHIP_MIDWEEK_WEEKS = [2, 6, 10, 14, 19, 24, 27, 33];
 
 interface RoundSlot {
   /** 1-38, the weekend this round belongs to. */
@@ -255,6 +267,20 @@ export function postSeasonFor(division: CareerDivision, n: number): number {
 }
 
 /**
+ * The summer tournament's five weeks, relative to whichever season actually
+ * just finished — `TOURNAMENT_WEEKS` above is hardcoded to `POST_SEASON`,
+ * which is a Premier League club's post-season. A Championship call-up used
+ * to land on those same Premier-League-relative weeks regardless, running
+ * either before that division's own season had actually finished or with a
+ * needless gap after it. `postSeasonFor` already carries the "which
+ * division's post-season" distinction everywhere else — this just applies it
+ * to the same five week-offsets `TOURNAMENT_WEEKS` uses.
+ */
+export function tournamentWeeksFor(division: CareerDivision): number[] {
+  return [3, 4, 5, 6, 7].map(n => postSeasonFor(division, n));
+}
+
+/**
  * When a fixture is actually played.
  *
  * League football on Saturday. Everything else in the midweek that FOLLOWS that
@@ -266,16 +292,32 @@ export function postSeasonFor(division: CareerDivision, n: number): number {
  * and an FA Cup round, week 25 has a European leg and a League Cup semi-final
  * leg. Put them on the same day and the fixture list has you playing twice in an
  * evening.
+ *
+ * `kind` matters for one specific reason: a Championship week number is a
+ * ROUND, remapped onto a real weekend via `championshipCalendarWeek` (eight
+ * of the forty-six rounds share a weekend with the one before them). A
+ * European fixture's `week` was never a round in the first place — `seedEurope`/
+ * `euroTieFixture` (competitions.ts) hand out the same plain weekend-offset
+ * numbers (5, 7, 25, 26…) regardless of which division the club plays in,
+ * because Europe runs on its own continental calendar, not on whatever
+ * domestic round-numbering scheme happens to apply that season. Reported
+ * directly: a Championship club that retained a European place after
+ * relegation (won a qualifying trophy, went down anyway) had its Euro
+ * fixtures land on nonsense real dates — the round-remapping was being
+ * applied to a number that was never a round to begin with. `kind` is the
+ * one thing that tells `fixtureDate` which case it's looking at; every
+ * existing caller that doesn't pass one keeps the old (league/cup) behaviour.
  */
 export function fixtureDate(
   startYear: number, season: number, week: number, day: MatchDay,
-  division: CareerDivision = "premier",
+  division: CareerDivision = "premier", kind?: string,
 ): Date {
   const opening = openingSaturday(seasonStartYear(startYear, season));
-  // A Premier League week IS its weekend. A Championship week is a round,
-  // and eight of the forty-six share a weekend with the round before them —
-  // see CHAMPIONSHIP_ROUNDS.
-  const calendarWeek = division === "championship" ? championshipCalendarWeek(week) : week;
+  // A Premier League week IS its weekend. A Championship week is a round —
+  // see CHAMPIONSHIP_ROUNDS — UNLESS it's a European fixture, which is
+  // always already a plain weekend offset (see the file note above).
+  const calendarWeek = division === "championship" && kind !== "europe"
+    ? championshipCalendarWeek(week) : week;
   const saturday = opening.getTime() + (calendarWeek - 1) * 7 * DAY_MS;
   // Pre-season sits in the week BEFORE the opening Saturday, which is what
   // week 0 means: the Community Shield is played the weekend before it starts.
@@ -340,7 +382,28 @@ export function fixtureDateLabel(
   kind?: string,
   division: CareerDivision = "premier",
 ): string {
-  return formatDate(fixtureDate(startYear, season, week, dayFor(kind, week, division), division));
+  return formatDate(fixtureDate(startYear, season, week, dayFor(kind, week, division), division, kind));
+}
+
+/**
+ * A real, sortable moment in time for a fixture — the one thing a fixture
+ * list actually orders by, and the one thing `week` alone can't give you.
+ *
+ * Replaced a `(week, KIND_ORDER)` tiebreak that ranked a cup fixture ahead of
+ * a European one sharing a week, backwards from which is actually played
+ * first — reported directly, after a 15th's Champions League tie was shown
+ * below the 16th's League Cup tie in the fixture list. Comparing real dates
+ * makes the ordering correct by construction rather than by a hand-maintained
+ * priority table.
+ */
+export function fixtureTimestamp(
+  startYear: number,
+  season: number,
+  week: number,
+  kind: string | undefined,
+  division: CareerDivision = "premier",
+): number {
+  return fixtureDate(startYear, season, week, dayFor(kind, week, division), division, kind).getTime();
 }
 
 // ── The Championship's cups, and the play-offs ──────────────────────────────

@@ -28,7 +28,15 @@ function playerAt(club: string): StarPlayer {
 }
 
 const champClub = CHAMPIONSHIP_CLUBS[0];
-const plClub = PREMIER_LEAGUE_CLUBS[0];
+// Not PREMIER_LEAGUE_CLUBS[0] (Arsenal) — Arsenal starts in the Champions
+// League (see STARTING_EUROPEAN_QUALIFICATION, clubs.ts), and a club playing
+// Europe deliberately gets its colliding cup rounds pushed off the raw slot
+// weeks below (cupRoundWeek's inEurope push-forward, competitions.ts) — real,
+// intended behaviour that has its own dedicated coverage elsewhere, not what
+// this block is checking. Leeds United starts with no European place, so this
+// stays a clean baseline: an ordinary Premier League career's cups still sit
+// exactly on the raw weeks.
+const plClub = "Leeds United";
 const champ = makeInitialCareer(playerAt(champClub), [...CHAMPIONSHIP_CLUBS], "championship");
 const pl = makeInitialCareer(playerAt(plClub), [...PREMIER_LEAGUE_CLUBS], "premier");
 

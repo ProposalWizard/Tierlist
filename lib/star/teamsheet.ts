@@ -394,9 +394,46 @@ function build(
  *
  * Does nothing when you are on the bench or dropped: then the sheet is right
  * already, and putting you on it would contradict the screen above it.
+ *
+ * ── When your own slot is genuinely empty ──
+ *
+ * `sheet.xi` only holds the slots `build()` actually filled — a formation
+ * slot nobody in the pool could fill (your club's only recognised man for
+ * that role sold, or a squad snapshot that hadn't finished loading yet) is
+ * simply absent from it, not present-but-weak. `findIndex(p => p.role ===
+ * me.position)` used to search `sheet.xi` alone, so a genuinely vacant slot
+ * read exactly like "no slot for this role in the shape at all" and fell
+ * through to the weakest-outfielder fallback — shoving a striker or a
+ * winger into an unrelated defender's shirt for no reason a manager ever
+ * would. Reported directly, with screenshots: a club's real striker gone
+ * from the squad, and the career player (nominally a winger) turning up at
+ * centre-back instead. The formation's OWN slot list still knows the shape
+ * has a hole at your role even when `sheet.xi` doesn't; checked first now,
+ * and filled directly — an addition, not a swap — before ever reaching for
+ * somebody else's place.
  */
 function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
   if (sheet.xi.some(p => p.isYou)) return sheet;
+
+  // Coordinates, not ids: `sheet.xi` entries came straight off
+  // `formation.slots[i].x/y`, so this is a reliable way to tell "filled" from
+  // "never had anyone to fill it" without the SheetPlayer shape needing to
+  // carry its own slot index.
+  const filled = new Set(sheet.xi.map(p => `${p.x},${p.y}`));
+  const vacantSlot = sheet.formation.slots.find(
+    s => s.role === me.position && !filled.has(`${s.x},${s.y}`),
+  );
+  if (vacantSlot) {
+    return {
+      ...sheet,
+      xi: [...sheet.xi, {
+        id: me.id, name: me.name, short: me.short, role: vacantSlot.role,
+        slot: vacantSlot.label ?? vacantSlot.role, overall: me.overall,
+        face: me.face, nation: me.nation, isYou: true,
+        x: vacantSlot.x, y: vacantSlot.y,
+      }],
+    };
+  }
 
   // The slot you actually play, or the nearest thing to it that is filled.
   const target = sheet.xi.findIndex(p => p.role === me.position);
@@ -509,14 +546,20 @@ export function matchdayFor(
   // Your own squad, minus any duplicate of you: a career whose squad was
   // fetched from the database can contain the real player whose shirt you took.
   let ownPool = fromSquad(career.squad ?? []).filter(p => p.short !== you.short);
-  // A saved lineup can name someone your own curated squad already dropped —
-  // see withFullRosterFallback's own note. Only widened when there is
-  // actually something saved to resolve; an ordinary auto-picked eleven
-  // keeps drawing from the same twenty it always has.
-  if (savedXI || savedBench) {
-    const ownFullRoster = fromLeagueSquad((career.leagueSquads ?? []).find(s => s.club === mine));
-    ownPool = withFullRosterFallback(ownPool, ownFullRoster);
-  }
+  // `career.squad` is a fixed ~20-man curation, taken once and never topped
+  // up when a real transfer window sells one of them out from under you —
+  // the widened pool used to only apply while resolving a saved lineup (see
+  // withFullRosterFallback's own note, about a SAVED SLOT naming someone the
+  // curated squad had already dropped). Reported directly, with screenshots:
+  // a club's real, only recognised man at a position sold away mid-season,
+  // and an ordinary (no saved lineup) auto-picked eleven simply played the
+  // match a body short at that slot rather than reaching for anyone else on
+  // the books — the wider roster this same fallback already draws on for a
+  // saved lineup was sitting right there, unused, for the everyday case.
+  // Always widened now, additively — it can only ever hand `autoPick` an
+  // extra name it did not already have, never remove or override one.
+  const ownFullRoster = fromLeagueSquad((career.leagueSquads ?? []).find(s => s.club === mine));
+  ownPool = withFullRosterFallback(ownPool, ownFullRoster);
   // `you` only joins the pool `autoPick` competes over when you are actually
   // starting — a substitute must never be able to win a starting slot on
   // rating alone, since the manager already decided this week that you're
@@ -683,6 +726,35 @@ export function startingTeammateRoles(career: CareerState, fixture: Fixture): Ma
       roles.set(p.id, p.role);
     }
     return roles;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The other lot, the same way — the eleven actually starting for whoever
+ * you're playing, not their whole scouted roster.
+ *
+ * Built for naming the opponent's own goals live (see CanvasMatch.tsx):
+ * "They score!" with no name attached used to be the whole of it, while a
+ * goal your own side scored got a real man's name off the exact XI shown
+ * before kick-off. Requested directly, once the reason for the gap was
+ * traced — build the same restriction `startingTeammateRoles` already does
+ * for your side, just read the other half of the same `matchdayFor` call.
+ * `null` for the same reasons that function returns null: an international
+ * fixture, or a side too thin to draw an XI from — "unable to scout" is the
+ * honest answer there too, not an invented name.
+ */
+export function opponentStartingXI(career: CareerState, fixture: Fixture): SheetPlayer[] | null {
+  if (fixture.kind === "international") return null;
+  try {
+    const saved = loadLineup(career.player.club);
+    const savedXI = saved && saved.xi.some(Boolean)
+      ? { formation: formationOf(saved.formation), xi: saved.xi }
+      : undefined;
+    const md = matchdayFor(career, fixture, true, undefined, saved?.bench, savedXI);
+    const theirs = md.home.yours ? md.away : md.home;
+    return theirs.xi.length >= 9 ? theirs.xi : null;
   } catch {
     return null;
   }

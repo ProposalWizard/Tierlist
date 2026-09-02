@@ -65,7 +65,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   const base = makeInitialCareer(player, CLUBS);
   const career: CareerState = {
@@ -110,7 +110,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Test", lastName: "Player", age: 20, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   const base = makeInitialCareer(player, CLUBS);
 
@@ -155,7 +155,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Test", lastName: "Player", age: 20, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   const career: CareerState = {
     ...makeInitialCareer(player, CLUBS),
@@ -181,7 +181,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   const withYou: CareerState = {
     ...makeInitialCareer(player, CLUBS),
@@ -209,7 +209,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Test", lastName: "Player", age: 20, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   const career: CareerState = {
     ...makeInitialCareer(player, CLUBS),
@@ -230,7 +230,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   let c: CareerState = {
     ...makeInitialCareer(player, CLUBS),
@@ -276,7 +276,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 19, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   const base = makeInitialCareer(player, CLUBS);
 
@@ -413,7 +413,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   let c: CareerState = {
     ...makeInitialCareer(player, CLUBS),
@@ -532,7 +532,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 16, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   let c: CareerState = {
     ...makeInitialCareer(player, CLUBS),
@@ -595,7 +595,7 @@ const CLUBS = [
 {
   const player = {
     firstName: "Mikey", lastName: "Vass", age: 19, position: "ST",
-    club: "Liverpool", nationality: "England",
+    club: "Liverpool", nationality: "England", startYear: 2027,
   } as never;
   const career: CareerState = {
     ...makeInitialCareer(player, CLUBS),

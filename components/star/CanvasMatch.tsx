@@ -35,13 +35,13 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, creatorOf } from "@/lib/star/lineup";
-import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster } from "@/lib/star/teamsheet";
+import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
 import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
-import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
+import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
@@ -253,6 +253,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const startingXI = career && fixture ? startingTeammateRoles(career, fixture) : null;
   const onPitch = (squad: SquadPlayer[]): SquadPlayer[] =>
     onPitchToday(fillMissingFromFullRoster(squad, startingXI, career ?? null), startingXI);
+  // The other lot's actual starting XI — see opponentStartingXI's own note.
+  // Null (not an empty array) when there's nothing to scout, same as
+  // `startingXI`, so the opponent-goal branch below can tell "nobody to
+  // draw from" apart from "a real XI with, say, no listed CAM this week".
+  const oppXI = career && fixture ? opponentStartingXI(career, fixture) : null;
 
   /**
    * Put a name to every goal in a run of hidden-match events, and record it.
@@ -287,7 +292,37 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       if (!e.isGoal) return [{ minute: e.minute, text: attributeClub(e.text, e.isOpponent), isOpponent: e.isOpponent }];
 
       if (!e.teammateGoal) {
-        return [{ minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true, isOpponent: true }];
+        // The opponent's own goal, named the same way yours is — off their
+        // real starting XI (opponentStartingXI, teamsheet.ts), not their
+        // whole scouted roster, so an unused substitute can't be credited
+        // with a goal in a match he didn't play. `oppXI` is null only when
+        // there is genuinely nothing to scout (an international fixture, or
+        // a side too thin to draw an XI from) — the one case with no honest
+        // name to give, so it alone keeps the old generic line untracked.
+        // Every OTHER opponent goal is recorded here exactly once, same as
+        // every one of your side's team-mate goals already is — the results
+        // page (careerFlow.ts) reads this list to credit the SAME name it
+        // showed live, rather than rolling a second, different one.
+        if (oppXI === null) {
+          return [{ minute: e.minute, text: `⚽ ${fixtureOpponentRef.current} score!`, isGoal: true, isOpponent: true }];
+        }
+        const oppCandidates = oppXI.map(p => ({ id: p.id, name: p.name, shortName: p.short, position: p.role }));
+        const oppScorer = pickSquadScorer(oppCandidates, rng)
+          ?? { id: "unnamed", name: "Team-mate", shortName: "Team-mate" };
+        const oppAssister = oppScorer.id !== "unnamed" ? pickSquadAssist(oppCandidates, oppScorer.id, rng) : null;
+        oppGoalEventsRef.current.push({
+          minute: e.minute, scorerId: oppScorer.id, scorer: oppScorer.name,
+          assistId: oppAssister?.id, assist: oppAssister?.name,
+        });
+
+        const oppGoalLine = `⚽ ${oppScorer.shortName} scores!`;
+        if (announce) pushLine(`${e.minute}' ${oppGoalLine}${oppAssister ? ` (${oppAssister.shortName})` : ""}`);
+        return oppAssister
+          ? [
+              { minute: e.minute, text: oppGoalLine, isGoal: true, isOpponent: true },
+              { minute: e.minute, text: `🎯 ${oppAssister.shortName} assists!`, tone: "assist", isOpponent: true },
+            ]
+          : [{ minute: e.minute, text: oppGoalLine, isGoal: true, isOpponent: true }];
       }
 
       const scorer = pickSquadScorer(attackers.length > 0 ? attackers : squad, rng)
@@ -371,6 +406,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   const userScoreRef = useRef(0);
   const oppScoreRef = useRef(0);
   const goalEventsRef = useRef<GoalEvent[]>([]);
+  const oppGoalEventsRef = useRef<OppGoalEvent[]>([]);
   const [finalStats, setFinalStats] = useState<MatchStats | null>(null);
 
   // --- Simulation between chances ---
@@ -2626,7 +2662,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
           ...finaliseMatch(
             attemptsRef.current, t.goals, t.assists, t.passesCompleted,
             90, userScoreRef.current, oppScoreRef.current, careerForStats,
-            goalEventsRef.current,
+            goalEventsRef.current, null, oppGoalEventsRef.current,
           ),
           endEnergy: liveEnergyAt(matchMinuteRef.current),
         };
@@ -2842,7 +2878,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
                 attemptsRef.current, t.goals, t.assists, t.passesCompleted,
                 Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
                 userScoreRef.current, oppScoreRef.current, careerForStats,
-                goalEventsRef.current, hookedRef.current,
+                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current,
               ),
               // The moment the match actually ended for you — full time, or
               // the minute you were hooked — not necessarily 90.
@@ -2992,6 +3028,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     userScoreRef.current = 0;
     oppScoreRef.current = 0;
     goalEventsRef.current = [];
+    oppGoalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));

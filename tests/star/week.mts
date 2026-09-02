@@ -36,7 +36,7 @@ function mulberry32(a: number) {
 
 const PLAYER: StarPlayer = {
   firstName: "Test", lastName: "Player", age: 22, position: "ST",
-  club: "Arsenal", nationality: "England",
+  club: "Arsenal", nationality: "England", startYear: 2027,
 } as StarPlayer;
 const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Man City", "Man Utd", "Spurs", "Newcastle", "Aston Villa", "Brighton", "West Ham"];
 const base = () => makeInitialCareer(PLAYER, CLUBS);

@@ -306,11 +306,19 @@ export function creditMatchResult(
     const yours = (stats.goalEvents ?? []).map(e => ({
       m: e.minute, s: surname(e.scorer), ...(e.assist ? { a: surname(e.assist) } : {}),
     }));
+    // …and now so are theirs, when the live match named them — see
+    // playLeagueWeek's own note on `oppGoals`.
+    const theirs = (stats.oppGoalEvents ?? []).map(e => ({
+      id: e.scorerId, m: e.minute, s: surname(e.scorer),
+      ...(e.assistId ? { assistId: e.assistId } : {}),
+      ...(e.assist ? { a: surname(e.assist) } : {}),
+    }));
     // The squads are mutated in place as goals are named, so they come back out
     // of the call with this week's tallies already on them.
     const squads = (career.leagueSquads ?? []).map(sq => ({ ...sq, players: sq.players.map(p => ({ ...p })) }));
     const round = playLeagueWeek(league, fixture.week, {
-      club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded, goals: yours,
+      club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded,
+      goals: yours, oppGoals: theirs,
     }, rng, squads);
     league = round.league;
     leagueSquads = squads;
@@ -709,6 +717,21 @@ export function creditMatchResult(
   return { ...applyAchievements(next), potmAwarded: potmJustAwarded ?? undefined };
 }
 
+/** Where a window sits within its season's own order — summer, then January.
+ *  See `runDueTransferWindow`'s overshoot guard for why this exists. */
+const WINDOW_ORDER: Record<"summer" | "january", number> = { summer: 0, january: 1 };
+
+/** Parses a `lastTransferWindowKey` ("1-summer") into a single comparable
+ *  number, so a later key can never be judged "already passed" by an
+ *  earlier one. Absent or unrecognised keys sort before everything. */
+function windowOrdinal(key: string | undefined): number {
+  const [seasonPart, windowPart] = (key ?? "").split("-");
+  const season = Number(seasonPart);
+  const order = WINDOW_ORDER[windowPart as "summer" | "january"];
+  if (!Number.isFinite(season) || order === undefined) return -Infinity;
+  return season * 2 + order;
+}
+
 /**
  * Run whichever transfer window is due, if it hasn't already run.
  *
@@ -720,6 +743,20 @@ export function creditMatchResult(
  * if this window already ran (comparing `next.lastTransferWindowKey`, which
  * at the call site in creditMatchResult is still the pre-match career's key —
  * nothing between there and here touches it).
+ *
+ * `next.week` is a count of matches played, not a true calendar week — it
+ * runs ahead of real time by one for every cup or European fixture folded in
+ * alongside the 38 league Saturdays, and a season deep in all three
+ * knockouts can rack up enough of those to push the counter past what
+ * `fixtureDate` reads as the FOLLOWING season's August, re-computing
+ * "summer" a second time before this season has actually rolled over.
+ * Reported directly, once cupRoundWeek started spacing cup rounds further
+ * from a Tuesday European night to fix a real-rest-gap bug: extending the
+ * calendar just enough for exactly this overshoot to fire, silently
+ * overwriting an already-run January's key and re-running a summer window
+ * mid-season. Guarded by ordinal rather than loosening the key check itself:
+ * a window is only ever allowed to advance, never regress, within — or
+ * across — a season.
  */
 export function runDueTransferWindow(next: CareerState): CareerState {
   if (!next.leagueSquads?.length) return next;
@@ -727,6 +764,7 @@ export function runDueTransferWindow(next: CareerState): CareerState {
   if (!openedWindow) return next;
   const key = `${next.season}-${openedWindow}`;
   if (next.lastTransferWindowKey === key) return next;
+  if (windowOrdinal(key) <= windowOrdinal(next.lastTransferWindowKey)) return next;
 
   const rng = mulberry32(next.season * 100003 + next.week * 37);
   const { career: afterWindow, moves, loans } = runTransferWindow(next, openedWindow, rng);

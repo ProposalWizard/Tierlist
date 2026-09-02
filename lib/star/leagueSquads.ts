@@ -381,6 +381,46 @@ export function nameGoals(squad: LeagueSquad | undefined, count: number, rng: ()
   return out.sort((a, b) => a.m - b.m);
 }
 
+/** One of the opponent's goals, already decided live — see OppGoalEvent
+ *  (types.ts) and CanvasMatch.tsx's opponent-goal branch. */
+export interface NamedOppGoal {
+  id: string;
+  assistId?: string;
+  m: number;
+  s: string;
+  a?: string;
+}
+
+/**
+ * Put names to goals that were already scored, live, in front of the player.
+ *
+ * The other half of `nameGoals`: that function is for the nine matches
+ * nobody watched, rolling a fresh weighted pick because there is no real
+ * event to name. A match the player just played through is a real event —
+ * the commentary already showed a name the moment the ball crossed the
+ * line — so re-rolling here would show a SECOND, different scorer on the
+ * results page from the one the player just watched score. Mutates the
+ * same season tallies `nameGoals` does, by id rather than by a fresh
+ * weighted draw, so the Golden Boot table still credits the right man; an
+ * id with no match in `squad` (the "Team-mate" fallback CanvasMatch uses
+ * when nobody could be picked, or a squad this function was never handed)
+ * simply isn't credited — the name still shows on the scoresheet either way.
+ */
+export function creditNamedGoals(squad: LeagueSquad | undefined, goals: NamedOppGoal[]): SimGoal[] {
+  const byId = new Map((squad?.players ?? []).map(p => [p.id, p]));
+  for (const g of goals) {
+    const scorer = byId.get(g.id);
+    if (scorer) scorer.goals += 1;
+    if (g.assistId) {
+      const assister = byId.get(g.assistId);
+      if (assister) assister.assists += 1;
+    }
+  }
+  return goals
+    .map(g => ({ m: g.m, s: g.s, ...(g.a ? { a: g.a } : {}) }))
+    .sort((a, b) => a.m - b.m);
+}
+
 /** A new season: the table resets, and so does everybody's tally. */
 export function resetLeagueSquads(squads: LeagueSquad[]): LeagueSquad[] {
   return squads.map(s => ({ ...s, players: s.players.map(p => ({ ...p, goals: 0, assists: 0 })) }));

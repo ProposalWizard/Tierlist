@@ -6,7 +6,7 @@ import { formationOf } from "../../lib/star/formations";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { buildLeagueSquad, type RosterRow } from "../../lib/star/leagueSquads";
 import { fitness } from "../../lib/star/formations";
-import type { CareerState, Fixture } from "../../lib/star/types";
+import type { CareerState, Fixture, LeagueSquad } from "../../lib/star/types";
 
 /**
  * THE TEAM SHEET.
@@ -60,9 +60,25 @@ function career(club = "Liverpool"): CareerState {
     club, nationality: "England", startYear: 2027, skinTone: "light",
     clubBadge: null,
   } as never;
+  const base = makeInitialCareer(player, CLUBS);
+  // Production always keeps the OWN club's leagueSquads entry as a superset
+  // of career.squad — the same real players, just not slot-limited (see
+  // app/star-dev/page.tsx's own-club re-fetch, keepAll=true). Built here
+  // straight off base.squad rather than off an independently-seeded
+  // roster(), so matchdayFor's now-unconditional full-roster widening finds
+  // the SAME eleven `career.squad` would already pick, not a wholesale
+  // alternate cast — the other nineteen clubs are unaffected, since only
+  // your own club's entry is ever read as a fallback pool.
+  const ownRoster: LeagueSquad = {
+    club,
+    players: base.squad.map(p => ({
+      id: p.id, name: p.name, position: p.position, overall: p.overall ?? 65,
+      goals: 0, assists: 0, ...(p.positions ? { positions: p.positions } : {}),
+    })),
+  };
   return {
-    ...makeInitialCareer(player, CLUBS),
-    leagueSquads: CLUBS.map(c => buildLeagueSquad(c, roster(c))),
+    ...base,
+    leagueSquads: [ownRoster, ...CLUBS.filter(c => c !== club).map(c => buildLeagueSquad(c, roster(c)))],
   };
 }
 
@@ -389,10 +405,23 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
 // own-club roster (the same untrimmed source `matchdayFor` already widens the
 // pre-match sheet with) before `onPitchToday` ever runs.
 {
-  const c = career(); // Liverpool; c.squad ids are "sp_N" (generateSquad),
-                       // c.leagueSquads' own-club roster ids are "Liverpool-N"
-                       // (the roster() helper above) — deliberately disjoint,
-                       // so every roster player is "missing" from the squad.
+  const base = career();
+  // career()'s own-club leagueSquads entry is built straight off c.squad now
+  // (matching production's own guarantee — see the helper's own comment), so
+  // this scenario needs its OWN, deliberately disjoint stand-in: c.squad ids
+  // stay "sp_N" (generateSquad) while this one's are "Liverpool-N" (the
+  // roster() helper above), so every one of its players is genuinely
+  // "missing" from career.squad — the exact situation a real player the
+  // lineup builder started, who lost his own club's twenty-slot
+  // competition, is in.
+  const disjointOwnRoster = buildLeagueSquad("Liverpool", roster("Liverpool"));
+  const c: CareerState = {
+    ...base,
+    leagueSquads: [
+      disjointOwnRoster,
+      ...(base.leagueSquads ?? []).filter(s => s.club !== "Liverpool"),
+    ],
+  };
   const ownRoster = c.leagueSquads!.find(s => s.club === "Liverpool")!;
   const missingPlayer = ownRoster.players[3]; // a real player never in c.squad
   check(!(c.squad ?? []).some(p => p.id === missingPlayer.id),

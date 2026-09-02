@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
-import { fixtureDateLabel, isPostSeason, divisionOf, leagueNameFor } from "@/lib/star/calendar";
+import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNameFor } from "@/lib/star/calendar";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
-import { roundsFor, nationOf, internationalCallUp, KIND_ORDER } from "@/lib/star/competitions";
+import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
 import { exitRound } from "@/lib/star/cups";
-import { STAR_EDITION_LABEL } from "@/lib/star/edition";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
@@ -13,12 +12,9 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 
 interface Props {
   career: CareerState;
-  /** Pull the squads down from the database again. See page.tsx. */
-  onRefreshSquads?: () => void;
-  refreshing?: boolean;
 }
 
-export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Props) {
+export default function LeagueScreen({ career }: Props) {
   /** Whose fixture this is — your club, or your country. */
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
@@ -364,10 +360,15 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
               (competitions.ts) already had to solve this same problem by
               scanning rather than trusting array order, for the same
               reason — the array itself is genuinely out of order after a
-              mid-season cup draw. League first when two land in the same
-              week, the same tie-break nextFixtureFor uses. */}
+              mid-season cup draw. Ordered by the real date each fixture is
+              played on (fixtureTimestamp), not by week number with a
+              competition-priority tiebreak — that used to show a European
+              tie played on the Tuesday BELOW a domestic cup tie played on
+              the Wednesday after it, backwards from the order they're
+              actually played in. */}
           {[...career.fixtures]
-            .sort((a, b) => a.week - b.week || (KIND_ORDER[a.kind ?? "league"] ?? 0) - (KIND_ORDER[b.kind ?? "league"] ?? 0))
+            .sort((a, b) => fixtureTimestamp(career.player.startYear, career.season, a.week, a.kind, divisionOf(career))
+              - fixtureTimestamp(career.player.startYear, career.season, b.week, b.kind, divisionOf(career)))
             .map((f, i) => {
               const yourScore = f.played ? (f.home ? f.homeScore : f.awayScore) : undefined;
               const theirScore = f.played ? (f.home ? f.awayScore : f.homeScore) : undefined;
@@ -582,23 +583,6 @@ export default function LeagueScreen({ career, onRefreshSquads, refreshing }: Pr
                 ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Moved below the squad list itself, requested directly. */}
-      {view === "squad" && onRefreshSquads && (
-        <div className="mt-2 rounded-lg border border-gray-600 bg-gray-800 p-2">
-          <button
-            onClick={onRefreshSquads}
-            disabled={refreshing}
-            className="w-full rounded bg-emerald-600 py-1.5 text-[11px] font-black uppercase tracking-wide text-white transition hover:bg-emerald-500 disabled:opacity-50"
-          >
-            {refreshing ? "Fetching…" : "Update squads from the database"}
-          </button>
-          <p className="mt-1 text-[10px] font-bold leading-tight text-white">
-            Your career holds the squads as they were when it started. Press this after editing
-            {" "}{STAR_EDITION_LABEL} to bring in new ratings and transfers. Goals and assists are kept.
-          </p>
         </div>
       )}
     </div>

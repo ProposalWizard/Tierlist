@@ -71,7 +71,14 @@ export function clubNameSeed(name: string): number {
 
 // Pick a squad member to credit as the scorer of a team goal (non-user).
 // Weighted toward attacking positions.
-export function pickSquadScorer(squad: SquadPlayer[], rng: () => number): SquadPlayer | null {
+//
+// Generic over anything shaped like a squad player — not just SquadPlayer —
+// so the exact same weighting can name an OPPONENT's scorer too, off their
+// own starting XI (see CanvasMatch.tsx's opponent-goal branch), rather than
+// duplicating this logic for a second, parallel "who scored" picker.
+export function pickSquadScorer<T extends { id: string; position: SquadPlayer["position"] }>(
+  squad: T[], rng: () => number,
+): T | null {
   const attackers = squad.filter(p => ["ST", "CAM", "LW", "RW"].includes(p.position));
   const mids = squad.filter(p => ["CM", "CDM"].includes(p.position));
   const r = rng();
@@ -83,7 +90,9 @@ export function pickSquadScorer(squad: SquadPlayer[], rng: () => number): SquadP
 
 // Optionally pick an assister (different from scorer).
 // Returns null 35% of the time to model unassisted goals.
-export function pickSquadAssist(squad: SquadPlayer[], excludeId: string, rng: () => number): SquadPlayer | null {
+export function pickSquadAssist<T extends { id: string; position: SquadPlayer["position"] }>(
+  squad: T[], excludeId: string, rng: () => number,
+): T | null {
   if (rng() < 0.35) return null;
   const creators = squad.filter(p =>
     p.id !== excludeId && ["CM", "CAM", "LW", "RW", "CDM", "RB", "LB"].includes(p.position),
