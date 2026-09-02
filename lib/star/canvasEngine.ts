@@ -4769,7 +4769,16 @@ export function stepBallInNet(ball: Ball, dt: number) {
   // Side netting — a ball that crossed the line inside the posts stays inside
   // them. Without this its residual sideways pace carried it out through the
   // side of the goal, so a legitimate goal could finish drawn outside the net.
-  const inL = POST_L + BALL_R, inR = POST_R - BALL_R;
+  //
+  // Clamped a real half-metre clear of the post now, not just the ball's own
+  // radius — reported directly, with a screenshot: a ball that settled right
+  // on the clamp line read as sitting ON the post, half swallowed by the
+  // frame graphic, when a real shot that beats a keeper into the top corner
+  // is cushioned by the net well short of the upright, not stopped dead
+  // against it. Purely how it settles for the eye — see stepBall for what
+  // actually decided the goal, untouched here.
+  const SIDE_NET_CLEARANCE = 0.5;
+  const inL = POST_L + BALL_R + SIDE_NET_CLEARANCE, inR = POST_R - BALL_R - SIDE_NET_CLEARANCE;
   if (ball.pos.x < inL) { ball.pos.x = inL; ball.vel.x = Math.abs(ball.vel.x) * 0.25; }
   else if (ball.pos.x > inR) { ball.pos.x = inR; ball.vel.x = -Math.abs(ball.vel.x) * 0.25; }
 }
