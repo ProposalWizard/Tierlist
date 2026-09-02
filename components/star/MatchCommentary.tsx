@@ -79,6 +79,20 @@ export default function MatchCommentary({
            over and nothing here needs it drawn — the div still scrolls. */
         .kib-feed::-webkit-scrollbar { display: none; }
         .kib-feed { scrollbar-width: none; -ms-overflow-style: none; }
+        /* Each line its own panel, not just a colour change that runs
+           several rows together into one slab — reported directly, with a
+           real NSS screenshot for comparison: theirs beveled every row so a
+           run of same-toned lines still read as separate incidents, ours
+           only had a border so faint (4% white) it was invisible the moment
+           two rows shared a colour. A soft gloss top-to-bottom plus a hard
+           inset seam at the very bottom of each row does the same job here
+           — layered as its own background-image/box-shadow rather than
+           touching background-color, so it sits over a team-tinted row,
+           a neutral one, and the goal-flash animation identically. */
+        .kib-line {
+          background-image: linear-gradient(to bottom, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 45%, rgba(0,0,0,0.16) 100%);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.4);
+        }
       `}</style>
 
       {/* ── The commentary ── */}
@@ -157,7 +171,7 @@ export default function MatchCommentary({
 function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit }) {
   if (l.tone === "period") {
     return (
-      <div className="flex items-center gap-2 border-y border-white/10 bg-gray-800/80 px-3 py-1.5">
+      <div className="kib-line flex items-center gap-2 border-y border-white/10 bg-gray-800/80 px-3 py-1.5">
         {l.minute !== undefined && (
           <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white">{l.minute}</span>
         )}
@@ -232,7 +246,7 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
 
   return (
     <div
-      className={`kib-line flex items-baseline gap-2 border-b border-white/[0.04] px-3 py-1.5 ${tone}`}
+      className={`kib-line flex items-baseline gap-2 px-3 py-1.5 ${tone}`}
       style={teamStyle}
     >
       {/* The clock, not the commentary — reported directly: sitting in
