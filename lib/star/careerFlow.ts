@@ -29,6 +29,7 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
+import { computeStarRating, growthMultiplier, TROPHY_FAME } from "./rating";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
@@ -45,18 +46,6 @@ export const SPONSOR_CATEGORIES = [
   "Boots", "Sports Drink", "Sports Clothing", "Casual Clothing", "Food",
   "Cosmetics", "Watch", "Electronics", "Jewelry", "Car",
 ];
-
-/** Fame handed out for a season's silverware, at rollover — see the
- *  `trophyFame` computation in advanceSeason. A league title (or a European
- *  Cup) means more than a Community Shield, so the trophy itself decides how
- *  much; anything not listed (Play-Offs, an unnamed cup) still counts a
- *  little rather than nothing. */
-const TROPHY_FAME: Record<string, number> = {
-  "Premier League": 25, "Championship": 20,
-  "Champions League": 22, "Europa League": 12, "Conference League": 8,
-  "FA Cup": 14, "League Cup": 9,
-  "Community Shield": 4, "Super Cup": 4,
-};
 
 const EMPTY_SEASON_STATS = {
   appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0,
@@ -114,6 +103,9 @@ export function makeInitialCareer(
     injury: null,
     happiness: 60,
     money: 3,
+    // Overwritten just below, once the object actually exists — see
+    // computeStarRating's own note. A placeholder here only so every
+    // required CareerState field is present in this one literal.
     starRating: 2.5,
     fame: 5,
     seasonStats: { ...EMPTY_SEASON_STATS },
@@ -166,6 +158,11 @@ export function makeInitialCareer(
     // a round-up for.
     deadlineDayShownFor: "1-summer",
   };
+  // A fresh, unproven eighteen-year-old is meant to read as exactly that —
+  // computed off the starting skills (40/40/40/40/30) and an empty honours
+  // list, rather than a fixed 2.5 every career opened at regardless of who
+  // you actually are yet.
+  state.starRating = computeStarRating(state);
   state.squadNumber = assignSquadNumber(state, player.club);
   state.manager = makeManager(state, player.club, 1);
   const seeded = seedSeasonKnockouts(state);
@@ -563,8 +560,26 @@ export function creditMatchResult(
     }
   }
 
+  // A good ninety minutes sharpens you a little, across the board — the
+  // "played well, so you're marginally sharper" pool this used to grant as
+  // a direct starRating nudge (+0.03 at an 8+ rating, +0.01 at 7+) now goes
+  // into the real attributes underneath the rating instead (rating.ts's
+  // computeStarRating reads them back out), scaled by how fast a player of
+  // this age actually develops — see growthMultiplier.
+  const matchSkillPool = alreadyPlayed ? 0
+    : stats.rating >= 8 ? 3 : stats.rating >= 7 ? 1.2 : stats.rating >= 6 ? 0.4 : 0;
+  const perSkillGain = (matchSkillPool * growthMultiplier(career.player.age)) / 5;
+  const nextSkills: Skills = perSkillGain <= 0 ? career.skills : {
+    pace: Math.min(100, Math.round(career.skills.pace + perSkillGain)),
+    power: Math.min(100, Math.round(career.skills.power + perSkillGain)),
+    technique: Math.min(100, Math.round(career.skills.technique + perSkillGain)),
+    vision: Math.min(100, Math.round(career.skills.vision + perSkillGain)),
+    freeKick: Math.min(100, Math.round(career.skills.freeKick + perSkillGain)),
+  };
+
   const next: CareerState = {
     ...career,
+    skills: nextSkills,
     potm,
     // …and on the honours list beside the Ballon d'Or, but only when it is
     // yours. A month somebody else won is a fact about the league, not an
@@ -617,8 +632,9 @@ export function creditMatchResult(
       sponsors: newSponsorRel,
     },
     sponsors,
-    starRating: alreadyPlayed ? career.starRating
-      : Math.min(5, career.starRating + (stats.rating >= 8 ? 0.03 : stats.rating >= 7 ? 0.01 : 0)),
+    // Recomputed below, once this result's achievements (which can
+    // themselves move it — a fresh "trophy-cabinet" unlock, say) are final.
+    starRating: career.starRating,
     fame: alreadyPlayed ? career.fame : career.fame + Math.max(0, Math.floor(stats.fansChange / 2)),
     // The single most important guard in this function — see `alreadyPlayed`'s
     // own doc at the top. A replay must not advance the calendar; it already
@@ -714,7 +730,12 @@ export function creditMatchResult(
   // what makes this safe against a replay.
   Object.assign(next, runDueTransferWindow(next));
 
-  return { ...applyAchievements(next), potmAwarded: potmJustAwarded ?? undefined };
+  const settled = applyAchievements(next);
+  return {
+    career: { ...settled.career, starRating: computeStarRating(settled.career) },
+    newlyUnlocked: settled.newlyUnlocked,
+    potmAwarded: potmJustAwarded ?? undefined,
+  };
 }
 
 /** Where a window sits within its season's own order — summer, then January.
@@ -1072,7 +1093,14 @@ export function advanceSeason(
   next.euroState = euro.state ?? undefined;
   next.fixtures = [...next.fixtures, ...seeded.fixtures, ...drawn.fixtures, ...euro.fixtures];
 
-  return applyAchievements(next);
+  // Aged skills, a season's trophies, fresh personal bests and any
+  // achievement this rollover itself unlocked are all final at this point —
+  // exactly the moment computeStarRating should read them from.
+  const settled = applyAchievements(next);
+  return {
+    career: { ...settled.career, starRating: computeStarRating(settled.career) },
+    newlyUnlocked: settled.newlyUnlocked,
+  };
 }
 
 function clamp01to100(v: number): number {
@@ -1234,5 +1262,11 @@ export function simulateMissedFixture(
   }
 
   const { career: withAchievements, newlyUnlocked } = applyAchievements(next);
-  return { career: withAchievements, newlyUnlocked, homeScore: userScore, awayScore: oppScore };
+  // A cup won from the stands (`cupTrophy`, above) still moves the rating —
+  // trophies count toward it whether or not you were the one who lifted it
+  // in person.
+  return {
+    career: { ...withAchievements, starRating: computeStarRating(withAchievements) },
+    newlyUnlocked, homeScore: userScore, awayScore: oppScore,
+  };
 }

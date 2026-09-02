@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNameFor } from "@/lib/star/calendar";
+import { displayOverall } from "@/lib/star/rating";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
@@ -516,7 +517,9 @@ export default function LeagueScreen({ career }: Props) {
               id: "__you__", isYou: true,
               name: `${career.player.firstName} ${career.player.lastName}`,
               position: career.player.position,
-              overall: Math.round(career.starRating * 18 + 10),
+              // The one shared overall formula every screen reads now
+              // (rating.ts), not a formula of this screen's own.
+              overall: displayOverall(career.starRating),
               seasonGoals: career.seasonStats.goals,
               seasonAssists: career.seasonStats.assists,
               imageUrl: undefined as string | undefined,

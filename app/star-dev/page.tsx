@@ -36,6 +36,7 @@ import TransferSigning from "@/components/star/TransferSigning";
 import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
+import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialPenalty from "@/components/star/TrialPenalty";
 import TrialReward from "@/components/star/TrialReward";
@@ -108,6 +109,9 @@ export default function StarDevPage() {
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
   const [contractOfferReason, setContractOfferReason] = useState<"form" | "star" | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  /** A star rating that just moved — see toastRatingChange. Cleared the same
+   *  flat-timeout way the achievement toast above already is. */
+  const [ratingChange, setRatingChange] = useState<{ from: number; to: number } | null>(null);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
   const [pressQuestion, setPressQuestion] = useState<PressQuestion | null>(null);
@@ -443,14 +447,22 @@ export default function StarDevPage() {
   const handleTrainingComplete = useCallback((xp: number) => {
     if (!career || !trainingSkill) return;
     const currentVal = career.skills[trainingSkill];
-    const gain = Math.min(100 - currentVal, Math.floor(xp / 5));
+    // A younger player gets more out of the same session than a veteran
+    // does — see growthMultiplier's own note; applied here rather than to
+    // `xp` itself so the drill's own scoring (TrainingMinigame.tsx) stays
+    // exactly what it always was.
+    const gain = Math.min(100 - currentVal, Math.round(Math.floor(xp / 5) * growthMultiplier(career.player.age)));
     const updated: CareerState = {
       ...career,
       skills: { ...career.skills, [trainingSkill]: currentVal + gain },
       energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
-      starRating: Math.min(5, career.starRating + gain * 0.005),
+      // Recomputed below, once this session's achievement checks (a fresh
+      // "max-technique" unlock, say) are final.
+      starRating: career.starRating,
     };
     checkAndSetAchievements(updated);
+    updated.starRating = computeStarRating(updated);
+    toastRatingChange(career.starRating, updated.starRating);
     setCareer(spendAction(updated));
     setTrainingSkill(null);
     setPhase("skills");
@@ -467,6 +479,7 @@ export default function StarDevPage() {
     if (!career || !nextFixture) return;
     const { career: next, newlyUnlocked } = simulateMissedFixture(career, nextFixture);
     toastAchievements(newlyUnlocked);
+    toastRatingChange(career.starRating, next.starRating);
     setCareer(next);
     setActiveNav("home");
     setPhase("dashboard");
@@ -487,12 +500,27 @@ export default function StarDevPage() {
     toastAchievements(newlyUnlocked);
   };
 
+  // The visible moment a rating change asked for — requested directly,
+  // "not just a number quietly drifting". Compares the ROUNDED display
+  // value (1 decimal, what the star bar itself shows), not the raw float,
+  // so this never fires for a change too small to actually see. Increases
+  // only — a rating that ticks down from aging decay is real and correct,
+  // but is not the kind of moment worth a celebratory banner for.
+  const toastRatingChange = (from: number, to: number) => {
+    const fromShown = Math.round(from * 10) / 10;
+    const toShown = Math.round(to * 10) / 10;
+    if (toShown <= fromShown) return;
+    setRatingChange({ from: fromShown, to: toShown });
+    setTimeout(() => setRatingChange(null), 3000);
+  };
+
   const handleMatchComplete = useCallback((stats: MatchStats) => {
     if (!career || !nextFixture) return;
     setLastMatchStats(stats);
     setPlayedFixture(nextFixture);
     const { career: next, newlyUnlocked, potmAwarded } = creditMatchResult(career, nextFixture, stats);
     toastAchievements(newlyUnlocked);
+    toastRatingChange(career.starRating, next.starRating);
     // The world reacts. Generated once, here, from the career on both sides of
     // the match — "went top" is a comparison and the after state cannot make it.
     next.media = generateForMatch(career, next, nextFixture, stats);
@@ -815,6 +843,7 @@ export default function StarDevPage() {
   const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false, justTransferred = false) => {
     const { career: next, newlyUnlocked } = advanceSeason(from, userWon, justTransferred);
     toastAchievements(newlyUnlocked);
+    toastRatingChange(from.starRating, next.starRating);
     // ── A club you just SIGNED for is not "promoted" ──
     //
     // Getting here via a forced relegation move means `from.player.club` is
@@ -1655,6 +1684,11 @@ export default function StarDevPage() {
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
           ⭐ Achievement Unlocked: {unlockedAchievements[0]} ⭐
+        </div>
+      )}
+      {ratingChange && (
+        <div className="mb-2 bg-emerald-500 border border-emerald-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
+          ▲ Rating Up: {ratingChange.from.toFixed(1)}★ → {ratingChange.to.toFixed(1)}★
         </div>
       )}
       {phase === "dashboard" && career.managerNews && (

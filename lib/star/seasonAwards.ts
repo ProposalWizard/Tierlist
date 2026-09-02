@@ -2,6 +2,7 @@ import type { CareerState } from "./types";
 import { formationOf, fitness, type Role, type Slot } from "./formations";
 import { divisionOf, leagueNameFor } from "./calendar";
 import { mulberry32 } from "./season";
+import { displayOverall } from "./rating";
 
 /**
  * THE SEASON'S OWN AWARDS.
@@ -123,23 +124,19 @@ interface Candidate {
   image?: string;
 }
 
-/**
- * A rough 0-100 overall for the one player in this career who does not
- * carry a real one — your own character only has `starRating` (0-5). Not
- * read anywhere else; it exists purely so a season you dominated can put
- * you in Team of the Season alongside players who DO have a real number.
- */
-function starRatingToOverall(starRating: number): number {
-  return Math.round(45 + starRating * 11);
-}
-
 function candidatePool(career: CareerState): Candidate[] {
   const out: Candidate[] = [];
 
   out.push({
     name: `${career.player.firstName} ${career.player.lastName}`,
     club: career.player.club,
-    overall: starRatingToOverall(career.starRating),
+    // A rough 0-100 overall for the one player in this career who does not
+    // carry a real one — your own character only has `starRating` (0-5).
+    // The same shared formula every other screen reads now (rating.ts),
+    // not a formula of this screen's own — it exists purely so a season
+    // you dominated can put you in Team of the Season alongside players
+    // who DO have a real number.
+    overall: displayOverall(career.starRating),
     leagueGoals: career.leagueSeasonStats?.goals ?? 0,
     leagueAssists: career.leagueSeasonStats?.assists ?? 0,
     age: career.player.age,
