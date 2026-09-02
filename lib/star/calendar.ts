@@ -318,6 +318,16 @@ export function formatDateFull(d: Date): string {
   return `${formatDate(d)} ${d.getUTCFullYear()}`;
 }
 
+/** "22/08/26" — day/month/year, zero-padded. A real calendar date rather
+ *  than a fixture row (see formatDate/formatDateFull for that) — for
+ *  anywhere that wants to read like an actual phone. */
+export function formatDateNumeric(d: Date): string {
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const yy = String(d.getUTCFullYear() % 100).padStart(2, "0");
+  return `${dd}/${mm}/${yy}`;
+}
+
 /**
  * The date a fixture is played, as a string, straight off the fixture.
  *

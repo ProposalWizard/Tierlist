@@ -1331,12 +1331,13 @@ export default function StarDevPage() {
     );
   }
 
-  // Straight out of the ground it is a moment with a Continue; reached from the
-  // nav it is a place you can browse and leave.
-  if (phase === "media") {
-    return activeNav === "media"
-      ? <MediaFeed career={career} mode="browse" onBack={handleBackToDashboard} />
-      : <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} />;
+  // Straight out of the ground it is a moment with a Continue — its own
+  // standalone screen, same as it always was. Reached from the nav
+  // ("browse") it falls through to the DashboardShell render below instead
+  // — full-bleed (see DashboardShell's own prop), so the bottom nav stays
+  // on screen under it and there's nothing left needing a back button.
+  if (phase === "media" && activeNav !== "media") {
+    return <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} />;
   }
 
   if (phase === "legacy") {
@@ -1678,6 +1679,7 @@ export default function StarDevPage() {
       mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
       nextMatchDate={nextMatchDate ?? undefined}
+      fullBleed={phase === "media" && activeNav === "media"}
     >
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
@@ -1745,6 +1747,9 @@ export default function StarDevPage() {
       )}
       {phase === "league" && (
         <LeagueScreen career={career} onRefreshSquads={refreshSquads} refreshing={refreshing} />
+      )}
+      {phase === "media" && activeNav === "media" && (
+        <MediaFeed career={career} mode="browse" />
       )}
       {phase === "skills" && (
         <div>

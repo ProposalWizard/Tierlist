@@ -21,7 +21,7 @@ export default function KibCanIcon({ can, className = "h-14 w-10" }: { can: KibC
       <img
         src={can.image}
         alt=""
-        className={`${className} shrink-0 rounded-lg border-2 border-black/40 object-cover`}
+        className={`${className} shrink-0 rounded-lg object-cover`}
         onError={() => setImgOk(false)}
       />
     );
