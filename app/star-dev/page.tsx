@@ -64,6 +64,16 @@ import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
 import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
+
+/** The dashboard KIB Cans card's own accent per tier — the same colour as
+ *  the can's real photo (see shopData.ts's `color`), as a hex value rather
+ *  than a Tailwind class so it can drive an inline border/background wash
+ *  too, not just a token. */
+const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
+  basic: { hex: "#fb923c" },
+  premium: { hex: "#60a5fa" },
+  elite: { hex: "#c084fc" },
+};
 import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
 import DilemmaModal from "@/components/star/DilemmaModal";
@@ -1686,20 +1696,42 @@ export default function StarDevPage() {
             <div className="grid grid-cols-3 gap-2">
               {KIB_CANS.map((c) => {
                 const count = career.kibCans[c.id];
+                const accent = KIB_ACCENT[c.id];
                 return (
-                  <button
+                  <div
                     key={c.id}
-                    disabled={count === 0}
-                    onClick={() => handleUseCan(c.id)}
-                    className={`p-1.5 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
+                    className="relative overflow-hidden rounded-xl border p-2 text-center"
+                    style={{ borderColor: `${accent.hex}66`, backgroundColor: "#15151a" }}
                   >
-                    <KibCanIcon can={c} className="h-24 w-full mb-1.5" />
-                    <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
-                    <div className="text-[9px] font-bold">
-                      <span className="text-emerald-300">+{c.restore}</span>
-                      <span className="text-white/60"> · {count} owned</span>
+                    {/* A diagonal wash in the can's own colour, standing in
+                        for the concept art's background graphics — no extra
+                        art asset needed, just the accent already on the
+                        can's own data. */}
+                    <div
+                      className="pointer-events-none absolute inset-0 opacity-25"
+                      style={{
+                        backgroundImage: `repeating-linear-gradient(115deg, ${accent.hex}55 0px, ${accent.hex}55 2px, transparent 2px, transparent 14px)`,
+                      }}
+                    />
+                    <div className="relative">
+                      <KibCanIcon can={c} className="h-[84px] w-full mb-1.5" />
+                      <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
+                      <div className="text-[9px] font-bold text-white/55">+{c.restore} energy</div>
+                      <div className="mt-1 text-sm font-black tabular-nums" style={{ color: accent.hex }}>
+                        {count} owned
+                      </div>
+                      <button
+                        disabled={count === 0}
+                        onClick={() => handleUseCan(c.id)}
+                        className={`mt-1.5 w-full rounded-md py-1 text-[10px] font-black uppercase tracking-wide transition ${
+                          count > 0 ? "text-gray-950" : "bg-gray-700 text-white/40"
+                        }`}
+                        style={count > 0 ? { backgroundColor: accent.hex } : undefined}
+                      >
+                        Use
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

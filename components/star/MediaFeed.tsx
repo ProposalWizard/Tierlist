@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import type { Tag } from "@/lib/star/media/types";
+import type { Tag, Trend } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
 import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar";
@@ -87,26 +87,7 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
         </div>
       ) : (
         <>
-          {trends.length > 0 && (
-            <div className="kib-noscroll shrink-0 overflow-x-auto border-b border-white/10 px-2.5 py-2">
-              <div className="flex gap-1.5">
-                {trends.map((t, i) => (
-                  <div
-                    key={t.label}
-                    className="flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1"
-                  >
-                    <span className="text-[9px] font-black text-white/50">{i + 1}</span>
-                    <span className="whitespace-nowrap text-[10.5px] font-black text-white">
-                      {t.label}{t.hot && " 🔥"}
-                    </span>
-                    <span className="text-[9px] font-bold tabular-nums text-white/50">
-                      {formatVolume(t.volume)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {trends.length > 0 && <TrendTicker trends={trends} />}
 
           {mode === "browse" && (
             <div className="kib-noscroll shrink-0 overflow-x-auto px-2.5 pb-1 pt-2">
@@ -141,6 +122,15 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
                   </p>
                 </div>
               )}
+              {/* The end of the list — without it there is nothing to tell
+                  a reader they have actually reached the bottom rather than
+                  a feed that just stopped loading. */}
+              {shown.length > 0 && (
+                <div className="py-6 text-center">
+                  <div className="text-[13px] font-black text-white/70">You&apos;re all caught up.</div>
+                  <div className="mt-0.5 text-[11px] font-bold text-white/40">Touch grass.</div>
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -165,10 +155,15 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
   );
 
   // Reached from the bottom nav: full-bleed inside DashboardShell already —
-  // just fill whatever room it gave us, no screen of our own to build.
+  // just fill whatever room it gave us, no screen of our own to build. No
+  // background of its own any more, either: reported directly, the dark
+  // gradient this used to sit on read as its own box around the phone,
+  // wanted only around the bottom nav below it. DashboardShell's own body
+  // (a plain grey gradient) shows straight through instead — "I liked it
+  // how it was before where it was only the phone there."
   if (mode === "browse") {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(120%_80%_at_50%_-10%,#1f2937_0%,#0b0f14_55%,#05070a_100%)] p-2">
+      <div className="flex h-full w-full items-center justify-center p-2">
         <div className="h-full w-full max-w-md">{phone}</div>
       </div>
     );
@@ -215,6 +210,51 @@ function AppMark() {
         <path d="M12 7l3.5 2.5-1.3 4.1H9.8L8.5 9.5z" fill="#052e1a" stroke="none" />
         <path d="M12 3v4M12 21v-4M3 12h4M21 12h-4" strokeLinecap="round" />
       </svg>
+    </div>
+  );
+}
+
+/**
+ * A ticker, not a shelf — the row used to be a horizontal scroller a reader
+ * had to drag through by hand. Requested directly: a continuous roll,
+ * left, that never cuts back to its own start the way a "1 to 10, then
+ * snap back to 1" loop would.
+ *
+ * The trick is duplicating the row once and animating exactly to -50%: the
+ * tail of the second copy lands pixel-for-pixel on the head of the first,
+ * so the reset is invisible and the count keeps climbing past the nominal
+ * length (11 really is the next tag after 10, reading as the SAME tag
+ * again rather than a jump) — the "revolving door" asked for.
+ */
+function TrendTicker({ trends }: { trends: Trend[] }) {
+  const loop = [...trends, ...trends];
+  // Roughly constant on-screen speed regardless of how many tags there are
+  // — more tags means more width to cover, so the duration scales with
+  // count rather than staying fixed and speeding up on a busy day.
+  const seconds = Math.max(14, trends.length * 4.5);
+  return (
+    <div className="shrink-0 overflow-hidden border-b border-white/10 py-2">
+      <style>{`
+        @keyframes kibTicker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .kib-ticker { animation: kibTicker ${seconds}s linear infinite; }
+        @media (prefers-reduced-motion: reduce) { .kib-ticker { animation: none; } }
+      `}</style>
+      <div className="kib-ticker flex w-max gap-1.5 px-2.5">
+        {loop.map((t, i) => (
+          <div
+            key={`${t.label}-${i}`}
+            className="flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1"
+          >
+            <span className="text-[9px] font-black text-white/50">{(i % trends.length) + 1}</span>
+            <span className="whitespace-nowrap text-[10.5px] font-black text-white">
+              {t.label}{t.hot && " 🔥"}
+            </span>
+            <span className="text-[9px] font-bold tabular-nums text-white/50">
+              {formatVolume(t.volume)}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

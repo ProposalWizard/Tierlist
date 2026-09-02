@@ -7,25 +7,30 @@ import Avatar from "./Avatar";
 /**
  * One post.
  *
- * The archetype changes the chrome as well as the words — a newspaper reads as a
- * masthead, a supporter reads as somebody's phone — because a feed where every
- * card is identical undoes most of the work the voice system did.
+ * The archetype changes the words but not the card chrome any more — every
+ * card used to carry its own coloured left stripe (emerald for a club,
+ * amber for a cup account, and so on through nine more colours), which read
+ * as unexplained noise rather than information: reported directly, "I can't
+ * seem to understand what this is referring to." The archetype is still
+ * named on the byline line (Club/League/Stats/Press/…) where it can
+ * actually be read, so nothing legible was lost — only the ten-colour key
+ * nobody had.
  */
 
-const CHROME: Record<string, { label: string; accent: string }> = {
-  club: { label: "Club", accent: "border-l-emerald-500" },
-  league: { label: "League", accent: "border-l-indigo-400" },
-  competition: { label: "Cup", accent: "border-l-amber-400" },
-  broadsheet: { label: "Press", accent: "border-l-slate-300" },
-  tabloid: { label: "Back Page", accent: "border-l-red-500" },
-  insider: { label: "Transfers", accent: "border-l-orange-400" },
-  stats: { label: "Stats", accent: "border-l-cyan-400" },
-  aggregator: { label: "Highlights", accent: "border-l-rose-400" },
-  pundit: { label: "Opinion", accent: "border-l-violet-400" },
-  fan: { label: "", accent: "border-l-white/25" },
-  rivalFan: { label: "", accent: "border-l-white/25" },
-  teammate: { label: "", accent: "border-l-sky-400" },
-  meme: { label: "", accent: "border-l-pink-400" },
+const CHROME: Record<string, { label: string }> = {
+  club: { label: "Club" },
+  league: { label: "League" },
+  competition: { label: "Cup" },
+  broadsheet: { label: "Press" },
+  tabloid: { label: "Back Page" },
+  insider: { label: "Transfers" },
+  stats: { label: "Stats" },
+  aggregator: { label: "Highlights" },
+  pundit: { label: "Opinion" },
+  fan: { label: "" },
+  rivalFan: { label: "" },
+  teammate: { label: "" },
+  meme: { label: "" },
 };
 
 function count(n: number): string {
@@ -37,7 +42,7 @@ function count(n: number): string {
 export default function PostCard({ post, now }: { post: StoredPost; now: number }) {
   const chrome = CHROME[post.author.archetype] ?? CHROME.fan;
   return (
-    <article className={`rounded-xl border border-white/12 border-l-[3px] ${chrome.accent} bg-gray-800/80 p-3`}>
+    <article className="rounded-xl border border-white/12 bg-gray-800/80 p-3">
       <header className="flex items-start gap-2.5">
         <Avatar
           initials={post.author.initials}
