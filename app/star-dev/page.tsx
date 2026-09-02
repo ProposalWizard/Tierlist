@@ -1722,12 +1722,14 @@ export default function StarDevPage() {
                     key={c.id}
                     disabled={count === 0}
                     onClick={() => handleUseCan(c.id)}
-                    className={`p-2 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
+                    className={`p-1.5 rounded-lg border ${count > 0 ? "border-gray-500 hover:bg-gray-700" : "border-gray-700 opacity-40"}`}
                   >
-                    <KibCanIcon can={c} className="h-10 w-8 mx-auto mb-1" />
+                    <KibCanIcon can={c} className="h-24 w-full mb-1.5" />
                     <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
-                    <div className="text-[9px] text-emerald-300 font-bold">+{c.restore}</div>
-                    <div className="text-[9px] text-white/75">{count} owned</div>
+                    <div className="text-[9px] font-bold">
+                      <span className="text-emerald-300">+{c.restore}</span>
+                      <span className="text-white/60"> · {count} owned</span>
+                    </div>
                   </button>
                 );
               })}
