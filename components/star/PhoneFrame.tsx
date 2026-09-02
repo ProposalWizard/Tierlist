@@ -28,7 +28,7 @@ export default function PhoneFrame({
 }) {
   return (
     <div
-      className="relative mx-auto flex h-full w-full max-w-[300px] flex-col overflow-hidden rounded-[2.6rem] border-[3px] border-[#3a3a3f] bg-[#111114] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.75),inset_0_0_0_1.5px_rgba(255,255,255,0.06)]"
+      className="relative mx-auto flex h-full w-full flex-col overflow-hidden rounded-[2.6rem] border-[3px] border-[#3a3a3f] bg-[#111114] shadow-[0_30px_70px_-20px_rgba(0,0,0,0.75),inset_0_0_0_1.5px_rgba(255,255,255,0.06)]"
       style={{
         // A hairline of graphite between the bezel and the glass — the same
         // "titanium" edge the reference photo's own frame has, not a flat
@@ -36,6 +36,15 @@ export default function PhoneFrame({
         backgroundImage: "linear-gradient(155deg, #232327 0%, #131316 40%, #0a0a0c 100%)",
       }}
     >
+      {/* Scrollbars off, everywhere inside the phone — reported directly:
+          "get rid of the scroll wheels... I don't like scroll wheels at
+          all." A real phone doesn't show one either; the content still
+          scrolls, this only hides the track/thumb chrome. Same pattern
+          MatchCommentary.tsx's own feed already uses. */}
+      <style>{`
+        .kib-noscroll::-webkit-scrollbar { display: none; }
+        .kib-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+      `}</style>
       {/* The screen — a hair inset from the outer bezel, everything else
           (status bar, app chrome, content) lives inside this. */}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.3rem] bg-black">

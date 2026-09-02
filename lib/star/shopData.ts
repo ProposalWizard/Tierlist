@@ -15,13 +15,20 @@ export interface KibCan {
   name: string;
   price: number;
   restore: number;
+  /** Flat-colour fallback, drawn until — or unless — `image` exists. */
   color: string;
+  /** A real product shot, supplied directly (requested: "I can give you an
+   *  image for each one"). Falls back to the flat `color` box via the
+   *  image's own onError, same pattern TrialReward.tsx's contract art uses —
+   *  drop the file in later and it upgrades automatically, no code change
+   *  needed, and nothing breaks while it's still missing. */
+  image: string;
 }
 
 export const KIB_CANS: KibCan[] = [
-  { id: "basic", name: "Basic KIB Can", price: 3, restore: 25, color: "bg-orange-400" },
-  { id: "premium", name: "Premium KIB Can", price: 6, restore: 50, color: "bg-purple-400" },
-  { id: "elite", name: "Elite KIB Can", price: 12, restore: 100, color: "bg-emerald-400" },
+  { id: "basic", name: "Basic KIB Can", price: 3, restore: 25, color: "bg-orange-400", image: "/star/kib-basic.png" },
+  { id: "premium", name: "Premium KIB Can", price: 6, restore: 50, color: "bg-purple-400", image: "/star/kib-premium.png" },
+  { id: "elite", name: "Elite KIB Can", price: 12, restore: 100, color: "bg-emerald-400", image: "/star/kib-elite.png" },
 ];
 
 export const BOOTS_CATALOGUE: Boot[] = [
