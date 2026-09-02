@@ -1417,6 +1417,19 @@ export default function StarDevPage() {
             // contested BETWEEN two European winners) get the UEFA-branded
             // shot; everything else — league, FA Cup, League Cup, Community
             // Shield, internationals — gets the ordinary floodlit ground.
+            //
+            // Both source files arrived with a black letterboxed/rounded
+            // frame baked into the PNG itself (a screenshot of a generated
+            // image, corners and all) — `cover` was scaling that black
+            // padding right along with the real photo, so depending on this
+            // box's own aspect ratio the actual stadium could be cropped
+            // strangely or shrunk to leave black bars showing. Cropped out
+            // at the source now (see git history for the originals) so
+            // `cover` has nothing but real photo to work with. The gradient
+            // itself was also darker than intended, worst right at the
+            // bottom — reported directly, twice: "doesn't fit the entire
+            // box... quite odd" and "a lot darker and shadier than I
+            // imagined... like an effect." Lightened across the board.
             const isEuropeanNight = nextFixture.competition === "Champions League"
               || nextFixture.competition === "Europa League"
               || nextFixture.competition === "Super Cup";
@@ -1425,7 +1438,7 @@ export default function StarDevPage() {
               <div
                 className="relative overflow-hidden rounded-xl border border-emerald-800/60 shadow-lg"
                 style={{
-                  backgroundImage: `linear-gradient(180deg, rgba(11,42,31,0.55) 0%, rgba(10,31,39,0.7) 55%, rgba(7,19,24,0.88) 100%), url(${stadiumPhoto})`,
+                  backgroundImage: `linear-gradient(180deg, rgba(11,42,31,0.25) 0%, rgba(10,31,39,0.35) 55%, rgba(7,19,24,0.5) 100%), url(${stadiumPhoto})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }}

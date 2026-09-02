@@ -263,16 +263,22 @@ export default function VersusScreen({ matchday, date, competition, results, onK
 
         {/* The substitutes bar above is `position: absolute`, so it takes up
             no space of its own in this flow — the "Substitutes +9" tab
-            (always visible, even collapsed) actually sits `-bottom-4` PLUS
-            its own height below the pitch, and a small `mt` here read as if
-            that space were empty and sat Kick Off right on top of the tab.
-            Reported directly, with a screenshot: the tab and the button were
-            overlapping, both partly unpressable. Cleared with margin, not a
-            layout rewrite — the drawer's own docked-to-the-pitch design
-            (see its comment above) is worth keeping. */}
+            (always visible, even collapsed) actually sits `-bottom-4` below
+            the pitch, and a small `mt` here read as if that space were empty
+            and sat Kick Off right on top of the tab. Reported directly, with
+            a screenshot: the tab and the button were overlapping, both
+            partly unpressable — fixed with `mt-12`. That overshot: the tab's
+            OWN height doesn't add to the gap the way it first looked (the
+            tab is bottom-anchored, so its already-visible bottom edge is
+            just `-bottom-4` below the pitch, not its height further down
+            again) — so `mt-12` cleared it by about 32px of dead space.
+            Reported again, with a screenshot: "quite a big gap... we just
+            need the whole kick off button available to click with nothing
+            on top of it." `mt-6` clears the tab's actual bottom edge with a
+            few pixels to spare and nothing more. */}
         <button
           onClick={onKickOff}
-          className="mt-12 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-2.5 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
+          className="mt-6 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-2.5 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
         >
           Kick Off
         </button>
