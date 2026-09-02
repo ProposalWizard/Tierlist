@@ -66,7 +66,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[radial-gradient(120%_80%_at_50%_-10%,#1f2937_0%,#0b0f14_55%,#05070a_100%)] px-3 py-4 text-white">
-      <header className="mb-3 flex w-full max-w-sm items-center gap-2">
+      <header className="mb-3 flex w-full max-w-md items-center gap-2">
         {mode === "browse" && onBack && (
           <button
             onClick={onBack}
@@ -92,7 +92,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
           the Continue button / hint line below — capped so it never grows
           into an implausibly huge phone on a tall desktop viewport. */}
       <div className="flex w-full flex-1 items-center justify-center py-1" style={{ minHeight: 0 }}>
-        <div className="w-full" style={{ height: "min(76vh, 660px)" }}>
+        <div className="w-full max-w-md" style={{ height: "min(80vh, 780px)" }}>
           <PhoneFrame>
             {/* App bar — the one constant across both tabs. */}
             <div className="flex shrink-0 items-center gap-1.5 border-b border-white/10 px-3 pb-2 pt-1">
@@ -101,13 +101,13 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
             </div>
 
             {tab === "transfers" ? (
-              <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
+              <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
                 <TransfersPanel career={career} />
               </div>
             ) : (
               <>
                 {trends.length > 0 && (
-                  <div className="shrink-0 overflow-x-auto border-b border-white/10 px-2.5 py-2">
+                  <div className="kib-noscroll shrink-0 overflow-x-auto border-b border-white/10 px-2.5 py-2">
                     <div className="flex gap-1.5">
                       {trends.map((t, i) => (
                         <div
@@ -128,7 +128,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
                 )}
 
                 {mode === "browse" && (
-                  <div className="shrink-0 overflow-x-auto px-2.5 pb-1 pt-2">
+                  <div className="kib-noscroll shrink-0 overflow-x-auto px-2.5 pb-1 pt-2">
                     <div className="flex gap-1.5">
                       {FILTERS.map(f => (
                         <button
@@ -147,7 +147,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
                   </div>
                 )}
 
-                <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
+                <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
                   <div className="space-y-2">
                     {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
                     {shown.length === 0 && (
@@ -187,7 +187,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
       {mode === "moment" && onContinue && (
         <button
           onClick={onContinue}
-          className="mt-4 flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-black text-white transition hover:from-emerald-500 hover:to-emerald-400"
+          className="mt-4 flex w-full max-w-md items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-black text-white transition hover:from-emerald-500 hover:to-emerald-400"
         >
           Continue
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -196,7 +196,7 @@ export default function MediaFeed({ career, mode, onContinue, onBack }: Props) {
         </button>
       )}
       {mode === "browse" && (
-        <p className="mt-3 max-w-sm text-center text-[10px] font-bold text-white/45">
+        <p className="mt-3 max-w-md text-center text-[10px] font-bold text-white/45">
           The rest of the week&apos;s reaction arrives as it happens.
         </p>
       )}
