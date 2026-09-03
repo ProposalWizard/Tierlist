@@ -270,7 +270,6 @@ function TrendTicker({ trends }: { trends: Trend[] }) {
             key={`${t.label}-${i}`}
             className="flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1"
           >
-            <span className="text-[9px] font-black text-white/50">{(i % trends.length) + 1}</span>
             <span className="whitespace-nowrap text-[10.5px] font-black text-white">
               {t.label}{t.hot && " 🔥"}
             </span>

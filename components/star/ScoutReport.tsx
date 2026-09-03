@@ -4,6 +4,7 @@ import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { initials } from "@/components/star/ClubCrest";
+import { shortNameOf } from "@/lib/star/realSquad";
 
 const RESULT_BG: Record<"W" | "D" | "L", string> = { W: "#16a34a", D: "#b98a1f", L: "#b91c1c" };
 
@@ -29,10 +30,10 @@ function MiniCrest({ club, size = 16 }: { club: string; size?: number }) {
 /**
  * Every card is themed by the role it's scouting — and, since the user's
  * own designed template art, backed by a real frame image per role:
- * public/star/scout/{scorer,assist,rated}-frame.png. Each is a portrait
- * card with a circular photo cutout (genuinely transparent — alpha 0, not
- * just a dark fill) and a glow underline, measured directly off the
- * uploaded files rather than eyeballed:
+ * public/star/scout/{blue,red,gold}-frame.png. Each is a portrait card
+ * with a circular photo cutout (genuinely transparent — alpha 0, not just
+ * a dark fill) and a glow underline, measured directly off the uploaded
+ * files rather than eyeballed:
  *   - circle centre ≈ 50% across, ≈ 21.5% down; diameter ≈ 42% of width
  *   - glow underline ≈ 44% down
  *   - a dotted texture band starts ≈ 70% down, reserved for the stat boxes
@@ -40,11 +41,16 @@ function MiniCrest({ club, size = 16 }: { club: string; size?: number }) {
  * one shared geometry (CARD_GEOM below) works for all three roles. The
  * player photo is a separate, lower layer positioned at that same circle —
  * the template's cutout is what actually makes it read as "in" the frame.
+ *
+ * Colour is keyed to the ROLE, not fixed to a template file — requested
+ * directly, swapping the top scorer to red and the assist king to blue
+ * (from the reverse), which just means each role points at a different
+ * frame image and accent now, not that the frame files themselves changed.
  */
 const ROLE_THEME: Record<"scorer" | "assist" | "rated", { icon: string; label: string; accent: string; soft: string; frame: string }> = {
-  scorer: { icon: "⚽", label: "Top Scorer", accent: "#38bdf8", soft: "rgba(56,189,248,0.16)", frame: "/star/scout/scorer-frame.png" },
-  assist: { icon: "🎯", label: "Assist King", accent: "#fb7185", soft: "rgba(251,113,133,0.16)", frame: "/star/scout/assist-frame.png" },
-  rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)", frame: "/star/scout/rated-frame.png" },
+  scorer: { icon: "⚽", label: "Top Scorer", accent: "#f87171", soft: "rgba(248,113,113,0.16)", frame: "/star/scout/red-frame.png" },
+  assist: { icon: "🎯", label: "Assist King", accent: "#38bdf8", soft: "rgba(56,189,248,0.16)", frame: "/star/scout/blue-frame.png" },
+  rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)", frame: "/star/scout/gold-frame.png" },
 };
 
 /**
@@ -56,15 +62,16 @@ const ROLE_THEME: Record<"scorer" | "assist" | "rated", { icon: string; label: s
  * label/name/stat block instead sits as one group in the roomy gap BELOW
  * the underline (44% down to the ~70%-down dotted band), which is what
  * the underline is actually for: a divider between the photo and the
- * text, not a rule the text sits flush above.
+ * text, not a rule the text sits flush above. Each line gets real
+ * breathing room from the next rather than being packed edge to edge.
  */
 const CARD_GEOM = {
   aspect: "536 / 814",
   circle: { cx: 50, cy: 21.5, diameter: 42 },
-  labelTop: 47,
-  nameTop: 52.5,
-  statTop: 58.5,
-  boxesTop: 74,
+  labelTop: 47.5,
+  nameTop: 54,
+  statTop: 61,
+  boxesTop: 76,
 };
 
 /**
@@ -102,12 +109,15 @@ function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; pla
         <span>{theme.icon}</span><span className="truncate">{theme.label}</span>
       </div>
 
+      {/* Surname only — a full name (especially a hyphenated first name
+          plus surname) reliably overflowed this width; the full name is
+          still there on hover via the title. */}
       <div
         className="absolute px-2 text-center text-[12px] font-black text-white truncate"
         style={{ top: `${g.nameTop}%`, left: 0, right: 0 }}
         title={player.name}
       >
-        {player.name}
+        {shortNameOf(player.name)}
       </div>
 
       <div
@@ -117,26 +127,37 @@ function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; pla
         {theme.icon} {player.value}{role === "rated" ? " OVR" : ""} · {player.position}
       </div>
 
-      {/* The three boxes from the template's dotted band — recent-form
-          indicators: did they score/assist in each of the last few league
-          games. The top-rated card has no single relevant per-match event
-          to track (see ScoutPlayer.form's own doc comment), so it gets no
-          boxes at all rather than three that can never mean anything. */}
-      {player.form && (
+      {/* Up to five boxes from the template's dotted band — recent-form
+          indicators: did they score/assist in each of the last five league
+          games, and how many times (a brace or a hat trick gets a ×N badge
+          in the box's own corner rather than reading the same as a single).
+          The top-rated card has no single relevant per-match event to
+          track (see ScoutPlayer.form's own doc comment), so it gets no
+          boxes at all rather than several that can never mean anything. */}
+      {player.form && player.form.length > 0 && (
         <div
-          className="absolute flex justify-center gap-1.5 px-3"
+          className="absolute flex justify-center gap-1"
           style={{ top: `${g.boxesTop}%`, left: 0, right: 0 }}
         >
-          {player.form.slice(0, 3).map((did, i) => (
+          {player.form.map((count, i) => (
             <span
               key={i}
-              className="grid aspect-square flex-1 place-items-center rounded-md border text-[11px]"
+              className="relative grid aspect-square place-items-center rounded-md border text-[10px]"
               style={{
-                borderColor: did ? theme.accent : "rgba(255,255,255,0.15)",
-                background: did ? theme.soft : "rgba(255,255,255,0.04)",
+                width: "16%",
+                borderColor: count > 0 ? theme.accent : "rgba(255,255,255,0.15)",
+                background: count > 0 ? theme.soft : "rgba(255,255,255,0.04)",
               }}
             >
-              {did ? theme.icon : ""}
+              {count > 0 ? theme.icon : ""}
+              {count > 1 && (
+                <span
+                  className="absolute -right-1 -top-1 rounded-full bg-gray-950 px-[3px] text-[7px] font-black leading-tight"
+                  style={{ color: theme.accent, border: `1px solid ${theme.accent}` }}
+                >
+                  ×{count}
+                </span>
+              )}
             </span>
           ))}
         </div>

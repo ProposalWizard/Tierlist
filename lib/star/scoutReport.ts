@@ -34,13 +34,15 @@ export interface ScoutPlayer {
   assists: number;
   overall: number;
   /**
-   * Did this player do the thing the card is about (score, for the top
-   * scorer; assist, for the assist king) in each of the club's last few
-   * league games this season — oldest first, most recent last. As many
-   * entries as games actually played, 0-5; absent for the best-player card,
-   * which has no single relevant per-match event to track.
+   * How many times this player did the thing the card is about (goals, for
+   * the top scorer; assists, for the assist king) in each of the club's
+   * last five league games this season — oldest first, most recent last, 0
+   * meaning they didn't. A count rather than a yes/no so a brace or a hat
+   * trick shows as more than a single strike did. As many entries as games
+   * actually played, 0-5; absent for the best-player card, which has no
+   * single relevant per-match event to track.
    */
-  form?: boolean[];
+  form?: number[];
 }
 
 export interface RecentResult {
@@ -119,26 +121,38 @@ function lastWord(s: string): string {
   return parts[parts.length - 1];
 }
 
-/** Did this named player score (or assist) in each of the club's last five
- *  league games — read off the same `hg`/`ag` scorer log the results page
- *  itself is built from, not a separate per-player history nothing else
- *  tracks. */
-function formFor(playerName: string, club: string, results: LeagueResult[], kind: "scored" | "assisted"): boolean[] {
+/** How many times did this named player score (or assist) in each of the
+ *  club's last five league games — read off the same `hg`/`ag` scorer log
+ *  the results page itself is built from, not a separate per-player
+ *  history nothing else tracks. A brace or a hat trick counts as more than
+ *  one, not just "yes". */
+function formFor(playerName: string, club: string, results: LeagueResult[], kind: "scored" | "assisted"): number[] {
   const target = lastWord(playerName);
   return lastFive(club, results).map(r => {
     const goals = r.home === club ? r.hg : r.ag;
-    if (!goals) return false;
-    return goals.some(g => lastWord(kind === "scored" ? g.s : (g.a ?? "")) === target);
+    if (!goals) return 0;
+    return goals.filter(g => lastWord(kind === "scored" ? g.s : (g.a ?? "")) === target).length;
   });
 }
 
+/**
+ * A fixed-size window of the table centred on the opponent — always
+ * `radius * 2 + 1` rows (5, by default) when the division has that many
+ * clubs, clamped by SLIDING the whole window rather than shrinking it: a
+ * club sitting 20th in a 20-team division still gets 5 rows (16th-20th),
+ * not just the 2 or 3 that a naive "radius each side, clamp each side
+ * independently" produces once you're within `radius` of an edge.
+ */
 function tableSnippetFor(table: LeagueTeam[], opponentIdx: number, radius = 2): TableRow[] {
   if (opponentIdx < 0) return [];
-  const start = Math.max(0, opponentIdx - radius);
-  const end = Math.min(table.length, opponentIdx + radius + 1);
+  const windowSize = Math.min(table.length, radius * 2 + 1);
+  let start = opponentIdx - radius;
+  if (start < 0) start = 0;
+  if (start + windowSize > table.length) start = table.length - windowSize;
+  const end = start + windowSize;
   return table.slice(start, end).map((t, i) => ({
     position: start + i + 1, club: t.name, points: t.points, played: t.played,
-    isOpponent: i + start === opponentIdx,
+    isOpponent: start + i === opponentIdx,
   }));
 }
 

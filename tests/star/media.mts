@@ -5,6 +5,7 @@ import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch, detectCareer } from "..
 import { buildMatchRecord } from "../../lib/star/media/record";
 import { emptyMemory, absorbMatch } from "../../lib/star/media/memory";
 import { chooseTemplate } from "../../lib/star/media/templates";
+import { buildTrends } from "../../lib/star/media/trending";
 import { mulberry32 } from "../../lib/star/season";
 import type { CareerState, GoalEvent, MatchStats, StarPlayer } from "../../lib/star/types";
 import type { Archetype, CareerRecord, FootballEvent, StoredPost } from "../../lib/star/media/types";
@@ -604,6 +605,37 @@ const RUN_ROW = (rows: { label: string; value: string }[]) =>
   // Never your own name, in any of the three.
   const NAME = /Test Player|Player\b/;
   check([...win, ...loss, ...draw].every(b => !NAME.test(b)), "none of these ever say your own name");
+}
+
+// ── Trending always shows a real platform's worth of tags, not just what ───
+// ── the cycle happened to produce — reported directly: a quiet cycle only
+// ever real-trended two labels, and a real feed never looks that empty.
+{
+  // A completely quiet cycle: nothing happened worth talking about at all.
+  const quiet = buildTrends([], [], "cycle-quiet", 50);
+  check(quiet.length >= 10, `even a dead-quiet cycle still shows at least ten trends (${quiet.length})`);
+  check(quiet.every(t => t.volume > 0 && t.label.length > 0), "every padded-in trend still has a real label and a positive volume");
+  check(quiet.every(t => !t.hot), "padding is never marked hot — nothing actually happened to earn that");
+  check(new Set(quiet.map(t => t.label)).size === quiet.length, "no duplicate labels between the real trends and the padding");
+
+  // A cycle with one real, important event — the real trend should still be
+  // in the mix once padded up to ten, not pushed out by the filler.
+  const busyEvents: FootballEvent[] = [{
+    // A one-word name so surname() (grammar.ts) leaves it untouched — the
+    // point here is checking the real trend survives padding, not the
+    // separate name-shortening behaviour.
+    id: "e1", subject: { kind: "you", name: "Strikerson" }, tags: ["derby"],
+    baseImportance: 80, window: "instant", facts: {},
+  }];
+  const busy = buildTrends(busyEvents, [], "cycle-busy", 50);
+  check(busy.length >= 10, `a cycle with one real event still pads up to ten (${busy.length})`);
+  check(busy.some(t => t.label === "Strikerson" || t.label === "Derby Day"),
+    `the real event's own trend survives the padding (${busy.map(t => t.label).join(", ")})`);
+
+  // Deterministic: the same cycle id produces the same padded list, so the
+  // ticker doesn't reshuffle itself on every re-render.
+  const again = buildTrends([], [], "cycle-quiet", 50);
+  check(JSON.stringify(quiet) === JSON.stringify(again), "the same cycle id always pads out to the same trends");
 }
 
 if (problems.length) {

@@ -106,22 +106,26 @@ function squadFor(club: string, offset: number): LeagueSquad {
   const scorer = squad.reduce((a, b) => (b.goals > a.goals ? b : a));
   const assister = squad.reduce((a, b) => (b.assists > a.assists ? b : a));
 
-  // Three league games for Chelsea this season: scored in the 1st and 3rd,
-  // not the 2nd; the assist king sets up the 3rd only. Mix of home and away
-  // so the home/away goal-log split is actually exercised.
+  // Three league games for Chelsea this season: scored ONCE in the 1st,
+  // nothing in the 2nd, TWICE (a brace) in the 3rd — so the count, not just
+  // whether it happened, is actually exercised. The assist king sets up the
+  // 3rd only. Mix of home and away so the home/away goal-log split runs too.
   const results: LeagueResult[] = [
     { week: 1, home: opponent, away: "Fulham FC", hs: 1, as: 0, hg: [{ m: 30, s: scorer.name }] },
     { week: 2, home: "Everton", away: opponent, hs: 2, as: 1, ag: [{ m: 60, s: "Someone Else" }] },
-    { week: 3, home: opponent, away: "Brentford", hs: 2, as: 0, hg: [{ m: 10, s: "Someone Else" }, { m: 70, s: scorer.name, a: assister.name }] },
+    {
+      week: 3, home: opponent, away: "Brentford", hs: 3, as: 0,
+      hg: [{ m: 10, s: "Someone Else" }, { m: 70, s: scorer.name, a: assister.name }, { m: 80, s: scorer.name }],
+    },
   ];
   c = { ...c, results };
 
   const r = scoutReportFor(c, opponent, 4);
   check(r.topScorer?.form?.length === 3, `three league games played, three entries (${r.topScorer?.form?.length})`);
-  check(JSON.stringify(r.topScorer?.form) === JSON.stringify([true, false, true]),
-    `scored games 1 and 3, not 2, oldest first (${JSON.stringify(r.topScorer?.form)})`);
-  check(JSON.stringify(r.topAssister?.form) === JSON.stringify([false, false, true]),
-    `the assist king only actually assisted the third (${JSON.stringify(r.topAssister?.form)})`);
+  check(JSON.stringify(r.topScorer?.form) === JSON.stringify([1, 0, 2]),
+    `one goal in game 1, none in game 2, a brace in game 3, oldest first (${JSON.stringify(r.topScorer?.form)})`);
+  check(JSON.stringify(r.topAssister?.form) === JSON.stringify([0, 0, 1]),
+    `the assist king only actually assisted once, in the third (${JSON.stringify(r.topAssister?.form)})`);
 
   // Recent results themselves: real scores, real opponents, oldest first.
   check(r.recentResults.length === 3, "one row per game played");
@@ -160,28 +164,67 @@ function squadFor(club: string, offset: number): LeagueSquad {
   c = { ...c, results };
 
   const r = scoutReportFor(c, opponent, 4);
-  check(JSON.stringify(r.topScorer?.form) === JSON.stringify([true, false, true]),
+  check(JSON.stringify(r.topScorer?.form) === JSON.stringify([1, 0, 1]),
     `both the played-match ("Dijk") and simulated-match ("van Dijk") log spellings still match the real scorer (${JSON.stringify(r.topScorer?.form)})`);
 }
 
-// ── The table snippet is genuinely centred on the opponent, clamped at the edges ─
+// ── Five games played still means five entries, not capped at three ────────
+{
+  let c = base();
+  const opponent = "Chelsea";
+  c = { ...c, leagueSquads: c.league.map((t, i) => squadFor(t.name, i * 3)) };
+  const squad = c.leagueSquads!.find(s => s.club === opponent)!.players;
+  const scorer = squad.reduce((a, b) => (b.goals > a.goals ? b : a));
+
+  // Six league games played — the scorer scored in the FIRST (which should
+  // age out of the last-five window) and the LAST (which should be the most
+  // recent entry). If the form strip were still capped at three, or reading
+  // the wrong window, this comes out wrong either way.
+  const results: LeagueResult[] = [1, 2, 3, 4, 5, 6].map(week => ({
+    week, home: opponent, away: `Opponent ${week}`, hs: (week === 1 || week === 6) ? 1 : 0, as: 0,
+    hg: (week === 1 || week === 6) ? [{ m: 10, s: scorer.name }] : undefined,
+  }));
+  c = { ...c, results };
+
+  const r = scoutReportFor(c, opponent, 8);
+  check(r.topScorer?.form?.length === 5, `capped at five, not stuck at three (${r.topScorer?.form?.length})`);
+  check(JSON.stringify(r.topScorer?.form) === JSON.stringify([0, 0, 0, 0, 1]),
+    `week 1's goal aged out, week 6's (the most recent) is the only one left (${JSON.stringify(r.topScorer?.form)})`);
+}
+
+// ── The table snippet always shows five rows, SLIDING at the edges rather ──
+// ── than shrinking — reported directly from a 20th-placed club only ever
+// showing 3 rows (itself plus the two above) instead of a real 5-row window.
 {
   let c = base();
   const table = c.league.map(t => t.name);
-  const topClub = table[0], midClub = table[10], bottomClub = table[table.length - 1];
+  const topClub = table[0], midClub = table[10], secondClub = table[1], bottomClub = table[table.length - 1];
 
   const top = scoutReportFor(c, topClub, 1);
-  check(top.tableSnippet[0].position === 1, `clamped at the top, not showing a negative position (${top.tableSnippet[0].position})`);
-  check(top.tableSnippet.some(r => r.isOpponent && r.club === topClub), "the opponent is marked within it");
+  check(top.tableSnippet.length === 5, `still five rows even right at the top (${top.tableSnippet.length})`);
+  check(top.tableSnippet[0].position === 1 && top.tableSnippet[4].position === 5,
+    `1st place shows 1st through 5th, not clamped down to 3 rows (${JSON.stringify(top.tableSnippet.map(r => r.position))})`);
+  check(top.tableSnippet[0].isOpponent, "the opponent is still the FIRST row, not re-centred once slid");
+
+  // The exact case reported: 2nd from the bottom shows 5 rows sliding to
+  // include one MORE below them, not just clamping to fewer above.
+  const second = scoutReportFor(c, secondClub, 1);
+  check(second.tableSnippet.length === 5, `2nd place also gets a full five rows (${second.tableSnippet.length})`);
+  check(second.tableSnippet[0].position === 1 && second.tableSnippet[4].position === 5,
+    `2nd place slides the window down to 1st-5th rather than showing only 4 rows (${JSON.stringify(second.tableSnippet.map(r => r.position))})`);
 
   const mid = scoutReportFor(c, midClub, 1);
   const oppRow = mid.tableSnippet.find(r => r.isOpponent)!;
-  check(mid.tableSnippet.length === 5, `two either side in the middle of the table (${mid.tableSnippet.length})`);
-  check(oppRow.club === midClub, "…genuinely centred on the opponent, not some fixed slice");
+  check(mid.tableSnippet.length === 5, `five rows in the middle of the table too (${mid.tableSnippet.length})`);
+  check(oppRow.club === midClub, "…genuinely centred on the opponent when there's room to be");
 
+  // The exact case reported: last place (Hull City, 20th in a 20-team
+  // division) must still show 5 rows — 16th through 20th — not just 3.
   const bottom = scoutReportFor(c, bottomClub, 1);
-  check(bottom.tableSnippet[bottom.tableSnippet.length - 1].position === table.length,
-    `clamped at the bottom too, not running past the last club (${bottom.tableSnippet[bottom.tableSnippet.length - 1].position})`);
+  check(bottom.tableSnippet.length === 5, `still five rows dead last, not clamped down to 3 (${bottom.tableSnippet.length})`);
+  check(bottom.tableSnippet[4].position === table.length && bottom.tableSnippet[0].position === table.length - 4,
+    `last place shows the final five positions, sliding the window up (${JSON.stringify(bottom.tableSnippet.map(r => r.position))})`);
+  check(bottom.tableSnippet[4].isOpponent, "the opponent is still the LAST row, not re-centred once slid");
 }
 
 // ── Head-to-head actually accumulates, and only for club matches ───────────
