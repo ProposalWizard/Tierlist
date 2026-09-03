@@ -99,15 +99,29 @@ function recentResultsFor(club: string, results: LeagueResult[]): RecentResult[]
   });
 }
 
+/** The results log never carries a full name — it's trimmed to a bare
+ *  surname by one of two different helpers depending on whether the goal
+ *  was scored in a match you actually played (`surname()`,
+ *  lib/star/media/grammar.ts) or one simulated without you
+ *  (`shortNameOf()`, lib/star/realSquad.ts) — and those two don't always
+ *  agree on a multi-word surname ("Dijk" vs "van Dijk"). Comparing on just
+ *  the final word is the one thing both agree on, and squad names rarely
+ *  collide on a surname alone. */
+function lastWord(s: string): string {
+  const parts = s.trim().split(/\s+/);
+  return parts[parts.length - 1];
+}
+
 /** Did this named player score (or assist) in each of the club's last five
  *  league games — read off the same `hg`/`ag` scorer log the results page
  *  itself is built from, not a separate per-player history nothing else
  *  tracks. */
 function formFor(playerName: string, club: string, results: LeagueResult[], kind: "scored" | "assisted"): boolean[] {
+  const target = lastWord(playerName);
   return lastFive(club, results).map(r => {
     const goals = r.home === club ? r.hg : r.ag;
     if (!goals) return false;
-    return goals.some(g => (kind === "scored" ? g.s === playerName : g.a === playerName));
+    return goals.some(g => lastWord(kind === "scored" ? g.s : (g.a ?? "")) === target);
   });
 }
 
