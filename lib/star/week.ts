@@ -5,12 +5,16 @@ import type { CareerState } from "./types";
  *
  * Three things a week between matches — train a skill, work on a relationship,
  * or actually rest. Energy is spent by playing (see creditMatchResult) and
- * earned back only by a deliberate choice here — Rest, or skipping the rest
- * of the week outright — never by the week simply turning over on its own.
- * That distinction is the whole point of this build: an earlier version of
- * energy topped itself up automatically every week regardless of what you
- * did, which made it a number that moved on its own rather than something
- * you managed. See CareerState.energy's own doc comment.
+ * earned back by a deliberate choice here — Rest, or skipping the rest of
+ * the week outright — OR, for any action you leave unspent, automatically
+ * the moment the next match starts (creditMatchResult credits REST_ENERGY
+ * per unspent action there). What it is never given back by is the week
+ * simply turning over regardless of what was actually done with it — an
+ * earlier version of energy topped itself up automatically every week no
+ * matter what, which made it a number that moved on its own rather than
+ * something you managed; training a skill or working on a relationship is
+ * still a real trade against resting THAT action, same as it always was.
+ * See CareerState.energy's own doc comment.
  */
 
 /** How many things you can do between matches. */
