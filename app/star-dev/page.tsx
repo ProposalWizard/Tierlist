@@ -1749,13 +1749,18 @@ export default function StarDevPage() {
                         backgroundImage: `repeating-linear-gradient(115deg, ${accent.hex}55 0px, ${accent.hex}55 2px, transparent 2px, transparent 14px)`,
                       }}
                     />
+                    {/* How many owned, as a corner badge rather than its own
+                        text row — same information, less vertical space. */}
+                    <div
+                      className="absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums text-gray-950"
+                      style={{ backgroundColor: accent.hex }}
+                    >
+                      ×{count}
+                    </div>
                     <div className="relative">
                       <KibCanIcon can={c} className="h-[84px] w-full mb-1.5" />
                       <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
                       <div className="text-[9px] font-bold text-white/55">+{c.restore} energy</div>
-                      <div className="mt-1 text-sm font-black tabular-nums" style={{ color: accent.hex }}>
-                        {count} owned
-                      </div>
                       <button
                         disabled={count === 0}
                         onClick={() => handleUseCan(c.id)}
