@@ -1,4 +1,4 @@
-import { scoutReportFor, keyInsightFor } from "../../lib/star/scoutReport";
+import { scoutReportFor } from "../../lib/star/scoutReport";
 import { groundFor, crowdFor, GROUNDS } from "../../lib/star/stadiums";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
@@ -210,30 +210,6 @@ function squadFor(club: string, offset: number): LeagueSquad {
   const intl = creditMatchResult(base(), { week: 1, opponent: "Brazil", home: true, played: false, kind: "international" },
     stats({ homeScore: 1, awayScore: 0 })).career;
   check(!intl.headToHead?.["Brazil"], "a nation never gets a club head-to-head entry");
-}
-
-// ── The key insight is built from real facts, in the right priority order ──
-{
-  let c = base();
-  const noScout = scoutReportFor(c, "Chelsea", 1);
-  check(keyInsightFor(noScout) !== null, "the table position alone is still worth a sentence, even with no squad data");
-
-  c = { ...c, leagueSquads: c.league.map((t, i) => squadFor(t.name, i * 3)) };
-  const opponent = "Chelsea";
-  const squad = c.leagueSquads!.find(s => s.club === opponent)!.players;
-  const scorer = squad.reduce((a, b) => (b.goals > a.goals ? b : a));
-
-  const scouted = scoutReportFor(c, opponent, 1);
-  const insight = keyInsightFor(scouted)!;
-  check(insight.includes(opponent), `it names the actual club (${insight})`);
-  check(insight.includes(scorer.name), `it leads with the real top scorer over the assist king when both exist (${insight})`);
-
-  // A relegation-zone club reads differently from one push for the top —
-  // both derived from the same real `report.table`, nothing hardcoded.
-  const table = c.league.map(t => t.name);
-  const bottomInsight = keyInsightFor(scoutReportFor(c, table[table.length - 1], 1))!;
-  const topInsight = keyInsightFor(scoutReportFor(c, table[0], 1))!;
-  check(bottomInsight !== topInsight, "bottom of the table and top of the table don't read the same");
 }
 
 // ── Grounds ──────────────────────────────────────────────────────────────

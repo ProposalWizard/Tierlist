@@ -1,6 +1,5 @@
 "use client";
 import type { ScoutReport, ScoutPlayer } from "@/lib/star/scoutReport";
-import { keyInsightFor } from "@/lib/star/scoutReport";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { kitsOf, labelInk } from "@/lib/star/kits";
@@ -119,14 +118,13 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 export default function ScoutReportCard({ report }: { report: ScoutReport }) {
   const noPlayerData = !report.topScorer && !report.topAssister && !report.bestPlayer;
-  const insight = keyInsightFor(report);
 
   return (
     <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800 p-3">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Scout Report</span>
         {report.table && (
-          <span className="text-[10px] font-bold text-white/70">{report.table.position}{ordinal(report.table.position)} in the table</span>
+          <span className="text-[10px] font-bold text-white/90">{report.table.position}{ordinal(report.table.position)} in the table</span>
         )}
       </div>
 
@@ -144,11 +142,15 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
 
       <div className="mt-2.5 grid grid-cols-2 gap-2.5">
         <div>
-          <div className="text-[9px] font-black uppercase tracking-wide text-white/60 mb-1">Recent Form</div>
+          <div className="text-[9px] font-black uppercase tracking-wide text-emerald-300/90 mb-1">Recent Form</div>
           {report.recentResults.length ? (
             <div className="space-y-1">
               {[...report.recentResults].reverse().map((r, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-[9px]">
+                <div
+                  key={i}
+                  className="flex items-center gap-1.5 rounded-md px-1 py-1 text-[9px]"
+                  style={{ background: `${RESULT_BG[r.result]}26`, boxShadow: `inset 2px 0 0 0 ${RESULT_BG[r.result]}` }}
+                >
                   <span
                     className="grid h-4 w-4 shrink-0 place-items-center rounded text-[8px] font-black text-white"
                     style={{ background: RESULT_BG[r.result] }}
@@ -156,7 +158,7 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
                     {r.result}
                   </span>
                   <MiniCrest club={r.opponent} />
-                  <span className="text-white/80 truncate">
+                  <span className="text-white truncate">
                     {r.scoreFor}-{r.scoreAgainst} vs {r.opponent}
                   </span>
                 </div>
@@ -167,18 +169,19 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
           )}
         </div>
         <div>
-          <div className="text-[9px] font-black uppercase tracking-wide text-white/60 mb-1">League Table</div>
+          <div className="text-[9px] font-black uppercase tracking-wide text-emerald-300/90 mb-1">League Table</div>
           {report.tableSnippet.length ? (
             <div className="space-y-0.5">
               {report.tableSnippet.map(row => (
                 <div
                   key={row.club}
-                  className={`flex items-center gap-1 text-[9px] rounded px-1 py-0.5 ${row.isOpponent ? "bg-emerald-500/20 text-emerald-200 font-black" : "text-white/70"}`}
+                  className={`flex items-center gap-1 rounded-md px-1 py-1 text-[9px] ${
+                    row.isOpponent ? "bg-emerald-500 text-gray-950 font-black shadow-[0_0_10px_-2px_rgba(16,185,129,0.9)]" : "text-white/90"}`}
                 >
                   <span className="w-3.5 shrink-0 tabular-nums">{row.position}</span>
                   <MiniCrest club={row.club} size={14} />
                   <span className="flex-1 truncate">{row.club}</span>
-                  <span className="tabular-nums">{row.points}pts</span>
+                  <span className={`tabular-nums font-bold ${row.isOpponent ? "" : "text-emerald-300"}`}>{row.points}pts</span>
                 </div>
               ))}
             </div>
@@ -187,16 +190,6 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
           )}
         </div>
       </div>
-
-      {insight && (
-        <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-2.5 py-2">
-          <span className="text-sm leading-none">🔭</span>
-          <div className="text-[10px] font-bold text-white/85">
-            <span className="mr-1 text-[8px] font-black uppercase tracking-wide text-emerald-300">Key Insight</span>
-            <div className="mt-0.5">{insight}</div>
-          </div>
-        </div>
-      )}
 
       {report.headToHead && (
         <div className="mt-2.5 text-[10px] text-white/70 text-center">
