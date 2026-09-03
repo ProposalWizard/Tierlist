@@ -69,7 +69,21 @@ const stats = (rating: number): MatchStats => ({
 // match swing the whole judgement, so one 4.2 in your opening week put you on
 // the bench. The window is a fixed five, padded with neutral performances.
 {
-  let c = base();
+  // Pinned at a neutral 2.5★ (re-pinned every iteration below), AND pinned
+  // to a manager of a known, zero-bend style — makeManager (manager.ts)
+  // seeds its RNG off `career.starRating` at the moment a career is
+  // created, so a fresh career's now-derived, lower default rating
+  // (rating.ts's computeStarRating — a real, intended change, see its own
+  // note) hands out a DIFFERENT manager, whose style then bends the
+  // 1st-Team/Substitute thresholds this block is calibrated against.
+  // Neither starRating nor whichever manager the RNG happens to land on is
+  // what this block means to test, so both are isolated the same way
+  // energy already is below — a run of bad form, nothing else.
+  let c: CareerState = {
+    ...base(),
+    starRating: 2.5,
+    manager: { name: "Test Manager", style: "rotational", since: 1, arrival: "", reputation: 50 },
+  };
   const bad = { ...stats(4.2), bossChange: -5 };
   const seen: string[] = [];
   for (let i = 0; i < 5; i++) {
@@ -80,7 +94,7 @@ const stats = (rating: number): MatchStats => ({
     // manager's verdict all the way to Squad regardless of form, which is
     // its own real behaviour (see tests/star/energy.mts) but not what this
     // block is isolating.
-    c = { ...c, energy: 100 };
+    c = { ...c, energy: 100, starRating: 2.5 };
     seen.push(selectionFor(c).status);
   }
   check(seen[0] === "1st Team", `one bad game does not cost you your place (${seen[0]})`);

@@ -75,10 +75,17 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
 
   const phone = (
     <PhoneFrame statusLabel={dateLabel}>
-      {/* App bar — the one constant across both tabs. */}
+      {/* App bar — the one constant across both tabs. Reads "Post Match
+          Reactions" for the standalone full-time screen (mode === "moment")
+          instead of the ordinary "Matchday" — requested directly, once the
+          screen's OWN header above the phone (see below) was removed: the
+          phone itself is now the only place left to say what this moment
+          actually is. */}
       <div className="flex shrink-0 items-center gap-1.5 border-b border-white/10 px-3 pb-2 pt-1">
         <AppMark />
-        <span className="text-[13px] font-black tracking-tight text-white">Matchday</span>
+        <span className="text-[13px] font-black tracking-tight text-white">
+          {mode === "moment" ? "Post Match Reactions" : "Matchday"}
+        </span>
       </div>
 
       {tab === "transfers" ? (
@@ -174,13 +181,10 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
   // around in.
   return (
     <div className="flex min-h-screen flex-col items-center bg-[radial-gradient(120%_80%_at_50%_-10%,#1f2937_0%,#0b0f14_55%,#05070a_100%)] px-3 py-4 text-white">
-      <header className="mb-3 flex w-full max-w-md items-center gap-2">
-        <div className="flex-1">
-          <h1 className="text-base font-black uppercase tracking-wide text-white">Full-time reaction</h1>
-          <p className="text-[10px] font-bold text-white/55">What they made of that</p>
-        </div>
-      </header>
-
+      {/* No header of its own any more — reported directly: the phone's own
+          app bar now says "Post Match Reactions" (see `phone` above),
+          which was exactly what this "Full-time reaction / What they made
+          of that" header used to say a second time above it. */}
       <div className="flex w-full flex-1 items-center justify-center py-1" style={{ minHeight: 0 }}>
         <div className="w-full max-w-md" style={{ height: "min(80vh, 780px)" }}>{phone}</div>
       </div>

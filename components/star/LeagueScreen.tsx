@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNameFor } from "@/lib/star/calendar";
+import { displayOverall } from "@/lib/star/rating";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
-import { roundsFor, nationOf, internationalCallUp } from "@/lib/star/competitions";
+import { roundsFor, nationOf, internationalCallUp, nextFixtureFor } from "@/lib/star/competitions";
 import { exitRound } from "@/lib/star/cups";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
@@ -366,10 +367,25 @@ export default function LeagueScreen({ career }: Props) {
               tie played on the Tuesday BELOW a domestic cup tie played on
               the Wednesday after it, backwards from the order they're
               actually played in. */}
-          {[...career.fixtures]
-            .sort((a, b) => fixtureTimestamp(career.player.startYear, career.season, a.week, a.kind, divisionOf(career))
-              - fixtureTimestamp(career.player.startYear, career.season, b.week, b.kind, divisionOf(career)))
-            .map((f, i) => {
+          {(() => {
+            // The one row that should read as "next", not every row that
+            // happens to share a week number with `career.week` — which is
+            // a count of matches PLAYED (see calendar.ts's own note on it),
+            // not a fixture's real week, and matches several fixtures at
+            // once whenever more than one game shares a week (a cup tie
+            // alongside its league match, say). Reported directly, with a
+            // screenshot: a cup tie still unplayed sat ABOVE the row
+            // actually highlighted, and every fixture in week 5 was about
+            // to light up together once the career reached week 5. The
+            // SAME fixture object nextFixtureFor already resolves this
+            // correctly for (used to decide what "Next:" reads elsewhere)
+            // is compared by reference below instead — sort doesn't clone
+            // the fixture objects, so `f === upNext` matches exactly one row.
+            const upNext = nextFixtureFor(career);
+            return [...career.fixtures]
+              .sort((a, b) => fixtureTimestamp(career.player.startYear, career.season, a.week, a.kind, divisionOf(career))
+                - fixtureTimestamp(career.player.startYear, career.season, b.week, b.kind, divisionOf(career)))
+              .map((f, i) => {
               const yourScore = f.played ? (f.home ? f.homeScore : f.awayScore) : undefined;
               const theirScore = f.played ? (f.home ? f.awayScore : f.homeScore) : undefined;
               const resultColor = yourScore === undefined || theirScore === undefined ? ""
@@ -379,7 +395,7 @@ export default function LeagueScreen({ career }: Props) {
               <div
                 key={i}
                 className={`grid grid-cols-[58px_1fr_60px_1fr] items-center py-2 px-2 gap-1 text-xs font-bold ${
-                  f.week === career.week ? "bg-emerald-500 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                  f === upNext ? "bg-emerald-500 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
                 }`}
               >
                 {/* The week, not the date, on top now — reported directly:
@@ -419,7 +435,8 @@ export default function LeagueScreen({ career }: Props) {
                 </div>
               </div>
               );
-            })}
+            });
+          })()}
         </div>
       )}
 
@@ -516,7 +533,9 @@ export default function LeagueScreen({ career }: Props) {
               id: "__you__", isYou: true,
               name: `${career.player.firstName} ${career.player.lastName}`,
               position: career.player.position,
-              overall: Math.round(career.starRating * 18 + 10),
+              // The one shared overall formula every screen reads now
+              // (rating.ts), not a formula of this screen's own.
+              overall: displayOverall(career.starRating),
               seasonGoals: career.seasonStats.goals,
               seasonAssists: career.seasonStats.assists,
               imageUrl: undefined as string | undefined,

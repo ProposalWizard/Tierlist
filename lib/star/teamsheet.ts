@@ -3,6 +3,7 @@ import { mulberry32 } from "./season";
 import { FORMATIONS, formationOf, autoPick, type Formation, type Pickable, type Role } from "./formations";
 import { shortNameOf } from "./realSquad";
 import { loadLineup } from "./lineupStore";
+import { displayOverall } from "./rating";
 
 /**
  * THE TEAM SHEET.
@@ -536,8 +537,9 @@ export function matchdayFor(
     short: career.player.lastName,
     position: playAs ?? (career.player.position as Role) ?? "ST",
     // Rated off your star rating so you are not permanently the worst man on
-    // the sheet — 2.5 stars is a squad player and 5 is the best in the league.
-    overall: Math.round(58 + (career.starRating ?? 2.5) * 6.5),
+    // the sheet — the one shared overall formula every screen now reads
+    // (rating.ts's displayOverall), not a formula of this screen's own.
+    overall: displayOverall(career.starRating ?? 2.5),
     face: career.player.portrait,
     nation: career.player.nationality,
     isYou: true,
