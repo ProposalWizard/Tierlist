@@ -2,6 +2,8 @@ import { scoutReportFor } from "../../lib/star/scoutReport";
 import { groundFor, crowdFor, GROUNDS } from "../../lib/star/stadiums";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { shortNameOf } from "../../lib/star/realSquad";
+import { surname } from "../../lib/star/media/grammar";
 import type { CareerState, Fixture, LeagueResult, LeagueSquad, MatchStats, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -119,6 +121,37 @@ function squadFor(club: string, offset: number): LeagueSquad {
     `game 2 read correctly as the away side (${JSON.stringify(r.recentResults[1])})`);
   check(r.recentResults[2].result === "W" && r.recentResults[2].opponent === "Brentford",
     `game 3 read correctly (${JSON.stringify(r.recentResults[2])})`);
+}
+
+// ── Form strips still match against the log's real shape: a bare surname ──
+// The fabricated fixture above wrote the scorer/assister's FULL name straight
+// into `hg`/`ag` — production never does that. A goal scored in a match you
+// actually played is logged as `surname(scorer)` (lib/star/media/grammar.ts);
+// one simulated without you is logged as `shortNameOf(scorer)`
+// (lib/star/realSquad.ts) — and those two don't even agree with each other on
+// a multi-word surname ("Dijk" vs "van Dijk"). This block uses BOTH real
+// helpers, on a player whose full name is more than two words, to prove the
+// form strip still lines up rather than silently going all-blank.
+{
+  let c = base();
+  const opponent = "Chelsea";
+  c = { ...c, leagueSquads: c.league.map((t, i) => squadFor(t.name, i * 3)) };
+  const squad = c.leagueSquads!.find(s => s.club === opponent)!.players;
+  const scorer = { ...squad.reduce((a, b) => (b.goals > a.goals ? b : a)), name: "V. van Dijk" };
+  squad[squad.findIndex(p => p.id === scorer.id)] = scorer;
+
+  const results: LeagueResult[] = [
+    // Logged the way a match YOU played logs it: surname() → "Dijk".
+    { week: 1, home: opponent, away: "Fulham FC", hs: 1, as: 0, hg: [{ m: 30, s: surname(scorer.name) }] },
+    { week: 2, home: "Everton", away: opponent, hs: 2, as: 1, ag: [{ m: 60, s: "Someone Else" }] },
+    // Logged the way a simulated match logs it: shortNameOf() → "van Dijk".
+    { week: 3, home: opponent, away: "Brentford", hs: 2, as: 0, hg: [{ m: 10, s: "Someone Else" }, { m: 70, s: shortNameOf(scorer.name) }] },
+  ];
+  c = { ...c, results };
+
+  const r = scoutReportFor(c, opponent, 4);
+  check(JSON.stringify(r.topScorer?.form) === JSON.stringify([true, false, true]),
+    `both the played-match ("Dijk") and simulated-match ("van Dijk") log spellings still match the real scorer (${JSON.stringify(r.topScorer?.form)})`);
 }
 
 // ── The table snippet is genuinely centred on the opponent, clamped at the edges ─

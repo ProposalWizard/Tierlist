@@ -3,6 +3,7 @@ import {
   ENERGY_MATCH_COST, INJURY_RISK_BASE, INJURY_FATIGUE_FLOOR, INJURY_RISK_FATIGUE_EXTRA,
 } from "../../lib/star/careerFlow";
 import { MISSED_WEEK } from "../../lib/star/selection";
+import { WEEK_ACTIONS, REST_ENERGY } from "../../lib/star/week";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, Fixture, MatchStats, StarPlayer } from "../../lib/star/types";
 
@@ -66,10 +67,27 @@ function firstFixture(c: CareerState): Fixture {
 }
 
 // ── Energy cannot go negative ────────────────────────────────────────────────
+// weekActions: 0 isolates this from the unspent-actions fairness credit below —
+// this block is testing the floor itself, not that credit.
 {
-  let c: CareerState = { ...base(), energy: 5 };
+  let c: CareerState = { ...base(), energy: 5, weekActions: 0 };
   c = creditMatchResult(c, firstFixture(c), stats({ minutes: 90 })).career;
   check(c.energy === 0, `it floors at zero rather than going negative (${c.energy})`);
+}
+
+// ── Unspent actions credit the same energy Rest would have given ───────────
+{
+  const untouched: CareerState = { ...base(), energy: 5 };
+  const credited = creditMatchResult(untouched, firstFixture(untouched), stats({ minutes: 90 })).career;
+  const expected = Math.min(100, 5 + WEEK_ACTIONS * REST_ENERGY) - ENERGY_MATCH_COST;
+  check(credited.energy === expected,
+    `three unspent actions are worth three Rests before the match's own cost (${credited.energy}, expected ${expected})`);
+
+  const partial: CareerState = { ...base(), energy: 5, weekActions: 1 };
+  const partialCredited = creditMatchResult(partial, firstFixture(partial), stats({ minutes: 90 })).career;
+  const partialExpected = Math.max(0, Math.min(100, 5 + 1 * REST_ENERGY) - ENERGY_MATCH_COST);
+  check(partialCredited.energy === partialExpected,
+    `only the actions actually left unspent are credited (${partialCredited.energy}, expected ${partialExpected})`);
 }
 
 // ── A replayed fixture does not spend the budget twice ──────────────────────

@@ -10,7 +10,7 @@ import {
   simulateFixtureScore,
 } from "./season";
 import { selectionFor, MISSED_WEEK } from "./selection";
-import { startNewWeek, WEEK_ACTIONS } from "./week";
+import { startNewWeek, WEEK_ACTIONS, actionsLeft, REST_ENERGY } from "./week";
 import { judgeSeason } from "./expectations";
 import {
   seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
@@ -343,16 +343,27 @@ export function creditMatchResult(
 
   const minuteShare = Math.max(0.25, Math.min(1, (stats.minutes ?? 90) / 90));
 
-  // ── Energy: spent by playing, never given back by the week just turning
-  //    over — see the field's own doc comment on CareerState. A full ninety
-  //    costs ENERGY_MATCH_COST; twenty minutes off the bench costs a
-  //    quarter of that, same minuteShare a cameo already uses for
-  //    matchFitness above it. Guarded on `alreadyPlayed` the same way
-  //    `accrue` above is — a replayed fixture must not spend the budget
-  //    twice.
+  // ── Energy: spent by playing, given back for whichever of the week's
+  //    actions you did NOT spend training or working on a relationship —
+  //    see the field's own doc comment on CareerState. Reported directly:
+  //    a week where nothing was trained still cost energy exactly as if it
+  //    had been, and the only way to get anything back was to press Rest
+  //    yourself, action by action — "if you choose not to train or work on
+  //    your relationships, you should get the same energy [Rest] would
+  //    have given". An action already spent on Rest already added
+  //    REST_ENERGY the moment it was pressed (week.ts) and reduced
+  //    weekActions doing it, so `actionsLeft` here only ever counts the
+  //    ones genuinely left untouched — training an action, or spending it
+  //    on a relationship, is a real choice against this, not something
+  //    this quietly refunds. A full ninety costs ENERGY_MATCH_COST; twenty
+  //    minutes off the bench costs a quarter of that, same minuteShare a
+  //    cameo already uses for matchFitness above it. Guarded on
+  //    `alreadyPlayed` the same way `accrue` above is — a replayed fixture
+  //    must not spend the budget, or earn the refund, twice.
+  const restEquivalent = alreadyPlayed ? 0 : actionsLeft(career) * REST_ENERGY;
   const nextEnergy = alreadyPlayed
     ? career.energy
-    : Math.max(0, career.energy - Math.round(ENERGY_MATCH_COST * minuteShare));
+    : Math.max(0, Math.min(100, career.energy + restEquivalent) - Math.round(ENERGY_MATCH_COST * minuteShare));
 
   // ── Injuries: a real risk on every single appearance, not just a tired
   //    one — real footballers pick up freak knocks on a fresh pair of legs

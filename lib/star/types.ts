@@ -451,13 +451,24 @@ export interface CareerState {
   week: number;
   matchFitness: number;
   /**
-   * How much you have left in the tank — spent by playing, given back only by
-   * a deliberate choice (Rest, or skipping the rest of the week), never by
-   * the week simply turning over. That last part is the whole point: energy
-   * was cut once already because an automatic weekly top-up made it nothing
-   * but a number that went down and then back up on its own. See
-   * lib/star/selection.ts (the two gates it enforces on team selection) and
-   * lib/star/week.ts (the two ways to earn it back).
+   * How much you have left in the tank — spent by playing, given back by a
+   * deliberate choice (Rest, or skipping the rest of the week) OR by simply
+   * leaving an action unspent, never by the week turning over on its own
+   * regardless of what was done with it. That last part is the whole point:
+   * energy was cut once already because an automatic weekly top-up made it
+   * nothing but a number that went down and then back up on its own — the
+   * fix here is narrower than that: reported directly, a week where you
+   * trained or worked on a relationship instead of resting cost the SAME
+   * energy as a week you never touched at all, since only an explicit Rest
+   * press ever gave anything back. `creditMatchResult` (careerFlow.ts) now
+   * credits `REST_ENERGY` for every one of the week's actions still unspent
+   * the moment the next match kicks off, so choosing to train or build a
+   * relationship still trades that specific action away — the choice is
+   * real — but doing nothing with an action is never worse than resting
+   * with it. See lib/star/selection.ts (the two gates it enforces on team
+   * selection) and lib/star/week.ts (Rest/Skip, the two ways to spend an
+   * action ON energy specifically rather than leave it to be credited this
+   * way).
    */
   energy: number;
   /**
