@@ -142,46 +142,6 @@ function tableSnippetFor(table: LeagueTeam[], opponentIdx: number, radius = 2): 
   }));
 }
 
-function ordinalOf(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
-}
-
-/**
- * One real sentence about the opponent, built from the same two facts a
- * human scout would lead with: where they sit in the table, and who's
- * actually doing the damage for them. Nothing here is invented — the table
- * clause reads `report.table` and the player clause picks whichever of
- * `topScorer`/`topAssister`/`bestPlayer` is genuinely most informative, in
- * that order of preference. Null when there is truly nothing to say (an
- * outside cup opponent with no squad data and no table place).
- */
-export function keyInsightFor(report: ScoutReport): string | null {
-  const clauses: string[] = [];
-
-  if (report.table) {
-    const { position, of } = report.table;
-    if (position <= 6) {
-      clauses.push(`${report.club} sit ${ordinalOf(position)} — a side pushing for the top of the table.`);
-    } else if (position > of - 3) {
-      clauses.push(`${report.club} are deep in trouble, ${ordinalOf(position)} in the table.`);
-    } else {
-      clauses.push(`${report.club} sit ${ordinalOf(position)}, a mid-table side.`);
-    }
-  }
-
-  if (report.topScorer) {
-    clauses.push(`${report.topScorer.name} leads their line with ${report.topScorer.goals} goal${report.topScorer.goals === 1 ? "" : "s"}.`);
-  } else if (report.topAssister) {
-    clauses.push(`${report.topAssister.name} is their biggest creative threat, with ${report.topAssister.assists} assist${report.topAssister.assists === 1 ? "" : "s"}.`);
-  } else if (report.bestPlayer) {
-    clauses.push(`${report.bestPlayer.name} is their standout performer, rated ${report.bestPlayer.overall} OVR.`);
-  }
-
-  return clauses.length ? clauses.join(" ") : null;
-}
-
 export function scoutReportFor(career: CareerState, opponent: string, week: number): ScoutReport {
   const squad = squadFor(career, opponent);
   const table = sortLeague(career.league);
