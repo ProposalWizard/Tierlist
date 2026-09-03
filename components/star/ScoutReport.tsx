@@ -47,13 +47,23 @@ const ROLE_THEME: Record<"scorer" | "assist" | "rated", { icon: string; label: s
   rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)", frame: "/star/scout/rated-frame.png" },
 };
 
-/** All fractions of the card's own width/height — see the doc comment above. */
+/**
+ * All fractions of the card's own width/height — see the doc comment above.
+ * The circle's own bottom edge sits at ~35% and the glow underline at
+ * ~44%: that ~9%-tall gap is real but too tight for the label to sit in
+ * (its glow bleeds a few points further down than the hard alpha=0 edge,
+ * so text placed right under the circle visually collides with it) — the
+ * label/name/stat block instead sits as one group in the roomy gap BELOW
+ * the underline (44% down to the ~70%-down dotted band), which is what
+ * the underline is actually for: a divider between the photo and the
+ * text, not a rule the text sits flush above.
+ */
 const CARD_GEOM = {
   aspect: "536 / 814",
   circle: { cx: 50, cy: 21.5, diameter: 42 },
-  labelTop: 36.5,
-  nameTop: 40.5,
-  statTop: 46,
+  labelTop: 47,
+  nameTop: 52.5,
+  statTop: 58.5,
   boxesTop: 74,
 };
 
@@ -109,26 +119,28 @@ function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; pla
 
       {/* The three boxes from the template's dotted band — recent-form
           indicators: did they score/assist in each of the last few league
-          games. No single relevant per-match event exists for the
-          top-rated card, so its three boxes render, but always empty —
-          that's honest (there's nothing to claim), not a bug. */}
-      <div
-        className="absolute flex justify-center gap-1.5 px-3"
-        style={{ top: `${g.boxesTop}%`, left: 0, right: 0 }}
-      >
-        {(player.form ?? [false, false, false]).slice(0, 3).map((did, i) => (
-          <span
-            key={i}
-            className="grid aspect-square flex-1 place-items-center rounded-md border text-[11px]"
-            style={{
-              borderColor: did ? theme.accent : "rgba(255,255,255,0.15)",
-              background: did ? theme.soft : "rgba(255,255,255,0.04)",
-            }}
-          >
-            {did ? theme.icon : ""}
-          </span>
-        ))}
-      </div>
+          games. The top-rated card has no single relevant per-match event
+          to track (see ScoutPlayer.form's own doc comment), so it gets no
+          boxes at all rather than three that can never mean anything. */}
+      {player.form && (
+        <div
+          className="absolute flex justify-center gap-1.5 px-3"
+          style={{ top: `${g.boxesTop}%`, left: 0, right: 0 }}
+        >
+          {player.form.slice(0, 3).map((did, i) => (
+            <span
+              key={i}
+              className="grid aspect-square flex-1 place-items-center rounded-md border text-[11px]"
+              style={{
+                borderColor: did ? theme.accent : "rgba(255,255,255,0.15)",
+                background: did ? theme.soft : "rgba(255,255,255,0.04)",
+              }}
+            >
+              {did ? theme.icon : ""}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

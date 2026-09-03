@@ -26,6 +26,27 @@ import PhoneFrame from "./PhoneFrame";
  * schedule.ts. This file only decides how it's PRESENTED.
  */
 
+/**
+ * A real phone's own proportions (roughly a modern iPhone: 390×844) — used
+ * to LOCK the shape of whatever box the phone renders inside, rather than
+ * letting it fill whatever rectangle its container happens to be.
+ *
+ * Reported directly: on a real phone it usually looks right, but the exact
+ * same screen would come out either stretched tall or squashed wide
+ * depending on browser zoom or window size. Root cause was that neither
+ * place PhoneFrame gets sized actually constrained BOTH dimensions
+ * together — browse mode was plain `h-full w-full` (no ratio at all, just
+ * whatever shape DashboardShell's body box happened to be that moment);
+ * the standalone post-match screen set width from the column's own width
+ * and height from `min(80vh, 780px)` — two totally independent formulas,
+ * so they only ever agreed by coincidence at one particular window size.
+ * `aspect-ratio` plus a height AND a max-width together is what actually
+ * produces a real "shrink to fit, preserve the phone's own shape" box —
+ * CSS resolves the un-set dimension from the ratio and still respects
+ * whichever constraint (the height or the max-width) is tighter.
+ */
+const PHONE_ASPECT = "390 / 844";
+
 interface Props {
   career: CareerState;
   /** Post-match: the first wave, then a Continue, its own full standalone
@@ -171,7 +192,7 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
   if (mode === "browse") {
     return (
       <div className="flex h-full w-full items-center justify-center p-2">
-        <div className="h-full w-full max-w-md">{phone}</div>
+        <div className="h-full" style={{ aspectRatio: PHONE_ASPECT, maxWidth: "min(28rem, 100%)" }}>{phone}</div>
       </div>
     );
   }
@@ -186,7 +207,7 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
           which was exactly what this "Full-time reaction / What they made
           of that" header used to say a second time above it. */}
       <div className="flex w-full flex-1 items-center justify-center py-1" style={{ minHeight: 0 }}>
-        <div className="w-full max-w-md" style={{ height: "min(80vh, 780px)" }}>{phone}</div>
+        <div className="h-full" style={{ aspectRatio: PHONE_ASPECT, maxHeight: 780, maxWidth: "min(28rem, 100%)" }}>{phone}</div>
       </div>
 
       {onContinue && (
