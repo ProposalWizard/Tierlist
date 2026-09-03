@@ -26,92 +26,109 @@ function MiniCrest({ club, size = 16 }: { club: string; size?: number }) {
   );
 }
 
-/** Every card is themed by the role it's scouting — matches the reference
- *  concept's blue / rose / gold split so the three read as distinct at a
- *  glance even before a photo fills the frame in. */
-const ROLE_THEME: Record<"scorer" | "assist" | "rated", { icon: string; label: string; accent: string; soft: string }> = {
-  scorer: { icon: "⚽", label: "Top Scorer", accent: "#38bdf8", soft: "rgba(56,189,248,0.16)" },
-  assist: { icon: "🎯", label: "Assist King", accent: "#fb7185", soft: "rgba(251,113,133,0.16)" },
-  rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)" },
+/**
+ * Every card is themed by the role it's scouting — and, since the user's
+ * own designed template art, backed by a real frame image per role:
+ * public/star/scout/{scorer,assist,rated}-frame.png. Each is a portrait
+ * card with a circular photo cutout (genuinely transparent — alpha 0, not
+ * just a dark fill) and a glow underline, measured directly off the
+ * uploaded files rather than eyeballed:
+ *   - circle centre ≈ 50% across, ≈ 21.5% down; diameter ≈ 42% of width
+ *   - glow underline ≈ 44% down
+ *   - a dotted texture band starts ≈ 70% down, reserved for the stat boxes
+ * All three templates measured within a percentage point of each other, so
+ * one shared geometry (CARD_GEOM below) works for all three roles. The
+ * player photo is a separate, lower layer positioned at that same circle —
+ * the template's cutout is what actually makes it read as "in" the frame.
+ */
+const ROLE_THEME: Record<"scorer" | "assist" | "rated", { icon: string; label: string; accent: string; soft: string; frame: string }> = {
+  scorer: { icon: "⚽", label: "Top Scorer", accent: "#38bdf8", soft: "rgba(56,189,248,0.16)", frame: "/star/scout/scorer-frame.png" },
+  assist: { icon: "🎯", label: "Assist King", accent: "#fb7185", soft: "rgba(251,113,133,0.16)", frame: "/star/scout/assist-frame.png" },
+  rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)", frame: "/star/scout/rated-frame.png" },
+};
+
+/** All fractions of the card's own width/height — see the doc comment above. */
+const CARD_GEOM = {
+  aspect: "536 / 814",
+  circle: { cx: 50, cy: 21.5, diameter: 42 },
+  labelTop: 36.5,
+  nameTop: 40.5,
+  statTop: 46,
+  boxesTop: 74,
 };
 
 /**
- * A scouted player, as a card.
- *
- * The top of the card — everything inside the image frame — is the part
- * meant to eventually carry a designed portrait per role (see `player.image`):
- * this component reserves the frame, themes it, and vignettes it so it reads
- * as a real card even filled with just the silhouette placeholder. Swap a
- * real image in per player and nothing else here needs to change; it's drawn
- * with `object-fit: cover` against a fixed frame, so a portrait cropped
- * roughly 4:5 (taller than wide, like the reference cards) will fill it
- * cleanly.
+ * A scouted player, as a card — the user's own template art as the frame,
+ * with the photo, label, name, stat line and recent-form boxes laid over it
+ * at the measured positions in CARD_GEOM.
  */
 function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; player: ScoutPlayer }) {
   const theme = ROLE_THEME[role];
-  const headline = role === "scorer" ? `⚽ ${player.value} Goal${player.value === 1 ? "" : "s"}`
-    : role === "assist" ? `🎯 ${player.value} Assist${player.value === 1 ? "" : "s"}`
-      : `⭐ ${player.value} OVR`;
+  const g = CARD_GEOM;
 
   return (
-    <div
-      className="flex-1 min-w-0 overflow-hidden rounded-xl border bg-gray-900/80"
-      style={{ borderColor: `${theme.accent}80`, boxShadow: `0 0 14px -6px ${theme.accent}` }}
-    >
+    <div className="relative flex-1 min-w-0 overflow-hidden rounded-xl" style={{ aspectRatio: g.aspect }}>
+      {/* The photo sits BELOW the frame — the frame's circle is a real
+          transparent cutout, so it shows through exactly there. */}
+      <ImageWithFallback
+        src={player.image || SILHOUETTE_SRC}
+        fallbackSrc={SILHOUETTE_SRC}
+        alt=""
+        className="absolute rounded-full object-cover"
+        style={{
+          left: `${g.circle.cx}%`, top: `${g.circle.cy}%`,
+          width: `${g.circle.diameter}%`, aspectRatio: "1 / 1",
+          transform: "translate(-50%, -50%)",
+        }}
+      />
+      {/* The template itself — frame, glow ring, underline, dotted band. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={theme.frame} alt="" className="pointer-events-none absolute inset-0 h-full w-full" />
+
       <div
-        className="flex items-center gap-1 px-1.5 py-1 text-[8px] font-black uppercase tracking-wide"
-        style={{ background: theme.soft, color: theme.accent }}
+        className="absolute flex items-center justify-center gap-1 text-[8px] font-black uppercase tracking-wide"
+        style={{ top: `${g.labelTop}%`, left: 0, right: 0, color: theme.accent }}
       >
         <span>{theme.icon}</span><span className="truncate">{theme.label}</span>
       </div>
 
-      {/* The image frame — see the doc comment above for the shape a real
-          portrait should arrive in. */}
-      <div className="relative h-24 w-full" style={{ background: `linear-gradient(160deg, ${theme.soft}, rgba(3,7,18,0.9))` }}>
-        <ImageWithFallback
-          src={player.image || SILHOUETTE_SRC}
-          fallbackSrc={SILHOUETTE_SRC}
-          alt=""
-          className="h-full w-full object-cover object-top"
-        />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-gray-950/95 to-transparent" />
+      <div
+        className="absolute px-2 text-center text-[12px] font-black text-white truncate"
+        style={{ top: `${g.nameTop}%`, left: 0, right: 0 }}
+        title={player.name}
+      >
+        {player.name}
       </div>
 
-      <div className="px-2 pt-1.5 pb-2 text-center">
-        <div className="text-[11px] font-black text-white truncate" title={player.name}>{player.name}</div>
-        <div className="mt-0.5 text-[9px] font-bold truncate" style={{ color: theme.accent }}>
-          {headline} · {player.position}
-        </div>
-
-        <div className="mt-1.5 grid grid-cols-3 gap-1 border-t border-white/10 pt-1.5">
-          <Stat label="GLS" value={player.goals} />
-          <Stat label="AST" value={player.assists} />
-          <Stat label="OVR" value={player.overall} />
-        </div>
-
-        {player.form && player.form.length > 0 && (
-          <div className="mt-1.5 flex justify-center gap-0.5">
-            {player.form.map((did, i) => (
-              <span
-                key={i}
-                className={`grid h-3.5 w-3.5 place-items-center rounded-sm text-[8px] ${did ? "" : "bg-white/5"}`}
-                style={did ? { background: theme.soft, color: theme.accent } : undefined}
-              >
-                {did ? (role === "assist" ? "🎯" : "⚽") : ""}
-              </span>
-            ))}
-          </div>
-        )}
+      <div
+        className="absolute px-2 text-center text-[9px] font-bold truncate"
+        style={{ top: `${g.statTop}%`, left: 0, right: 0, color: theme.accent }}
+      >
+        {theme.icon} {player.value}{role === "rated" ? " OVR" : ""} · {player.position}
       </div>
-    </div>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <div className="text-[7px] font-bold uppercase tracking-wide text-white/45">{label}</div>
-      <div className="text-[11px] font-black text-white tabular-nums">{value}</div>
+      {/* The three boxes from the template's dotted band — recent-form
+          indicators: did they score/assist in each of the last few league
+          games. No single relevant per-match event exists for the
+          top-rated card, so its three boxes render, but always empty —
+          that's honest (there's nothing to claim), not a bug. */}
+      <div
+        className="absolute flex justify-center gap-1.5 px-3"
+        style={{ top: `${g.boxesTop}%`, left: 0, right: 0 }}
+      >
+        {(player.form ?? [false, false, false]).slice(0, 3).map((did, i) => (
+          <span
+            key={i}
+            className="grid aspect-square flex-1 place-items-center rounded-md border text-[11px]"
+            style={{
+              borderColor: did ? theme.accent : "rgba(255,255,255,0.15)",
+              background: did ? theme.soft : "rgba(255,255,255,0.04)",
+            }}
+          >
+            {did ? theme.icon : ""}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
