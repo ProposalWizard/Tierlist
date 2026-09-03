@@ -1595,20 +1595,11 @@ export default function StarDevPage() {
             <ScoutReportCard report={scoutReportFor(career, nextFixture.opponent, nextFixture.week)} />
           )}
 
-          {/* Which position you play this match — moved here from the
-              dashboard: it's a decision for the build-up to THIS match, not
-              a standing setting, and it needs nothing about the opponent. */}
-          {nextFixture.kind !== "international" && (
-            <PositionPicker
-              club={career.player.club}
-              realPosition={career.player.position}
-              playAs={playAs}
-              onChange={setPlayAs}
-            />
-          )}
-
           {/* The manager's team sheet. Boss, form, reputation and sharpness used
-              to move every week and decide nothing at all. */}
+              to move every week and decide nothing at all. Which position you
+              play this match lives here too now — it was its own box above
+              this one, but it's a decision that belongs with the rest of
+              "your role this match", not a separate stop on the page. */}
           {selection && (
             <div className={`mt-3 rounded-xl border p-3 ${
               selection.status === "1st Team" ? "border-emerald-500/50 bg-emerald-500/10"
@@ -1627,7 +1618,18 @@ export default function StarDevPage() {
                         : "Out of Squad"}
                 </span>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+
+              {nextFixture.kind !== "international" && (
+                <PositionPicker
+                  club={career.player.club}
+                  realPosition={career.player.position}
+                  playAs={playAs}
+                  onChange={setPlayAs}
+                  embedded
+                />
+              )}
+
+              <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-black/20 rounded-lg py-2 text-center">
                   <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
                   <div className="font-black text-emerald-300 text-base">{Math.round(career.matchFitness)}%</div>

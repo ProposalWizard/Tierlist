@@ -1,4 +1,4 @@
-import { scoutReportFor } from "../../lib/star/scoutReport";
+import { scoutReportFor, keyInsightFor } from "../../lib/star/scoutReport";
 import { groundFor, crowdFor, GROUNDS } from "../../lib/star/stadiums";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
@@ -85,6 +85,16 @@ function squadFor(club: string, offset: number): LeagueSquad {
   check(r.topAssister?.name === realTopAssister.name, "…and the real top assister");
   check(r.bestPlayer?.name === realBest.name && r.bestPlayer?.value === realBest.overall, "…and the real best player, by OVR");
   check(r.bestPlayer?.form === undefined, "the top-rated card has no single event to track a form strip against");
+
+  // Every card carries the same three real numbers, not just its headline
+  // stat — no per-player "matches" field exists anywhere in the game (only
+  // team-level `played`), so the card footer sticks to goals/assists/OVR.
+  check(r.topScorer?.goals === realTopScorer.goals && r.topScorer?.assists === realTopScorer.assists && r.topScorer?.overall === realTopScorer.overall,
+    "the top scorer card carries its own real goals/assists/OVR, not just the headline stat");
+  check(r.topAssister?.goals === realTopAssister.goals && r.topAssister?.assists === realTopAssister.assists && r.topAssister?.overall === realTopAssister.overall,
+    "…and so does the assist king card");
+  check(r.bestPlayer?.goals === realBest.goals && r.bestPlayer?.assists === realBest.assists && r.bestPlayer?.overall === realBest.overall,
+    "…and the top-rated card");
 }
 
 // ── Form strips read the real scorer/assister log, not a separate history ──
@@ -200,6 +210,30 @@ function squadFor(club: string, offset: number): LeagueSquad {
   const intl = creditMatchResult(base(), { week: 1, opponent: "Brazil", home: true, played: false, kind: "international" },
     stats({ homeScore: 1, awayScore: 0 })).career;
   check(!intl.headToHead?.["Brazil"], "a nation never gets a club head-to-head entry");
+}
+
+// ── The key insight is built from real facts, in the right priority order ──
+{
+  let c = base();
+  const noScout = scoutReportFor(c, "Chelsea", 1);
+  check(keyInsightFor(noScout) !== null, "the table position alone is still worth a sentence, even with no squad data");
+
+  c = { ...c, leagueSquads: c.league.map((t, i) => squadFor(t.name, i * 3)) };
+  const opponent = "Chelsea";
+  const squad = c.leagueSquads!.find(s => s.club === opponent)!.players;
+  const scorer = squad.reduce((a, b) => (b.goals > a.goals ? b : a));
+
+  const scouted = scoutReportFor(c, opponent, 1);
+  const insight = keyInsightFor(scouted)!;
+  check(insight.includes(opponent), `it names the actual club (${insight})`);
+  check(insight.includes(scorer.name), `it leads with the real top scorer over the assist king when both exist (${insight})`);
+
+  // A relegation-zone club reads differently from one push for the top —
+  // both derived from the same real `report.table`, nothing hardcoded.
+  const table = c.league.map(t => t.name);
+  const bottomInsight = keyInsightFor(scoutReportFor(c, table[table.length - 1], 1))!;
+  const topInsight = keyInsightFor(scoutReportFor(c, table[0], 1))!;
+  check(bottomInsight !== topInsight, "bottom of the table and top of the table don't read the same");
 }
 
 // ── Grounds ──────────────────────────────────────────────────────────────

@@ -1,39 +1,125 @@
 "use client";
 import type { ScoutReport, ScoutPlayer } from "@/lib/star/scoutReport";
+import { keyInsightFor } from "@/lib/star/scoutReport";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { kitsOf, labelInk } from "@/lib/star/kits";
+import { initials } from "@/components/star/ClubCrest";
 
 const RESULT_BG: Record<"W" | "D" | "L", string> = { W: "#16a34a", D: "#b98a1f", L: "#b91c1c" };
 
-function PlayerCard({ icon, title, statIcon, player }: { icon: string; title: string; statIcon: string; player: ScoutPlayer }) {
+/** A club, as a small circular badge only — no name label underneath, for a
+ *  row that already prints the club name as text beside it (recent form,
+ *  the table snippet). Same "shirt with initials" device as ClubCrest,
+ *  just without its bundled name row. */
+function MiniCrest({ club, size = 16 }: { club: string; size?: number }) {
+  const kit = kitsOf(club).home;
   return (
-    <div className="flex-1 rounded-lg bg-gray-700/70 border border-gray-600 px-2 py-2 text-center min-w-0">
-      <ImageWithFallback
-        src={player.image || SILHOUETTE_SRC}
-        fallbackSrc={SILHOUETTE_SRC}
-        alt=""
-        className="mx-auto h-11 w-11 rounded-full bg-white/10 object-cover border border-white/10"
-      />
-      <div className="mt-1 text-[9px] font-black uppercase tracking-wide text-white/60">{icon} {title}</div>
-      <div className="mt-0.5 text-[11px] font-black text-white truncate" title={player.name}>{player.name}</div>
-      <div className="text-[10px] font-bold text-emerald-300">
-        {statIcon} {player.value}{title === "Top Rated" ? " OVR" : ""} · {player.position}
+    <div
+      className="grid shrink-0 place-items-center rounded-full border font-black"
+      style={{
+        height: size, width: size, backgroundColor: kit.shirt, borderColor: kit.trim,
+        color: labelInk(kit.shirt), fontSize: Math.max(6, Math.round(size * 0.32)),
+      }}
+    >
+      {initials(club)}
+    </div>
+  );
+}
+
+/** Every card is themed by the role it's scouting — matches the reference
+ *  concept's blue / rose / gold split so the three read as distinct at a
+ *  glance even before a photo fills the frame in. */
+const ROLE_THEME: Record<"scorer" | "assist" | "rated", { icon: string; label: string; accent: string; soft: string }> = {
+  scorer: { icon: "⚽", label: "Top Scorer", accent: "#38bdf8", soft: "rgba(56,189,248,0.16)" },
+  assist: { icon: "🎯", label: "Assist King", accent: "#fb7185", soft: "rgba(251,113,133,0.16)" },
+  rated: { icon: "⭐", label: "Top Rated", accent: "#fbbf24", soft: "rgba(251,191,36,0.16)" },
+};
+
+/**
+ * A scouted player, as a card.
+ *
+ * The top of the card — everything inside the image frame — is the part
+ * meant to eventually carry a designed portrait per role (see `player.image`):
+ * this component reserves the frame, themes it, and vignettes it so it reads
+ * as a real card even filled with just the silhouette placeholder. Swap a
+ * real image in per player and nothing else here needs to change; it's drawn
+ * with `object-fit: cover` against a fixed frame, so a portrait cropped
+ * roughly 4:5 (taller than wide, like the reference cards) will fill it
+ * cleanly.
+ */
+function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; player: ScoutPlayer }) {
+  const theme = ROLE_THEME[role];
+  const headline = role === "scorer" ? `⚽ ${player.value} Goal${player.value === 1 ? "" : "s"}`
+    : role === "assist" ? `🎯 ${player.value} Assist${player.value === 1 ? "" : "s"}`
+      : `⭐ ${player.value} OVR`;
+
+  return (
+    <div
+      className="flex-1 min-w-0 overflow-hidden rounded-xl border bg-gray-900/80"
+      style={{ borderColor: `${theme.accent}80`, boxShadow: `0 0 14px -6px ${theme.accent}` }}
+    >
+      <div
+        className="flex items-center gap-1 px-1.5 py-1 text-[8px] font-black uppercase tracking-wide"
+        style={{ background: theme.soft, color: theme.accent }}
+      >
+        <span>{theme.icon}</span><span className="truncate">{theme.label}</span>
       </div>
-      {player.form && player.form.length > 0 && (
-        <div className="mt-1 flex justify-center gap-0.5">
-          {player.form.map((did, i) => (
-            <span key={i} className={`grid h-3.5 w-3.5 place-items-center rounded-sm text-[8px] ${did ? "bg-emerald-500/30" : "bg-white/5"}`}>
-              {did ? statIcon : ""}
-            </span>
-          ))}
+
+      {/* The image frame — see the doc comment above for the shape a real
+          portrait should arrive in. */}
+      <div className="relative h-24 w-full" style={{ background: `linear-gradient(160deg, ${theme.soft}, rgba(3,7,18,0.9))` }}>
+        <ImageWithFallback
+          src={player.image || SILHOUETTE_SRC}
+          fallbackSrc={SILHOUETTE_SRC}
+          alt=""
+          className="h-full w-full object-cover object-top"
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-gray-950/95 to-transparent" />
+      </div>
+
+      <div className="px-2 pt-1.5 pb-2 text-center">
+        <div className="text-[11px] font-black text-white truncate" title={player.name}>{player.name}</div>
+        <div className="mt-0.5 text-[9px] font-bold truncate" style={{ color: theme.accent }}>
+          {headline} · {player.position}
         </div>
-      )}
+
+        <div className="mt-1.5 grid grid-cols-3 gap-1 border-t border-white/10 pt-1.5">
+          <Stat label="GLS" value={player.goals} />
+          <Stat label="AST" value={player.assists} />
+          <Stat label="OVR" value={player.overall} />
+        </div>
+
+        {player.form && player.form.length > 0 && (
+          <div className="mt-1.5 flex justify-center gap-0.5">
+            {player.form.map((did, i) => (
+              <span
+                key={i}
+                className={`grid h-3.5 w-3.5 place-items-center rounded-sm text-[8px] ${did ? "" : "bg-white/5"}`}
+                style={did ? { background: theme.soft, color: theme.accent } : undefined}
+              >
+                {did ? (role === "assist" ? "🎯" : "⚽") : ""}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="text-[7px] font-bold uppercase tracking-wide text-white/45">{label}</div>
+      <div className="text-[11px] font-black text-white tabular-nums">{value}</div>
     </div>
   );
 }
 
 export default function ScoutReportCard({ report }: { report: ScoutReport }) {
   const noPlayerData = !report.topScorer && !report.topAssister && !report.bestPlayer;
+  const insight = keyInsightFor(report);
 
   return (
     <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800 p-3">
@@ -50,9 +136,9 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
         </div>
       ) : (
         <div className="mt-2.5 flex gap-1.5">
-          {report.topScorer && <PlayerCard icon="⚽" statIcon="⚽" title="Top Scorer" player={report.topScorer} />}
-          {report.topAssister && <PlayerCard icon="🎯" statIcon="🎯" title="Assist King" player={report.topAssister} />}
-          {report.bestPlayer && <PlayerCard icon="⭐" statIcon="⭐" title="Top Rated" player={report.bestPlayer} />}
+          {report.topScorer && <PlayerCard role="scorer" player={report.topScorer} />}
+          {report.topAssister && <PlayerCard role="assist" player={report.topAssister} />}
+          {report.bestPlayer && <PlayerCard role="rated" player={report.bestPlayer} />}
         </div>
       )}
 
@@ -69,6 +155,7 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
                   >
                     {r.result}
                   </span>
+                  <MiniCrest club={r.opponent} />
                   <span className="text-white/80 truncate">
                     {r.scoreFor}-{r.scoreAgainst} vs {r.opponent}
                   </span>
@@ -89,6 +176,7 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
                   className={`flex items-center gap-1 text-[9px] rounded px-1 py-0.5 ${row.isOpponent ? "bg-emerald-500/20 text-emerald-200 font-black" : "text-white/70"}`}
                 >
                   <span className="w-3.5 shrink-0 tabular-nums">{row.position}</span>
+                  <MiniCrest club={row.club} size={14} />
                   <span className="flex-1 truncate">{row.club}</span>
                   <span className="tabular-nums">{row.points}pts</span>
                 </div>
@@ -99,6 +187,16 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
           )}
         </div>
       </div>
+
+      {insight && (
+        <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-2.5 py-2">
+          <span className="text-sm leading-none">🔭</span>
+          <div className="text-[10px] font-bold text-white/85">
+            <span className="mr-1 text-[8px] font-black uppercase tracking-wide text-emerald-300">Key Insight</span>
+            <div className="mt-0.5">{insight}</div>
+          </div>
+        </div>
+      )}
 
       {report.headToHead && (
         <div className="mt-2.5 text-[10px] text-white/70 text-center">

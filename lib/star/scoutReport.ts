@@ -26,6 +26,13 @@ export interface ScoutPlayer {
   value: number;
   position: string;
   image?: string;
+  /** The same three numbers on every card regardless of which one is the
+   *  headline stat — real, tracked fields, not a fabricated "appearances"
+   *  count (nothing in this game tracks per-player minutes for a squad you
+   *  don't manage). */
+  goals: number;
+  assists: number;
+  overall: number;
   /**
    * Did this player do the thing the card is about (score, for the top
    * scorer; assist, for the assist king) in each of the club's last few
@@ -135,6 +142,46 @@ function tableSnippetFor(table: LeagueTeam[], opponentIdx: number, radius = 2): 
   }));
 }
 
+function ordinalOf(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+}
+
+/**
+ * One real sentence about the opponent, built from the same two facts a
+ * human scout would lead with: where they sit in the table, and who's
+ * actually doing the damage for them. Nothing here is invented — the table
+ * clause reads `report.table` and the player clause picks whichever of
+ * `topScorer`/`topAssister`/`bestPlayer` is genuinely most informative, in
+ * that order of preference. Null when there is truly nothing to say (an
+ * outside cup opponent with no squad data and no table place).
+ */
+export function keyInsightFor(report: ScoutReport): string | null {
+  const clauses: string[] = [];
+
+  if (report.table) {
+    const { position, of } = report.table;
+    if (position <= 6) {
+      clauses.push(`${report.club} sit ${ordinalOf(position)} — a side pushing for the top of the table.`);
+    } else if (position > of - 3) {
+      clauses.push(`${report.club} are deep in trouble, ${ordinalOf(position)} in the table.`);
+    } else {
+      clauses.push(`${report.club} sit ${ordinalOf(position)}, a mid-table side.`);
+    }
+  }
+
+  if (report.topScorer) {
+    clauses.push(`${report.topScorer.name} leads their line with ${report.topScorer.goals} goal${report.topScorer.goals === 1 ? "" : "s"}.`);
+  } else if (report.topAssister) {
+    clauses.push(`${report.topAssister.name} is their biggest creative threat, with ${report.topAssister.assists} assist${report.topAssister.assists === 1 ? "" : "s"}.`);
+  } else if (report.bestPlayer) {
+    clauses.push(`${report.bestPlayer.name} is their standout performer, rated ${report.bestPlayer.overall} OVR.`);
+  }
+
+  return clauses.length ? clauses.join(" ") : null;
+}
+
 export function scoutReportFor(career: CareerState, opponent: string, week: number): ScoutReport {
   const squad = squadFor(career, opponent);
   const table = sortLeague(career.league);
@@ -154,17 +201,22 @@ export function scoutReportFor(career: CareerState, opponent: string, week: numb
     topScorer: topScorer && topScorer.goals > 0
       ? {
         name: topScorer.name, value: topScorer.goals, position: topScorer.position, image: topScorer.image,
+        goals: topScorer.goals, assists: topScorer.assists, overall: topScorer.overall,
         form: formFor(topScorer.name, opponent, results, "scored"),
       }
       : null,
     topAssister: topAssister && topAssister.assists > 0
       ? {
         name: topAssister.name, value: topAssister.assists, position: topAssister.position, image: topAssister.image,
+        goals: topAssister.goals, assists: topAssister.assists, overall: topAssister.overall,
         form: formFor(topAssister.name, opponent, results, "assisted"),
       }
       : null,
     bestPlayer: bestPlayer
-      ? { name: bestPlayer.name, value: bestPlayer.overall, position: bestPlayer.position, image: bestPlayer.image }
+      ? {
+        name: bestPlayer.name, value: bestPlayer.overall, position: bestPlayer.position, image: bestPlayer.image,
+        goals: bestPlayer.goals, assists: bestPlayer.assists, overall: bestPlayer.overall,
+      }
       : null,
     recentResults: recentResultsFor(opponent, results),
     tableSnippet: tableSnippetFor(table, idx),
