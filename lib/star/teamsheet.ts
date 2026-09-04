@@ -227,12 +227,36 @@ export interface SavedXI {
   xi: (string | null)[];
 }
 
-/** Auto-pick only the slots the saved eleven left empty. */
+/**
+ * Auto-pick only the slots the saved eleven left empty.
+ *
+ * `autoPick` competes over the FULL formation, so calling it on the whole
+ * eleven and keeping just the missing index used to waste `spare` on slots
+ * that already had a real pick from `chosen` — it has no idea most of what
+ * it just filled is about to be thrown away. Reported directly, with a real
+ * match: Everton kicking off with only ten men despite a real roster of
+ * seventeen-plus, because their saved lineup (/lineups) was missing only
+ * the right winger — a genuinely late slot in the formation's own array —
+ * and every one of the handful of spare (not-already-chosen) players had
+ * already been handed to the ten slots ahead of it before autoPick ever got
+ * there. A roster with plenty of headcount overall still fielded a man
+ * short, because the ONE actual gap was starved by slots that never needed
+ * filling in the first place.
+ *
+ * Built here as its own tiny formation of just the missing slots, so
+ * `autoPick`'s competition is exactly "who best covers each real gap",
+ * never "who best covers a slot that already has somebody."
+ */
 function fillGaps(pool: Candidate[], formation: Formation, chosen: (string | null)[]): (string | null)[] {
   const taken = new Set(chosen.filter((id): id is string => !!id));
   const spare = pool.filter(p => !taken.has(p.id));
-  const auto = autoPick(spare, formation);
-  return formation.slots.map((_, i) => chosen[i] ?? auto[i] ?? null);
+  const gapIndices = chosen.map((id, i) => (id ? -1 : i)).filter(i => i >= 0);
+  if (gapIndices.length === 0) return chosen;
+  const gapFormation: Formation = { ...formation, slots: gapIndices.map(i => formation.slots[i]) };
+  const picks = autoPick(spare, gapFormation);
+  const result = [...chosen];
+  gapIndices.forEach((slotIdx, k) => { result[slotIdx] = picks[k] ?? null; });
+  return result;
 }
 
 /**
