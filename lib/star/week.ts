@@ -1,4 +1,5 @@
 import type { CareerState } from "./types";
+import { getTuning } from "./tuningStore";
 
 /**
  * THE WEEK BETWEEN MATCHES
@@ -17,15 +18,21 @@ import type { CareerState } from "./types";
  * See CareerState.energy's own doc comment.
  */
 
-/** How many things you can do between matches. */
-export const WEEK_ACTIONS = 3;
-export const REST_HAPPINESS = 6;
+/**
+ * How many things you can do between matches, and what Rest/Skip buy back —
+ * all editable at /star-tuning-dev (see lib/star/tuning.ts). Read once, at
+ * module load, the same way these were a plain hardcoded `const` before —
+ * an edit in the tuning editor takes effect next time the app loads, not
+ * instantly mid-session.
+ */
+export const WEEK_ACTIONS = getTuning("energy.weekActions");
+export const REST_HAPPINESS = getTuning("energy.restHappiness");
 /** What Rest buys back, alongside happiness — a modest top-up since it only
  *  costs one of the three actions and leaves the rest of the week free. */
-export const REST_ENERGY = 20;
+export const REST_ENERGY = getTuning("energy.restEnergy");
 /** What skipping the rest of the week buys back — bigger, because it costs
  *  everything else you could have done this week instead. */
-export const SKIP_ENERGY = 45;
+export const SKIP_ENERGY = getTuning("energy.skipEnergy");
 
 export function actionsLeft(career: CareerState): number {
   return career.weekActions ?? WEEK_ACTIONS;

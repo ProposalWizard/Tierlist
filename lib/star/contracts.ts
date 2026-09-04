@@ -1,4 +1,5 @@
 import type { CareerState, Contract } from "./types";
+import { getTuning } from "./tuningStore";
 
 /**
  * CONTRACT CLAUSES
@@ -36,17 +37,17 @@ export function offerClauses(career: CareerState, wage: number, rng: () => numbe
   const out: Partial<Contract> = {};
 
   // Appearance money for players who are not certain to play.
-  if (star < 3.4 || rng() < 0.3) {
-    out.appearanceFee = Math.max(1, Math.round(wage * 0.18));
+  if (star < 3.4 || rng() < getTuning("contracts.appearanceFeeChance")) {
+    out.appearanceFee = Math.max(1, Math.round(wage * getTuning("contracts.appearanceFeePct")));
   }
   // Loyalty for players they are worried about.
-  if (star >= 3.0 && rng() < 0.7) {
-    out.loyaltyBonus = Math.max(2, Math.round(wage * 2.2));
+  if (star >= 3.0 && rng() < getTuning("contracts.loyaltyBonusChance")) {
+    out.loyaltyBonus = Math.max(2, Math.round(wage * getTuning("contracts.loyaltyBonusPct")));
   }
   // And a price at which they cannot say no.
-  if (rng() < 0.65) {
+  if (rng() < getTuning("contracts.releaseClauseChance")) {
     // Cheaper for a lesser player, and never so low that it is free.
-    const multiple = 14 + star * 6 + rng() * 10;
+    const multiple = getTuning("contracts.releaseClauseBase") + star * getTuning("contracts.releaseClauseStarMult") + rng() * 10;
     out.releaseClause = Math.max(10, Math.round(wage * multiple));
   }
   return out;
@@ -75,7 +76,7 @@ export function clauseSummary(contract: Contract): ClauseSummary[] {
  */
 export function canTriggerClause(contract: Contract, buyerStrength: number, wage: number): boolean {
   if (!contract.releaseClause) return false;
-  const means = Math.round(wage * (8 + (buyerStrength / 100) * 55));
+  const means = Math.round(wage * (getTuning("contracts.buyerMeansBase") + (buyerStrength / 100) * getTuning("contracts.buyerMeansStrengthMult")));
   return means >= contract.releaseClause;
 }
 

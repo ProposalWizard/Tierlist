@@ -602,7 +602,25 @@ export function matchdayFor(
     rng: mulberry32(rotationSeedFor(theirs, fixture, career.season)),
     chance: rotationChanceFor(fixture),
   };
-  const them = build(theirs, fromLeagueSquad(oppSquad), false, oppSaved?.bench, oppSavedXI, rotation);
+  let oppPool = fromLeagueSquad(oppSquad);
+  // A real club's own roster can erode over a career-length run of transfer
+  // windows to fewer than eleven — lib/star/leagueTransfers.ts sells a
+  // player out of a club's pool with nothing automatically bought back in
+  // to replace him. Reported directly: an opponent (Everton) kicking off a
+  // full league match with only ten men, because their one recognised
+  // right winger had been sold and nothing else in their real roster could
+  // even stand in out of position. Free agents (career.freeAgents) are
+  // real, already-tracked players with no club — reached for here, purely
+  // as a last resort when the real roster genuinely cannot field a full
+  // side, the same "widen additively, never remove or override" way
+  // `ownPool` above is widened for the everyday case. Never for a squad
+  // that's merely thin at one position — bestFitness's own flat 22-point
+  // floor already reassigns a real teammate out of position for that; this
+  // is only for when there simply are not eleven real men to reassign.
+  if (oppPool.length < formationForClub(theirs).slots.length) {
+    oppPool = withFullRosterFallback(oppPool, fromLeagueSquad({ club: theirs, players: career.freeAgents ?? [] }));
+  }
+  const them = build(theirs, oppPool, false, oppSaved?.bench, oppSavedXI, rotation);
 
   return fixture.home
     ? { home: ours, away: them, fixture }

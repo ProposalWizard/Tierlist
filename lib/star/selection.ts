@@ -1,5 +1,6 @@
 import type { CareerState } from "./types";
 import { STYLE_SELECTION } from "./manager";
+import { getTuning } from "./tuningStore";
 
 /**
  * TEAM SELECTION
@@ -62,8 +63,8 @@ const BENCH_AT = 34;    // …and to make the bench at all
 // form talks a manager into starting a player who cannot physically get
 // through ninety minutes. A player just short of MIN_ENERGY_TO_START can
 // still be trusted with a cameo; short of MIN_ENERGY_TO_SUB, not even that.
-export const MIN_ENERGY_TO_START = 35;
-export const MIN_ENERGY_TO_SUB = 15;
+export const MIN_ENERGY_TO_START = getTuning("energy.minToStart");
+export const MIN_ENERGY_TO_SUB = getTuning("energy.minToSub");
 
 export function selectionStanding(career: CareerState): number {
   const form = recentForm(career.form);
@@ -161,8 +162,8 @@ export function selectionFor(career: CareerState): SelectionVerdict {
 export const MISSED_WEEK = {
   matchFitness: -7,
   boss: +3,
-  energy: +15,
-} as const;
+  energy: getTuning("energy.missedWeekEnergy"),
+};
 
 /**
  * BEING TAKEN OFF
@@ -175,7 +176,7 @@ export type HookReason = "form" | "rested" | "legs";
 
 /** Below this live, in-match energy, tired legs start to become a real risk
  *  of being hooked — see hookCheck's `args.liveEnergy`. */
-const HOOK_LEGS_FLOOR = 28;
+const HOOK_LEGS_FLOOR = getTuning("energy.hookLegsFloor");
 
 export interface HookDecision {
   hooked: boolean;

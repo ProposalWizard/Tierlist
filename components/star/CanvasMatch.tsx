@@ -456,7 +456,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     user: log.filter(l => l.tone === "goal").length,
     opp: log.filter(l => l.tone === "oppGoal").length,
   }), [log]);
+  // Commentary speed — reported directly: it reset to the slowest setting
+  // at the start of every single match, which is real friction across a
+  // session where you might play ten or fifteen games in a row on your
+  // preferred speed. Persisted the same way `star-match-muted` already is
+  // just below — read once on mount, written back on every change — so it
+  // holds across matches (and reloads) until you change it again yourself.
   const [speed, setSpeed] = useState(1);
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem("star-match-speed"));
+      if (saved === 1 || saved === 2 || saved === 4) setSpeed(saved);
+    } catch { /* ignore */ }
+  }, []);
+  const cycleSpeed = () => {
+    setSpeed((sp) => {
+      const next = sp === 1 ? 2 : sp === 2 ? 4 : 1;
+      try { localStorage.setItem("star-match-speed", String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const [pause, setPause] = useState<{ label?: string; cta: string; onContinue: () => void } | null>(null);
   const halfTimeShownRef = useRef(false);
   /** What to do once the queue has emptied. */
@@ -3337,7 +3356,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
             oppKit={theirKit()}
             stats={stats}
             speed={speed}
-            onSpeed={() => setSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}
+            onSpeed={cycleSpeed}
             pause={pause}
             // Tapping the commentary empties the queue in one go. Nobody wants
             // to sit through four minutes of build-up twice, and the alternative

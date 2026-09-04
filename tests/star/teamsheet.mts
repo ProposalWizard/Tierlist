@@ -6,7 +6,7 @@ import { formationOf } from "../../lib/star/formations";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { buildLeagueSquad, type RosterRow } from "../../lib/star/leagueSquads";
 import { fitness } from "../../lib/star/formations";
-import type { CareerState, Fixture, LeagueSquad } from "../../lib/star/types";
+import type { CareerState, Fixture, LeagueSquad, LeaguePlayer } from "../../lib/star/types";
 
 /**
  * THE TEAM SHEET.
@@ -456,6 +456,59 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   const noneMissing = new Map<string, "CB">([[(c.squad ?? [])[0].id, "CB"]]);
   check(fillMissingFromFullRoster(c.squad ?? [], noneMissing, c).length === (c.squad ?? []).length,
     "nobody missing means nothing is added");
+}
+
+// ── An opponent's own roster too thin for eleven still fields eleven ───────
+// Reported directly, with a real match: Everton kicking off a league game
+// with only ten men, because the one real right winger left in their
+// database roster had been sold with nobody bought in to replace him.
+// lib/star/leagueTransfers.ts now has a hard floor stopping a sale from
+// taking a club this thin in the first place — this covers the save that
+// was ALREADY this thin before that floor existed, or any other reason a
+// club's real roster ever ends up short.
+{
+  const thinPositions: LeagueSquad["players"][number]["position"][] =
+    ["GK", "CB", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "ST"];
+  const thinSquad: LeagueSquad = {
+    club: "Everton",
+    players: thinPositions.map((position, i) => ({
+      id: `e${i}`, name: `Everton Player ${i}`, position, overall: 70 - (i % 10), goals: 0, assists: 0,
+    })),
+  };
+  const freeAgents: LeaguePlayer[] = [
+    { id: "fa1", name: "Free Agent RW", position: "RW", overall: 62, goals: 0, assists: 0 },
+    { id: "fa2", name: "Free Agent CB", position: "CB", overall: 60, goals: 0, assists: 0 },
+  ];
+
+  const base = makeInitialCareer(
+    {
+      firstName: "Test", lastName: "Player", age: 16, skinTone: "light",
+      club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027,
+    } as any,
+    CLUBS,
+  );
+  const withoutFreeAgents: CareerState = { ...base, leagueSquads: [thinSquad] };
+  const fixture: Fixture = { week: 1, opponent: "Everton", home: true, played: false, kind: "league" };
+
+  const short = matchdayFor(withoutFreeAgents, fixture, false).away;
+  check(short.xi.length === 10, `confirms the shape of the reported bug — only ten real men, ten fielded (${short.xi.length})`);
+
+  const withFreeAgents: CareerState = { ...withoutFreeAgents, freeAgents };
+  const full = matchdayFor(withFreeAgents, fixture, false).away;
+  check(full.xi.length === 11, `a real free agent fills the gap rather than leaving the side a man short (${full.xi.length})`);
+  check(full.xi.some(p => p.id === "fa1" || p.id === "fa2"),
+    "…and it's genuinely one of the free agents doing it, not a coincidence");
+
+  // A roster that already has eleven real men never reaches for a free
+  // agent at all — this is a last resort, not a standing widening.
+  const platoon: LeagueSquad = {
+    club: "Everton",
+    players: [...thinSquad.players, { id: "e10", name: "Everton Player 10", position: "RW", overall: 65, goals: 0, assists: 0 }],
+  };
+  const enough: CareerState = { ...base, leagueSquads: [platoon], freeAgents };
+  const notNeeded = matchdayFor(enough, fixture, false).away;
+  check(notNeeded.xi.length === 11 && !notNeeded.xi.some(p => p.id === "fa1" || p.id === "fa2"),
+    "…and once the real roster can field eleven on its own, the free agents are left alone");
 }
 
 if (problems.length) {

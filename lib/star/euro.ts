@@ -92,47 +92,57 @@ export interface EuroState {
  * league phase needs. Strengths are fixed rather than rolled, so Real Madrid is
  * Real Madrid in every career and a draw against them means the same thing
  * twice.
+ *
+ * Every name below is the exact spelling `clubs.ts`'s CHAMPIONS_LEAGUE_CLUBS/
+ * EUROPA_LEAGUE_CLUBS/OTHER_CLUBS lists use — not a shorthand ("Bayern
+ * Munich", "Copenhagen") that reads fine but has no real squad to resolve
+ * against. Reported directly: a real Champions League tie against Copenhagen
+ * showed "Unable to scout opponent's team" even with a lineup genuinely set
+ * for them — the squad WAS fetched, but under "FC København" (the real
+ * SoFIFA/database spelling), so the fixture's own opponent name never
+ * matched it. That was true for most of this pool, not just Copenhagen —
+ * fixed throughout rather than one name at a time.
  */
 const CHAMPIONS_POOL: EuroClub[] = [
   { name: "Real Madrid", strength: 92, pot: 1 },
-  { name: "Bayern Munich", strength: 91, pot: 1 },
-  { name: "Barcelona", strength: 89, pot: 1 },
-  { name: "Paris SG", strength: 88, pot: 1 },
-  { name: "Inter Milan", strength: 86, pot: 1 },
+  { name: "FC Bayern München", strength: 91, pot: 1 },
+  { name: "FC Barcelona", strength: 89, pot: 1 },
+  { name: "Paris Saint-Germain", strength: 88, pot: 1 },
+  { name: "Inter", strength: 86, pot: 1 },
   { name: "Atlético Madrid", strength: 85, pot: 1 },
   { name: "Borussia Dortmund", strength: 84, pot: 1 },
   { name: "Juventus", strength: 84, pot: 1 },
   { name: "AC Milan", strength: 83, pot: 1 },
 
-  { name: "Bayer Leverkusen", strength: 83, pot: 2 },
+  { name: "Bayer 04 Leverkusen", strength: 83, pot: 2 },
   { name: "Napoli", strength: 82, pot: 2 },
-  { name: "Benfica", strength: 80, pot: 2 },
-  { name: "Porto", strength: 79, pot: 2 },
-  { name: "Sevilla", strength: 79, pot: 2 },
+  { name: "SL Benfica", strength: 80, pot: 2 },
+  { name: "FC Porto", strength: 79, pot: 2 },
+  { name: "Sevilla FC", strength: 79, pot: 2 },
   { name: "RB Leipzig", strength: 80, pot: 2 },
   { name: "Roma", strength: 80, pot: 2 },
-  { name: "PSV Eindhoven", strength: 77, pot: 2 },
+  { name: "PSV", strength: 77, pot: 2 },
   { name: "Ajax", strength: 76, pot: 2 },
 
   { name: "Sporting CP", strength: 77, pot: 3 },
   { name: "Feyenoord", strength: 75, pot: 3 },
-  { name: "Marseille", strength: 76, pot: 3 },
-  { name: "Lyon", strength: 75, pot: 3 },
+  { name: "Olympique de Marseille", strength: 76, pot: 3 },
+  { name: "Olympique Lyonnais", strength: 75, pot: 3 },
   { name: "Real Sociedad", strength: 76, pot: 3 },
-  { name: "Villarreal", strength: 76, pot: 3 },
+  { name: "Villarreal CF", strength: 76, pot: 3 },
   { name: "Eintracht Frankfurt", strength: 76, pot: 3 },
   { name: "Celtic", strength: 72, pot: 3 },
-  { name: "Club Brugge", strength: 72, pot: 3 },
+  { name: "Club Brugge KV", strength: 72, pot: 3 },
 
-  { name: "Galatasaray", strength: 74, pot: 4 },
+  { name: "Galatasaray SK", strength: 74, pot: 4 },
   { name: "Shakhtar Donetsk", strength: 72, pot: 4 },
-  { name: "Red Bull Salzburg", strength: 73, pot: 4 },
+  { name: "FC Red Bull Salzburg", strength: 73, pot: 4 },
   { name: "Dinamo Zagreb", strength: 70, pot: 4 },
-  { name: "Young Boys", strength: 68, pot: 4 },
-  { name: "Slavia Prague", strength: 70, pot: 4 },
-  { name: "Copenhagen", strength: 70, pot: 4 },
-  { name: "Bodø/Glimt", strength: 69, pot: 4 },
-  { name: "Sturm Graz", strength: 68, pot: 4 },
+  { name: "BSC Young Boys", strength: 68, pot: 4 },
+  { name: "SK Slavia Praha", strength: 70, pot: 4 },
+  { name: "FC København", strength: 70, pot: 4 },
+  { name: "FK Bodø/Glimt", strength: 69, pot: 4 },
+  { name: "SK Sturm Graz", strength: 68, pot: 4 },
 ];
 
 /**
@@ -143,46 +153,58 @@ const CHAMPIONS_POOL: EuroClub[] = [
  * flattened as well as lowered, because a Europa League field is genuinely more
  * even, and that is what makes winning it feel like a different achievement
  * rather than an easier version of the same one.
+ *
+ * Every name below is a real member of clubs.ts's own CHAMPIONS_LEAGUE_CLUBS
+ * or EUROPA_LEAGUE_CLUBS list — the same lists the /lineups picker's
+ * Champions League and Europa League tabs are built from — not a club typed
+ * in independently of them. Eighteen entries used to name a club that had
+ * never actually been added to either list at all (Fiorentina, Qarabağ, and
+ * sixteen others like them): real clubs, but ones this game's own database
+ * was never told to have, so a tie against one still read "Unable to scout
+ * opponent's team" no matter how the name was spelled. Swapped for eighteen
+ * real EUROPA_LEAGUE_CLUBS/CHAMPIONS_LEAGUE_CLUBS members that weren't
+ * already drawn on anywhere else in this file, keeping each pot's rough
+ * strength range rather than the exact old number.
  */
 const EUROPA_POOL: EuroClub[] = [
-  { name: "Villarreal", strength: 78, pot: 1 },
-  { name: "Real Betis", strength: 77, pot: 1 },
-  { name: "Fenerbahçe", strength: 76, pot: 1 },
-  { name: "Rangers", strength: 74, pot: 1 },
+  { name: "Villarreal CF", strength: 78, pot: 1 },
+  { name: "Real Betis Balompié", strength: 77, pot: 1 },
+  { name: "Fenerbahçe SK", strength: 76, pot: 1 },
+  { name: "Rangers FC", strength: 74, pot: 1 },
   { name: "Lazio", strength: 78, pot: 1 },
-  { name: "Fiorentina", strength: 77, pot: 1 },
-  { name: "Athletic Club", strength: 77, pot: 1 },
-  { name: "Olympiacos", strength: 73, pot: 1 },
-  { name: "Braga", strength: 73, pot: 1 },
+  { name: "Crystal Palace", strength: 76, pot: 1 },
+  { name: "RC Lens", strength: 75, pot: 1 },
+  { name: "Olympiacos FC", strength: 73, pot: 1 },
+  { name: "Sporting Clube de Braga", strength: 73, pot: 1 },
 
-  { name: "Stuttgart", strength: 75, pot: 2 },
-  { name: "Nice", strength: 74, pot: 2 },
-  { name: "Lille", strength: 75, pot: 2 },
-  { name: "Anderlecht", strength: 71, pot: 2 },
-  { name: "Twente", strength: 70, pot: 2 },
-  { name: "Union SG", strength: 70, pot: 2 },
-  { name: "Panathinaikos", strength: 71, pot: 2 },
-  { name: "Ferencváros", strength: 69, pot: 2 },
-  { name: "Hoffenheim", strength: 73, pot: 2 },
+  { name: "VfB Stuttgart", strength: 75, pot: 2 },
+  { name: "AFC Bournemouth", strength: 73, pot: 2 },
+  { name: "Lille OSC", strength: 75, pot: 2 },
+  { name: "RSC Anderlecht", strength: 71, pot: 2 },
+  { name: "KRC Genk", strength: 71, pot: 2 },
+  { name: "Union Saint-Gilloise", strength: 70, pot: 2 },
+  { name: "PAOK", strength: 70, pot: 2 },
+  { name: "Ferencvárosi Torna Club", strength: 69, pot: 2 },
+  { name: "TSG 1899 Hoffenheim", strength: 73, pot: 2 },
 
-  { name: "Midtjylland", strength: 69, pot: 3 },
-  { name: "Slovan Bratislava", strength: 66, pot: 3 },
-  { name: "Malmö", strength: 68, pot: 3 },
-  { name: "Rapid Vienna", strength: 68, pot: 3 },
-  { name: "Elfsborg", strength: 66, pot: 3 },
-  { name: "Ludogorets", strength: 67, pot: 3 },
+  { name: "FC Midtjylland", strength: 69, pot: 3 },
+  { name: "Sunderland", strength: 69, pot: 3 },
+  { name: "Malmö FF", strength: 68, pot: 3 },
+  { name: "Sparta Praha", strength: 68, pot: 3 },
+  { name: "Beşiktaş JK", strength: 70, pot: 3 },
+  { name: "Trabzonspor", strength: 69, pot: 3 },
   { name: "AZ Alkmaar", strength: 72, pot: 3 },
   { name: "Viktoria Plzeň", strength: 68, pot: 3 },
-  { name: "Maccabi Tel Aviv", strength: 66, pot: 3 },
+  { name: "Stade Rennais FC", strength: 70, pot: 3 },
 
-  { name: "FCSB", strength: 65, pot: 4 },
-  { name: "Qarabağ", strength: 66, pot: 4 },
-  { name: "Omonia", strength: 63, pot: 4 },
-  { name: "APOEL", strength: 63, pot: 4 },
-  { name: "Bačka Topola", strength: 61, pot: 4 },
-  { name: "Riga FC", strength: 61, pot: 4 },
-  { name: "Astana", strength: 62, pot: 4 },
-  { name: "Petrocub", strength: 60, pot: 4 },
+  { name: "RC Celta", strength: 65, pot: 4 },
+  { name: "Hearts", strength: 63, pot: 4 },
+  { name: "FC Basel 1893", strength: 64, pot: 4 },
+  { name: "AEK Athens", strength: 62, pot: 4 },
+  { name: "Vitória SC", strength: 61, pot: 4 },
+  { name: "Legia Warszawa", strength: 62, pot: 4 },
+  { name: "Lech Poznań", strength: 61, pot: 4 },
+  { name: "Como", strength: 64, pot: 4 },
   { name: "Shamrock Rovers", strength: 60, pot: 4 },
 ];
 
@@ -371,22 +393,57 @@ export function buildEuroTable(state: EuroState, yourClub: string, seed: number)
     credit(m.opponent, m.them, m.us);
   }
 
-  // Then everybody else, until all thirty-six have played eight. Pairing the
-  // two clubs furthest from a full card keeps it from ending with one club
-  // needing three games and nobody left to play them.
-  for (let guard = 0; guard < 400; guard++) {
-    const short = state.clubs
-      .map(c => rows.get(c.name)!)
-      .filter(r => r.played < 8 && !r.isYou)
-      .sort((a, b) => a.played - b.played);
-    if (short.length < 2) break;
-    const home = short[0];
-    const away = short[1];
-    const [hs, as] = simulate(
-      (strength.get(home.name) ?? 75), (strength.get(away.name) ?? 75), rng,
-    );
-    credit(home.name, hs, as);
-    credit(away.name, as, hs);
+  // Any of your own eight not played yet still has a real, specific
+  // opponent — `state.leaguePhase` already names him, drawn the same way
+  // every other tie was. Simulated against that exact club here, rather
+  // than left for the generic "everybody else" pool below (which has no
+  // idea who you're actually fixtured against): without this, a table
+  // built before your own first ball was kicked left your own row stuck
+  // on nothing while all thirty-five others were fully projected —
+  // exactly backwards from "every club plays eight" being the whole point
+  // of this function.
+  for (const m of state.leaguePhase) {
+    if (m.us !== undefined && m.them !== undefined) continue;
+    const [hs, as] = simulate((strength.get(yourClub) ?? 75), (strength.get(m.opponent) ?? 75), rng);
+    credit(yourClub, hs, as);
+    credit(m.opponent, as, hs);
+  }
+
+  // Then everybody else, until all thirty-six have played eight.
+  //
+  // Used to pick "the two clubs furthest from a full card" each round —
+  // which reads like it should work, and provably does not: your own eight
+  // opponents start at 1 played, every other club starts at 0, and that
+  // uneven start lets the greedy pick paint itself into a corner where
+  // exactly one club is left needing more games with every possible
+  // partner already sitting at a full eight — caught by a test asserting
+  // literally every one of the thirty-six plays eight, not by anyone
+  // noticing a table with one club stuck on nothing. A flat list — one
+  // entry per game a club still needs — shuffled and paired off two at a
+  // time is provably complete instead: the list's length is always even
+  // (every non-you club needs 8 minus a number that started even across
+  // the field), so pairing consecutive entries covers everyone with
+  // nothing left over. The only real risk left is a club landing paired
+  // against itself in the shuffle, handled by swapping forward to the next
+  // slot that is not the same name.
+  const slots: string[] = [];
+  for (const c of state.clubs) {
+    const r = rows.get(c.name)!;
+    if (r.isYou) continue;
+    for (let i = r.played; i < 8; i++) slots.push(c.name);
+  }
+  const fixture = shuffle(slots, rng);
+  for (let i = 0; i + 1 < fixture.length; i += 2) {
+    if (fixture[i] === fixture[i + 1]) {
+      let j = i + 2;
+      while (j < fixture.length && (fixture[j] === fixture[i] || fixture[j] === fixture[i + 1])) j++;
+      if (j < fixture.length) [fixture[i + 1], fixture[j]] = [fixture[j], fixture[i + 1]];
+    }
+    const home = fixture[i];
+    const away = fixture[i + 1];
+    const [hs, as] = simulate((strength.get(home) ?? 75), (strength.get(away) ?? 75), rng);
+    credit(home, hs, as);
+    credit(away, as, hs);
   }
 
   return sortEuro(Array.from(rows.values()));

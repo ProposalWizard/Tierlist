@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Skills } from "@/lib/star/types";
+import { getTuning } from "@/lib/star/tuningStore";
 
 interface Props {
   skill: keyof Skills;
@@ -19,12 +20,17 @@ const SKILL_TITLES: Record<keyof Skills, string> = {
 // Shared helpers
 // -------------------------------------------------------------------------
 
-// XP mapping: 3 base + up to 36 from average per-rep quality (0..1).
-// Perfect session ~= 39 XP (page converts to +stat via Math.floor(xp/5)).
+// XP mapping: a base amount, plus up to a "scale" from average per-rep
+// quality (0..1), hard-capped at a max — all three editable at
+// /star-tuning-dev (lib/star/tuning.ts, "Training" category). Page converts
+// to +stat via Math.floor(xp / training.minigameXpDivisor).
 function qualitiesToXp(qualities: number[], reps: number): number {
-  if (qualities.length === 0) return 3;
+  const base = getTuning("training.minigameBaseXp");
+  const max = getTuning("training.minigameMaxXp");
+  const scale = getTuning("training.minigameScale");
+  if (qualities.length === 0) return base;
   const avg = qualities.reduce((a, b) => a + b, 0) / reps;
-  return Math.max(3, Math.min(40, Math.round(3 + avg * 36)));
+  return Math.max(base, Math.min(max, Math.round(base + avg * scale)));
 }
 
 // Collects per-rep quality scores, projects XP, and fires onFinish once.

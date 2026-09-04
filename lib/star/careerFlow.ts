@@ -30,6 +30,7 @@ import { BOOTS_CATALOGUE } from "./shopData";
 import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier, TROPHY_FAME } from "./rating";
+import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
@@ -51,8 +52,9 @@ const EMPTY_SEASON_STATS = {
   appearances: 0, goals: 0, hatTricks: 0, passes: 0, assists: 0, starMan: 0, totalRating: 0, ratingCount: 0,
 };
 
-/** What a full ninety minutes costs — see nextEnergy in creditMatchResult. */
-export const ENERGY_MATCH_COST = 32;
+/** What a full ninety minutes costs — see nextEnergy in creditMatchResult.
+ *  Editable at /star-tuning-dev (lib/star/tuning.ts). */
+export const ENERGY_MATCH_COST = getTuning("energy.matchCost");
 
 // ── Injury risk ──────────────────────────────────────────────────────────
 //
@@ -578,8 +580,11 @@ export function creditMatchResult(
   // computeStarRating reads them back out), scaled by how fast a player of
   // this age actually develops — see growthMultiplier.
   const matchSkillPool = alreadyPlayed ? 0
-    : stats.rating >= 8 ? 3 : stats.rating >= 7 ? 1.2 : stats.rating >= 6 ? 0.4 : 0;
-  const perSkillGain = (matchSkillPool * growthMultiplier(career.player.age)) / 5;
+    : stats.rating >= 8 ? getTuning("training.matchPoolRating8")
+    : stats.rating >= 7 ? getTuning("training.matchPoolRating7")
+    : stats.rating >= 6 ? getTuning("training.matchPoolRating6")
+    : 0;
+  const perSkillGain = (matchSkillPool * growthMultiplier(career.player.age)) / getTuning("training.matchGainDivisor");
   const nextSkills: Skills = perSkillGain <= 0 ? career.skills : {
     pace: Math.min(100, Math.round(career.skills.pace + perSkillGain)),
     power: Math.min(100, Math.round(career.skills.power + perSkillGain)),

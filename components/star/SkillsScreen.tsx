@@ -2,6 +2,7 @@
 import type { CareerState, Skills } from "@/lib/star/types";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
+import { getTuning } from "@/lib/star/tuningStore";
 
 interface Props {
   career: CareerState;
@@ -16,7 +17,7 @@ const SKILL_LABELS: [keyof Skills, string, string, string][] = [
   ["freeKick", "Free Kick", "🎪", "Set-piece accuracy, curl — and who takes them"],
 ];
 
-const ENERGY_COST = 15;
+const ENERGY_COST = getTuning("energy.trainingCost");
 
 export default function SkillsScreen({ career, onTrain }: Props) {
   const duties = setPieceDuties(career);
