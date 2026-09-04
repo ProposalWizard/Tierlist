@@ -388,18 +388,30 @@ export default function LeagueScreen({ career }: Props) {
         const active = competitions[Math.min(compIndex, competitions.length - 1)];
         return (
           <div>
-            {/* The switcher — a small gap above the table itself, enough
-                room for one button naming whichever competition is
-                showing. Tapping it cycles to the next; requested directly,
-                in place of a separate Cups tab. */}
-            <div className="mb-1.5 flex justify-end">
-              <button
-                onClick={() => setCompIndex(i => (i + 1) % competitions.length)}
-                className="rounded-full border border-gray-600 bg-gray-800 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white transition hover:bg-gray-700"
-              >
-                {active.label} ›
-              </button>
-            </div>
+            {/* A tab per competition instead of one button cycling through
+                them — requested directly, matching the same tabs-you-can-
+                see-and-click shape the outer Table/Results/Fixtures/Awards/
+                Squad row already is. Wraps onto a second line rather than
+                scrolling sideways when there are more competitions than
+                fit one row (a full house — league, both domestic cups,
+                Europe, country — is six) — no scroll wheels anywhere in
+                the league areas, per standing instruction. */}
+            {competitions.length > 1 && (
+              <div className="mb-1.5 flex flex-wrap gap-1.5">
+                {competitions.map((c, i) => (
+                  <button
+                    key={c.key}
+                    onClick={() => setCompIndex(i)}
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide transition ${
+                      i === compIndex
+                        ? "border-yellow-400 bg-yellow-500 text-white"
+                        : "border-gray-600 bg-gray-800 text-white hover:bg-gray-700"}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
             {active.content}
           </div>
         );
