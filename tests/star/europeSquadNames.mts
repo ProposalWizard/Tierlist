@@ -2,49 +2,49 @@ import { poolFor } from "../../lib/star/euro";
 import { externalClubsFor, PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "../../lib/star/clubs";
 
 /**
- * A EUROPEAN OPPONENT'S NAME MUST MATCH WHOSE SQUAD ACTUALLY GETS FETCHED.
+ * A EUROPEAN OPPONENT'S NAME MUST MATCH WHOSE SQUAD ACTUALLY GETS FETCHED —
+ * AND MUST BE A REAL, DATABASE-BACKED CLUB TO BEGIN WITH.
  *
  * Reported directly, with a real match against Copenhagen: "unable to scout
  * opponent's team" despite a lineup genuinely set for them. Root cause —
  * `CHAMPIONS_POOL`/`EUROPA_POOL` (lib/star/euro.ts, who you can actually be
  * drawn against) spelled clubs differently from `CHAMPIONS_LEAGUE_CLUBS`/
  * `EUROPA_LEAGUE_CLUBS`/`OTHER_CLUBS` (lib/star/clubs.ts, the real SoFIFA/
- * database spelling `externalClubsFor` fetches squads under) — "Copenhagen"
- * vs "FC København", "Bayern Munich" vs "FC Bayern München", and so on
- * throughout most of both pools. The squad WAS fetched, just under a name
- * the fixture's own `opponent` field never matched.
+ * database spelling `externalClubsFor` fetches squads under, and the same
+ * lists the /lineups picker's Champions League and Europa League tabs are
+ * built from) — "Copenhagen" vs "FC København", "Bayern Munich" vs "FC
+ * Bayern München", and so on throughout most of both pools.
  *
- * This locks the fix in at the data level: every pool entry with a real
- * squad in the database must spell itself exactly the way `externalClubsFor`
- * fetches it, so a future edit to either list can't quietly drift the two
- * apart again the same way.
+ * A second pass fixed a deeper version of the same gap, told directly:
+ * eighteen EUROPA_POOL entries (Fiorentina, Qarabağ, and sixteen others)
+ * named a club that had never been added to clubs.ts's lists AT ALL — not a
+ * spelling difference, a club this game's database was simply never told
+ * about — swapped for real EUROPA_LEAGUE_CLUBS/CHAMPIONS_LEAGUE_CLUBS
+ * members instead. Every pool entry now has to be a genuine member of one
+ * of clubs.ts's lists, not just spelled consistently with one.
+ *
+ * This locks both fixes in at the data level, so a future edit to either
+ * list can't quietly drift the two apart again the same way.
  */
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
-// The pool entries with no real squad ANYWHERE in clubs.ts at all — never
-// scraped/cloned into the database, not just a spelling difference. These
-// are expected to still fail to resolve until that import actually happens;
-// this list is what keeps the test honest about which is which.
-const KNOWN_UNCLONED = new Set([
-  "Fiorentina", "Athletic Club", "Nice", "Twente", "Panathinaikos",
-  "Slovan Bratislava", "Rapid Vienna", "Elfsborg", "Ludogorets",
-  "Maccabi Tel Aviv", "FCSB", "Qarabağ", "Omonia", "APOEL",
-  "Bačka Topola", "Riga FC", "Astana", "Petrocub",
-]);
-
 // A Premier League career's own fetch list — the same shape every real
-// career actually calls (see app/star-dev/page.tsx).
+// career actually calls (see app/star-dev/page.tsx). A club already in your
+// own division (Crystal Palace, say, for a Premier League career) is
+// correctly EXCLUDED from this — it resolves straight through
+// `leagueSquads` instead, never needing `externalSquads` at all — so it
+// still counts as resolved for this check.
 const fetchList = new Set(externalClubsFor(PREMIER_LEAGUE_CLUBS));
+const ownDivision = new Set(PREMIER_LEAGUE_CLUBS);
 
 for (const competition of ["Champions League", "Europa League"] as const) {
   const pool = poolFor(competition);
   check(pool.length > 0, `${competition}'s pool is not empty`);
   for (const club of pool) {
-    if (KNOWN_UNCLONED.has(club.name)) continue;
-    check(fetchList.has(club.name),
-      `${competition} opponent "${club.name}" has a real squad fetched under its own exact name`);
+    check(fetchList.has(club.name) || ownDivision.has(club.name),
+      `${competition} opponent "${club.name}" is a real, database-backed club — either fetched into externalSquads or already in your own division`);
   }
 }
 
