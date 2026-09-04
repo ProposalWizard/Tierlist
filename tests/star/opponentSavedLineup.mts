@@ -204,6 +204,69 @@ const FIXTURE: Fixture = { week: 1, opponent: "Liverpool", home: true, played: f
   clearLineup("Wigan Athletic");
 }
 
+// ── A saved lineup missing just ONE late slot still fields eleven ──────────
+//
+// Reported directly, with a real match: Everton kicking off with only ten
+// men despite a real roster of well over a dozen, because their /lineups
+// save was missing only the right winger (sold away, nothing re-assigned
+// to the empty slot). Root cause was in `fillGaps` (teamsheet.ts): it used
+// to run autoPick over the WHOLE formation and keep only the missing
+// index's result — so autoPick's own internal greedy loop, working through
+// the formation in slot order, could hand every one of a small "spare"
+// pool to the TEN SLOTS THAT ALREADY HAD A REAL PICK before ever reaching
+// the one actual gap, if that gap happened to sit late in the formation's
+// own slot order (a winger, after a back four and a central three). A
+// squad with plenty of headcount overall still fielded a man short,
+// because the fill algorithm starved the one real gap on slots that never
+// needed filling at all.
+{
+  const shape = formationOf("433");
+  // Fifteen real players: one keeper, ten who cover every slot but the
+  // rightmost (right winger, the formation's LAST slot — see formations.ts,
+  // f() appends rows in order and 4-3-3's front row is [LW, ST, RW]), and
+  // five more real squad players held in reserve — the "spare" pool a real
+  // saved-lineup gap actually has to draw from. None of the fifteen is
+  // listed as a natural RW, the exact reported shape.
+  const positions: SquadPlayer["position"][] = [
+    "GK", "CB", "CB", "CB", "LB", "RB", "CDM", "CM", "CM", "CAM", "LW", "ST", "ST", "CM", "CB",
+  ];
+  const thinButFull: LeagueSquad = {
+    club: "Liverpool",
+    players: positions.map((position, i) => ({
+      id: `t${i}`, name: `Liverpool Player ${i}`, position, overall: 75 - i, goals: 0, assists: 0,
+    })),
+  };
+  const sq = thinButFull.players;
+  const rwSlot = shape.slots.findIndex(s => s.role === "RW");
+  check(rwSlot === shape.slots.length - 1, `sanity: RW really is the last slot in 4-3-3's own order (${rwSlot} of ${shape.slots.length})`);
+
+  // Every slot EXCEPT the right winger is explicitly saved, using the
+  // first ten of the fifteen real players — leaving the last five as the
+  // genuine "spare" a real saved lineup's one gap has to be filled from.
+  const chosen: (string | null)[] = shape.slots.map((_, i) => (i === rwSlot ? null : sq[i].id));
+  saveLineup("Liverpool", { formation: shape.id, xi: chosen });
+
+  const career: CareerState = {
+    ...makeInitialCareer(
+      {
+        firstName: "Test", lastName: "Player", age: 16, skinTone: "light",
+        club: "AFC Bournemouth", clubBadge: null, position: "ST",
+        nationality: "England", startYear: 2027,
+      },
+      CLUBS,
+    ),
+    leagueSquads: [thinButFull],
+  };
+  const md = matchdayFor(career, FIXTURE, false).away;
+
+  check(md.xi.length === 11, `all eleven slots are filled, not ten (${md.xi.length})`);
+  check(chosen.filter((id): id is string => !!id).every(id => md.xi.some(p => p.id === id)),
+    "…and every one of the ten explicitly saved picks survives untouched");
+  const rwFilled = md.xi.find(p => p.role === "RW");
+  check(!!rwFilled, "…with a real, spare squad player standing in at right winger rather than the slot staying empty");
+  clearLineup("Liverpool");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);
