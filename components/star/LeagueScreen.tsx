@@ -4,9 +4,9 @@ import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNam
 import { displayOverall } from "@/lib/star/rating";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
-import { roundsFor, nationOf, internationalCallUp, nextFixtureFor } from "@/lib/star/competitions";
+import { nationOf, nextFixtureFor } from "@/lib/star/competitions";
 import { exitRound } from "@/lib/star/cups";
-import { buildEuroTable, sortEuro } from "@/lib/star/euro";
+import { buildEuroTable, sortEuro, knockoutSlots } from "@/lib/star/euro";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
@@ -271,118 +271,127 @@ export default function LeagueScreen({ career }: Props) {
               ),
             };
           }),
-          // ── Europe (and anything else career.cups tracks) ──
+          // ── Europe: read straight off career.euroState ──
           //
-          // Requested directly: no table anywhere for a live Champions/Europa
-          // League campaign, despite the league phase genuinely being one —
-          // eight real games apiece against thirty-five other real clubs, the
-          // same shape the domestic table already is. `buildEuroTable`
-          // (lib/star/euro.ts) already simulates the other thirty-five clubs'
-          // results the exact way `sortLeague` does for the domestic
-          // division — it just had nothing on screen ever calling it. Shown
-          // here, above the knockout's own round-by-round progress bar (which
-          // already existed), so the one tab reads top to bottom exactly the
-          // way the competition itself runs: league phase settles first, the
-          // bracket follows from where it left off.
-          ...(career.cups ?? []).map((run) => {
-            const rounds = roundsFor(run.competition);
-            const euro = run.kind === "europe" && career.euroState?.competition === run.competition
-              ? career.euroState : null;
-            const euroTable = euro ? sortEuro(buildEuroTable(euro, career.player.club, career.season * 104729 + 17)) : null;
+          // Reported directly: the Champions League never showed up as a
+          // tab at all. Root cause — this used to build the entry by
+          // filtering `career.cups` for `kind === "europe"`, but
+          // `seedSeasonKnockouts` (competitions.ts) never actually creates
+          // one: it only ever opens the domestic cup and the international
+          // tournament that way. Europe's own progress has always lived
+          // entirely in `career.euroState` (lib/star/euro.ts) instead, so
+          // that filter could never produce a match — the tab was silently
+          // dead code, not something that only worked on some saves.
+          //
+          // The table itself was requested separately: no table anywhere
+          // for a live Champions/Europa League campaign, despite the league
+          // phase genuinely being one — eight real games apiece against
+          // thirty-five other real clubs, the same shape the domestic table
+          // already is. `buildEuroTable` (lib/star/euro.ts) simulates the
+          // other thirty-five clubs' results the exact way `sortLeague`
+          // does for the domestic division, and runs regardless of how many
+          // of your own eight are played yet — every club's row is always a
+          // full, live projection.
+          ...(career.euroState ? [(() => {
+            const euro = career.euroState!;
+            const euroTable = sortEuro(buildEuroTable(euro, career.player.club, career.season * 104729 + 17));
             const euroZone = (pos: number): string => {
               if (pos <= 8) return "border-l-2 border-l-emerald-500";
               if (pos <= 24) return "border-l-2 border-l-blue-500";
               return "border-l-2 border-l-red-500";
             };
+            // Which knockout rounds this run actually has is specific to
+            // where you finished the league phase — a top-8 finish skips
+            // the Round of 32 entirely (knockoutSlots, euro.ts) — so it's
+            // read off the real slots for THIS campaign, not one fixed list
+            // shared by every run regardless of seeding.
+            const rounds = euro.position !== undefined
+              ? Array.from(new Set(knockoutSlots(euro.position).map((s) => s.round)))
+              : [];
+            const lastTie = euro.ties[euro.ties.length - 1] ?? null;
+            const roundIdx = lastTie ? rounds.indexOf(lastTie.round) : -1;
+            const statusLabel = euro.won ? "Winners 🏆"
+              : euro.eliminated ? "Eliminated"
+              : lastTie ? lastTie.round
+              : "League Phase";
             return {
-              key: `run-${run.competition}`,
-              label: run.competition,
+              key: `run-${euro.competition}`,
+              label: euro.competition,
               content: (
                 <div className={`rounded-lg border p-3 ${
-                  run.won ? "border-amber-400 bg-amber-500/15"
-                    : run.eliminated ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
+                  euro.won ? "border-amber-400 bg-amber-500/15"
+                    : euro.eliminated ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
                 >
-                  {euroTable && (
-                    <div className="mb-3 overflow-hidden rounded-lg border border-gray-600 bg-gray-700 shadow-md">
-                      <div className="grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] border-l-2 border-l-transparent gap-1 border-b border-black/50 bg-gray-800 px-2 py-1.5 text-[10px] font-black text-white">
-                        <div className="text-center">#</div>
-                        <div>Name</div>
-                        <div className="text-center">P</div>
-                        <div className="text-center">W</div>
-                        <div className="text-center">D</div>
-                        <div className="text-center">L</div>
-                        <div className="text-center">Pts</div>
-                      </div>
-                      <div>
-                        {euroTable.map((t, i) => {
-                          const pos = i + 1;
-                          return (
-                            <div
-                              key={t.name}
-                              className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] items-center gap-1 border-b border-black/20 px-2 py-1.5 text-[10px] font-bold ${euroZone(pos)} ${
-                                t.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
-                            >
-                              <div className="text-center font-black">{pos}</div>
-                              <div className="truncate">{t.name}</div>
-                              <div className="text-center">{t.played}</div>
-                              <div className="text-center">{t.won}</div>
-                              <div className="text-center">{t.drawn}</div>
-                              <div className="text-center">{t.lost}</div>
-                              <div className="text-center font-black">{t.points}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="flex items-center gap-3 border-t border-black/40 bg-gray-800 px-2 py-1 text-[8px] font-bold text-white/70">
-                        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Straight through</span>
-                        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> Play-off round</span>
-                        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Eliminated</span>
-                      </div>
+                  <div className="mb-3 overflow-hidden rounded-lg border border-gray-600 bg-gray-700 shadow-md">
+                    <div className="grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] border-l-2 border-l-transparent gap-1 border-b border-black/50 bg-gray-800 px-2 py-1.5 text-[10px] font-black text-white">
+                      <div className="text-center">#</div>
+                      <div>Name</div>
+                      <div className="text-center">P</div>
+                      <div className="text-center">W</div>
+                      <div className="text-center">D</div>
+                      <div className="text-center">L</div>
+                      <div className="text-center">Pts</div>
                     </div>
-                  )}
+                    <div>
+                      {euroTable.map((t, i) => {
+                        const pos = i + 1;
+                        return (
+                          <div
+                            key={t.name}
+                            className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] items-center gap-1 border-b border-black/20 px-2 py-1.5 text-[10px] font-bold ${euroZone(pos)} ${
+                              t.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
+                          >
+                            <div className="text-center font-black">{pos}</div>
+                            <div className="truncate">{t.name}</div>
+                            <div className="text-center">{t.played}</div>
+                            <div className="text-center">{t.won}</div>
+                            <div className="text-center">{t.drawn}</div>
+                            <div className="text-center">{t.lost}</div>
+                            <div className="text-center font-black">{t.points}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-3 border-t border-black/40 bg-gray-800 px-2 py-1 text-[8px] font-bold text-white/70">
+                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Straight through</span>
+                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> Play-off round</span>
+                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Eliminated</span>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-black text-white">{run.competition}</span>
+                    <span className="text-sm font-black text-white">{euro.competition}</span>
                     <span className={`text-[10px] font-black uppercase tracking-widest ${
-                      run.won ? "text-amber-300" : run.eliminated ? "text-white/85" : "text-emerald-300"}`}
+                      euro.won ? "text-amber-300" : euro.eliminated ? "text-white/85" : "text-emerald-300"}`}
                     >
-                      {run.won ? "Winners 🏆" : run.eliminated ? "Eliminated" : rounds[run.roundIndex]}
+                      {statusLabel}
                     </span>
                   </div>
-                  <div className="mt-2 flex gap-1">
-                    {rounds.map((r, i) => (
-                      <div
-                        key={r}
-                        title={r}
-                        className={`h-1.5 flex-1 rounded-full ${
-                          run.won || i < run.roundIndex ? "bg-emerald-400"
-                            : i === run.roundIndex && !run.eliminated ? "bg-white/70" : "bg-white/15"}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-1 text-[10px] text-white">{rounds.join(" · ")}</div>
+                  {rounds.length > 0 && (
+                    <>
+                      <div className="mt-2 flex gap-1">
+                        {rounds.map((r, i) => (
+                          <div
+                            key={r}
+                            title={r}
+                            className={`h-1.5 flex-1 rounded-full ${
+                              euro.won || i < roundIdx ? "bg-emerald-400"
+                                : i === roundIdx && !euro.eliminated ? "bg-white/70" : "bg-white/15"}`}
+                          />
+                        ))}
+                      </div>
+                      <div className="mt-1 text-[10px] text-white">{rounds.join(" · ")}</div>
+                    </>
+                  )}
                 </div>
               ),
             };
-          }),
-          {
-            key: "international",
-            label: nationOf(career),
-            content: (
-              <div className="bg-gray-700 rounded-lg border border-gray-600 p-3">
-                <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">{nationOf(career)}</div>
-                <div className="mt-1 text-xs text-white">
-                  {(career.caps ?? 0)} cap{(career.caps ?? 0) === 1 ? "" : "s"} · {(career.internationalGoals ?? 0)} goal{(career.internationalGoals ?? 0) === 1 ? "" : "s"}
-                </div>
-                {(career.caps ?? 0) === 0 && (
-                  <div className="mt-1 text-[10px] text-white/85">
-                    {internationalCallUp(career)
-                      ? "You are in the squad — a tournament comes round every other season."
-                      : "Not in the squad yet. Reputation is what gets you picked."}
-                  </div>
-                )}
-              </div>
-            ),
-          },
+          })()] : []),
+          // The "your country" tab was removed on request — nothing in the
+          // game lets you actually play a national-team match yet, so a tab
+          // reporting 0 caps forever was premature. `sideFor`/`nationOf`
+          // above still resolve an international fixture's opponent
+          // correctly if one is ever generated; only this dedicated tab is
+          // gone.
         ];
 
         const active = competitions[Math.min(compIndex, competitions.length - 1)];
