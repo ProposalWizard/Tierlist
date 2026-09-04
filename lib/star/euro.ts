@@ -24,7 +24,13 @@ import {
  *
  * The thirty-five clubs you are not are simulated rather than played, on the
  * same expected-goals model the rest of the division uses, so the table you
- * finish ninth in is a table somebody actually finished eighth in.
+ * finish ninth in is a table somebody actually finished eighth in — but,
+ * requested directly after a real report of a table that filled itself in
+ * seven matchdays ahead of where the season actually was: ONE MATCHDAY AT A
+ * TIME, exactly the way the domestic league plays everyone else's games the
+ * week yours happens (season.ts's playLeagueWeek) — never a whole
+ * projected phase built in one shot, yours or anyone else's. See
+ * `simulateEuroMatchday`.
  */
 
 export type EuroId = "Champions League" | "Europa League" | "Conference League";
@@ -73,7 +79,25 @@ export interface EuroState {
   clubs: EuroClub[];
   /** Your eight, in the order they are played. */
   leaguePhase: EuroMatch[];
-  /** Filled in once all eight are played. */
+  /**
+   * The real, live table — all thirty-six clubs, updated one matchday at a
+   * time by `simulateEuroMatchday` the moment your own result for that
+   * matchday is known (played, or watched from the stands), never fabricated
+   * ahead of where the season has actually got to. Starts all-zero at
+   * `openEuro`. Reported directly: a table that "automatically filled up...
+   * with the eight games" after only matchday one was played — the OLD
+   * `buildEuroTable` recomputed a fully-projected, all-thirty-six-clubs-on-
+   * eight-games table from scratch on every render, including simulating
+   * your own remaining fixtures. This is the honest replacement — read
+   * straight off it, never recomputed.
+   */
+  liveTable: EuroStanding[];
+  /** How many league-phase matchdays have actually been simulated (0-8) —
+   *  guards `simulateEuroMatchday` against replaying the same one twice. */
+  matchdaysPlayed: number;
+  /** A snapshot of `liveTable`, sorted, taken the moment the eighth
+   *  matchday completes — what the knockout draw and `position` are read
+   *  off. Absent until then. */
   table?: EuroStanding[];
   position?: number;
   ties: EuroTie[];
@@ -316,7 +340,15 @@ export function openEuro(
     if (available[1]) leaguePhase.push({ opponent: available[1].name, home: !homeFirst });
   }
 
-  return { competition, clubs, leaguePhase: shuffle(leaguePhase, rng), ties: [] };
+  const liveTable: EuroStanding[] = clubs.map(c => ({
+    name: c.name, played: 0, won: 0, drawn: 0, lost: 0,
+    goalsFor: 0, goalsAgainst: 0, points: 0, isYou: c.name === clubName,
+  }));
+
+  return {
+    competition, clubs, leaguePhase: shuffle(leaguePhase, rng), ties: [],
+    liveTable, matchdaysPlayed: 0,
+  };
 }
 
 /** Fisher–Yates. `sort(() => rng() - 0.5)` is not a uniform permutation. */
@@ -354,28 +386,43 @@ function poisson(mean: number, rng: () => number): number {
 }
 
 /**
- * Build the thirty-six-club table.
+ * Play everybody else's game for ONE matchday — the Champions/Europa League
+ * analogue of season.ts's `playLeagueWeek`. Called exactly once per matchday,
+ * the moment your own result for it is known (played for real, or watched
+ * from the stands — see settleEuro/simulateMissedFixture), so `liveTable`
+ * only ever reflects matchdays that have genuinely happened. Reported
+ * directly: a table that "automatically filled up... with the eight games"
+ * after only matchday one — the previous design (buildEuroTable) recomputed
+ * a fully-projected table from scratch on every render, simulating your own
+ * unplayed fixtures along with everyone else's. This replaces that outright.
  *
- * Your eight results are real — you played them. Everybody else's are simulated
- * here, and every club plays eight so the table is honest: a club cannot finish
- * above you on games you did not have.
- *
- * Deterministic from the season, so the table does not reshuffle itself every
- * time the screen is opened.
+ * You and your opponent are credited with the real result handed in. The
+ * other thirty-four are paired off at random for this one matchday and
+ * simulated the same expected-goals way the rest of the division is —
+ * always exactly seventeen pairs, since thirty-six minus the two of you
+ * leaves an even thirty-four, so every club plays exactly once this
+ * matchday and (after all eight run) exactly eight across the whole phase,
+ * by construction, with no leftover-club bookkeeping needed. Their own
+ * eight opponents are not preserved pot-for-pot the way yours are — nobody
+ * ever audits Villarreal's own fixture list — only that the volume (one
+ * game a matchday, eight across the phase) matches yours exactly.
  */
-export function buildEuroTable(state: EuroState, yourClub: string, seed: number): EuroStanding[] {
-  const rng = mulberry32(seed);
-  const rows = new Map<string, EuroStanding>();
-  for (const c of state.clubs) {
-    rows.set(c.name, {
-      name: c.name, played: 0, won: 0, drawn: 0, lost: 0,
-      goalsFor: 0, goalsAgainst: 0, points: 0, isYou: c.name === yourClub,
-    });
-  }
+export function simulateEuroMatchday(
+  state: EuroState,
+  mdIndex: number,
+  yourClub: string,
+  yourOpponent: string,
+  yourScore: number,
+  yourOppScore: number,
+  rng: () => number,
+): EuroState {
+  if (mdIndex < state.matchdaysPlayed) return state; // already simulated — never replay it
   const strength = new Map(state.clubs.map(c => [c.name, c.strength]));
+  const liveTable = state.liveTable.map(r => ({ ...r }));
+  const byName = new Map(liveTable.map(r => [r.name, r]));
 
   const credit = (name: string, gf: number, ga: number) => {
-    const r = rows.get(name);
+    const r = byName.get(name);
     if (!r) return;
     r.played += 1;
     r.goalsFor += gf;
@@ -385,68 +432,21 @@ export function buildEuroTable(state: EuroState, yourClub: string, seed: number)
     else r.lost += 1;
   };
 
-  // Yours first, so the simulated clubs are topped up around results that
-  // already happened rather than the other way round.
-  for (const m of state.leaguePhase) {
-    if (m.us === undefined || m.them === undefined) continue;
-    credit(yourClub, m.us, m.them);
-    credit(m.opponent, m.them, m.us);
-  }
+  credit(yourClub, yourScore, yourOppScore);
+  credit(yourOpponent, yourOppScore, yourScore);
 
-  // Any of your own eight not played yet still has a real, specific
-  // opponent — `state.leaguePhase` already names him, drawn the same way
-  // every other tie was. Simulated against that exact club here, rather
-  // than left for the generic "everybody else" pool below (which has no
-  // idea who you're actually fixtured against): without this, a table
-  // built before your own first ball was kicked left your own row stuck
-  // on nothing while all thirty-five others were fully projected —
-  // exactly backwards from "every club plays eight" being the whole point
-  // of this function.
-  for (const m of state.leaguePhase) {
-    if (m.us !== undefined && m.them !== undefined) continue;
-    const [hs, as] = simulate((strength.get(yourClub) ?? 75), (strength.get(m.opponent) ?? 75), rng);
-    credit(yourClub, hs, as);
-    credit(m.opponent, as, hs);
-  }
-
-  // Then everybody else, until all thirty-six have played eight.
-  //
-  // Used to pick "the two clubs furthest from a full card" each round —
-  // which reads like it should work, and provably does not: your own eight
-  // opponents start at 1 played, every other club starts at 0, and that
-  // uneven start lets the greedy pick paint itself into a corner where
-  // exactly one club is left needing more games with every possible
-  // partner already sitting at a full eight — caught by a test asserting
-  // literally every one of the thirty-six plays eight, not by anyone
-  // noticing a table with one club stuck on nothing. A flat list — one
-  // entry per game a club still needs — shuffled and paired off two at a
-  // time is provably complete instead: the list's length is always even
-  // (every non-you club needs 8 minus a number that started even across
-  // the field), so pairing consecutive entries covers everyone with
-  // nothing left over. The only real risk left is a club landing paired
-  // against itself in the shuffle, handled by swapping forward to the next
-  // slot that is not the same name.
-  const slots: string[] = [];
-  for (const c of state.clubs) {
-    const r = rows.get(c.name)!;
-    if (r.isYou) continue;
-    for (let i = r.played; i < 8; i++) slots.push(c.name);
-  }
-  const fixture = shuffle(slots, rng);
-  for (let i = 0; i + 1 < fixture.length; i += 2) {
-    if (fixture[i] === fixture[i + 1]) {
-      let j = i + 2;
-      while (j < fixture.length && (fixture[j] === fixture[i] || fixture[j] === fixture[i + 1])) j++;
-      if (j < fixture.length) [fixture[i + 1], fixture[j]] = [fixture[j], fixture[i + 1]];
-    }
-    const home = fixture[i];
-    const away = fixture[i + 1];
-    const [hs, as] = simulate((strength.get(home) ?? 75), (strength.get(away) ?? 75), rng);
+  const others = shuffle(
+    state.clubs.map(c => c.name).filter(n => n !== yourClub && n !== yourOpponent),
+    rng,
+  );
+  for (let i = 0; i + 1 < others.length; i += 2) {
+    const home = others[i], away = others[i + 1];
+    const [hs, as] = simulate(strength.get(home) ?? 75, strength.get(away) ?? 75, rng);
     credit(home, hs, as);
     credit(away, as, hs);
   }
 
-  return sortEuro(Array.from(rows.values()));
+  return { ...state, liveTable, matchdaysPlayed: mdIndex + 1 };
 }
 
 export function sortEuro(rows: EuroStanding[]): EuroStanding[] {

@@ -1,4 +1,5 @@
 import type { CareerState, StarPhase } from "./types";
+import type { EuroStanding } from "./euro";
 import { makeManager } from "./manager";
 import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
@@ -142,6 +143,40 @@ function backfill(c: CareerState): CareerState {
   // later had a full dressing room. Reported as exactly that: "it just says me
   // on there."
   if (!out.squad?.length) out.squad = generateSquad(clubNameSeed(out.player.club));
+
+  // A euroState saved before the league phase became a real, matchday-by-
+  // matchday table (`simulateEuroMatchday`, euro.ts) has no `liveTable` or
+  // `matchdaysPlayed` at all — reading either would crash outright rather
+  // than just show an empty table. Rebuilt from what the save DOES have:
+  // your own matchdays already played, credited for real, exactly as
+  // `simulateEuroMatchday` would have left them. The background thirty-five
+  // are NOT retroactively simulated for matchdays already gone — the whole
+  // point of this fix is never fabricating a game that hasn't happened —
+  // they simply start accumulating from here, same as any club would.
+  if (out.euroState && (out.euroState as { liveTable?: unknown }).liveTable === undefined) {
+    const state = out.euroState;
+    const liveTable: EuroStanding[] = state.clubs.map((c) => ({
+      name: c.name, played: 0, won: 0, drawn: 0, lost: 0,
+      goalsFor: 0, goalsAgainst: 0, points: 0, isYou: c.name === out.player.club,
+    }));
+    const byName = new Map(liveTable.map((r) => [r.name, r]));
+    const credit = (name: string, gf: number, ga: number) => {
+      const r = byName.get(name);
+      if (!r) return;
+      r.played += 1; r.goalsFor += gf; r.goalsAgainst += ga;
+      if (gf > ga) { r.won += 1; r.points += 3; }
+      else if (gf === ga) { r.drawn += 1; r.points += 1; }
+      else r.lost += 1;
+    };
+    let matchdaysPlayed = 0;
+    for (const m of state.leaguePhase) {
+      if (m.us === undefined || m.them === undefined) continue;
+      credit(out.player.club, m.us, m.them);
+      credit(m.opponent, m.them, m.us);
+      matchdaysPlayed += 1;
+    }
+    out.euroState = { ...state, liveTable, matchdaysPlayed };
+  }
 
   // ── …and the months that were played before anybody was counting ──
   //

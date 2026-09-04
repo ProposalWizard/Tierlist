@@ -1,87 +1,107 @@
-import { openEuro, buildEuroTable, sortEuro, type EuroMatch } from "../../lib/star/euro";
+import { openEuro, simulateEuroMatchday, sortEuro } from "../../lib/star/euro";
 import { mulberry32 } from "../../lib/star/season";
 
 /**
- * THE LEAGUE-PHASE TABLE, ON SCREEN.
+ * THE LEAGUE-PHASE TABLE, MATCHDAY BY MATCHDAY.
  *
- * Requested directly: a real Champions/Europa League campaign had nowhere
- * on screen showing a table at all, despite the league phase genuinely
- * being one — eight real games apiece against thirty-five other real
- * clubs, the same shape the domestic table already is. `buildEuroTable`
- * already existed and already simulates the other thirty-five clubs'
- * results the way the domestic league does — it just had no test coverage
- * and, until now, nothing on screen ever called it.
+ * Reported directly, with a real save as the evidence: after playing only
+ * matchday one, the table already showed every club — you included — on a
+ * full eight games played. The previous design (`buildEuroTable`, since
+ * removed) recomputed a fully-projected thirty-six-club table from scratch
+ * on every render, simulating even your own unplayed fixtures. This is the
+ * replacement: `simulateEuroMatchday` runs exactly once per matchday, the
+ * moment your own result for it is known, and the table is real,
+ * incrementally-accumulated state (`EuroState.liveTable`) — never
+ * fabricated ahead of where the season has actually got to.
  */
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
-const SEED = 2027 * 104729 + 17;
-
 function freshState(competition: "Champions League" | "Europa League" = "Champions League") {
   return openEuro(competition, "Test FC", 78, 3, mulberry32(11));
 }
 
-// ── A fresh campaign (nothing played yet) still produces a full table ──────
+// ── A fresh campaign starts genuinely blank, not pre-filled ────────────────
 {
   const state = freshState();
-  const table = sortEuro(buildEuroTable(state, "Test FC", SEED));
-  check(table.length === 36, `all thirty-six clubs appear, not just the ones with real results (${table.length})`);
-  check(table.every(t => t.played === 8), `every club — you included, on nothing played yet — is credited a full eight (${table.map(t => t.played).join(",")})`);
-  check(table.filter(t => t.isYou).length === 1, "exactly one row is you");
-  check(table.some(t => t.name === "Test FC"), "…and it's genuinely your own club in the table");
+  check(state.liveTable.length === 36, `all thirty-six clubs are in the table from the start (${state.liveTable.length})`);
+  check(state.liveTable.every(r => r.played === 0), "…but nobody has played anything yet");
+  check(state.matchdaysPlayed === 0, "no matchday has been simulated yet");
+  check(state.liveTable.filter(r => r.isYou).length === 1, "exactly one row is you");
 }
 
-// ── Your OWN real results are credited, not overwritten by the simulation ──
+// ── Simulating ONE matchday plays exactly that many games — not the whole
+// phase — for every one of the thirty-six clubs, you included ─────────────
 {
   const state = freshState();
-  // Play out all eight of your own games with a fixed, extreme scoreline —
-  // if the simulation ever overwrote these, this exact tally couldn't survive.
-  const played: EuroMatch[] = state.leaguePhase.map(m => ({ ...m, us: 4, them: 0 }));
-  const withResults = { ...state, leaguePhase: played };
+  const opponent = state.leaguePhase[0].opponent;
+  const rng = mulberry32(999);
+  const after = simulateEuroMatchday(state, 0, "Test FC", opponent, 3, 1, rng);
 
-  const table = sortEuro(buildEuroTable(withResults, "Test FC", SEED));
-  const you = table.find(t => t.isYou)!;
-  check(you.played === 8, `your own eight are the ones credited, not re-simulated (${you.played})`);
-  check(you.won === 8 && you.drawn === 0 && you.lost === 0,
-    `eight real 4-0 wins survive into the table untouched (${you.won}W ${you.drawn}D ${you.lost}L)`);
-  check(you.points === 24, `…worth the real twenty-four points, not a simulated number (${you.points})`);
-  check(you.goalsFor === 32 && you.goalsAgainst === 0, `…and the real goal difference (${you.goalsFor}-${you.goalsAgainst})`);
+  check(after.matchdaysPlayed === 1, `exactly matchday one is recorded as played (${after.matchdaysPlayed})`);
+  check(after.liveTable.every(r => r.played === 1),
+    `every one of the thirty-six clubs has played exactly one game, not eight (${after.liveTable.map(r => r.played).join(",")})`);
+
+  const you = after.liveTable.find(r => r.isYou)!;
+  check(you.won === 1 && you.points === 3, `your real 3-1 win is credited (${you.won}W, ${you.points}pts)`);
+  check(you.goalsFor === 3 && you.goalsAgainst === 1, `…with the real scoreline (${you.goalsFor}-${you.goalsAgainst})`);
+
+  const them = after.liveTable.find(r => r.name === opponent)!;
+  check(them.lost === 1 && them.points === 0, `your opponent is credited the real loss, not simulated separately (${them.lost}L, ${them.points}pts)`);
 }
 
-// ── Deterministic: the same state and seed always builds the same table ────
-{
-  const state = freshState();
-  const first = buildEuroTable(state, "Test FC", SEED);
-  const second = buildEuroTable(state, "Test FC", SEED);
-  check(JSON.stringify(sortEuro(first)) === JSON.stringify(sortEuro(second)),
-    "reopening the same screen mid-season doesn't reshuffle the simulated clubs' results");
-}
-
-// ── Every one of the thirty-six always reaches exactly eight — not "almost
-// always": the old fill algorithm ("pair the two clubs furthest from a
-// full card") looked sound and was not — it could leave exactly one club
-// stuck on nothing with nobody left to play, for perfectly ordinary
-// starting conditions, not just some contrived edge case. Stress-tested
-// across many seeds, campaigns at various stages, and both competitions.
+// ── Playing every matchday in order reaches exactly eight for everyone —
+// not "almost always": the old fill algorithm this replaced could leave
+// exactly one club stuck on nothing with nobody left to play. Here there is
+// no such failure mode by construction (36 clubs, 34 always pair evenly
+// once you and your opponent are set aside) — stress-tested across many
+// seeds and campaign starting conditions anyway, since "provably can't fail"
+// is worth checking, not just asserting. ─────────────────────────────────
 {
   let anyShort = false;
-  for (let seed = 0; seed < 60; seed++) {
+  for (let seed = 0; seed < 40; seed++) {
     for (const competition of ["Champions League", "Europa League"] as const) {
-      const state = openEuro(competition, "Test FC", 70 + (seed % 20), 1 + (seed % 20), mulberry32(seed * 31 + 7));
-      // Vary how many of your own eight are "played" so far, 0 through 8.
-      const playedCount = seed % 9;
-      const leaguePhase: EuroMatch[] = state.leaguePhase.map((m, i) =>
-        i < playedCount ? { ...m, us: (seed + i) % 4, them: (seed + i + 1) % 4 } : m);
-      const table = buildEuroTable({ ...state, leaguePhase }, "Test FC", seed * 104729 + 17);
-      if (table.length !== 36 || table.some(t => t.played !== 8)) {
+      let state = openEuro(competition, "Test FC", 70 + (seed % 20), 1 + (seed % 20), mulberry32(seed * 31 + 7));
+      const rng = mulberry32(seed * 104729 + 17);
+      for (let md = 0; md < 8; md++) {
+        const opponent = state.leaguePhase[md].opponent;
+        state = simulateEuroMatchday(state, md, "Test FC", opponent, (seed + md) % 4, (seed + md + 1) % 4, rng);
+      }
+      if (state.liveTable.length !== 36 || state.liveTable.some(r => r.played !== 8)) {
         anyShort = true;
-        problems.push(`seed ${seed}/${competition}, ${playedCount} of your own games played: ` +
-          `${table.length} clubs, played counts [${table.map(t => t.played).join(",")}]`);
+        problems.push(`seed ${seed}/${competition}: ${state.liveTable.length} clubs, played counts [${state.liveTable.map(r => r.played).join(",")}]`);
+      }
+      if (state.matchdaysPlayed !== 8) {
+        anyShort = true;
+        problems.push(`seed ${seed}/${competition}: matchdaysPlayed is ${state.matchdaysPlayed}, not 8`);
       }
     }
   }
-  check(!anyShort, "every club reaches exactly eight played, across sixty seeds, both competitions, and every stage of your own campaign");
+  check(!anyShort, "every club reaches exactly eight played after all eight matchdays run, across forty seeds and both competitions");
+}
+
+// ── Deterministic: the same inputs and rng stream always produce the same
+// matchday result — reopening the screen mid-phase must not reshuffle what
+// already happened. ─────────────────────────────────────────────────────
+{
+  const state = freshState();
+  const opponent = state.leaguePhase[0].opponent;
+  const first = simulateEuroMatchday(state, 0, "Test FC", opponent, 2, 2, mulberry32(555));
+  const second = simulateEuroMatchday(state, 0, "Test FC", opponent, 2, 2, mulberry32(555));
+  check(JSON.stringify(first.liveTable) === JSON.stringify(second.liveTable),
+    "the same matchday, replayed with the same seed, produces the exact same table");
+}
+
+// ── Guarded against replaying an already-simulated matchday ────────────────
+{
+  const state = freshState();
+  const opponent = state.leaguePhase[0].opponent;
+  const once = simulateEuroMatchday(state, 0, "Test FC", opponent, 1, 0, mulberry32(1));
+  const again = simulateEuroMatchday(once, 0, "Test FC", opponent, 9, 9, mulberry32(2));
+  check(JSON.stringify(again.liveTable) === JSON.stringify(once.liveTable),
+    "asking for a matchday that's already been played is a no-op, not a second, contradictory result");
+  check(again.matchdaysPlayed === 1, "…and the count doesn't move either");
 }
 
 // ── sortEuro: points first, goal difference the tiebreak ───────────────────
@@ -101,4 +121,4 @@ if (problems.length) {
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — the league phase is a real, simulated thirty-six-club table, not a blank screen");
+console.log("PASS — the league phase plays out one real matchday at a time, never fabricated ahead of where the season actually is");

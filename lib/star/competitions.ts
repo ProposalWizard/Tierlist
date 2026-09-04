@@ -11,7 +11,7 @@ import {
   type CareerDivision,
 } from "./calendar";
 import {
-  openEuro, poolFor, knockoutSlots, buildEuroTable, leaguePhaseComplete, drawTie,
+  openEuro, poolFor, knockoutSlots, simulateEuroMatchday, sortEuro, leaguePhaseComplete, drawTie,
   currentTie, currentLeg, settleTie, nextRound, firstRound, crownEurope, phaseVerdict,
   type EuroState, type EuroTie,
 } from "./euro";
@@ -814,7 +814,13 @@ export function settleEuro(
   if (mdIndex >= 0) {
     const leaguePhase = state.leaguePhase.map((m, i) =>
       (i === mdIndex ? { ...m, us: userScore, them: oppScore } : m));
-    const next: EuroState = { ...state, leaguePhase };
+    // The other thirty-four play this exact matchday too, right now — not a
+    // whole phase projected in one shot. See simulateEuroMatchday's own
+    // header for why: the table used to fabricate every remaining matchday
+    // for everybody, yours included, the moment the screen was opened.
+    const next = simulateEuroMatchday(
+      { ...state, leaguePhase }, mdIndex, career.player.club, fixture.opponent, userScore, oppScore, rng,
+    );
     if (!leaguePhaseComplete(next)) {
       const left = leaguePhase.filter(m => m.us === undefined).length;
       return {
@@ -825,8 +831,10 @@ export function settleEuro(
       };
     }
 
-    // All eight in: build the table, and it decides the rest of the campaign.
-    const table = buildEuroTable(next, career.player.club, career.season * 104729 + 17);
+    // All eight matchdays simulated — liveTable is already the real, complete
+    // thirty-six-club table, built one matchday at a time as the season
+    // actually reached each one. Just sort and snapshot it.
+    const table = sortEuro(next.liveTable);
     const position = table.findIndex(r => r.isYou) + 1;
     const settled: EuroState = { ...next, table, position };
     const opening = firstRound(position);

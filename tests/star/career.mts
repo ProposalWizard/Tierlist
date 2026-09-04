@@ -1,5 +1,7 @@
 import { makeInitialCareer, creditMatchResult, awardLeagueTrophyIfWon, advanceSeason } from "../../lib/star/careerFlow";
 import { saveStarPhase, loadStarPhase } from "../../lib/star/storage";
+import { openEuro } from "../../lib/star/euro";
+import { mulberry32 } from "../../lib/star/season";
 import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -182,6 +184,54 @@ function playWholeSeason(start: CareerState): CareerState {
     saveStarPhase(p);
     check(loadStarPhase()?.phase === p, `${p} is`);
   }
+}
+
+// ── A euroState saved before liveTable/matchdaysPlayed existed is backfilled,
+// not crashed on ──────────────────────────────────────────────────────────
+//
+// Reported directly: a real Champions League table filled itself in seven
+// matchdays ahead of where the season actually was — fixed by making the
+// table real, incrementally-built state (simulateEuroMatchday, euro.ts)
+// instead of something recomputed on every render. A save from before that
+// fix has a euroState with no liveTable/matchdaysPlayed at all; reading
+// either would throw rather than just show an empty table.
+{
+  const store = new Map<string, string>();
+  (globalThis as unknown as { localStorage: Storage }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+    key: (i: number) => [...store.keys()][i] ?? null,
+    get length() { return store.size; },
+  } as Storage;
+
+  const euro = openEuro("Champions League", "Arsenal", 82, 2, mulberry32(4));
+  // Two matchdays genuinely played, real scorelines — the rest still ahead.
+  const leaguePhase = euro.leaguePhase.map((m, i) =>
+    i < 2 ? { ...m, us: i === 0 ? 3 : 1, them: i === 0 ? 1 : 1 } : m);
+  const withEuro: CareerState = { ...makeInitialCareer(PLAYER, CLUBS), euroState: { ...euro, leaguePhase } };
+  saveCareer(withEuro);
+
+  // Simulate what an OLD save actually looked like: strip the fields that
+  // didn't exist yet, the same way a real save from before this fix would
+  // never have had them.
+  const [key, raw] = [...store.entries()].find(([, v]) => JSON.parse(v).version === 2)!;
+  const parsed = JSON.parse(raw);
+  delete parsed.euroState.liveTable;
+  delete parsed.euroState.matchdaysPlayed;
+  store.set(key, JSON.stringify(parsed));
+
+  const loaded = loadCareer();
+  const table = loaded?.euroState?.liveTable;
+  check(!!table, "loading an old-shaped euroState doesn't throw — it backfills liveTable");
+  check(loaded?.euroState?.matchdaysPlayed === 2, `…crediting exactly the two matchdays genuinely played (${loaded?.euroState?.matchdaysPlayed})`);
+  const you = table?.find(r => r.isYou);
+  check(you?.played === 2 && you?.won === 1 && you?.drawn === 1,
+    `your own two real results survive the backfill (${you?.played} played, ${you?.won}W ${you?.drawn}D)`);
+  const untouchedOpponent = table?.find(r => r.name === euro.leaguePhase[2].opponent);
+  check(untouchedOpponent?.played === 0,
+    "a club whose matchday hasn't happened yet is NOT retroactively simulated — it starts blank, same as this whole fix is about");
 }
 
 if (problems.length) {
