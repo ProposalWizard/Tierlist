@@ -92,47 +92,57 @@ export interface EuroState {
  * league phase needs. Strengths are fixed rather than rolled, so Real Madrid is
  * Real Madrid in every career and a draw against them means the same thing
  * twice.
+ *
+ * Every name below is the exact spelling `clubs.ts`'s CHAMPIONS_LEAGUE_CLUBS/
+ * EUROPA_LEAGUE_CLUBS/OTHER_CLUBS lists use — not a shorthand ("Bayern
+ * Munich", "Copenhagen") that reads fine but has no real squad to resolve
+ * against. Reported directly: a real Champions League tie against Copenhagen
+ * showed "Unable to scout opponent's team" even with a lineup genuinely set
+ * for them — the squad WAS fetched, but under "FC København" (the real
+ * SoFIFA/database spelling), so the fixture's own opponent name never
+ * matched it. That was true for most of this pool, not just Copenhagen —
+ * fixed throughout rather than one name at a time.
  */
 const CHAMPIONS_POOL: EuroClub[] = [
   { name: "Real Madrid", strength: 92, pot: 1 },
-  { name: "Bayern Munich", strength: 91, pot: 1 },
-  { name: "Barcelona", strength: 89, pot: 1 },
-  { name: "Paris SG", strength: 88, pot: 1 },
-  { name: "Inter Milan", strength: 86, pot: 1 },
+  { name: "FC Bayern München", strength: 91, pot: 1 },
+  { name: "FC Barcelona", strength: 89, pot: 1 },
+  { name: "Paris Saint-Germain", strength: 88, pot: 1 },
+  { name: "Inter", strength: 86, pot: 1 },
   { name: "Atlético Madrid", strength: 85, pot: 1 },
   { name: "Borussia Dortmund", strength: 84, pot: 1 },
   { name: "Juventus", strength: 84, pot: 1 },
   { name: "AC Milan", strength: 83, pot: 1 },
 
-  { name: "Bayer Leverkusen", strength: 83, pot: 2 },
+  { name: "Bayer 04 Leverkusen", strength: 83, pot: 2 },
   { name: "Napoli", strength: 82, pot: 2 },
-  { name: "Benfica", strength: 80, pot: 2 },
-  { name: "Porto", strength: 79, pot: 2 },
-  { name: "Sevilla", strength: 79, pot: 2 },
+  { name: "SL Benfica", strength: 80, pot: 2 },
+  { name: "FC Porto", strength: 79, pot: 2 },
+  { name: "Sevilla FC", strength: 79, pot: 2 },
   { name: "RB Leipzig", strength: 80, pot: 2 },
   { name: "Roma", strength: 80, pot: 2 },
-  { name: "PSV Eindhoven", strength: 77, pot: 2 },
+  { name: "PSV", strength: 77, pot: 2 },
   { name: "Ajax", strength: 76, pot: 2 },
 
   { name: "Sporting CP", strength: 77, pot: 3 },
   { name: "Feyenoord", strength: 75, pot: 3 },
-  { name: "Marseille", strength: 76, pot: 3 },
-  { name: "Lyon", strength: 75, pot: 3 },
+  { name: "Olympique de Marseille", strength: 76, pot: 3 },
+  { name: "Olympique Lyonnais", strength: 75, pot: 3 },
   { name: "Real Sociedad", strength: 76, pot: 3 },
-  { name: "Villarreal", strength: 76, pot: 3 },
+  { name: "Villarreal CF", strength: 76, pot: 3 },
   { name: "Eintracht Frankfurt", strength: 76, pot: 3 },
   { name: "Celtic", strength: 72, pot: 3 },
-  { name: "Club Brugge", strength: 72, pot: 3 },
+  { name: "Club Brugge KV", strength: 72, pot: 3 },
 
-  { name: "Galatasaray", strength: 74, pot: 4 },
+  { name: "Galatasaray SK", strength: 74, pot: 4 },
   { name: "Shakhtar Donetsk", strength: 72, pot: 4 },
-  { name: "Red Bull Salzburg", strength: 73, pot: 4 },
+  { name: "FC Red Bull Salzburg", strength: 73, pot: 4 },
   { name: "Dinamo Zagreb", strength: 70, pot: 4 },
-  { name: "Young Boys", strength: 68, pot: 4 },
-  { name: "Slavia Prague", strength: 70, pot: 4 },
-  { name: "Copenhagen", strength: 70, pot: 4 },
-  { name: "Bodø/Glimt", strength: 69, pot: 4 },
-  { name: "Sturm Graz", strength: 68, pot: 4 },
+  { name: "BSC Young Boys", strength: 68, pot: 4 },
+  { name: "SK Slavia Praha", strength: 70, pot: 4 },
+  { name: "FC København", strength: 70, pot: 4 },
+  { name: "FK Bodø/Glimt", strength: 69, pot: 4 },
+  { name: "SK Sturm Graz", strength: 68, pot: 4 },
 ];
 
 /**
@@ -144,30 +154,41 @@ const CHAMPIONS_POOL: EuroClub[] = [
  * even, and that is what makes winning it feel like a different achievement
  * rather than an easier version of the same one.
  */
+// Fifteen of these — Fiorentina, Athletic Club, Nice, Twente, Panathinaikos,
+// Slovan Bratislava, Rapid Vienna, Elfsborg, Ludogorets, Maccabi Tel Aviv,
+// FCSB, Qarabağ, Omonia, APOEL, Bačka Topola, Riga FC, Astana and Petrocub —
+// have no matching entry anywhere in clubs.ts at all, not just a different
+// spelling: nobody ever ran the scrape+clone pass (see CLAUDE.md's PL Draft
+// data-status notes) that would give them a real squad in the database, the
+// same gap "Slovan Bratislava" was already confirmed to be a member of
+// (EUROPA_LEAGUE_CLUBS's own comment). A tie against one of these will still
+// read "Unable to scout opponent's team" until that import actually happens
+// — left named as they were rather than guessed at, so a future clone pass
+// has an honest list of who's still missing.
 const EUROPA_POOL: EuroClub[] = [
-  { name: "Villarreal", strength: 78, pot: 1 },
-  { name: "Real Betis", strength: 77, pot: 1 },
-  { name: "Fenerbahçe", strength: 76, pot: 1 },
-  { name: "Rangers", strength: 74, pot: 1 },
+  { name: "Villarreal CF", strength: 78, pot: 1 },
+  { name: "Real Betis Balompié", strength: 77, pot: 1 },
+  { name: "Fenerbahçe SK", strength: 76, pot: 1 },
+  { name: "Rangers FC", strength: 74, pot: 1 },
   { name: "Lazio", strength: 78, pot: 1 },
   { name: "Fiorentina", strength: 77, pot: 1 },
   { name: "Athletic Club", strength: 77, pot: 1 },
-  { name: "Olympiacos", strength: 73, pot: 1 },
-  { name: "Braga", strength: 73, pot: 1 },
+  { name: "Olympiacos FC", strength: 73, pot: 1 },
+  { name: "Sporting Clube de Braga", strength: 73, pot: 1 },
 
-  { name: "Stuttgart", strength: 75, pot: 2 },
+  { name: "VfB Stuttgart", strength: 75, pot: 2 },
   { name: "Nice", strength: 74, pot: 2 },
-  { name: "Lille", strength: 75, pot: 2 },
-  { name: "Anderlecht", strength: 71, pot: 2 },
+  { name: "Lille OSC", strength: 75, pot: 2 },
+  { name: "RSC Anderlecht", strength: 71, pot: 2 },
   { name: "Twente", strength: 70, pot: 2 },
-  { name: "Union SG", strength: 70, pot: 2 },
+  { name: "Union Saint-Gilloise", strength: 70, pot: 2 },
   { name: "Panathinaikos", strength: 71, pot: 2 },
-  { name: "Ferencváros", strength: 69, pot: 2 },
-  { name: "Hoffenheim", strength: 73, pot: 2 },
+  { name: "Ferencvárosi Torna Club", strength: 69, pot: 2 },
+  { name: "TSG 1899 Hoffenheim", strength: 73, pot: 2 },
 
-  { name: "Midtjylland", strength: 69, pot: 3 },
+  { name: "FC Midtjylland", strength: 69, pot: 3 },
   { name: "Slovan Bratislava", strength: 66, pot: 3 },
-  { name: "Malmö", strength: 68, pot: 3 },
+  { name: "Malmö FF", strength: 68, pot: 3 },
   { name: "Rapid Vienna", strength: 68, pot: 3 },
   { name: "Elfsborg", strength: 66, pot: 3 },
   { name: "Ludogorets", strength: 67, pot: 3 },

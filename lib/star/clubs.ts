@@ -226,3 +226,39 @@ const DIVISION_BY_CLUB = new Map<string, Division>([
 export function divisionOf(club: string): Division | null {
   return DIVISION_BY_CLUB.get(club) ?? null;
 }
+
+/**
+ * Every club this career could plausibly FACE OR TRADE WITH beyond its own
+ * division — Champions League, Europa League, the "Other"/promotion-pool
+ * clubs the Lineups screen already offers, AND the other English tier
+ * (Championship when you play the Premier League, the Premier League when
+ * you play the Championship) — minus whichever of them happen to also be in
+ * the player's own division (Arsenal is both a Premier League club and a
+ * Champions League one; fetching and tracking it twice would be pointless
+ * and would let it silently diverge between the two).
+ *
+ * The other English tier belongs here too — reported directly, a real FA
+ * Cup tie against Blackburn Rovers (a Championship club, for a Premier
+ * League career) still showed "Unable to scout opponent's team". Root
+ * cause: the FA Cup/League Cup draw genuinely pulls from the other domestic
+ * tier as real opposition (see cups.ts's belowField, "always the real OTHER
+ * English tier first"), but this list — the only thing that decides whose
+ * squad actually gets fetched into `externalSquads` — never included it,
+ * only Europe/promotion-pool/other. A cup opponent from the tier below (or
+ * above) was always a name with no roster to resolve a saved lineup or
+ * scout report against, no matter what.
+ *
+ * See lib/star/leagueTransfers.ts's runInternationalWindow for the other
+ * thing that reads this list, called from app/star-dev/page.tsx — a
+ * Championship↔Premier League transfer during that window is a real,
+ * previously-unsimulated transfer type this incidentally also makes
+ * possible, not a regression.
+ */
+export function externalClubsFor(domesticClubs: string[]): string[] {
+  const domestic = new Set(domesticClubs);
+  const world = new Set([
+    ...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS, ...OTHER_CLUBS, ...PROMOTION_POOL_CLUBS,
+    ...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS,
+  ]);
+  return Array.from(world).filter(c => !domestic.has(c));
+}
