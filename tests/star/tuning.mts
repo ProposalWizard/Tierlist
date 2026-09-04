@@ -21,7 +21,7 @@ import {
 // broken substitution in the file that used to hardcode it) would silently
 // ship a different balance number than the game had before this system
 // existed, and this is what catches that.
-import { WEEK_ACTIONS, REST_HAPPINESS, REST_ENERGY, SKIP_ENERGY } from "../../lib/star/week";
+import { WEEK_ACTIONS, REST_HAPPINESS, REST_ENERGY } from "../../lib/star/week";
 import { MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, MISSED_WEEK } from "../../lib/star/selection";
 import { ENERGY_MATCH_COST } from "../../lib/star/careerFlow";
 import { displayOverall, growthMultiplier, attributeOverall } from "../../lib/star/rating";
@@ -119,7 +119,6 @@ function def(key: string): number {
   check(WEEK_ACTIONS === 3, `WEEK_ACTIONS still defaults to 3 (got ${WEEK_ACTIONS})`);
   check(REST_HAPPINESS === 6, `REST_HAPPINESS still defaults to 6 (got ${REST_HAPPINESS})`);
   check(REST_ENERGY === 20, `REST_ENERGY still defaults to 20 (got ${REST_ENERGY})`);
-  check(SKIP_ENERGY === 45, `SKIP_ENERGY still defaults to 45 (got ${SKIP_ENERGY})`);
   check(MIN_ENERGY_TO_START === 35, `MIN_ENERGY_TO_START still defaults to 35 (got ${MIN_ENERGY_TO_START})`);
   check(MIN_ENERGY_TO_SUB === 15, `MIN_ENERGY_TO_SUB still defaults to 15 (got ${MIN_ENERGY_TO_SUB})`);
   check(MISSED_WEEK.energy === 15, `MISSED_WEEK.energy still defaults to 15 (got ${MISSED_WEEK.energy})`);

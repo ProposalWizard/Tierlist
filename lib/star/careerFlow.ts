@@ -1165,7 +1165,11 @@ export function simulateMissedFixture(
   const rng = mulberry32(career.season * 1000 + career.week + 7717);
   const strength = (name: string) => career.league.find((t) => t.name === name)?.strength ?? 65;
   const mine = strength(career.player.club);
-  const theirs = strength(fixture.opponent);
+  // A European opponent is not in career.league at all — the domestic lookup
+  // above would silently fall back to a flat 65 for every single one of
+  // them. `fixture.opponentStrength` is the real number (set by euro.ts's
+  // own club pool) and takes priority whenever it's there.
+  const theirs = fixture.opponentStrength ?? strength(fixture.opponent);
 
   // Reported from the player's point of view, the same way stats.homeScore is.
   const score = fixture.home
@@ -1214,6 +1218,24 @@ export function simulateMissedFixture(
     }
   }
 
+  // A Champions/Europa League fixture you were left out of still happens —
+  // settleEuro itself returns null for anything that is not one, so this is
+  // safe to call unconditionally whenever there IS a euroState. Missing this
+  // used to leave that matchday's leaguePhase entry permanently unplayed
+  // (career.euroState was never touched here at all), which could stop
+  // leaguePhaseComplete ever becoming true for a save that watched even one
+  // European game from the stands.
+  let euroState = career.euroState;
+  if (euroState) {
+    const settled = settleEuro(career, fixture, userScore, oppScore);
+    if (settled) {
+      euroState = settled.state;
+      if (settled.nextFixture) extraFixtures = [...extraFixtures, settled.nextFixture];
+      if (settled.trophy) cupTrophy = settled.trophy;
+      if (settled.message) knockoutMessage = settled.message;
+    }
+  }
+
   const fixtures = career.fixtures.map((f) =>
     (f === fixture || sameFixture(f))
       ? {
@@ -1235,6 +1257,7 @@ export function simulateMissedFixture(
     fixtures: [...fixtures, ...extraFixtures],
     cups,
     cupState,
+    euroState,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
     money: career.money + career.contract.wage,

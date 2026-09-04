@@ -6,12 +6,20 @@ import { getTuning } from "./tuningStore";
  *
  * Three things a week between matches — train a skill, work on a relationship,
  * or actually rest. Energy is spent by playing (see creditMatchResult) and
- * earned back by a deliberate choice here — Rest, or skipping the rest of
- * the week outright — OR, for any action you leave unspent, automatically
- * the moment the next match starts (creditMatchResult credits REST_ENERGY
- * per unspent action there). What it is never given back by is the week
- * simply turning over regardless of what was actually done with it — an
- * earlier version of energy topped itself up automatically every week no
+ * earned back by a deliberate choice — Rest — OR, for any action you leave
+ * unspent, automatically the moment you actually go to play the next match:
+ * `projectedEnergy` below is what that credit will be, read by the pre-match
+ * screen so it shows the real number you're about to have rather than the
+ * stale one from before this week's actions were accounted for, and applied
+ * for real (see app/star-dev/page.tsx's `handlePlayMatch`) the moment you
+ * commit to playing — not merely by navigating to look at the pre-match
+ * screen, so backing out to train or rest instead still spends those actions
+ * normally. There used to be a separate "Skip to Match Day" button for this;
+ * removed on request — it did the same thing an unused action already does
+ * automatically, just for a different, inconsistent amount, and pressing it
+ * was never really what was being asked for. What energy is never given back
+ * by is the week simply turning over regardless of what was actually done
+ * with it — an earlier version topped itself up automatically every week no
  * matter what, which made it a number that moved on its own rather than
  * something you managed; training a skill or working on a relationship is
  * still a real trade against resting THAT action, same as it always was.
@@ -19,20 +27,18 @@ import { getTuning } from "./tuningStore";
  */
 
 /**
- * How many things you can do between matches, and what Rest/Skip buy back —
- * all editable at /star-tuning-dev (see lib/star/tuning.ts). Read once, at
+ * How many things you can do between matches, and what Rest buys back — all
+ * editable at /star-tuning-dev (see lib/star/tuning.ts). Read once, at
  * module load, the same way these were a plain hardcoded `const` before —
  * an edit in the tuning editor takes effect next time the app loads, not
  * instantly mid-session.
  */
 export const WEEK_ACTIONS = getTuning("energy.weekActions");
 export const REST_HAPPINESS = getTuning("energy.restHappiness");
-/** What Rest buys back, alongside happiness — a modest top-up since it only
- *  costs one of the three actions and leaves the rest of the week free. */
+/** What Rest buys back, alongside happiness — and what every action you
+ *  instead leave unspent is worth too, credited automatically the moment
+ *  you actually go and play (see `projectedEnergy` below). */
 export const REST_ENERGY = getTuning("energy.restEnergy");
-/** What skipping the rest of the week buys back — bigger, because it costs
- *  everything else you could have done this week instead. */
-export const SKIP_ENERGY = getTuning("energy.skipEnergy");
 
 export function actionsLeft(career: CareerState): number {
   return career.weekActions ?? WEEK_ACTIONS;
@@ -66,21 +72,20 @@ export function rest(career: CareerState): CareerState {
 }
 
 /**
- * Give up on the rest of this week's actions and coast to matchday instead.
+ * What your energy will actually be once you go and play — every action
+ * still sitting unspent this week counts for exactly what Rest would have
+ * given it, added on top of where you are now and capped at 100.
  *
- * The literal "regenerates when skipping to the end of the week" — a real
- * trade against training or working on a relationship this week, not a free
- * top-up. Guarded on `canAct` the same way `rest` is: with no actions left
- * there is nothing left to give up, so this is a no-op rather than a second
- * helping of energy on top of whatever the week already spent.
+ * Requested directly: not having to press Rest three separate times just to
+ * bank the energy an otherwise-empty week was going to hand back anyway —
+ * this is that credit, computed rather than manually claimed. The pre-match
+ * screen reads it to show what you're really about to have; `handlePlayMatch`
+ * (app/star-dev/page.tsx) applies it for real — spending every remaining
+ * action and setting `energy` to this — the moment you actually commit to
+ * playing, not merely by looking at the screen first.
  */
-export function skipToMatchDay(career: CareerState): CareerState {
-  if (!canAct(career)) return career;
-  return {
-    ...career,
-    weekActions: 0,
-    energy: Math.min(100, career.energy + SKIP_ENERGY),
-  };
+export function projectedEnergy(career: CareerState): number {
+  return Math.min(100, career.energy + actionsLeft(career) * REST_ENERGY);
 }
 
 /**

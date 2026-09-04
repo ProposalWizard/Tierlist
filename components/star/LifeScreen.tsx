@@ -7,13 +7,10 @@ interface Props {
   career: CareerState;
   onPlayRelationshipGame: (kind: RelationshipKind) => void;
   onRest: () => void;
-  /** Give up on the rest of the week's actions for a bigger energy top-up —
-   *  the literal "regenerates when skipping to the end of the week". */
-  onSkipToMatchDay: () => void;
 }
 
 export default function LifeScreen({
-  career, onPlayRelationshipGame, onRest, onSkipToMatchDay,
+  career, onPlayRelationshipGame, onRest,
 }: Props) {
   const left = actionsLeft(career);
   const canPlay = left > 0;
@@ -34,29 +31,23 @@ export default function LifeScreen({
         <div className="mt-2">
           <RelationshipRow label="Energy" value={Math.round(career.energy)} icon="⚡" />
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-1.5">
+        <div className="mt-2">
           <button
             onClick={onRest}
             disabled={left === 0}
-            className={`py-2 rounded-lg font-black text-sm transition ${
+            className={`w-full py-2 rounded-lg font-black text-sm transition ${
               left === 0
                 ? "bg-gray-700 text-white/65"
                 : "bg-emerald-600 hover:bg-emerald-500 text-white active:scale-[0.98]"}`}
           >
             Rest 😴
           </button>
-          <button
-            onClick={onSkipToMatchDay}
-            disabled={left === 0}
-            title="Give up whatever's left of this week's actions for a bigger energy top-up"
-            className={`py-2 rounded-lg font-black text-sm transition ${
-              left === 0
-                ? "bg-gray-700 text-white/65"
-                : "bg-sky-600 hover:bg-sky-500 text-white active:scale-[0.98]"}`}
-          >
-            Skip to Match Day ⏭️
-          </button>
         </div>
+        {left > 0 && (
+          <div className="mt-1.5 text-[9px] text-white/55 text-center">
+            Any day{left === 1 ? "" : "s"} left unspent still count toward energy — credited automatically the moment you go and play.
+          </div>
+        )}
       </div>
       <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
         <RelationshipRow label="Boss" value={career.relationships.boss} icon="💼" onIconClick={canPlay ? () => onPlayRelationshipGame("boss") : undefined} />

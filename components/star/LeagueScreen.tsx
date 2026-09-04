@@ -6,7 +6,7 @@ import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { nationOf, nextFixtureFor } from "@/lib/star/competitions";
 import { exitRound } from "@/lib/star/cups";
-import { buildEuroTable, sortEuro, knockoutSlots } from "@/lib/star/euro";
+import { sortEuro, knockoutSlots } from "@/lib/star/euro";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
@@ -287,14 +287,13 @@ export default function LeagueScreen({ career }: Props) {
           // for a live Champions/Europa League campaign, despite the league
           // phase genuinely being one — eight real games apiece against
           // thirty-five other real clubs, the same shape the domestic table
-          // already is. `buildEuroTable` (lib/star/euro.ts) simulates the
-          // other thirty-five clubs' results the exact way `sortLeague`
-          // does for the domestic division, and runs regardless of how many
-          // of your own eight are played yet — every club's row is always a
-          // full, live projection.
+          // already is. Read straight off `euroState.table` once the phase
+          // is complete, or `liveTable` while it's still in progress — both
+          // are real, incrementally-built state (see simulateEuroMatchday,
+          // euro.ts), never recomputed/fabricated here.
           ...(career.euroState ? [(() => {
             const euro = career.euroState!;
-            const euroTable = sortEuro(buildEuroTable(euro, career.player.club, career.season * 104729 + 17));
+            const euroTable = sortEuro(euro.table ?? euro.liveTable);
             const euroZone = (pos: number): string => {
               if (pos <= 8) return "border-l-2 border-l-emerald-500";
               if (pos <= 24) return "border-l-2 border-l-blue-500";
