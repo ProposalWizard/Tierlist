@@ -17,7 +17,7 @@ import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup, fetchSharedLineups } from "@/lib/star/lineupStore";
 import { formationOf, type Role } from "@/lib/star/formations";
-import { spendAction, rest, canAct, skipToMatchDay } from "@/lib/star/week";
+import { spendAction, rest, canAct, projectedEnergy } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
@@ -263,6 +263,14 @@ export default function StarDevPage() {
   // Who the manager has picked this week, and which dead balls would be yours.
   const selection = career ? selectionFor(career) : null;
   const duties = career && selection ? setPieceDuties(career, selection.status) : null;
+  // What your energy — and therefore your selection — will actually be once
+  // you go and play: every day still unspent this week counts toward it
+  // automatically (handlePlayMatch banks it for real the moment you commit).
+  // The pre-match screen reads THESE, not the raw pre-credit `career`/
+  // `selection` above, so it shows and decides off the number you're really
+  // about to have rather than a stale one from before this week finished.
+  const preMatchEnergy = career ? projectedEnergy(career) : 0;
+  const preMatchSelection = career ? selectionFor({ ...career, energy: preMatchEnergy }) : null;
   const myTeam = (f: typeof nextFixture) =>
     f?.kind === "international" ? nationOf(career!) : career!.player.club;
   const nextMatchLabel = nextFixture
@@ -390,12 +398,6 @@ export default function StarDevPage() {
     setCareer(rest(career));
   }, [career]);
 
-  // Give up on the rest of this week's actions in exchange for real energy
-  // back — the trade point 3 of the energy design asks for.
-  const handleSkipToMatchDay = useCallback(() => {
-    if (!career) return;
-    setCareer(skipToMatchDay(career));
-  }, [career]);
 
   /**
    * Set or clear the photograph on your graphics.
@@ -451,8 +453,16 @@ export default function StarDevPage() {
     setPhase("skills");
   }, [career, trainingSkill]);
 
+  // Committing to play is what actually banks whatever's left of the week —
+  // every unspent action credited as if Rest had been pressed for it (see
+  // projectedEnergy, week.ts), applied for real here rather than merely
+  // shown as a preview, so the team sheet, selection and the match itself
+  // all run on the same number the pre-match screen just promised. Nothing
+  // is spent by simply looking at the pre-match screen or backing out of it —
+  // only by actually kicking off.
   const handlePlayMatch = useCallback(() => {
     if (!career || !nextFixture) return;
+    setCareer({ ...career, weekActions: 0, energy: projectedEnergy(career) });
     setPhase("match");
   }, [career, nextFixture]);
 
@@ -1447,7 +1457,7 @@ export default function StarDevPage() {
       : undefined;
     const matchday = nextFixture.kind === "international"
       ? null
-      : matchdayFor(career, nextFixture, selection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI, selection?.status === "Substitute");
+      : matchdayFor(career, nextFixture, preMatchSelection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI, preMatchSelection?.status === "Substitute");
     // Whether YOUR side is drawable — the bar the button decides on now. An
     // under-scouted OPPONENT no longer holds the screen back at all: it gets
     // its own "Unable to scout" half instead (see VersusScreen). Only an
@@ -1551,7 +1561,7 @@ export default function StarDevPage() {
                   <div className="mt-3 text-center text-[10px] text-white/70">
                     🏟️ {ground.name} · Crowd: {crowd.toLocaleString()}
                   </div>
-                  {!career.injury && career.energy < MIN_ENERGY_TO_START && (
+                  {!career.injury && preMatchEnergy < MIN_ENERGY_TO_START && (
                     <div className="mt-3 text-center text-amber-300 text-[10px] font-bold">⚠ Too fatigued to start — the manager will only risk you off the bench</div>
                   )}
                   {career.injury && (
@@ -1583,21 +1593,21 @@ export default function StarDevPage() {
               play this match lives here too now — it was its own box above
               this one, but it's a decision that belongs with the rest of
               "your role this match", not a separate stop on the page. */}
-          {selection && (
+          {preMatchSelection && (
             <div className={`mt-3 rounded-xl border p-3 ${
-              selection.status === "1st Team" ? "border-emerald-500/50 bg-emerald-500/10"
-                : selection.status === "Substitute" ? "border-amber-400/50 bg-amber-400/10"
+              preMatchSelection.status === "1st Team" ? "border-emerald-500/50 bg-emerald-500/10"
+                : preMatchSelection.status === "Substitute" ? "border-amber-400/50 bg-amber-400/10"
                   : "border-red-500/50 bg-red-500/10"}`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Your role</span>
                 <span className={`text-xs font-black ${
-                  selection.status === "1st Team" ? "text-emerald-300"
-                    : selection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
+                  preMatchSelection.status === "1st Team" ? "text-emerald-300"
+                    : preMatchSelection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
                 >
-                  {selection.status === "1st Team" ? "Starting Eleven"
-                    : selection.status === "Substitute" ? `Bench (on ~${selection.onAt}')`
-                      : selection.status === "Injured" ? "Injured"
+                  {preMatchSelection.status === "1st Team" ? "Starting Eleven"
+                    : preMatchSelection.status === "Substitute" ? `Bench (on ~${preMatchSelection.onAt}')`
+                      : preMatchSelection.status === "Injured" ? "Injured"
                         : "Out of Squad"}
                 </span>
               </div>
@@ -1620,9 +1630,9 @@ export default function StarDevPage() {
                 <div className="bg-black/20 rounded-lg py-2 text-center">
                   <div className="text-white/75 text-[10px] font-bold">Energy</div>
                   <div className={`font-black text-base ${
-                    career.energy >= 70 ? "text-emerald-300" : career.energy >= 40 ? "text-amber-300" : "text-red-400"}`}
+                    preMatchEnergy >= 70 ? "text-emerald-300" : preMatchEnergy >= 40 ? "text-amber-300" : "text-red-400"}`}
                   >
-                    {Math.round(career.energy)}%
+                    {Math.round(preMatchEnergy)}%
                   </div>
                 </div>
               </div>
@@ -1631,7 +1641,7 @@ export default function StarDevPage() {
 
           <div className="grid grid-cols-2 gap-2 mt-4">
             <button onClick={handleBackToDashboard} className="py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-black">← Back</button>
-            {selection?.status === "Squad" || selection?.status === "Injured" ? (
+            {preMatchSelection?.status === "Squad" || preMatchSelection?.status === "Injured" ? (
               <button onClick={handleWatchFromStands} className="py-3 bg-gray-600 hover:bg-gray-500 rounded-xl font-black">Watch from the stands</button>
             ) : (
               <button
@@ -1645,7 +1655,7 @@ export default function StarDevPage() {
                     short, skips the screen entirely. */}
                 {teamsReady
                   ? "Team sheets →"
-                  : selection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
+                  : preMatchSelection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
               </button>
             )}
           </div>
@@ -1781,7 +1791,6 @@ export default function StarDevPage() {
               career={career}
               onPlayRelationshipGame={handleOpenRelationshipGame}
               onRest={handleRest}
-              onSkipToMatchDay={handleSkipToMatchDay}
             />
           )}
         </div>

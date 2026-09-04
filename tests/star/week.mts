@@ -1,5 +1,5 @@
 import {
-  WEEK_ACTIONS, REST_ENERGY, SKIP_ENERGY, actionsLeft, canAct, spendAction, rest, skipToMatchDay, startNewWeek,
+  WEEK_ACTIONS, REST_ENERGY, actionsLeft, canAct, spendAction, rest, projectedEnergy, startNewWeek,
 } from "../../lib/star/week";
 import { hookCheck } from "../../lib/star/selection";
 import { liveRating, finaliseMatch } from "../../lib/star/matchStats";
@@ -11,8 +11,9 @@ import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types";
  * The week between matches, and being taken off during one.
  *
  * Energy is back, rebuilt against the real design: a budget spent by playing
- * and earned back only by a deliberate choice — Rest, or giving up the rest
- * of the week outright — never by the week simply turning over. What remains
+ * and earned back only by a deliberate choice — Rest, or simply not spending
+ * an action, which is credited automatically (projectedEnergy) the moment
+ * you actually go and play — never by the week simply turning over. What remains
  * here from the earlier no-energy era is the three-actions-a-week structure
  * itself and two of the three reasons a manager takes a player off; the
  * third, tired legs, is energy's own.
@@ -80,22 +81,32 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(rest(none).energy === none.energy, "…or gain energy from trying to");
 }
 
-// ── Skip to Match Day: the real "regenerates on skipping" ───────────────────
+// ── projectedEnergy: what you'll have once you actually go and play ────────
 //
-// The literal design brief: energy comes back when you skip to the end of
-// the week, not on its own. Bigger than Rest's top-up, because it costs
-// everything else the week could have been spent on, not just one day of it.
+// The literal design brief: not having to press Rest three separate times to
+// bank what an otherwise-empty week was going to hand back anyway — every
+// action still unspent counts for exactly what Rest would have given it,
+// computed rather than manually claimed one action at a time.
 {
   const c: CareerState = { ...base(), energy: 20 };
-  const skipped = skipToMatchDay(c);
-  check(skipped.energy === 20 + SKIP_ENERGY, `a real top-up (${skipped.energy})`);
-  check(SKIP_ENERGY > REST_ENERGY, "skipping the week buys back more than resting once does");
-  check(actionsLeft(skipped) === 0, "…because it gives up everything else the week could have been");
-  check(skipToMatchDay({ ...c, energy: 90 }).energy === 100, "energy still caps at 100");
+  check(projectedEnergy(c) === 20 + WEEK_ACTIONS * REST_ENERGY,
+    `every unspent action counts, worth exactly what Rest gives (${projectedEnergy(c)})`);
+  check(projectedEnergy({ ...c, energy: 90 }) === 100, "energy still caps at 100");
+
+  let partiallySpent = c;
+  partiallySpent = spendAction(partiallySpent);
+  check(projectedEnergy(partiallySpent) === 20 + (WEEK_ACTIONS - 1) * REST_ENERGY,
+    `only the days genuinely still unspent count (${projectedEnergy(partiallySpent)})`);
 
   let none = { ...base(), energy: 20 };
   for (let i = 0; i < WEEK_ACTIONS; i++) none = spendAction(none);
-  check(skipToMatchDay(none).energy === none.energy, "nothing left to give up, nothing gained");
+  check(projectedEnergy(none) === none.energy, "nothing left to credit once every action is already spent");
+
+  // Resting one action by hand and leaving the projection to cover the rest
+  // must not double up — an action Rest already spent is not "still unspent".
+  const restedOnce = rest(c);
+  check(projectedEnergy(restedOnce) === restedOnce.energy + (WEEK_ACTIONS - 1) * REST_ENERGY,
+    `an action already spent on Rest is not counted again (${projectedEnergy(restedOnce)})`);
 }
 
 // ── Training is no longer a budget you can run out of ──────────────────────

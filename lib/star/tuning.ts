@@ -60,11 +60,6 @@ export const TUNABLES: TunableDef[] = [
     default: 20, min: 0, max: 100, step: 1,
   },
   {
-    key: "energy.skipEnergy", category: "Energy", label: "Skip to matchday — energy gained",
-    description: "Energy restored by giving up the rest of the week's actions.",
-    default: 45, min: 0, max: 100, step: 1,
-  },
-  {
     key: "energy.matchCost", category: "Energy", label: "Energy cost of a full match",
     description: "Energy spent playing 90 minutes; a substitute appearance costs proportionally less.",
     default: 32, min: 0, max: 100, step: 1,
