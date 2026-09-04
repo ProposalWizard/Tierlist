@@ -70,7 +70,7 @@ const CARD_GEOM = {
   circle: { cx: 50, cy: 21.5, diameter: 42 },
   labelTop: 47.5,
   nameTop: 54,
-  statTop: 61,
+  statTop: 64,
   boxesTop: 76,
 };
 
@@ -120,31 +120,45 @@ function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; pla
         {shortNameOf(player.name)}
       </div>
 
-      <div
-        className="absolute px-2 text-center text-[9px] font-bold truncate"
-        style={{ top: `${g.statTop}%`, left: 0, right: 0, color: theme.accent }}
-      >
-        {theme.icon} {player.value}{role === "rated" ? " OVR" : ""} · {player.position}
-      </div>
+      {/* The top-rated card has no per-match form to show (no boxes below —
+          see the form-boxes comment), so its OVR/position line sits down
+          where the boxes would otherwise be, rather than leaving that whole
+          lower band empty. Scorer/assist keep it right under the name,
+          directly above their own boxes. */}
+      {role !== "rated" && (
+        <div
+          className="absolute px-2 text-center text-[9px] font-bold truncate"
+          style={{ top: `${g.statTop}%`, left: 0, right: 0, color: theme.accent }}
+        >
+          {theme.icon} {player.value} · {player.position}
+        </div>
+      )}
 
       {/* Up to five boxes from the template's dotted band — recent-form
           indicators: did they score/assist in each of the last five league
           games, and how many times (a brace or a hat trick gets a ×N badge
           in the box's own corner rather than reading the same as a single).
           The top-rated card has no single relevant per-match event to
-          track (see ScoutPlayer.form's own doc comment), so it gets no
-          boxes at all rather than several that can never mean anything. */}
-      {player.form && player.form.length > 0 && (
+          track (see ScoutPlayer.form's own doc comment), so it shows its
+          overall/position line in this band instead of boxes. */}
+      {role === "rated" ? (
+        <div
+          className="absolute px-2 text-center text-[10px] font-bold truncate"
+          style={{ top: `${g.boxesTop}%`, left: 0, right: 0, color: theme.accent }}
+        >
+          {theme.icon} {player.value} OVR · {player.position}
+        </div>
+      ) : player.form && player.form.length > 0 && (
         <div
           className="absolute flex justify-center gap-1"
-          style={{ top: `${g.boxesTop}%`, left: 0, right: 0 }}
+          style={{ top: `${g.boxesTop}%`, left: "6%", right: "6%" }}
         >
           {player.form.map((count, i) => (
             <span
               key={i}
               className="relative grid aspect-square place-items-center rounded-md border text-[10px]"
               style={{
-                width: "16%",
+                width: "15%",
                 borderColor: count > 0 ? theme.accent : "rgba(255,255,255,0.15)",
                 background: count > 0 ? theme.soft : "rgba(255,255,255,0.04)",
               }}
