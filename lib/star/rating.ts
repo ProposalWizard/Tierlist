@@ -1,5 +1,6 @@
 import type { CareerState, Skills } from "./types";
 import { RECORDS, recordBeaten } from "./records";
+import { getTuning } from "./tuningStore";
 
 /**
  * ONE OVERALL, DERIVED FROM WHAT'S ACTUALLY REAL.
@@ -34,11 +35,11 @@ import { RECORDS, recordBeaten } from "./records";
  * specialism, not a general measure of how good a player is. Sums to 1.
  */
 const SKILL_WEIGHTS: Record<keyof Skills, number> = {
-  pace: 0.20,
-  power: 0.20,
-  technique: 0.26,
-  vision: 0.22,
-  freeKick: 0.12,
+  pace: getTuning("rating.weightPace"),
+  power: getTuning("rating.weightPower"),
+  technique: getTuning("rating.weightTechnique"),
+  vision: getTuning("rating.weightVision"),
+  freeKick: getTuning("rating.weightFreeKick"),
 };
 
 /** 0-100, purely off trained attributes — a maxed-out set of skills (all
@@ -75,35 +76,36 @@ export const TROPHY_FAME: Record<string, number> = {
  *  capped, so a decorated legend is meaningfully lifted above an
  *  identically-trained nobody without honours ever being able to outweigh
  *  actual ability. 18 points is +0.9★ at the very most. */
-const HONOUR_CAP = 18;
+const HONOUR_CAP = getTuning("rating.honourCap");
 
 function honourPoints(career: CareerState): number {
   // Trophies — reusing TROPHY_FAME's own weighting, scaled down: a title
   // (25 fame) is worth 2.5 reputation points here, a Community Shield
   // (4 fame) half a point. A whole cabinet of silverware adds up fast,
   // which is exactly why the cap above exists.
-  const trophies = career.trophies.reduce((sum, t) => sum + (TROPHY_FAME[t.competition] ?? 6), 0) * 0.1;
+  const trophies = career.trophies.reduce((sum, t) => sum + (TROPHY_FAME[t.competition] ?? getTuning("rating.unlistedTrophyFame")), 0)
+    * getTuning("rating.trophyFameScale");
 
   // The individual honour nothing else touches: a Ballon d'Or is the
   // single biggest reputation event a career can have.
-  const ballonDor = career.ballonDorWins * 3;
+  const ballonDor = career.ballonDorWins * getTuning("rating.ballonDorPoints");
 
   // Every achievement unlocked, a small amount each — the 34 in
   // achievements.ts span "made your debut" to "won the treble", so no
   // single one should move the needle much on its own.
-  const achievements = career.achievements.length * 0.15;
+  const achievements = career.achievements.length * getTuning("rating.achievementPoints");
 
   // A REAL Premier League record beaten (records.ts) is about as
   // legendary as this game gets — worth more per item than anything else
   // here, and there are only five of them to ever beat.
-  const records = RECORDS.filter(r => recordBeaten(career, r)).length * 3;
+  const records = RECORDS.filter(r => recordBeaten(career, r)).length * getTuning("rating.recordPoints");
 
   // A body of work, read continuously rather than at achievement
   // thresholds — square-rooted so a prolific career keeps being rewarded
   // without a striker's goal tally alone dwarfing everything above.
-  const body = Math.sqrt(career.careerStats.goals) * 0.3
-    + Math.sqrt(career.careerStats.assists) * 0.2
-    + Math.sqrt(career.careerStats.appearances) * 0.1;
+  const body = Math.sqrt(career.careerStats.goals) * getTuning("rating.goalsWeight")
+    + Math.sqrt(career.careerStats.assists) * getTuning("rating.assistsWeight")
+    + Math.sqrt(career.careerStats.appearances) * getTuning("rating.appearancesWeight");
 
   return Math.min(HONOUR_CAP, trophies + ballonDor + achievements + records + body);
 }
@@ -124,7 +126,7 @@ function honourPoints(career: CareerState): number {
  */
 export function computeStarRating(career: CareerState): number {
   const total = attributeOverall(career.skills) + honourPoints(career);
-  return Math.max(0.5, Math.min(5, total / 20));
+  return Math.max(getTuning("rating.floor"), Math.min(5, total / getTuning("rating.divisor")));
 }
 
 /**
@@ -137,7 +139,7 @@ export function computeStarRating(career: CareerState): number {
  * 30s, a fully-trained, decorated legend caps out at a real "100".
  */
 export function displayOverall(starRating: number): number {
-  return Math.max(1, Math.min(100, Math.round(30 + starRating * 14)));
+  return Math.max(1, Math.min(100, Math.round(getTuning("rating.displayBase") + starRating * getTuning("rating.displayScale"))));
 }
 
 // ── Growing (and aging) at a realistic rate ─────────────────────────────────
@@ -152,9 +154,9 @@ export function displayOverall(starRating: number): number {
  * veteran-plateaus shape shows up on both levers.
  */
 export function growthMultiplier(age: number): number {
-  if (age <= 19) return 1.4;
-  if (age <= 23) return 1.15;
-  if (age <= 28) return 1.0;
-  if (age <= 31) return 0.7;
-  return 0.4;
+  if (age <= 19) return getTuning("rating.growthUnder20");
+  if (age <= 23) return getTuning("rating.growthUnder24");
+  if (age <= 28) return getTuning("rating.growthUnder29");
+  if (age <= 31) return getTuning("rating.growthUnder32");
+  return getTuning("rating.growthOver31");
 }

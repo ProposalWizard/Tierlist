@@ -6,6 +6,7 @@ import { shortNameOf } from "./realSquad";
 import type { TransferWindow } from "./calendar";
 import { isDerby, strongestTier } from "./rivalries";
 import { FREE_AGENTS_CLUB } from "./leagueSquads";
+import { getTuning } from "./tuningStore";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS, RESHAPING THEMSELVES.
@@ -269,7 +270,7 @@ const FREE_AGENT_REACH_MULT = 2;
 /** Eleven starters, nine substitutes — the squad size both `sellability` and
  *  `positionNeed` treat as "full", the same target the Lineups picker and
  *  buildLeagueSquad's own POSITION_ORDER already assume. */
-const SQUAD_TARGET = 20;
+const SQUAD_TARGET = getTuning("transfers.squadTarget");
 
 /**
  * Eleven starters plus at least four in reserve — the absolute floor a sale
@@ -288,7 +289,7 @@ const SQUAD_TARGET = 20;
  * this thin, but the actual fix is not selling a club down this far in the
  * first place.
  */
-const MIN_SQUAD_SIZE = 15;
+const MIN_SQUAD_SIZE = getTuning("transfers.minSquadSize");
 
 function clampUnit(x: number): number {
   return Math.max(0, Math.min(1, x));
@@ -384,10 +385,10 @@ function sellability(
   if (squadSize <= MIN_SQUAD_SIZE) return null;
   const isEliteClub = ownStrength >= leagueTopStrength - 4;
   if (squadSize <= SQUAD_TARGET || (isStarter && isEliteClub)) {
-    const unhappyOdds = window === "summer" ? 0.05 : 0.015;
+    const unhappyOdds = window === "summer" ? getTuning("transfers.summerUnhappyOdds") : getTuning("transfers.januaryUnhappyOdds");
     return rng() < unhappyOdds ? { candidate: c, unhappy: true } : null;
   }
-  const baseOdds = isStarter ? 0.10 : 0.16;
+  const baseOdds = isStarter ? getTuning("transfers.starterListingOdds") : getTuning("transfers.benchListingOdds");
   const odds = window === "summer" ? baseOdds : baseOdds * 0.35;
   return rng() < odds ? { candidate: c, unhappy: false } : null;
 }
@@ -472,7 +473,7 @@ export interface LoanMove {
  *  same shape real fees roughly follow without pretending to model a market. */
 function feeFor(overall: number): number {
   const m = Math.max(0, overall - 60);
-  return Math.round((0.3 + m * m * 0.045) * 10) / 10; // £m, one decimal
+  return Math.round((getTuning("transfers.feeBase") + m * m * getTuning("transfers.feeQuadratic")) * 10) / 10; // £m, one decimal
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { CareerState, SponsorDeal, MatchStats } from "./types";
 import { mulberry32 } from "./season";
 import { clubExpectation, type Ambition } from "./expectations";
+import { getTuning } from "./tuningStore";
 
 /**
  * SPONSORS WITH SOMETHING TO ASK
@@ -130,7 +131,10 @@ export function sponsorEligible(category: string, career: CareerState): boolean 
 // A famous player at a club chasing the league is worth more to every brand
 // than the same fame at a relegation battler — the fee scales with both.
 const AMBITION_FEE_MULT: Record<Ambition, number> = {
-  Title: 1.4, Europe: 1.2, "Mid-table": 1.0, Survival: 0.85,
+  Title: getTuning("sponsors.ambitionTitle"),
+  Europe: getTuning("sponsors.ambitionEurope"),
+  "Mid-table": getTuning("sponsors.ambitionMidTable"),
+  Survival: getTuning("sponsors.ambitionSurvival"),
 };
 
 /**
@@ -146,7 +150,7 @@ export function sponsorFee(category: string, career: CareerState): number {
   const r = SPONSOR_REQUIREMENTS[category];
   if (!r) return 0;
   const mult = AMBITION_FEE_MULT[clubExpectation(career).ambition] ?? 1;
-  return Math.max(1, Math.round((r.baseFee + career.fame / 6) * mult));
+  return Math.max(1, Math.round((r.baseFee + career.fame / getTuning("sponsors.fameDivisor")) * mult));
 }
 
 /**
@@ -289,7 +293,7 @@ export function rollSponsorSeason(career: CareerState): {
     .filter(s => s.active)
     .map(s => ({ category: s.category, fee: sponsorFee(s.category, career) }));
 
-  return { sponsors, lapsed, standingHit: lapsed.length * 6, seasonFees };
+  return { sponsors, lapsed, standingHit: lapsed.length * getTuning("sponsors.lapsedStandingHit"), seasonFees };
 }
 
 /** A newly activated deal gets something to ask for. */

@@ -37,6 +37,7 @@ import { RetirementChoice, LegacyScreen } from "@/components/star/Retirement";
 import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilemmas";
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
+import { getTuning } from "@/lib/star/tuningStore";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialPenalty from "@/components/star/TrialPenalty";
 import TrialReward from "@/components/star/TrialReward";
@@ -433,7 +434,7 @@ export default function StarDevPage() {
     // does — see growthMultiplier's own note; applied here rather than to
     // `xp` itself so the drill's own scoring (TrainingMinigame.tsx) stays
     // exactly what it always was.
-    const gain = Math.min(100 - currentVal, Math.round(Math.floor(xp / 5) * growthMultiplier(career.player.age)));
+    const gain = Math.min(100 - currentVal, Math.round(Math.floor(xp / getTuning("training.minigameXpDivisor")) * growthMultiplier(career.player.age)));
     const updated: CareerState = {
       ...career,
       skills: { ...career.skills, [trainingSkill]: currentVal + gain },
