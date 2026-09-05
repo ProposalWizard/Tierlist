@@ -374,7 +374,22 @@ const snapshot = (sc: Scenario) => JSON.stringify({
       slowest = Math.max(slowest, n);
     }
     check(stayed < 3, `${name}: an overhit ball leaves the situation (${stayed}/200 did not)`);
-    check(slowest < 150, `${name}: and it is over when it goes (${(slowest / 60).toFixed(1)}s at worst)`);
+    // "up" flies straight at the keeper, at 34 m/s — always over the
+    // resolveKeeper speed>26 push-away threshold, never a catch. That push
+    // is now a live rebound (canvasEngine.ts), not an instant terminal
+    // outcome — a real keeper who gets a hand to a shot he can't hold has
+    // put it back in play, and a nearby team-mate or defender genuinely
+    // reacting to that in real time is the whole point of the fix. This
+    // synthetic scenario deliberately has neither (`defenders = []`,
+    // `runner = null`, to isolate raw ball physics), so nothing is there to
+    // claim it — it still resolves, just via the existing "ball resting
+    // untouched" backstop (DEAD_BALL_TIMEOUT) rather than instantly, and
+    // that backstop's own arithmetic (roll-out time plus its 3 s fuse)
+    // bounds the wait at ~10 s, measured directly at 602/900 frames across
+    // 1,000 seeds — a real, finite ceiling, not a hang, just a later one
+    // than the days when a save could never be anything but the last thing
+    // that happened.
+    check(slowest < 700, `${name}: and it is over when it goes (${(slowest / 60).toFixed(1)}s at worst)`);
   }
 
   // Now park one outside and make sure nobody sets off after it.

@@ -147,7 +147,17 @@ function played(kind: ScenarioKind, seed: number) {
     if (out) seen.set(out, (seen.get(out) ?? 0) + 1);
   }
 
-  const declared = Object.keys(OUTCOME_TEXT) as Outcome[];
+  // "tipped" is the one deliberate exception: resolveKeeper's old push-away
+  // branch used to return it as a terminal outcome, ending the move outright
+  // the instant the keeper got a hand to a shot he couldn't hold — which was
+  // most of what the keeper actually did (measured at 59% of every save).
+  // It now returns null and leaves the ball loose, same as a parry, so a
+  // team-mate or a defender genuinely reacting to the rebound is possible at
+  // all — see canvasEngine.ts's resolveKeeper. The label stays declared (an
+  // unrelated system, TrialPenalty.tsx, still produces it, and the
+  // star-match-dev fork's own separate Outcome type still does too) but
+  // production's own live match can no longer produce it, on purpose.
+  const declared = (Object.keys(OUTCOME_TEXT) as Outcome[]).filter(o => o !== "tipped");
   const missing = declared.filter(o => !seen.has(o));
   check(missing.length === 0, `every declared outcome is reachable (never seen: ${missing.join(", ") || "none"})`);
 
@@ -236,7 +246,14 @@ function played(kind: ScenarioKind, seed: number) {
 
 // ── The keeper holds one now and then ────────────────────────────────────
 {
-  let reached = 0, caught = 0, tipped = 0, parried = 0;
+  // A catch/push-away/parry decision is still all three (resolveKeeper still
+  // decides between them on the same margin/height/speed gates as ever) —
+  // what changed is that a push-away no longer has its OWN terminal Outcome
+  // to read off at this exact frame. It returns null now, the same as a
+  // parry, because it stays live rather than ending the move outright (see
+  // resolveKeeper) — so this can only measure "caught" vs "everything else
+  // he put back into play", not the old finer catch/tip/parry three-way.
+  let reached = 0, caught = 0, putBackIntoPlay = 0;
   for (const kind of SHOOT) {
     for (let seed = 0; seed < 500; seed++) {
       const rng = mulberry32(seed * 77 + kind.length * 313);
@@ -261,8 +278,7 @@ function played(kind: ScenarioKind, seed: number) {
         if (sc.keeper.saves > saves) {
           saves = sc.keeper.saves; reached++;
           if (out === "caught") caught++;
-          else if (out === "tipped") tipped++;
-          else if (out === null) parried++;
+          else if (out === null) putBackIntoPlay++;
         }
       }
     }
@@ -276,8 +292,8 @@ function played(kind: ScenarioKind, seed: number) {
   check(reached > 500, `the keeper gets to plenty of them (${reached})`);
   check(caught / reached > 0.05, `he holds a fair few (${pct(caught, reached)})`);
   check(caught / reached < 0.30, `but he is not a wall (${pct(caught, reached)})`);
-  check(parried / reached > 0.10, `and he spills enough to make a scramble (${pct(parried, reached)})`);
-  check(tipped / reached > 0.30, `while most of what beats him for placement is pushed clear (${pct(tipped, reached)})`);
+  check(putBackIntoPlay / reached > 0.55,
+    `and most of the rest, held or not, is a real rebound now — not the end of the move (${pct(putBackIntoPlay, reached)})`);
 }
 
 // ── A volley is a chance, not a shooting gallery ─────────────────────────
@@ -358,6 +374,15 @@ function played(kind: ScenarioKind, seed: number) {
   // of 1,701 were still rolling when the highlight ended. You watched it leave
   // and then watched an empty rectangle. A keeper's tip left at 9-16 m/s
   // against 1.9 m/s² of rolling resistance, which is forty metres of running.
+  //
+  // `settled` (ball.settling) is a much smaller population than it used to
+  // be — a keeper's push-away was the dominant source of it, and it no
+  // longer sets the flag at all: it stays live instead of ending the move
+  // outright, so there is a REAL passage of play to watch rather than a
+  // cosmetic roll standing in for one. What is left is the rarer case this
+  // flag was always meant for too — a defender winning an already-loose
+  // ball outright — still worth confirming it stays inside the frame when
+  // it happens, just not the near-universal event it once was.
   let settled = 0, gone = 0, goals = 0, outsideTheNet = 0;
   for (const kind of SCENARIO_KINDS) {
     for (let seed = 0; seed < 250; seed++) {
@@ -374,7 +399,7 @@ function played(kind: ScenarioKind, seed: number) {
       }
     }
   }
-  check(settled > 300 && goals > 300, `plenty of both to look at (${settled} settling, ${goals} goals)`);
+  check(settled > 0 && goals > 300, `both still happen (${settled} settling, ${goals} goals)`);
   check(gone <= settled * 0.01, `a ball pushed clear finishes inside the frame (${gone}/${settled} left it)`);
   check(outsideTheNet === 0, `and a goal finishes inside the net (${outsideTheNet}/${goals} did not)`);
 }

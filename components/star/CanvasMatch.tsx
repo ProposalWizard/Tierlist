@@ -2510,7 +2510,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       nudge(0.28, 0.25);
       playPost();
       playCrowdSwell("groan");
-    } else if (res === "saved" || res === "tipped") {
+    } else if (res === "saved") {
       nudge(0.18, 0.14);
       playSave();
       playCrowdSwell("groan");
