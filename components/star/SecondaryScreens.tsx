@@ -191,7 +191,34 @@ export function AchievementsScreen({ career, onBack }: { career: CareerState; on
 }
 
 // ---------- TROPHIES ----------
-export function TrophiesScreen({ trophies, onBack, ballonDors }: { trophies: Trophy[]; ballonDors: number; onBack: () => void }) {
+
+/** How individual honours read in the cabinet, rarest first — Ballon d'Or
+ *  itself sits in its own hero tile above this list, not counted twice
+ *  here. Anything not in this order (a future award kind) still shows, just
+ *  after the named ones, so nothing silently disappears from the count. */
+const AWARD_ORDER = ["Player of the Season", "Golden Boot", "Player of the Month"];
+const AWARD_ICON: Record<string, string> = {
+  "Player of the Season": "⭐", "Golden Boot": "👟", "Player of the Month": "🗓️",
+};
+
+export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
+  trophies: Trophy[]; ballonDors: number; onBack: () => void;
+  /** Every individual honour ever won — see CareerState.awards. Simply
+   *  counted per kind ("Player of the Month ×11"), not listed one by one:
+   *  requested directly, since a career can rack up a lot of these and the
+   *  trophy cabinet is about the honours roll, not a monthly diary. */
+  awards?: { kind: string }[];
+}) {
+  const counts = new Map<string, number>();
+  for (const a of awards ?? []) counts.set(a.kind, (counts.get(a.kind) ?? 0) + 1);
+  const kinds = Array.from(counts.keys()).sort((a, b) => {
+    const ia = AWARD_ORDER.indexOf(a), ib = AWARD_ORDER.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col py-3 px-3">
       <div className="w-full max-w-sm mx-auto flex-1">
@@ -206,6 +233,21 @@ export function TrophiesScreen({ trophies, onBack, ballonDors }: { trophies: Tro
           <div className="font-black text-yellow-300 text-xl">{ballonDors}</div>
           <div className="text-[10px] font-black text-yellow-200 uppercase tracking-widest">Ballon d&apos;Or</div>
         </div>
+
+        {kinds.length > 0 && (
+          <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden mb-3">
+            <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/60 border-b border-black/20">
+              Individual Awards
+            </div>
+            {kinds.map((kind, i) => (
+              <div key={kind} className={`flex items-center gap-2.5 px-3 py-2 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
+                <span className="text-lg">{AWARD_ICON[kind] ?? "🏅"}</span>
+                <span className="flex-1 font-bold text-white text-sm">{kind}</span>
+                <span className="font-black text-amber-300 text-sm">×{counts.get(kind)}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {trophies.length === 0 ? (
           <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 text-center text-white/75 text-sm">
