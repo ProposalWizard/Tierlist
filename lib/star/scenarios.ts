@@ -1,4 +1,5 @@
 import { PITCH_W, HALF_LEN } from "./pitch";
+import type { Facing } from "./scenarioRender";
 
 /**
  * HAND-BUILT MATCH SCENARIOS — THE DATA MODEL, NOTHING WIRED UP YET.
@@ -52,10 +53,14 @@ export interface ScenarioPlayer {
 
 /**
  * The framing this scenario is viewed through — a rectangle over the real
- * pitch plus an optional tilt, not a true 3D camera (`pitch.ts`'s own note:
- * the real engine's camera already looks straight down). `angle` rotates
- * the frame around its own centre, in degrees; 0 is the ordinary
- * straight-on view every other screen in the game already uses.
+ * pitch, exactly the shape canvasEngine.ts's own `Viewport` is (see
+ * `scenarioRender.ts`, which shares its `Viewport`/`Facing` types with the
+ * real match engine's own model on purpose). Requested directly, once the
+ * editor started drawing the pitch the way a real match actually looks: a
+ * free rotation angle had nothing to match it against, because the real
+ * camera only ever turns in the three ways `facing` names below, never a
+ * free degree — so an arbitrary tilt could show a scenario built at an
+ * angle the game would never actually film it at.
  */
 export interface ScenarioCamera {
   /** Centre of the framed view, in the same pitch metres as the players. */
@@ -65,8 +70,10 @@ export interface ScenarioCamera {
    *  — the shorter axis is derived from the editor/canvas's own aspect
    *  ratio so the frame is never stretched. Smaller is a tighter shot. */
   viewHeight: number;
-  /** Degrees, clockwise, purely cosmetic. */
-  angle: number;
+  /** "up" is the ordinary view (goal in front of you); "left"/"right" are
+   *  the same quarter-turn a crossing situation is watched from in a real
+   *  match — see canvasEngine.ts's own Facing. */
+  facing: Facing;
 }
 
 export interface MatchScenario {
@@ -76,6 +83,11 @@ export interface MatchScenario {
   name: string;
   kind: ScenarioMomentKind;
   camera: ScenarioCamera;
+  /** Kept in the save format for whenever this is actually wired into the
+   *  real game — but in the editor itself it is never independently placed
+   *  or selected: it always mirrors the "you" player's own position, kept
+   *  in sync the moment he moves (ScenarioEditor.tsx), the same way the
+   *  ball genuinely is at your feet a moment before you strike it. */
   ball: { x: number; y: number };
   players: ScenarioPlayer[];
   /** When this scenario was last saved — for sorting the list, nothing more. */
@@ -100,7 +112,7 @@ export function blankScenario(kind: ScenarioMomentKind = "corner"): MatchScenari
       centerX: PITCH_W / 2,
       centerY: nearGoal ? 16 : ballY,
       viewHeight: nearGoal ? 40 : 55,
-      angle: 0,
+      facing: "up",
     },
     ball: { x: kind === "corner" ? 2 : PITCH_W / 2, y: ballY },
     players: [

@@ -1,20 +1,35 @@
 "use client";
-import { useRef, useState } from "react";
-import { PITCH_W, HALF_LEN, POST_L, POST_R, SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R } from "@/lib/star/pitch";
+import { useEffect, useRef, useState } from "react";
+import { PITCH_W, HALF_LEN } from "@/lib/star/pitch";
 import {
   SCENARIO_KINDS, blankScenario, addPlayer,
   type MatchScenario, type ScenarioSide, type ScenarioMomentKind,
 } from "@/lib/star/scenarios";
 import { listScenarios, loadScenario, saveScenario, deleteScenario } from "@/lib/star/scenarioStore";
+import {
+  renderScenario, viewportFor, pitchFromPx, pxFromPitch, VIEW_ASPECT,
+  type Facing,
+} from "@/lib/star/scenarioRender";
 
 /**
  * THE SCENARIO EDITOR — DRAFT TOOL, NOT WIRED INTO THE REAL GAME.
  *
- * See lib/star/scenarios.ts's own header for why this exists. Two pitch
- * lengths tall (105m) drawn at 1 SVG unit per metre, using the exact same
- * real-geometry constants (pitch.ts) the actual match renderer draws
- * against, so this looks like the same pitch because it genuinely is the
- * same numbers, not a separate approximation.
+ * See lib/star/scenarios.ts's own header for why this exists. Two things
+ * requested directly, on top of that first build:
+ *
+ *  - Dragging used to put a player down "off to the side" of the actual
+ *    cursor. Fixed in scenarioRender.ts's pitchFromPx, which reads the
+ *    canvas's own on-screen box exactly rather than assuming it matches a
+ *    fixed aspect ratio.
+ *  - The pitch used to be a flat, schematic top-down diagram — coloured
+ *    dots on ruled lines. It is drawn now the way an actual highlight
+ *    looks (scenarioRender.ts: the same palette, the same flat overhead
+ *    camera, the same hand-drawn kit figures the real match uses), so a
+ *    scenario can be judged by eye rather than by imagining it.
+ *
+ * The ball is no longer something placed independently — it lives at your
+ * own feet, always, the same way it does the moment before you actually
+ * strike it in a real match; there is nothing to select or drag for it.
  */
 
 const PITCH_LEN = HALF_LEN * 2; // 105
@@ -23,8 +38,17 @@ const KIND_LABEL: Record<ScenarioMomentKind, string> = {
   kickoff: "Kickoff", open_play: "Open Play",
 };
 const SIDE_COLOR: Record<ScenarioSide, string> = {
-  you: "#fbbf24", teammate: "#38bdf8", opponent: "#f87171",
+  you: "#10b981", teammate: "#3b82f6", opponent: "#dc2626",
 };
+const FACING_LABEL: Record<Facing, string> = { up: "Straight on", left: "From the left", right: "From the right" };
+
+// The canvas's own backing-store size — fixed, at the real match's own
+// aspect ratio (VIEW_ASPECT, canvasEngine.ts) so a scenario previews at the
+// same shape it would actually be framed in. Scaled up by devicePixelRatio
+// at mount for a crisp line on a real screen, capped so a saved scenario is
+// never asked to redraw at an absurd resolution.
+const CANVAS_H = 900;
+const CANVAS_W = Math.round(CANVAS_H * VIEW_ASPECT);
 
 export default function ScenarioEditor() {
   const [scenario, setScenario] = useState<MatchScenario>(() => blankScenario("corner"));
@@ -32,40 +56,115 @@ export default function ScenarioEditor() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const dragRef = useRef<{ id: string } | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ballImgRef = useRef<HTMLImageElement | null>(null);
 
   const refreshList = () => setSaved(listScenarios());
 
+  // The real ball photo, loaded once — renderScenario falls back to a plain
+  // disc for the handful of frames before this resolves.
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/star/ball.png";
+    ballImgRef.current = img;
+    img.onload = () => paint();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Sizing: the backing store at devicePixelRatio, the CSS box at the
+  // real match's own 5:8 shape — see CANVAS_W/H above. ──
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(CANVAS_W * dpr);
+    canvas.height = Math.round(CANVAS_H * dpr);
+    paint();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Paint whenever the scenario or the selection changes ──
+  const cam = scenario.camera;
+  const paint = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const vp = viewportFor(cam.centerX, cam.centerY, cam.viewHeight);
+    renderScenario(canvas, {
+      viewport: vp,
+      facing: cam.facing ?? "up", // an old saved scenario predates `facing` — default straight-on
+      players: scenario.players.map(p => ({ x: p.x, y: p.y, side: p.side, selected: p.id === selectedId })),
+      ball: scenario.players.find(p => p.side === "you") ?? scenario.ball,
+      ballImage: ballImgRef.current,
+    });
+  };
+  useEffect(paint);
+
   // ── Pitch-coordinate math ──────────────────────────────────────────────
-  const pointFromEvent = (e: { clientX: number; clientY: number }): { x: number; y: number } | null => {
-    const svg = svgRef.current;
-    if (!svg) return null;
-    const rect = svg.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * PITCH_W;
-    // The SVG is drawn goal-at-top (y grows downward on screen) — pitch.ts's
-    // own y grows upfield, so screen-down is pitch-up: flipped here, once.
-    const y = PITCH_LEN - ((e.clientY - rect.top) / rect.height) * PITCH_LEN;
+  //
+  // Reported directly: dragging a player put him down "off to the side" of
+  // the actual cursor. A `<canvas>` has no letterboxing to account for the
+  // way an SVG viewBox does — its CSS box IS the drawing surface — so
+  // mapping through the element's own bounding rect, in the ratio of its
+  // OWN width/height rather than a fixed assumed aspect ratio, is exact
+  // regardless of how the panel around it happens to be sized.
+  const facing = (): Facing => cam.facing ?? "up";
+  const canvasPointFromEvent = (e: { clientX: number; clientY: number }): { px: number; py: number } | null => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
     return {
-      x: Math.max(0, Math.min(PITCH_W, x)),
-      y: Math.max(0, Math.min(PITCH_LEN, y)),
+      px: ((e.clientX - rect.left) / rect.width) * canvas.width,
+      py: ((e.clientY - rect.top) / rect.height) * canvas.height,
     };
   };
+  const pitchFromEvent = (e: { clientX: number; clientY: number }): { x: number; y: number } | null => {
+    const canvas = canvasRef.current;
+    const p = canvasPointFromEvent(e);
+    if (!canvas || !p) return null;
+    const vp = viewportFor(cam.centerX, cam.centerY, cam.viewHeight);
+    return pitchFromPx(p.px, p.py, canvas.width, canvas.height, vp, facing());
+  };
 
-  const startDrag = (id: string) => (e: React.PointerEvent) => {
-    e.stopPropagation();
-    dragRef.current = { id };
+  /** Which player (you included) is actually under the pointer — nearest
+   *  one inside a generous grab radius, so a thumb on a phone still finds
+   *  the right man in a crowd. */
+  const playerAt = (e: { clientX: number; clientY: number }): string | null => {
+    const canvas = canvasRef.current;
+    const p = canvasPointFromEvent(e);
+    if (!canvas || !p) return null;
+    const vp = viewportFor(cam.centerX, cam.centerY, cam.viewHeight);
+    const grab = canvas.width * 0.06;
+    let best: string | null = null, bestD = grab;
+    for (const pl of scenario.players) {
+      const s = pxFromPitch(pl.x, pl.y, canvas.width, canvas.height, vp, facing());
+      const d = Math.hypot(s.px - p.px, s.py - p.py);
+      if (d < bestD) { bestD = d; best = pl.id; }
+    }
+    return best;
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    const id = playerAt(e);
     setSelectedId(id);
+    if (!id) return;
+    dragRef.current = { id };
     (e.target as Element).setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current) return;
-    const p = pointFromEvent(e);
+    const p = pitchFromEvent(e);
     if (!p) return;
     const id = dragRef.current.id;
-    setScenario(s => id === "ball"
-      ? { ...s, ball: p }
-      : { ...s, players: s.players.map(pl => (pl.id === id ? { ...pl, x: p.x, y: p.y } : pl)) });
+    setScenario(s => ({
+      ...s,
+      // The ball lives at your feet, always — dragging you IS dragging it,
+      // so its own stored position stays honest without being separately
+      // selectable or draggable at all.
+      ball: id === "you" ? p : s.ball,
+      players: s.players.map(pl => (pl.id === id ? { ...pl, x: p.x, y: p.y } : pl)),
+    }));
   };
 
   const endDrag = () => { dragRef.current = null; };
@@ -84,10 +183,12 @@ export default function ScenarioEditor() {
   };
 
   const removeSelected = () => {
-    if (!selectedId || selectedId === "you" || selectedId === "ball") return;
+    if (!selectedId || selectedId === "you") return;
     setScenario(s => ({ ...s, players: s.players.filter(p => p.id !== selectedId) }));
     setSelectedId(null);
   };
+
+  const setFacing = (f: Facing) => setScenario(s => ({ ...s, camera: { ...s.camera, facing: f } }));
 
   const save = () => {
     saveScenario(scenario);
@@ -109,96 +210,26 @@ export default function ScenarioEditor() {
     if (scenario.id === id) startNew();
   };
 
-  // ── Camera frame preview rectangle, in pitch metres ─────────────────────
-  const cam = scenario.camera;
-  const camRectW = Math.min(PITCH_W, cam.viewHeight * (PITCH_W / PITCH_LEN));
-  const camX = cam.centerX - camRectW / 2;
-  const camY = PITCH_LEN - cam.centerY - cam.viewHeight / 2; // flipped, same as pointFromEvent
-
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       {/* ── The pitch ── */}
       <div className="rounded-xl border border-gray-700 bg-gray-900 p-2">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${PITCH_W} ${PITCH_LEN}`}
-          className="w-full touch-none select-none rounded-lg"
-          style={{ maxHeight: "72vh", background: "#1a6e3c" }}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerLeave={endDrag}
-          onPointerDown={() => setSelectedId(null)}
-        >
-          {/* Stripes, purely decorative */}
-          {Array.from({ length: 10 }).map((_, i) => (
-            <rect key={i} x={0} y={(i * PITCH_LEN) / 10} width={PITCH_W} height={PITCH_LEN / 10}
-              fill={i % 2 === 0 ? "#1a6e3c" : "#1c7a40"} />
-          ))}
-
-          {/* Markings — goal-at-top (y=0) since that's the shot this scenario
-              is usually about; the other goal line still draws at PITCH_LEN
-              for open-play/kickoff scenarios that use the far end too. */}
-          <g stroke="#ffffffaa" strokeWidth={0.25} fill="none">
-            <rect x={0} y={0} width={PITCH_W} height={PITCH_LEN} />
-            <line x1={0} y1={HALF_LEN} x2={PITCH_W} y2={HALF_LEN} />
-            <circle cx={PITCH_W / 2} cy={HALF_LEN} r={9.15} />
-            <circle cx={PITCH_W / 2} cy={HALF_LEN} r={0.4} fill="#ffffffaa" />
-            {/* Near goal (top) */}
-            <rect x={SIX_L} y={0} width={SIX_R - SIX_L} height={SIX_DEPTH} />
-            <rect x={BOX_L} y={0} width={BOX_R - BOX_L} height={BOX_DEPTH} />
-            <circle cx={PITCH_W / 2} cy={PEN_SPOT_Y} r={0.4} fill="#ffffffaa" />
-            <path d={`M ${PITCH_W / 2 - ARC_R} ${BOX_DEPTH} A ${ARC_R} ${ARC_R} 0 0 0 ${PITCH_W / 2 + ARC_R} ${BOX_DEPTH}`} />
-            <line x1={POST_L} y1={0} x2={POST_L} y2={-2} strokeWidth={0.6} />
-            <line x1={POST_R} y1={0} x2={POST_R} y2={-2} strokeWidth={0.6} />
-            {/* Far goal (bottom) */}
-            <rect x={SIX_L} y={PITCH_LEN - SIX_DEPTH} width={SIX_R - SIX_L} height={SIX_DEPTH} />
-            <rect x={BOX_L} y={PITCH_LEN - BOX_DEPTH} width={BOX_R - BOX_L} height={BOX_DEPTH} />
-            <line x1={POST_L} y1={PITCH_LEN} x2={POST_L} y2={PITCH_LEN + 2} strokeWidth={0.6} />
-            <line x1={POST_R} y1={PITCH_LEN} x2={POST_R} y2={PITCH_LEN + 2} strokeWidth={0.6} />
-            {/* Corner arcs */}
-            <path d={`M 0 1.5 A 1.5 1.5 0 0 0 1.5 0`} />
-            <path d={`M ${PITCH_W - 1.5} 0 A 1.5 1.5 0 0 0 ${PITCH_W} 1.5`} />
-            <path d={`M 0 ${PITCH_LEN - 1.5} A 1.5 1.5 0 0 1 1.5 ${PITCH_LEN}`} />
-            <path d={`M ${PITCH_W - 1.5} ${PITCH_LEN} A 1.5 1.5 0 0 1 ${PITCH_W} ${PITCH_LEN - 1.5}`} />
-          </g>
-
-          {/* Camera framing preview — a dashed window, not interactive */}
-          <g transform={`rotate(${cam.angle}, ${cam.centerX}, ${PITCH_LEN - cam.centerY})`}>
-            <rect
-              x={camX} y={camY} width={camRectW} height={cam.viewHeight}
-              fill="none" stroke="#facc15" strokeWidth={0.35} strokeDasharray="1.5,1"
-            />
-          </g>
-
-          {/* Ball */}
-          <circle
-            cx={scenario.ball.x} cy={PITCH_LEN - scenario.ball.y} r={0.9}
-            fill="#fff" stroke="#00000055" strokeWidth={0.15}
-            onPointerDown={startDrag("ball")}
-            className="cursor-grab active:cursor-grabbing"
+        <div className="mx-auto" style={{ maxWidth: 420 }}>
+          <canvas
+            ref={canvasRef}
+            style={{ width: "100%", aspectRatio: `${VIEW_ASPECT}`, touchAction: "none" }}
+            className="select-none rounded-lg"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerLeave={endDrag}
           />
-
-          {/* Players */}
-          {scenario.players.map(p => (
-            <g key={p.id} onPointerDown={startDrag(p.id)} className="cursor-grab active:cursor-grabbing">
-              <circle
-                cx={p.x} cy={PITCH_LEN - p.y} r={1.6}
-                fill={SIDE_COLOR[p.side]}
-                stroke={selectedId === p.id ? "#fff" : "#00000066"}
-                strokeWidth={selectedId === p.id ? 0.45 : 0.2}
-              />
-              {p.side === "you" && (
-                <text x={p.x} y={PITCH_LEN - p.y + 0.6} fontSize={1.6} textAnchor="middle" fontWeight="900" fill="#052e1a">Y</text>
-              )}
-            </g>
-          ))}
-        </svg>
+        </div>
         <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-[10px] font-bold text-white/70">
           <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.you }} /> You</span>
           <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.teammate }} /> Teammate</span>
           <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.opponent }} /> Opponent</span>
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full border border-dashed border-yellow-300" /> Camera frame</span>
-          <span className="ml-auto">Drag any dot to place it. Click a dot to select it.</span>
+          <span className="ml-auto">Drag a player to place him. The ball stays at your feet.</span>
         </div>
       </div>
 
@@ -235,7 +266,7 @@ export default function ScenarioEditor() {
           </div>
           <button
             onClick={removeSelected}
-            disabled={!selectedId || selectedId === "you" || selectedId === "ball"}
+            disabled={!selectedId || selectedId === "you"}
             className="mt-1.5 w-full rounded-lg bg-gray-700 py-1.5 text-[11px] font-black text-white/80 hover:bg-gray-600 disabled:opacity-40"
           >
             Remove selected
@@ -253,8 +284,23 @@ export default function ScenarioEditor() {
             onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, centerY: v } }))} />
           <SliderRow label="Zoom (view height, m)" value={cam.viewHeight} min={10} max={PITCH_LEN} step={1}
             onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, viewHeight: v } }))} />
-          <SliderRow label="Tilt (°)" value={cam.angle} min={-30} max={30} step={1}
-            onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, angle: v } }))} />
+
+          <label className="mt-3 block text-[10px] font-black uppercase tracking-wide text-white/60">Angle</label>
+          <div className="mt-1 grid grid-cols-3 gap-1">
+            {(["up", "left", "right"] as Facing[]).map(f => (
+              <button
+                key={f}
+                onClick={() => setFacing(f)}
+                className={`rounded-lg px-1.5 py-1.5 text-[10px] font-black uppercase transition ${
+                  facing() === f ? "bg-emerald-500 text-white" : "bg-gray-700 text-white/70 hover:bg-gray-600"}`}
+              >
+                {FACING_LABEL[f]}
+              </button>
+            ))}
+          </div>
+          <div className="mt-1 text-[9px] text-white/40">
+            The same three the real match ever shoots from — a free tilt would show an angle the game could not actually film.
+          </div>
         </div>
 
         <div className="flex gap-1.5">
