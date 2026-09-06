@@ -8,28 +8,39 @@ import {
 import { listScenarios, loadScenario, saveScenario, deleteScenario } from "@/lib/star/scenarioStore";
 import {
   renderScenario, viewportFor, pitchFromPx, pxFromPitch, VIEW_ASPECT,
-  type Facing,
+  type Facing, type Viewport,
 } from "@/lib/star/scenarioRender";
 
 /**
  * THE SCENARIO EDITOR — DRAFT TOOL, NOT WIRED INTO THE REAL GAME.
  *
- * See lib/star/scenarios.ts's own header for why this exists. Two things
- * requested directly, on top of that first build:
+ * See lib/star/scenarios.ts's own header for why this exists. Requested
+ * directly, on top of the first build (which drew the pitch the real way
+ * but still had a schematic editor around it):
  *
- *  - Dragging used to put a player down "off to the side" of the actual
- *    cursor. Fixed in scenarioRender.ts's pitchFromPx, which reads the
- *    canvas's own on-screen box exactly rather than assuming it matches a
- *    fixed aspect ratio.
- *  - The pitch used to be a flat, schematic top-down diagram — coloured
- *    dots on ruled lines. It is drawn now the way an actual highlight
- *    looks (scenarioRender.ts: the same palette, the same flat overhead
- *    camera, the same hand-drawn kit figures the real match uses), so a
- *    scenario can be judged by eye rather than by imagining it.
- *
- * The ball is no longer something placed independently — it lives at your
- * own feet, always, the same way it does the moment before you actually
- * strike it in a real match; there is nothing to select or drag for it.
+ *  - Added players were invisible — `addPlayer` placed them relative to
+ *    the BALL, which for a corner sits at the touchline while the camera
+ *    is centred on goal; fixed in `scenarios.ts` to place relative to the
+ *    camera's own frame instead, so a new player is always somewhere you
+ *    can actually see and drag.
+ *  - Deleting a player used to mean leaving the pitch entirely for a
+ *    button in the side panel. There's now a small ✕ that floats right
+ *    over a selected player on the canvas itself — tap him, tap the ✕ (or
+ *    press Delete/Backspace with him selected) — no separate panel needed.
+ *  - The Add Teammate/Add Opponent controls used to be the second of five
+ *    stacked panels below the canvas, forcing a scroll on anything under a
+ *    1024px-wide window. They're a small sidebar beside the pitch now,
+ *    using the space the narrow portrait canvas was leaving empty.
+ *  - The turned ("from the left"/"from the right") camera used to render
+ *    with a badly disproportionate D-arc and goal — `viewportFor` in
+ *    `scenarioRender.ts` wasn't accounting for the fact that a turned frame
+ *    swaps which screen axis each pitch axis maps through, so one metre
+ *    stopped being one metre on both screen axes. Fixed there; see that
+ *    file's own note on the arithmetic.
+ *  - A "Pick on pitch" mode: the canvas can show the WHOLE pitch, zoomed
+ *    out, with the current camera's frame drawn as a dashed rectangle you
+ *    drag around — wherever you release becomes the new centre. Requested
+ *    directly as an easier way to pick a framing than the raw X/Y sliders.
  */
 
 const PITCH_LEN = HALF_LEN * 2; // 105
@@ -50,12 +61,22 @@ const FACING_LABEL: Record<Facing, string> = { up: "Straight on", left: "From th
 const CANVAS_H = 900;
 const CANVAS_W = Math.round(CANVAS_H * VIEW_ASPECT);
 
+// A fixed "up"-facing frame sized to hold the entire pitch with a little
+// breathing room on every edge, used only by the "Pick on pitch" mode.
+// (125m tall is bigger than the pitch's own 105m length specifically so
+// the DERIVED width, 125*VIEW_ASPECT≈78m, comfortably clears the pitch's
+// 68m width too — the frame is portrait-shaped, so it's the WIDTH that's
+// the tight dimension here, not the length.)
+const FULL_PITCH_VIEW_HEIGHT = 125;
+
 export default function ScenarioEditor() {
   const [scenario, setScenario] = useState<MatchScenario>(() => blankScenario("corner"));
   const [saved, setSaved] = useState<MatchScenario[]>(() => listScenarios());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [pitchPicker, setPitchPicker] = useState(false);
   const dragRef = useRef<{ id: string } | null>(null);
+  const pickerDraggingRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ballImgRef = useRef<HTMLImageElement | null>(null);
 
@@ -83,15 +104,29 @@ export default function ScenarioEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Paint whenever the scenario or the selection changes ──
   const cam = scenario.camera;
+  const facing = (): Facing => cam.facing ?? "up";
+  const camVp = () => viewportFor(cam.centerX, cam.centerY, cam.viewHeight, facing());
+  const fullPitchVp = (): Viewport => viewportFor(PITCH_W / 2, HALF_LEN, FULL_PITCH_VIEW_HEIGHT, "up");
+
+  // ── Paint whenever the scenario or the selection changes ──
   const paint = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const vp = viewportFor(cam.centerX, cam.centerY, cam.viewHeight);
+    if (pitchPicker) {
+      renderScenario(canvas, {
+        viewport: fullPitchVp(),
+        facing: "up",
+        players: scenario.players.map(p => ({ x: p.x, y: p.y, side: p.side })),
+        ball: scenario.players.find(p => p.side === "you") ?? scenario.ball,
+        ballImage: ballImgRef.current,
+        frameOverlay: camVp(),
+      });
+      return;
+    }
     renderScenario(canvas, {
-      viewport: vp,
-      facing: cam.facing ?? "up", // an old saved scenario predates `facing` — default straight-on
+      viewport: camVp(),
+      facing: facing(), // an old saved scenario predates `facing` — default straight-on
       players: scenario.players.map(p => ({ x: p.x, y: p.y, side: p.side, selected: p.id === selectedId })),
       ball: scenario.players.find(p => p.side === "you") ?? scenario.ball,
       ballImage: ballImgRef.current,
@@ -107,7 +142,6 @@ export default function ScenarioEditor() {
   // mapping through the element's own bounding rect, in the ratio of its
   // OWN width/height rather than a fixed assumed aspect ratio, is exact
   // regardless of how the panel around it happens to be sized.
-  const facing = (): Facing => cam.facing ?? "up";
   const canvasPointFromEvent = (e: { clientX: number; clientY: number }): { px: number; py: number } | null => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -122,8 +156,7 @@ export default function ScenarioEditor() {
     const canvas = canvasRef.current;
     const p = canvasPointFromEvent(e);
     if (!canvas || !p) return null;
-    const vp = viewportFor(cam.centerX, cam.centerY, cam.viewHeight);
-    return pitchFromPx(p.px, p.py, canvas.width, canvas.height, vp, facing());
+    return pitchFromPx(p.px, p.py, canvas.width, canvas.height, camVp(), facing());
   };
 
   /** Which player (you included) is actually under the pointer — nearest
@@ -133,7 +166,7 @@ export default function ScenarioEditor() {
     const canvas = canvasRef.current;
     const p = canvasPointFromEvent(e);
     if (!canvas || !p) return null;
-    const vp = viewportFor(cam.centerX, cam.centerY, cam.viewHeight);
+    const vp = camVp();
     const grab = canvas.width * 0.06;
     let best: string | null = null, bestD = grab;
     for (const pl of scenario.players) {
@@ -144,15 +177,35 @@ export default function ScenarioEditor() {
     return best;
   };
 
+  /** In picker mode, move the CAMERA's own centre to wherever the pointer
+   *  is on the full-pitch overview — live, so the dashed frame visibly
+   *  follows the drag, and wherever it's released is what stays. */
+  const moveCameraTo = (e: { clientX: number; clientY: number }) => {
+    const canvas = canvasRef.current;
+    const p = canvasPointFromEvent(e);
+    if (!canvas || !p) return;
+    const pt = pitchFromPx(p.px, p.py, canvas.width, canvas.height, fullPitchVp(), "up");
+    setScenario(s => ({ ...s, camera: { ...s.camera, centerX: pt.x, centerY: pt.y } }));
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture(e.pointerId);
+    if (pitchPicker) {
+      pickerDraggingRef.current = true;
+      moveCameraTo(e);
+      return;
+    }
     const id = playerAt(e);
     setSelectedId(id);
     if (!id) return;
     dragRef.current = { id };
-    (e.target as Element).setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (pitchPicker) {
+      if (pickerDraggingRef.current) moveCameraTo(e);
+      return;
+    }
     if (!dragRef.current) return;
     const p = pitchFromEvent(e);
     if (!p) return;
@@ -167,7 +220,7 @@ export default function ScenarioEditor() {
     }));
   };
 
-  const endDrag = () => { dragRef.current = null; };
+  const endDrag = () => { dragRef.current = null; pickerDraggingRef.current = false; };
 
   // ── Scenario-level actions ─────────────────────────────────────────────
   const setKind = (kind: ScenarioMomentKind) => {
@@ -188,6 +241,23 @@ export default function ScenarioEditor() {
     setSelectedId(null);
   };
 
+  // Delete/Backspace deletes the selected player — the on-canvas ✕ is the
+  // primary way now, this is the desktop-keyboard equivalent of it. Skips
+  // when a text field (the Name input) actually has focus.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (!selectedId || selectedId === "you") return;
+      e.preventDefault();
+      removeSelected();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
   const setFacing = (f: Facing) => setScenario(s => ({ ...s, camera: { ...s.camera, facing: f } }));
 
   const save = () => {
@@ -199,7 +269,7 @@ export default function ScenarioEditor() {
 
   const load = (id: string) => {
     const s = loadScenario(id);
-    if (s) { setScenario(s); setSelectedId(null); }
+    if (s) { setScenario(s); setSelectedId(null); setPitchPicker(false); }
   };
 
   const startNew = () => { setScenario(blankScenario(scenario.kind)); setSelectedId(null); };
@@ -210,26 +280,77 @@ export default function ScenarioEditor() {
     if (scenario.id === id) startNew();
   };
 
+  // Where to float the on-canvas delete button — the selected player's own
+  // screen position, converted from the canvas's backing-store pixels to a
+  // CSS percentage so it tracks the canvas's own responsive `width: 100%`.
+  const selectedPlayer = scenario.players.find(p => p.id === selectedId);
+  let deleteButtonPct: { left: number; top: number } | null = null;
+  if (selectedPlayer && selectedId !== "you" && !pitchPicker && canvasRef.current) {
+    const canvas = canvasRef.current;
+    const s = pxFromPitch(selectedPlayer.x, selectedPlayer.y, canvas.width, canvas.height, camVp(), facing());
+    deleteButtonPct = { left: (s.px / canvas.width) * 100, top: (s.py / canvas.height) * 100 };
+  }
+
+  const teammateCount = scenario.players.filter(p => p.side === "teammate").length;
+  const opponentCount = scenario.players.filter(p => p.side === "opponent").length;
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      {/* ── The pitch ── */}
+      {/* ── The pitch, with player-add controls beside it — using the space
+          the narrow portrait canvas would otherwise leave empty. ── */}
       <div className="rounded-xl border border-gray-700 bg-gray-900 p-2">
-        <div className="mx-auto" style={{ maxWidth: 420 }}>
-          <canvas
-            ref={canvasRef}
-            style={{ width: "100%", aspectRatio: `${VIEW_ASPECT}`, touchAction: "none" }}
-            className="select-none rounded-lg"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={endDrag}
-            onPointerLeave={endDrag}
-          />
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-[10px] font-bold text-white/70">
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.you }} /> You</span>
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.teammate }} /> Teammate</span>
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.opponent }} /> Opponent</span>
-          <span className="ml-auto">Drag a player to place him. The ball stays at your feet.</span>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-row sm:flex-col gap-1.5 sm:w-28 shrink-0">
+            <button onClick={() => addSide("teammate")} className="flex-1 sm:flex-none rounded-lg bg-sky-600 py-1.5 text-[11px] font-black text-white hover:bg-sky-500">+ Teammate</button>
+            <button onClick={() => addSide("opponent")} className="flex-1 sm:flex-none rounded-lg bg-red-600 py-1.5 text-[11px] font-black text-white hover:bg-red-500">+ Opponent</button>
+            <button
+              onClick={removeSelected}
+              disabled={!selectedId || selectedId === "you"}
+              className="flex-1 sm:flex-none rounded-lg bg-gray-700 py-1.5 text-[10px] font-black text-white/80 hover:bg-gray-600 disabled:opacity-40"
+            >
+              Remove
+            </button>
+            <div className="hidden sm:block text-[9px] text-white/50">
+              {teammateCount} mate(s)<br />{opponentCount} opp(s)
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full" style={{ maxWidth: 420 }}>
+            <canvas
+              ref={canvasRef}
+              style={{ width: "100%", aspectRatio: `${VIEW_ASPECT}`, touchAction: "none" }}
+              className="select-none rounded-lg"
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={endDrag}
+              onPointerLeave={endDrag}
+            />
+            {deleteButtonPct && (
+              <button
+                onClick={removeSelected}
+                aria-label="Delete selected player"
+                className="absolute z-10 grid h-7 w-7 -translate-x-1/2 -translate-y-full place-items-center rounded-full border-2 border-white/80 bg-red-600 text-xs font-black text-white shadow-lg hover:bg-red-500"
+                style={{ left: `${deleteButtonPct.left}%`, top: `calc(${deleteButtonPct.top}% - 12px)` }}
+              >
+                ✕
+              </button>
+            )}
+            {pitchPicker && (
+              <div className="pointer-events-none absolute inset-x-0 top-1 z-10 flex justify-center">
+                <span className="rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-black text-amber-300">
+                  Drag anywhere — release to set the camera there
+                </span>
+              </div>
+            )}
+            <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-[10px] font-bold text-white/70">
+              <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.you }} /> You</span>
+              <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.teammate }} /> Teammate</span>
+              <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.opponent }} /> Opponent</span>
+            </div>
+            <div className="mt-1 px-1 text-[10px] text-white/50">
+              {pitchPicker ? "Drag to move the camera's frame." : "Drag a player to place him, tap him then ✕ to remove him."}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -259,25 +380,16 @@ export default function ScenarioEditor() {
         </div>
 
         <div className="rounded-xl border border-gray-700 bg-gray-800 p-3">
-          <div className="text-[10px] font-black uppercase tracking-wide text-white/60">Players</div>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            <button onClick={() => addSide("teammate")} className="rounded-lg bg-sky-600 py-1.5 text-[11px] font-black text-white hover:bg-sky-500">+ Teammate</button>
-            <button onClick={() => addSide("opponent")} className="rounded-lg bg-red-600 py-1.5 text-[11px] font-black text-white hover:bg-red-500">+ Opponent</button>
-          </div>
-          <button
-            onClick={removeSelected}
-            disabled={!selectedId || selectedId === "you"}
-            className="mt-1.5 w-full rounded-lg bg-gray-700 py-1.5 text-[11px] font-black text-white/80 hover:bg-gray-600 disabled:opacity-40"
-          >
-            Remove selected
-          </button>
-          <div className="mt-1.5 text-[10px] text-white/50">
-            {scenario.players.filter(p => p.side === "teammate").length} teammate(s), {scenario.players.filter(p => p.side === "opponent").length} opponent(s)
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-700 bg-gray-800 p-3">
           <div className="text-[10px] font-black uppercase tracking-wide text-white/60">Camera framing</div>
+
+          <button
+            onClick={() => setPitchPicker(v => !v)}
+            className={`mt-2 w-full rounded-lg py-1.5 text-[11px] font-black uppercase transition ${
+              pitchPicker ? "bg-amber-400 text-amber-950" : "bg-gray-700 text-white/80 hover:bg-gray-600"}`}
+          >
+            {pitchPicker ? "Done — back to editing" : "Pick on the whole pitch"}
+          </button>
+
           <SliderRow label="Centre X" value={cam.centerX} min={0} max={PITCH_W} step={0.5}
             onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, centerX: v } }))} />
           <SliderRow label="Centre Y" value={cam.centerY} min={0} max={PITCH_LEN} step={0.5}

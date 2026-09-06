@@ -116,6 +116,13 @@ export interface RenderScenarioOptions {
    *  loaded — falls back to a plain white disc otherwise, same as
    *  CanvasMatch.tsx does for the one frame before it loads. */
   ballImage?: HTMLImageElement | null;
+  /** Draws a highlighted rectangle over this viewport, in the SAME frame
+   *  currently being rendered — used by the full-pitch camera picker to
+   *  show where the scenario's own framing currently sits while you drag
+   *  it around a zoomed-out view of the whole pitch. Always drawn in the
+   *  "up" projection regardless of the scenario's own facing, since the
+   *  full-pitch overview itself is never turned. */
+  frameOverlay?: Viewport | null;
 }
 
 /**
@@ -399,6 +406,22 @@ export function renderScenario(canvas: HTMLCanvasElement, opts: RenderScenarioOp
       ctx.stroke();
     }
   }
+
+  // ── The camera-picker's frame overlay, if asked for — on top of
+  // everything, so it always reads clearly against grass or a player. ──
+  if (opts.frameOverlay) {
+    const ov = opts.frameOverlay;
+    const a = toPx(ov.x1, ov.y1), b = toPx(ov.x2, ov.y2);
+    ctx.save();
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = Math.max(2, unit * 0.15);
+    ctx.setLineDash([unit * 0.6, unit * 0.35]);
+    ctx.strokeRect(Math.min(a.px, b.px), Math.min(a.py, b.py), Math.abs(b.px - a.px), Math.abs(b.py - a.py));
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(250,204,21,0.10)";
+    ctx.fillRect(Math.min(a.px, b.px), Math.min(a.py, b.py), Math.abs(b.px - a.px), Math.abs(b.py - a.py));
+    ctx.restore();
+  }
 }
 
 /**
@@ -407,11 +430,35 @@ export function renderScenario(canvas: HTMLCanvasElement, opts: RenderScenarioOp
  * canvasEngine.ts's own Viewport already has to a centre + height, using
  * the real match's own aspect ratio so a scenario built here previews at
  * the same width-to-height shape the real game actually frames a shot in.
+ *
+ * `viewHeight` always means the world's Y-EXTENT, regardless of facing —
+ * "zoom" should mean the same thing whichever angle you pick. What has to
+ * change with facing is the OTHER extent (the width, `w` below).
+ *
+ * Reported directly, with the D-arc looking "completely disproportional"
+ * and missing its own semicircle shape once turned: for `facing: "up"`,
+ * `toPx()` maps pitch-x through the canvas's own W and pitch-y through H,
+ * so `w = viewHeight * VIEW_ASPECT` makes the two screen-pixels-per-metre
+ * factors come out equal (isotropic) exactly because the canvas box is
+ * ALSO built at `VIEW_ASPECT` (`ScenarioEditor.tsx`'s `CANVAS_W/H`). But
+ * for `facing: "left"/"right"`, `toPx()` SWAPS which screen axis each pitch
+ * axis maps through (pitch-x now goes through H, pitch-y through W) — so
+ * for that same isotropy to hold, the WORLD rectangle's own extent ratio
+ * has to invert too, to `1/VIEW_ASPECT` rather than `VIEW_ASPECT`. Without
+ * this, `renderScenario`'s `unit`/`uy` come out `1/VIEW_ASPECT² ≈ 2.56×`
+ * apart whenever turned, corrupting every circle/radius (the D-arc, corner
+ * arcs, centre circle, player/ball markers) and the goal's height, while
+ * straight two-point lines (the box edges) still land in the right PLACE
+ * (just not sized consistently with the round shapes drawn against them).
+ * This exact swap is already how the real match engine frames a crossing
+ * situation — see `canvasEngine.ts`'s `crossViewport()`, which builds its
+ * turned viewport with precisely this inverted ratio; this brings the
+ * editor's own facing-aware camera into line with that reference.
  */
 export const VIEW_ASPECT = 5 / 8;
 
-export function viewportFor(centerX: number, centerY: number, viewHeight: number): Viewport {
-  const w = viewHeight * VIEW_ASPECT;
+export function viewportFor(centerX: number, centerY: number, viewHeight: number, facing: Facing = "up"): Viewport {
+  const w = facing === "up" ? viewHeight * VIEW_ASPECT : viewHeight / VIEW_ASPECT;
   return {
     x1: centerX - w / 2, x2: centerX + w / 2,
     y1: centerY - viewHeight / 2, y2: centerY + viewHeight / 2,

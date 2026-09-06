@@ -1,8 +1,7 @@
 import {
-  cameraFor, project, unprojectAtDepth, groundAt, aimOnPlane,
+  cameraFor, project, unprojectAtDepth, groundAt,
   EYE, FOCAL_K, HORIZON_F, NEAR,
 } from "../../lib/star/firstPersonView";
-import { newRun } from "../../lib/star/firstPersonDribble";
 
 /**
  * THE FIRST-PERSON CAMERA'S PROJECTION MATH.
@@ -10,7 +9,9 @@ import { newRun } from "../../lib/star/firstPersonDribble";
  * The same idiom as scenarioRender.mts: no canvas anywhere in this file,
  * just the divide-by-depth projection and its inverse, checked the way
  * pxFromPitch/pitchFromPx are checked there — a screen pixel and the world
- * point it was computed from must always agree.
+ * point it was computed from must always agree. Also covers the rotated
+ * (`forward`) case the open-run mode needs — see the file header on why the
+ * default case has to reduce back to exactly what it always was.
  */
 
 const problems: string[] = [];
@@ -18,10 +19,8 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 const W = 480, H = 800;
 
-function mkCam(x: number, y: number) {
-  const run = newRun({ pace: 60, oppStrength: 50, rng: () => 0.5 });
-  run.x = x; run.y = y;
-  return cameraFor(run, W, H);
+function mkCam(x: number, y: number, forward?: { x: number; y: number }) {
+  return cameraFor({ x, y }, W, H, { forward });
 }
 
 // ── cameraFor derives focal/horizon from canvas size ──────────────────────
@@ -115,13 +114,36 @@ function mkCam(x: number, y: number) {
   check(ground !== null && ground.y < cam.y, "groundAt below the horizon returns a real point ahead of the camera");
 }
 
-// ── aimOnPlane: the screen centre maps to the camera's own lane on the
-// goal plane, and a plane behind the camera is refused ───────────────────
+// ── A rotated camera (the open-run mode's turning heading) reduces to a
+// pure axis swap, and still projects "straight ahead" to screen centre ────
 {
-  const cam = mkCam(34, 12);
-  const centre = aimOnPlane(cam, W / 2, cam.horizon + 100, 0);
-  check(centre !== null && Math.abs(centre.x - 34) < 1e-6, `screen centre aims at your own lane on the goal plane (${centre?.x.toFixed(3)})`);
-  check(aimOnPlane(cam, W / 2, cam.horizon + 100, 20) === null, "a plane behind the camera (y > cam.y) is refused");
+  // Facing world "right" ({1,0}) instead of the default "up" ({0,-1}).
+  const cam = mkCam(34, 40, { x: 1, y: 0 });
+  const ahead = project(cam, 34 + 10, 40, 0); // 10m in the facing direction
+  check(!!ahead && Math.abs(ahead.px - W / 2) < 1e-6, "straight ahead of a rotated camera still lands on screen centre");
+  const behind = project(cam, 34 - 10, 40, 0); // 10m the OPPOSITE way
+  check(behind === null, "directly behind a rotated camera is refused, same as the default camera's own behind");
+  // A point ahead-and-to-the-side of a right-facing camera (facing {1,0},
+  // whose "right" by the same +90°-from-forward relationship the default
+  // camera already uses is {0,1}) should land right of screen centre. Pure
+  // sideways-with-no-forward-component is a different case entirely — it's
+  // directly abeam at zero depth, which is correctly refused below.
+  const aheadRight = project(cam, 34 + 10, 40 + 5, 0);
+  check(!!aheadRight && aheadRight.px > W / 2, "ahead-and-to-the-right of a rotated camera projects right of screen centre");
+  check(project(cam, 34, 40 + 5, 0) === null, "a point exactly abeam (zero depth) of a rotated camera is refused, same as exactly abeam of the default camera");
+}
+
+// ── Facing "up" (the default) explicitly, to confirm passing the same
+// vector as the default produces IDENTICAL output to omitting it ─────────
+{
+  const withDefault = mkCam(34, 40);
+  const withExplicit = mkCam(34, 40, { x: 0, y: -1 });
+  for (const p of [{ x: 30, y: 20, z: 0 }, { x: 40, y: 10, z: 1.5 }]) {
+    const a = project(withDefault, p.x, p.y, p.z);
+    const b = project(withExplicit, p.x, p.y, p.z);
+    check(!!a && !!b && Math.abs(a.px - b.px) < 1e-9 && Math.abs(a.py - b.py) < 1e-9,
+      "explicitly passing forward={0,-1} matches omitting it entirely");
+  }
 }
 
 if (problems.length) {

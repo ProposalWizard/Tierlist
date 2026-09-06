@@ -814,15 +814,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       // which runs 1 to 90 and has never had an interval. See matchLog.
       if (!halfTimeShownRef.current && next.minute !== undefined && next.minute > HALF_TIME_MINUTE) {
         halfTimeShownRef.current = true;
+        // Read off REVEALED goals, same fix and same reason as
+        // `displayScore` above — not `userScoreRef`/`oppScoreRef`, which are
+        // the simulation's raw running total for the whole batch just
+        // resolved and can already be well ahead of what's actually been
+        // shown. Reported directly: half time read Coventry 1-0 up at
+        // minute 45 when their goal didn't actually happen (commentary-wise)
+        // until minute 61 — the batch that produced the half-time line had
+        // already simulated straight through to 61 and committed that goal
+        // to the ref before any of it had streamed out. Counting from `l` —
+        // the functional updater's own argument — is guaranteed to include
+        // exactly what's been pushed to the log so far, `next` included,
+        // with no risk of reading a stale closure.
+        //
         // Real scoreline order — home side's goals first — not "yours,
         // then theirs" regardless of ground. Reported directly: away at
         // Sunderland, losing 0-1, read as "Half Time 0-1" — which, printed
         // in that order, reads as the AWAY side (you) leading 1-0, the
         // opposite of what was actually happening.
-        const homeHalfScore = fixtureHomeRef.current ? userScoreRef.current : oppScoreRef.current;
-        const awayHalfScore = fixtureHomeRef.current ? oppScoreRef.current : userScoreRef.current;
-        setLog(l => [...l, logLine(
-          `Half Time  ${homeHalfScore} - ${awayHalfScore}`, "period", HALF_TIME_MINUTE)]);
+        setLog(l => {
+          const userGoals = l.filter(x => x.tone === "goal").length;
+          const oppGoals = l.filter(x => x.tone === "oppGoal").length;
+          const homeHalfScore = fixtureHomeRef.current ? userGoals : oppGoals;
+          const awayHalfScore = fixtureHomeRef.current ? oppGoals : userGoals;
+          return [...l, logLine(`Half Time  ${homeHalfScore} - ${awayHalfScore}`, "period", HALF_TIME_MINUTE)];
+        });
         setPause({
           cta: "Second half →",
           onContinue: () => setPause(null),
@@ -2878,13 +2894,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
         // final whistle you did not notice is a result you find out about on a
         // stats screen.
         // Real scoreline order — home side first — same fix and same reason
-        // as Half Time above.
-        {
-          const homeFinal = fixtureHomeRef.current ? userScoreRef.current : oppScoreRef.current;
-          const awayFinal = fixtureHomeRef.current ? oppScoreRef.current : userScoreRef.current;
-          setLog(l => [...l, logLine(
-            `Full Time  ${homeFinal} - ${awayFinal}`, "period", MATCH_DURATION)]);
-        }
+        // as Half Time above: read off revealed goals from the log itself,
+        // not the raw refs, in case a future change to the queue-draining
+        // gate above ever lets this fire before every line has streamed out.
+        setLog(l => {
+          const userGoals = l.filter(x => x.tone === "goal").length;
+          const oppGoals = l.filter(x => x.tone === "oppGoal").length;
+          const homeFinal = fixtureHomeRef.current ? userGoals : oppGoals;
+          const awayFinal = fixtureHomeRef.current ? oppGoals : userGoals;
+          return [...l, logLine(`Full Time  ${homeFinal} - ${awayFinal}`, "period", MATCH_DURATION)];
+        });
         setMatchMinute(MATCH_DURATION);
         setPause({
           cta: "Full time →",

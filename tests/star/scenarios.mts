@@ -11,6 +11,7 @@ const store = new Map<string, string>();
 import { PITCH_W, HALF_LEN } from "../../lib/star/pitch";
 import { blankScenario, addPlayer, newScenarioId, SCENARIO_KINDS } from "../../lib/star/scenarios";
 import { listScenarios, loadScenario, saveScenario, deleteScenario } from "../../lib/star/scenarioStore";
+import { viewportFor } from "../../lib/star/scenarioRender";
 
 /**
  * THE SCENARIO EDITOR'S DATA MODEL — A DRAFT TOOL, NOT WIRED IN YET.
@@ -52,6 +53,23 @@ for (const kind of SCENARIO_KINDS) {
   const addedOpp = s.players[s.players.length - 1];
   check(addedOpp.side === "opponent", "adding an opponent is genuinely an opponent");
   check(s.players.length === before + 2, "the original teammate is still there — adding never overwrites");
+}
+
+// ── A newly added player is actually VISIBLE — inside the current camera's
+// own frame, not just somewhere on the pitch. Reported directly: on a
+// corner (ball at the touchline, x=2, camera centred on goal, x=34), the
+// old offset-from-the-ball math put every add off past the left edge of
+// the frame — present in `players`, never seen, never draggable. ─────────
+{
+  let s = blankScenario("corner");
+  for (let i = 0; i < 4; i++) s = addPlayer(s, i % 2 === 0 ? "teammate" : "opponent");
+  const vp = viewportFor(s.camera.centerX, s.camera.centerY, s.camera.viewHeight, s.camera.facing ?? "up");
+  for (const p of s.players.filter(p => p.side !== "you")) {
+    check(
+      p.x >= vp.x1 && p.x <= vp.x2 && p.y >= vp.y1 && p.y <= vp.y2,
+      `${p.side} at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) lands inside the camera's own frame (x: ${vp.x1.toFixed(1)}-${vp.x2.toFixed(1)}, y: ${vp.y1.toFixed(1)}-${vp.y2.toFixed(1)})`,
+    );
+  }
 }
 
 // ── Ids are unique, not a coincidence of Date.now() colliding ──────────────

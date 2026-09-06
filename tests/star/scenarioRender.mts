@@ -30,6 +30,42 @@ const W = 480, H = 900; // an arbitrary canvas backing-store size
   check(Math.abs((vp.y1 + vp.y2) / 2 - 20) < 1e-9, "centred on the requested Y");
 }
 
+// ── viewportFor is isotropic for EVERY facing, not just "up" ──────────────
+//
+// Reported directly: the D-arc, corner arcs, centre circle and player/ball
+// markers all came out "completely disproportional" once turned — no
+// semicircle, just a wrong-sized blob. `renderScenario`'s `unit`/`uy` (the
+// two screen-pixels-per-metre factors) are only equal — i.e. one metre is
+// genuinely one metre on both screen axes, which every circular shape in
+// that file assumes — when the WORLD rectangle's own x:y extent ratio
+// matches whichever screen aspect it actually gets swapped onto. `toPx`
+// sends pitch-x through the canvas's W and pitch-y through H when facing
+// "up", but SWAPS that (pitch-x through H, pitch-y through W) once turned —
+// so the viewport's own extent ratio has to invert to match, exactly the
+// way canvasEngine.ts's own `crossViewport()` already builds its turned
+// frames. This reproduces that check with no canvas involved at all: given
+// an arbitrary canvas box W×H at VIEW_ASPECT and a viewport from
+// `viewportFor`, the two derived scale factors must always agree.
+{
+  // W/H must equal VIEW_ASPECT — the same relationship ScenarioEditor.tsx's
+  // own CANVAS_W/CANVAS_H holds (CANVAS_W = round(CANVAS_H * VIEW_ASPECT)).
+  const H = 900, W = H * VIEW_ASPECT;
+  for (const facing of ["up", "left", "right"] as Facing[]) {
+    const vp = viewportFor(30, 22, 44, facing);
+    const turned = facing !== "up";
+    const unit = turned ? H / (vp.x2 - vp.x1) : W / (vp.x2 - vp.x1);
+    const uy = turned ? W / (vp.y2 - vp.y1) : H / (vp.y2 - vp.y1);
+    check(Math.abs(unit - uy) < 1e-9,
+      `${facing}: one metre is the same number of pixels on both screen axes (unit=${unit.toFixed(3)}, uy=${uy.toFixed(3)})`);
+  }
+  // And the requested "zoom" (viewHeight, the world Y-extent) means the
+  // same thing regardless of facing — only the OTHER extent should change.
+  for (const facing of ["up", "left", "right"] as Facing[]) {
+    const vp = viewportFor(30, 22, 44, facing);
+    check(Math.abs((vp.y2 - vp.y1) - 44) < 1e-9, `${facing}: viewHeight still means the world Y-extent exactly (${vp.y2 - vp.y1})`);
+  }
+}
+
 // ── pxFromPitch / pitchFromPx are exact inverses, every facing ────────────
 {
   const vp = viewportFor(PITCH_W / 2, 16, 40);
