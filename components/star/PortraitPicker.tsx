@@ -13,9 +13,14 @@ import { paletteFor } from "@/lib/star/media/graphics/palette";
  * placeholder waiting to be filled, and most people will never open this. So the
  * control opens showing what the cards will use if you walk away from it.
  *
- * `capture="user"` on the input is what makes a phone offer the camera rather
- * than only the photo library. Desktops ignore it and show a file picker, which
- * is the right thing there.
+ * No `capture` attribute on the input, deliberately — that attribute doesn't
+ * just ADD a camera option, it makes most mobile browsers skip the native
+ * chooser entirely and jump straight into the camera app, with no way to
+ * reach the photo library at all. Reported directly: on a phone this let
+ * you take a new photo but never pick one you already had. A bare
+ * `type="file" accept="image/*"` is what makes a phone show its normal
+ * chooser (camera OR library) — the same one a desktop's file picker is a
+ * different flavour of.
  *
  * Nothing here uploads. See lib/star/portrait.ts.
  */
@@ -167,7 +172,6 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
               <input
                 type="file"
                 accept="image/*"
-                capture="user"
                 className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
               />
