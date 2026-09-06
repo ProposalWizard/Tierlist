@@ -1,5 +1,5 @@
 import { PITCH_W, HALF_LEN } from "./pitch";
-import type { Facing } from "./scenarioRender";
+import { viewportFor, type Facing } from "./scenarioRender";
 
 /**
  * HAND-BUILT MATCH SCENARIOS — THE DATA MODEL, NOTHING WIRED UP YET.
@@ -122,11 +122,33 @@ export function blankScenario(kind: ScenarioMomentKind = "corner"): MatchScenari
   };
 }
 
-/** Add one more body to the pitch, offset a little from the ball so a
- *  freshly-added dot is never sitting exactly on top of another one. */
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * Add one more body to the pitch, spread out so a freshly-added dot is
+ * never sitting exactly on top of another one.
+ *
+ * Placed relative to the CURRENT CAMERA'S OWN FRAME, not the ball. Used to
+ * be offset from `scenario.ball.x/y` — which, reported directly, made every
+ * added player invisible and undraggable for a scenario (a corner, say)
+ * whose ball sits nowhere near where the camera is actually centred: the
+ * corner flag is at the touchline (x=2) while the default corner camera is
+ * centred on the goalmouth (x=34), so the old offset math never landed
+ * anywhere near the visible frame. A new player has to show up somewhere
+ * you can actually see and drag him, so this is anchored to the viewport's
+ * own centre instead, which is visible by construction.
+ */
 export function addPlayer(scenario: MatchScenario, side: ScenarioSide): MatchScenario {
+  const cam = scenario.camera;
+  const vp = viewportFor(cam.centerX, cam.centerY, cam.viewHeight, cam.facing ?? "up");
   const n = scenario.players.filter(p => p.side === side).length;
   const spread = (n % 5) - 2;
+  const midX = (vp.x1 + vp.x2) / 2;
+  const midY = (vp.y1 + vp.y2) / 2;
+  const stepX = (vp.x2 - vp.x1) * 0.1;
+  const sideOffset = (vp.x2 - vp.x1) * (side === "opponent" ? 0.15 : -0.15);
   return {
     ...scenario,
     players: [
@@ -134,8 +156,8 @@ export function addPlayer(scenario: MatchScenario, side: ScenarioSide): MatchSce
       {
         id: newScenarioId(),
         side,
-        x: Math.max(1, Math.min(PITCH_W - 1, scenario.ball.x + spread * 3 + (side === "opponent" ? 4 : -4))),
-        y: Math.max(1, Math.min(HALF_LEN * 2 - 1, scenario.ball.y + 6 + Math.floor(n / 5) * 3)),
+        x: clamp(midX + sideOffset + spread * stepX, 1, PITCH_W - 1),
+        y: clamp(midY + (vp.y2 - vp.y1) * 0.08 + Math.floor(n / 5) * 3, 1, HALF_LEN * 2 - 1),
       },
     ],
   };
