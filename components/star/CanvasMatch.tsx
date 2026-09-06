@@ -3098,18 +3098,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     if (phaseRef.current !== "aim") return;
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
+    // ── A team-mate takes priority over the ball ──
+    //
+    // Reported directly: "most of the time I try and click on a player to
+    // select him [and] the game thinks I'm tryna aim." The ball's own grab
+    // radius below is deliberately generous — 28% of the framed pitch
+    // height — and used to be checked FIRST, so any tap anywhere near a
+    // supporting runner (who, in a cutback/through-ball, is normally
+    // standing well within that same 28%) was swallowed as "start aiming"
+    // before `captainPickAt`'s own, much smaller (9%) player hit-test ever
+    // ran. Checking the player first fixes this outright: it already
+    // returns null immediately for anyone who isn't the captain or whose
+    // scenario doesn't accept orders (`acceptsCaptainOrders`), so this
+    // changes nothing about when captaincy applies — only the PRIORITY
+    // between "pick a man" and "grab the ball" once it does.
+    const r = captainPickAt(p);
+    if (r) {
+      captainDragRef.current = { runner: r, from: p, to: p };
+      try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
     // Grab radius scales with the camera so the ball is equally easy to pick up
     // whether the chance is framed tight or wide.
     const vp = viewportRef.current;
     if (Math.hypot(p.x - b.x, p.y - b.y) > (vp.y2 - vp.y1) * 0.28) {
-      // Not the ball. A captain touching one of his own players is giving him an
-      // order; anybody else has simply missed, and nothing happens — which is
-      // exactly what happened before the armband existed.
-      const r = captainPickAt(p);
-      if (r) {
-        captainDragRef.current = { runner: r, from: p, to: p };
-        try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-      }
+      // Missed both a player and the ball — nothing happens, exactly as
+      // before the armband existed.
       return;
     }
     draggingRef.current = true;

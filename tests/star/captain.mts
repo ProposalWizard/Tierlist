@@ -41,11 +41,20 @@ function mulberry32(a: number) {
 
 const DT = 1 / 60;
 
-/** Play the situation out, and say what happened along the way. */
+/** Play the situation out, and say what happened along the way.
+ *
+ * `secondReceiver` is a snapshot of `sc.receivedBy` taken the instant the
+ * SECOND reception happens — not whatever `sc.receivedBy` ends up holding
+ * once `playOut` stops. Those are genuinely different questions: a THIRD
+ * event (a scramble off the second man's own missed shot, say) can
+ * legitimately hand the ball to anyone standing nearby, the original
+ * passer included — that is an ordinary rebound, not the relay being
+ * undone, and checking final state would confuse the two. */
 function playOut(sc: Scenario, ball: Ball, rng: () => number, maxT = 12) {
   let res: Outcome | null = null;
   let relayed = false;
   let receptions = 0;
+  let secondReceiver: Runner | null = null;
   let lastEvent: string | null = null;
   for (let t = 0; t < maxT / DT && !res; t++) {
     stepDefenders(sc, DT, sc.player, false, ball);
@@ -54,12 +63,15 @@ function playOut(sc: Scenario, ball: Ball, rng: () => number, maxT = 12) {
     res = stepBall(ball, sc, rng, DT);
     if (ball.event && ball.event !== lastEvent) {
       if (ball.event === "relay") relayed = true;
-      if (ball.event === "received") receptions++;
+      if (ball.event === "received") {
+        receptions++;
+        if (receptions === 2) secondReceiver = sc.receivedBy ?? null;
+      }
       lastEvent = ball.event;
     }
     if (ball.event) ball.event = null;
   }
-  return { res, relayed, receptions };
+  return { res, relayed, receptions, secondReceiver };
 }
 
 /** A cutback with two men in the middle, the second one well away from the first. */
@@ -78,6 +90,16 @@ function twoManScenario(seed: number): { sc: Scenario; rng: () => number } {
     speed: 7, moving: false, role: "support",
     who: { id: "m2", name: "Second Man", shortName: "Second", position: "ST" },
   }];
+  // Out of the way of every pass this file plays — a `cutback` also rolls a
+  // "follower" (the loose-ball poacher role, added to the reception
+  // candidates via `goalInView`), and left at the builder's own default
+  // position it can sit close enough to the ball's path to intercept a
+  // pass meant for `sc.runner`, receiving it FIRST under a completely
+  // different identity than the one every test in this file believes it
+  // is checking. Found by exactly that: a short lay-off test whose "first
+  // reception" belonged to neither the intended passer nor the intended
+  // target at all.
+  sc.follower = { ...sc.follower, x: -100, y: -100 };
   return { sc, rng };
 }
 
@@ -165,6 +187,101 @@ function passTo(sc: Scenario, to: Runner, rng: () => number): Ball {
   const ball = passTo(sc, sc.runner!, rng);
   const out = playOut(sc, ball, rng);
   check(!out.relayed, "the man on the end of it does not lay it off to himself");
+}
+
+/** Same shape as twoManScenario, but the lay-off target is a REALISTIC
+ *  short distance away (4m) rather than the far-corner-to-far-corner ~11m
+ *  gap the tests above happen to use. Needed specifically because the
+ *  self-reception race this reproduces only bites at short range — see
+ *  the test below. */
+function shortLayoffScenario(seed: number): { sc: Scenario; rng: () => number } {
+  const { sc, rng } = twoManScenario(seed);
+  const from = sc.runner!.pos;
+  sc.secondaryRunners = [{
+    pos: { x: from.x + 4, y: from.y }, to: { x: from.x + 4, y: from.y },
+    speed: 7, moving: false, role: "support",
+    who: { id: "m2", name: "Second Man", shortName: "Second", position: "ST" },
+  }];
+  return { sc, rng };
+}
+
+// ── The pass is not stolen back — the ORDERED man ends up with it, not the
+// passer. Reported directly: "they try to pass to the player I selected
+// then they INSTANTLY take the ball back and shoot." The existing "genuinely
+// travels a second time" test above never actually checked WHOSE feet it
+// travelled a second time TO — and it uses an ~11m gap, far enough that the
+// ball clears the passer's own control radius comfortably before anyone
+// (including him) is allowed to touch it again. A real lay-off order is
+// most useful at SHORT range — the near man in space — which is exactly the
+// distance this checks instead. ─────────────────────────────────────────
+{
+  let relays = 0, arrived = 0, wentToTarget = 0, wentToPasser = 0;
+  for (let s = 0; s < 300; s++) {
+    const { sc, rng } = shortLayoffScenario(s * 41 + 11);
+    const passer = sc.runner!;
+    const target = sc.secondaryRunners[0];
+    sc.relayTo = target;
+    const ball = passTo(sc, passer, rng);
+    const out = playOut(sc, ball, rng);
+    if (out.relayed) relays++;
+    if (out.receptions >= 2) {
+      arrived++;
+      if (out.secondReceiver === target) wentToTarget++;
+      if (out.secondReceiver === passer) wentToPasser++;
+    }
+  }
+  check(relays > 0, `the short-distance case actually exercises a relay at all (${relays})`);
+  check(arrived > 0, `and a second reception genuinely happens (${arrived})`);
+  check(wentToPasser === 0, `the passer never reclaims his own relay (${wentToPasser}/${arrived} went back to him)`);
+  check(wentToTarget === arrived, `every second reception genuinely belongs to the ordered man, not just "somebody" (${wentToTarget}/${arrived})`);
+}
+
+// ── The order actually works for buildup and midfield_pass too. Both are
+// accepted by acceptsCaptainOrders, but reported (via the same symptom
+// above) to silently do nothing in practice — these two kinds have no
+// scenario.receiver at all (no goal in view: see goalInView), and the relay
+// used to only ever be checked inside a receiver-gated branch, so the whole
+// mechanism never even ran for them. ──────────────────────────────────────
+{
+  for (const kind of ["buildup", "midfield_pass"] as const) {
+    let relays = 0, arrived = 0, wentToTarget = 0, sampled = 0;
+    for (let s = 0; s < 200; s++) {
+      const rng = mulberry32(s * 53 + kind.length);
+      const sc = buildScenario(kind, rng, 70, 70);
+      initDefenders(sc, rng);
+      check(sc.receiver === null, `${kind}: sanity check — genuinely has no receiver to begin with`);
+      if (!sc.runner) continue; // no primary target this roll — nothing to order a lay-off from
+      sampled++;
+      const passer = sc.runner;
+      sc.defenders = [];
+      const target: Runner = {
+        pos: { x: passer.pos.x + 4, y: passer.pos.y }, to: { x: passer.pos.x + 4, y: passer.pos.y },
+        speed: 7, moving: false, role: "support",
+        who: { id: "kb", name: "Layoff Man", shortName: "Layoff", position: "ST" },
+      };
+      sc.secondaryRunners = [target];
+      sc.relayTo = target;
+      const ball = passTo(sc, passer, rng);
+      const out = playOut(sc, ball, rng);
+      if (out.relayed) relays++;
+      // Neither kind has a receiver or a goal in view, so the SECOND
+      // reception (the relay actually arriving) never gets its own
+      // "received" touch-and-hold event the way a shooting chance's does —
+      // relayTargetFor correctly refuses a SECOND relay by then
+      // (scenario.relayed is already true), so the move goes straight to
+      // "delivered" the instant it reaches him. That is success, not a
+      // miscount: check the outcome and who it actually reached, not the
+      // event count `out.receptions` was built to track for the other kinds.
+      if (sc.relayed && out.res === "delivered") {
+        arrived++;
+        if (sc.receivedBy === target) wentToTarget++;
+      }
+    }
+    check(sampled > 0, `${kind}: at least some rolls actually gave a primary target to test with (${sampled})`);
+    check(relays > 0, `${kind}: the order actually fires a relay at all now (${relays})`);
+    check(arrived > 0, `${kind}: and it's genuinely delivered rather than just dropped (${arrived})`);
+    check(wentToTarget === arrived, `${kind}: it genuinely reaches the ordered man (${wentToTarget}/${arrived})`);
+  }
 }
 
 // ── One lay-off, never two ──────────────────────────────────────────────────
