@@ -20,6 +20,7 @@
     npx tsx tests/star/firstPersonView.mts
     npx tsx tests/star/firstPersonDribble.mts
     npx tsx tests/star/curveBoots.mts
+    npx tsx tests/star/liveAttack.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -1263,3 +1264,28 @@ ever climbing; and the cap bounds the swipes' OWN cumulative contribution
 launch spin, so a shot that already left the boot heavily curled can still
 take the full correction on top of it rather than being capped out before a
 single swipe.
+
+## `liveAttack.mts` — the moving attacking-situation sandbox's build-up and ready window
+
+`npx tsx tests/star/liveAttack.mts`
+
+`lib/star/liveAttack.ts` is the pure logic behind `/star-attack-dev`: a real
+shooting chance (`buildScenario`) is built exactly as it always is, and a
+ball delivery is animated arriving at it, with defenders/support runners
+visibly arriving into the positions `buildScenario` already balanced the
+finish around. Confirms: every delivery kind builds a real, self-consistent
+scenario, with one "arrived from" point per defender/runner; the ball starts
+exactly at its delivery origin and lands exactly on `scenario.ball` at the
+scheduled time, touching down (z=0) the instant it arrives regardless of
+which arc or bounce it took to get there; distance to the arrival point
+shrinks monotonically, never wobbling backward; a late strike keeps
+travelling past the arrival point rather than freezing there, which is what
+makes lateness cost you something real; the ready window actually gates
+`isReady`/`hasMissed`, and `stepLiveAttack` stops advancing time the instant
+a chance turns into a miss; a defender/runner starts exactly at his own
+recorded origin, has reached his real scenario position by the time the ball
+arrives, and holds there afterward rather than running through it;
+`strikeLiveAttack` locks the scenario's ball to the live strike point,
+always inside the scenario's own viewport; the same seed always builds the
+same situation; and the power-from-pull helper is monotonic, clamps to
+[0,1], and gives a stronger player more power for the same pull.
