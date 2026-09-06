@@ -1,5 +1,6 @@
-import type { CareerState } from "./types";
+import type { CareerState, LeagueSquad, LeagueResult } from "./types";
 import { mulberry32 } from "./season";
+import { nameGoals, creditNamedGoals, type NamedOppGoal } from "./leagueSquads";
 import {
   EURO_LEAGUE_PHASE_WEEKS, EURO_KO_SLOTS_WITH_R32, EURO_KO_SLOTS_SEEDED, type CupSlot,
 } from "./calendar";
@@ -92,6 +93,26 @@ export interface EuroState {
    * straight off it, never recomputed.
    */
   liveTable: EuroStanding[];
+  /**
+   * Every league-phase fixture actually played so far, across ALL thirty-six
+   * clubs, one matchday's worth (18 games) appended each time
+   * `simulateEuroMatchday` runs — the Euro analogue of `career.results` for
+   * the domestic league, and deliberately the SAME `LeagueResult` shape
+   * (`week` holds the matchday number here), so `scoutReport.ts`'s existing
+   * `recentResultsFor`/`formFor` work on it completely unchanged.
+   *
+   * Requested directly: "it should know who they've played... know the
+   * result... even know who scored the goals... called the assists" about
+   * an upcoming Champions League opponent — before this, a matchday's other
+   * seventeen fixtures were simulated purely to update `liveTable` and then
+   * thrown away, with no scorer/assist naming even for the two clubs
+   * actually in front of the player. See `simulateEuroMatchday`.
+   *
+   * Optional so a career saved before this field existed loads exactly as
+   * it did before — an absent campaign's history, not a crash. Every reader
+   * treats it as `results ?? []`.
+   */
+  results?: LeagueResult[];
   /** How many league-phase matchdays have actually been simulated (0-8) —
    *  guards `simulateEuroMatchday` against replaying the same one twice. */
   matchdaysPlayed: number;
@@ -347,7 +368,7 @@ export function openEuro(
 
   return {
     competition, clubs, leaguePhase: shuffle(leaguePhase, rng), ties: [],
-    liveTable, matchdaysPlayed: 0,
+    liveTable, results: [], matchdaysPlayed: 0,
   };
 }
 
@@ -406,20 +427,46 @@ function poisson(mean: number, rng: () => number): number {
  * eight opponents are not preserved pot-for-pot the way yours are — nobody
  * ever audits Villarreal's own fixture list — only that the volume (one
  * game a matchday, eight across the phase) matches yours exactly.
+ *
+ * ── Named goals, for every one of the eighteen games ──
+ *
+ * `nameGoals`/`creditNamedGoals` (leagueSquads.ts) are exactly the same
+ * functions `playLeagueWeek` already uses for the domestic division — a
+ * goal in Europe belongs to somebody the same way a goal in the league
+ * does. `squads` is `career.externalSquads` (Champions/Europa/Conference
+ * League rosters are fetched into there, never `leagueSquads`) — a club
+ * whose squad hasn't been fetched yet simply gets no named scorers for that
+ * game (same graceful fallback `nameGoals`/the domestic league already have
+ * for an unfetched squad), so the table is never blocked on a fetch, only
+ * the scorer detail is.
+ *
+ * `yourGoals`/`yourOppGoals` let the CALLER hand in the real, live-match
+ * goal events for your own fixture specifically (mirroring
+ * `playLeagueWeek`'s own `user.goals`/`user.oppGoals`) — a match you
+ * actually played has real named goals, not a fresh weighted roll. Absent
+ * (e.g. a matchday you watched from the stands), your own game is named the
+ * same weighted-roll way as the other seventeen.
  */
 export function simulateEuroMatchday(
   state: EuroState,
   mdIndex: number,
   yourClub: string,
   yourOpponent: string,
+  yourHome: boolean,
   yourScore: number,
   yourOppScore: number,
   rng: () => number,
+  squads?: LeagueSquad[],
+  yourGoals?: { m: number; s: string; a?: string }[],
+  yourOppGoals?: NamedOppGoal[],
 ): EuroState {
   if (mdIndex < state.matchdaysPlayed) return state; // already simulated — never replay it
   const strength = new Map(state.clubs.map(c => [c.name, c.strength]));
   const liveTable = state.liveTable.map(r => ({ ...r }));
   const byName = new Map(liveTable.map(r => [r.name, r]));
+  const squadOf = new Map((squads ?? []).map(s => [s.club, s]));
+  const matchday = mdIndex + 1;
+  const results: LeagueResult[] = [];
 
   const credit = (name: string, gf: number, ga: number) => {
     const r = byName.get(name);
@@ -435,6 +482,20 @@ export function simulateEuroMatchday(
   credit(yourClub, yourScore, yourOppScore);
   credit(yourOpponent, yourOppScore, yourScore);
 
+  const yourNamed = yourGoals ?? nameGoals(squadOf.get(yourClub), yourScore, rng);
+  const oppNamed = yourOppGoals
+    ? creditNamedGoals(squadOf.get(yourOpponent), yourOppGoals)
+    : nameGoals(squadOf.get(yourOpponent), yourOppScore, rng);
+  results.push({
+    week: matchday,
+    home: yourHome ? yourClub : yourOpponent,
+    away: yourHome ? yourOpponent : yourClub,
+    hs: yourHome ? yourScore : yourOppScore,
+    as: yourHome ? yourOppScore : yourScore,
+    ...(yourNamed.length ? (yourHome ? { hg: yourNamed } : { ag: yourNamed }) : {}),
+    ...(oppNamed.length ? (yourHome ? { ag: oppNamed } : { hg: oppNamed }) : {}),
+  });
+
   const others = shuffle(
     state.clubs.map(c => c.name).filter(n => n !== yourClub && n !== yourOpponent),
     rng,
@@ -444,9 +505,15 @@ export function simulateEuroMatchday(
     const [hs, as] = simulate(strength.get(home) ?? 75, strength.get(away) ?? 75, rng);
     credit(home, hs, as);
     credit(away, as, hs);
+    const hg = nameGoals(squadOf.get(home), hs, rng);
+    const ag = nameGoals(squadOf.get(away), as, rng);
+    results.push({
+      week: matchday, home, away, hs, as,
+      ...(hg.length ? { hg } : {}), ...(ag.length ? { ag } : {}),
+    });
   }
 
-  return { ...state, liveTable, matchdaysPlayed: mdIndex + 1 };
+  return { ...state, liveTable, matchdaysPlayed: matchday, results: [...(state.results ?? []), ...results] };
 }
 
 export function sortEuro(rows: EuroStanding[]): EuroStanding[] {

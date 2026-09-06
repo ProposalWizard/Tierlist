@@ -1,5 +1,6 @@
-import type { CareerState, LeagueSquad, LeaguePlayer, LeagueResult, LeagueTeam } from "./types";
+import type { CareerState, LeagueSquad, LeaguePlayer, LeagueResult } from "./types";
 import { sortLeague } from "./season";
+import { sortEuro } from "./euro";
 import { groundFor, crowdFor } from "./stadiums";
 
 /**
@@ -19,6 +20,23 @@ import { groundFor, crowdFor } from "./stadiums";
  * derived "strengths and weaknesses" from squad overalls; dropped on
  * request in favour of this — real results are a stronger, less
  * second-guessable scouting story than a derived stat category anyway.
+ *
+ * ── A Champions/Europa League opponent reads from a different table ──
+ *
+ * Requested directly, after asking whether the game tracked real Champions
+ * League fixtures at all: "can you do that with the scout report as well?
+ * ...just for Champions League stats only." A European opponent is never in
+ * `career.league`/`career.results` — those are the domestic division's own
+ * data — so this used to render a real squad's `bestPlayer` card correctly
+ * (that one only needs a static overall) while `topScorer`/`topAssister`/
+ * `recentResults`/`table` all silently came back empty, because their goals
+ * were never named anywhere (see `euro.ts`'s `simulateEuroMatchday`, which
+ * now names them) and there was nowhere to read a European standings
+ * position from either. `career.euroState.results`/`liveTable` are the
+ * European analogues of `career.results`/`career.league` — deliberately the
+ * same `LeagueResult` shape (see `EuroState.results`'s own note), so
+ * `recentResultsFor`/`formFor` below are shared, unmodified, between both
+ * branches; only WHICH table/results array feeds them differs.
  */
 
 export interface ScoutPlayer {
@@ -142,8 +160,17 @@ function formFor(playerName: string, club: string, results: LeagueResult[], kind
  * club sitting 20th in a 20-team division still gets 5 rows (16th-20th),
  * not just the 2 or 3 that a naive "radius each side, clamp each side
  * independently" produces once you're within `radius` of an edge.
+ *
+ * Takes just the three fields it actually reads rather than the full
+ * `LeagueTeam` shape, so the same function works for a European standings
+ * row (`EuroStanding`, sorted by `sortEuro`) without any adapting — both
+ * shapes already carry `name`/`points`/`played`.
  */
-function tableSnippetFor(table: LeagueTeam[], opponentIdx: number, radius = 2): TableRow[] {
+function tableSnippetFor(
+  table: { name: string; points: number; played: number }[],
+  opponentIdx: number,
+  radius = 2,
+): TableRow[] {
   if (opponentIdx < 0) return [];
   const windowSize = Math.min(table.length, radius * 2 + 1);
   let start = opponentIdx - radius;
@@ -156,22 +183,13 @@ function tableSnippetFor(table: LeagueTeam[], opponentIdx: number, radius = 2): 
   }));
 }
 
-export function scoutReportFor(career: CareerState, opponent: string, week: number): ScoutReport {
-  const squad = squadFor(career, opponent);
-  const table = sortLeague(career.league);
-  const idx = table.findIndex(t => t.name === opponent);
-  const team = idx >= 0 ? table[idx] : null;
-  const results = career.results ?? [];
-
+/** The three player cards — shared between the domestic and European
+ *  branches below; only which `results` log feeds the form strips differs. */
+function playerCards(squad: LeagueSquad | undefined, opponent: string, results: LeagueResult[]) {
   const topScorer = squad ? best(squad.players, p => p.goals) : null;
   const topAssister = squad ? best(squad.players, p => p.assists) : null;
   const bestPlayer = squad ? best(squad.players, p => p.overall) : null;
-
-  const g = groundFor(opponent);
   return {
-    club: opponent,
-    ground: { name: g.name, crowd: crowdFor(opponent, week) },
-    table: team ? { position: idx + 1, of: table.length } : null,
     topScorer: topScorer && topScorer.goals > 0
       ? {
         name: topScorer.name, value: topScorer.goals, position: topScorer.position, image: topScorer.image,
@@ -192,6 +210,48 @@ export function scoutReportFor(career: CareerState, opponent: string, week: numb
         goals: bestPlayer.goals, assists: bestPlayer.assists, overall: bestPlayer.overall,
       }
       : null,
+  };
+}
+
+export function scoutReportFor(career: CareerState, opponent: string, week: number): ScoutReport {
+  const squad = squadFor(career, opponent);
+  const g = groundFor(opponent);
+  const ground = { name: g.name, crowd: crowdFor(opponent, week) };
+
+  // A Champions/Europa/Conference League opponent — never in the domestic
+  // league table, but the campaign's own standings and fixture history
+  // (see EuroState.results/liveTable) tell exactly the same kind of story.
+  // `euro.clubs` always includes the PLAYER's own club too (marked `isYou`)
+  // — excluded explicitly here, or a caller asking about a fixture whose
+  // opponent happens to equal `career.player.club` (never a real fixture,
+  // but exercised by this file's own test suite) would get scouted against
+  // the European table instead of the domestic one.
+  const euro = career.euroState;
+  if (euro && opponent !== career.player.club && euro.clubs.some(c => c.name === opponent)) {
+    const euroTable = sortEuro(euro.liveTable);
+    const idx = euroTable.findIndex(r => r.name === opponent);
+    const results = euro.results ?? [];
+    return {
+      club: opponent,
+      ground,
+      table: idx >= 0 ? { position: idx + 1, of: euroTable.length } : null,
+      ...playerCards(squad, opponent, results),
+      recentResults: recentResultsFor(opponent, results),
+      tableSnippet: tableSnippetFor(euroTable, idx),
+      headToHead: career.headToHead?.[opponent] ?? null,
+    };
+  }
+
+  const table = sortLeague(career.league);
+  const idx = table.findIndex(t => t.name === opponent);
+  const team = idx >= 0 ? table[idx] : null;
+  const results = career.results ?? [];
+
+  return {
+    club: opponent,
+    ground,
+    table: team ? { position: idx + 1, of: table.length } : null,
+    ...playerCards(squad, opponent, results),
     recentResults: recentResultsFor(opponent, results),
     tableSnippet: tableSnippetFor(table, idx),
     headToHead: career.headToHead?.[opponent] ?? null,
