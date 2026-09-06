@@ -1,4 +1,4 @@
-import { project, type FpCamera } from "./firstPersonView";
+import { project, horizonPx, type FpCamera } from "./firstPersonView";
 import type { FpDefender, DefenderPhase } from "./firstPersonDribble";
 
 /**
@@ -156,8 +156,9 @@ function drawSky(ctx: CanvasRenderingContext2D, W: number, H: number, horizon: n
  *  Bands are drawn in WORLD depth, keyed off `stride` (metres run), never
  *  off wall-clock time, so they can never drift out of sync with speed. */
 function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: FpCamera, stride: number, minX: number, maxX: number) {
+  const horizon = horizonPx(cam);
   ctx.fillStyle = C.pitch;
-  ctx.fillRect(0, cam.horizon, W, H - cam.horizon);
+  ctx.fillRect(0, horizon, W, H - horizon);
 
   const STRIPE_M = 5;
   const offset = stride % (STRIPE_M * 2);
@@ -186,7 +187,7 @@ function drawGround(ctx: CanvasRenderingContext2D, W: number, H: number, cam: Fp
       ctx.save();
       ctx.globalAlpha = 0.5;
       ctx.fillStyle = pat;
-      ctx.fillRect(0, cam.horizon, W, H - cam.horizon);
+      ctx.fillRect(0, horizon, W, H - horizon);
       ctx.restore();
     }
   }
@@ -440,7 +441,7 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   const W = canvas.width, H = canvas.height;
   const cam = opts.cam;
 
-  drawSky(ctx, W, H, cam.horizon);
+  drawSky(ctx, W, H, horizonPx(cam));
   drawGround(ctx, W, H, cam, opts.reducedMotion ? 0 : opts.stride, opts.minX, opts.maxX);
   drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
 
@@ -472,7 +473,7 @@ export function renderFirstPersonRoam(canvas: HTMLCanvasElement, opts: RenderRoa
   const W = canvas.width, H = canvas.height;
   const cam = opts.cam;
 
-  drawSky(ctx, W, H, cam.horizon);
+  drawSky(ctx, W, H, horizonPx(cam));
   drawGround(ctx, W, H, cam, opts.reducedMotion ? 0 : opts.stride, opts.minX, opts.maxX);
   drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
 

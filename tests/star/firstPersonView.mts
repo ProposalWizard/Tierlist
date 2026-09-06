@@ -1,5 +1,5 @@
 import {
-  cameraFor, project, unprojectAtDepth, groundAt,
+  cameraFor, project, unprojectAtDepth, groundAt, horizonPx,
   EYE, FOCAL_K, HORIZON_F, NEAR,
 } from "../../lib/star/firstPersonView";
 
@@ -144,6 +144,51 @@ function mkCam(x: number, y: number, forward?: { x: number; y: number }) {
     check(!!a && !!b && Math.abs(a.px - b.px) < 1e-9 && Math.abs(a.py - b.py) < 1e-9,
       "explicitly passing forward={0,-1} matches omitting it entirely");
   }
+}
+
+// ── Pitch (the establishing shot's tilt-down): 0 matches omitting it,
+// lateral projection is untouched by tilt, and it genuinely reveals ground
+// that a dead-level camera could never see at all ─────────────────────────
+{
+  const level = cameraFor({ x: 34, y: 40 }, W, H);
+  const explicitLevel = cameraFor({ x: 34, y: 40 }, W, H, { pitch: 0 });
+  for (const p of [{ x: 30, y: 20, z: 0 }, { x: 40, y: 10, z: 1.5 }]) {
+    const a = project(level, p.x, p.y, p.z), b = project(explicitLevel, p.x, p.y, p.z);
+    check(!!a && !!b && Math.abs(a.px - b.px) < 1e-9 && Math.abs(a.py - b.py) < 1e-9,
+      "explicitly passing pitch=0 matches omitting it entirely");
+  }
+  check(Math.abs(horizonPx(level) - level.horizon) < 1e-9, "horizonPx at pitch 0 is exactly cam.horizon");
+
+  const tilted = cameraFor({ x: 34, y: 40 }, W, H, { pitch: Math.PI / 4 });
+  // Lateral placement (u) never involves pitch — straight ahead is still centre.
+  const ahead = project(tilted, 34, 30, 0);
+  check(!!ahead && Math.abs(ahead.px - W / 2) < 1e-6, "tilting down never moves a straight-ahead point off screen centre horizontally");
+
+  // Tilting down shifts the visual horizon UP the screen (smaller py).
+  check(horizonPx(tilted) < level.horizon, `tilting the camera down raises the visual horizon on screen (${horizonPx(tilted).toFixed(1)} < ${level.horizon})`);
+
+  // The genuinely new thing pitch buys: a point directly beneath the camera
+  // (same x/y, ground level) is exactly at the near plane at pitch 0 — never
+  // drawable — but a steep enough downward tilt brings it into view, which
+  // is the entire point of an overhead establishing shot.
+  check(project(level, 34, 40, 0) === null, "dead level, a point directly underneath the camera can't be seen at all");
+  const steep = cameraFor({ x: 34, y: 40 }, W, H, { pitch: (75 * Math.PI) / 180 });
+  const below = project(steep, 34, 40, 0);
+  check(below !== null, "steeply tilted down, that same point directly underneath is now genuinely visible");
+}
+
+// ── At a near-vertical pitch, depth for any ground point converges to the
+// eye height, regardless of lateral/forward offset — the degenerate case
+// that makes the establishing shot read as a flat, map-like overhead view
+// rather than a smeared, extreme-perspective one ──────────────────────────
+{
+  const nearVertical = cameraFor({ x: 34, y: 40 }, W, H, { pitch: (89.9 * Math.PI) / 180, eye: 20 });
+  const points = [{ x: 30, y: 35 }, { x: 40, y: 20 }, { x: 25, y: 45 }];
+  const scales = points.map(p => project(nearVertical, p.x, p.y, 0)?.scale ?? -1);
+  check(scales.every(s => s > 0), "every ground point still projects at a near-vertical pitch");
+  const avg = scales.reduce((a, b) => a + b, 0) / scales.length;
+  const spread = (Math.max(...scales) - Math.min(...scales)) / avg;
+  check(spread < 0.01, `scale is essentially uniform (within 1%) across the frame near pitch=90°, like a flat map (spread ${(spread * 100).toFixed(2)}%)`);
 }
 
 if (problems.length) {
