@@ -4,6 +4,8 @@ import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow"
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { shortNameOf } from "../../lib/star/realSquad";
 import { surname } from "../../lib/star/media/grammar";
+import { openEuro, simulateEuroMatchday } from "../../lib/star/euro";
+import { mulberry32 } from "../../lib/star/season";
 import type { CareerState, Fixture, LeagueResult, LeagueSquad, MatchStats, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -253,6 +255,50 @@ function squadFor(club: string, offset: number): LeagueSquad {
   const intl = creditMatchResult(base(), { week: 1, opponent: "Brazil", home: true, played: false, kind: "international" },
     stats({ homeScore: 1, awayScore: 0 })).career;
   check(!intl.headToHead?.["Brazil"], "a nation never gets a club head-to-head entry");
+}
+
+// ── A Champions League opponent — never in career.league/career.results,
+// but euroState.liveTable/results tell the exact same kind of story now
+// that simulateEuroMatchday names real goals. This is the actual feature
+// requested: "who have they played, what was the result, who scored, who
+// assisted" for a club never in your own division. ────────────────────────
+{
+  const b = base();
+  let c: CareerState = { ...b, euroState: openEuro("Champions League", b.player.club, 78, 3, mulberry32(1)) };
+  const opponent = c.euroState!.leaguePhase[0].opponent;
+  const squads = c.euroState!.clubs.map(cl => squadFor(cl.name, 0));
+
+  // Not in the domestic league or its results log at all.
+  check(!c.league.some(t => t.name === opponent), "sanity check: this club genuinely isn't in the domestic division");
+
+  const after = simulateEuroMatchday(c.euroState!, 0, b.player.club, opponent, true, 2, 1, mulberry32(5), squads);
+  c = { ...c, euroState: after, externalSquads: squads };
+
+  const r = scoutReportFor(c, opponent, 1);
+  check(r.club === opponent, "the report is about the right Champions League club");
+  check(r.table !== null, `a real Champions League standings position, not the "not in the table" null the old version always gave (${JSON.stringify(r.table)})`);
+  check(r.recentResults.length === 1, `the opponent's one played Champions League game shows up as a recent result (${r.recentResults.length})`);
+  check(r.recentResults[0]?.opponent !== undefined, "…naming who THEY played, not just a scoreline");
+  check(r.topScorer !== null, `a real Champions League top scorer, not null (${JSON.stringify(r.topScorer)})`);
+  check((r.topScorer?.goals ?? 0) > 0 && (r.topScorer?.form?.length ?? 0) === 1,
+    `their top scorer carries real goals and a one-game form strip from the Champions League game just simulated (${JSON.stringify(r.topScorer)})`);
+  check(r.bestPlayer !== null, "the best-player card still works exactly as it did before (needs no fixture history, just OVR)");
+}
+
+// ── …and a Champions League club with no squad supplied degrades exactly
+// the same honest way a domestic club with no squad data does — the table
+// position still shows (it doesn't need a squad), the player cards don't. ──
+{
+  const b = base();
+  let c: CareerState = { ...b, euroState: openEuro("Champions League", b.player.club, 78, 3, mulberry32(1)) };
+  const opponent = c.euroState!.leaguePhase[0].opponent;
+  const after = simulateEuroMatchday(c.euroState!, 0, b.player.club, opponent, true, 2, 1, mulberry32(5));
+  c = { ...c, euroState: after };
+
+  const r = scoutReportFor(c, opponent, 1);
+  check(r.table !== null, "the Champions League table position needs no squad data and still shows");
+  check(r.topScorer === null && r.topAssister === null && r.bestPlayer === null,
+    "…but with no squad ever fetched for them, the player cards degrade honestly rather than crashing or inventing one");
 }
 
 // ── Grounds ──────────────────────────────────────────────────────────────

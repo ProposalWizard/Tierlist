@@ -358,6 +358,9 @@ export interface Boot {
   technique: number;
   matches: number;
   price: number;
+  /** Grants the swipe-to-curve mid-flight correction (see applyCurveSwipe
+   *  in canvasEngine.ts) for as long as this boot has matches left. */
+  curve?: boolean;
 }
 
 export interface OwnedItem {

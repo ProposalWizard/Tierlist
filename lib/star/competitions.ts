@@ -1,4 +1,5 @@
-import type { CareerState, Fixture, CupRun, Competition, LeagueTeam } from "./types";
+import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad } from "./types";
+import type { NamedOppGoal } from "./leagueSquads";
 import {
   openCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
   CUP_ROUND_NAMES, type CupState, type CupId,
@@ -791,12 +792,24 @@ export interface EuroOutcome {
  *
  * Returns null when this fixture is not European, so the caller can fall
  * through to whatever else it might be.
+ *
+ * `squads` (career.externalSquads, cloned by the caller) is mutated in
+ * place as goals are named for every one of the matchday's eighteen games —
+ * the same "hand in a mutable clone, read the same reference back" contract
+ * `playLeagueWeek` already has. `userGoals`/`userOppGoals`, when given, are
+ * the real named goals from the match the player just played (mirroring
+ * `playLeagueWeek`'s own `user.goals`/`user.oppGoals`) — absent for a
+ * fixture watched from the stands, where the user's own game is named the
+ * same weighted-roll way as everyone else's.
  */
 export function settleEuro(
   career: CareerState,
   fixture: Fixture,
   userScore: number,
   oppScore: number,
+  squads?: LeagueSquad[],
+  userGoals?: { m: number; s: string; a?: string }[],
+  userOppGoals?: NamedOppGoal[],
 ): EuroOutcome | null {
   const state = career.euroState;
   if (!state || fixture.kind !== "europe") return null;
@@ -819,7 +832,8 @@ export function settleEuro(
     // header for why: the table used to fabricate every remaining matchday
     // for everybody, yours included, the moment the screen was opened.
     const next = simulateEuroMatchday(
-      { ...state, leaguePhase }, mdIndex, career.player.club, fixture.opponent, userScore, oppScore, rng,
+      { ...state, leaguePhase }, mdIndex, career.player.club, fixture.opponent, fixture.home,
+      userScore, oppScore, rng, squads, userGoals, userOppGoals,
     );
     if (!leaguePhaseComplete(next)) {
       const left = leaguePhase.filter(m => m.us === undefined).length;

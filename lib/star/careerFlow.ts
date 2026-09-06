@@ -465,6 +465,7 @@ export function creditMatchResult(
   let knockoutMessage: string | null = null;
   let cupState = career.cupState;
   let euroState = career.euroState;
+  let externalSquads = career.externalSquads;
   // Guarded on `alreadyPlayed` for the same reason the league round is
   // (see the top of this function): unguarded, a replayed knockout leg
   // found the competition's state already advanced past this tie by the
@@ -473,11 +474,28 @@ export function creditMatchResult(
   // actually played, and potentially minting a duplicate trophy if that
   // phantom result happened to land on the final.
   if (kind !== "league" && fixture.competition && !alreadyPlayed) {
+    // Real, named goals for a European match actually played — the same
+    // conversion the league block above does for `yours`/`theirs`, so a
+    // Champions League scout report can eventually show them the same way a
+    // domestic one does. `externalSquads` is cloned so `nameGoals`/
+    // `creditNamedGoals` (called inside settleEuro, for every one of the
+    // matchday's eighteen games, not just this one) can mutate it in place
+    // without touching `career`'s own copy until this credit is committed.
+    const euroYours = (stats.goalEvents ?? []).map(e => ({
+      m: e.minute, s: surname(e.scorer), ...(e.assist ? { a: surname(e.assist) } : {}),
+    }));
+    const euroTheirs = (stats.oppGoalEvents ?? []).map(e => ({
+      id: e.scorerId, m: e.minute, s: surname(e.scorer),
+      ...(e.assistId ? { assistId: e.assistId } : {}),
+      ...(e.assist ? { a: surname(e.assist) } : {}),
+    }));
+    const euroSquads = (career.externalSquads ?? []).map(sq => ({ ...sq, players: sq.players.map(p => ({ ...p })) }));
     // Europe first: a league-phase night and a two-legged tie are neither a
     // domestic cup round nor a counter-style run, and asking the other two
     // handlers about it would have them answer for a competition they do not
     // know about.
-    const euro = settleEuro(career, fixture, stats.homeScore, stats.awayScore);
+    const euro = settleEuro(career, fixture, stats.homeScore, stats.awayScore, euroSquads, euroYours, euroTheirs);
+    if (euro) externalSquads = euroSquads;
     const settled = euro ? null : settleCupTie(career, fixture, stats.homeScore, stats.awayScore);
     if (euro) {
       euroState = euro.state;
@@ -623,6 +641,7 @@ export function creditMatchResult(
     league,
     results: weekResults,
     leagueSquads,
+    externalSquads,
     fixtures: [...fixtures, ...extraFixtures],
     // Match-day money: the wage and bonuses the result produced, an appearance
     // fee if the deal has one, and anything a sponsor objective just paid out.
@@ -1226,10 +1245,16 @@ export function simulateMissedFixture(
   // leaguePhaseComplete ever becoming true for a save that watched even one
   // European game from the stands.
   let euroState = career.euroState;
+  let externalSquads = career.externalSquads;
   if (euroState) {
-    const settled = settleEuro(career, fixture, userScore, oppScore);
+    // Nobody watched this one live, so there are no real goal events to hand
+    // in — every one of the matchday's eighteen games, yours included, gets
+    // named the same weighted-roll way (see simulateEuroMatchday).
+    const euroSquads = (career.externalSquads ?? []).map(sq => ({ ...sq, players: sq.players.map(p => ({ ...p })) }));
+    const settled = settleEuro(career, fixture, userScore, oppScore, euroSquads);
     if (settled) {
       euroState = settled.state;
+      externalSquads = euroSquads;
       if (settled.nextFixture) extraFixtures = [...extraFixtures, settled.nextFixture];
       if (settled.trophy) cupTrophy = settled.trophy;
       if (settled.message) knockoutMessage = settled.message;
@@ -1254,6 +1279,7 @@ export function simulateMissedFixture(
     league,
     results: weekResults,
     leagueSquads,
+    externalSquads,
     fixtures: [...fixtures, ...extraFixtures],
     cups,
     cupState,

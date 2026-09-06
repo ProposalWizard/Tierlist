@@ -4,7 +4,7 @@ import {
   newDribble, flick, stepDribble, dribbleProgress,
   type DribbleState, type DribbleOutcome,
 } from "@/lib/star/dribble";
-import { cameraFor } from "@/lib/star/firstPersonView";
+import { cameraFor, EYE } from "@/lib/star/firstPersonView";
 import { renderFirstPersonRoam } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
 
@@ -45,14 +45,60 @@ import { mulberry32 } from "@/lib/star/season";
  * already facing," and "swipe left/right" means "peel off that way from
  * here," exactly the way a first-person control scheme has to work once
  * the camera can turn. See `worldFlickFrom` below.
+ *
+ * ── The establishing shot ──
+ *
+ * Reported directly: "you cannot see the first man without turning into
+ * him... the user needs to understand the situation... without using
+ * information boxes and text." A first-person view genuinely can't show
+ * you a man standing off to the side until you're already facing him —
+ * that isn't a bug, it's what first person means — so the fix isn't a
+ * wider lens or a minimap overlay, it's a real camera move: a brief
+ * `"intro"` phase before `"run"` starts, elevated and tilted down over the
+ * whole, frozen situation (you and every chaser, awake or not), then a
+ * single continuous swoop down and level out into the ordinary eye-level
+ * view. `firstPersonView.ts`'s `pitch` is what makes this ONE camera model
+ * rather than a cut between two different renderers — the intro and the
+ * game share every drawing routine in `firstPersonRender.ts` unchanged;
+ * only `eye`/`pitch` animate.
+ *
+ * ── Dribbling, not gliding ──
+ *
+ * Reported directly, separately: the ball used to sit at a fixed offset
+ * ahead of you, gliding as you moved — "it doesn't just look like getting
+ * an image stuck on." There's no leg rig to animate a real touch, so the
+ * ball itself carries the illusion: a bounce synced to distance run (not
+ * wall-clock time, same reasoning `stride` already exists for), a lateral
+ * sway alternating roughly foot to foot, and a forward surge-then-settle
+ * timed to land just after the bounce peaks — a toe-poke, not a carry.
  */
 
-type Phase = "run" | "result";
+type Phase = "intro" | "run" | "result";
 
 const DT_CAP = 0.05;
 const BALL_LEAD = 1.7; // same reasoning as the duel mode's — see firstPersonView.ts
 const MIN_SWIPE_FRAC = 0.05; // of canvas width — smaller swipes are ignored
 const FORWARD_SMOOTH_RATE = 8; // 1/s — how fast the camera catches up to a new heading
+
+// The establishing shot — see the file header.
+const INTRO_DURATION = 1.3; // seconds
+const ESTABLISH_EYE = 20;   // metres — high enough to comfortably frame the
+                             // ~18m-wide corridor even near-vertical (see
+                             // tests/star/firstPersonView.mts's near-pitch-90 check)
+const ESTABLISH_PITCH = (75 * Math.PI) / 180;
+
+// Dribbling motion — see the file header. Frequency matches
+// firstPersonRender.ts's own forearm-bob rate (`stride * 1.9`) so the ball
+// and the player's own body read as the same rhythm.
+const TOUCH_FREQ = 1.9;
+const LATERAL_BOB = 0.22;   // metres of side-to-side sway, foot to foot
+const LEAD_PULSE = 0.35;    // metres the ball surges ahead of the base lead
+const BOUNCE_HEIGHT = 0.16; // metres of hop at the top of each touch
+
+function easeInOutCubic(t: number): number {
+  const c = Math.max(0, Math.min(1, t));
+  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+}
 
 const RESULT_LABEL: Record<DribbleOutcome, (beatenBy: number | null) => string> = {
   running: () => "",
@@ -87,9 +133,11 @@ export default function FirstPersonRoam({
   const reducedMotionRef = useRef(false);
   const strideRef = useRef(0);
   const smoothForwardRef = useRef({ x: 0, y: -1 });
+  // Elapsed time in the establishing-shot intro — see the file header.
+  const introTRef = useRef(0);
 
-  const phaseRef = useRef<Phase>("run");
-  const [phase, setPhaseState] = useState<Phase>("run");
+  const phaseRef = useRef<Phase>("intro");
+  const [phase, setPhaseState] = useState<Phase>("intro");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   const [resultText, setResultText] = useState("");
@@ -121,9 +169,10 @@ export default function FirstPersonRoam({
     stateRef.current = state;
     strideRef.current = 0;
     smoothForwardRef.current = { ...normalize(state.heading) };
+    introTRef.current = 0;
     swipeStartRef.current = null;
     setResultText("");
-    setPhase("run");
+    setPhase("intro");
   }, [pace, oppStrength, chasers, newRng]);
 
   useEffect(() => { reset(); }, [reset]);
@@ -207,7 +256,13 @@ export default function FirstPersonRoam({
       last = now;
       const state = stateRef.current;
 
-      if (phaseRef.current === "run" && state) {
+      if (phaseRef.current === "intro") {
+        // Nothing moves and nobody wakes during the establishing shot — it
+        // is a look at the situation exactly as it starts, not a preview of
+        // it already under way.
+        introTRef.current += dt;
+        if (introTRef.current >= INTRO_DURATION) setPhase("run");
+      } else if (phaseRef.current === "run" && state) {
         const outcome = stepDribble(state, dt);
         strideRef.current += state.speed * dt;
 
@@ -229,12 +284,38 @@ export default function FirstPersonRoam({
       const c = canvasRef.current, state = stateRef.current;
       if (!c || !state) return;
       const forward = smoothForwardRef.current;
-      const cam = cameraFor({ x: state.pos.x, y: state.pos.y }, c.width, c.height, { forward });
-      const ball = {
-        x: state.pos.x + forward.x * BALL_LEAD,
-        y: state.pos.y + forward.y * BALL_LEAD,
-        z: 0,
-      };
+
+      // The establishing shot — one continuous swoop from elevated/tilted
+      // down to the ordinary eye-level view, sharing every drawing routine
+      // with normal play; only these two numbers animate.
+      let eye: number | undefined, pitch: number | undefined;
+      if (phaseRef.current === "intro") {
+        const p = easeInOutCubic(introTRef.current / INTRO_DURATION);
+        eye = ESTABLISH_EYE + (EYE - ESTABLISH_EYE) * p;
+        pitch = ESTABLISH_PITCH * (1 - p);
+      }
+      const cam = cameraFor({ x: state.pos.x, y: state.pos.y }, c.width, c.height, { forward, eye, pitch });
+
+      // The ball leads you, bouncing and swaying in a rhythm tied to
+      // distance run rather than gliding at a fixed offset — see the file
+      // header. Frozen at a plain lead offset during the intro (nothing is
+      // moving yet) and when the viewer has asked for reduced motion.
+      const right = { x: -forward.y, y: forward.x };
+      let ball: { x: number; y: number; z: number };
+      if (phaseRef.current !== "run" || reducedMotionRef.current) {
+        ball = { x: state.pos.x + forward.x * BALL_LEAD, y: state.pos.y + forward.y * BALL_LEAD, z: 0 };
+      } else {
+        const touchPhase = strideRef.current * TOUCH_FREQ;
+        const bounce = Math.max(0, Math.sin(touchPhase));
+        const sway = Math.sin(touchPhase * 0.5) * LATERAL_BOB;
+        const lead = BALL_LEAD + Math.cos(touchPhase) * LEAD_PULSE * 0.5;
+        ball = {
+          x: state.pos.x + forward.x * lead + right.x * sway,
+          y: state.pos.y + forward.y * lead + right.y * sway,
+          z: bounce * BOUNCE_HEIGHT,
+        };
+      }
+
       renderFirstPersonRoam(c, {
         cam,
         chasers: state.chasers,
@@ -242,7 +323,7 @@ export default function FirstPersonRoam({
         minX: state.minX, maxX: state.maxX,
         ball, ballImage: ballImgRef.current,
         reducedMotion: reducedMotionRef.current,
-        hud: { text: `${Math.round(dribbleProgress(state) * 100)}% through` },
+        hud: phaseRef.current === "run" ? { text: `${Math.round(dribbleProgress(state) * 100)}% through` } : null,
       });
     };
 

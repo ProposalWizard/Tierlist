@@ -127,6 +127,13 @@ export interface Ball {
    */
   lastTouch?: "attack" | "defence" | "keeper" | "frame";
   deflected?: "keeper" | "frame";
+  /**
+   * Curve boots' mid-flight swipe correction (see applyCurveSwipe), tracked
+   * separately from the strike's own natural `spin`/`vz` so the cap on how
+   * much a swipe can add doesn't depend on how curly the strike already was.
+   */
+  curveSpinAdj?: number;
+  curveVzAdj?: number;
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -2628,8 +2635,24 @@ const RECEIVER_CONTROL_T = 0.45; // seconds the teammate takes to control the ba
 
 // ── THE CAPTAIN'S LAY-OFF ────────────────────────────────────────────────────
 
-/** Shortest and longest ball a man will look up and play on your say-so. */
-const RELAY_MIN = 3;
+/**
+ * Shortest and longest ball a man will look up and play on your say-so.
+ *
+ * `RELAY_MIN` was 3m — measured from wherever the ball is actually
+ * RECEIVED, not from the man's position at the moment the order was given.
+ * Both men keep moving right up to that reception (the receiving runner
+ * chases the pass; a nearby support man drifts toward the same passage of
+ * play), so a captain's order given at a perfectly sensible 4-5m gap
+ * routinely arrived to find the live gap already inside 3m — and a real,
+ * deliberate order was silently REFUSED by `relayTargetFor`, sending the
+ * ball back through the ordinary "he shoots" path instead. From the
+ * outside that reads identically to the passer stealing his own pass back
+ * — reported directly. Lowered enough that natural closing-down movement
+ * during a real pass's flight time can't accidentally veto a short,
+ * legitimate lay-off (a one-two, a backheel), while a literal
+ * already-standing-together non-order stays excluded.
+ */
+const RELAY_MIN = 1.2;
 const RELAY_MAX = 40;
 
 /**
@@ -2688,7 +2711,24 @@ function launchReceiverPass(ball: Ball, scenario: Scenario, target: Runner, rng:
   ball.z = 0.08;
   ball.spin = (rng() - 0.5) * 0.35;
   ball.loose = false;
-  ball.contactCd = 0.15;
+  // ── Long enough that the ball actually clears the man who just played it ──
+  //
+  // A flat 0.15s (the value every OTHER launch in this file uses, all of
+  // them shots at 16-32 m/s) was reused here without checking it against
+  // this call's own numbers. At a relay's minimum speed (11 m/s, above)
+  // and the shortest order a captain can give (RELAY_MIN=3m, so the man
+  // being played to is close), 0.15s only carries the ball 1.65m — short
+  // of PASS_CONTROL_R (2.0m, the radius reception is tested against) — so
+  // immunity expired with the ball still inside the PASSER's own control
+  // radius. He was still standing exactly where he played it from
+  // (`r.moving = false` on reception, never reset), first in the
+  // reception loop's own candidate list, and so reclaimed his own pass and
+  // shot it himself on the very next eligible tick — reported directly:
+  // "they try to pass to the player I selected then they INSTANTLY take
+  // the ball back and shoot." Sized here, per relay, so the ball is always
+  // a genuine PASS_CONTROL_R clear of him (plus a real margin) by the time
+  // anyone — including him — is allowed to touch it again.
+  ball.contactCd = clamp((PASS_CONTROL_R + 0.6) / speed, 0.15, 0.4);
   ball.lastTouch = "attack";
   ball.event = "relay";
   // It is a PASS. Setting `shot` here would make every other team-mate step out
@@ -3066,6 +3106,66 @@ export function curlRange(technique: number): number {
 /** The same, for how much lift and dip you can put on it. */
 export function loftRange(technique: number): number {
   return 0.55 + clamp(technique, 0, 100) / 100 * 0.45;
+}
+
+/**
+ * Curve boots: "sometimes you kick the ball and realise it's going too high
+ * or too left or right... the player should be able to swipe the screen to
+ * curve the ball towards that direction... with each additional swipe
+ * stacking the curve." Requested as a boot-gated ability, not a universal
+ * mechanic — see Boot.curve.
+ *
+ * `spin` is a live, continuously-re-read field (the Magnus term in
+ * stepBallRaw reads it every substep), so bending a shot already in flight
+ * needs no new physics — nudging it here takes effect on the very next
+ * substep. `vz` only ever mattered at launch and at bounce, so an up/down
+ * swipe is a one-time vertical impulse rather than a continuous force.
+ *
+ * A full strike's own launch spin already reaches roughly ±1.85 (see
+ * `launch`'s `spin = contact.cx * curlRange(tech) * 1.85 * power`), so
+ * CURVE_SPIN_STEP is pitched as a genuinely noticeable correction — not a
+ * fraction that gets lost against the strike's own curl — while
+ * CURVE_SPIN_MAX/CURVE_VZ_MAX cap the swipes' OWN contribution (tracked in
+ * curveSpinAdj/curveVzAdj, separately from however curly or high the strike
+ * already was) so a flurry of swipes corrects a mistake without letting the
+ * ball be bent at an absurd, physics-breaking angle.
+ */
+export const CURVE_SPIN_STEP = 0.45;
+export const CURVE_SPIN_MAX = 2.2;
+export const CURVE_VZ_STEP = 1.4;
+export const CURVE_VZ_MAX = 4.5;
+
+export type CurveDir = "left" | "right" | "up" | "down";
+
+/** Classifies a screen swipe by its dominant axis — left/right/up/down only,
+ *  never a diagonal blend, matching how the feature was asked for. */
+export function curveDirFromSwipe(dx: number, dy: number): CurveDir | null {
+  if (dx === 0 && dy === 0) return null;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "right" : "left";
+  return dy > 0 ? "down" : "up";
+}
+
+/**
+ * Applies one stacked swipe correction to a ball already in flight. Returns
+ * false (and changes nothing) once that axis's cap is reached, so mashing
+ * the same direction can't be used to detect "maxed out" by its silence —
+ * callers that care can check the return value.
+ */
+export function applyCurveSwipe(ball: Ball, dir: CurveDir): boolean {
+  if (dir === "left" || dir === "right") {
+    const cur = ball.curveSpinAdj ?? 0;
+    if (Math.abs(cur) >= CURVE_SPIN_MAX) return false;
+    const next = clamp(cur + (dir === "right" ? CURVE_SPIN_STEP : -CURVE_SPIN_STEP), -CURVE_SPIN_MAX, CURVE_SPIN_MAX);
+    ball.spin += next - cur;
+    ball.curveSpinAdj = next;
+    return true;
+  }
+  const cur = ball.curveVzAdj ?? 0;
+  if (Math.abs(cur) >= CURVE_VZ_MAX) return false;
+  const next = clamp(cur + (dir === "up" ? CURVE_VZ_STEP : -CURVE_VZ_STEP), -CURVE_VZ_MAX, CURVE_VZ_MAX);
+  ball.vz += next - cur;
+  ball.curveVzAdj = next;
+  return true;
 }
 
 /**
@@ -4546,6 +4646,21 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     // Height is not what makes it a shot; pace is.
     const shotAtGoal = ball.shot === true && !ball.resting && speed >= DEAD_BALL_SPEED;
     for (const r of candidates) {
+      // ── He already had his touch, and gave it away ──
+      //
+      // A distance/timing margin alone cannot protect a relay: the man who
+      // just played it is not standing still waiting to be outrun by the
+      // ball — the same generic support-positioning that puts him
+      // somewhere useful in the first place keeps drawing him back TOWARD
+      // the ball as it moves, which can close the gap faster than any sane
+      // immunity window survives. Reported directly: "they try to pass to
+      // the player I selected then they INSTANTLY take the ball back and
+      // shoot" — confirmed by measurement, not just distance: the passer's
+      // own position was found tracking the ball's almost exactly, frame
+      // for frame, after a relay. `scenario.receivedBy` still holds him at
+      // this point in the loop (only reassigned below, on an ACTUAL new
+      // match) — the one clean, movement-proof way to know who he is.
+      if (scenario.relayed && r === scenario.receivedBy) continue;
       const tgt = r.pos;
       let swept = Math.hypot(tgt.x - ball.pos.x, tgt.y - ball.pos.y);
       const segX = ball.pos.x - prevX, segY = ball.pos.y - prevY;
@@ -4621,7 +4736,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // computed and ignored; when there is a defensive line worth the name,
         // this is where it goes back in.
 
-        // ── If he has it and there is a goal, he shoots ──
+        // ── If he has it and there is a goal, he shoots — unless he was told
+        // to lay it off instead, which always wins ──
         //
         // The cap is a runaway guard and nothing more. It used to be two, which
         // is not a runaway — it is a normal goalmouth scramble, and it bit
@@ -4629,7 +4745,21 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // parried, collected, and then a team-mate stood on the ball six yards
         // out and the highlight ended saying PASS. It says four now, which no
         // real scramble reaches.
-        if (scenario.receiver && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
+        //
+        // `relay` is checked here, not just at the control-window's own
+        // expiry below, for two reasons. First, `buildup`/`midfield_pass`
+        // scenarios have no `scenario.receiver` at all (no goal in view —
+        // see `goalInView`) — reported directly, a captain's order was
+        // accepted for these kinds (`acceptsCaptainOrders` allows them) and
+        // silently did nothing, because the code below only ever entered
+        // this whole branch `if (scenario.receiver ...)`, so it fell straight
+        // to "delivered" with the relay never even looked at. Second, a
+        // SCRAMBLED reception (a loose ball chased down) used to shoot on
+        // sight unconditionally, ignoring a pending order entirely — the
+        // armband has to outrank instinct even then, not just on a clean
+        // pass into his stride.
+        const relay = relayTargetFor(scenario);
+        if ((scenario.receiver || relay) && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
           // ── A ball you chase down is hit first time ──
@@ -4641,8 +4771,12 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // decision anybody would take. It looked like a bug, because it was
           // one — the pause was written for the other case and applied to both.
           if (scrambled) {
-            launchReceiverShot(ball, scenario, rng);
+            if (relay) launchReceiverPass(ball, scenario, relay, rng);
+            else launchReceiverShot(ball, scenario, rng);
           } else {
+            // Re-checked at expiry (below) rather than decided here, so a
+            // relay pending right now and a relay still pending a beat later
+            // are never out of step with each other.
             ball.receiverControlT = RECEIVER_CONTROL_T;
             ball.event = "received";
           }

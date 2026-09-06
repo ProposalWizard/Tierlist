@@ -40,6 +40,34 @@
  * must always agree. `unprojectAtDepth`/`groundAt` are not (yet) rotation-
  * aware; nothing that needs hit-testing against a rotated camera exists in
  * this codebase, so they stay simple rather than generalised on spec.
+ *
+ * ── A third, optional degree of freedom: pitch ──
+ *
+ * Requested directly: the open-run mode dropped you straight into a duel
+ * with no establishing shot, so a chaser standing off to the side was
+ * genuinely hard to notice without already turning toward him — "the user
+ * needs to understand the situation... without using information boxes and
+ * text." The fix is a real camera move, not a UI overlay: start elevated
+ * and tilted down over the frozen situation, then swoop down and level out
+ * into the ordinary eye-level view before the run begins.
+ *
+ * `pitch` (radians, positive = tilted downward) is the camera's rotation
+ * around its own lateral (`right`) axis, applied AFTER the yaw rotation
+ * `forward`/`right` already do — a standard two-axis FPS camera. Worked
+ * through by hand (and checked in tests/star/firstPersonView.mts): with
+ * `relX = x - cam.x`, `relY = y - cam.y`, `relZ = z - cam.eye`,
+ *
+ *   d0    = relX·fwd.x + relY·fwd.y        (the old, pitch-free forward distance)
+ *   u     = relX·right.x + relY·right.y    (lateral — pitch never touches this)
+ *   depth = d0·cos(pitch) − relZ·sin(pitch)
+ *   v     = d0·sin(pitch) + relZ·cos(pitch)
+ *   px    = W/2 + u·(focal/depth)
+ *   py    = horizon − v·(focal/depth)
+ *
+ * At `pitch = 0`, `depth = d0` and `v = relZ` exactly — the original
+ * formulas, unchanged. Every existing caller (the duel mode, and the
+ * open-run mode's own ordinary gameplay camera) never sets `pitch`, so
+ * `?? 0` makes this purely additive.
  */
 
 export interface FpCamera {
@@ -61,6 +89,11 @@ export interface FpCamera {
    *  Defaults to {0,-1} (world "up") when omitted — the duel mode's camera
    *  never sets this and behaves exactly as it always has. */
   forward?: { x: number; y: number };
+  /** Radians, positive = tilted downward, applied around the camera's own
+   *  lateral axis after `forward`'s yaw. Defaults to 0 (dead level) — see
+   *  the file header's own derivation. Only the open-run mode's
+   *  establishing-shot intro ever sets this away from 0. */
+  pitch?: number;
 }
 
 export const EYE = 1.55;
@@ -77,14 +110,14 @@ const DEFAULT_FORWARD = { x: 0, y: -1 };
 
 /** Build a camera at a given pitch position and canvas size. `forward`
  *  defaults to world "up" — pass it explicitly for a camera that turns to
- *  face a heading (see the file header). */
+ *  face a heading (see the file header). `pitch` defaults to dead level. */
 export function cameraFor(
   pos: { x: number; y: number }, W: number, H: number,
-  opts: { eye?: number; forward?: { x: number; y: number } } = {},
+  opts: { eye?: number; forward?: { x: number; y: number }; pitch?: number } = {},
 ): FpCamera {
   return {
     x: pos.x, y: pos.y, eye: opts.eye ?? EYE, W, H,
-    focal: FOCAL_K * W, horizon: HORIZON_F * H, forward: opts.forward,
+    focal: FOCAL_K * W, horizon: HORIZON_F * H, forward: opts.forward, pitch: opts.pitch,
   };
 }
 
@@ -105,15 +138,43 @@ export function project(cam: FpCamera, x: number, y: number, z: number): Project
   const fwd = cam.forward ?? DEFAULT_FORWARD;
   const right = { x: -fwd.y, y: fwd.x };
   const relX = x - cam.x, relY = y - cam.y;
-  const depth = relX * fwd.x + relY * fwd.y;
+  const relZ = z - cam.eye;
+  const d0 = relX * fwd.x + relY * fwd.y;
+  const u = relX * right.x + relY * right.y;
+
+  const pitch = cam.pitch;
+  let depth: number, v: number;
+  if (!pitch) {
+    // The common, dead-level case — no trig, matches the original formula
+    // exactly (see the file header: this is `pitch = 0` of the general one).
+    depth = d0;
+    v = relZ;
+  } else {
+    const cosP = Math.cos(pitch), sinP = Math.sin(pitch);
+    depth = d0 * cosP - relZ * sinP;
+    v = d0 * sinP + relZ * cosP;
+  }
   if (depth <= NEAR) return null;
   const scale = cam.focal / depth;
-  const u = relX * right.x + relY * right.y;
   return {
     px: cam.W / 2 + u * scale,
-    py: cam.horizon + (cam.eye - z) * scale,
+    py: cam.horizon - v * scale,
     scale,
   };
+}
+
+/**
+ * Where the true visual horizon (the vanishing point for anything at eye
+ * height) actually falls, given the camera's pitch — `cam.horizon` alone is
+ * only that at `pitch = 0`; tilting the camera down shifts it up the screen
+ * by `tan(pitch) · focal` (derived in the file header: a point at `z = eye`,
+ * i.e. `relZ = 0`, as `d0 → ∞`, projects to `py → horizon − tan(pitch)·focal`).
+ * `firstPersonRender.ts` uses this — not `cam.horizon` directly — to split
+ * sky from ground, so the establishing shot's steep tilt doesn't leave the
+ * grass starting at the wrong row.
+ */
+export function horizonPx(cam: FpCamera): number {
+  return cam.horizon - Math.tan(cam.pitch ?? 0) * cam.focal;
 }
 
 /**

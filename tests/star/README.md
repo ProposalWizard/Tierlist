@@ -19,6 +19,7 @@
     npx tsx tests/star/offside.mts
     npx tsx tests/star/firstPersonView.mts
     npx tsx tests/star/firstPersonDribble.mts
+    npx tsx tests/star/curveBoots.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -1242,3 +1243,23 @@ corridor; an adversarial input still terminates within `RUN_TIMEOUT`; and
 the outcome agrees across dt = 1/30, 1/60 and 1/120 for at least 95% of
 seeds, guarding against this codebase's clamped-dt rAF loops making
 fairness frame-rate-dependent.
+
+## `curveBoots.mts` — swipe-to-curve classification and stacking
+
+`npx tsx tests/star/curveBoots.mts`
+
+`curveDirFromSwipe`/`applyCurveSwipe` (`lib/star/canvasEngine.ts`) are what
+CanvasMatch's flight-phase pointer handlers call into for the curve boots
+(`Boot.curve`) feature — a swipe mid-flight bends (`spin`), lifts or dips
+(`vz`) a shot already struck. Confirms: a swipe classifies by its dominant
+axis only, a perfect diagonal ties toward horizontal rather than blending,
+and a zero-length swipe is refused; one swipe moves `spin`/`vz` by exactly
+one step in the swiped direction, and a horizontal swipe never touches `vz`
+(nor a vertical one `spin`); repeated same-direction swipes stack up to the
+cap, reported via `applyCurveSwipe`'s own return value once saturated;
+swiping the opposite way walks the correction back down rather than only
+ever climbing; and the cap bounds the swipes' OWN cumulative contribution
+(`curveSpinAdj`/`curveVzAdj`), tracked separately from the strike's natural
+launch spin, so a shot that already left the boot heavily curled can still
+take the full correction on top of it rather than being capped out before a
+single swipe.
