@@ -1408,7 +1408,7 @@ export default function StarDevPage() {
 
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
-  if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} onBack={handleBackToDashboard} />;
+  if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
 
   if (phase === "settings") {
     return (

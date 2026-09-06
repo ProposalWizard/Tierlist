@@ -439,7 +439,16 @@ export interface Scenario {
 }
 
 export type Outcome =
-  | "goal" | "rebound" | "delivered" | "saved" | "caught" | "tipped"
+  | "goal" | "rebound" | "delivered" | "saved" | "caught"
+  /**
+   * No longer producible here — a push-away (resolveKeeper's old "tipped"
+   * branch) returns null and stays live now, same as a parry. Kept in the
+   * union anyway: TrialPenalty.tsx's own (unrelated, simpler) save model
+   * still uses it, and the star-match-dev fork's own Outcome type is a
+   * separate copy that still produces it too — removing it here rippled
+   * into both for no real gain, since neither is what changed.
+   */
+  | "tipped"
   | "over" | "post" | "wide" | "blocked" | "out" | "short" | "offside"
   /** Dwelt too long and the closing defender took it off you. */
   | "tackled";
@@ -3968,8 +3977,14 @@ function classifySave(
   const dx = Math.abs(xCross - keeperX);
   const dz = zCross - KEEPER_CENTRE_Z;
 
-  // Right on the edge of his reach, or clawed away — fingertips.
-  if (margin < 0.18 || outcome === "tipped") {
+  // Right on the edge of his reach — fingertips. `outcome === "tipped"`
+  // used to catch some of these too, back when a push-away was its own
+  // distinct terminal outcome; it is not anymore (resolveKeeper's push-away
+  // branch returns null, same as a parry — see there), so the margin
+  // itself is widened to 0.24, matching that branch's own threshold, to
+  // keep the animation reading as a stretch rather than falling through to
+  // the plainer dive heuristics below for a genuine full-stretch save.
+  if (margin < 0.24) {
     return zCross > 1.6 ? "high" : "fingertip";
   }
   // Gathered cleanly and close to the body — a catch.
@@ -3999,8 +4014,9 @@ function keeperCovers(scenario: Scenario, xCross: number, zCross: number): { sav
   return { saved: d < r, margin: clamp((r - d) / r, 0, 1) };
 }
 
-// Resolve a keeper contact into catch / parry / tip. Returns a terminal Outcome
-// for catch/tip, or null when the ball is parried and stays live.
+// Resolve a keeper contact into catch / parry / tip. Returns a terminal
+// Outcome only for a genuine catch (or the third-save smother) — a parry
+// and a tip both stay live and return null; see each branch below.
 function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: number, speed: number, rng: () => number): Outcome | null {
   const k = scenario.keeper;
   k.saves += 1;
@@ -4048,34 +4064,44 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     return "caught";
   }
 
-  // Full-stretch, high or fierce → pushed away to safety, and it has to LOOK
-  // like safety.
+  // Full-stretch, high or fierce → pushed away, not held — and, same as a
+  // parry, still very much in play.
   //
-  // Two goes at this and both were wrong for the same reason. Behind the line
-  // and outside the post is where a tipped ball really goes, and from directly
-  // above that reads as the ball sitting in the side netting. Setting it down
-  // out in front of the goal instead read as the ball being TELEPORTED there,
-  // because that is what it was: the outcome is terminal, so wherever the ball
-  // is put is where it appears, instantly, with nothing in between.
+  // This used to be terminal: the ball got a push clear and the whole
+  // passage of play ended right there, on the theory that a fingertip save
+  // sends it to "safety". Measured directly, across 2,400 shots on target,
+  // this branch is not the exception a scrambled corner would be — it is
+  // 59% of EVERY save the keeper makes, so treating it as a dead ball meant
+  // the majority of saves in this game could never produce a rebound,
+  // however good the poacher standing right there was. Reported directly:
+  // a save cannoning off the keeper, still clearly in the frame, rolling on
+  // with nobody — not a poacher, not a defender — reacting to it at all,
+  // because nothing was left running once the outcome resolved.
   //
-  // So he does not put it anywhere. He hits it — away from his goal, from the
-  // point he reached it — and the result phase keeps stepping it until it
-  // stops. You watch it go, which is the whole of the difference.
+  // So it is wired exactly like a parry now: he hits it away, hard, and it
+  // stays loose — your poacher can chase it in, a defender who gets there
+  // first clears it, and only THAT settles the passage of play. The push
+  // itself is unchanged (still 9-16 m/s, still dies inside the rectangle
+  // rather than needing the touchline) — only whether anyone can react to
+  // it changed.
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     const side = ball.pos.x < CX ? -1 : 1;
     const away = normalize({ x: side * (0.7 + rng() * 0.5), y: 1 });
-    // A push to safety, not a clearance. At 9-16 m/s a tipped ball ran for the
-    // better part of forty metres and was off the screen long before it stopped
-    // — which is not what "you watch it go" was supposed to mean. This dies
-    // inside the rectangle, most of the time without needing the touchline.
     const sp = 6 + rng() * 6;
     ball.vel = { x: away.x * sp, y: away.y * sp };
     ball.vz = 1.4 + rng() * 2.2;
     ball.spin *= 0.2;
     ball.resting = false;
-    ball.settling = true;
-    k.done = true;
-    return "tipped";
+    markLanding(ball, scenario);
+    ball.loose = true;
+    // Same reasoning as the parry below: a ball the keeper has just put
+    // out of his own hands is not still "your shot" — leaving that flag on
+    // meant a team-mate stepped aside from exactly this kind of rebound.
+    ball.shot = false;
+    ball.contactCd = 0.28;
+    k.targetX = ball.pos.x;
+    k.scrambling = true;
+    return null;
   }
 
   // ── He smothers it ──
@@ -4454,7 +4480,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
     if (dist < KEEPER_BODY_R) {
       const res = resolveKeeper(ball, scenario, dist, KEEPER_BODY_R, speed, rng);
-      if (res) return res; // caught or tipped
+      if (res) return res; // a genuine catch — a push-away, tipped or parried, returns null and stays live
       // parried — ball is loose, keep simulating this tick
     }
   }
@@ -4744,7 +4770,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const reachable = !capped && nearestOurs < PASS_CONTROL_R;
     const settled = !reachable && (scenario.receiverDone || (scenario.receiverShots ?? 0) >= 2);
     const limit = settled ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
-    if ((ball.restT ?? 0) > limit) return "short";
+    if ((ball.restT ?? 0) > limit) {
+      // A rebound the keeper put down that nobody else ever touched again is
+      // still, narratively, HIS save — not a generic "scrambled clear". This
+      // was unreachable before a tip could stay live (resolveKeeper used to
+      // end the move outright the instant he touched it), so nothing here
+      // ever had to ask whose touch this dead ball actually was.
+      return ball.lastTouch === "keeper" ? "saved" : "short";
+    }
   }
   return null;
 }
