@@ -17,6 +17,8 @@
     npx tsx tests/star/money.mts
     npx tsx tests/star/conditions.mts
     npx tsx tests/star/offside.mts
+    npx tsx tests/star/firstPersonView.mts
+    npx tsx tests/star/firstPersonDribble.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -1195,3 +1197,48 @@ including the delivery failing):
 
 The byline cross falling is the same fix as the cutback rising: it was converting
 at 36% *because* the keeper never moved, not because anybody was finishing well.
+
+---
+
+## `firstPersonView.mts` — the first-person camera's projection, checked with no canvas at all
+
+`npx tsx tests/star/firstPersonView.mts`
+
+The one genuinely novel piece of math in the first-person dribbling mode
+(`lib/star/firstPersonView.ts`), split into its own file specifically so it
+could be tested this way — the same precedent `scenarioRender.mts` already
+set for `pxFromPitch`/`pitchFromPx`. Checks `project`/`unprojectAtDepth` are
+exact inverses across many points and all three coordinates, that a point on
+your own lane always lands on screen centre regardless of depth, that
+doubling a lateral offset doubles its screen offset (linearity) and doubling
+depth exactly halves `scale`, that a ground point's `py` decreases
+monotonically toward the horizon and never crosses it, and that both
+`project` (nearer than `NEAR`) and `groundAt` (above the horizon) refuse
+rather than dividing into a blown-up or negative-depth number.
+
+## `firstPersonDribble.mts` — is the duel actually fair, actually winnable, actually requiring a burst
+
+`npx tsx tests/star/firstPersonDribble.mts`
+
+Every assertion here is a claim about feel, not just "doesn't crash" —
+picked because if it were false, the mode would not play the way it's
+supposed to. Confirms: the same seed always produces the same outcome and
+separations; standing completely still loses every single time, a hard
+invariant (this caught a real tuning bug — `LUNGE_REACH` was originally set
+*larger* than `CLEAR_SEP`, which meant a frozen player could "win" a duel
+purely off the defender's own random guess, with no action at all; fixed by
+keeping `LUNGE_REACH` comfortably under `CLEAR_SEP` so separation can only
+ever come from what the player does); a scripted oracle that reads the
+telegraph and bursts away wins almost every time, and bursting *into* the
+telegraphed side loses almost every time; bursting blind before any
+telegraph shows is punished but not a guaranteed loss; steering alone,
+without ever bursting, essentially never gets you through; every telegraph
+stays live at least 0.45s of wall-clock time even at maximum defender
+strength (a zero-latency oracle can't reveal this — it reacts as fast at
+any difficulty, which is why difficulty here is entirely about how long the
+window stays open, not about the oracle's win rate); a stronger defence
+gives a measurably shorter window on average; the lane always clamps to the
+corridor; an adversarial input still terminates within `RUN_TIMEOUT`; and
+the outcome agrees across dt = 1/30, 1/60 and 1/120 for at least 95% of
+seeds, guarding against this codebase's clamped-dt rAF loops making
+fairness frame-rate-dependent.
