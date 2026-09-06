@@ -7,6 +7,7 @@ import {
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
+  curveDirFromSwipe, applyCurveSwipe,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner,
 } from "@/lib/star/canvasEngine";
@@ -64,6 +65,9 @@ const MATCH_DURATION = 90;
 
 interface Props {
   skills?: KickSkills;
+  /** Curve boots equipped, with matches left — see Boot.curve. Lets you
+   *  swipe the screen during flight to bend/lift/dip a shot already struck. */
+  canCurve?: boolean;
   /**
    * The minute you come on. 0 when you start. Anything else means the match has
    * already been going on without you, and the score you inherit is one your
@@ -133,6 +137,15 @@ const MIN_PULL = 0.008;
  * read as a tap, which is the other order entirely.
  */
 const CAPTAIN_DRAG_MIN = 3.0;
+
+/**
+ * The shortest swipe, in screen pixels, that counts as a curve-boot
+ * correction rather than an idle finger resting on the glass while the shot
+ * flies. Pixels rather than a pitch distance or a fraction of canvas height
+ * — same reasoning as CAPTAIN_DRAG_MIN, just for a gesture read in screen
+ * space instead of world space.
+ */
+const CURVE_SWIPE_MIN_PX = 16;
 
 // --- Knowitball match identity: "night match under floodlights" ---
 // Deep cool pitch greens + floodlight wash, near-black glass chrome, gold accent.
@@ -237,7 +250,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
 
   // ── Who else is actually out there ──
   //
@@ -504,6 +517,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
   // Scenario machinery entirely: no ball flight, no keeper, no builders.
   const dribbleRef = useRef<DribbleState | null>(null);
   const flickStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Curve boots: a swipe captured in screen pixels (not pitch metres — the
+  // ball is in flight, moving through 3D space the aim gesture never has to
+  // reason about, so "which way did the thumb move on the glass" is both
+  // simpler and the actually-correct read of the gesture).
+  const curveSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   /** Is this dead ball yours? With no duties supplied (the sandbox), everything is. */
   const mayTake = (kind: ScenarioKind) => {
@@ -3033,6 +3051,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
+    curveSwipeStartRef.current = null;
     // Orders belong to the situation they were given in. A fresh scenario is a
     // fresh set of team-mates in fresh positions, so anything the captain said
     // about the last one is meaningless — and carrying a stale Runner reference
@@ -3095,6 +3114,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
+    if (phaseRef.current === "flight") {
+      if (!canCurve) return;
+      curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
+      try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
     if (phaseRef.current !== "aim") return;
     const p = pitchFromPointer(e.clientX, e.clientY);
     const b = scenarioRef.current.ball;
@@ -3152,6 +3177,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, kee
       const dx = to.x - from.x, dy = to.y - from.y;
       if (Math.hypot(dx, dy) < 1.2) return;
       flick(d, dx, dy);
+      return;
+    }
+    if (phaseRef.current === "flight") {
+      const from = curveSwipeStartRef.current;
+      curveSwipeStartRef.current = null;
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (!from || !canCurve || !ballRef.current) return;
+      const dx = e.clientX - from.x, dy = e.clientY - from.y;
+      if (Math.hypot(dx, dy) < CURVE_SWIPE_MIN_PX) return;
+      const dir = curveDirFromSwipe(dx, dy);
+      if (dir) applyCurveSwipe(ballRef.current, dir);
       return;
     }
     // ── The captain's gesture, settled ──

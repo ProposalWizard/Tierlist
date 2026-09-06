@@ -89,7 +89,12 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                       selectedBoot?.id === b.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white hover:bg-gray-600"
                     }`}
                   >
-                    <div className="text-left pl-3">{b.name}</div>
+                    <div className="text-left pl-3 flex items-center gap-1">
+                      {b.name}
+                      {b.curve && (
+                        <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
+                      )}
+                    </div>
                     <div>{b.pace.toFixed(1)}</div>
                     <div>{b.power.toFixed(1)}</div>
                     <div>{b.technique.toFixed(1)}</div>
@@ -99,9 +104,19 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 ))}
               </div>
             </div>
+            {selectedBoot?.curve && (
+              <div className="bg-sky-900/40 border border-sky-500/60 rounded-lg p-2.5 mb-3 text-[11px] text-sky-100 text-center">
+                Swipe the screen while a shot is in the air to bend, lift or dip it — each swipe stacks.
+              </div>
+            )}
             <div className="bg-gray-700 rounded-lg p-3 border border-gray-600 text-center">
               <div className="text-xs text-white/85">Current boot</div>
-              <div className="font-black text-white">{career.currentBoot.name} — {career.currentBoot.matches} matches left</div>
+              <div className="font-black text-white">
+                {career.currentBoot.name} — {career.currentBoot.matches} matches left
+                {career.currentBoot.curve && career.currentBoot.matches > 0 && (
+                  <span className="ml-1.5 text-[9px] align-middle px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
+                )}
+              </div>
             </div>
             <button
               disabled={!selectedBoot || career.money < selectedBoot.price}

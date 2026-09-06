@@ -23,6 +23,10 @@ export const BOOTS_CATALOGUE_DEFAULT: Boot[] = [
   { id: "control", name: "NS-Control", pace: 5, power: 5, technique: 10, matches: 5, price: 5 },
   { id: "speed", name: "NS-Flash", pace: 10, power: 5, technique: 10, matches: 5, price: 10 },
   { id: "power", name: "NS-Thunder", pace: 5, power: 10, technique: 10, matches: 5, price: 10 },
+  // Not a stat boost — a whole extra ability. Priced against NS-Elite/NS-Pro
+  // (similar matches, similar power/technique) rather than against the pure
+  // stat-per-star curve the rest of the catalogue follows.
+  { id: "curl", name: "NS-Swerve", pace: 5, power: 5, technique: 10, matches: 6, price: 20, curve: true },
   { id: "elite", name: "NS-Elite", pace: 10, power: 10, technique: 10, matches: 7, price: 15 },
   { id: "pro", name: "NS-Pro", pace: 15, power: 15, technique: 10, matches: 7, price: 15 },
   { id: "legend", name: "NS-Legend", pace: 15, power: 15, technique: 15, matches: 7, price: 25 },

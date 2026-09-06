@@ -127,6 +127,13 @@ export interface Ball {
    */
   lastTouch?: "attack" | "defence" | "keeper" | "frame";
   deflected?: "keeper" | "frame";
+  /**
+   * Curve boots' mid-flight swipe correction (see applyCurveSwipe), tracked
+   * separately from the strike's own natural `spin`/`vz` so the cap on how
+   * much a swipe can add doesn't depend on how curly the strike already was.
+   */
+  curveSpinAdj?: number;
+  curveVzAdj?: number;
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -3099,6 +3106,66 @@ export function curlRange(technique: number): number {
 /** The same, for how much lift and dip you can put on it. */
 export function loftRange(technique: number): number {
   return 0.55 + clamp(technique, 0, 100) / 100 * 0.45;
+}
+
+/**
+ * Curve boots: "sometimes you kick the ball and realise it's going too high
+ * or too left or right... the player should be able to swipe the screen to
+ * curve the ball towards that direction... with each additional swipe
+ * stacking the curve." Requested as a boot-gated ability, not a universal
+ * mechanic — see Boot.curve.
+ *
+ * `spin` is a live, continuously-re-read field (the Magnus term in
+ * stepBallRaw reads it every substep), so bending a shot already in flight
+ * needs no new physics — nudging it here takes effect on the very next
+ * substep. `vz` only ever mattered at launch and at bounce, so an up/down
+ * swipe is a one-time vertical impulse rather than a continuous force.
+ *
+ * A full strike's own launch spin already reaches roughly ±1.85 (see
+ * `launch`'s `spin = contact.cx * curlRange(tech) * 1.85 * power`), so
+ * CURVE_SPIN_STEP is pitched as a genuinely noticeable correction — not a
+ * fraction that gets lost against the strike's own curl — while
+ * CURVE_SPIN_MAX/CURVE_VZ_MAX cap the swipes' OWN contribution (tracked in
+ * curveSpinAdj/curveVzAdj, separately from however curly or high the strike
+ * already was) so a flurry of swipes corrects a mistake without letting the
+ * ball be bent at an absurd, physics-breaking angle.
+ */
+export const CURVE_SPIN_STEP = 0.45;
+export const CURVE_SPIN_MAX = 2.2;
+export const CURVE_VZ_STEP = 1.4;
+export const CURVE_VZ_MAX = 4.5;
+
+export type CurveDir = "left" | "right" | "up" | "down";
+
+/** Classifies a screen swipe by its dominant axis — left/right/up/down only,
+ *  never a diagonal blend, matching how the feature was asked for. */
+export function curveDirFromSwipe(dx: number, dy: number): CurveDir | null {
+  if (dx === 0 && dy === 0) return null;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "right" : "left";
+  return dy > 0 ? "down" : "up";
+}
+
+/**
+ * Applies one stacked swipe correction to a ball already in flight. Returns
+ * false (and changes nothing) once that axis's cap is reached, so mashing
+ * the same direction can't be used to detect "maxed out" by its silence —
+ * callers that care can check the return value.
+ */
+export function applyCurveSwipe(ball: Ball, dir: CurveDir): boolean {
+  if (dir === "left" || dir === "right") {
+    const cur = ball.curveSpinAdj ?? 0;
+    if (Math.abs(cur) >= CURVE_SPIN_MAX) return false;
+    const next = clamp(cur + (dir === "right" ? CURVE_SPIN_STEP : -CURVE_SPIN_STEP), -CURVE_SPIN_MAX, CURVE_SPIN_MAX);
+    ball.spin += next - cur;
+    ball.curveSpinAdj = next;
+    return true;
+  }
+  const cur = ball.curveVzAdj ?? 0;
+  if (Math.abs(cur) >= CURVE_VZ_MAX) return false;
+  const next = clamp(cur + (dir === "up" ? CURVE_VZ_STEP : -CURVE_VZ_STEP), -CURVE_VZ_MAX, CURVE_VZ_MAX);
+  ball.vz += next - cur;
+  ball.curveVzAdj = next;
+  return true;
 }
 
 /**

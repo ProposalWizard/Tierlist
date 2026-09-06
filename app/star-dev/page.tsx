@@ -1231,6 +1231,7 @@ export default function StarDevPage() {
     const bootMatchesLeft = career.currentBoot.matches > 0;
     const effectivePower = Math.min(100, career.skills.power + (bootMatchesLeft ? career.currentBoot.power : 0));
     const effectiveTechnique = Math.min(100, career.skills.technique + (bootMatchesLeft ? career.currentBoot.technique : 0));
+    const canCurve = bootMatchesLeft && !!career.currentBoot.curve;
     return (
       <div
         className="min-h-screen bg-gray-950 text-white py-4 px-3"
@@ -1239,6 +1240,7 @@ export default function StarDevPage() {
         <div className="max-w-sm mx-auto">
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
+            canCurve={canCurve}
             keeperStrength={oppStrength}
             position={career.playAs ?? career.player.position}
             teamRelationship={career.relationships.team}
