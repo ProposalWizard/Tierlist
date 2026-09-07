@@ -46,29 +46,55 @@ function scoped(base: string, scope: string): string {
 }
 
 /**
- * A save made before this fix shipped sits under the old flat key, with no
- * account attached to it at all. The first scope (real account, or
- * ANON_SCOPE) to ask for its data claims that flat save as its own and the
- * flat key is deleted immediately afterward — so it can only ever be
- * claimed once, rather than a second account on the same device inheriting
- * the first account's pre-fix history the same way this whole bug started.
- * Whoever is actually sitting at the device when it first updates is, in
- * practice, almost always its one real owner.
+ * Copies a career (plus its saved-at/phase, if present) from one set of keys
+ * to `scope`'s own — but only if `scope` doesn't already have a save of its
+ * own, and only once: the source keys are deleted immediately afterward, so
+ * a second scope reading later finds nothing left to also inherit. Shared by
+ * claimLegacySave (a pre-scoping flat save) and claimAnonSave (a save made
+ * signed out, before the account reading it now ever played on this device)
+ * — same shape, different source keys.
  */
-function claimLegacySave(scope: string): void {
+function claimSave(scope: string, fromCareerKey: string, fromSavedAtKey: string, fromPhaseKey: string): void {
   try {
     if (localStorage.getItem(scoped(KEY, scope)) !== null) return; // already has its own
-    const legacyCareer = localStorage.getItem(KEY);
-    if (legacyCareer === null) return;
-    localStorage.setItem(scoped(KEY, scope), legacyCareer);
-    const legacySavedAt = localStorage.getItem(SAVED_AT_KEY);
-    if (legacySavedAt !== null) localStorage.setItem(scoped(SAVED_AT_KEY, scope), legacySavedAt);
-    const legacyPhase = localStorage.getItem(PHASE_KEY);
-    if (legacyPhase !== null) localStorage.setItem(scoped(PHASE_KEY, scope), legacyPhase);
-    localStorage.removeItem(KEY);
-    localStorage.removeItem(SAVED_AT_KEY);
-    localStorage.removeItem(PHASE_KEY);
+    const career = localStorage.getItem(fromCareerKey);
+    if (career === null) return;
+    localStorage.setItem(scoped(KEY, scope), career);
+    const savedAt = localStorage.getItem(fromSavedAtKey);
+    if (savedAt !== null) localStorage.setItem(scoped(SAVED_AT_KEY, scope), savedAt);
+    const phase = localStorage.getItem(fromPhaseKey);
+    if (phase !== null) localStorage.setItem(scoped(PHASE_KEY, scope), phase);
+    localStorage.removeItem(fromCareerKey);
+    localStorage.removeItem(fromSavedAtKey);
+    localStorage.removeItem(fromPhaseKey);
   } catch { /* ignore */ }
+}
+
+/**
+ * A save made before this fix shipped sits under the old flat key, with no
+ * account attached to it at all. The first scope (real account, or
+ * ANON_SCOPE) to ask for its data claims that flat save as its own — so
+ * rather than a second account on the same device inheriting the first
+ * account's pre-fix history the same way this whole bug started. Whoever is
+ * actually sitting at the device when it first updates is, in practice,
+ * almost always its one real owner.
+ */
+function claimLegacySave(scope: string): void {
+  claimSave(scope, KEY, SAVED_AT_KEY, PHASE_KEY);
+}
+
+/**
+ * A career played signed out, on a device that goes on to sign in for the
+ * first time — claimed into that account rather than left behind under
+ * ANON_SCOPE, a scope real play will never read again now that a career
+ * requires an account (see app/star-dev/page.tsx's sign-in gate). Without
+ * this, anyone who played during the window between that scoping fix
+ * shipping and sign-in becoming required would have found their progress
+ * gone the moment they were asked to sign in.
+ */
+function claimAnonSave(scope: string): void {
+  if (scope === ANON_SCOPE) return;
+  claimSave(scope, scoped(KEY, ANON_SCOPE), scoped(SAVED_AT_KEY, ANON_SCOPE), scoped(PHASE_KEY, ANON_SCOPE));
 }
 
 /**
@@ -159,6 +185,7 @@ export function loadCareerSavedAt(scope: string): number {
 
 export function loadCareer(scope: string): CareerState | null {
   claimLegacySave(scope);
+  claimAnonSave(scope);
   try {
     const raw = localStorage.getItem(scoped(KEY, scope));
     if (!raw) return null;

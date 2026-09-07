@@ -204,6 +204,28 @@ function playWholeSeason(start: CareerState): CareerState {
   check(loadCareer("user-bob") === null, "a second account on the same device does NOT also inherit the already-claimed legacy save");
 }
 
+// ── A career played signed out is claimed by the first account that later
+// signs in on that device — not stranded under a scope real play will never
+// read again now that /star-dev requires an account ────────────────────────
+{
+  const store4 = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store4.get(k) ?? null,
+    setItem: (k: string, v: string) => { store4.set(k, String(v)); },
+    removeItem: (k: string) => { store4.delete(k); },
+    clear: () => store4.clear(),
+  };
+
+  const guest = makeInitialCareer({ ...PLAYER, firstName: "Guest" }, CLUBS);
+  saveCareer(guest, ANON_SCOPE);
+  saveStarPhase("dilemma", ANON_SCOPE);
+
+  check(loadCareer("user-alice")?.player.firstName === "Guest", "signing in for the first time claims a career played signed out on this device");
+  check(loadCareer(ANON_SCOPE) === null, "the anonymous slot is empty once claimed");
+  check(loadStarPhase("user-alice")?.phase === "dilemma", "its pending phase comes with it too");
+  check(loadCareer("user-bob") === null, "a second account signing in later does NOT also inherit the already-claimed guest career");
+}
+
 // ── What a refresh has to carry ─────────────────────────────────────────────
 //
 // The career itself has always been saved. The PHASE was React state only, and
