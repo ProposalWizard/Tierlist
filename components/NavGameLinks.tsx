@@ -7,7 +7,7 @@ const LIVE_GAMES = [
   { name: "Tic Tac Toe", href: "/tic-tac-toe" },
   { name: "Ten-A-Ball", href: "/tenable" },
   { name: "Rankings", href: "/tierlists" },
-  { name: "Road to the Ballon d'Or", href: "/star-dev", beta: true },
+  { name: "Road to Ballon d'Or", href: "/star-dev", beta: true },
 ];
 
 /** Same amber pill used everywhere else a live-but-unfinished game is marked
