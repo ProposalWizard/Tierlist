@@ -54,22 +54,33 @@ const TIE_GAP_MS = 950;  // pause after a tie completes, before the next one sta
  * each side of every tie once it's drawn, with the tie that has YOUR club in
  * it glowing gold.
  *
- * Two deliberate departures from the reference, both for reasons already
- * settled elsewhere in this codebase:
- *  - No real club crest images. ClubCrest.tsx's own header is explicit about
- *    why: "There are no crest files, and a wrong crest is worse than none."
- *    `TeamBadge` below is the same device that component already uses
- *    everywhere a club needs to read as more than a name — the club's own
- *    kit colour with its initials on it — just laid out for a horizontal
- *    row instead of ClubCrest's badge-over-name stack (which would have
- *    doubled the club name up: once tiny under the badge, once again next
- *    to it).
- *  - No photographic trophy artwork. Every other big moment in this game
- *    (the Ballon d'Or ceremony, the pro-contract banner) builds its hero
- *    art the same way — CSS gradients, an emoji at a large size with a
- *    glow, and a scatter of small coloured flecks — rather than a bitmap
- *    asset, so this reuses that same technique instead of introducing the
- *    one screen in the game that looks like a rendered photo.
+ * One deliberate departure from the reference, for a reason already settled
+ * elsewhere in this codebase: no real club crest images. ClubCrest.tsx's own
+ * header is explicit about why: "There are no crest files, and a wrong crest
+ * is worse than none." `TeamBadge` below is the same device that component
+ * already uses everywhere a club needs to read as more than a name — the
+ * club's own kit colour with its initials on it — just laid out for a
+ * horizontal row instead of ClubCrest's badge-over-name stack (which would
+ * have doubled the club name up: once tiny under the badge, once again next
+ * to it). Unchanged by everything below — better tools don't make a wrong
+ * crest less wrong.
+ *
+ * ── Real photography, via the Adobe connector ──
+ *
+ * The first pass of this redesign built the trophy and the confetti scatter
+ * out of an emoji and CSS-drawn flecks — deliberately, matching how every
+ * other big moment in this game (the Ballon d'Or ceremony, the pro-contract
+ * banner) builds its hero art, since this codebase had no way to produce
+ * real imagery. With the Adobe Creative Cloud connector now available for
+ * this session, that's no longer true here: `public/star/cup-draw/` holds
+ * three licensed Adobe Stock photos — trophy, gold confetti, stadium
+ * floodlights — found and processed through the connector (the trophy
+ * tightly cropped to its subject via Photoshop API's subject-aware crop).
+ * All three were deliberately picked for a TRUE BLACK background rather
+ * than cut out to alpha transparency, so they composite here with plain CSS
+ * `mix-blend-mode: screen` (screen(black, x) = x — the black contributes
+ * nothing, only the bright subject shows through) instead of needing a real
+ * masking pipeline. `ConfettiOverlay`/`StadiumGlow` below are that trick.
  */
 export default function CupDrawReveal({ competition, round, yourClub, onContinue }: Props) {
   const [started, setStarted] = useState(false);
@@ -124,7 +135,8 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
           className="relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]"
           style={{ background: "linear-gradient(180deg, #131b2e 0%, #0a0f1c 55%, #070a12 100%)" }}
         >
-          <Flecks count={started ? 10 : 0} />
+          <StadiumGlow />
+          {started && <ConfettiOverlay opacity={0.5} />}
 
           {/* ── Header ── */}
           <div className="relative z-10 text-center pt-5 pb-3 px-4">
@@ -143,18 +155,22 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
             {!started && (
               <div className="flex flex-col items-center gap-4 py-6">
                 <div
-                  className="relative flex flex-col items-center justify-center rounded-xl w-full py-8"
+                  className="relative flex flex-col items-center justify-center overflow-hidden rounded-xl w-full py-8"
                   style={{
                     background: "radial-gradient(65% 90% at 50% 15%, rgba(56,132,255,0.28), transparent 70%)",
                   }}
                 >
-                  <Flecks count={6} />
-                  <div
-                    className="relative text-6xl"
-                    style={{ filter: "drop-shadow(0 0 26px rgba(251,191,36,0.5))" }}
-                  >
-                    🏆
-                  </div>
+                  <ConfettiOverlay opacity={0.65} />
+                  <img
+                    src={TROPHY_SRC}
+                    alt=""
+                    aria-hidden
+                    className="relative h-32 w-auto"
+                    style={{
+                      mixBlendMode: "screen",
+                      filter: "drop-shadow(0 0 26px rgba(251,191,36,0.5)) drop-shadow(0 12px 16px rgba(0,0,0,0.5))",
+                    }}
+                  />
                   <div className="relative -mt-1 text-3xl rotate-[-8deg]" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.5))" }}>
                     🎟️
                   </div>
@@ -260,13 +276,16 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
           60% { opacity: 1; transform: scale(1.06); }
           100% { opacity: 1; transform: scale(1); }
         }
-        @keyframes cup-fleck-drift {
-          0%, 100% { transform: translateY(0) rotate(var(--fleck-rot)); opacity: 0.55; }
-          50% { transform: translateY(-6px) rotate(calc(var(--fleck-rot) + 12deg)); opacity: 0.9; }
+        .cup-confetti-pulse {
+          animation: cup-confetti-shimmer 3.2s ease-in-out infinite;
+        }
+        @keyframes cup-confetti-shimmer {
+          0%, 100% { filter: brightness(1); }
+          50% { filter: brightness(1.35); }
         }
         @media (prefers-reduced-motion: reduce) {
           @keyframes draw-pop { from { opacity: 1; } to { opacity: 1; } }
-          @keyframes cup-fleck-drift { from { opacity: 0.7; } to { opacity: 0.7; } }
+          .cup-confetti-pulse { animation: none; }
         }
       `}</style>
     </div>
@@ -293,40 +312,39 @@ function TeamBadge({ club, kit }: { club: string; kit: Kit }) {
   );
 }
 
-const FLECK_COLORS = ["#F0C040", "#60A5FA", "#F472B6", "#4ADE80", "#FBBF24"];
+const TROPHY_SRC = "/star/cup-draw/trophy.webp";
+const CONFETTI_SRC = "/star/cup-draw/confetti.webp";
+const STADIUM_SRC = "/star/cup-draw/stadium-lights.webp";
 
-/** A quiet scatter of coloured flecks — the same "static confetti" device
- *  TrialReward.tsx's CongratulationsBanner uses for a moment that is
- *  festive but not the full falling-confetti burst BallonDor.tsx fires for
- *  an actual trophy win. A draw is a nice moment, not THE moment. Purely
- *  decorative and positioned deterministically (no rng) so server and
- *  client render the same markup. */
-function Flecks({ count }: { count: number }) {
-  if (count <= 0) return null;
-  const pieces = Array.from({ length: count }, (_, i) => {
-    const left = `${(i * 37 + 8) % 94}%`;
-    const top = `${(i * 53 + 12) % 88}%`;
-    const rot = (i * 67) % 360;
-    const size = 5 + (i % 3) * 2;
-    return { left, top, rot, size, color: FLECK_COLORS[i % FLECK_COLORS.length], delay: `${(i * 0.23) % 2}s` };
-  });
+/** Real gold confetti/glitter, shot on true black — see the file header on
+ *  why `mix-blend-mode: screen` is enough to drop that black without any
+ *  cutout. A gentle brightness pulse stands in for the old per-fleck drift
+ *  animation (a static photo has no individual pieces to animate). */
+function ConfettiOverlay({ opacity = 0.55 }: { opacity?: number }) {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {pieces.map((p, i) => (
-        <span
-          key={i}
-          className="absolute block rounded-[1px]"
-          style={{
-            left: p.left, top: p.top, width: p.size, height: p.size * 1.8,
-            background: p.color,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ["--fleck-rot" as any]: `${p.rot}deg`,
-            transform: `rotate(${p.rot}deg)`,
-            animation: `cup-fleck-drift ${2.4 + (i % 4) * 0.4}s ease-in-out ${p.delay} infinite`,
-          }}
-        />
-      ))}
-    </div>
+    <img
+      src={CONFETTI_SRC}
+      alt=""
+      aria-hidden
+      className="cup-confetti-pulse pointer-events-none absolute inset-0 h-full w-full object-cover"
+      style={{ mixBlendMode: "screen", opacity }}
+    />
+  );
+}
+
+/** A real stadium-floodlight photo, screen-blended in at low, constant
+ *  opacity as ambience behind the whole card — the same true-black trick as
+ *  ConfettiOverlay, just static and much fainter. Replaces the flat radial
+ *  glow that used to be the only thing giving the card any depth. */
+function StadiumGlow() {
+  return (
+    <img
+      src={STADIUM_SRC}
+      alt=""
+      aria-hidden
+      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      style={{ mixBlendMode: "screen", opacity: 0.32, objectPosition: "85% 15%" }}
+    />
   );
 }
 
