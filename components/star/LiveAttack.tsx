@@ -235,7 +235,7 @@ export default function LiveAttack({
         : (ballRef.current?.pos ?? sc.ball);
       const positions = fieldPositionsAt(s);
       const players: ScenarioRenderPlayer[] = [
-        { x: sc.player.x, y: sc.player.y, side: "you" },
+        { x: positions.player.x, y: positions.player.y, side: "you" },
         ...positions.runners.map(p => ({ x: p.x, y: p.y, side: "teammate" as const })),
         ...sc.teammates.map(p => ({ x: p.x, y: p.y, side: "teammate" as const })),
         ...positions.defenders.map(p => ({ x: p.x, y: p.y, side: "opponent" as const })),
