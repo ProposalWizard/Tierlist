@@ -3,6 +3,10 @@ import { mulberry32 } from "./season";
 import { clubNameSeed } from "./squadData";
 import { loadLineup } from "./lineupStore";
 import { clubExpectation } from "./expectations";
+import {
+  rollReplacementManager, managerRng, clubAmbition,
+  TIER_REPUTATION_RANGE, type PoolTier,
+} from "./managerPool";
 
 /**
  * THE MANAGER
@@ -56,6 +60,13 @@ export interface Manager {
    * to fix things now, not to be given time to learn the job.
    */
   reputation: number;
+  /**
+   * Set only when this name was drawn from managerPool.ts's real-world list
+   * (undefined for a fictional or Lineups-typed name). Lets a sacking hand
+   * him back to the RIGHT bucket in `CareerState.availableManagers` — see
+   * `hireReplacementManager`.
+   */
+  poolTier?: PoolTier;
 }
 
 const STYLE_BLURB: Record<ManagerStyle, string> = {
@@ -136,6 +147,53 @@ export function makeManager(career: CareerState, club: string, season: number): 
 
 export function styleBlurb(style: ManagerStyle): string {
   return STYLE_BLURB[style];
+}
+
+export interface ReplacementHire {
+  manager: Manager;
+  /** The pool with this hire (if real) removed — save back onto the career. */
+  availableManagers: string[];
+}
+
+/**
+ * The man who replaces a sacked manager — unlike `makeManager` (used only
+ * for the very first appointment at career start), this ALWAYS rolls against
+ * `managerPool.ts`'s real, currently-unemployed names first, and never reads
+ * the Lineups sheet: that field just names whoever the admin typed in as
+ * this club's current manager, which is exactly who was just sacked.
+ * Falling back to it here would have him "replace himself."
+ */
+export function hireReplacementManager(
+  career: CareerState, club: string, season: number, availableManagers: string[],
+): ReplacementHire {
+  const rng = managerRng(career, club, season);
+  const ambition = clubAmbition(career, club);
+  const pick = rollReplacementManager(availableManagers, club, ambition, rng);
+
+  const styleRoll = rng();
+  const style: ManagerStyle = styleRoll < 0.38 ? "trusting" : styleRoll < 0.72 ? "demanding" : "rotational";
+
+  if (pick) {
+    const range = TIER_REPUTATION_RANGE[pick.tier];
+    const reputation = Math.round(range.min + rng() * (range.max - range.min));
+    return {
+      manager: {
+        name: pick.name, style, since: season, arrival: STYLE_BLURB[style], reputation,
+        poolTier: pick.tier,
+      },
+      availableManagers: availableManagers.filter(n => n !== pick.name),
+    };
+  }
+
+  // Fictional — the same generated-name device makeManager uses, but never
+  // the Lineups-typed name (see header comment above).
+  const generatedName = `${FIRST[Math.floor(rng() * FIRST.length)]} ${LAST[Math.floor(rng() * LAST.length)]}`;
+  const range = REPUTATION_RANGE[ambition];
+  const reputation = Math.round(range.min + rng() * (range.max - range.min));
+  return {
+    manager: { name: generatedName, style, since: season, arrival: STYLE_BLURB[style], reputation },
+    availableManagers,
+  };
 }
 
 /**

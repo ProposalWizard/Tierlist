@@ -14,6 +14,7 @@
     npx tsx tests/star/attributes.mts
     npx tsx tests/star/recognition.mts
     npx tsx tests/star/club.mts
+    npx tsx tests/star/managerPool.mts
     npx tsx tests/star/money.mts
     npx tsx tests/star/conditions.mts
     npx tsx tests/star/offside.mts
@@ -936,6 +937,35 @@ match you had just played.
   bulletin over a hat-trick and a rout. Every question is the same decision
   underneath — back yourself, back the team, or give them nothing — and the file
   checks that shape holds for every story rather than checking the wording.
+
+---
+
+**managerPool** — who actually replaces a sacked manager.
+
+Before this, the incoming man after a sacking was either a fully fictional
+generated name, or — a real bug — whichever real manager happens to be typed
+into that club's own Lineups sheet, which meant a sacked real manager could
+"replace himself." Requested directly: a real, tiered list of currently
+unemployed managers (Dream Appointments locked to one club each, then three
+tiers by how big a coup landing one would be), with the rule that a manager
+who gets sacked goes back into that list — he can turn up at your club again
+later, in a long enough save.
+
+- **A Dream Appointment never appears for the wrong club, over thousands of
+  rolls** — Wenger reachable at Arsenal, never once at Chelsea in the same
+  run. **Dream tier is never rolled for a job that doesn't need one either**
+  — a Survival-ambition job at a Dream-locked club still never lands one.
+- **No name is tagged into more than one tier**, and every name in the source
+  lists round-trips through `managerTier()` correctly.
+- **Reputation ranges land where `reputationTier()` would actually call
+  them** — a Dream/Level-1 hire reads as Elite or close to it, a Level-3 hire
+  never reads as Elite.
+- **The pool shrinks by exactly one name on a hire and is restored to full
+  size after a hire-then-sack cycle** — the actual give-back mechanic
+  `careerFlow.ts` runs on every sacking.
+- **An empty pool still produces a hire** (the fictional fallback, unchanged
+  from before this list existed) rather than crashing or returning nobody.
+- **Determinism** — same career/club/season/pool in, same manager out.
 
 ---
 

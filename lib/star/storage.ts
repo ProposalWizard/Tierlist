@@ -1,6 +1,7 @@
 import type { CareerState, StarPhase } from "./types";
 import type { EuroStanding } from "./euro";
 import { makeManager } from "./manager";
+import { allPoolManagers } from "./managerPool";
 import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { catchUpAwards } from "./potm";
@@ -225,6 +226,11 @@ function backfill(c: CareerState): CareerState {
   // would otherwise silently corrupt into NaN from here on).
   if (out.energy === undefined) out.energy = 100;
   if (out.injury === undefined) out.injury = null;
+  // A career saved before the real-manager pool existed has no record of who
+  // it's already "used" — the current manager (if any) predates the pool
+  // too and was never drawn from it, so the full roster is honestly correct
+  // here, not a guess.
+  if (!out.availableManagers) out.availableManagers = allPoolManagers();
   // A career saved before KIB Cans came back has no shelf of them to have
   // been buying — zero, not the two-basic starter grant a brand new career
   // gets, since this career is well past its trial.

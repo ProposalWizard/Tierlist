@@ -681,9 +681,20 @@ export interface CareerState {
     name: string; style: "trusting" | "demanding" | "rotational"; since: number; arrival: string;
     /** 0-100, his own standing as a free agent — see manager.ts's reputationTier. */
     reputation: number;
+    /** Set only for a real name drawn from managerPool.ts — see manager.ts's Manager type. */
+    poolTier?: "dream" | 1 | 2 | 3;
   };
   /** What happened in the dugout at the end of last season. */
   managerNews?: string | null;
+  /**
+   * Real-world managers (managerPool.ts) currently without a club, from
+   * YOUR club's point of view — every named manager except whoever is
+   * presently in your own dugout. Shrinks by one name when he's hired,
+   * grows back by one the moment he's sacked. No other club in the league
+   * is simulated well enough to hire or fire anyone, so this is the only
+   * "unemployed" that needs tracking.
+   */
+  availableManagers?: string[];
   /** Sponsor objectives settled at the last rollover, for the dashboard. */
   sponsorNews?: string[];
   /**
