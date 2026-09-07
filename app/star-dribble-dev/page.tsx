@@ -42,6 +42,13 @@ export default function StarDribbleDevPage() {
   const [useFixedSeed, setUseFixedSeed] = useState(false);
   const [seed, setSeed] = useState(1);
 
+  // Chase-cam tuning (duel mode only) — see FirstPersonDribble.tsx's own
+  // header on why the camera moved off eyes-level, and its DEFAULT_CHASE_*
+  // constants for what these default to.
+  const [chaseEye, setChaseEye] = useState(4.5);
+  const [chasePitchDeg, setChasePitchDeg] = useState(22);
+  const [chaseOffset, setChaseOffset] = useState(4.5);
+
   if (state === "loading") {
     return <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-sm">Loading…</div>;
   }
@@ -58,7 +65,7 @@ export default function StarDribbleDevPage() {
 
   // Remounts the active mode's component whenever a slider changes, so a
   // fresh run always reflects the current settings.
-  const runKey = `${mode}-${pace}-${oppStrength}-${count}-${assist}-${useFixedSeed ? seed : "random"}`;
+  const runKey = `${mode}-${pace}-${oppStrength}-${count}-${assist}-${useFixedSeed ? seed : "random"}-${chaseEye}-${chasePitchDeg}-${chaseOffset}`;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -87,6 +94,9 @@ export default function StarDribbleDevPage() {
               defenders={count}
               assist={assist}
               seed={useFixedSeed ? seed : undefined}
+              chaseEye={chaseEye}
+              chasePitchDeg={chasePitchDeg}
+              chaseOffset={chaseOffset}
             />
           ) : (
             <FirstPersonRoam
@@ -128,10 +138,19 @@ export default function StarDribbleDevPage() {
           </div>
 
           {mode === "duel" && (
-            <label className="flex items-center justify-between text-xs font-bold text-white/70">
-              Open-side assist glow
-              <input type="checkbox" checked={assist} onChange={e => setAssist(e.target.checked)} />
-            </label>
+            <>
+              <label className="flex items-center justify-between text-xs font-bold text-white/70">
+                Open-side assist glow
+                <input type="checkbox" checked={assist} onChange={e => setAssist(e.target.checked)} />
+              </label>
+
+              <div className="pt-2 border-t border-white/10 space-y-3">
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Chase-cam</div>
+                <Slider label="Height (m)" value={chaseEye} onChange={setChaseEye} min={2} max={10} step={0.25} />
+                <Slider label="Tilt down (°)" value={chasePitchDeg} onChange={setChasePitchDeg} min={0} max={60} step={1} />
+                <Slider label="Distance behind (m)" value={chaseOffset} onChange={setChaseOffset} min={1} max={12} step={0.25} />
+              </div>
+            </>
           )}
 
           <label className="flex items-center justify-between text-xs font-bold text-white/70">
@@ -152,7 +171,9 @@ export default function StarDribbleDevPage() {
   );
 }
 
-function Slider({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function Slider({
+  label, value, onChange, min = 0, max = 100, step = 1,
+}: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) {
   return (
     <div>
       <div className="flex justify-between text-xs font-bold text-white/70 mb-1">
@@ -161,8 +182,9 @@ function Slider({ label, value, onChange }: { label: string; value: number; onCh
       </div>
       <input
         type="range"
-        min={0}
-        max={100}
+        min={min}
+        max={max}
+        step={step}
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         className="w-full"

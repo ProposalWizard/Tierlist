@@ -1222,7 +1222,7 @@ export default function StarDevPage() {
           <div className="text-3xl mb-3">⚽</div>
           <h1 className="text-xl font-black text-white mb-2">Sign in to play</h1>
           <p className="text-sm text-white/60 mb-6">
-            Road to the Ballon d&apos;Or saves to your account, so your career follows you between
+            Road to Ballon d&apos;Or saves to your account, so your career follows you between
             devices instead of being stuck on whichever one you started it on.
           </p>
           <a

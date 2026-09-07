@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { labelInk, kitsFor, type Kit } from "@/lib/star/kits";
+import { initials } from "./ClubCrest";
 
 /**
  * Deliberately just strings, not CupRound/CupTie from lib/star/cups.ts —
@@ -43,6 +45,31 @@ const TIE_GAP_MS = 950;  // pause after a tie completes, before the next one sta
  * pressing the button does not re-roll anything, it starts revealing the
  * result one name at a time. A skip button jumps straight to the end for
  * anyone who has seen enough draws for one afternoon.
+ *
+ * ── The broadcast-graphics redesign ──
+ *
+ * Requested directly, with two reference mockups: a proper "cup competition"
+ * look — a dark stadium-light card, a trophy-and-ticket hero before the draw
+ * starts, lightning-bolt accents on the call to action, and a team-badge on
+ * each side of every tie once it's drawn, with the tie that has YOUR club in
+ * it glowing gold.
+ *
+ * Two deliberate departures from the reference, both for reasons already
+ * settled elsewhere in this codebase:
+ *  - No real club crest images. ClubCrest.tsx's own header is explicit about
+ *    why: "There are no crest files, and a wrong crest is worse than none."
+ *    `TeamBadge` below is the same device that component already uses
+ *    everywhere a club needs to read as more than a name — the club's own
+ *    kit colour with its initials on it — just laid out for a horizontal
+ *    row instead of ClubCrest's badge-over-name stack (which would have
+ *    doubled the club name up: once tiny under the badge, once again next
+ *    to it).
+ *  - No photographic trophy artwork. Every other big moment in this game
+ *    (the Ballon d'Or ceremony, the pro-contract banner) builds its hero
+ *    art the same way — CSS gradients, an emoji at a large size with a
+ *    glow, and a scatter of small coloured flecks — rather than a bitmap
+ *    asset, so this reuses that same technique instead of introducing the
+ *    one screen in the game that looks like a rendered photo.
  */
 export default function CupDrawReveal({ competition, round, yourClub, onContinue }: Props) {
   const [started, setStarted] = useState(false);
@@ -91,77 +118,139 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex items-center justify-center px-3 py-4">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] to-black text-white flex items-center justify-center px-3 py-4">
       <div className="w-full max-w-sm">
-        <div className="bg-gray-700 rounded-t-xl border border-gray-600 py-2.5 px-3 text-center">
-          <div className="text-[10px] uppercase tracking-widest font-black text-white/75">{competition} Draw</div>
-          <div className="text-lg font-black text-white mt-0.5">{round.name}</div>
-        </div>
+        <div
+          className="relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]"
+          style={{ background: "linear-gradient(180deg, #131b2e 0%, #0a0f1c 55%, #070a12 100%)" }}
+        >
+          <Flecks count={started ? 10 : 0} />
 
-        <div className="bg-gray-800 border-x border-gray-600 min-h-[280px] px-3 py-3 space-y-2">
-          {!started && (
-            <div className="flex flex-col items-center justify-center py-14 gap-3">
-              <div className="text-4xl">🎟️</div>
-              <div className="text-sm text-white/70 text-center px-4">
-                {total === 1 ? "Your tie" : `${total} ties`} to be drawn for the {round.name}.
-              </div>
-              <button
-                onClick={run}
-                className="px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black text-sm uppercase tracking-wide transition"
-              >
-                Run the Draw
-              </button>
+          {/* ── Header ── */}
+          <div className="relative z-10 text-center pt-5 pb-3 px-4">
+            <div className="text-[10px] uppercase tracking-[0.35em] font-black text-sky-300/70">
+              {competition} Draw
             </div>
-          )}
+            <div className="mt-1.5 flex items-center justify-center gap-3">
+              <span className="h-px flex-1 max-w-10 bg-gradient-to-r from-transparent to-white/25" />
+              <h2 className="text-xl font-black tracking-tight text-white">{round.name}</h2>
+              <span className="h-px flex-1 max-w-10 bg-gradient-to-l from-transparent to-white/25" />
+            </div>
+          </div>
 
-          {started && round.ties.slice(0, done ? total : revealed + 1).map((tie, i) => {
-            const isCurrent = !done && i === revealed;
-            const isYours = tie.home === yourClub || tie.away === yourClub;
-            const showAway = !isCurrent || homeShown;
-            return (
-              <div
-                key={`${tie.home}-${tie.away}-${i}`}
-                className={`rounded-lg border px-3 py-2 flex items-center justify-between text-sm font-bold transition-colors ${
-                  isYours ? "bg-amber-400/15 border-amber-400/60" : "bg-gray-700/60 border-gray-600"
-                }`}
-              >
-                <span className={`truncate ${isCurrent ? "animate-[draw-pop_0.35s_ease-out]" : ""}`}>
-                  {tie.home}
-                </span>
-                <span className="text-white/40 text-xs px-2 shrink-0">v</span>
-                {showAway ? (
-                  <span
-                    className={`truncate text-right ${isCurrent ? "animate-[draw-pop_0.35s_ease-out]" : ""}`}
+          {/* ── Body ── */}
+          <div className="relative z-10 px-3 pb-3 min-h-[280px]">
+            {!started && (
+              <div className="flex flex-col items-center gap-4 py-6">
+                <div
+                  className="relative flex flex-col items-center justify-center rounded-xl w-full py-8"
+                  style={{
+                    background: "radial-gradient(65% 90% at 50% 15%, rgba(56,132,255,0.28), transparent 70%)",
+                  }}
+                >
+                  <Flecks count={6} />
+                  <div
+                    className="relative text-6xl"
+                    style={{ filter: "drop-shadow(0 0 26px rgba(251,191,36,0.5))" }}
                   >
-                    {tie.away}
-                  </span>
-                ) : (
-                  <span className="text-right text-white/25 text-xs shrink-0">drawing…</span>
+                    🏆
+                  </div>
+                  <div className="relative -mt-1 text-3xl rotate-[-8deg]" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.5))" }}>
+                    🎟️
+                  </div>
+                </div>
+
+                <div className="text-sm font-bold text-white/80 text-center px-4">
+                  <span className="text-rose-400">{total}</span> {total === 1 ? "tie" : "ties"} to be drawn for the{" "}
+                  <span className="text-rose-400">{round.name}</span>.
+                </div>
+
+                <div className="relative flex items-center gap-2">
+                  <Bolt />
+                  <button
+                    onClick={run}
+                    className="px-7 py-3 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 text-emerald-950 font-black text-sm uppercase tracking-wide transition shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                  >
+                    Run the Draw
+                  </button>
+                  <Bolt flip />
+                </div>
+              </div>
+            )}
+
+            {started && (
+              <div className="space-y-2 pt-2">
+                {round.ties.slice(0, done ? total : revealed + 1).map((tie, i) => {
+                  const isCurrent = !done && i === revealed;
+                  const isYours = tie.home === yourClub || tie.away === yourClub;
+                  const showAway = !isCurrent || homeShown;
+                  const kits = kitsFor(tie.home, tie.away);
+                  return (
+                    <div
+                      key={`${tie.home}-${tie.away}-${i}`}
+                      className={`relative flex items-center gap-1.5 rounded-xl border px-2.5 py-2 transition-colors ${
+                        isYours
+                          ? "border-amber-400/70 bg-gradient-to-r from-amber-400/[0.12] via-amber-400/[0.06] to-amber-400/[0.12] shadow-[0_0_16px_rgba(251,191,36,0.28)]"
+                          : "border-white/10 bg-white/[0.03]"
+                      }`}
+                    >
+                      <div className="flex flex-1 min-w-0 items-center gap-2">
+                        <TeamBadge club={tie.home} kit={kits.home} />
+                        <span
+                          className={`truncate text-sm font-bold ${isYours ? "text-amber-300" : "text-white"} ${
+                            isCurrent ? "animate-[draw-pop_0.35s_ease-out]" : ""
+                          }`}
+                        >
+                          {tie.home}
+                        </span>
+                      </div>
+
+                      <span className="text-white/30 text-[10px] font-bold px-1 shrink-0">v</span>
+
+                      <div className="flex flex-1 min-w-0 items-center justify-end gap-2">
+                        {showAway ? (
+                          <>
+                            <span
+                              className={`truncate text-right text-sm font-bold ${isYours ? "text-amber-300" : "text-white"} ${
+                                isCurrent ? "animate-[draw-pop_0.35s_ease-out]" : ""
+                              }`}
+                            >
+                              {tie.away}
+                            </span>
+                            <TeamBadge club={tie.away} kit={kits.away} />
+                          </>
+                        ) : (
+                          <span className="text-right text-white/25 text-xs shrink-0 pr-1">drawing…</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {!done && (
+                  <div className="pt-2 text-center">
+                    <button
+                      onClick={skip}
+                      className="text-[11px] font-black uppercase tracking-widest text-white/50 hover:text-white/80 transition"
+                    >
+                      Skip ›
+                    </button>
+                  </div>
                 )}
               </div>
-            );
-          })}
+            )}
+          </div>
 
-          {started && !done && (
-            <div className="pt-2 text-center">
-              <button
-                onClick={skip}
-                className="text-[11px] font-black uppercase tracking-widest text-white/50 hover:text-white/80 transition"
-              >
-                Skip ›
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-gray-700 rounded-b-xl border border-t-0 border-gray-600 p-3">
-          <button
-            onClick={onContinue}
-            disabled={!done}
-            className="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-600 disabled:text-white/40 text-gray-950 font-black text-sm uppercase tracking-wide transition"
-          >
-            Continue
-          </button>
+          {/* ── Footer ── */}
+          <div className="relative z-10 border-t border-white/10 p-3">
+            <button
+              onClick={onContinue}
+              disabled={!done}
+              className="w-full py-3 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-emerald-950 font-black text-sm uppercase tracking-wide transition"
+            >
+              Continue
+            </button>
+          </div>
         </div>
       </div>
 
@@ -171,10 +260,85 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
           60% { opacity: 1; transform: scale(1.06); }
           100% { opacity: 1; transform: scale(1); }
         }
+        @keyframes cup-fleck-drift {
+          0%, 100% { transform: translateY(0) rotate(var(--fleck-rot)); opacity: 0.55; }
+          50% { transform: translateY(-6px) rotate(calc(var(--fleck-rot) + 12deg)); opacity: 0.9; }
+        }
         @media (prefers-reduced-motion: reduce) {
           @keyframes draw-pop { from { opacity: 1; } to { opacity: 1; } }
+          @keyframes cup-fleck-drift { from { opacity: 0.7; } to { opacity: 0.7; } }
         }
       `}</style>
     </div>
+  );
+}
+
+/** A club, as a badge, laid out for a single horizontal row rather than
+ *  ClubCrest.tsx's badge-over-name stack — see the file header on why this
+ *  is a separate small component instead of reusing ClubCrest directly
+ *  (it would have printed the club's name twice). Same device, same
+ *  reasoning: the club's own kit colour with its initials on it, since
+ *  there are no crest images and a wrong crest is worse than none. */
+function TeamBadge({ club, kit }: { club: string; kit: Kit }) {
+  return (
+    <div
+      className="grid shrink-0 place-items-center rounded-full border-2 font-black"
+      style={{
+        height: 26, width: 26, backgroundColor: kit.shirt, borderColor: kit.trim,
+        color: labelInk(kit.shirt), fontSize: 9,
+      }}
+    >
+      {initials(club)}
+    </div>
+  );
+}
+
+const FLECK_COLORS = ["#F0C040", "#60A5FA", "#F472B6", "#4ADE80", "#FBBF24"];
+
+/** A quiet scatter of coloured flecks — the same "static confetti" device
+ *  TrialReward.tsx's CongratulationsBanner uses for a moment that is
+ *  festive but not the full falling-confetti burst BallonDor.tsx fires for
+ *  an actual trophy win. A draw is a nice moment, not THE moment. Purely
+ *  decorative and positioned deterministically (no rng) so server and
+ *  client render the same markup. */
+function Flecks({ count }: { count: number }) {
+  if (count <= 0) return null;
+  const pieces = Array.from({ length: count }, (_, i) => {
+    const left = `${(i * 37 + 8) % 94}%`;
+    const top = `${(i * 53 + 12) % 88}%`;
+    const rot = (i * 67) % 360;
+    const size = 5 + (i % 3) * 2;
+    return { left, top, rot, size, color: FLECK_COLORS[i % FLECK_COLORS.length], delay: `${(i * 0.23) % 2}s` };
+  });
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="absolute block rounded-[1px]"
+          style={{
+            left: p.left, top: p.top, width: p.size, height: p.size * 1.8,
+            background: p.color,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ["--fleck-rot" as any]: `${p.rot}deg`,
+            transform: `rotate(${p.rot}deg)`,
+            animation: `cup-fleck-drift ${2.4 + (i % 4) * 0.4}s ease-in-out ${p.delay} infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** A small lightning-bolt accent flanking the "Run the Draw" button. */
+function Bolt({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg
+      width="14" height="22" viewBox="0 0 14 22" fill="none"
+      className={flip ? "scale-x-[-1]" : ""}
+      style={{ filter: "drop-shadow(0 0 6px rgba(52,211,153,0.65))" }}
+    >
+      <path d="M8 0L0 13H5.5L4 22L14 8H8.5L8 0Z" fill="#6EE7B7" />
+    </svg>
   );
 }
