@@ -522,6 +522,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // reason about, so "which way did the thumb move on the glass" is both
   // simpler and the actually-correct read of the gesture).
   const curveSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  // The swipe's CURRENT point while it's in progress — separate from the
+  // start above so the draw loop can paint a live guide line, the same
+  // feedback every other drag in this game already gives (the aim arrow,
+  // the captain's order). Without this the gesture was invisible while it
+  // happened: reported as "I'm doing stuff... nothing's happening."
+  const curveSwipeCurrentRef = useRef<{ x: number; y: number } | null>(null);
 
   /** Is this dead ball yours? With no duties supplied (the sandbox), everything is. */
   const mayTake = (kind: ScenarioKind) => {
@@ -2117,6 +2123,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (ball) drawBall(ball.pos.x, ball.pos.y, ball.z);
     else if (phaseRef.current === "aim") drawBall(sc.ball.x, sc.ball.y, 0);
 
+    // --- Curve boots: a live guide line while the swipe is in progress ---
+    //
+    // Every other drag in this game shows something happening while you're
+    // still holding it down (the aim arrow, the captain's order line). This
+    // one drew nothing at all until release — reported directly as "I'm
+    // doing stuff... nothing's happening," which is true of the FEEDBACK
+    // even on frames where the gesture itself is being read correctly. A
+    // screen-space line, not a pitch one — the swipe itself is read in
+    // screen pixels (see curveSwipeStartRef's own note on why).
+    if (phaseRef.current === "flight" && canCurve && curveSwipeStartRef.current && curveSwipeCurrentRef.current) {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const toCanvasPx = (clientX: number, clientY: number) => ({
+            px: ((clientX - rect.left) / rect.width) * canvas.width,
+            py: ((clientY - rect.top) / rect.height) * canvas.height,
+          });
+          const a = toCanvasPx(curveSwipeStartRef.current.x, curveSwipeStartRef.current.y);
+          const b = toCanvasPx(curveSwipeCurrentRef.current.x, curveSwipeCurrentRef.current.y);
+          ctx.save();
+          ctx.strokeStyle = "rgba(56,189,248,0.9)"; // sky blue — distinct from the orange aim arrow
+          ctx.lineWidth = Math.max(2, canvas.width * 0.01);
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(a.px, a.py);
+          ctx.lineTo(b.px, b.py);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(b.px, b.py, Math.max(3, canvas.width * 0.012), 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(56,189,248,0.9)";
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+    }
+
     // --- Aim slingshot overlay (brand gold) ---
     if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
       const d = dragRef.current;
@@ -3117,6 +3160,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (phaseRef.current === "flight") {
       if (!canCurve) return;
       curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
+      curveSwipeCurrentRef.current = { x: e.clientX, y: e.clientY };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
@@ -3157,6 +3201,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (phaseRef.current === "dribble") return;
+    if (curveSwipeStartRef.current) {
+      curveSwipeCurrentRef.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
     if (captainDragRef.current) {
       captainDragRef.current.to = pitchFromPointer(e.clientX, e.clientY);
       return;
@@ -3182,6 +3230,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (phaseRef.current === "flight") {
       const from = curveSwipeStartRef.current;
       curveSwipeStartRef.current = null;
+      curveSwipeCurrentRef.current = null;
       try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
       if (!from || !canCurve || !ballRef.current) return;
       const dx = e.clientX - from.x, dy = e.clientY - from.y;

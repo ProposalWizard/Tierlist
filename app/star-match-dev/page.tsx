@@ -49,6 +49,10 @@ export default function StarMatchDevPage() {
    * the sandbox's original behaviour.
    */
   const [forcedKind, setForcedKind] = useState<ScenarioKind | null>(null);
+  // Simulates having curve boots equipped — there's no shop/career grind on
+  // this sandbox, so a toggle stands in for actually owning the boot. See
+  // canvasEngineTest.ts's ported applyCurveSwipe/curveDirFromSwipe.
+  const [canCurve, setCanCurve] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -113,6 +117,7 @@ export default function StarMatchDevPage() {
           career={career}
           seed={2024}
           forcedKind={forcedKind}
+          canCurve={canCurve}
         />
 
         {/* Scenario picker — every chance becomes exactly this kind, bypassing
@@ -147,6 +152,22 @@ export default function StarMatchDevPage() {
               Every chance is a {SCENARIO_LABELS[forcedKind].toLowerCase()} — duty and the match's own requests are bypassed.
             </div>
           )}
+        </div>
+
+        {/* Curve boots — no shop here, so a toggle stands in for owning one. */}
+        <div className="mt-4 bg-gray-900/60 border border-gray-700 rounded-lg p-3 space-y-2">
+          <label className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Curve boots</div>
+              <div className="text-[10px] text-gray-500">Once struck, drag on the shot to bend/lift/dip it.</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={canCurve}
+              onChange={(e) => setCanCurve(e.target.checked)}
+              className="w-5 h-5 accent-sky-500"
+            />
+          </label>
         </div>
 
         {/* Skill sliders so I can feel how attributes change the shot */}

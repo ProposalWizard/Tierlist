@@ -129,6 +129,9 @@ export interface Ball {
    */
   lastTouch?: "attack" | "defence" | "keeper" | "frame";
   deflected?: "keeper" | "frame";
+  /** Ported from canvasEngine.ts's curve boots — see applyCurveSwipe there. */
+  curveSpinAdj?: number;
+  curveVzAdj?: number;
 }
 
 // A goalkeeper that slides + dives along its line and stretches to reach the ball.
@@ -2972,6 +2975,43 @@ export function curlRange(technique: number): number {
 /** The same, for how much lift and dip you can put on it. */
 export function loftRange(technique: number): number {
   return 0.55 + clamp(technique, 0, 100) / 100 * 0.45;
+}
+
+/**
+ * Curve boots, ported here so the mechanic is testable on this sandbox's
+ * own sliders without needing a real career/boot purchase — see
+ * canvasEngine.ts's own copy of these for the full design rationale. Kept
+ * byte-for-byte identical on purpose: this fork exists so tuning changes
+ * can be tried safely, not so two copies of the same feature drift apart.
+ */
+export const CURVE_SPIN_STEP = 0.45;
+export const CURVE_SPIN_MAX = 2.2;
+export const CURVE_VZ_STEP = 1.4;
+export const CURVE_VZ_MAX = 4.5;
+
+export type CurveDir = "left" | "right" | "up" | "down";
+
+export function curveDirFromSwipe(dx: number, dy: number): CurveDir | null {
+  if (dx === 0 && dy === 0) return null;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "right" : "left";
+  return dy > 0 ? "down" : "up";
+}
+
+export function applyCurveSwipe(ball: Ball, dir: CurveDir): boolean {
+  if (dir === "left" || dir === "right") {
+    const cur = ball.curveSpinAdj ?? 0;
+    if (Math.abs(cur) >= CURVE_SPIN_MAX) return false;
+    const next = clamp(cur + (dir === "right" ? CURVE_SPIN_STEP : -CURVE_SPIN_STEP), -CURVE_SPIN_MAX, CURVE_SPIN_MAX);
+    ball.spin += next - cur;
+    ball.curveSpinAdj = next;
+    return true;
+  }
+  const cur = ball.curveVzAdj ?? 0;
+  if (Math.abs(cur) >= CURVE_VZ_MAX) return false;
+  const next = clamp(cur + (dir === "up" ? CURVE_VZ_STEP : -CURVE_VZ_STEP), -CURVE_VZ_MAX, CURVE_VZ_MAX);
+  ball.vz += next - cur;
+  ball.curveVzAdj = next;
+  return true;
 }
 
 /**
