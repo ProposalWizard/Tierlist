@@ -61,7 +61,6 @@ export default function TransfersPanel({ career }: { career: CareerState }) {
                 </div>
                 <div className="text-[10px] font-bold text-white/80">
                   {m.from} → {m.to}
-                  {m.unhappy && <span className="ml-1.5 text-amber-300">· forced the move</span>}
                 </div>
               </div>
             );

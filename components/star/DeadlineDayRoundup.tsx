@@ -277,7 +277,6 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                       </div>
                       <div className="text-[10px] font-bold text-white">
                         from <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
-                        {d.unhappy && <span className="ml-1 text-amber-300" style={{ textShadow: NAME_OUTLINE }}>· forced the move</span>}
                       </div>
                     </div>
                   ))}
@@ -297,7 +296,6 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                       </div>
                       <div className="text-[10px] font-bold text-white">
                         to <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
-                        {d.unhappy && <span className="ml-1 text-amber-300" style={{ textShadow: NAME_OUTLINE }}>· forced the move</span>}
                       </div>
                     </div>
                   ))}

@@ -3,6 +3,7 @@ import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { mulberry32 } from "../../lib/star/season";
 import { generateSquad, clubNameSeed } from "../../lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONS_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { shouldUpgradeExternalSquads } from "../../lib/star/leagueSquads";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -130,6 +131,36 @@ function freshCareer(season: number): CareerState {
     check(!(fromPool?.some(p => p.name === found!.player)),
       `…and no longer appears in ${found.from}'s roster`);
   }
+}
+
+// ── A stale/thin external-squads snapshot gets flagged for re-fetch ──
+//
+// Reported directly: "I don't really ever see any transfers between foreign
+// clubs." runInternationalWindow itself needs no fix — it is deliberately
+// rare (see the file header) — but a career whose externalSquads was first
+// fetched while most of those clubs still had zero rows on file (before
+// fc27_clone_european_clubs.sql's spelling fixes landed, say) stays stuck
+// with that thin snapshot forever: app/star-dev/page.tsx only re-fetches
+// while the array is completely empty, and a handful of real clubs is
+// enough to make it non-empty. shouldUpgradeExternalSquads is the signal
+// that breaks that trap — same idea as shouldUpgradeLeagueSquads, just
+// judging presence of ANY player per club rather than a per-player field.
+{
+  check(shouldUpgradeExternalSquads([]) === false, "an empty array is not itself a staleness signal — nothing has been fetched yet");
+
+  const mostlyEmpty: LeagueSquad[] = [
+    { club: "Real Madrid", players: [] },
+    { club: "FC Barcelona", players: [] },
+    { club: "Paris Saint-Germain", players: squadFor("Paris Saint-Germain", 1, true).players },
+  ];
+  check(shouldUpgradeExternalSquads(mostlyEmpty) === true, "mostly-empty foreign rosters flag for a re-fetch");
+
+  const mostlyReal: LeagueSquad[] = [
+    { club: "Real Madrid", players: squadFor("Real Madrid", 1, true).players },
+    { club: "FC Barcelona", players: squadFor("FC Barcelona", 2, true).players },
+    { club: "Villarreal", players: [] }, // one genuinely never-scraped club is not the whole snapshot being stale
+  ];
+  check(shouldUpgradeExternalSquads(mostlyReal) === false, "mostly-real foreign rosters do not trigger a re-fetch over one thin club");
 }
 
 if (problems.length) {

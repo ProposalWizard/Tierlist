@@ -253,6 +253,26 @@ export function shouldUpgradeLeagueSquads(squads: LeagueSquad[]): boolean {
 }
 
 /**
+ * The same staleness problem as `shouldUpgradeLeagueSquads`, for
+ * `career.externalSquads` (the Champions/Europa/Other clubs
+ * `runInternationalWindow` — leagueTransfers.ts — trades with). A club here
+ * can genuinely have never been scraped at all rather than merely be
+ * missing a field — see `fc27_clone_european_clubs.sql`'s own header for
+ * several real examples of a club sitting on zero rows until a spelling fix
+ * landed — so the signal is simply how many of the fetched clubs came back
+ * with anybody on the books at all, not per-player field quality. Without
+ * this, a career that first fetched the wider world before such a fix
+ * shipped is stuck for the rest of that save: the fetch on `app/star-dev/
+ * page.tsx` only ever runs again while the array is still completely empty,
+ * and a handful of real clubs is enough to make it non-empty forever.
+ */
+export function shouldUpgradeExternalSquads(squads: LeagueSquad[]): boolean {
+  if (squads.length === 0) return false;
+  const withPlayers = squads.filter(s => s.players.length > 0).length;
+  return withPlayers / squads.length < 0.5;
+}
+
+/**
  * Go and get the division.
  *
  * One request for every club at once — see app/api/star/league-squads. Never
