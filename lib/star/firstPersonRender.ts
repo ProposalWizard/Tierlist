@@ -56,6 +56,8 @@ const C = {
   oppRim: "#7f1d1d",
   oppAsleep: "#7a8a8f",
   oppAsleepRim: "#3f4a4e",
+  you: "#10b981",
+  youRim: "#065f46",
   skin: "#c68642",
   sky: "#0b1220",
   skyLow: "#16233a",
@@ -432,6 +434,17 @@ export interface RenderFirstPersonOptions {
   assist: boolean;
   reducedMotion: boolean;
   hud?: { text: string; pips?: DuelPip[] } | null;
+  /**
+   * Your own world position, for a THIRD-person chase camera sitting
+   * behind and above you — see FirstPersonDribble.tsx's own header on why
+   * this exists. Draws you as a real figure (the same drawFigure() every
+   * defender already uses, in "you" green) instead of the flat first-
+   * person forearms-at-the-bottom-edge, which have no world position and
+   * would make no sense once the camera isn't AT your eyes any more.
+   * Omit (or null) for the plain first-person view — unchanged, and what
+   * the open-run mode still uses.
+   */
+  own?: { x: number; y: number } | null;
 }
 
 /** The one-on-one duel mode. */
@@ -448,8 +461,12 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist);
   if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
 
-  const bob = opts.reducedMotion ? 0 : Math.sin(opts.stride * 1.9);
-  drawOwnBody(ctx, W, H, bob);
+  if (opts.own) {
+    drawFigure(ctx, cam, opts.own, 0, { shirt: C.you, rim: C.youRim });
+  } else {
+    const bob = opts.reducedMotion ? 0 : Math.sin(opts.stride * 1.9);
+    drawOwnBody(ctx, W, H, bob);
+  }
 
   if (opts.hud) drawHud(ctx, W, H, opts.hud.text, opts.hud.pips);
 }

@@ -9,22 +9,71 @@ import { renderFirstPerson, type DuelPip } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
 
 /**
- * THE FIRST-PERSON DUEL — THE COMPONENT.
+ * THE ONE-ON-ONE DUEL — THE COMPONENT.
  *
- * Beat the three men you're given, in first person; that's it. Told
- * directly after the first version of this shipped with a shot at the
- * end: "you just need to beat the men that you are given, and you're not
- * even running towards a goal... it should just be to more space." So
- * there is no shot here, no goal anywhere in the drawing (see
- * firstPersonRender.ts's own header), and no camera facing to defend
- * either — clearing the third man IS the win.
+ * Beat the three men you're given; that's it. Told directly after the
+ * first version of this shipped with a shot at the end: "you just need to
+ * beat the men that you are given, and you're not even running towards a
+ * goal... it should just be to more space." So there is no shot here, no
+ * goal anywhere in the drawing (see firstPersonRender.ts's own header) —
+ * clearing the third man IS the win.
  *
  * Structural template: `TrialPenalty.tsx` — a canvas ref, a single rAF
  * loop, pointer capture, the same "reset() called at start and after
- * every attempt" shape. What's different is entirely the input scheme:
- * steer is a continuous relative drag, and a burst is a FLICK detected
- * mid-drag rather than on release — waiting for release would eat the
- * exact reaction window `firstPersonDribble.ts` is built around.
+ * every attempt" shape.
+ *
+ * ── Third person, playtested and revised from a true first-person build ──
+ *
+ * Reported directly, after actually playing the eyes-level version: "I'm
+ * thinking maybe it's too difficult from that point of view... maybe we
+ * could... have it as like a third person camera angle just behind their
+ * head so you can see what's in front of you still." True first-person
+ * has a real, structural problem for THIS mechanic specifically (it's
+ * fine for the open-run mode, which only ever asks "which general
+ * direction"): the whole duel is decided on one exact number — how far
+ * left or right he's committed versus you, at the moment he reaches you —
+ * and a flat, ground-level, dead-ahead view genuinely cannot show that
+ * distance with any precision. There's no depth cue for it. A camera
+ * sitting a few metres behind and above you, tilted down, can — you see
+ * your own lane and his as two actual lanes with a gap between them, not
+ * an inferred one.
+ *
+ * This costs almost nothing to build: `firstPersonView.ts`'s camera
+ * already supports an arbitrary elevated, tilted position (that's exactly
+ * what the establishing-shot swoop already used) — a chase-cam is just
+ * "sit the camera a bit behind and above your ACTUAL position" instead of
+ * "sit it exactly at your eyes," via `CHASE_OFFSET`/`CHASE_EYE`/
+ * `CHASE_PITCH` below. It deliberately still doesn't rotate to face
+ * anything — same reasoning as the open-run mode's own camera fix, and
+ * doubly true for a trailing chase-cam, which is the standard way this
+ * kind of camera behaves in every genre that uses one.
+ *
+ * The one thing a first-person view got for free that a third-person one
+ * doesn't: your own body was never drawn, because there was no world
+ * position for it — just decorative forearms at the screen edge. Now
+ * there is a real body to draw, in "you" green, using the exact same
+ * `drawFigure()` every defender already renders with (see
+ * `firstPersonRender.ts`'s `own` option).
+ *
+ * ── Touches, not just a drag — the feint the defender AI already reads ──
+ *
+ * Reported alongside the camera: "instead of actually moving left and
+ * right, it's more like you're touching the ball left and right... push
+ * it right a bit, and then straight away go left... which would bait the
+ * defender." The duel's own AI already reads your lateral drift the
+ * instant his telegraph starts (`pickSide` in firstPersonDribble.ts) —
+ * drift right and he commits right, whatever caused that drift. So this
+ * needed no new simulation, only an input that makes the bait a
+ * deliberate, felt choice instead of an invisible side effect of a drag:
+ * a quick, small tap on either side of the screen now nudges your lane
+ * that way by a fixed amount (`TAP_NUDGE`) — "touch the ball right," then
+ * a second quick tap left immediately after genuinely sells one way and
+ * cuts the other, because each tap sets an absolute lane target and the
+ * SECOND one is measured from wherever the first has actually gotten you
+ * to, not from your original spot. A real drag (more movement, or held
+ * longer) still steers continuously exactly as before, and a flick still
+ * bursts — taps are additive on top of both, not a replacement mode you
+ * have to switch into.
  */
 
 type Phase = "run" | "result";
@@ -36,10 +85,29 @@ const BALL_LEAD_BURST = 2.6;
 const FLICK_MIN_PX_FRAC = 0.06;   // of canvas width
 const FLICK_MIN_SPEED_FRAC = 1.6; // canvas-widths per second
 
+// ── The chase-cam — see the file header on why this replaced eyes-level.
+// Defaults chosen to see both lanes and the gap between them clearly
+// without floating so far back the duel stops feeling close; exposed as
+// props so the dev sandbox can tune them live (no browser this session).
+const DEFAULT_CHASE_EYE = 4.5;      // metres — how high the camera sits
+const DEFAULT_CHASE_PITCH_DEG = 22; // degrees — how far down it tilts
+const DEFAULT_CHASE_OFFSET = 4.5;   // metres BEHIND your actual position
+
+// ── A tap, not a drag — see the file header. Small movement, short
+// duration, released without ever crossing the flick thresholds above.
+const TAP_MAX_MOVE_FRAC = 0.035; // of canvas width — below this, it's a tap
+const TAP_MAX_MS = 280;
+const TAP_NUDGE = 1.8; // metres your lane target jumps per tap
+
 export interface FirstPersonDribbleProps {
   pace?: number;
   oppStrength?: number;
   defenders?: number;
+  /** Chase-cam tuning — see DEFAULT_CHASE_* above for the reasoning behind
+   *  the defaults. */
+  chaseEye?: number;
+  chasePitchDeg?: number;
+  chaseOffset?: number;
   /** A fixed seed replays the exact same run every time (for tuning);
    *  omit it for a fresh random run on every attempt. */
   seed?: number;
@@ -49,6 +117,7 @@ export interface FirstPersonDribbleProps {
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, defenders = 3, seed, assist = true, onComplete,
+  chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
 }: FirstPersonDribbleProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -64,11 +133,14 @@ export default function FirstPersonDribble({
   const [resultText, setResultText] = useState("");
 
   // Gesture bookkeeping — steer via relative drag, burst via a flick
-  // detected mid-drag (velocity, not release).
+  // detected mid-drag (velocity, not release), and a tap-nudge decided on
+  // release once we know the whole gesture never grew into either — see
+  // the file header on why taps are additive, not a separate mode.
   const draggingRef = useRef(false);
   const anchorPxRef = useRef(0);
   const anchorLaneRef = useRef(0);
   const sampleRef = useRef<{ x: number; t: number }[]>([]);
+  const gestureStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   useEffect(() => {
     const img = new Image();
@@ -91,6 +163,7 @@ export default function FirstPersonDribble({
     rngRef.current = rng;
     runRef.current = newRun({ pace, oppStrength, defenders, rng });
     draggingRef.current = false;
+    gestureStartRef.current = null;
     setResultText("");
     setPhase("run");
   }, [pace, oppStrength, defenders, newRng]);
@@ -123,6 +196,7 @@ export default function FirstPersonDribble({
     anchorPxRef.current = e.clientX;
     anchorLaneRef.current = runRef.current?.laneTarget ?? runRef.current?.x ?? 0;
     sampleRef.current = [{ x: e.clientX, t: performance.now() }];
+    gestureStartRef.current = { x: e.clientX, y: e.clientY, t: performance.now() };
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -155,8 +229,28 @@ export default function FirstPersonDribble({
 
   const onPointerUp = (e: React.PointerEvent) => {
     const c = canvasRef.current;
+    const run = runRef.current;
     try { c?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
     draggingRef.current = false;
+
+    // ── Tap-nudge: touch the ball left or right ──
+    //
+    // Decided here, on release, once we know the gesture never grew into a
+    // drag or a flick — see the file header. A tap on the left half of the
+    // screen nudges your lane target left by TAP_NUDGE, right nudges right;
+    // additive on top of whatever the continuous drag-steer above already
+    // did during the same brief hold (negligible for a real tap, since it
+    // barely moved).
+    const start = gestureStartRef.current;
+    gestureStartRef.current = null;
+    if (!c || !run || !start || phaseRef.current !== "run") return;
+    const r = c.getBoundingClientRect();
+    if (r.width <= 0) return;
+    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    const heldMs = performance.now() - start.t;
+    if (moved > TAP_MAX_MOVE_FRAC * r.width || heldMs > TAP_MAX_MS) return;
+    const dir = (start.x - r.left) < r.width / 2 ? -1 : 1;
+    applySteer(run, run.laneTarget + TAP_NUDGE * dir);
   };
 
   // ── Keyboard fallback ────────────────────────────────────────────────────
@@ -222,7 +316,14 @@ export default function FirstPersonDribble({
     const draw = () => {
       const c = canvasRef.current, run = runRef.current;
       if (!c || !run) return;
-      const cam = cameraFor({ x: run.x, y: run.y }, c.width, c.height);
+      // Chase-cam: sits CHASE_OFFSET metres behind your actual position
+      // (larger y — the corridor runs toward y=0), elevated and tilted
+      // down. See the file header on why this replaced a camera sitting
+      // exactly at your own eyes.
+      const cam = cameraFor(
+        { x: run.x, y: run.y + chaseOffset }, c.width, c.height,
+        { eye: chaseEye, pitch: (chasePitchDeg * Math.PI) / 180 },
+      );
       const pips: DuelPip[] = run.defenders.map((d, i) => (
         d.phase === "beaten" ? "beaten" : d.phase === "won" ? "won" : i === run.active ? "active" : "pending"
       ));
@@ -238,13 +339,14 @@ export default function FirstPersonDribble({
         ballImage: ballImgRef.current,
         assist, reducedMotion: reducedMotionRef.current,
         hud: { text: `${beaten}/${run.defenders.length} beaten`, pips },
+        own: { x: run.x, y: run.y },
       });
     };
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assist, onComplete]);
+  }, [assist, onComplete, chaseEye, chasePitchDeg, chaseOffset]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center px-3 py-4">
@@ -273,7 +375,7 @@ export default function FirstPersonDribble({
           {phase === "run" && (
             <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 flex flex-col items-center gap-1 px-4">
               <p className="rounded-lg bg-black/55 px-3 py-1 text-center text-[10px] font-bold text-white/80">
-                Drag to steer. Flick left or right to burst past him.
+                Tap left or right to touch the ball that way. Flick to burst past him.
               </p>
             </div>
           )}
