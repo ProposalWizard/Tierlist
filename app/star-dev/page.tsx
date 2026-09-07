@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
-import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt } from "@/lib/star/storage";
+import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE } from "@/lib/star/storage";
+import { createClient } from "@/lib/supabase/client";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
@@ -108,11 +109,44 @@ export default function StarDevPage() {
   // Stays true while we check for a cloud save, so we show a spinner rather
   // than the new-career setup screen during the async fetch.
   const [cloudLoading, setCloudLoading] = useState(true);
+  /**
+   * A career only ever exists tied to an account now — see the "sign in to
+   * play" gate below. Reported directly, after the cross-account save
+   * contamination bug: a save that can live in an ambiguous, maybe-signed-in
+   * local state is a save that can end up attached to the wrong account.
+   * Requiring an account before a career can even be created removes that
+   * state entirely — there is no longer a signed-out career for local
+   * storage and a real account's cloud row to ever disagree about.
+   */
+  const [signedIn, setSignedIn] = useState(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * Which account's local slot every localStorage read/write below acts on
+   * for the rest of this page's life — always the signed-in user's id (see
+   * the sign-in gate: nothing past it runs without one). Resolved once,
+   * here, before anything else reads or writes a save — see storage.ts's
+   * own note on why a save must never be read or written without knowing
+   * whose it is. Signing in or out always does a full page navigation in
+   * this app (OAuth redirect / a server sign-out route), so this never goes
+   * stale mid-session.
+   */
+  const scopeRef = useRef<string>(ANON_SCOPE);
 
   useEffect(() => {
     const init = async () => {
       setHydrated(true);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // No account, no career — not even a local one. See the note on
+        // `signedIn` above for why this is deliberate rather than falling
+        // back to ANON_SCOPE the way it used to.
+        setSignedIn(false);
+        setCloudLoading(false);
+        return;
+      }
+      setSignedIn(true);
+      scopeRef.current = user.id;
       // Whichever actually changed more recently — NOT cloud unconditionally.
       //
       // The first version of this always preferred cloud, on the theory that
@@ -128,8 +162,8 @@ export default function StarDevPage() {
       // Comparing timestamps instead means cloud only wins when it is
       // genuinely ahead — a different device, or recovering after local
       // storage itself was wiped — which is the entire reason it exists.
-      const local = loadCareer();
-      const localAt = local ? loadCareerSavedAt() : -1;
+      const local = loadCareer(scopeRef.current);
+      const localAt = local ? loadCareerSavedAt(scopeRef.current) : -1;
       const cloud = await loadCareerFromCloud();
       const saved = cloud && cloud.savedAt > localAt ? cloud.career : local;
       setCloudLoading(false);
@@ -195,7 +229,7 @@ export default function StarDevPage() {
     // always land on the dashboard, which at the end of a season meant no
     // fixture left to play and no way to reach the Ballon d'Or — the career was
     // stuck there for good.
-    const pending = loadStarPhase();
+    const pending = loadStarPhase(scopeRef.current);
     const seasonOver = saved.fixtures.every((f) => f.played);
     if (pending?.phase === "ballon-dor" && seasonOver) {
       setPhase("ballon-dor");
@@ -229,7 +263,7 @@ export default function StarDevPage() {
 
   useEffect(() => {
     if (!career) return;
-    saveCareer(career); // localStorage — immediate
+    saveCareer(career, scopeRef.current); // localStorage — immediate
     // Debounced cloud save: waits 3 s after the last change so a burst of
     // state updates (end of match, season rollover) produces one write, not many.
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
@@ -239,7 +273,7 @@ export default function StarDevPage() {
   // Only the phases a refresh must return you to are written; everything else
   // clears the record — see RESUMABLE in storage.ts.
   useEffect(() => {
-    if (hydrated) saveStarPhase(phase, contractOfferReason ?? undefined, wonBallonDor);
+    if (hydrated) saveStarPhase(phase, scopeRef.current, contractOfferReason ?? undefined, wonBallonDor);
   }, [hydrated, phase, contractOfferReason, wonBallonDor]);
 
   // The fixture the post-match screen is reporting on. Held in state because
@@ -1016,7 +1050,7 @@ export default function StarDevPage() {
 
   const handleFullReset = () => {
     if (career?.retired || confirm("Delete this career and start over?")) {
-      clearCareer();
+      clearCareer(scopeRef.current);
       clearCareerFromCloud();
       setCareer(null);
       setPhase("profile-setup");
@@ -1174,6 +1208,30 @@ export default function StarDevPage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white/60 text-sm font-bold animate-pulse">Loading career…</div>
+      </div>
+    );
+  }
+
+  // A career only ever exists tied to an account — see the note on
+  // `signedIn` above. Nothing past this point (ProfileSetup included) ever
+  // runs signed out.
+  if (!signedIn) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+        <div className="max-w-sm w-full text-center">
+          <div className="text-3xl mb-3">⚽</div>
+          <h1 className="text-xl font-black text-white mb-2">Sign in to play</h1>
+          <p className="text-sm text-white/60 mb-6">
+            Road to the Ballon d&apos;Or saves to your account, so your career follows you between
+            devices instead of being stuck on whichever one you started it on.
+          </p>
+          <a
+            href="/auth?next=/star-dev"
+            className="inline-block w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-emerald-950 active:scale-95"
+          >
+            Sign in
+          </a>
+        </div>
       </div>
     );
   }

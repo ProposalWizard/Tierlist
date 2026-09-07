@@ -61,15 +61,18 @@ export default function StarMatchDevPage() {
       } catch {
         setState("denied");
       }
+      // Pre-fill the sliders from this account's own real career, if this
+      // browser has one cached for it — see storage.ts's scoping note on
+      // why that has to be per-account rather than a flat, shared key.
+      const loaded = loadCareer(user.id);
+      if (loaded) {
+        setCareer(loaded);
+        setCareerPosition(loaded.player.position);
+        setPosition(loaded.player.position);
+        setCareerTeam(loaded.relationships.team);
+        setTeamRelationship(loaded.relationships.team);
+      }
     });
-    const loaded = loadCareer();
-    if (loaded) {
-      setCareer(loaded);
-      setCareerPosition(loaded.player.position);
-      setPosition(loaded.player.position);
-      setCareerTeam(loaded.relationships.team);
-      setTeamRelationship(loaded.relationships.team);
-    }
   }, []);
 
   if (state === "loading") {

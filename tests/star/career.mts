@@ -31,7 +31,8 @@ const store = new Map<string, string>();
   clear: () => store.clear(),
 };
 
-const { saveStarPhase, loadStarPhase, saveCareer, loadCareer, clearCareer } = await import("../../lib/star/storage");
+const { saveStarPhase, loadStarPhase, saveCareer, loadCareer, clearCareer, ANON_SCOPE } = await import("../../lib/star/storage");
+const SCOPE = "test-user";
 
 const PLAYER: StarPlayer = {
   firstName: "Test", lastName: "Player", age: 18, position: "CAM",
@@ -108,41 +109,121 @@ function playWholeSeason(start: CareerState): CareerState {
 
 // ── Only the phases you cannot navigate back from are resumed ───────────────
 {
-  saveStarPhase("ballon-dor");
-  check(loadStarPhase()?.phase === "ballon-dor", "the awards screen is resumed after a reload");
+  saveStarPhase("ballon-dor", SCOPE);
+  check(loadStarPhase(SCOPE)?.phase === "ballon-dor", "the awards screen is resumed after a reload");
 
-  saveStarPhase("contract-renewal", "star");
-  check(loadStarPhase()?.offerReason === "star", "…and it remembers why the club offered");
+  saveStarPhase("contract-renewal", SCOPE, "star");
+  check(loadStarPhase(SCOPE)?.offerReason === "star", "…and it remembers why the club offered");
 
-  saveStarPhase("dilemma");
-  check(loadStarPhase()?.phase === "dilemma", "an unanswered dilemma is resumed");
+  saveStarPhase("dilemma", SCOPE);
+  check(loadStarPhase(SCOPE)?.phase === "dilemma", "an unanswered dilemma is resumed");
 
   // Everything else clears the record rather than leaving a stale one behind —
   // resuming into a match whose state was never saved would be worse than the
   // bug this fixes.
   for (const p of ["dashboard", "match", "post-match", "training", "league", "life", "casino-menu"] as const) {
-    saveStarPhase("ballon-dor");
-    saveStarPhase(p);
-    check(loadStarPhase() === null, `${p} is not resumed, and clears whatever was pending`);
+    saveStarPhase("ballon-dor", SCOPE);
+    saveStarPhase(p, SCOPE);
+    check(loadStarPhase(SCOPE) === null, `${p} is not resumed, and clears whatever was pending`);
   }
 
   // A record written by a future version, or by hand, is ignored rather than
   // trusted.
-  store.set("star-career-phase-v1", JSON.stringify({ phase: "match" }));
-  check(loadStarPhase() === null, "a phase outside the resumable set is refused even if it is on disk");
-  store.set("star-career-phase-v1", "not json");
-  check(loadStarPhase() === null, "a corrupt record is refused rather than thrown");
+  store.set(`star-career-phase-v1::${SCOPE}`, JSON.stringify({ phase: "match" }));
+  check(loadStarPhase(SCOPE) === null, "a phase outside the resumable set is refused even if it is on disk");
+  store.set(`star-career-phase-v1::${SCOPE}`, "not json");
+  check(loadStarPhase(SCOPE) === null, "a corrupt record is refused rather than thrown");
 }
 
 // ── Resetting a career leaves nothing behind ───────────────────────────────
 {
   const c = makeInitialCareer(PLAYER, CLUBS);
-  saveCareer(c);
-  saveStarPhase("ballon-dor");
-  clearCareer();
-  check(loadCareer() === null, "clearing a career removes the career");
-  check(loadStarPhase() === null,
+  saveCareer(c, SCOPE);
+  saveStarPhase("ballon-dor", SCOPE);
+  clearCareer(SCOPE);
+  check(loadCareer(SCOPE) === null, "clearing a career removes the career");
+  check(loadStarPhase(SCOPE) === null,
     "…and the pending phase with it — otherwise a new career resumes the old one's awards screen");
+}
+
+// ── Two accounts on one device never see each other's save ─────────────────
+//
+// The actual bug this scoping fix exists for: a save used to live under one
+// flat key per browser, not per account, so switching which account was
+// logged in on a shared device showed — and then silently uploaded — the
+// OTHER account's career. See storage.ts's own note on `scoped()`.
+{
+  const store2 = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store2.get(k) ?? null,
+    setItem: (k: string, v: string) => { store2.set(k, String(v)); },
+    removeItem: (k: string) => { store2.delete(k); },
+    clear: () => store2.clear(),
+  };
+
+  const alice = makeInitialCareer({ ...PLAYER, firstName: "Alice" }, CLUBS);
+  const bob = makeInitialCareer({ ...PLAYER, firstName: "Bob" }, CLUBS);
+  saveCareer(alice, "user-alice");
+  saveCareer(bob, "user-bob");
+
+  check(loadCareer("user-alice")?.player.firstName === "Alice", "account A's own save loads for account A");
+  check(loadCareer("user-bob")?.player.firstName === "Bob", "account B's own save loads for account B");
+  check(loadCareer(ANON_SCOPE) === null, "a device that has never played signed out has no anonymous save of its own");
+
+  saveStarPhase("dilemma", "user-alice");
+  check(loadStarPhase("user-bob") === null, "a pending phase saved for one account is invisible to another on the same device");
+  check(loadStarPhase("user-alice")?.phase === "dilemma", "…and still there for the account that actually saved it");
+
+  clearCareer("user-alice");
+  check(loadCareer("user-alice") === null, "clearing account A's career doesn't touch account B's");
+  check(loadCareer("user-bob")?.player.firstName === "Bob", "account B's save survives account A being cleared");
+}
+
+// ── A save made before this fix shipped is claimed once, by whichever scope
+// asks for it first, and cannot leak into a second account afterward ───────
+{
+  const store3 = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store3.get(k) ?? null,
+    setItem: (k: string, v: string) => { store3.set(k, String(v)); },
+    removeItem: (k: string) => { store3.delete(k); },
+    clear: () => store3.clear(),
+  };
+
+  // Simulate a real pre-fix save: written straight under the old flat keys,
+  // with no account attached to it at all.
+  const legacy = makeInitialCareer({ ...PLAYER, firstName: "Legacy" }, CLUBS);
+  store3.set("star-career-v2", JSON.stringify(legacy));
+  store3.set("star-career-saved-at-v1", String(1700000000000));
+  store3.set("star-career-phase-v1", JSON.stringify({ phase: "dilemma" }));
+
+  check(loadCareer("user-alice")?.player.firstName === "Legacy", "the first account to load on this device claims the pre-fix save");
+  check(store3.has("star-career-v2") === false, "the flat legacy key is gone once claimed");
+  check(loadStarPhase("user-alice")?.phase === "dilemma", "its pending phase comes with it");
+
+  check(loadCareer("user-bob") === null, "a second account on the same device does NOT also inherit the already-claimed legacy save");
+}
+
+// ── A career played signed out is claimed by the first account that later
+// signs in on that device — not stranded under a scope real play will never
+// read again now that /star-dev requires an account ────────────────────────
+{
+  const store4 = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store4.get(k) ?? null,
+    setItem: (k: string, v: string) => { store4.set(k, String(v)); },
+    removeItem: (k: string) => { store4.delete(k); },
+    clear: () => store4.clear(),
+  };
+
+  const guest = makeInitialCareer({ ...PLAYER, firstName: "Guest" }, CLUBS);
+  saveCareer(guest, ANON_SCOPE);
+  saveStarPhase("dilemma", ANON_SCOPE);
+
+  check(loadCareer("user-alice")?.player.firstName === "Guest", "signing in for the first time claims a career played signed out on this device");
+  check(loadCareer(ANON_SCOPE) === null, "the anonymous slot is empty once claimed");
+  check(loadStarPhase("user-alice")?.phase === "dilemma", "its pending phase comes with it too");
+  check(loadCareer("user-bob") === null, "a second account signing in later does NOT also inherit the already-claimed guest career");
 }
 
 // ── What a refresh has to carry ─────────────────────────────────────────────
@@ -166,23 +247,23 @@ function playWholeSeason(start: CareerState): CareerState {
   // rolls over — and both screens in between are resumable. It used to live in
   // React state, so refreshing on either of them lost the win: you watched
   // yourself collect it and then found it had never happened.
-  saveStarPhase("retirement", undefined, true);
-  check(loadStarPhase()?.wonBallonDor === true, "a Ballon d'Or survives a refresh at the retirement screen");
-  saveStarPhase("season-transfer", undefined, true);
-  check(loadStarPhase()?.wonBallonDor === true, "…and at the transfer window");
-  saveStarPhase("season-transfer", undefined, false);
-  check(loadStarPhase()?.wonBallonDor === false, "and a runner-up stays a runner-up");
+  saveStarPhase("retirement", SCOPE, undefined, true);
+  check(loadStarPhase(SCOPE)?.wonBallonDor === true, "a Ballon d'Or survives a refresh at the retirement screen");
+  saveStarPhase("season-transfer", SCOPE, undefined, true);
+  check(loadStarPhase(SCOPE)?.wonBallonDor === true, "…and at the transfer window");
+  saveStarPhase("season-transfer", SCOPE, undefined, false);
+  check(loadStarPhase(SCOPE)?.wonBallonDor === false, "and a runner-up stays a runner-up");
 
   // Only the phases that cannot get out of their own way are written. Landing
   // back in a match or a training minigame would resume a game that is not
   // there; every browsing screen you can simply navigate out of.
   for (const p of ["dashboard", "match", "post-match", "training", "life", "press"] as const) {
-    saveStarPhase(p);
-    check(loadStarPhase() === null, `${p} is not resumed after a refresh`);
+    saveStarPhase(p, SCOPE);
+    check(loadStarPhase(SCOPE) === null, `${p} is not resumed after a refresh`);
   }
   for (const p of ["ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer"] as const) {
-    saveStarPhase(p);
-    check(loadStarPhase()?.phase === p, `${p} is`);
+    saveStarPhase(p, SCOPE);
+    check(loadStarPhase(SCOPE)?.phase === p, `${p} is`);
   }
 }
 
@@ -211,7 +292,7 @@ function playWholeSeason(start: CareerState): CareerState {
   const leaguePhase = euro.leaguePhase.map((m, i) =>
     i < 2 ? { ...m, us: i === 0 ? 3 : 1, them: i === 0 ? 1 : 1 } : m);
   const withEuro: CareerState = { ...makeInitialCareer(PLAYER, CLUBS), euroState: { ...euro, leaguePhase } };
-  saveCareer(withEuro);
+  saveCareer(withEuro, SCOPE);
 
   // Simulate what an OLD save actually looked like: strip the fields that
   // didn't exist yet, the same way a real save from before this fix would
@@ -222,7 +303,7 @@ function playWholeSeason(start: CareerState): CareerState {
   delete parsed.euroState.matchdaysPlayed;
   store.set(key, JSON.stringify(parsed));
 
-  const loaded = loadCareer();
+  const loaded = loadCareer(SCOPE);
   const table = loaded?.euroState?.liveTable;
   check(!!table, "loading an old-shaped euroState doesn't throw — it backfills liveTable");
   check(loaded?.euroState?.matchdaysPlayed === 2, `…crediting exactly the two matchdays genuinely played (${loaded?.euroState?.matchdaysPlayed})`);
