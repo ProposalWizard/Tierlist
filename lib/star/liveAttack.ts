@@ -19,11 +19,27 @@ import { PITCH_W } from "./pitch";
  * as it always is, so the finish (defenders, keeper, viewport) is the same
  * balanced situation a real match would give you. What's new is everything
  * BEFORE the strike: the ball arrives from somewhere (a ground pass, a
- * through ball, a driven cross, a raking counter-attack ball), defenders
- * and support runners visibly arrive into the positions `buildScenario`
- * already placed them at (rather than starting there, frozen), and the
- * strike itself must be timed — aim too early and there's nothing to aim
- * at yet, too late and the moment's gone.
+ * through ball, a driven cross, a raking counter-attack ball), and YOU —
+ * not just defenders and support runners — visibly arrive into the
+ * position `buildScenario` already placed you at, rather than standing
+ * there like a mannequin while everyone else plays a real football match
+ * around you.
+ *
+ * PLAYTESTED AND REVISED (first real feedback pass): the original build had
+ * a hard, punishing ready window — strike a beat early or late and the
+ * whole chance was simply gone — which reads on paper as "a real timing
+ * skill" but played as "confusing, and the only way to reliably act was to
+ * already be dragging before you could see the moment had arrived." Two
+ * changes came out of that: the player now makes a real run onto the ball
+ * instead of standing fixed and offside-looking (see `playerFrom`), and
+ * the ready window no longer expires on a short fuse — once the ball is
+ * reachable it stays yours to deal with for a long time (`READY_TAIL`),
+ * with the ball settling into a small, decaying, ever-so-slightly-alive
+ * wobble near where it arrived rather than rolling off screen if you take
+ * a moment to look at the picture. You can still strike it early, while it
+ * is genuinely still travelling, if you want the sharper read — that part
+ * of the original brief ("aim the arrow on the moving ball") is unchanged
+ * — but taking your time is no longer punished the way it was.
  *
  * Deliberately NOT a rebuild of `dribble.ts`'s "carry the ball past people"
  * mode (that request is a separate, already-shipped feature — the
@@ -89,14 +105,25 @@ const APPROACH_FOR: Record<DeliveryKind, (rng: () => number) => { duration: numb
 };
 
 /** Seconds before the ball's "perfect" arrival that a strike may already be
- *  attempted, and seconds after it that the chance is still yours before
- *  it's genuinely gone. */
+ *  attempted — the "read it early" skill option, unchanged from the first
+ *  build. */
 const READY_LEAD = 0.35;
-const READY_TAIL = 0.55;
+/**
+ * Seconds after arrival before the chance is genuinely gone — a generous
+ * safety net, not a real deadline. Reads as "basically unlimited" to a
+ * human deciding what to do (the settle motion in `ballFlightAt` keeps the
+ * ball visibly alive the whole time without drifting away), and only
+ * exists at all so an abandoned sandbox run doesn't hang forever.
+ */
+const READY_TAIL = 12;
 
 /** Metres a defender/support runner covers arriving into the position
  *  `buildScenario` already balanced the finish around. */
 const RUN_IN = 7;
+/** The same idea for YOU — a shorter run than a defender recovering from
+ *  deep, since this is your own timed run onto the ball, not a scramble
+ *  back. See the header note on why this exists at all. */
+const PLAYER_RUN_IN = 4.5;
 
 export interface LiveAttackState {
   kind: DeliveryKind;
@@ -105,6 +132,8 @@ export interface LiveAttackState {
   approach: Approach;
   readyStart: number;
   readyEnd: number;
+  /** Where you run in FROM, same idea as defenderFrom/runnerFrom below. */
+  playerFrom: Vec2;
   /** Parallel to scenario.defenders / scenario.secondaryRunners — where each
    *  one runs in FROM. */
   defenderFrom: Vec2[];
@@ -127,6 +156,10 @@ export function newLiveAttack(
     y: Math.max(1, scenario.ball.y + spec.offset.y),
   };
   const approach: Approach = { from, duration: spec.duration, bounces: spec.bounces, peak: spec.peak };
+  const playerFrom: Vec2 = {
+    x: clamp(scenario.player.x + (rng() - 0.5) * 4, 2, PITCH_W - 2),
+    y: Math.max(0.5, scenario.player.y + PLAYER_RUN_IN + rng() * 2.5),
+  };
   const defenderFrom = scenario.defenders.map(d => ({
     x: d.x + (rng() - 0.5) * 4,
     y: d.y + RUN_IN + rng() * 3,
@@ -139,7 +172,7 @@ export function newLiveAttack(
     kind, scenario, t: 0, approach,
     readyStart: Math.max(0, approach.duration - READY_LEAD),
     readyEnd: approach.duration + READY_TAIL,
-    defenderFrom, runnerFrom,
+    playerFrom, defenderFrom, runnerFrom,
     phase: "buildup",
   };
 }
@@ -147,9 +180,17 @@ export function newLiveAttack(
 /**
  * Where the ball actually is at time `t` — read every frame for rendering,
  * and read once more at the moment of the aim-release to find out exactly
- * where it was struck from. Past `approach.duration` it keeps rolling on in
- * its own direction rather than snapping to a halt, which is the thing that
- * makes striking it late genuinely harder than striking it on time.
+ * where it was struck from.
+ *
+ * Past `approach.duration` it used to keep rolling on in its own direction
+ * forever, which made striking late genuinely harder — but with the ready
+ * window now generous (see READY_TAIL), a ball that never stops rolling
+ * would eventually roll off the edge of the frame while you were still
+ * looking at the picture. It settles instead: a small, quickly-decaying
+ * wobble back and forth along the delivery's own line, centred on the real
+ * arrival point, so it still reads as a ball that has just arrived rather
+ * than a frozen photograph — without ever drifting away from where you're
+ * about to strike it.
  */
 export function ballFlightAt(state: LiveAttackState, t: number): { x: number; y: number; z: number } {
   const { approach, scenario } = state;
@@ -163,20 +204,27 @@ export function ballFlightAt(state: LiveAttackState, t: number): { x: number; y:
     x = approach.from.x + dx * u;
     y = approach.from.y + dy * u;
   } else {
-    const over = t - approach.duration;
-    const rollSpeed = (dist / approach.duration) * 0.35;
-    x = to.x + dirX * rollSpeed * over;
-    y = to.y + dirY * rollSpeed * over;
+    const settleT = t - approach.duration;
+    const decay = Math.exp(-settleT * 1.6);
+    const wobble = Math.sin(settleT * 5.5) * 0.6 * decay;
+    x = to.x + dirX * wobble;
+    y = to.y + dirY * wobble;
     u = 1;
   }
   let z = 0;
-  if (approach.peak > 0) {
-    z = 4 * approach.peak * u * (1 - u);
-  } else if (approach.bounces > 0) {
-    const decay = Math.max(0, 1 - u * 0.6);
-    z = Math.max(0, Math.sin(u * approach.bounces * Math.PI)) * 1.1 * decay;
+  if (t <= approach.duration) {
+    if (approach.peak > 0) {
+      z = 4 * approach.peak * u * (1 - u);
+    } else if (approach.bounces > 0) {
+      const decay = Math.max(0, 1 - u * 0.6);
+      z = Math.max(0, Math.sin(u * approach.bounces * Math.PI)) * 1.1 * decay;
+    }
+  } else {
+    // A last little bounce right on arrival, settling fast — same spirit as
+    // the lateral wobble above.
+    const settleT = t - approach.duration;
+    z = Math.max(0, Math.sin(settleT * 7)) * 0.3 * Math.exp(-settleT * 2.5);
   }
-  if (t > approach.duration) z = Math.max(0, z * Math.max(0, 1 - (t - approach.duration) * 1.6));
   return { x, y, z };
 }
 
@@ -196,13 +244,23 @@ export function stepLiveAttack(state: LiveAttackState, dt: number): void {
   if (state.t > state.readyEnd) state.phase = "missed";
 }
 
-/** Live defender/support-runner positions, interpolated from where they ran
- *  in from toward the real position buildScenario placed them at — and held
- *  there once the ball has arrived, exactly like a real chance. */
-export function fieldPositionsAt(state: LiveAttackState): { defenders: Vec2[]; runners: Vec2[] } {
+/**
+ * Live positions for you, defenders and support runners — all interpolated
+ * from where they ran in from toward the real position `buildScenario`
+ * placed them at, and held there once the ball has arrived, exactly like a
+ * real chance. Your own run (`player`) is the direct fix for the most
+ * concrete piece of playtesting feedback this design got: "everyone's
+ * running because this is a football match, but my player is just
+ * standing there... a lot of the time he's just standing offside."
+ */
+export function fieldPositionsAt(state: LiveAttackState): { player: Vec2; defenders: Vec2[]; runners: Vec2[] } {
   const u = clamp(state.t / state.approach.duration, 0, 1);
   const lerp = (a: number, b: number) => a + (b - a) * u;
   return {
+    player: {
+      x: lerp(state.playerFrom.x, state.scenario.player.x),
+      y: lerp(state.playerFrom.y, state.scenario.player.y),
+    },
     defenders: state.scenario.defenders.map((d, i) => ({
       x: lerp(state.defenderFrom[i].x, d.x), y: lerp(state.defenderFrom[i].y, d.y),
     })),

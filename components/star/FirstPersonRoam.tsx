@@ -27,24 +27,37 @@ import { mulberry32 } from "@/lib/star/season";
  * the camera and the input mapping needed to make a free-direction heading
  * make sense in first person.
  *
- * ── Why the camera has to turn here, when the duel mode's never does ──
+ * ── The camera never turns — playtested and revised from a first build
+ * that rotated it to face state.heading ──
  *
- * The duel mode only ever runs one way, so its camera only ever
- * translates (see firstPersonView.ts's header). A swipe here can point
- * anywhere, including sideways or backward — a first-person camera that
- * kept facing a fixed direction while you ran sideways would look like
- * sliding, not running. So this camera's `forward` genuinely rotates to
- * face `state.heading` (smoothed a little for comfort — the smoothing is
- * purely a rendering nicety, layered on top of the simulation's own
- * instant-snap heading, never fed back into it).
+ * Reported directly, after actually playing the rotating version: "you
+ * click left, or you swipe left or right, and then you go left or right,
+ * but it does like a full turn, and you basically can't see anything
+ * else... there's no in between." The first build's reasoning — "a swipe
+ * here can point anywhere, so the camera has to turn to face it or running
+ * sideways looks like sliding" — was true as far as it went, but missed
+ * the actual cost: `flick()` sets a brand new heading in one instant (that
+ * is `dribble.ts`'s own design, unchanged and correct for the top-down
+ * version, which never had a camera to spin), so a camera that rotates to
+ * match it necessarily SNAPS too, however much easing is layered on top of
+ * where it ends up pointing. A near-sideways flick — the natural gesture
+ * for "go left" — is a near-90° turn, and turning 90° in first person
+ * means the whole frame you could see a moment ago is now off past the
+ * edge of the screen.
  *
- * ── Reading the gesture relative to where you're already facing ──
- *
- * A swipe is interpreted relative to the CURRENT heading, not fixed screen
- * axes — "swipe up" always means "keep going roughly the way you're
- * already facing," and "swipe left/right" means "peel off that way from
- * here," exactly the way a first-person control scheme has to work once
- * the camera can turn. See `worldFlickFrom` below.
+ * The fix is the one the duel mode already uses (see firstPersonView.ts's
+ * header on why that camera only translates): keep `forward` fixed at the
+ * corridor's own long axis, always. A flick still points wherever you
+ * swipe — sideways, backward, anywhere `dribble.ts` already allows — but
+ * the CAMERA stops treating that as something to turn toward. Steering
+ * hard becomes drifting sideways across a frame that never stops looking
+ * up the corridor, the same well-worn control feel an endless runner uses
+ * (Temple Run, Subway Surfers) for exactly this reason: it reads instantly
+ * to anyone who has ever swiped on a phone, and a big correction never
+ * costs you the view. `worldFlickFrom` (below) used to rotate the swipe
+ * into the current-heading's own basis for this reason; with `forward`
+ * fixed at the default, that basis IS screen space, so it's now a direct,
+ * unrotated pass-through of the gesture into `flick()`.
  *
  * ── The establishing shot ──
  *
@@ -78,7 +91,6 @@ type Phase = "intro" | "run" | "result";
 const DT_CAP = 0.05;
 const BALL_LEAD = 1.7; // same reasoning as the duel mode's — see firstPersonView.ts
 const MIN_SWIPE_FRAC = 0.05; // of canvas width — smaller swipes are ignored
-const FORWARD_SMOOTH_RATE = 8; // 1/s — how fast the camera catches up to a new heading
 
 // The establishing shot — see the file header.
 const INTRO_DURATION = 1.3; // seconds
@@ -132,7 +144,6 @@ export default function FirstPersonRoam({
   const rngRef = useRef<() => number>(() => Math.random());
   const reducedMotionRef = useRef(false);
   const strideRef = useRef(0);
-  const smoothForwardRef = useRef({ x: 0, y: -1 });
   // Elapsed time in the establishing-shot intro — see the file header.
   const introTRef = useRef(0);
 
@@ -142,8 +153,8 @@ export default function FirstPersonRoam({
 
   const [resultText, setResultText] = useState("");
 
-  // A swipe, start to release — direction is read relative to the CURRENT
-  // heading (see the file header), so it's computed on release, not mid-drag.
+  // A swipe, start to release — read on release, not mid-drag, same as the
+  // top-down version's own flick gesture.
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -168,7 +179,6 @@ export default function FirstPersonRoam({
     const state = newDribble({ pace, oppStrength, chasers, rng });
     stateRef.current = state;
     strideRef.current = 0;
-    smoothForwardRef.current = { ...normalize(state.heading) };
     introTRef.current = 0;
     swipeStartRef.current = null;
     setResultText("");
@@ -191,21 +201,15 @@ export default function FirstPersonRoam({
     return () => window.removeEventListener("resize", resize);
   }, []);
 
-  /** Turn a screen-space swipe into a world heading, relative to whichever
-   *  way you're currently facing — "up" on screen means "keep going the
-   *  way you're already going," not a fixed world axis. */
+  /** Turn a screen-space swipe into a world heading. The camera's forward
+   *  never rotates (see the file header), so screen space IS world space
+   *  here — this is a direct pass-through, not a basis change. Kept as its
+   *  own function anyway: `flick()`'s x/y and screen dx/dy line up by
+   *  construction, not by coincidence, and a named function says so. */
   const worldFlickFrom = (dxScreen: number, dyScreen: number) => {
     const state = stateRef.current;
     if (!state) return;
-    const fwd = normalize(state.heading);
-    const right = { x: -fwd.y, y: fwd.x };
-    const fwdComponent = -dyScreen; // screen-up => keep facing forward
-    const rightComponent = dxScreen;
-    const dir = {
-      x: fwd.x * fwdComponent + right.x * rightComponent,
-      y: fwd.y * fwdComponent + right.y * rightComponent,
-    };
-    flick(state, dir.x, dir.y);
+    flick(state, dxScreen, dyScreen);
   };
 
   // ── Pointer input — a swipe, read on release ──────────────────────────
@@ -227,7 +231,7 @@ export default function FirstPersonRoam({
     worldFlickFrom(dx, dy);
   };
 
-  // ── Keyboard fallback — arrows turn relative to the current heading ────
+  // ── Keyboard fallback — arrows steer left/right, same fixed axes ───────
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
       if (phaseRef.current !== "run") return;
@@ -265,15 +269,6 @@ export default function FirstPersonRoam({
       } else if (phaseRef.current === "run" && state) {
         const outcome = stepDribble(state, dt);
         strideRef.current += state.speed * dt;
-
-        const target = normalize(state.heading);
-        const sm = smoothForwardRef.current;
-        const t = 1 - Math.exp(-dt * FORWARD_SMOOTH_RATE);
-        sm.x += (target.x - sm.x) * t;
-        sm.y += (target.y - sm.y) * t;
-        const n = normalize(sm);
-        sm.x = n.x; sm.y = n.y;
-
         if (outcome !== "running") finishRun(outcome, state.beatenBy);
       }
 
@@ -283,23 +278,29 @@ export default function FirstPersonRoam({
     const draw = () => {
       const c = canvasRef.current, state = stateRef.current;
       if (!c || !state) return;
-      const forward = smoothForwardRef.current;
 
       // The establishing shot — one continuous swoop from elevated/tilted
       // down to the ordinary eye-level view, sharing every drawing routine
-      // with normal play; only these two numbers animate.
+      // with normal play; only these two numbers animate. `forward` is
+      // deliberately never passed here — see the file header on why the
+      // camera stays fixed at cameraFor's own default for the whole run.
       let eye: number | undefined, pitch: number | undefined;
       if (phaseRef.current === "intro") {
         const p = easeInOutCubic(introTRef.current / INTRO_DURATION);
         eye = ESTABLISH_EYE + (EYE - ESTABLISH_EYE) * p;
         pitch = ESTABLISH_PITCH * (1 - p);
       }
-      const cam = cameraFor({ x: state.pos.x, y: state.pos.y }, c.width, c.height, { forward, eye, pitch });
+      const cam = cameraFor({ x: state.pos.x, y: state.pos.y }, c.width, c.height, { eye, pitch });
 
       // The ball leads you, bouncing and swaying in a rhythm tied to
       // distance run rather than gliding at a fixed offset — see the file
       // header. Frozen at a plain lead offset during the intro (nothing is
-      // moving yet) and when the viewer has asked for reduced motion.
+      // moving yet) and when the viewer has asked for reduced motion. Its
+      // own direction is your ACTUAL heading, not the (now fixed) camera —
+      // the ball genuinely leads wherever you're dribbling it, which can
+      // drift it off to one side of a frame that keeps looking straight
+      // up the corridor, exactly as it should when you've steered hard.
+      const forward = normalize(state.heading);
       const right = { x: -forward.y, y: forward.x };
       let ball: { x: number; y: number; z: number };
       if (phaseRef.current !== "run" || reducedMotionRef.current) {

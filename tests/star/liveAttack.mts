@@ -8,8 +8,11 @@ import {
 /**
  * The moving attacking-situation sandbox's pure logic: does the ball
  * genuinely arrive where the real scenario expects it, does the ready
- * window actually gate a strike, do defenders/runners actually arrive
- * rather than teleport, and does striking late genuinely cost you distance.
+ * window actually stay open long enough to be usable (not the short, hard
+ * fuse the first build shipped with — see liveAttack.ts's own header on
+ * why that changed after real playtesting), does the settled ball stay
+ * near where it arrived rather than drifting off screen if you take your
+ * time, and do you and everyone else genuinely arrive rather than teleport.
  */
 
 const problems: string[] = [];
@@ -31,6 +34,7 @@ for (const kind of DELIVERY_KINDS) {
   check(s.readyStart >= 0, `${kind}: ready window never starts before kickoff`);
   check(s.readyStart < s.readyEnd, `${kind}: ready window has real width`);
   check(s.approach.duration >= s.readyStart && s.approach.duration <= s.readyEnd, `${kind}: "perfect" arrival falls inside its own ready window`);
+  check(s.readyEnd - s.readyStart > 10, `${kind}: the ready window is genuinely generous, not a short reflex-test fuse`);
 }
 
 // ── ballFlightAt: starts at the origin, arrives exactly at scenario.ball,
@@ -64,14 +68,31 @@ for (const kind of DELIVERY_KINDS) {
   check(monotonic, "distance to the arrival point shrinks monotonically during the approach");
 }
 
-// ── Striking late costs you distance — the ball keeps travelling in the
-// same direction rather than snapping to a halt at the arrival point ─────
+// ── Once it arrives, the ball settles near that point — it stays visibly
+// alive for a moment, but never drifts away, however long you take ───────
 {
+  for (const kind of DELIVERY_KINDS) {
+    const s = runOut(kind, 11);
+    let maxDrift = 0;
+    for (let over = 0; over <= 15; over += 0.1) {
+      const p = ballFlightAt(s, s.approach.duration + over);
+      maxDrift = Math.max(maxDrift, Math.hypot(p.x - s.scenario.ball.x, p.y - s.scenario.ball.y));
+    }
+    check(maxDrift < 1.0, `${kind}: the settled ball never drifts more than a metre from where it arrived, however long you wait (max ${maxDrift.toFixed(2)}m)`);
+  }
+
+  // And it genuinely settles — the wobble shrinks over time rather than
+  // oscillating forever at the same amplitude.
   const s = runOut("ground", 11);
-  const atArrival = ballFlightAt(s, s.approach.duration);
-  const late = ballFlightAt(s, s.approach.duration + 0.3);
-  const movedOn = Math.hypot(late.x - atArrival.x, late.y - atArrival.y);
-  check(movedOn > 0.3, `a late read keeps moving past the arrival point (moved ${movedOn.toFixed(2)}m) rather than freezing there`);
+  const early = Math.hypot(
+    ballFlightAt(s, s.approach.duration + 0.15).x - s.scenario.ball.x,
+    ballFlightAt(s, s.approach.duration + 0.15).y - s.scenario.ball.y,
+  );
+  const late = Math.hypot(
+    ballFlightAt(s, s.approach.duration + 5).x - s.scenario.ball.x,
+    ballFlightAt(s, s.approach.duration + 5).y - s.scenario.ball.y,
+  );
+  check(late < early, `the residual wobble decays over time rather than staying constant (0.15s in: ${early.toFixed(3)}m, 5s in: ${late.toFixed(3)}m)`);
 }
 
 // ── The ready window actually gates a strike ──────────────────────────────
@@ -97,9 +118,26 @@ for (const kind of DELIVERY_KINDS) {
   check(s.t === tAtMiss, "time stops advancing once the chance is gone");
 }
 
-// ── Defenders and support runners genuinely arrive, they don't teleport ──
+// ── You, defenders and support runners all genuinely arrive — nobody
+// teleports, and nobody just stands there while everyone else plays
+// football, which was the single most concrete piece of feedback this
+// design got ("my player is just standing there... a lot of the time he's
+// just standing offside") ─────────────────────────────────────────────────
 {
   const s = runOut("cross", 13);
+  const at0 = fieldPositionsAt(s).player;
+  check(Math.abs(at0.x - s.playerFrom.x) < 1e-9 && Math.abs(at0.y - s.playerFrom.y) < 1e-9,
+    "you start exactly at your own recorded starting point, not already standing on the ball");
+  s.t = s.approach.duration;
+  const atArrival = fieldPositionsAt(s).player;
+  check(Math.abs(atArrival.x - s.scenario.player.x) < 1e-6 && Math.abs(atArrival.y - s.scenario.player.y) < 1e-6,
+    "by the time the ball arrives, you've made the run onto the real scenario's position for you");
+  s.t = s.approach.duration + 5;
+  const held = fieldPositionsAt(s).player;
+  check(Math.abs(held.x - s.scenario.player.x) < 1e-6 && Math.abs(held.y - s.scenario.player.y) < 1e-6,
+    "you hold your run-onto position rather than drifting off it");
+  s.t = 0;
+
   if (s.scenario.defenders.length > 0) {
     const at0 = fieldPositionsAt(s).defenders[0];
     check(Math.abs(at0.x - s.defenderFrom[0].x) < 1e-9 && Math.abs(at0.y - s.defenderFrom[0].y) < 1e-9,
