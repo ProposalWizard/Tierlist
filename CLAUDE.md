@@ -48,7 +48,15 @@ NEXT_PUBLIC_SUPABASE_URL=https://cagkgfketucousksgtbk.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 NEXT_PUBLIC_APP_URL=https://knowitball.co.uk
+NEXT_PUBLIC_POSTHOG_KEY=phc_ksQCEbdcPvcMaAs2u3Ejx6YnpaYYvYQLHGWbcALPskR8
+NEXT_PUBLIC_POSTHOG_HOST=https://eu.posthog.com
+NEXT_PUBLIC_SENTRY_DSN=            # set once a Sentry project exists — see Pending Setup below
+SENTRY_ORG=                        # optional, enables source-map upload at build time
+SENTRY_PROJECT=                    # optional, enables source-map upload at build time
+SENTRY_AUTH_TOKEN=                 # optional, enables source-map upload at build time
 ```
+
+Both PostHog and Sentry are wired to no-op cleanly when their env vars are unset — missing `NEXT_PUBLIC_POSTHOG_KEY` disables analytics entirely, missing `NEXT_PUBLIC_SENTRY_DSN` disables error reporting entirely, neither throws or blocks the build. `NEXT_PUBLIC_POSTHOG_KEY` is safe to commit/expose client-side by design (same class of value as a GA measurement ID) but kept in env vars here for consistency with everything else in this table.
 
 ---
 
@@ -188,6 +196,15 @@ npm run lint   # Run ESLint
 | `fc27_clone_premier_league.sql` | **RUN** (Aug 2026) | Cloned every FC 26 Premier League player into `fifa_year = 2027` a year older, so the 2026/27 season can be built by hand before FC 27 exists. 506 players, 20 clubs, every club's average age +1.0. It is a single statement whose result row says what happened, and it matches on **club name** (the twenty in `lib/star/kits.ts`, punctuation stripped) rather than league name — the league-name version found nothing twice. `ON CONFLICT DO NOTHING`, so re-run it to fill in anybody missing; it never undoes an edit. Manual promotions from other leagues survive re-runs (Arsenal 24→26, Newcastle 29→28 are exactly that). |
 | `security_user_profiles_columns_aug2026.sql` | **PENDING** (new, Aug 2026) | The `user_profiles` update policy limits you to your own row but permits any *column*. Lets any logged-in user equip cosmetics they never unlocked (bypassing `/api/profile/equip`), set `longest_streak` to grant themselves streak trophies via `/api/stats`, and bypass the username-change cooldown. Run `security_rls_hardening_jul2026.sql` first. |
 | `star_lineups.sql` | **PENDING — RUN BEFORE USING /lineups AGAIN** (new, Aug 2026) | Creates the `star_lineups` table. The Lineups/Squad Builder page used to save ONLY to browser localStorage — invisible to every other device and every other player, discovered after real work was put into building lineups that only that one browser ever saw. `/api/star/lineups` (GET public, POST admin-only via `isAdmin()`) now reads/writes this table instead; `lib/star/lineupStore.ts`'s localStorage stays as a synchronous read cache, refreshed via `fetchSharedLineups()` at app load. Until this migration runs, GET/POST both fail (table doesn't exist) and the Lineups page falls back to auto-picked sides for everyone. |
+
+---
+
+## Pending Setup (non-database, Sep 2026)
+
+| What | Status | Impact if missing |
+|------|--------|-------------------|
+| Sentry project | **PENDING** | The error-monitoring connector's org link (`knowitball`) is correct, but the org has no project in it yet — Sentry dashboard → Projects → Create Project → "Next.js" platform. `instrumentation-client.ts`/`sentry.server.config.ts`/`sentry.edge.config.ts` are already wired to read `NEXT_PUBLIC_SENTRY_DSN`; until that env var is set in Vercel, error reporting is a deliberate no-op (not broken — just off). |
+| Supabase/Vercel MCP connectors | **PENDING (account-side, not code)** | Both `list_projects`/`list_teams` come back empty against the connected accounts — neither resolves to the account that actually owns `cagkgfketucousksgtbk`/the knowitball Vercel project. Disconnect and reconnect each, logging into the correct account (relevant if more than one Supabase/Vercel login exists) — no code change fixes this. |
 
 ---
 

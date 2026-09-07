@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -10,6 +12,9 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities", "@supabase/supabase-js"],
+    // instrumentation.ts (Sentry's server/edge init) is still opt-in on
+    // Next.js 14 — stable without this flag from 15 on.
+    instrumentationHook: true,
   },
   // face-api.js depends on node-fetch (which needs 'encoding') and
   // references 'fs' for model loading.  Neither is needed at build
@@ -70,4 +75,20 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Wraps the build with Sentry's webpack plugin for source-map upload —
+// harmless without SENTRY_ORG/SENTRY_PROJECT/SENTRY_AUTH_TOKEN set (it just
+// skips the upload with a warning rather than failing the build), so this
+// is safe to ship before those exist. `silent: true` keeps that warning out
+// of normal build output; set it to false locally if source maps aren't
+// uploading and the reason isn't obvious.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: true,
+  widenClientFileUpload: true,
+  webpack: {
+    treeshake: { removeDebugLogging: true },
+    automaticVercelMonitors: false,
+  },
+});
