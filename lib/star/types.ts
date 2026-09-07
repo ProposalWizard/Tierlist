@@ -722,12 +722,14 @@ export interface CareerState {
    */
   leagueTransferNews?: {
     player: string; from: string; to: string; overall: number; fee: number; unhappy: boolean;
+    position: import("./formations").Role; age?: number; imageUrl?: string;
   }[];
   /** Same "what just happened, replaced whole" shape as leagueTransferNews,
    *  for loan moves specifically. See lib/star/leagueTransfers. */
   leagueLoanNews?: {
     player: string; playerId: string; parentClub: string; loanClub: string;
     overall: number; returnSeason: number;
+    position: import("./formations").Role; age?: number; imageUrl?: string;
   }[];
   /**
    * Everybody currently out on loan, whoever's business it was — yours
@@ -738,6 +740,7 @@ export interface CareerState {
   activeLoans?: {
     player: string; playerId: string; parentClub: string; loanClub: string;
     overall: number; returnSeason: number;
+    position: import("./formations").Role; age?: number; imageUrl?: string;
   }[];
   /**
    * `"<season>-<summer|january>"` of the last window actually run, so a

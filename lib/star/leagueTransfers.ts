@@ -452,6 +452,12 @@ export interface TransferMove {
   fee: number;
   /** He asked for the move rather than being sold on. Rare — see sellability. */
   unhappy: boolean;
+  /** His primary role — every Candidate this file reads already has one, so
+   *  this is never a guess. Added for the Transfers tab redesign (a real
+   *  photo, a position chip, an age), never read by the engine itself. */
+  position: Role;
+  age?: number;
+  imageUrl?: string;
 }
 
 export interface LoanMove {
@@ -467,6 +473,10 @@ export interface LoanMove {
   /** The season this loan is due home — always the season it was made in;
    *  see the file header for what that deliberately does not cover. */
   returnSeason: number;
+  /** See TransferMove — same reason, same source. */
+  position: Role;
+  age?: number;
+  imageUrl?: string;
 }
 
 /** A price with no budget behind it — cosmetic, off the rating alone, the
@@ -606,6 +616,7 @@ export function runTransferWindow(
           // divide from where he was sitting when this was written.
           player: seller.name, playerId: stableKey(seller), parentClub: seller.club, loanClub: bestClub,
           overall: seller.overall, returnSeason: career.season,
+          position: seller.position, age: seller.age, imageUrl: seller.imageUrl,
         },
         score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
       });
@@ -615,6 +626,7 @@ export function runTransferWindow(
         saleMove: {
           player: seller.name, from: seller.club, to: bestClub,
           overall: seller.overall, fee: feeFor(seller.overall), unhappy,
+          position: seller.position, age: seller.age, imageUrl: seller.imageUrl,
         },
         score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
       });
@@ -649,6 +661,7 @@ export function runTransferWindow(
       saleMove: {
         // A signing, not a purchase — free is what "free agent" means.
         player: fa.name, from: FREE_AGENTS_CLUB, to: bestClub, overall: fa.overall, fee: 0, unhappy: false,
+        position: fa.position, age: fa.age, imageUrl: fa.imageUrl,
       },
       score: bestScore, from: FREE_AGENTS_CLUB, to: bestClub, playerId: fa.id,
     });
@@ -890,6 +903,7 @@ export function runInternationalWindow(
     moves.push({
       player: player.name, from: sellerClub.club, to: buyerClub,
       overall: player.overall, fee: feeFor(player.overall), unhappy: false,
+      position: player.position, age: player.age, imageUrl: player.imageUrl,
     });
   }
 
