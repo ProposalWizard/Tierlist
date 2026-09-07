@@ -166,6 +166,28 @@ function freshCareer(season: number): CareerState {
     { club: "Villarreal", players: [] }, // one genuinely never-scraped club is not the whole snapshot being stale
   ];
   check(shouldUpgradeExternalSquads(mostlyReal) === false, "mostly-real foreign rosters do not trigger a re-fetch over one thin club");
+
+  // ── A healthy-looking snapshot that predates a real club-list edit ──
+  //
+  // Reported directly from a real save: Sturm Graz/Young Boys/Ajax read as a
+  // full XI of free agents in a Champions League game, even though the rest
+  // of that career's externalSquads snapshot was fine (nothing near the
+  // <50% empty ratio above). Root cause was clubs.ts's own club lists having
+  // been edited (clubs added/moved) after that save's snapshot was taken —
+  // a staleness the empty-ratio check can never see, because every club
+  // that WAS in the old snapshot is perfectly healthy; the problem is one
+  // that's now expected but entirely absent.
+  const healthyButMissingOne: LeagueSquad[] = [
+    { club: "Real Madrid", players: squadFor("Real Madrid", 1, true).players },
+    { club: "FC Barcelona", players: squadFor("FC Barcelona", 2, true).players },
+    { club: "Paris Saint-Germain", players: squadFor("Paris Saint-Germain", 3, true).players },
+  ];
+  check(shouldUpgradeExternalSquads(healthyButMissingOne) === false,
+    "without an expected list, a healthy snapshot never re-fetches, however incomplete it actually is");
+  check(shouldUpgradeExternalSquads(healthyButMissingOne, ["Real Madrid", "FC Barcelona", "Paris Saint-Germain"]) === false,
+    "…but with one, a snapshot that already has everything currently expected does not re-fetch");
+  check(shouldUpgradeExternalSquads(healthyButMissingOne, ["Real Madrid", "FC Barcelona", "Paris Saint-Germain", "SK Sturm Graz"]) === true,
+    "…and a snapshot missing even one currently-expected club re-fetches, no matter how healthy the rest of it is");
 }
 
 if (problems.length) {

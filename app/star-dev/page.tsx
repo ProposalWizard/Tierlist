@@ -220,11 +220,12 @@ export default function StarDevPage() {
       fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
         setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
       });
-    } else if (shouldUpgradeExternalSquads(saved.externalSquads!)) {
+    } else if (shouldUpgradeExternalSquads(saved.externalSquads!, externalClubsFor(saved.league.map(t => t.name)))) {
       // A career that first fetched the wider world while most of those
-      // clubs still had zero real rows (see shouldUpgradeExternalSquads) —
-      // re-fetched and merged, same as the domestic re-fetch just above,
-      // rather than staying stuck with a near-empty snapshot forever.
+      // clubs still had zero real rows, OR whose snapshot simply predates a
+      // club the CURRENT code expects to find (see shouldUpgradeExternalSquads'
+      // own comment) — re-fetched and merged, same as the domestic re-fetch
+      // just above, rather than staying stuck with a stale snapshot forever.
       fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((fresh) => {
         setCareer(c => (c ? { ...c, externalSquads: mergeLeagueSquadStats(fresh, c.externalSquads ?? []) } : c));
       });

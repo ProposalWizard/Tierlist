@@ -1,5 +1,8 @@
 import { poolFor } from "../../lib/star/euro";
-import { externalClubsFor, PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "../../lib/star/clubs";
+import {
+  externalClubsFor, PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS,
+  CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS,
+} from "../../lib/star/clubs";
 
 /**
  * A EUROPEAN OPPONENT'S NAME MUST MATCH WHOSE SQUAD ACTUALLY GETS FETCHED —
@@ -53,6 +56,31 @@ check(poolFor("Champions League").some(c => c.name === "FC København"),
   "Copenhagen is in the Champions League pool under the real database spelling");
 check(!poolFor("Champions League").some(c => c.name === "Copenhagen"),
   "…and not under the old English shorthand that had no squad to match");
+
+// ── A club must be drawn in the SAME competition clubs.ts assigns it to —
+// not just resolvable to a real squad somewhere. Reported directly from a
+// real save: Sturm Graz, Young Boys and Ajax — all real EUROPA_LEAGUE_CLUBS
+// members per clubs.ts (and shown under the Europa League tab on /lineups)
+// — turned up as the player's live CHAMPIONS League opponents, because
+// euro.ts's CHAMPIONS_POOL/EUROPA_POOL had drifted from clubs.ts's own
+// CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS without either ever being
+// checked against the other — only checked (above) for existing somewhere.
+{
+  const championsSet = new Set(CHAMPIONS_LEAGUE_CLUBS);
+  const europaSet = new Set(EUROPA_LEAGUE_CLUBS);
+  for (const club of poolFor("Champions League")) {
+    check(championsSet.has(club.name),
+      `Champions League opponent "${club.name}" is tagged a Champions League club in clubs.ts, not merely resolvable somewhere`);
+    check(!europaSet.has(club.name),
+      `Champions League opponent "${club.name}" is not ALSO tagged a Europa League club in clubs.ts`);
+  }
+  for (const club of poolFor("Europa League")) {
+    check(europaSet.has(club.name),
+      `Europa League opponent "${club.name}" is tagged an Europa League club in clubs.ts, not merely resolvable somewhere`);
+    check(!championsSet.has(club.name),
+      `Europa League opponent "${club.name}" is not ALSO tagged a Champions League club in clubs.ts`);
+  }
+}
 
 // ── The other domestic tier is fetched too — a real FA Cup opponent from ───
 // the tier below (or above) your own division, e.g. Blackburn Rovers for a

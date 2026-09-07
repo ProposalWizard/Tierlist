@@ -61,11 +61,20 @@ export const PROMOTION_POOL_CLUBS: readonly string[] = [
  * "Villarreal" was given here too ("Villareal") but is already the Champions
  * League club above — one mention, not two. "Ajax" moved to the Europa
  * League list, which was seven short of the real thirty-six.
+ *
+ * "Sevilla FC"/"Eintracht Frankfurt"/"Lazio" moved out to
+ * CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS below — reported directly from
+ * a real save: these three (plus several already-misfiled entries within
+ * those two lists) turned up as the player's live Champions League
+ * opponents despite this file calling them something else entirely
+ * (Europa League, or not a European club at all per this list). euro.ts's
+ * CHAMPIONS_POOL/EUROPA_POOL — who you can actually be drawn against — had
+ * drifted from this file's own tabs without either ever being checked
+ * against the other. See euro.ts's own header for the full account.
  */
 export const OTHER_CLUBS: readonly string[] = [
-  "Sevilla FC", "Eintracht Frankfurt", "FC Schalke 04", "AS Monaco",
-  "RC Strasbourg Alsace", "Atalanta", "Lazio", "Al Hilal", "Al Nassr",
-  "Al Ahli SFC", "Al Ittihad",
+  "FC Schalke 04", "AS Monaco", "RC Strasbourg Alsace", "Atalanta",
+  "Al Hilal", "Al Nassr", "Al Ahli SFC", "Al Ittihad",
 ];
 
 /**
@@ -105,6 +114,10 @@ export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
   // league already confirmed present via Midtjylland's match. Danish
   // spelling, not the English one — its own real row is "FC København".
   "FC København",
+  // Moved in from OTHER_CLUBS — both have real recent Champions League
+  // pedigree and euro.ts's CHAMPIONS_POOL already (correctly) treated them
+  // as Champions League clubs; this file just never agreed until now.
+  "Sevilla FC", "Eintracht Frankfurt",
 ];
 
 export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
@@ -124,6 +137,10 @@ export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
   // other clubs with a genuine European pedigree, each from a league already
   // confirmed present in the table by a club above that matched clean.
   "Sporting Clube de Braga", "PAOK", "Viktoria Plzeň", "Vitória SC", "Legia Warszawa",
+  // Moved in from OTHER_CLUBS — real Europa League pedigree, and euro.ts's
+  // EUROPA_POOL already (correctly) treated it as one; this file just never
+  // agreed until now.
+  "Lazio",
 ];
 
 /**

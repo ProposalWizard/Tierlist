@@ -265,11 +265,30 @@ export function shouldUpgradeLeagueSquads(squads: LeagueSquad[]): boolean {
  * shipped is stuck for the rest of that save: the fetch on `app/star-dev/
  * page.tsx` only ever runs again while the array is still completely empty,
  * and a handful of real clubs is enough to make it non-empty forever.
+ *
+ * `expectedClubs`, when given, catches a DIFFERENT kind of staleness the
+ * ratio below can't see at all: reported directly from a real save fourteen
+ * seasons in, where Champions League opponents the CURRENT code expects
+ * (Sturm Graz, Young Boys, Ajax — see euro.ts's own header for the fuller
+ * story) had a full XI of free agents instead of a real squad, even though
+ * plenty of OTHER clubs in the same `externalSquads` snapshot resolved
+ * fine. Root cause: `clubs.ts`'s CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS
+ * (what `externalClubsFor` fetches) has been edited many times since this
+ * feature shipped — clubs added, moved between lists, renamed — and a save
+ * whose snapshot was taken before one of those edits landed keeps a
+ * perfectly healthy-LOOKING array (most of what's in it has real players)
+ * that simply never contains the newer club at all. `withPlayers / length`
+ * can't detect an absence; only comparing against what the game would fetch
+ * TODAY can. Passed as `externalClubsFor(...)`'s own current output at both
+ * call sites in app/star-dev/page.tsx.
  */
-export function shouldUpgradeExternalSquads(squads: LeagueSquad[]): boolean {
+export function shouldUpgradeExternalSquads(squads: LeagueSquad[], expectedClubs?: string[]): boolean {
   if (squads.length === 0) return false;
   const withPlayers = squads.filter(s => s.players.length > 0).length;
-  return withPlayers / squads.length < 0.5;
+  if (withPlayers / squads.length < 0.5) return true;
+  if (!expectedClubs) return false;
+  const have = new Set(squads.map(s => s.club));
+  return expectedClubs.some(c => !have.has(c));
 }
 
 /**
