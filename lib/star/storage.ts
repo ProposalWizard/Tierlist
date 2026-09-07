@@ -11,6 +11,67 @@ const PHASE_KEY = "star-career-phase-v1";
 const SAVED_AT_KEY = "star-career-saved-at-v1";
 
 /**
+ * A logged-out player's own slot — distinct from any real account id, so a
+ * career played signed-out never collides with one played signed-in.
+ */
+export const ANON_SCOPE = "anon";
+
+/**
+ * EVERY key below is scoped by WHICH ACCOUNT this save belongs to (or
+ * ANON_SCOPE for a signed-out player) — never a bare, shared key.
+ *
+ * Before this, `KEY` etc. were flat constants: one save per BROWSER, not per
+ * account. That is fine on a device only ever used by one account, and
+ * silently catastrophic the moment it isn't. Reported directly: switching to
+ * a second account on one device (a phone, to reach an admin feature the
+ * usual computer account needed) showed that account's OWN career as
+ * whatever the browser had last cached for the FIRST account — and a few
+ * seconds later, the debounced cloud-save effect in app/star-dev/page.tsx
+ * uploaded that wrong career to the second account's cloud row, because the
+ * upload only ever asks "who is logged in right now", never "does this
+ * local copy actually belong to them". From there it cascades on its own:
+ * the next device to load that now-contaminated account pulls it down
+ * (cloud looks newer than local), and merely LOOKING at the other account
+ * while troubleshooting repeats the exact same upload in the other
+ * direction — which is exactly how both accounts ended up holding the
+ * identical career.
+ *
+ * Scoping every key by account makes the browser cache for account A and
+ * the cache for account B two entirely separate slots, on the same device —
+ * switching which account is signed in can no longer leak one into the
+ * other, because there is nothing shared left to leak through.
+ */
+function scoped(base: string, scope: string): string {
+  return `${base}::${scope}`;
+}
+
+/**
+ * A save made before this fix shipped sits under the old flat key, with no
+ * account attached to it at all. The first scope (real account, or
+ * ANON_SCOPE) to ask for its data claims that flat save as its own and the
+ * flat key is deleted immediately afterward — so it can only ever be
+ * claimed once, rather than a second account on the same device inheriting
+ * the first account's pre-fix history the same way this whole bug started.
+ * Whoever is actually sitting at the device when it first updates is, in
+ * practice, almost always its one real owner.
+ */
+function claimLegacySave(scope: string): void {
+  try {
+    if (localStorage.getItem(scoped(KEY, scope)) !== null) return; // already has its own
+    const legacyCareer = localStorage.getItem(KEY);
+    if (legacyCareer === null) return;
+    localStorage.setItem(scoped(KEY, scope), legacyCareer);
+    const legacySavedAt = localStorage.getItem(SAVED_AT_KEY);
+    if (legacySavedAt !== null) localStorage.setItem(scoped(SAVED_AT_KEY, scope), legacySavedAt);
+    const legacyPhase = localStorage.getItem(PHASE_KEY);
+    if (legacyPhase !== null) localStorage.setItem(scoped(PHASE_KEY, scope), legacyPhase);
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(SAVED_AT_KEY);
+    localStorage.removeItem(PHASE_KEY);
+  } catch { /* ignore */ }
+}
+
+/**
  * The phases a refresh must land you back in.
  *
  * The career itself has always been saved, but the phase was React state only,
@@ -45,16 +106,22 @@ export interface SavedPhase {
   wonBallonDor?: boolean;
 }
 
-export function saveStarPhase(phase: StarPhase, offerReason?: "form" | "star", wonBallonDor?: boolean) {
+/**
+ * `scope` is the current account's user id, or ANON_SCOPE for a signed-out
+ * player — see the note above `scoped()` for why this can no longer be
+ * optional. Every call site knows which account (if any) it's acting for.
+ */
+export function saveStarPhase(phase: StarPhase, scope: string, offerReason?: "form" | "star", wonBallonDor?: boolean) {
   try {
-    if (!RESUMABLE.includes(phase)) { localStorage.removeItem(PHASE_KEY); return; }
-    localStorage.setItem(PHASE_KEY, JSON.stringify({ phase, offerReason, wonBallonDor }));
+    const key = scoped(PHASE_KEY, scope);
+    if (!RESUMABLE.includes(phase)) { localStorage.removeItem(key); return; }
+    localStorage.setItem(key, JSON.stringify({ phase, offerReason, wonBallonDor }));
   } catch {}
 }
 
-export function loadStarPhase(): SavedPhase | null {
+export function loadStarPhase(scope: string): SavedPhase | null {
   try {
-    const raw = localStorage.getItem(PHASE_KEY);
+    const raw = localStorage.getItem(scoped(PHASE_KEY, scope));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SavedPhase;
     return RESUMABLE.includes(parsed.phase) ? parsed : null;
@@ -63,10 +130,10 @@ export function loadStarPhase(): SavedPhase | null {
   }
 }
 
-export function saveCareer(state: CareerState) {
+export function saveCareer(state: CareerState, scope: string) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-    localStorage.setItem(SAVED_AT_KEY, String(Date.now()));
+    localStorage.setItem(scoped(KEY, scope), JSON.stringify(state));
+    localStorage.setItem(scoped(SAVED_AT_KEY, scope), String(Date.now()));
   } catch {}
 }
 
@@ -81,18 +148,19 @@ export function saveCareer(state: CareerState) {
  * save that has never been timestamped losing to ANY cloud row, however old,
  * the very first time this runs — the exact bug this exists to fix.
  */
-export function loadCareerSavedAt(): number {
+export function loadCareerSavedAt(scope: string): number {
   try {
-    const raw = localStorage.getItem(SAVED_AT_KEY);
+    const raw = localStorage.getItem(scoped(SAVED_AT_KEY, scope));
     return raw ? Number(raw) : Date.now();
   } catch {
     return Date.now();
   }
 }
 
-export function loadCareer(): CareerState | null {
+export function loadCareer(scope: string): CareerState | null {
+  claimLegacySave(scope);
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(scoped(KEY, scope));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CareerState;
     if (parsed.version !== 2) return null;
@@ -199,11 +267,19 @@ function backfill(c: CareerState): CareerState {
   return out;
 }
 
-export function clearCareer() {
+export function clearCareer(scope: string) {
   try {
+    localStorage.removeItem(scoped(KEY, scope));
+    localStorage.removeItem(scoped(SAVED_AT_KEY, scope));
+    localStorage.removeItem(scoped(PHASE_KEY, scope));
+    // Pre-fix saves under the flat keys, and a stray v1 record — neither is
+    // scoped to begin with, so there's nothing to pick a scope for; clearing
+    // them here just means a reset also cleans up anything left over from
+    // before this fix shipped.
     localStorage.removeItem(KEY);
     localStorage.removeItem(OLD_KEY);
     localStorage.removeItem(PHASE_KEY);
+    localStorage.removeItem(SAVED_AT_KEY);
   } catch {}
 }
 
