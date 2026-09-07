@@ -771,14 +771,47 @@ export function runTransferWindow(
 // Deliberately a SEPARATE pass from runTransferWindow above rather than
 // folding sixty extra clubs into its own matching loop: that engine is tuned
 // and tested for a twenty-club division where every signing is somebody
-// else's sale, and a marquee move crossing into it is meant to be the rare
-// exception a whole division's business is not built around — "you MIGHT
-// see" one, not routine cross-continental trading every window. So this
-// keeps its own small budget (at most one or two deals, and most windows
-// have none at all) and reuses the SAME tuned building blocks — clubStrength,
-// reachDown/REACH_UP, positionNeed, sellability, rivalrySellChance, feeFor —
-// rather than inventing separate rules a big club buying abroad would somehow
-// follow differently from one buying at home.
+// else's sale. This pass still reuses what genuinely carries over —
+// clubStrength, positionNeed, rivalrySellChance, feeFor — but NOT the
+// domestic engine's own sellability gate or reach, both of which assume a
+// tight ~20-man squad close enough in level to its rivals to trade with
+// routinely; see internationalSellability and INTERNATIONAL_REACH_MULT for
+// why the wider world needed its own version of each instead.
+//
+// Tuned twice. First pass (see the original comment above, kept for the
+// "why does this exist at all" history): a genuine rarity, gated behind a
+// 40%/15% coin flip with at most two deals even then, a 78+ overall floor,
+// and (unreported at the time) borrowing the domestic sellability gate
+// wholesale — which only lets an ordinary, non-"unhappy" departure through
+// once a squad is OVERSTOCKED past its target size, something a freshly
+// generated ~20-man squad (domestic or foreign) essentially never is. Most
+// windows had none, and measuring it directly (see
+// tests/star/internationalWindow.mts) showed the coin flip barely mattered
+// next to that gate — raising it alone moved the realised rate from a
+// genuine rarity to only a quarter of summer windows.
+//
+// Reported directly as too rare regardless: "it should not be this rare,
+// transfers like this happen all the time just a bit less often" — not
+// routine the way the closed domestic system trades every window, but the
+// NORMAL case, not the exception; and "players should be able to leave the
+// Premier League or the Championship to join international clubs as well"
+// — already true in principle (`incoming` below is only 60% of attempts,
+// the other 40% sell OUT of the division), but the 78+ floor filtered out
+// nearly every generated domestic player, so there was rarely anyone on
+// that side who qualified to leave in the first place.
+//
+// Re-tuned to what's actually measured now: 74+ is the new floor (a real
+// first-teamer, not a reserve); the window-chance roll moved to 90%/55%;
+// up to three deals in a busy summer, two in January; sellers are judged by
+// internationalSellability's flat starter/bench listing odds instead of
+// the overstocked-only gate; and buyers reach further than a domestic deal
+// would (INTERNATIONAL_REACH_MULT/INTERNATIONAL_REACH_UP) since the whole
+// premise of this pass is the aspirational "a big club goes and gets him"
+// signing, not a like-for-like swap. Measured result on the test's own
+// (deliberately extreme, non-overlapping) squad-strength split: roughly
+// two-thirds of summer windows produce at least one deal, a third of
+// January windows do, averaging under one deal per summer window — a real
+// division's own overlapping strength range should do at least as well.
 //
 // Permanent sales only, deliberately — no loans across this boundary. A loan
 // comes home automatically at the season's end (returnLoansHome), which
@@ -788,9 +821,18 @@ export function runTransferWindow(
 // forever the way `leagueSquads` does. A permanent move has no such promise
 // to keep.
 
-const INTERNATIONAL_STAR_THRESHOLD = 78; // a marquee window, not a scouting trawl through reserves
-const INTERNATIONAL_WINDOW_CHANCE: Record<"summer" | "january", number> = { summer: 0.4, january: 0.15 };
-const INTERNATIONAL_SECOND_DEAL_CHANCE = 0.25; // summer only — most windows that happen at all still produce just one
+const INTERNATIONAL_STAR_THRESHOLD = 74; // a real first-teamer, not a reserve
+const INTERNATIONAL_WINDOW_CHANCE: Record<"summer" | "january", number> = { summer: 0.9, january: 0.55 };
+
+/** How much business the wider world does in a window that happens at all —
+ *  still less volume than the closed domestic system (that trades roughly
+ *  thirty players a summer), just no longer a rare one-or-two-a-season
+ *  novelty either. */
+function internationalDealCount(window: TransferWindow, rng: () => number): number {
+  const r = rng();
+  if (window === "summer") return r < 0.15 ? 3 : r < 0.55 ? 2 : 1;
+  return r < 0.35 ? 2 : 1;
+}
 
 /** One club's pool, restated the same way runTransferWindow reads its own —
  *  own strength, own formation-based need, own eligibility to sell. */
@@ -803,16 +845,49 @@ function worldClubsFrom(squads: LeagueSquad[]): WorldClub[] {
   });
 }
 
-/** Every plausible seller across a set of clubs, using the exact same
- *  sellability gate runTransferWindow applies to its own twenty. */
-function listedAcross(clubs: WorldClub[], topStrength: number, window: TransferWindow, rng: () => number): Listed[] {
+/**
+ * `sellability`'s squad-size gate only lets a club list an ordinary (not
+ * "unhappy") departure once it is OVERSTOCKED past `SQUAD_TARGET` — right
+ * for a domestic club, real or generated, that carries close to a normal
+ * ~20-man squad and genuinely has no surplus to move on most windows. Every
+ * club this pass reads (`career.externalSquads`, generated the same
+ * ~20-man way) hits that same "not overstocked" branch essentially every
+ * time, which was the actual reason this pass was so much rarer than
+ * intended even after the odds and star threshold below were raised — it
+ * was almost never reaching the branch with any real odds in it at all,
+ * regardless of how often the window itself rolled to fire.
+ *
+ * A world of scouted continental giants is a different shape of squad from
+ * a domestic side, generated or real — genuine depth, genuine rotation —
+ * and real transfer windows show it: Real Madrid or Bayern sell contracted,
+ * even starting-calibre players most summers, not only when one of them
+ * forces it. So this drops the overstocked/elite-protection gate entirely
+ * for the wider world and applies the SAME starter/bench listing odds
+ * `runTransferWindow` already uses for an overstocked domestic club's real
+ * surplus, to everybody here — still bounded (10%/16% per eligible player
+ * a summer, a third of that in January), just no longer conditioned on a
+ * squad shape this pool was never going to have.
+ */
+function internationalSellability(
+  c: Candidate, isStarter: boolean, window: TransferWindow, rng: () => number, squadSize: number,
+): Omit<Listed, "loan"> | null {
+  if (squadSize <= MIN_SQUAD_SIZE) return null;
+  const baseOdds = isStarter ? getTuning("transfers.starterListingOdds") : getTuning("transfers.benchListingOdds");
+  const odds = window === "summer" ? baseOdds : baseOdds * 0.35;
+  return rng() < odds ? { candidate: c, unhappy: false } : null;
+}
+
+/** Every plausible seller across a set of clubs — see internationalSellability
+ *  for why this reuses runTransferWindow's own listing-odds tuning knobs
+ *  rather than its full sellability gate. */
+function listedAcross(clubs: WorldClub[], window: TransferWindow, rng: () => number): Listed[] {
   const listed: Listed[] = [];
-  for (const { club, pool, strength } of clubs) {
+  for (const { club, pool } of clubs) {
     const formation = formationForClub(club);
     const xi = new Set(autoPick(pool as Pickable[], formation).filter((id): id is string => !!id));
     for (const c of pool) {
       if (c.overall < INTERNATIONAL_STAR_THRESHOLD) continue;
-      const l = sellability(c, xi.has(c.id), strength, topStrength, window, rng, pool.length);
+      const l = internationalSellability(c, xi.has(c.id), window, rng, pool.length);
       if (l) listed.push({ ...l, loan: false });
     }
   }
@@ -821,13 +896,21 @@ function listedAcross(clubs: WorldClub[], topStrength: number, window: TransferW
 
 /** The best-fitting buyer for one listed man among a set of clubs — the same
  *  scoring runTransferWindow's own matching loop uses. */
+/** How much further an international deal reaches than an ordinary domestic
+ *  one — the whole point of this pass is the aspirational, "a big club goes
+ *  and gets him" signing, not a like-for-like swap, so the ordinary
+ *  domestic reachDown/REACH_UP (tuned for twenty clubs already close enough
+ *  in level to trade routinely) is too tight here on its own. */
+const INTERNATIONAL_REACH_MULT = 1.8;
+const INTERNATIONAL_REACH_UP = 9;
+
 function bestBuyerAmong(seller: Candidate, buyers: WorldClub[], rng: () => number): string | null {
   let bestClub: string | null = null, bestScore = -Infinity;
   for (const { club, pool, strength: buyerStrength } of buyers) {
     if (club === seller.club) continue;
     if (rng() > rivalrySellChance(seller.club, club, false)) continue;
     const gap = buyerStrength - seller.overall;
-    if (gap < -reachDown(buyerStrength) || gap > REACH_UP) continue;
+    if (gap < -reachDown(buyerStrength) * INTERNATIONAL_REACH_MULT || gap > INTERNATIONAL_REACH_UP) continue;
     const formation = formationForClub(club);
     const need = Math.max(...seller.positions.map(r => positionNeed(r, club, pool, formation, pool.length)));
     if (need <= 0.12) continue;
@@ -852,7 +935,7 @@ export function runInternationalWindow(
     return { career, moves: [] };
   }
   if (rng() >= INTERNATIONAL_WINDOW_CHANCE[window]) return { career, moves: [] };
-  const deals = window === "summer" && rng() < INTERNATIONAL_SECOND_DEAL_CHANCE ? 2 : 1;
+  const deals = internationalDealCount(window, rng);
 
   const you = career.player.club;
   const domesticPool = career.squad.map(p => fromSquadPlayer(p, you));
@@ -861,7 +944,6 @@ export function runInternationalWindow(
     ...worldClubsFrom(career.leagueSquads.filter(sq => sq.club !== you)),
   ];
   const external = worldClubsFrom(career.externalSquads);
-  const topStrength = Math.max(...domestic.map(c => c.strength), ...external.map(c => c.strength));
 
   const moves: TransferMove[] = [];
   for (let i = 0; i < deals; i++) {
@@ -871,7 +953,7 @@ export function runInternationalWindow(
     const sellSide = incoming ? external : domestic;
     const buySide = incoming ? domestic : external;
 
-    const candidates = listedAcross(sellSide, topStrength, window, rng);
+    const candidates = listedAcross(sellSide, window, rng);
     if (!candidates.length) continue;
 
     let chosen: { seller: Candidate; sellerClub: WorldClub; buyerClub: string } | null = null;

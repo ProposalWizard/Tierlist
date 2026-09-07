@@ -64,7 +64,11 @@ function freshCareer(season: number): CareerState {
   check(moves.length === 0, "…and nothing is reported as having moved");
 }
 
-// ── Across many windows: rare, never more than two, and only real crossings ──
+// ── Across many windows: the normal case now, up to three, real crossings ──
+//
+// Re-tuned directly: "it should not be this rare, transfers like this happen
+// all the time just a bit less often" — a summer window with no international
+// business at all should now be the less common outcome, not the usual one.
 {
   let windowsWithMoves = 0, totalMoves = 0, maxInOneWindow = 0;
   const TRIALS = 300;
@@ -85,9 +89,8 @@ function freshCareer(season: number): CareerState {
     }
   }
   const pct = (windowsWithMoves / TRIALS) * 100;
-  check(windowsWithMoves > 0, `at least some summer windows produce a marquee move, across ${TRIALS} trials`);
-  check(pct < 55, `…but it stays the exception, not the rule (${pct.toFixed(1)}% of summer windows had one)`);
-  check(maxInOneWindow <= 2, `never more than two marquee deals in a single window (worst seen: ${maxInOneWindow})`);
+  check(pct > 50, `now the normal case, not a rarity (${pct.toFixed(1)}% of summer windows had at least one)`);
+  check(maxInOneWindow <= 3, `never more than three marquee deals in a single window (worst seen: ${maxInOneWindow})`);
   check(totalMoves > 0, "the sample actually produced real moves to check, not an empty run");
 }
 
@@ -136,8 +139,10 @@ function freshCareer(season: number): CareerState {
 // ── A stale/thin external-squads snapshot gets flagged for re-fetch ──
 //
 // Reported directly: "I don't really ever see any transfers between foreign
-// clubs." runInternationalWindow itself needs no fix — it is deliberately
-// rare (see the file header) — but a career whose externalSquads was first
+// clubs." (Since re-tuned to be the normal case rather than a rarity — see
+// the file header — but this staleness bug was real regardless of how often
+// runInternationalWindow itself rolls to fire.) A career whose externalSquads
+// was first
 // fetched while most of those clubs still had zero rows on file (before
 // fc27_clone_european_clubs.sql's spelling fixes landed, say) stays stuck
 // with that thin snapshot forever: app/star-dev/page.tsx only re-fetches
@@ -169,4 +174,4 @@ if (problems.length) {
   if (problems.length > 25) console.log(`  ...and ${problems.length - 25} more`);
   process.exit(1);
 }
-console.log("PASS — the wider world trades with the division rarely, never more than two deals a window, and every move is real");
+console.log("PASS — the wider world trades with the division routinely now, up to three deals a window, and every move is real");
