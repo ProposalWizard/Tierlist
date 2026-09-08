@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan } from "@/lib/star/shopData";
 import KibCanIcon from "./KibCanIcon";
+import LifestyleIcon from "./LifestyleIcon";
 
 interface Props {
   career: CareerState;
@@ -152,9 +153,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                       selectedItem?.id === i.id ? "bg-emerald-600" : owned ? "bg-gray-800" : "bg-gray-700 hover:bg-gray-600"
                     }`}
                   >
-                    <div className="w-10 h-10 rounded bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center text-lg">
-                      {i.category === "item" ? "📱" : i.category === "vehicle" ? "🚗" : "🏠"}
-                    </div>
+                    <LifestyleIcon id={i.id} category={i.category} />
                     <div className="flex-1">
                       <div className="font-black text-white text-sm">{i.name}</div>
                       <div className="text-[10px] text-white/75">Lifestyle +{i.lifestyleValue}</div>
