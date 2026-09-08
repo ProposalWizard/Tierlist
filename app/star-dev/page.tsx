@@ -1162,19 +1162,22 @@ export default function StarDevPage() {
     setCareer(topUpClubBudget(career, club, amount));
   }, [career]);
   const handleSignPlayerForOwnedClub = useCallback((club: string, playerId: string, fromClub: string) => {
-    if (!career) return;
+    if (!career) return { ok: false, reason: "No active career" };
     const result = signPlayerForOwnedClub(career, club, playerId, fromClub);
     if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
   }, [career]);
   const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string) => {
-    if (!career) return;
+    if (!career) return { ok: false, reason: "No active career" };
     const result = sellPlayerFromOwnedClub(career, club, playerId);
     if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
   }, [career]);
   const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
-    if (!career) return;
+    if (!career) return { ok: false, reason: "No active career" };
     const result = replaceManagerForOwnedClub(career, club, managerName);
     if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
   }, [career]);
 
   const handleOpenRelationshipGame = useCallback((kind: RelationshipKind) => {

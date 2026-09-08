@@ -232,7 +232,44 @@ function transferFee(overall: number): number {
   return Math.round((getTuning("transfers.feeBase") + m * m * getTuning("transfers.feeQuadratic")) * 10) / 10;
 }
 
+/**
+ * Where a club's REAL squad actually lives.
+ *
+ * `career.leagueSquads` only ever holds the other clubs in the player's
+ * CURRENT division — everyone else the game tracks a roster for (Champions/
+ * Europa League, Championship/Other clubs when the player is in the Premier
+ * League, or vice versa) lives in `career.externalSquads` instead. Every
+ * other reader of "some other club's squad" in this codebase already checks
+ * both (`scoutReport.ts`, `teamsheet.ts`) — this file didn't, so majority
+ * ownership of any club outside the player's own division looked entirely
+ * empty ("no squad data on file") and every sign/sell into it silently
+ * failed to find a seller, reported directly after 100+ simulated seasons
+ * of promotions/relegations and European qualification made that the common
+ * case rather than the exception.
+ */
+function findSquadEntry(career: CareerState, club: string): { squad: LeagueSquad; where: "league" | "external" } | undefined {
+  const inLeague = (career.leagueSquads ?? []).find(s => s.club === club);
+  if (inLeague) return { squad: inLeague, where: "league" };
+  const inExternal = (career.externalSquads ?? []).find(s => s.club === club);
+  if (inExternal) return { squad: inExternal, where: "external" };
+  return undefined;
+}
+
+/** A club with no squad entry in EITHER array yet belongs wherever the rest
+ *  of the game would file it: in your current division's live table
+ *  (`career.league`), or external if not. */
 function setSquad(career: CareerState, club: string, players: LeaguePlayer[]): CareerState {
+  const existing = findSquadEntry(career, club);
+  const where = existing?.where ?? (career.league.some(t => t.name === club) ? "league" : "external");
+
+  if (where === "external") {
+    const exists = (career.externalSquads ?? []).some(s => s.club === club);
+    const externalSquads: LeagueSquad[] = exists
+      ? (career.externalSquads ?? []).map(s => (s.club === club ? { ...s, players } : s))
+      : [...(career.externalSquads ?? []), { club, players }];
+    return { ...career, externalSquads };
+  }
+
   const exists = (career.leagueSquads ?? []).some(s => s.club === club);
   const leagueSquads: LeagueSquad[] = exists
     ? (career.leagueSquads ?? []).map(s => (s.club === club ? { ...s, players } : s))
@@ -273,17 +310,17 @@ export function signPlayerForOwnedClub(
     player = career.freeAgents![idx];
     next = { ...career, freeAgents: career.freeAgents!.filter((_, i) => i !== idx) };
   } else {
-    const seller = (career.leagueSquads ?? []).find(s => s.club === fromClub);
-    const idx = seller?.players.findIndex(p => p.id === playerId) ?? -1;
-    if (!seller || idx < 0) return { career, ok: false, reason: "That player isn't available" };
-    player = seller.players[idx];
+    const sellerEntry = findSquadEntry(career, fromClub);
+    const idx = sellerEntry?.squad.players.findIndex(p => p.id === playerId) ?? -1;
+    if (!sellerEntry || idx < 0) return { career, ok: false, reason: "That player isn't available" };
+    player = sellerEntry.squad.players[idx];
     fee = transferFee(player.overall);
     if (fee > budget) return { career, ok: false, reason: "Not enough in the transfer budget" };
-    next = setSquad(next, fromClub, seller.players.filter((_, i) => i !== idx));
+    next = setSquad(next, fromClub, sellerEntry.squad.players.filter((_, i) => i !== idx));
   }
   if (!player) return { career, ok: false, reason: "That player isn't available" };
 
-  const buyerPlayers = [...((next.leagueSquads ?? []).find(s => s.club === club)?.players ?? []), player];
+  const buyerPlayers = [...(findSquadEntry(next, club)?.squad.players ?? []), player];
   next = setSquad(next, club, buyerPlayers);
   next = {
     ...next,
@@ -299,7 +336,8 @@ export function signPlayerForOwnedClub(
  *  not strip it down to nothing. */
 export function sellPlayerFromOwnedClub(career: CareerState, club: string, playerId: string): BoardActionResult {
   if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
-  const squad = (career.leagueSquads ?? []).find(s => s.club === club);
+  const entry = findSquadEntry(career, club);
+  const squad = entry?.squad;
   const idx = squad?.players.findIndex(p => p.id === playerId) ?? -1;
   if (!squad || idx < 0) return { career, ok: false, reason: "That player isn't in the squad" };
   if (squad.players.length <= getTuning("transfers.minSquadSize")) {
