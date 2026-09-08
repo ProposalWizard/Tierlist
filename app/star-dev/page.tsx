@@ -1278,7 +1278,20 @@ export default function StarDevPage() {
   }
 
   if (phase === "training" && trainingSkill) {
-    return <TrainingMinigame skill={trainingSkill} onComplete={handleTrainingComplete} />;
+    // `level` is the whole point of the rebuilt drills: every one of them is
+    // calibrated to the stat it trains, so the same session gets genuinely
+    // harder as that number climbs (see lib/star/trainingDrills.ts). It was
+    // never passed before, which is why training played identically at 5 and
+    // at 95. `skills` goes to the engine's own `launch`, so a strike in
+    // training is the same strike it would be in a match.
+    return (
+      <TrainingMinigame
+        skill={trainingSkill}
+        level={career.skills[trainingSkill]}
+        skills={career.skills}
+        onComplete={handleTrainingComplete}
+      />
+    );
   }
 
   if (phase === "match" && nextFixture) {
