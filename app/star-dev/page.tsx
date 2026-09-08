@@ -80,6 +80,10 @@ const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
 };
 import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
+import Investments from "@/components/star/Investments";
+import {
+  buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
+} from "@/lib/star/investments";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
@@ -1143,6 +1147,36 @@ export default function StarDevPage() {
     setCareer({ ...career, competitionBets: [...(career.competitionBets ?? []), { ...bet, id }] });
   }, [career]);
 
+  // Investments — every action below is a pure CareerState -> CareerState
+  // function in lib/star/investments.ts; this is only the setCareer wiring.
+  const handleBuyStake = useCallback((club: string, percent: number) => {
+    if (!career) return;
+    setCareer(buyStake(career, club, percent));
+  }, [career]);
+  const handleSellStake = useCallback((club: string, percent: number) => {
+    if (!career) return;
+    setCareer(sellStake(career, club, percent));
+  }, [career]);
+  const handleTopUpClubBudget = useCallback((club: string, amount: number) => {
+    if (!career) return;
+    setCareer(topUpClubBudget(career, club, amount));
+  }, [career]);
+  const handleSignPlayerForOwnedClub = useCallback((club: string, playerId: string, fromClub: string) => {
+    if (!career) return;
+    const result = signPlayerForOwnedClub(career, club, playerId, fromClub);
+    if (result.ok) setCareer(result.career);
+  }, [career]);
+  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string) => {
+    if (!career) return;
+    const result = sellPlayerFromOwnedClub(career, club, playerId);
+    if (result.ok) setCareer(result.career);
+  }, [career]);
+  const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
+    if (!career) return;
+    const result = replaceManagerForOwnedClub(career, club, managerName);
+    if (result.ok) setCareer(result.career);
+  }, [career]);
+
   const handleOpenRelationshipGame = useCallback((kind: RelationshipKind) => {
     setRelationshipGameKind(kind);
     setPhase("relationship-game");
@@ -1500,6 +1534,21 @@ export default function StarDevPage() {
     return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onPlaceBet={handlePlaceBet} />;
   }
 
+  if (phase === "investments") {
+    return (
+      <Investments
+        career={career}
+        onBack={handleBackToDashboard}
+        onBuyStake={handleBuyStake}
+        onSellStake={handleSellStake}
+        onTopUpBudget={handleTopUpClubBudget}
+        onSignPlayer={handleSignPlayerForOwnedClub}
+        onSellPlayer={handleSellPlayerFromOwnedClub}
+        onReplaceManager={handleReplaceManagerForOwnedClub}
+      />
+    );
+  }
+
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
@@ -1824,10 +1873,11 @@ export default function StarDevPage() {
             <QuickBtn label="Style" icon="💎" onClick={() => setPhase("shop-lifestyle")} />
             <QuickBtn label="Casino" icon="🎰" onClick={() => setPhase("casino-menu")} />
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="mt-2 grid grid-cols-4 gap-2">
             <QuickBtn label="Sponsors" icon="🤝" onClick={() => setPhase("sponsors")} />
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
+            <QuickBtn label="Invest" icon="📈" onClick={() => setPhase("investments")} />
           </div>
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>

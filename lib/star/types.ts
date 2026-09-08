@@ -704,6 +704,17 @@ export interface CareerState {
    * "unemployed" that needs tracking.
    */
   availableManagers?: string[];
+  /** Real stakes owned in real clubs — see lib/star/investments.ts for the
+   *  valuation model and the buy/sell math; nothing here is read anywhere
+   *  else in the engine except that file itself. */
+  investments?: import("./investments").ClubStake[];
+  /** Set only for a club you hold a MAJORITY stake in (see
+   *  investments.ts's MAJORITY_THRESHOLD) — its own transfer budget and,
+   *  once appointed, a real manager name. Survives selling back below
+   *  majority (a chairman selling down doesn't erase what the club already
+   *  spent), just stops being reachable from the Boardroom until you buy
+   *  back in. */
+  ownedClubs?: Record<string, import("./investments").OwnedClubState>;
   /**
    * The casino's book — real money staked on who wins a real competition,
    * priced off real club strengths (see lib/star/competitionBetting.ts).
@@ -817,6 +828,7 @@ export type StarPhase =
   | "casino-blackjack"
   | "casino-roulette"
   | "casino-slots"
+  | "investments"
   | "sponsors"
   | "achievements"
   | "trophies"
