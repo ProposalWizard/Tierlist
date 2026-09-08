@@ -15,7 +15,8 @@ import { judgeSeason } from "./expectations";
 import {
   seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
 } from "./recognition";
-import { makeManager, sackCheck, bossOnArrival, reputationTier } from "./manager";
+import { makeManager, sackCheck, bossOnArrival, reputationTier, hireReplacementManager } from "./manager";
+import { allPoolManagers } from "./managerPool";
 import { rivalryMultiplier } from "./rivalries";
 import { progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
@@ -167,6 +168,10 @@ export function makeInitialCareer(
   state.starRating = computeStarRating(state);
   state.squadNumber = assignSquadNumber(state, player.club);
   state.manager = makeManager(state, player.club, 1);
+  // The starting roster for the sacking carousel below — every real name in
+  // managerPool.ts, since nobody has been hired at YOUR club yet (the only
+  // club this game actually tracks a job market for).
+  state.availableManagers = allPoolManagers();
   const seeded = seedSeasonKnockouts(state);
   state.cups = seeded.runs;
   // Both domestic cups: thirty-two clubs, a first-round draw, and your tie on
@@ -1106,9 +1111,17 @@ export function advanceSeason(
   // goes with him, which is how a settled player becomes a squad player without
   // kicking a ball differently.
   if (sack.sacked) {
-    const incoming = makeManager(next, next.player.club, next.season);
-    next.manager = incoming;
-    next.managerNews = `${sack.reason} ${incoming.name} (${reputationTier(incoming.reputation)}) takes over. "${incoming.arrival}"`;
+    // The man who just left is out of a job too — back into the pool before
+    // rolling his replacement, so a long enough save can eventually bring
+    // him back. A career saved before this pool existed has no list on
+    // file yet; treat it as the full roster rather than losing this hire
+    // (backfill in storage.ts covers every other load path).
+    let pool = career.availableManagers ?? allPoolManagers();
+    if (career.manager?.poolTier !== undefined) pool = [...pool, career.manager.name];
+    const hire = hireReplacementManager(next, next.player.club, next.season, pool);
+    next.manager = hire.manager;
+    next.availableManagers = hire.availableManagers;
+    next.managerNews = `${sack.reason} ${hire.manager.name} (${reputationTier(hire.manager.reputation)}) takes over. "${hire.manager.arrival}"`;
     next.relationships = { ...next.relationships, boss: bossOnArrival(next) };
     next.captain = false;
   } else {

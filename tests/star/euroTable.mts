@@ -1,4 +1,4 @@
-import { openEuro, simulateEuroMatchday, sortEuro } from "../../lib/star/euro";
+import { openEuro, simulateEuroMatchday, sortEuro, poolFor } from "../../lib/star/euro";
 import { mulberry32 } from "../../lib/star/season";
 import type { LeagueSquad } from "../../lib/star/types";
 
@@ -23,6 +23,13 @@ import type { LeagueSquad } from "../../lib/star/types";
  * scoreline to the table) and appends them to `EuroState.results` — the
  * European analogue of `career.results`, and deliberately the same
  * `LeagueResult` shape so `scoutReport.ts` can read it unchanged.
+ *
+ * Field sizes below are derived from `poolFor(...)`, not hardcoded to 36 —
+ * reconciling CHAMPIONS_SEEDS/EUROPA_SEEDS against clubs.ts's own
+ * CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS (see euro.ts's header) left
+ * Champions League at 34 clubs and Europa League at 38, not 36 apiece —
+ * a literal 36 here would have made this suite fight that fix instead of
+ * verifying it.
  */
 
 const problems: string[] = [];
@@ -47,7 +54,9 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
 // ── A fresh campaign starts genuinely blank, not pre-filled ────────────────
 {
   const state = freshState();
-  check(state.liveTable.length === 36, `all thirty-six clubs are in the table from the start (${state.liveTable.length})`);
+  const expectedField = poolFor("Champions League").length + 1;
+  check(state.liveTable.length === expectedField,
+    `every pool club plus you is in the table from the start (${state.liveTable.length}, expected ${expectedField})`);
   check(state.liveTable.every(r => r.played === 0), "…but nobody has played anything yet");
   check(state.matchdaysPlayed === 0, "no matchday has been simulated yet");
   check(state.liveTable.filter(r => r.isYou).length === 1, "exactly one row is you");
@@ -55,16 +64,17 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
 }
 
 // ── Simulating ONE matchday plays exactly that many games — not the whole
-// phase — for every one of the thirty-six clubs, you included ─────────────
+// phase — for every club in the field, you included ────────────────────────
 {
   const state = freshState();
   const opponent = state.leaguePhase[0].opponent;
   const rng = mulberry32(999);
   const after = simulateEuroMatchday(state, 0, "Test FC", opponent, true, 3, 1, rng);
+  const expectedGames = state.liveTable.length / 2;
 
   check(after.matchdaysPlayed === 1, `exactly matchday one is recorded as played (${after.matchdaysPlayed})`);
   check(after.liveTable.every(r => r.played === 1),
-    `every one of the thirty-six clubs has played exactly one game, not eight (${after.liveTable.map(r => r.played).join(",")})`);
+    `every club in the field has played exactly one game, not eight (${after.liveTable.map(r => r.played).join(",")})`);
 
   const you = after.liveTable.find(r => r.isYou)!;
   check(you.won === 1 && you.points === 3, `your real 3-1 win is credited (${you.won}W, ${you.points}pts)`);
@@ -73,9 +83,10 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
   const them = after.liveTable.find(r => r.name === opponent)!;
   check(them.lost === 1 && them.points === 0, `your opponent is credited the real loss, not simulated separately (${them.lost}L, ${them.points}pts)`);
 
-  // The matchday's eighteen games are all stored as real fixtures now, not
-  // just folded into the table and discarded.
-  check((after.results ?? []).length === 18, `all eighteen of the matchday's games are stored as real fixtures (${(after.results ?? []).length})`);
+  // The matchday's games are all stored as real fixtures now, not just
+  // folded into the table and discarded — one per pair, field size / 2.
+  check((after.results ?? []).length === expectedGames,
+    `every one of the matchday's games is stored as a real fixture (${(after.results ?? []).length}, expected ${expectedGames})`);
   check((after.results ?? []).every(r => r.week === 1), "…every one tagged with the matchday it was actually played on");
   const yourFixture = (after.results ?? []).find(r => r.home === "Test FC" || r.away === "Test FC");
   check(!!yourFixture && yourFixture.home === "Test FC" && yourFixture.away === opponent
@@ -85,8 +96,8 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
 
 // ── Named scorers and assists — for YOUR match (with real, live-match goal
 // events handed in, the same way playLeagueWeek's user.goals/oppGoals work)
-// AND for the other seventeen games (a fresh weighted roll, same as the
-// domestic league simulates everyone else's) ──────────────────────────────
+// AND for the other games (a fresh weighted roll, same as the domestic
+// league simulates everyone else's) ─────────────────────────────────────
 {
   const state = freshState();
   const opponent = state.leaguePhase[0].opponent;
@@ -99,12 +110,12 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
   check(JSON.stringify(yourFixture.hg) === JSON.stringify(yourGoals),
     `your own real goal events are stored exactly as handed in, not re-rolled (${JSON.stringify(yourFixture.hg)})`);
 
-  // The other seventeen games: at least SOME of them involve a club whose
-  // squad was NOT supplied (only two of the thirty-six squads exist here),
-  // so this also exercises "no squad -> no named scorers, but the scoreline
-  // still stands" without a separate test.
+  // The other games: at least SOME of them involve a club whose squad was
+  // NOT supplied (only two of the field's squads exist here), so this also
+  // exercises "no squad -> no named scorers, but the scoreline still
+  // stands" without a separate test.
   const othersWithGoals = after.results!.filter(r => r.home !== "Test FC" && r.away !== "Test FC" && (r.hs > 0 || r.as > 0));
-  check(othersWithGoals.length > 0, "at least one of the other seventeen games actually had a goal in it, to test against");
+  check(othersWithGoals.length > 0, "at least one of the other games actually had a goal in it, to test against");
   const namedElsewhere = othersWithGoals.some(r => (r.hg?.length ?? 0) > 0 || (r.ag?.length ?? 0) > 0);
   check(!namedElsewhere, "…and since neither club in any of THOSE games has a squad supplied, none of them get named scorers either — the fallback is real, not accidentally always-on");
 }
@@ -131,23 +142,25 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
 // ── Playing every matchday in order reaches exactly eight for everyone —
 // not "almost always": the old fill algorithm this replaced could leave
 // exactly one club stuck on nothing with nobody left to play. Here there is
-// no such failure mode by construction (36 clubs, 34 always pair evenly
-// once you and your opponent are set aside) — stress-tested across many
-// seeds and campaign starting conditions anyway, since "provably can't fail"
-// is worth checking, not just asserting. ─────────────────────────────────
+// no such failure mode by construction (each competition's own field size —
+// see poolFor — always pairs evenly once you and your opponent are set
+// aside) — stress-tested across many seeds and campaign starting conditions
+// anyway, since "provably can't fail" is worth checking, not just
+// asserting. ──────────────────────────────────────────────────────────────
 {
   let anyShort = false;
   for (let seed = 0; seed < 40; seed++) {
     for (const competition of ["Champions League", "Europa League"] as const) {
       let state = openEuro(competition, "Test FC", 70 + (seed % 20), 1 + (seed % 20), mulberry32(seed * 31 + 7));
+      const expectedField = poolFor(competition).length + 1;
       const rng = mulberry32(seed * 104729 + 17);
       for (let md = 0; md < 8; md++) {
         const opponent = state.leaguePhase[md].opponent;
         state = simulateEuroMatchday(state, md, "Test FC", opponent, md % 2 === 0, (seed + md) % 4, (seed + md + 1) % 4, rng);
       }
-      if (state.liveTable.length !== 36 || state.liveTable.some(r => r.played !== 8)) {
+      if (state.liveTable.length !== expectedField || state.liveTable.some(r => r.played !== 8)) {
         anyShort = true;
-        problems.push(`seed ${seed}/${competition}: ${state.liveTable.length} clubs, played counts [${state.liveTable.map(r => r.played).join(",")}]`);
+        problems.push(`seed ${seed}/${competition}: ${state.liveTable.length} clubs (expected ${expectedField}), played counts [${state.liveTable.map(r => r.played).join(",")}]`);
       }
       if (state.matchdaysPlayed !== 8) {
         anyShort = true;
@@ -181,7 +194,8 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
   check(JSON.stringify(again.liveTable) === JSON.stringify(once.liveTable),
     "asking for a matchday that's already been played is a no-op, not a second, contradictory result");
   check(again.matchdaysPlayed === 1, "…and the count doesn't move either");
-  check((again.results ?? []).length === 18, "…and the fixture history doesn't grow a second copy of the matchday either");
+  check((again.results ?? []).length === state.liveTable.length / 2,
+    "…and the fixture history doesn't grow a second copy of the matchday either");
 }
 
 // ── sortEuro: points first, goal difference the tiebreak ───────────────────

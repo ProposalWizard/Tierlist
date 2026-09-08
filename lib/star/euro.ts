@@ -130,65 +130,101 @@ export interface EuroState {
 
 // ── The field ───────────────────────────────────────────────────────────────
 
+interface EuroSeed { name: string; strength: number; }
+
 /**
- * Europe's clubs, by pot.
+ * Turn a flat, un-potted list into a real seeded field, strongest first.
  *
- * Thirty-five names so that with you there are thirty-six, which is what the
- * league phase needs. Strengths are fixed rather than rolled, so Real Madrid is
- * Real Madrid in every career and a draw against them means the same thing
- * twice.
- *
- * Every name below is the exact spelling `clubs.ts`'s CHAMPIONS_LEAGUE_CLUBS/
- * EUROPA_LEAGUE_CLUBS/OTHER_CLUBS lists use — not a shorthand ("Bayern
- * Munich", "Copenhagen") that reads fine but has no real squad to resolve
- * against. Reported directly: a real Champions League tie against Copenhagen
- * showed "Unable to scout opponent's team" even with a lineup genuinely set
- * for them — the squad WAS fetched, but under "FC København" (the real
- * SoFIFA/database spelling), so the fixture's own opponent name never
- * matched it. That was true for most of this pool, not just Copenhagen —
- * fixed throughout rather than one name at a time.
+ * Pot membership used to be typed by hand alongside each name — which is
+ * exactly how it drifted: a club moved between CHAMPIONS_SEEDS/EUROPA_SEEDS
+ * below never had its hand-typed `pot` double-checked against anything,
+ * so a stale number would sit there silently. Deriving it from strength
+ * instead means there is nothing left to keep in sync — move a club to a
+ * different seed list or change its strength and its pot follows on its
+ * own.
  */
-const CHAMPIONS_POOL: EuroClub[] = [
-  { name: "Real Madrid", strength: 92, pot: 1 },
-  { name: "FC Bayern München", strength: 91, pot: 1 },
-  { name: "FC Barcelona", strength: 89, pot: 1 },
-  { name: "Paris Saint-Germain", strength: 88, pot: 1 },
-  { name: "Inter", strength: 86, pot: 1 },
-  { name: "Atlético Madrid", strength: 85, pot: 1 },
-  { name: "Borussia Dortmund", strength: 84, pot: 1 },
-  { name: "Juventus", strength: 84, pot: 1 },
-  { name: "AC Milan", strength: 83, pot: 1 },
+function seededPool(seeds: EuroSeed[]): EuroClub[] {
+  const sorted = [...seeds].sort((a, b) => b.strength - a.strength);
+  const potSize = Math.ceil(sorted.length / 4);
+  return sorted.map((c, i) => ({ ...c, pot: Math.min(4, Math.floor(i / potSize) + 1) }));
+}
 
-  { name: "Bayer 04 Leverkusen", strength: 83, pot: 2 },
-  { name: "Napoli", strength: 82, pot: 2 },
-  { name: "SL Benfica", strength: 80, pot: 2 },
-  { name: "FC Porto", strength: 79, pot: 2 },
-  { name: "Sevilla FC", strength: 79, pot: 2 },
-  { name: "RB Leipzig", strength: 80, pot: 2 },
-  { name: "Roma", strength: 80, pot: 2 },
-  { name: "PSV", strength: 77, pot: 2 },
-  { name: "Ajax", strength: 76, pot: 2 },
-
-  { name: "Sporting CP", strength: 77, pot: 3 },
-  { name: "Feyenoord", strength: 75, pot: 3 },
-  { name: "Olympique de Marseille", strength: 76, pot: 3 },
-  { name: "Olympique Lyonnais", strength: 75, pot: 3 },
-  { name: "Real Sociedad", strength: 76, pot: 3 },
-  { name: "Villarreal CF", strength: 76, pot: 3 },
-  { name: "Eintracht Frankfurt", strength: 76, pot: 3 },
-  { name: "Celtic", strength: 72, pot: 3 },
-  { name: "Club Brugge KV", strength: 72, pot: 3 },
-
-  { name: "Galatasaray SK", strength: 74, pot: 4 },
-  { name: "Shakhtar Donetsk", strength: 72, pot: 4 },
-  { name: "FC Red Bull Salzburg", strength: 73, pot: 4 },
-  { name: "Dinamo Zagreb", strength: 70, pot: 4 },
-  { name: "BSC Young Boys", strength: 68, pot: 4 },
-  { name: "SK Slavia Praha", strength: 70, pot: 4 },
-  { name: "FC København", strength: 70, pot: 4 },
-  { name: "FK Bodø/Glimt", strength: 69, pot: 4 },
-  { name: "SK Sturm Graz", strength: 68, pot: 4 },
+/**
+ * Europe's clubs.
+ *
+ * Reported directly, from a real save fourteen seasons in: Sturm Graz, Young
+ * Boys and Ajax — all real clubs, all fetched into `externalSquads` under
+ * their real names — turned up as the player's live CHAMPIONS League
+ * opponents, with a scout report and a fetched squad that matched nobody
+ * (a full XI of free agents, the last-resort fallback `teamsheet.ts` reaches
+ * for when the named opponent isn't in any squad pool it actually holds).
+ *
+ * Root cause: this file's own `CHAMPIONS_POOL`/`EUROPA_POOL` — literally who
+ * you can be drawn against — were typed independently of `clubs.ts`'s
+ * `CHAMPIONS_LEAGUE_CLUBS`/`EUROPA_LEAGUE_CLUBS`, the lists that decide which
+ * tab the /lineups picker shows a club under AND which competition
+ * `externalClubsFor` fetches its squad for. A previous pass here
+ * (see tests/star/europeSquadNames.mts) only ever checked that a pool name
+ * was spelled correctly and resolvable to SOME real club — never that it was
+ * resolvable to a club clubs.ts calls a member of THIS competition
+ * specifically. Ten clubs clubs.ts calls Europa League (Sturm Graz, Young
+ * Boys, Ajax, Juventus, AC Milan, Bayer Leverkusen, Benfica, Marseille, Real
+ * Sociedad, Salzburg) had ended up in the Champions pool below; five clubs
+ * clubs.ts calls Champions League (Betis, Fenerbahçe, Lens, Stuttgart,
+ * Lille) had ended up in the Europa pool; two more (Sevilla, Eintracht
+ * Frankfurt) weren't in either of clubs.ts's lists at all, so that file was
+ * fixed to agree with what this one already did with them (see clubs.ts's
+ * own OTHER_CLUBS comment). FC Red Bull Salzburg is the one club that came
+ * out of this reconciliation with nowhere to go — still correctly tagged
+ * Europa League in clubs.ts, just not re-added to the seed list below, kept
+ * out so the pool sizes below stay the odd numbers simulateEuroMatchday's
+ * matchday-pairing needs (see its own comment) without inventing a 38th
+ * name.
+ *
+ * Every name below is still the exact spelling clubs.ts's
+ * CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS lists use — not a shorthand
+ * ("Bayern Munich", "Copenhagen") that reads fine but has no real squad to
+ * resolve against (the ORIGINAL version of this bug, fixed earlier — see
+ * tests/star/europeSquadNames.mts). This pass adds a second, stricter test
+ * there: not just "resolvable to a real club somewhere" but "resolvable to a
+ * real club in clubs.ts's list for THIS competition, and no other."
+ */
+const CHAMPIONS_SEEDS: EuroSeed[] = [
+  { name: "Real Madrid", strength: 92 },
+  { name: "FC Bayern München", strength: 91 },
+  { name: "FC Barcelona", strength: 89 },
+  { name: "Paris Saint-Germain", strength: 88 },
+  { name: "Inter", strength: 86 },
+  { name: "Atlético Madrid", strength: 85 },
+  { name: "Borussia Dortmund", strength: 84 },
+  { name: "Napoli", strength: 82 },
+  { name: "Sevilla FC", strength: 79 },
+  { name: "FC Porto", strength: 79 },
+  { name: "RB Leipzig", strength: 80 },
+  { name: "Roma", strength: 80 },
+  { name: "PSV", strength: 77 },
+  { name: "Real Betis Balompié", strength: 77 },
+  { name: "Sporting CP", strength: 77 },
+  { name: "Villarreal CF", strength: 76 },
+  { name: "Eintracht Frankfurt", strength: 76 },
+  { name: "Fenerbahçe SK", strength: 76 },
+  { name: "Feyenoord", strength: 75 },
+  { name: "Olympique Lyonnais", strength: 75 },
+  { name: "RC Lens", strength: 75 },
+  { name: "VfB Stuttgart", strength: 75 },
+  { name: "Lille OSC", strength: 75 },
+  { name: "Galatasaray SK", strength: 74 },
+  { name: "Celtic", strength: 72 },
+  { name: "Club Brugge KV", strength: 72 },
+  { name: "Shakhtar Donetsk", strength: 72 },
+  { name: "Dinamo Zagreb", strength: 70 },
+  { name: "SK Slavia Praha", strength: 70 },
+  { name: "FC København", strength: 70 },
+  { name: "FK Bodø/Glimt", strength: 69 },
+  { name: "Como", strength: 64 },
+  { name: "AEK Athens", strength: 62 },
 ];
+const CHAMPIONS_POOL: EuroClub[] = seededPool(CHAMPIONS_SEEDS);
 
 /**
  * The Europa League field.
@@ -197,111 +233,104 @@ const CHAMPIONS_POOL: EuroClub[] = [
  * competitions can never put the same club in both — and the strengths are
  * flattened as well as lowered, because a Europa League field is genuinely more
  * even, and that is what makes winning it feel like a different achievement
- * rather than an easier version of the same one.
- *
- * Every name below is a real member of clubs.ts's own CHAMPIONS_LEAGUE_CLUBS
- * or EUROPA_LEAGUE_CLUBS list — the same lists the /lineups picker's
- * Champions League and Europa League tabs are built from — not a club typed
- * in independently of them. Eighteen entries used to name a club that had
- * never actually been added to either list at all (Fiorentina, Qarabağ, and
- * sixteen others like them): real clubs, but ones this game's own database
- * was never told to have, so a tie against one still read "Unable to scout
- * opponent's team" no matter how the name was spelled. Swapped for eighteen
- * real EUROPA_LEAGUE_CLUBS/CHAMPIONS_LEAGUE_CLUBS members that weren't
- * already drawn on anywhere else in this file, keeping each pot's rough
- * strength range rather than the exact old number.
+ * rather than an easier version of the same one. See CHAMPIONS_SEEDS above
+ * for the reconciliation against clubs.ts that moved several names here.
  */
-const EUROPA_POOL: EuroClub[] = [
-  { name: "Villarreal CF", strength: 78, pot: 1 },
-  { name: "Real Betis Balompié", strength: 77, pot: 1 },
-  { name: "Fenerbahçe SK", strength: 76, pot: 1 },
-  { name: "Rangers FC", strength: 74, pot: 1 },
-  { name: "Lazio", strength: 78, pot: 1 },
-  { name: "Crystal Palace", strength: 76, pot: 1 },
-  { name: "RC Lens", strength: 75, pot: 1 },
-  { name: "Olympiacos FC", strength: 73, pot: 1 },
-  { name: "Sporting Clube de Braga", strength: 73, pot: 1 },
-
-  { name: "VfB Stuttgart", strength: 75, pot: 2 },
-  { name: "AFC Bournemouth", strength: 73, pot: 2 },
-  { name: "Lille OSC", strength: 75, pot: 2 },
-  { name: "RSC Anderlecht", strength: 71, pot: 2 },
-  { name: "KRC Genk", strength: 71, pot: 2 },
-  { name: "Union Saint-Gilloise", strength: 70, pot: 2 },
-  { name: "PAOK", strength: 70, pot: 2 },
-  { name: "Ferencvárosi Torna Club", strength: 69, pot: 2 },
-  { name: "TSG 1899 Hoffenheim", strength: 73, pot: 2 },
-
-  { name: "FC Midtjylland", strength: 69, pot: 3 },
-  { name: "Sunderland", strength: 69, pot: 3 },
-  { name: "Malmö FF", strength: 68, pot: 3 },
-  { name: "Sparta Praha", strength: 68, pot: 3 },
-  { name: "Beşiktaş JK", strength: 70, pot: 3 },
-  { name: "Trabzonspor", strength: 69, pot: 3 },
-  { name: "AZ Alkmaar", strength: 72, pot: 3 },
-  { name: "Viktoria Plzeň", strength: 68, pot: 3 },
-  { name: "Stade Rennais FC", strength: 70, pot: 3 },
-
-  { name: "RC Celta", strength: 65, pot: 4 },
-  { name: "Hearts", strength: 63, pot: 4 },
-  { name: "FC Basel 1893", strength: 64, pot: 4 },
-  { name: "AEK Athens", strength: 62, pot: 4 },
-  { name: "Vitória SC", strength: 61, pot: 4 },
-  { name: "Legia Warszawa", strength: 62, pot: 4 },
-  { name: "Lech Poznań", strength: 61, pot: 4 },
-  { name: "Como", strength: 64, pot: 4 },
-  { name: "Shamrock Rovers", strength: 60, pot: 4 },
+const EUROPA_SEEDS: EuroSeed[] = [
+  { name: "Juventus", strength: 84 },
+  { name: "AC Milan", strength: 83 },
+  { name: "Bayer 04 Leverkusen", strength: 83 },
+  { name: "SL Benfica", strength: 80 },
+  { name: "Lazio", strength: 78 },
+  { name: "Ajax", strength: 76 },
+  { name: "Olympique de Marseille", strength: 76 },
+  { name: "Real Sociedad", strength: 76 },
+  { name: "Crystal Palace", strength: 76 },
+  { name: "Rangers FC", strength: 74 },
+  { name: "Olympiacos FC", strength: 73 },
+  { name: "Sporting Clube de Braga", strength: 73 },
+  { name: "AFC Bournemouth", strength: 73 },
+  { name: "TSG 1899 Hoffenheim", strength: 73 },
+  { name: "AZ Alkmaar", strength: 72 },
+  { name: "RSC Anderlecht", strength: 71 },
+  { name: "KRC Genk", strength: 71 },
+  { name: "Union Saint-Gilloise", strength: 70 },
+  { name: "PAOK", strength: 70 },
+  { name: "Beşiktaş JK", strength: 70 },
+  { name: "Stade Rennais FC", strength: 70 },
+  { name: "Ferencvárosi Torna Club", strength: 69 },
+  { name: "FC Midtjylland", strength: 69 },
+  { name: "Sunderland", strength: 69 },
+  { name: "Trabzonspor", strength: 69 },
+  { name: "BSC Young Boys", strength: 68 },
+  { name: "SK Sturm Graz", strength: 68 },
+  { name: "Malmö FF", strength: 68 },
+  { name: "Sparta Praha", strength: 68 },
+  { name: "Viktoria Plzeň", strength: 68 },
+  { name: "FC Basel 1893", strength: 64 },
+  { name: "RC Celta", strength: 65 },
+  { name: "Legia Warszawa", strength: 62 },
+  { name: "Hearts", strength: 63 },
+  { name: "Lech Poznań", strength: 61 },
+  { name: "Vitória SC", strength: 61 },
+  { name: "Shamrock Rovers", strength: 60 },
 ];
+const EUROPA_POOL: EuroClub[] = seededPool(EUROPA_SEEDS);
 
 /**
  * The Conference League field.
  *
- * Thirty-five clubs a step below the Europa League — lower-ranked national
- * champions, beaten play-off sides and domestic cup winners. Winning it is a
- * genuine European trophy, which is the only reason it counts: the game does
- * not offer it as a consolation prize and then make it feel like one.
+ * A step below the Europa League — lower-ranked national champions, beaten
+ * play-off sides and domestic cup winners. Winning it is a genuine European
+ * trophy, which is the only reason it counts: the game does not offer it as
+ * a consolation prize and then make it feel like one.
+ *
+ * None of these are clubs.ts-backed (no real squad to fetch) — a genuinely
+ * separate, pre-existing gap from the CHAMPIONS/EUROPA reconciliation above,
+ * not something this pass fixes. Trimmed by one (La Fiorita) purely to keep
+ * this list's length the same odd-parity shape as the other two seed lists.
  */
-const CONFERENCE_POOL: EuroClub[] = [
-  { name: "Fiorentina", strength: 74, pot: 1 },
-  { name: "Club Brugge", strength: 72, pot: 1 },
-  { name: "Hearts", strength: 66, pot: 1 },
-  { name: "Gent", strength: 68, pot: 1 },
-  { name: "Partizan", strength: 67, pot: 1 },
-  { name: "PAOK", strength: 69, pot: 1 },
-  { name: "Galatasaray B", strength: 67, pot: 1 },
-  { name: "Djurgården", strength: 64, pot: 1 },
-  { name: "Legia Warsaw", strength: 66, pot: 1 },
+const CONFERENCE_SEEDS: EuroSeed[] = [
+  { name: "Fiorentina", strength: 74 },
+  { name: "Club Brugge", strength: 72 },
+  { name: "Hearts", strength: 66 },
+  { name: "Gent", strength: 68 },
+  { name: "Partizan", strength: 67 },
+  { name: "PAOK", strength: 69 },
+  { name: "Galatasaray B", strength: 67 },
+  { name: "Djurgården", strength: 64 },
+  { name: "Legia Warsaw", strength: 66 },
 
-  { name: "Molde", strength: 65, pot: 2 },
-  { name: "Heidenheim", strength: 66, pot: 2 },
-  { name: "HJK Helsinki", strength: 62, pot: 2 },
-  { name: "Sivasspor", strength: 63, pot: 2 },
-  { name: "Genk", strength: 67, pot: 2 },
-  { name: "Brøndby", strength: 64, pot: 2 },
-  { name: "Vitória Guimarães", strength: 65, pot: 2 },
-  { name: "Lech Poznań", strength: 63, pot: 2 },
-  { name: "Slavia Sofia", strength: 61, pot: 2 },
+  { name: "Molde", strength: 65 },
+  { name: "Heidenheim", strength: 66 },
+  { name: "HJK Helsinki", strength: 62 },
+  { name: "Sivasspor", strength: 63 },
+  { name: "Genk", strength: 67 },
+  { name: "Brøndby", strength: 64 },
+  { name: "Vitória Guimarães", strength: 65 },
+  { name: "Lech Poznań", strength: 63 },
+  { name: "Slavia Sofia", strength: 61 },
 
-  { name: "Hajduk Split", strength: 63, pot: 3 },
-  { name: "Rosenborg", strength: 62, pot: 3 },
-  { name: "IFK Göteborg", strength: 60, pot: 3 },
-  { name: "Botev Plovdiv", strength: 59, pot: 3 },
-  { name: "Universitatea Craiova", strength: 60, pot: 3 },
-  { name: "Zaglebie Lubin", strength: 60, pot: 3 },
-  { name: "Vikingur", strength: 58, pot: 3 },
-  { name: "Noah FC", strength: 58, pot: 3 },
-  { name: "FC Pyunik", strength: 57, pot: 3 },
+  { name: "Hajduk Split", strength: 63 },
+  { name: "Rosenborg", strength: 62 },
+  { name: "IFK Göteborg", strength: 60 },
+  { name: "Botev Plovdiv", strength: 59 },
+  { name: "Universitatea Craiova", strength: 60 },
+  { name: "Zaglebie Lubin", strength: 60 },
+  { name: "Vikingur", strength: 58 },
+  { name: "Noah FC", strength: 58 },
+  { name: "FC Pyunik", strength: 57 },
 
-  { name: "NSÍ Runavík", strength: 55, pot: 4 },
-  { name: "Levadia Tallinn", strength: 56, pot: 4 },
-  { name: "FK Riteriai", strength: 55, pot: 4 },
-  { name: "Differdange 03", strength: 53, pot: 4 },
-  { name: "FC Santa Coloma", strength: 52, pot: 4 },
-  { name: "La Fiorita", strength: 52, pot: 4 },
-  { name: "Shkupi", strength: 57, pot: 4 },
-  { name: "Inter Club d'Escaldes", strength: 51, pot: 4 },
-  { name: "Lincoln Red Imps", strength: 56, pot: 4 },
+  { name: "NSÍ Runavík", strength: 55 },
+  { name: "Levadia Tallinn", strength: 56 },
+  { name: "FK Riteriai", strength: 55 },
+  { name: "Differdange 03", strength: 53 },
+  { name: "FC Santa Coloma", strength: 52 },
+  { name: "Shkupi", strength: 57 },
+  { name: "Inter Club d'Escaldes", strength: 51 },
+  { name: "Lincoln Red Imps", strength: 56 },
 ];
+const CONFERENCE_POOL: EuroClub[] = seededPool(CONFERENCE_SEEDS);
 
 export function poolFor(competition: EuroId): EuroClub[] {
   if (competition === "Champions League") return CHAMPIONS_POOL;
@@ -344,13 +373,17 @@ export function openEuro(
   const pool = poolFor(competition);
   const you: EuroClub = { name: clubName, strength: clubStrength, pot: yourPot };
 
-  // Thirty-six: you, then the strongest available from each pot until it is
-  // full. Your own pot takes one fewer, because you are in it.
+  // You, plus everyone in the pool — no per-pot cap. The pool's real size
+  // now varies by competition (however many clubs CHAMPIONS_SEEDS/
+  // EUROPA_SEEDS/CONFERENCE_SEEDS actually name), so a fixed "9 per pot,
+  // minus 1 for your own pot" assumption would silently break the moment
+  // that stopped being exactly 36 either way, which is exactly what
+  // reconciling the seed lists against clubs.ts did. simulateEuroMatchday's
+  // own comment explains why the total needs to come out even; the three
+  // seed lists are each sized with that in mind instead.
   const clubs: EuroClub[] = [you];
   for (let pot = 1; pot <= 4; pot++) {
-    const want = pot === yourPot ? 8 : 9;
-    const inPot = pool.filter(c => c.pot === pot && c.name !== clubName);
-    clubs.push(...inPot.slice(0, want));
+    clubs.push(...pool.filter(c => c.pot === pot && c.name !== clubName));
   }
 
   const leaguePhase: EuroMatch[] = [];

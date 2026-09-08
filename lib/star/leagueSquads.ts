@@ -253,6 +253,45 @@ export function shouldUpgradeLeagueSquads(squads: LeagueSquad[]): boolean {
 }
 
 /**
+ * The same staleness problem as `shouldUpgradeLeagueSquads`, for
+ * `career.externalSquads` (the Champions/Europa/Other clubs
+ * `runInternationalWindow` — leagueTransfers.ts — trades with). A club here
+ * can genuinely have never been scraped at all rather than merely be
+ * missing a field — see `fc27_clone_european_clubs.sql`'s own header for
+ * several real examples of a club sitting on zero rows until a spelling fix
+ * landed — so the signal is simply how many of the fetched clubs came back
+ * with anybody on the books at all, not per-player field quality. Without
+ * this, a career that first fetched the wider world before such a fix
+ * shipped is stuck for the rest of that save: the fetch on `app/star-dev/
+ * page.tsx` only ever runs again while the array is still completely empty,
+ * and a handful of real clubs is enough to make it non-empty forever.
+ *
+ * `expectedClubs`, when given, catches a DIFFERENT kind of staleness the
+ * ratio below can't see at all: reported directly from a real save fourteen
+ * seasons in, where Champions League opponents the CURRENT code expects
+ * (Sturm Graz, Young Boys, Ajax — see euro.ts's own header for the fuller
+ * story) had a full XI of free agents instead of a real squad, even though
+ * plenty of OTHER clubs in the same `externalSquads` snapshot resolved
+ * fine. Root cause: `clubs.ts`'s CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS
+ * (what `externalClubsFor` fetches) has been edited many times since this
+ * feature shipped — clubs added, moved between lists, renamed — and a save
+ * whose snapshot was taken before one of those edits landed keeps a
+ * perfectly healthy-LOOKING array (most of what's in it has real players)
+ * that simply never contains the newer club at all. `withPlayers / length`
+ * can't detect an absence; only comparing against what the game would fetch
+ * TODAY can. Passed as `externalClubsFor(...)`'s own current output at both
+ * call sites in app/star-dev/page.tsx.
+ */
+export function shouldUpgradeExternalSquads(squads: LeagueSquad[], expectedClubs?: string[]): boolean {
+  if (squads.length === 0) return false;
+  const withPlayers = squads.filter(s => s.players.length > 0).length;
+  if (withPlayers / squads.length < 0.5) return true;
+  if (!expectedClubs) return false;
+  const have = new Set(squads.map(s => s.club));
+  return expectedClubs.some(c => !have.has(c));
+}
+
+/**
  * Go and get the division.
  *
  * One request for every club at once — see app/api/star/league-squads. Never

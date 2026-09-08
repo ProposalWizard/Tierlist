@@ -27,7 +27,7 @@ import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/m
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, shouldUpgradeExternalSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
@@ -219,6 +219,15 @@ export default function StarDevPage() {
     if (!(saved.externalSquads ?? []).length) {
       fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
         setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
+      });
+    } else if (shouldUpgradeExternalSquads(saved.externalSquads!, externalClubsFor(saved.league.map(t => t.name)))) {
+      // A career that first fetched the wider world while most of those
+      // clubs still had zero real rows, OR whose snapshot simply predates a
+      // club the CURRENT code expects to find (see shouldUpgradeExternalSquads'
+      // own comment) — re-fetched and merged, same as the domestic re-fetch
+      // just above, rather than staying stuck with a stale snapshot forever.
+      fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((fresh) => {
+        setCareer(c => (c ? { ...c, externalSquads: mergeLeagueSquadStats(fresh, c.externalSquads ?? []) } : c));
       });
     }
 

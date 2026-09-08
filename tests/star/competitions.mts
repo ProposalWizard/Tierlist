@@ -3,6 +3,7 @@ import {
   internationalCallUp, tournamentFor, roundsFor, nextFixtureFor, leagueWeeks, cupRoundWeek,
 } from "../../lib/star/competitions";
 import { CUP_ROUND_NAMES } from "../../lib/star/cups";
+import { poolFor } from "../../lib/star/euro";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, advanceSeason, awardLeagueTrophyIfWon } from "../../lib/star/careerFlow";
 import type { CareerState, MatchStats, StarPlayer, Fixture, CupRun } from "../../lib/star/types";
 
@@ -312,7 +313,12 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   check(nextSeason.europeanQualification === "Champions League", "and gets you into the Champions League");
   check(!!nextSeason.euroState, "which opens a European campaign the following season");
   check(nextSeason.euroState?.competition === "Champions League", "in the competition it earned");
-  check(nextSeason.euroState?.clubs.length === 36, `against a field of thirty-six (${nextSeason.euroState?.clubs.length})`);
+  // Field size is derived from poolFor, not hardcoded — see euro.ts's own
+  // header for why Champions League is 34, not 36, after reconciling its
+  // seed lists against clubs.ts's CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS.
+  const expectedField = poolFor("Champions League").length + 1;
+  check(nextSeason.euroState?.clubs.length === expectedField,
+    `against the real Champions League field (${nextSeason.euroState?.clubs.length}, expected ${expectedField})`);
   // A league phase can be drawn up in advance — every opponent is known on the
   // day of the draw — so all eight go on the calendar at once. A knockout
   // cannot, which is why the cups still arrive one round at a time.

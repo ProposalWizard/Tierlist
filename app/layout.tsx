@@ -10,6 +10,7 @@ import { Cinzel } from "next/font/google";
 import "./globals.css";
 import GlobalNav from "@/components/GlobalNav";
 import SiteFooter from "@/components/SiteFooter";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 const GA_ID = "G-ZEGDB8YDZZ";
 
@@ -67,9 +68,11 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={`font-sans bg-gray-950 text-gray-100 min-h-screen flex flex-col overflow-x-hidden`}>
-        <GlobalNav />
-        <div className="flex-1">{children}</div>
-        <SiteFooter />
+        <PostHogProvider>
+          <GlobalNav />
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </PostHogProvider>
       </body>
     </html>
   );

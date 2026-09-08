@@ -3,6 +3,7 @@ import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { mulberry32 } from "../../lib/star/season";
 import { generateSquad, clubNameSeed } from "../../lib/star/squadData";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONS_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { shouldUpgradeExternalSquads } from "../../lib/star/leagueSquads";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -63,7 +64,11 @@ function freshCareer(season: number): CareerState {
   check(moves.length === 0, "…and nothing is reported as having moved");
 }
 
-// ── Across many windows: rare, never more than two, and only real crossings ──
+// ── Across many windows: the normal case now, up to three, real crossings ──
+//
+// Re-tuned directly: "it should not be this rare, transfers like this happen
+// all the time just a bit less often" — a summer window with no international
+// business at all should now be the less common outcome, not the usual one.
 {
   let windowsWithMoves = 0, totalMoves = 0, maxInOneWindow = 0;
   const TRIALS = 300;
@@ -84,9 +89,8 @@ function freshCareer(season: number): CareerState {
     }
   }
   const pct = (windowsWithMoves / TRIALS) * 100;
-  check(windowsWithMoves > 0, `at least some summer windows produce a marquee move, across ${TRIALS} trials`);
-  check(pct < 55, `…but it stays the exception, not the rule (${pct.toFixed(1)}% of summer windows had one)`);
-  check(maxInOneWindow <= 2, `never more than two marquee deals in a single window (worst seen: ${maxInOneWindow})`);
+  check(pct > 50, `now the normal case, not a rarity (${pct.toFixed(1)}% of summer windows had at least one)`);
+  check(maxInOneWindow <= 3, `never more than three marquee deals in a single window (worst seen: ${maxInOneWindow})`);
   check(totalMoves > 0, "the sample actually produced real moves to check, not an empty run");
 }
 
@@ -132,10 +136,64 @@ function freshCareer(season: number): CareerState {
   }
 }
 
+// ── A stale/thin external-squads snapshot gets flagged for re-fetch ──
+//
+// Reported directly: "I don't really ever see any transfers between foreign
+// clubs." (Since re-tuned to be the normal case rather than a rarity — see
+// the file header — but this staleness bug was real regardless of how often
+// runInternationalWindow itself rolls to fire.) A career whose externalSquads
+// was first
+// fetched while most of those clubs still had zero rows on file (before
+// fc27_clone_european_clubs.sql's spelling fixes landed, say) stays stuck
+// with that thin snapshot forever: app/star-dev/page.tsx only re-fetches
+// while the array is completely empty, and a handful of real clubs is
+// enough to make it non-empty. shouldUpgradeExternalSquads is the signal
+// that breaks that trap — same idea as shouldUpgradeLeagueSquads, just
+// judging presence of ANY player per club rather than a per-player field.
+{
+  check(shouldUpgradeExternalSquads([]) === false, "an empty array is not itself a staleness signal — nothing has been fetched yet");
+
+  const mostlyEmpty: LeagueSquad[] = [
+    { club: "Real Madrid", players: [] },
+    { club: "FC Barcelona", players: [] },
+    { club: "Paris Saint-Germain", players: squadFor("Paris Saint-Germain", 1, true).players },
+  ];
+  check(shouldUpgradeExternalSquads(mostlyEmpty) === true, "mostly-empty foreign rosters flag for a re-fetch");
+
+  const mostlyReal: LeagueSquad[] = [
+    { club: "Real Madrid", players: squadFor("Real Madrid", 1, true).players },
+    { club: "FC Barcelona", players: squadFor("FC Barcelona", 2, true).players },
+    { club: "Villarreal", players: [] }, // one genuinely never-scraped club is not the whole snapshot being stale
+  ];
+  check(shouldUpgradeExternalSquads(mostlyReal) === false, "mostly-real foreign rosters do not trigger a re-fetch over one thin club");
+
+  // ── A healthy-looking snapshot that predates a real club-list edit ──
+  //
+  // Reported directly from a real save: Sturm Graz/Young Boys/Ajax read as a
+  // full XI of free agents in a Champions League game, even though the rest
+  // of that career's externalSquads snapshot was fine (nothing near the
+  // <50% empty ratio above). Root cause was clubs.ts's own club lists having
+  // been edited (clubs added/moved) after that save's snapshot was taken —
+  // a staleness the empty-ratio check can never see, because every club
+  // that WAS in the old snapshot is perfectly healthy; the problem is one
+  // that's now expected but entirely absent.
+  const healthyButMissingOne: LeagueSquad[] = [
+    { club: "Real Madrid", players: squadFor("Real Madrid", 1, true).players },
+    { club: "FC Barcelona", players: squadFor("FC Barcelona", 2, true).players },
+    { club: "Paris Saint-Germain", players: squadFor("Paris Saint-Germain", 3, true).players },
+  ];
+  check(shouldUpgradeExternalSquads(healthyButMissingOne) === false,
+    "without an expected list, a healthy snapshot never re-fetches, however incomplete it actually is");
+  check(shouldUpgradeExternalSquads(healthyButMissingOne, ["Real Madrid", "FC Barcelona", "Paris Saint-Germain"]) === false,
+    "…but with one, a snapshot that already has everything currently expected does not re-fetch");
+  check(shouldUpgradeExternalSquads(healthyButMissingOne, ["Real Madrid", "FC Barcelona", "Paris Saint-Germain", "SK Sturm Graz"]) === true,
+    "…and a snapshot missing even one currently-expected club re-fetches, no matter how healthy the rest of it is");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems.slice(0, 25)) console.log(`  ✗ ${p}`);
   if (problems.length > 25) console.log(`  ...and ${problems.length - 25} more`);
   process.exit(1);
 }
-console.log("PASS — the wider world trades with the division rarely, never more than two deals a window, and every move is real");
+console.log("PASS — the wider world trades with the division routinely now, up to three deals a window, and every move is real");

@@ -190,9 +190,23 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
   // (a plain grey gradient) shows straight through instead — "I liked it
   // how it was before where it was only the phone there."
   if (mode === "browse") {
+    // Reported directly: the phone visibly narrows on the Transfers tab
+    // compared to Feed. Both tabs share this exact box — nothing here reads
+    // `tab` — so the only plausible route to a WIDTH difference is height:
+    // this box's width is DERIVED from its own height via aspect-ratio (see
+    // PHONE_ASPECT's own note on why), and Transfers' content is often
+    // considerably taller than Feed's. `overflow-hidden` on both this box
+    // and its flex parent stops that inner content from ever influencing
+    // either box's own computed size, which PhoneFrame's internal
+    // `overflow-y-auto` scrolling should already guarantee but evidently
+    // does not always in every browser. Belt and suspenders, not a rewrite
+    // of the sizing formula itself — that formula (a definite height, width
+    // derived from it, capped by max-width) is deliberate, see the note
+    // above, and swapping which dimension is "definite" risks reintroducing
+    // the exact stretched/squashed bug that formula was written to fix.
     return (
-      <div className="flex h-full w-full items-center justify-center p-2">
-        <div className="h-full" style={{ aspectRatio: PHONE_ASPECT, maxWidth: "min(28rem, 100%)" }}>{phone}</div>
+      <div className="flex h-full w-full items-center justify-center overflow-hidden p-2">
+        <div className="h-full overflow-hidden" style={{ aspectRatio: PHONE_ASPECT, maxWidth: "min(28rem, 100%)" }}>{phone}</div>
       </div>
     );
   }
