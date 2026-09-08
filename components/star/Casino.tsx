@@ -406,7 +406,7 @@ function HorseRacingGame(props: HorseRacingProps) {
                     <div className="text-[10px] text-white/75">Rating: {h.rating}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-black text-yellow-300 text-sm">{h.odds.toFixed(1)}:1</div>
+                    <div className="font-black text-yellow-300 text-sm">{h.odds.toFixed(2)}</div>
                     <div className="text-[9px] text-white/65">odds</div>
                   </div>
                 </button>
@@ -572,7 +572,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
 
         {placed && (
           <div className="mb-2 rounded-lg bg-emerald-600/80 border border-emerald-300 px-3 py-2 text-center text-xs font-black">
-            Bet placed: {placed.club} @ {placed.odds.toFixed(1)}
+            Bet placed: {placed.club} @ {placed.odds.toFixed(2)}
           </div>
         )}
 
@@ -585,7 +585,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
               className="w-full flex items-center justify-between gap-2 px-3 py-2.5 border-b border-black/20 last:border-b-0 hover:bg-gray-700 disabled:opacity-40 text-left"
             >
               <span className="font-bold text-white text-sm truncate">{entry.name}</span>
-              <span className="shrink-0 font-black text-yellow-300 text-sm tabular-nums">{entry.odds.toFixed(1)}:1</span>
+              <span className="shrink-0 font-black text-yellow-300 text-sm tabular-nums">{entry.odds.toFixed(2)}</span>
             </button>
           ))}
         </div>
@@ -608,7 +608,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
                       <span className="text-white/55"> — {label}</span>
                     </div>
                     <div className="font-black text-yellow-300 tabular-nums">
-                      ★{b.stake} @ {b.odds.toFixed(1)} → ★{Math.round(b.stake * b.odds)}
+                      ★{b.stake} @ {b.odds.toFixed(2)} → ★{Math.round(b.stake * b.odds)}
                     </div>
                   </div>
                 );
