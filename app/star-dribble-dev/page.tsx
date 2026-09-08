@@ -49,6 +49,12 @@ export default function StarDribbleDevPage() {
   const [chasePitchDeg, setChasePitchDeg] = useState(22);
   const [chaseOffset, setChaseOffset] = useState(4.5);
 
+  // Dribble-feel tuning — see FirstPersonDribble.tsx's own header (the
+  // camera-lag + ball-touch-spring rework) and its DEFAULT_CAMERA_FOLLOW_RATE/
+  // DEFAULT_BALL_TOUCH_REACH constants for what these default to.
+  const [cameraFollowRate, setCameraFollowRate] = useState(5.5);
+  const [ballTouchReach, setBallTouchReach] = useState(0.9);
+
   if (state === "loading") {
     return <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-sm">Loading…</div>;
   }
@@ -65,7 +71,7 @@ export default function StarDribbleDevPage() {
 
   // Remounts the active mode's component whenever a slider changes, so a
   // fresh run always reflects the current settings.
-  const runKey = `${mode}-${pace}-${oppStrength}-${count}-${assist}-${useFixedSeed ? seed : "random"}-${chaseEye}-${chasePitchDeg}-${chaseOffset}`;
+  const runKey = `${mode}-${pace}-${oppStrength}-${count}-${assist}-${useFixedSeed ? seed : "random"}-${chaseEye}-${chasePitchDeg}-${chaseOffset}-${cameraFollowRate}-${ballTouchReach}`;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -97,6 +103,8 @@ export default function StarDribbleDevPage() {
               chaseEye={chaseEye}
               chasePitchDeg={chasePitchDeg}
               chaseOffset={chaseOffset}
+              cameraFollowRate={cameraFollowRate}
+              ballTouchReach={ballTouchReach}
             />
           ) : (
             <FirstPersonRoam
@@ -149,6 +157,12 @@ export default function StarDribbleDevPage() {
                 <Slider label="Height (m)" value={chaseEye} onChange={setChaseEye} min={2} max={10} step={0.25} />
                 <Slider label="Tilt down (°)" value={chasePitchDeg} onChange={setChasePitchDeg} min={0} max={60} step={1} />
                 <Slider label="Distance behind (m)" value={chaseOffset} onChange={setChaseOffset} min={1} max={12} step={0.25} />
+              </div>
+
+              <div className="pt-2 border-t border-white/10 space-y-3">
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Dribble feel</div>
+                <Slider label="Camera follow speed" value={cameraFollowRate} onChange={setCameraFollowRate} min={1} max={15} step={0.5} />
+                <Slider label="Ball touch reach (m)" value={ballTouchReach} onChange={setBallTouchReach} min={0.2} max={2} step={0.1} />
               </div>
             </>
           )}

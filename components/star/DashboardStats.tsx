@@ -169,6 +169,17 @@ export default function DashboardStats({ career, onRenew }: Props) {
             </div>
           )}
 
+          {(career.betNews ?? []).length > 0 && (
+            <div className="rounded-lg border-l-4 border-emerald-400 bg-gray-800 p-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">🏆 Casino — Competition Bets</div>
+              <div className="mt-1 space-y-0.5">
+                {(career.betNews ?? []).map((n, i) => (
+                  <div key={i} className={`text-[11px] font-bold ${n.includes("didn't win") ? "text-red-300" : "text-white"}`}>{n}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {(career.awards ?? []).length > 0 && (
             <div className="rounded-lg border-l-4 border-amber-400 bg-gray-800 p-3">
               <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">🏅 Individual honours</div>

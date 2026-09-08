@@ -15,7 +15,7 @@ import { judgeSeason } from "./expectations";
 import {
   seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
 } from "./recognition";
-import { makeManager, sackCheck, bossOnArrival, reputationTier, hireReplacementManager } from "./manager";
+import { makeManager, sackCheck, bossOnArrival, hireReplacementManager } from "./manager";
 import { allPoolManagers } from "./managerPool";
 import { rivalryMultiplier } from "./rivalries";
 import { progressObjectives, rollSponsorSeason } from "./sponsors";
@@ -28,6 +28,7 @@ import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner } from "./cups";
 import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
+import { settleBets, betNewsLines } from "./competitionBetting";
 import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier, TROPHY_FAME } from "./rating";
@@ -1024,6 +1025,12 @@ export function advanceSeason(
 
   const lastSeasonWinners = resolveSeasonWinners(career);
 
+  // The casino's book, settled against the exact same result the trophy
+  // cabinet just agreed on above — never re-decided here. Only THIS
+  // season's bets settle (see settleBets' own comment); anything else is
+  // carried forward untouched.
+  const betResult = settleBets(career.competitionBets ?? [], lastSeasonWinners, career.season);
+
   const next: CareerState = {
     ...career,
     player: { ...career.player, age: newAge },
@@ -1090,7 +1097,9 @@ export function advanceSeason(
     // Silverware and individual recognition feed the same reputation
     // sponsors actually check — see trophyFame/honourFame above.
     fame: career.fame + trophyFame + honourFame,
-    money: career.money + loyalty + seasonFeeTotal,
+    money: career.money + loyalty + seasonFeeTotal + betResult.totalPayout,
+    competitionBets: betResult.stillPending,
+    betNews: betNewsLines(betResult.settled),
   };
   if (sponsorRoll.standingHit > 0) {
     next.relationships = {
@@ -1121,7 +1130,12 @@ export function advanceSeason(
     const hire = hireReplacementManager(next, next.player.club, next.season, pool);
     next.manager = hire.manager;
     next.availableManagers = hire.availableManagers;
-    next.managerNews = `${sack.reason} ${hire.manager.name} (${reputationTier(hire.manager.reputation)}) takes over. "${hire.manager.arrival}"`;
+    // No reputation tag ("Elite"/"Proven"/...) in this specific line —
+    // reported directly as unnecessary noise in the message itself. The
+    // tier still exists on the manager (reputationTier(next.manager.reputation)
+    // is read elsewhere, e.g. the Settings/manager screen) — this only drops
+    // it from this one announcement.
+    next.managerNews = `${sack.reason} ${hire.manager.name} takes over. "${hire.manager.arrival}"`;
     next.relationships = { ...next.relationships, boss: bossOnArrival(next) };
     next.captain = false;
   } else {

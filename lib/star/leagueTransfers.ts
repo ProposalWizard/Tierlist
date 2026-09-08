@@ -452,9 +452,20 @@ export interface TransferMove {
   fee: number;
   /** He asked for the move rather than being sold on. Rare — see sellability. */
   unhappy: boolean;
-  /** His primary role — every Candidate this file reads already has one, so
-   *  this is never a guess. Added for the Transfers tab redesign (a real
-   *  photo, a position chip, an age), never read by the engine itself. */
+  /**
+   * His real primary position, for display only — never read by the engine
+   * itself. Reported directly: a player listed as LB/LM/CB showed up in his
+   * own transfer news as "Left Winger", which isn't even one of his real
+   * positions. Root cause was reading `Candidate.position` here — which,
+   * despite this comment once claiming otherwise, is NOT a player's real
+   * position at all; it's the SLOT `buildLeagueSquad`/`buildSquadFromRoster`
+   * (leagueSquads.ts/realSquad.ts) greedily filled him into, which a
+   * neighbour-fit can legitimately assign outside his own listed positions
+   * (an LB/LM/CB filling an empty LW slot at build time, exactly as
+   * reported). `Candidate.positions[0]` — his actual parsed positions,
+   * primary first, always populated (see fromSquadPlayer/fromLeaguePlayer's
+   * own fallback) — is the real one.
+   */
   position: Role;
   age?: number;
   imageUrl?: string;
@@ -473,7 +484,8 @@ export interface LoanMove {
   /** The season this loan is due home — always the season it was made in;
    *  see the file header for what that deliberately does not cover. */
   returnSeason: number;
-  /** See TransferMove — same reason, same source. */
+  /** See TransferMove's own comment — the real position, `positions[0]`,
+   *  never the formation-slot `position` a Candidate is also carrying. */
   position: Role;
   age?: number;
   imageUrl?: string;
@@ -616,7 +628,7 @@ export function runTransferWindow(
           // divide from where he was sitting when this was written.
           player: seller.name, playerId: stableKey(seller), parentClub: seller.club, loanClub: bestClub,
           overall: seller.overall, returnSeason: career.season,
-          position: seller.position, age: seller.age, imageUrl: seller.imageUrl,
+          position: seller.positions[0], age: seller.age, imageUrl: seller.imageUrl,
         },
         score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
       });
@@ -626,7 +638,7 @@ export function runTransferWindow(
         saleMove: {
           player: seller.name, from: seller.club, to: bestClub,
           overall: seller.overall, fee: feeFor(seller.overall), unhappy,
-          position: seller.position, age: seller.age, imageUrl: seller.imageUrl,
+          position: seller.positions[0], age: seller.age, imageUrl: seller.imageUrl,
         },
         score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
       });
@@ -661,7 +673,7 @@ export function runTransferWindow(
       saleMove: {
         // A signing, not a purchase — free is what "free agent" means.
         player: fa.name, from: FREE_AGENTS_CLUB, to: bestClub, overall: fa.overall, fee: 0, unhappy: false,
-        position: fa.position, age: fa.age, imageUrl: fa.imageUrl,
+        position: fa.positions[0], age: fa.age, imageUrl: fa.imageUrl,
       },
       score: bestScore, from: FREE_AGENTS_CLUB, to: bestClub, playerId: fa.id,
     });
@@ -985,7 +997,7 @@ export function runInternationalWindow(
     moves.push({
       player: player.name, from: sellerClub.club, to: buyerClub,
       overall: player.overall, fee: feeFor(player.overall), unhappy: false,
-      position: player.position, age: player.age, imageUrl: player.imageUrl,
+      position: player.positions[0], age: player.age, imageUrl: player.imageUrl,
     });
   }
 

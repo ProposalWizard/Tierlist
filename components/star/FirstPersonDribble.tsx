@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  newRun, applySteer, applyBurst, stepRun,
+  newRun, applySteer, applyBurst, stepRun, BURST_T,
   type FpRunState, type RunPhase,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor } from "@/lib/star/firstPersonView";
@@ -74,14 +74,41 @@ import { mulberry32 } from "@/lib/star/season";
  * longer) still steers continuously exactly as before, and a flick still
  * bursts — taps are additive on top of both, not a replacement mode you
  * have to switch into.
+ *
+ * ── The ball is touched, not glued to your feet — and the camera lags
+ * behind you instead of locking to your lane ──
+ *
+ * Two things reported directly after actually playing this: (1) "instead
+ * of actually moving left and right, it's more like the SCREEN is moving
+ * left and right" — because the chase-cam used to sit at EXACTLY your own
+ * x every frame, so your own figure always rendered dead-centre and only
+ * the world around you ever appeared to move; (2) the ball was invisible
+ * except during a swipe, then "moves forward a bit, and then it just
+ * disappears again" — it sat close enough to your own feet (the old
+ * BALL_LEAD, tuned for the original eyes-level camera, never retuned after
+ * the chase-cam pivot) that your own figure, correctly depth-sorted in
+ * front of it, hid it almost the whole time.
+ *
+ * Fixed with two independent per-frame refs, neither touching the sim
+ * (firstPersonDribble.ts's fairness math is untouched — this is rendering
+ * only): `camXRef` eases toward your real lane rather than snapping to it,
+ * so a steer or a burst now visibly moves YOU across the frame first, with
+ * the camera catching up a beat behind (`cameraFollowRate`, tunable). Every
+ * defender already reads your ball being "touched" by watching your
+ * lateral drift once his telegraph starts (`pickSide` in
+ * firstPersonDribble.ts); `ballXRef`/`ballVXRef` make that touch visible —
+ * a damped spring pulling the ball toward whichever side you're currently
+ * steering (or bursting) toward, so pushing right then immediately left
+ * shows the ball ease out right, overshoot, and get caught up into the new
+ * line, the way an actual touch looks, rather than teleporting. A small
+ * forward push-glide wave (keyed to `stride`, never wall-clock, same
+ * discipline the ground stripes use) rides on top so the ball visibly gets
+ * touched forward each stride instead of gliding at one fixed distance.
  */
 
 type Phase = "run" | "result";
 
 const DT_CAP = 0.05;
-const BALL_LEAD = 1.7; // see firstPersonView.ts's header — the depth that
-                        // keeps the ball on-screen at a natural size.
-const BALL_LEAD_BURST = 2.6;
 const FLICK_MIN_PX_FRAC = 0.06;   // of canvas width
 const FLICK_MIN_SPEED_FRAC = 1.6; // canvas-widths per second
 
@@ -92,6 +119,20 @@ const FLICK_MIN_SPEED_FRAC = 1.6; // canvas-widths per second
 const DEFAULT_CHASE_EYE = 4.5;      // metres — how high the camera sits
 const DEFAULT_CHASE_PITCH_DEG = 22; // degrees — how far down it tilts
 const DEFAULT_CHASE_OFFSET = 4.5;   // metres BEHIND your actual position
+
+// ── Camera lag — see the file header. Higher = snappier (closer to the
+// old exact-lock behaviour); lower = more visible lateral slide before the
+// camera catches up. /s, exponential-smoothing rate.
+const DEFAULT_CAMERA_FOLLOW_RATE = 5.5;
+
+// ── The ball's touch spring — see the file header. ──
+const DEFAULT_BALL_TOUCH_REACH = 0.9; // metres it eases toward, to the touched side
+const BALL_SPRING_K = 90;             // stiffness
+const BALL_SPRING_C = 17;             // damping — under-damped on purpose, for a slight overshoot
+const BALL_BASE_LEAD = 0.6;           // metres in front of your feet at rest
+const BALL_BURST_LEAD = 1.5;          // metres in front during/just after a burst
+const TOUCH_WAVE_LEN = 1.3;           // metres of stride per forward push-glide cycle
+const TOUCH_WAVE_AMP = 0.18;          // metres the lead distance ripples by
 
 // ── A tap, not a drag — see the file header. Small movement, short
 // duration, released without ever crossing the flick thresholds above.
@@ -108,6 +149,10 @@ export interface FirstPersonDribbleProps {
   chaseEye?: number;
   chasePitchDeg?: number;
   chaseOffset?: number;
+  /** Dribble-feel tuning — see the file header and DEFAULT_CAMERA_FOLLOW_RATE/
+   *  DEFAULT_BALL_TOUCH_REACH above. */
+  cameraFollowRate?: number;
+  ballTouchReach?: number;
   /** A fixed seed replays the exact same run every time (for tuning);
    *  omit it for a fresh random run on every attempt. */
   seed?: number;
@@ -118,6 +163,7 @@ export interface FirstPersonDribbleProps {
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, defenders = 3, seed, assist = true, onComplete,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
+  cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -125,6 +171,12 @@ export default function FirstPersonDribble({
   const ballImgRef = useRef<HTMLImageElement | null>(null);
   const rngRef = useRef<() => number>(() => Math.random());
   const reducedMotionRef = useRef(false);
+  // Camera-lag and ball-touch-spring state — see the file header. Reset
+  // alongside the run itself so a fresh attempt doesn't inherit the last
+  // one's drift.
+  const camXRef = useRef(0);
+  const ballXRef = useRef(0);
+  const ballVXRef = useRef(0);
 
   const phaseRef = useRef<Phase>("run");
   const [phase, setPhaseState] = useState<Phase>("run");
@@ -161,7 +213,11 @@ export default function FirstPersonDribble({
   const reset = useCallback(() => {
     const rng = newRng();
     rngRef.current = rng;
-    runRef.current = newRun({ pace, oppStrength, defenders, rng });
+    const run = newRun({ pace, oppStrength, defenders, rng });
+    runRef.current = run;
+    camXRef.current = run.x;
+    ballXRef.current = run.x;
+    ballVXRef.current = 0;
     draggingRef.current = false;
     gestureStartRef.current = null;
     setResultText("");
@@ -310,43 +366,76 @@ export default function FirstPersonDribble({
         if (result !== "running") finishRun(result);
       }
 
-      draw();
+      draw(dt);
     };
 
-    const draw = () => {
+    const draw = (dt: number) => {
       const c = canvasRef.current, run = runRef.current;
       if (!c || !run) return;
-      // Chase-cam: sits CHASE_OFFSET metres behind your actual position
-      // (larger y — the corridor runs toward y=0), elevated and tilted
-      // down. See the file header on why this replaced a camera sitting
-      // exactly at your own eyes.
+
+      // Camera lag — see the file header: ease toward your lane instead of
+      // snapping to it, so a steer or a burst displaces YOU across the
+      // frame before the camera catches up.
+      camXRef.current += (run.x - camXRef.current) * (1 - Math.exp(-cameraFollowRate * dt));
+
+      // The ball's touch spring — see the file header. Pushed toward
+      // whichever side you're currently steering (or bursting) toward;
+      // under-damped so a change of direction overshoots slightly, the way
+      // a real touch does, instead of snapping straight to the new line.
+      let touchDir = 0;
+      if (run.burst) touchDir = run.burst.dir;
+      else {
+        const diff = run.laneTarget - run.x;
+        if (Math.abs(diff) > 0.15) touchDir = Math.sign(diff);
+      }
+      const desiredBallX = run.x + touchDir * ballTouchReach * (run.burst ? 1.4 : 1);
+      const accel = BALL_SPRING_K * (desiredBallX - ballXRef.current) - BALL_SPRING_C * ballVXRef.current;
+      ballVXRef.current += accel * dt;
+      ballXRef.current += ballVXRef.current * dt;
+      ballXRef.current = Math.max(run.minX - 0.5, Math.min(run.maxX + 0.5, ballXRef.current));
+
+      // Forward push-glide — a small ripple on the lead distance keyed to
+      // stride (never wall-clock), plus the existing burst lunge further
+      // out ahead.
+      const burstLead = run.burst ? Math.min(1, run.burst.t / BURST_T) : 0;
+      const baseLead = BALL_BASE_LEAD + (BALL_BURST_LEAD - BALL_BASE_LEAD) * burstLead;
+      const wave = Math.sin((run.stride / TOUCH_WAVE_LEN) * Math.PI * 2) * TOUCH_WAVE_AMP;
+      const leadDepth = Math.max(0.3, baseLead + wave);
+
+      // Chase-cam: sits CHASE_OFFSET metres behind your (lagged) camera
+      // position (larger y — the corridor runs toward y=0), elevated and
+      // tilted down. See the file header on why this replaced a camera
+      // sitting exactly at your own eyes, and why it no longer locks
+      // exactly to your x either.
       const cam = cameraFor(
-        { x: run.x, y: run.y + chaseOffset }, c.width, c.height,
+        { x: camXRef.current, y: run.y + chaseOffset }, c.width, c.height,
         { eye: chaseEye, pitch: (chasePitchDeg * Math.PI) / 180 },
       );
       const pips: DuelPip[] = run.defenders.map((d, i) => (
         d.phase === "beaten" ? "beaten" : d.phase === "won" ? "won" : i === run.active ? "active" : "pending"
       ));
-      const burstLead = run.burst ? Math.min(1, run.burst.t / 0.35) : 0;
-      const leadDepth = BALL_LEAD + (BALL_LEAD_BURST - BALL_LEAD) * burstLead;
-      const lateral = run.burst ? run.burst.dir * 0.9 * burstLead : 0;
       const beaten = run.defenders.filter(d => d.phase === "beaten").length;
+      // The body leans toward whichever side the ball is currently being
+      // touched (reuses the same lateral shear a defender's telegraph
+      // already draws with — see firstPersonRender.ts).
+      const lean = Math.max(-0.35, Math.min(0.35, (ballXRef.current - run.x) * 0.55));
 
       renderFirstPerson(c, {
         cam, defenders: run.defenders, stride: run.stride,
         minX: run.minX, maxX: run.maxX,
-        ball: { x: run.x + lateral, y: run.y - leadDepth, z: 0 },
+        ball: { x: ballXRef.current, y: run.y - leadDepth, z: 0 },
         ballImage: ballImgRef.current,
         assist, reducedMotion: reducedMotionRef.current,
         hud: { text: `${beaten}/${run.defenders.length} beaten`, pips },
         own: { x: run.x, y: run.y },
+        ownLean: lean,
       });
     };
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assist, onComplete, chaseEye, chasePitchDeg, chaseOffset]);
+  }, [assist, onComplete, chaseEye, chasePitchDeg, chaseOffset, cameraFollowRate, ballTouchReach]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center px-3 py-4">

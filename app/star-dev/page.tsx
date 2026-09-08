@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
+import type { CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE } from "@/lib/star/storage";
 import { createClient } from "@/lib/supabase/client";
@@ -79,6 +80,10 @@ const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
 };
 import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
+import Investments from "@/components/star/Investments";
+import {
+  buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
+} from "@/lib/star/investments";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
@@ -1131,6 +1136,47 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  // Stake itself already left the casino's `bank` (see Casino.tsx's own
+  // onSetBank call, which flows back into career.money on exit exactly like
+  // any other casino loss) — this only records the bet so it can actually
+  // settle against a real result at the next rollover (see advanceSeason's
+  // settleBets call, careerFlow.ts).
+  const handlePlaceBet = useCallback((bet: Omit<CompetitionBet, "id">) => {
+    if (!career) return;
+    const id = `bet-${career.season}-${(career.competitionBets ?? []).length}-${Math.round(Math.random() * 1e6)}`;
+    setCareer({ ...career, competitionBets: [...(career.competitionBets ?? []), { ...bet, id }] });
+  }, [career]);
+
+  // Investments — every action below is a pure CareerState -> CareerState
+  // function in lib/star/investments.ts; this is only the setCareer wiring.
+  const handleBuyStake = useCallback((club: string, percent: number) => {
+    if (!career) return;
+    setCareer(buyStake(career, club, percent));
+  }, [career]);
+  const handleSellStake = useCallback((club: string, percent: number) => {
+    if (!career) return;
+    setCareer(sellStake(career, club, percent));
+  }, [career]);
+  const handleTopUpClubBudget = useCallback((club: string, amount: number) => {
+    if (!career) return;
+    setCareer(topUpClubBudget(career, club, amount));
+  }, [career]);
+  const handleSignPlayerForOwnedClub = useCallback((club: string, playerId: string, fromClub: string) => {
+    if (!career) return;
+    const result = signPlayerForOwnedClub(career, club, playerId, fromClub);
+    if (result.ok) setCareer(result.career);
+  }, [career]);
+  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string) => {
+    if (!career) return;
+    const result = sellPlayerFromOwnedClub(career, club, playerId);
+    if (result.ok) setCareer(result.career);
+  }, [career]);
+  const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
+    if (!career) return;
+    const result = replaceManagerForOwnedClub(career, club, managerName);
+    if (result.ok) setCareer(result.career);
+  }, [career]);
+
   const handleOpenRelationshipGame = useCallback((kind: RelationshipKind) => {
     setRelationshipGameKind(kind);
     setPhase("relationship-game");
@@ -1278,7 +1324,20 @@ export default function StarDevPage() {
   }
 
   if (phase === "training" && trainingSkill) {
-    return <TrainingMinigame skill={trainingSkill} onComplete={handleTrainingComplete} />;
+    // `level` is the whole point of the rebuilt drills: every one of them is
+    // calibrated to the stat it trains, so the same session gets genuinely
+    // harder as that number climbs (see lib/star/trainingDrills.ts). It was
+    // never passed before, which is why training played identically at 5 and
+    // at 95. `skills` goes to the engine's own `launch`, so a strike in
+    // training is the same strike it would be in a match.
+    return (
+      <TrainingMinigame
+        skill={trainingSkill}
+        level={career.skills[trainingSkill]}
+        skills={career.skills}
+        onComplete={handleTrainingComplete}
+      />
+    );
   }
 
   if (phase === "match" && nextFixture) {
@@ -1472,7 +1531,22 @@ export default function StarDevPage() {
   }
 
   if (phase === "casino-menu") {
-    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} />;
+    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onPlaceBet={handlePlaceBet} />;
+  }
+
+  if (phase === "investments") {
+    return (
+      <Investments
+        career={career}
+        onBack={handleBackToDashboard}
+        onBuyStake={handleBuyStake}
+        onSellStake={handleSellStake}
+        onTopUpBudget={handleTopUpClubBudget}
+        onSignPlayer={handleSignPlayerForOwnedClub}
+        onSellPlayer={handleSellPlayerFromOwnedClub}
+        onReplaceManager={handleReplaceManagerForOwnedClub}
+      />
+    );
   }
 
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
@@ -1757,7 +1831,22 @@ export default function StarDevPage() {
       )}
       {phase === "dashboard" && career.managerNews && (
         <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/15 p-3">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-200">In the dugout</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-200">In the dugout</div>
+            {/* Persisted CareerState, not a transient toast — see managerNews's
+                own comment on why it needs an explicit dismiss rather than a
+                timeout: reported directly, this banner used to sit on the
+                dashboard for the rest of the entire season (every match,
+                every Home tap) because nothing ever cleared it before the
+                NEXT sacking or the next rollover, whichever came first. */}
+            <button
+              onClick={() => setCareer(c => (c && c.managerNews ? { ...c, managerNews: null } : c))}
+              className="shrink-0 text-red-200/70 hover:text-white text-sm leading-none"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
           <p className="mt-1 text-xs text-white">{career.managerNews}</p>
         </div>
       )}
@@ -1784,10 +1873,11 @@ export default function StarDevPage() {
             <QuickBtn label="Style" icon="💎" onClick={() => setPhase("shop-lifestyle")} />
             <QuickBtn label="Casino" icon="🎰" onClick={() => setPhase("casino-menu")} />
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="mt-2 grid grid-cols-4 gap-2">
             <QuickBtn label="Sponsors" icon="🤝" onClick={() => setPhase("sponsors")} />
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
+            <QuickBtn label="Invest" icon="📈" onClick={() => setPhase("investments")} />
           </div>
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>
