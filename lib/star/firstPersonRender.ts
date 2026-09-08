@@ -124,7 +124,7 @@ function crowdTile(): HTMLCanvasElement | null {
 }
 
 type Pt = { px: number; py: number };
-function quad(ctx: CanvasRenderingContext2D, q: Pt[], fill: string) {
+function quad(ctx: CanvasRenderingContext2D, q: Pt[], fill: string | CanvasGradient) {
   ctx.beginPath();
   ctx.moveTo(q[0].px, q[0].py);
   for (let i = 1; i < q.length; i++) ctx.lineTo(q[i].px, q[i].py);
@@ -134,6 +134,30 @@ function quad(ctx: CanvasRenderingContext2D, q: Pt[], fill: string) {
 }
 function seg(ctx: CanvasRenderingContext2D, a: Pt, b: Pt) {
   ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+}
+
+/** A tapered limb segment (thigh, shin, upper/lower arm) as a filled quad in
+ *  screen space, not a stroked line — the direct fix for "a stick man":
+ *  each end is projected separately and widened by ITS OWN scale, so the
+ *  limb still tapers correctly with perspective rather than being a
+ *  constant screen-space width. */
+function limb(
+  ctx: CanvasRenderingContext2D, cam: FpCamera,
+  a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number },
+  widthA: number, widthB: number, fill: string,
+) {
+  const pa = project(cam, a.x, a.y, a.z), pb = project(cam, b.x, b.y, b.z);
+  if (!pa || !pb) return;
+  const dx = pb.px - pa.px, dy = pb.py - pa.py;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len;
+  const wa = widthA * pa.scale, wb = widthB * pb.scale;
+  quad(ctx, [
+    { px: pa.px + nx * wa, py: pa.py + ny * wa },
+    { px: pb.px + nx * wb, py: pb.py + ny * wb },
+    { px: pb.px - nx * wb, py: pb.py - ny * wb },
+    { px: pa.px - nx * wa, py: pa.py - ny * wa },
+  ], fill);
 }
 
 // ── Sky, stands, ground ────────────────────────────────────────────────────
@@ -223,78 +247,135 @@ function shearFor(def: FpDefender): number {
   return 0;
 }
 
-/** The shared front-on figure — legs, shorts, shirt, arms, head, all
- *  projected from the given world position with an optional lateral shear
- *  (the duel mode's telegraph lean; always 0 for a plain roam chaser). */
+/** Metres a foot swings forward/back from under the hip, and how high it
+ *  lifts while swinging through — the whole stylised running gait is these
+ *  two numbers fed through one sine each. */
+const STRIDE_REACH = 0.30;
+const LIFT_H = 0.16;
+
+/** One limb's forward/back + lift offset at a given phase (radians). Used
+ *  for both legs and arms — an arm just passes `lift = 0`, since only a
+ *  planted foot needs to visibly clear the turf. */
+function gait(phase: number, reach: number, lift: number): { fwd: number; up: number } {
+  const off = Math.sin(phase);
+  return { fwd: -off * reach, up: Math.max(0, off) * lift };
+}
+
+/**
+ * The shared figure — legs, shorts, shirt, arms, head, all projected from
+ * the given world position with an optional lateral shear (a defender's
+ * telegraph lean, or the ball-carrier leaning toward whichever side he's
+ * currently touching the ball — see FirstPersonDribble.tsx's `ownLean`).
+ *
+ * Rebuilt from a straight-line stick figure into filled, tapered limbs (see
+ * `limb()`) with a real running gait (`runPhase`, radians — legs and arms
+ * swing from it, contralaterally, the way a person actually runs) and a
+ * shaded, tapered torso instead of a flat rectangle. Reported directly as
+ * "this weird stick man type of figure" — this is the vector-art fix; a
+ * genuinely illustrated or 3D-modelled character is a separate asset this
+ * codebase has no pipeline for yet (no image-generation tool was available
+ * this session either), so it stays procedural, same as every other figure
+ * in this file and in scenarioRender.ts.
+ */
 function drawFigure(
   ctx: CanvasRenderingContext2D, cam: FpCamera,
   pos: { x: number; y: number }, shear: number,
   colors: { shirt: string; rim: string },
-  opts: { legSpread?: number; armFlungSide?: -1 | 1 | 0; armFlungAmount?: number } = {},
+  opts: {
+    legSpread?: number; armFlungSide?: -1 | 1 | 0; armFlungAmount?: number;
+    runPhase?: number;
+  } = {},
 ) {
   const feet = project(cam, pos.x, pos.y, 0);
   if (!feet) return;
   const sc = feet.scale;
-  const bodyX = (dx: number, z: number) => project(cam, pos.x + dx + shear, pos.y, z);
+  const phase = opts.runPhase ?? 0;
+  const P = (dx: number, dy: number, z: number) => ({ x: pos.x + dx + shear, y: pos.y + dy, z });
 
   ctx.beginPath();
   ctx.ellipse(feet.px, feet.py, 0.42 * sc, 0.14 * sc, 0, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(0,0,0,0.38)";
   ctx.fill();
 
-  const legSpread = opts.legSpread ?? 0.16;
-  const hipL = bodyX(-legSpread, 0.95), hipR = bodyX(legSpread, 0.95);
-  const footL = bodyX(-legSpread * 1.3, 0), footR = bodyX(legSpread * 1.3, 0);
-  ctx.strokeStyle = C.skin;
-  ctx.lineWidth = Math.max(1.4, sc * 0.10);
-  ctx.lineCap = "round";
-  if (hipL && footL) seg(ctx, hipL, footL);
-  if (hipR && footR) seg(ctx, hipR, footR);
+  const baseSpread = opts.legSpread ?? 0.15;
+  const hipZ = 0.92;
+  // A small double-bounce per stride (two footfalls per full gait cycle) —
+  // cheap, but it's the difference between "gliding" and "running".
+  const bounce = Math.max(0, Math.sin(phase * 2)) * 0.03;
 
-  const shortsA = bodyX(-0.24, 0.82), shortsB = bodyX(0.24, 1.02);
-  if (shortsA && shortsB) {
-    ctx.fillStyle = colors.rim;
-    ctx.beginPath();
-    ctx.roundRect?.(Math.min(shortsA.px, shortsB.px), Math.min(shortsA.py, shortsB.py),
-      Math.abs(shortsB.px - shortsA.px), Math.abs(shortsB.py - shortsA.py), sc * 0.08);
-    if (!ctx.roundRect) ctx.rect(Math.min(shortsA.px, shortsB.px), Math.min(shortsA.py, shortsB.py),
-      Math.abs(shortsB.px - shortsA.px), Math.abs(shortsB.py - shortsA.py));
-    ctx.fill();
+  // Legs — left on the base phase, right a half-cycle behind, each a
+  // filled thigh+shin rather than one straight stroke.
+  for (const side of [-1, 1] as const) {
+    const g = gait(phase + (side === 1 ? Math.PI : 0), STRIDE_REACH, LIFT_H);
+    const hip = P(side * baseSpread, 0, hipZ + bounce);
+    const knee = P(side * baseSpread * 1.1, g.fwd * 0.45, hipZ * 0.5 + g.up * 0.5 + bounce * 0.5);
+    const foot = P(side * baseSpread * 1.4, g.fwd, g.up);
+    limb(ctx, cam, hip, knee, 0.075, 0.06, C.skin);
+    limb(ctx, cam, knee, foot, 0.06, 0.045, C.skin);
+    limb(ctx, cam, P(side * baseSpread * 1.4, g.fwd - 0.10, g.up), foot, 0.05, 0.05, "#111827");
   }
 
-  const shirtA = bodyX(-0.26, 1.05), shirtB = bodyX(0.26, 1.50);
-  if (shirtA && shirtB) {
-    ctx.fillStyle = colors.shirt;
-    ctx.beginPath();
-    ctx.roundRect?.(Math.min(shirtA.px, shirtB.px), Math.min(shirtA.py, shirtB.py),
-      Math.abs(shirtB.px - shirtA.px), Math.abs(shirtB.py - shirtA.py), sc * 0.06);
-    if (!ctx.roundRect) ctx.rect(Math.min(shirtA.px, shirtB.px), Math.min(shirtA.py, shirtB.py),
-      Math.abs(shirtB.px - shirtA.px), Math.abs(shirtB.py - shirtA.py));
-    ctx.fill();
-    ctx.strokeStyle = colors.rim;
-    ctx.lineWidth = Math.max(1, sc * 0.05);
-    ctx.stroke();
+  // Shorts — a filled trapezoid on the hips, not a rounded rectangle.
+  const shortsTL = project(cam, pos.x - 0.24 + shear, pos.y, 1.02 + bounce);
+  const shortsTR = project(cam, pos.x + 0.24 + shear, pos.y, 1.02 + bounce);
+  const shortsBR = project(cam, pos.x + 0.20 + shear, pos.y, 0.80 + bounce);
+  const shortsBL = project(cam, pos.x - 0.20 + shear, pos.y, 0.80 + bounce);
+  if (shortsTL && shortsTR && shortsBR && shortsBL) {
+    quad(ctx, [shortsTL, shortsTR, shortsBR, shortsBL], colors.rim);
   }
 
-  const shoulderL = bodyX(-0.28, 1.45), shoulderR = bodyX(0.28, 1.45);
+  // Torso — tapered (shoulders wider than the waist) and shaded with a
+  // light-to-dark sweep so it reads as a rounded body, not a flat card.
+  const shoulderL = project(cam, pos.x - 0.28 + shear, pos.y, 1.48 + bounce);
+  const shoulderR = project(cam, pos.x + 0.28 + shear, pos.y, 1.48 + bounce);
+  const waistR = project(cam, pos.x + 0.22 + shear, pos.y, 1.02 + bounce);
+  const waistL = project(cam, pos.x - 0.22 + shear, pos.y, 1.02 + bounce);
+  if (shoulderL && shoulderR && waistR && waistL) {
+    const grad = ctx.createLinearGradient(shoulderL.px, 0, shoulderR.px, 0);
+    grad.addColorStop(0, colors.shirt);
+    grad.addColorStop(0.55, colors.shirt);
+    grad.addColorStop(1, colors.rim);
+    quad(ctx, [shoulderL, shoulderR, waistR, waistL], grad);
+  }
+
+  // Arms — swing opposite the same-side leg (a natural gait is
+  // contralateral). A committed defender's flung arm — his dive telegraph —
+  // overrides its own side's target instead of the ordinary running swing;
+  // the other arm keeps running normally.
   const flung = opts.armFlungAmount ?? 0;
-  const handL = opts.armFlungSide === -1
-    ? bodyX(-0.55 - flung, 1.55) : bodyX(-0.55, 1.15);
-  const handR = opts.armFlungSide === 1
-    ? bodyX(0.55 + flung, 1.55) : bodyX(0.55, 1.15);
-  ctx.strokeStyle = C.skin;
-  ctx.lineWidth = Math.max(1.2, sc * 0.09);
-  if (shoulderL && handL) seg(ctx, shoulderL, handL);
-  if (shoulderR && handR) seg(ctx, shoulderR, handR);
+  for (const side of [-1, 1] as const) {
+    const shoulder = P(side * 0.28, 0, 1.46 + bounce);
+    let elbow: { x: number; y: number; z: number };
+    let hand: { x: number; y: number; z: number };
+    if (opts.armFlungSide === side) {
+      elbow = P(side * (0.45 + flung * 0.5), 0.1, 1.35 + bounce);
+      hand = P(side * (0.65 + flung), 0.15, 1.50 + bounce);
+    } else {
+      const g = gait(phase + (side === 1 ? 0 : Math.PI), 0.22, 0);
+      elbow = P(side * 0.30, g.fwd, 1.15 + bounce);
+      hand = P(side * 0.32, g.fwd * 1.4, 1.00 + bounce);
+    }
+    limb(ctx, cam, shoulder, elbow, 0.055, 0.05, C.skin);
+    limb(ctx, cam, elbow, hand, 0.05, 0.045, C.skin);
+  }
 
-  const head = bodyX(0, 1.62);
+  // Head — a darker hair cap so it doesn't read as a bald ball, plus a
+  // little shading on the face itself.
+  const head = project(cam, pos.x + shear, pos.y, 1.62 + bounce);
   if (head) {
+    const r = Math.max(1.5, 0.11 * sc);
     ctx.beginPath();
-    ctx.arc(head.px, head.py, Math.max(1.5, 0.11 * sc), 0, Math.PI * 2);
+    ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
     ctx.fillStyle = C.skin;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(head.px, head.py - r * 0.22, r * 0.95, Math.PI, 0);
+    ctx.fillStyle = "rgba(28,20,14,0.55)";
     ctx.fill();
     ctx.strokeStyle = "rgba(0,0,0,0.35)";
     ctx.lineWidth = Math.max(1, sc * 0.03);
+    ctx.beginPath();
+    ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
     ctx.stroke();
   }
 }
@@ -339,10 +420,15 @@ function drawDefender(ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefen
 
   const legSpread = 0.16 + (def.phase === "committed" ? 0.10 * easeOutCubic(def.lunge) : 0);
   const flungOut = def.phase === "committed" ? 0.75 * easeOutCubic(def.lunge) : -0.25;
+  // A running phase keyed to distance closed, not wall-clock — same
+  // discipline `stride` already uses for the ground stripes, so it can
+  // never drift out of sync with how fast he's actually closing you down.
+  const runPhase = (-def.y / 1.5) * Math.PI * 2;
   drawFigure(ctx, cam, def, shear, { shirt: C.opp, rim: C.oppRim }, {
     legSpread,
     armFlungSide: def.phase === "committed" ? def.commitSide : 0,
     armFlungAmount: flungOut,
+    runPhase,
   });
 }
 
@@ -350,7 +436,8 @@ function drawDefender(ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefen
  *  off (dimmed, not yet a threat) or fully awake and coming for the ball. */
 function drawChaser(ctx: CanvasRenderingContext2D, cam: FpCamera, chaser: { x: number; y: number; awake: boolean }) {
   const colors = chaser.awake ? { shirt: C.opp, rim: C.oppRim } : { shirt: C.oppAsleep, rim: C.oppAsleepRim };
-  drawFigure(ctx, cam, chaser, 0, colors);
+  const runPhase = (-chaser.y / 1.5) * Math.PI * 2;
+  drawFigure(ctx, cam, chaser, 0, colors, { runPhase });
 }
 
 // ── Ball, hands, HUD ─────────────────────────────────────────────────────
@@ -445,6 +532,15 @@ export interface RenderFirstPersonOptions {
    * the open-run mode still uses.
    */
   own?: { x: number; y: number } | null;
+  /**
+   * Lean the "own" figure sideways — reuses the same lateral `shear` a
+   * defender's telegraph already draws with, driven instead by which way
+   * the ball is currently being touched (see FirstPersonDribble.tsx), so
+   * the body visibly reaches toward it rather than always standing bolt
+   * upright while the ball moves independently of it. Ignored when `own`
+   * is null.
+   */
+  ownLean?: number;
 }
 
 /** The one-on-one duel mode. */
@@ -459,14 +555,22 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
 
   for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist);
-  if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
 
   if (opts.own) {
-    drawFigure(ctx, cam, opts.own, 0, { shirt: C.you, rim: C.youRim });
+    const ownRunPhase = (opts.stride / 1.4) * Math.PI * 2;
+    drawFigure(ctx, cam, opts.own, opts.ownLean ?? 0, { shirt: C.you, rim: C.youRim }, { runPhase: ownRunPhase });
   } else {
     const bob = opts.reducedMotion ? 0 : Math.sin(opts.stride * 1.9);
     drawOwnBody(ctx, W, H, bob);
   }
+
+  // Drawn LAST, on top of everything — reported directly that the ball was
+  // invisible except during a swipe: it sits close enough to the player
+  // (see FirstPersonDribble.tsx's BALL_BASE_LEAD) that the correctly
+  // depth-sorted "nearer, so drawn on top" player figure was hiding it
+  // almost the whole time. A dribbled ball reading clearly at your feet
+  // matters more here than strict depth ordering.
+  if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
 
   if (opts.hud) drawHud(ctx, W, H, opts.hud.text, opts.hud.pips);
 }
