@@ -2,6 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
+import {
+  BET_COMPETITIONS, oddsFor, entrantsFor, type BetCompetition, type CompetitionBet, type BetEntrant,
+} from "@/lib/star/competitionBetting";
 
 interface Props {
   bankStart: number;
@@ -9,6 +12,7 @@ interface Props {
   onExit: (finalBank: number) => void;
   onHorseRace: (finish: number, prize: number, energyCost: number) => void;
   onBuyHorse: (horse: Horse, price: number) => void;
+  onPlaceBet: (bet: Omit<CompetitionBet, "id">) => void;
 }
 
 // Horses available for purchase (same as former HorseRacing.tsx STABLE)
@@ -27,8 +31,8 @@ const HORSE_NAMES = [
 
 const MY_HORSE_RACE_COST = 40;
 
-export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse }: Props) {
-  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses">("menu");
+export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onPlaceBet }: Props) {
+  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(1);
 
@@ -54,6 +58,19 @@ export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onB
         onChangeBet={changeBet}
         onHorseRace={onHorseRace}
         onBuyHorse={onBuyHorse}
+      />
+    );
+  }
+  if (game === "bets") {
+    return (
+      <CompetitionBetting
+        bank={bank}
+        bet={bet}
+        career={career}
+        onSetBank={setBank}
+        onExit={() => setGame("menu")}
+        onChangeBet={changeBet}
+        onPlaceBet={onPlaceBet}
       />
     );
   }
@@ -101,6 +118,14 @@ export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onB
           >
             <div className="text-3xl">🐎</div>
             <div className="text-emerald-400">HORSE RACING</div>
+          </button>
+          <button
+            disabled={bank < 1}
+            onClick={() => setGame("bets")}
+            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
+          >
+            <div className="text-3xl">🏆</div>
+            <div className="text-emerald-400">COMPETITION BETS</div>
           </button>
         </div>
       </div>
@@ -497,6 +522,106 @@ function HorseRacingGame(props: HorseRacingProps) {
 
 function ordinal(n: number) {
   return n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
+}
+
+// ---------- COMPETITION BETS ----------
+//
+// Requested directly: bet on the winner of any competition, priced off real
+// team ratings — see lib/star/competitionBetting.ts for the actual odds
+// model and settlement. This screen only lays a stake and shows what's
+// already down; nothing here decides who wins anything.
+interface CompetitionBettingProps extends CasinoGameProps {
+  career: CareerState;
+  onPlaceBet: (bet: Omit<CompetitionBet, "id">) => void;
+}
+
+function CompetitionBetting(props: CompetitionBettingProps) {
+  const [tab, setTab] = useState<BetCompetition>("league");
+  const [placed, setPlaced] = useState<{ club: string; odds: number } | null>(null);
+  const book: BetEntrant[] = oddsFor(entrantsFor(tab, props.career));
+  const pending = (props.career.competitionBets ?? []).filter(b => b.season === props.career.season);
+
+  const place = (entry: BetEntrant) => {
+    if (props.bank < props.bet) return;
+    props.onSetBank(props.bank - props.bet);
+    props.onPlaceBet({
+      competition: tab, club: entry.name, odds: entry.odds, stake: props.bet, season: props.career.season,
+    });
+    setPlaced({ club: entry.name, odds: entry.odds });
+    setTimeout(() => setPlaced(null), 1400);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
+      <div className="w-full max-w-sm">
+        <TopBar {...props} />
+
+        <div className="grid grid-cols-5 gap-1 mb-3">
+          {BET_COMPETITIONS.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setTab(c.id)}
+              className={`py-2 rounded-lg font-black text-[9px] uppercase leading-tight transition ${
+                tab === c.id ? "bg-emerald-600" : "bg-gray-700 text-white/70"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        {placed && (
+          <div className="mb-2 rounded-lg bg-emerald-600/80 border border-emerald-300 px-3 py-2 text-center text-xs font-black">
+            Bet placed: {placed.club} @ {placed.odds.toFixed(1)}
+          </div>
+        )}
+
+        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
+          {book.map(entry => (
+            <button
+              key={entry.name}
+              onClick={() => place(entry)}
+              disabled={props.bank < props.bet}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 border-b border-black/20 last:border-b-0 hover:bg-gray-700 disabled:opacity-40 text-left"
+            >
+              <span className="font-bold text-white text-sm truncate">{entry.name}</span>
+              <span className="shrink-0 font-black text-yellow-300 text-sm tabular-nums">{entry.odds.toFixed(1)}:1</span>
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 text-[10px] text-center text-white/65">
+          Tap a club to bet ★{props.bet} on them to win the {BET_COMPETITIONS.find(c => c.id === tab)?.label}.
+        </div>
+
+        {pending.length > 0 && (
+          <div className="mt-4">
+            <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-white/60">
+              Your bets this season
+            </div>
+            <div className="space-y-1.5">
+              {pending.map((b, i) => {
+                const label = BET_COMPETITIONS.find(c => c.id === b.competition)?.label ?? b.competition;
+                return (
+                  <div key={i} className="bg-gray-800/70 border border-gray-700 rounded-lg px-3 py-2 flex items-center justify-between text-[11px]">
+                    <div>
+                      <span className="font-bold text-white">{b.club}</span>
+                      <span className="text-white/55"> — {label}</span>
+                    </div>
+                    <div className="font-black text-yellow-300 tabular-nums">
+                      ★{b.stake} @ {b.odds.toFixed(1)} → ★{Math.round(b.stake * b.odds)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-1.5 text-[9px] text-center text-white/50">
+              Settles at the end of the season, against the real result.
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ---------- BLACKJACK ----------

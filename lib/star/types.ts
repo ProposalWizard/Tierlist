@@ -684,7 +684,16 @@ export interface CareerState {
     /** Set only for a real name drawn from managerPool.ts — see manager.ts's Manager type. */
     poolTier?: "dream" | 1 | 2 | 3;
   };
-  /** What happened in the dugout at the end of last season. */
+  /**
+   * What happened in the dugout at the end of last season.
+   *
+   * Persisted, and only ever cleared two ways: the player dismissing the
+   * dashboard banner it drives (app/star-dev/page.tsx), or the NEXT sacking
+   * overwriting it wholesale at the following rollover. Reported directly:
+   * before the dismiss button existed, a sacking's news sat on the
+   * dashboard for the rest of that entire season — every match played,
+   * every tap of the Home tab — because nothing else ever nulled it out.
+   */
   managerNews?: string | null;
   /**
    * Real-world managers (managerPool.ts) currently without a club, from
@@ -695,6 +704,18 @@ export interface CareerState {
    * "unemployed" that needs tracking.
    */
   availableManagers?: string[];
+  /**
+   * The casino's book — real money staked on who wins a real competition,
+   * priced off real club strengths (see lib/star/competitionBetting.ts).
+   * Settled inside `advanceSeason`, against the exact same
+   * `resolveSeasonWinners` result the trophy cabinet and the Ballon d'Or
+   * race already agree on, then removed — a bet never lingers past the
+   * season it was placed in settling.
+   */
+  competitionBets?: import("./competitionBetting").CompetitionBet[];
+  /** One line per bet settled at the last rollover — win or lose — for the
+   *  dashboard, same "read once, gone next season" shape as `sponsorNews`. */
+  betNews?: string[];
   /** Sponsor objectives settled at the last rollover, for the dashboard. */
   sponsorNews?: string[];
   /**

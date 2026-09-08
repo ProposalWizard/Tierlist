@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
+import type { CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE } from "@/lib/star/storage";
 import { createClient } from "@/lib/supabase/client";
@@ -1131,6 +1132,17 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  // Stake itself already left the casino's `bank` (see Casino.tsx's own
+  // onSetBank call, which flows back into career.money on exit exactly like
+  // any other casino loss) — this only records the bet so it can actually
+  // settle against a real result at the next rollover (see advanceSeason's
+  // settleBets call, careerFlow.ts).
+  const handlePlaceBet = useCallback((bet: Omit<CompetitionBet, "id">) => {
+    if (!career) return;
+    const id = `bet-${career.season}-${(career.competitionBets ?? []).length}-${Math.round(Math.random() * 1e6)}`;
+    setCareer({ ...career, competitionBets: [...(career.competitionBets ?? []), { ...bet, id }] });
+  }, [career]);
+
   const handleOpenRelationshipGame = useCallback((kind: RelationshipKind) => {
     setRelationshipGameKind(kind);
     setPhase("relationship-game");
@@ -1485,7 +1497,7 @@ export default function StarDevPage() {
   }
 
   if (phase === "casino-menu") {
-    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} />;
+    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onPlaceBet={handlePlaceBet} />;
   }
 
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
@@ -1770,7 +1782,22 @@ export default function StarDevPage() {
       )}
       {phase === "dashboard" && career.managerNews && (
         <div className="mb-3 rounded-xl border border-red-500/50 bg-red-500/15 p-3">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-200">In the dugout</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-red-200">In the dugout</div>
+            {/* Persisted CareerState, not a transient toast — see managerNews's
+                own comment on why it needs an explicit dismiss rather than a
+                timeout: reported directly, this banner used to sit on the
+                dashboard for the rest of the entire season (every match,
+                every Home tap) because nothing ever cleared it before the
+                NEXT sacking or the next rollover, whichever came first. */}
+            <button
+              onClick={() => setCareer(c => (c && c.managerNews ? { ...c, managerNews: null } : c))}
+              className="shrink-0 text-red-200/70 hover:text-white text-sm leading-none"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
           <p className="mt-1 text-xs text-white">{career.managerNews}</p>
         </div>
       )}
