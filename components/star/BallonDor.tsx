@@ -5,6 +5,7 @@ import { computeBallonDorShortlist, type BallonDorEntry } from "@/lib/star/ballo
 import { shortClub } from "@/lib/star/media/grammar";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import ClubBadge from "@/components/star/ClubBadge";
 
 /**
  * THE CEREMONY.
@@ -333,7 +334,10 @@ export default function BallonDor({ career, onContinue }: Props) {
               <Face image={winner.image} size={36} ring="border-amber-400/40" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black text-white">{winner.name}</p>
-                <p className="text-xs text-white/70">{shortClub(winner.club)}</p>
+                <div className="mt-0.5 flex items-center gap-1">
+                  <ClubBadge club={winner.club} size={13} />
+                  <p className="truncate text-xs text-white/70">{shortClub(winner.club)}</p>
+                </div>
               </div>
               <p className="shrink-0 text-xs text-white/80">{keyStat(winner)}</p>
             </div>
@@ -427,7 +431,10 @@ function CountdownCard({ entry }: { entry: BallonDorEntry }) {
           <p className={`truncate text-sm font-black ${entry.isPlayer ? "text-amber-300" : "text-white"}`}>{entry.name}</p>
           {entry.isPlayer && <span className="shrink-0 rounded-full bg-amber-400 px-1.5 py-px text-[9px] font-black text-black">YOU</span>}
         </div>
-        <p className="text-[11px] text-white/70">{shortClub(entry.club)}</p>
+        <div className="mt-0.5 flex items-center gap-1">
+          <ClubBadge club={entry.club} size={12} />
+          <p className="truncate text-[11px] text-white/70">{shortClub(entry.club)}</p>
+        </div>
       </div>
       <div className="shrink-0 text-right">
         <p className="text-[11px] font-bold text-white/85">{keyStat(entry)}</p>
@@ -444,7 +451,10 @@ function MysteryCard({ entry }: { entry: BallonDorEntry }) {
         <span className="text-base text-amber-400/80">?</span>
       </div>
       <p className={`text-sm font-black leading-tight ${entry.isPlayer ? "text-amber-300" : "text-white"}`}>{entry.name}</p>
-      <p className="mt-0.5 text-[10px] text-white/70">{shortClub(entry.club)}</p>
+      <div className="mt-0.5 flex items-center justify-center gap-1">
+        <ClubBadge club={entry.club} size={12} />
+        <p className="text-[10px] text-white/70">{shortClub(entry.club)}</p>
+      </div>
       <p className="mt-2 text-[10px] text-white/80">{keyStat(entry)}</p>
       {entry.isPlayer && <span className="mt-2 inline-block rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-black">YOU</span>}
     </div>
@@ -476,7 +486,10 @@ function WinnerCard({ entry }: { entry: BallonDorEntry }) {
       </div>
       <p className="mt-1 text-2xl font-black leading-tight text-amber-300">{entry.name}</p>
       <p className="mt-1 text-sm font-bold text-white/90">has won the Ballon d&apos;Or</p>
-      <p className="mt-2 text-xs font-bold text-white/80">{shortClub(entry.club)}</p>
+      <div className="mt-2 flex items-center justify-center gap-1.5">
+        <ClubBadge club={entry.club} size={16} />
+        <p className="text-xs font-bold text-white/80">{shortClub(entry.club)}</p>
+      </div>
       {entry.isPlayer && (
         <span className="mt-3 inline-block rounded-full bg-amber-400 px-3 py-1 text-[11px] font-black text-black">YOU</span>
       )}
@@ -506,7 +519,10 @@ function RunnerUpCard({ entry }: { entry: BallonDorEntry }) {
         <p className="truncate text-sm font-black text-white">
           {entry.name}{entry.isPlayer ? " (You)" : ""} <span className="font-bold text-white/70">has come second</span>
         </p>
-        <p className="text-xs text-white/70">{shortClub(entry.club)}</p>
+        <div className="mt-0.5 flex items-center gap-1">
+          <ClubBadge club={entry.club} size={13} />
+          <p className="truncate text-xs text-white/70">{shortClub(entry.club)}</p>
+        </div>
       </div>
       <p className="shrink-0 text-xs font-bold text-white/80">{keyStat(entry)}</p>
     </div>

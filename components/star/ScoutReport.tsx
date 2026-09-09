@@ -2,29 +2,17 @@
 import type { ScoutReport, ScoutPlayer } from "@/lib/star/scoutReport";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
-import { kitsOf, labelInk } from "@/lib/star/kits";
-import { initials } from "@/components/star/ClubCrest";
+import ClubBadge from "@/components/star/ClubBadge";
 import { shortNameOf } from "@/lib/star/realSquad";
 
 const RESULT_BG: Record<"W" | "D" | "L", string> = { W: "#16a34a", D: "#b98a1f", L: "#b91c1c" };
 
 /** A club, as a small circular badge only — no name label underneath, for a
  *  row that already prints the club name as text beside it (recent form,
- *  the table snippet). Same "shirt with initials" device as ClubCrest,
- *  just without its bundled name row. */
+ *  the table snippet). Just `ClubBadge` at a small size — the real crest
+ *  when one exists, its kit-colour-and-initials fallback otherwise. */
 function MiniCrest({ club, size = 16 }: { club: string; size?: number }) {
-  const kit = kitsOf(club).home;
-  return (
-    <div
-      className="grid shrink-0 place-items-center rounded-full border font-black"
-      style={{
-        height: size, width: size, backgroundColor: kit.shirt, borderColor: kit.trim,
-        color: labelInk(kit.shirt), fontSize: Math.max(6, Math.round(size * 0.32)),
-      }}
-    >
-      {initials(club)}
-    </div>
-  );
+  return <ClubBadge club={club} size={size} />;
 }
 
 /**

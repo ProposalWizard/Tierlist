@@ -2,8 +2,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { Role } from "@/lib/star/formations";
 import { seasonStartYear } from "@/lib/star/calendar";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
-import { kitsOf, labelInk } from "@/lib/star/kits";
-import { initials } from "./ClubCrest";
+import ClubBadge from "./ClubBadge";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 
@@ -165,13 +164,13 @@ function PositionChip({ position }: { position: Role }) {
   );
 }
 
-/** One club, as a small colour+initials dot — the same device ClubCrest.tsx
- *  and CupDrawReveal.tsx's TeamBadge already use everywhere a club needs to
- *  read as more than a name, since there are no crest images in this
- *  codebase and a wrong crest is worse than none. `Free Agents` (a
- *  synthetic "club" — see leagueSquads.ts) isn't a real club to look kit
- *  colours up for, so it gets its own dashed, colourless marker instead of
- *  a misleading NEUTRAL-green dot that would read as an actual side. */
+/** One club, as a small badge — `ClubBadge` (the real crest when one
+ *  exists, its kit-colour-and-initials fallback otherwise), the same
+ *  device ClubCrest.tsx and CupDrawReveal.tsx's TeamBadge already use
+ *  everywhere a club needs to read as more than a name. `Free Agents` (a
+ *  synthetic "club" — see leagueSquads.ts) isn't a real club to look a
+ *  crest or kit colours up for, so it gets its own dashed, colourless
+ *  marker instead of a misleading dot that would read as an actual side. */
 function ClubDot({ club }: { club: string }) {
   if (club === FREE_AGENTS_CLUB) {
     return (
@@ -183,16 +182,7 @@ function ClubDot({ club }: { club: string }) {
       </div>
     );
   }
-  const kit = kitsOf(club).home;
-  return (
-    <div
-      className="grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 font-black"
-      style={{ backgroundColor: kit.shirt, borderColor: kit.trim, color: labelInk(kit.shirt), fontSize: 8 }}
-      title={club}
-    >
-      {initials(club)}
-    </div>
-  );
+  return <ClubBadge club={club} size={24} />;
 }
 
 function MoveArrow() {

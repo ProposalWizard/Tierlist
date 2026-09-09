@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { labelInk, kitsFor, type Kit } from "@/lib/star/kits";
-import { initials } from "./ClubCrest";
+import { kitsFor, type Kit } from "@/lib/star/kits";
+import ClubBadge from "./ClubBadge";
 
 /**
  * Deliberately just strings, not CupRound/CupTie from lib/star/cups.ts —
@@ -295,21 +295,11 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
 /** A club, as a badge, laid out for a single horizontal row rather than
  *  ClubCrest.tsx's badge-over-name stack — see the file header on why this
  *  is a separate small component instead of reusing ClubCrest directly
- *  (it would have printed the club's name twice). Same device, same
- *  reasoning: the club's own kit colour with its initials on it, since
- *  there are no crest images and a wrong crest is worse than none. */
+ *  (it would have printed the club's name twice). Just `ClubBadge` — the
+ *  real crest when one exists, its kit-colour-and-initials fallback
+ *  otherwise. */
 function TeamBadge({ club, kit }: { club: string; kit: Kit }) {
-  return (
-    <div
-      className="grid shrink-0 place-items-center rounded-full border-2 font-black"
-      style={{
-        height: 26, width: 26, backgroundColor: kit.shirt, borderColor: kit.trim,
-        color: labelInk(kit.shirt), fontSize: 9,
-      }}
-    >
-      {initials(club)}
-    </div>
-  );
+  return <ClubBadge club={club} kit={kit} size={26} />;
 }
 
 const TROPHY_SRC = "/star/cup-draw/trophy.webp";
