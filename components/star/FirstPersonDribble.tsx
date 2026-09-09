@@ -11,12 +11,16 @@ import { mulberry32 } from "@/lib/star/season";
 /**
  * THE ONE-ON-ONE DUEL — THE COMPONENT.
  *
- * Beat the three men you're given; that's it. Told directly after the
- * first version of this shipped with a shot at the end: "you just need to
- * beat the men that you are given, and you're not even running towards a
+ * Beat everyone you're given, wave by wave; that's it. Told directly after
+ * the first version of this shipped with a shot at the end: "you just need
+ * to beat the men that you are given, and you're not even running towards a
  * goal... it should just be to more space." So there is no shot here, no
  * goal anywhere in the drawing (see firstPersonRender.ts's own header) —
- * clearing the third man IS the win.
+ * clearing the last wave IS the win. Originally exactly three men, engaged
+ * strictly one at a time; changed directly to three WAVES of one to three
+ * men each, randomly, placed across the corridor rather than spawned on
+ * your lane — see firstPersonDribble.ts's own header for the full reasoning
+ * and the fairness math that changed with it.
  *
  * Structural template: `TrialPenalty.tsx` — a canvas ref, a single rAF
  * loop, pointer capture, the same "reset() called at start and after
@@ -163,7 +167,11 @@ const TAP_NUDGE = 1.8; // metres your lane target jumps per tap
 export interface FirstPersonDribbleProps {
   pace?: number;
   oppStrength?: number;
-  defenders?: number;
+  /** How many waves — each one to three men, randomly, placed across the
+   *  corridor rather than sprung on your lane. See firstPersonDribble.ts's
+   *  own header on why: "instead of three opponents... you actually have
+   *  three rounds... each wave has one to three players." */
+  rounds?: number;
   /** Chase-cam tuning — see DEFAULT_CHASE_* above for the reasoning behind
    *  the defaults. */
   chaseEye?: number;
@@ -181,7 +189,7 @@ export interface FirstPersonDribbleProps {
 }
 
 export default function FirstPersonDribble({
-  pace = 60, oppStrength = 55, defenders = 3, seed, assist = true, onComplete,
+  pace = 60, oppStrength = 55, rounds = 3, seed, assist = true, onComplete,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -233,7 +241,7 @@ export default function FirstPersonDribble({
   const reset = useCallback(() => {
     const rng = newRng();
     rngRef.current = rng;
-    const run = newRun({ pace, oppStrength, defenders, rng });
+    const run = newRun({ pace, oppStrength, rounds, rng });
     runRef.current = run;
     camXRef.current = run.x;
     ballXRef.current = run.x;
@@ -242,7 +250,7 @@ export default function FirstPersonDribble({
     gestureStartRef.current = null;
     setResultText("");
     setPhase("run");
-  }, [pace, oppStrength, defenders, newRng]);
+  }, [pace, oppStrength, rounds, newRng]);
 
   useEffect(() => { reset(); }, [reset]);
 
@@ -366,9 +374,10 @@ export default function FirstPersonDribble({
     const finishRun = (finalPhase: RunPhase) => {
       const run = runRef.current;
       if (finalPhase === "clear") {
-        setResultText("Clear! Beat all three.");
+        setResultText(`Clear! Beat everyone across all ${run?.roundSizes.length ?? 3} waves.`);
       } else {
-        const label = run?.lostTo != null ? `Beaten by man ${run.lostTo + 1}` : "Ran out of time";
+        const lost = run?.lostTo != null ? run.defenders[run.lostTo] : undefined;
+        const label = lost ? `Beaten in wave ${lost.round + 1}` : "Ran out of time";
         setResultText(label);
       }
       setPhase("result");
@@ -431,10 +440,18 @@ export default function FirstPersonDribble({
         { x: camXRef.current, y: run.y + chaseOffset }, c.width, c.height,
         { eye: chaseEye, pitch: (chasePitchDeg * Math.PI) / 180 },
       );
-      const pips: DuelPip[] = run.defenders.map((d, i) => (
-        d.phase === "beaten" ? "beaten" : d.phase === "won" ? "won" : i === run.active ? "active" : "pending"
-      ));
-      const beaten = run.defenders.filter(d => d.phase === "beaten").length;
+      // One pip per WAVE, not per man — a wave is "beaten" only once every
+      // man in it is, "won" if it beat you, "active" if it's the one
+      // currently engaging (which can mean several men at once now).
+      const pips: DuelPip[] = run.roundSizes.map((_, r) => {
+        const wave = run.defenders.filter(d => d.round === r);
+        if (wave.some(d => d.phase === "won")) return "won";
+        if (wave.every(d => d.phase === "beaten")) return "beaten";
+        return r === run.activeRound ? "active" : "pending";
+      });
+      const wavesCleared = run.roundSizes.filter((_, r) =>
+        run.defenders.filter(d => d.round === r).every(d => d.phase === "beaten"),
+      ).length;
       // The body leans toward whichever side the ball is currently being
       // touched (reuses the same lateral shear a defender's telegraph
       // already draws with — see firstPersonRender.ts).
@@ -446,7 +463,7 @@ export default function FirstPersonDribble({
         ball: { x: ballXRef.current, y: run.y - leadDepth, z: 0 },
         ballImage: ballImgRef.current,
         assist, reducedMotion: reducedMotionRef.current,
-        hud: { text: `${beaten}/${run.defenders.length} beaten`, pips },
+        hud: { text: `${wavesCleared}/${run.roundSizes.length} waves`, pips },
         own: { x: run.x, y: run.y },
         ownLean: lean,
       });
