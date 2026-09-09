@@ -180,7 +180,7 @@ export function betNewsLines(settlements: BetSettlement[]): string[] {
   return settlements.map(s => {
     const comp = BET_COMPETITIONS.find(c => c.id === s.bet.competition)?.label ?? s.bet.competition;
     return s.won
-      ? `${comp}: ${s.bet.club} won! ★${s.bet.stake} @ ${s.bet.odds.toFixed(1)} → ★${s.payout}`
+      ? `${comp}: ${s.bet.club} won! ★${s.bet.stake} @ ${s.bet.odds.toFixed(2)} → ★${s.payout}`
       : `${comp}: ${s.bet.club} didn't win it — ★${s.bet.stake} stake lost.`;
   });
 }

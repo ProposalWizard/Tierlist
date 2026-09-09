@@ -129,8 +129,28 @@ const DEFAULT_CAMERA_FOLLOW_RATE = 5.5;
 const DEFAULT_BALL_TOUCH_REACH = 0.9; // metres it eases toward, to the touched side
 const BALL_SPRING_K = 90;             // stiffness
 const BALL_SPRING_C = 17;             // damping — under-damped on purpose, for a slight overshoot
-const BALL_BASE_LEAD = 0.6;           // metres in front of your feet at rest
-const BALL_BURST_LEAD = 1.5;          // metres in front during/just after a burst
+// Reported directly after playing this: at rest the ball reads fine, but
+// steering (or bursting) leaves it looking "stuck behind/on your leg" — a
+// real visual collision, not a depth-order bug. Verified against an actual
+// render (a standalone harness driving the real project()/drawFigure()/
+// drawBall() through Playwright, since this canvas can't be screenshotted
+// any other way): with the OLD 0.6/1.5m leads, the touch spring's lateral
+// swing (up to ballTouchReach*1.4 ≈ 1.26m) puts the ball's screen position
+// squarely inside the swinging leg's silhouette, because 0.6-1.5m of extra
+// depth barely separates it from your own feet at this camera's distance.
+// Genuinely re-enabling depth-sorted occlusion (ball drawn behind your own
+// figure when it's actually farther away, which it always is) was tried and
+// measured worse, not better: at this chase-cam distance your own torso and
+// legs are close enough to the lens that they cover almost the ball's ENTIRE
+// screen footprint at ANY reasonable lead distance, even mid-steer — the
+// ball nearly vanished the whole run, reproducing the exact "invisible
+// ball" bug this file's BALL_BASE_LEAD/BALL_BURST_LEAD were introduced to
+// fix in the first place. So the ball still draws last (always visible,
+// unchanged) — the fix is giving it enough extra clearance ahead of your
+// feet that the touch spring's lateral swing lands it clearly beside your
+// leg in open grass instead of overlapping it.
+const BALL_BASE_LEAD = 0.95;          // metres in front of your feet at rest
+const BALL_BURST_LEAD = 1.8;          // metres in front during/just after a burst
 const TOUCH_WAVE_LEN = 1.3;           // metres of stride per forward push-glide cycle
 const TOUCH_WAVE_AMP = 0.18;          // metres the lead distance ripples by
 

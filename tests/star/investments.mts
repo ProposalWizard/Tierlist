@@ -4,7 +4,7 @@ import {
   allInvestableClubs,
 } from "../../lib/star/investments";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
-import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { PREMIER_LEAGUE_CLUBS, CHAMPIONS_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { FREE_AGENTS_CLUB } from "../../lib/star/leagueSquads";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
 
@@ -209,6 +209,32 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   check(result.ok, `appointing a real manager succeeds (${result.reason ?? ""})`);
   check(ownedClubState(result.career, RIVAL).budget < before, "…and costs real money from the club's budget");
   check(ownedClubState(result.career, RIVAL).managerName === "Pep Guardiola", "…and the appointment is on record");
+}
+
+// ── Governance: a club whose real squad lives in externalSquads, not
+// leagueSquads (any Champions/Europa League, Other, or other-division club —
+// see investments.ts's findSquadEntry header for why) ─────────────────────
+{
+  const EURO_CLUB = "Atlético Madrid"; // CHAMPIONS_LEAGUE_CLUBS, not in PREMIER_LEAGUE_CLUBS
+  check(CHAMPIONS_LEAGUE_CLUBS.includes(EURO_CLUB) && !PREMIER_LEAGUE_CLUBS.includes(EURO_CLUB),
+    "fixture assumption: this club is European, not domestic");
+
+  let career = freshCareer({ externalSquads: [squadFor(EURO_CLUB, 80)] });
+  career = buyStake(career, EURO_CLUB, 60);
+  check(isMajorityOwner(career, EURO_CLUB), "can buy a majority stake in a European club too");
+
+  const before = ownedClubState(career, EURO_CLUB).budget;
+  const signed = signPlayerForOwnedClub(career, EURO_CLUB, "fa1", FREE_AGENTS_CLUB);
+  check(signed.ok, `signing into a club filed under externalSquads succeeds (${signed.reason ?? ""})`);
+  const afterSquad = (signed.career.externalSquads ?? []).find(s => s.club === EURO_CLUB);
+  check(!!afterSquad?.players.some(p => p.id === "fa1"), "…and the new player lands in externalSquads, where this club actually lives");
+  check((signed.career.leagueSquads ?? []).every(s => s.club !== EURO_CLUB), "…never spuriously created in leagueSquads");
+
+  const sold = sellPlayerFromOwnedClub(signed.career, EURO_CLUB, `${EURO_CLUB}:0`);
+  check(sold.ok, `selling from a club filed under externalSquads succeeds (${sold.reason ?? ""})`);
+  const soldSquad = (sold.career.externalSquads ?? []).find(s => s.club === EURO_CLUB);
+  check(!soldSquad?.players.some(p => p.id === `${EURO_CLUB}:0`), "…and he's genuinely gone from externalSquads");
+  check(ownedClubState(sold.career, EURO_CLUB).budget > before, "…with the fee landing in the club's real budget");
 }
 
 if (problems.length) {

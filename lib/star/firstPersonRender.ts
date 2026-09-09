@@ -262,20 +262,33 @@ function gait(phase: number, reach: number, lift: number): { fwd: number; up: nu
 }
 
 /**
- * The shared figure — legs, shorts, shirt, arms, head, all projected from
- * the given world position with an optional lateral shear (a defender's
- * telegraph lean, or the ball-carrier leaning toward whichever side he's
- * currently touching the ball — see FirstPersonDribble.tsx's `ownLean`).
+ * The shared figure — boots, socks, legs, shorts, shirt, neck, arms, head,
+ * all projected from the given world position with an optional lateral
+ * shear (a defender's telegraph lean, or the ball-carrier leaning toward
+ * whichever side he's currently touching the ball — see
+ * FirstPersonDribble.tsx's `ownLean`).
  *
  * Rebuilt from a straight-line stick figure into filled, tapered limbs (see
  * `limb()`) with a real running gait (`runPhase`, radians — legs and arms
  * swing from it, contralaterally, the way a person actually runs) and a
  * shaded, tapered torso instead of a flat rectangle. Reported directly as
- * "this weird stick man type of figure" — this is the vector-art fix; a
- * genuinely illustrated or 3D-modelled character is a separate asset this
- * codebase has no pipeline for yet (no image-generation tool was available
- * this session either), so it stays procedural, same as every other figure
- * in this file and in scenarioRender.ts.
+ * "this weird stick man type of figure" — this was the first vector-art
+ * fix. Reported again after actually playing the redesigned duel — "it
+ * doesn't really look like you made any changes to how the player actually
+ * looks" — so a second pass: boots and socks (previously the whole leg
+ * below the knee was one flat skin-toned tube, with the "boot" a stub the
+ * same width as the shin — nothing read as a kit), a neck (the head
+ * previously sat floating directly on the shoulders with no join at all),
+ * and — the part that actually connects to how the ball moves — the near-
+ * side leg now visibly REACHES toward the ball when you're touching it
+ * (`reachSide`/`reachAmount`, driven by `ownLean` — see
+ * FirstPersonRoam.tsx/FirstPersonDribble.tsx), instead of running its
+ * ordinary gait regardless of what the ball is doing. A genuinely
+ * illustrated or 3D-modelled character remains a separate asset this
+ * codebase has no pipeline for (no image-generation/3D tool was reachable
+ * this session either — see the session's own reply on that), so it stays
+ * procedural, same as every other figure in this file and in
+ * scenarioRender.ts.
  */
 function drawFigure(
   ctx: CanvasRenderingContext2D, cam: FpCamera,
@@ -284,6 +297,13 @@ function drawFigure(
   opts: {
     legSpread?: number; armFlungSide?: -1 | 1 | 0; armFlungAmount?: number;
     runPhase?: number;
+    /** Which side the near leg reaches toward, as if poking the ball —
+     *  see the function header. 0 (or omitted) runs the ordinary gait. */
+    reachSide?: -1 | 1 | 0;
+    /** 0-1, how far into that reach — driven by how hard the ball is
+     *  currently being touched (e.g. FirstPersonDribble.tsx's `ownLean`,
+     *  normalised). Ignored when `reachSide` is 0. */
+    reachAmount?: number;
   } = {},
 ) {
   const feet = project(cam, pos.x, pos.y, 0);
@@ -302,17 +322,55 @@ function drawFigure(
   // A small double-bounce per stride (two footfalls per full gait cycle) —
   // cheap, but it's the difference between "gliding" and "running".
   const bounce = Math.max(0, Math.sin(phase * 2)) * 0.03;
+  const reachSide = opts.reachSide ?? 0;
+  const reachAmt = reachSide ? clamp(opts.reachAmount ?? 0, 0, 1) : 0;
 
   // Legs — left on the base phase, right a half-cycle behind, each a
-  // filled thigh+shin rather than one straight stroke.
+  // filled thigh + sock-covered shin + boot, not one flat tube.
   for (const side of [-1, 1] as const) {
     const g = gait(phase + (side === 1 ? Math.PI : 0), STRIDE_REACH, LIFT_H);
+    // The reaching leg stretches toward the ball's side and stays low and
+    // forward — a poke, not a stride — rather than swinging through its
+    // ordinary gait; the OTHER leg (the standing/planted one) is untouched,
+    // exactly like a real touch only ever moves one foot.
+    const reaching = side === reachSide;
+    const fwd = reaching ? lerp(g.fwd, 0.34, reachAmt) : g.fwd;
+    const up = reaching ? lerp(g.up, 0.03, reachAmt) : g.up;
+    const lateral = reaching ? side * baseSpread * 1.4 + reachSide * 0.30 * reachAmt : side * baseSpread * 1.4;
+
     const hip = P(side * baseSpread, 0, hipZ + bounce);
-    const knee = P(side * baseSpread * 1.1, g.fwd * 0.45, hipZ * 0.5 + g.up * 0.5 + bounce * 0.5);
-    const foot = P(side * baseSpread * 1.4, g.fwd, g.up);
+    const knee = P(side * baseSpread * 1.1, fwd * 0.45, hipZ * 0.5 + up * 0.5 + bounce * 0.5);
+    const ankle = P(lateral, fwd, 0.22 + up);
+    // Forward (the direction of travel) is DECREASING world y — see gait():
+    // a positive sin phase swings the foot forward via a NEGATIVE fwd
+    // offset. So the toe (points forward) needs the smaller/more-negative
+    // offset and the heel (behind the ankle) the larger one. Both use the
+    // SAME `+ up` lift as the ankle above them — an earlier version scaled
+    // the boot's lift down (`up * 0.6`) so the boot rose slower than the
+    // sock during a swing and visibly detached from it mid-stride.
+    const soleZ = Math.max(0, ankle.z - 0.12);
+    const soleMid = P(lateral, fwd, soleZ);
+    const toe = P(lateral, fwd - 0.16, soleZ);
+    const heel = P(lateral, fwd + 0.06, soleZ + 0.02);
+
+    // Thigh — bare skin, shorts cover it from above.
     limb(ctx, cam, hip, knee, 0.075, 0.06, C.skin);
-    limb(ctx, cam, knee, foot, 0.06, 0.045, C.skin);
-    limb(ctx, cam, P(side * baseSpread * 1.4, g.fwd - 0.10, g.up), foot, 0.05, 0.05, "#111827");
+    // Sock — covers the shin, team-trim coloured, same taper the skin tube
+    // had before so it still reads as a leg, not a separate cylinder.
+    limb(ctx, cam, knee, ankle, 0.058, 0.05, colors.rim);
+    // A thin skin band right at the knee, where a real sock stops short.
+    const kneeBand = P(side * baseSpread * 1.1, fwd * 0.45 * 0.94, hipZ * 0.5 + up * 0.5 + bounce * 0.5 - 0.05);
+    limb(ctx, cam, knee, kneeBand, 0.06, 0.058, C.skin);
+    // Boot — an ankle-to-sole "cuff" closes the gap the sock leaves above
+    // the sole (an earlier version placed the boot at a fixed depth well
+    // below the ankle with nothing drawn in between, which read as a
+    // separate object floating under the leg whenever the foot lifted mid-
+    // stride), plus a real taper along the sole itself: narrow at the heel,
+    // wider at the toe, not a constant-width stub. Sole line on top for a
+    // cheap highlight.
+    limb(ctx, cam, ankle, soleMid, 0.05, 0.06, "#15181f");
+    limb(ctx, cam, heel, toe, 0.045, 0.075, "#15181f");
+    limb(ctx, cam, heel, toe, 0.02, 0.03, "#3a3f4a");
   }
 
   // Shorts — a filled trapezoid on the hips, not a rounded rectangle.
@@ -337,6 +395,10 @@ function drawFigure(
     grad.addColorStop(1, colors.rim);
     quad(ctx, [shoulderL, shoulderR, waistR, waistL], grad);
   }
+
+  // Neck — the head used to sit floating directly on the shoulders with no
+  // join at all. A short skin-toned taper closes that gap.
+  limb(ctx, cam, P(0, 0, 1.45 + bounce), P(0, 0, 1.58 + bounce), 0.09, 0.07, C.skin);
 
   // Arms — swing opposite the same-side leg (a natural gait is
   // contralateral). A committed defender's flung arm — his dive telegraph —
@@ -558,7 +620,16 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
 
   if (opts.own) {
     const ownRunPhase = (opts.stride / 1.4) * Math.PI * 2;
-    drawFigure(ctx, cam, opts.own, opts.ownLean ?? 0, { shirt: C.you, rim: C.youRim }, { runPhase: ownRunPhase });
+    const lean = opts.ownLean ?? 0;
+    // The near leg visibly reaches toward the ball while it's being
+    // touched — see drawFigure's own header — reusing the same lean signal
+    // that already leans the whole body, so a hard touch shows in the feet
+    // and legs, not just a sideways tilt.
+    const reachSide: -1 | 1 | 0 = Math.abs(lean) > 0.05 ? (lean > 0 ? 1 : -1) : 0;
+    const reachAmount = clamp(Math.abs(lean) / 0.35, 0, 1);
+    drawFigure(ctx, cam, opts.own, lean, { shirt: C.you, rim: C.youRim }, {
+      runPhase: ownRunPhase, reachSide, reachAmount,
+    });
   } else {
     const bob = opts.reducedMotion ? 0 : Math.sin(opts.stride * 1.9);
     drawOwnBody(ctx, W, H, bob);
@@ -568,8 +639,15 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   // invisible except during a swipe: it sits close enough to the player
   // (see FirstPersonDribble.tsx's BALL_BASE_LEAD) that the correctly
   // depth-sorted "nearer, so drawn on top" player figure was hiding it
-  // almost the whole time. A dribbled ball reading clearly at your feet
-  // matters more here than strict depth ordering.
+  // almost the whole time. Re-verified when a LATER report said the ball
+  // instead looked stuck behind/on the leg while steering: switching to
+  // real depth order was tried again (with a bigger lead too) and measured,
+  // via an actual render, to hide the ball almost the entire run at this
+  // chase-cam's distance — your own torso/legs are close enough to the lens
+  // to cover nearly its whole screen footprint at any reasonable lead. A
+  // dribbled ball reading clearly at your feet matters more here than
+  // strict depth ordering; see FirstPersonDribble.tsx's BALL_BASE_LEAD/
+  // BALL_BURST_LEAD for the actual fix (more clearance, not occlusion).
   if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
 
   if (opts.hud) drawHud(ctx, W, H, opts.hud.text, opts.hud.pips);

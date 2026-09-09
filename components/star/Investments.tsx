@@ -20,15 +20,20 @@ import { allPoolManagers } from "@/lib/star/managerPool";
  * (career.leagueSquads) and the money genuinely leaves your own balance.
  */
 
+interface ActionResult {
+  ok: boolean;
+  reason?: string;
+}
+
 interface Props {
   career: CareerState;
   onBack: () => void;
   onBuyStake: (club: string, percent: number) => void;
   onSellStake: (club: string, percent: number) => void;
   onTopUpBudget: (club: string, amount: number) => void;
-  onSignPlayer: (club: string, playerId: string, fromClub: string) => void;
-  onSellPlayer: (club: string, playerId: string) => void;
-  onReplaceManager: (club: string, managerName: string) => void;
+  onSignPlayer: (club: string, playerId: string, fromClub: string) => ActionResult;
+  onSellPlayer: (club: string, playerId: string) => ActionResult;
+  onReplaceManager: (club: string, managerName: string) => ActionResult;
 }
 
 function StarIcon() {
@@ -323,19 +328,34 @@ function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: Car
   );
 }
 
+/** Wherever the game actually filed this club's real squad — see
+ *  investments.ts's own `findSquadEntry` for why it can't only be
+ *  `leagueSquads`: that array is only the OTHER clubs in the player's
+ *  current division, and every club outside it (Europe, the other
+ *  division, Other clubs) lives in `externalSquads` instead. */
+function squadFor(career: CareerState, club: string) {
+  return (career.leagueSquads ?? []).find(s => s.club === club)
+    ?? (career.externalSquads ?? []).find(s => s.club === club);
+}
+
 function Boardroom({
   career, club, onBack, onTopUpBudget, onSignPlayer, onSellPlayer, onReplaceManager,
 }: {
   career: CareerState; club: string; onBack: () => void;
   onTopUpBudget: (club: string, amount: number) => void;
-  onSignPlayer: (club: string, playerId: string, fromClub: string) => void;
-  onSellPlayer: (club: string, playerId: string) => void;
-  onReplaceManager: (club: string, managerName: string) => void;
+  onSignPlayer: (club: string, playerId: string, fromClub: string) => ActionResult;
+  onSellPlayer: (club: string, playerId: string) => ActionResult;
+  onReplaceManager: (club: string, managerName: string) => ActionResult;
 }) {
   const [section, setSection] = useState<"squad" | "sign" | "manager">("squad");
   const [topUp, setTopUp] = useState(1000);
+  const [message, setMessage] = useState<string | null>(null);
   const state = ownedClubState(career, club);
-  const squad = (career.leagueSquads ?? []).find(s => s.club === club);
+  const squad = squadFor(career, club);
+
+  const runAction = (result: ActionResult) => {
+    setMessage(result.ok ? null : (result.reason ?? "That didn't go through."));
+  };
 
   return (
     <div>
@@ -370,7 +390,7 @@ function Boardroom({
         {(["squad", "sign", "manager"] as const).map(s => (
           <button
             key={s}
-            onClick={() => setSection(s)}
+            onClick={() => { setSection(s); setMessage(null); }}
             className={`py-1.5 rounded-lg font-black text-[10px] uppercase transition ${
               section === s ? "bg-emerald-600" : "bg-gray-700 text-white/70"
             }`}
@@ -379,6 +399,12 @@ function Boardroom({
           </button>
         ))}
       </div>
+
+      {message && (
+        <div className="mb-2 rounded-lg bg-red-900/60 border border-red-500/60 px-3 py-2 text-center text-[11px] font-bold text-red-200">
+          {message}
+        </div>
+      )}
 
       {section === "squad" && (
         <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
@@ -389,7 +415,7 @@ function Boardroom({
                 <div className="text-[10px] text-white/55">{p.position} · OVR {p.overall}</div>
               </div>
               <button
-                onClick={() => onSellPlayer(club, p.id)}
+                onClick={() => runAction(onSellPlayer(club, p.id))}
                 className="px-2.5 py-1 rounded-md bg-red-600/80 hover:bg-red-500 text-[10px] font-black"
               >
                 Sell
@@ -402,9 +428,13 @@ function Boardroom({
         </div>
       )}
 
-      {section === "sign" && <SignPlayerPanel career={career} club={club} onSignPlayer={onSignPlayer} />}
+      {section === "sign" && (
+        <SignPlayerPanel career={career} club={club} onSignPlayer={(c, p, f) => runAction(onSignPlayer(c, p, f))} />
+      )}
 
-      {section === "manager" && <ManagerPanel career={career} club={club} onReplaceManager={onReplaceManager} />}
+      {section === "manager" && (
+        <ManagerPanel career={career} club={club} onReplaceManager={(c, n) => runAction(onReplaceManager(c, n))} />
+      )}
     </div>
   );
 }
@@ -414,7 +444,7 @@ function SignPlayerPanel({
 }: { career: CareerState; club: string; onSignPlayer: (club: string, playerId: string, fromClub: string) => void }) {
   const [search, setSearch] = useState("");
   const freeAgents = (career.freeAgents ?? []).map(p => ({ ...p, fromClub: FREE_AGENTS_CLUB }));
-  const others = (career.leagueSquads ?? [])
+  const others = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
     .filter(s => s.club !== club)
     .flatMap(s => s.players.map(p => ({ ...p, fromClub: s.club })));
   const pool = [...freeAgents, ...others]
