@@ -1286,6 +1286,25 @@ number of simultaneous defenders should be; reading it wrong loses ~90% of
 the time either way, so "reading it matters" survives the redesign even
 though the absolute clear rate is now wave-size-dependent by design.
 
+A THIRD round of measurement, after the wave redesign shipped and got
+played: reported directly that a swipe basically always worked, "you
+don't even have to time it." Two real, independently-measured reasons,
+neither invented: the open-side assist glow (default ON at the time)
+literally showed which way to go, removing the reading half of the
+mechanic entirely; and a correctly-directed burst fired the INSTANT his
+telegraph ended — i.e. after he's already committed and his own lunge is
+by then a fixed, non-reactive function of time — still cleared 32.3% of
+the time, so "react whenever, in whatever direction looks right" carried
+almost no real deadline. Fixed by (1) defaulting `assist` to `false`
+everywhere it's exposed, and (2) `applyBurst` fixing the burst's power
+the instant it fires, based on the nearest man's phase: full power only
+while he's genuinely telegraphing, a fraction of it (0.3×) if he's
+already committed. Same seeds, same measurement, after the fix: 2.9% —
+and reading it right, in time, is completely unaffected (95.9% on
+solo-wave seeds, identical to before), because the fix only closes the
+"any time up to and including too-late works" gap, not the actual
+telegraph-reading window.
+
 Every assertion here is a claim about feel, not just "doesn't crash" —
 picked because if it were false, the mode would not play the way it's
 supposed to. Confirms: the same seed always produces the same outcome and
