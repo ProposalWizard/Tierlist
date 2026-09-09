@@ -568,8 +568,15 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   // invisible except during a swipe: it sits close enough to the player
   // (see FirstPersonDribble.tsx's BALL_BASE_LEAD) that the correctly
   // depth-sorted "nearer, so drawn on top" player figure was hiding it
-  // almost the whole time. A dribbled ball reading clearly at your feet
-  // matters more here than strict depth ordering.
+  // almost the whole time. Re-verified when a LATER report said the ball
+  // instead looked stuck behind/on the leg while steering: switching to
+  // real depth order was tried again (with a bigger lead too) and measured,
+  // via an actual render, to hide the ball almost the entire run at this
+  // chase-cam's distance — your own torso/legs are close enough to the lens
+  // to cover nearly its whole screen footprint at any reasonable lead. A
+  // dribbled ball reading clearly at your feet matters more here than
+  // strict depth ordering; see FirstPersonDribble.tsx's BALL_BASE_LEAD/
+  // BALL_BURST_LEAD for the actual fix (more clearance, not occlusion).
   if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
 
   if (opts.hud) drawHud(ctx, W, H, opts.hud.text, opts.hud.pips);
