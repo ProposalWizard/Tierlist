@@ -181,6 +181,34 @@ function oracleRun(seed: number, oppStrength: number, mode: "correct" | "wrong")
   check(rate >= 0.85, `when every wave happens to be one man, reading him correctly wins almost every time, same as the original design (${(rate * 100).toFixed(1)}% of ${soloSeeds})`);
 }
 
+// ── Bursting the right way, but too LATE — the actual thing reported as
+// missing: "swipe left or right... every single time... you don't even
+// have to time it." A correctly-directed burst fired the instant his
+// telegraph ends (he's already committed) used to clear about a third of
+// runs — reading to a player as "no real deadline," since a burst fired
+// any time up to and including that instant worked about as well. Now it's
+// a real cliff: full power only while he's still actually telegraphing.
+// Measured: 32.3% -> 2.9% right at the boundary. ───────────────────────────
+{
+  function lateCorrectRun(seed: number): RunPhase {
+    const s = newRun({ pace: 60, oppStrength: 60, rng: mulberry32(seed * 101 + 7) });
+    const reacted = new Set<FpDefender>();
+    return runToEnd(s, DT, st => {
+      const threat = nearestThreat(st);
+      if (threat && threat.phase === "committed" && !reacted.has(threat)) {
+        const landsAt = threat.x + threat.commitSide * 1.1; // LUNGE_REACH
+        const fired = applyBurst(st, st.x >= landsAt ? 1 : -1);
+        if (fired) reacted.add(threat);
+      }
+    });
+  }
+  const seeds = 1000;
+  let cleared = 0;
+  for (let seed = 1; seed <= seeds; seed++) if (lateCorrectRun(seed) === "clear") cleared++;
+  const rate = cleared / seeds;
+  check(rate < 0.15, `a correctly-directed burst fired the instant he's already committed is now a real miss, not a coin flip (${(rate * 100).toFixed(1)}% < 15%)`);
+}
+
 // ── Bursting the instant a wave starts closing (before anyone's shown a
 // side) is punished — worse than reading the telegraph, but not zero ──────
 {

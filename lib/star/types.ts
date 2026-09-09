@@ -212,9 +212,14 @@ export interface LeagueFixture {
 export interface LeagueResult extends LeagueFixture {
   hs: number;
   as: number;
-  /** Who scored them: minute, scorer, assister. Home side then away side. */
-  hg?: { m: number; s: string; a?: string }[];
-  ag?: { m: number; s: string; a?: string }[];
+  /** Who scored them: minute, scorer, assister. Home side then away side.
+   *  `full`/`role` (the scorer's real full name and position) are only ever
+   *  set for a match nobody played — see leagueSquads.ts's SimGoal, which
+   *  this shape mirrors — so the league-wide media pass (media/detect/
+   *  league.ts) can name a goal exactly, not just as its short scoreline
+   *  form. Absent on a career saved before either existed. */
+  hg?: { m: number; s: string; a?: string; full?: string; role?: string }[];
+  ag?: { m: number; s: string; a?: string; full?: string; role?: string }[];
 }
 
 /** A knockout the player is in, or was in. */

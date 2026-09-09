@@ -1,10 +1,11 @@
-import type { CareerState, Fixture, MatchStats } from "../types";
+import type { CareerState, Fixture, LeagueResult, MatchStats } from "../types";
 import type {
   CareerRecord, Facts, FootballEvent, MatchRecord, MediaAccount, MediaCycle,
   MediaState, StoredPost, StoryMemory, Trend,
 } from "./types";
 import { buildMatchRecord } from "./record";
 import { detectCareer, detectMatch } from "./detect";
+import { detectLeagueWeek } from "./detect/league";
 import { headlineEvent, scoreCareerEvents, scoreMatchEvents } from "./importance";
 import { absorbEvents, absorbMatch, coolThreads, emptyMemory, markSaid } from "./memory";
 import { buildRoster, selfAccount } from "./accounts";
@@ -97,6 +98,36 @@ export function generateForCareer(career: CareerState, moment: CareerRecord["mom
 }
 
 /**
+ * The rest of the division, the same week.
+ *
+ * `weekResults` is this week's slice of `career.results` — every fixture
+ * `playLeagueWeek` (season.ts) simulated, YOURS included; the caller
+ * (app/star-dev/page.tsx) filters it down to everyone else's before handing
+ * it over, since your own match already went through `generateForMatch`.
+ * No memory/thread absorption here — see detect/league.ts's own header on
+ * why this stays a narrow, independent pass rather than a second storyline
+ * engine — so the career's existing memory is threaded through untouched.
+ */
+export function generateForLeagueWeek(
+  career: CareerState,
+  weekResults: LeagueResult[],
+  competition = "Premier League",
+): MediaState {
+  const state = mediaOf(career);
+  // The week these RESULTS are for — not `career.week`, which has already
+  // advanced past it by the time this runs (crediting your own match moves
+  // the career on to next week before this is ever called). Every entry in
+  // `weekResults` is the same week already (the caller filters it that way),
+  // so the first is as good as any.
+  const week = weekResults[0]?.week ?? career.week;
+  const id = `s${career.season}-w${week}-leagueweek`;
+  if (state.lastLeagueCycleId === id) return state;
+
+  const events = detectLeagueWeek(weekResults, career.player.club, week, competition, career.season);
+  return commit(career, state, null, events, state.memory, id, clockAt(career.season, week, 0), "league");
+}
+
+/**
  * Turn scored events into posts and fold them into the saved state.
  *
  * Shared by both entry points on purpose: a transfer and a hat-trick go through
@@ -111,8 +142,20 @@ function commit(
   memory: StoryMemory,
   cycleId: string,
   cycleClock: number,
+  scope: "club" | "league" = "club",
 ): MediaState {
-  if (!events.length) return { ...state, memory, lastCycleId: cycleId, lastCycleClock: cycleClock };
+  // The league-wide weekly pass runs its OWN replay guard
+  // (`lastLeagueCycleId`) rather than the match/career one below — it is
+  // always called the same week as (and right after) a `generateForMatch`
+  // that already claimed `lastCycleId`/`lastCycleClock` for itself, and
+  // those two fields drive the "moment" walk-out-of-the-stadium screen,
+  // which is about YOUR match specifically. Overwriting them here would
+  // silently break that screen's own timing every single week.
+  if (!events.length) {
+    return scope === "league"
+      ? { ...state, memory, lastLeagueCycleId: cycleId }
+      : { ...state, memory, lastCycleId: cycleId, lastCycleClock: cycleClock };
+  }
 
   const accounts = [...buildRoster(career), selfAccount(career)];
   const pairings = selectPairings(events, accounts, cycleId, career.player.club);
@@ -135,7 +178,7 @@ function commit(
     if (recentText.has(made.post.text)) continue;
     recentText.add(made.post.text);
     usedThisCycle.add(made.templateId);
-    posts.push(made.post);
+    posts.push({ ...made.post, scope });
     used.push(made.templateId);
   }
 
@@ -148,8 +191,9 @@ function commit(
     posts: all,
     memory: markSaid(memory, used),
     trends: trends.length ? trends : state.trends,
-    lastCycleId: cycleId,
-    lastCycleClock: cycleClock,
+    ...(scope === "league"
+      ? { lastCycleId: state.lastCycleId, lastCycleClock: state.lastCycleClock, lastLeagueCycleId: cycleId }
+      : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId }),
   };
 }
 

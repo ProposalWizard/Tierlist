@@ -150,6 +150,9 @@ export interface FpBurst {
   /** Metres of lateral travel already delivered, so the ease-out is exact
    *  regardless of frame rate. */
   done: number;
+  /** 0-1, fixed the instant the burst fires — see `applyBurst`'s own
+   *  header on why a burst fired too late is deliberately mostly wasted. */
+  power: number;
 }
 
 export interface FpRunState {
@@ -382,12 +385,45 @@ export function applySteer(s: FpRunState, laneTarget: number): void {
   s.laneTarget = clamp(laneTarget, s.minX, s.maxX);
 }
 
-/** The decisive knock past him. Returns false if a burst is still locked
- *  out from the last one — the component can use that to ignore a
- *  double-flick rather than silently swallowing it. */
+/** The nearest still-live man in the currently active wave — whoever a
+ *  burst fired right now would actually be judged against. */
+function nearestLiveInActiveRound(s: FpRunState): FpDefender | undefined {
+  let best: FpDefender | undefined;
+  for (const d of s.defenders) {
+    if (d.round !== s.activeRound || d.phase === "beaten" || d.phase === "won") continue;
+    if (!best || s.y - d.y < s.y - best.y) best = d;
+  }
+  return best;
+}
+
+/**
+ * The decisive knock past him. Returns false if a burst is still locked out
+ * from the last one — the component can use that to ignore a double-flick
+ * rather than silently swallowing it.
+ *
+ * Reported directly, after actually playing this: "swipe left or right...
+ * you get past them every single time, you don't even have to time it."
+ * Measured directly against the sim (a scratch harness, same idiom as every
+ * other measured number in this file): reading the telegraph correctly and
+ * bursting the instant it starts, or a while into it, or right as it ends,
+ * ALL clear at roughly the same ~90%+ rate — the window was real (a burst
+ * fired blind during "closing" already only clears ~4% of the time, and
+ * one fired well after commit falls off fast) but it had no genuinely
+ * PUNISHING edge right where it mattered: firing the instant his telegraph
+ * ends and he's already committed still cleared about a third of the time,
+ * which reads to a player as "no real deadline" rather than "you missed it."
+ * A burst now only delivers its full, decisive kick while he's actually
+ * telegraphing — the one moment this whole mechanic is built to test
+ * reading. Fired once he's already committed, it's mostly wasted: his own
+ * lunge is by then a fixed, non-reactive function of time (see
+ * `stepDefender`'s "committed" case), so "I'll just react whenever" no
+ * longer has anywhere to hide.
+ */
 export function applyBurst(s: FpRunState, dir: -1 | 1): boolean {
   if (s.phase !== "running" || s.burst || s.burstLock > 0) return false;
-  s.burst = { dir, t: 0, done: 0 };
+  const threat = nearestLiveInActiveRound(s);
+  const power = threat?.phase === "committed" ? 0.3 : 1;
+  s.burst = { dir, t: 0, done: 0, power };
   s.burstLock = BURST_LOCK;
   return true;
 }
@@ -474,7 +510,7 @@ export function stepRun(s: FpRunState, dt: number): RunPhase {
     const b = s.burst;
     b.t += sdt;
     const f = easeOutCubic(b.t / BURST_T);
-    const target = BURST_LATERAL * f;
+    const target = BURST_LATERAL * b.power * f;
     s.x += b.dir * (target - b.done);
     b.done = target;
     boost = 1 + (BURST_BOOST - 1) * (1 - clamp(b.t / BURST_T, 0, 1));

@@ -94,10 +94,22 @@ function interest(a: MediaAccount, e: FootballEvent): number {
  * A rival account's interest is INVERTED, not reduced: they want the events
  * you would rather not have happened, and they want them badly. That single
  * sign flip is most of what makes them read like rivals.
+ *
+ * ── Every event used to be about your club, so this never had to ask ──
+ *
+ * Until the league-wide pass (media/detect/league.ts) started producing
+ * events about OTHER clubs' matches — Newcastle beating Fulham means
+ * nothing to you — every single event this function ever saw genuinely was
+ * about `yourClub`, so keying everything off `e.subject.kind !== "opponent"`
+ * happened to give the right answer without ever actually checking WHICH
+ * club. `e.facts.club` (every event sets it — see detect/kit.ts's `base()`)
+ * is the real answer: does this event belong to the club this account is
+ * actually loyal to. For every event that existed before this comment, that
+ * is still always `yourClub`, so nothing below changes for them.
  */
-function allegiance(a: MediaAccount, e: FootballEvent, yourClub: string): number {
+export function allegiance(a: MediaAccount, e: FootballEvent, yourClub: string): number {
   if (!a.allegiance) return 1;
-  const aboutYourClub = e.subject.kind !== "opponent";
+  const eventClub = e.facts.club as string | undefined;
   const negative = e.tags.includes("shame") || e.tags.includes("relegation")
     || e.id.startsWith("derby-loss") || e.id === "hammered" || e.id === "collapse"
     || e.id === "losing-run" || e.id === "drought" || e.id === "hooked"
@@ -105,11 +117,18 @@ function allegiance(a: MediaAccount, e: FootballEvent, yourClub: string): number
     || e.id === "embarrassed" || e.id === "into-the-drop" || e.id === "out-of-form";
 
   if (a.allegiance.polarity === -1) {
-    if (!aboutYourClub) return 0.2;
+    // A rival only cares about the club they are rivals WITH — not itself,
+    // and not some third club's unrelated afternoon.
+    if (eventClub !== yourClub) return 0.2;
     return negative ? 1.6 : 0.12;   // they will still sneer at your good day, occasionally
   }
-  // A club account only ever talks about its own club.
-  if (a.archetype === "club" && a.allegiance.club !== yourClub) return 0;
+  // Positive allegiance (a club's own account, its own supporters, you) —
+  // indifferent to news that is specifically about some OTHER named club. A
+  // club account only ever talks about its own club; your own fans do not
+  // tweet about a match they had nothing to do with.
+  if (eventClub !== undefined && eventClub !== a.allegiance.club) {
+    return a.archetype === "club" ? 0 : 0.05;
+  }
   return negative ? 0.45 : 1;       // your own do not dwell on the bad ones
 }
 

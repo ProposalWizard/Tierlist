@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import type { Tag, Trend } from "@/lib/star/media/types";
+import type { Trend } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
 import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar";
@@ -56,11 +56,18 @@ interface Props {
   onContinue?: () => void;
 }
 
-const FILTERS: { id: string; label: string; tags?: Tag[] }[] = [
+/**
+ * All / England / Club — replaced the old All/News/Stats/Fans set of tags,
+ * which all filtered the SAME pool (your own club and career, however it
+ * was posted about). Requested directly, once "England" had something real
+ * to show: a way to actually SEE the rest of the division's news
+ * (media/detect/league.ts) separately from your own club's, rather than
+ * only slicing the one pool four different ways by subject matter.
+ */
+const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
   { id: "all", label: "All" },
-  { id: "news", label: "News", tags: ["drama", "transfer", "manager", "trophy", "relegation", "title"] },
-  { id: "stats", label: "Stats", tags: ["stat", "record", "streak", "milestone"] },
-  { id: "fans", label: "Fans", tags: ["derby", "shame", "goal", "opinion"] },
+  { id: "england", label: "England", scope: "league" },
+  { id: "club", label: "Club", scope: "club" },
 ];
 
 export default function MediaFeed({ career, mode, onContinue }: Props) {
@@ -77,14 +84,11 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
 
   const shown = useMemo(() => {
     const f = FILTERS.find(x => x.id === filter);
-    if (!f?.tags) return posts;
-    // A fan filter that hides the fans would be a strange filter, so archetype
-    // counts as well as subject matter.
-    const social = new Set(["fan", "rivalFan", "teammate", "meme"]);
-    return posts.filter(p =>
-      p.tags.some(t => f.tags!.includes(t))
-      || (f.id === "fans" && social.has(p.author.archetype))
-      || (f.id === "stats" && p.author.archetype === "stats"));
+    if (!f?.scope) return posts;
+    // A post saved before `scope` existed carries neither value — it stays
+    // under All rather than vanishing from both narrower tabs, which is
+    // what filtering strictly by equality would otherwise do to it.
+    return posts.filter(p => p.scope === f.scope);
   }, [posts, filter]);
 
   // The status bar's own clock, reading real — "22/08/26", not a fixed

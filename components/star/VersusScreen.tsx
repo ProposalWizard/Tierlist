@@ -152,24 +152,45 @@ export default function VersusScreen({ matchday, date, competition, results, onK
         </button>
 
         {/* ── The header ──
-            One dark, floodlit panel rather than a plain bar — the competition
-            line, both teams, and each team's own formation directly under its
-            own crest, all in the same column so the two can never drift out of
-            line with each other. */}
+            A floodlit panel, not a plain bar — two soft glows standing in for
+            the stadium lights raking in from the corners, a bordered
+            competition badge instead of bare uppercase text, and each team's
+            own formation directly under its own crest so the two can never
+            drift out of line with each other. `overflow-hidden` on this
+            outer wrapper is what lets the glows bleed to the panel's own
+            rounded corners without spilling past them. */}
         <div
-          className="rounded-t-xl border border-white/15 px-3 py-2.5"
+          className="relative overflow-hidden rounded-t-xl border border-white/15 px-3 py-3"
           style={{ background: "linear-gradient(115deg, #051025 0%, #0b1530 32%, #1a0a12 68%, #2a0a10 100%)" }}
         >
-          <div className="text-center text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
-            {compHead}
-            {compTail && <> <span className="text-white/30">·</span> <span className="text-amber-300">{compTail}</span></>}
+          <div
+            className="pointer-events-none absolute -top-10 left-0 h-28 w-28 rounded-full opacity-70"
+            style={{ background: "radial-gradient(circle, rgba(191,219,254,0.35), transparent 70%)" }}
+          />
+          <div
+            className="pointer-events-none absolute -top-10 right-0 h-28 w-28 rounded-full opacity-70"
+            style={{ background: "radial-gradient(circle, rgba(191,219,254,0.35), transparent 70%)" }}
+          />
+
+          <div className="relative mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1">
+            <BallIcon />
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/80">
+              {compHead}
+              {compTail && <> <span className="text-white/30">·</span> <span className="text-amber-300">{compTail}</span></>}
+            </div>
           </div>
-          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+
+          <div className="relative mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
             <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
               form={recentForm(home.club, results ?? [])} scouted={homeScouted} />
-            <div className="flex flex-col items-center gap-1 pt-1.5">
-              <div className="text-xl font-black italic text-white/90">VS</div>
-              {date && <div className="whitespace-nowrap text-[10px] font-bold text-white/75">{date}</div>}
+            <div className="flex flex-col items-center gap-1 pt-3">
+              <div className="text-2xl font-black italic text-white" style={TEXT_OUTLINE}>VS</div>
+              {date && (
+                <div className="flex items-center gap-1 whitespace-nowrap text-[10px] font-bold text-white/75">
+                  <CalendarIcon />
+                  {date}
+                </div>
+              )}
             </div>
             <TeamHeader club={away.club} kit={kits.away} formation={away.formation.name}
               form={recentForm(away.club, results ?? [])} scouted={awayScouted} />
@@ -214,17 +235,48 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             from the earlier pass too. */}
         <div className="relative">
           <div className="relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
+            {/* Mown stripes, alternating light/dark bands the full height of
+                the pitch — a real groundsman's pattern, not just one faint
+                highlight — so the two halves read as one cut pitch rather
+                than a plain fill. Drawn before the markings/glow so both sit
+                on top of it. */}
+            <div className="pointer-events-none absolute inset-0">
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className={`absolute inset-x-0 ${i % 2 === 0 ? "bg-white/[0.045]" : "bg-black/[0.06]"}`}
+                  style={{ top: `${i * 12.5}%`, height: "12.5%" }} />
+              ))}
+            </div>
+
+            {/* Floodlight wash from all four corners — the same glow the
+                header panel uses above, so the pitch reads as lit by the
+                same stadium rather than a flat fill sitting under it. */}
+            <div className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full opacity-60"
+              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
+            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-60"
+              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
+            <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full opacity-60"
+              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
+            <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full opacity-60"
+              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
+
             {/* Markings, drawn once and read by nothing. */}
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
-              <div className="absolute left-1/2 top-1/2 h-[11%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30" />
-              <div className="absolute left-1/2 top-0 h-[11%] w-[46%] -translate-x-1/2 border-x border-b border-white/30" />
-              <div className="absolute bottom-0 left-1/2 h-[11%] w-[46%] -translate-x-1/2 border-x border-t border-white/30" />
-              {/* Mown stripes, so the two halves read as one pitch. */}
-              {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className="absolute inset-x-0 bg-white/[0.025]"
-                  style={{ top: `${i * 12.5}%`, height: "6.25%" }} />
-              ))}
+              <div className="absolute inset-x-0 top-1/2 h-px bg-white/35" />
+              <div className="absolute left-1/2 top-1/2 h-[11%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/35" />
+              <div className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/60" />
+              {/* Each box, its penalty spot, and the D arcing off it. */}
+              <div className="absolute left-1/2 top-0 h-[11%] w-[46%] -translate-x-1/2 border-x border-b border-white/35" />
+              <div className="absolute left-1/2 top-[7.5%] h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-white/60" />
+              <div className="absolute left-1/2 top-[11%] h-[7%] w-[16%] -translate-x-1/2 rounded-b-full border-b border-x border-white/35" />
+              <div className="absolute bottom-0 left-1/2 h-[11%] w-[46%] -translate-x-1/2 border-x border-t border-white/35" />
+              <div className="absolute bottom-[7.5%] left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-white/60" />
+              <div className="absolute bottom-[11%] left-1/2 h-[7%] w-[16%] -translate-x-1/2 rounded-t-full border-t border-x border-white/35" />
+              {/* Corner arcs — a quarter-circle carved from each corner by
+                  rounding only the inward-facing edge of a small square. */}
+              <div className="absolute left-0 top-0 h-[3.5%] w-[3.5%] rounded-br-full border-b border-r border-white/35" />
+              <div className="absolute right-0 top-0 h-[3.5%] w-[3.5%] rounded-bl-full border-b border-l border-white/35" />
+              <div className="absolute bottom-0 left-0 h-[3.5%] w-[3.5%] rounded-tr-full border-t border-r border-white/35" />
+              <div className="absolute bottom-0 right-0 h-[3.5%] w-[3.5%] rounded-tl-full border-t border-l border-white/35" />
             </div>
 
             {homeScouted
@@ -299,7 +351,13 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
 }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-1">
-      <Crest club={club} kit={kit} />
+      {/* A ring the shared ClubBadge doesn't draw itself — it's plain
+          everywhere else it's used (the cup draw, the scout report), but
+          here, next to a big italic "VS", the two crests are the whole
+          point of the panel and read as an afterthought without one. */}
+      <div className="grid place-items-center rounded-full border-2 border-white/70 bg-black/20 p-0.5 shadow-[0_0_10px_rgba(0,0,0,0.4)]">
+        <Crest club={club} kit={kit} size={44} />
+      </div>
       <FormRow form={form} />
       <div
         className="truncate text-[9px] font-black uppercase tracking-wider"
@@ -331,6 +389,36 @@ function FormRow({ form }: { form: Result[] }) {
 
 /** See components/star/ClubCrest.tsx — shared with the match-day header now. */
 const Crest = ClubCrest;
+
+/** The competition badge's own mark — a plain ball, so the badge reads as
+ *  "this is a match" before a single word of it is read. */
+function BallIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-2.5 w-2.5 shrink-0">
+      <circle cx="10" cy="10" r="8.5" fill="white" stroke="rgba(0,0,0,0.5)" strokeWidth="0.75" />
+      <path
+        d="M10 5.2 13.6 7.8 12.3 12 7.7 12 6.4 7.8Z M10 5.2 10 2.3 M13.6 7.8 16.4 6.6 M12.3 12 14.2 15.2 M7.7 12 5.8 15.2 M6.4 7.8 3.6 6.6"
+        fill="rgba(0,0,0,0.85)"
+        stroke="rgba(0,0,0,0.85)"
+        strokeWidth="0.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** A calendar page, for the fixture date — the one piece of the header that
+ *  is a plain fact rather than either club's own colour or crest. */
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-2.5 w-2.5 shrink-0 opacity-80">
+      <rect x="2.5" y="4" width="15" height="14" rx="1.5" fill="none" stroke="white" strokeWidth="1.3" />
+      <line x1="2.5" y1="8" x2="17.5" y2="8" stroke="white" strokeWidth="1.3" />
+      <line x1="6" y1="2.3" x2="6" y2="5.5" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+      <line x1="14" y1="2.3" x2="14" y2="5.5" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 /**
  * The gold star over your own head.
