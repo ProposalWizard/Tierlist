@@ -1,7 +1,8 @@
 import { CX } from "./pitch";
 
 /**
- * FIRST-PERSON DRIBBLING — THREE MEN, ONE AT A TIME, THROUGH HIS OWN EYES.
+ * FIRST-PERSON DRIBBLING — THREE WAVES, ONE TO THREE MEN EACH, THROUGH HIS
+ * OWN EYES.
  *
  * Requested directly: a first-person dribbling mode — "you see through his
  * eyes... dribble through players... then be left with a chance to pass or
@@ -11,12 +12,25 @@ import { CX } from "./pitch";
  * stationary-until-woken defenders, one flick to pick a whole LINE through
  * them, and the goal kept off-screen on purpose ("getting through is what
  * earns you the chance, it is not the chance itself"). None of that
- * transfers to a first-person camera — you cannot see a "line" through three
- * men from ground level, only the one in front of you, right now. So this
- * is a different shape entirely: three SEQUENTIAL one-on-one duels, each one
- * a single readable moment — he telegraphs a side, you read it and burst the
- * other way — and the goal is visible and growing from the start, because in
- * first person a growing goal on the horizon IS the sense of progress.
+ * transfers to a first-person camera — you cannot see a "line" through
+ * several men from ground level, only whoever's actually in front of you,
+ * right now. So this is a different shape entirely: three WAVES, each one
+ * a bank of one to three defenders you meet together — every man in it a
+ * single readable moment in his own right — he telegraphs a side, you read
+ * it and burst the other way — and the goal is visible and growing from the
+ * start, because in first person a growing goal on the horizon IS the sense
+ * of progress.
+ *
+ * Originally shipped as three men engaged strictly one at a time. Changed
+ * directly: "instead of three opponents... you have a random chance, so you
+ * actually have three rounds instead... each wave has one to three players,
+ * randomly placed on that line to start with, and then... they try to get
+ * the ball off of you just like they normally do." Every man in a wave still
+ * runs the exact same one-on-one duel machine below, completely
+ * independently of the others in his wave — the only thing that changed is
+ * how many of them there are and that they're placed across the corridor
+ * BEFORE you reach them, not spawned on your lane the moment you do (see
+ * "Placement" below).
  *
  * Pure simulation: no React, no canvas, no input handling, no camera. The
  * component feeds it a lane target and a burst direction; everything that
@@ -24,7 +38,7 @@ import { CX } from "./pitch";
  * same "mutate the state, return the outcome" step shape
  * (`stepDribble(state, dt): DribbleOutcome`), not an immutable `step(s) => s`.
  *
- * ── Why sequential, and why a telegraph ──
+ * ── Why a telegraph, and why each duel is still fair on its own ──
  *
  * A duel resolves on ONE number: lateral separation from the defender at the
  * moment he reaches you. Every mechanic — mirroring, lag, the telegraph
@@ -33,7 +47,9 @@ import { CX } from "./pitch";
  * it" oracle should win almost every time, and a scripted "do nothing"
  * should lose every time. If either of those isn't true, the duel isn't
  * actually fair, and the arithmetic below exists so it starts out that way
- * rather than being tuned by feel after the fact:
+ * rather than being tuned by feel after the fact — and it's exactly as true
+ * with three men in a wave as with one, because nothing about an individual
+ * duel changed, only how many can be live in front of you together:
  *
  *   closure rate  ≈ yourSpeed + closeSpeed ≈ 6.5 + 3.3 ≈ 9.8 m/s
  *   commit depth  = ~5.2 m  →  ~0.53 s from commit to contact
@@ -47,21 +63,32 @@ import { CX } from "./pitch";
  *                   beat a man. Easiest relationship to break while tuning;
  *                   it has its own test.
  *
- * ── The lazy spawn (not a cosmetic choice) ──
+ * ── Placement: visible in advance, spread across the corridor ──
  *
- * A defender's lane is not fixed at construction — he spawns ON YOUR LANE
- * the instant he engages (`ENGAGE_D`). With a 9 m half-corridor and only
- * ~12 m of engage depth to work with, pre-placing him would let one
- * touchline be hugged safely the whole way through — he is the man who
- * steps out to meet you, not an obstacle you can route around in advance.
- * Still fully deterministic under the seeded RNG.
+ * Told directly to place them, not spawn them: each wave's men are given
+ * real lanes at construction, before the run even starts — spread across
+ * even bands of the corridor (`placeWave`) so a wave of two or three always
+ * leaves at least one real gap, never stacked on top of each other. This
+ * replaces the original single-defender "lazy spawn" (he used to snap onto
+ * YOUR exact lane the instant he engaged, specifically so pre-placing him
+ * couldn't let one touchline be hugged safely in advance — see the git
+ * history here for that reasoning). That protection mattered most for
+ * exactly one defender with the whole corridor to place him in; it matters
+ * less once a wave already occupies multiple bands across the width, and it
+ * is directly at odds with "randomly placed on that line to start with" —
+ * so for a wave, visible-in-advance is the point, not a fairness hole. Once
+ * engaged (`ENGAGE_D`), each man's lagged `read` starts from HIS OWN real
+ * lane rather than snapping to yours, so he closes in the same mirroring way
+ * a lazily-spawned man always did.
  *
  * ── Difficulty scaling ──
  *
  * A stronger defender does not move faster in some unreadable way — he
  * TELEGRAPHS LESS (smaller `tellT`). That is the one difficulty knob that
  * preserves fairness as it climbs: the window narrows, it never becomes a
- * guess.
+ * guess. Scales by WAVE now (every man in a wave shares that wave's
+ * strength factor) rather than by an individual's position in a single
+ * flat sequence.
  */
 
 export interface Vec2 { x: number; y: number; }
@@ -111,6 +138,9 @@ export interface FpDefender {
   /** Lateral separation the duel was actually judged on — set on
    *  resolution; the one number every test reads. */
   sepAtContact?: number;
+  /** Which wave he belongs to (0-based) — see `FpRunState.roundSizes` and
+   *  `placeWave`. Every man in the same wave engages together. */
+  round: number;
 }
 
 export interface FpBurst {
@@ -133,9 +163,13 @@ export interface FpRunState {
   speed: number;
   burst: FpBurst | null;
   defenders: FpDefender[];
-  /** Index of the defender currently being duelled, or -1 once all three
-   *  are resolved (or before any has engaged). */
-  active: number;
+  /** How many men are in each wave (`defenders` is grouped by wave, in
+   *  order) — length is the number of waves, e.g. `[2, 1, 3]`. */
+  roundSizes: number[];
+  /** Which wave is currently live — every man in it engages together, all
+   *  independently of one another. -1 once every wave is resolved (or
+   *  before any has engaged). */
+  activeRound: number;
   minX: number;
   maxX: number;
   startY: number;
@@ -199,7 +233,13 @@ const LUNGE_T = 0.22;
  * its own. Kept comfortably under CLEAR_SEP so "do nothing" is a hard,
  * always-lose invariant (see tests/star/firstPersonDribble.mts).
  */
-const LUNGE_REACH = 1.1;
+/** Exported for tests only: reading a telegraph correctly now means bursting
+ *  away from where his lunge will actually LAND (his current lane +
+ *  commitSide*LUNGE_REACH), not just "the opposite of commitSide" — the two
+ *  were the same thing when a defender always spawned on your exact lane,
+ *  but a wave's men are placed across the corridor and don't always fully
+ *  close that lateral gap before committing (see `placeWave`'s own header). */
+export const LUNGE_REACH = 1.1;
 /** How much the world slows during a telegraph, so the window is long
  *  enough to actually read on a phone. */
 export const TELE_SLOW = 0.72;
@@ -226,43 +266,92 @@ export function runSpeed(pace: number): number {
   return BASE_SPEED + clamp(pace, 0, 100) / 100 * PACE_SPEED;
 }
 
+/** How many men in a wave — "one to three players", uniformly. */
+function waveSize(rng: () => number): number {
+  return 1 + Math.floor(rng() * 3);
+}
+
+/**
+ * Real lanes for a wave's men — spread across even bands of the corridor so
+ * a wave of two or three always leaves at least one real gap between any
+ * two of them, never stacked on top of each other. See the file header's
+ * "Placement" section on why they're placed here, upfront, rather than
+ * spawned lazily the way the original single defender was.
+ */
+/**
+ * Genuinely random, not one-per-band. An earlier version split the corridor
+ * into `size` equal bands and placed one man in each — which sounds like
+ * "spread across the line" but actually GUARANTEES one man on your left and
+ * one on your right for every wave of two or more, every single time (measured
+ * directly: a wave of three cleared under a scripted "read every telegraph
+ * correctly" oracle only ~6% of the time, because you start pinched between
+ * a left-band man and a right-band man before you've done anything at all —
+ * no burst clears both at once). Real random placement can by chance put
+ * every man on the SAME side and leave the other side wide open, which is
+ * both the honest reading of "randomly placed" and the escapable case a
+ * burst is actually meant to exploit. `minGap` only stops two men literally
+ * overlapping — it is not a fairness mechanism.
+ */
+function placeWave(size: number, rng: () => number): number[] {
+  const width = CORRIDOR_HALF * 2;
+  const minGap = Math.min(2.2, width / (size + 1));
+  const xs: number[] = [];
+  for (let i = 0; i < size; i++) {
+    let x = CX - CORRIDOR_HALF + rng() * width;
+    for (let tries = 0; tries < 20 && xs.some(o => Math.abs(o - x) < minGap); tries++) {
+      x = CX - CORRIDOR_HALF + rng() * width;
+    }
+    xs.push(x);
+  }
+  return xs;
+}
+
 /**
  * Set up a run.
  *
- * Three defenders by default, ramped from a slightly easier first man to a
- * tougher last one — the ramp is entirely in `tellT` (see the file header):
- * a stronger defender telegraphs less, never moves in some way you can't
- * react to at all.
+ * Three waves by default, each one to three men, ramped from a slightly
+ * easier first wave to a tougher last one — the ramp is entirely in
+ * `tellT` (see the file header): a stronger defender telegraphs less,
+ * never moves in some way you can't react to at all.
  */
 export function newRun(opts: {
   pace: number;
   oppStrength: number;
-  defenders?: number;
+  rounds?: number;
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
-  const count = opts.defenders ?? 3;
+  const roundCount = opts.rounds ?? 3;
 
   const defenders: FpDefender[] = [];
-  for (let i = 0; i < count; i++) {
-    const factor = count > 1 ? 0.85 + 0.15 * (i / (count - 1)) : 1.0;
+  const roundSizes: number[] = [];
+  for (let r = 0; r < roundCount; r++) {
+    const size = waveSize(rng);
+    roundSizes.push(size);
+    const factor = roundCount > 1 ? 0.85 + 0.15 * (r / (roundCount - 1)) : 1.0;
     const str = clamp(opts.oppStrength, 0, 100) * factor;
-    defenders.push({
-      x: 0,
-      y: START_Y - FIRST_DUEL_DEPTH - DUEL_GAP * i,
-      phase: "waiting",
-      read: 0,
-      mirrorSpeed: 2.0 + (str / 100) * 1.6,
-      lagT: 0.32 - (str / 100) * 0.14,
-      closeSpeed: 2.6 + (str / 100) * 1.4,
-      commitD: COMMIT_D_BASE * (0.85 + rng() * 0.30),
-      tellT: TELL_BASE * (1.25 - (str / 100) * 0.5),
-      tell: 0,
-      commitSide: 1,
-      bias: rng() < 0.5 ? -1 : 1,
-      lungeFrom: 0,
-      lunge: 0,
-    });
+    const y = START_Y - FIRST_DUEL_DEPTH - DUEL_GAP * r;
+    for (const x of placeWave(size, rng)) {
+      defenders.push({
+        x,
+        y,
+        phase: "waiting",
+        // Starts reading from his OWN real lane, not yours — he hasn't
+        // been lazily snapped onto it (see the file header).
+        read: x,
+        mirrorSpeed: 2.0 + (str / 100) * 1.6,
+        lagT: 0.32 - (str / 100) * 0.14,
+        closeSpeed: 2.6 + (str / 100) * 1.4,
+        commitD: COMMIT_D_BASE * (0.85 + rng() * 0.30),
+        tellT: TELL_BASE * (1.25 - (str / 100) * 0.5),
+        tell: 0,
+        commitSide: 1,
+        bias: rng() < 0.5 ? -1 : 1,
+        lungeFrom: 0,
+        lunge: 0,
+        round: r,
+      });
+    }
   }
 
   return {
@@ -272,7 +361,8 @@ export function newRun(opts: {
     speed: runSpeed(opts.pace),
     burst: null,
     defenders,
-    active: defenders.length > 0 ? 0 : -1,
+    roundSizes,
+    activeRound: defenders.length > 0 ? 0 : -1,
     minX: CX - CORRIDOR_HALF,
     maxX: CX + CORRIDOR_HALF,
     startY: START_Y,
@@ -307,8 +397,8 @@ function pickSide(def: FpDefender, s: FpRunState): -1 | 1 {
   return Math.abs(drift) > SHOW_SIDE ? (drift > 0 ? 1 : -1) : def.bias;
 }
 
-/** Advance the currently-active defender by one tick. Only ever one man is
- *  live at a time — sequential duels, not a wall of three. */
+/** Advance one defender by one tick. Every man in the active wave is
+ *  stepped this way, independently — see `stepRun`. */
 function stepDefender(idx: number, s: FpRunState, sdt: number): void {
   const def = s.defenders[idx];
   switch (def.phase) {
@@ -316,9 +406,9 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
       const d = s.y - def.y;
       if (d <= ENGAGE_D) {
         def.phase = "closing";
-        // Spawn his lane on yours the instant he steps out — see the file
-        // header: pre-placing him would make one touchline safe in advance.
-        def.x = def.read = s.x + (s.rng() - 0.5) * 1.2;
+        // His `read` already starts at his own real lane (set in newRun —
+        // he was placed, not lazily spawned; see the file header), so
+        // nothing to reset here beyond the phase itself.
       }
       return;
     }
@@ -330,7 +420,6 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
         def.phase = "telegraph";
         def.commitSide = pickSide(def, s);
         def.tell = def.tellT;
-        s.timeScale = TELE_SLOW;
       }
       break;
     }
@@ -342,7 +431,6 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
         def.phase = "committed";
         def.lungeFrom = def.x;
         def.lunge = 0;
-        s.timeScale = 1;
       }
       break;
     }
@@ -402,15 +490,29 @@ export function stepRun(s: FpRunState, dt: number): RunPhase {
   s.y -= forward * sdt;
   s.stride += forward * sdt;
 
-  // Only the frontmost unresolved defender is ever live.
-  let activeIdx = -1;
-  for (let i = 0; i < s.defenders.length; i++) {
-    const p = s.defenders[i].phase;
-    if (p !== "beaten" && p !== "won") { activeIdx = i; break; }
+  // Only the frontmost unresolved WAVE is ever live — but every man inside
+  // it steps independently this tick, not just one at a time (see the file
+  // header). `defenders` is built wave-by-wave in `newRun`, so the first
+  // unresolved entry's `round` is genuinely the lowest unresolved wave.
+  let activeRound = -1;
+  for (const d of s.defenders) {
+    if (d.phase !== "beaten" && d.phase !== "won") { activeRound = d.round; break; }
   }
-  s.active = activeIdx;
-  if (activeIdx >= 0) {
-    stepDefender(activeIdx, s, sdt);
+  s.activeRound = activeRound;
+  if (activeRound >= 0) {
+    for (let i = 0; i < s.defenders.length; i++) {
+      const d = s.defenders[i];
+      if (d.round !== activeRound || d.phase === "beaten" || d.phase === "won") continue;
+      stepDefender(i, s, sdt);
+      if (s.phase !== "running") break; // one of them won the ball — stop immediately
+    }
+    // The world only stays slowed while SOMEONE in the wave is actually
+    // telegraphing — with up to three men able to commit at different
+    // moments, a single shared timeScale has to reflect all of them, not
+    // just whichever one happened to set it last.
+    s.timeScale = s.defenders.some(d => d.round === activeRound && d.phase === "telegraph") ? TELE_SLOW : 1;
+  } else {
+    s.timeScale = 1;
   }
   if (s.phase !== "running") return s.phase;
 

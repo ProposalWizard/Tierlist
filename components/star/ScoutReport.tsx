@@ -180,6 +180,31 @@ function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; pla
   );
 }
 
+/**
+ * The card slot for a scorer/assister with nothing to show yet — reported
+ * directly from a season-one game-one scout report: nobody's scored or
+ * assisted for either club yet, so the row silently dropped to just the
+ * "Top Rated" card instead of saying so, the one section on this whole
+ * screen that didn't say "no data" the way Recent Form already does
+ * ("No games played yet"). Same slot size as a real PlayerCard so the row
+ * stays balanced regardless of which cards have real data, but no frame
+ * image or photo — there's no player to put in it.
+ */
+function EmptyPlayerCard({ role }: { role: "scorer" | "assist" }) {
+  const theme = ROLE_THEME[role];
+  return (
+    <div
+      className="relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-2 text-center"
+      style={{ aspectRatio: CARD_GEOM.aspect }}
+    >
+      <div className="flex items-center justify-center gap-1 text-[8px] font-black uppercase tracking-wide" style={{ color: theme.accent }}>
+        <span>{theme.icon}</span><span className="truncate">{theme.label}</span>
+      </div>
+      <div className="text-[9px] text-white/50">No data available</div>
+    </div>
+  );
+}
+
 export default function ScoutReportCard({ report }: { report: ScoutReport }) {
   const noPlayerData = !report.topScorer && !report.topAssister && !report.bestPlayer;
 
@@ -198,8 +223,8 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
         </div>
       ) : (
         <div className="mt-2.5 flex gap-1.5">
-          {report.topScorer && <PlayerCard role="scorer" player={report.topScorer} />}
-          {report.topAssister && <PlayerCard role="assist" player={report.topAssister} />}
+          {report.topScorer ? <PlayerCard role="scorer" player={report.topScorer} /> : <EmptyPlayerCard role="scorer" />}
+          {report.topAssister ? <PlayerCard role="assist" player={report.topAssister} /> : <EmptyPlayerCard role="assist" />}
           {report.bestPlayer && <PlayerCard role="rated" player={report.bestPlayer} />}
         </div>
       )}

@@ -1252,28 +1252,69 @@ rather than dividing into a blown-up or negative-depth number.
 
 `npx tsx tests/star/firstPersonDribble.mts`
 
+Changed directly from three men engaged strictly one at a time to three
+WAVES of one to three men each, placed across the corridor rather than
+spawned on your lane (see `firstPersonDribble.ts`'s own header). That broke
+the old test's "oracle" in a way worth recording: with a man always
+spawned exactly on your lane, "burst away from his commitSide" and "burst
+away from his actual position" were the same instruction. Once men are
+placed and don't always fully close that lateral gap before committing,
+they aren't — an oracle using the old rule was measured clearing a
+three-man wave only ~6% of the time, not because the mode had gotten
+unfair but because that rule no longer means "read him correctly." Fixed
+by bursting away from where his lunge will actually LAND (`threat.x +
+commitSide * LUNGE_REACH`, now exported for exactly this) and by having
+the oracle steer toward the widest gap the moment a wave comes into view —
+the entire point of placing men in advance rather than springing them.
+
+A second real bug this measurement caught: the original placement split
+the corridor into one band per man and put exactly one man in each band —
+which sounds like "spread across the line" but actually GUARANTEED one man
+on your left and one on your right for every wave of two or more, every
+single time. You start pinched between them before doing anything at all;
+no burst clears both sides at once. Measured at ~6% clear for a three-man
+wave under the corrected oracle — still broken, just no longer by the
+oracle's fault. Fixed by placing each man at a genuinely random lane
+(rejecting only literal overlaps, `placeWave`'s own `minGap`), so a wave
+can by chance cluster entirely on one side and leave the other wide open —
+the escapable case a burst is actually meant to exploit. After both fixes:
+solo-wave seeds (every wave size 1, the case directly comparable to the
+original single-defender design) clear ~92-96% reading the wave correctly,
+matching the original design's own number; the full mixed set (waves
+randomly 1-3) clears ~25-35%, genuinely harder, exactly as increasing the
+number of simultaneous defenders should be; reading it wrong loses ~90% of
+the time either way, so "reading it matters" survives the redesign even
+though the absolute clear rate is now wave-size-dependent by design.
+
 Every assertion here is a claim about feel, not just "doesn't crash" —
 picked because if it were false, the mode would not play the way it's
 supposed to. Confirms: the same seed always produces the same outcome and
-separations; standing completely still loses every single time, a hard
-invariant (this caught a real tuning bug — `LUNGE_REACH` was originally set
-*larger* than `CLEAR_SEP`, which meant a frozen player could "win" a duel
-purely off the defender's own random guess, with no action at all; fixed by
-keeping `LUNGE_REACH` comfortably under `CLEAR_SEP` so separation can only
-ever come from what the player does); a scripted oracle that reads the
-telegraph and bursts away wins almost every time, and bursting *into* the
-telegraphed side loses almost every time; bursting blind before any
-telegraph shows is punished but not a guaranteed loss; steering alone,
-without ever bursting, essentially never gets you through; every telegraph
-stays live at least 0.45s of wall-clock time even at maximum defender
-strength (a zero-latency oracle can't reveal this — it reacts as fast at
-any difficulty, which is why difficulty here is entirely about how long the
-window stays open, not about the oracle's win rate); a stronger defence
-gives a measurably shorter window on average; the lane always clamps to the
-corridor; an adversarial input still terminates within `RUN_TIMEOUT`; and
-the outcome agrees across dt = 1/30, 1/60 and 1/120 for at least 95% of
-seeds, guarding against this codebase's clamped-dt rAF loops making
-fairness frame-rate-dependent.
+separations; standing completely still loses almost every time (no longer
+a hard 100% invariant now that a man's pre-placed lane can occasionally be
+too far away to close in time — measured 196/200 — but still "almost
+always," and still true that his own lunge alone, from near-zero
+separation, can never clear `CLEAR_SEP` — `LUNGE_REACH` is kept
+comfortably under it for exactly that reason); a scripted oracle that
+steers to the gap and reads every telegraph correctly clears a real share
+of runs, and clearly, repeatably more than one that reads them wrong
+(measured ~34% vs ~10% cleared, wrong losing ~90%); restricted to solo-wave
+seeds, that same oracle wins almost every time, matching the original
+single-defender design; bursting blind before any telegraph shows is
+punished but not a guaranteed loss; steering alone, without ever bursting,
+essentially never gets you through; every telegraph stays live at least
+0.45s of wall-clock time even at maximum defender strength (a zero-latency
+oracle can't reveal this — it reacts as fast at any difficulty, which is
+why difficulty here is entirely about how long the window stays open, not
+about the oracle's win rate); a stronger defence gives a measurably shorter
+window on average; every wave's men are placed inside the corridor with a
+real minimum gap and no two ever overlap, and — the thing actually being
+tested — a three-man wave can genuinely land entirely on one side, proving
+placement is real randomness and not one-per-band; the lane always clamps
+to the corridor; an adversarial input still terminates within `RUN_TIMEOUT`;
+wave sizes are always 1-3 and all three sizes actually occur; and the
+outcome agrees across dt = 1/30, 1/60 and 1/120 for at least 90% of seeds,
+guarding against this codebase's clamped-dt rAF loops making fairness
+frame-rate-dependent.
 
 ## `curveBoots.mts` — swipe-to-curve classification and stacking
 

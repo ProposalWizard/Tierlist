@@ -97,7 +97,7 @@ export default function StarDribbleDevPage() {
               key={runKey}
               pace={pace}
               oppStrength={oppStrength}
-              defenders={count}
+              rounds={count}
               assist={assist}
               seed={useFixedSeed ? seed : undefined}
               chaseEye={chaseEye}
@@ -128,7 +128,7 @@ export default function StarDribbleDevPage() {
 
           <div>
             <div className="text-xs font-bold text-white/70 mb-1">
-              {mode === "duel" ? "Defenders" : "Chasers"}
+              {mode === "duel" ? "Waves (1-3 men each)" : "Chasers"}
             </div>
             <div className="flex gap-2">
               {[1, 2, 3, 4].map(n => (
