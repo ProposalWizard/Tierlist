@@ -1379,3 +1379,66 @@ arrives, and holds there afterward rather than running through it;
 always inside the scenario's own viewport; the same seed always builds the
 same situation; and the power-from-pull helper is monotonic, clamps to
 [0,1], and gives a stronger player more power for the same pull.
+
+## `leagueMedia.mts` — the rest of the division has a voice now
+
+`npx tsx tests/star/leagueMedia.mts`
+
+Requested directly: an "England" tab on the phone that shows real news
+about other clubs and other players, not just yours — replacing the old
+All/News/Stats/Fans tags, which all filtered the SAME pool (your own club
+and career, sliced four different ways by subject matter). Investigated
+first, before building anything: the chant mechanic itself (media/
+chants.ts) turned out to be fully wired and reachable — it just only ever
+fires for an exact real name on your own squad, tagged "goal", which under
+the OLD tabs only ever showed under All or Fans. The actual gap was
+architectural: `playLeagueWeek` (season.ts) already simulates every OTHER
+fixture in the division each week, complete with named scorers off each
+club's real roster — that data just never reached the media engine, which
+until now only ever generated events about YOUR match or YOUR career.
+
+`lib/star/media/detect/league.ts` is the new, deliberately narrow pass:
+per other fixture, a `win`/`draw`/`loss`/`rout`/`hammered` event for BOTH
+sides and a `hat-trick`/`four-goals`/`five-goals` event for any named
+scorer with three or more, in the exact same event-id/tag/fact vocabulary
+`detect/result.ts`/`detect/goals.ts` already use for your own match. That
+turned out to be the whole trick: the existing "club" and "league"
+archetype templates were ALREADY club-name-generic (a club account's own
+"FULL TIME | {homeClub} {hs}-{as} {awayClub}" has never actually said
+"you"), so no new templates or accounts were needed — only a real bug in
+`select.ts`'s `allegiance()`, found and fixed before a single other-club
+event could safely exist: every event until now was always about
+`yourClub`, so keying "is this about my club" off `e.subject.kind !==
+"opponent"` happened to give the right answer without ever checking WHICH
+club. Rewritten to key off `e.facts.club` against each account's own
+allegiance — confirmed directly: a third club's own "club" account
+speaks fully for its own win (`allegiance === 1`), your own club's account
+returns exactly `0` for a match that isn't theirs (never zero before this
+fix, because the old check couldn't tell), and your own supporters drop to
+near-silent (`< 0.5`) on a result with nothing to do with them — while
+every existing event (still always about `yourClub`) measures identically
+to before, since `facts.club === yourClub` for every one of them.
+
+Also confirmed: `detectLeagueWeek` excludes the user's own fixture
+entirely (their match already went through `generateForMatch`, so
+covering it twice would double it); a different week's results never
+leak into this week's events; a hat-trick is named exactly (the real
+`full` name a new `SimGoal.full`/`role` pair carries — added to
+`leagueSquads.ts`'s `nameGoals` and `LeagueResult.hg`/`ag` specifically
+for this, since the existing `s` field there was always a short name); a
+brace or a single goal never misreads as a hat-trick; and an end-to-end
+run of real weeks produces posts under BOTH `StoredPost.scope` values
+("club" from the ordinary pipeline, "league" from this one — the new
+field the England/Club tabs actually filter on), with its own independent
+replay guard (`MediaState.lastLeagueCycleId`) so replaying a week's
+league-wide pass never posts twice — proven separately from, and without
+disturbing, the match/career cycle guard the "moment" walk-out-of-the-
+stadium screen depends on.
+
+Deliberately left out of this first pass: table-position drama (went-top,
+champions, relegated) for other clubs, and chants for a player at a club
+that isn't yours or your derby rival — both stay exactly as narrow as they
+already were rather than inventing twenty clubs' worth of new fan
+accounts. A real result and a real hat-trick elsewhere, reported by that
+club's own account and the neutral press, was the thing that was actually
+asked for.

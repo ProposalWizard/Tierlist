@@ -389,7 +389,20 @@ function weightedPick(
   return players[players.length - 1] ?? null;
 }
 
-export interface SimGoal { m: number; s: string; a?: string }
+export interface SimGoal {
+  m: number;
+  s: string;
+  a?: string;
+  /**
+   * The scorer's real full name and position — absent from every OTHER field
+   * on this record on purpose (`s` is the short name a scoreline already
+   * wants), but the one thing a media post about a goal nobody watched still
+   * needs: matching a real terrace chant (media/chants.ts) or a stat-page
+   * line needs the exact full name, not "M. Salah".
+   */
+  full?: string;
+  role?: string;
+}
 
 /**
  * Put names to the goals in a match nobody played.
@@ -414,6 +427,8 @@ export function nameGoals(squad: LeagueSquad | undefined, count: number, rng: ()
     out.push({
       m: 2 + Math.floor(rng() * 88),
       s: shortNameOf(scorer.name),
+      full: scorer.name,
+      role: scorer.position,
       ...(assister ? { a: shortNameOf(assister.name) } : {}),
     });
   }

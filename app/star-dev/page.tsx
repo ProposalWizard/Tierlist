@@ -24,7 +24,7 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForCareer, hasFreshMedia } from "@/lib/star/media/feed";
+import { generateForMatch, generateForCareer, generateForLeagueWeek, hasFreshMedia } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
@@ -565,6 +565,17 @@ export default function StarDevPage() {
     // The world reacts. Generated once, here, from the career on both sides of
     // the match — "went top" is a comparison and the after state cannot make it.
     next.media = generateForMatch(career, next, nextFixture, stats);
+    // …and so does the rest of the division, the same week — `next.results`
+    // already carries every OTHER fixture `playLeagueWeek` simulated
+    // alongside yours (empty on a cup/Europe/international week, when the
+    // domestic round doesn't run at all); only those belong to the new
+    // England-wide tab, since yours is already covered above.
+    const restOfWeek = (next.results ?? []).filter(
+      r => r.week === nextFixture.week && r.home !== career.player.club && r.away !== career.player.club,
+    );
+    if (restOfWeek.length) {
+      next.media = generateForLeagueWeek({ ...next, media: next.media }, restOfWeek);
+    }
     // …and again if the month ended with it, so the award is its own moment in
     // the feed rather than a line buried under the match report.
     if (potmAwarded) {

@@ -541,6 +541,17 @@ export interface StoredPost {
   metrics: { likes: number; reposts: number; replies: number };
   eventId: string;
   tags: Tag[];
+  /**
+   * "club" for everything that has ALWAYS been generated — your own match,
+   * your own career moments — and "league" for the newer weekly pass over
+   * the rest of the division (media/detect/league.ts). Drives the
+   * All/England/Club tabs (MediaFeed.tsx) without either tab having to
+   * inspect each post's own facts. Optional so a post saved before this
+   * field existed still renders under "All" and simply doesn't match
+   * either narrower tab — the honest answer for a post from before the
+   * distinction existed at all.
+   */
+  scope?: "club" | "league";
 }
 
 export interface Trend {
@@ -565,6 +576,11 @@ export interface MediaState {
    * post instantly visible and quietly delete the news cycle.
    */
   lastCycleClock: number;
+  /** Same idea as `lastCycleId`, but for the weekly league-wide pass
+   *  (media/detect/league.ts) — kept separate so that pass replaying a week
+   *  never collides with, or overwrites, the match/career cycle guard
+   *  above. Absent on a career saved before the league-wide pass existed. */
+  lastLeagueCycleId?: string;
 }
 
 export interface MediaCycle {
