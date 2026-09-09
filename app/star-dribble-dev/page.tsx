@@ -38,7 +38,7 @@ export default function StarDribbleDevPage() {
   const [pace, setPace] = useState(60);
   const [oppStrength, setOppStrength] = useState(55);
   const [count, setCount] = useState(3);
-  const [assist, setAssist] = useState(true);
+  const [assist, setAssist] = useState(false);
   const [useFixedSeed, setUseFixedSeed] = useState(false);
   const [seed, setSeed] = useState(1);
 
@@ -148,7 +148,7 @@ export default function StarDribbleDevPage() {
           {mode === "duel" && (
             <>
               <label className="flex items-center justify-between text-xs font-bold text-white/70">
-                Open-side assist glow
+                Open-side assist glow (shows the answer — off by default now)
                 <input type="checkbox" checked={assist} onChange={e => setAssist(e.target.checked)} />
               </label>
 

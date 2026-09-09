@@ -184,12 +184,17 @@ export interface FirstPersonDribbleProps {
   /** A fixed seed replays the exact same run every time (for tuning);
    *  omit it for a fresh random run on every attempt. */
   seed?: number;
+  /** The open-side glow during a telegraph — literally shows which way to
+   *  go, not just a hint. Off by default: reported directly that reading
+   *  the telegraph yourself, not being told the answer, is the actual
+   *  skill this mode is meant to test. An accessibility aid to turn back
+   *  on, not the intended default difficulty. */
   assist?: boolean;
   onComplete?: (result: { cleared: boolean }) => void;
 }
 
 export default function FirstPersonDribble({
-  pace = 60, oppStrength = 55, rounds = 3, seed, assist = true, onComplete,
+  pace = 60, oppStrength = 55, rounds = 3, seed, assist = false, onComplete,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
