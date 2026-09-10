@@ -129,7 +129,9 @@ function oracleRun(seed: number, oppStrength: number, mode: "correct" | "wrong")
 // mathematically could never clear CLEAR_SEP on its own). A wave's men are
 // placed across the corridor and won't always fully close that gap before
 // committing — occasionally one starts far enough away that even standing
-// completely still leaves you clear of him by dumb luck. Measured: 196/200.
+// completely still leaves you clear of him by dumb luck. Measured: 198/200
+// (after `press`; was 196/200 before it — a non-nearest man pressing less
+// makes this very slightly more likely, not less, which is the intent).
 {
   let losses = 0;
   const seeds = 200;
@@ -144,13 +146,16 @@ function oracleRun(seed: number, oppStrength: number, mode: "correct" | "wrong")
 
 // ── Reading every wave correctly clears a real, meaningfully high share of
 // runs — and clearly, repeatably beats reading it wrong. Measured against
-// 1000 seeds AFTER waves grew from one-to-three to one-to-four men: correct
-// 17.7%, wrong 4.8% cleared (wrong loses 95.2%) — down from the one-to-three
-// era's 34.4%/10.2%, which is exactly the point of the change: a wave can
-// now genuinely be a four-man bank, and this is the real, measured shape of
-// that harder difficulty curve, not a guess. Not the ~95% a single defender
-// alone still gets (measured separately below on the solo-wave subset) —
-// several men at once is supposed to be harder than one. ──────────────────
+// 1000 seeds AFTER `press` (see firstPersonDribble.ts's file header, "Why a
+// wave used to crowd you"): correct 27.1%, wrong 8.8% cleared (wrong loses
+// 91.2%) — up from 17.7%/4.8% before `press` existed, which is the actual
+// point of that change: reported directly that a wave of several men all
+// converging onto your exact lane made some waves ("get unlucky and get
+// four players") close to unwinnable regardless of how well you read them
+// — measured at the time as 0.9% clearable for the worst case (both of the
+// first two waves rolling four men), now 12.9%. Genuinely hard, not
+// "basically impossible" — several men at once is still supposed to be
+// harder than one (see the solo-wave subset below, still ~95%+). ─────────
 {
   const seeds = 1000;
   let correctCleared = 0, wrongCleared = 0, wrongLost = 0;
@@ -168,8 +173,9 @@ function oracleRun(seed: number, oppStrength: number, mode: "correct" | "wrong")
 
 // ── The same oracle, restricted to seeds where every wave happened to be a
 // solo man — the one case that's directly comparable to the original
-// single-defender design, and it should still hit that same ~95% mark.
-// Measured: 71/74 on 1000 seeds' worth of solo-only seeds. ─────────────────
+// single-defender design, and it should still hit that same ~95% mark: a
+// solo defender is always rank 0 in his own "wave" of one, so `press` is
+// 1.0 and nothing about his math changed. Measured: 35/36 on this sample. ──
 {
   let cleared = 0, soloSeeds = 0;
   for (let seed = 1; seed <= 2000 && soloSeeds < 200; seed++) {

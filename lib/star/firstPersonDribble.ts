@@ -89,6 +89,33 @@ import { CX } from "./pitch";
  * guess. Scales by WAVE now (every man in a wave shares that wave's
  * strength factor) rather than by an individual's position in a single
  * flat sequence.
+ *
+ * ── Why a wave used to crowd you, and `press` fixes it ──
+ *
+ * Reported directly, after actually playing it: "everyone just goes to
+ * where the ball is... they just leave huge gaps [everywhere else]... it's
+ * basically impossible if you get unlucky and get four players." True, and
+ * exactly what the code did: every man in a wave mirrored YOUR lane
+ * independently and identically (`closing`'s `read` chases `s.x`, same
+ * lag/speed for all of them) — the whole point of placing a wave across
+ * the corridor was to leave real gaps, but nothing stopped every man
+ * closing on the SAME gap (you) at once regardless of how far he started.
+ * A back four that all sprint to the ball is not a defence, it's a scrum.
+ *
+ * `press` fixes this at construction, once, per wave — ranked by each
+ * man's distance from your fixed starting lane (`CX`), same "visible in
+ * advance" spirit as placement itself: whoever starts closest presses at
+ * full mirrorSpeed, exactly as a solo defender always has (so a one-man
+ * wave, and the nearest man in any wave, is untouched — same math, same
+ * tests). Teammates farther out press less (`PRESS_STEPS`), so they hold
+ * more of their own starting ground instead of fully closing the lateral
+ * gap before they commit — some of them end up laterally far enough from
+ * you at commit that they were never a real threat, which is the actual
+ * "leaves a real gap" a spread defence is supposed to produce. Commit
+ * timing (purely depth-based) and the telegraph/lunge fairness math for
+ * whoever DOES end up close are completely untouched — this only changes
+ * how far a wave's outer men are willing to drift off their own line to
+ * get there.
  */
 
 export interface Vec2 { x: number; y: number; }
@@ -141,6 +168,15 @@ export interface FpDefender {
   /** Which wave he belongs to (0-based) — see `FpRunState.roundSizes` and
    *  `placeWave`. Every man in the same wave engages together. */
   round: number;
+  /** 0-1, how hard he presses toward your actual lane while closing — see
+   *  `newRun`'s ranking below. 1.0 for a solo wave or a wave's nearest man;
+   *  smaller for his teammates, so a bank of three or four doesn't collapse
+   *  onto the exact same spot (see the file header, "Why a wave used to
+   *  crowd you"). Only scales the CLOSING phase's lateral mirror — commit
+   *  timing (depth-based) and the lunge/telegraph fairness math are
+   *  untouched, so a man who DOES end up close still duels exactly as fairly
+   *  as ever. */
+  press: number;
 }
 
 export interface FpBurst {
@@ -225,6 +261,13 @@ const ENGAGE_D = 12;
 const COMMIT_D_BASE = 5.2;
 const TELL_BASE = 0.30;
 const LUNGE_T = 0.22;
+/** `press` by rank within a wave, nearest-to-you first — see the file
+ *  header's "Why a wave used to crowd you" section. Rank 0 (or a solo
+ *  wave) is always 1.0, so nothing changes for the case the original
+ *  fairness math and tests were built against. Ranks beyond this list
+ *  (a fifth-plus man, not currently reachable — waves cap at four) fall
+ *  back to the last entry rather than a hole. */
+const PRESS_STEPS = [1.0, 0.62, 0.4, 0.25];
 /**
  * How far he lurches once committed. Deliberately LESS than CLEAR_SEP — if
  * you never move at all, `lungeFrom` sits essentially on top of you (he
@@ -334,7 +377,15 @@ export function newRun(opts: {
     const factor = roundCount > 1 ? 0.85 + 0.15 * (r / (roundCount - 1)) : 1.0;
     const str = clamp(opts.oppStrength, 0, 100) * factor;
     const y = START_Y - FIRST_DUEL_DEPTH - DUEL_GAP * r;
-    for (const x of placeWave(size, rng)) {
+    const xs = placeWave(size, rng);
+    // Rank this wave's men by distance from your fixed starting lane —
+    // nearest presses hardest (see PRESS_STEPS / the file header). Ranking
+    // at construction, off the same fixed CX placement already uses, keeps
+    // a wave's whole shape decided upfront rather than shifting mid-run.
+    const order = xs.map((_, i) => i).sort((a, b) => Math.abs(xs[a] - CX) - Math.abs(xs[b] - CX));
+    const press = new Array<number>(size);
+    order.forEach((i, rank) => { press[i] = PRESS_STEPS[Math.min(rank, PRESS_STEPS.length - 1)]; });
+    xs.forEach((x, i) => {
       defenders.push({
         x,
         y,
@@ -353,8 +404,9 @@ export function newRun(opts: {
         lungeFrom: 0,
         lunge: 0,
         round: r,
+        press: press[i],
       });
-    }
+    });
   }
 
   return {
@@ -450,7 +502,15 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
     }
     case "closing": {
       def.read += (s.x - def.read) * Math.min(1, sdt / def.lagT);
-      def.x += clamp(def.read - def.x, -def.mirrorSpeed * sdt, def.mirrorSpeed * sdt);
+      // `press` caps how fast he's willing to actually cover ground toward
+      // that read, not the read itself — see the file header. At 1.0
+      // (a solo wave, or a wave's nearest man) this is exactly the original
+      // mirrorSpeed clamp; a teammate farther out moves toward you slower,
+      // so he genuinely can't fully close a wide starting gap before he
+      // commits, and stays a real, exploitable gap instead of arriving
+      // late to the same spot everyone else did.
+      const mirror = def.mirrorSpeed * def.press;
+      def.x += clamp(def.read - def.x, -mirror * sdt, mirror * sdt);
       def.y += def.closeSpeed * sdt;
       if (s.y - def.y <= def.commitD) {
         def.phase = "telegraph";
