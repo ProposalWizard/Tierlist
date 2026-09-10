@@ -17,7 +17,7 @@ import { mulberry32 } from "@/lib/star/season";
  * goal... it should just be to more space." So there is no shot here, no
  * goal anywhere in the drawing (see firstPersonRender.ts's own header) —
  * clearing the last wave IS the win. Originally exactly three men, engaged
- * strictly one at a time; changed directly to three WAVES of one to three
+ * strictly one at a time; changed directly to three WAVES of one to four
  * men each, randomly, placed across the corridor rather than spawned on
  * your lane — see firstPersonDribble.ts's own header for the full reasoning
  * and the fairness math that changed with it.
@@ -167,7 +167,7 @@ const TAP_NUDGE = 1.8; // metres your lane target jumps per tap
 export interface FirstPersonDribbleProps {
   pace?: number;
   oppStrength?: number;
-  /** How many waves — each one to three men, randomly, placed across the
+  /** How many waves — each one to four men, randomly, placed across the
    *  corridor rather than sprung on your lane. See firstPersonDribble.ts's
    *  own header on why: "instead of three opponents... you actually have
    *  three rounds... each wave has one to three players." */

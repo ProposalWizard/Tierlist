@@ -11,6 +11,7 @@ import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import ClubBadge from "./ClubBadge";
 
 interface Props {
   career: CareerState;
@@ -206,7 +207,10 @@ export default function LeagueScreen({ career }: Props) {
                       }`}
                     >
                       <div className="text-center font-black">{i + 1}</div>
-                      <div className="truncate">{t.name}</div>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <ClubBadge club={t.name} size={16} />
+                        <span className="truncate">{t.name}</span>
+                      </div>
                       <div className="text-center">{t.played}</div>
                       <div className="text-center">{t.won}</div>
                       <div className="text-center">{t.drawn}</div>
@@ -341,7 +345,10 @@ export default function LeagueScreen({ career }: Props) {
                               t.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
                           >
                             <div className="text-center font-black">{pos}</div>
-                            <div className="truncate">{t.name}</div>
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              <ClubBadge club={t.name} size={16} />
+                              <span className="truncate">{t.name}</span>
+                            </div>
                             <div className="text-center">{t.played}</div>
                             <div className="text-center">{t.won}</div>
                             <div className="text-center">{t.drawn}</div>

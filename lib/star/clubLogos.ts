@@ -35,6 +35,52 @@ export function normalizeClubKey(club: string): string {
     .replace(/[^a-z0-9]/g, ""); // drop spaces, dots, hyphens
 }
 
+/**
+ * Short forms a real logo dataset is just as likely to use as the star
+ * game's own full club name — "Man Utd" for Manchester United, "Brighton"
+ * for Brighton & Hove Albion. `normalizeClubKey` alone only survives
+ * cosmetic drift (accents, "&"), not an actual SHORTER name: "Man United"
+ * and "Manchester United" normalise to two different strings. Mirrors the
+ * alias table `kits.ts`'s own `BY_LOOSE` already carries for exactly this
+ * reason (kit colours have the identical problem) — duplicated rather than
+ * imported, per this file's own header on why club-name tables are kept
+ * local to whichever module needs them. Keyed by ALIAS here (several
+ * aliases can share one canonical club), values are the star game's own
+ * canonical name, i.e. what `CareerState`/`LeagueTeam.name` actually spell
+ * it as.
+ */
+const CLUB_LOGO_ALIASES: Record<string, string> = {
+  "man utd": "Manchester United", "man u": "Manchester United", "manu": "Manchester United",
+  "man united": "Manchester United",
+  "man city": "Manchester City", "city": "Manchester City",
+  "spurs": "Tottenham Hotspur", "tottenham": "Tottenham Hotspur",
+  "wolves": "Wolverhampton Wanderers", "wolverhampton": "Wolverhampton Wanderers",
+  "brighton": "Brighton & Hove Albion", "brighton and hove albion": "Brighton & Hove Albion",
+  "palace": "Crystal Palace",
+  "newcastle": "Newcastle United",
+  "forest": "Nottingham Forest", "nottm forest": "Nottingham Forest", "nottingham": "Nottingham Forest",
+  "leeds": "Leeds United",
+  "west ham": "West Ham United",
+  "villa": "Aston Villa",
+  "bournemouth": "AFC Bournemouth",
+  "fulham": "Fulham FC",
+  "boro": "Middlesbrough",
+  "qpr": "Queens Park Rangers",
+  "pne": "Preston North End",
+};
+
+/** Every key `l.club` could reasonably have been saved under for the given
+ *  CANONICAL club name — itself, plus any alias whose value matches it.
+ *  Tried in order against the fetched map, so a dataset that used either
+ *  spelling still resolves to the same badge. */
+function candidateKeysFor(club: string): string[] {
+  const keys = [normalizeClubKey(club)];
+  for (const [alias, canonical] of Object.entries(CLUB_LOGO_ALIASES)) {
+    if (canonical === club) keys.push(normalizeClubKey(alias));
+  }
+  return keys;
+}
+
 // club_logos is small and only changes when an admin re-imports it, so one
 // fetch covers every badge shown for a good while — cached in module scope
 // rather than re-querying every time a screen with a dozen badges mounts.
@@ -56,4 +102,22 @@ export async function getClubLogoMap(): Promise<Map<string, string>> {
   // caching it would blank every badge for the whole TTL.
   if (map.size > 0) cache = { map, at: Date.now() };
   return map;
+}
+
+/**
+ * The badge for a club, trying every spelling it could plausibly have been
+ * saved under (see `candidateKeysFor`) rather than the one exact key the
+ * star game itself uses. `ClubBadge` calls this instead of
+ * `map.get(normalizeClubKey(club))` directly — every real badge is
+ * imported by hand, from a file an admin put together outside this
+ * codebase, and there was never any guarantee it used the star game's own
+ * full club names rather than the same short forms `kits.ts` already has
+ * to survive for kit colours.
+ */
+export function lookupClubLogo(map: Map<string, string>, club: string): string | undefined {
+  for (const key of candidateKeysFor(club)) {
+    const hit = map.get(key);
+    if (hit) return hit;
+  }
+  return undefined;
 }

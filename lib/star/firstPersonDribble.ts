@@ -15,7 +15,7 @@ import { CX } from "./pitch";
  * transfers to a first-person camera — you cannot see a "line" through
  * several men from ground level, only whoever's actually in front of you,
  * right now. So this is a different shape entirely: three WAVES, each one
- * a bank of one to three defenders you meet together — every man in it a
+ * a bank of one to four defenders you meet together — every man in it a
  * single readable moment in his own right — he telegraphs a side, you read
  * it and burst the other way — and the goal is visible and growing from the
  * start, because in first person a growing goal on the horizon IS the sense
@@ -269,9 +269,9 @@ export function runSpeed(pace: number): number {
   return BASE_SPEED + clamp(pace, 0, 100) / 100 * PACE_SPEED;
 }
 
-/** How many men in a wave — "one to three players", uniformly. */
+/** How many men in a wave — "one to four players", uniformly. */
 function waveSize(rng: () => number): number {
-  return 1 + Math.floor(rng() * 3);
+  return 1 + Math.floor(rng() * 4);
 }
 
 /**
@@ -312,7 +312,7 @@ function placeWave(size: number, rng: () => number): number[] {
 /**
  * Set up a run.
  *
- * Three waves by default, each one to three men, ramped from a slightly
+ * Three waves by default, each one to four men, ramped from a slightly
  * easier first wave to a tougher last one — the ramp is entirely in
  * `tellT` (see the file header): a stronger defender telegraphs less,
  * never moves in some way you can't react to at all.

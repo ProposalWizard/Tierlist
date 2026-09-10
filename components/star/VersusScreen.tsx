@@ -152,27 +152,18 @@ export default function VersusScreen({ matchday, date, competition, results, onK
         </button>
 
         {/* ── The header ──
-            A floodlit panel, not a plain bar — two soft glows standing in for
-            the stadium lights raking in from the corners, a bordered
-            competition badge instead of bare uppercase text, and each team's
-            own formation directly under its own crest so the two can never
-            drift out of line with each other. `overflow-hidden` on this
-            outer wrapper is what lets the glows bleed to the panel's own
-            rounded corners without spilling past them. */}
+            A plain, dark panel — a bordered competition badge instead of
+            bare uppercase text, and each team's own formation directly
+            under its own crest so the two can never drift out of line with
+            each other. The floodlight glow this used to have in the corners
+            was reported directly as an unwanted "blur" rather than an
+            improvement, and pulled — this matches the given reference
+            image's own plain header treatment instead of a look of its own. */}
         <div
-          className="relative overflow-hidden rounded-t-xl border border-white/15 px-3 py-3"
+          className="rounded-t-xl border border-white/15 px-3 py-3"
           style={{ background: "linear-gradient(115deg, #051025 0%, #0b1530 32%, #1a0a12 68%, #2a0a10 100%)" }}
         >
-          <div
-            className="pointer-events-none absolute -top-10 left-0 h-28 w-28 rounded-full opacity-70"
-            style={{ background: "radial-gradient(circle, rgba(191,219,254,0.35), transparent 70%)" }}
-          />
-          <div
-            className="pointer-events-none absolute -top-10 right-0 h-28 w-28 rounded-full opacity-70"
-            style={{ background: "radial-gradient(circle, rgba(191,219,254,0.35), transparent 70%)" }}
-          />
-
-          <div className="relative mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1">
+          <div className="mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1">
             <BallIcon />
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/80">
               {compHead}
@@ -180,7 +171,7 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             </div>
           </div>
 
-          <div className="relative mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+          <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
             <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
               form={recentForm(home.club, results ?? [])} scouted={homeScouted} />
             <div className="flex flex-col items-center gap-1 pt-3">
@@ -235,48 +226,23 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             from the earlier pass too. */}
         <div className="relative">
           <div className="relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
-            {/* Mown stripes, alternating light/dark bands the full height of
-                the pitch — a real groundsman's pattern, not just one faint
-                highlight — so the two halves read as one cut pitch rather
-                than a plain fill. Drawn before the markings/glow so both sit
-                on top of it. */}
+            {/* Markings, drawn once and read by nothing. Kept plain and
+                close to the given reference image on purpose — a previous
+                pass added corner arcs, a D off each box and a floodlight
+                glow in the corners, reported directly as an unwanted
+                "blur" and "irregular circles" rather than an improvement.
+                Pulled back to the halfway line, centre circle and the two
+                boxes, plus one faint mown band so the pitch doesn't read as
+                a flat fill. */}
             <div className="pointer-events-none absolute inset-0">
               {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className={`absolute inset-x-0 ${i % 2 === 0 ? "bg-white/[0.045]" : "bg-black/[0.06]"}`}
-                  style={{ top: `${i * 12.5}%`, height: "12.5%" }} />
+                <div key={i} className="absolute inset-x-0 bg-white/[0.025]"
+                  style={{ top: `${i * 12.5}%`, height: "6.25%" }} />
               ))}
-            </div>
-
-            {/* Floodlight wash from all four corners — the same glow the
-                header panel uses above, so the pitch reads as lit by the
-                same stadium rather than a flat fill sitting under it. */}
-            <div className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full opacity-60"
-              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
-            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-60"
-              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
-            <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full opacity-60"
-              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
-            <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full opacity-60"
-              style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
-
-            {/* Markings, drawn once and read by nothing. */}
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-x-0 top-1/2 h-px bg-white/35" />
-              <div className="absolute left-1/2 top-1/2 h-[11%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/35" />
-              <div className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/60" />
-              {/* Each box, its penalty spot, and the D arcing off it. */}
-              <div className="absolute left-1/2 top-0 h-[11%] w-[46%] -translate-x-1/2 border-x border-b border-white/35" />
-              <div className="absolute left-1/2 top-[7.5%] h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-white/60" />
-              <div className="absolute left-1/2 top-[11%] h-[7%] w-[16%] -translate-x-1/2 rounded-b-full border-b border-x border-white/35" />
-              <div className="absolute bottom-0 left-1/2 h-[11%] w-[46%] -translate-x-1/2 border-x border-t border-white/35" />
-              <div className="absolute bottom-[7.5%] left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-white/60" />
-              <div className="absolute bottom-[11%] left-1/2 h-[7%] w-[16%] -translate-x-1/2 rounded-t-full border-t border-x border-white/35" />
-              {/* Corner arcs — a quarter-circle carved from each corner by
-                  rounding only the inward-facing edge of a small square. */}
-              <div className="absolute left-0 top-0 h-[3.5%] w-[3.5%] rounded-br-full border-b border-r border-white/35" />
-              <div className="absolute right-0 top-0 h-[3.5%] w-[3.5%] rounded-bl-full border-b border-l border-white/35" />
-              <div className="absolute bottom-0 left-0 h-[3.5%] w-[3.5%] rounded-tr-full border-t border-r border-white/35" />
-              <div className="absolute bottom-0 right-0 h-[3.5%] w-[3.5%] rounded-tl-full border-t border-l border-white/35" />
+              <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
+              <div className="absolute left-1/2 top-1/2 h-[11%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30" />
+              <div className="absolute left-1/2 top-0 h-[11%] w-[46%] -translate-x-1/2 border-x border-b border-white/30" />
+              <div className="absolute bottom-0 left-1/2 h-[11%] w-[46%] -translate-x-1/2 border-x border-t border-white/30" />
             </div>
 
             {homeScouted
