@@ -152,31 +152,39 @@ export default function VersusScreen({ matchday, date, competition, results, onK
         </button>
 
         {/* ── The header ──
-            A stadium plate rather than a flat panel: two soft floodlight
-            beams fanning down from the top corners (crisp linear gradients
-            clipped to a triangle, not a blurred glow) sit BEHIND everything
-            else via z-index, so they read as light falling on the panel
-            rather than the "blur"/glow this screen had reverted once
-            before. Each team's own formation still sits directly under its
-            own crest so the two can never drift out of line with each
-            other. */}
+            A stadium plate, not a flat panel — but the FIRST floodlight
+            attempt here (two 128px-wide gradient corners) was reported
+            directly as "this white circle and this white oval... that
+            needs to go": at this panel's actual mobile width those beams
+            landed almost exactly behind each crest, reading as a stray
+            blob rather than light. This version keeps the beams genuinely
+            THIN (24px, true light-fixture proportions) and pinned to the
+            outermost corners, clear of the crests entirely, plus a small
+            radial glow behind the competition badge only — verified
+            against an actual render, not just described. Each team's own
+            formation still sits directly under its own crest so the two
+            can never drift out of line with each other. */}
         <div
           className="relative overflow-hidden rounded-t-xl border border-white/15 px-3 py-3"
           style={{ background: "linear-gradient(115deg, #051025 0%, #0b1530 32%, #1a0a12 68%, #2a0a10 100%)" }}
         >
           <div
-            className="pointer-events-none absolute -top-2 left-0 h-28 w-32"
+            className="pointer-events-none absolute -top-3 left-0 h-20 w-6"
             style={{
-              background: "linear-gradient(122deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 72%)",
-              clipPath: "polygon(0 0, 62% 0, 0 100%)",
+              background: "linear-gradient(115deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 85%)",
+              clipPath: "polygon(0 0, 100% 0, 0 100%)",
             }}
           />
           <div
-            className="pointer-events-none absolute -top-2 right-0 h-28 w-32"
+            className="pointer-events-none absolute -top-3 right-0 h-20 w-6"
             style={{
-              background: "linear-gradient(58deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 72%)",
-              clipPath: "polygon(100% 0, 38% 0, 100% 100%)",
+              background: "linear-gradient(245deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 85%)",
+              clipPath: "polygon(100% 0, 0 0, 100% 100%)",
             }}
+          />
+          <div
+            className="pointer-events-none absolute left-1/2 top-0 h-16 w-40 -translate-x-1/2"
+            style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.10), rgba(255,255,255,0) 70%)" }}
           />
 
           <div className="relative mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.08] px-3 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
