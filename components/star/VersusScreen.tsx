@@ -152,18 +152,34 @@ export default function VersusScreen({ matchday, date, competition, results, onK
         </button>
 
         {/* ── The header ──
-            A plain, dark panel — a bordered competition badge instead of
-            bare uppercase text, and each team's own formation directly
-            under its own crest so the two can never drift out of line with
-            each other. The floodlight glow this used to have in the corners
-            was reported directly as an unwanted "blur" rather than an
-            improvement, and pulled — this matches the given reference
-            image's own plain header treatment instead of a look of its own. */}
+            A stadium plate rather than a flat panel: two soft floodlight
+            beams fanning down from the top corners (crisp linear gradients
+            clipped to a triangle, not a blurred glow) sit BEHIND everything
+            else via z-index, so they read as light falling on the panel
+            rather than the "blur"/glow this screen had reverted once
+            before. Each team's own formation still sits directly under its
+            own crest so the two can never drift out of line with each
+            other. */}
         <div
-          className="rounded-t-xl border border-white/15 px-3 py-3"
+          className="relative overflow-hidden rounded-t-xl border border-white/15 px-3 py-3"
           style={{ background: "linear-gradient(115deg, #051025 0%, #0b1530 32%, #1a0a12 68%, #2a0a10 100%)" }}
         >
-          <div className="mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1">
+          <div
+            className="pointer-events-none absolute -top-2 left-0 h-28 w-32"
+            style={{
+              background: "linear-gradient(122deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 72%)",
+              clipPath: "polygon(0 0, 62% 0, 0 100%)",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute -top-2 right-0 h-28 w-32"
+            style={{
+              background: "linear-gradient(58deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 72%)",
+              clipPath: "polygon(100% 0, 38% 0, 100% 100%)",
+            }}
+          />
+
+          <div className="relative mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.08] px-3 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
             <BallIcon />
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/80">
               {compHead}
@@ -171,7 +187,7 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             </div>
           </div>
 
-          <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+          <div className="relative mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
             <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
               form={recentForm(home.club, results ?? [])} scouted={homeScouted} />
             <div className="flex flex-col items-center gap-1 pt-3">
@@ -226,24 +242,22 @@ export default function VersusScreen({ matchday, date, competition, results, onK
             from the earlier pass too. */}
         <div className="relative">
           <div className="relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
-            {/* Markings, drawn once and read by nothing. Kept plain and
-                close to the given reference image on purpose — a previous
-                pass added corner arcs, a D off each box and a floodlight
-                glow in the corners, reported directly as an unwanted
-                "blur" and "irregular circles" rather than an improvement.
-                Pulled back to the halfway line, centre circle and the two
-                boxes, plus one faint mown band so the pitch doesn't read as
-                a flat fill. */}
-            <div className="pointer-events-none absolute inset-0">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className="absolute inset-x-0 bg-white/[0.025]"
-                  style={{ top: `${i * 12.5}%`, height: "6.25%" }} />
-              ))}
-              <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
-              <div className="absolute left-1/2 top-1/2 h-[11%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30" />
-              <div className="absolute left-1/2 top-0 h-[11%] w-[46%] -translate-x-1/2 border-x border-b border-white/30" />
-              <div className="absolute bottom-0 left-1/2 h-[11%] w-[46%] -translate-x-1/2 border-x border-t border-white/30" />
-            </div>
+            {/* Mown stripes as real alternating bands (not a near-invisible
+                0.025-opacity tint) plus a soft center-lit vignette, so the
+                grass itself reads as turf under floodlights rather than a
+                flat fill. */}
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.05) 12.5%, rgba(0,0,0,0.05) 12.5%, rgba(0,0,0,0.05) 25%)",
+              }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: "radial-gradient(ellipse 70% 55% at 50% 50%, rgba(255,255,255,0.05), rgba(0,0,0,0.18) 100%)" }}
+            />
+            <PitchMarkings />
 
             {homeScouted
               ? home.xi.map(p => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} />)
@@ -355,6 +369,48 @@ function FormRow({ form }: { form: Result[] }) {
 
 /** See components/star/ClubCrest.tsx — shared with the match-day header now. */
 const Crest = ClubCrest;
+
+/**
+ * The full set of pitch markings, drawn once as an SVG rather than a stack
+ * of CSS boxes/rounded-borders — the previous CSS-only attempt at a D-arc
+ * and corner arcs (border-radius tricks) was reported directly as "irregular
+ * circles". Real `<path>` arcs read as a real pitch instead.
+ *
+ * viewBox is 300×490 to match the pitch box's own aspect-[3/4.9] exactly, so
+ * a shape drawn with equal x/y radii lands on screen as a true circle rather
+ * than a squashed ellipse. Every number below is a real pitch measurement
+ * (68m wide, 105m long, standard box/arc/spot distances) mapped onto that
+ * viewBox — not eyeballed percentages.
+ */
+function PitchMarkings() {
+  const stroke = "rgba(255,255,255,0.34)";
+  const sw = 1.4;
+  return (
+    <svg viewBox="0 0 300 490" className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none">
+      {/* outer boundary, inset slightly off the box edge */}
+      <rect x={2} y={2} width={296} height={486} fill="none" stroke={stroke} strokeWidth={sw} />
+      {/* halfway line + centre circle + spot */}
+      <line x1={2} y1={245} x2={298} y2={245} stroke={stroke} strokeWidth={sw} />
+      <ellipse cx={150} cy={245} rx={40.4} ry={42.7} fill="none" stroke={stroke} strokeWidth={sw} />
+      <circle cx={150} cy={245} r={1.6} fill={stroke} />
+      {/* top penalty box, 6-yard box, spot and D */}
+      <rect x={61} y={2} width={178} height={75} fill="none" stroke={stroke} strokeWidth={sw} />
+      <rect x={109.6} y={2} width={80.8} height={25.7} fill="none" stroke={stroke} strokeWidth={sw} />
+      <circle cx={150} cy={53.3} r={1.6} fill={stroke} />
+      <path d="M 117.7 77 A 40.4 42.7 0 0 0 182.3 77" fill="none" stroke={stroke} strokeWidth={sw} />
+      {/* bottom penalty box, 6-yard box, spot and D — mirrored */}
+      <rect x={61} y={413} width={178} height={75} fill="none" stroke={stroke} strokeWidth={sw} />
+      <rect x={109.6} y={461.7} width={80.8} height={25.7} fill="none" stroke={stroke} strokeWidth={sw} />
+      <circle cx={150} cy={436.7} r={1.6} fill={stroke} />
+      <path d="M 117.7 413 A 40.4 42.7 0 0 1 182.3 413" fill="none" stroke={stroke} strokeWidth={sw} />
+      {/* corner arcs */}
+      <path d="M 6.5 2 A 4.5 4.7 0 0 1 2 8.7" fill="none" stroke={stroke} strokeWidth={sw} />
+      <path d="M 298 8.7 A 4.5 4.7 0 0 1 293.5 2" fill="none" stroke={stroke} strokeWidth={sw} />
+      <path d="M 2 481.3 A 4.5 4.7 0 0 1 6.5 488" fill="none" stroke={stroke} strokeWidth={sw} />
+      <path d="M 293.5 488 A 4.5 4.7 0 0 1 298 481.3" fill="none" stroke={stroke} strokeWidth={sw} />
+    </svg>
+  );
+}
 
 /** The competition badge's own mark — a plain ball, so the badge reads as
  *  "this is a match" before a single word of it is read. */
