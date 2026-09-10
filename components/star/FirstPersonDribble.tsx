@@ -119,9 +119,27 @@ const FLICK_MIN_SPEED_FRAC = 1.6; // canvas-widths per second
 // ── The chase-cam — see the file header on why this replaced eyes-level.
 // Defaults chosen to see both lanes and the gap between them clearly
 // without floating so far back the duel stops feeling close; exposed as
-// props so the dev sandbox can tune them live (no browser this session).
-const DEFAULT_CHASE_EYE = 4.5;      // metres — how high the camera sits
-const DEFAULT_CHASE_PITCH_DEG = 22; // degrees — how far down it tilts
+// props so the dev sandbox can tune them live.
+//
+// eye/pitch retuned from 4.5m/22° to 3.2m/15° — reported directly: "the
+// ball still reads as behind/attached to the player's body... in front
+// from the chase-cam", with the leg/reach motion looking unnatural on top
+// of that. Verified with the real project() formula (firstPersonView.ts),
+// not guessed: at 4.5m/22°, a ball sitting BALL_BASE_LEAD (0.95m) ahead of
+// your feet projects to 0.303·focal below the horizon — almost exactly
+// your own HIP's 0.296·focal, and nowhere near your ankle's 0.395 or your
+// feet's 0.425. The ball being farther from the camera than your feet (it
+// has to be, to stay ahead of you) pushes it UP-screen at this pitch/
+// height enough to land in the hip band regardless of how much lead it's
+// given — more lead makes this WORSE (farther still), not better. A
+// lower, less-tilted camera changes that trade-off: at 3.2m/15° the same
+// 0.95m-lead ball projects to 0.277·focal, clearly below the hip (0.210)
+// and much closer to the ankle (0.335) than before — reads as grounded,
+// not worn. Still an elevated, tilted-down chase-cam (not a reversion to
+// eyes-level, which was reported as too hard to read the gap with) — just
+// not tilted/elevated enough to fight the ball's own depth against it.
+const DEFAULT_CHASE_EYE = 3.2;      // metres — how high the camera sits
+const DEFAULT_CHASE_PITCH_DEG = 15; // degrees — how far down it tilts
 const DEFAULT_CHASE_OFFSET = 4.5;   // metres BEHIND your actual position
 
 // ── Camera lag — see the file header. Higher = snappier (closer to the
@@ -153,6 +171,12 @@ const BALL_SPRING_C = 17;             // damping — under-damped on purpose, fo
 // unchanged) — the fix is giving it enough extra clearance ahead of your
 // feet that the touch spring's lateral swing lands it clearly beside your
 // leg in open grass instead of overlapping it.
+// Left at their original 0.95/1.8m values — the chase-cam retune above
+// (see DEFAULT_CHASE_EYE/PITCH_DEG's own note) fixes the "reads as
+// attached to your body" complaint by changing how a given lead PROJECTS
+// vertically, not by changing the lead itself. Shrinking lead instead
+// would reopen the older, already-fixed bug this constant exists for: the
+// touch spring's lateral swing colliding with your own swinging leg.
 const BALL_BASE_LEAD = 0.95;          // metres in front of your feet at rest
 const BALL_BURST_LEAD = 1.8;          // metres in front during/just after a burst
 const TOUCH_WAVE_LEN = 1.3;           // metres of stride per forward push-glide cycle

@@ -92,7 +92,17 @@ export async function getClubLogoMap(): Promise<Map<string, string>> {
 
   const supabase = createClient();
   const map = new Map<string, string>();
-  const { data } = await supabase.from("club_logos").select("club, logo_url").limit(5000);
+  const { data, error } = await supabase.from("club_logos").select("club, logo_url").limit(5000);
+  // Reported directly: every badge on the team-sheet screen still falls back
+  // to the plain kit-and-initials circle even after `candidateKeysFor` was
+  // added to survive a short-name dataset. That fix can only ever help if
+  // `data` actually came back with rows in it — this used to discard
+  // `error` entirely, so an RLS reject, a missing table, or any other read
+  // failure looked EXACTLY like "the table is just empty", with nothing in
+  // the browser console to tell the two apart. Logged, not thrown: a badge
+  // screen with one console warning is still fully usable; one that throws
+  // on every render is not.
+  if (error) console.error("club_logos read failed — every badge will fall back to initials:", error.message);
   ((data ?? []) as { club: string; logo_url: string }[]).forEach(l => {
     const key = normalizeClubKey(l.club || "");
     if (key && !map.has(key)) map.set(key, l.logo_url);

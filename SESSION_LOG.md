@@ -5,6 +5,32 @@
 > `CLAUDE.md` keeps only the current architecture/state; this file is the archive.
 > New session summaries should be appended here, not to `CLAUDE.md`.
 
+## Session: 19 August 2026 — Missing player images site-wide, teammate finishing rebalanced twice, cup/Europe draw ceremony, club strength from real squads
+
+Started from "a lot of players have missing images" and grew into most of a full pass over Draft mode and the star career game's fairness/realism systems. Fourteen commits.
+
+- **Missing images, root-caused**: SoFIFA's CDN now requires a signed-in session to serve a face at all — every `sofifa_players.image_url` is a raw hotlink, so both the live `<img>` tags and the scraper's own anonymous fetches started failing. Fixed the scraper (`scripts/scrape_missing.py`, four iterations: HTTP 403 → CORS-blocked fetch → a real `<img>` element + Playwright network capture, which works) and added two upload scripts that self-host copies in Supabase Storage instead of hotlinking: `upload_player_images.py` (the current 506-player roster) and `upload_pl_draft_images.py --year=YYYY` (Draft mode's archive, one PL edition at a time — year-suffixed filenames on purpose, since the same real player can have a different photo across editions). See "PL Draft — Data Status" in `CLAUDE.md`.
+- **The silhouette placeholder, made consistent**: `lib/silhouette.ts` exports one `SILHOUETTE_SRC`, now used everywhere a player has no photo — it originated in Draft's player card but Draft mode turned out to have ~10 OTHER places with their own blank-circle or initials fallback (`DraftPick.tsx`, `SquadManagerDev.tsx`, `CareerRecap.tsx`, `app/draft/page.tsx`), all now fixed, plus the star career team-sheet/squad screens.
+- **Teammate finishing, tuned twice in opposite directions**: first fix — `RECEIVER_CONTROL` scaled a receiver's shot-placement CEILING down with situation difficulty, not just the average, so a header/corner/cross could never mathematically clear the keeper's reach no matter how good the finish (reported as "always straight at the keeper, always saved"). Fixed by raising the floor under how much `control` shrinks the ceiling. That overcorrected — reported as 6 goals from 8 passes in one match, "if there's no defender it just goes in." Root cause was `readsKeeper` (which side to aim for) peaking at 86% for a maxed-out cutback, at which point the placement fix's now-higher ceiling reliably cleared even the best keeper. Brought `readsKeeper`'s peak down to 72%. Both fixes verified against `tests/star/finishing.mts`.
+- **Finisher skill, tied to the actual player**: `Receiver.skill` was a fresh random roll every single chance, completely disconnected from the real squad player standing there. `Identity` now carries `overall`, and at reception `receiver.skill` becomes that real player's rating (± real day-to-day noise). Also added `ambition`, a mean-1.0 random multiplier on how far off-centre a shot aims.
+- **Cup/Europe knockout draws are now a ceremony**: `CupDrawReveal.tsx` — a "Run the Draw" screen that reveals a round's ties one at a time, skippable, wired into `continueAfterMatch` in `app/star-dev/page.tsx`.
+- **Every competition now resolves to a real winner, not just yours**: `finishCupToWinner()` (`lib/star/cups.ts`), `crownWithoutYou()` (`lib/star/euro.ts`), `seasonQualifiers()` (`lib/star/competitions.ts`). Community Shield/Super Cup (`seedPreSeason`) now check `CareerState.lastSeasonWinners` instead of the player's own trophy cabinet.
+- **Club strength, derived rather than rolled**: `averageStartingXIRating()`/`syncLeagueStrengthFromSquads()` (`lib/star/leagueSquads.ts`) read `LeagueTeam.strength` off the actual squad's first eleven, resynced at every point `leagueSquads` changes.
+- **A genuinely isolated test sandbox**: `/star-match-dev` now runs `CanvasMatchTest.tsx` on a full fork of the engine (`canvasEngineTest.ts`/`hiddenMatchTest.ts`).
+- Also: the in-match star above the human player was centred on the chin with a radius almost as big as the head — halved and repositioned.
+
+## Session: 7 August 2026 — Star career match engine rebuilt against the NSS specification
+
+Twelve items, five commits, five new test suites under `tests/star/`. Every constant tuned by measurement rather than by eye — `tests/star/README.md` records both the numbers and the mistakes the measurements caught.
+
+- **Hidden match** (`lib/star/hiddenMatch.ts`) — chances used to arrive on a countdown with an independent coin flip for opponent goals. There is now a match around you: possession, five-zone territory, momentum. Set pieces come from moves breaking down.
+- **Support play** — team-mates were a `Vec2[]` nothing read. Now: `spaceScore`, supporting runs that re-read the pitch every 0.3s, pursuit of a ball not played straight at anyone, and a completed pass chaining into the next decision built from where the ball actually arrived.
+- **Defending** — interception with commitment, recovery runs, live offside on the through-ball.
+- **Contest** — ball ownership, 50-50s on a loose ball, aerial duels on headers, first touch on a chained scenario.
+- **Perception** — vision changes what you are told, not how accurately you strike; energy drains across the match and costs execution only.
+
+Verified end to end: 300 full simulated matches, no soft-locks, 6.5 chances and 1.75 goals per match.
+
 ## Session: 4 August 2026 — American draft performance + six-agent site-wide audit
 
 American draft: the era pool is now also persisted to Supabase Storage (`draft-cache/` in the existing bucket) so a cold serverless instance recovers it with one read instead of ~28 queries; each round's pool is pre-built ("staged") during the previous round and consumed on advance; the pick response carries the authoritative state so the board updates with no Realtime round-trip; clients prefetch the next round's images. Also fixed: position eligibility now defers to `positionFitness` (≥0.98) rather than a position-string list, weak-card threshold +3 per season and draw weight 0.10 → 0.03, replacement signings join the bench, and `AM_POSITION_SEQUENCE` now matches the 4-3-3 in `formations.ts` (it drafted three CMs where the formation wants a CDM, so every squad had a midfielder stuck out of position).

@@ -45,8 +45,8 @@ export default function StarDribbleDevPage() {
   // Chase-cam tuning (duel mode only) — see FirstPersonDribble.tsx's own
   // header on why the camera moved off eyes-level, and its DEFAULT_CHASE_*
   // constants for what these default to.
-  const [chaseEye, setChaseEye] = useState(4.5);
-  const [chasePitchDeg, setChasePitchDeg] = useState(22);
+  const [chaseEye, setChaseEye] = useState(3.2);
+  const [chasePitchDeg, setChasePitchDeg] = useState(15);
   const [chaseOffset, setChaseOffset] = useState(4.5);
 
   // Dribble-feel tuning — see FirstPersonDribble.tsx's own header (the
