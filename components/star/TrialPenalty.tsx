@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepBallInNet,
+  settleBall, stepBallPastBar, dragForFullPower,
   clamp, type Ball, type Outcome, type Scenario, type Viewport,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
@@ -91,10 +92,26 @@ type Phase = "aim" | "contact" | "flight" | "missed";
  * first scenario exists.
  */
 const FALLBACK_VIEW: Viewport = { x1: BOX_L - 2, x2: BOX_R + 2, y1: -NET_DEPTH - 1.5, y2: PEN_SPOT_Y + 5 };
-/** Same dead-zone rule the real game uses — a press that slips is not a shot. */
-const MIN_PULL = 0.04;
-/** How far you must pull for full power, as a fraction of the canvas height. */
-const FULL_POWER_PULL = 0.16;
+/**
+ * The same two aim constants CanvasMatch.tsx's own real penalties use — not
+ * a separate, hand-picked pair. Reported directly: this trial "feels
+ * different" from a real in-match penalty, harder to keep off the post.
+ * It had quietly drifted from the real thing on both of these: `MIN_PULL`
+ * was still 0.04, a dead-zone CanvasMatch.tsx itself used to have before
+ * its own aim/power-feel pass brought it down to 0.008 (this file's old
+ * comment even still claimed parity it no longer had); and
+ * `FULL_POWER_PULL` was a flat 0.16, while a real match computes it from
+ * the shooter's own power via `dragForFullPower` (0.115-0.14, never as
+ * high as 0.16) — so the exact same drag that reaches full power in a
+ * real match fell short of it here, every time. `launch()` below already
+ * hard-codes this trial's shooter at power/technique 62 (a career's very
+ * first penalty, before any real stats exist to read) — `dragForFullPower`
+ * uses that same number, so the two numbers this screen already commits to
+ * (the shooter's assumed skill, and how far a drag has to travel) finally
+ * agree with each other instead of one of them being stale.
+ */
+const MIN_PULL = 0.008;
+const FULL_POWER_PULL = dragForFullPower(62);
 
 export default function TrialPenalty({ onScored, club }: { onScored: () => void; club: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -233,7 +250,29 @@ export default function TrialPenalty({ onScored, club }: { onScored: () => void;
           if (res) {
             outcomeRef.current = res;
             settle = 0;
+            // The outcome is decided, but the ball itself must not just stop
+            // dead the instant it is — reported directly as "the ball just
+            // gets stuck on the post". `ball.settling` is what CanvasMatch's
+            // own real matches gate `settleBall`'s pure roll-on physics
+            // behind (gravity, bounce, friction, no collisions), but the
+            // shared engine only ever sets it itself for one narrow case (a
+            // defender winning a loose ball) — every OTHER miss (a post that
+            // dies without a second bounce, a shot that drifts wide, one the
+            // keeper smothers) resolves with the flag never set, which is
+            // exactly the frame a real post-hit was reported freezing on.
+            // Owning the flag here, for every miss this screen can produce,
+            // is what actually stops that: the ball keeps visibly rolling
+            // through the settle beat below instead of announcing a result
+            // over a dead frame. `over` sets its own continuation
+            // (`ball.overBar`, read below) and a goal already has
+            // `ball.inNet` — this only ever applies to the ones that need it.
+            if (!ball.overBar) ball.settling = true;
           }
+        } else {
+          // See the comment above — this is the settle beat itself, keeping
+          // the ball visibly moving through it rather than frozen.
+          if (ball.settling) settleBall(ball, dt, sc);
+          if (ball.overBar) stepBallPastBar(ball, dt);
         }
         if (outcomeRef.current) {
           settle += dt;

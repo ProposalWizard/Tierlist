@@ -7,7 +7,7 @@ import { mulberry32 } from "../../lib/star/season";
 
 /**
  * THE FIRST-PERSON DUEL — IS IT ACTUALLY FAIR, ACTUALLY WINNABLE, ACTUALLY
- * REQUIRING A BURST? NOW WITH WAVES OF ONE TO THREE MEN, NOT JUST ONE.
+ * REQUIRING A BURST? NOW WITH WAVES OF ONE TO FOUR MEN, NOT JUST ONE.
  *
  * Same idiom as every other suite here: a problems[] array, PASS/FAIL,
  * process.exit(1) on failure. What makes this suite worth writing at all is
@@ -16,7 +16,7 @@ import { mulberry32 } from "../../lib/star/season";
  * play the way it's meant to.
  *
  * Changed directly from three men engaged strictly one at a time to three
- * WAVES of one to three men each, placed across the corridor rather than
+ * WAVES of one to four men each, placed across the corridor rather than
  * spawned on your lane. The "oracle" below had to change to match how a
  * real player would actually read it: it now (1) steers toward the widest
  * gap between a wave's men the moment they come into view — the entire
@@ -144,11 +144,13 @@ function oracleRun(seed: number, oppStrength: number, mode: "correct" | "wrong")
 
 // ── Reading every wave correctly clears a real, meaningfully high share of
 // runs — and clearly, repeatably beats reading it wrong. Measured against
-// 1000 seeds: correct 34.4%, wrong 10.2% cleared (wrong loses 89.8%). Not
-// the ~95% a single defender alone gets (measured separately below on the
-// solo-wave subset) — three men at once is supposed to be harder than one,
-// and this is the real, measured shape of that difficulty curve, not a
-// guess. ─────────────────────────────────────────────────────────────────
+// 1000 seeds AFTER waves grew from one-to-three to one-to-four men: correct
+// 17.7%, wrong 4.8% cleared (wrong loses 95.2%) — down from the one-to-three
+// era's 34.4%/10.2%, which is exactly the point of the change: a wave can
+// now genuinely be a four-man bank, and this is the real, measured shape of
+// that harder difficulty curve, not a guess. Not the ~95% a single defender
+// alone still gets (measured separately below on the solo-wave subset) —
+// several men at once is supposed to be harder than one. ──────────────────
 {
   const seeds = 1000;
   let correctCleared = 0, wrongCleared = 0, wrongLost = 0;
@@ -159,7 +161,7 @@ function oracleRun(seed: number, oppStrength: number, mode: "correct" | "wrong")
     if (wp === "lost") wrongLost++;
   }
   const correctRate = correctCleared / seeds, wrongRate = wrongCleared / seeds, wrongLostRate = wrongLost / seeds;
-  check(correctRate >= 0.25, `reading every wave correctly clears a real share of runs (${(correctRate * 100).toFixed(1)}%)`);
+  check(correctRate >= 0.15, `reading every wave correctly clears a real share of runs (${(correctRate * 100).toFixed(1)}%)`);
   check(wrongLostRate >= 0.80, `reacting into the telegraphed lane instead of away from it loses the great majority of the time (${(wrongLostRate * 100).toFixed(1)}%)`);
   check(correctRate > wrongRate * 2, `reading it right clears more than twice as often as reading it wrong (${(correctRate * 100).toFixed(1)}% vs ${(wrongRate * 100).toFixed(1)}%)`);
 }
@@ -426,18 +428,18 @@ function telegraphWindows(oppStrength: number, seeds: number): number[] {
   check(Math.abs(runProgress(s) - 1) < 1e-9, "progress reaches 1 at clearY");
 }
 
-// ── Wave sizes are 1-3, and vary — the actual "random chance" requested ────
+// ── Wave sizes are 1-4, and vary — the actual "random chance" requested ────
 {
   const seen = new Set<number>();
   for (let seed = 1; seed <= 300; seed++) {
     const s = newRun({ pace: 60, oppStrength: 60, rng: mulberry32(seed * 101 + 7) });
     check(s.roundSizes.length === 3, `three waves by default (${s.roundSizes.length})`);
     for (const n of s.roundSizes) {
-      check(n >= 1 && n <= 3, `every wave has one to three men, never more or fewer (saw ${n})`);
+      check(n >= 1 && n <= 4, `every wave has one to four men, never more or fewer (saw ${n})`);
       seen.add(n);
     }
   }
-  check(seen.has(1) && seen.has(2) && seen.has(3), `all three wave sizes actually occur across enough seeds (saw ${[...seen].sort()})`);
+  check(seen.has(1) && seen.has(2) && seen.has(3) && seen.has(4), `all four wave sizes actually occur across enough seeds (saw ${[...seen].sort()})`);
 }
 
 if (problems.length) {
@@ -445,4 +447,4 @@ if (problems.length) {
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — waves of one to three men are winnable by reading them, unwinnable by ignoring them, and fair on a phone");
+console.log("PASS — waves of one to four men are winnable by reading them, unwinnable by ignoring them, and fair on a phone");

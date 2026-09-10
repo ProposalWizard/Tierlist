@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { kitsOf, labelInk, type Kit } from "@/lib/star/kits";
-import { getClubLogoMap, normalizeClubKey } from "@/lib/star/clubLogos";
+import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
 
 /**
  * THE CIRCLE ITSELF — REAL BADGE WHEN ONE EXISTS, THE OLD KIT-COLOUR-PLUS-
@@ -27,7 +27,7 @@ export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?
     setFailed(false);
     let alive = true;
     getClubLogoMap().then(map => {
-      if (alive) setLogoUrl(map.get(normalizeClubKey(club)) ?? null);
+      if (alive) setLogoUrl(lookupClubLogo(map, club) ?? null);
     });
     return () => { alive = false; };
   }, [club]);
