@@ -204,10 +204,21 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
                   return (
                     <div
                       key={`${tie.home}-${tie.away}-${i}`}
+                      // A real dark backdrop behind every tie, not just a
+                      // near-transparent wash — reported directly: the
+                      // stadium-floodlight background (StadiumGlow, above)
+                      // is bright enough in places that white team names
+                      // sitting on 3% white / 6-12% amber weren't reliably
+                      // readable over it. `bg-black/55` (and a stronger
+                      // amber base for your own tie) sits UNDER the same
+                      // colour wash as before, so the highlight itself is
+                      // unchanged — it just no longer depends on however
+                      // bright the photo behind it happens to be at that
+                      // exact spot on the card.
                       className={`relative flex items-center gap-1.5 rounded-xl border px-2.5 py-2 transition-colors ${
                         isYours
-                          ? "border-amber-400/70 bg-gradient-to-r from-amber-400/[0.12] via-amber-400/[0.06] to-amber-400/[0.12] shadow-[0_0_16px_rgba(251,191,36,0.28)]"
-                          : "border-white/10 bg-white/[0.03]"
+                          ? "border-amber-400/70 bg-amber-950/70 bg-gradient-to-r from-amber-400/[0.16] via-amber-400/[0.08] to-amber-400/[0.16] shadow-[0_0_16px_rgba(251,191,36,0.28)]"
+                          : "border-white/10 bg-black/55"
                       }`}
                     >
                       <div className="flex flex-1 min-w-0 items-center gap-2">

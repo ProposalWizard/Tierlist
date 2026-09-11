@@ -226,6 +226,19 @@ function backfill(c: CareerState): CareerState {
   // would otherwise silently corrupt into NaN from here on).
   if (out.energy === undefined) out.energy = 100;
   if (out.injury === undefined) out.injury = null;
+  // A career saved before attribute decay existed has no record of when
+  // anything was last trained — treated as "just now" (this week), not
+  // "never", so it gets the same fresh grace period a brand-new career
+  // does rather than reading every skill as already overdue the moment
+  // decaySkills first runs against it.
+  if (!out.lastTrainedWeek) {
+    out.lastTrainedWeek = { pace: out.week, power: out.week, technique: out.week, vision: out.week, freeKick: out.week };
+  }
+  // A career saved before reputation existed has no world/club/government/
+  // shareholder standing on file — backfilled at the same neutral starting
+  // point a brand-new career opens with (see makeInitialCareer), not left
+  // `undefined` (which every `reputation.*` read would otherwise crash on).
+  if (out.reputation === undefined) out.reputation = { world: 15, club: 50, government: 5, shareholders: 5 };
   // A career saved before the real-manager pool existed has no record of who
   // it's already "used" — the current manager (if any) predates the pool
   // too and was never drawn from it, so the full roster is honestly correct

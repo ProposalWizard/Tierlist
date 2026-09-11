@@ -204,6 +204,70 @@ export function resolvePlayOffs(
   };
 }
 
+// ── Self-healing: a division is always exactly the right size ──────────────
+
+const PREMIER_SIZE = PREMIER_LEAGUE_CLUBS.length;
+const CHAMPIONSHIP_SIZE = CHAMPIONSHIP_CLUBS.length;
+const POOL_SIZE = PROMOTION_POOL_CLUBS.length;
+
+/**
+ * Fix a ladder that has drifted from the shape it's supposed to have —
+ * see `resolveLadder`'s own note on why this exists at all. Two distinct
+ * problems, handled in order:
+ *
+ * 1. The SAME club name sitting in more than one tier at once. Kept in
+ *    whichever tier is checked first (premier, then championship, then
+ *    pool) — an arbitrary but deterministic tie-break, and the direction
+ *    that matches the likeliest real cause: a promotion that updated the
+ *    destination tier correctly but failed to strip the name out of the
+ *    tier it left.
+ * 2. A tier that is the wrong SIZE once de-duplicated. Too many: the
+ *    weakest excess members are pushed down a tier, same direction (and
+ *    same weighted logic) an ordinary relegation already uses. Too few:
+ *    the strongest available members are pulled up from the tier below,
+ *    same as an ordinary promotion. The pool has no tier below it to draw
+ *    from, so a pool shortfall is left as a last-resort no-op rather than
+ *    inventing a club that was never part of this world at all.
+ */
+function reconcileLadder(
+  premier: string[], championship: string[], pool: string[],
+  strength: Map<string, number>, rng: () => number,
+): { premier: string[]; championship: string[]; pool: string[] } {
+  const seen = new Set<string>();
+  const dedupe = (list: string[]) => list.filter(c => (seen.has(c) ? false : (seen.add(c), true)));
+  let p = dedupe(premier), c = dedupe(championship), pl = dedupe(pool);
+
+  const byStrengthAsc = (list: string[]) => [...list].sort((a, b) => (strength.get(a) ?? 70) - (strength.get(b) ?? 70));
+
+  const shrink = (list: string[], target: number, demoteTo: string[]): [string[], string[]] => {
+    if (list.length <= target) return [list, demoteTo];
+    const weakestFirst = byStrengthAsc(list);
+    const demoted = weakestFirst.slice(0, list.length - target);
+    const kept = list.filter(x => !demoted.includes(x));
+    return [kept, [...demoteTo, ...demoted]];
+  };
+  const grow = (list: string[], target: number, sourcePool: string[]): [string[], string[]] => {
+    if (list.length >= target || sourcePool.length === 0) return [list, sourcePool];
+    const promoted = weightedDraw(sourcePool, strength, Math.min(target - list.length, sourcePool.length), rng);
+    const remaining = sourcePool.filter(x => !promoted.includes(x));
+    return [[...list, ...promoted], remaining];
+  };
+
+  // Oversized tiers spill downward first — premier into championship, then
+  // (with whatever championship now holds) championship into the pool —
+  // before anything is topped back up, so a genuinely-too-big premier
+  // doesn't get read as "championship needs bodies" a step too early.
+  [p, c] = shrink(p, PREMIER_SIZE, c);
+  [c, pl] = shrink(c, CHAMPIONSHIP_SIZE, pl);
+
+  // Then undersized tiers pull upward from whatever the tier below now has
+  // spare, same direction an ordinary promotion already moves in.
+  [c, pl] = grow(c, CHAMPIONSHIP_SIZE, pl);
+  [p, c] = grow(p, PREMIER_SIZE, c);
+
+  return { premier: p, championship: c, pool: pl };
+}
+
 // ── The whole ladder, once a season ─────────────────────────────────────────
 
 export interface LadderOutcome {
@@ -282,11 +346,11 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     promotedToChampionship = weightedDraw(members.pool, strength, 3, rng);
   }
 
-  const premier = [
+  const premierRaw = [
     ...members.premier.filter(c => !relegatedFromPremier.includes(c)),
     ...promotedToPremier,
   ];
-  const championship = [
+  const championshipRaw = [
     ...members.championship.filter(
       c => !promotedToPremier.includes(c) && !relegatedFromChampionship.includes(c)),
     ...relegatedFromPremier,
@@ -295,10 +359,23 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   // Relegated Championship clubs join the pool, and the three that came up
   // out of it leave — which is what puts a relegated club back in the hat for
   // next time round.
-  const pool = [
+  const poolRaw = [
     ...members.pool.filter(c => !promotedToChampionship.includes(c)),
     ...relegatedFromChampionship,
   ];
+
+  // Reported directly, from a real save at season 3: the Premier League
+  // held 21 clubs. Twenty seasons of this exact arithmetic, run through
+  // `advanceSeason` and not just this function in isolation, are checked
+  // by tests/star/promotion.mts and hold — so this is defensive, guarding
+  // a shape that shouldn't be reachable from clean code rather than one
+  // proven to happen from it. But a save is a JSON blob forever: whatever
+  // produced a 21st club (an already-fixed historical bug, most likely,
+  // given the math above checks out today) is now baked into that one
+  // save regardless of what today's code does, and the fix that actually
+  // reaches a player is one that heals the shape it finds, not one that
+  // only proves it wouldn't have happened starting from scratch.
+  const { premier, championship, pool } = reconcileLadder(premierRaw, championshipRaw, poolRaw, strength, rng);
 
   // Your club is one of the two by now — either it was never in the relegated
   // three, or the page already moved you to a new one before this ran (see

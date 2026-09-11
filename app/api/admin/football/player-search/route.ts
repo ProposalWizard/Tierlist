@@ -168,7 +168,7 @@ export async function PATCH(req: NextRequest) {
   const {
     sofifa_id, fifa_year,
     manual_overall, manual_positions, manual_nationality, name,
-    club, league, potential, age, attributes: attributesUpdate,
+    club, league, potential, age, attributes: attributesUpdate, high_potential,
   } = body as {
     sofifa_id: string;
     fifa_year: number;
@@ -181,6 +181,7 @@ export async function PATCH(req: NextRequest) {
     potential?: number | null;
     age?: number | null;
     attributes?: Record<string, unknown> | null;
+    high_potential?: boolean;
   };
 
   if (!sofifa_id || !fifa_year) {
@@ -197,6 +198,7 @@ export async function PATCH(req: NextRequest) {
   if (potential !== undefined) updates.potential = potential;
   if (age !== undefined) updates.age = age;
   if (attributesUpdate !== undefined) updates.attributes = attributesUpdate;
+  if (high_potential !== undefined) updates.high_potential = high_potential;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

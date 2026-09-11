@@ -2,6 +2,7 @@ import type { LeaguePlayer, LeagueSquad, LeagueTeam, SquadPlayer } from "./types
 import { generateSquad, clubNameSeed } from "./squadData";
 import { shortNameOf } from "./realSquad";
 import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
+import { getTuning } from "./tuningStore";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS.
@@ -85,7 +86,7 @@ function fit(slot: Pos, positions: string): number {
 /** What the endpoint gives back, of the parts we use. */
 export interface RosterRow {
   id: string; name: string; positions: string; overall: number;
-  image?: string; nation?: string; age?: number;
+  image?: string; nation?: string; age?: number; highPotential?: boolean;
 }
 
 /**
@@ -133,6 +134,7 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
       ...(best.image ? { image: best.image } : {}),
       ...(best.nation ? { nation: best.nation } : {}),
       ...(best.age ? { age: best.age } : {}),
+      ...(best.highPotential ? { highPotential: true } : {}),
       positions: rolesOf(best.positions),
     });
   }
@@ -178,6 +180,7 @@ function rowToLeaguePlayer(p: RosterRow): LeaguePlayer {
     ...(p.image ? { image: p.image } : {}),
     ...(p.nation ? { nation: p.nation } : {}),
     ...(p.age ? { age: p.age } : {}),
+    ...(p.highPotential ? { highPotential: true } : {}),
     positions: rolesOf(p.positions),
   };
 }
@@ -497,6 +500,44 @@ export function creditNamedGoals(squad: LeagueSquad | undefined, goals: NamedOpp
 /** A new season: the table resets, and so does everybody's tally. */
 export function resetLeagueSquads(squads: LeagueSquad[]): LeagueSquad[] {
   return squads.map(s => ({ ...s, players: s.players.map(p => ({ ...p, goals: 0, assists: 0 })) }));
+}
+
+/**
+ * WONDERKIDS ACTUALLY GROW.
+ *
+ * Requested directly: a player admin has ticked "High Potential" — the
+ * database's own `high_potential` column, one boy scouted at a time — "has
+ * the ability to increase their overall rating," where before, no squad
+ * player anywhere (not the other nineteen clubs, not the wider world) ever
+ * had their `overall` move at all once a season was built (confirmed
+ * directly against this file and leagueTransfers.ts: neither has ever
+ * written to `overall` outside squad construction). Called once per season
+ * rollover, on both `career.leagueSquads` and `career.externalSquads` — see
+ * careerFlow.ts's `advanceSeason`.
+ *
+ * Deliberately modest and age-gated rather than a guaranteed climb: a real
+ * wonderkid does not hit his ceiling every single season, and one already
+ * the wrong side of `wonderkidAgeCeiling` has presumably already had his
+ * growth spurt — the flag stays on his record (it is a scouting judgement
+ * about who he WAS, not undone retroactively), it just stops paying out.
+ * Capped short of the very top ratings (`wonderkidGrowthCap`) so a whole
+ * career of ticks does not quietly mint a division full of 99s.
+ */
+export function growWonderkids(squads: LeagueSquad[], rng: () => number): LeagueSquad[] {
+  const ageCeiling = getTuning("wonderkids.ageCeiling");
+  const chance = getTuning("wonderkids.growthChance");
+  const minGain = getTuning("wonderkids.growthMin");
+  const maxGain = getTuning("wonderkids.growthMax");
+  const cap = getTuning("wonderkids.growthCap");
+  return squads.map(s => ({
+    ...s,
+    players: s.players.map(p => {
+      if (!p.highPotential || (p.age ?? 0) >= ageCeiling) return p;
+      if (rng() >= chance) return p;
+      const gain = minGain + Math.floor(rng() * (maxGain - minGain + 1));
+      return { ...p, overall: Math.min(cap, p.overall + gain) };
+    }),
+  }));
 }
 
 /**

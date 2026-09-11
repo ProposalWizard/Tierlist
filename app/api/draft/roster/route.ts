@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("sofifa_players")
     .select(
-      "sofifa_id, name, overall, manual_overall, potential, positions, manual_positions, age, image_url, nationality, manual_nationality, attributes"
+      "sofifa_id, name, overall, manual_overall, potential, positions, manual_positions, age, image_url, nationality, manual_nationality, attributes, high_potential"
     )
     .eq("club", club)
     .eq("fifa_year", year)
@@ -94,6 +94,7 @@ export async function GET(request: NextRequest) {
       age: p.age || parseAttr(a.age) || parseAttr(a.attr_ae) || 0,
       image_url: p.image_url || (a.image_url as string) || null,
       nationality: p.manual_nationality || p.nationality || (a.nationality as string) || "",
+      high_potential: p.high_potential === true,
       // Keys are stored as "Pace", "Shooting" etc. (capital, full name) in all editions
       pace:         parseAttr(a.Pace)         || parseAttr(a.attr_pac) || parseAttr(a.pac),
       shooting:     parseAttr(a.Shooting)     || parseAttr(a.attr_sho) || parseAttr(a.shooting),

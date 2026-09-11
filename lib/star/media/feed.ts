@@ -6,6 +6,9 @@ import type {
 import { buildMatchRecord } from "./record";
 import { detectCareer, detectMatch } from "./detect";
 import { detectLeagueWeek } from "./detect/league";
+import { detectWonderkidHype } from "./detect/wonderkids";
+import { mulberry32 } from "../season";
+import { getTuning } from "../tuningStore";
 import { headlineEvent, scoreCareerEvents, scoreMatchEvents } from "./importance";
 import { absorbEvents, absorbMatch, coolThreads, emptyMemory, markSaid } from "./memory";
 import { buildRoster, selfAccount } from "./accounts";
@@ -139,6 +142,15 @@ export function generateForLeagueWeek(
   if (state.lastLeagueCycleId === id || alreadySeen(state, id)) return state;
 
   const events = detectLeagueWeek(weekResults, career.player.club, week, competition, career.season);
+  // The kids everyone is talking about — see detect/wonderkids.ts's own
+  // header for why this is scoped to the rest of the world (leagueSquads/
+  // externalSquads) rather than your own squad, and why it's at most one
+  // pick a week. Seeded independently of `detectLeagueWeek`'s own (fully
+  // deterministic, no rng at all) results pass, off the same
+  // (season, week) a replay of this exact cycle would reproduce.
+  const wonderkidRng = mulberry32(career.season * 52631 + week * 977);
+  const wonderkidPool = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])];
+  events.push(...detectWonderkidHype(wonderkidPool, week, career.season, wonderkidRng, getTuning("wonderkids.mediaChance")));
   return commit(career, state, null, events, state.memory, id, clockAt(career.season, week, 0), "league");
 }
 

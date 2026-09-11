@@ -87,6 +87,22 @@ export interface Relationships {
   sponsors: number;
 }
 
+/**
+ * Reputation, as a real multi-part stat — Phase 1 of STAR_POWER_POLITICS.md.
+ * Explicitly NOT one number: world/governing-body standing, standing within
+ * your own club, government-official relationships, and shareholder
+ * relationships. Fan reputation deliberately isn't duplicated here — it's
+ * `Relationships.fans` above, extended rather than replaced (see the
+ * brief's §5). All four fields are 0-100, same convention as
+ * `Relationships`. See lib/star/reputation.ts for how these move.
+ */
+export interface Reputation {
+  world: number;
+  club: number;
+  government: number;
+  shareholders: number;
+}
+
 export interface Contract {
   club: string;
   wage: number;
@@ -194,6 +210,20 @@ export interface LeaguePlayer {
    * `image`/`nation`.
    */
   age?: number;
+  /**
+   * A real, admin-ticked scouting judgement — "this player has real
+   * potential to improve" — set per FC-27 row in /admin/football/players
+   * (sofifa_players.high_potential) and read straight through here. Drives
+   * three things a normal squad player doesn't get: a real chance to grow
+   * his `overall` at each season rollover (`growWonderkids`,
+   * leagueSquads.ts), a transfer-fee premium over what his age/rating alone
+   * would justify (`feeFor`, leagueTransfers.ts), and a bias toward moving
+   * to a bigger club specifically because of that upside. Absent (not
+   * false) for a generated squad or a save from before this existed —
+   * treated as "no" wherever it's read, same convention as every other
+   * optional real-player field here.
+   */
+  highPotential?: boolean;
 }
 
 export interface LeagueSquad {
@@ -273,6 +303,10 @@ export interface SquadPlayer {
   imageUrl?: string;
   nationality?: string;
   age?: number;
+  /** See LeaguePlayer.highPotential — the same admin-ticked flag, for a man
+   *  who ended up in YOUR squad (your own club's real roster, or someone
+   *  you signed) rather than one of the other nineteen. */
+  highPotential?: boolean;
   /**
    * Every position he is actually listed for, `position` included — a real
    * player's data holds several (SoFIFA's "CAM, CM, LW"), but building the
@@ -423,7 +457,19 @@ export interface CareerState {
   version: 2;
   player: StarPlayer;
   skills: Skills;
+  /**
+   * The last career week each skill was actually TRAINED (the deliberate
+   * minigame action, not a passing match-performance nudge) — what
+   * `decaySkills` (careerFlow.ts) reads to decide who's overdue. Requested
+   * directly: "if you haven't trained any of your attributes... every few
+   * months... you have a chance of downgrading them by a point or two...
+   * so you have to go and play and earn the points back." Optional so a
+   * save from before this existed backfills cleanly (storage.ts) rather
+   * than reading every skill as already overdue on the very next match.
+   */
+  lastTrainedWeek?: Partial<Record<keyof Skills, number>>;
   relationships: Relationships;
+  reputation: Reputation;
   contract: Contract;
   season: number;
   /**
@@ -843,6 +889,12 @@ export type StarPhase =
   | "sponsors"
   | "achievements"
   | "trophies"
+  /** World/club/government/shareholder standing — Phase 1 of
+   *  STAR_POWER_POLITICS.md. See ReputationScreen, lib/star/reputation.ts. */
+  | "reputation"
+  /** The generic vote/ceremony engine — Phase 2 of STAR_POWER_POLITICS.md.
+   *  See VoteCeremony, lib/star/voting.ts. */
+  | "vote-ceremony"
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"

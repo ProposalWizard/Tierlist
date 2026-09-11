@@ -176,6 +176,20 @@ function Market({
   );
 }
 
+/**
+ * BUY/SELL, BY AMOUNT — NOT A 0-100% WHEEL.
+ *
+ * Requested directly: the old control was a single 0.01%-100% slider, which
+ * has two real problems at once. First, it let you drag straight past what
+ * you could actually afford — "buying" 2.83% of a club when you can afford
+ * exactly that reads as a target you have to hit with a thumb on a slider a
+ * pixel wide. Second, "I want to spend roughly ★2,000" is a much more
+ * natural way to think about an investment than "I want 2.83%" — money is
+ * hard enough to come by in this game that overshooting a good buy, or
+ * undershooting one, is a real cost, and a percentage-only control makes
+ * that mistake easy. A star-money amount, capped at what the bank can pay,
+ * is both.
+ */
 function StakeControls({
   club, valuation, money: bank, stake, onBuy, onSell,
 }: {
@@ -183,51 +197,107 @@ function StakeControls({
   stake?: { percent: number; avgBuyValuation: number };
   onBuy: (percent: number) => void; onSell: (percent: number) => void;
 }) {
-  const [pct, setPct] = useState(0.1);
-  const cost = Math.round(valuation * (pct / 100));
-  const canAfford = cost > 0 && cost <= bank;
-  const canSellThis = (stake?.percent ?? 0) >= pct && pct > 0;
-  const profit = stake ? Math.round((valuation - stake.avgBuyValuation) * (stake.percent / 100)) : 0;
+  // What buying 100% of this club would cost you, capped by what's actually
+  // in the bank — the hard ceiling the old slider never had.
+  const maxBuySpend = Math.max(0, Math.min(bank, Math.round(valuation)));
+  const [buyAmount, setBuyAmount] = useState(() => Math.max(1, Math.min(maxBuySpend, Math.round(valuation * 0.001))));
+  const clampedBuy = Math.max(0, Math.min(maxBuySpend, Math.round(buyAmount) || 0));
+  const buyPct = valuation > 0 ? (clampedBuy / valuation) * 100 : 0;
+  const canAfford = clampedBuy > 0 && clampedBuy <= bank;
+
+  const stakePct = stake?.percent ?? 0;
+  const [sellFraction, setSellFraction] = useState(1); // of your OWN holding
+  const sellPct = stakePct * sellFraction;
+  const sellAmount = Math.round(valuation * (sellPct / 100));
+
+  const profit = stake ? Math.round((valuation - stake.avgBuyValuation) * (stakePct / 100)) : 0;
 
   return (
-    <div className="bg-gray-900/60 px-3 py-3 space-y-2">
+    <div className="bg-gray-900/60 px-3 py-3 space-y-3">
       {stake && (
         <div className="text-[11px] text-white/70">
-          Bought in at <span className="text-white font-bold">★{money(stake.avgBuyValuation)}</span> full value —
+          You own <span className="text-white font-bold">{stakePct.toFixed(stakePct < 1 ? 3 : 1)}%</span>, bought in at{" "}
+          <span className="text-white font-bold">★{money(stake.avgBuyValuation)}</span> full value —
           {" "}
           <span className={profit >= 0 ? "text-emerald-300 font-bold" : "text-red-300 font-bold"}>
             {profit >= 0 ? "+" : ""}★{money(Math.abs(profit))} unrealised
           </span>
         </div>
       )}
-      <div className="flex items-center gap-2">
-        <input
-          type="range" min={0.01} max={100} step={0.01} value={pct}
-          onChange={e => setPct(Number(e.target.value))}
-          className="flex-1"
-        />
-        <span className="w-16 text-right text-xs font-black text-white tabular-nums">{pct.toFixed(2)}%</span>
-      </div>
-      <div className="text-[11px] text-white/60">
-        {pct.toFixed(2)}% costs <span className="text-yellow-300 font-bold">★{money(cost)}</span>
-        {pct >= MAJORITY_THRESHOLD && <span className="ml-1 text-emerald-300 font-black">→ MAJORITY</span>}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
+
+      {/* ── Buy, by amount ── */}
+      <div>
+        <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white/50">Buy</div>
+        <div className="flex items-center gap-2">
+          <span className="text-yellow-300 font-black text-sm">★</span>
+          <input
+            type="number" min={0} max={maxBuySpend} step={1}
+            value={clampedBuy}
+            onChange={e => setBuyAmount(Math.max(0, Math.min(maxBuySpend, Math.round(Number(e.target.value) || 0))))}
+            className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-2 py-1.5 text-sm text-white tabular-nums"
+          />
+          <span className="w-16 text-right text-xs font-black text-white/70 tabular-nums">
+            = {buyPct.toFixed(buyPct < 1 ? 3 : 1)}%
+          </span>
+        </div>
+        <div className="mt-1.5 grid grid-cols-4 gap-1">
+          {[0.1, 0.25, 0.5, 1].map(f => {
+            const amt = Math.round(maxBuySpend * f);
+            return (
+              <button
+                key={f}
+                onClick={() => setBuyAmount(amt)}
+                disabled={maxBuySpend <= 0}
+                className="py-1.5 rounded-md bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-[10px] font-black text-white/80"
+              >
+                {f === 1 ? "MAX" : `${Math.round(f * 100)}%`}
+              </button>
+            );
+          })}
+        </div>
+        {buyPct >= MAJORITY_THRESHOLD && (
+          <div className="mt-1 text-[10px] font-black text-emerald-300">→ MAJORITY at this amount</div>
+        )}
         <button
           disabled={!canAfford}
-          onClick={() => onBuy(pct)}
-          className="py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs"
+          onClick={() => onBuy(buyPct)}
+          className="mt-2 w-full py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs"
         >
-          Buy
+          Buy ★{money(clampedBuy)} ({buyPct.toFixed(buyPct < 1 ? 3 : 1)}%)
         </button>
-        <button
-          disabled={!canSellThis}
-          onClick={() => onSell(pct)}
-          className="py-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-40 font-black text-xs"
-        >
-          Sell
-        </button>
+        {maxBuySpend < Math.round(valuation) && (
+          <div className="mt-1 text-[9px] text-center text-white/40">
+            Most you can afford: ★{money(maxBuySpend)} ({((maxBuySpend / valuation) * 100).toFixed(2)}%)
+          </div>
+        )}
       </div>
+
+      {/* ── Sell, by share of what you own ── */}
+      {stakePct > 0 && (
+        <div>
+          <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white/50">Sell</div>
+          <div className="grid grid-cols-4 gap-1">
+            {[0.25, 0.5, 0.75, 1].map(f => (
+              <button
+                key={f}
+                onClick={() => setSellFraction(f)}
+                className={`py-1.5 rounded-md text-[10px] font-black ${
+                  sellFraction === f ? "bg-red-600 text-white" : "bg-gray-800 hover:bg-gray-700 text-white/80"
+                }`}
+              >
+                {f === 1 ? "ALL" : `${Math.round(f * 100)}%`}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => onSell(sellPct)}
+            className="mt-2 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 font-black text-xs"
+          >
+            Sell {sellPct.toFixed(sellPct < 1 ? 3 : 1)}% for ★{money(sellAmount)}
+          </button>
+        </div>
+      )}
+
       <div className="text-[9px] text-center text-white/40">Club: {club}</div>
     </div>
   );

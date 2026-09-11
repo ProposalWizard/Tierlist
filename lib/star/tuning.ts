@@ -74,6 +74,33 @@ export const TUNABLES: TunableDef[] = [
     default: 30, min: 0, max: 100, step: 1,
   },
 
+  // ── Attribute decay ──────────────────────────────────────────────────
+  {
+    key: "attributes.decayCheckWeeks", category: "Attribute Decay", label: "Weeks before a skill is overdue",
+    description: "A skill that hasn't been trained (the minigame, not passing match performance) in this many weeks becomes eligible to decay — \"every few months\".",
+    default: 18, min: 4, max: 52, step: 1,
+  },
+  {
+    key: "attributes.decayChance", category: "Attribute Decay", label: "Chance to decay, once overdue",
+    description: "Odds an overdue skill actually drops, checked once per match played while it stays overdue.",
+    default: 0.12, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "attributes.decayMin", category: "Attribute Decay", label: "Points lost — minimum",
+    description: "Smallest drop a successful decay roll costs a skill.",
+    default: 1, min: 0, max: 10, step: 1,
+  },
+  {
+    key: "attributes.decayMax", category: "Attribute Decay", label: "Points lost — maximum",
+    description: "Largest drop a successful decay roll costs a skill.",
+    default: 2, min: 0, max: 10, step: 1,
+  },
+  {
+    key: "attributes.decayFloor", category: "Attribute Decay", label: "Never decays below this",
+    description: "A skill stops decaying once it reaches this floor, however long it's neglected.",
+    default: 20, min: 0, max: 99, step: 1,
+  },
+
   // ── Energy ────────────────────────────────────────────────────────────
   {
     key: "energy.weekActions", category: "Energy", label: "Actions per week",
@@ -119,6 +146,53 @@ export const TUNABLES: TunableDef[] = [
     key: "energy.trainingCost", category: "Energy", label: "Training minigame — energy cost",
     description: "Energy spent per training session (also gates whether the Train button is enabled).",
     default: 15, min: 0, max: 100, step: 1,
+  },
+
+  // ── Wonderkids (High Potential) ──────────────────────────────────────
+  {
+    key: "wonderkids.ageCeiling", category: "Wonderkids", label: "Growth stops at this age",
+    description: "A High Potential player younger than this can still grow each season rollover; at or past it, he's presumed to have peaked.",
+    default: 24, min: 16, max: 40, step: 1,
+  },
+  {
+    key: "wonderkids.growthChance", category: "Wonderkids", label: "Chance to grow, per season",
+    description: "Odds a High Potential player under the age ceiling gains overall at any given season rollover.",
+    default: 0.6, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "wonderkids.growthMin", category: "Wonderkids", label: "Overall gained — minimum",
+    description: "Smallest overall bump a successful growth roll gives a High Potential player.",
+    default: 1, min: 0, max: 10, step: 1,
+  },
+  {
+    key: "wonderkids.growthMax", category: "Wonderkids", label: "Overall gained — maximum",
+    description: "Largest overall bump a successful growth roll gives a High Potential player.",
+    default: 3, min: 0, max: 15, step: 1,
+  },
+  {
+    key: "wonderkids.growthCap", category: "Wonderkids", label: "Overall ceiling",
+    description: "Growth never pushes a High Potential player's overall past this, however many seasons he keeps developing.",
+    default: 92, min: 1, max: 99, step: 1,
+  },
+  {
+    key: "wonderkids.feeMultiplier", category: "Wonderkids", label: "Transfer fee premium",
+    description: "A High Potential player's transfer fee is multiplied by this on top of the ordinary overall-based fee — clubs pay for the upside, not just the current rating.",
+    default: 1.6, min: 1, max: 5, step: 0.1,
+  },
+  {
+    key: "wonderkids.feeAgeCeiling", category: "Wonderkids", label: "Fee premium stops at this age",
+    description: "The transfer-fee premium only applies below this age — an older High Potential player is judged on what he's already become, not what he might.",
+    default: 26, min: 16, max: 40, step: 1,
+  },
+  {
+    key: "wonderkids.bigClubReachBonus", category: "Wonderkids", label: "Big-club reach bonus",
+    description: "Added to how far above its own strength a buying club can reach when the player being chased is High Potential — the upside is the whole reason a bigger side takes a punt on him.",
+    default: 6, min: 0, max: 30, step: 1,
+  },
+  {
+    key: "wonderkids.mediaChance", category: "Wonderkids", label: "Media hype chance, per week",
+    description: "Odds the England tab features one High Potential player from the rest of the division in any given week — \"these players get talked about in the media quite a bit.\"",
+    default: 0.22, min: 0, max: 1, step: 0.01,
   },
 
   // ── Training gains ───────────────────────────────────────────────────

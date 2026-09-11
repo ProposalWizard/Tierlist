@@ -3155,7 +3155,13 @@ export function applyCurveSwipe(ball: Ball, dir: CurveDir): boolean {
   if (dir === "left" || dir === "right") {
     const cur = ball.curveSpinAdj ?? 0;
     if (Math.abs(cur) >= CURVE_SPIN_MAX) return false;
-    const next = clamp(cur + (dir === "right" ? CURVE_SPIN_STEP : -CURVE_SPIN_STEP), -CURVE_SPIN_MAX, CURVE_SPIN_MAX);
+    // Reported directly: swiping right curved the ball LEFT. `stepBallRaw`'s
+    // own curl term (see its "positive spin curves LEFT of travel" comment)
+    // is the authority here — for a shot travelling toward the goal
+    // (vel.y < 0), positive spin pushes vel.x DOWN, bending the ball toward
+    // smaller pitch x, i.e. left. So a swipe toward pitch-RIGHT (increasing
+    // x) has to apply NEGATIVE spin, not positive — this was backwards.
+    const next = clamp(cur + (dir === "right" ? -CURVE_SPIN_STEP : CURVE_SPIN_STEP), -CURVE_SPIN_MAX, CURVE_SPIN_MAX);
     ball.spin += next - cur;
     ball.curveSpinAdj = next;
     return true;
@@ -4164,6 +4170,35 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     return "caught";
   }
 
+  // ── He smothers it ──
+  //
+  // A keeper who has already been beaten twice in one move does not palm it
+  // back out a third time; he falls on it. Without this the goalmouth scramble
+  // was a perpetual motion machine, and the mechanism was neat: he scrambles
+  // ACROSS to the ball he has spilled, your team-mate collects it at that same
+  // spot, and so shoots from directly on top of him — which he saves, and
+  // spills, and so on. Measured, it never once broke out: a move either had no
+  // team-mate shot at all or ran to the cap, 306 times in 1200, and never one,
+  // two or three.
+  //
+  // Checked BEFORE the fierce/full-stretch branch below, not after it — it
+  // used to sit below that branch's own `return null`, which meant it could
+  // only ever fire for a save that happened to land in the ordinary "parry"
+  // bucket. A fierce or high shot (fast, lifted, or at full stretch) ALWAYS
+  // took the branch above and returned null before this was ever reached —
+  // so a scramble made entirely of hard/high efforts had no cap at all.
+  // Reported directly: "if they're in rebound mode, they rebound every
+  // single shot... about ten rebounds in a row" — exactly what a missing
+  // cap on that one branch produces, since a fierce shot is the likeliest
+  // kind a real scramble is full of.
+  if (k.saves >= 3) {
+    ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
+    ball.z = 0.55;
+    ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
+    k.done = true;
+    return "caught";
+  }
+
   // Full-stretch, high or fierce → pushed away, not held — and, same as a
   // parry, still very much in play.
   //
@@ -4179,12 +4214,27 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // because nothing was left running once the outcome resolved.
   //
   // So it is wired exactly like a parry now: he hits it away, hard, and it
-  // stays loose — your poacher can chase it in, a defender who gets there
-  // first clears it, and only THAT settles the passage of play. The push
-  // itself is unchanged (still 9-16 m/s, still dies inside the rectangle
-  // rather than needing the touchline) — only whether anyone can react to
-  // it changed.
+  // USUALLY stays loose — your poacher can chase it in, a defender who gets
+  // there first clears it, and only THAT settles the passage of play. The
+  // push itself is unchanged (still 9-16 m/s, still dies inside the
+  // rectangle rather than needing the touchline) — only whether anyone can
+  // react to it changed.
+  //
+  // "Usually", not "always": requested directly, on top of the ordering fix
+  // above — even before the smother cap forces it, a keeper who gets his
+  // whole body behind a fierce ball sometimes just turns it behind for a
+  // corner instead of leaving it dangerously live. Returns `"saved"`
+  // directly (the same terminal outcome `stepBall` relabels an "out"/"wide"
+  // into when the keeper caused it) rather than returning "out" itself and
+  // relying on that relabeling — `stepBall` reads `lastTouch` from BEFORE
+  // this tick runs (see its own header on why), so a same-tick keeper touch
+  // that immediately ends the move would not yet read back as "keeper" and
+  // would surface as a plain, uncredited "out".
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
+    if (rng() < 0.22) {
+      k.done = true;
+      return "saved";
+    }
     const side = ball.pos.x < CX ? -1 : 1;
     const away = normalize({ x: side * (0.7 + rng() * 0.5), y: 1 });
     const sp = 6 + rng() * 6;
@@ -4204,25 +4254,16 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     return null;
   }
 
-  // ── He smothers it ──
-  //
-  // A keeper who has already been beaten twice in one move does not palm it
-  // back out a third time; he falls on it. Without this the goalmouth scramble
-  // was a perpetual motion machine, and the mechanism was neat: he scrambles
-  // ACROSS to the ball he has spilled, your team-mate collects it at that same
-  // spot, and so shoots from directly on top of him — which he saves, and
-  // spills, and so on. Measured, it never once broke out: a move either had no
-  // team-mate shot at all or ran to the cap, 306 times in 1200, and never one,
-  // two or three.
-  if (k.saves >= 3) {
+  // Otherwise: a parry that stays in play — most of the time. Same reasoning
+  // as the branch above: a genuine chance he just holds this one too, not
+  // only once the smother cap forces it.
+  if (rng() < 0.18) {
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
     k.done = true;
     return "caught";
   }
-
-  // Otherwise: a parry that stays in play.
   const away = normalize({ x: ball.pos.x - k.x, y: ball.pos.y - k.y });
   const dangerous = rng() < 0.34; // sometimes spilled straight back into the danger zone
   // Safe parries go wide + downfield; dangerous ones drop short and central.

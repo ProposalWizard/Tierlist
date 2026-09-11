@@ -217,6 +217,11 @@ export const DATA_TEMPLATES: Template[] = [
     body: "🚨 {player} called up. First time in the squad. Deserved.",
   },
   {
+    id: "in-wonderkid", archetype: "insider", events: ["wonderkid-hype"], requires: ["player", "club"],
+    body: "⚠️ Been asking around about {player} at {club}. Every scout who's seen him says the same thing — this one's the real deal.",
+    weight: 3,
+  },
+  {
     id: "in-generic", archetype: "insider",
     body: "⚠️ Keeping an eye on the situation at {club}. More when I have it.",
     weight: 0.4,

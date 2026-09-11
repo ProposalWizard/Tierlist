@@ -49,6 +49,9 @@ interface LeanPlayer {
    *  never to the other nineteen clubs' players it actually matters most
    *  for. One more short scalar column, not the JSONB blob. */
   age?: number;
+  /** The admin-ticked "real potential to improve" flag — see LeaguePlayer.
+   *  highPotential (types.ts) and growWonderkids (leagueSquads.ts). */
+  highPotential?: boolean;
 }
 
 export async function GET(request: NextRequest) {
@@ -119,7 +122,7 @@ export async function GET(request: NextRequest) {
       // exists to avoid — the shortlist graphic needs faces and twenty
       // extra queries to get them would undo the whole point of the
       // endpoint.
-      .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age")
+      .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age, high_potential")
       .eq("fifa_year", year)
       .in("club", dbClubs)
       .order("overall", { ascending: false, nullsFirst: false })
@@ -154,11 +157,13 @@ export async function GET(request: NextRequest) {
     const image = ((row.image_url as string) || "").trim();
     const nation = (((row.manual_nationality as string) || (row.nationality as string)) || "").trim();
     const age = row.age as number | null;
+    const highPotential = row.high_potential === true;
     list.push({
       id: String(row.sofifa_id), name, positions, overall,
       ...(image ? { image } : {}),
       ...(nation ? { nation } : {}),
       ...(age ? { age } : {}),
+      ...(highPotential ? { highPotential } : {}),
     });
   }
 

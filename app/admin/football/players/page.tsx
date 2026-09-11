@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 
 /* ── Attribute label map ── */
 const ATTR_LABELS: Record<string, string> = {
@@ -100,6 +101,7 @@ interface SofifaPlayer {
   age: number | null;
   image_url: string | null;
   attributes: Record<string, unknown> | null;
+  high_potential: boolean;
 }
 
 export default function PlayerSearchPage() {
@@ -212,6 +214,38 @@ export default function PlayerSearchPage() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSearch();
+  };
+
+  /**
+   * The High Potential (wonderkid) flag — requested directly, and requested
+   * on the OUTER base row specifically, not buried behind a dropdown: "just
+   * on the base thing, there should be a button... a tick on or off." It's
+   * one column on one (sofifa_id, fifa_year) row, same shape as
+   * manual_overall/manual_positions — this just always targets the FC 27
+   * edition, since that's the one edition the Star Career game actually
+   * reads (see STAR_FIFA_YEAR, lib/star/edition.ts) and the one the request
+   * was scoped to ("if I go to FC 27, and find the player").
+   */
+  const [togglingHP, setTogglingHP] = useState<string | null>(null);
+  const handleToggleHighPotential = async (sofifaId: string, current: boolean) => {
+    setTogglingHP(sofifaId);
+    try {
+      const res = await fetch("/api/admin/football/player-search", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: STAR_FIFA_YEAR, high_potential: !current }),
+      });
+      if (res.ok) {
+        setPlayers((prev) =>
+          prev.map((p) =>
+            p.sofifa_id === sofifaId && p.fifa_year === STAR_FIFA_YEAR
+              ? { ...p, high_potential: !current }
+              : p
+          )
+        );
+      }
+    } catch {}
+    setTogglingHP(null);
   };
 
   const handleSaveOvr = async (sofifaId: string, fifaYear: number) => {
@@ -739,11 +773,25 @@ export default function PlayerSearchPage() {
                   const isOpen = expandedPlayer === group.sofifa_id;
                   const bestOvr = Math.max(...group.editions.map(e => e.manual_overall ?? e.overall ?? 0));
                   const editionRange = `${yearLabel(group.editions[group.editions.length - 1].fifa_year)} – ${yearLabel(group.editions[0].fifa_year)}`;
+                  // The one edition the Star Career game actually reads. The
+                  // toggle below only does anything when this exists —
+                  // ticking "high potential" on a player with no FC 27 row
+                  // would silently update nothing.
+                  const fc27 = group.editions.find(e => e.fifa_year === STAR_FIFA_YEAR);
                   return (
                     <div key={group.sofifa_id} className="rounded-xl border border-gray-800 overflow-hidden">
-                      <button
+                      {/* A div, not a button — the High Potential toggle
+                          below is a real button nested inside it (a
+                          basetable of the whole row's own expand action),
+                          and a <button> cannot legally contain another one.
+                          Same pattern the edition rows below already use
+                          for their own inline-editable fields. */}
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => setExpandedPlayer(isOpen ? null : group.sofifa_id)}
-                        className={`w-full text-left px-5 py-3.5 flex items-center gap-4 transition-colors ${
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpandedPlayer(isOpen ? null : group.sofifa_id); }}
+                        className={`w-full text-left px-5 py-3.5 flex items-center gap-4 transition-colors cursor-pointer ${
                           isOpen ? "bg-gray-800" : "bg-gray-900 hover:bg-gray-850"
                         }`}
                       >
@@ -751,6 +799,34 @@ export default function PlayerSearchPage() {
                           <span className="font-bold text-white text-base">{group.name}</span>
                           <span className="ml-3 text-xs text-white">ID: {group.sofifa_id}</span>
                         </div>
+                        {/* ── High Potential — requested directly, right on
+                            this base row: a plain tick, always for FC 27
+                            (the edition Road to Ballon d'Or reads). See
+                            handleToggleHighPotential's own header for why
+                            this always targets STAR_FIFA_YEAR specifically,
+                            and lib/star/leagueSquads.ts's growWonderkids /
+                            leagueTransfers.ts for what ticking it does in
+                            the actual game. */}
+                        <button
+                          type="button"
+                          disabled={!fc27 || togglingHP === group.sofifa_id}
+                          onClick={(e) => { e.stopPropagation(); if (fc27) handleToggleHighPotential(group.sofifa_id, fc27.high_potential); }}
+                          title={
+                            !fc27
+                              ? "No FC 27 edition for this player yet"
+                              : fc27.high_potential
+                                ? "High Potential — click to un-tag"
+                                : "Tag as High Potential (FC 27)"
+                          }
+                          className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wide border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                            fc27?.high_potential
+                              ? "bg-amber-500/20 border-amber-400 text-amber-300"
+                              : "bg-transparent border-gray-700 text-white/50 hover:border-gray-500 hover:text-white/80"
+                          }`}
+                        >
+                          <span>{fc27?.high_potential ? "★" : "☆"}</span>
+                          <span className="hidden sm:inline">High Potential</span>
+                        </button>
                         <div className="text-sm text-white">{editionRange}</div>
                         <div className="px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-400 text-sm font-bold">
                           Peak {bestOvr}
@@ -759,7 +835,7 @@ export default function PlayerSearchPage() {
                           {group.editions.length} edition{group.editions.length !== 1 ? "s" : ""}
                         </div>
                         <div className="text-white">{isOpen ? "▲" : "▼"}</div>
-                      </button>
+                      </div>
 
                       {isOpen && (
                         <div className="border-t border-gray-800">

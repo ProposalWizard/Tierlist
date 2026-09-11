@@ -244,9 +244,58 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   check(seasonsInPremier > 0, `including some seasons in the Premier League (${seasonsInPremier})`);
 }
 
+// ── A corrupted 21-club Premier League heals back to 20/24/5 ────────────────
+//
+// Reported directly from a real save at season 3: the Premier League table
+// held 21 clubs. The pure arithmetic above is provably correct today (the
+// twenty-season stress test never drifts), so this reproduces the actual
+// reported SHAPE — not by finding a code path that causes it, but by
+// starting `resolveLadder` from a `career.divisions` already in that state,
+// exactly like a save file that picked up the corruption from an old,
+// already-fixed bug and has carried it every season since. `reconcileLadder`
+// (the self-healing step in resolveLadder) has to fix a shape like this on
+// the very next rollover, with no club invented and none silently dropped.
+{
+  const premierClubs = [...PREMIER_LEAGUE_CLUBS];
+  const championshipClubs = [...CHAMPIONSHIP_CLUBS];
+  const poolClubs = [...PROMOTION_POOL_CLUBS];
+
+  // The 21st Premier League club is a duplicate of a real Championship club —
+  // the same name sitting in two tiers at once, which is exactly what
+  // "twenty one clubs in the Premier League" looks like from inside a save
+  // that also still has a full, un-shrunk Championship.
+  const strayClub = championshipClubs[0];
+  const corruptDivisions = {
+    premier: [...premierClubs, strayClub],
+    championship: [...championshipClubs],
+    pool: [...poolClubs],
+  };
+
+  const order = [...premierClubs, strayClub];
+  let career = withStandings(
+    makeInitialCareer(playerAt(order[0]), order, "premier"), order);
+  career = { ...career, divisions: corruptDivisions };
+
+  const out = resolveLadder(career, mulberry32(23));
+  const { premier, championship, pool } = out.divisions;
+
+  check(premier.length === PREMIER_LEAGUE_CLUBS.length,
+    `a corrupted 21-club Premier League heals to ${PREMIER_LEAGUE_CLUBS.length} (saw ${premier.length})`);
+  check(championship.length === CHAMPIONSHIP_CLUBS.length,
+    `the Championship still ends up at ${CHAMPIONSHIP_CLUBS.length} (saw ${championship.length})`);
+  check(pool.length === PROMOTION_POOL_CLUBS.length,
+    `the pool still ends up at ${PROMOTION_POOL_CLUBS.length} (saw ${pool.length})`);
+
+  const all = [...premier, ...championship, ...pool];
+  check(new Set(all).size === all.length, "no club is left sitting in two tiers at once");
+  check(all.length === PREMIER_LEAGUE_CLUBS.length + CHAMPIONSHIP_CLUBS.length + PROMOTION_POOL_CLUBS.length,
+    `no club was invented or dropped while healing (${all.length} total)`);
+  check(new Set(all).has(strayClub), "the stray duplicate club still exists somewhere, just not doubled up");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — three up, three down, play-offs, and twenty seasons that still add up");
+console.log("PASS — three up, three down, play-offs, twenty seasons that still add up, and a corrupted save heals itself");

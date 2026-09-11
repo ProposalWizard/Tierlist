@@ -32,13 +32,14 @@ import { settleBets, betNewsLines } from "./competitionBetting";
 import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier, TROPHY_FAME } from "./rating";
+import { nudgeReputation, worldReputationFromSeason, clubReputationFromSeason } from "./reputation";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
-import { resetLeagueSquads, syncLeagueStrengthFromSquads } from "./leagueSquads";
+import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
 } from "./potm";
@@ -103,7 +104,13 @@ export function makeInitialCareer(
       vision: getTuning("startingSkills.vision"),
       freeKick: getTuning("startingSkills.freeKick"),
     },
+    lastTrainedWeek: { pace: 1, power: 1, technique: 1, vision: 1, freeKick: 1 },
     relationships: { boss: 60, team: 60, fans: 40, girlfriend: null, sponsors: 0 },
+    // A trialist is unknown to the football world and to any governing body
+    // or shareholder — low but not zero, the same "unproven, not disliked"
+    // starting point `fans: 40` already sets. Club reputation starts higher,
+    // matching the fresh-signing optimism `boss`/`team` already open with.
+    reputation: { world: 15, club: 50, government: 5, shareholders: 5 },
     contract: { club: player.club, wage: 1, goalBonus: 1, assistBonus: 1, seasonsRemaining: 3 },
     season: 1,
     division,
@@ -238,6 +245,56 @@ export function markContractOfferUsed(career: CareerState, reason: "form" | "sta
     return { ...career, contractFormOfferSeason: career.season };
   }
   return career;
+}
+
+/**
+ * NEGLECT A SKILL LONG ENOUGH AND IT SLIPS.
+ *
+ * Requested directly: "if you haven't trained any of your attributes...
+ * every few months... you have a chance of downgrading them by a point or
+ * two every time. So then you have to go and play and earn the points back."
+ * `lastTrainedWeek` (types.ts) only moves on the deliberate training
+ * minigame — a passing good match already earns its own skill points
+ * elsewhere in this file, which is a separate reward, not evidence the
+ * skill is being MAINTAINED.
+ *
+ * Checked once per match played (creditMatchResult, guarded against a
+ * replay the same way every other once-per-match effect there is) rather
+ * than on a fixed calendar date, so a career that skips matches entirely
+ * for a stretch still has its skills quietly checked in the background —
+ * "every few months" is a real elapsed time, not "the next N times you
+ * happen to play".
+ *
+ * Every skill overdue gets its OWN independent roll — training pace and
+ * neglecting technique for the same stretch can decay one without the
+ * other. A successful roll resets that skill's own clock (`lastTrainedWeek`
+ * moves to now), so it isn't eligible to decay again next match purely
+ * because nothing else has changed — the same beat as actually training it,
+ * just a worse outcome.
+ */
+export function decaySkills(career: CareerState, rng: () => number): CareerState {
+  const overdue = getTuning("attributes.decayCheckWeeks");
+  const chance = getTuning("attributes.decayChance");
+  const minLoss = getTuning("attributes.decayMin");
+  const maxLoss = getTuning("attributes.decayMax");
+  const floor = getTuning("attributes.decayFloor");
+  const lastTrained = career.lastTrainedWeek ?? {};
+
+  let skills = career.skills;
+  let lastTrainedWeek = lastTrained;
+  let changed = false;
+  for (const key of Object.keys(career.skills) as (keyof Skills)[]) {
+    const since = career.week - (lastTrained[key] ?? 1);
+    if (since < overdue) continue;
+    if (rng() >= chance) continue;
+    const loss = minLoss + Math.floor(rng() * (maxLoss - minLoss + 1));
+    if (!changed) { skills = { ...career.skills }; lastTrainedWeek = { ...lastTrained }; changed = true; }
+    skills[key] = Math.max(floor, skills[key] - loss);
+    // The clock resets here too — a skill that just decayed is not still
+    // overdue next match purely because nothing about it has changed since.
+    lastTrainedWeek[key] = career.week;
+  }
+  return changed ? { ...career, skills, lastTrainedWeek } : career;
 }
 
 // Apply a finished match to the career: season/career stat accrual, the user's
@@ -777,6 +834,14 @@ export function creditMatchResult(
   // what makes this safe against a replay.
   Object.assign(next, runDueTransferWindow(next));
 
+  // Neglect a skill long enough and it can slip — see decaySkills's own
+  // header. Gated on `!alreadyPlayed` for the same reason every other
+  // once-per-match effect above is: a replayed fixture must never roll
+  // this twice.
+  if (!alreadyPlayed) {
+    Object.assign(next, decaySkills(next, mulberry32(next.season * 5051 + next.week * 131 + 3)));
+  }
+
   const settled = applyAchievements(next);
   return {
     career: { ...settled.career, starRating: computeStarRating(settled.career) },
@@ -1066,9 +1131,17 @@ export function advanceSeason(
     // in it is dead weight the team sheet would never read; the ones now
     // missing are refetched by the page (see the division-change effect in
     // app/star-dev/page.tsx).
-    leagueSquads: resetLeagueSquads(
-      (career.leagueSquads ?? []).filter(s => clubs.includes(s.club)),
+    // Wonderkids get their real shot at growing here, once a season — see
+    // growWonderkids's own header. Applied to both the division you're
+    // actually in (leagueSquads) and the wider world (externalSquads,
+    // otherwise just carried forward unchanged by the `...career` spread
+    // above) — a High Potential player at a Champions League club is no
+    // less real for being outside your own twenty.
+    leagueSquads: growWonderkids(
+      resetLeagueSquads((career.leagueSquads ?? []).filter(s => clubs.includes(s.club))),
+      mulberry32(career.season * 71923 + 5),
     ),
+    externalSquads: growWonderkids(career.externalSquads ?? [], mulberry32(career.season * 71923 + 7)),
     seasonStats: { ...EMPTY_SEASON_STATS },
     matchFitness: 85,
     // A summer off resets both — nobody carries a knock or a tired pair of
@@ -1090,6 +1163,14 @@ export function advanceSeason(
       ...career.relationships,
       boss: clamp01to100(career.relationships.boss + judgement.bossChange),
     },
+    // Reputation's two Phase 1 hooks (see reputation.ts's own file note):
+    // silverware nudges world standing, and the board's own verdict on the
+    // season — the same judgement that just moved `boss` above — nudges
+    // club standing, at its own smaller scale.
+    reputation: nudgeReputation(career.reputation, {
+      world: worldReputationFromSeason(trophyFame, honourFame),
+      club: clubReputationFromSeason(judgement.score),
+    }),
     lastSeasonJudgement: judgement,
     awards: honours.length > 0 ? [...(career.awards ?? []), ...honours] : career.awards,
     sponsors: sponsorRoll.sponsors,
