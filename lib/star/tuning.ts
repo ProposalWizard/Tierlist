@@ -170,9 +170,24 @@ export const TUNABLES: TunableDef[] = [
     default: 3, min: 0, max: 15, step: 1,
   },
   {
-    key: "wonderkids.growthCap", category: "Wonderkids", label: "Overall ceiling",
-    description: "Growth never pushes a High Potential player's overall past this, however many seasons he keeps developing.",
+    key: "wonderkids.growthCap", category: "Wonderkids", label: "High Potential ceiling",
+    description: "The typical ceiling growth stops at for a High Potential player — but see Breakout chance below: a real minority of them are secretly capable of reaching the higher World Class ceiling instead.",
     default: 92, min: 1, max: 99, step: 1,
+  },
+  {
+    key: "wonderkids.worldClassGrowthCap", category: "Wonderkids", label: "World Class ceiling",
+    description: "The typical ceiling growth stops at for a World Class Potential player — genuinely higher than the ordinary High Potential ceiling. See Underachieve chance below: a real minority of them only ever reach the lower High Potential ceiling instead.",
+    default: 97, min: 1, max: 99, step: 1,
+  },
+  {
+    key: "wonderkids.breakoutChance", category: "Wonderkids", label: "Breakout chance (High Potential)",
+    description: "Requested directly: a High Potential player can occasionally go above and beyond and reach the higher World Class ceiling instead of his own — a real, if uncommon, breakout. Fixed per player (his own hidden destiny), not re-rolled every season.",
+    default: 0.12, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "wonderkids.underachieveChance", category: "Wonderkids", label: "Underachieve chance (World Class)",
+    description: "Requested directly: a World Class player doesn't always hit the very highest tier — sometimes he only reaches the lower High Potential ceiling. Fixed per player (his own hidden destiny), not re-rolled every season.",
+    default: 0.25, min: 0, max: 1, step: 0.01,
   },
   {
     key: "wonderkids.feeMultiplier", category: "Wonderkids", label: "Transfer fee premium",
@@ -193,6 +208,11 @@ export const TUNABLES: TunableDef[] = [
     key: "wonderkids.mediaChance", category: "Wonderkids", label: "Media hype chance, per week",
     description: "Odds the England tab features one High Potential player from the rest of the division in any given week — \"these players get talked about in the media quite a bit.\"",
     default: 0.22, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "wonderkids.worldClassMultiplier", category: "Wonderkids", label: "World Class multiplier",
+    description: "World Class Potential is the stronger tier above High Potential — this multiplies growth chance, growth gain, the transfer-fee premium, and the big-club reach bonus for a World Class player on top of what High Potential alone already gives him.",
+    default: 1.5, min: 1, max: 5, step: 0.1,
   },
 
   // ── Training gains ───────────────────────────────────────────────────

@@ -52,6 +52,9 @@ interface LeanPlayer {
   /** The admin-ticked "real potential to improve" flag — see LeaguePlayer.
    *  highPotential (types.ts) and growWonderkids (leagueSquads.ts). */
   highPotential?: boolean;
+  /** The stronger tier above `highPotential` — see LeaguePlayer.
+   *  worldClassPotential (types.ts). */
+  worldClassPotential?: boolean;
 }
 
 export async function GET(request: NextRequest) {
@@ -127,26 +130,38 @@ export async function GET(request: NextRequest) {
 
   const PAGE_SIZE = 1000;
   const rows: Record<string, unknown>[] = [];
-  // Whether `high_potential` is actually queried this request — starts true,
-  // dropped permanently the moment it errors once (see the note below), so
-  // every later page in the same request goes straight to the fallback
-  // instead of re-discovering the same failure on each one.
+  // Which of the two potential-tier columns are actually queried this
+  // request — both start true, dropped permanently (one at a time,
+  // world_class_potential first since its migration is the newer of the
+  // two) the moment a query errors, so every later page in the same
+  // request goes straight to whatever already worked instead of
+  // re-discovering the same failure on each one.
   let includeHighPotential = true;
+  let includeWorldClass = true;
+  const columnsFor = () => BASE_COLUMNS
+    + (includeHighPotential ? ", high_potential" : "")
+    + (includeWorldClass ? ", world_class_potential" : "");
   for (let from = 0; ; from += PAGE_SIZE) {
-    let { data, error } = await runQuery(includeHighPotential ? `${BASE_COLUMNS}, high_potential` : BASE_COLUMNS, from, PAGE_SIZE);
+    let { data, error } = await runQuery(columnsFor(), from, PAGE_SIZE);
 
-    // `high_potential.sql` (see CLAUDE.md's pending-migrations table) may not
-    // have run against the live database yet — selecting a column that
-    // doesn't exist fails the WHOLE query, not just the missing field (the
-    // exact Supabase behaviour the admin page's own "Critical Gotchas" note
-    // already warns about), which broke every single real squad fetch the
-    // moment this column was added here — every club silently fell back to
-    // `generatedSquad`'s fake roster instead of just missing the wonderkid
-    // flag. Retried once without it so a pending migration degrades to "no
-    // wonderkid flag yet," not "no real players in the entire division."
+    // Either migration (`high_potential.sql`/`world_class_potential.sql` —
+    // see CLAUDE.md's pending-migrations table) may not have run against
+    // the live database yet — selecting a column that doesn't exist fails
+    // the WHOLE query, not just the missing field (the exact Supabase
+    // behaviour the admin page's own "Critical Gotchas" note already warns
+    // about), which broke every single real squad fetch the moment
+    // `high_potential` was first added here — every club silently fell
+    // back to `generatedSquad`'s fake roster instead of just missing the
+    // wonderkid flag. Retried up to twice, dropping one column at a time,
+    // so a pending migration degrades to "no potential tier yet," never
+    // "no real players in the entire division."
+    if (error && includeWorldClass) {
+      includeWorldClass = false;
+      ({ data, error } = await runQuery(columnsFor(), from, PAGE_SIZE));
+    }
     if (error && includeHighPotential) {
       includeHighPotential = false;
-      ({ data, error } = await runQuery(BASE_COLUMNS, from, PAGE_SIZE));
+      ({ data, error } = await runQuery(columnsFor(), from, PAGE_SIZE));
     }
 
     if (error) {
@@ -177,13 +192,21 @@ export async function GET(request: NextRequest) {
     const image = ((row.image_url as string) || "").trim();
     const nation = (((row.manual_nationality as string) || (row.nationality as string)) || "").trim();
     const age = row.age as number | null;
-    const highPotential = row.high_potential === true;
+    const worldClassPotential = row.world_class_potential === true;
+    // World Class always implies High Potential — read as an OR here too,
+    // in case a row somehow has world_class_potential set without
+    // high_potential (shouldn't happen given the admin PATCH route always
+    // sets both together, but a lean read like this one is exactly the
+    // kind of place a raw, unenforced boolean column could drift, and
+    // every downstream hook keyed off `highPotential` should still fire).
+    const highPotential = row.high_potential === true || worldClassPotential;
     list.push({
       id: String(row.sofifa_id), name, positions, overall,
       ...(image ? { image } : {}),
       ...(nation ? { nation } : {}),
       ...(age ? { age } : {}),
       ...(highPotential ? { highPotential } : {}),
+      ...(worldClassPotential ? { worldClassPotential } : {}),
     });
   }
 

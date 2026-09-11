@@ -224,6 +224,17 @@ export interface LeaguePlayer {
    * optional real-player field here.
    */
   highPotential?: boolean;
+  /**
+   * The stronger tier above `highPotential`, added directly afterward —
+   * `sofifa_players.world_class_potential` in /admin/football/players.
+   * ALWAYS accompanied by `highPotential: true` for the same player (set
+   * that way by the admin PATCH route), so every hook keyed off
+   * `highPotential` already fires for a World Class player too; this only
+   * needs to be read where the STRONGER tier itself matters (a bigger
+   * growth roll, a bigger fee premium, a bigger reach-up bias). Same
+   * "absent means no" convention as `highPotential`.
+   */
+  worldClassPotential?: boolean;
 }
 
 export interface LeagueSquad {
@@ -307,6 +318,9 @@ export interface SquadPlayer {
    *  who ended up in YOUR squad (your own club's real roster, or someone
    *  you signed) rather than one of the other nineteen. */
   highPotential?: boolean;
+  /** See LeaguePlayer.worldClassPotential — the same stronger tier, for a
+   *  man in YOUR squad. */
+  worldClassPotential?: boolean;
   /**
    * Every position he is actually listed for, `position` included — a real
    * player's data holds several (SoFIFA's "CAM, CM, LW"), but building the
