@@ -1,6 +1,7 @@
 import type { LeagueTeam, Fixture, LeagueFixture, LeagueResult, LeagueSquad } from "./types";
 import { nameGoals, creditNamedGoals, type NamedOppGoal } from "./leagueSquads";
 import { primaryRivalOf } from "./rivalries";
+import { applyResult, DEFAULT_RULE_BOOK, type RuleBook } from "./ruleBook";
 
 // Deterministic PRNG so a career's season sim is reproducible
 export function mulberry32(seed: number): () => number {
@@ -142,6 +143,9 @@ export function playLeagueWeek(
   },
   rng: () => number,
   squads?: LeagueSquad[],
+  /** Phase 4 of STAR_POWER_POLITICS.md — absent means the classic rules,
+   *  byte-identical to every call site that predates this parameter. */
+  rules: RuleBook = DEFAULT_RULE_BOOK,
 ): { league: LeagueTeam[]; results: LeagueResult[] } {
   const clubs = league.map(t => t.name);
   const strength = new Map(league.map(t => [t.name, t.strength]));
@@ -190,12 +194,11 @@ export function playLeagueWeek(
     const H = updated.find(t => t.name === home);
     const A = updated.find(t => t.name === away);
     if (!H || !A) return;
-    H.played++; A.played++;
     H.goalsFor += sc.home; H.goalsAgainst += sc.away;
     A.goalsFor += sc.away; A.goalsAgainst += sc.home;
-    if (sc.home > sc.away) { H.won++; A.lost++; H.points += 3; }
-    else if (sc.home < sc.away) { A.won++; H.lost++; A.points += 3; }
-    else { H.drawn++; A.drawn++; H.points += 1; A.points += 1; }
+    const outcome = applyResult(rules, H, A, sc.home, sc.away, hs, as, rng);
+    H.played = outcome.home.played; H.won = outcome.home.won; H.drawn = outcome.home.drawn; H.lost = outcome.home.lost; H.points = outcome.home.points;
+    A.played = outcome.away.played; A.won = outcome.away.won; A.drawn = outcome.away.drawn; A.lost = outcome.away.lost; A.points = outcome.away.points;
     used.add(home); used.add(away);
   };
 
@@ -239,21 +242,26 @@ export function updateLeagueWithUserResult(
   opponent: string,
   userScore: number,
   oppScore: number,
+  /** Phase 4 of STAR_POWER_POLITICS.md — see playLeagueWeek's own note. */
+  rules: RuleBook = DEFAULT_RULE_BOOK,
+  /** Only ever consulted for a genuine draw under `rules.noDraws` — see
+   *  applyResult's own note. This whole codebase stays seeded/deterministic
+   *  even in fallback paths, so the default here is `mulberry32`'s own
+   *  generator, not `Math.random` — it can only matter when a caller has
+   *  already opted into `noDraws` and therefore has every reason to pass a
+   *  real seeded one instead. */
+  rng: () => number = mulberry32(1),
 ): LeagueTeam[] {
+  const user = league.find(t => t.name === userClub);
+  const opp = league.find(t => t.name === opponent);
+  if (!user || !opp) return league;
+  const outcome = applyResult(rules, user, opp, userScore, oppScore, user.strength, opp.strength, rng);
   return league.map((t) => {
     if (t.name === userClub) {
-      const updated = { ...t, played: t.played + 1, goalsFor: t.goalsFor + userScore, goalsAgainst: t.goalsAgainst + oppScore };
-      if (userScore > oppScore) { updated.won++; updated.points += 3; }
-      else if (userScore < oppScore) updated.lost++;
-      else { updated.drawn++; updated.points += 1; }
-      return updated;
+      return { ...t, ...outcome.home, goalsFor: t.goalsFor + userScore, goalsAgainst: t.goalsAgainst + oppScore };
     }
     if (t.name === opponent) {
-      const updated = { ...t, played: t.played + 1, goalsFor: t.goalsFor + oppScore, goalsAgainst: t.goalsAgainst + userScore };
-      if (oppScore > userScore) { updated.won++; updated.points += 3; }
-      else if (oppScore < userScore) updated.lost++;
-      else { updated.drawn++; updated.points += 1; }
-      return updated;
+      return { ...t, ...outcome.away, goalsFor: t.goalsFor + oppScore, goalsAgainst: t.goalsAgainst + userScore };
     }
     return t;
   });

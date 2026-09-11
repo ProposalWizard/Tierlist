@@ -2,6 +2,7 @@ import type { SeasonWinners } from "./careerFlow";
 import type { CareerState } from "./types";
 import { poolFor } from "./euro";
 import { seasonQualifiers } from "./competitions";
+import { ruleBookFor } from "./ruleBook";
 
 /**
  * THE CASINO'S BOOK — BETTING ON WHO WINS THE ACTUAL COMPETITIONS.
@@ -131,7 +132,8 @@ export function entrantsFor(competition: BetCompetition, career: CareerState): {
     return career.euroState.clubs.map(c => ({ name: c.name, strength: c.strength }));
   }
   const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
-  const qualifiers = seasonQualifiers(career.league, null, null);
+  const uefaRules = ruleBookFor(career, "UEFA");
+  const qualifiers = seasonQualifiers(career.league, null, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
   const domestic = (competition === "championsLeague" ? qualifiers.champions : qualifiers.europa)
     .map(name => ({ name, strength: strengthOf(name) }));
   const foreign = poolFor(euroId).map(c => ({ name: c.name, strength: c.strength }));

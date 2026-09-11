@@ -853,10 +853,30 @@ function attackers(sc: Scenario): { pos: Vec2; flag: (v: boolean) => void }[] {
 }
 
 /**
+ * Whether the law applies at all this match — Phase 6 of
+ * STAR_POWER_POLITICS.md, rule §4.4 #1 ("abolish offside entirely, for
+ * whichever competition(s) the acting body controls"). A module-level
+ * setting rather than a parameter threaded through every scenario-building
+ * function between here and CanvasMatch.tsx (there are several layers, and
+ * this is one flag for the one match currently being played, not per-call
+ * data) — set once, at the start of a match, by CanvasMatch.tsx reading
+ * `career.ruleBook`'s FA entry. Defaults true so every existing call site,
+ * and every test that never touches this, sees exactly the law it always
+ * has.
+ */
+let offsideRuleEnabled = true;
+
+export function setOffsideRuleEnabled(enabled: boolean): void {
+  offsideRuleEnabled = enabled;
+}
+
+/**
  * Freeze the pitch and judge every attacker's POSITION. Called at the instant a
  * team-mate deliberately plays the ball, and at no other time.
  */
 export function offsideSnapshot(sc: Scenario, ballAt: Vec2) {
+  // The law itself has been abolished this match — nobody is ever offside.
+  if (!offsideRuleEnabled) { clearOffside(sc); return; }
   // A corner cannot produce offside directly.
   if (sc.kind === "corner") { clearOffside(sc); return; }
   // ── Nor can a situation with no goal in it ──

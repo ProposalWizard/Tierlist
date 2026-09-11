@@ -270,9 +270,15 @@ export function qualificationFor(
   wonFaCup = false,
   wonLeagueCup = false,
   wonEuroComp = false,
+  /** Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #11 — extra places UEFA
+   *  has granted this country on top of the ordinary top-5/6th-7th split.
+   *  Both default to 0, so every existing caller sees exactly the split it
+   *  always has. */
+  extraChampionsLeagueSlots = 0,
+  extraEuropaLeagueSlots = 0,
 ): Competition | null {
-  const cl = Math.round(clubCount * 0.25);  // PL: top 5
-  const elBottom = cl + 2;                   // PL: 7th
+  const cl = Math.round(clubCount * 0.25) + extraChampionsLeagueSlots;  // PL: top 5, plus any UEFA grant
+  const elBottom = cl + 2 + extraEuropaLeagueSlots;                      // PL: 7th, plus any UEFA grant
 
   if (position <= cl) return "Champions League";
   if (wonEuroComp) return "Champions League";         // UCL/EL winner outside top 5
@@ -297,10 +303,13 @@ export function seasonQualifiers(
   league: LeagueTeam[],
   faCupWinner: string | null,
   leagueCupWinner: string | null,
+  /** Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #11 — see qualificationFor's own note. */
+  extraChampionsLeagueSlots = 0,
+  extraEuropaLeagueSlots = 0,
 ): { champions: string[]; europa: string[] } {
   const table = sortLeague(league).map(t => t.name);
-  const cl = Math.round(league.length * 0.25);
-  const elBottom = cl + 2;
+  const cl = Math.round(league.length * 0.25) + extraChampionsLeagueSlots;
+  const elBottom = cl + 2 + extraEuropaLeagueSlots;
   const champions = new Set(table.slice(0, cl));
   const europa = new Set(table.slice(cl, elBottom));
   let cascade = elBottom; // next candidate by table position for a vacated cup berth

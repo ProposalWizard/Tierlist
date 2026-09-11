@@ -387,6 +387,60 @@ finally club takeovers/mergers (§2's hardest item — full assets
 absorption, renaming, split fan reaction). This phase is scoped to YOUR
 OWN club and clubs you can buy outright — no governing bodies yet.
 
+**Done, 11 September 2026.** New `lib/star/clubPowers.ts`, built on top of
+Phase 1's reputation and Phase 2's voting engine rather than duplicating
+either:
+- **Recommendations**: `submitRecommendation` (below-majority stakes
+  only — a majority owner already acts directly) / `considerRecommendations`
+  (an `advanceSeason` hook: a real, shareholder-reputation-biased roll,
+  never certain, +1 shareholder reputation on adoption, nothing lost on
+  dismissal since a non-binding suggestion was never a risk).
+- **Formation as manager**: `setClubFormation` (majority-only) plus
+  `clubStrengthWithFormation` — a real, SMALL, bounded (±3) strength
+  adjustment computed from `formations.ts`'s own `autoPick`/`bestFitness`
+  fitness math, read-time only, never written back into the stored
+  `LeagueTeam.strength` the real season simulation uses everywhere else.
+- **Kit creator + fan vote**: `ClubKit` (primary/secondary/trim colours),
+  `setClubKit` (direct, majority-only) or `proposeKitVote`/`resolveKitVote`
+  (a real fan vote reusing Phase 2's `castVote`, biased by fan reputation
+  when you nominate a favourite, +2 fan reputation for holding the vote at
+  all).
+- **Elected presidency + wage**: `proposePresidentVote`/`resolvePresidentVote`
+  (a real shareholder vote on YOU specifically, same overrule/reputation-cost
+  machinery Phase 2's sell-vote already uses) — passing sets
+  `ownedClubs[club].isPresident`; only then can `setPresidentWage` set a
+  real number, paid out of the CLUB's own budget (capped at what's
+  actually there) into your own money every season via the new
+  `payPresidentWages` `advanceSeason` hook.
+- **The §4.5 son mechanic**: `haveASon` (a real cost, starts as a newborn),
+  `ageUpSonWithPotion` (real, capped, random age/ability jumps, real
+  ongoing cost, reusable as many times as you like), `promoteSonToFirstTeam`
+  (majority-owned club only, a real age floor of 16, becomes a genuine
+  `LeaguePlayer` entry in that club's actual squad), `transferSon` (moved
+  for free, no vote, to ANY club with a real squad on file — the one place
+  this whole layer deliberately breaks its own ownership rules, because the
+  brief frames this power as total and personal: "because you're his dad").
+- **Mergers**: `canMergeClubs`/`mergeClubs` — requires genuine 100%
+  ownership of BOTH sides, the survivor's squad is capped at the normal
+  squad-size limit (best combined XI survives, not a doubled roster), the
+  absorbed club's real squad is genuinely emptied and marked
+  `dissolvedInto`, combined budgets, and a real fan-reputation cost (15
+  points) for "stealing their club." Deliberately does NOT remove the
+  absorbed club from `clubs.ts`'s fixed lists or the ladder's fixed
+  division sizes — see `mergeClubs`'s own comment for why that would have
+  broken the exact invariant `promotion.ts`'s `reconcileLadder` exists to
+  protect; an honest simplification, not a shortcut.
+- Minimal but real UI: a new "Powers" tab in the Boardroom screen
+  (formation/kit/presidency/wage/merge/son), and a "Recommend to the
+  board" action on minority stakes in the Portfolio tab. Deliberately NOT
+  built: dedicated polished screens for each — this reuses
+  `VoteCeremony` and simple form controls rather than seven bespoke
+  flows, matching the "honestly modest" depth `investments.ts`'s own
+  header already commits to for governance UI.
+- `tests/star/clubPowers.mts` (new, all seven sub-mechanics plus both
+  `advanceSeason` hooks) passes, alongside the full 93-file suite and
+  `tsc --noEmit`.
+
 ### Phase 4 — The Rule Book, starting with the simplest rules only
 Using Phase 1+2, and gated behind governing-body investment (a new,
 smaller version of the club-investment system, scoped per §4.2's map).
@@ -403,11 +457,59 @@ and anything competition-format-shaped — those need real match-engine or
 team-sheet work (see Phase 6) and shouldn't block shipping the rule-book
 UI and voting flow on the simplest possible real rules.
 
+**Done, 11 September 2026.** New `lib/star/governingBodies.ts` (§4.2's map
+as real data — FA/UEFA/FIFA/CONMEBOL, each scoped to the real competitions
+it runs; `investInfluence`, a flat-priced 0-100 influence stat per body,
+deliberately not a live valuation like a club stake since there's no
+"how good is this body right now" fact to price it against) and new
+`lib/star/ruleBook.ts` (the three rules, a shared `applyResult` function,
+and `proposeRuleChangeVote`/`resolveRuleChangeVote` reusing Phase 2's
+`castVote`/`VoteCeremony` exactly, gated by influence rather than
+ownership, overrulable above a higher influence bar, costing WORLD
+reputation — not shareholder — since this is the world stage). `season.ts`'s
+`playLeagueWeek`/`updateLeagueWithUserResult` both take an optional
+`rules` parameter defaulting to the classic 3/1/0-with-draws setup, so
+every existing call site and every existing test sees byte-identical
+behaviour unless it opts in — only `careerFlow.ts`'s two real call sites
+now pass the FA's actual active rule book. Match length threads into
+`CanvasMatch.tsx` as a local value read off `career.ruleBook`'s FA entry,
+changing when the match actually ends and how in-match energy drains —
+deliberately NOT retuning `matchLog.ts`'s own commentary-density pacing
+(`halfTimeSplit`/`dwellFor`) or the half-time banner's trigger point,
+both of which stay calibrated for a classic 90-minute match; a
+non-default length still plays correctly start to finish, just without
+that pacing curve re-tuned for a length nobody asked to have tuned yet —
+the honest, contained slice of what the rollout plan itself flagged as
+the heaviest lift of the three. New `RuleBookScreen`, reachable from the
+dashboard. Scope, stated plainly: only the FA's rule book reaches
+anything this career actually plays — UEFA/FIFA/CONMEBOL are real,
+investable bodies with nowhere yet for these three rules to show an
+effect, since nothing simulates Europe or international football deeply
+enough for them to matter. `tests/star/ruleBook.mts` (new) plus the full
+94-file suite and `tsc --noEmit` both pass.
+
 ### Phase 5 — Corruption mechanics
 Bribery, illegal-equipment black market, the getting-caught risk/consequence
 system (§4.3) — built as one shared "risk of exposure" mechanic rather than
 three separate ones. Depends on reputation (Phase 1) and the rule book UI
 existing (Phase 4) enough to have real illegal-vs-legal states to toggle.
+
+**Done, 11 September 2026.** New `lib/star/corruption.ts`: `bribeVote`
+(sways real votes toward a target option, capped at 15% of the electorate
+so an enormous bribe tips a close vote rather than manufacturing a
+landslide), `exposureRisk`/`rollCaught` (a real per-act baseline risk,
+cut — never removed — by also hiring lawyers), and `applyGettingCaught`
+(one shared consequence for all three acts: a capped fine, a real
+world-reputation hit, damaged boss/fan relationships, and a genuine
+suspension that reuses `career.injury`'s exact shape rather than a second
+mechanic). `RuleBook.bannedItems` (a new field, votable through the
+existing Phase 4 vote engine for free since it's already generic over
+`Partial<RuleBook>`) makes a boot genuinely illegal; buying it anyway
+from "shady guys" (`blackMarketPrice`, a real markup) rolls the same
+exposure mechanic. Wired into the real Shop screen (a BANNED tag, a
+black-market purchase path) and the Rule Book screen (an optional bribe
+alongside any proposed rule change). `tests/star/corruption.mts` (new)
+passes.
 
 ### Phase 6 — The harder rules: match-engine and competition-structure changes
 Offside toggle, squad-size-per-side (needs real team-sheet/formation work —
@@ -420,6 +522,68 @@ Premier League example), and new-competition creation (Super League /
 new cup). Each of these is closer to a full feature in its own right and
 should likely be its own further-split set of sessions once reached.
 
+**Done, 11 September 2026 — with two items shipped as real, votable data
+that is HONESTLY not yet wired to any gameplay effect.** In order:
+- **Offside toggle**: genuinely wired. `canvasEngine.ts`'s
+  `offsideSnapshot` now checks a module-level `setOffsideRuleEnabled`
+  switch first — set once per match mount by `CanvasMatch.tsx` off
+  `career.ruleBook`'s FA entry — clearing every offside flag outright when
+  abolished. Proven against a real, rigged offside-position scenario: the
+  exact same position judged differently on vs. abolished vs. restored.
+- **Squad size per side**: real, votable `RuleBook.squadSize` data —
+  deliberately NOT wired to anything. The match engine and every
+  team-sheet screen still hard-assume 11 a side; changing this number
+  changes nothing on the pitch. Exactly the acceptable-later scope the
+  brief itself named.
+- **Champions League format**: real, votable
+  `RuleBook.championsLeagueFormat` ("league" | "groups") data —
+  deliberately NOT wired. `euro.ts`'s Champions League simulation is a
+  large, already-tested file; rewriting its actual competition structure
+  was judged too large and too risky to do safely alongside five other
+  phases in one pass, so this ships the data and the vote, honestly
+  short of the real mechanical rewrite Phase 0 already scoped the target
+  format for.
+- **European slot reallocation**: genuinely wired. `RuleBook.
+  extraChampionsLeagueSlots`/`extraEuropaLeagueSlots` (read off UEFA's own
+  rule book — UEFA controls these competitions, not the FA) are real
+  optional parameters on `competitions.ts`'s real `qualificationFor`/
+  `seasonQualifiers` functions, defaulting to 0 so every existing caller
+  is unaffected. A real club at a real league position is genuinely
+  pulled into the Champions League by a real extra slot, checked directly
+  against those functions.
+- **Forced league movement**: genuinely wired, via new
+  `lib/star/forcedMovement.ts`. Gated behind FA influence at the SAME high
+  bar as overruling a Rule Book vote (`RULE_OVERRULE_INFLUENCE_THRESHOLD`)
+  — a "high enough official" power, explicitly separate from club
+  ownership. Displaces the real 17th-placed club (or, when the player
+  isn't in that division to have a live table, the weakest by the same
+  strength estimate `promotion.ts` already uses for every un-simulated
+  club) into the Championship, which in turn bumps its own weakest club
+  into a genuinely new **limbo** tier (`career.limboClubs`) — extending
+  `promotion.ts`'s own `reconcileLadder` (the 21-club-bug fix from
+  earlier this session) to fold limbo returns back into next season's
+  real pool, shedding any resulting overflow back out the same way every
+  other tier's own overflow already gets handled. Never displaces the
+  PLAYER's own club — doing so mid-season would desync the live
+  `career.league` table from `career.divisions` until the next rollover,
+  the exact kind of edge case flagged as needing its own session; blocked
+  outright rather than half-handled.
+- **New competition creation**: genuinely real, via new
+  `lib/star/newCompetition.ts` — a standalone single-elimination bracket
+  (entrants trim to the largest clean power-of-two, never a padded/
+  invented bye), resolved statistically like any competition the player
+  has no personal stake in (the same principle `euro.ts`'s own
+  `crownWithoutYou` already uses), reusing `resolvePenalties` for a drawn
+  tie rather than inventing a fourth version of the same coin. Deliberately
+  standalone from `cups.ts`'s real FA Cup/League Cup machinery — that
+  system is tightly coupled to those two named competitions and the
+  calendar's own cup-week scheduling, and warping it to fit a brand-new
+  competition risked the existing, tested system more than it was worth.
+- `tests/star/phase6.mts` (new) covers everything with a real behavioural
+  effect; `ruleBook.mts`'s own magnitude tests cover the two data-only
+  fields, since there's nothing behavioural in them yet to test. Full
+  test suite and `tsc --noEmit` both pass.
+
 ### Phase 7 — Club facilities (§6)
 Can actually be pulled EARLIER if it turns out to be simple pure-data work
 (stadium/training-ground/youth-team as club attributes with no gameplay
@@ -427,6 +591,39 @@ hook yet) — flagged here at the end only because nothing above strictly
 depends on it, not because it's necessarily hard. Worth a quick scoping
 pass at the start of whichever session picks it up to decide if it's
 actually a Phase 1-adjacent quick win.
+
+**Done, 11 September 2026 — this was in fact a quick win.** New
+`lib/star/facilities.ts`: every one of the ~50+ clubs this game knows
+about gets a real stadium, training ground and youth academy the moment
+anything reads them (`facilitiesFor`) — deterministically generated from
+the club's own name along three independent hashed axes (the same
+`nameNoise`-style trick `promotion.ts`'s strength estimate already uses),
+never hand-authored per club and never re-rolled on a second read.
+Majority owners can rename the stadium, add capacity, and upgrade the
+training ground/youth academy up to a real top tier, each a real cost
+paid from the club's own budget — the same tier of action as every other
+Boardroom power. One real, deliberately modest gameplay hook, wired into
+`advanceSeason`: a bigger stadium earns its own club real gate-receipt
+revenue every season (`creditStadiumRevenue`), scaled to its real
+capacity, never touching the player's personal money. Deliberately NOT
+wired into `leagueSquads.ts`'s `growWonderkids` — a youth-academy-tier
+bonus to wonderkid growth would be a natural second hook, but that
+function's signature is already fixed and tested at two `advanceSeason`
+call sites, and this phase's own brief explicitly allows shipping real
+facility data with no gameplay hook at all, so that stayed out rather
+than risked. New Facilities section in the Boardroom's Powers tab.
+`tests/star/facilities.mts` (new) passes, alongside the full 97-file
+suite and `tsc --noEmit`.
+
+**This completes all seven phases of the original rollout plan.** Every
+phase's own honest gaps and deliberate scope cuts are recorded in that
+phase's own section above — read the relevant one before extending
+anything further. The only items never scheduled at all: becoming
+president/king of a real country (§5's end-game framing — no concrete
+mechanic given, needs real design first) and the two Phase 6 items shipped
+as real, votable Rule Book data without a gameplay hook (squad size,
+Champions League format) — both still open for a genuinely new session to
+pick up.
 
 ### Cut entirely from the rollout plan for now
 - Becoming president/king of a real country (§5's end-game framing) — no
