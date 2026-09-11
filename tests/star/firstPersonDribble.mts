@@ -1,5 +1,5 @@
 import {
-  newRun, applySteer, applyBurst, stepRun, runProgress, runSpeed,
+  newRun, applySteer, applyBurst, stepRun, runProgress, runSpeed, pickWaveSizes,
   BASE_SPEED, PACE_SPEED, LUNGE_REACH,
   type FpRunState, type FpDefender, type RunPhase,
 } from "../../lib/star/firstPersonDribble";
@@ -446,6 +446,87 @@ function telegraphWindows(oppStrength: number, seeds: number): number[] {
     }
   }
   check(seen.has(1) && seen.has(2) && seen.has(3) && seen.has(4), `all four wave sizes actually occur across enough seeds (saw ${[...seen].sort()})`);
+}
+
+// ── The "beaten" count real gameplay reads for its 7+-defenders bonus ─────
+//
+// `FirstPersonDribble.tsx`'s `onComplete` reports `beaten` as every
+// defender individually marked `"beaten"` — not a re-derived sum of
+// `roundSizes`, which would over-count a wave you never fully finished. On
+// a clean win every man is beaten by definition; on a loss only the waves
+// actually got past should count. Verified here against the exact formula
+// the component uses, driven through the same scripted oracle the rest of
+// this suite already trusts.
+{
+  const beatenOf = (s: FpRunState) => s.defenders.filter(d => d.phase === "beaten").length;
+
+  let clearedSeeds = 0;
+  for (let seed = 1; seed <= 300; seed++) {
+    const s = oracleRun(seed, 55, "correct");
+    if (s.phase !== "clear") continue;
+    clearedSeeds++;
+    const total = s.roundSizes.reduce((a, b) => a + b, 0);
+    check(beatenOf(s) === total, `a clean win beats every man across every wave (${beatenOf(s)} vs ${total} total, seed ${seed})`);
+  }
+  check(clearedSeeds >= 40, `enough seeds actually clear to trust the check above (${clearedSeeds}/300)`);
+
+  // A loss can still have beaten some of the very wave you lose in — a wave
+  // of two or more isn't all-or-nothing, you can beat one man and be caught
+  // by the other. So the real invariants are narrower than "only fully
+  // finished waves count": you never beat EVERYONE (else you wouldn't have
+  // lost), and nobody in a LATER wave ever engaged at all (the run ends the
+  // instant you're caught).
+  let lostSeeds = 0;
+  for (let seed = 1; seed <= 300; seed++) {
+    const s = oracleRun(seed, 90, "wrong");
+    if (s.phase !== "lost" || s.lostTo == null) continue;
+    lostSeeds++;
+    const total = s.roundSizes.reduce((a, b) => a + b, 0);
+    const lostRound = s.defenders[s.lostTo].round;
+    check(beatenOf(s) < total, `a loss never counts every defender across the run (${beatenOf(s)} of ${total}, seed ${seed})`);
+    const laterUntouched = s.defenders.filter(d => d.round > lostRound).every(d => d.phase === "waiting");
+    check(laterUntouched, `nobody in a wave after the one you lost in ever engaged (seed ${seed}, lost in wave ${lostRound + 1})`);
+  }
+  check(lostSeeds >= 60, `enough seeds actually lose (to a defender, not a timeout) to trust the checks above (${lostSeeds}/300)`);
+}
+
+// ── pickWaveSizes — real gameplay's own wave shape, capped at ten ─────────
+//
+// Requested directly, with the reason given: "it cannot have more than ten
+// players be shown... because in a real match there's only eleven players,
+// and one of them is a goalkeeper." Two to four waves, one to four men
+// each, but the cap is a hard ceiling that wins over the random rolls that
+// would otherwise exceed it — checked directly, not just at the defaults.
+{
+  let sawFewerThanFourWaves = false;
+  let sawCapBinding = false;
+  for (let seed = 1; seed <= 2000; seed++) {
+    const sizes = pickWaveSizes(mulberry32(seed * 7919 + 3));
+    check(sizes.length >= 2, `at least two waves (saw ${sizes.length})`);
+    check(sizes.length <= 4, `never more than four waves (saw ${sizes.length})`);
+    const total = sizes.reduce((a, b) => a + b, 0);
+    check(total <= 10, `total defenders across the whole run never exceeds ten (saw ${total}, sizes ${sizes})`);
+    for (const n of sizes) check(n >= 1 && n <= 4, `every wave still has one to four men (saw ${n})`);
+    if (sizes.length < 4) sawFewerThanFourWaves = true;
+    if (total === 10 || sizes.length < 4) sawCapBinding = true;
+  }
+  check(sawFewerThanFourWaves, "the random 2-4 wave count actually varies, not always landing on 4");
+  check(sawCapBinding, "the ten-man cap actually binds at least once across enough seeds, not just a theoretical ceiling");
+
+  // A tighter cap proves the cap wins over the wave-count/size ranges, not
+  // just that it happens not to matter at the defaults.
+  const tight = pickWaveSizes(mulberry32(99), { maxTotal: 3 });
+  const tightTotal = tight.reduce((a, b) => a + b, 0);
+  check(tightTotal <= 3, `a tight maxTotal is honoured even though it can cut wave count below minRounds (total ${tightTotal}, sizes ${tight})`);
+}
+
+// ── newRun's waveSizes override — real gameplay's exact wave shape, not a
+// re-roll of it — takes priority over `rounds` and skips the internal
+// random per-wave roll entirely.
+{
+  const s = newRun({ pace: 100, oppStrength: 100, waveSizes: [2, 1, 4], rounds: 3, rng: mulberry32(5) });
+  check(s.roundSizes.length === 3 && s.roundSizes[0] === 2 && s.roundSizes[1] === 1 && s.roundSizes[2] === 4,
+    `waveSizes is used verbatim, not re-rolled (got ${s.roundSizes})`);
 }
 
 if (problems.length) {

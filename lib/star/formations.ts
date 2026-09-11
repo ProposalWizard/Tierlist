@@ -50,6 +50,12 @@ export interface Formation {
 //    goalkeeper instead (5-2-2-1's keeper and central centre-back were
 //    overlapping).
 const GK = 0.94, DEF4 = 0.80, DEF = 0.75, WB = 0.73, HOLD = 0.632, MID = 0.478, ATT = 0.324, FWD = 0.17;
+/** A back five's own wide two, a touch ahead of its three centre-backs —
+ *  reported directly, with a marked-up screenshot: a flat five reads as
+ *  five regular defenders in a row, and a wing-back is meant to look like
+ *  more than a full-back with a different label. `WB` above stays what the
+ *  three centre-backs sit on; only LWB/RWB in `back5()` use this. */
+const WB_ADV = WB - 0.035;
 
 const gk = (): Slot => ({ role: "GK", x: 0.5, y: GK });
 /** A flat back four. */
@@ -74,11 +80,12 @@ const back4 = (): Slot[] => [
 const back3 = (): Slot[] => [
   { role: "CB", x: 0.22, y: DEF }, { role: "CB", x: 0.50, y: DEF }, { role: "CB", x: 0.78, y: DEF },
 ];
-/** Three centre-halves and two wing-backs, all level — a flat five. */
+/** Three centre-halves level, with the two wing-backs a touch further
+ *  forward than a flat line — see WB_ADV. */
 const back5 = (): Slot[] => [
-  { role: "LB", x: 0.07, y: WB, label: "LWB" }, { role: "CB", x: 0.30, y: WB },
+  { role: "LB", x: 0.07, y: WB_ADV, label: "LWB" }, { role: "CB", x: 0.30, y: WB },
   { role: "CB", x: 0.50, y: WB }, { role: "CB", x: 0.70, y: WB },
-  { role: "RB", x: 0.93, y: WB, label: "RWB" },
+  { role: "RB", x: 0.93, y: WB_ADV, label: "RWB" },
 ];
 
 const f = (id: string, name: string, ...rows: Slot[][]): Formation => ({

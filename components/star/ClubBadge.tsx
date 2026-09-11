@@ -33,13 +33,26 @@ export default function ClubBadge({ club, kit, size = 28 }: { club: string; kit?
   }, [club]);
 
   if (logoUrl && !failed) {
+    // Reported three times, from two different screens, as a stray white
+    // circle/oval sitting behind the crest that "moves around a bit" when
+    // zoomed — TWO earlier attempts chased it as a decorative glow effect on
+    // VersusScreen's header (both removed, neither was the actual cause).
+    // The real source: a real crest PNG/SVG is almost never a perfect
+    // circle — Forest's tree, United's shield — so `bg-white/10` painted
+    // behind it as a fill for the tag's own box showed straight through
+    // every transparent pixel the crest itself doesn't cover. Different
+    // crests have different transparent regions, which is exactly why it
+    // looked like a circle for one club and an oval for another, and why
+    // it shifted at different zoom levels (the crest's own alpha edge,
+    // not a fixed shape). No fill at all — the crest sits on whatever is
+    // already behind it, same as every other transparent badge in this game.
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={logoUrl}
         alt=""
         referrerPolicy="no-referrer"
-        className="shrink-0 rounded-full bg-white/10 object-contain p-0.5"
+        className="shrink-0 rounded-full object-contain p-0.5"
         style={{ height: size, width: size }}
         onError={() => setFailed(true)}
       />
