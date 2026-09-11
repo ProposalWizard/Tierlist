@@ -3,7 +3,7 @@ import { generateForMatch, generateForLeagueWeek, mediaOf } from "../../lib/star
 import { detectLeagueWeek } from "../../lib/star/media/detect/league";
 import { buildRoster } from "../../lib/star/media/accounts";
 import { allegiance } from "../../lib/star/media/select";
-import type { CareerState, GoalEvent, LeagueResult, MatchStats, StarPlayer } from "../../lib/star/types";
+import type { CareerState, Fixture, GoalEvent, LeagueResult, MatchStats, StarPlayer } from "../../lib/star/types";
 import type { FootballEvent } from "../../lib/star/media/types";
 
 /**
@@ -46,7 +46,9 @@ function newCareer(seed = 1): CareerState {
  *  actually played in — captured BEFORE crediting, the same way
  *  app/star-dev/page.tsx already has `nextFixture.week` in hand, rather
  *  than guessing it back out of `career.week` afterward. */
-function playOne(career: CareerState, seed: number): { career: CareerState; week: number } | null {
+function playOne(
+  career: CareerState, seed: number,
+): { career: CareerState; week: number; fixture: Fixture; stats: MatchStats } | null {
   const fixture = career.fixtures.find(f => !f.played && f.week === career.week)
     ?? career.fixtures.find(f => !f.played);
   if (!fixture) return null;
@@ -61,7 +63,7 @@ function playOne(career: CareerState, seed: number): { career: CareerState; week
   };
   const { career: after } = creditMatchResult(career, fixture, stats);
   after.media = generateForMatch(career, after, fixture, stats);
-  return { career: after, week: fixture.week };
+  return { career: after, week: fixture.week, fixture, stats };
 }
 
 /** This week's OTHER fixtures — exactly what app/star-dev/page.tsx now
@@ -197,6 +199,47 @@ function restOfWeek(c: CareerState, week: number): LeagueResult[] {
   const beforeCount = mediaOf(c).posts.length;
   const again = generateForLeagueWeek(c, lastOthers);
   check(again.posts.length === beforeCount, "replaying the same league week never posts twice");
+}
+
+// ── A STALE replay — not the immediately-preceding cycle — must not post
+// twice either. Reported directly: old news (a specific match and a
+// specific fan account's post) resurfacing well after newer posts already
+// existed, duplicated. `lastCycleId`/`lastLeagueCycleId` only ever
+// remember the SINGLE MOST RECENT cycle of their own kind — they catch an
+// immediate double-call fine (the check right above this one), but once a
+// second week's cycle has run, both fields have moved on, and nothing
+// stopped a stale replay of the FIRST week from sailing straight through
+// and posting everything again. Fixed with `MediaState.seenCycleIds`, a
+// bounded history checked by membership rather than equality with only
+// the last entry. Measured directly: the old single-slot guard let a
+// stale replay of week 1 (after week 2 had already run) add 19 duplicate
+// posts; the fix adds zero. ───────────────────────────────────────────────
+{
+  let c = newCareer(7);
+  const beforeWeek1 = c; // the exact pre-match state a stale reload replays from
+
+  const r1 = playOne(c, 5001)!;
+  c = r1.career;
+  const others1 = restOfWeek(c, r1.week);
+  if (others1.length) c.media = generateForLeagueWeek({ ...c, media: c.media }, others1);
+
+  const r2 = playOne(c, 5002)!;
+  c = r2.career;
+  const others2 = restOfWeek(c, r2.week);
+  if (others2.length) c.media = generateForLeagueWeek({ ...c, media: c.media }, others2);
+
+  const beforeReplay = mediaOf(c).posts.length;
+  check(beforeReplay > 0, "both weeks produced at least some posts to stale-replay against");
+
+  // The stale replay: week 1's match again, from its own real before-state,
+  // plus its own league-wide pass again — exactly what a reload of a save
+  // taken right before week 1 was credited would do.
+  c.media = generateForMatch({ ...beforeWeek1, media: c.media }, c, r1.fixture, r1.stats);
+  if (others1.length) c.media = generateForLeagueWeek({ ...c, media: c.media }, others1);
+
+  const afterReplay = mediaOf(c).posts.length;
+  check(afterReplay === beforeReplay,
+    `a stale replay of an OLDER week (not the most recent one) posts nothing new (${beforeReplay} -> ${afterReplay})`);
 }
 
 if (problems.length) {

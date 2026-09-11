@@ -387,13 +387,19 @@ export interface SponsorDeal {
   active: boolean;
   /** What they want for the money. Absent on a deal signed before this existed. */
   objective?: {
-    kind: "goals" | "assists" | "appearances" | "starMan" | "rating";
+    kind: "goals" | "assists" | "appearances" | "starMan" | "rating" | "goalStreak" | "startStreak" | "cleanSheets";
     target: number;
     progress: number;
     seasonsLeft: number;
     bonus: number;
     done: boolean;
   };
+  /** How many times an objective for THIS deal has been completed — see
+   *  `sponsorFee`'s own header. Starts at (and defaults to, for a deal
+   *  signed before this existed) 1, the deal's original, unupgraded fee;
+   *  each completed objective bumps it, permanently raising every future
+   *  season's fee for this one deal. */
+  level?: number;
 }
 
 export interface Trophy {

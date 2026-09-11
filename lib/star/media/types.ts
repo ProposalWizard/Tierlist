@@ -581,6 +581,24 @@ export interface MediaState {
    *  never collides with, or overwrites, the match/career cycle guard
    *  above. Absent on a career saved before the league-wide pass existed. */
   lastLeagueCycleId?: string;
+  /**
+   * Every cycle id ever committed, bounded — the REAL replay guard.
+   * `lastCycleId`/`lastLeagueCycleId` only ever remember the single most
+   * recent cycle of their own kind, so they can only catch an EXACT repeat
+   * of whichever one just ran — a match cycle followed by a league cycle
+   * followed by a THIRD replay of that same match would sail straight past
+   * `lastCycleId` (which has since moved on to the league cycle's id) and
+   * post the whole match again. Reported directly as old news
+   * resurfacing — the same Aston Villa/Forest and Man City posts reappearing
+   * verbatim, unprompted, well after newer posts existed — which is exactly
+   * this shape of bug, not a scope-tagging problem (a direct simulation of
+   * the scope logic in isolation turned up nothing wrong with it). Checked
+   * as a membership test against every id that's ever actually committed,
+   * not just the last one. Absent on a career saved before this existed —
+   * treated as empty, which only risks one further replay of whatever the
+   * two legacy single-value guards already would have let through anyway,
+   * never a NEW hole. */
+  seenCycleIds?: string[];
 }
 
 export interface MediaCycle {

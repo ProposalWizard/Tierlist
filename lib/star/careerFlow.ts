@@ -435,7 +435,7 @@ export function creditMatchResult(
   const newSponsorRel = Math.min(100, career.relationships.sponsors + sponsorGain);
   const progressed = alreadyPlayed
     ? { sponsors: career.sponsors, earned: 0, completed: [] as string[] }
-    : progressObjectives(career.sponsors, stats, accrue(career.seasonStats));
+    : progressObjectives(career.sponsors, stats, accrue(career.seasonStats), { home: fixture.home });
   const sponsors = progressed.sponsors;
 
   // Update squad player stats from this match's goal events.
