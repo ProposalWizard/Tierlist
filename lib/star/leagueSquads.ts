@@ -87,6 +87,7 @@ function fit(slot: Pos, positions: string): number {
 export interface RosterRow {
   id: string; name: string; positions: string; overall: number;
   image?: string; nation?: string; age?: number; highPotential?: boolean;
+  worldClassPotential?: boolean;
 }
 
 /**
@@ -135,6 +136,7 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
       ...(best.nation ? { nation: best.nation } : {}),
       ...(best.age ? { age: best.age } : {}),
       ...(best.highPotential ? { highPotential: true } : {}),
+      ...(best.worldClassPotential ? { worldClassPotential: true } : {}),
       positions: rolesOf(best.positions),
     });
   }
@@ -181,6 +183,7 @@ function rowToLeaguePlayer(p: RosterRow): LeaguePlayer {
     ...(p.nation ? { nation: p.nation } : {}),
     ...(p.age ? { age: p.age } : {}),
     ...(p.highPotential ? { highPotential: true } : {}),
+    ...(p.worldClassPotential ? { worldClassPotential: true } : {}),
     positions: rolesOf(p.positions),
   };
 }
@@ -523,19 +526,73 @@ export function resetLeagueSquads(squads: LeagueSquad[]): LeagueSquad[] {
  * Capped short of the very top ratings (`wonderkidGrowthCap`) so a whole
  * career of ticks does not quietly mint a division full of 99s.
  */
+/** A stable 0..1 number off a player's own id — his own hidden destiny,
+ *  decided once (effectively at the moment he's first tagged, since this
+ *  is a pure function of an id that never changes) rather than re-rolled
+ *  every season. Same FNV-1a-style hash `promotion.ts`'s own `nameNoise`
+ *  and `facilities.ts`'s own `hash` already use for exactly this "a stable
+ *  fraction off a name/id, well spread across 0..1" job — a plain djb2
+ *  variant tried here first badly under-spread on short numeric-suffixed
+ *  ids specifically (whole blocks of ids sharing the same output), which
+ *  is exactly the id shape real sofifa ids and this file's own test ids
+ *  both have. */
+function destinySeed(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967295;
+}
+
+/**
+ * Which ceiling THIS player's growth actually stops at — requested
+ * directly, and explicitly NOT a strict "World Class always beats High
+ * Potential" rule: both tiers draw from the same two real ceilings, just
+ * with different odds of landing on the higher one. A High Potential
+ * player is usually capped at the ordinary ceiling but can occasionally
+ * "go above and beyond" into the World Class one (`breakoutChance`); a
+ * World Class player usually reaches the higher ceiling but can
+ * occasionally underachieve into the ordinary one (`underachieveChance`)
+ * — "they don't always hit the highest tiers." Exported so a caller (or a
+ * test) can know a specific player's real destiny without re-deriving the
+ * hash by hand.
+ */
+export function growthCeilingFor(playerId: string, worldClassPotential?: boolean): number {
+  const cap = getTuning("wonderkids.growthCap");
+  const worldClassCap = getTuning("wonderkids.worldClassGrowthCap");
+  const seed = destinySeed(playerId);
+  if (worldClassPotential) {
+    return seed < getTuning("wonderkids.underachieveChance") ? cap : worldClassCap;
+  }
+  return seed < getTuning("wonderkids.breakoutChance") ? worldClassCap : cap;
+}
+
 export function growWonderkids(squads: LeagueSquad[], rng: () => number): LeagueSquad[] {
   const ageCeiling = getTuning("wonderkids.ageCeiling");
   const chance = getTuning("wonderkids.growthChance");
   const minGain = getTuning("wonderkids.growthMin");
   const maxGain = getTuning("wonderkids.growthMax");
-  const cap = getTuning("wonderkids.growthCap");
+  // World Class is the stronger tier above High Potential, added directly
+  // afterward — the same growth roll, just scaled up, rather than a second
+  // parallel mechanic. Every World Class player also carries
+  // `highPotential: true` (enforced at the admin PATCH route), so the age
+  // gate above already applies to him unchanged. His actual CEILING is a
+  // separate question from how often/how much he grows per season — see
+  // growthCeilingFor's own note on why the two tiers' ceilings genuinely
+  // overlap rather than one strictly dominating the other.
+  const worldClassMultiplier = getTuning("wonderkids.worldClassMultiplier");
   return squads.map(s => ({
     ...s,
     players: s.players.map(p => {
       if (!p.highPotential || (p.age ?? 0) >= ageCeiling) return p;
-      if (rng() >= chance) return p;
-      const gain = minGain + Math.floor(rng() * (maxGain - minGain + 1));
-      return { ...p, overall: Math.min(cap, p.overall + gain) };
+      const tierChance = p.worldClassPotential ? Math.min(1, chance * worldClassMultiplier) : chance;
+      if (rng() >= tierChance) return p;
+      const tierMin = p.worldClassPotential ? minGain * worldClassMultiplier : minGain;
+      const tierMax = p.worldClassPotential ? maxGain * worldClassMultiplier : maxGain;
+      const gain = Math.round(tierMin + rng() * (tierMax - tierMin));
+      const ceiling = growthCeilingFor(p.id, p.worldClassPotential);
+      return { ...p, overall: Math.min(ceiling, p.overall + gain) };
     }),
   }));
 }

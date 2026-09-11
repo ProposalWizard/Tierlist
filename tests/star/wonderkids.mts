@@ -1,4 +1,4 @@
-import { growWonderkids } from "../../lib/star/leagueSquads";
+import { growWonderkids, growthCeilingFor } from "../../lib/star/leagueSquads";
 import { feeFor, runTransferWindow } from "../../lib/star/leagueTransfers";
 import { detectWonderkidHype } from "../../lib/star/media/detect/wonderkids";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -30,10 +30,11 @@ const REAL_POSITIONS: Role[] = ["GK", "CB", "CB", "RB", "LB", "CDM", "CM", "CM",
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
-function mkPlayer(id: string, overall: number, age: number, highPotential: boolean, position: Role = "ST"): LeaguePlayer {
+function mkPlayer(id: string, overall: number, age: number, highPotential: boolean, position: Role = "ST", worldClassPotential = false): LeaguePlayer {
   return {
     id, name: id, position, positions: [position], overall, goals: 0, assists: 0, age,
     ...(highPotential ? { highPotential: true } : {}),
+    ...(worldClassPotential ? { worldClassPotential: true } : {}),
   };
 }
 
@@ -63,13 +64,45 @@ function mkPlayer(id: string, overall: number, age: number, highPotential: boole
     `a young High Potential player grows roughly at the tuned chance, not always or never (${taggedYoungGrew}/${trials})`);
 
   // The cap actually holds — run one player through enough seasons that,
-  // uncapped, he'd sail past it.
+  // uncapped, he'd sail past it. Checked against his OWN real ceiling
+  // (growthCeilingFor), not a hardcoded number — see the ceiling-overlap
+  // section below for why a specific High Potential player's own ceiling
+  // isn't always the plain tuned default.
   let capped: LeagueSquad[] = [{ club: "Test FC", players: [mkPlayer("climber", 60, 18, true)] }];
+  const climberCeiling = growthCeilingFor("climber", false);
   for (let season = 1; season <= 40; season++) {
     capped = growWonderkids(capped, mulberry32(season * 991 + 1));
     capped[0].players[0].age = 18; // stays young on purpose — isolates the OVERALL cap from the age gate
   }
-  check(capped[0].players[0].overall <= 92, `growth never exceeds the tuned ceiling however many seasons run (${capped[0].players[0].overall})`);
+  check(capped[0].players[0].overall <= climberCeiling, `growth never exceeds this specific player's own real ceiling (${climberCeiling}) however many seasons run (${capped[0].players[0].overall})`);
+}
+
+// ── The ceiling itself genuinely overlaps between tiers ────────────────────
+//
+// Requested directly: NOT "World Class always beats High Potential" — a
+// real minority of High Potential players secretly break out into the
+// World Class ceiling, and a real minority of World Class players
+// underachieve into the ordinary one. Fixed per player, not re-rolled.
+{
+  const highCap = 92, worldClassCap = 97; // the tuned defaults, per tuning.ts
+  const trials = 500;
+  let highBreakouts = 0, worldClassUnderachievers = 0;
+  for (let i = 0; i < trials; i++) {
+    const highId = `high-player-${i}`;
+    const worldClassId = `world-class-player-${i}`;
+    if (growthCeilingFor(highId, false) === worldClassCap) highBreakouts++;
+    if (growthCeilingFor(worldClassId, true) === highCap) worldClassUnderachievers++;
+  }
+  check(highBreakouts > 0 && highBreakouts < trials * 0.3,
+    `a real, minority share of High Potential players genuinely break out to the World Class ceiling — some, not most, not none (${highBreakouts}/${trials})`);
+  check(worldClassUnderachievers > 0 && worldClassUnderachievers < trials * 0.5,
+    `a real, minority share of World Class players genuinely underachieve to the ordinary ceiling — some, but still fewer than half (${worldClassUnderachievers}/${trials})`);
+
+  // The SAME player id always gets the SAME destiny — his own hidden
+  // ceiling, decided once, not re-rolled every time this is asked.
+  const first = growthCeilingFor("same-player-twice", true);
+  const second = growthCeilingFor("same-player-twice", true);
+  check(first === second, "the same player's ceiling is stable across repeated reads, not re-rolled each time");
 }
 
 // ── feeFor: the premium is real, and it's age-gated ────────────────────────
@@ -80,6 +113,41 @@ function mkPlayer(id: string, overall: number, age: number, highPotential: boole
   check(taggedYoung > plain, `a High Potential fee is higher than the same rating with no tag (${taggedYoung} vs ${plain})`);
   check(Math.abs(taggedYoung - plain) > plain * 0.3, `the premium is a real multiplier, not a rounding nudge (${taggedYoung} vs ${plain})`);
   check(Math.abs(taggedOld - plain) < 1e-9, `the premium stops once the player is past the fee-premium age ceiling (${taggedOld} vs ${plain})`);
+}
+
+// ── World Class Potential: a real, STRONGER tier stacked on top ───────────
+{
+  const plain = feeFor(75);
+  const high = feeFor(75, true, 20, false);
+  const worldClass = feeFor(75, true, 20, true);
+  check(worldClass > high, `a World Class fee is genuinely higher than the same player merely tagged High Potential (${worldClass} vs ${high})`);
+  check(Math.abs(worldClass - high) > high * 0.2, `the World Class premium is a real extra multiplier, not a rounding nudge (${worldClass} vs ${high})`);
+  const worldClassOld = feeFor(75, true, 30, true);
+  check(Math.abs(worldClassOld - plain) < 1e-9, "the World Class premium is age-gated exactly the same way High Potential's own premium is");
+
+  // World Class WITHOUT the high_potential flag set shouldn't happen in
+  // practice (the admin route always sets both together), but the formula
+  // itself should still read it honestly as "no premium at all" rather
+  // than silently applying one — a stronger tier of nothing is still nothing.
+  const worldClassAlone = feeFor(75, false, 20, true);
+  check(Math.abs(worldClassAlone - plain) < 1e-9, "World Class alone, without High Potential, applies no premium — it's a stronger TIER of that flag, not an independent one");
+
+  const squads: LeagueSquad[] = [{
+    club: "Test FC",
+    players: [
+      mkPlayer("high-only", 70, 19, true, "ST", false),
+      mkPlayer("world-class", 70, 19, true, "ST", true),
+    ],
+  }];
+  let highGrew = 0, worldClassGrew = 0;
+  const trials = 400;
+  for (let seed = 1; seed <= trials; seed++) {
+    const out = growWonderkids(squads, mulberry32(seed * 6659 + 11));
+    const p = (id: string) => out[0].players.find(x => x.id === id)!;
+    if (p("high-only").overall > 70) highGrew++;
+    if (p("world-class").overall > 70) worldClassGrew++;
+  }
+  check(worldClassGrew > highGrew, `a World Class player grows genuinely more often than a merely High Potential one, same age and rating (${worldClassGrew}/${trials} vs ${highGrew}/${trials})`);
 }
 
 // ── A wonderkid at a small club really does move to bigger clubs more ──────
@@ -198,4 +266,4 @@ if (problems.length) {
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — High Potential players actually grow, cost a real premium, actually move to bigger clubs, and get their own media hype");
+console.log("PASS — High Potential players actually grow, cost a real premium, actually move to bigger clubs, get their own media hype, and World Class Potential stacks a genuinely stronger version of all of it on top");

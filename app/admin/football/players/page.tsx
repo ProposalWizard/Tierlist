@@ -102,6 +102,7 @@ interface SofifaPlayer {
   image_url: string | null;
   attributes: Record<string, unknown> | null;
   high_potential: boolean;
+  world_class_potential: boolean;
 }
 
 export default function PlayerSearchPage() {
@@ -217,34 +218,57 @@ export default function PlayerSearchPage() {
   };
 
   /**
-   * The High Potential (wonderkid) flag — requested directly, and requested
-   * on the OUTER base row specifically, not buried behind a dropdown: "just
-   * on the base thing, there should be a button... a tick on or off." It's
-   * one column on one (sofifa_id, fifa_year) row, same shape as
-   * manual_overall/manual_positions — this just always targets the FC 27
-   * edition, since that's the one edition the Star Career game actually
-   * reads (see STAR_FIFA_YEAR, lib/star/edition.ts) and the one the request
-   * was scoped to ("if I go to FC 27, and find the player").
+   * The potential tier — requested directly, and requested on the OUTER
+   * base row specifically, not buried behind a dropdown: "just on the base
+   * thing, there should be a button... a tick on or off." Two real columns
+   * on one (sofifa_id, fifa_year) row, same shape as manual_overall/
+   * manual_positions, always targeting the FC 27 edition since that's the
+   * one edition the Star Career game actually reads (see STAR_FIFA_YEAR,
+   * lib/star/edition.ts).
+   *
+   * Three real states, one pressed at a time — nothing, High Potential, or
+   * the stronger World Class Potential tier added directly afterward.
+   * World Class always implies High Potential at the data layer (see
+   * world_class_potential.sql's own note and the PATCH route), so every
+   * game hook that already reads `high_potential`
+   * (growWonderkids/feeFor/the reach-up transfer bias/the media hype
+   * detector) keeps working unchanged for a World Class player without a
+   * second copy of each check.
    */
   const [togglingHP, setTogglingHP] = useState<string | null>(null);
-  const handleToggleHighPotential = async (sofifaId: string, current: boolean) => {
+  const handleSetPotentialTier = async (sofifaId: string, tier: "none" | "high" | "worldClass") => {
     setTogglingHP(sofifaId);
+    setError(null);
+    const high_potential = tier !== "none";
+    const world_class_potential = tier === "worldClass";
     try {
       const res = await fetch("/api/admin/football/player-search", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: STAR_FIFA_YEAR, high_potential: !current }),
+        body: JSON.stringify({ sofifa_id: sofifaId, fifa_year: STAR_FIFA_YEAR, high_potential, world_class_potential }),
       });
       if (res.ok) {
         setPlayers((prev) =>
           prev.map((p) =>
             p.sofifa_id === sofifaId && p.fifa_year === STAR_FIFA_YEAR
-              ? { ...p, high_potential: !current }
+              ? { ...p, high_potential, world_class_potential }
               : p
           )
         );
+      } else {
+        // Reported directly: the toggle "understands it's being pressed"
+        // then silently reverts with no way to tell whether it actually
+        // saved — because this branch never existed at all. The API route
+        // itself already returns a real `{ error }` body on failure (most
+        // likely a `column "..." does not exist` error while the matching
+        // migration is still pending); this just actually reads and shows
+        // it instead of doing nothing.
+        const body = await res.json().catch(() => null);
+        setError(body?.error ?? `Couldn't save potential tier (${res.status})`);
       }
-    } catch {}
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save potential tier");
+    }
     setTogglingHP(null);
   };
 
@@ -799,24 +823,30 @@ export default function PlayerSearchPage() {
                           <span className="font-bold text-white text-base">{group.name}</span>
                           <span className="ml-3 text-xs text-white">ID: {group.sofifa_id}</span>
                         </div>
-                        {/* ── High Potential — requested directly, right on
+                        {/* ── Potential tier — requested directly, right on
                             this base row: a plain tick, always for FC 27
-                            (the edition Road to Ballon d'Or reads). See
-                            handleToggleHighPotential's own header for why
-                            this always targets STAR_FIFA_YEAR specifically,
-                            and lib/star/leagueSquads.ts's growWonderkids /
-                            leagueTransfers.ts for what ticking it does in
-                            the actual game. */}
+                            (the edition Road to Ballon d'Or reads). Two
+                            buttons, one tier active at a time — see
+                            handleSetPotentialTier's own header for why
+                            World Class always implies High Potential at the
+                            data layer, and lib/star/leagueSquads.ts's
+                            growWonderkids / leagueTransfers.ts for what
+                            each tier does in the actual game. */}
                         <button
                           type="button"
                           disabled={!fc27 || togglingHP === group.sofifa_id}
-                          onClick={(e) => { e.stopPropagation(); if (fc27) handleToggleHighPotential(group.sofifa_id, fc27.high_potential); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (fc27) handleSetPotentialTier(group.sofifa_id, fc27.high_potential && !fc27.world_class_potential ? "none" : "high");
+                          }}
                           title={
                             !fc27
                               ? "No FC 27 edition for this player yet"
-                              : fc27.high_potential
-                                ? "High Potential — click to un-tag"
-                                : "Tag as High Potential (FC 27)"
+                              : fc27.world_class_potential
+                                ? "World Class already covers this — click to drop to High Potential"
+                                : fc27.high_potential
+                                  ? "High Potential — click to un-tag"
+                                  : "Tag as High Potential (FC 27)"
                           }
                           className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wide border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
                             fc27?.high_potential
@@ -826,6 +856,29 @@ export default function PlayerSearchPage() {
                         >
                           <span>{fc27?.high_potential ? "★" : "☆"}</span>
                           <span className="hidden sm:inline">High Potential</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!fc27 || togglingHP === group.sofifa_id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (fc27) handleSetPotentialTier(group.sofifa_id, fc27.world_class_potential ? "none" : "worldClass");
+                          }}
+                          title={
+                            !fc27
+                              ? "No FC 27 edition for this player yet"
+                              : fc27.world_class_potential
+                                ? "World Class Potential — click to un-tag"
+                                : "Tag as World Class Potential (FC 27)"
+                          }
+                          className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wide border transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                            fc27?.world_class_potential
+                              ? "bg-purple-500/20 border-purple-400 text-purple-300"
+                              : "bg-transparent border-gray-700 text-white/50 hover:border-gray-500 hover:text-white/80"
+                          }`}
+                        >
+                          <span>{fc27?.world_class_potential ? "★" : "☆"}</span>
+                          <span className="hidden sm:inline">World Class</span>
                         </button>
                         <div className="text-sm text-white">{editionRange}</div>
                         <div className="px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-400 text-sm font-bold">

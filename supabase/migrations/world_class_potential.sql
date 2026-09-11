@@ -1,0 +1,11 @@
+-- A second, stronger tier above `high_potential` — same per-edition admin
+-- flag shape, ticked by hand in /admin/football/players, one row
+-- (sofifa_id, fifa_year) at a time. Every "World Class" player is also
+-- treated as "High Potential" at the application layer (see the admin
+-- PATCH route and lib/star/types.ts's own note), so this column only ever
+-- needs to answer "is this the STRONGER of the two tiers" — it is never
+-- read on its own without high_potential also being true for the same row.
+-- Not scraped data, so — same as high_potential/manual_overall — it is
+-- never wiped by a re-import; defaults to false rather than null since
+-- there is no "unknown" state, only ticked or not.
+ALTER TABLE sofifa_players ADD COLUMN IF NOT EXISTS world_class_potential boolean NOT NULL DEFAULT false;

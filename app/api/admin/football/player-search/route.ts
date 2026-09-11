@@ -168,7 +168,7 @@ export async function PATCH(req: NextRequest) {
   const {
     sofifa_id, fifa_year,
     manual_overall, manual_positions, manual_nationality, name,
-    club, league, potential, age, attributes: attributesUpdate, high_potential,
+    club, league, potential, age, attributes: attributesUpdate, high_potential, world_class_potential,
   } = body as {
     sofifa_id: string;
     fifa_year: number;
@@ -182,6 +182,7 @@ export async function PATCH(req: NextRequest) {
     age?: number | null;
     attributes?: Record<string, unknown> | null;
     high_potential?: boolean;
+    world_class_potential?: boolean;
   };
 
   if (!sofifa_id || !fifa_year) {
@@ -199,6 +200,16 @@ export async function PATCH(req: NextRequest) {
   if (age !== undefined) updates.age = age;
   if (attributesUpdate !== undefined) updates.attributes = attributesUpdate;
   if (high_potential !== undefined) updates.high_potential = high_potential;
+  // World Class implies High Potential at the data layer — every place that
+  // already reads `high_potential` (growWonderkids, feeFor, the reach-up
+  // transfer bias, the media hype detector) keeps working unchanged for a
+  // World Class player without needing its own copy of each of those
+  // checks; only the few places that care about the STRONGER tier read
+  // `world_class_potential` on top. See world_class_potential.sql's own note.
+  if (world_class_potential !== undefined) {
+    updates.world_class_potential = world_class_potential;
+    if (world_class_potential) updates.high_potential = true;
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
