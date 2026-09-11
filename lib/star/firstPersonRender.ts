@@ -315,10 +315,21 @@ function computeLegs(
     // the near one's swing lands.
     const reaching = side === reachSide;
     const fwd = g.fwd, up = g.up;
-    const lateral = side * baseSpread * 1.4 + (reaching ? reachSide * 0.30 * reachAmt : 0);
+    // Reported directly, with `ownLean` held near its max for as long as
+    // you keep steering one way (not just a brief touch impulse): "flicking
+    // upwardly... like a donkey kick, over and over again." The knee below
+    // used to stay at the ordinary stance width while ONLY the ankle got
+    // pulled out by this — for however many strides the steer lasted, the
+    // shin was kinked hard sideways off a knee that hadn't moved, and that
+    // fixed kink cycling through the normal swing's forward/up lift every
+    // stride is exactly what read as a repeated kick. The knee now shares
+    // half the same pull, so the leg leans together the way the torso
+    // already does via `shear`, rather than bending unnaturally at the knee.
+    const reachLateral = reaching ? reachSide * 0.30 * reachAmt : 0;
+    const lateral = side * baseSpread * 1.4 + reachLateral;
 
     const hip = P(side * baseSpread, 0, hipZ + bounce);
-    const knee = P(side * baseSpread * 1.1, fwd * 0.45, hipZ * 0.5 + up * 0.5 + bounce * 0.5);
+    const knee = P(side * baseSpread * 1.1 + reachLateral * 0.5, fwd * 0.45, hipZ * 0.5 + up * 0.5 + bounce * 0.5);
     const ankle = P(lateral, fwd, 0.22 + up);
     // Forward (the direction of travel) is DECREASING world y — see gait():
     // a positive sin phase swings the foot forward via a NEGATIVE fwd
@@ -328,7 +339,7 @@ function computeLegs(
     // the boot's lift down (`up * 0.6`) so the boot rose slower than the
     // sock during a swing and visibly detached from it mid-stride.
     const soleZ = Math.max(0, ankle.z - 0.12);
-    const kneeBand = P(side * baseSpread * 1.1, fwd * 0.45 * 0.94, hipZ * 0.5 + up * 0.5 + bounce * 0.5 - 0.05);
+    const kneeBand = P(side * baseSpread * 1.1 + reachLateral * 0.5, fwd * 0.45 * 0.94, hipZ * 0.5 + up * 0.5 + bounce * 0.5 - 0.05);
     legs.push({
       hip, knee, kneeBand, ankle,
       soleMid: P(lateral, fwd, soleZ),

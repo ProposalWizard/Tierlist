@@ -35,11 +35,26 @@ import { buildTrends } from "./trending";
 const POST_CAP = 150;
 
 export function emptyMedia(): MediaState {
-  return { posts: [], memory: emptyMemory(), trends: [], lastCycleId: "", lastCycleClock: 0 };
+  return { posts: [], memory: emptyMemory(), trends: [], lastCycleId: "", lastCycleClock: 0, seenCycleIds: [] };
 }
 
 export function mediaOf(career: CareerState): MediaState {
   return career.media ?? emptyMedia();
+}
+
+/** The real replay guard — see `MediaState.seenCycleIds`'s own header on why
+ *  `lastCycleId`/`lastLeagueCycleId` alone aren't enough. */
+function alreadySeen(state: MediaState, id: string): boolean {
+  return (state.seenCycleIds ?? []).includes(id);
+}
+
+// Generous relative to POST_CAP (150) — a cycle that produced zero posts
+// (nothing scored high enough) still needs its id remembered so IT doesn't
+// replay either, so this can't just be "one entry per surviving post."
+const SEEN_CAP = 400;
+
+function withSeen(state: MediaState, id: string): string[] {
+  return [...(state.seenCycleIds ?? []), id].slice(-SEEN_CAP);
 }
 
 // ── Generation ──────────────────────────────────────────────────────────────
@@ -55,7 +70,7 @@ export function generateForMatch(
 
   // A replayed season must not post twice. The career has already shipped one
   // double-crediting bug from exactly this; it does not need a second.
-  if (state.lastCycleId === record.id) return state;
+  if (state.lastCycleId === record.id || alreadySeen(state, record.id)) return state;
 
   // The run including today, then what the run makes true.
   const withMatch = absorbMatch(coolThreads(state.memory), record);
@@ -72,7 +87,7 @@ export function generateForMatch(
 export function generateForCareer(career: CareerState, moment: CareerRecord["moment"], key: string): MediaState {
   const state = mediaOf(career);
   const id = `s${career.season}-w${career.week}-${key}`;
-  if (state.lastCycleId === id) return state;
+  if (state.lastCycleId === id || alreadySeen(state, id)) return state;
 
   const record: CareerRecord = {
     id,
@@ -121,7 +136,7 @@ export function generateForLeagueWeek(
   // so the first is as good as any.
   const week = weekResults[0]?.week ?? career.week;
   const id = `s${career.season}-w${week}-leagueweek`;
-  if (state.lastLeagueCycleId === id) return state;
+  if (state.lastLeagueCycleId === id || alreadySeen(state, id)) return state;
 
   const events = detectLeagueWeek(weekResults, career.player.club, week, competition, career.season);
   return commit(career, state, null, events, state.memory, id, clockAt(career.season, week, 0), "league");
@@ -152,9 +167,10 @@ function commit(
   // which is about YOUR match specifically. Overwriting them here would
   // silently break that screen's own timing every single week.
   if (!events.length) {
+    const seenCycleIds = withSeen(state, cycleId);
     return scope === "league"
-      ? { ...state, memory, lastLeagueCycleId: cycleId }
-      : { ...state, memory, lastCycleId: cycleId, lastCycleClock: cycleClock };
+      ? { ...state, memory, lastLeagueCycleId: cycleId, seenCycleIds }
+      : { ...state, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds };
   }
 
   const accounts = [...buildRoster(career), selfAccount(career)];
@@ -191,6 +207,7 @@ function commit(
     posts: all,
     memory: markSaid(memory, used),
     trends: trends.length ? trends : state.trends,
+    seenCycleIds: withSeen(state, cycleId),
     ...(scope === "league"
       ? { lastCycleId: state.lastCycleId, lastCycleClock: state.lastCycleClock, lastLeagueCycleId: cycleId }
       : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId }),

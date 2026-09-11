@@ -281,6 +281,93 @@ export const TUNABLES: TunableDef[] = [
     default: 6, min: 0, max: 50, step: 1,
   },
 
+  // ── Sponsorship objectives ───────────────────────────────────────────
+  {
+    key: "sponsors.objectiveDifficultyPerFee", category: "Sponsorships", label: "Objective difficulty — × base fee",
+    description: "How much harder an objective gets per ★ of the category's own base fee — a cheap deal asks something easy, an expensive one asks something hard.",
+    default: 0.06, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "sponsors.objectiveGoalsBase", category: "Sponsorships", label: "Objective — goals (base)",
+    description: "Base target for a 'score N goals' objective, before star rating/seasons/difficulty scaling.",
+    default: 8, min: 1, max: 100, step: 1,
+  },
+  {
+    key: "sponsors.objectiveAssistsBase", category: "Sponsorships", label: "Objective — assists (base)",
+    description: "Base target for a 'register N assists' objective.",
+    default: 5, min: 1, max: 100, step: 1,
+  },
+  {
+    key: "sponsors.objectiveAppearancesBase", category: "Sponsorships", label: "Objective — appearances (base)",
+    description: "Base target for a 'play N matches' objective.",
+    default: 14, min: 1, max: 100, step: 1,
+  },
+  {
+    key: "sponsors.objectiveStarManBase", category: "Sponsorships", label: "Objective — Star Man awards (base)",
+    description: "Base target for a 'win N Star Man awards' objective.",
+    default: 3, min: 1, max: 50, step: 1,
+  },
+  {
+    key: "sponsors.objectiveRatingBase", category: "Sponsorships", label: "Objective — average rating (base ×10)",
+    description: "Base target for an 'average rating' objective, stored ×10 (70 = a 7.0 average).",
+    default: 70, min: 40, max: 95, step: 1,
+  },
+  {
+    key: "sponsors.objectiveRatingSpread", category: "Sponsorships", label: "Objective — average rating (random spread ×10)",
+    description: "Random amount added on top of the base rating target, stored ×10.",
+    default: 8, min: 0, max: 30, step: 1,
+  },
+  {
+    key: "sponsors.objectiveGoalStreakBase", category: "Sponsorships", label: "Objective — goal streak (base games)",
+    description: "Base target for a 'score in N consecutive appearances' objective.",
+    default: 4, min: 2, max: 30, step: 1,
+  },
+  {
+    key: "sponsors.objectiveStartStreakBase", category: "Sponsorships", label: "Objective — start streak (base games)",
+    description: "Base target for a 'start N matches in a row' objective.",
+    default: 10, min: 2, max: 40, step: 1,
+  },
+  {
+    key: "sponsors.objectiveCleanSheetsBase", category: "Sponsorships", label: "Objective — clean sheets (base)",
+    description: "Base target for a 'keep N clean sheets while you play' objective.",
+    default: 6, min: 1, max: 40, step: 1,
+  },
+  {
+    key: "sponsors.objectiveBonusBase", category: "Sponsorships", label: "Objective bonus — base",
+    description: "Base ★ bonus for completing an objective, before the per-deal index, star rating, seasons and difficulty scaling.",
+    default: 6, min: 0, max: 100, step: 1,
+  },
+  {
+    key: "sponsors.objectiveBonusPerIndex", category: "Sponsorships", label: "Objective bonus — × deal index",
+    description: "Extra ★ bonus added per position in your sponsor list — a later, bigger deal pays a bigger bonus for the same difficulty.",
+    default: 2, min: 0, max: 20, step: 0.5,
+  },
+  {
+    key: "sponsors.objectiveSeasonsMin", category: "Sponsorships", label: "Objective term — minimum seasons",
+    description: "The shortest an objective's deadline can be.",
+    default: 1, min: 1, max: 5, step: 1,
+  },
+  {
+    key: "sponsors.objectiveSeasonsMax", category: "Sponsorships", label: "Objective term — maximum seasons",
+    description: "The longest an objective's deadline can be.",
+    default: 2, min: 1, max: 5, step: 1,
+  },
+  {
+    key: "sponsors.upgradeFeeMultiplier", category: "Sponsorships", label: "Upgrade — fee gain per completed objective",
+    description: "Completing an objective doesn't just pay its bonus — it permanently raises this deal's season fee by this fraction, compounding with every objective completed since (capped at Upgrade — max level).",
+    default: 0.15, min: 0, max: 2, step: 0.01,
+  },
+  {
+    key: "sponsors.upgradeMaxLevel", category: "Sponsorships", label: "Upgrade — max level",
+    description: "The most times a single deal's fee can be upgraded by completing its objectives.",
+    default: 5, min: 1, max: 20, step: 1,
+  },
+  {
+    key: "sponsors.startThresholdMinutes", category: "Sponsorships", label: "Minutes counted as 'started'",
+    description: "A start-streak or clean-sheet objective needs at least this many minutes played to count the match as a start, not a substitute cameo.",
+    default: 60, min: 1, max: 90, step: 1,
+  },
+
   // ── Contracts ────────────────────────────────────────────────────────
   {
     key: "contracts.appearanceFeePct", category: "Contracts", label: "Appearance fee — % of wage",

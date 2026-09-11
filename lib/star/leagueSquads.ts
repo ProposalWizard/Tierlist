@@ -281,11 +281,30 @@ export function shouldUpgradeLeagueSquads(squads: LeagueSquad[]): boolean {
  * can't detect an absence; only comparing against what the game would fetch
  * TODAY can. Passed as `externalClubsFor(...)`'s own current output at both
  * call sites in app/star-dev/page.tsx.
+ *
+ * ── A third kind, neither of the above catches: a club that IS present,
+ * with a full XI of players, every one of them fake ──
+ *
+ * Reported directly, with a specific example: a cup tie against Lincoln
+ * City fielded a lineup of invented names (`Luke Mbappe`, `Andres Watkins`)
+ * even though real Lincoln City data has been in the database the whole
+ * time — checked directly, not assumed. `fetchLeagueSquads` falls back to
+ * `generatedSquad` per club on a failed request (a network hiccup, or the
+ * fetch racing a page that reached a cup draw before this ever resolved
+ * once) — and a generated squad is twenty non-empty entries, so it passes
+ * BOTH checks above (`withPlayers` counts it as "has players"; `have` counts
+ * the club as present) and is never seen as thin OR missing. Once baked
+ * into a save, that one club's fake squad survives forever — every later
+ * load re-passes the exact same two checks. `generatedSquad`'s own ids
+ * (`gen:${club}:${i}`) are the tell: a real fetch never produces one, so any
+ * club whose entire roster is generated ids is exactly this staleness, not
+ * a club that's merely thin.
  */
 export function shouldUpgradeExternalSquads(squads: LeagueSquad[], expectedClubs?: string[]): boolean {
   if (squads.length === 0) return false;
   const withPlayers = squads.filter(s => s.players.length > 0).length;
   if (withPlayers / squads.length < 0.5) return true;
+  if (squads.some(s => s.players.length > 0 && s.players.every(p => p.id.startsWith("gen:")))) return true;
   if (!expectedClubs) return false;
   const have = new Set(squads.map(s => s.club));
   return expectedClubs.some(c => !have.has(c));

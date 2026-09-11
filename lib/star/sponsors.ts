@@ -145,12 +145,31 @@ const AMBITION_FEE_MULT: Record<Ambition, number> = {
  * regular, and the Sponsors screen showing that live is the point: the
  * number you see for an active deal is exactly what it pays at the next
  * season's fee.
+ *
+ * ── Upgrades ──
+ *
+ * Requested directly: completing a tough objective shouldn't just pay its
+ * one-off bonus, it should make the DEAL itself worth more from then on —
+ * "your sponsorship increases to get you more money." `SponsorDeal.level`
+ * (bumped in `progressObjectives` the instant an objective completes) is
+ * read straight off `career.sponsors` here rather than threaded through as
+ * a parameter, so every existing call site keeps working unchanged. Level 1
+ * (never completed anything, or a deal saved before this existed) is
+ * exactly the old, un-upgraded fee — `(1 + rate)^0 = 1`. Compounding, not
+ * additive, so a deal that keeps delivering keeps meaningfully outpacing
+ * one that doesn't, capped at `upgradeMaxLevel` so it can't run away over a
+ * very long career.
  */
 export function sponsorFee(category: string, career: CareerState): number {
   const r = SPONSOR_REQUIREMENTS[category];
   if (!r) return 0;
   const mult = AMBITION_FEE_MULT[clubExpectation(career).ambition] ?? 1;
-  return Math.max(1, Math.round((r.baseFee + career.fame / getTuning("sponsors.fameDivisor")) * mult));
+  const level = Math.min(
+    career.sponsors.find(s => s.category === category)?.level ?? 1,
+    getTuning("sponsors.upgradeMaxLevel"),
+  );
+  const upgrade = Math.pow(1 + getTuning("sponsors.upgradeFeeMultiplier"), Math.max(0, level - 1));
+  return Math.max(1, Math.round((r.baseFee + career.fame / getTuning("sponsors.fameDivisor")) * mult * upgrade));
 }
 
 /**
@@ -162,12 +181,14 @@ export function sponsorFee(category: string, career: CareerState): number {
 export function signSponsor(career: CareerState, category: string): CareerState {
   const idx = career.sponsors.findIndex(s => s.category === category);
   if (idx < 0 || career.sponsors[idx].active || !sponsorEligible(category, career)) return career;
-  const activated = career.sponsors.map((s, i) => (i === idx ? { ...s, active: true } : s));
+  const activated = career.sponsors.map((s, i) => (i === idx ? { ...s, active: true, level: s.level ?? 1 } : s));
   const sponsors = attachObjective(career, activated);
   return { ...career, sponsors, money: career.money + sponsorFee(category, career) };
 }
 
-export type ObjectiveKind = "goals" | "assists" | "appearances" | "starMan" | "rating";
+export type ObjectiveKind =
+  | "goals" | "assists" | "appearances" | "starMan" | "rating"
+  | "goalStreak" | "startStreak" | "cleanSheets";
 
 export interface SponsorObjective {
   kind: ObjectiveKind;
@@ -186,6 +207,9 @@ const LABEL: Record<ObjectiveKind, (n: number) => string> = {
   appearances: n => `Play ${n} matches`,
   starMan: n => `Win ${n} Star Man awards`,
   rating: n => `Average ${(n / 10).toFixed(1)} across the season`,
+  goalStreak: n => `Score in ${n} consecutive appearances`,
+  startStreak: n => `Start ${n} matches in a row`,
+  cleanSheets: n => `Keep ${n} clean sheets while you're on the pitch`,
 };
 
 export function objectiveLabel(o: SponsorObjective): string {
@@ -198,25 +222,62 @@ export function objectiveLabel(o: SponsorObjective): string {
  * Scaled to what you already are, so the same deal is a stretch for a teenager
  * and a formality for a star — and pitched deliberately just above your current
  * season's rate, because a target you would hit anyway is not an objective.
+ *
+ * ── Difficulty scales with what the deal is actually worth ──
+ *
+ * Requested directly: "for more expensive sponsorships, which give you more
+ * money... you provide a lot more difficult bonuses... the difficulty
+ * increases with the value of the deal." `category`'s own `baseFee` (the
+ * same number that sets the fee — see `SPONSOR_REQUIREMENTS`) drives
+ * `difficulty` below: a Boots deal (cheap) asks something close to the old
+ * flat numbers, a Car deal (the most expensive) asks noticeably more of
+ * everything. Optional and defaulting to a mid-value assumption only so a
+ * caller that genuinely has no category to hand (there is none left in this
+ * codebase, but the signature was public) doesn't crash.
+ *
+ * The three streak/count kinds (goalStreak, startStreak, cleanSheets) are
+ * new — requested directly, real examples given ("score in eleven games in
+ * a row", "start twenty-seven games this season", "clean sheets in your
+ * next fifteen games") — alongside the original five. A streak's target
+ * does not multiply by `seasons` the way a cumulative tally does: the term
+ * length is how long you have to pull it off ONCE, not a quota that grows
+ * the longer you're given.
  */
-export function makeObjective(career: CareerState, index: number, rng: () => number): SponsorObjective {
-  const kinds: ObjectiveKind[] = ["goals", "assists", "appearances", "starMan", "rating"];
+export function makeObjective(career: CareerState, index: number, rng: () => number, category?: string): SponsorObjective {
+  const kinds: ObjectiveKind[] = [
+    "goals", "assists", "appearances", "starMan", "rating",
+    "goalStreak", "startStreak", "cleanSheets",
+  ];
   const kind = kinds[Math.floor(rng() * kinds.length)];
   const rep = Math.max(0.4, career.starRating / 3);
-  const seasons = 1 + Math.floor(rng() * 2);
+  const seasonsMin = getTuning("sponsors.objectiveSeasonsMin");
+  const seasonsMax = Math.max(seasonsMin, getTuning("sponsors.objectiveSeasonsMax"));
+  const seasons = seasonsMin + Math.floor(rng() * (seasonsMax - seasonsMin + 1));
 
-  const target = kind === "goals" ? Math.max(4, Math.round(8 * rep * seasons))
-    : kind === "assists" ? Math.max(3, Math.round(5 * rep * seasons))
-      : kind === "appearances" ? Math.max(8, Math.round(14 * seasons))
-        : kind === "starMan" ? Math.max(2, Math.round(3 * rep * seasons))
-          : 70 + Math.round(rng() * 8);   // rating, stored ×10
+  const baseFee = (category ? SPONSOR_REQUIREMENTS[category]?.baseFee : undefined) ?? 12;
+  const difficulty = 1 + baseFee * getTuning("sponsors.objectiveDifficultyPerFee");
+  // Streak/count targets use the SQUARE ROOT of difficulty — a linear scale
+  // on top of an already-exponential-feeling "N in a row" would make the
+  // most expensive deals' streak objectives absurd (a Car deal wanting a
+  // 20+ game scoring streak) rather than just harder.
+  const streakDifficulty = Math.sqrt(difficulty);
+
+  const target =
+    kind === "goals" ? Math.max(4, Math.round(getTuning("sponsors.objectiveGoalsBase") * rep * seasons * difficulty))
+    : kind === "assists" ? Math.max(3, Math.round(getTuning("sponsors.objectiveAssistsBase") * rep * seasons * difficulty))
+    : kind === "appearances" ? Math.max(8, Math.round(getTuning("sponsors.objectiveAppearancesBase") * seasons * difficulty))
+    : kind === "starMan" ? Math.max(2, Math.round(getTuning("sponsors.objectiveStarManBase") * rep * seasons * difficulty))
+    : kind === "goalStreak" ? Math.max(3, Math.round(getTuning("sponsors.objectiveGoalStreakBase") * streakDifficulty))
+    : kind === "startStreak" ? Math.max(5, Math.round(getTuning("sponsors.objectiveStartStreakBase") * streakDifficulty))
+    : kind === "cleanSheets" ? Math.max(3, Math.round(getTuning("sponsors.objectiveCleanSheetsBase") * seasons * streakDifficulty))
+    : getTuning("sponsors.objectiveRatingBase") + Math.round(rng() * getTuning("sponsors.objectiveRatingSpread")); // rating, stored ×10
 
   return {
     kind,
     target,
     progress: 0,
     seasonsLeft: seasons,
-    bonus: Math.max(3, Math.round((6 + index * 2) * rep * seasons)),
+    bonus: Math.max(3, Math.round((getTuning("sponsors.objectiveBonusBase") + index * getTuning("sponsors.objectiveBonusPerIndex")) * rep * seasons * difficulty)),
     done: false,
   };
 }
@@ -225,31 +286,69 @@ export function makeObjective(career: CareerState, index: number, rng: () => num
  * Move every live objective on by one match.
  *
  * Rating is the odd one out: it is an average rather than a tally, so progress
- * holds the season's average ×10 rather than accumulating. Everything else adds
- * up, which is why a season target survives a bad month.
+ * holds the season's average ×10 rather than accumulating. `goals`/`assists`/
+ * `appearances`/`starMan` are cumulative tallies that never reset on their
+ * own — a "50 goals, two seasons to do it in" objective is just `goals` with
+ * `seasonsLeft: 2`; the season boundary only matters to `rollSponsorSeason`'s
+ * countdown, not to this function.
+ *
+ * `goalStreak`/`startStreak` are genuinely different: a STREAK, which BREAKS
+ * (resets to 0) the moment the run stops, not a tally that only ever grows.
+ * `cleanSheets` sits in between — a cumulative COUNT (like appearances), just
+ * of a different real-world thing than the original five.
+ *
+ * `match`, when given, is `{ home }` for the fixture just played — the only
+ * way to know which scoreline number was YOUR goals conceded, needed for
+ * `cleanSheets`. Optional so a caller with no fixture in hand (there is none
+ * left in this codebase — see careerFlow.ts's own call site) simply can't
+ * progress that one kind rather than crashing.
  */
 export function progressObjectives(
   sponsors: SponsorDeal[],
   stats: MatchStats,
   seasonStats: CareerState["seasonStats"],
+  match?: { home: boolean },
 ): { sponsors: SponsorDeal[]; earned: number; completed: string[] } {
   let earned = 0;
   const completed: string[] = [];
+
+  const startThreshold = getTuning("sponsors.startThresholdMinutes");
+  const minutes = stats.minutes ?? 90; // absent means the full 90, same convention careerFlow.ts already uses
+  const started = minutes >= startThreshold;
+  const conceded = match ? (match.home ? stats.awayScore : stats.homeScore) : undefined;
 
   const next = sponsors.map(s => {
     const o = s.objective;
     if (!s.active || !o || o.done) return s;
 
-    const progress = o.kind === "goals" ? o.progress + stats.goals
+    const progress =
+      o.kind === "goals" ? o.progress + stats.goals
       : o.kind === "assists" ? o.progress + stats.assists
-        : o.kind === "appearances" ? o.progress + 1
-          : o.kind === "starMan" ? o.progress + (stats.starMan ? 1 : 0)
-            : Math.round((seasonStats.ratingCount > 0 ? seasonStats.totalRating / seasonStats.ratingCount : 0) * 10);
+      : o.kind === "appearances" ? o.progress + 1
+      : o.kind === "starMan" ? o.progress + (stats.starMan ? 1 : 0)
+      : o.kind === "rating" ? Math.round((seasonStats.ratingCount > 0 ? seasonStats.totalRating / seasonStats.ratingCount : 0) * 10)
+      // A scoreless appearance breaks the streak outright; a goal extends it.
+      : o.kind === "goalStreak" ? (stats.goals > 0 ? o.progress + 1 : 0)
+      // Coming off the bench (or an unused-sub week, which never reaches
+      // this function at all) breaks a START streak specifically — you
+      // were not trusted to begin the match, whatever else happened in it.
+      : o.kind === "startStreak" ? (started ? o.progress + 1 : 0)
+      // A count, not a streak: only ever moves forward, and only on a
+      // match you actually featured in — `conceded` is undefined when no
+      // fixture context was given, which correctly never credits it.
+      : o.kind === "cleanSheets" ? (conceded === 0 ? o.progress + 1 : o.progress)
+      : o.progress;
 
     if (progress >= o.target) {
       earned += o.bonus;
       completed.push(`${s.category}: ${objectiveLabel(o)} — ★${o.bonus}`);
-      return { ...s, objective: { ...o, progress, done: true } };
+      // The upgrade: this deal's own fee (see sponsorFee) is permanently
+      // higher from here on, capped at upgradeMaxLevel so it can't run away
+      // over a very long career. `level` starts at 1 (or is absent, on a
+      // deal saved before this existed — treated the same) — the FIRST
+      // completion takes it to 2, i.e. the first real upgrade.
+      const level = Math.min(getTuning("sponsors.upgradeMaxLevel"), (s.level ?? 1) + 1);
+      return { ...s, level, objective: { ...o, progress, done: true } };
     }
     return { ...s, objective: { ...o, progress } };
   });
@@ -299,5 +398,5 @@ export function rollSponsorSeason(career: CareerState): {
 /** A newly activated deal gets something to ask for. */
 export function attachObjective(career: CareerState, sponsors: SponsorDeal[]): SponsorDeal[] {
   const rng = mulberry32(career.season * 4211 + career.week * 17);
-  return sponsors.map((s, i) => (s.active && !s.objective ? { ...s, objective: makeObjective(career, i, rng) } : s));
+  return sponsors.map((s, i) => (s.active && !s.objective ? { ...s, objective: makeObjective(career, i, rng, s.category) } : s));
 }

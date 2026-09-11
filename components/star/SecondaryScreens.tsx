@@ -52,7 +52,18 @@ export function SponsorsScreen({ career, onBack, onSign }: {
             return (
               <div key={sp.category} className={`py-2.5 px-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
                 <div className="flex items-center gap-2">
-                  <div className="font-black text-white text-sm flex-1">{sp.category}</div>
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <span className="font-black text-white text-sm truncate">{sp.category}</span>
+                    {/* Level 1 is the original, un-upgraded deal — not worth a
+                        badge. Only shown once an objective has actually
+                        raised it, so it reads as "you did this," not as
+                        a difficulty label on every deal from day one. */}
+                    {(sp.level ?? 1) > 1 && (
+                      <span className="shrink-0 rounded-full bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-black text-amber-300">
+                        Lv.{sp.level}
+                      </span>
+                    )}
+                  </div>
                   {sp.active ? (
                     <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
                       <StarIcon />{sponsorFee(sp.category, career)}
@@ -89,7 +100,9 @@ export function SponsorsScreen({ career, onBack, onSign }: {
           your boot deal, a big fanbase for a clothing line, a trophy for the tech
           brands, the lifestyle to match for the luxury ones. Sign an eligible deal
           and the fee lands immediately — then again at the start of every season
-          you keep it.
+          you keep it. Hit its objective and you don&rsquo;t just get the bonus — the
+          deal itself gets upgraded, permanently paying more from then on. The
+          bigger the deal, the harder it asks.
         </div>
       </div>
     </div>
