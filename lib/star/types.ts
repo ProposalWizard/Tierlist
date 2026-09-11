@@ -811,6 +811,10 @@ export interface CareerState {
    *  default from the club's own name rather than leaving it undefined.
    *  See lib/star/facilities.ts. */
   facilities?: Record<string, import("./facilities").ClubFacilities>;
+  /** §5's end-game power fantasy, previously cut for having no concrete
+   *  mechanic — see lib/star/leadership.ts. Every governing body you've
+   *  actually been elected (or forced your way into) the presidency of. */
+  governingBodyPresidencies?: import("./governingBodies").GoverningBody[];
   /**
    * The casino's book — real money staked on who wins a real competition,
    * priced off real club strengths (see lib/star/competitionBetting.ts).

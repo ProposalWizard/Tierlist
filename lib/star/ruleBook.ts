@@ -2,6 +2,7 @@ import type { CareerState, Reputation } from "./types";
 import { castVote, type VoteTally } from "./voting";
 import { clampReputation } from "./reputation";
 import { type GoverningBody, canProposeRuleChange, influenceIn } from "./governingBodies";
+import { isBodyPresident } from "./leadership";
 
 /**
  * THE RULE BOOK — PHASE 4 OF STAR_POWER_POLITICS.MD.
@@ -207,7 +208,9 @@ export function fanCostOf(current: RuleBook, change: Partial<RuleBook>): number 
 export function proposeRuleChangeVote(
   career: CareerState, body: GoverningBody, change: Partial<RuleBook>, rng: () => number,
 ): { ok: true; proposal: RuleChangeProposal } | { ok: false; reason: string } {
-  if (!canProposeRuleChange(career, body)) return { ok: false, reason: "Not enough influence in this governing body" };
+  if (!canProposeRuleChange(career, body) && !isBodyPresident(career, body)) {
+    return { ok: false, reason: "Not enough influence in this governing body" };
+  }
   const biasStrength = (career.reputation.world - 50) / 50;
   const tally = castVote(
     `Should ${body} adopt this rule change?`,
@@ -218,7 +221,7 @@ export function proposeRuleChangeVote(
 }
 
 export function canOverruleRuleVote(career: CareerState, body: GoverningBody): boolean {
-  return influenceIn(career, body) >= RULE_OVERRULE_INFLUENCE_THRESHOLD;
+  return influenceIn(career, body) >= RULE_OVERRULE_INFLUENCE_THRESHOLD || isBodyPresident(career, body);
 }
 
 function nudgeWorld(reputation: Reputation, delta: number): Reputation {

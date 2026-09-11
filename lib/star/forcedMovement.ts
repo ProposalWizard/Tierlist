@@ -3,6 +3,7 @@ import { membershipOf, estimateClubStrength } from "./promotion";
 import { sortLeague } from "./season";
 import { type GoverningBody, influenceIn } from "./governingBodies";
 import { RULE_OVERRULE_INFLUENCE_THRESHOLD } from "./ruleBook";
+import { isBodyPresident } from "./leadership";
 
 /**
  * FORCED LEAGUE MOVEMENT — PHASE 6 OF STAR_POWER_POLITICS.MD, §4.4 #10.
@@ -30,7 +31,7 @@ import { RULE_OVERRULE_INFLUENCE_THRESHOLD } from "./ruleBook";
  */
 
 export function canForceClubMovement(career: CareerState, body: GoverningBody): boolean {
-  return influenceIn(career, body) >= RULE_OVERRULE_INFLUENCE_THRESHOLD;
+  return influenceIn(career, body) >= RULE_OVERRULE_INFLUENCE_THRESHOLD || isBodyPresident(career, body);
 }
 
 export interface ForcedMovementResult {

@@ -3,6 +3,7 @@ import type { CareerState } from "./types";
 import { poolFor } from "./euro";
 import { seasonQualifiers } from "./competitions";
 import { ruleBookFor } from "./ruleBook";
+import { calendarMonthOf, divisionOf } from "./calendar";
 
 /**
  * THE CASINO'S BOOK — BETTING ON WHO WINS THE ACTUAL COMPETITIONS.
@@ -21,6 +22,26 @@ import { ruleBookFor } from "./ruleBook";
  * module in this codebase keeps (dribble.ts, leagueTransfers.ts): the caller
  * reads/writes `career.competitionBets`/`career.money`, this only computes.
  */
+
+/**
+ * Betting is only open early in the season — reported directly: without a
+ * cutoff, a bet placed on the last day of the season (once the title is
+ * already effectively decided) is a free win, not a real bet. Gated on the
+ * summer transfer window closing rather than a fixed matchweek count,
+ * matching the same real calendar boundary `careerFlow.ts`'s own deadline-
+ * day event fires on — `transferWindowFor` treats August and September as
+ * "summer," closing the moment October arrives (see calendar.ts's own
+ * note), so this closes betting at exactly that same boundary. Read
+ * straight off the live calendar rather than `career.lastTransferWindowKey`
+ * because season 1's own summer window is deliberately never run at all
+ * (the hand-curated starting rosters aren't immediately overwritten — see
+ * `runDueTransferWindow`'s own note), which would otherwise leave season 1
+ * with no real "window closed" signal to key off.
+ */
+export function canPlaceCompetitionBet(career: CareerState): boolean {
+  const month = calendarMonthOf(career.player.startYear, career.season, career.week, divisionOf(career));
+  return month < 7; // before August
+}
 
 export type BetCompetition = "league" | "faCup" | "leagueCup" | "championsLeague" | "europaLeague";
 
