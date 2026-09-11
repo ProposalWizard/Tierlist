@@ -7,6 +7,10 @@ import { poolFor } from "./euro";
 import { getTuning } from "./tuningStore";
 import { FREE_AGENTS_CLUB } from "./leagueSquads";
 import { managerTier } from "./managerPool";
+import {
+  castVote, applyVoteHeldReputation, applyOverruleReputationCost,
+  OVERRULE_OWNERSHIP_THRESHOLD, type VoteTally,
+} from "./voting";
 
 /**
  * INVESTMENTS — OWNING A PIECE OF A REAL CLUB, NOT JUST PLAYING FOR ONE.
@@ -351,6 +355,94 @@ export function sellPlayerFromOwnedClub(career: CareerState, club: string, playe
     career: { ...next, ownedClubs: { ...(next.ownedClubs ?? {}), [club]: { ...current, budget: current.budget + fee } } },
     ok: true,
   };
+}
+
+// ── Selling a player, routed through a real shareholder vote ────────────────
+//
+// Phase 2 of STAR_POWER_POLITICS.md's proof-of-concept: this ONE boardroom
+// action now goes through the generic voting engine (voting.ts) instead of
+// acting instantly. Nothing else in this file changed — signing a player and
+// appointing a manager are untouched, deliberately, since Phase 2 is "prove
+// the voting system works," not "route every boardroom action through it."
+
+/** How many shareholders vote — this game doesn't model individual
+ *  shareholders as data, so a stylised, fixed electorate stands in for
+ *  "however many people actually hold shares" (the brief's own worked
+ *  example, 638 votes, is this same order of magnitude). */
+const SHAREHOLDER_ELECTORATE = 640;
+
+/** Above `OVERRULE_OWNERSHIP_THRESHOLD` (voting.ts), a club-scoped vote can
+ *  be overruled outright regardless of your ownership stake in the OTHER
+ *  sense the rest of this file already checks (majority control) — this is
+ *  a stricter, higher bar on top of it. */
+export function canOverruleClubVote(career: CareerState, club: string): boolean {
+  return (stakeIn(career, club)?.percent ?? 0) >= OVERRULE_OWNERSHIP_THRESHOLD;
+}
+
+export interface SellPlayerVoteProposal {
+  club: string;
+  playerId: string;
+  playerName: string;
+  fee: number;
+  tally: VoteTally;
+}
+
+/** Build and immediately resolve the shareholder vote on selling a specific
+ *  player — the real tally is decided here (see voting.ts's own note on why
+ *  a vote is rolled once, not simulated live); the ceremony screen only
+ *  animates toward it. Every check `sellPlayerFromOwnedClub` itself makes
+ *  (majority ownership, the player exists, the squad floor) is repeated
+ *  here first so a vote is never held over something that could never
+ *  actually happen. */
+export function proposeSellPlayerVote(
+  career: CareerState, club: string, playerId: string, rng: () => number,
+): { ok: true; proposal: SellPlayerVoteProposal } | { ok: false; reason: string } {
+  if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
+  const entry = findSquadEntry(career, club);
+  const squad = entry?.squad;
+  const idx = squad?.players.findIndex(p => p.id === playerId) ?? -1;
+  if (!squad || idx < 0) return { ok: false, reason: "That player isn't in the squad" };
+  if (squad.players.length <= getTuning("transfers.minSquadSize")) {
+    return { ok: false, reason: "The squad is already too thin to sell from" };
+  }
+  const player = squad.players[idx];
+  const fee = transferFee(player.overall);
+
+  // Shareholder reputation biases the odds in your favour, never guarantees
+  // them — a popular chairman with a great record still occasionally loses
+  // a vote, which is the entire point of it being a real roll (see
+  // voting.ts's MAX_SWING).
+  const biasStrength = (career.reputation.shareholders - 50) / 50;
+  const tally = castVote(
+    `Sell ${player.name} for £${fee}m?`,
+    [{ id: "yes", label: "Sell" }, { id: "no", label: "Keep" }],
+    SHAREHOLDER_ELECTORATE, "yes", biasStrength, rng,
+  );
+
+  return { ok: true, proposal: { club, playerId, playerName: player.name, fee, tally } };
+}
+
+/** Apply the outcome of a proposal built by `proposeSellPlayerVote`. If the
+ *  vote passed, or you overrule it (only possible above
+ *  `OVERRULE_OWNERSHIP_THRESHOLD` — see `canOverruleClubVote` above), the
+ *  sale goes through exactly as `sellPlayerFromOwnedClub` already did it;
+ *  either way, holding the vote nudges shareholder reputation, and
+ *  overruling costs it on top. */
+export function resolveSellPlayerVote(
+  career: CareerState, proposal: SellPlayerVoteProposal, overrule: boolean,
+): BoardActionResult {
+  let next = { ...career, reputation: applyVoteHeldReputation(career.reputation) };
+  const passed = proposal.tally.winner === "yes";
+  if (!passed && overrule) {
+    if (!canOverruleClubVote(next, proposal.club)) {
+      return { career: next, ok: false, reason: "Not enough ownership to overrule this vote" };
+    }
+    next = { ...next, reputation: applyOverruleReputationCost(next.reputation) };
+  } else if (!passed) {
+    return { career: next, ok: false, reason: "The shareholders voted to keep him" };
+  }
+  const sale = sellPlayerFromOwnedClub(next, proposal.club, proposal.playerId);
+  return sale.ok ? sale : { career: next, ok: false, reason: sale.reason };
 }
 
 function managerFee(name: string): number {

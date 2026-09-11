@@ -173,19 +173,30 @@ function played(kind: ScenarioKind, seed: number) {
   // Every chance where the keeper got a hand to it and the move died without
   // one of your players touching it again should name HIM, not the grass it
   // rolled onto.
-  let keeperEnded = 0, namedForHim = 0;
+  //
+  // One real exception: a save that stays loose (see resolveKeeper) can find
+  // its way to an offside runner — offsideOffence's own "offside" return
+  // fires before `receiverDone`/anything else does, so `ball.lastTouch` is
+  // still "keeper" even though a player of yours DID reach it. That is not
+  // the grass claiming credit for the keeper's work — the reason the move
+  // actually died is the offside flag, which is a more specific and more
+  // correct thing to call it than "saved". Genuinely rare (the loose ball
+  // has to find a man who was offside when it was played), so it is counted
+  // separately rather than folded into the main tally, which stays exact.
+  let keeperEnded = 0, namedForHim = 0, offsideOffRebound = 0;
   for (const kind of SHOOT) {
     for (let seed = 0; seed < 300; seed++) {
       const { out, ball, keeperTouched } = played(kind, seed + 5000);
       if (!keeperTouched || out === "none") continue;
       if (ball.lastTouch !== "keeper") continue;   // somebody re-struck it after
       keeperEnded++;
-      if (out === "saved" || out === "caught" || out === "tipped") namedForHim++;
+      if (out === "saved" || out === "caught" || out === "tipped") { namedForHim++; continue; }
+      if (out === "offside" && ball.loose) { offsideOffRebound++; continue; }
     }
   }
   check(keeperEnded > 100, `the keeper ends a lot of chances (${keeperEnded})`);
-  check(namedForHim === keeperEnded,
-    `and every one of them is called a save (${namedForHim}/${keeperEnded})`);
+  check(namedForHim + offsideOffRebound === keeperEnded,
+    `and every one of them is called a save, or the more specific "offside" when a loose rebound found an offside man (${namedForHim} saves + ${offsideOffRebound} offside / ${keeperEnded})`);
 }
 
 // ── The woodwork gets a mention ────────────────────────────────────────────

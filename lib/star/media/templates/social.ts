@@ -285,4 +285,11 @@ export const SOCIAL_TEMPLATES: Template[] = [
     body: "football is a simple game and then {club} play it",
     weight: 0.5,
   },
+
+  // ── The kids ─────────────────────────────────────────────────────────────
+  {
+    id: "fan-wonderkid", archetype: "fan", events: ["wonderkid-hype"], requires: ["player"],
+    body: "everyone needs to see this {player} kid at {club} play, remember the name",
+    weight: 2,
+  },
 ];

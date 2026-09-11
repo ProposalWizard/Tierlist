@@ -83,9 +83,12 @@ import Casino from "@/components/star/Casino";
 import Investments from "@/components/star/Investments";
 import {
   buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
+  proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, type SellPlayerVoteProposal,
 } from "@/lib/star/investments";
+import { OVERRULE_REPUTATION_COST } from "@/lib/star/voting";
+import VoteCeremony from "@/components/star/VoteCeremony";
 import DilemmaModal from "@/components/star/DilemmaModal";
-import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
+import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
 
 export default function StarDevPage() {
@@ -102,6 +105,9 @@ export default function StarDevPage() {
    *  flat-timeout way the achievement toast above already is. */
   const [ratingChange, setRatingChange] = useState<{ from: number; to: number } | null>(null);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
+  /** The one proposal in flight for the Phase 2 voting proof-of-concept —
+   *  see handleSellPlayerFromOwnedClub/handleVoteDone. */
+  const [sellPlayerVoteProposal, setSellPlayerVoteProposal] = useState<SellPlayerVoteProposal | null>(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
   const [pressQuestion, setPressQuestion] = useState<PressQuestion | null>(null);
   /** Whether they won it is only known at the ceremony, so it is carried here. */
@@ -488,6 +494,10 @@ export default function StarDevPage() {
     const updated: CareerState = {
       ...career,
       skills: { ...career.skills, [trainingSkill]: currentVal + gain },
+      // This is the "trained it" clock decaySkills reads — a session
+      // resets it regardless of how much it actually gained, same as
+      // real training: showing up is what keeps a skill maintained.
+      lastTrainedWeek: { ...career.lastTrainedWeek, [trainingSkill]: career.week },
       energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
       // Recomputed below, once this session's achievement checks (a fresh
       // "max-technique" unlock, say) are final.
@@ -1104,10 +1114,20 @@ export default function StarDevPage() {
 
   const handleBuyBoot = useCallback((boot: Boot) => {
     if (!career || career.money < boot.price) return;
+    // Buying the SAME pair you're already wearing stacks the matches left
+    // rather than overwriting them — requested directly, with the exact
+    // arithmetic: 3 left, buy two more pairs, one match played, one more
+    // pair bought = 3 - 1 + 3 + 3 + 3 = 11. A DIFFERENT boot still replaces
+    // outright; switching boots mid-career was always meant to give up
+    // whatever was left on the old pair, and stacking only makes sense for
+    // more of the exact same thing.
+    const stacking = career.currentBoot.id === boot.id;
     setCareer({
       ...career,
       money: career.money - boot.price,
-      currentBoot: { ...boot },
+      currentBoot: stacking
+        ? { ...boot, matches: career.currentBoot.matches + boot.matches }
+        : { ...boot },
     });
   }, [career]);
 
@@ -1178,12 +1198,27 @@ export default function StarDevPage() {
     if (result.ok) setCareer(result.career);
     return { ok: result.ok, reason: result.reason };
   }, [career]);
+  // Phase 2 of STAR_POWER_POLITICS.md's proof-of-concept: selling a player
+  // from an owned club no longer acts instantly — it's put to a real
+  // shareholder vote (voting.ts/investments.ts's proposeSellPlayerVote),
+  // and the ceremony screen (below) decides what actually happens.
   const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string) => {
     if (!career) return { ok: false, reason: "No active career" };
-    const result = sellPlayerFromOwnedClub(career, club, playerId);
-    if (result.ok) setCareer(result.career);
-    return { ok: result.ok, reason: result.reason };
+    const rng = mulberry32(career.season * 91721 + career.week * 131 + playerId.length);
+    const result = proposeSellPlayerVote(career, club, playerId, rng);
+    if (!result.ok) return { ok: false, reason: result.reason };
+    setSellPlayerVoteProposal(result.proposal);
+    setPhase("vote-ceremony");
+    return { ok: true };
   }, [career]);
+
+  const handleVoteDone = useCallback((_accepted: boolean, overrule: boolean) => {
+    if (!career || !sellPlayerVoteProposal) return;
+    const result = resolveSellPlayerVote(career, sellPlayerVoteProposal, overrule);
+    setCareer(result.career);
+    setSellPlayerVoteProposal(null);
+    setPhase("investments");
+  }, [career, sellPlayerVoteProposal]);
   const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
     if (!career) return { ok: false, reason: "No active career" };
     const result = replaceManagerForOwnedClub(career, club, managerName);
@@ -1566,6 +1601,20 @@ export default function StarDevPage() {
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
+  if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToDashboard} />;
+
+  if (phase === "vote-ceremony" && sellPlayerVoteProposal) {
+    return (
+      <VoteCeremony
+        tally={sellPlayerVoteProposal.tally}
+        scope="boardroom"
+        successOptionId="yes"
+        canOverrule={canOverruleClubVote(career, sellPlayerVoteProposal.club)}
+        overruleCost={OVERRULE_REPUTATION_COST}
+        onDone={handleVoteDone}
+      />
+    );
+  }
 
   if (phase === "settings") {
     return (
@@ -1892,6 +1941,9 @@ export default function StarDevPage() {
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
             <QuickBtn label="Invest" icon="📈" onClick={() => setPhase("investments")} />
+          </div>
+          <div className="mt-2 grid grid-cols-1 gap-2">
+            <QuickBtn label="Reputation" icon="🌍" onClick={() => setPhase("reputation")} />
           </div>
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>

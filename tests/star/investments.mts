@@ -1,12 +1,22 @@
 import {
   clubValuation, buyStake, sellStake, stakeIn, isMajorityOwner, canInvestIn, MAJORITY_THRESHOLD,
   topUpClubBudget, ownedClubState, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
-  allInvestableClubs,
+  allInvestableClubs, proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote,
 } from "../../lib/star/investments";
+import { OVERRULE_OWNERSHIP_THRESHOLD, OVERRULE_REPUTATION_COST, VOTE_HELD_REPUTATION_GAIN } from "../../lib/star/voting";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONS_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { FREE_AGENTS_CLUB } from "../../lib/star/leagueSquads";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
+
+function mulberry32(a: number) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 /**
  * OWNING A PIECE OF A REAL CLUB.
@@ -237,10 +247,68 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   check(ownedClubState(sold.career, EURO_CLUB).budget > before, "…with the fee landing in the club's real budget");
 }
 
+// ── Phase 2 proof-of-concept: selling a player now goes through a real
+// shareholder vote, not an instant action — see voting.ts and this file's
+// own proposeSellPlayerVote/resolveSellPlayerVote. ──────────────────────────
+{
+  // Below the overrule threshold — real control, but the vote is real too.
+  let career = freshCareer();
+  career = buyStake(career, RIVAL, 60);
+  check(isMajorityOwner(career, RIVAL) && !canOverruleClubVote(career, RIVAL),
+    "a 60% owner has majority control but is below the overrule bar");
+
+  const proposed = proposeSellPlayerVote(career, RIVAL, `${RIVAL}:0`, mulberry32(1));
+  check(proposed.ok, `a majority owner can put a real sale to a vote (${!proposed.ok ? proposed.reason : ""})`);
+  if (proposed.ok) {
+    check(proposed.proposal.tally.electorate > 0, "the tally is a real electorate, not a placeholder");
+    check(proposed.proposal.playerName.length > 0 && proposed.proposal.fee > 0, "the proposal names a real player and a real fee");
+
+    // Force a losing tally directly (rather than hunting for an unlucky
+    // seed) to check what happens on a genuine "no" without also needing
+    // overrule rights — the vote engine itself is already proven separately
+    // in tests/star/voting.mts.
+    const losingProposal = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "no" } };
+    const beforeShareholders = career.reputation.shareholders;
+    const blocked = resolveSellPlayerVote(career, losingProposal, false);
+    check(!blocked.ok, "a lost vote, not overruled, blocks the sale");
+    check(blocked.career.reputation.shareholders === beforeShareholders + VOTE_HELD_REPUTATION_GAIN,
+      "…but holding the vote at all still earned its own real reputation gain");
+
+    const overruleAttempt = resolveSellPlayerVote(career, losingProposal, true);
+    check(!overruleAttempt.ok, "a 60% owner cannot overrule a lost vote — below the ownership threshold");
+
+    const winningProposal = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "yes" } };
+    const won = resolveSellPlayerVote(career, winningProposal, false);
+    check(won.ok, `a won vote genuinely sells the player (${!won.ok ? won.reason : ""})`);
+    check(!(won.ok && (won.career.leagueSquads ?? []).find(s => s.club === RIVAL)?.players.some(p => p.id === `${RIVAL}:0`)),
+      "…and he's genuinely gone from the real squad, exactly like the instant version already did");
+  }
+}
+
+// ── Above the overrule threshold, a lost vote can be forced through — at a
+// real, immediate reputation cost every time ────────────────────────────────
+{
+  let career = freshCareer();
+  career = buyStake(career, RIVAL, 80);
+  check(canOverruleClubVote(career, RIVAL), `an 80% owner clears the ${OVERRULE_OWNERSHIP_THRESHOLD}% overrule bar`);
+
+  const proposed = proposeSellPlayerVote(career, RIVAL, `${RIVAL}:0`, mulberry32(2));
+  check(proposed.ok, "an 80% owner can still put a sale to a vote in the first place");
+  if (proposed.ok) {
+    const losingProposal = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "no" } };
+    const before = career.reputation.shareholders;
+    const overruled = resolveSellPlayerVote(career, losingProposal, true);
+    check(overruled.ok, `overruling a lost vote at high enough ownership genuinely sells him anyway (${!overruled.ok ? overruled.reason : ""})`);
+    const expectedAfterCost = Math.max(0, before + VOTE_HELD_REPUTATION_GAIN - OVERRULE_REPUTATION_COST);
+    check(overruled.ok && overruled.career.reputation.shareholders === expectedAfterCost,
+      `overruling costs shareholder reputation on top of the ordinary vote-held gain (saw ${overruled.ok ? overruled.career.reputation.shareholders : "n/a"}, expected ${expectedAfterCost})`);
+  }
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems.slice(0, 25)) console.log(`  ✗ ${p}`);
   if (problems.length > 25) console.log(`  ...and ${problems.length - 25} more`);
   process.exit(1);
 }
-console.log("PASS — club valuations reflect real form, and majority ownership genuinely moves real squads and money");
+console.log("PASS — club valuations reflect real form, majority ownership genuinely moves real squads and money, and selling a player now stands or falls on a real shareholder vote");

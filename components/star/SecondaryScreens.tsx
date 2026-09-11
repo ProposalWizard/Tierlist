@@ -284,6 +284,57 @@ export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
   );
 }
 
+// ---------- REPUTATION ----------
+
+/** Same traffic-light bar LifeScreen.tsx's RelationshipRow uses, read-only —
+ *  nothing here is a minigame to play. See lib/star/reputation.ts's file
+ *  note for what actually moves each of these right now. */
+function ReputationRow({ label, value, icon, blurb }: { label: string; value: number; icon: string; blurb: string }) {
+  const color = value >= 70 ? "bg-emerald-500" : value >= 40 ? "bg-yellow-500" : "bg-red-500";
+  return (
+    <div className="mb-2 last:mb-0">
+      <div className="flex items-center gap-2">
+        <div className="w-9 h-9 rounded-lg bg-gray-700 border border-gray-600 flex items-center justify-center text-xl">{icon}</div>
+        <div className="relative flex-1 h-9 rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
+          <div className={`absolute inset-y-0 left-0 ${color} transition-all`} style={{ width: `${value}%` }} />
+          <div className="relative flex items-center justify-center h-full">
+            <span className="font-black text-white text-sm">{label}</span>
+            <span className="ml-2 font-black text-white text-xs bg-black/40 rounded-full px-2">{value}</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-1 ml-11 text-[9px] text-white/55">{blurb}</div>
+    </div>
+  );
+}
+
+export function ReputationScreen({ career, onBack }: { career: CareerState; onBack: () => void }) {
+  const rep = career.reputation;
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col py-3 px-3">
+      <div className="w-full max-w-sm mx-auto flex-1">
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
+          <div className="font-black text-white text-lg">Reputation</div>
+          <div />
+        </div>
+
+        <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
+          <ReputationRow label="World" value={rep.world} icon="🌍" blurb="How well the wider football world knows you — silverware and individual honours build this every season." />
+          <ReputationRow label="Club" value={rep.club} icon="🏟️" blurb="Your standing with your own club's board, beyond just the manager — moves with how the season judged you." />
+          <ReputationRow label="Fans" value={career.relationships.fans} icon="🧣" blurb="Play a minigame from the Life tab to move this one." />
+          <ReputationRow label="Government" value={rep.government} icon="🏛️" blurb="Standing with governing bodies (FA, UEFA, FIFA...) — arrives with governing-body investment, later." />
+          <ReputationRow label="Shareholders" value={rep.shareholders} icon="🤝" blurb="Standing with the shareholders of clubs you own a stake in — moves when you hold a real shareholder vote, and costs you if you overrule one." />
+        </div>
+
+        <div className="mt-3 text-[9px] text-center text-white/55">
+          Reputation is still being built out — right now it's a real, moving record of your standing, not yet the input to any vote.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- CONTRACT RENEWAL (higher-or-lower) ----------
 export function ContractRenewal({ career, offerReason, onComplete }: {
   career: CareerState;

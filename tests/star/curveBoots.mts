@@ -41,17 +41,27 @@ function mkBall(spin = 0, vz = 0): Ball {
 }
 
 // ── One swipe nudges spin/vz by exactly one step, in the swiped direction ──
+//
+// Reported directly: swiping right curved the ball LEFT. `stepBallRaw`'s own
+// curl term is the authority on what a given spin sign actually does to the
+// ball (see its "positive spin curves LEFT of travel" comment) — for a shot
+// travelling toward the goal (vel.y < 0), POSITIVE spin bends it toward
+// smaller pitch x, i.e. LEFT. So a swipe toward pitch-right has to apply
+// NEGATIVE spin to actually curve the ball right — the opposite of what
+// this suite originally asserted, which is exactly how the bug shipped
+// unnoticed: the pure-logic test agreed with itself without ever checking
+// against the real physics it feeds.
 {
   const ball = mkBall(0.2, 3);
   const baseSpin = ball.spin, baseVz = ball.vz;
   const ok = applyCurveSwipe(ball, "right");
   check(ok === true, "a fresh right swipe is accepted");
-  check(Math.abs(ball.spin - (baseSpin + CURVE_SPIN_STEP)) < 1e-9, "right swipe adds exactly one spin step");
+  check(Math.abs(ball.spin - (baseSpin - CURVE_SPIN_STEP)) < 1e-9, "right swipe subtracts one spin step (curves the ball right — see stepBallRaw's curl term)");
   check(ball.vz === baseVz, "a horizontal swipe never touches vz");
 
   const ball2 = mkBall(0.2, 3);
   applyCurveSwipe(ball2, "left");
-  check(Math.abs(ball2.spin - (0.2 - CURVE_SPIN_STEP)) < 1e-9, "left swipe subtracts one spin step");
+  check(Math.abs(ball2.spin - (0.2 + CURVE_SPIN_STEP)) < 1e-9, "left swipe adds one spin step (curves the ball left)");
 
   const ball3 = mkBall(0, 2);
   applyCurveSwipe(ball3, "up");
@@ -69,7 +79,7 @@ function mkBall(spin = 0, vz = 0): Ball {
   let lastOk = true;
   for (let i = 0; i < 20; i++) lastOk = applyCurveSwipe(ball, "right");
   check(Math.abs(ball.curveSpinAdj ?? 0) <= CURVE_SPIN_MAX + 1e-9, "spin correction never exceeds the cap however many swipes are thrown at it");
-  check(Math.abs((ball.curveSpinAdj ?? 0) - CURVE_SPIN_MAX) < 1e-9, "twenty swipes saturate exactly at the cap, not short of it");
+  check(Math.abs((ball.curveSpinAdj ?? 0) - (-CURVE_SPIN_MAX)) < 1e-9, "twenty right swipes saturate exactly at the cap, not short of it");
   check(lastOk === false, "a swipe once already at the cap reports it changed nothing");
 
   const ball2 = mkBall(0, 0);
@@ -84,8 +94,8 @@ function mkBall(spin = 0, vz = 0): Ball {
   applyCurveSwipe(ball, "right");
   const afterTwo = ball.spin;
   applyCurveSwipe(ball, "left");
-  check(ball.spin < afterTwo, "swiping the opposite way reduces the correction already applied");
-  check(Math.abs(ball.spin - CURVE_SPIN_STEP) < 1e-9, "two right swipes and one left nets to exactly one step of curve");
+  check(ball.spin > afterTwo, "swiping the opposite way reduces the correction already applied (right subtracts, left adds back)");
+  check(Math.abs(ball.spin - (-CURVE_SPIN_STEP)) < 1e-9, "two right swipes and one left nets to exactly one step of right-curving spin");
 }
 
 // ── The cap bounds the SWIPE'S OWN contribution, not the ball's total spin —
@@ -95,7 +105,7 @@ function mkBall(spin = 0, vz = 0): Ball {
   const heavilyCurled = mkBall(1.85, 0); // roughly launch()'s own max
   for (let i = 0; i < 20; i++) applyCurveSwipe(heavilyCurled, "right");
   check(
-    Math.abs(heavilyCurled.spin - (1.85 + CURVE_SPIN_MAX)) < 1e-9,
+    Math.abs(heavilyCurled.spin - (1.85 - CURVE_SPIN_MAX)) < 1e-9,
     "the swipe cap tracks its own contribution separately from however curly the strike already was",
   );
 }

@@ -22,6 +22,10 @@
     npx tsx tests/star/firstPersonDribble.mts
     npx tsx tests/star/curveBoots.mts
     npx tsx tests/star/liveAttack.mts
+    npx tsx tests/star/promotion.mts
+    npx tsx tests/star/investments.mts
+    npx tsx tests/star/reputation.mts
+    npx tsx tests/star/voting.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -1470,3 +1474,51 @@ already were rather than inventing twenty clubs' worth of new fan
 accounts. A real result and a real hat-trick elsewhere, reported by that
 club's own account and the neutral press, was the thing that was actually
 asked for.
+
+**reputation** — world/club/government/shareholder standing (Phase 1 of
+`STAR_POWER_POLITICS.md`), explicitly not one number.
+
+Checks the pure formulas in isolation (`clampReputation` stays inside
+0-100 and rounds; `nudgeReputation` only ever moves the keys it's given
+and clamps each independently; `worldReputationFromSeason`/
+`clubReputationFromSeason` scale trophy fame and the season's judgement
+score down to a modest bar-sized nudge, never reusing `fame`'s own
+unbounded scale or `bossChange`'s directly), then proves the wiring
+through the real `advanceSeason` path rather than trusting the formulas
+alone: a league title won through a real, played-out standings table
+raises both world and club reputation by exactly the amount the same
+formulas predict independently, and a relegation-form season at a big,
+high-expectation club (Arsenal finishing bottom — picking a SPECIFIC club
+rather than just reversing the table, since a low-expectation club
+finishing bottom can read as "about as expected" instead of a crisis)
+lowers club reputation without ever pushing it below the floor.
+Government and shareholder reputation are real fields from day one but
+have no hook yet — checked explicitly that they don't move on their own,
+since Phase 1's brief only names two hooks ("winning trophies nudges
+world reputation, a strong boardroom track record nudges club
+reputation") and inventing motion for the other two ahead of Phase 2/3/4
+existing would be worse than leaving them honestly still.
+
+**voting** — the generic vote/ceremony engine (Phase 2 of
+`STAR_POWER_POLITICS.md`), the one reusable system §3 says every future
+tier of this feature (kit votes, fan votes, the Rule Book itself) goes
+through.
+
+Checks `castVote` produces real per-option counts and abstentions that
+always sum exactly to the electorate; that an unbiased vote actually
+splits close to even across many trials (a genuine bug caught here during
+development — a missing branch for "no favoured option" silently sent
+every unclaimed probability mass to whichever option was listed last,
+which read as a neutral vote but was actually a ~75/25 vote in disguise);
+that reputation bias genuinely swings the odds without ever guaranteeing
+them, checked at two different electorate sizes on purpose (a 2000-voter
+electorate is close to deterministic under the law of large numbers even
+at full bias, so "the favoured side can still lose" is only checked at a
+size — 15 voters — small enough for that to actually happen sometimes);
+and that the reputation hooks (`applyVoteHeldReputation`,
+`applyOverruleReputationCost`) move only shareholder reputation, by their
+own named constants, clamped at the 0-100 floor/ceiling. The end-to-end
+proof that this engine is actually wired into a real decision — selling a
+player out of an owned club, now routed through a shareholder vote
+instead of acting instantly — lives in `tests/star/investments.mts`'s own
+voting section, not here; this file only proves the engine itself.

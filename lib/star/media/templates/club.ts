@@ -264,4 +264,11 @@ export const CLUB_TEMPLATES: Template[] = [
     body: "{competition} | {homeClub} {hs}-{as} {awayClub}",
     graphic: "scoreline", weight: 0.5,
   },
+
+  // ── One of their own kids ────────────────────────────────────────────────
+  {
+    id: "club-wonderkid", archetype: "club", events: ["wonderkid-hype"], requires: ["player"],
+    body: "Keep an eye on this name: {player}. One for the future here at {club}. 🌟",
+    weight: 3,
+  },
 ];

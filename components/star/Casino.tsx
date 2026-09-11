@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
 import {
@@ -31,12 +31,66 @@ const HORSE_NAMES = [
 
 const MY_HORSE_RACE_COST = 40;
 
+/**
+ * BET AMOUNTS — A REAL STEP TABLE, NOT ±1.
+ *
+ * Requested directly, with the exact sequence given: every press used to
+ * move the bet by a single star, which is fine for deciding between 4 and 5
+ * but useless for getting from 1 to anything worth calling a bet — a real
+ * session's bankroll runs into the thousands, and pressing a button that
+ * many times to get there is not a control, it's a chore. This is the given
+ * sequence verbatim: 1-10 by small steps, 10-1000 in round hundreds, then
+ * increasingly coarse steps up to a million, the same shape a real casino's
+ * chip denominations use.
+ */
+const BET_STEPS: number[] = [
+  1, 2, 5, 10, 25, 50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000,
+  1250, 1500, 1750, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+  12500, 15000, 17500, 20000, 25000, 30000, 35000, 40000, 50000, 60000, 70000, 80000, 90000, 100000,
+  250000, 500000, 1000000,
+];
+
+/** The nearest step at or below `n` — for clamping a saved/previous bet down
+ *  to whatever the current bank can actually afford. */
+function stepAtOrBelow(n: number): number {
+  let best = BET_STEPS[0];
+  for (const s of BET_STEPS) { if (s <= n) best = s; else break; }
+  return best;
+}
+
+const BET_STORAGE_KEY = "star-casino-bet";
+
 export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onPlaceBet }: Props) {
   const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(1);
 
-  const changeBet = (delta: number) => setBet((b) => Math.max(1, Math.min(bank, b + delta)));
+  // Persisted the same way the match speed button is (star-match-speed):
+  // read once on mount, written back on every change, so it holds across
+  // casino visits — "if I left it on ten star money as the bet, the next
+  // time I came to do a bet it would still be on ten."
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem(BET_STORAGE_KEY));
+      if (BET_STEPS.includes(saved)) setBet(stepAtOrBelow(Math.min(saved, bankStart)));
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const changeBet = useCallback((direction: 1 | -1) => {
+    setBet((b) => {
+      const i = BET_STEPS.indexOf(b);
+      // A bet that predates this table (or was clamped to a non-step value
+      // by the bank cap below) may not sit exactly on a step — fall back to
+      // the nearest one below it first, so a press always moves from a real
+      // rung rather than getting stuck between two of them.
+      const cur = i >= 0 ? i : BET_STEPS.indexOf(stepAtOrBelow(b));
+      const next = Math.max(0, Math.min(BET_STEPS.length - 1, cur + direction));
+      const value = Math.min(BET_STEPS[next], Math.max(1, bank));
+      try { localStorage.setItem(BET_STORAGE_KEY, String(value)); } catch { /* ignore */ }
+      return value;
+    });
+  }, [bank]);
 
   if (game === "blackjack") {
     return <Blackjack bank={bank} bet={bet} onSetBank={setBank} onExit={() => setGame("menu")} onChangeBet={changeBet} />;
@@ -138,7 +192,8 @@ interface CasinoGameProps {
   bet: number;
   onSetBank: (n: number) => void;
   onExit: () => void;
-  onChangeBet: (delta: number) => void;
+  /** Moves the bet one rung up or down BET_STEPS — not a raw amount. */
+  onChangeBet: (direction: 1 | -1) => void;
 }
 
 function TopBar({ bank, bet, onExit, onChangeBet }: CasinoGameProps) {
@@ -644,28 +699,37 @@ function handValue(cards: Card[]): number {
 }
 
 function Blackjack(props: CasinoGameProps) {
-  const [player, setPlayer] = useState<Card[]>([drawCard(), drawCard()]);
-  const [dealer, setDealer] = useState<Card[]>([drawCard(), drawCard()]);
-  const [revealedDealerCount, setRevealedDealerCount] = useState(1); // second card hidden initially
-  const [phase, setPhase] = useState<"play" | "dealer-turn" | "done">("play");
+  // Requested directly: pressing Black Jack used to deal both hands
+  // instantly, before the bet was even decided — "it's a bit misconstruing
+  // the way that does it." A real "bet" phase now sits in front of every
+  // hand (the first one included): the table is empty, the TopBar's own
+  // bet +/- is right there to adjust, and nothing is drawn or staked until
+  // you press Deal yourself.
+  const [player, setPlayer] = useState<Card[]>([]);
+  const [dealer, setDealer] = useState<Card[]>([]);
+  const [revealedDealerCount, setRevealedDealerCount] = useState(0);
+  const [phase, setPhase] = useState<"bet" | "play" | "dealer-turn" | "done">("bet");
   const [message, setMessage] = useState("");
-  const initialised = useRef(false);
 
-  useEffect(() => {
-    if (!initialised.current) {
-      initialised.current = true;
-      props.onSetBank(props.bank - props.bet);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const startRound = () => {
+  const deal = () => {
+    if (props.bank < props.bet) return;
     setPlayer([drawCard(), drawCard()]);
     setDealer([drawCard(), drawCard()]);
-    setRevealedDealerCount(1);
+    setRevealedDealerCount(1); // second card hidden until Hold
     setPhase("play");
     setMessage("");
     props.onSetBank(props.bank - props.bet);
+  };
+
+  const startRound = () => {
+    // Back to the bet screen, not straight into a new hand — same reasoning
+    // as the initial deal: the bet is worth a deliberate look between hands
+    // too, not just the very first one.
+    setPlayer([]);
+    setDealer([]);
+    setRevealedDealerCount(0);
+    setMessage("");
+    setPhase("bet");
   };
 
   const hit = () => {
@@ -716,6 +780,7 @@ function Blackjack(props: CasinoGameProps) {
     setPhase("done");
   };
 
+  const dealt = phase !== "bet";
   const done = phase === "done";
   const showingSecondCard = revealedDealerCount >= 2;
 
@@ -733,10 +798,20 @@ function Blackjack(props: CasinoGameProps) {
                 </div>
               ))}
             </div>
-            <div className="text-white font-black mt-1">
-              {showingSecondCard ? handValue(dealer.slice(0, revealedDealerCount)) : "?"}
-            </div>
+            {dealt && (
+              <div className="text-white font-black mt-1">
+                {showingSecondCard ? handValue(dealer.slice(0, revealedDealerCount)) : "?"}
+              </div>
+            )}
           </div>
+
+          {phase === "bet" && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
+              <div className="text-center text-sm font-bold text-white/70">
+                Set your bet above, then deal yourself in.
+              </div>
+            </div>
+          )}
 
           {message && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -747,7 +822,7 @@ function Blackjack(props: CasinoGameProps) {
           )}
 
           <div>
-            <div className="text-white font-black mb-1">{handValue(player)}</div>
+            {dealt && <div className="text-white font-black mb-1">{handValue(player)}</div>}
             <div className="flex gap-2">
               {player.map((c, i) => (
                 <CardView key={i} card={c} />
@@ -757,6 +832,15 @@ function Blackjack(props: CasinoGameProps) {
           </div>
         </div>
 
+        {phase === "bet" && (
+          <button
+            disabled={props.bank < props.bet}
+            onClick={deal}
+            className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
+          >
+            Deal — ★{props.bet}
+          </button>
+        )}
         {phase === "play" && (
           <div className="grid grid-cols-2 gap-2 mt-3">
             <button onClick={hold} className="py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black">✕ Hold</button>
@@ -768,11 +852,10 @@ function Blackjack(props: CasinoGameProps) {
         )}
         {done && (
           <button
-            disabled={props.bank < props.bet}
             onClick={startRound}
-            className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
+            className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black"
           >
-            Deal Again — ★{props.bet}
+            New Hand
           </button>
         )}
       </div>

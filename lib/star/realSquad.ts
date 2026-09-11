@@ -28,6 +28,7 @@ interface RosterPlayer {
   age: number;
   image_url: string | null;
   nationality: string;
+  high_potential?: boolean;
 }
 
 type Slot = SquadPlayer["position"];
@@ -165,6 +166,7 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
       nationality: best.nationality || undefined,
       age: best.age || undefined,
       positions: rolesOf(best.positions),
+      ...(best.high_potential ? { highPotential: true } : {}),
     });
   }
 

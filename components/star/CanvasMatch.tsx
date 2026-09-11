@@ -964,9 +964,46 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const ballImgRef = useRef<HTMLImageElement | null>(null);
   useEffect(() => {
-    const img = new Image();
-    img.src = "/star/ball.png";
-    ballImgRef.current = img;
+    // ── The plain white ball, actually explained ──
+    //
+    // Reported directly, more than once: "the ball is invisible to kick,
+    // and it's just plain white, like the graphics are lost." That IS the
+    // real bug, not a mystery — it is exactly `drawBall`'s own fallback
+    // circle, further down, which only ever draws when `img.complete &&
+    // img.naturalWidth > 0` is false. The comment that used to sit here
+    // called that "effectively never" — true for the ordinary one-frame
+    // gap while the image is still loading, but there was NO handling at
+    // all for the image genuinely FAILING to load (a real network hiccup,
+    // far more likely on the mobile connections this game is mostly played
+    // on) — a single failed fetch left `ballImgRef.current` pointed at a
+    // permanently-incomplete Image for the rest of that match, with nothing
+    // ever trying again. "Sometimes in a match" is exactly what a rare,
+    // never-retried failure looks like.
+    //
+    // Retries with backoff, a fresh Image() each attempt (reassigning `src`
+    // on the same failed element does not reliably restart the load in
+    // every browser) and a cache-busting query param (so a CDN edge that
+    // cached the failure itself doesn't just hand back the same failure
+    // immediately). Five attempts spans a little over ten seconds — long
+    // enough to ride out a real hiccup, short enough that a genuinely
+    // offline device still just plays with the plain fallback disc, which
+    // was always the safe worst case here, never a crash.
+    let cancelled = false;
+    let attempt = 0;
+    const MAX_ATTEMPTS = 5;
+    const load = () => {
+      const img = new Image();
+      img.onerror = () => {
+        if (cancelled) return;
+        attempt++;
+        if (attempt >= MAX_ATTEMPTS) return;
+        window.setTimeout(load, 400 * 3 ** (attempt - 1));
+      };
+      img.src = attempt === 0 ? "/star/ball.png" : `/star/ball.png?retry=${attempt}`;
+      ballImgRef.current = img;
+    };
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   // Respect prefers-reduced-motion: no shake, no confetti, only a faint brief flash.
@@ -2105,9 +2142,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.drawImage(img, -br, -br, br * 2, br * 2);
         ctx.restore();
       } else {
-        // Before the image has loaded — effectively never, but a blank spot
-        // where the ball should be is worse than a plain fallback for the
-        // one frame it might take.
+        // Before the image has loaded (the ordinary one-frame gap), or —
+        // the case that was actually reported — a real failed fetch the
+        // mount effect above is now busy retrying. A blank spot where the
+        // ball should be is worse than this plain fallback either way.
         ctx.beginPath();
         ctx.arc(px, by, br, 0, Math.PI * 2);
         ctx.fillStyle = "#fefefe";
@@ -2157,7 +2195,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // doing stuff... nothing's happening," which is true of the FEEDBACK
     // even on frames where the gesture itself is being read correctly. A
     // screen-space line, not a pitch one — the swipe itself is read in
-    // screen pixels (see curveSwipeStartRef's own note on why).
+    // screen pixels — drawn exactly where the finger/mouse actually is. What
+    // that raw gesture MEANS (left/right/up/down) is worked out from the
+    // pitch's own lateral axis on release, not from these screen pixels
+    // directly — see onPointerUp's own note on why.
     if (phaseRef.current === "flight" && canCurve && curveSwipeStartRef.current && curveSwipeCurrentRef.current) {
       const canvas = canvasRef.current;
       if (canvas) {
@@ -3246,7 +3287,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
 
   // --- Pointer (slingshot) ---
+  //
+  // Curve boots reported as "not really showing anything on PC": touch
+  // already gets `touchAction: "none"` (the wrapper, above) to stop the
+  // browser's own scroll/zoom gestures from competing with a drag, but
+  // nothing stopped a MOUSE drag from doing what an ordinary mouse drag over
+  // text/an image does — starting a native text-selection or image-drag
+  // instead of just moving the pointer. That is far more disruptive to a
+  // short, fast, lateral swipe (exactly what a curve correction is) than to
+  // the longer, mostly-vertical aim drag, which is likely why this was
+  // reported specifically against curving rather than every drag in the
+  // game. `preventDefault` on pointerdown, plus `user-select: none` on the
+  // wrapper above, stop both.
   const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
     primeMatchSound();
     if (phaseRef.current === "dribble") {
       flickStartRef.current = pitchFromPointer(e.clientX, e.clientY);
@@ -3329,9 +3383,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       curveSwipeCurrentRef.current = null;
       try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
       if (!from || !canCurve || !ballRef.current) return;
-      const dx = e.clientX - from.x, dy = e.clientY - from.y;
-      if (Math.hypot(dx, dy) < CURVE_SWIPE_MIN_PX) return;
-      const dir = curveDirFromSwipe(dx, dy);
+      const rawDx = e.clientX - from.x, rawDy = e.clientY - from.y;
+      if (Math.hypot(rawDx, rawDy) < CURVE_SWIPE_MIN_PX) return;
+      // Reported directly: the curve direction "changes depending on the
+      // camera" — a crossing situation watches from the side (`toPx`'s own
+      // "quarter turn"), which swaps which SCREEN axis is actually pitch-
+      // lateral. Reading raw screen dx as "left/right" only matched pitch-
+      // left/right by coincidence, in whichever facing happened to be
+      // active when the shot was framed. Rotate the swipe into the same
+      // pitch-lateral axis `toPx`/`pitchFromPointer` already use, so
+      // "toward pitch-right" always means the same thing regardless of
+      // which way the camera is currently turned.
+      const f = facingRef.current;
+      const lateral = f === "right" ? rawDy : f === "left" ? -rawDy : rawDx;
+      const other = f === "up" ? rawDy : rawDx;
+      const dir = curveDirFromSwipe(lateral, other);
       if (dir) applyCurveSwipe(ballRef.current, dir);
       return;
     }
@@ -3415,7 +3481,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     flightDtLogRef.current = [];
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
     setPhase("flight");
-    pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
+    // A header scenario can be lost in the air before your header ever
+    // happens — see canvasEngine.ts's applyAerialContest: if the marker
+    // rises above you, YOUR intended header is overridden entirely into
+    // his clearance, sent back up the pitch instead of goalward. Real,
+    // deliberate football (you can lose a header duel), reported as "the
+    // ball just goes backwards" because nothing on screen ever said why —
+    // it looked identical to your own header commentary firing, then the
+    // ball inexplicably reversing. `launch()` already leaves the tell
+    // (`lastTouch === "defence"`) — naming it here is the fix, not the
+    // physics, which were already doing the right thing.
+    if (scenarioRef.current.kind === "header" && ballRef.current.lastTouch === "defence") {
+      pushLine("He gets up highest and heads it clear!");
+    } else {
+      pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
+    }
     playKick();
     kickPoseRef.current = KICK_POSE_S;
   };
@@ -3512,7 +3592,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       <div
         ref={wrapRef}
         className="relative w-full aspect-[5/8] rounded-xl overflow-hidden border-2 border-emerald-800/80 shadow-2xl shadow-emerald-950/60"
-        style={{ touchAction: "none" }}
+        style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none" }}
       >
         <canvas
           ref={canvasRef}

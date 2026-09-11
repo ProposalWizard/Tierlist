@@ -164,6 +164,11 @@ interface Candidate {
    */
   leagueGoals?: number;
   leagueAssists?: number;
+  /** See LeaguePlayer.highPotential/SquadPlayer.highPotential (types.ts) —
+   *  the admin-ticked wonderkid flag, carried through the same round trip
+   *  as everything else here so it survives a transfer window intact. Drives
+   *  reachUp/feeFor below. */
+  highPotential?: boolean;
 }
 
 const ROLES: Role[] = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
@@ -193,6 +198,7 @@ function fromSquadPlayer(p: SquadPlayer, club: string): Candidate {
     seasonGoals: p.seasonGoals, seasonAssists: p.seasonAssists,
     careerGoals: p.careerGoals, careerAssists: p.careerAssists,
     leagueGoals: p.leagueGoals, leagueAssists: p.leagueAssists,
+    highPotential: p.highPotential,
   };
 }
 
@@ -203,6 +209,7 @@ function fromLeaguePlayer(p: LeaguePlayer, club: string): Candidate {
     overall: p.overall, club, isYou: false,
     sofifaId: p.id, imageUrl: p.image, nationality: p.nation, age: p.age,
     seasonGoals: p.goals, seasonAssists: p.assists, careerGoals: 0, careerAssists: 0,
+    highPotential: p.highPotential,
   };
 }
 
@@ -221,6 +228,7 @@ function toSquadPlayer(c: Candidate): SquadPlayer {
     // he scores one. `undefined` is the honest "not tracked for him yet".
     ...(c.leagueGoals !== undefined ? { leagueGoals: c.leagueGoals } : {}),
     ...(c.leagueAssists !== undefined ? { leagueAssists: c.leagueAssists } : {}),
+    ...(c.highPotential ? { highPotential: true } : {}),
   };
 }
 
@@ -231,6 +239,7 @@ function toLeaguePlayer(c: Candidate): LeaguePlayer {
     ...(c.imageUrl ? { image: c.imageUrl } : {}),
     ...(c.nationality ? { nation: c.nationality } : {}),
     ...(c.age ? { age: c.age } : {}),
+    ...(c.highPotential ? { highPotential: true } : {}),
   };
 }
 
@@ -491,11 +500,27 @@ export interface LoanMove {
   imageUrl?: string;
 }
 
-/** A price with no budget behind it — cosmetic, off the rating alone, the
- *  same shape real fees roughly follow without pretending to model a market. */
-function feeFor(overall: number): number {
+/**
+ * A price with no budget behind it — cosmetic, off the rating alone, the
+ * same shape real fees roughly follow without pretending to model a market.
+ *
+ * A High Potential player under the fee-premium age ceiling costs more than
+ * his current rating alone would justify — requested directly: "these
+ * players generally are worth a lot more than a player of their age and
+ * rating would usually be worth, because they have potential to upgrade."
+ * Age-gated the same way the growth mechanic is (wonderkids.feeAgeCeiling,
+ * not necessarily the same number as wonderkids.ageCeiling — a club still
+ * pays for potential a little longer than the player still grows into it):
+ * the premium is for buying the upside itself, which only means something
+ * while there's realistically upside left to buy.
+ */
+export function feeFor(overall: number, highPotential?: boolean, age?: number): number {
   const m = Math.max(0, overall - 60);
-  return Math.round((getTuning("transfers.feeBase") + m * m * getTuning("transfers.feeQuadratic")) * 10) / 10; // £m, one decimal
+  const base = getTuning("transfers.feeBase") + m * m * getTuning("transfers.feeQuadratic");
+  const premium = highPotential && (age ?? 0) < getTuning("wonderkids.feeAgeCeiling")
+    ? getTuning("wonderkids.feeMultiplier")
+    : 1;
+  return Math.round(base * premium * 10) / 10; // £m, one decimal
 }
 
 /**
@@ -607,7 +632,14 @@ export function runTransferWindow(
       // club sends a squad player out on loan somewhere it would never
       // actually SELL him that cheap.
       const reach = loan ? reachDown(buyerStrength) * 1.4 : reachDown(buyerStrength);
-      if (gap < -reach || gap > REACH_UP) continue;
+      // A much stronger club reaching for a player well below its own level
+      // makes no sense NORMALLY — REACH_UP's whole job — except when he's
+      // High Potential, which is exactly the case this was asked for
+      // directly: "these players generally will sign for bigger clubs if
+      // they are at small clubs, because they have high potential." A big
+      // club is buying tomorrow's rating, not today's.
+      const reachUp = REACH_UP + (seller.highPotential ? getTuning("wonderkids.bigClubReachBonus") : 0);
+      if (gap < -reach || gap > reachUp) continue;
       const pool = pools.get(club)!;
       const formation = formationForClub(club);
       const need = Math.max(
@@ -637,7 +669,7 @@ export function runTransferWindow(
         loan: false,
         saleMove: {
           player: seller.name, from: seller.club, to: bestClub,
-          overall: seller.overall, fee: feeFor(seller.overall), unhappy,
+          overall: seller.overall, fee: feeFor(seller.overall, seller.highPotential, seller.age), unhappy,
           position: seller.positions[0], age: seller.age, imageUrl: seller.imageUrl,
         },
         score: bestScore, from: seller.club, to: bestClub, playerId: seller.id,
@@ -657,7 +689,8 @@ export function runTransferWindow(
       const buyerStrength = strengths.get(club)!;
       const gap = buyerStrength - fa.overall;
       const reach = reachDown(buyerStrength) * FREE_AGENT_REACH_MULT;
-      if (gap < -reach || gap > REACH_UP) continue;
+      const reachUp = REACH_UP + (fa.highPotential ? getTuning("wonderkids.bigClubReachBonus") : 0);
+      if (gap < -reach || gap > reachUp) continue;
       const pool = pools.get(club)!;
       const formation = formationForClub(club);
       const need = Math.max(
@@ -922,7 +955,8 @@ function bestBuyerAmong(seller: Candidate, buyers: WorldClub[], rng: () => numbe
     if (club === seller.club) continue;
     if (rng() > rivalrySellChance(seller.club, club, false)) continue;
     const gap = buyerStrength - seller.overall;
-    if (gap < -reachDown(buyerStrength) * INTERNATIONAL_REACH_MULT || gap > INTERNATIONAL_REACH_UP) continue;
+    const reachUp = INTERNATIONAL_REACH_UP + (seller.highPotential ? getTuning("wonderkids.bigClubReachBonus") : 0);
+    if (gap < -reachDown(buyerStrength) * INTERNATIONAL_REACH_MULT || gap > reachUp) continue;
     const formation = formationForClub(club);
     const need = Math.max(...seller.positions.map(r => positionNeed(r, club, pool, formation, pool.length)));
     if (need <= 0.12) continue;
@@ -996,7 +1030,7 @@ export function runInternationalWindow(
 
     moves.push({
       player: player.name, from: sellerClub.club, to: buyerClub,
-      overall: player.overall, fee: feeFor(player.overall), unhappy: false,
+      overall: player.overall, fee: feeFor(player.overall, player.highPotential, player.age), unhappy: false,
       position: player.positions[0], age: player.age, imageUrl: player.imageUrl,
     });
   }
