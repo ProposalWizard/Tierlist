@@ -7,6 +7,7 @@ import { BOOTS_CATALOGUE } from "@/lib/star/shopData";
 import { allInvestableClubs } from "@/lib/star/investments";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
 import type { NewCompetitionState } from "@/lib/star/newCompetition";
+import { isBodyPresident, canStandForBodyPresidency } from "@/lib/star/leadership";
 
 /**
  * THE RULE BOOK — PHASE 4 OF STAR_POWER_POLITICS.MD, PLUS PHASE 5's BRIBERY.
@@ -32,10 +33,13 @@ interface Props {
   onForceClubIntoPremierLeague: (incomingClub: string) => ActionResult;
   /** Phase 6 — §4.4 #12. */
   onCreateCompetition: (name: string, entrants: string[]) => ActionResult;
+  /** §5's end-game power fantasy — see lib/star/leadership.ts. */
+  onStandForBodyPresidency: (body: GoverningBody) => ActionResult;
 }
 
 export default function RuleBookScreen({
   career, onBack, onInvest, onProposeChange, onForceClubIntoPremierLeague, onCreateCompetition,
+  onStandForBodyPresidency,
 }: Props) {
   const [body, setBody] = useState<GoverningBody>("FA");
   const [investAmount, setInvestAmount] = useState(10000);
@@ -104,6 +108,28 @@ export default function RuleBookScreen({
             </button>
           </div>
           {!canPropose && <div className="mt-1.5 text-[9px] text-white/55">Needs real influence before you can propose a rule change.</div>}
+        </div>
+
+        <div className="bg-amber-950/40 border border-amber-700 rounded-lg p-3 mb-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-1.5">President / King (§5)</div>
+          {isBodyPresident(career, body) ? (
+            <div className="text-[11px] text-amber-200 font-bold">
+              You are president of {body} — you can propose any rule change here regardless of influence, and overrule any vote in it outright.
+            </div>
+          ) : (
+            <>
+              <div className="text-[11px] text-white/75 mb-2">
+                Needs 90+ world reputation and 90+ influence in this body — the "president or king" end-game the brief itself named, built as president of a governing body rather than an invented country.
+              </div>
+              <button
+                disabled={!canStandForBodyPresidency(career, body)}
+                onClick={() => run(onStandForBodyPresidency(body))}
+                className="w-full py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-[10px] font-black"
+              >
+                Stand for president of {body}
+              </button>
+            </>
+          )}
         </div>
 
         {message && (

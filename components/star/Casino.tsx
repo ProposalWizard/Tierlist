@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
 import {
-  BET_COMPETITIONS, oddsFor, entrantsFor, type BetCompetition, type CompetitionBet, type BetEntrant,
+  BET_COMPETITIONS, oddsFor, entrantsFor, canPlaceCompetitionBet, type BetCompetition, type CompetitionBet, type BetEntrant,
 } from "@/lib/star/competitionBetting";
 
 interface Props {
@@ -595,9 +595,15 @@ function CompetitionBetting(props: CompetitionBettingProps) {
   const [placed, setPlaced] = useState<{ club: string; odds: number } | null>(null);
   const book: BetEntrant[] = oddsFor(entrantsFor(tab, props.career));
   const pending = (props.career.competitionBets ?? []).filter(b => b.season === props.career.season);
+  // Reported directly: betting with no cutoff let a bet get placed on the
+  // last day of the season, once a title was already effectively decided —
+  // a free win, not a real bet. Closed the moment the summer transfer
+  // window shuts (see competitionBetting.ts's own note on why this exact
+  // calendar boundary, not a fixed matchweek count).
+  const bettingOpen = canPlaceCompetitionBet(props.career);
 
   const place = (entry: BetEntrant) => {
-    if (props.bank < props.bet) return;
+    if (!bettingOpen || props.bank < props.bet) return;
     props.onSetBank(props.bank - props.bet);
     props.onPlaceBet({
       competition: tab, club: entry.name, odds: entry.odds, stake: props.bet, season: props.career.season,
@@ -631,12 +637,18 @@ function CompetitionBetting(props: CompetitionBettingProps) {
           </div>
         )}
 
+        {!bettingOpen && (
+          <div className="mb-2 rounded-lg bg-red-900/60 border border-red-500/60 px-3 py-2 text-center text-[11px] font-bold text-red-200">
+            Betting closed for the season — the summer transfer window has shut.
+          </div>
+        )}
+
         <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
           {book.map(entry => (
             <button
               key={entry.name}
               onClick={() => place(entry)}
-              disabled={props.bank < props.bet}
+              disabled={!bettingOpen || props.bank < props.bet}
               className="w-full flex items-center justify-between gap-2 px-3 py-2.5 border-b border-black/20 last:border-b-0 hover:bg-gray-700 disabled:opacity-40 text-left"
             >
               <span className="font-bold text-white text-sm truncate">{entry.name}</span>

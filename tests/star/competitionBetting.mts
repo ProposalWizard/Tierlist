@@ -1,5 +1,8 @@
-import { oddsFor, settleBets, betNewsLines, type CompetitionBet } from "../../lib/star/competitionBetting";
-import type { SeasonWinners } from "../../lib/star/careerFlow";
+import { oddsFor, settleBets, betNewsLines, canPlaceCompetitionBet, type CompetitionBet } from "../../lib/star/competitionBetting";
+import { makeInitialCareer, type SeasonWinners } from "../../lib/star/careerFlow";
+import { calendarMonthOf } from "../../lib/star/calendar";
+import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import type { CareerState, StarPlayer } from "../../lib/star/types";
 
 /**
  * THE CASINO'S BOOK.
@@ -128,9 +131,32 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(lines[1].includes("Chelsea") && !lines[1].includes("won!"), `the losing line reads clearly, without claiming a win (${lines[1]})`);
 }
 
+// ── canPlaceCompetitionBet: open early, closed once the summer window shuts ──
+{
+  function player(): StarPlayer {
+    return {
+      firstName: "Test", lastName: "Player", age: 18, skinTone: "light",
+      club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027,
+    } as StarPlayer;
+  }
+  const base = makeInitialCareer(player(), [...PREMIER_LEAGUE_CLUBS]);
+
+  let sawOpen = false, sawClosed = false;
+  for (let week = 1; week <= 46; week++) {
+    const career: CareerState = { ...base, week };
+    const month = calendarMonthOf(career.player.startYear, career.season, career.week, "premier");
+    const expected = month < 7;
+    check(canPlaceCompetitionBet(career) === expected,
+      `week ${week} (calendar month ${month}) reads betting as ${expected ? "open" : "closed"}, matching the real calendar`);
+    if (expected) sawOpen = true; else sawClosed = true;
+  }
+  check(sawOpen, "a real season fixture genuinely has weeks where betting is open");
+  check(sawClosed, "…and real weeks later on where it's genuinely closed — this isn't a permanently-open or permanently-closed check");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — the book favours real form, overrounds like a real bookmaker, and settles only against the real result");
+console.log("PASS — the book favours real form, overrounds like a real bookmaker, settles only against the real result, and betting itself closes for the season once the summer window shuts");

@@ -626,11 +626,41 @@ Champions League format) — both still open for a genuinely new session to
 pick up.
 
 ### Cut entirely from the rollout plan for now
-- Becoming president/king of a real country (§5's end-game framing) — no
-  concrete mechanic given yet, needs real design before it's schedulable
-  at all.
+Empty — see below. Both items originally listed here are now resolved.
 
-(§4.5's aging-up "son" mechanic was the other item here — cleared in Phase
-0, see §4.5's updated note. It's a club-ownership power, not a Rule Book
-vote, so it slots into Phase 3 alongside the rest of the ownership-layer
-work rather than Phase 4 — see Phase 3's note below.)
+(§4.5's aging-up "son" mechanic was one of the original two — cleared in
+Phase 0, see §4.5's updated note. It's a club-ownership power, not a Rule
+Book vote, so it slotted into Phase 3 alongside the rest of the
+ownership-layer work rather than Phase 4 — see Phase 3's note above.)
+
+### Phase 8 (unplanned, added after the original 7 phases) — President/king
+**Done, 11 September 2026.** The other original "cut" item —
+"becoming president/king of a real country (§5's end-game framing) — no
+concrete mechanic given yet" — got the missing design and a real
+implementation, new `lib/star/leadership.ts`. Read as HONESTLY as
+possible: nothing in this engine models a country as its own entity (no
+population, no national government, no national budget), but a governing
+body IS a real, modelled thing — investable, with its own real Rule Book
+and real forced-movement power — and the FA already stands in for
+"England" everywhere else this game touches national football. So
+"president/king of your own country" ships as president of a governing
+body, not a second, parallel country-government system invented just for
+this framing. "King" isn't a separate tier above "president" for the same
+reason: there's no throne in this world for it to be king OF that the
+presidency isn't already the real top of.
+
+Real thresholds on TWO separate axes — 90+ world reputation AND 90+
+influence in the specific body you're standing for, either alone is not
+enough — decided by a real vote (Phase 2's `castVote`, reused exactly),
+overrulable at a genuinely higher bar (95 on both axes) at a real
+reputation cost. The actual point of the feature, not just a title: once
+won, a president genuinely bypasses the ordinary influence gate on every
+real power this session already built for that body — proposing a Rule
+Book change (`ruleBook.ts`'s `proposeRuleChangeVote`), overruling a vote
+(`canOverruleRuleVote`), and forcing a club's league position
+(`forcedMovement.ts`'s `canForceClubMovement`) — each of those three real
+gates checks `isBodyPresident` as an alternative path, proven with a
+fixture that has literally zero ordinary influence and would fail every
+one of them without the title. New Presidency section in the Rule Book
+screen. `tests/star/leadership.mts` (new) passes, alongside the full
+98-file suite and `tsc --noEmit`.

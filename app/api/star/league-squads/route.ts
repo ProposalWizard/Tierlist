@@ -113,27 +113,47 @@ export async function GET(request: NextRequest) {
   // for this to be safe at all — `overall` alone ties constantly, and
   // Postgres does not promise the same order for tied rows across two
   // separate paged requests the way it would within one.
-  const PAGE_SIZE = 1000;
-  const rows: Record<string, unknown>[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("sofifa_players")
-      // `image_url` is a short text column, not the JSONB blob this route
-      // exists to avoid — the shortlist graphic needs faces and twenty
-      // extra queries to get them would undo the whole point of the
-      // endpoint.
-      .select("sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age, high_potential")
+  // `image_url` is a short text column, not the JSONB blob this route exists
+  // to avoid — the shortlist graphic needs faces and twenty extra queries to
+  // get them would undo the whole point of the endpoint.
+  const BASE_COLUMNS = "sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age";
+  const runQuery = (columns: string, from: number, pageSize: number) =>
+    supabase.from("sofifa_players").select(columns)
       .eq("fifa_year", year)
       .in("club", dbClubs)
       .order("overall", { ascending: false, nullsFirst: false })
       .order("sofifa_id", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
+      .range(from, from + pageSize - 1);
+
+  const PAGE_SIZE = 1000;
+  const rows: Record<string, unknown>[] = [];
+  // Whether `high_potential` is actually queried this request — starts true,
+  // dropped permanently the moment it errors once (see the note below), so
+  // every later page in the same request goes straight to the fallback
+  // instead of re-discovering the same failure on each one.
+  let includeHighPotential = true;
+  for (let from = 0; ; from += PAGE_SIZE) {
+    let { data, error } = await runQuery(includeHighPotential ? `${BASE_COLUMNS}, high_potential` : BASE_COLUMNS, from, PAGE_SIZE);
+
+    // `high_potential.sql` (see CLAUDE.md's pending-migrations table) may not
+    // have run against the live database yet — selecting a column that
+    // doesn't exist fails the WHOLE query, not just the missing field (the
+    // exact Supabase behaviour the admin page's own "Critical Gotchas" note
+    // already warns about), which broke every single real squad fetch the
+    // moment this column was added here — every club silently fell back to
+    // `generatedSquad`'s fake roster instead of just missing the wonderkid
+    // flag. Retried once without it so a pending migration degrades to "no
+    // wonderkid flag yet," not "no real players in the entire division."
+    if (error && includeHighPotential) {
+      includeHighPotential = false;
+      ({ data, error } = await runQuery(BASE_COLUMNS, from, PAGE_SIZE));
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     if (!data || data.length === 0) break;
-    rows.push(...data);
+    rows.push(...(data as unknown as Record<string, unknown>[]));
     if (data.length < PAGE_SIZE) break;
   }
 

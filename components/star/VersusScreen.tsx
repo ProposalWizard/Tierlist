@@ -320,13 +320,14 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
 }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-1">
-      {/* A ring the shared ClubBadge doesn't draw itself — it's plain
-          everywhere else it's used (the cup draw, the scout report), but
-          here, next to a big italic "VS", the two crests are the whole
-          point of the panel and read as an afterthought without one. */}
-      <div className="grid place-items-center rounded-full border-2 border-white/70 bg-black/20 p-0.5 shadow-[0_0_10px_rgba(0,0,0,0.4)]">
-        <Crest club={club} kit={kit} size={44} />
-      </div>
+      {/* Reported directly, repeatedly: no ring, no circle, no oval around
+          the crest — plain, exactly like every other screen that uses
+          ClubBadge/Crest. A previous pass added this wrapper specifically
+          to give this one screen a ring the shared component doesn't draw
+          itself; that wrapper's own background is the same class of bug
+          ClubBadge.tsx's own crest fix already existed to prevent, just
+          reintroduced one level up. Deleted outright, not reshaped again. */}
+      <Crest club={club} kit={kit} size={44} />
       <FormRow form={form} />
       <div
         className="truncate text-[9px] font-black uppercase tracking-wider"

@@ -31,6 +31,7 @@
     npx tsx tests/star/corruption.mts
     npx tsx tests/star/phase6.mts
     npx tsx tests/star/facilities.mts
+    npx tsx tests/star/leadership.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -1648,3 +1649,23 @@ budget-crediting function directly: it never touches the player's
 personal money, it's a genuine no-op for a career with no owned clubs
 and for a merely-minority stake, and a stadium upgraded bigger genuinely
 earns MORE revenue afterward, not just a cosmetic capacity number.
+
+**leadership** — becoming president (or "king") of a real governing body,
+§5's end-game power fantasy, previously cut from the rollout plan for
+having no concrete mechanic. Built as president of a governing body
+rather than an invented country — nothing in this engine models a
+country as its own entity, and a governing body already is one, with the
+FA already standing in for "England" everywhere else this game touches
+national football.
+
+Checks that standing for election needs real, high thresholds on TWO
+separate axes (world reputation AND influence in that specific body —
+clearing only one is never enough, and clearing it in one body grants
+nothing in another); that the vote itself reuses Phase 2's real engine
+rather than a fourth version of it; that overruling a lost vote needs a
+genuinely higher bar than merely standing did; and — the actual point of
+the feature, not just a title — that a president of a body genuinely
+bypasses the ordinary influence gate on THREE separate real powers this
+session already built (proposing a Rule Book change, overruling a vote,
+forcing a club's league position), checked with a fixture that has ZERO
+ordinary influence and would fail every one of those gates on its own.

@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
-import type { CompetitionBet } from "@/lib/star/competitionBetting";
+import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE } from "@/lib/star/storage";
 import { createClient } from "@/lib/supabase/client";
@@ -99,6 +99,10 @@ import { proposeRuleChangeVote, resolveRuleChangeVote, canOverruleRuleVote, type
 import RuleBookScreen from "@/components/star/RuleBookScreen";
 import { bribeVote, rollCaught, applyGettingCaught, blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { forceClubIntoPremierLeague } from "@/lib/star/forcedMovement";
+import {
+  proposeBodyPresidencyVote, resolveBodyPresidencyVote, canOverrulePresidencyVote,
+  canStandForBodyPresidency, isBodyPresident, type PresidencyVoteProposal,
+} from "@/lib/star/leadership";
 import { createCompetition, playCompetitionToWinner, type NewCompetitionState } from "@/lib/star/newCompetition";
 import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
@@ -129,6 +133,7 @@ export default function StarDevPage() {
     | { kind: "kit"; proposal: KitVoteProposal }
     | { kind: "president"; proposal: PresidentVoteProposal }
     | { kind: "ruleChange"; proposal: RuleChangeProposal }
+    | { kind: "bodyPresidency"; proposal: PresidencyVoteProposal }
     | null
   >(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
@@ -1196,7 +1201,7 @@ export default function StarDevPage() {
   // settle against a real result at the next rollover (see advanceSeason's
   // settleBets call, careerFlow.ts).
   const handlePlaceBet = useCallback((bet: Omit<CompetitionBet, "id">) => {
-    if (!career) return;
+    if (!career || !canPlaceCompetitionBet(career)) return;
     const id = `bet-${career.season}-${(career.competitionBets ?? []).length}-${Math.round(Math.random() * 1e6)}`;
     setCareer({ ...career, competitionBets: [...(career.competitionBets ?? []), { ...bet, id }] });
   }, [career]);
@@ -1262,12 +1267,23 @@ export default function StarDevPage() {
     const result = pendingVote.kind === "sellPlayer" ? resolveSellPlayerVote(career, pendingVote.proposal, overrule)
       : pendingVote.kind === "kit" ? { career: resolveKitVote(career, pendingVote.proposal), ok: true as const }
       : pendingVote.kind === "president" ? resolvePresidentVote(career, pendingVote.proposal, overrule)
+      : pendingVote.kind === "bodyPresidency" ? resolveBodyPresidencyVote(career, pendingVote.proposal, overrule)
       : resolveRuleChangeVote(career, pendingVote.proposal, overrule);
     setCareer(result.career);
-    const backTo = pendingVote.kind === "ruleChange" ? "rule-book" : "investments";
+    const backTo = (pendingVote.kind === "ruleChange" || pendingVote.kind === "bodyPresidency") ? "rule-book" : "investments";
     setPendingVote(null);
     setPhase(backTo);
   }, [career, pendingVote]);
+
+  const handleProposeBodyPresidency = useCallback((body: GoverningBody) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const rng = mulberry32(career.season * 13291 + career.week * 733 + body.length);
+    const result = proposeBodyPresidencyVote(career, body, rng);
+    if (!result.ok) return { ok: false, reason: result.reason };
+    setPendingVote({ kind: "bodyPresidency", proposal: result.proposal });
+    setPhase("vote-ceremony");
+    return { ok: true };
+  }, [career]);
   const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
     if (!career) return { ok: false, reason: "No active career" };
     const result = replaceManagerForOwnedClub(career, club, managerName);
@@ -1847,6 +1863,7 @@ export default function StarDevPage() {
         onInvest={handleInvestInfluence} onProposeChange={handleProposeRuleChange}
         onForceClubIntoPremierLeague={handleForceClubIntoPremierLeague}
         onCreateCompetition={handleCreateCompetition}
+        onStandForBodyPresidency={handleProposeBodyPresidency}
       />
     );
   }
@@ -1854,11 +1871,12 @@ export default function StarDevPage() {
   if (phase === "vote-ceremony" && pendingVote) {
     const canOverrule = pendingVote.kind === "kit" ? false
       : pendingVote.kind === "ruleChange" ? canOverruleRuleVote(career, pendingVote.proposal.body)
+      : pendingVote.kind === "bodyPresidency" ? canOverrulePresidencyVote(career, pendingVote.proposal.body)
       : canOverruleClubVote(career, pendingVote.proposal.club);
     return (
       <VoteCeremony
         tally={pendingVote.proposal.tally}
-        scope={pendingVote.kind === "kit" ? "fans" : pendingVote.kind === "ruleChange" ? "governing-body" : "boardroom"}
+        scope={pendingVote.kind === "kit" ? "fans" : (pendingVote.kind === "ruleChange" || pendingVote.kind === "bodyPresidency") ? "governing-body" : "boardroom"}
         successOptionId={pendingVote.kind === "kit" ? undefined : "yes"}
         canOverrule={canOverrule}
         overruleCost={OVERRULE_REPUTATION_COST}
