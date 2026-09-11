@@ -43,6 +43,37 @@ export interface TunableDef {
 }
 
 export const TUNABLES: TunableDef[] = [
+  // ── Starting skills ──────────────────────────────────────────────────
+  // What a brand-new career's five attributes start at (makeInitialCareer,
+  // careerFlow.ts) — every one 0-100, the same range training caps them at
+  // and every skill-reading formula in canvasEngine.ts/liveAttack.ts
+  // (strength, curve, pull distance, etc.) assumes.
+  {
+    key: "startingSkills.pace", category: "Starting Skills", label: "Starting Pace",
+    description: "How fast a brand-new career starts, 0-100.",
+    default: 40, min: 0, max: 100, step: 1,
+  },
+  {
+    key: "startingSkills.power", category: "Starting Skills", label: "Starting Power",
+    description: "Shot/tackle strength a brand-new career starts with, 0-100.",
+    default: 40, min: 0, max: 100, step: 1,
+  },
+  {
+    key: "startingSkills.technique", category: "Starting Skills", label: "Starting Technique",
+    description: "Ball control/finishing a brand-new career starts with, 0-100.",
+    default: 40, min: 0, max: 100, step: 1,
+  },
+  {
+    key: "startingSkills.vision", category: "Starting Skills", label: "Starting Vision",
+    description: "Passing/reading-the-game a brand-new career starts with, 0-100.",
+    default: 40, min: 0, max: 100, step: 1,
+  },
+  {
+    key: "startingSkills.freeKick", category: "Starting Skills", label: "Starting Free Kick",
+    description: "Set-piece ability a brand-new career starts with, 0-100. Starts a notch below the other four on purpose — nobody arrives already good at dead balls.",
+    default: 30, min: 0, max: 100, step: 1,
+  },
+
   // ── Energy ────────────────────────────────────────────────────────────
   {
     key: "energy.weekActions", category: "Energy", label: "Actions per week",

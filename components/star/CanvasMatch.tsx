@@ -20,6 +20,8 @@ import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weath
 import {
   newDribble, stepDribble, flick, dribbleProgress, dribbleViewport, type DribbleState,
 } from "@/lib/star/dribble";
+import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
+import FirstPersonDribble from "./FirstPersonDribble";
 import {
   PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH, GOAL_H,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
@@ -57,7 +59,26 @@ import {
  * called `sim` and was a panel that appeared over the pitch to report minutes
  * you had already skipped past.
  */
-type Phase = "aim" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble";
+type Phase = "aim" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble" | "fpDribble";
+
+/**
+ * WHICH DRIBBLE SCENARIO REAL MATCHES USE.
+ *
+ * Replaced directly, with the explicit condition that the old one stays
+ * fully intact and reachable, not deleted — "I want you to have the
+ * dribbling scenario as it currently was... so that we cannot lose it and
+ * we can go back to it at some point if we need to." Every line of the old
+ * system is still here and still works: `lib/star/dribble.ts`, `dribbleRef`,
+ * `finishDribble`, the `"dribble"` phase's own draw()/pointer-handling code
+ * below, all untouched. This flag is the entire difference between the two
+ * — flip it back to `false` and the old top-down flick-to-run scenario is
+ * exactly what real matches use again, with nothing else to restore.
+ *
+ * See CLAUDE.md's "Recent Session" note for the full writeup of what the
+ * old system was and why the new one (the first-person duel mode built and
+ * tuned in `/star-dribble-dev`) replaced it.
+ */
+const USE_FIRST_PERSON_DRIBBLE = true;
 
 // Match runs from minute 0 to 90. Chances are distributed organically — no
 // fixed session length. The number of chances depends on player/team quality.
@@ -516,6 +537,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // A scenario where you carry it rather than strike it. Lives outside the
   // Scenario machinery entirely: no ball flight, no keeper, no builders.
   const dribbleRef = useRef<DribbleState | null>(null);
+  // The new first-person duel mode's own run — see USE_FIRST_PERSON_DRIBBLE.
+  // Rolled once, the moment the scenario triggers (loadScenario), and held
+  // fixed for the run's whole lifetime so re-renders while phase ===
+  // "fpDribble" never reroll the waves out from under an in-progress run.
+  const fpDribbleRef = useRef<{ waveSizes: number[]; seed: number } | null>(null);
   const flickStartRef = useRef<{ x: number; y: number } | null>(null);
   // Curve boots: a swipe captured in screen pixels (not pitch metres — the
   // ball is in flight, moving through 3D space the aim gesture never has to
@@ -2818,6 +2844,56 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
   };
 
+  /**
+   * The first-person duel is over — see USE_FIRST_PERSON_DRIBBLE.
+   *
+   * Mirrors `finishDribble` above exactly on a loss. On a win, requested
+   * directly with a specific threshold: beating SEVEN OR MORE men and still
+   * making it through means you broke clean forward, not just past the one
+   * or two who were actually near you — that earns a real attacking
+   * scenario near the box (`chainKindFor`'s own close-range branch, at
+   * `y < BOX_DEPTH + 2`: ~45% one_on_one, else volley/tight_angle — real
+   * shooting-shape chances, no through-ball/cross routing) rather than the
+   * ordinary advanced-midfield chain every other clear run gets, which
+   * lands well short of the box on purpose, at roughly the same depth
+   * `lib/star/dribble.ts`'s own old run used to end a normal win at.
+   */
+  const finishFpDribble = (result: { cleared: boolean; beaten: number }) => {
+    fpDribbleRef.current = null;
+    attemptsRef.current += 1;
+    const rng = rngRef.current;
+
+    if (result.cleared) {
+      const bonus = result.beaten >= 7;
+      pushLine(bonus ? "Clean through — you've beaten the lot of them." : "You are through — and the chance is on.");
+      showAction("BEAT HIM");
+      chainRef.current = bonus
+        ? { pos: { x: CX + (rng() - 0.5) * 8, y: PEN_SPOT_Y - 2 + rng() * 4 }, depth: 0, ambition: 1 }
+        : { pos: { x: CX + (rng() - 0.5) * 12, y: 28 + rng() * 3 }, depth: 0, ambition: 1 };
+      if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
+      {
+        const gen = sceneGenRef.current;
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1200);
+      }
+      return;
+    }
+
+    pushLine("Taken off you.");
+    setOutcome("tackled");
+    setPhase("result");
+    if (matchModeRef.current) resolveScenario(matchStateRef.current, "lost");
+    const t = tallyRef.current;
+    t.chances += 1;
+    setStats({ ...t });
+    if (matchModeRef.current) {
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1600);
+    } else {
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1600);
+    }
+  };
+
   // Run the match on around you until it needs you again.
   //
   // This used to be a countdown: an interval computed from your skill decided
@@ -3027,9 +3103,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // bar across the top, and it kept doing it "onto the next highlight".
     // A new scenario loading is exactly the point its lifetime is over.
     dribbleRef.current = null;
+    fpDribbleRef.current = null;
 
     // A run at the defence rather than a ball to strike.
     if (!attacking && request?.dribble) {
+      if (USE_FIRST_PERSON_DRIBBLE) {
+        // Pace/opponent strength/wave shape are fixed production values, not
+        // read off the career or tuned per scenario the way the old system's
+        // `chasers` count was — requested directly, specific numbers: pace
+        // 100, opponent strength 100, two to four waves of one to four men
+        // each, never more than ten men across the whole run.
+        fpDribbleRef.current = { waveSizes: pickWaveSizes(rng), seed: Math.floor(rng() * 1e9) };
+        setAim(null);
+        setOutcome(null);
+        dragRef.current = null;
+        draggingRef.current = false;
+        facingRef.current = "up";
+        setPhase("fpDribble");
+        logMoment(momentLine(), "you");
+        pushLine(request.reason);
+        pushLine("Beat your man to win the ball forward.");
+        playWhistle();
+        return;
+      }
       dribbleRef.current = newDribble({
         pace: careerRef.current?.skills.pace ?? 50,
         oppStrength: oppStrengthRef.current,
@@ -3427,6 +3523,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : "cursor-default"}`}
         />
 
+        {/* The first-person duel — see USE_FIRST_PERSON_DRIBBLE. A full
+            overlay over the canvas (it manages its own camera/render loop
+            entirely), not something drawn onto it the way the old top-down
+            dribble is. `waveSizes`/`seed` are rolled once at trigger time
+            (fpDribbleRef) and held fixed so this never remounts mid-run. */}
+        {phase === "fpDribble" && fpDribbleRef.current && (
+          <FirstPersonDribble
+            embedded
+            pace={100}
+            oppStrength={100}
+            waveSizes={fpDribbleRef.current.waveSizes}
+            seed={fpDribbleRef.current.seed}
+            chaseEye={5}
+            chasePitchDeg={5}
+            chaseOffset={4}
+            cameraFollowRate={10}
+            onComplete={finishFpDribble}
+          />
+        )}
 
         {/* Contact overlay */}
         {phase === "contact" && aim && (

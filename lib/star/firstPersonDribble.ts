@@ -318,6 +318,43 @@ function waveSize(rng: () => number): number {
 }
 
 /**
+ * Decide every wave's size upfront, for a caller that needs a hard ceiling
+ * on the run's total defender count — real gameplay, not the dev sandbox
+ * (see `newRun`'s own `waveSizes` param). Requested directly: two to four
+ * waves, one to four men each, but never more than ten shown across the
+ * whole run — "because in a real match there's only eleven players, and
+ * one of them is a goalkeeper." The cap is a hard ceiling, not a target:
+ * if an early wave's random roll eats most of the budget, a later wave
+ * (even one within `minRounds`) shrinks to whatever is left, and the run
+ * can end up with FEWER waves than `maxRounds` would suggest rather than
+ * ever exceeding `maxTotal` — `minRounds` is always reachable regardless
+ * (worst case `maxRounds` waves of 1 each is 4, well under a sane cap),
+ * so only the generous end of the range ever gets trimmed.
+ */
+export function pickWaveSizes(rng: () => number, opts?: {
+  minRounds?: number; maxRounds?: number; minSize?: number; maxSize?: number; maxTotal?: number;
+}): number[] {
+  const minRounds = opts?.minRounds ?? 2;
+  const maxRounds = opts?.maxRounds ?? 4;
+  const minSize = opts?.minSize ?? 1;
+  const maxSize = opts?.maxSize ?? 4;
+  const maxTotal = opts?.maxTotal ?? 10;
+  const roundCount = minRounds + Math.floor(rng() * (maxRounds - minRounds + 1));
+
+  const sizes: number[] = [];
+  let total = 0;
+  for (let r = 0; r < roundCount; r++) {
+    const remaining = maxTotal - total;
+    if (remaining < minSize) break;
+    const cap = Math.min(maxSize, remaining);
+    const size = minSize + Math.floor(rng() * (cap - minSize + 1));
+    sizes.push(size);
+    total += size;
+  }
+  return sizes;
+}
+
+/**
  * Real lanes for a wave's men — spread across even bands of the corridor so
  * a wave of two or three always leaves at least one real gap between any
  * two of them, never stacked on top of each other. See the file header's
@@ -364,15 +401,22 @@ export function newRun(opts: {
   pace: number;
   oppStrength: number;
   rounds?: number;
+  /** Precomputed wave sizes (see `pickWaveSizes`) — overrides both `rounds`
+   *  and the internal random 1-4-per-wave roll when given, so a caller that
+   *  needs a hard ceiling on the run's total defender count can decide
+   *  every wave's size upfront instead of letting each one roll
+   *  independently. The dev sandbox and existing tests don't pass this, so
+   *  they keep rolling each wave's size exactly as before. */
+  waveSizes?: number[];
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
-  const roundCount = opts.rounds ?? 3;
+  const roundCount = opts.waveSizes?.length ?? opts.rounds ?? 3;
 
   const defenders: FpDefender[] = [];
   const roundSizes: number[] = [];
   for (let r = 0; r < roundCount; r++) {
-    const size = waveSize(rng);
+    const size = opts.waveSizes ? opts.waveSizes[r] : waveSize(rng);
     roundSizes.push(size);
     const factor = roundCount > 1 ? 0.85 + 0.15 * (r / (roundCount - 1)) : 1.0;
     const str = clamp(opts.oppStrength, 0, 100) * factor;

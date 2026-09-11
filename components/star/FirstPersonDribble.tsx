@@ -194,8 +194,14 @@ export interface FirstPersonDribbleProps {
   /** How many waves — each one to four men, randomly, placed across the
    *  corridor rather than sprung on your lane. See firstPersonDribble.ts's
    *  own header on why: "instead of three opponents... you actually have
-   *  three rounds... each wave has one to three players." */
+   *  three rounds... each wave has one to three players." Ignored when
+   *  `waveSizes` is given. */
   rounds?: number;
+  /** Precomputed wave sizes (see firstPersonDribble.ts's `pickWaveSizes`) —
+   *  takes priority over `rounds` when given. Real gameplay's own call site
+   *  uses this to enforce a hard cap on the run's total defender count;
+   *  the dev sandbox keeps using `rounds` and lets each wave roll freely. */
+  waveSizes?: number[];
   /** Chase-cam tuning — see DEFAULT_CHASE_* above for the reasoning behind
    *  the defaults. */
   chaseEye?: number;
@@ -214,11 +220,22 @@ export interface FirstPersonDribbleProps {
    *  skill this mode is meant to test. An accessibility aid to turn back
    *  on, not the intended default difficulty. */
   assist?: boolean;
-  onComplete?: (result: { cleared: boolean }) => void;
+  /** How many individual defenders you actually beat before the run ended
+   *  — every defender across every fully-resolved wave, cleared or not.
+   *  Real gameplay's own call site reads this to decide whether a clear
+   *  run earned a routine follow-up chance or, having beaten enough men to
+   *  have genuinely broken forward, a real attacking scenario near the
+   *  box — see CanvasMatch.tsx's own handler for the exact threshold. */
+  onComplete?: (result: { cleared: boolean; beaten: number }) => void;
+  /** Drop the full-page wrapper (heading, page background, `min-h-screen`)
+   *  and just fill whatever box the caller already sized — for mounting
+   *  this inside a real match's own overlay rather than as its own page.
+   *  The dev sandbox never sets this. */
+  embedded?: boolean;
 }
 
 export default function FirstPersonDribble({
-  pace = 60, oppStrength = 55, rounds = 3, seed, assist = false, onComplete,
+  pace = 60, oppStrength = 55, rounds = 3, waveSizes, seed, assist = false, onComplete, embedded = false,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -270,7 +287,7 @@ export default function FirstPersonDribble({
   const reset = useCallback(() => {
     const rng = newRng();
     rngRef.current = rng;
-    const run = newRun({ pace, oppStrength, rounds, rng });
+    const run = newRun({ pace, oppStrength, rounds, waveSizes, rng });
     runRef.current = run;
     camXRef.current = run.x;
     ballXRef.current = run.x;
@@ -279,7 +296,8 @@ export default function FirstPersonDribble({
     gestureStartRef.current = null;
     setResultText("");
     setPhase("run");
-  }, [pace, oppStrength, rounds, newRng]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes)]);
 
   useEffect(() => { reset(); }, [reset]);
 
@@ -410,7 +428,12 @@ export default function FirstPersonDribble({
         setResultText(label);
       }
       setPhase("result");
-      onComplete?.({ cleared: finalPhase === "clear" });
+      // Every defender individually marked "beaten" — correct whether the
+      // run cleared (every wave, by definition) or ended partway through
+      // (only the waves you'd actually got past), unlike summing
+      // `roundSizes` which would count men in a wave you never reached.
+      const beaten = run?.defenders.filter(d => d.phase === "beaten").length ?? 0;
+      onComplete?.({ cleared: finalPhase === "clear", beaten });
     };
 
     const frame = (now: number) => {
@@ -503,6 +526,61 @@ export default function FirstPersonDribble({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assist, onComplete, chaseEye, chasePitchDeg, chaseOffset, cameraFollowRate, ballTouchReach]);
 
+  const pitch = (
+    <div
+      ref={wrapRef}
+      className={
+        embedded
+          // Fills whatever box the caller already sized (CanvasMatch's own
+          // wrapRef is already aspect-[5/8]) rather than imposing a second,
+          // possibly-conflicting aspect ratio of its own.
+          ? "absolute inset-0 h-full w-full overflow-hidden touch-none select-none"
+          : "relative w-full overflow-hidden rounded-xl border border-white/15 touch-none select-none"
+      }
+      style={embedded ? undefined : { aspectRatio: "5 / 8" }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 h-full w-full touch-none"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      />
+
+      {phase === "run" && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 flex flex-col items-center gap-1 px-4">
+          <p className="rounded-lg bg-black/55 px-3 py-1 text-center text-[10px] font-bold text-white/80">
+            Tap left or right to touch the ball that way. Flick to burst past him.
+          </p>
+        </div>
+      )}
+
+      {phase === "result" && (
+        <div className="absolute inset-0 z-40 grid place-items-center bg-black/60">
+          <div className="text-center px-4">
+            <div className="text-2xl font-black text-amber-300">{resultText}</div>
+            {/* Embedded in a real match, the parent reacts to `onComplete`
+                and moves the match on itself (same beat the old dribble
+                scenario used — see CanvasMatch.tsx) — there is no "again"
+                to offer mid-match. Only the standalone sandbox gets the
+                retry button. */}
+            {!embedded && (
+              <button
+                onClick={reset}
+                className="mt-4 rounded-lg bg-emerald-500 px-5 py-2 text-sm font-black text-emerald-950 active:scale-95"
+              >
+                Go Again
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (embedded) return pitch;
+
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center px-3 py-4">
       <div className="w-full max-w-sm">
@@ -512,43 +590,7 @@ export default function FirstPersonDribble({
           </div>
           <h1 className="mt-2 text-xl font-black tracking-tight">Beat your man</h1>
         </div>
-
-        <div
-          ref={wrapRef}
-          className="relative w-full overflow-hidden rounded-xl border border-white/15 touch-none select-none"
-          style={{ aspectRatio: "5 / 8" }}
-        >
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 h-full w-full touch-none"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-          />
-
-          {phase === "run" && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 flex flex-col items-center gap-1 px-4">
-              <p className="rounded-lg bg-black/55 px-3 py-1 text-center text-[10px] font-bold text-white/80">
-                Tap left or right to touch the ball that way. Flick to burst past him.
-              </p>
-            </div>
-          )}
-
-          {phase === "result" && (
-            <div className="absolute inset-0 z-40 grid place-items-center bg-black/60">
-              <div className="text-center px-4">
-                <div className="text-2xl font-black text-amber-300">{resultText}</div>
-                <button
-                  onClick={reset}
-                  className="mt-4 rounded-lg bg-emerald-500 px-5 py-2 text-sm font-black text-emerald-950 active:scale-95"
-                >
-                  Go Again
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        {pitch}
       </div>
     </div>
   );

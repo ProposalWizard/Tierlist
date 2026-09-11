@@ -96,7 +96,13 @@ export function makeInitialCareer(
   const state: CareerState = {
     version: 2,
     player,
-    skills: { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 30 },
+    skills: {
+      pace: getTuning("startingSkills.pace"),
+      power: getTuning("startingSkills.power"),
+      technique: getTuning("startingSkills.technique"),
+      vision: getTuning("startingSkills.vision"),
+      freeKick: getTuning("startingSkills.freeKick"),
+    },
     relationships: { boss: 60, team: 60, fans: 40, girlfriend: null, sponsors: 0 },
     contract: { club: player.club, wage: 1, goalBonus: 1, assistBonus: 1, seasonsRemaining: 3 },
     season: 1,
