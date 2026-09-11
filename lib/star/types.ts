@@ -772,6 +772,45 @@ export interface CareerState {
    *  spent), just stops being reachable from the Boardroom until you buy
    *  back in. */
   ownedClubs?: Record<string, import("./investments").OwnedClubState>;
+  /** Phase 3 of STAR_POWER_POLITICS.md — a minority shareholder's real, if
+   *  non-binding, suggestions to a board they don't control. See
+   *  lib/star/clubPowers.ts. */
+  recommendations?: import("./clubPowers").Recommendation[];
+  /** Every club's real kit design, once you've either set one directly or a
+   *  public kit vote has settled one — absent means "the game's default
+   *  kit," same as absent formation means "whatever autoPick already
+   *  chooses." See lib/star/clubPowers.ts. */
+  clubKits?: Record<string, import("./clubPowers").ClubKit>;
+  /** §4.5 of STAR_POWER_POLITICS.md — the one deliberately-fictional,
+   *  magically-aged "son" mechanic (a potion/magic effect on a game
+   *  character, not a real depiction of doping a real child — see that
+   *  section's own note). Null until you have one. See clubPowers.ts. */
+  son?: import("./clubPowers").SonState | null;
+  /** Phase 4 of STAR_POWER_POLITICS.md — real influence bought in a real
+   *  governing body, priced flat (there's no club-sized asset to value a
+   *  share of). See lib/star/governingBodies.ts. */
+  governingBodyInfluence?: Partial<Record<import("./governingBodies").GoverningBody, number>>;
+  /** Every governing body's own active Rule Book, once changed from the
+   *  classic default — absent for a body means DEFAULT_RULE_BOOK. Only the
+   *  FA's entry actually reaches anything this career plays, for now — see
+   *  ruleBook.ts's own header. */
+  ruleBook?: Partial<Record<import("./governingBodies").GoverningBody, import("./ruleBook").RuleBook>>;
+  /** Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #10 — a club forced out
+   *  of the Championship by governing-body fiat (see
+   *  lib/star/forcedMovement.ts), waiting to re-enter next season's
+   *  promotion pool at `resolveLadder`'s own next run. Absent/empty is the
+   *  ordinary case. */
+  limboClubs?: string[];
+  /** Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #12 — every new
+   *  competition a governing body has created, resolved statistically.
+   *  See lib/star/newCompetition.ts. */
+  newCompetitions?: import("./newCompetition").NewCompetitionState[];
+  /** Phase 7 of STAR_POWER_POLITICS.md, §6 — every club's own stadium,
+   *  training ground and youth academy. Absent for a club means it's never
+   *  been touched — `facilitiesFor` generates a real, deterministic
+   *  default from the club's own name rather than leaving it undefined.
+   *  See lib/star/facilities.ts. */
+  facilities?: Record<string, import("./facilities").ClubFacilities>;
   /**
    * The casino's book — real money staked on who wins a real competition,
    * priced off real club strengths (see lib/star/competitionBetting.ts).
@@ -895,6 +934,9 @@ export type StarPhase =
   /** The generic vote/ceremony engine — Phase 2 of STAR_POWER_POLITICS.md.
    *  See VoteCeremony, lib/star/voting.ts. */
   | "vote-ceremony"
+  /** Governing-body influence + the Rule Book — Phase 4 of
+   *  STAR_POWER_POLITICS.md. See RuleBookScreen, lib/star/ruleBook.ts. */
+  | "rule-book"
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"

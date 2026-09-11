@@ -206,6 +206,15 @@ export interface OwnedClubState {
   budget: number;
   managerName?: string;
   managerSince?: number;
+  /** Phase 3 of STAR_POWER_POLITICS.md — see lib/star/clubPowers.ts. */
+  formation?: string;
+  isPresident?: boolean;
+  presidentWage?: number;
+  /** Set once this club has been absorbed into another via a merger — its
+   *  own investable/governable identity ends here, but it is deliberately
+   *  NOT removed from the world (clubs.ts's fixed lists, the ladder's fixed
+   *  division sizes) — see clubPowers.ts's mergeClubs for why. */
+  dissolvedInto?: string;
 }
 
 export function ownedClubState(career: CareerState, club: string): OwnedClubState {
@@ -222,7 +231,7 @@ export function topUpClubBudget(career: CareerState, club: string, amount: numbe
   };
 }
 
-function clubStrengthFromPlayers(players: { overall: number }[]): number {
+export function clubStrengthFromPlayers(players: { overall: number }[]): number {
   const xi = [...players].sort((a, b) => b.overall - a.overall).slice(0, 11);
   if (!xi.length) return 65;
   return Math.round(xi.reduce((s, p) => s + p.overall, 0) / xi.length);
@@ -231,7 +240,7 @@ function clubStrengthFromPlayers(players: { overall: number }[]): number {
 /** The exact fee formula leagueTransfers.ts's own (unexported) feeFor uses,
  *  duplicated rather than imported — see this file's own header on why: the
  *  transfer engine's internals stay untouched by an unrelated caller. */
-function transferFee(overall: number): number {
+export function transferFee(overall: number): number {
   const m = Math.max(0, overall - 60);
   return Math.round((getTuning("transfers.feeBase") + m * m * getTuning("transfers.feeQuadratic")) * 10) / 10;
 }
@@ -251,7 +260,7 @@ function transferFee(overall: number): number {
  * of promotions/relegations and European qualification made that the common
  * case rather than the exception.
  */
-function findSquadEntry(career: CareerState, club: string): { squad: LeagueSquad; where: "league" | "external" } | undefined {
+export function findSquadEntry(career: CareerState, club: string): { squad: LeagueSquad; where: "league" | "external" } | undefined {
   const inLeague = (career.leagueSquads ?? []).find(s => s.club === club);
   if (inLeague) return { squad: inLeague, where: "league" };
   const inExternal = (career.externalSquads ?? []).find(s => s.club === club);
@@ -262,7 +271,7 @@ function findSquadEntry(career: CareerState, club: string): { squad: LeagueSquad
 /** A club with no squad entry in EITHER array yet belongs wherever the rest
  *  of the game would file it: in your current division's live table
  *  (`career.league`), or external if not. */
-function setSquad(career: CareerState, club: string, players: LeaguePlayer[]): CareerState {
+export function setSquad(career: CareerState, club: string, players: LeaguePlayer[]): CareerState {
   const existing = findSquadEntry(career, club);
   const where = existing?.where ?? (career.league.some(t => t.name === club) ? "league" : "external");
 

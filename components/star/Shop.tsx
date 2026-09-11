@@ -2,8 +2,12 @@
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan } from "@/lib/star/shopData";
+import { ruleBookFor } from "@/lib/star/ruleBook";
+import { blackMarketPrice } from "@/lib/star/corruption";
 import KibCanIcon from "./KibCanIcon";
 import LifestyleIcon from "./LifestyleIcon";
+
+interface ActionResult { ok: boolean; reason?: string; }
 
 interface Props {
   career: CareerState;
@@ -12,11 +16,17 @@ interface Props {
   onBuyKib: (can: KibCan) => void;
   onBuyBoot: (boot: Boot) => void;
   onBuyItem: (item: OwnedItem) => void;
+  /** Phase 5 of STAR_POWER_POLITICS.md — buying a boot the FA's Rule Book
+   *  has banned, from "shady guys," at a real risk of getting caught. */
+  onBuyFromBlackMarket: (boot: Boot, useLawyers: boolean) => ActionResult;
 }
 
-export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem }: Props) {
+export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket }: Props) {
   const [tab, setTab] = useState<"item" | "vehicle" | "property">("item");
   const [selectedBoot, setSelectedBoot] = useState<Boot | null>(BOOTS_CATALOGUE[0]);
+  const [useLawyers, setUseLawyers] = useState(false);
+  const [blackMarketMessage, setBlackMarketMessage] = useState<string | null>(null);
+  const bannedBoots = new Set(ruleBookFor(career, "FA").bannedItems);
   const [selectedCan, setSelectedCan] = useState<KibCan | null>(KIB_CANS[0]);
   const [selectedItem, setSelectedItem] = useState<OwnedItem | null>(null);
 
@@ -95,6 +105,9 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                       {b.curve && (
                         <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
                       )}
+                      {bannedBoots.has(b.id) && (
+                        <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
+                      )}
                     </div>
                     <div>{b.pace.toFixed(1)}</div>
                     <div>{b.power.toFixed(1)}</div>
@@ -119,13 +132,38 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 )}
               </div>
             </div>
-            <button
-              disabled={!selectedBoot || career.money < selectedBoot.price}
-              onClick={() => selectedBoot && onBuyBoot(selectedBoot)}
-              className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600 flex items-center justify-center gap-2"
-            >
-              Buy {selectedBoot?.name} — ★{selectedBoot?.price}
-            </button>
+            {selectedBoot && bannedBoots.has(selectedBoot.id) ? (
+              <div className="mt-3 bg-red-950/60 border border-red-700 rounded-xl p-3">
+                <div className="text-[11px] text-red-200 font-bold text-center mb-2">
+                  Banned by the FA — a real chance of getting caught buying it anyway.
+                </div>
+                <label className="flex items-center gap-2 mb-2 text-[10px] text-white/80">
+                  <input type="checkbox" checked={useLawyers} onChange={e => setUseLawyers(e.target.checked)} />
+                  Hire lawyers first (★5000 — cuts the risk a lot, doesn&apos;t remove it)
+                </label>
+                <button
+                  disabled={career.money < blackMarketPrice(selectedBoot.price) + (useLawyers ? 5000 : 0)}
+                  onClick={() => {
+                    const result = onBuyFromBlackMarket(selectedBoot, useLawyers);
+                    setBlackMarketMessage(result.ok ? "Bought — nobody official noticed. This time." : (result.reason ?? "Failed"));
+                  }}
+                  className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600"
+                >
+                  Buy from shady guys — ★{blackMarketPrice(selectedBoot.price)}
+                </button>
+                {blackMarketMessage && (
+                  <div className="mt-2 text-center text-[10px] font-bold text-white/85">{blackMarketMessage}</div>
+                )}
+              </div>
+            ) : (
+              <button
+                disabled={!selectedBoot || career.money < selectedBoot.price}
+                onClick={() => selectedBoot && onBuyBoot(selectedBoot)}
+                className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600 flex items-center justify-center gap-2"
+              >
+                Buy {selectedBoot?.name} — ★{selectedBoot?.price}
+              </button>
+            )}
           </>
         )}
 

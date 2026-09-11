@@ -26,6 +26,11 @@
     npx tsx tests/star/investments.mts
     npx tsx tests/star/reputation.mts
     npx tsx tests/star/voting.mts
+    npx tsx tests/star/clubPowers.mts
+    npx tsx tests/star/ruleBook.mts
+    npx tsx tests/star/corruption.mts
+    npx tsx tests/star/phase6.mts
+    npx tsx tests/star/facilities.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -1522,3 +1527,124 @@ proof that this engine is actually wired into a real decision — selling a
 player out of an owned club, now routed through a shareholder vote
 instead of acting instantly — lives in `tests/star/investments.mts`'s own
 voting section, not here; this file only proves the engine itself.
+
+**clubPowers** — everything Phase 3 of `STAR_POWER_POLITICS.md` added beyond
+investments.ts's original sign/sell/manager trio: minority-shareholder
+recommendations, formation-as-manager, the kit creator + a real fan vote,
+a shareholder-elected presidency and the wage that comes with it, the
+§4.5 aging-up "son" mechanic, and club mergers.
+
+Checks that a recommendation can only be FILED below majority ownership
+(a majority owner already acts directly) and that the board's later
+consideration of it is a real, reputation-biased roll — never certain
+either way, matched at two extremes of shareholder reputation across 200
+trials each to prove the bias is real without being a guarantee.
+Formation-as-manager is checked against a real, small, bounded strength
+effect (±5 of a 75 baseline) rather than an invented number, reusing
+`autoPick`/`bestFitness` from formations.ts directly rather than a second
+fitness formula. The kit vote and presidency election both reuse Phase
+2's `castVote`/`VoteCeremony` machinery exactly, checked here only for
+their own wiring (fan reputation nudges on a kit vote, shareholder
+reputation nudges + the same overrule gate on a presidency vote) since
+the vote engine itself is proven in `voting.mts`. The son mechanic is
+checked end to end — he can't be promoted before a real age floor, the
+potion's age/ability gains are real, random, and capped, and once
+promoted he's a genuine entry in that club's real squad, moved for free
+between clubs exactly as the brief's "because you're his dad" framing
+demands. The merger check is the most load-bearing: both sides must be
+genuinely 100% owned first, the survivor's squad is capped at the normal
+squad-size limit (best players from BOTH sides, not just doubled), the
+absorbed club's real squad is actually emptied rather than just
+relabelled, and a real fan-reputation cost is paid — while the absorbed
+club deliberately stays in the world's fixed club lists rather than being
+removed (removing it would break the ladder's fixed division-size
+invariants `tests/star/promotion.mts` exists specifically to defend). A
+final section confirms both new `advanceSeason` hooks (the board
+considering pending recommendations, and paying out president wages) are
+genuinely wired in, not just correct in isolation.
+
+**ruleBook** — the Rule Book itself (Phase 4 of `STAR_POWER_POLITICS.md`),
+starting with the three simplest, most self-contained rules: points per
+result, no-draws-go-to-penalties, and match length, gated behind a real
+(if deliberately flat-priced) governing-body-investment system.
+
+Checks the governing-body map is real structural data (the FA controls
+the Premier League, not the Champions League); investing influence is
+real, bounded 0-100, and scoped per body (investing in the FA doesn't
+leak into UEFA); `resolvePenalties` is the same quality-weighted coin
+euro.ts's own tie-breaker already uses, reused rather than reinvented;
+`applyResult` reproduces the exact original 3/1/0 arithmetic under the
+classic rule book and genuinely changes it under a custom one; no-draws
+NEVER records a draw for either side across 100 trials and splits
+realistically between home and away at equal strength. The load-bearing
+check is on the REAL `season.ts` functions themselves — `playLeagueWeek`
+and `updateLeagueWithUserResult` — proving a rule book passed in genuinely
+changes their real output, and confirming every call site that predates
+this feature (which is all of them, until a future session wires more
+in) sees byte-identical classic behaviour because the parameter defaults
+to it. The vote/overrule/fan-cost section mirrors Phase 2/3's own pattern
+exactly (a real vote, an influence-gated overrule at a bar above the
+proposal threshold, a bounded fan-reputation cost scaled to how big the
+change actually is) rather than inventing a fourth version of the same
+idea.
+
+**corruption** — bribery, hiring lawyers, and the illegal-equipment black
+market, all Phase 5 of `STAR_POWER_POLITICS.md`, built as one shared
+"risk of exposure → real consequence" mechanic rather than three separate
+systems.
+
+Checks `bribeVote` genuinely moves real votes toward a target option
+(taken from whoever actually has them, not an arbitrary donor), capped so
+even an enormous bribe can't manufacture a landslide outright; that
+hiring lawyers genuinely lowers the exposure risk of every corrupt act
+except itself, measured across 300 trials to prove it's a real reduction
+and not a coincidence, while never reaching zero; and that getting caught
+applies one real, shared, bounded consequence — a capped fine, a real
+world-reputation hit, damaged boss/fan relationships, and a genuine
+suspension that reuses `career.injury`'s exact shape rather than
+inventing a second "forced out of the team" mechanic (and never
+overwrites a real, unrelated injury already in progress). The black
+market's markup is checked as a real, consistent multiplier, not an
+arbitrary flat surcharge.
+
+**phase6** — the harder rules from Phase 6, each checked against the real
+system it actually touches rather than in isolation: the offside toggle
+against a real, rigged offside-position scenario (proving the exact same
+position is judged differently with the law on vs. abolished, then
+restored, so the module-level switch canvasEngine.ts uses genuinely
+works both ways); extra European slots against the real
+`qualificationFor`/`seasonQualifiers` functions (a real club at a real
+league position genuinely gets pulled into the Champions League by real
+extra slots, not just a cosmetic number); forced league movement against
+the real `resolveLadder`/`membershipOf` machinery — gated behind real
+influence, blocked from ever targeting the player's own club, and proven
+to create a genuine limbo tier that a REAL subsequent `resolveLadder`
+call folds back into the pool without the pool ever growing past its own
+fixed size or any club ending up in two places at once; and new
+competition creation as a real, standalone single-elimination bracket
+(a 20-club entrant list trims to the largest clean bracket of 16 rather
+than an invented bye, and a full run plays exactly the 15 real matches a
+16-club knockout needs, no more, no fewer). Squad size and the Champions
+League format ship as real, votable Rule Book data with an honestly
+stated gap — no gameplay hook exists yet for either, checked in
+`ruleBook.mts`'s own magnitude tests, not here, since there's nothing
+behavioural in them yet to test.
+
+**facilities** — every club's own stadium, training ground and youth
+academy (Phase 7 of `STAR_POWER_POLITICS.md`, the last phase in the
+original rollout plan).
+
+Checks that facilities are real and deterministic (reading the same
+club twice gives byte-identical results, never re-rolled) but genuinely
+distinct per club (two different real clubs get different capacities and
+tiers, not a shared template), and that a Premier League club's baseline
+stadium is genuinely bigger than a Championship one's. Upgrades are
+checked as real majority-owner actions paid from the club's own budget —
+blocked without majority ownership, blocked without enough budget, and
+training/youth upgrades genuinely stop at their own top tier rather than
+climbing forever. The one real gameplay hook — a bigger stadium earning
+real gate-receipt revenue every season — is checked against the actual
+budget-crediting function directly: it never touches the player's
+personal money, it's a genuine no-op for a career with no owned clubs
+and for a merely-minority stake, and a stadium upgraded bigger genuinely
+earns MORE revenue afterward, not just a cosmetic capacity number.

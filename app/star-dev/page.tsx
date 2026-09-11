@@ -87,6 +87,21 @@ import {
 } from "@/lib/star/investments";
 import { OVERRULE_REPUTATION_COST } from "@/lib/star/voting";
 import VoteCeremony from "@/components/star/VoteCeremony";
+import {
+  setClubFormation, setClubKit, proposeKitVote, resolveKitVote, type ClubKit, type KitVoteProposal,
+  proposePresidentVote, resolvePresidentVote, setPresidentWage, type PresidentVoteProposal,
+  submitRecommendation, type RecommendationKind,
+  haveASon, ageUpSonWithPotion, promoteSonToFirstTeam, transferSon,
+  mergeClubs,
+} from "@/lib/star/clubPowers";
+import { investInfluence, type GoverningBody } from "@/lib/star/governingBodies";
+import { proposeRuleChangeVote, resolveRuleChangeVote, canOverruleRuleVote, type RuleChangeProposal, type RuleBook } from "@/lib/star/ruleBook";
+import RuleBookScreen from "@/components/star/RuleBookScreen";
+import { bribeVote, rollCaught, applyGettingCaught, blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
+import { forceClubIntoPremierLeague } from "@/lib/star/forcedMovement";
+import { createCompetition, playCompetitionToWinner, type NewCompetitionState } from "@/lib/star/newCompetition";
+import { allInvestableClubs } from "@/lib/star/investments";
+import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
@@ -105,9 +120,17 @@ export default function StarDevPage() {
    *  flat-timeout way the achievement toast above already is. */
   const [ratingChange, setRatingChange] = useState<{ from: number; to: number } | null>(null);
   const [relationshipGameKind, setRelationshipGameKind] = useState<RelationshipKind | null>(null);
-  /** The one proposal in flight for the Phase 2 voting proof-of-concept —
-   *  see handleSellPlayerFromOwnedClub/handleVoteDone. */
-  const [sellPlayerVoteProposal, setSellPlayerVoteProposal] = useState<SellPlayerVoteProposal | null>(null);
+  /** The one vote in flight, of any of the kinds this engine now proposes —
+   *  Phase 2's proof-of-concept (selling a player) plus Phase 3's kit and
+   *  presidency votes, all sharing the exact same VoteCeremony/resolve
+   *  pattern. See handleVoteDone below. */
+  const [pendingVote, setPendingVote] = useState<
+    | { kind: "sellPlayer"; proposal: SellPlayerVoteProposal }
+    | { kind: "kit"; proposal: KitVoteProposal }
+    | { kind: "president"; proposal: PresidentVoteProposal }
+    | { kind: "ruleChange"; proposal: RuleChangeProposal }
+    | null
+  >(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
   const [pressQuestion, setPressQuestion] = useState<PressQuestion | null>(null);
   /** Whether they won it is only known at the ceremony, so it is carried here. */
@@ -1207,23 +1230,221 @@ export default function StarDevPage() {
     const rng = mulberry32(career.season * 91721 + career.week * 131 + playerId.length);
     const result = proposeSellPlayerVote(career, club, playerId, rng);
     if (!result.ok) return { ok: false, reason: result.reason };
-    setSellPlayerVoteProposal(result.proposal);
+    setPendingVote({ kind: "sellPlayer", proposal: result.proposal });
+    setPhase("vote-ceremony");
+    return { ok: true };
+  }, [career]);
+
+  // Phase 3: the same voting engine, put to two more real decisions — a
+  // public kit vote, and a shareholder vote to elect you club president.
+  const handleProposeKitVote = useCallback((club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const rng = mulberry32(career.season * 40361 + career.week * 211 + club.length);
+    const result = proposeKitVote(career, club, optionA, optionB, favor, rng);
+    if (!result.ok) return { ok: false, reason: result.reason };
+    setPendingVote({ kind: "kit", proposal: result.proposal });
+    setPhase("vote-ceremony");
+    return { ok: true };
+  }, [career]);
+
+  const handleProposePresidentVote = useCallback((club: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const rng = mulberry32(career.season * 20887 + career.week * 307 + club.length);
+    const result = proposePresidentVote(career, club, rng);
+    if (!result.ok) return { ok: false, reason: result.reason };
+    setPendingVote({ kind: "president", proposal: result.proposal });
     setPhase("vote-ceremony");
     return { ok: true };
   }, [career]);
 
   const handleVoteDone = useCallback((_accepted: boolean, overrule: boolean) => {
-    if (!career || !sellPlayerVoteProposal) return;
-    const result = resolveSellPlayerVote(career, sellPlayerVoteProposal, overrule);
+    if (!career || !pendingVote) return;
+    const result = pendingVote.kind === "sellPlayer" ? resolveSellPlayerVote(career, pendingVote.proposal, overrule)
+      : pendingVote.kind === "kit" ? { career: resolveKitVote(career, pendingVote.proposal), ok: true as const }
+      : pendingVote.kind === "president" ? resolvePresidentVote(career, pendingVote.proposal, overrule)
+      : resolveRuleChangeVote(career, pendingVote.proposal, overrule);
     setCareer(result.career);
-    setSellPlayerVoteProposal(null);
-    setPhase("investments");
-  }, [career, sellPlayerVoteProposal]);
+    const backTo = pendingVote.kind === "ruleChange" ? "rule-book" : "investments";
+    setPendingVote(null);
+    setPhase(backTo);
+  }, [career, pendingVote]);
   const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
     if (!career) return { ok: false, reason: "No active career" };
     const result = replaceManagerForOwnedClub(career, club, managerName);
     if (result.ok) setCareer(result.career);
     return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  // ── Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer ──
+  const handleSetClubFormation = useCallback((club: string, formationId: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = setClubFormation(career, club, formationId);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleSetClubKit = useCallback((club: string, kit: ClubKit) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = setClubKit(career, club, kit);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleSetPresidentWage = useCallback((club: string, wage: number) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = setPresidentWage(career, club, wage);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleMergeClubs = useCallback((primaryClub: string, absorbedClub: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = mergeClubs(career, primaryClub, absorbedClub);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleSubmitRecommendation = useCallback((club: string, kind: RecommendationKind, detail: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = submitRecommendation(career, club, kind, detail);
+    if ("ok" in result) return result;
+    setCareer(result);
+    return { ok: true };
+  }, [career]);
+
+  const handleHaveASon = useCallback(() => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = haveASon(career);
+    if ("ok" in result) return result;
+    setCareer(result);
+    return { ok: true };
+  }, [career]);
+
+  const handleAgeUpSon = useCallback(() => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const rng = mulberry32(career.season * 61519 + career.week * 419 + (career.son?.age ?? 0));
+    const result = ageUpSonWithPotion(career, rng);
+    if ("ok" in result) return result;
+    setCareer(result);
+    return { ok: true };
+  }, [career]);
+
+  const handlePromoteSon = useCallback((club: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = promoteSonToFirstTeam(career, club);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleTransferSon = useCallback((toClub: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = transferSon(career, toClub);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  // ── Phase 4 of STAR_POWER_POLITICS.md — the Rule Book ──────────────────
+  const handleInvestInfluence = useCallback((body: GoverningBody, amount: number) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = investInfluence(career, body, amount);
+    if ("ok" in result) return result;
+    setCareer(result);
+    return { ok: true };
+  }, [career]);
+
+  // Phase 5 of STAR_POWER_POLITICS.md: an optional bribe (§4.3) swaps real
+  // votes toward "yes" the moment the tally is rolled — a real risk of
+  // getting caught, reduced (never removed) by also hiring lawyers.
+  const handleProposeRuleChange = useCallback((
+    body: GoverningBody, change: Partial<RuleBook>, bribe?: { amount: number; useLawyers: boolean },
+  ) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const rng = mulberry32(career.season * 82301 + career.week * 523 + JSON.stringify(change).length);
+    const result = proposeRuleChangeVote(career, body, change, rng);
+    if (!result.ok) return { ok: false, reason: result.reason };
+
+    let proposal = result.proposal;
+    let workingCareer = career;
+    if (bribe && bribe.amount > 0) {
+      const totalCost = bribe.amount + (bribe.useLawyers ? LAWYER_FEE : 0);
+      if (totalCost > workingCareer.money) return { ok: false, reason: "Not enough money for that bribe" };
+      workingCareer = { ...workingCareer, money: workingCareer.money - totalCost };
+      proposal = { ...proposal, tally: bribeVote(proposal.tally, "yes", bribe.amount) };
+      const caughtRng = mulberry32(career.season * 61001 + career.week * 907 + bribe.amount);
+      if (rollCaught("bribery", bribe.useLawyers, caughtRng)) {
+        workingCareer = applyGettingCaught(workingCareer, "bribery", bribe.amount, "Caught bribing a governing-body vote");
+      }
+    }
+    setCareer(workingCareer);
+    setPendingVote({ kind: "ruleChange", proposal });
+    setPhase("vote-ceremony");
+    return { ok: true };
+  }, [career]);
+
+  // ── Phase 7 of STAR_POWER_POLITICS.md — club facilities ─────────────────
+  const handleRenameStadium = useCallback((club: string, name: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = renameStadium(career, club, name);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleUpgradeStadiumCapacity = useCallback((club: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = upgradeStadiumCapacity(career, club);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleUpgradeTrainingGround = useCallback((club: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = upgradeTrainingGround(career, club);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleUpgradeYouthAcademy = useCallback((club: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = upgradeYouthAcademy(career, club);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  // ── Phase 6 of STAR_POWER_POLITICS.md — forced movement and new competitions ──
+  const handleForceClubIntoPremierLeague = useCallback((incomingClub: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = forceClubIntoPremierLeague(career, incomingClub);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleCreateCompetition = useCallback((name: string, entrants: string[]) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const created = createCompetition(`comp-${career.season}-${(career.newCompetitions ?? []).length}`, name, entrants);
+    if ("ok" in created) return created;
+    const rng = mulberry32(career.season * 71011 + career.week * 617 + name.length);
+    const strengthOf = (club: string) => career.league.find(t => t.name === club)?.strength ?? 70;
+    const finished = playCompetitionToWinner(created, strengthOf, rng);
+    setCareer({ ...career, newCompetitions: [...(career.newCompetitions ?? []), finished] });
+    return { ok: true };
+  }, [career]);
+
+  const handleBuyFromBlackMarket = useCallback((boot: Boot, useLawyers: boolean) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const price = blackMarketPrice(boot.price) + (useLawyers ? LAWYER_FEE : 0);
+    if (price > career.money) return { ok: false, reason: "Not enough money" };
+    const stacking = career.currentBoot.id === boot.id;
+    let next: CareerState = {
+      ...career,
+      money: career.money - price,
+      currentBoot: stacking ? { ...boot, matches: career.currentBoot.matches + boot.matches } : { ...boot },
+    };
+    const rng = mulberry32(career.season * 33301 + career.week * 419 + boot.id.length);
+    if (rollCaught("blackMarket", useLawyers, rng)) {
+      next = applyGettingCaught(next, "blackMarket", price, `Caught buying banned boots (${boot.name})`);
+    }
+    setCareer(next);
+    return { ok: true };
   }, [career]);
 
   const handleOpenRelationshipGame = useCallback((kind: RelationshipKind) => {
@@ -1575,6 +1796,7 @@ export default function StarDevPage() {
         onBuyKib={handleBuyKib}
         onBuyBoot={handleBuyBoot}
         onBuyItem={handleBuyItem}
+        onBuyFromBlackMarket={handleBuyFromBlackMarket}
       />
     );
   }
@@ -1594,6 +1816,21 @@ export default function StarDevPage() {
         onSignPlayer={handleSignPlayerForOwnedClub}
         onSellPlayer={handleSellPlayerFromOwnedClub}
         onReplaceManager={handleReplaceManagerForOwnedClub}
+        onRecommend={handleSubmitRecommendation}
+        onSetFormation={handleSetClubFormation}
+        onSetKit={handleSetClubKit}
+        onProposeKitVote={handleProposeKitVote}
+        onStandForPresident={handleProposePresidentVote}
+        onSetPresidentWage={handleSetPresidentWage}
+        onMergeClubs={handleMergeClubs}
+        onHaveASon={handleHaveASon}
+        onAgeUpSon={handleAgeUpSon}
+        onPromoteSon={handlePromoteSon}
+        onTransferSon={handleTransferSon}
+        onRenameStadium={handleRenameStadium}
+        onUpgradeStadiumCapacity={handleUpgradeStadiumCapacity}
+        onUpgradeTrainingGround={handleUpgradeTrainingGround}
+        onUpgradeYouthAcademy={handleUpgradeYouthAcademy}
       />
     );
   }
@@ -1603,13 +1840,27 @@ export default function StarDevPage() {
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
   if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToDashboard} />;
 
-  if (phase === "vote-ceremony" && sellPlayerVoteProposal) {
+  if (phase === "rule-book") {
+    return (
+      <RuleBookScreen
+        career={career} onBack={handleBackToDashboard}
+        onInvest={handleInvestInfluence} onProposeChange={handleProposeRuleChange}
+        onForceClubIntoPremierLeague={handleForceClubIntoPremierLeague}
+        onCreateCompetition={handleCreateCompetition}
+      />
+    );
+  }
+
+  if (phase === "vote-ceremony" && pendingVote) {
+    const canOverrule = pendingVote.kind === "kit" ? false
+      : pendingVote.kind === "ruleChange" ? canOverruleRuleVote(career, pendingVote.proposal.body)
+      : canOverruleClubVote(career, pendingVote.proposal.club);
     return (
       <VoteCeremony
-        tally={sellPlayerVoteProposal.tally}
-        scope="boardroom"
-        successOptionId="yes"
-        canOverrule={canOverruleClubVote(career, sellPlayerVoteProposal.club)}
+        tally={pendingVote.proposal.tally}
+        scope={pendingVote.kind === "kit" ? "fans" : pendingVote.kind === "ruleChange" ? "governing-body" : "boardroom"}
+        successOptionId={pendingVote.kind === "kit" ? undefined : "yes"}
+        canOverrule={canOverrule}
         overruleCost={OVERRULE_REPUTATION_COST}
         onDone={handleVoteDone}
       />
@@ -1942,8 +2193,9 @@ export default function StarDevPage() {
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
             <QuickBtn label="Invest" icon="📈" onClick={() => setPhase("investments")} />
           </div>
-          <div className="mt-2 grid grid-cols-1 gap-2">
+          <div className="mt-2 grid grid-cols-2 gap-2">
             <QuickBtn label="Reputation" icon="🌍" onClick={() => setPhase("reputation")} />
+            <QuickBtn label="Rule Book" icon="⚖️" onClick={() => setPhase("rule-book")} />
           </div>
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>

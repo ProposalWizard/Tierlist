@@ -8,6 +8,7 @@ import {
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
   curveDirFromSwipe, applyCurveSwipe,
+  setOffsideRuleEnabled,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner,
 } from "@/lib/star/canvasEngine";
@@ -28,6 +29,7 @@ import {
   PEN_SPOT_Y, ARC_R, CENTRE_R, CORNER_R,
 } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
+import { ruleBookFor } from "@/lib/star/ruleBook";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
 } from "@/lib/star/matchCommentary";
@@ -80,9 +82,13 @@ type Phase = "aim" | "contact" | "flight" | "result" | "feed" | "postmatch" | "d
  */
 const USE_FIRST_PERSON_DRIBBLE = true;
 
-// Match runs from minute 0 to 90. Chances are distributed organically — no
-// fixed session length. The number of chances depends on player/team quality.
-const MATCH_DURATION = 90;
+// Match runs from minute 0 to 90 by default. Chances are distributed
+// organically — no fixed session length. The number of chances depends on
+// player/team quality. Phase 4 of STAR_POWER_POLITICS.md's match-length
+// rule (ruleBook.ts) can change the actual figure per career — see the
+// local `MATCH_DURATION` shadow inside the component, which reads it off
+// `career.ruleBook`'s FA entry when a real career is attached.
+const DEFAULT_MATCH_DURATION = 90;
 
 interface Props {
   skills?: KickSkills;
@@ -272,6 +278,20 @@ const ACTION_BANNER_MS = 1000;
 const KICK_POSE_S = 0.28;
 
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
+  // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
+  // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
+  // when the match ends and how fast in-match energy drains, NOT
+  // matchLog.ts's own commentary-density pacing, which stays tuned for 90
+  // minutes regardless (see ruleBook.ts's header for the honest reasoning).
+  const MATCH_DURATION = career ? ruleBookFor(career, "FA").matchLengthMinutes : DEFAULT_MATCH_DURATION;
+
+  // Phase 6's offside toggle (§4.4 #1) — see canvasEngine.ts's own note on
+  // why this is a module-level setting rather than threaded through every
+  // scenario-building call: set once per mount of a real match, read by
+  // every offside judgement canvasEngine.ts makes for the rest of it.
+  useEffect(() => {
+    setOffsideRuleEnabled(!(career ? ruleBookFor(career, "FA").offsideAbolished : false));
+  }, [career]);
 
   // ── Who else is actually out there ──
   //

@@ -33,6 +33,9 @@ import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier, TROPHY_FAME } from "./rating";
 import { nudgeReputation, worldReputationFromSeason, clubReputationFromSeason } from "./reputation";
+import { considerRecommendations, payPresidentWages } from "./clubPowers";
+import { creditStadiumRevenue } from "./facilities";
+import { ruleBookFor } from "./ruleBook";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
@@ -355,8 +358,13 @@ export function creditMatchResult(
   // …and the round itself is skipped outright on a replay — see
   // `alreadyPlayed` at the top of this function.
   if (kind === "league" && !alreadyPlayed) {
-    league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore);
+    // Phase 4 of STAR_POWER_POLITICS.md — the FA's own active Rule Book, if
+    // it's ever been changed from the classic default. Every other
+    // governing body's rules are real data but reach nothing this career
+    // plays yet — see ruleBook.ts's own header.
+    const faRules = ruleBookFor(career, "FA");
     const rng = mulberry32(career.season * 1000 + career.week);
+    league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, stats.homeScore, stats.awayScore, faRules, rng);
     // ── homeScore is YOURS, not the home team's ──
     //
     // `finaliseMatch` writes `homeScore: userScore` whichever ground it was
@@ -387,7 +395,7 @@ export function creditMatchResult(
     const round = playLeagueWeek(league, fixture.week, {
       club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded,
       goals: yours, oppGoals: theirs,
-    }, rng, squads);
+    }, rng, squads, faRules);
     league = round.league;
     leagueSquads = squads;
     // Replaying a week replaces it rather than doubling it.
@@ -964,7 +972,10 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
   const leagueWinner = finalTable[0]?.name;
   const leagueRunnerUp = finalTable[1]?.name;
 
-  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner);
+  // Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #11 — any extra European
+  // places UEFA has granted this country, read off UEFA's own rule book.
+  const uefaRules = ruleBookFor(career, "UEFA");
+  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
   const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
   const inYourCompetition = (id: "Champions League" | "Europa League") =>
     career.euroState?.competition === id ? career.euroState : null;
@@ -1092,6 +1103,7 @@ export function advanceSeason(
   // would happily hand out a European place for one if it were asked.
   const qualification = divisionOf(career) === "championship" ? null : qualificationFor(
     leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup, wonEuroComp,
+    ruleBookFor(career, "UEFA").extraChampionsLeagueSlots, ruleBookFor(career, "UEFA").extraEuropaLeagueSlots,
   );
 
   const lastSeasonWinners = resolveSeasonWinners(career);
@@ -1109,6 +1121,7 @@ export function advanceSeason(
     season: career.season + 1,
     division: nextDivision,
     divisions: ladder.divisions,
+    limboClubs: ladder.limbo,
     ladderNews: {
       yourMove: ladder.yourMove,
       promotedToPremier: ladder.promotedToPremier,
@@ -1242,6 +1255,15 @@ export function advanceSeason(
   next.euroState = euro.state ?? undefined;
   next.fixtures = [...next.fixtures, ...seeded.fixtures, ...drawn.fixtures, ...euro.fixtures];
 
+  // Phase 3 of STAR_POWER_POLITICS.md's own two season-boundary hooks: the
+  // board considers whatever minority-shareholder recommendations are
+  // still pending, and every club you're president of pays out its wage.
+  Object.assign(next, considerRecommendations(next, mulberry32(next.season * 54617 + 13)));
+  Object.assign(next, payPresidentWages(next));
+  // Phase 7 of STAR_POWER_POLITICS.md — every owned club's own stadium
+  // pays its own real gate-receipt revenue, into its own budget.
+  Object.assign(next, creditStadiumRevenue(next));
+
   // Aged skills, a season's trophies, fresh personal bests and any
   // achievement this rollover itself unlocked are all final at this point —
   // exactly the moment computeStarRating should read them from.
@@ -1315,12 +1337,13 @@ export function simulateMissedFixture(
   let weekResults = career.results ?? [];
   let leagueSquads = career.leagueSquads;
   if (kind === "league") {
-    league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, userScore, oppScore);
+    const faRules = ruleBookFor(career, "FA");
+    league = updateLeagueWithUserResult(career.league, career.player.club, fixture.opponent, userScore, oppScore, faRules, rng);
     const squads = (career.leagueSquads ?? []).map(sq => ({ ...sq, players: sq.players.map(p => ({ ...p })) }));
     const round = playLeagueWeek(league, fixture.week, {
       club: career.player.club, opponent: fixture.opponent, home: fixture.home,
       scored: userScore, conceded: oppScore,
-    }, rng, squads);
+    }, rng, squads, faRules);
     league = round.league;
     leagueSquads = squads;
     weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];

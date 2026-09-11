@@ -7,6 +7,9 @@ import {
 } from "@/lib/star/investments";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { allPoolManagers } from "@/lib/star/managerPool";
+import { FORMATIONS } from "@/lib/star/formations";
+import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
+import { facilitiesFor } from "@/lib/star/facilities";
 
 /**
  * INVESTMENTS — BUY A STAKE, AND, PAST 50.1%, RUN THE BOARDROOM.
@@ -34,6 +37,23 @@ interface Props {
   onSignPlayer: (club: string, playerId: string, fromClub: string) => ActionResult;
   onSellPlayer: (club: string, playerId: string) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
+  /** Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer. */
+  onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
+  onSetFormation: (club: string, formationId: string) => ActionResult;
+  onSetKit: (club: string, kit: ClubKit) => ActionResult;
+  onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
+  onStandForPresident: (club: string) => ActionResult;
+  onSetPresidentWage: (club: string, wage: number) => ActionResult;
+  onMergeClubs: (primaryClub: string, absorbedClub: string) => ActionResult;
+  onHaveASon: () => ActionResult;
+  onAgeUpSon: () => ActionResult;
+  onPromoteSon: (club: string) => ActionResult;
+  onTransferSon: (toClub: string) => ActionResult;
+  /** Phase 7 of STAR_POWER_POLITICS.md — club facilities. */
+  onRenameStadium: (club: string, name: string) => ActionResult;
+  onUpgradeStadiumCapacity: (club: string) => ActionResult;
+  onUpgradeTrainingGround: (club: string) => ActionResult;
+  onUpgradeYouthAcademy: (club: string) => ActionResult;
 }
 
 function StarIcon() {
@@ -93,7 +113,9 @@ export default function Investments(props: Props) {
           />
         )}
 
-        {tab === "portfolio" && <Portfolio career={career} owned={owned} onSellStake={props.onSellStake} />}
+        {tab === "portfolio" && (
+          <Portfolio career={career} owned={owned} onSellStake={props.onSellStake} onRecommend={props.onRecommend} />
+        )}
 
         {tab === "boardroom" && (
           boardroomClub
@@ -102,6 +124,15 @@ export default function Investments(props: Props) {
                 career={career} club={boardroomClub} onBack={() => setBoardroomClub(null)}
                 onTopUpBudget={props.onTopUpBudget} onSignPlayer={props.onSignPlayer}
                 onSellPlayer={props.onSellPlayer} onReplaceManager={props.onReplaceManager}
+                onSetFormation={props.onSetFormation} onSetKit={props.onSetKit}
+                onProposeKitVote={props.onProposeKitVote} onStandForPresident={props.onStandForPresident}
+                onSetPresidentWage={props.onSetPresidentWage}
+                otherOwnedClubs={owned.map(i => i.club).filter(c => c !== boardroomClub)}
+                onMergeClubs={props.onMergeClubs}
+                son={career.son} onHaveASon={props.onHaveASon} onAgeUpSon={props.onAgeUpSon}
+                onPromoteSon={props.onPromoteSon} onTransferSon={props.onTransferSon}
+                onRenameStadium={props.onRenameStadium} onUpgradeStadiumCapacity={props.onUpgradeStadiumCapacity}
+                onUpgradeTrainingGround={props.onUpgradeTrainingGround} onUpgradeYouthAcademy={props.onUpgradeYouthAcademy}
               />
             )
             : <BoardroomList clubs={majorityClubs.map(i => i.club)} career={career} onOpen={setBoardroomClub} />
@@ -306,11 +337,16 @@ function StakeControls({
 // ── PORTFOLIO ────────────────────────────────────────────────────────────
 
 function Portfolio({
-  career, owned, onSellStake,
+  career, owned, onSellStake, onRecommend,
 }: {
   career: CareerState; owned: { club: string; percent: number; avgBuyValuation: number }[];
   onSellStake: (club: string, percent: number) => void;
+  onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
 }) {
+  const [recommendClub, setRecommendClub] = useState<string | null>(null);
+  const [recommendKind, setRecommendKind] = useState<RecommendationKind>("sign");
+  const [recommendDetail, setRecommendDetail] = useState("");
+  const [recommendMessage, setRecommendMessage] = useState<string | null>(null);
   const totalValue = owned.reduce((s, i) => s + clubValuation(i.club, career) * (i.percent / 100), 0);
   const totalCost = owned.reduce((s, i) => s + i.avgBuyValuation * (i.percent / 100), 0);
   const totalProfit = totalValue - totalCost;
@@ -361,10 +397,78 @@ function Portfolio({
               >
                 Sell entire stake
               </button>
+              {i.percent < MAJORITY_THRESHOLD && (
+                <div className="mt-1.5">
+                  {recommendClub === i.club ? (
+                    <div className="space-y-1">
+                      <select
+                        value={recommendKind}
+                        onChange={e => setRecommendKind(e.target.value as RecommendationKind)}
+                        className="w-full rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-[10px] text-white"
+                      >
+                        <option value="sign">Sign a player</option>
+                        <option value="formation">Change formation</option>
+                        <option value="manager">Change manager</option>
+                        <option value="wage">Adjust wages</option>
+                      </select>
+                      <input
+                        value={recommendDetail} onChange={e => setRecommendDetail(e.target.value)}
+                        placeholder="What would you suggest?"
+                        className="w-full rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-[10px] text-white"
+                      />
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => {
+                            const result = onRecommend(i.club, recommendKind, recommendDetail || "No detail given");
+                            setRecommendMessage(result.ok ? "Recommendation filed — the board will consider it." : (result.reason ?? "Failed"));
+                            if (result.ok) { setRecommendClub(null); setRecommendDetail(""); }
+                          }}
+                          className="flex-1 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black"
+                        >
+                          Submit
+                        </button>
+                        <button
+                          onClick={() => setRecommendClub(null)}
+                          className="px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setRecommendClub(i.club); setRecommendMessage(null); }}
+                      className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black"
+                    >
+                      Recommend to the board
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+      {recommendMessage && (
+        <div className="mt-2 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-center text-[11px] font-bold text-white/80">
+          {recommendMessage}
+        </div>
+      )}
+      {(career.recommendations ?? []).length > 0 && (
+        <div className="mt-3 bg-gray-800/70 border border-gray-700 rounded-lg overflow-hidden">
+          <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/60 border-b border-black/20">
+            Your recommendations
+          </div>
+          {[...(career.recommendations ?? [])].reverse().slice(0, 8).map(r => (
+            <div key={r.id} className="px-3 py-1.5 border-b border-black/10 last:border-b-0 flex items-center justify-between gap-2">
+              <div className="text-[10px] text-white/80 truncate">{r.club}: {r.detail}</div>
+              <span className={`text-[9px] font-black uppercase shrink-0 ${
+                r.status === "adopted" ? "text-emerald-300" : r.status === "dismissed" ? "text-white/40" : "text-yellow-300"
+              }`}>{r.status}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -410,14 +514,33 @@ function squadFor(career: CareerState, club: string) {
 
 function Boardroom({
   career, club, onBack, onTopUpBudget, onSignPlayer, onSellPlayer, onReplaceManager,
+  onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
+  onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
   career: CareerState; club: string; onBack: () => void;
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string) => ActionResult;
   onSellPlayer: (club: string, playerId: string) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
+  onSetFormation: (club: string, formationId: string) => ActionResult;
+  onSetKit: (club: string, kit: ClubKit) => ActionResult;
+  onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
+  onStandForPresident: (club: string) => ActionResult;
+  onSetPresidentWage: (club: string, wage: number) => ActionResult;
+  otherOwnedClubs: string[];
+  onMergeClubs: (primaryClub: string, absorbedClub: string) => ActionResult;
+  son: CareerState["son"];
+  onHaveASon: () => ActionResult;
+  onAgeUpSon: () => ActionResult;
+  onPromoteSon: (club: string) => ActionResult;
+  onTransferSon: (toClub: string) => ActionResult;
+  onRenameStadium: (club: string, name: string) => ActionResult;
+  onUpgradeStadiumCapacity: (club: string) => ActionResult;
+  onUpgradeTrainingGround: (club: string) => ActionResult;
+  onUpgradeYouthAcademy: (club: string) => ActionResult;
 }) {
-  const [section, setSection] = useState<"squad" | "sign" | "manager">("squad");
+  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers">("squad");
   const [topUp, setTopUp] = useState(1000);
   const [message, setMessage] = useState<string | null>(null);
   const state = ownedClubState(career, club);
@@ -456,8 +579,8 @@ function Boardroom({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-1 mb-2">
-        {(["squad", "sign", "manager"] as const).map(s => (
+      <div className="grid grid-cols-4 gap-1 mb-2">
+        {(["squad", "sign", "manager", "powers"] as const).map(s => (
           <button
             key={s}
             onClick={() => { setSection(s); setMessage(null); }}
@@ -505,6 +628,216 @@ function Boardroom({
       {section === "manager" && (
         <ManagerPanel career={career} club={club} onReplaceManager={(c, n) => runAction(onReplaceManager(c, n))} />
       )}
+
+      {section === "powers" && (
+        <PowersPanel
+          career={career} club={club}
+          onSetFormation={(c, f) => runAction(onSetFormation(c, f))}
+          onSetKit={(c, k) => runAction(onSetKit(c, k))}
+          onProposeKitVote={(c, a, b, favor) => runAction(onProposeKitVote(c, a, b, favor))}
+          onStandForPresident={(c) => runAction(onStandForPresident(c))}
+          onSetPresidentWage={(c, w) => runAction(onSetPresidentWage(c, w))}
+          otherOwnedClubs={otherOwnedClubs}
+          onMergeClubs={(p, a) => runAction(onMergeClubs(p, a))}
+          son={son} onHaveASon={() => runAction(onHaveASon())} onAgeUpSon={() => runAction(onAgeUpSon())}
+          onPromoteSon={(c) => runAction(onPromoteSon(c))} onTransferSon={(c) => runAction(onTransferSon(c))}
+          onRenameStadium={(c, n) => runAction(onRenameStadium(c, n))}
+          onUpgradeStadiumCapacity={(c) => runAction(onUpgradeStadiumCapacity(c))}
+          onUpgradeTrainingGround={(c) => runAction(onUpgradeTrainingGround(c))}
+          onUpgradeYouthAcademy={(c) => runAction(onUpgradeYouthAcademy(c))}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── PHASE 3 OF STAR_POWER_POLITICS.MD — THE REST OF THE OWNERSHIP LAYER ────
+
+function PowersPanel({
+  career, club, onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
+  onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
+}: {
+  career: CareerState; club: string;
+  onSetFormation: (club: string, formationId: string) => void;
+  onSetKit: (club: string, kit: ClubKit) => void;
+  onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => void;
+  onStandForPresident: (club: string) => void;
+  onSetPresidentWage: (club: string, wage: number) => void;
+  otherOwnedClubs: string[];
+  onMergeClubs: (primaryClub: string, absorbedClub: string) => void;
+  son: CareerState["son"];
+  onHaveASon: () => void;
+  onAgeUpSon: () => void;
+  onPromoteSon: (club: string) => void;
+  onTransferSon: (toClub: string) => void;
+  onRenameStadium: (club: string, name: string) => void;
+  onUpgradeStadiumCapacity: (club: string) => void;
+  onUpgradeTrainingGround: (club: string) => void;
+  onUpgradeYouthAcademy: (club: string) => void;
+}) {
+  const state = ownedClubState(career, club);
+  const kit = clubKitFor(career, club);
+  const facilities = facilitiesFor(career, club);
+  const [formationId, setFormationId] = useState(state.formation ?? "433");
+  const [kitA, setKitA] = useState<ClubKit>(kit ?? { primary: "#dc2626", secondary: "#ffffff", trim: "#111827" });
+  const [kitB, setKitB] = useState<ClubKit>({ primary: "#1d4ed8", secondary: "#ffffff", trim: "#facc15" });
+  const [wage, setWage] = useState(state.presidentWage ?? 0);
+  const [mergeTarget, setMergeTarget] = useState(otherOwnedClubs[0] ?? "");
+  const [stadiumName, setStadiumName] = useState(facilities.stadiumName);
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Formation (manager's tactics)</div>
+        <div className="flex items-center gap-2">
+          <select
+            value={formationId} onChange={e => setFormationId(e.target.value)}
+            className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+          >
+            {FORMATIONS.map(f => <option key={f.id} value={f.id}>{f.name ?? f.id}</option>)}
+          </select>
+          <button
+            onClick={() => onSetFormation(club, formationId)}
+            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 font-black text-xs whitespace-nowrap"
+          >
+            Set
+          </button>
+        </div>
+        <div className="mt-1 text-[9px] text-white/50">Real strength with this shape: {clubStrengthWithFormation(career, club)}</div>
+      </div>
+
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Kit</div>
+        {kit && (
+          <div className="mb-2 flex items-center gap-2 text-[10px] text-white/70">
+            Current: <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.primary }} />
+            <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.secondary }} />
+            <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.trim }} />
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <div className="text-[9px] font-bold text-white/60 mb-1">Design A</div>
+            <div className="flex gap-1">
+              {(["primary", "secondary", "trim"] as const).map(k => (
+                <input key={k} type="color" value={kitA[k]} onChange={e => setKitA({ ...kitA, [k]: e.target.value })} className="w-6 h-6 rounded" />
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-[9px] font-bold text-white/60 mb-1">Design B</div>
+            <div className="flex gap-1">
+              {(["primary", "secondary", "trim"] as const).map(k => (
+                <input key={k} type="color" value={kitB[k]} onChange={e => setKitB({ ...kitB, [k]: e.target.value })} className="w-6 h-6 rounded" />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 flex gap-1">
+          <button onClick={() => onSetKit(club, kitA)} className="flex-1 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">
+            Set Design A directly
+          </button>
+          <button onClick={() => onProposeKitVote(club, kitA, kitB, "a")} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+            Put to a fan vote
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Presidency</div>
+        {state.isPresident ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="number" min={0} value={wage} onChange={e => setWage(Math.max(0, Number(e.target.value)))}
+              className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+            />
+            <button onClick={() => onSetPresidentWage(club, wage)} className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 font-black text-xs whitespace-nowrap">
+              Set wage
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => onStandForPresident(club)} className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+            Stand for president (shareholder vote)
+          </button>
+        )}
+      </div>
+
+      {otherOwnedClubs.length > 0 && (
+        <div className="bg-gray-800 border border-red-900/60 rounded-xl p-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-red-300 mb-1.5">Merge/takeover (100% ownership of both required)</div>
+          <div className="flex items-center gap-2">
+            <select value={mergeTarget} onChange={e => setMergeTarget(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white">
+              {otherOwnedClubs.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button onClick={() => onMergeClubs(club, mergeTarget)} className="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 font-black text-xs whitespace-nowrap">
+              Absorb
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Son</div>
+        {!son ? (
+          <button onClick={onHaveASon} className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+            Have a son
+          </button>
+        ) : (
+          <div className="space-y-1.5">
+            <div className="text-[10px] text-white/75">
+              {son.name} · Age {son.age} · OVR {son.overall} · {son.club ?? "Not on a team yet"}
+            </div>
+            <div className="flex gap-1">
+              <button onClick={onAgeUpSon} className="flex-1 py-1.5 rounded-md bg-purple-600/80 hover:bg-purple-500 text-[10px] font-black">
+                Use the potion
+              </button>
+              {!son.club ? (
+                <button onClick={() => onPromoteSon(club)} className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black">
+                  Promote to first team
+                </button>
+              ) : (
+                <button onClick={() => onTransferSon(club)} className="flex-1 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">
+                  Transfer here
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Facilities</div>
+        <div className="flex items-center gap-2 mb-1.5">
+          <input value={stadiumName} onChange={e => setStadiumName(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white" />
+          <button onClick={() => onRenameStadium(club, stadiumName)} className="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 font-black text-xs whitespace-nowrap">
+            Rename
+          </button>
+        </div>
+        <div className="text-[11px] text-white/75 mb-1.5">
+          Capacity {facilities.stadiumCapacity.toLocaleString()} · Training tier {facilities.trainingGroundTier}/3 · Youth tier {facilities.youthAcademyTier}/3
+        </div>
+        <div className="flex gap-1">
+          <button onClick={() => onUpgradeStadiumCapacity(club)} className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black">
+            +5,000 seats
+          </button>
+          <button
+            disabled={facilities.trainingGroundTier >= 3}
+            onClick={() => onUpgradeTrainingGround(club)}
+            className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-[10px] font-black"
+          >
+            Upgrade training
+          </button>
+          <button
+            disabled={facilities.youthAcademyTier >= 3}
+            onClick={() => onUpgradeYouthAcademy(club)}
+            className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-[10px] font-black"
+          >
+            Upgrade academy
+          </button>
+        </div>
+        <div className="mt-1.5 text-[9px] text-white/55">A bigger stadium earns this club real gate-receipt revenue every season.</div>
+      </div>
     </div>
   );
 }

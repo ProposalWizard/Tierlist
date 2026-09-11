@@ -228,14 +228,23 @@ const POOL_SIZE = PROMOTION_POOL_CLUBS.length;
  *    same as an ordinary promotion. The pool has no tier below it to draw
  *    from, so a pool shortfall is left as a last-resort no-op rather than
  *    inventing a club that was never part of this world at all.
+ *
+ * A fourth, optional input: `limbo` — clubs forced out of the ladder by a
+ * governing-body's forced-movement rule (Phase 6 of
+ * STAR_POWER_POLITICS.md, §4.4 #10 — see forcedMovement.ts), waiting to
+ * re-enter the pool. Folded straight into the pool candidates before
+ * dedup/resize, so an oversized pool (a real limbo return, or any other
+ * drift) sheds its own weakest back OUT into limbo rather than the pool
+ * silently growing past its own fixed size — the exact same shrink logic
+ * every other tier already uses, just with nowhere lower to shrink INTO.
  */
 function reconcileLadder(
-  premier: string[], championship: string[], pool: string[],
+  premier: string[], championship: string[], pool: string[], limbo: string[],
   strength: Map<string, number>, rng: () => number,
-): { premier: string[]; championship: string[]; pool: string[] } {
+): { premier: string[]; championship: string[]; pool: string[]; limbo: string[] } {
   const seen = new Set<string>();
   const dedupe = (list: string[]) => list.filter(c => (seen.has(c) ? false : (seen.add(c), true)));
-  let p = dedupe(premier), c = dedupe(championship), pl = dedupe(pool);
+  let p = dedupe(premier), c = dedupe(championship), pl = dedupe([...pool, ...limbo]);
 
   const byStrengthAsc = (list: string[]) => [...list].sort((a, b) => (strength.get(a) ?? 70) - (strength.get(b) ?? 70));
 
@@ -265,7 +274,12 @@ function reconcileLadder(
   [c, pl] = grow(c, CHAMPIONSHIP_SIZE, pl);
   [p, c] = grow(p, PREMIER_SIZE, c);
 
-  return { premier: p, championship: c, pool: pl };
+  // An oversized pool (limbo returns included) sheds its own weakest back
+  // into limbo — nowhere lower to shrink into, same as the pool's own
+  // shortfall case above has nowhere lower to grow FROM.
+  const [poolFinal, limboOut] = shrink(pl, POOL_SIZE, []);
+
+  return { premier: p, championship: c, pool: poolFinal, limbo: limboOut };
 }
 
 // ── The whole ladder, once a season ─────────────────────────────────────────
@@ -284,6 +298,11 @@ export interface LadderOutcome {
   relegatedFromChampionship: string[];
   /** Only when a Championship season was the one being played. */
   playOffs: PlayOffResult | null;
+  /** Clubs still in limbo after this season's reconciliation — a forced
+   *  movement that happened DURING this same rollover before the ladder
+   *  resolved lands here too, not just returns from a previous one. Persist
+   *  onto `career.limboClubs`. See forcedMovement.ts. */
+  limbo: string[];
 }
 
 /**
@@ -375,7 +394,7 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   // save regardless of what today's code does, and the fix that actually
   // reaches a player is one that heals the shape it finds, not one that
   // only proves it wouldn't have happened starting from scratch.
-  const { premier, championship, pool } = reconcileLadder(premierRaw, championshipRaw, poolRaw, strength, rng);
+  const { premier, championship, pool, limbo } = reconcileLadder(premierRaw, championshipRaw, poolRaw, career.limboClubs ?? [], strength, rng);
 
   // Your club is one of the two by now — either it was never in the relegated
   // three, or the page already moved you to a new one before this ran (see
@@ -397,5 +416,6 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     promotedToPremier, relegatedFromPremier,
     promotedToChampionship, relegatedFromChampionship,
     playOffs,
+    limbo,
   };
 }
