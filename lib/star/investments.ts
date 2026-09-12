@@ -167,10 +167,21 @@ export function canInvestIn(career: CareerState, club: string): boolean {
 
 export function buyStake(career: CareerState, club: string, percent: number): CareerState {
   if (percent <= 0 || !canInvestIn(career, club)) return career;
+  const existing = stakeIn(career, club);
+  // Reported directly: buying 100% of a club and then still being offered
+  // more let a real save end up owning 200% of one club — impossible in
+  // reality and unhandled everywhere else in this engine (majority checks,
+  // vote weight, sale proceeds all assume percentages that sum to at most
+  // 100). Clamp the actual purchase to whatever room is left rather than
+  // trusting the caller's requested amount — the UI's own spend cap
+  // (Investments.tsx's `maxBuySpend`) is fixed alongside this, but this is
+  // the real backstop.
+  const room = Math.max(0, 100 - (existing?.percent ?? 0));
+  percent = Math.min(percent, room);
+  if (percent <= 0) return career;
   const valuation = clubValuation(club, career);
   const cost = Math.round(valuation * (percent / 100));
   if (cost <= 0 || cost > career.money) return career;
-  const existing = stakeIn(career, club);
   const merged: ClubStake = existing
     ? {
         club,

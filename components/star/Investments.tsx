@@ -31,6 +31,12 @@ interface ActionResult {
 interface Props {
   career: CareerState;
   onBack: () => void;
+  /** Deep-link straight into a tab (and, for "boardroom", a specific club)
+   *  instead of always opening on Market — lets OwnershipScreen's hub jump a
+   *  club card straight to that club's boardroom rather than making the
+   *  player re-navigate through tabs they just came from. */
+  initialTab?: "market" | "portfolio" | "boardroom";
+  initialBoardroomClub?: string;
   onBuyStake: (club: string, percent: number) => void;
   onSellStake: (club: string, percent: number) => void;
   onTopUpBudget: (club: string, amount: number) => void;
@@ -72,10 +78,10 @@ function money(n: number): string {
 
 export default function Investments(props: Props) {
   const { career } = props;
-  const [tab, setTab] = useState<"market" | "portfolio" | "boardroom">("market");
+  const [tab, setTab] = useState<"market" | "portfolio" | "boardroom">(props.initialTab ?? "market");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [boardroomClub, setBoardroomClub] = useState<string | null>(null);
+  const [boardroomClub, setBoardroomClub] = useState<string | null>(props.initialBoardroomClub ?? null);
 
   const owned = (career.investments ?? []).filter(i => i.percent > 0);
   const majorityClubs = owned.filter(i => isMajorityOwner(career, i.club));
@@ -228,15 +234,20 @@ function StakeControls({
   stake?: { percent: number; avgBuyValuation: number };
   onBuy: (percent: number) => void; onSell: (percent: number) => void;
 }) {
-  // What buying 100% of this club would cost you, capped by what's actually
-  // in the bank — the hard ceiling the old slider never had.
-  const maxBuySpend = Math.max(0, Math.min(bank, Math.round(valuation)));
+  // What buying up to 100% TOTAL would cost you, capped by what's actually
+  // in the bank and by whatever room is left above what you already own —
+  // reported directly, from a real save: buying 100% and still being
+  // offered more let one club end up 200%-owned. `buyStake` itself now
+  // clamps too (the real backstop), but the control shouldn't dangle a
+  // bigger purchase than is actually possible in the first place.
+  const stakePct = stake?.percent ?? 0;
+  const roomPct = Math.max(0, 100 - stakePct);
+  const maxBuySpend = Math.max(0, Math.min(bank, Math.round(valuation * (roomPct / 100))));
   const [buyAmount, setBuyAmount] = useState(() => Math.max(1, Math.min(maxBuySpend, Math.round(valuation * 0.001))));
   const clampedBuy = Math.max(0, Math.min(maxBuySpend, Math.round(buyAmount) || 0));
   const buyPct = valuation > 0 ? (clampedBuy / valuation) * 100 : 0;
   const canAfford = clampedBuy > 0 && clampedBuy <= bank;
 
-  const stakePct = stake?.percent ?? 0;
   const [sellFraction, setSellFraction] = useState(1); // of your OWN holding
   const sellPct = stakePct * sellFraction;
   const sellAmount = Math.round(valuation * (sellPct / 100));

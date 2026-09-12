@@ -955,6 +955,14 @@ export type StarPhase =
   /** Governing-body influence + the Rule Book — Phase 4 of
    *  STAR_POWER_POLITICS.md. See RuleBookScreen, lib/star/ruleBook.ts. */
   | "rule-book"
+  /** A single consolidated home for everything Star Power & Politics built —
+   *  reputation, the clubs you're a shareholder in, the Rule Book, governing-
+   *  body standing — reported directly: those used to be three separate,
+   *  unrelated-looking home-page buttons with no sense they were one system.
+   *  See OwnershipScreen. Links out to the real screens (Investments'
+   *  boardroom, ReputationScreen, RuleBookScreen) rather than re-implementing
+   *  them, so nothing here changes what any of those actually do. */
+  | "ownership"
   | "contract-renewal"
   | "dilemma"
   | "relationship-game"

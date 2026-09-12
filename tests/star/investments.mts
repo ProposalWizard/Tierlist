@@ -124,6 +124,26 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   check(oversell === after, "can't sell more than you own");
 }
 
+// ── Can't own more than 100% of a club ──────────────────────────────────
+// Reported directly, from a real save: buying 100% and then buying more
+// left one club at 200% owned — impossible, and unhandled by every other
+// consumer of ClubStake.percent (majority checks, vote weight, sale value).
+{
+  let career = freshCareer();
+  career = buyStake(career, RIVAL, 100);
+  check(Math.abs((stakeIn(career, RIVAL)?.percent ?? 0) - 100) < 1e-6, "buying 100% lands at exactly 100%");
+
+  const before = career;
+  career = buyStake(career, RIVAL, 50);
+  check(career === before, "buying more once already at 100% is a no-op, not 150%");
+  check((stakeIn(career, RIVAL)?.percent ?? 0) === 100, "…and the stake stays capped at 100%");
+
+  // Buying past 100% from partway there is clamped to the room left, not rejected outright.
+  let partial = buyStake(freshCareer(), RIVAL, 80);
+  partial = buyStake(partial, RIVAL, 40);
+  check(Math.abs((stakeIn(partial, RIVAL)?.percent ?? 0) - 100) < 1e-6, "a purchase that would overshoot 100% is clamped to fill the remaining room, not blocked entirely");
+}
+
 // ── Majority threshold ──────────────────────────────────────────────────
 {
   let career = freshCareer();
