@@ -279,6 +279,13 @@ npm run lint   # Run ESLint
 
 ## Recent Session
 
+**12 September 2026 (cont. 5) — One real money-formatting standard, everywhere.**
+
+- **New `lib/star/money.ts` — `formatMoney`.** Requested directly, with exact worked examples: amounts of ★1,000+ now read with a k/m/b suffix, and every digit below the unit boundary becomes a real decimal digit rather than being rounded away — ★1,256 reads as "1.256k", ★12,500,072 as "12.500072m", an exact ★46,000,000,000 as a plain "46b" (no trailing ".000000000"), and ★12,500,000 as "12.5m" (trailing zero digits trimmed). Verified against every one of the user's own worked examples in `tests/star/money.mts` (new).
+- **Replaced every duplicate, differently-rounded local `money()` helper** across `Investments.tsx`, `OwnershipScreen.tsx`, `NegotiationScreen.tsx`, and `DevMoneyPanel.tsx` (each used to independently `toFixed(1)`/`toFixed(2)` round to "1.3K"/"12.50M" — a real, if minor, inconsistency between screens) — all four now defer to the one shared implementation.
+- **Fixed several balance displays that showed the RAW number with no formatting at all** — most notably `DashboardShell.tsx`'s own main balance strip, the very first money figure the game ever shows, alongside `HorseRacing.tsx`, `Shop.tsx`, and `Casino.tsx`'s bank displays.
+- Full 101-file test suite and `tsc --noEmit` both clean.
+
 **12 September 2026 (cont. 4) — Position-picker/market-value bugs fixed, league simulation and match ratings both made genuinely harsher/more realistic, and a dev "Add Money" tool.**
 
 - **Position picker offering positions that don't exist in the real formation — fixed.** Reported directly: choosing Attacking Mid/LW/RW from the pre-match role picker did nothing because the club's real formation had no such slots — only Striker. Root cause: `PositionPicker.tsx` computed its alternates off `formationForClub(club)`, a generic hash-of-the-club's-name guess, instead of the REAL saved lineup formation `teamsheet.ts`'s own `build()` actually uses (`saved?.formation ?? formationForClub(club)`). Now reads the same real saved lineup first, so it only ever offers positions the actual team sheet can put you in.

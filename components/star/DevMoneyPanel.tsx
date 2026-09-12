@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
+import { formatMoney } from "@/lib/star/money";
 
 /**
  * DEV MONEY — A TESTING TOOL, NOT A GAMEPLAY MECHANIC.
@@ -16,9 +17,7 @@ import type { CareerState } from "@/lib/star/types";
 const PRESETS = [10_000, 100_000, 1_000_000, 10_000_000];
 
 function money(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K`;
-  return `${Math.round(n)}`;
+  return formatMoney(n);
 }
 
 export default function DevMoneyPanel({
@@ -33,7 +32,7 @@ export default function DevMoneyPanel({
     <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
       <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Dev — Add Money</div>
       <p className="mt-1 text-[11px] font-semibold text-white/90">
-        For testing Investments/Boardroom without grinding for it. Current balance: ★{career.money.toLocaleString()}
+        For testing Investments/Boardroom without grinding for it. Current balance: ★{formatMoney(career.money)}
       </p>
 
       <div className="mt-2 grid grid-cols-4 gap-1.5">

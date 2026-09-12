@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
+import { formatMoney } from "@/lib/star/money";
 
 interface Props {
   career: CareerState;
@@ -91,7 +92,7 @@ export default function HorseRacing({ career, onBuyHorse, onRace, onBack }: Prop
           <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
           <div className="font-black text-white text-lg">🐎 Racing Stable</div>
           <div className="flex items-center gap-1 bg-gray-800 rounded-lg px-2 py-1 text-sm font-black text-yellow-300">
-            <StarIcon />{career.money}
+            <StarIcon />{formatMoney(career.money)}
           </div>
         </div>
 

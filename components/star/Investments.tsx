@@ -11,6 +11,7 @@ import { FORMATIONS } from "@/lib/star/formations";
 import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
 import { facilitiesFor } from "@/lib/star/facilities";
 import { playerMarketValue } from "@/lib/star/marketValue";
+import { formatMoney } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 
 /**
@@ -73,9 +74,7 @@ function StarIcon() {
 }
 
 function money(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return `${Math.round(n)}`;
+  return formatMoney(n);
 }
 
 export default function Investments(props: Props) {

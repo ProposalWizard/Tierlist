@@ -4,6 +4,7 @@ import {
   startNegotiation, makeOffer, moodToFace,
   type NegotiationMode, type NegotiationState, type CounterpartMood,
 } from "@/lib/star/negotiation";
+import { formatMoney } from "@/lib/star/money";
 
 /**
  * THE NEGOTIATION — FACE TO FACE ACROSS TWO DESKS.
@@ -18,9 +19,7 @@ import {
  */
 
 function money(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return `${Math.round(n)}`;
+  return formatMoney(n);
 }
 
 const FACE: Record<CounterpartMood, string> = { happy: "😊", neutral: "😐", angry: "😠" };
