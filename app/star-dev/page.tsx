@@ -1227,9 +1227,9 @@ export default function StarDevPage() {
     if (!career) return;
     setCareer(topUpClubBudget(career, club, amount));
   }, [career]);
-  const handleSignPlayerForOwnedClub = useCallback((club: string, playerId: string, fromClub: string) => {
+  const handleSignPlayerForOwnedClub = useCallback((club: string, playerId: string, fromClub: string, agreedFee?: number) => {
     if (!career) return { ok: false, reason: "No active career" };
-    const result = signPlayerForOwnedClub(career, club, playerId, fromClub);
+    const result = signPlayerForOwnedClub(career, club, playerId, fromClub, agreedFee);
     if (result.ok) setCareer(result.career);
     return { ok: result.ok, reason: result.reason };
   }, [career]);
@@ -1237,10 +1237,10 @@ export default function StarDevPage() {
   // from an owned club no longer acts instantly — it's put to a real
   // shareholder vote (voting.ts/investments.ts's proposeSellPlayerVote),
   // and the ceremony screen (below) decides what actually happens.
-  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string) => {
+  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string, agreedFee?: number) => {
     if (!career) return { ok: false, reason: "No active career" };
     const rng = mulberry32(career.season * 91721 + career.week * 131 + playerId.length);
-    const result = proposeSellPlayerVote(career, club, playerId, rng);
+    const result = proposeSellPlayerVote(career, club, playerId, rng, agreedFee);
     if (!result.ok) return { ok: false, reason: result.reason };
     setPendingVote({ kind: "sellPlayer", proposal: result.proposal });
     setPhase("vote-ceremony");

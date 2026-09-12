@@ -608,4 +608,103 @@ export const TUNABLES: TunableDef[] = [
     description: "Reported directly: the best horse/rating was winning far too often, with barely any risk. This is how much real randomness gets added on top of a horse's own rating for one race — raising it makes the field far less predictable without erasing the favourite's real edge.",
     default: 50, min: 10, max: 100, step: 1,
   },
+
+  // ── Market Value ─────────────────────────────────────────────────────
+  {
+    key: "marketValue.ratingFloor", category: "Market Value", label: "Rating — floor before value climbs",
+    description: "Overall at or below this is worth almost nothing on the open market — the zero point the rating curve below measures every player's value from.",
+    default: 55, min: 30, max: 70, step: 1,
+  },
+  {
+    key: "marketValue.ratingExponent", category: "Market Value", label: "Rating — value curve steepness",
+    description: "How much faster value climbs near the very top of the rating scale than in the middle — a real transfer fee blows up disproportionately for the truly elite.",
+    default: 2.2, min: 1, max: 4, step: 0.1,
+  },
+  {
+    key: "marketValue.scale", category: "Market Value", label: "Overall value scale",
+    description: "The single dial that sets how much money a market value actually comes out to — raise it to make every player's value bigger, lower it to shrink the whole market.",
+    default: 45, min: 5, max: 200, step: 5,
+  },
+  {
+    key: "marketValue.floor", category: "Market Value", label: "Minimum market value",
+    description: "No player, however poor, is worth less than this — a real floor for a squad-filler transfer.",
+    default: 200, min: 0, max: 5000, step: 100,
+  },
+  {
+    key: "marketValue.youthPremiumPerYear", category: "Market Value", label: "Youth premium per year under 22",
+    description: "A real footballer's resale value rises the younger he already is at a given rating — this much extra value per year under 22.",
+    default: 0.08, min: 0, max: 0.3, step: 0.01,
+  },
+  {
+    key: "marketValue.declinePerYear", category: "Market Value", label: "Value decline per year past 28",
+    description: "How much value falls away per year once a player is past his prime (28) — real transfer value falls off a cliff past 30-32.",
+    default: 0.09, min: 0, max: 0.3, step: 0.01,
+  },
+  {
+    key: "marketValue.ageFloor", category: "Market Value", label: "Minimum age-decline multiplier",
+    description: "Even a genuine veteran keeps some real value — this is the floor the age decline above never falls past.",
+    default: 0.15, min: 0.05, max: 0.6, step: 0.05,
+  },
+  {
+    key: "marketValue.highPotentialPeak", category: "Market Value", label: "High Potential — peak value multiplier",
+    description: "How much more a High Potential player is worth than an identical player with no tag, at its strongest (the youngest a potential tag can matter).",
+    default: 1.5, min: 1, max: 3, step: 0.1,
+  },
+  {
+    key: "marketValue.worldClassPeak", category: "Market Value", label: "World Class Potential — peak value multiplier",
+    description: "The same premium as High Potential, but stronger — World Class Potential is meant to be the stronger tier directly above it.",
+    default: 2.2, min: 1, max: 4, step: 0.1,
+  },
+  {
+    key: "marketValue.potentialYouthWindow", category: "Market Value", label: "Potential tag — years before it stops mattering",
+    description: "\"The potential is closer to already realized or not\" the older a tagged player gets — this many years past 23, the tag's premium has almost entirely tapered away.",
+    default: 6, min: 2, max: 12, step: 1,
+  },
+
+  // ── Negotiation ──────────────────────────────────────────────────────
+  {
+    key: "negotiation.sellerAnchorMin", category: "Negotiation", label: "Seller's opening ask — minimum over market value",
+    description: "A seller never opens at exactly market value — this is the least they anchor above it (as a fraction, so 0.15 = 15% over).",
+    default: 0.15, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "negotiation.sellerAnchorMax", category: "Negotiation", label: "Seller's opening ask — maximum over market value",
+    description: "The most a seller anchors above market value on their opening ask.",
+    default: 0.4, min: 0, max: 1.5, step: 0.05,
+  },
+  {
+    key: "negotiation.buyerAnchorMin", category: "Negotiation", label: "Buyer's opening offer — minimum under market value",
+    description: "A buyer never opens at exactly market value either — this is the least they lowball it by (as a fraction under).",
+    default: 0.15, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "negotiation.buyerAnchorMax", category: "Negotiation", label: "Buyer's opening offer — maximum under market value",
+    description: "The most a buyer lowballs their opening offer under market value.",
+    default: 0.35, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "negotiation.maxRounds", category: "Negotiation", label: "Maximum negotiation rounds",
+    description: "A negotiation can't drag on forever — after this many offers, it's forced to a final resolution one way or the other.",
+    default: 5, min: 2, max: 10, step: 1,
+  },
+  {
+    key: "negotiation.concessionRate", category: "Negotiation", label: "How much the counterpart concedes per round",
+    description: "Of the gap between their current position and your last offer, how much they give up each round — scaled by mood, so this is their concession at neutral mood.",
+    default: 0.35, min: 0.05, max: 0.9, step: 0.05,
+  },
+  {
+    key: "negotiation.acceptTolerance", category: "Negotiation", label: "How close counts as a deal",
+    description: "Once your offer is within this fraction of their current position, they accept outright rather than countering again.",
+    default: 0.04, min: 0, max: 0.2, step: 0.01,
+  },
+  {
+    key: "negotiation.walkAwayMoodFloor", category: "Negotiation", label: "Mood floor before they might walk",
+    description: "Below this mood score (0-100), the counterpart has a real chance of ending the negotiation angrily rather than countering again.",
+    default: 30, min: 0, max: 60, step: 5,
+  },
+  {
+    key: "negotiation.walkAwayChance", category: "Negotiation", label: "Chance of walking away per bad round",
+    description: "Once mood is below the floor above, the chance they walk away entirely on any round that doesn't improve it.",
+    default: 0.3, min: 0, max: 1, step: 0.05,
+  },
 ];

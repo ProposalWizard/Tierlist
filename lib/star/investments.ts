@@ -67,9 +67,9 @@ export function allInvestableClubs(): string[] {
 
 // ── Valuation ────────────────────────────────────────────────────────────
 
-type ClubTier = "champions" | "europa" | "premier" | "championship" | "other";
+export type ClubTier = "champions" | "europa" | "premier" | "championship" | "other";
 
-function tierOf(club: string, career: CareerState): ClubTier {
+export function tierOf(club: string, career: CareerState): ClubTier {
   // Actually playing in it THIS season outranks the static list — a club
   // punching above its usual competition (or currently in one at all) is
   // worth what it's doing now, not its long-run reputation bucket.
@@ -101,7 +101,7 @@ function strengthOf(club: string, career: CareerState): number {
 // a Champions League regular is worth more than a Championship promotion
 // hopeful at the same nominal strength, the same way real club valuations
 // carry a competition premium independent of the current XI's quality.
-const TIER_MULTIPLIER: Record<ClubTier, number> = {
+export const TIER_MULTIPLIER: Record<ClubTier, number> = {
   champions: 1.25, europa: 0.85, premier: 1.0, championship: 0.3, other: 0.55,
 };
 
@@ -320,6 +320,10 @@ export interface BoardActionResult {
  */
 export function signPlayerForOwnedClub(
   career: CareerState, club: string, playerId: string, fromClub: string,
+  /** A price a real negotiation (negotiation.ts) already agreed on —
+   *  overrides the flat `transferFee` formula when provided. Free-agent
+   *  signings ignore this: there's no seller to have negotiated with. */
+  agreedFee?: number,
 ): BoardActionResult {
   if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
   const budget = ownedClubState(career, club).budget;
@@ -338,7 +342,7 @@ export function signPlayerForOwnedClub(
     const idx = sellerEntry?.squad.players.findIndex(p => p.id === playerId) ?? -1;
     if (!sellerEntry || idx < 0) return { career, ok: false, reason: "That player isn't available" };
     player = sellerEntry.squad.players[idx];
-    fee = transferFee(player.overall);
+    fee = agreedFee ?? transferFee(player.overall);
     if (fee > budget) return { career, ok: false, reason: "Not enough in the transfer budget" };
     next = setSquad(next, fromClub, sellerEntry.squad.players.filter((_, i) => i !== idx));
   }
@@ -358,7 +362,12 @@ export function signPlayerForOwnedClub(
  *  is already down to the same minimum size the rest of the transfer
  *  engine protects (transfers.minSquadSize) — a chairman can weaken a club,
  *  not strip it down to nothing. */
-export function sellPlayerFromOwnedClub(career: CareerState, club: string, playerId: string): BoardActionResult {
+export function sellPlayerFromOwnedClub(
+  career: CareerState, club: string, playerId: string,
+  /** A price a real negotiation already agreed on — overrides the flat
+   *  `transferFee` formula when provided. */
+  agreedFee?: number,
+): BoardActionResult {
   if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
   const entry = findSquadEntry(career, club);
   const squad = entry?.squad;
@@ -368,7 +377,7 @@ export function sellPlayerFromOwnedClub(career: CareerState, club: string, playe
     return { career, ok: false, reason: "The squad is already too thin to sell from" };
   }
   const player = squad.players[idx];
-  const fee = transferFee(player.overall);
+  const fee = agreedFee ?? transferFee(player.overall);
   const next = setSquad(career, club, squad.players.filter((_, i) => i !== idx));
   const current = ownedClubState(next, club);
   return {
@@ -416,6 +425,9 @@ export interface SellPlayerVoteProposal {
  *  actually happen. */
 export function proposeSellPlayerVote(
   career: CareerState, club: string, playerId: string, rng: () => number,
+  /** A price a real negotiation with the buyer already agreed on — overrides
+   *  the flat `transferFee` formula the shareholders are asked to approve. */
+  agreedFee?: number,
 ): { ok: true; proposal: SellPlayerVoteProposal } | { ok: false; reason: string } {
   if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
   const entry = findSquadEntry(career, club);
@@ -426,7 +438,7 @@ export function proposeSellPlayerVote(
     return { ok: false, reason: "The squad is already too thin to sell from" };
   }
   const player = squad.players[idx];
-  const fee = transferFee(player.overall);
+  const fee = agreedFee ?? transferFee(player.overall);
 
   // Shareholder reputation biases the odds in your favour, never guarantees
   // them — a popular chairman with a great record still occasionally loses
@@ -461,7 +473,13 @@ export function resolveSellPlayerVote(
   } else if (!passed) {
     return { career: next, ok: false, reason: "The shareholders voted to keep him" };
   }
-  const sale = sellPlayerFromOwnedClub(next, proposal.club, proposal.playerId);
+  // Reuse the exact fee the shareholders actually voted on (also the exact
+  // price a negotiation may have agreed with the buyer) rather than letting
+  // sellPlayerFromOwnedClub recompute its own flat fee fresh here — the two
+  // could only diverge if the vote and the resolution happened at different
+  // moments, but "the fee you sell for" should never silently change from
+  // "the fee that was actually approved."
+  const sale = sellPlayerFromOwnedClub(next, proposal.club, proposal.playerId, proposal.fee);
   return sale.ok ? sale : { career: next, ok: false, reason: sale.reason };
 }
 
