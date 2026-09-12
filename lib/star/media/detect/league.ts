@@ -69,10 +69,13 @@ function sideResultEvent(
   }, "instant");
 }
 
-/** Any scorer who got three or more in this one match, named exactly — the
- *  same `hat-trick`/`four-goals`/`five-goals` ids and importance
+/** Any scorer who got two or more in this one match, named exactly — the
+ *  same `brace`/`hat-trick`/`four-goals`/`five-goals` ids and importance
  *  `detect/goals.ts`'s HAUL uses for yours, aimed at whichever real player
- *  actually scored them this week. */
+ *  actually scored them this week. A brace (n===2) used to be silently
+ *  dropped here (the loop only fired at n>=3) — reported directly, with a
+ *  real example (Cole Palmer's brace in a Chelsea win) that this detector
+ *  simply never covered. */
 function hatTrickEvents(
   club: string, opponent: string,
   goals: LeagueResult["hg"] | undefined, home: boolean,
@@ -88,16 +91,88 @@ function hatTrickEvents(
   }
   const out: FootballEvent[] = [];
   for (const [full, { n, short, role }] of Array.from(counts)) {
-    if (n < 3) continue;
-    const id = n >= 5 ? "five-goals" : n === 4 ? "four-goals" : "hat-trick";
-    const importance = n >= 5 ? 96 : n === 4 ? 88 : 76;
-    out.push(ev(id, clubSubject(club), importance, ["goal", "record"], {
+    if (n < 2) continue;
+    const id = n >= 5 ? "five-goals" : n === 4 ? "four-goals" : n === 3 ? "hat-trick" : "brace";
+    const importance = n >= 5 ? 96 : n === 4 ? 88 : n === 3 ? 76 : 52;
+    out.push(ev(id, clubSubject(club), importance, ["goal", n >= 3 ? "record" : "goal"], {
       club, opponent, competition, season, week, home,
       player: full, short, goals: n,
       ...(role ? { role } : {}),
     }, "instant"));
   }
   return out;
+}
+
+/**
+ * The goal that actually decided it, named — mirroring `detect/goals.ts`'s
+ * EQUALISER/WINNER for your own match. `LeagueResult.hg`/`.ag` carry a
+ * minute per goal but no running score, so it is reconstructed here by
+ * walking every goal (both sides, chronologically) the same way
+ * `isWinner`/`isEqualiser` (detect/kit.ts) read it off `MatchRecord.goals`.
+ * Requested directly: "Chelsea beat Man City 3-2 away, and Palmer scored
+ * two goals including the winning goal… I'd expect to see praise for that"
+ * — this is what makes a decisive goal, not just a brace, show up.
+ */
+function decisiveGoalEvents(
+  home: string, away: string,
+  hg: LeagueResult["hg"], ag: LeagueResult["ag"],
+  hs: number, as: number,
+  competition: string, season: number, week: number,
+): FootballEvent[] {
+  if (hs === as) return decisiveDrawEvent(home, away, hg, ag, competition, season, week);
+  if (!hg?.length && !ag?.length) return [];
+  const winnerIsHome = hs > as;
+  const winnerClub = winnerIsHome ? home : away;
+  const opponent = winnerIsHome ? away : home;
+  const winnerGoals = (winnerIsHome ? hg : ag) ?? [];
+  const loserFinal = winnerIsHome ? as : hs;
+  const sorted = [...winnerGoals].sort((a, b) => a.m - b.m);
+  // The goal that put the eventual winner exactly `loserFinal + 1` ahead —
+  // the last lead the loser never overturned. If several goals happen to
+  // tie that (shouldn't, since scores only go up), the latest one wins.
+  let running = 0;
+  let decider: (typeof sorted)[number] | undefined;
+  for (const g of sorted) {
+    running += 1;
+    if (running === loserFinal + 1) decider = g;
+  }
+  if (!decider?.full) return [];
+  const late = decider.m >= 85;
+  return [ev(late ? "late-winner" : "winner", clubSubject(winnerClub), late ? 86 : 58,
+    late ? ["goal", "drama"] : ["goal"], {
+      club: winnerClub, opponent, competition, season, week,
+      player: decider.full, short: decider.s, minute: decider.m,
+      ...(decider.role ? { role: decider.role } : {}),
+    }, "instant")];
+}
+
+/** A drawn match's equalising goal — the last goal that made it level,
+ *  named exactly, same as `detect/goals.ts`'s EQUALISER. */
+function decisiveDrawEvent(
+  home: string, away: string,
+  hg: LeagueResult["hg"], ag: LeagueResult["ag"],
+  competition: string, season: number, week: number,
+): FootballEvent[] {
+  const merged = [
+    ...(hg ?? []).map(g => ({ ...g, side: "home" as const })),
+    ...(ag ?? []).map(g => ({ ...g, side: "away" as const })),
+  ].sort((a, b) => a.m - b.m);
+  if (!merged.length) return [];
+  let homeScore = 0, awayScore = 0;
+  let lastEqualiser: (typeof merged)[number] | undefined;
+  for (const g of merged) {
+    if (g.side === "home") homeScore += 1; else awayScore += 1;
+    if (homeScore === awayScore && homeScore > 0) lastEqualiser = g;
+  }
+  if (!lastEqualiser?.full) return [];
+  const club = lastEqualiser.side === "home" ? home : away;
+  const opponent = lastEqualiser.side === "home" ? away : home;
+  const late = lastEqualiser.m >= 80;
+  return [ev("equaliser", clubSubject(club), late ? 62 : 44, late ? ["goal", "drama"] : ["goal"], {
+    club, opponent, competition, season, week,
+    player: lastEqualiser.full, short: lastEqualiser.s, minute: lastEqualiser.m,
+    ...(lastEqualiser.role ? { role: lastEqualiser.role } : {}),
+  }, "instant")];
 }
 
 /**
@@ -124,6 +199,7 @@ export function detectLeagueWeek(
     out.push(sideResultEvent(r.away, r.home, r.as, r.hs, false, competition, season, week));
     out.push(...hatTrickEvents(r.home, r.away, r.hg, true, competition, season, week));
     out.push(...hatTrickEvents(r.away, r.home, r.ag, false, competition, season, week));
+    out.push(...decisiveGoalEvents(r.home, r.away, r.hg, r.ag, r.hs, r.as, competition, season, week));
   }
   return out;
 }

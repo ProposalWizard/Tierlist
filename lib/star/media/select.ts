@@ -118,8 +118,12 @@ export function allegiance(a: MediaAccount, e: FootballEvent, yourClub: string):
 
   if (a.allegiance.polarity === -1) {
     // A rival only cares about the club they are rivals WITH — not itself,
-    // and not some third club's unrelated afternoon.
-    if (eventClub !== yourClub) return 0.2;
+    // and not some third club's unrelated afternoon. This used to return a
+    // flat 0.2 for "anything that isn't yourClub", which is backwards: it
+    // made a rival-fan account sound off on every OTHER club's match too
+    // (reported directly — third-party fixtures like Leeds or Villa-Forest
+    // showing up under a rival account with nothing to do with your club).
+    if (eventClub !== yourClub) return 0;
     return negative ? 1.6 : 0.12;   // they will still sneer at your good day, occasionally
   }
   // Positive allegiance (a club's own account, its own supporters, you) —

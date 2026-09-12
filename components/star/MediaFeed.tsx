@@ -108,9 +108,28 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
           actually is. */}
       <div className="flex shrink-0 items-center gap-1.5 border-b border-white/10 px-3 pb-2 pt-1">
         <AppMark />
-        <span className="text-[13px] font-black tracking-tight text-white">
+        <span className="flex-1 text-[13px] font-black tracking-tight text-white">
           {mode === "moment" ? "Post Match Reactions" : "Matchday"}
         </span>
+        {/* Requested directly: having to scroll all the way down just to
+            leave this screen was annoying when playing a lot of matches in
+            a row. Small, always-visible, and outside the scrollable feed
+            entirely (this whole app bar is `shrink-0`, above the
+            `overflow-y-auto` post list) — pressing it never depends on
+            having scrolled anywhere first. A second, equally real Continue
+            still opens the feed as its own first post below (see `shown`)
+            for anyone who scrolls normally instead. */}
+        {mode === "moment" && onContinue && (
+          <button
+            onClick={onContinue}
+            className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-black text-black transition hover:bg-emerald-400"
+          >
+            Continue
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+              <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {tab === "transfers" ? (
@@ -143,6 +162,20 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
 
           <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
             <div className="space-y-2">
+              {/* The second of the two Continue buttons — this one scrolls
+                  away like any other post, for anyone reading the feed
+                  normally rather than reaching for the app-bar one above. */}
+              {mode === "moment" && onContinue && (
+                <button
+                  onClick={onContinue}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-2 text-[12px] font-black text-black transition hover:bg-emerald-400"
+                >
+                  Continue
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                    <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              )}
               {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
               {shown.length === 0 && (
                 <div className="rounded-xl border border-white/12 bg-white/[0.04] px-3 py-8 text-center">
@@ -224,21 +257,16 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
           app bar now says "Post Match Reactions" (see `phone` above),
           which was exactly what this "Full-time reaction / What they made
           of that" header used to say a second time above it. */}
+      {/* Reported directly: having to scroll to the very bottom of the feed
+          just to leave this screen was annoying playing several matches in
+          a row. The one full-width Continue that used to live down here is
+          gone — replaced by two smaller ones that don't need any scrolling
+          at all: one fixed in the phone's own app bar above, one as the
+          feed's own first "post" (so scrolling past it works exactly like
+          scrolling past anything else). See `phone` above for both. */}
       <div className="flex w-full flex-1 items-center justify-center py-1" style={{ minHeight: 0 }}>
         <div className="h-full" style={{ aspectRatio: PHONE_ASPECT, maxHeight: 780, maxWidth: "min(28rem, 100%)" }}>{phone}</div>
       </div>
-
-      {onContinue && (
-        <button
-          onClick={onContinue}
-          className="mt-4 flex w-full max-w-md items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-black text-white transition hover:from-emerald-500 hover:to-emerald-400"
-        >
-          Continue
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      )}
     </div>
   );
 }

@@ -90,13 +90,31 @@ export function pickSquadScorer<T extends { id: string; position: SquadPlayer["p
 
 // Optionally pick an assister (different from scorer).
 // Returns null 35% of the time to model unassisted goals.
+//
+// Reported directly, from a real month-long save: one teammate ended up with
+// ~20 assists, a couple more with 7-10, and literally everyone else on the
+// XI stuck at zero all season. Root cause — this used to hard-exclude ST/CB
+// from ever registering an assist at all (only CM/CAM/LW/RW/CDM/RB/LB were
+// eligible), then picked UNIFORMLY within that small, fixed pool every
+// single week. With a static saved lineup, that is the same 5-7 names drawn
+// from all season — plain variance over that few players, that many draws,
+// reliably produces one runaway leader and several stuck at zero, and a
+// striker or centre-back could never break in no matter how the season
+// went. Now every outfield position is reachable (a striker's lay-off, a
+// centre-back's knockdown from a corner — both real, just rarer) via a
+// weighted pool shaped like `pickSquadScorer`'s, not a uniform draw over a
+// handful of names.
 export function pickSquadAssist<T extends { id: string; position: SquadPlayer["position"] }>(
   squad: T[], excludeId: string, rng: () => number,
 ): T | null {
   if (rng() < 0.35) return null;
-  const creators = squad.filter(p =>
-    p.id !== excludeId && ["CM", "CAM", "LW", "RW", "CDM", "RB", "LB"].includes(p.position),
-  );
-  if (creators.length === 0) return null;
-  return creators[Math.floor(rng() * creators.length)];
+  const eligible = (p: T) => p.id !== excludeId && p.position !== "GK";
+  const primary = squad.filter(p => eligible(p) && ["CM", "CAM", "LW", "RW", "CDM"].includes(p.position));
+  const secondary = squad.filter(p => eligible(p) && ["ST", "RB", "LB"].includes(p.position));
+  const rest = squad.filter(p => eligible(p) && !["CM", "CAM", "LW", "RW", "CDM", "ST", "RB", "LB"].includes(p.position));
+  const r = rng();
+  const pool = r < 0.70 ? primary : r < 0.95 ? secondary : rest;
+  const from = pool.length > 0 ? pool : squad.filter(eligible);
+  if (from.length === 0) return null;
+  return from[Math.floor(rng() * from.length)];
 }

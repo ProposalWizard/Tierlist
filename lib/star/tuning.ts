@@ -581,4 +581,31 @@ export const TUNABLES: TunableDef[] = [
     description: "Base chance a squad/bench player is listed, in summer.",
     default: 0.16, min: 0, max: 1, step: 0.01,
   },
+
+  // ── Betting ───────────────────────────────────────────────────────────
+  {
+    key: "betting.strengthExponent", category: "Betting", label: "Competition odds — strength exponent",
+    description: "Reported directly as too flat: a huge real gap between the best and worst squad in the division barely showed up in the odds (a ~10 shot favourite next to a ~35 shot no-hoper). Raising this widens that gap a lot — the same shape competitionBetting.ts's winWeight always used, just steeper.",
+    default: 3.5, min: 1, max: 6, step: 0.1,
+  },
+  {
+    key: "betting.strengthBaseline", category: "Betting", label: "Competition odds — strength baseline",
+    description: "Strength at or below this is treated as having no real chance of winning at all — the zero point the exponent above measures every club's real gap from.",
+    default: 50, min: 0, max: 70, step: 1,
+  },
+  {
+    key: "betting.overround", category: "Betting", label: "Competition odds — bookmaker's overround",
+    description: "The house edge folded into every competition-betting price — a real book never sums to even money.",
+    default: 1.25, min: 1, max: 2, step: 0.01,
+  },
+  {
+    key: "betting.maxOdds", category: "Betting", label: "Competition odds — longest price offered",
+    description: "Reported directly: real long-shot title odds go into the thousands (Leicester City's real 5000/1), and this game's old 250 cap made even the weakest team in the division look like a live outright contender. Real bookmakers often cap around 500 for a big domestic league; this goes further since a bookmaker's practical cap is a business choice this game doesn't need to copy exactly.",
+    default: 1000, min: 100, max: 10000, step: 50,
+  },
+  {
+    key: "horseRacing.raceNoise", category: "Betting", label: "Horse race — random variance",
+    description: "Reported directly: the best horse/rating was winning far too often, with barely any risk. This is how much real randomness gets added on top of a horse's own rating for one race — raising it makes the field far less predictable without erasing the favourite's real edge.",
+    default: 50, min: 10, max: 100, step: 1,
+  },
 ];

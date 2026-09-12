@@ -117,7 +117,7 @@ export default function VoteCeremony({ tally, scope, successOptionId, canOverrul
                   </div>
                 );
               })}
-              <div className="px-3 py-2 border-t border-black/30 text-[10px] text-white/55 flex justify-between">
+              <div className="px-3 py-2 border-t border-black/30 text-[10px] text-white font-semibold flex justify-between">
                 <span>Abstentions</span>
                 <span className="tabular-nums">{displayedAbstentions.toLocaleString()}</span>
               </div>

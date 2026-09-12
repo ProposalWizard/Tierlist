@@ -1220,16 +1220,23 @@ export function advanceSeason(
   // goes with him, which is how a settled player becomes a squad player without
   // kicking a ball differently.
   if (sack.sacked) {
-    // The man who just left is out of a job too — back into the pool before
-    // rolling his replacement, so a long enough save can eventually bring
-    // him back. A career saved before this pool existed has no list on
-    // file yet; treat it as the full roster rather than losing this hire
-    // (backfill in storage.ts covers every other load path).
-    let pool = career.availableManagers ?? allPoolManagers();
-    if (career.manager?.poolTier !== undefined) pool = [...pool, career.manager.name];
+    // The man who just left is out of a job too — but he must not be a
+    // candidate for his OWN replacement in this same rollover (found as a
+    // real, reproducible bug: adding him back into the pool before rolling
+    // from it let him occasionally roll straight back into the job, so the
+    // sack narrative fired — "Iraola leaves…" — while `career.manager`
+    // never actually changed). Roll the replacement from the pool WITHOUT
+    // him, then add him back in afterward so a long enough save can still
+    // eventually bring him back for a LATER vacancy. A career saved before
+    // this pool existed has no list on file yet; treat it as the full
+    // roster rather than losing this hire (backfill in storage.ts covers
+    // every other load path).
+    const pool = career.availableManagers ?? allPoolManagers();
     const hire = hireReplacementManager(next, next.player.club, next.season, pool);
     next.manager = hire.manager;
-    next.availableManagers = hire.availableManagers;
+    next.availableManagers = career.manager?.poolTier !== undefined
+      ? [...hire.availableManagers, career.manager.name]
+      : hire.availableManagers;
     // No reputation tag ("Elite"/"Proven"/...) in this specific line —
     // reported directly as unnecessary noise in the message itself. The
     // tier still exists on the manager (reputationTier(next.manager.reputation)
