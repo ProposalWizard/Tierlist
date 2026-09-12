@@ -73,7 +73,7 @@ export default function RuleBookScreen({
               key={b}
               onClick={() => { setBody(b); setMessage(null); }}
               className={`py-1.5 rounded-lg font-black text-[10px] uppercase transition ${
-                body === b ? "bg-emerald-600" : "bg-gray-700 text-white/70"
+                body === b ? "bg-emerald-600" : "bg-gray-700 text-white/90"
               }`}
             >
               {b}
@@ -83,7 +83,7 @@ export default function RuleBookScreen({
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">Controls</div>
-          <div className="text-[11px] text-white/75">{GOVERNING_BODY_COMPETITIONS[body].join(", ")}</div>
+          <div className="text-[11px] text-white font-semibold">{GOVERNING_BODY_COMPETITIONS[body].join(", ")}</div>
         </div>
 
         <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3 mb-3">
@@ -107,7 +107,7 @@ export default function RuleBookScreen({
               Invest
             </button>
           </div>
-          {!canPropose && <div className="mt-1.5 text-[9px] text-white/55">Needs real influence before you can propose a rule change.</div>}
+          {!canPropose && <div className="mt-1.5 text-[9px] text-white font-semibold">Needs real influence before you can propose a rule change.</div>}
         </div>
 
         <div className="bg-amber-950/40 border border-amber-700 rounded-lg p-3 mb-3">
@@ -118,7 +118,7 @@ export default function RuleBookScreen({
             </div>
           ) : (
             <>
-              <div className="text-[11px] text-white/75 mb-2">
+              <div className="text-[11px] text-white font-semibold mb-2">
                 Needs 90+ world reputation and 90+ influence in this body — the "president or king" end-game the brief itself named, built as president of a governing body rather than an invented country.
               </div>
               <button
@@ -153,14 +153,14 @@ export default function RuleBookScreen({
             <input type="checkbox" checked={useLawyers} onChange={e => setUseLawyers(e.target.checked)} />
             Hire lawyers first (★5000 — cuts the risk of getting caught, doesn&apos;t remove it)
           </label>
-          <div className="mt-1.5 text-[9px] text-white/55">
+          <div className="mt-1.5 text-[9px] text-white font-semibold">
             {bribeAmount > 0 ? "Any proposal below will try to sway real votes toward yes, at a real risk." : "Leave at 0 to just propose honestly."}
           </div>
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Points per result</div>
-          <div className="text-[11px] text-white/75 mb-2">Win {rules.points.win} · Draw {rules.points.draw} · Loss {rules.points.loss}</div>
+          <div className="text-[11px] text-white font-semibold mb-2">Win {rules.points.win} · Draw {rules.points.draw} · Loss {rules.points.loss}</div>
           <button
             disabled={!canPropose}
             onClick={() => run(onProposeChange(body, { points: { win: 2, draw: 1, loss: 0 } }, bribe))}
@@ -172,7 +172,7 @@ export default function RuleBookScreen({
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Draws</div>
-          <div className="text-[11px] text-white/75 mb-2">{rules.noDraws ? "Every draw goes to penalties" : "Draws stand, as normal"}</div>
+          <div className="text-[11px] text-white font-semibold mb-2">{rules.noDraws ? "Every draw goes to penalties" : "Draws stand, as normal"}</div>
           <button
             disabled={!canPropose}
             onClick={() => run(onProposeChange(body, { noDraws: !rules.noDraws }, bribe))}
@@ -184,7 +184,7 @@ export default function RuleBookScreen({
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Match length</div>
-          <div className="text-[11px] text-white/75 mb-2">{rules.matchLengthMinutes} minutes</div>
+          <div className="text-[11px] text-white font-semibold mb-2">{rules.matchLengthMinutes} minutes</div>
           <div className="flex gap-1">
             <button
               disabled={!canPropose}
@@ -205,7 +205,7 @@ export default function RuleBookScreen({
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Banned equipment</div>
-          <div className="text-[11px] text-white/75 mb-2">
+          <div className="text-[11px] text-white font-semibold mb-2">
             {rules.bannedItems.length > 0 ? `Banned: ${rules.bannedItems.join(", ")}` : "Nothing currently banned"}
           </div>
           <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ export default function RuleBookScreen({
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Offside</div>
-          <div className="text-[11px] text-white/75 mb-2">{rules.offsideAbolished ? "Abolished — nobody is ever offside" : "The law applies, as normal"}</div>
+          <div className="text-[11px] text-white font-semibold mb-2">{rules.offsideAbolished ? "Abolished — nobody is ever offside" : "The law applies, as normal"}</div>
           <button
             disabled={!canPropose}
             onClick={() => run(onProposeChange(body, { offsideAbolished: !rules.offsideAbolished }, bribe))}
@@ -240,18 +240,18 @@ export default function RuleBookScreen({
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Squad size per side</div>
-          <div className="text-[11px] text-white/75 mb-2">{rules.squadSize} a side</div>
+          <div className="text-[11px] text-white font-semibold mb-2">{rules.squadSize} a side</div>
           <div className="flex gap-1">
             <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { squadSize: 9 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">Propose: 9 a side</button>
             <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { squadSize: 20 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">Propose: 20 a side</button>
           </div>
-          <div className="mt-1.5 text-[9px] text-white/55">Real, votable data — the match/team-sheet engine still assumes 11 a side, so this doesn&apos;t change anything on the pitch yet.</div>
+          <div className="mt-1.5 text-[9px] text-white font-semibold">Real, votable data — the match/team-sheet engine still assumes 11 a side, so this doesn&apos;t change anything on the pitch yet.</div>
         </div>
 
         {body === "UEFA" && (
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
             <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">European slots for England</div>
-            <div className="text-[11px] text-white/75 mb-2">
+            <div className="text-[11px] text-white font-semibold mb-2">
               +{rules.extraChampionsLeagueSlots} Champions League · +{rules.extraEuropaLeagueSlots} Europa League
             </div>
             <div className="flex gap-1 mb-1.5">
@@ -259,7 +259,7 @@ export default function RuleBookScreen({
               <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { extraEuropaLeagueSlots: rules.extraEuropaLeagueSlots + 1 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">+1 Europa League</button>
             </div>
             <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5 mt-2">Champions League format</div>
-            <div className="text-[11px] text-white/75 mb-2">{rules.championsLeagueFormat === "groups" ? "Groups of 4, then knockout" : "Single league-table phase"}</div>
+            <div className="text-[11px] text-white font-semibold mb-2">{rules.championsLeagueFormat === "groups" ? "Groups of 4, then knockout" : "Single league-table phase"}</div>
             <button
               disabled={!canPropose}
               onClick={() => run(onProposeChange(body, { championsLeagueFormat: rules.championsLeagueFormat === "groups" ? "league" : "groups" }, bribe))}
@@ -267,13 +267,13 @@ export default function RuleBookScreen({
             >
               Propose: {rules.championsLeagueFormat === "groups" ? "Revert to the league phase" : "Groups of 4, then knockout"}
             </button>
-            <div className="mt-1.5 text-[9px] text-white/55">Real, votable data — the actual Champions League simulation still runs the current format regardless.</div>
+            <div className="mt-1.5 text-[9px] text-white font-semibold">Real, votable data — the actual Champions League simulation still runs the current format regardless.</div>
           </div>
         )}
 
         <div className="bg-red-950/40 border border-red-800 rounded-xl p-3 mt-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-red-300 mb-1.5">Force a club into the Premier League</div>
-          <div className="text-[11px] text-white/75 mb-2">
+          <div className="text-[11px] text-white font-semibold mb-2">
             Needs {RULE_OVERRULE_INFLUENCE_THRESHOLD}+ FA influence — the same bar as overruling a vote outright.
           </div>
           <div className="flex items-center gap-2">
@@ -309,7 +309,7 @@ export default function RuleBookScreen({
           )}
         </div>
 
-        <div className="mt-3 text-[9px] text-center text-white/55">
+        <div className="mt-3 text-[9px] text-center text-white font-semibold">
           Only the FA&apos;s rule book actually reaches your own league and matches right now — the other bodies are real, but nothing they govern is simulated deeply enough yet to feel it.
         </div>
       </div>

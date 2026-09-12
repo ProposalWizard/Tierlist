@@ -4,6 +4,7 @@ import { poolFor } from "./euro";
 import { seasonQualifiers } from "./competitions";
 import { ruleBookFor } from "./ruleBook";
 import { calendarMonthOf, divisionOf } from "./calendar";
+import { getTuning } from "./tuningStore";
 
 /**
  * THE CASINO'S BOOK — BETTING ON WHO WINS THE ACTUAL COMPETITIONS.
@@ -71,19 +72,12 @@ export interface BetEntrant {
   odds: number;
 }
 
-/** House edge folded into every price — a real bookmaker's book never sums
- *  to even money, and a book that did would make this a fair coin-flip
- *  with extra steps rather than a bet. */
-const OVERROUND = 1.12;
 /** Never a price so short it stops feeling like a bet, however dominant a
  *  favourite the strength gap makes them. */
 const MIN_ODDS = 1.15;
-/** Never so long that a real contender's price implies they can't win at
- *  all — a rating gap is not a promise. */
-const MAX_ODDS = 250;
 
 /**
- * Strength → win-weight, the same shape (and, for the two European
+ * Strength → win-weight, the same SHAPE (and, for the two European
  * competitions, close to the same numbers) `crownEurope`/`crownWithoutYou`
  * already use in euro.ts to decide who actually lifts a trophy you didn't
  * contest — so the price on offer reflects the same model of "how likely is
@@ -92,9 +86,21 @@ const MAX_ODDS = 250;
  * side is a real favourite) than at the bottom (a 55 and a 60 are both
  * miles off winning anything), which is what the exponent buys over a
  * straight linear weighting.
+ *
+ * Reported directly, with real numbers: a genuinely huge gap between the
+ * best and worst squad in the division (this game's own strengths run
+ * roughly 55-90) was barely showing up in the odds — a runaway favourite
+ * priced around 10/1 next to a relegation-bound no-hoper at 35/1, when a
+ * real division with that big a talent gap prices its favourite at 2-4/1
+ * and its rank outsider in the hundreds or thousands (Leicester City's
+ * real 5000/1 title win is the extreme end of exactly this). The exponent
+ * and the overround/cap below are now real, tunable numbers
+ * (`betting.*` in tuning.ts) rather than baked-in constants, precisely so
+ * this can be recalibrated again without another code change if it still
+ * reads wrong.
  */
 function winWeight(strength: number): number {
-  return Math.pow(Math.max(1, strength - 55), 2.1);
+  return Math.pow(Math.max(1, strength - getTuning("betting.strengthBaseline")), getTuning("betting.strengthExponent"));
 }
 
 /**
@@ -105,6 +111,8 @@ function winWeight(strength: number): number {
  * number of contenders.
  */
 export function oddsFor(entrants: { name: string; strength: number }[]): BetEntrant[] {
+  const maxOdds = getTuning("betting.maxOdds");
+  const overround = getTuning("betting.overround");
   const byName = new Map<string, number>();
   for (const e of entrants) {
     const prev = byName.get(e.name);
@@ -115,9 +123,9 @@ export function oddsFor(entrants: { name: string; strength: number }[]): BetEntr
   return weights
     .map(w => {
       const prob = w.weight / total;
-      const fair = prob > 0 ? 1 / prob : MAX_ODDS;
-      const priced = fair / OVERROUND;
-      return { name: w.name, odds: Math.max(MIN_ODDS, Math.min(MAX_ODDS, Math.round(priced * 10) / 10)) };
+      const fair = prob > 0 ? 1 / prob : maxOdds;
+      const priced = fair / overround;
+      return { name: w.name, odds: Math.max(MIN_ODDS, Math.min(maxOdds, Math.round(priced * 10) / 10)) };
     })
     .sort((a, b) => a.odds - b.odds);
 }

@@ -390,6 +390,25 @@ const ASSIST_WEIGHT: Record<Pos, number> = {
   LW: 18, RW: 18, CAM: 16, CM: 12, ST: 10, LB: 7, RB: 7, CDM: 4, CB: 2, GK: 0.3,
 };
 
+/**
+ * A bench player weighs far less than a starter, not the same. `buildLeagueSquad`
+ * fills `players` in `POSITION_ORDER`, so index 0-10 are the actual starting XI
+ * (same convention `averageStartingXIRating` already uses) and everything from
+ * 11 on is the bench — reserves who play a fraction of a real season's minutes,
+ * not a ~45% share of it.
+ *
+ * Reported directly, with a real match-week count: roughly 16 of that week's
+ * goalscorers across the division weren't in the starting lineups the user had
+ * built at all. Before this, `weightedPick` only weighted by position+rating —
+ * a bench player at the same position and a similar rating to a starter scored
+ * almost as often as the starter himself, and since a squad has more bench
+ * slots than starting ones at most positions, most goals landed on non-starters
+ * purely by the numbers, with no actual bug in who could start. This discount
+ * doesn't remove bench goals entirely (a sub really can come off the bench and
+ * score) — it makes them the minority they are in a real match week.
+ */
+const BENCH_WEIGHT = 0.22;
+
 function weightedPick(
   players: LeaguePlayer[],
   weights: Record<Pos, number>,
@@ -398,11 +417,13 @@ function weightedPick(
 ): LeaguePlayer | null {
   let total = 0;
   const w: number[] = [];
-  for (const p of players) {
+  for (let i = 0; i < players.length; i++) {
+    const p = players[i];
     // Rating tilts it, but never to the point where only the best man scores:
     // a 70 is worth about half a 90, not a twentieth.
     const q = 0.55 + (Math.max(40, Math.min(99, p.overall)) - 40) / 59 * 0.9;
-    const x = p.id === exclude ? 0 : (weights[p.position] ?? 1) * q;
+    const bench = i >= 11 ? BENCH_WEIGHT : 1;
+    const x = p.id === exclude ? 0 : (weights[p.position] ?? 1) * q * bench;
     w.push(x); total += x;
   }
   if (total <= 0) return null;

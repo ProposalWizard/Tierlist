@@ -2,6 +2,7 @@ import { oddsFor, settleBets, betNewsLines, canPlaceCompetitionBet, type Competi
 import { makeInitialCareer, type SeasonWinners } from "../../lib/star/careerFlow";
 import { calendarMonthOf } from "../../lib/star/calendar";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { getTuning } from "../../lib/star/tuningStore";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -36,7 +37,8 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(by.get("Everton")! < by.get("Luton")!, "…to the weakest side having the longest odds");
 
   check(by.get("Man City")! >= 1.15, `even a huge favourite is never a sure thing (${by.get("Man City")})`);
-  check(by.get("Luton")! <= 250, `even a huge underdog is never priced as impossible (${by.get("Luton")})`);
+  check(by.get("Luton")! <= getTuning("betting.maxOdds"), `even a huge underdog is never priced past the real, tuned longest price (${by.get("Luton")})`);
+  check(by.get("Luton")! > 50, `…but a genuinely huge talent gap now reads as a genuinely long shot, not a merely-unlikely one (${by.get("Luton")})`);
   check(book.every(b => b.odds > 1), "every price is worse than even money against the field (odds > 1)");
 
   // The book should imply a bookmaker's overround, not a fair coin: summed

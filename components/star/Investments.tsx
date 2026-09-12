@@ -97,7 +97,7 @@ export default function Investments(props: Props) {
               key={t}
               onClick={() => { setTab(t); setBoardroomClub(null); }}
               className={`py-2 rounded-lg font-black text-[11px] uppercase transition ${
-                tab === t ? "bg-emerald-600" : "bg-gray-700 text-white/70"
+                tab === t ? "bg-emerald-600" : "bg-gray-700 text-white font-semibold"
               }`}
             >
               {t === "boardroom" ? `Boardroom${majorityClubs.length ? ` (${majorityClubs.length})` : ""}` : t}
@@ -187,7 +187,7 @@ function Market({
                   <div className="font-black text-yellow-300 text-sm tabular-nums flex items-center gap-1 justify-end">
                     <StarIcon />{money(valuation)}
                   </div>
-                  <div className="text-[9px] text-white/50">full value</div>
+                  <div className="text-[9px] text-white font-semibold">full value</div>
                 </div>
               </button>
               {isOpen && (
@@ -200,7 +200,7 @@ function Market({
           );
         })}
         {clubs.length === 0 && (
-          <div className="px-3 py-6 text-center text-xs text-white/50">No clubs match &ldquo;{search}&rdquo;.</div>
+          <div className="px-3 py-6 text-center text-xs text-white font-semibold">No clubs match &ldquo;{search}&rdquo;.</div>
         )}
       </div>
     </>
@@ -246,7 +246,7 @@ function StakeControls({
   return (
     <div className="bg-gray-900/60 px-3 py-3 space-y-3">
       {stake && (
-        <div className="text-[11px] text-white/70">
+        <div className="text-[11px] text-white font-semibold">
           You own <span className="text-white font-bold">{stakePct.toFixed(stakePct < 1 ? 3 : 1)}%</span>, bought in at{" "}
           <span className="text-white font-bold">★{money(stake.avgBuyValuation)}</span> full value —
           {" "}
@@ -258,7 +258,7 @@ function StakeControls({
 
       {/* ── Buy, by amount ── */}
       <div>
-        <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white/50">Buy</div>
+        <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Buy</div>
         <div className="flex items-center gap-2">
           <span className="text-yellow-300 font-black text-sm">★</span>
           <input
@@ -267,7 +267,7 @@ function StakeControls({
             onChange={e => setBuyAmount(Math.max(0, Math.min(maxBuySpend, Math.round(Number(e.target.value) || 0))))}
             className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-2 py-1.5 text-sm text-white tabular-nums"
           />
-          <span className="w-16 text-right text-xs font-black text-white/70 tabular-nums">
+          <span className="w-16 text-right text-xs font-black text-white font-semibold tabular-nums">
             = {buyPct.toFixed(buyPct < 1 ? 3 : 1)}%
           </span>
         </div>
@@ -297,7 +297,7 @@ function StakeControls({
           Buy ★{money(clampedBuy)} ({buyPct.toFixed(buyPct < 1 ? 3 : 1)}%)
         </button>
         {maxBuySpend < Math.round(valuation) && (
-          <div className="mt-1 text-[9px] text-center text-white/40">
+          <div className="mt-1 text-[9px] text-center text-white font-semibold">
             Most you can afford: ★{money(maxBuySpend)} ({((maxBuySpend / valuation) * 100).toFixed(2)}%)
           </div>
         )}
@@ -306,7 +306,7 @@ function StakeControls({
       {/* ── Sell, by share of what you own ── */}
       {stakePct > 0 && (
         <div>
-          <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white/50">Sell</div>
+          <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Sell</div>
           <div className="grid grid-cols-4 gap-1">
             {[0.25, 0.5, 0.75, 1].map(f => (
               <button
@@ -329,7 +329,7 @@ function StakeControls({
         </div>
       )}
 
-      <div className="text-[9px] text-center text-white/40">Club: {club}</div>
+      <div className="text-[9px] text-center text-white font-semibold">Club: {club}</div>
     </div>
   );
 }
@@ -353,7 +353,7 @@ function Portfolio({
 
   if (owned.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-8 text-center text-sm text-white/60">
+      <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-8 text-center text-sm text-white/90">
         No stakes yet — buy into a club from the Market tab.
       </div>
     );
@@ -379,7 +379,7 @@ function Portfolio({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-bold text-white text-sm">{i.club}</div>
-                  <div className="text-[10px] text-white/60">
+                  <div className="text-[10px] text-white/90">
                     {i.percent.toFixed(i.percent < 1 ? 3 : 1)}%
                     {i.percent >= MAJORITY_THRESHOLD && <span className="ml-1 text-emerald-300 font-black">MAJORITY</span>}
                   </div>
@@ -463,7 +463,7 @@ function Portfolio({
             <div key={r.id} className="px-3 py-1.5 border-b border-black/10 last:border-b-0 flex items-center justify-between gap-2">
               <div className="text-[10px] text-white/80 truncate">{r.club}: {r.detail}</div>
               <span className={`text-[9px] font-black uppercase shrink-0 ${
-                r.status === "adopted" ? "text-emerald-300" : r.status === "dismissed" ? "text-white/40" : "text-yellow-300"
+                r.status === "adopted" ? "text-emerald-300" : r.status === "dismissed" ? "text-white font-semibold" : "text-yellow-300"
               }`}>{r.status}</span>
             </div>
           ))}
@@ -478,7 +478,7 @@ function Portfolio({
 function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: CareerState; onOpen: (c: string) => void }) {
   if (clubs.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-8 text-center text-sm text-white/60">
+      <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-8 text-center text-sm text-white/90">
         Own {MAJORITY_THRESHOLD}% or more of a club to take a seat on its board.
       </div>
     );
@@ -493,9 +493,9 @@ function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: Car
         >
           <div>
             <div className="font-black text-white text-sm">{club}</div>
-            <div className="text-[10px] text-white/60">Budget: ★{money(ownedClubState(career, club).budget)}</div>
+            <div className="text-[10px] text-white/90">Budget: ★{money(ownedClubState(career, club).budget)}</div>
           </div>
-          <span className="text-white/40">→</span>
+          <span className="text-white font-semibold">→</span>
         </button>
       ))}
     </div>
@@ -552,15 +552,15 @@ function Boardroom({
 
   return (
     <div>
-      <button onClick={onBack} className="mb-2 text-xs font-black text-white/60 hover:text-white">← All boards</button>
+      <button onClick={onBack} className="mb-2 text-xs font-black text-white/90 hover:text-white">← All boards</button>
       <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
         <div className="font-black text-white">{club}</div>
-        <div className="text-[10px] text-white/60">
+        <div className="text-[10px] text-white/90">
           Manager: {state.managerName ?? "Vacant"}
         </div>
         <div className="mt-2 flex items-center gap-2">
           <div className="flex-1 bg-gray-900 rounded-lg px-2 py-1.5 flex items-center justify-between">
-            <span className="text-[10px] font-bold text-white/70">Budget</span>
+            <span className="text-[10px] font-bold text-white font-semibold">Budget</span>
             <span className="font-black text-yellow-300 text-sm">★{money(state.budget)}</span>
           </div>
         </div>
@@ -585,7 +585,7 @@ function Boardroom({
             key={s}
             onClick={() => { setSection(s); setMessage(null); }}
             className={`py-1.5 rounded-lg font-black text-[10px] uppercase transition ${
-              section === s ? "bg-emerald-600" : "bg-gray-700 text-white/70"
+              section === s ? "bg-emerald-600" : "bg-gray-700 text-white font-semibold"
             }`}
           >
             {s === "sign" ? "Sign a player" : s}
@@ -605,7 +605,7 @@ function Boardroom({
             <div key={p.id} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
               <div>
                 <div className="text-sm font-bold text-white">{p.name}</div>
-                <div className="text-[10px] text-white/55">{p.position} · OVR {p.overall}</div>
+                <div className="text-[10px] text-white font-semibold">{p.position} · OVR {p.overall}</div>
               </div>
               <button
                 onClick={() => runAction(onSellPlayer(club, p.id))}
@@ -616,7 +616,7 @@ function Boardroom({
             </div>
           ))}
           {(!squad || squad.players.length === 0) && (
-            <div className="px-3 py-6 text-center text-xs text-white/50">No squad data on file yet.</div>
+            <div className="px-3 py-6 text-center text-xs text-white font-semibold">No squad data on file yet.</div>
           )}
         </div>
       )}
@@ -704,13 +704,13 @@ function PowersPanel({
             Set
           </button>
         </div>
-        <div className="mt-1 text-[9px] text-white/50">Real strength with this shape: {clubStrengthWithFormation(career, club)}</div>
+        <div className="mt-1 text-[9px] text-white font-semibold">Real strength with this shape: {clubStrengthWithFormation(career, club)}</div>
       </div>
 
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Kit</div>
         {kit && (
-          <div className="mb-2 flex items-center gap-2 text-[10px] text-white/70">
+          <div className="mb-2 flex items-center gap-2 text-[10px] text-white font-semibold">
             Current: <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.primary }} />
             <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.secondary }} />
             <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.trim }} />
@@ -718,7 +718,7 @@ function PowersPanel({
         )}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <div className="text-[9px] font-bold text-white/60 mb-1">Design A</div>
+            <div className="text-[9px] font-bold text-white/90 mb-1">Design A</div>
             <div className="flex gap-1">
               {(["primary", "secondary", "trim"] as const).map(k => (
                 <input key={k} type="color" value={kitA[k]} onChange={e => setKitA({ ...kitA, [k]: e.target.value })} className="w-6 h-6 rounded" />
@@ -726,7 +726,7 @@ function PowersPanel({
             </div>
           </div>
           <div>
-            <div className="text-[9px] font-bold text-white/60 mb-1">Design B</div>
+            <div className="text-[9px] font-bold text-white/90 mb-1">Design B</div>
             <div className="flex gap-1">
               {(["primary", "secondary", "trim"] as const).map(k => (
                 <input key={k} type="color" value={kitB[k]} onChange={e => setKitB({ ...kitB, [k]: e.target.value })} className="w-6 h-6 rounded" />
@@ -785,7 +785,7 @@ function PowersPanel({
           </button>
         ) : (
           <div className="space-y-1.5">
-            <div className="text-[10px] text-white/75">
+            <div className="text-[10px] text-white font-semibold">
               {son.name} · Age {son.age} · OVR {son.overall} · {son.club ?? "Not on a team yet"}
             </div>
             <div className="flex gap-1">
@@ -814,7 +814,7 @@ function PowersPanel({
             Rename
           </button>
         </div>
-        <div className="text-[11px] text-white/75 mb-1.5">
+        <div className="text-[11px] text-white font-semibold mb-1.5">
           Capacity {facilities.stadiumCapacity.toLocaleString()} · Training tier {facilities.trainingGroundTier}/3 · Youth tier {facilities.youthAcademyTier}/3
         </div>
         <div className="flex gap-1">
@@ -836,7 +836,7 @@ function PowersPanel({
             Upgrade academy
           </button>
         </div>
-        <div className="mt-1.5 text-[9px] text-white/55">A bigger stadium earns this club real gate-receipt revenue every season.</div>
+        <div className="mt-1.5 text-[9px] text-white font-semibold">A bigger stadium earns this club real gate-receipt revenue every season.</div>
       </div>
     </div>
   );
@@ -866,7 +866,7 @@ function SignPlayerPanel({
           <div key={`${p.fromClub}:${p.id}`} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
             <div>
               <div className="text-sm font-bold text-white">{p.name}</div>
-              <div className="text-[10px] text-white/55">
+              <div className="text-[10px] text-white font-semibold">
                 {p.position} · OVR {p.overall} · {p.fromClub === FREE_AGENTS_CLUB ? "Free agent" : p.fromClub}
               </div>
             </div>
@@ -878,7 +878,7 @@ function SignPlayerPanel({
             </button>
           </div>
         ))}
-        {pool.length === 0 && <div className="px-3 py-6 text-center text-xs text-white/50">No players match.</div>}
+        {pool.length === 0 && <div className="px-3 py-6 text-center text-xs text-white font-semibold">No players match.</div>}
       </div>
     </>
   );

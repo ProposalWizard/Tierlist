@@ -81,7 +81,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
                   )}
                 </div>
                 {!sp.active && (
-                  <div className="mt-1 text-[10px] text-white/60">{sponsorRequirementText(sp.category)}</div>
+                  <div className="mt-1 text-[10px] font-semibold text-white/90">{sponsorRequirementText(sp.category)}</div>
                 )}
                 <ObjectiveRow deal={sp} />
               </div>
@@ -303,7 +303,7 @@ function ReputationRow({ label, value, icon, blurb }: { label: string; value: nu
           </div>
         </div>
       </div>
-      <div className="mt-1 ml-11 text-[9px] text-white/55">{blurb}</div>
+      <div className="mt-1 ml-11 text-[9px] font-semibold text-white/90">{blurb}</div>
     </div>
   );
 }
@@ -327,7 +327,7 @@ export function ReputationScreen({ career, onBack }: { career: CareerState; onBa
           <ReputationRow label="Shareholders" value={rep.shareholders} icon="🤝" blurb="Standing with the shareholders of clubs you own a stake in — moves when you hold a real shareholder vote, and costs you if you overrule one." />
         </div>
 
-        <div className="mt-3 text-[9px] text-center text-white/55">
+        <div className="mt-3 text-[9px] font-semibold text-center text-white/90">
           Reputation is still being built out — right now it's a real, moving record of your standing, not yet the input to any vote.
         </div>
       </div>

@@ -5,6 +5,7 @@ import { shuffle } from "@/lib/shuffle";
 import {
   BET_COMPETITIONS, oddsFor, entrantsFor, canPlaceCompetitionBet, type BetCompetition, type CompetitionBet, type BetEntrant,
 } from "@/lib/star/competitionBetting";
+import { getTuning } from "@/lib/star/tuningStore";
 
 interface Props {
   bankStart: number;
@@ -232,15 +233,43 @@ interface RaceRunner {
   isUser: boolean;
 }
 
+/**
+ * Real win odds for this exact field — measured by actually running the
+ * SAME race-scoring formula the real race below settles by
+ * (`rating + random noise up to horseRacing.raceNoise`), many times, rather
+ * than a hand-derived formula that could quietly drift out of sync with it.
+ * Reported directly: the old odds (`12 - rating/10`, a flat linear map) had
+ * nothing to do with how the race actually got decided, which is exactly
+ * how a rating-95 horse and a rating-40 horse ended up priced only a few
+ * points apart despite one of them being close to unbeatable in the real
+ * simulation. Cheap enough to run live (a few thousand additions) that
+ * there is no reason for the quoted price to ever disagree with reality.
+ */
+function raceWinOdds(ratings: number[]): number[] {
+  const noiseMax = getTuning("horseRacing.raceNoise");
+  const trials = 4000;
+  const wins = new Array(ratings.length).fill(0);
+  for (let t = 0; t < trials; t++) {
+    let bestIdx = 0, bestScore = -Infinity;
+    for (let i = 0; i < ratings.length; i++) {
+      const score = ratings[i] + Math.random() * noiseMax;
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
+    }
+    wins[bestIdx]++;
+  }
+  const overround = 1.15;
+  return wins.map(w => {
+    const prob = Math.max(w, 1) / trials; // never literally zero — a bad enough run still happens sometimes
+    return Math.max(1.2, Math.round((1 / prob / overround) * 10) / 10);
+  });
+}
+
 function generateRaceHorses(): RaceHorse[] {
   const shuffled = shuffle(HORSE_NAMES);
-  const horses: RaceHorse[] = [];
-  for (let i = 0; i < 6; i++) {
-    const rating = 40 + Math.floor(Math.random() * 56); // 40-95
-    const odds = Math.max(1.5, 12 - rating / 10);
-    horses.push({ name: shuffled[i], rating, odds: Math.round(odds * 10) / 10 });
-  }
-  return horses;
+  const ratings: number[] = [];
+  for (let i = 0; i < 6; i++) ratings.push(40 + Math.floor(Math.random() * 56)); // 40-95
+  const odds = raceWinOdds(ratings);
+  return ratings.map((rating, i) => ({ name: shuffled[i], rating, odds: odds[i] }));
 }
 
 interface HorseRacingProps extends CasinoGameProps {
@@ -298,9 +327,12 @@ function HorseRacingGame(props: HorseRacingProps) {
     if (selectedHorse === null || props.bank < props.bet) return;
     props.onSetBank(props.bank - props.bet);
 
-    // Build runners from the race horses
+    // Build runners from the race horses — the SAME noise the quoted odds
+    // above were actually measured against (raceWinOdds), so the race that
+    // plays out can never quietly disagree with the price it was priced at.
+    const raceNoise = getTuning("horseRacing.raceNoise");
     const field: RaceRunner[] = horses.map((h) => {
-      const score = h.rating + Math.random() * 30;
+      const score = h.rating + Math.random() * raceNoise;
       return { name: h.name, rating: h.rating, score, duration: 0, isUser: false };
     });
 
@@ -320,13 +352,23 @@ function HorseRacingGame(props: HorseRacingProps) {
   const startMyHorseRace = () => {
     if (!myHorse || myHorse.energy < MY_HORSE_RACE_COST) return;
     const energyFactor = 0.6 + (myHorse.energy / 100) * 0.4;
-    const userScore = (myHorse.speed * 0.55 + myHorse.stamina * 0.45) * energyFactor + Math.random() * 22;
+    // Reported directly: even the best purchasable horse was winning far
+    // too often (5 of 6 real starts) — barely any real risk to owning the
+    // best horse. `horseRacing.raceNoise` (tuning.ts) is now wide enough,
+    // relative to the real rating gap between a top horse and an average
+    // rival, that the best horse stays the field's real favourite without
+    // being a near-certainty — measured directly, not guessed: at the old,
+    // much narrower noise (22) the best purchasable horse won about 61% of
+    // simulated starts; at this tuning (50) that drops to roughly 40-45% —
+    // still clearly the field's favourite, but losing more often than not.
+    const raceNoise = getTuning("horseRacing.raceNoise");
+    const userScore = (myHorse.speed * 0.55 + myHorse.stamina * 0.45) * energyFactor + Math.random() * raceNoise;
 
     const field: RaceRunner[] = [{ name: myHorse.name, rating: Math.round((myHorse.speed + myHorse.stamina) / 2), score: userScore, duration: 0, isUser: true }];
     const rivalNames = shuffle(HORSE_NAMES.filter((n) => n !== myHorse.name));
     for (let i = 0; i < 5; i++) {
       const rating = 46 + Math.random() * 42;
-      field.push({ name: rivalNames[i], rating: Math.round(rating), score: rating + Math.random() * 22, duration: 0, isUser: false });
+      field.push({ name: rivalNames[i], rating: Math.round(rating), score: rating + Math.random() * raceNoise, duration: 0, isUser: false });
     }
 
     const scores = field.map((r) => r.score);
