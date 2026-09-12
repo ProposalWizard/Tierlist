@@ -10,6 +10,8 @@ import { allPoolManagers } from "@/lib/star/managerPool";
 import { FORMATIONS } from "@/lib/star/formations";
 import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
 import { facilitiesFor } from "@/lib/star/facilities";
+import { playerMarketValue } from "@/lib/star/marketValue";
+import NegotiationScreen from "./NegotiationScreen";
 
 /**
  * INVESTMENTS — BUY A STAKE, AND, PAST 50.1%, RUN THE BOARDROOM.
@@ -31,11 +33,17 @@ interface ActionResult {
 interface Props {
   career: CareerState;
   onBack: () => void;
+  /** Deep-link straight into a tab (and, for "boardroom", a specific club)
+   *  instead of always opening on Market — lets OwnershipScreen's hub jump a
+   *  club card straight to that club's boardroom rather than making the
+   *  player re-navigate through tabs they just came from. */
+  initialTab?: "market" | "portfolio" | "boardroom";
+  initialBoardroomClub?: string;
   onBuyStake: (club: string, percent: number) => void;
   onSellStake: (club: string, percent: number) => void;
   onTopUpBudget: (club: string, amount: number) => void;
-  onSignPlayer: (club: string, playerId: string, fromClub: string) => ActionResult;
-  onSellPlayer: (club: string, playerId: string) => ActionResult;
+  onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
+  onSellPlayer: (club: string, playerId: string, agreedFee?: number) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
   /** Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer. */
   onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
@@ -72,10 +80,10 @@ function money(n: number): string {
 
 export default function Investments(props: Props) {
   const { career } = props;
-  const [tab, setTab] = useState<"market" | "portfolio" | "boardroom">("market");
+  const [tab, setTab] = useState<"market" | "portfolio" | "boardroom">(props.initialTab ?? "market");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [boardroomClub, setBoardroomClub] = useState<string | null>(null);
+  const [boardroomClub, setBoardroomClub] = useState<string | null>(props.initialBoardroomClub ?? null);
 
   const owned = (career.investments ?? []).filter(i => i.percent > 0);
   const majorityClubs = owned.filter(i => isMajorityOwner(career, i.club));
@@ -228,15 +236,20 @@ function StakeControls({
   stake?: { percent: number; avgBuyValuation: number };
   onBuy: (percent: number) => void; onSell: (percent: number) => void;
 }) {
-  // What buying 100% of this club would cost you, capped by what's actually
-  // in the bank — the hard ceiling the old slider never had.
-  const maxBuySpend = Math.max(0, Math.min(bank, Math.round(valuation)));
+  // What buying up to 100% TOTAL would cost you, capped by what's actually
+  // in the bank and by whatever room is left above what you already own —
+  // reported directly, from a real save: buying 100% and still being
+  // offered more let one club end up 200%-owned. `buyStake` itself now
+  // clamps too (the real backstop), but the control shouldn't dangle a
+  // bigger purchase than is actually possible in the first place.
+  const stakePct = stake?.percent ?? 0;
+  const roomPct = Math.max(0, 100 - stakePct);
+  const maxBuySpend = Math.max(0, Math.min(bank, Math.round(valuation * (roomPct / 100))));
   const [buyAmount, setBuyAmount] = useState(() => Math.max(1, Math.min(maxBuySpend, Math.round(valuation * 0.001))));
   const clampedBuy = Math.max(0, Math.min(maxBuySpend, Math.round(buyAmount) || 0));
   const buyPct = valuation > 0 ? (clampedBuy / valuation) * 100 : 0;
   const canAfford = clampedBuy > 0 && clampedBuy <= bank;
 
-  const stakePct = stake?.percent ?? 0;
   const [sellFraction, setSellFraction] = useState(1); // of your OWN holding
   const sellPct = stakePct * sellFraction;
   const sellAmount = Math.round(valuation * (sellPct / 100));
@@ -520,8 +533,8 @@ function Boardroom({
 }: {
   career: CareerState; club: string; onBack: () => void;
   onTopUpBudget: (club: string, amount: number) => void;
-  onSignPlayer: (club: string, playerId: string, fromClub: string) => ActionResult;
-  onSellPlayer: (club: string, playerId: string) => ActionResult;
+  onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
+  onSellPlayer: (club: string, playerId: string, agreedFee?: number) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
   onSetFormation: (club: string, formationId: string) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
@@ -549,6 +562,32 @@ function Boardroom({
   const runAction = (result: ActionResult) => {
     setMessage(result.ok ? null : (result.reason ?? "That didn't go through."));
   };
+
+  // Negotiating a real fee (negotiation.ts) before either action actually
+  // fires — a free-agent signing has no seller to negotiate with, so that
+  // one path still goes straight through as before.
+  const [negotiating, setNegotiating] = useState<
+    | { kind: "sign"; playerId: string; fromClub: string; playerName: string; marketValue: number }
+    | { kind: "sell"; playerId: string; playerName: string; marketValue: number }
+    | null
+  >(null);
+
+  if (negotiating) {
+    return (
+      <NegotiationScreen
+        mode={negotiating.kind === "sign" ? "buying" : "selling"}
+        playerName={negotiating.playerName}
+        marketValue={negotiating.marketValue}
+        onDone={finalPrice => {
+          const deal = negotiating;
+          setNegotiating(null);
+          if (finalPrice === null) { setMessage("Talks broke down — no deal was made."); return; }
+          if (deal.kind === "sign") runAction(onSignPlayer(club, deal.playerId, deal.fromClub, finalPrice));
+          else runAction(onSellPlayer(club, deal.playerId, finalPrice));
+        }}
+      />
+    );
+  }
 
   return (
     <div>
@@ -608,7 +647,7 @@ function Boardroom({
                 <div className="text-[10px] text-white font-semibold">{p.position} · OVR {p.overall}</div>
               </div>
               <button
-                onClick={() => runAction(onSellPlayer(club, p.id))}
+                onClick={() => setNegotiating({ kind: "sell", playerId: p.id, playerName: p.name, marketValue: playerMarketValue(p, club, career) })}
                 className="px-2.5 py-1 rounded-md bg-red-600/80 hover:bg-red-500 text-[10px] font-black"
               >
                 Sell
@@ -622,7 +661,13 @@ function Boardroom({
       )}
 
       {section === "sign" && (
-        <SignPlayerPanel career={career} club={club} onSignPlayer={(c, p, f) => runAction(onSignPlayer(c, p, f))} />
+        <SignPlayerPanel
+          career={career} club={club}
+          onSignFreeAgent={(c, p, f) => runAction(onSignPlayer(c, p, f))}
+          onNegotiateSigning={(playerId, fromClub, playerName, marketValue) =>
+            setNegotiating({ kind: "sign", playerId, fromClub, playerName, marketValue })
+          }
+        />
       )}
 
       {section === "manager" && (
@@ -843,8 +888,12 @@ function PowersPanel({
 }
 
 function SignPlayerPanel({
-  career, club, onSignPlayer,
-}: { career: CareerState; club: string; onSignPlayer: (club: string, playerId: string, fromClub: string) => void }) {
+  career, club, onSignFreeAgent, onNegotiateSigning,
+}: {
+  career: CareerState; club: string;
+  onSignFreeAgent: (club: string, playerId: string, fromClub: string) => void;
+  onNegotiateSigning: (playerId: string, fromClub: string, playerName: string, marketValue: number) => void;
+}) {
   const [search, setSearch] = useState("");
   const freeAgents = (career.freeAgents ?? []).map(p => ({ ...p, fromClub: FREE_AGENTS_CLUB }));
   const others = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
@@ -871,10 +920,12 @@ function SignPlayerPanel({
               </div>
             </div>
             <button
-              onClick={() => onSignPlayer(club, p.id, p.fromClub)}
+              onClick={() => p.fromClub === FREE_AGENTS_CLUB
+                ? onSignFreeAgent(club, p.id, p.fromClub)
+                : onNegotiateSigning(p.id, p.fromClub, p.name, playerMarketValue(p, p.fromClub, career))}
               className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-[10px] font-black text-emerald-950"
             >
-              Sign
+              {p.fromClub === FREE_AGENTS_CLUB ? "Sign" : "Negotiate"}
             </button>
           </div>
         ))}

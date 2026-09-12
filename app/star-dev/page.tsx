@@ -81,6 +81,7 @@ const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
 import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
 import Investments from "@/components/star/Investments";
+import OwnershipScreen from "@/components/star/OwnershipScreen";
 import {
   buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
   proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, type SellPlayerVoteProposal,
@@ -119,6 +120,12 @@ export default function StarDevPage() {
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
   const [contractOfferReason, setContractOfferReason] = useState<"form" | "star" | null>(null);
+  /** Set right before jumping to "investments" from the Ownership hub, so a
+   *  club card can open straight into that club's boardroom instead of
+   *  making the player re-navigate through tabs they just came from. Reset
+   *  once read so re-opening Invest from its own home button still starts
+   *  on Market like it always has. */
+  const [investmentsEntry, setInvestmentsEntry] = useState<{ tab: "market" | "portfolio" | "boardroom"; club?: string } | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   /** A star rating that just moved — see toastRatingChange. Cleared the same
    *  flat-timeout way the achievement toast above already is. */
@@ -1111,6 +1118,11 @@ export default function StarDevPage() {
     setPhase("dashboard");
   }, [career]);
 
+  const handleAddMoney = useCallback((amount: number) => {
+    if (!career || amount <= 0) return;
+    setCareer({ ...career, money: career.money + amount });
+  }, [career]);
+
   const handleFullReset = () => {
     if (career?.retired || confirm("Delete this career and start over?")) {
       clearCareer(scopeRef.current);
@@ -1220,9 +1232,9 @@ export default function StarDevPage() {
     if (!career) return;
     setCareer(topUpClubBudget(career, club, amount));
   }, [career]);
-  const handleSignPlayerForOwnedClub = useCallback((club: string, playerId: string, fromClub: string) => {
+  const handleSignPlayerForOwnedClub = useCallback((club: string, playerId: string, fromClub: string, agreedFee?: number) => {
     if (!career) return { ok: false, reason: "No active career" };
-    const result = signPlayerForOwnedClub(career, club, playerId, fromClub);
+    const result = signPlayerForOwnedClub(career, club, playerId, fromClub, agreedFee);
     if (result.ok) setCareer(result.career);
     return { ok: result.ok, reason: result.reason };
   }, [career]);
@@ -1230,10 +1242,10 @@ export default function StarDevPage() {
   // from an owned club no longer acts instantly — it's put to a real
   // shareholder vote (voting.ts/investments.ts's proposeSellPlayerVote),
   // and the ceremony screen (below) decides what actually happens.
-  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string) => {
+  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string, agreedFee?: number) => {
     if (!career) return { ok: false, reason: "No active career" };
     const rng = mulberry32(career.season * 91721 + career.week * 131 + playerId.length);
-    const result = proposeSellPlayerVote(career, club, playerId, rng);
+    const result = proposeSellPlayerVote(career, club, playerId, rng, agreedFee);
     if (!result.ok) return { ok: false, reason: result.reason };
     setPendingVote({ kind: "sellPlayer", proposal: result.proposal });
     setPhase("vote-ceremony");
@@ -1825,7 +1837,9 @@ export default function StarDevPage() {
     return (
       <Investments
         career={career}
-        onBack={handleBackToDashboard}
+        initialTab={investmentsEntry?.tab}
+        initialBoardroomClub={investmentsEntry?.club}
+        onBack={() => { setInvestmentsEntry(null); handleBackToDashboard(); }}
         onBuyStake={handleBuyStake}
         onSellStake={handleSellStake}
         onTopUpBudget={handleTopUpClubBudget}
@@ -1855,6 +1869,19 @@ export default function StarDevPage() {
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
   if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToDashboard} />;
+
+  if (phase === "ownership") {
+    return (
+      <OwnershipScreen
+        career={career}
+        onBack={handleBackToDashboard}
+        onReputation={() => setPhase("reputation")}
+        onRuleBook={() => setPhase("rule-book")}
+        onOpenMarket={() => { setInvestmentsEntry({ tab: "market" }); setPhase("investments"); }}
+        onOpenBoardroom={club => { setInvestmentsEntry({ tab: "boardroom", club }); setPhase("investments"); }}
+      />
+    );
+  }
 
   if (phase === "rule-book") {
     return (
@@ -1891,6 +1918,7 @@ export default function StarDevPage() {
         career={career}
         onBack={handleBackToDashboard}
         onSkip={handleDevSkip}
+        onAddMoney={handleAddMoney}
         onNewCareer={handleFullReset}
         onSetPortrait={handleSetPortrait}
         onWatchReplay={handleWatchReplay}
@@ -2209,11 +2237,7 @@ export default function StarDevPage() {
             <QuickBtn label="Sponsors" icon="🤝" onClick={() => setPhase("sponsors")} />
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
-            <QuickBtn label="Invest" icon="📈" onClick={() => setPhase("investments")} />
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <QuickBtn label="Reputation" icon="🌍" onClick={() => setPhase("reputation")} />
-            <QuickBtn label="Rule Book" icon="⚖️" onClick={() => setPhase("rule-book")} />
+            <QuickBtn label="Ownership" icon="🏛️" onClick={() => setPhase("ownership")} />
           </div>
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>

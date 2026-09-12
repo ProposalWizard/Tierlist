@@ -1,6 +1,7 @@
 "use client";
 import { offeredPositions, POSITION_NAMES, formationForClub } from "@/lib/star/teamsheet";
-import type { Role } from "@/lib/star/formations";
+import { formationOf, type Role } from "@/lib/star/formations";
+import { loadLineup } from "@/lib/star/lineupStore";
 
 /**
  * ASK TO PLAY SOMEWHERE ELSE, BEFORE MATCH WEEK.
@@ -27,7 +28,18 @@ interface Props {
 }
 
 export default function PositionPicker({ club, realPosition, playAs, onChange, embedded = false }: Props) {
-  const alternates = offeredPositions(realPosition, formationForClub(club));
+  // Reported directly: the alternate positions offered here (Striker, CAM,
+  // LW, RW) didn't match the club's ACTUAL formation, which had none of
+  // those slots but Striker — because this read a generic hash-of-the-
+  // club's-name guess (formationForClub) instead of the real saved lineup's
+  // formation, the exact same one `teamsheet.ts`'s own `build()` already
+  // falls back to `formationForClub` FROM only when there's no saved lineup
+  // at all (`saved?.formation ?? formationForClub(club)`). This now reads
+  // the same real source of truth, so the positions offered are always ones
+  // the actual team sheet can put you in.
+  const savedFormation = loadLineup(club)?.formation;
+  const formation = savedFormation ? formationOf(savedFormation) : formationForClub(club);
+  const alternates = offeredPositions(realPosition, formation);
   if (!alternates.length) return null;
 
   const realName = POSITION_NAMES[realPosition as Role] ?? realPosition;

@@ -2,6 +2,7 @@
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import DevSkipPanel from "./DevSkipPanel";
+import DevMoneyPanel from "./DevMoneyPanel";
 import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 
@@ -9,6 +10,7 @@ interface Props {
   career: CareerState;
   onBack: () => void;
   onSkip: (target: SkipTarget) => void;
+  onAddMoney: (amount: number) => void;
   onNewCareer: () => void;
   onSetPortrait: (portrait: string | undefined) => void;
   onWatchReplay: (replay: GoalReplay) => void;
@@ -17,7 +19,7 @@ interface Props {
 }
 
 export default function SettingsScreen({
-  career, onBack, onSkip, onNewCareer, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
+  career, onBack, onSkip, onAddMoney, onNewCareer, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
 }: Props) {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -46,6 +48,8 @@ export default function SettingsScreen({
         </div>
 
         <DevSkipPanel career={career} onSkip={onSkip} />
+
+        <DevMoneyPanel career={career} onAddMoney={onAddMoney} />
 
         <GoalReplaysPanel
           career={career}

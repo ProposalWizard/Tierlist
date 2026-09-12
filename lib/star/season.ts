@@ -2,6 +2,7 @@ import type { LeagueTeam, Fixture, LeagueFixture, LeagueResult, LeagueSquad } fr
 import { nameGoals, creditNamedGoals, type NamedOppGoal } from "./leagueSquads";
 import { primaryRivalOf } from "./rivalries";
 import { applyResult, DEFAULT_RULE_BOOK, type RuleBook } from "./ruleBook";
+import { getTuning } from "./tuningStore";
 
 // Deterministic PRNG so a career's season sim is reproducible
 export function mulberry32(seed: number): () => number {
@@ -216,16 +217,44 @@ export function playLeagueWeek(
   return { league: updated, results };
 }
 
+/**
+ * Reported directly, after real extended play: team strength barely seemed
+ * to matter here — bad teams doing well, good teams doing badly, "sometimes
+ * big teams get relegated," compared to PL Draft mode's own simulation
+ * (`lib/seasonSimulator.ts`'s `computeExpectedGoals`), which was praised
+ * directly as feeling like a real Premier League season off the same kind
+ * of rating gaps.
+ *
+ * The old formula turned strength into a RATIO (`h/a`), which compresses a
+ * realistic ~25-point "contender vs relegation" gap into barely a 1.4x
+ * expected-goals swing — and the flat home-advantage bonus, run through
+ * that same ratio, was large enough to nearly cancel a 25-point gap for a
+ * strong side playing away. That's a structural reason a big team could
+ * plausibly draw or lose away at a much weaker home side from the math
+ * alone, not bad luck.
+ *
+ * This now uses the exact same LINEAR-DIFFERENCE shape Draft mode already
+ * uses and was praised for (`1.5 + diff * 0.065`, clamped 0.4-3.5) — a
+ * flat rating gap now produces a large, fixed expected-goals spread
+ * regardless of where the two sides sit on the scale (a 25-point gap comes
+ * out to roughly a 7-8x swing, not ~1.4x), and home advantage stays a small
+ * nudge on top of that gap rather than something that can compete with it.
+ */
 export function simulateFixtureScore(
   homeStrength: number,
   awayStrength: number,
   rng: () => number,
 ): { home: number; away: number } {
-  const h = homeStrength + 3;   // the same home advantage the rest of the league gets
-  const a = awayStrength;
+  const homeAdv = getTuning("leagueSim.homeAdvantage");
+  const slope = getTuning("leagueSim.strengthSlope");
+  const base = getTuning("leagueSim.baseXg");
+  const min = getTuning("leagueSim.minXg");
+  const max = getTuning("leagueSim.maxXg");
+  const diffHome = (homeStrength + homeAdv) - awayStrength;
+  const diffAway = awayStrength - (homeStrength + homeAdv);
   return {
-    home: poisson(Math.max(0.3, (h / a) * 1.4), rng),
-    away: poisson(Math.max(0.2, (a / h) * 1.1), rng),
+    home: poisson(Math.max(min, Math.min(max, base + diffHome * slope)), rng),
+    away: poisson(Math.max(min, Math.min(max, base + diffAway * slope)), rng),
   };
 }
 
