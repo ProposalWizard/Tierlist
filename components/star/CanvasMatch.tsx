@@ -3047,7 +3047,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const decision = hookCheck({
         minute: st.minute,
         startMinute: startMinuteRef.current,
-        liveRating: liveRating(t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
+        liveRating: liveRating(attemptsRef.current, t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
         scoreDiff: st.userScore - st.oppScore,
         rng,
         liveEnergy: liveEnergyAt(st.minute),
@@ -3587,7 +3587,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
-            {statCell("Avg Rat", liveRating(stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp).toFixed(1), "text-sky-300")}
+            {statCell("Avg Rat", liveRating(stats.chances, stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp).toFixed(1), "text-sky-300")}
           </div>
           <button
             onClick={toggleMuted}

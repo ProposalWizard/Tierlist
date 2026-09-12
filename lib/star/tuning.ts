@@ -661,6 +661,45 @@ export const TUNABLES: TunableDef[] = [
     default: 6, min: 2, max: 12, step: 1,
   },
 
+  // ── Match Rating ─────────────────────────────────────────────────────
+  {
+    key: "rating.wastePenaltyPerChance", category: "Match Rating", label: "Rating penalty per wasted chance",
+    description: "Reported directly, from a real deliberate test: kicking the ball out on purpose at every single chance still rated around a 6.4, because nothing measured waste at all. This is how much rating is lost per chance that produced neither a goal nor an assist.",
+    default: 0.35, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "rating.maxWastePenalty", category: "Match Rating", label: "Maximum rating penalty from wasted chances",
+    description: "A cap on how far wasted chances alone can drag a rating down — genuinely terrible finishing should read as a genuinely bad mark, not an impossible one.",
+    default: 4, min: 1, max: 8, step: 0.5,
+  },
+
+  // ── League Simulation ────────────────────────────────────────────────
+  {
+    key: "leagueSim.baseXg", category: "League Simulation", label: "Base expected goals",
+    description: "Expected goals for two perfectly even sides, before the rating gap or home advantage are applied — the same base Draft mode's own (praised) simulation uses.",
+    default: 1.5, min: 0.5, max: 3, step: 0.1,
+  },
+  {
+    key: "leagueSim.strengthSlope", category: "League Simulation", label: "Strength gap — expected-goals slope",
+    description: "Reported directly: the old ratio-based formula let team quality barely matter (a real 25-point gap only swung expected goals ~1.4x, so big teams could plausibly get relegated). This is how much expected goals move per point of rating gap — matches Draft mode's own value, which was praised for feeling like a real season.",
+    default: 0.065, min: 0.01, max: 0.2, step: 0.005,
+  },
+  {
+    key: "leagueSim.homeAdvantage", category: "League Simulation", label: "Home advantage (rating points)",
+    description: "A flat rating bonus for playing at home, folded into the strength gap above — kept small on purpose so it nudges a result rather than competing with a real quality gap.",
+    default: 3, min: 0, max: 10, step: 1,
+  },
+  {
+    key: "leagueSim.minXg", category: "League Simulation", label: "Minimum expected goals",
+    description: "Even the most outclassed side isn't expected to score literally zero — a real floor on expected goals.",
+    default: 0.4, min: 0.1, max: 1, step: 0.05,
+  },
+  {
+    key: "leagueSim.maxXg", category: "League Simulation", label: "Maximum expected goals",
+    description: "Even the most dominant side has a ceiling on expected goals for one match — keeps blowouts realistic rather than absurd.",
+    default: 3.5, min: 2, max: 6, step: 0.5,
+  },
+
   // ── Negotiation ──────────────────────────────────────────────────────
   {
     key: "negotiation.sellerAnchorMin", category: "Negotiation", label: "Seller's opening ask — minimum over market value",

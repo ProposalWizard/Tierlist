@@ -1118,6 +1118,11 @@ export default function StarDevPage() {
     setPhase("dashboard");
   }, [career]);
 
+  const handleAddMoney = useCallback((amount: number) => {
+    if (!career || amount <= 0) return;
+    setCareer({ ...career, money: career.money + amount });
+  }, [career]);
+
   const handleFullReset = () => {
     if (career?.retired || confirm("Delete this career and start over?")) {
       clearCareer(scopeRef.current);
@@ -1913,6 +1918,7 @@ export default function StarDevPage() {
         career={career}
         onBack={handleBackToDashboard}
         onSkip={handleDevSkip}
+        onAddMoney={handleAddMoney}
         onNewCareer={handleFullReset}
         onSetPortrait={handleSetPortrait}
         onWatchReplay={handleWatchReplay}

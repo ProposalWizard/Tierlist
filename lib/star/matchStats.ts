@@ -1,4 +1,5 @@
 import type { CareerState, MatchStats, GoalEvent, OppGoalEvent } from "./types";
+import { getTuning } from "./tuningStore";
 
 // Canonical end-of-match scoring for career mode: turns a match tally
 // (chances/goals/assists/passes + the final scoreline) into the MatchStats the
@@ -13,6 +14,7 @@ import type { CareerState, MatchStats, GoalEvent, OppGoalEvent } from "./types";
  * formula from the rating it is meant to reflect would be indefensible.
  */
 export function liveRating(
+  chances: number,
   goals: number,
   assists: number,
   passes: number,
@@ -20,7 +22,20 @@ export function liveRating(
   oppScore: number,
 ): number {
   const result = userScore > oppScore ? 0.4 : userScore < oppScore ? -0.3 : 0.1;
-  return Math.max(1, Math.min(10, 6.0 + goals * 1.2 + assists * 0.8 + passes * 0.05 + result));
+  // Reported directly, from a real deliberate test: kicking the ball off the
+  // pitch on purpose at literally every chance for a full 90 minutes still
+  // finished around a 6.4 — because nothing in this formula had ever
+  // measured WASTE. Every chance that produces neither a goal nor an assist
+  // is now a real strike against the rating, scaled up the more of them
+  // there are — a couple of missed chances in a normal match barely
+  // registers, but a whole afternoon of squandering every single one drags
+  // the floor down toward a genuinely bad mark, not a shrug.
+  const wasted = Math.max(0, chances - (goals + assists));
+  const wastePenalty = Math.min(
+    getTuning("rating.maxWastePenalty"),
+    wasted * getTuning("rating.wastePenaltyPerChance"),
+  );
+  return Math.max(1, Math.min(10, 6.0 + goals * 1.2 + assists * 0.8 + passes * 0.05 + result - wastePenalty));
 }
 
 export function finaliseMatch(
@@ -36,7 +51,7 @@ export function finaliseMatch(
   hooked: MatchStats["hooked"] = null,
   oppGoalEvents: OppGoalEvent[] = [],
 ): MatchStats {
-  let rating = liveRating(goals, assists, passes, userScore, oppScore);
+  let rating = liveRating(chances, goals, assists, passes, userScore, oppScore);
 
   // A cameo is judged on less evidence. The `minutes` argument had been passed
   // in since this function was written and never read; a substitute who came on

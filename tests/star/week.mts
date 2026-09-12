@@ -218,9 +218,14 @@ const matchResult = (minutes = 90): MatchStats => ({
   const hooked = finaliseMatch(3, 0, 0, 0, 64, 0, 2, c, [], "form");
   check(hooked.rating > full.rating,
     `sixty-four minutes of a bad game is not ninety (${hooked.rating} vs ${full.rating})`);
-  // …and the real floor of the formula, which is what the hook threshold had to
-  // be set against.
-  check(full.rating === 5.7, `a contributionless defeat is the worst rating the formula produces (${full.rating})`);
+  // …and the real floor of the formula for THIS shape of game — 6 real
+  // chances, none of them taken, in a defeat. Lower than it used to be: the
+  // formula now docks a real penalty per wasted chance (rating.ts's own
+  // note — a deliberately-terrible full 90 minutes used to still land
+  // around 6.4, which is what the fix was for), so the same zero-goals,
+  // zero-assists, six-chances-squandered defeat now genuinely reads as a
+  // bad mark instead of a shrug.
+  check(full.rating === 3.6, `a chance-squandering defeat is genuinely a bad rating now (${full.rating})`);
   check(hooked.hooked === "form", "and the reason travels with the result");
 
   // …but the manager still notices.
@@ -237,7 +242,7 @@ const matchResult = (minutes = 90): MatchStats => ({
 {
   const c = base();
   const full = finaliseMatch(6, 2, 1, 20, 90, 3, 1, c);
-  const live = liveRating(2, 1, 20, 3, 1);
+  const live = liveRating(6, 2, 1, 20, 3, 1);
   check(Math.abs(full.rating - Math.round(live * 10) / 10) < 0.05,
     `the manager reads mid-match exactly what the scoresheet reads at the end (${live} vs ${full.rating})`);
 }

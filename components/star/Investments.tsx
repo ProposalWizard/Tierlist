@@ -922,7 +922,7 @@ function SignPlayerPanel({
             <button
               onClick={() => p.fromClub === FREE_AGENTS_CLUB
                 ? onSignFreeAgent(club, p.id, p.fromClub)
-                : onNegotiateSigning(p.id, p.fromClub, p.name, playerMarketValue(p, club, career))}
+                : onNegotiateSigning(p.id, p.fromClub, p.name, playerMarketValue(p, p.fromClub, career))}
               className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-[10px] font-black text-emerald-950"
             >
               {p.fromClub === FREE_AGENTS_CLUB ? "Sign" : "Negotiate"}

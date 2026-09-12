@@ -119,8 +119,13 @@ const stats = (rating: number): MatchStats => ({
   check(cameoBad.rating > fullBad.rating, `and you cannot be blamed for twenty minutes (${cameoBad.rating} vs ${fullBad.rating})`);
 
   // A full match must be completely unchanged by this — the multiplier is
-  // exactly 1 at ninety minutes.
-  const raw = Math.max(1, Math.min(10, 6.0 + 2 * 1.2 + 0.8 + 20 * 0.05 + 0.4));
+  // exactly 1 at ninety minutes. `full` had 6 chances but only 3 ended in a
+  // goal or assist, so the real formula also docks it for the other 3
+  // wasted ones (rating.wastePenaltyPerChance) — folded into `raw` here so
+  // this is still checking the minutes-share multiplier alone, not
+  // pretending the waste penalty doesn't exist.
+  const wastePenalty = Math.min(4, (6 - (2 + 1)) * 0.35);
+  const raw = Math.max(1, Math.min(10, 6.0 + 2 * 1.2 + 0.8 + 20 * 0.05 + 0.4 - wastePenalty));
   check(Math.abs(full.rating - Math.round(raw * 10) / 10) < 0.05,
     `a ninety-minute rating is untouched (${full.rating} vs ${raw})`);
   check((full.minutes ?? 0) === 90 && (cameo.minutes ?? 0) === 22, "the minutes played are carried on the result");
