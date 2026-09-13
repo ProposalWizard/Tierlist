@@ -201,7 +201,7 @@ export function seedEurope(career: CareerState): { state: EuroState | null; fixt
   const rng = mulberry32(career.season * 5441 + career.league.length * 7);
   const mine = career.league.find(t => t.name === career.player.club);
   const finish = career.lastSeasonPosition ?? 4;
-  const state = openEuro(competition, career.player.club, mine?.strength ?? 75, finish, rng);
+  const state = openEuro(competition, career.player.club, mine?.strength ?? 75, finish, rng, career);
 
   const fixtures: Fixture[] = state.leaguePhase.map((m, i) => ({
     week: EURO_LEAGUE_PHASE_WEEKS[i] ?? 5 + i * 2,
@@ -264,66 +264,11 @@ export function euroTieFixture(
  * for a 20-club PL (the canonical case), and a sensible number for shorter
  * test leagues. No Conference League.
  */
-export function qualificationFor(
-  position: number,
-  clubCount: number,
-  wonFaCup = false,
-  wonLeagueCup = false,
-  wonEuroComp = false,
-  /** Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #11 — extra places UEFA
-   *  has granted this country on top of the ordinary top-5/6th-7th split.
-   *  Both default to 0, so every existing caller sees exactly the split it
-   *  always has. */
-  extraChampionsLeagueSlots = 0,
-  extraEuropaLeagueSlots = 0,
-): Competition | null {
-  const cl = Math.round(clubCount * 0.25) + extraChampionsLeagueSlots;  // PL: top 5, plus any UEFA grant
-  const elBottom = cl + 2 + extraEuropaLeagueSlots;                      // PL: 7th, plus any UEFA grant
-
-  if (position <= cl) return "Champions League";
-  if (wonEuroComp) return "Champions League";         // UCL/EL winner outside top 5
-  if (position <= elBottom) return "Europa League";   // 6th or 7th
-  if (wonFaCup || wonLeagueCup) return "Europa League";  // cup winner at 8th+
-  return null;
-}
-
-/**
- * The same rule as qualificationFor, applied to the whole division at once —
- * every club's European spot for next season, not just yours.
- *
- * qualificationFor's own doc comment already spells out the cascade: a cup
- * winner who qualified through the league anyway does not create a second
- * Europa League place, that place goes to the next-best-placed club instead.
- * That only ever mattered in words before now, because no other club's cup
- * result was tracked — this is what makes it real: the winners handed in are
- * whichever clubs actually won the FA Cup and League Cup this season (see
- * finishCupToWinner), which can be any of the twenty, not only the player's.
- */
-export function seasonQualifiers(
-  league: LeagueTeam[],
-  faCupWinner: string | null,
-  leagueCupWinner: string | null,
-  /** Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #11 — see qualificationFor's own note. */
-  extraChampionsLeagueSlots = 0,
-  extraEuropaLeagueSlots = 0,
-): { champions: string[]; europa: string[] } {
-  const table = sortLeague(league).map(t => t.name);
-  const cl = Math.round(league.length * 0.25) + extraChampionsLeagueSlots;
-  const elBottom = cl + 2 + extraEuropaLeagueSlots;
-  const champions = new Set(table.slice(0, cl));
-  const europa = new Set(table.slice(cl, elBottom));
-  let cascade = elBottom; // next candidate by table position for a vacated cup berth
-  for (const winner of [faCupWinner, leagueCupWinner]) {
-    if (!winner) continue;
-    if (champions.has(winner) || europa.has(winner)) {
-      while (cascade < table.length && (champions.has(table[cascade]) || europa.has(table[cascade]))) cascade++;
-      if (cascade < table.length) europa.add(table[cascade++]);
-    } else {
-      europa.add(winner);
-    }
-  }
-  return { champions: Array.from(champions), europa: Array.from(europa) };
-}
+// Moved to qualification.ts so euro.ts can import it without cycling back
+// through this file (which imports openEuro/poolFor FROM euro.ts) — see
+// that file's own note. Re-exported here so every existing importer of
+// these two functions from "./competitions" keeps working unchanged.
+export { qualificationFor, seasonQualifiers } from "./qualification";
 
 /** Where the player's club finished, 1-based. */
 export function leaguePosition(career: CareerState): number {

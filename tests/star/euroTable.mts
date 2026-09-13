@@ -25,11 +25,20 @@ import type { LeagueSquad } from "../../lib/star/types";
  * `LeagueResult` shape so `scoutReport.ts` can read it unchanged.
  *
  * Field sizes below are derived from `poolFor(...)`, not hardcoded to 36 —
- * reconciling CHAMPIONS_SEEDS/EUROPA_SEEDS against clubs.ts's own
- * CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS (see euro.ts's header) left
- * Champions League at 34 clubs and Europa League at 38, not 36 apiece —
- * a literal 36 here would have made this suite fight that fix instead of
- * verifying it.
+ * both competitions are genuinely 36 clubs every season since the 13 Sep
+ * 2026 rebuild (see clubs.ts/euro.ts's own headers), but deriving the
+ * expected size from `poolFor` rather than a literal keeps this suite
+ * honest if that number is ever revisited again.
+ *
+ * `openEuro`'s field size is always exactly `poolFor(...).length` (36) —
+ * whether "you" replace a real English qualifier already in the pool, or
+ * (a career-less call, or an invented club like "Test FC" below) get added
+ * by trimming one real pool club to make room. That trimming was added
+ * during this same rebuild: without it, a career-less "you" pushed the
+ * total to 37 — an ODD number that broke `simulateEuroMatchday`'s
+ * everyone-else pairing (it needs an EVEN number left over once you and
+ * your opponent are set aside) and left several clubs stuck on 7 played
+ * instead of 8. Caught here, not guessed.
  */
 
 const problems: string[] = [];
@@ -54,9 +63,15 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
 // ── A fresh campaign starts genuinely blank, not pre-filled ────────────────
 {
   const state = freshState();
-  const expectedField = poolFor("Champions League").length + 1;
+  // openEuro now keeps the field at exactly the real pool size (36) whether
+  // or not "you" already occupy a pool slot — a career-less/invented club
+  // like "Test FC" here isn't in the pool, so one pool club is trimmed to
+  // make room rather than the field growing to 37 (see openEuro's own note,
+  // added 13 Sep 2026: an odd 37 broke simulateEuroMatchday's even-pairing
+  // assumption for everyone else's fixtures).
+  const expectedField = poolFor("Champions League").length;
   check(state.liveTable.length === expectedField,
-    `every pool club plus you is in the table from the start (${state.liveTable.length}, expected ${expectedField})`);
+    `you take a real pool club's place, field size stays the real total (${state.liveTable.length}, expected ${expectedField})`);
   check(state.liveTable.every(r => r.played === 0), "…but nobody has played anything yet");
   check(state.matchdaysPlayed === 0, "no matchday has been simulated yet");
   check(state.liveTable.filter(r => r.isYou).length === 1, "exactly one row is you");
@@ -143,16 +158,16 @@ function freshState(competition: "Champions League" | "Europa League" = "Champio
 // not "almost always": the old fill algorithm this replaced could leave
 // exactly one club stuck on nothing with nobody left to play. Here there is
 // no such failure mode by construction (each competition's own field size —
-// see poolFor — always pairs evenly once you and your opponent are set
-// aside) — stress-tested across many seeds and campaign starting conditions
-// anyway, since "provably can't fail" is worth checking, not just
-// asserting. ──────────────────────────────────────────────────────────────
+// see poolFor/openEuro's own note — is always kept even once you and your
+// opponent are set aside) — stress-tested across many seeds and campaign
+// starting conditions anyway, since "provably can't fail" is worth
+// checking, not just asserting. ─────────────────────────────────────────
 {
   let anyShort = false;
   for (let seed = 0; seed < 40; seed++) {
     for (const competition of ["Champions League", "Europa League"] as const) {
       let state = openEuro(competition, "Test FC", 70 + (seed % 20), 1 + (seed % 20), mulberry32(seed * 31 + 7));
-      const expectedField = poolFor(competition).length + 1;
+      const expectedField = poolFor(competition).length;
       const rng = mulberry32(seed * 104729 + 17);
       for (let md = 0; md < 8; md++) {
         const opponent = state.leaguePhase[md].opponent;

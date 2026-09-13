@@ -51,10 +51,13 @@ for (const competition of ["Champions League", "Europa League"] as const) {
   }
 }
 
-// The exact reported case.
-check(poolFor("Champions League").some(c => c.name === "FC København"),
-  "Copenhagen is in the Champions League pool under the real database spelling");
-check(!poolFor("Champions League").some(c => c.name === "Copenhagen"),
+// The exact reported case. FC København moved from the Champions League to
+// the Europa League during the 13 Sep 2026 36-club rebuild (see clubs.ts) —
+// the real database spelling still has to resolve correctly wherever it
+// actually lives now.
+check(poolFor("Europa League").some(c => c.name === "FC København"),
+  "Copenhagen is in the Europa League pool under the real database spelling");
+check(!poolFor("Europa League").some(c => c.name === "Copenhagen"),
   "…and not under the old English shorthand that had no squad to match");
 
 // ── A club must be drawn in the SAME competition clubs.ts assigns it to —

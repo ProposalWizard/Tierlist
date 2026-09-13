@@ -76,6 +76,15 @@ export interface RuleBook {
    *  in STAR_POWER_POLITICS.md for why rewriting that simulation was
    *  scoped OUT of this pass rather than risked half-done. */
   championsLeagueFormat: "league" | "groups";
+  /** Requested directly: a real, votable rule letting Saudi Pro League
+   *  clubs into the Champions League and Europa League — see euro.ts's
+   *  `applySaudiSwap` for the actual mechanic (2 of the 4 Saudi clubs
+   *  promoted into each competition each season, randomly replacing
+   *  clubs outside a real exemption list, with the two Champions League
+   *  clubs bumped DOWN to Europa League rather than dropped outright).
+   *  UEFA's rule, same as the extra-slots fields above — it's the body
+   *  that actually controls these competitions. */
+  saudiClubsInEurope: boolean;
 }
 
 export const DEFAULT_RULE_BOOK: RuleBook = {
@@ -83,6 +92,7 @@ export const DEFAULT_RULE_BOOK: RuleBook = {
   offsideAbolished: false, squadSize: 11,
   extraChampionsLeagueSlots: 0, extraEuropaLeagueSlots: 0,
   championsLeagueFormat: "league",
+  saudiClubsInEurope: false,
 };
 
 export function ruleBookFor(career: CareerState, body: GoverningBody): RuleBook {
@@ -196,6 +206,7 @@ function changeMagnitude(current: RuleBook, change: Partial<RuleBook>): number {
   if (change.extraChampionsLeagueSlots !== undefined) magnitude += Math.abs(change.extraChampionsLeagueSlots - current.extraChampionsLeagueSlots) * 2;
   if (change.extraEuropaLeagueSlots !== undefined) magnitude += Math.abs(change.extraEuropaLeagueSlots - current.extraEuropaLeagueSlots) * 2;
   if (change.championsLeagueFormat !== undefined && change.championsLeagueFormat !== current.championsLeagueFormat) magnitude += 10;
+  if (change.saudiClubsInEurope !== undefined && change.saudiClubsInEurope !== current.saudiClubsInEurope) magnitude += 14;
   return magnitude;
 }
 

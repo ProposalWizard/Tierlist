@@ -1,9 +1,15 @@
 import type { CareerState, LeagueSquad, LeagueResult } from "./types";
-import { mulberry32 } from "./season";
+import { mulberry32, sortLeague } from "./season";
 import { nameGoals, creditNamedGoals, type NamedOppGoal } from "./leagueSquads";
 import {
   EURO_LEAGUE_PHASE_WEEKS, EURO_KO_SLOTS_WITH_R32, EURO_KO_SLOTS_SEEDED, type CupSlot,
 } from "./calendar";
+import { ruleBookFor } from "./ruleBook";
+import {
+  CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, OTHER_CLUBS,
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
+} from "./clubs";
+import { seasonQualifiers } from "./qualification";
 
 /**
  * EUROPE.
@@ -136,12 +142,11 @@ interface EuroSeed { name: string; strength: number; }
  * Turn a flat, un-potted list into a real seeded field, strongest first.
  *
  * Pot membership used to be typed by hand alongside each name — which is
- * exactly how it drifted: a club moved between CHAMPIONS_SEEDS/EUROPA_SEEDS
- * below never had its hand-typed `pot` double-checked against anything,
- * so a stale number would sit there silently. Deriving it from strength
- * instead means there is nothing left to keep in sync — move a club to a
- * different seed list or change its strength and its pot follows on its
- * own.
+ * exactly how it drifted: a club moved between seed lists never had its
+ * hand-typed `pot` double-checked against anything, so a stale number would
+ * sit there silently. Deriving it from strength instead means there is
+ * nothing left to keep in sync — move a club or change its strength and its
+ * pot follows on its own.
  */
 function seededPool(seeds: EuroSeed[]): EuroClub[] {
   const sorted = [...seeds].sort((a, b) => b.strength - a.strength);
@@ -150,132 +155,355 @@ function seededPool(seeds: EuroSeed[]): EuroClub[] {
 }
 
 /**
- * Europe's clubs.
+ * ═══════════════════════════════════════════════════════════════════════
+ * EUROPE'S CLUBS — READ THIS BEFORE TOUCHING ANYTHING BELOW.
+ * ═══════════════════════════════════════════════════════════════════════
  *
- * Reported directly, from a real save fourteen seasons in: Sturm Graz, Young
- * Boys and Ajax — all real clubs, all fetched into `externalSquads` under
- * their real names — turned up as the player's live CHAMPIONS League
- * opponents, with a scout report and a fetched squad that matched nobody
- * (a full XI of free agents, the last-resort fallback `teamsheet.ts` reaches
- * for when the named opponent isn't in any squad pool it actually holds).
+ * THE 12 SEPTEMBER 2026 BUG, IN FULL, SO IT DOESN'T HAPPEN A THIRD TIME:
+ * this file used to carry its OWN separate 33-club "CHAMPIONS_SEEDS" and
+ * 37-club "EUROPA_SEEDS" lists, deliberately EXCLUDING every English club —
+ * the idea being "the player's own club gets added on top as a 34th/38th
+ * entry." That was already wrong against this file's OWN header (which has
+ * always said "Thirty-six clubs... you play eight of them" — you are one of
+ * the 36, never a 37th) — and it got WORSE than that in practice: the
+ * "other English clubs added on top" step was never actually implemented
+ * anywhere. `openEuro` only ever added the ONE player's club, never the
+ * other 4-7 real English qualifiers that season. So a real save's Champions
+ * League was actually 34 clubs (33 foreign + you), Europa was 38 (37 + you)
+ * — neither the intended 36, and every other English club that had legitimately
+ * qualified was simply invisible from the competition entirely.
  *
- * Root cause: this file's own `CHAMPIONS_POOL`/`EUROPA_POOL` — literally who
- * you can be drawn against — were typed independently of `clubs.ts`'s
- * `CHAMPIONS_LEAGUE_CLUBS`/`EUROPA_LEAGUE_CLUBS`, the lists that decide which
- * tab the /lineups picker shows a club under AND which competition
- * `externalClubsFor` fetches its squad for. A previous pass here
- * (see tests/star/europeSquadNames.mts) only ever checked that a pool name
- * was spelled correctly and resolvable to SOME real club — never that it was
- * resolvable to a club clubs.ts calls a member of THIS competition
- * specifically. Ten clubs clubs.ts calls Europa League (Sturm Graz, Young
- * Boys, Ajax, Juventus, AC Milan, Bayer Leverkusen, Benfica, Marseille, Real
- * Sociedad, Salzburg) had ended up in the Champions pool below; five clubs
- * clubs.ts calls Champions League (Betis, Fenerbahçe, Lens, Stuttgart,
- * Lille) had ended up in the Europa pool; two more (Sevilla, Eintracht
- * Frankfurt) weren't in either of clubs.ts's lists at all, so that file was
- * fixed to agree with what this one already did with them (see clubs.ts's
- * own OTHER_CLUBS comment). FC Red Bull Salzburg is the one club that came
- * out of this reconciliation with nowhere to go — still correctly tagged
- * Europa League in clubs.ts, just not re-added to the seed list below, kept
- * out so the pool sizes below stay the odd numbers simulateEuroMatchday's
- * matchday-pairing needs (see its own comment) without inventing a 38th
- * name.
+ * THE FIX: there is no more separate foreign-only seed list. The season-1
+ * field for each competition is now `clubs.ts`'s own `CHAMPIONS_LEAGUE_CLUBS`/
+ * `EUROPA_LEAGUE_CLUBS` — EXACTLY 36 apiece, English clubs included directly
+ * (that file's own corrected list, after two entries had drifted these to
+ * 38 — see its own note) — read as the literal truth, not copied into a
+ * second list here that can drift from it again. `NON_ENGLISH_CLUB_STRENGTH`
+ * below only needs a number for the ~31 non-English clubs in each field
+ * (English clubs always read their real, LIVE strength off `career.league`
+ * instead — see `strengthOf`).
  *
- * Every name below is still the exact spelling clubs.ts's
- * CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS lists use — not a shorthand
- * ("Bayern Munich", "Copenhagen") that reads fine but has no real squad to
- * resolve against (the ORIGINAL version of this bug, fixed earlier — see
- * tests/star/europeSquadNames.mts). This pass adds a second, stricter test
- * there: not just "resolvable to a real club somewhere" but "resolvable to a
- * real club in clubs.ts's list for THIS competition, and no other."
+ * WHO ACTUALLY OCCUPIES A SLOT EACH SEASON (`seasonField`, below):
+ *   · England — real Premier League qualification (`seasonQualifiers`,
+ *     imported from `qualification.ts` rather than `competitions.ts` to
+ *     avoid a circular import — see that file's own note), clamped to the
+ *     fixed season-1 English count for each competition. This is the actual
+ *     fix for the "other English clubs are invisible" bug above.
+ *   · Spain/Italy/Germany/France — a FIXED total count per competition,
+ *     forever (whatever season 1 had), but WHICH specific clubs fill those
+ *     slots reshuffles randomly each season against that nation's own real
+ *     pool (its usual clubs plus its own real "Other"-section reserves —
+ *     e.g. France's Monaco/Strasbourg). Requested directly, with a full
+ *     worked example (France: always 4 in the Champions League, 2 in the
+ *     Europa League, drawn from its real 6-club pool of Monaco/Strasbourg
+ *     plus its 4 usual entrants).
+ *   · Everyone else — reshuffled each season, at least one club in EACH
+ *     competition for any nation with 2+ clubs (exactly 1-1 for a two-club
+ *     nation — Scotland's Celtic/Rangers/Hearts is the worked example given
+ *     directly). A one-club nation can land in either competition freely.
+ *   · Season 1 is ALWAYS the exact static clubs.ts roster — none of the
+ *     above runs before `career.season >= 2`, given directly.
+ *
+ * The Saudi Pro League rule (`applySaudiSwap`, further below) is a SEPARATE
+ * layer applied on top of whatever `seasonField` already produced — it was
+ * built and shipped before this fix, and still works the same way.
  */
-const CHAMPIONS_SEEDS: EuroSeed[] = [
-  { name: "Real Madrid", strength: 92 },
-  { name: "FC Bayern München", strength: 91 },
-  { name: "FC Barcelona", strength: 89 },
-  { name: "Paris Saint-Germain", strength: 88 },
-  { name: "Inter", strength: 86 },
-  { name: "Atlético Madrid", strength: 85 },
-  { name: "Borussia Dortmund", strength: 84 },
-  { name: "Napoli", strength: 82 },
-  { name: "Sevilla FC", strength: 79 },
-  { name: "FC Porto", strength: 79 },
-  { name: "RB Leipzig", strength: 80 },
-  { name: "Roma", strength: 80 },
-  { name: "PSV", strength: 77 },
-  { name: "Real Betis Balompié", strength: 77 },
-  { name: "Sporting CP", strength: 77 },
-  { name: "Villarreal CF", strength: 76 },
-  { name: "Eintracht Frankfurt", strength: 76 },
-  { name: "Fenerbahçe SK", strength: 76 },
-  { name: "Feyenoord", strength: 75 },
-  { name: "Olympique Lyonnais", strength: 75 },
-  { name: "RC Lens", strength: 75 },
-  { name: "VfB Stuttgart", strength: 75 },
-  { name: "Lille OSC", strength: 75 },
-  { name: "Galatasaray SK", strength: 74 },
-  { name: "Celtic", strength: 72 },
-  { name: "Club Brugge KV", strength: 72 },
-  { name: "Shakhtar Donetsk", strength: 72 },
-  { name: "Dinamo Zagreb", strength: 70 },
-  { name: "SK Slavia Praha", strength: 70 },
-  { name: "FC København", strength: 70 },
-  { name: "FK Bodø/Glimt", strength: 69 },
-  { name: "Como", strength: 64 },
-  { name: "AEK Athens", strength: 62 },
-];
-const CHAMPIONS_POOL: EuroClub[] = seededPool(CHAMPIONS_SEEDS);
+const NON_ENGLISH_CLUB_STRENGTH: Record<string, number> = {
+  "Real Madrid": 92, "FC Bayern München": 91, "FC Barcelona": 89,
+  "Paris Saint-Germain": 88, "Inter": 86, "Atlético Madrid": 85,
+  "Borussia Dortmund": 84, "Napoli": 82, "FC Porto": 79,
+  "RB Leipzig": 80, "Roma": 80, "PSV": 77,
+  "Real Betis Balompié": 77, "Sporting CP": 77, "Villarreal CF": 76,
+  "Eintracht Frankfurt": 76, "Fenerbahçe SK": 76, "Feyenoord": 75,
+  "Olympique Lyonnais": 75, "RC Lens": 75, "VfB Stuttgart": 75,
+  "Lille OSC": 75, "Galatasaray SK": 74, "Celtic": 72,
+  "Club Brugge KV": 72, "Shakhtar Donetsk": 72, "Dinamo Zagreb": 70,
+  "SK Slavia Praha": 70, "FC København": 70, "FK Bodø/Glimt": 69,
+  "Como": 64, "AEK Athens": 62,
+  "Juventus": 84, "AC Milan": 83, "Bayer 04 Leverkusen": 83,
+  "SL Benfica": 80, "Lazio": 78, "Ajax": 76,
+  "Olympique de Marseille": 76, "Real Sociedad": 76,
+  "Olympiacos FC": 73, "Sporting Clube de Braga": 73,
+  "TSG 1899 Hoffenheim": 73, "AZ Alkmaar": 72,
+  "RSC Anderlecht": 71, "KRC Genk": 71, "Union Saint-Gilloise": 70,
+  "PAOK": 70, "Beşiktaş JK": 70, "Stade Rennais FC": 70,
+  "Ferencvárosi Torna Club": 69, "FC Midtjylland": 69, "Trabzonspor": 69,
+  "BSC Young Boys": 68, "SK Sturm Graz": 68, "Malmö FF": 68,
+  "Sparta Praha": 68, "Viktoria Plzeň": 68, "FC Basel 1893": 64,
+  "RC Celta": 65, "Legia Warszawa": 62, "Lech Poznań": 61,
+  "Shamrock Rovers": 60, "FC Red Bull Salzburg": 76,
+  // The four real "Other"-section main-nation clubs — never pool-backed at
+  // all before now (OTHER_CLUBS never used to feed the simulation), needing
+  // a real strength now that a season's reshuffle can genuinely field any
+  // of them in place of their nation's usual entrants.
+  "FC Schalke 04": 68, "AS Monaco": 78, "RC Strasbourg Alsace": 71, "Atalanta": 80,
+  // The three clubs moved OUT to OTHER_CLUBS to correct clubs.ts's two
+  // lists down to the real 36 (see clubs.ts's own note) — still real
+  // candidates in their own nation's reshuffle pool from season 2 on.
+  "Sevilla FC": 79, "Rangers FC": 74, "Hearts": 63,
+  // Portugal's own fourth reserve, same reason.
+  "Vitória SC": 61,
+};
 
 /**
- * The Europa League field.
- *
- * Its own list of names rather than a relabelled Champions League, so the two
- * competitions can never put the same club in both — and the strengths are
- * flattened as well as lowered, because a Europa League field is genuinely more
- * even, and that is what makes winning it feel like a different achievement
- * rather than an easier version of the same one. See CHAMPIONS_SEEDS above
- * for the reconciliation against clubs.ts that moved several names here.
+ * The one real Europe-eligible club with no strength number above is a
+ * Saudi one — see SAUDI_CLUBS below, which carries its own.
  */
-const EUROPA_SEEDS: EuroSeed[] = [
-  { name: "Juventus", strength: 84 },
-  { name: "AC Milan", strength: 83 },
-  { name: "Bayer 04 Leverkusen", strength: 83 },
-  { name: "SL Benfica", strength: 80 },
-  { name: "Lazio", strength: 78 },
-  { name: "Ajax", strength: 76 },
-  { name: "Olympique de Marseille", strength: 76 },
-  { name: "Real Sociedad", strength: 76 },
-  { name: "Crystal Palace", strength: 76 },
-  { name: "Rangers FC", strength: 74 },
-  { name: "Olympiacos FC", strength: 73 },
-  { name: "Sporting Clube de Braga", strength: 73 },
-  { name: "AFC Bournemouth", strength: 73 },
-  { name: "TSG 1899 Hoffenheim", strength: 73 },
-  { name: "AZ Alkmaar", strength: 72 },
-  { name: "RSC Anderlecht", strength: 71 },
-  { name: "KRC Genk", strength: 71 },
-  { name: "Union Saint-Gilloise", strength: 70 },
-  { name: "PAOK", strength: 70 },
-  { name: "Beşiktaş JK", strength: 70 },
-  { name: "Stade Rennais FC", strength: 70 },
-  { name: "Ferencvárosi Torna Club", strength: 69 },
-  { name: "FC Midtjylland", strength: 69 },
-  { name: "Sunderland", strength: 69 },
-  { name: "Trabzonspor", strength: 69 },
-  { name: "BSC Young Boys", strength: 68 },
-  { name: "SK Sturm Graz", strength: 68 },
-  { name: "Malmö FF", strength: 68 },
-  { name: "Sparta Praha", strength: 68 },
-  { name: "Viktoria Plzeň", strength: 68 },
-  { name: "FC Basel 1893", strength: 64 },
-  { name: "RC Celta", strength: 65 },
-  { name: "Legia Warszawa", strength: 62 },
-  { name: "Hearts", strength: 63 },
-  { name: "Lech Poznań", strength: 61 },
-  { name: "Vitória SC", strength: 61 },
-  { name: "Shamrock Rovers", strength: 60 },
+const SAUDI_CLUBS: EuroSeed[] = [
+  { name: "Al Hilal", strength: 79 },
+  { name: "Al Nassr", strength: 79 },
+  { name: "Al Ahli SFC", strength: 77 },
+  { name: "Al Ittihad", strength: 77 },
 ];
-const EUROPA_POOL: EuroClub[] = seededPool(EUROPA_SEEDS);
+
+/**
+ * Real nationality for every non-English, non-Saudi club this file's
+ * reshuffle/Saudi-swap logic ever reasons about. English clubs are found
+ * via `divisionOf` (clubs.ts's own real ladder) rather than a hardcoded
+ * "England" entry per club here — the real source, not a second list that
+ * can drift from it, which is the exact bug this whole rewrite exists to
+ * stop happening a third time.
+ */
+const EURO_CLUB_NATION: Record<string, string> = {
+  "Real Madrid": "Spain", "FC Barcelona": "Spain", "Atlético Madrid": "Spain",
+  "Real Betis Balompié": "Spain", "Villarreal CF": "Spain", "Real Sociedad": "Spain",
+  "RC Celta": "Spain", "Sevilla FC": "Spain",
+  "Inter": "Italy", "Napoli": "Italy", "Roma": "Italy", "Como": "Italy",
+  "Juventus": "Italy", "AC Milan": "Italy", "Lazio": "Italy", "Atalanta": "Italy",
+  "FC Bayern München": "Germany", "Borussia Dortmund": "Germany", "RB Leipzig": "Germany",
+  "Eintracht Frankfurt": "Germany", "VfB Stuttgart": "Germany", "Bayer 04 Leverkusen": "Germany",
+  "TSG 1899 Hoffenheim": "Germany", "FC Schalke 04": "Germany",
+  "Paris Saint-Germain": "France", "Olympique Lyonnais": "France", "RC Lens": "France",
+  "Lille OSC": "France", "Olympique de Marseille": "France", "Stade Rennais FC": "France",
+  "AS Monaco": "France", "RC Strasbourg Alsace": "France",
+  "FC Porto": "Portugal", "Sporting CP": "Portugal", "SL Benfica": "Portugal",
+  "Sporting Clube de Braga": "Portugal", "Vitória SC": "Portugal",
+  "PSV": "Netherlands", "Feyenoord": "Netherlands", "Ajax": "Netherlands", "AZ Alkmaar": "Netherlands",
+  "Fenerbahçe SK": "Turkey", "Galatasaray SK": "Turkey", "Beşiktaş JK": "Turkey", "Trabzonspor": "Turkey",
+  "Celtic": "Scotland", "Rangers FC": "Scotland", "Hearts": "Scotland",
+  "Club Brugge KV": "Belgium", "RSC Anderlecht": "Belgium", "KRC Genk": "Belgium", "Union Saint-Gilloise": "Belgium",
+  "Shakhtar Donetsk": "Ukraine", "Dinamo Zagreb": "Croatia",
+  "SK Slavia Praha": "Czech Republic", "Sparta Praha": "Czech Republic", "Viktoria Plzeň": "Czech Republic",
+  "FC København": "Denmark", "FC Midtjylland": "Denmark", "FK Bodø/Glimt": "Norway",
+  "AEK Athens": "Greece", "Olympiacos FC": "Greece", "PAOK": "Greece",
+  "Ferencvárosi Torna Club": "Hungary",
+  "BSC Young Boys": "Switzerland", "FC Basel 1893": "Switzerland",
+  "SK Sturm Graz": "Austria", "FC Red Bull Salzburg": "Austria", "Malmö FF": "Sweden",
+  "Legia Warszawa": "Poland", "Lech Poznań": "Poland",
+  "Shamrock Rovers": "Ireland",
+};
+
+/** England, via the real ladder — or whatever `EURO_CLUB_NATION` says. */
+const ENGLISH_LADDER = new Set([...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS, ...PROMOTION_POOL_CLUBS]);
+
+function nationOf(club: string): string {
+  // Deliberately NOT `clubs.ts`'s own `divisionOf` here — that function's
+  // `DIVISION_BY_CLUB` map is built PREMIER_LEAGUE_CLUBS first, then
+  // CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS layered on top of the SAME
+  // map, so a club on BOTH lists (Arsenal, Aston Villa, Liverpool, Man
+  // City, Man United, Bournemouth, Crystal Palace, Sunderland — exactly
+  // the English clubs this function most needs to get right) has its
+  // "premier" tag silently overwritten to "champions"/"europa". Caught
+  // directly in testing: MAIN_NATION_ALLOCATION.England came out {0, 0},
+  // and every English qualifier vanished from the season 2+ field the
+  // instant `nationOf` trusted that map. `divisionOf` is used correctly in
+  // many other places for its own purpose (this file leaves it untouched
+  // rather than risk changing its behaviour for everything else that reads
+  // it) — this checks the three real English-ladder lists directly instead.
+  return ENGLISH_LADDER.has(club) ? "England" : (EURO_CLUB_NATION[club] ?? "Unknown");
+}
+
+/** An English club always reads its real, LIVE strength off `career.league`
+ *  — everyone else reads the flat table above. */
+function strengthOf(club: string, career: CareerState): number {
+  const inLeague = career.league.find(t => t.name === club);
+  if (inLeague) return inLeague.strength;
+  const saudi = SAUDI_CLUBS.find(s => s.name === club);
+  if (saudi) return saudi.strength;
+  return NON_ENGLISH_CLUB_STRENGTH[club] ?? 72;
+}
+
+const MAIN_NATIONS = ["England", "Spain", "Italy", "Germany", "France"];
+// Rangers FC dropped from this list in the 13 Sep 2026 36-club rebuild — it
+// moved from EUROPA_LEAGUE_CLUBS into OTHER_CLUBS (clubs.ts) to correct that
+// list's real count down to 36, so it's no longer a guaranteed fixture in
+// the Europa League field every season; naming it exempt here would be
+// meaningless (it can't be "replaced" out of a competition it isn't
+// reliably in). It's still a real, reachable Scotland club via the
+// "everyone else" reshuffle in seasonField, same as before.
+const EL_NAMED_EXEMPT = new Set(["Olympiacos FC", "RSC Anderlecht", "SL Benfica", "Ajax"]);
+
+/**
+ * How many of each main nation's clubs sit in the Champions/Europa League —
+ * computed ONCE from the real season-1 `clubs.ts` rosters, never hardcoded,
+ * so this can't drift from clubs.ts the way the old seed lists did. This
+ * count is PERMANENT for Spain/Italy/Germany/France (requested directly): a
+ * main nation always has exactly this many clubs in each competition, every
+ * season, and which SPECIFIC clubs fill those slots is what varies instead
+ * — see `seasonField`'s own note.
+ *
+ * England is the one exception, confirmed directly during the 13 Sep 2026
+ * qualification rewrite: its real count here is a FLOOR, not a hard cap —
+ * `qualification.ts`'s rule 4 (the European Title Upgrade) can genuinely
+ * grow England's total past this number with a pure-bonus qualifier, the
+ * same way the real competition does. When that happens, the extra English
+ * club takes a real slot from the "everyone else" pool, never from this
+ * allocation itself — see `seasonField`'s own note on `mainTotalChampions`/
+ * `mainTotalEuropa`.
+ */
+function computeMainNationAllocation(): Record<string, { champions: number; europa: number }> {
+  const alloc: Record<string, { champions: number; europa: number }> = {};
+  for (const nation of MAIN_NATIONS) {
+    alloc[nation] = {
+      champions: CHAMPIONS_LEAGUE_CLUBS.filter(name => nationOf(name) === nation).length,
+      europa: EUROPA_LEAGUE_CLUBS.filter(name => nationOf(name) === nation).length,
+    };
+  }
+  return alloc;
+}
+const MAIN_NATION_ALLOCATION = computeMainNationAllocation();
+
+/** Every real club (its usual Champions/Europa League entrants, plus its
+ *  own "Other"-section reserves) belonging to one nation — the pool a main
+ *  nation's fixed allocation is randomly drawn from each season. */
+function nationPool(nation: string): string[] {
+  return [...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS, ...OTHER_CLUBS]
+    .filter(name => nationOf(name) === nation);
+}
+
+/**
+ * THIS SEASON'S REAL FIELD FOR ONE COMPETITION — season 1 is the literal
+ * static roster; season 2 on is genuinely reshuffled. See this file's own
+ * big header comment above for the full account of each nation's rule.
+ */
+function seasonField(competition: "Champions League" | "Europa League", career: CareerState): EuroClub[] {
+  const withStrength = (names: string[]) => names.map(name => ({ name, strength: strengthOf(name, career) }));
+
+  if (career.season < 2) {
+    const names = competition === "Champions League" ? CHAMPIONS_LEAGUE_CLUBS : EUROPA_LEAGUE_CLUBS;
+    return seededPool(withStrength([...names]));
+  }
+
+  const rng = mulberry32(career.season * 30011 + 3);
+  const championsParts: string[] = [];
+  const europaParts: string[] = [];
+
+  // England — real Premier League qualification, never randomised. The
+  // European-trophy upgrade (qualification.ts's rule 4) only matters here
+  // if the club that won the Champions/Europa League last season was
+  // actually an ENGLISH one — an English club can't win both in one season,
+  // so at most one of these two is ever real.
+  const uefaRules = ruleBookFor(career, "UEFA");
+  const englishNames = new Set(career.league.map(t => t.name));
+  const europeanTrophyWinner = [
+    career.lastSeasonWinners?.championsLeague, career.lastSeasonWinners?.europaLeague,
+  ].find(name => name && englishNames.has(name)) ?? null;
+  const englishQualifiers = seasonQualifiers(
+    career.league, career.lastSeasonWinners?.faCup ?? null, career.lastSeasonWinners?.leagueCup ?? null,
+    europeanTrophyWinner,
+    uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots,
+  );
+  // `seasonQualifiers`'s Europa list can come up short of England's normal
+  // fixed count (6th place alone, on a season with no cup cascade to fill
+  // out the other slots) — topped up from the next-best-placed English club
+  // in the real table that hasn't already claimed a spot, same as before.
+  //
+  // In the OTHER direction, England's count is deliberately NOT capped down
+  // to the fixed 5/3 any more — confirmed directly: rule 4's "pure bonus"
+  // European-trophy qualifier genuinely GROWS England's total past its
+  // normal count, same as the real thing. When that happens, the extra
+  // English club takes a real slot from the "everyone else" pool below
+  // (never from Spain/Italy/Germany/France's own fixed allocation, and
+  // obviously never from England's own) — confirmed directly. That's what
+  // feeding the REAL (possibly-grown) English count into mainTotalChampions/
+  // mainTotalEuropa below achieves: it shrinks "everyone else"'s own real
+  // capacity by exactly the excess, so one of ITS clubs is the one that
+  // misses out that season via the same random clamp that already lets a
+  // nation with more depth than slots sit out — not a second, separate
+  // mechanism.
+  const englishChampions = [...englishQualifiers.champions];
+  const englishEuropa = [...englishQualifiers.europa];
+  if (englishEuropa.length < MAIN_NATION_ALLOCATION.England.europa) {
+    const claimed = new Set([...englishChampions, ...englishEuropa]);
+    for (const team of sortLeague(career.league)) {
+      if (englishEuropa.length >= MAIN_NATION_ALLOCATION.England.europa) break;
+      if (!claimed.has(team.name)) { englishEuropa.push(team.name); claimed.add(team.name); }
+    }
+  }
+  championsParts.push(...englishChampions);
+  europaParts.push(...englishEuropa);
+
+  // Spain/Italy/Germany/France — a fixed count, random specific clubs drawn
+  // from that nation's own real pool (worked example given directly: France
+  // always has exactly 4 in the Champions League and 2 in the Europa
+  // League, from its real 6-club pool of PSG/Lyon/Lens/Lille plus its own
+  // reserves Monaco/Strasbourg).
+  for (const nation of ["Spain", "Italy", "Germany", "France"]) {
+    const pool = shuffle(nationPool(nation), rng);
+    const alloc = MAIN_NATION_ALLOCATION[nation];
+    championsParts.push(...pool.slice(0, alloc.champions));
+    europaParts.push(...pool.slice(alloc.champions, alloc.champions + alloc.europa));
+  }
+
+  // Everyone else — reshuffled, at least one club per multi-club nation in
+  // EACH competition (exactly 1-1 for a two-club nation — Scotland's
+  // Celtic/Rangers/Hearts is the worked example given directly). Pulled
+  // from the real Champions/Europa lists AND the real non-main-nation
+  // "Other" reserves (Scotland's/Portugal's own — given directly: "add in
+  // every single team from the Other section that is not English or
+  // Saudi"), never from a main nation's or Saudi's own clubs, which are
+  // handled entirely separately above/below.
+  const isMainOrSaudi = (name: string) => MAIN_NATIONS.includes(nationOf(name)) || SAUDI_CLUBS.some(s => s.name === name);
+  const everyoneElse = [...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS, ...OTHER_CLUBS]
+    .filter(name => !isMainOrSaudi(name) && nationOf(name) !== "Unknown");
+
+  const byNation = new Map<string, string[]>();
+  for (const name of everyoneElse) {
+    const nation = nationOf(name);
+    (byNation.get(nation) ?? byNation.set(nation, []).get(nation)!).push(name);
+  }
+  const mandatoryChampions: string[] = [];
+  const mandatoryEuropa: string[] = [];
+  const flexible: string[] = [];
+  for (const clubs of Array.from(byNation.values())) {
+    if (clubs.length >= 2) {
+      const [first, second, ...rest] = shuffle(clubs, rng);
+      mandatoryChampions.push(first);
+      mandatoryEuropa.push(second);
+      flexible.push(...rest);
+    } else {
+      flexible.push(...clubs);
+    }
+  }
+  const shuffledFlex = shuffle(flexible, rng);
+  // England's REAL count this season (which can genuinely exceed its normal
+  // fixed allocation via rule 4's pure-bonus qualifier — see above), not the
+  // fixed constant, so a grown English count shrinks "everyone else"'s own
+  // real capacity by exactly the excess rather than pushing the total field
+  // past 36.
+  const mainTotalChampions = englishChampions.length
+    + ["Spain", "Italy", "Germany", "France"].reduce((s, n) => s + MAIN_NATION_ALLOCATION[n].champions, 0);
+  const mainTotalEuropa = englishEuropa.length
+    + ["Spain", "Italy", "Germany", "France"].reduce((s, n) => s + MAIN_NATION_ALLOCATION[n].europa, 0);
+  const clCapacity = CHAMPIONS_LEAGUE_CLUBS.length - mainTotalChampions;
+  const elCapacity = EUROPA_LEAGUE_CLUBS.length - mainTotalEuropa;
+  // Both sides are clamped to their OWN real capacity — the flexible pool
+  // (every multi-club nation's clubs beyond its mandatory 1, plus every
+  // single-club nation) is routinely BIGGER than the two capacities
+  // combined (a nation can have more real depth than there are slots for
+  // it, the same way Spain's own 8-club pool fills only 7 fixed slots) —
+  // real clubs genuinely sit out some seasons rather than being forced in
+  // somewhere. The first version of this dumped every leftover flexible
+  // club into the Europa League regardless of its own capacity, silently
+  // overfilling it — caught in testing (36/28 instead of 36/36).
+  const clNeeded = Math.max(0, Math.min(shuffledFlex.length, clCapacity - mandatoryChampions.length));
+  const afterChampions = shuffledFlex.slice(clNeeded);
+  const elNeeded = Math.max(0, Math.min(afterChampions.length, elCapacity - mandatoryEuropa.length));
+  championsParts.push(...mandatoryChampions, ...shuffledFlex.slice(0, clNeeded));
+  europaParts.push(...mandatoryEuropa, ...afterChampions.slice(0, elNeeded));
+
+  return seededPool(withStrength(competition === "Champions League" ? championsParts : europaParts));
+}
 
 /**
  * The Conference League field.
@@ -332,10 +560,85 @@ const CONFERENCE_SEEDS: EuroSeed[] = [
 ];
 const CONFERENCE_POOL: EuroClub[] = seededPool(CONFERENCE_SEEDS);
 
-export function poolFor(competition: EuroId): EuroClub[] {
-  if (competition === "Champions League") return CHAMPIONS_POOL;
-  if (competition === "Europa League") return EUROPA_POOL;
-  return CONFERENCE_POOL;
+// ── Saudi Pro League clubs in Europe — a real, votable Rule Book change ──
+//
+// Requested directly, in full mechanical detail. The four Saudi clubs
+// (clubs.ts's OTHER_CLUBS — Al Hilal, Al Nassr, Al Ahli SFC, Al Ittihad)
+// already have real squads fetched every season (`externalClubsFor` already
+// includes OTHER_CLUBS) — this only changes which competition's field lists
+// them. Two of the four join the Champions League each season, two join the
+// Europa League, randomly — but not by replacing just anyone: every main
+// nation's clubs are exempt from being bumped out of EITHER competition
+// (given directly), and the Europa League additionally exempts five named
+// clubs (Olympiacos, Anderlecht, Benfica, Rangers, Ajax — also given
+// directly). The two Champions League clubs that get replaced aren't
+// dropped outright — they demote INTO the Europa League that same season,
+// which is why the Europa League needs to make room for four incomers (two
+// Saudi, two demoted) by removing four of its own eligible clubs, not two.
+// Applies on TOP of whatever `seasonField` above already produced for this
+// season — SAUDI_CLUBS/EURO_CLUB_NATION are defined earlier in this file,
+// shared with `seasonField`'s own nation logic.
+function saudiExempt(club: EuroClub, competition: "Champions League" | "Europa League"): boolean {
+  if (MAIN_NATIONS.includes(nationOf(club.name))) return true;
+  return competition === "Europa League" && EL_NAMED_EXEMPT.has(club.name);
+}
+
+/** Applies the swap for ONE competition's pool, given the already-decided
+ *  incoming clubs (Saudi entrants, plus — for Europa League only — the two
+ *  Champions League clubs bumped down) and a seeded rng. Removes exactly as
+ *  many eligible (non-exempt) clubs as are coming in, re-seeds the whole
+ *  field by strength (`seededPool`'s own logic, inlined here since a mixed
+ *  field of untouched clubs + new arrivals needs the same treatment). */
+function swapIn(pool: EuroClub[], incoming: EuroSeed[], competition: "Champions League" | "Europa League", rng: () => number): EuroClub[] {
+  const eligible = shuffle(pool.filter(c => !saudiExempt(c, competition)), rng);
+  const removed = new Set(eligible.slice(0, incoming.length).map(c => c.name));
+  const survivors = pool.filter(c => !removed.has(c.name));
+  return seededPool([...survivors.map(c => ({ name: c.name, strength: c.strength })), ...incoming]);
+}
+
+/**
+ * The whole season's swap, computed once and reused for both pools so the
+ * Champions League's two demotions land as real incomers in the Europa
+ * League field, not a second independent random draw. Takes the base
+ * Champions/Europa fields as arguments (rather than reading module-level
+ * constants) so it composes correctly on top of whatever `seasonField`
+ * already produced this season — the Saudi swap applies to the REAL current
+ * field, not always the original static one.
+ */
+function applySaudiSwap(
+  championsBase: EuroClub[], europaBase: EuroClub[],
+  competition: "Champions League" | "Europa League", seasonSeed: number,
+): EuroClub[] {
+  const rng = mulberry32(seasonSeed);
+  const shuffledSaudis = shuffle(SAUDI_CLUBS, rng);
+  const [clA, clB, elA, elB] = shuffledSaudis;
+
+  const newChampions = swapIn(championsBase, [clA, clB], "Champions League", rng);
+  const demoted = championsBase.filter(c => !newChampions.some(n => n.name === c.name))
+    .map(c => ({ name: c.name, strength: c.strength }));
+  const newEuropa = swapIn(europaBase, [elA, elB, ...demoted], "Europa League", rng);
+
+  return competition === "Champions League" ? newChampions : newEuropa;
+}
+
+export function poolFor(competition: EuroId, career?: CareerState): EuroClub[] {
+  if (competition === "Conference League") return CONFERENCE_POOL;
+
+  // No live career to compute real qualification/strengths from — the
+  // static season-1 roster is the only meaningful fallback (used by e.g.
+  // crownWithoutYou, which supplies real English entrants separately).
+  if (!career) {
+    const names = competition === "Champions League" ? CHAMPIONS_LEAGUE_CLUBS : EUROPA_LEAGUE_CLUBS;
+    return seededPool(names.map(name => ({ name, strength: NON_ENGLISH_CLUB_STRENGTH[name] ?? 75 })));
+  }
+
+  const championsBase = seasonField("Champions League", career);
+  const europaBase = seasonField("Europa League", career);
+
+  if (ruleBookFor(career, "UEFA").saudiClubsInEurope) {
+    return applySaudiSwap(championsBase, europaBase, competition, career.season * 60013 + 17);
+  }
+  return competition === "Champions League" ? championsBase : europaBase;
 }
 
 // ── Opening the campaign ────────────────────────────────────────────────────
@@ -368,22 +671,39 @@ export function openEuro(
   clubStrength: number,
   leagueFinish: number,
   rng: () => number,
+  career?: CareerState,
 ): EuroState {
   const yourPot = potForFinish(leagueFinish);
-  const pool = poolFor(competition);
+  const pool = poolFor(competition, career);
   const you: EuroClub = { name: clubName, strength: clubStrength, pot: yourPot };
 
-  // You, plus everyone in the pool — no per-pot cap. The pool's real size
-  // now varies by competition (however many clubs CHAMPIONS_SEEDS/
-  // EUROPA_SEEDS/CONFERENCE_SEEDS actually name), so a fixed "9 per pot,
-  // minus 1 for your own pot" assumption would silently break the moment
-  // that stopped being exactly 36 either way, which is exactly what
-  // reconciling the seed lists against clubs.ts did. simulateEuroMatchday's
-  // own comment explains why the total needs to come out even; the three
-  // seed lists are each sized with that in mind instead.
+  // You, plus everyone ELSE in the pool. Since `seasonField` now builds the
+  // real 36-club field with English clubs (including yours, once you've
+  // genuinely qualified) already IN it — the fix for the bug this file's
+  // own big header comment above documents at length — the pool USUALLY
+  // already contains your own name; filtering it out here before re-adding
+  // you (with your own live strength/pot, which should already match, but
+  // this is the one place that GUARANTEES it) keeps the total at the real
+  // 36 rather than 37 in that case.
+  //
+  // But a career-less call (the dev sandbox, a generic test club, `/star
+  // -match-dev`) or an invented player club that never appears in any real
+  // qualification list hits the OTHER branch: filtering removes nothing,
+  // so simply prepending "you" would leave 37 clubs — an ODD total, which
+  // breaks `simulateEuroMatchday`'s everyone-else pairing (it relies on an
+  // EVEN number remaining once you and your opponent are set aside — see
+  // that function's own comment). Caught in testing: real seeded runs came
+  // back with several clubs stuck on 7 played instead of 8, a genuine bye
+  // creeping in every matchday. Fixed by dropping the single weakest
+  // (lowest-pot, last-in-pot) pool club in that case, so the total field
+  // size is always exactly `pool.length` regardless of which branch fires.
+  const withoutYou = pool.filter(c => c.name !== clubName);
+  const trimmed = withoutYou.length === pool.length
+    ? withoutYou.slice(0, -1)
+    : withoutYou;
   const clubs: EuroClub[] = [you];
   for (let pot = 1; pot <= 4; pot++) {
-    clubs.push(...pool.filter(c => c.pot === pot && c.name !== clubName));
+    clubs.push(...trimmed.filter(c => c.pot === pot));
   }
 
   const leaguePhase: EuroMatch[] = [];

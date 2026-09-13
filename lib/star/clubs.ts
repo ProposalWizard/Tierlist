@@ -75,6 +75,10 @@ export const PROMOTION_POOL_CLUBS: readonly string[] = [
 export const OTHER_CLUBS: readonly string[] = [
   "FC Schalke 04", "AS Monaco", "RC Strasbourg Alsace", "Atalanta",
   "Al Hilal", "Al Nassr", "Al Ahli SFC", "Al Ittihad",
+  // Moved out of CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS directly below —
+  // given directly, to correct both lists down to the real 36 UEFA uses
+  // (they'd drifted to 38 apiece). See those two lists' own notes.
+  "Sevilla FC", "Rangers FC", "Hearts", "Vitória SC",
 ];
 
 /**
@@ -100,6 +104,16 @@ export const OTHER_CLUBS: readonly string[] = [
  * from "cloned under a name three characters different from what's asked
  * for", and 36 of these 84 were the second kind.
  */
+/**
+ * Exactly 36 — the real UEFA Swiss-model field size, confirmed directly
+ * after this list drifted to 38. Two were moved out to correct it: "FC
+ * København" dropped to EUROPA_LEAGUE_CLUBS (its own note there), "Sevilla
+ * FC" dropped to OTHER_CLUBS (Spain already has its full fixed allocation
+ * without it — see euro.ts's MAIN_NATION_ALLOCATION). This is now the
+ * literal season-1 Champions League roster `euro.ts` builds its simulation
+ * from directly — not a separate hand-typed seed list that can drift from
+ * this one again, which is exactly how it reached 38 last time.
+ */
 export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
   "Arsenal", "Aston Villa", "Atlético Madrid", "Borussia Dortmund", "FC Barcelona",
   "FC Bayern München", "Club Brugge KV", "Como", "Feyenoord", "Galatasaray SK", "Inter",
@@ -107,26 +121,24 @@ export const CHAMPIONS_LEAGUE_CLUBS: readonly string[] = [
   "Napoli", "Paris Saint-Germain", "FC Porto", "PSV", "Real Betis Balompié",
   "Real Madrid", "Roma", "Shakhtar Donetsk", "SK Slavia Praha", "Sporting CP",
   "VfB Stuttgart", "Villarreal CF", "FK Bodø/Glimt", "Celtic", "AEK Athens", "Olympique Lyonnais",
-  "Fenerbahçe SK", "Dinamo Zagreb",
-  // Slovan Bratislava was given directly but confirmed absent from the FC26
-  // table under any close spelling (see fc27_clone_european_clubs.sql) —
-  // swapped for a club with genuine recent Champions League pedigree from a
-  // league already confirmed present via Midtjylland's match. Danish
-  // spelling, not the English one — its own real row is "FC København".
-  "FC København",
-  // Moved in from OTHER_CLUBS — both have real recent Champions League
-  // pedigree and euro.ts's CHAMPIONS_POOL already (correctly) treated them
-  // as Champions League clubs; this file just never agreed until now.
-  "Sevilla FC", "Eintracht Frankfurt",
+  "Fenerbahçe SK", "Dinamo Zagreb", "Eintracht Frankfurt",
 ];
 
+/**
+ * Exactly 36 — see CHAMPIONS_LEAGUE_CLUBS's own note; this list had drifted
+ * to 38 the same way. "Rangers FC", "Hearts", and "Vitória SC" moved out to
+ * OTHER_CLUBS (Scotland/Portugal already have real representation without
+ * them — same "real, but sitting out this season" pool the general reshuffle
+ * draws from, see euro.ts). "FC København" moved IN from
+ * CHAMPIONS_LEAGUE_CLUBS, given directly.
+ */
 export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
   "AZ Alkmaar", "AFC Bournemouth", "RC Celta", "Crystal Palace", "TSG 1899 Hoffenheim",
   "Juventus", "Bayer 04 Leverkusen", "Olympique de Marseille", "AC Milan", "Olympiacos FC",
   "Real Sociedad", "Stade Rennais FC", "Sparta Praha", "SK Sturm Graz", "Sunderland",
   "Union Saint-Gilloise", "Ferencvárosi Torna Club", "RSC Anderlecht", "Lech Poznań",
   "Trabzonspor", "SL Benfica", "Beşiktaş JK",
-  "FC Red Bull Salzburg", "Rangers FC", "Hearts", "Shamrock Rovers",
+  "FC Red Bull Salzburg", "Shamrock Rovers",
   // The first list was seven short of the real thirty-six.
   "Ajax", "FC Midtjylland", "KRC Genk", "BSC Young Boys", "FC Basel 1893", "Malmö FF",
   // Torreense, Crvena Zvezda, Omonia Nicosia, Pafos and Slovan Bratislava were
@@ -136,11 +148,14 @@ export const EUROPA_LEAGUE_CLUBS: readonly string[] = [
   // happens to share its nickname's English translation. Swapped for five
   // other clubs with a genuine European pedigree, each from a league already
   // confirmed present in the table by a club above that matched clean.
-  "Sporting Clube de Braga", "PAOK", "Viktoria Plzeň", "Vitória SC", "Legia Warszawa",
+  "Sporting Clube de Braga", "PAOK", "Viktoria Plzeň", "Legia Warszawa",
   // Moved in from OTHER_CLUBS — real Europa League pedigree, and euro.ts's
   // EUROPA_POOL already (correctly) treated it as one; this file just never
   // agreed until now.
   "Lazio",
+  // Moved in from CHAMPIONS_LEAGUE_CLUBS, given directly, correcting both
+  // lists down to the real 36.
+  "FC København",
 ];
 
 /**
