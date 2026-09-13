@@ -313,10 +313,14 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   check(nextSeason.europeanQualification === "Champions League", "and gets you into the Champions League");
   check(!!nextSeason.euroState, "which opens a European campaign the following season");
   check(nextSeason.euroState?.competition === "Champions League", "in the competition it earned");
-  // Field size is derived from poolFor, not hardcoded — see euro.ts's own
-  // header for why Champions League is 34, not 36, after reconciling its
-  // seed lists against clubs.ts's CHAMPIONS_LEAGUE_CLUBS/EUROPA_LEAGUE_CLUBS.
-  const expectedField = poolFor("Champions League").length + 1;
+  // Field size is derived from poolFor, not hardcoded — both competitions
+  // are genuinely 36 clubs every season since the 13 Sep 2026 rebuild. Your
+  // own club (Arsenal here, having just won the league) is a real English
+  // qualifier already IN the season-2 pool via seasonField/seasonQualifiers
+  // — openEuro recognises that and doesn't add a 37th slot on top (see its
+  // own note: that only happens for a career-less/invented club that isn't
+  // really in the pool at all).
+  const expectedField = poolFor("Champions League").length;
   check(nextSeason.euroState?.clubs.length === expectedField,
     `against the real Champions League field (${nextSeason.euroState?.clubs.length}, expected ${expectedField})`);
   // A league phase can be drawn up in advance — every opponent is known on the

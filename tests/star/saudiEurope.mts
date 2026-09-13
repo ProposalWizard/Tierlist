@@ -46,7 +46,11 @@ function freshCareer(): CareerState {
 const SAUDI_CLUBS = ["Al Hilal", "Al Nassr", "Al Ahli SFC", "Al Ittihad"];
 const CL_EXEMPT = ["Real Madrid", "FC Barcelona", "FC Bayern München", "Paris Saint-Germain", "Inter", "Atlético Madrid", "Napoli", "Roma", "Villarreal CF", "Borussia Dortmund"];
 const EL_NATION_EXEMPT = ["Juventus", "AC Milan", "Lazio", "Bayer 04 Leverkusen", "TSG 1899 Hoffenheim", "Real Sociedad", "RC Celta", "Olympique de Marseille", "Stade Rennais FC"];
-const EL_NAMED_EXEMPT = ["Olympiacos FC", "RSC Anderlecht", "SL Benfica", "Rangers FC", "Ajax"];
+// Rangers FC dropped here too — the 13 Sep 2026 36-club rebuild moved it
+// from EUROPA_LEAGUE_CLUBS into OTHER_CLUBS, so it's no longer guaranteed
+// to be in the season-1 pool this test checks against (see euro.ts's own
+// EL_NAMED_EXEMPT note).
+const EL_NAMED_EXEMPT = ["Olympiacos FC", "RSC Anderlecht", "SL Benfica", "Ajax"];
 
 // ── Off by default, unchanged behaviour ─────────────────────────────────
 {
