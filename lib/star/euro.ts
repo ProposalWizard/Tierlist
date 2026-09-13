@@ -357,26 +357,116 @@ const SAUDI_CLUBS: EuroSeed[] = [
   { name: "Al Ittihad", strength: 77 },
 ];
 
-/** Real nationality for every club in the Champions/Europa seed pools —
- *  built for exactly one purpose: deciding who's exempt from the Saudi
- *  swap above. Not claimed accurate for clubs outside these two pools. */
-const CLUB_NATION: Record<string, string> = {
-  "Real Madrid": "Spain", "FC Barcelona": "Spain", "Atlético Madrid": "Spain",
-  "Sevilla FC": "Spain", "Real Betis Balompié": "Spain", "Villarreal CF": "Spain", "Real Sociedad": "Spain", "RC Celta": "Spain",
-  "Inter": "Italy", "Napoli": "Italy", "Roma": "Italy", "Como": "Italy", "Juventus": "Italy", "AC Milan": "Italy", "Lazio": "Italy",
-  "FC Bayern München": "Germany", "Borussia Dortmund": "Germany", "RB Leipzig": "Germany",
-  "Eintracht Frankfurt": "Germany", "VfB Stuttgart": "Germany", "Bayer 04 Leverkusen": "Germany", "TSG 1899 Hoffenheim": "Germany",
-  "Paris Saint-Germain": "France", "Olympique Lyonnais": "France", "RC Lens": "France", "Lille OSC": "France",
-  "Olympique de Marseille": "France", "Stade Rennais FC": "France",
-  "AFC Bournemouth": "England", "Crystal Palace": "England", "Sunderland": "England",
+/**
+ * Real nationality for every one of the 70 real clubs in the Champions/
+ * Europa seed pools — the one source both the Saudi swap above and the
+ * seasonal reshuffle below read from. Not claimed accurate for clubs
+ * outside these two pools (the Conference League field isn't real-club-
+ * backed at all — see CONFERENCE_SEEDS' own note).
+ */
+const EURO_CLUB_NATION: Record<string, string> = {
+  // Champions League field
+  "Real Madrid": "Spain", "FC Bayern München": "Germany", "FC Barcelona": "Spain",
+  "Paris Saint-Germain": "France", "Inter": "Italy", "Atlético Madrid": "Spain",
+  "Borussia Dortmund": "Germany", "Napoli": "Italy", "Sevilla FC": "Spain",
+  "FC Porto": "Portugal", "RB Leipzig": "Germany", "Roma": "Italy", "PSV": "Netherlands",
+  "Real Betis Balompié": "Spain", "Sporting CP": "Portugal", "Villarreal CF": "Spain",
+  "Eintracht Frankfurt": "Germany", "Fenerbahçe SK": "Turkey", "Feyenoord": "Netherlands",
+  "Olympique Lyonnais": "France", "RC Lens": "France", "VfB Stuttgart": "Germany",
+  "Lille OSC": "France", "Galatasaray SK": "Turkey", "Celtic": "Scotland",
+  "Club Brugge KV": "Belgium", "Shakhtar Donetsk": "Ukraine", "Dinamo Zagreb": "Croatia",
+  "SK Slavia Praha": "Czech Republic", "FC København": "Denmark", "FK Bodø/Glimt": "Norway",
+  "Como": "Italy", "AEK Athens": "Greece",
+  // Europa League field
+  "Juventus": "Italy", "AC Milan": "Italy", "Bayer 04 Leverkusen": "Germany",
+  "SL Benfica": "Portugal", "Lazio": "Italy", "Ajax": "Netherlands",
+  "Olympique de Marseille": "France", "Real Sociedad": "Spain", "Crystal Palace": "England",
+  "Rangers FC": "Scotland", "Olympiacos FC": "Greece", "Sporting Clube de Braga": "Portugal",
+  "AFC Bournemouth": "England", "TSG 1899 Hoffenheim": "Germany", "AZ Alkmaar": "Netherlands",
+  "RSC Anderlecht": "Belgium", "KRC Genk": "Belgium", "Union Saint-Gilloise": "Belgium",
+  "PAOK": "Greece", "Beşiktaş JK": "Turkey", "Stade Rennais FC": "France",
+  "Ferencvárosi Torna Club": "Hungary", "FC Midtjylland": "Denmark", "Sunderland": "England",
+  "Trabzonspor": "Turkey", "BSC Young Boys": "Switzerland", "SK Sturm Graz": "Austria",
+  "Malmö FF": "Sweden", "Sparta Praha": "Czech Republic", "Viktoria Plzeň": "Czech Republic",
+  "FC Basel 1893": "Switzerland", "RC Celta": "Spain", "Legia Warszawa": "Poland",
+  "Hearts": "Scotland", "Lech Poznań": "Poland", "Vitória SC": "Portugal",
+  "Shamrock Rovers": "Ireland",
 };
 
+const RESHUFFLE_EXEMPT_NATIONS = new Set(["England", "Germany", "Italy", "Spain", "France"]);
 const EL_NAMED_EXEMPT = new Set(["Olympiacos FC", "RSC Anderlecht", "SL Benfica", "Rangers FC", "Ajax"]);
 
 function saudiExempt(club: EuroClub, competition: "Champions League" | "Europa League"): boolean {
-  const nation = CLUB_NATION[club.name];
-  if (nation && ["England", "Spain", "Italy", "Germany", "France"].includes(nation)) return true;
+  const nation = EURO_CLUB_NATION[club.name];
+  if (nation && RESHUFFLE_EXEMPT_NATIONS.has(nation)) return true;
   return competition === "Europa League" && EL_NAMED_EXEMPT.has(club.name);
+}
+
+/**
+ * A REAL, RANDOMISED EUROPEAN FIELD, DIFFERENT EVERY SEASON FROM SEASON 2 ON.
+ *
+ * Requested directly, in full mechanical detail: England/Germany/Italy/
+ * Spain/France's clubs never move between competitions — everyone else DOES,
+ * shuffled each season. A nation with only one club in Europe (the two
+ * combined fields) can land in either one freely. A nation with two or more
+ * clubs must always have at least one in EACH competition — split exactly
+ * 1/1 if it has precisely two (the worked example given directly: Scotland's
+ * three clubs, one in the Champions League, two in the Europa League, is
+ * exactly the shape this produces). Season 1 keeps the exact given rosters
+ * untouched, also given directly — this never runs for `career.season < 2`.
+ *
+ * Capacities (how many non-exempt clubs each competition actually has room
+ * for) are read off the REAL current pool sizes and REAL current exempt
+ * counts, not hardcoded — this stays correct if either seed list is ever
+ * edited. The exempt clubs' own competition never changes; only the
+ * non-exempt clubs get reshuffled between the two fields.
+ */
+function reshuffleEurope(seasonSeed: number): { champions: EuroClub[]; europa: EuroClub[] } {
+  const rng = mulberry32(seasonSeed);
+  const isChampions = (name: string) => CHAMPIONS_POOL.some(c => c.name === name);
+  const allClubs = [...CHAMPIONS_POOL, ...EUROPA_POOL];
+  const exempt = allClubs.filter(c => RESHUFFLE_EXEMPT_NATIONS.has(EURO_CLUB_NATION[c.name] ?? ""));
+  const nonExempt = allClubs.filter(c => !RESHUFFLE_EXEMPT_NATIONS.has(EURO_CLUB_NATION[c.name] ?? ""));
+
+  const exemptChampionsCount = exempt.filter(c => isChampions(c.name)).length;
+  const championsCapacity = CHAMPIONS_POOL.length - exemptChampionsCount;
+  const europaCapacity = EUROPA_POOL.length - (exempt.length - exemptChampionsCount);
+
+  const byNation = new Map<string, EuroClub[]>();
+  for (const c of nonExempt) {
+    const nation = EURO_CLUB_NATION[c.name] ?? "Unknown";
+    (byNation.get(nation) ?? byNation.set(nation, []).get(nation)!).push(c);
+  }
+
+  const champions: EuroClub[] = exempt.filter(c => isChampions(c.name));
+  const europa: EuroClub[] = exempt.filter(c => !isChampions(c.name));
+  const exemptChampionsStart = champions.length;
+  const flexible: EuroClub[] = [];
+
+  for (const clubs of Array.from(byNation.values())) {
+    if (clubs.length >= 2) {
+      const [first, second, ...rest] = shuffle(clubs, rng);
+      champions.push(first);
+      europa.push(second);
+      flexible.push(...rest);
+    } else {
+      flexible.push(...clubs);
+    }
+  }
+
+  // Whatever's left fills out each competition to its real capacity —
+  // clamped defensively so a future roster edit that shifts the exact
+  // numbers can never push either side negative or over-full.
+  const shuffledFlex = shuffle(flexible, rng);
+  const championsNonExemptSoFar = champions.length - exemptChampionsStart;
+  const championsNeeded = Math.max(0, Math.min(shuffledFlex.length, championsCapacity - championsNonExemptSoFar));
+  champions.push(...shuffledFlex.slice(0, championsNeeded));
+  europa.push(...shuffledFlex.slice(championsNeeded));
+
+  return {
+    champions: seededPool(champions.map(c => ({ name: c.name, strength: c.strength }))),
+    europa: seededPool(europa.map(c => ({ name: c.name, strength: c.strength }))),
+  };
 }
 
 /** Applies the swap for ONE competition's pool, given the already-decided
@@ -392,30 +482,48 @@ function swapIn(pool: EuroClub[], incoming: EuroSeed[], competition: "Champions 
   return seededPool([...survivors.map(c => ({ name: c.name, strength: c.strength })), ...incoming]);
 }
 
-/** The whole season's swap, computed once and reused for both pools so the
- *  Champions League's two demotions land as real incomers in the Europa
- *  League field, not a second independent random draw. */
-function applySaudiSwap(competition: "Champions League" | "Europa League", seasonSeed: number): EuroClub[] {
+/**
+ * The whole season's swap, computed once and reused for both pools so the
+ * Champions League's two demotions land as real incomers in the Europa
+ * League field, not a second independent random draw. Takes the base
+ * Champions/Europa pools as arguments (rather than always reading the
+ * module-level CHAMPIONS_POOL/EUROPA_POOL) so it composes correctly on top
+ * of a season already reshuffled by `reshuffleEurope` — the Saudi swap
+ * applies to whatever this season's real field actually is, not always the
+ * original static one.
+ */
+function applySaudiSwap(
+  championsBase: EuroClub[], europaBase: EuroClub[],
+  competition: "Champions League" | "Europa League", seasonSeed: number,
+): EuroClub[] {
   const rng = mulberry32(seasonSeed);
   const shuffledSaudis = shuffle(SAUDI_CLUBS, rng);
   const [clA, clB, elA, elB] = shuffledSaudis;
 
-  const newChampions = swapIn(CHAMPIONS_POOL, [clA, clB], "Champions League", rng);
-  const demoted = CHAMPIONS_POOL.filter(c => !newChampions.some(n => n.name === c.name) && c.name !== clA.name && c.name !== clB.name)
+  const newChampions = swapIn(championsBase, [clA, clB], "Champions League", rng);
+  const demoted = championsBase.filter(c => !newChampions.some(n => n.name === c.name))
     .map(c => ({ name: c.name, strength: c.strength }));
-  const newEuropa = swapIn(EUROPA_POOL, [elA, elB, ...demoted], "Europa League", rng);
+  const newEuropa = swapIn(europaBase, [elA, elB, ...demoted], "Europa League", rng);
 
   return competition === "Champions League" ? newChampions : newEuropa;
 }
 
 export function poolFor(competition: EuroId, career?: CareerState): EuroClub[] {
   if (competition === "Conference League") return CONFERENCE_POOL;
-  if (career && ruleBookFor(career, "UEFA").saudiClubsInEurope) {
-    return applySaudiSwap(competition, career.season * 60013 + 17);
+
+  // Season 1 keeps the exact given rosters, given directly — this never
+  // runs before season 2.
+  let championsBase = CHAMPIONS_POOL, europaBase = EUROPA_POOL;
+  if (career && career.season >= 2) {
+    const reshuffled = reshuffleEurope(career.season * 30011 + 3);
+    championsBase = reshuffled.champions;
+    europaBase = reshuffled.europa;
   }
-  if (competition === "Champions League") return CHAMPIONS_POOL;
-  if (competition === "Europa League") return EUROPA_POOL;
-  return CONFERENCE_POOL;
+
+  if (career && ruleBookFor(career, "UEFA").saudiClubsInEurope) {
+    return applySaudiSwap(championsBase, europaBase, competition, career.season * 60013 + 17);
+  }
+  return competition === "Champions League" ? championsBase : europaBase;
 }
 
 // ── Opening the campaign ────────────────────────────────────────────────────
