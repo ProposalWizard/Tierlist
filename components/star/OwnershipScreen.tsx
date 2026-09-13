@@ -3,6 +3,7 @@ import type { CareerState } from "@/lib/star/types";
 import { MAJORITY_THRESHOLD, clubValuation } from "@/lib/star/investments";
 import { GOVERNING_BODIES, influenceIn, canProposeRuleChange } from "@/lib/star/governingBodies";
 import { isBodyPresident } from "@/lib/star/leadership";
+import { formatMoney } from "@/lib/star/money";
 
 /**
  * OWNERSHIP — THE ONE HOME FOR EVERYTHING STAR POWER & POLITICS BUILT.
@@ -19,9 +20,7 @@ import { isBodyPresident } from "@/lib/star/leadership";
  */
 
 function money(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return `${Math.round(n)}`;
+  return formatMoney(n);
 }
 
 function RepBar({ label, value }: { label: string; value: number }) {

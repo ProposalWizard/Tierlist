@@ -4,6 +4,7 @@ import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan } from "@/lib/star/shopData";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { blackMarketPrice } from "@/lib/star/corruption";
+import { formatMoney } from "@/lib/star/money";
 import KibCanIcon from "./KibCanIcon";
 import LifestyleIcon from "./LifestyleIcon";
 
@@ -40,7 +41,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
           <div className="font-black text-white text-lg">{title}</div>
           <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-3 py-2 border border-gray-600">
             <StarIcon />
-            <span className="font-black text-yellow-300">{career.money}</span>
+            <span className="font-black text-yellow-300">{formatMoney(career.money)}</span>
           </div>
         </div>
 

@@ -125,7 +125,7 @@ export default function StarDevPage() {
    *  making the player re-navigate through tabs they just came from. Reset
    *  once read so re-opening Invest from its own home button still starts
    *  on Market like it always has. */
-  const [investmentsEntry, setInvestmentsEntry] = useState<{ tab: "market" | "portfolio" | "boardroom"; club?: string } | null>(null);
+  const [investmentsEntry, setInvestmentsEntry] = useState<{ tab: "market" | "portfolio" | "boardroom"; club?: string; section?: "squad" | "sign" | "manager" | "powers" } | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   /** A star rating that just moved — see toastRatingChange. Cleared the same
    *  flat-timeout way the achievement toast above already is. */
@@ -1248,6 +1248,7 @@ export default function StarDevPage() {
     const result = proposeSellPlayerVote(career, club, playerId, rng, agreedFee);
     if (!result.ok) return { ok: false, reason: result.reason };
     setPendingVote({ kind: "sellPlayer", proposal: result.proposal });
+    setInvestmentsEntry({ tab: "boardroom", club, section: "squad" });
     setPhase("vote-ceremony");
     return { ok: true };
   }, [career]);
@@ -1260,6 +1261,13 @@ export default function StarDevPage() {
     const result = proposeKitVote(career, club, optionA, optionB, favor, rng);
     if (!result.ok) return { ok: false, reason: result.reason };
     setPendingVote({ kind: "kit", proposal: result.proposal });
+    // Reported directly: putting a kit vote up used to dump you back on the
+    // Investments screen's Market tab afterwards, not the club's own
+    // Boardroom you were actually standing in — the whole Investments tree
+    // unmounts (and loses its own internal tab/section state) the moment
+    // the phase switches away to "vote-ceremony". Recording where you were
+    // here means the SAME club's Powers tab reopens once the vote resolves.
+    setInvestmentsEntry({ tab: "boardroom", club, section: "powers" });
     setPhase("vote-ceremony");
     return { ok: true };
   }, [career]);
@@ -1270,6 +1278,7 @@ export default function StarDevPage() {
     const result = proposePresidentVote(career, club, rng);
     if (!result.ok) return { ok: false, reason: result.reason };
     setPendingVote({ kind: "president", proposal: result.proposal });
+    setInvestmentsEntry({ tab: "boardroom", club, section: "powers" });
     setPhase("vote-ceremony");
     return { ok: true };
   }, [career]);
@@ -1839,6 +1848,7 @@ export default function StarDevPage() {
         career={career}
         initialTab={investmentsEntry?.tab}
         initialBoardroomClub={investmentsEntry?.club}
+        initialBoardroomSection={investmentsEntry?.section}
         onBack={() => { setInvestmentsEntry(null); handleBackToDashboard(); }}
         onBuyStake={handleBuyStake}
         onSellStake={handleSellStake}
@@ -1904,7 +1914,7 @@ export default function StarDevPage() {
       <VoteCeremony
         tally={pendingVote.proposal.tally}
         scope={pendingVote.kind === "kit" ? "fans" : (pendingVote.kind === "ruleChange" || pendingVote.kind === "bodyPresidency") ? "governing-body" : "boardroom"}
-        successOptionId={pendingVote.kind === "kit" ? undefined : "yes"}
+        successOptionId={pendingVote.kind === "kit" ? (pendingVote.proposal.favor === "b" ? "b" : pendingVote.proposal.favor === "a" ? "a" : undefined) : "yes"}
         canOverrule={canOverrule}
         overruleCost={OVERRULE_REPUTATION_COST}
         onDone={handleVoteDone}

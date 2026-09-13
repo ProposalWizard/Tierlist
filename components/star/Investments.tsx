@@ -7,10 +7,12 @@ import {
 } from "@/lib/star/investments";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { allPoolManagers } from "@/lib/star/managerPool";
+import { loadLineup } from "@/lib/star/lineupStore";
 import { FORMATIONS } from "@/lib/star/formations";
 import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
 import { facilitiesFor } from "@/lib/star/facilities";
 import { playerMarketValue } from "@/lib/star/marketValue";
+import { formatMoney, niceMoneyStep } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 
 /**
@@ -39,6 +41,7 @@ interface Props {
    *  player re-navigate through tabs they just came from. */
   initialTab?: "market" | "portfolio" | "boardroom";
   initialBoardroomClub?: string;
+  initialBoardroomSection?: "squad" | "sign" | "manager" | "powers";
   onBuyStake: (club: string, percent: number) => void;
   onSellStake: (club: string, percent: number) => void;
   onTopUpBudget: (club: string, amount: number) => void;
@@ -73,9 +76,7 @@ function StarIcon() {
 }
 
 function money(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return `${Math.round(n)}`;
+  return formatMoney(n);
 }
 
 export default function Investments(props: Props) {
@@ -130,6 +131,7 @@ export default function Investments(props: Props) {
             ? (
               <Boardroom
                 career={career} club={boardroomClub} onBack={() => setBoardroomClub(null)}
+                initialSection={boardroomClub === props.initialBoardroomClub ? props.initialBoardroomSection : undefined}
                 onTopUpBudget={props.onTopUpBudget} onSignPlayer={props.onSignPlayer}
                 onSellPlayer={props.onSellPlayer} onReplaceManager={props.onReplaceManager}
                 onSetFormation={props.onSetFormation} onSetKit={props.onSetKit}
@@ -275,7 +277,7 @@ function StakeControls({
         <div className="flex items-center gap-2">
           <span className="text-yellow-300 font-black text-sm">★</span>
           <input
-            type="number" min={0} max={maxBuySpend} step={1}
+            type="number" min={0} max={maxBuySpend} step={niceMoneyStep(clampedBuy)}
             value={clampedBuy}
             onChange={e => setBuyAmount(Math.max(0, Math.min(maxBuySpend, Math.round(Number(e.target.value) || 0))))}
             className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-2 py-1.5 text-sm text-white tabular-nums"
@@ -526,12 +528,13 @@ function squadFor(career: CareerState, club: string) {
 }
 
 function Boardroom({
-  career, club, onBack, onTopUpBudget, onSignPlayer, onSellPlayer, onReplaceManager,
+  career, club, onBack, initialSection, onTopUpBudget, onSignPlayer, onSellPlayer, onReplaceManager,
   onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
   otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
   career: CareerState; club: string; onBack: () => void;
+  initialSection?: "squad" | "sign" | "manager" | "powers";
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
   onSellPlayer: (club: string, playerId: string, agreedFee?: number) => ActionResult;
@@ -553,11 +556,12 @@ function Boardroom({
   onUpgradeTrainingGround: (club: string) => ActionResult;
   onUpgradeYouthAcademy: (club: string) => ActionResult;
 }) {
-  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers">("squad");
+  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers">(initialSection ?? "squad");
   const [topUp, setTopUp] = useState(1000);
   const [message, setMessage] = useState<string | null>(null);
   const state = ownedClubState(career, club);
   const squad = squadFor(career, club);
+  const isOwnClub = club === career.player.club;
 
   const runAction = (result: ActionResult) => {
     setMessage(result.ok ? null : (result.reason ?? "That didn't go through."));
@@ -589,13 +593,60 @@ function Boardroom({
     );
   }
 
+  // Requested directly: you can now buy your own club, including majority.
+  // But every Boardroom tool below (squad/sign/manager, and Powers'
+  // formation feature) reads the club's real roster via `findSquadEntry`,
+  // which only ever holds the OTHER 19 clubs — your own squad, contract,
+  // and manager relationship are already real, live systems elsewhere
+  // (the Squad screen, `career.contract`, `career.relationships.boss`), not
+  // this thin per-club record. Rather than a broken empty squad list, this
+  // is an honest financial-ownership-only view for the one club it applies
+  // to — same shape as the squad-size/Champions-League-format gap
+  // documented elsewhere in this game: a real, deliberate scope boundary,
+  // stated plainly, not a bug.
+  if (isOwnClub) {
+    return (
+      <div>
+        <button onClick={onBack} className="mb-2 text-xs font-black text-white/90 hover:text-white">← All boards</button>
+        <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
+          <div className="font-black text-white">{club}</div>
+          <div className="text-[10px] font-semibold text-white/90 mt-1">The club you actually play for.</div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex-1 bg-gray-900 rounded-lg px-2 py-1.5 flex items-center justify-between">
+              <span className="text-[10px] font-bold text-white font-semibold">Budget</span>
+              <span className="font-black text-yellow-300 text-sm">★{money(state.budget)}</span>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="number" min={0} value={topUp} onChange={e => setTopUp(Math.max(0, Number(e.target.value)))}
+              className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+            />
+            <button
+              disabled={topUp <= 0 || topUp > career.money}
+              onClick={() => onTopUpBudget(club, topUp)}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs whitespace-nowrap"
+            >
+              Fund club
+            </button>
+          </div>
+        </div>
+        <div className="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-[11px] font-semibold text-white/90">
+          Squad, signings, and the manager's job here are handled by your own career — the Squad screen, transfers,
+          and your relationship with the boss — not the Boardroom. Owning a stake still counts toward your
+          portfolio and pays out exactly like any other club.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <button onClick={onBack} className="mb-2 text-xs font-black text-white/90 hover:text-white">← All boards</button>
       <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
         <div className="font-black text-white">{club}</div>
         <div className="text-[10px] text-white/90">
-          Manager: {state.managerName ?? "Vacant"}
+          Manager: {loadLineup(club)?.manager || state.managerName || "Vacant"}
         </div>
         <div className="mt-2 flex items-center gap-2">
           <div className="flex-1 bg-gray-900 rounded-lg px-2 py-1.5 flex items-center justify-between">
@@ -726,7 +777,19 @@ function PowersPanel({
   const facilities = facilitiesFor(career, club);
   const [formationId, setFormationId] = useState(state.formation ?? "433");
   const [kitA, setKitA] = useState<ClubKit>(kit ?? { primary: "#dc2626", secondary: "#ffffff", trim: "#111827" });
-  const [kitB, setKitB] = useState<ClubKit>({ primary: "#1d4ed8", secondary: "#ffffff", trim: "#facc15" });
+  // Reported directly, and reproduced exactly: put a kit to a fan vote,
+  // Design B (this picker's own fixed default) wins, and the NEXT time the
+  // kit picker opens, Design A now shows the just-adopted current kit —
+  // which IS that same fixed default — while Design B still defaults to
+  // the identical literal. Two options that are always meant to be a real
+  // choice ended up showing the same colours because one of them was never
+  // anything but a hardcoded constant. Guaranteed different from whatever
+  // the current kit actually is now, picking a second alternate only if the
+  // first alternate happens to already be the current kit.
+  const KIT_ALT_1: ClubKit = { primary: "#1d4ed8", secondary: "#ffffff", trim: "#facc15" };
+  const KIT_ALT_2: ClubKit = { primary: "#111827", secondary: "#dc2626", trim: "#ffffff" };
+  const sameKit = (a: ClubKit, b: ClubKit) => a.primary === b.primary && a.secondary === b.secondary && a.trim === b.trim;
+  const [kitB, setKitB] = useState<ClubKit>(kit && sameKit(kit, KIT_ALT_1) ? KIT_ALT_2 : KIT_ALT_1);
   const [wage, setWage] = useState(state.presidentWage ?? 0);
   const [mergeTarget, setMergeTarget] = useState(otherOwnedClubs[0] ?? "");
   const [stadiumName, setStadiumName] = useState(facilities.stadiumName);
@@ -783,10 +846,25 @@ function PowersPanel({
           <button onClick={() => onSetKit(club, kitA)} className="flex-1 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">
             Set Design A directly
           </button>
-          <button onClick={() => onProposeKitVote(club, kitA, kitB, "a")} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
-            Put to a fan vote
+          <button onClick={() => onSetKit(club, kitB)} className="flex-1 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">
+            Set Design B directly
           </button>
         </div>
+        {/* Reported directly: this used to always nominate Design A as the
+            owner's favourite, with no way to actually root for B — so a
+            legitimate Design B win read as the vote "failing" on the
+            ceremony screen even though it won fairly. Two real options now. */}
+        <div className="mt-1.5 flex gap-1">
+          <button onClick={() => onProposeKitVote(club, kitA, kitB, "a")} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+            Vote — favour A
+          </button>
+          <button onClick={() => onProposeKitVote(club, kitA, kitB, "b")} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+            Vote — favour B
+          </button>
+        </div>
+        <button onClick={() => onProposeKitVote(club, kitA, kitB, undefined)} className="mt-1.5 w-full py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black text-white/90">
+          Vote — no favourite, let the fans decide
+        </button>
       </div>
 
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
@@ -862,9 +940,18 @@ function PowersPanel({
         <div className="text-[11px] text-white font-semibold mb-1.5">
           Capacity {facilities.stadiumCapacity.toLocaleString()} · Training tier {facilities.trainingGroundTier}/3 · Youth tier {facilities.youthAcademyTier}/3
         </div>
+        {facilities.stadiumBuild && (
+          <div className="mb-1.5 rounded-lg bg-amber-900/30 border border-amber-700/60 px-2.5 py-1.5 text-[10px] font-bold text-amber-200">
+            🏗️ Expanding to {facilities.stadiumBuild.targetCapacity.toLocaleString()} — {facilities.stadiumBuild.seasonsRemaining} season{facilities.stadiumBuild.seasonsRemaining === 1 ? "" : "s"} left
+          </div>
+        )}
         <div className="flex gap-1">
-          <button onClick={() => onUpgradeStadiumCapacity(club)} className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black">
-            +5,000 seats
+          <button
+            disabled={!!facilities.stadiumBuild}
+            onClick={() => onUpgradeStadiumCapacity(club)}
+            className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-[10px] font-black"
+          >
+            {facilities.stadiumBuild ? "Expansion under way" : "+5,000 seats (real build time)"}
           </button>
           <button
             disabled={facilities.trainingGroundTier >= 3}

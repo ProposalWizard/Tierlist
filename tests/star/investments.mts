@@ -96,9 +96,13 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
 // ── buyStake / sellStake: honest arithmetic ────────────────────────────────
 {
   const career = freshCareer();
-  check(!canInvestIn(career, career.player.club), "can't invest in your own employer");
-  const blocked = buyStake(career, career.player.club, 1);
-  check(blocked === career, "…and buyStake is a no-op against your own club");
+  // Requested directly: buying a stake in your own club is real now, not
+  // blocked — the Boardroom's squad/sign/manager tools still stay off for
+  // it (see Investments.tsx's own note), but the stake itself works exactly
+  // like any other club's.
+  check(canInvestIn(career, career.player.club), "you can invest in your own club too");
+  const ownClub = buyStake(career, career.player.club, 1);
+  check((stakeIn(ownClub, career.player.club)?.percent ?? 0) === 1, "…and buying a stake in your own club actually works");
 
   const valuation = clubValuation(RIVAL, career);
   const after = buyStake(career, RIVAL, 1);

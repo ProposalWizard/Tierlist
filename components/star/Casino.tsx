@@ -6,6 +6,7 @@ import {
   BET_COMPETITIONS, oddsFor, entrantsFor, canPlaceCompetitionBet, type BetCompetition, type CompetitionBet, type BetEntrant,
 } from "@/lib/star/competitionBetting";
 import { getTuning } from "@/lib/star/tuningStore";
+import { formatMoney } from "@/lib/star/money";
 
 interface Props {
   bankStart: number;
@@ -137,7 +138,7 @@ export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onB
           <button onClick={() => onExit(bank)} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
           <div className="flex-1 bg-gray-700 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-600">
             <span className="font-black text-white text-sm">Bank</span>
-            <span className="flex items-center gap-1 font-black text-yellow-300"><StarIcon />{bank}</span>
+            <span className="flex items-center gap-1 font-black text-yellow-300"><StarIcon />{formatMoney(bank)}</span>
           </div>
         </div>
 

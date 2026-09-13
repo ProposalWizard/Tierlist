@@ -245,32 +245,44 @@ export default function TrialPenalty({ onScored, club }: { onScored: () => void;
         if (ball.inNet) {
           stepBallInNet(ball, dt);
         } else if (!outcomeRef.current) {
-          stepKeeper(sc, dt);
-          const res = stepBall(ball, sc, rngRef.current, dt);
-          if (res) {
-            outcomeRef.current = res;
-            settle = 0;
-            // The outcome is decided, but the ball itself must not just stop
-            // dead the instant it is — reported directly as "the ball just
-            // gets stuck on the post". `ball.settling` is what CanvasMatch's
-            // own real matches gate `settleBall`'s pure roll-on physics
-            // behind (gravity, bounce, friction, no collisions), but the
-            // shared engine only ever sets it itself for one narrow case (a
-            // defender winning a loose ball) — every OTHER miss (a post that
-            // dies without a second bounce, a shot that drifts wide, one the
-            // keeper smothers) resolves with the flag never set, which is
-            // exactly the frame a real post-hit was reported freezing on.
-            // Owning the flag here, for every miss this screen can produce,
-            // is what actually stops that: the ball keeps visibly rolling
-            // through the settle beat below instead of announcing a result
-            // over a dead frame. `over` sets its own continuation
-            // (`ball.overBar`, read below) and a goal already has
-            // `ball.inNet` — this only ever applies to the ones that need it.
-            if (!ball.overBar) ball.settling = true;
+          // Reported directly, after the run-up/power constants were already
+          // brought in line with CanvasMatch: the ball still "didn't want to
+          // go in," felt "stuck," near the goal line specifically. Root
+          // cause found by comparison — CanvasMatch.tsx always subdivides a
+          // flight frame into 3 fixed substeps before calling stepBall (its
+          // own comment: "for stable physics"), so goal-line/post/net-entry
+          // collisions are checked against small ~0.0167s steps of motion.
+          // This loop was calling stepBall ONCE per frame with the raw,
+          // clamped-to-0.05s frame delta — up to 3x coarser Euler
+          // integration right at the exact boundary checks (over the bar,
+          // in the net, off the post) that are sensitive to how far the
+          // ball moves between checks. Mirroring the same 3-substep split
+          // here (no replay log to keep in sync with, unlike CanvasMatch —
+          // this screen has no replay system) is the actual fix.
+          const steps = 3;
+          for (let i = 0; i < steps; i++) {
+            const h = dt / steps;
+            stepKeeper(sc, h);
+            const res = stepBall(ball, sc, rngRef.current, h);
+            if (res) {
+              outcomeRef.current = res;
+              settle = 0;
+              // The outcome is decided, but the ball must not just stop dead
+              // the instant it is — reported directly, separately, as "the
+              // ball just gets stuck on the post." `ball.settling` is what
+              // gates `settleBall`'s pure roll-on physics below (gravity,
+              // bounce, friction, no collisions), but the shared engine only
+              // ever sets it itself for one narrow case (a defender winning
+              // a loose ball) — every OTHER miss here (a post that dies
+              // without a second bounce, a wide shot, a keeper smother)
+              // needs it set explicitly, or it freezes on the decided frame.
+              if (!ball.overBar) ball.settling = true;
+              break;
+            }
           }
         } else {
-          // See the comment above — this is the settle beat itself, keeping
-          // the ball visibly moving through it rather than frozen.
+          // This is the settle beat itself, keeping the ball visibly moving
+          // through it (see the `ball.settling` note above) rather than frozen.
           if (ball.settling) settleBall(ball, dt, sc);
           if (ball.overBar) stepBallPastBar(ball, dt);
         }

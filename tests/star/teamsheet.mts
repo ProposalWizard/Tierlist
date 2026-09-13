@@ -223,9 +223,13 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   check(offered.every(o => shape.slots.some(s => s.role === o.role)),
     `every offered role is one the shape actually has (${shape.name}: ${offered.map(o => o.role).join(",")})`);
   // Given directly: only these four are ever worth asking for, regardless of
-  // your real position — not a per-position neighbour table.
-  check(offered.every(o => (["CAM", "LW", "RW"] as const).includes(o.role as "CAM" | "LW" | "RW")),
-    `nothing outside Striker/Attacking Mid/either wing is ever offered (${offered.map(o => o.role).join(",")})`);
+  // your real position — not a per-position neighbour table. Central Mid is
+  // the one deliberate exception: requested directly, it unlocks as a real
+  // second option specifically when a shape (4-3-2-1 here — no wide men,
+  // only one of the usual four alternates has a slot at all) would
+  // otherwise leave almost no real choice — see offeredPositions' own note.
+  check(offered.every(o => (["CAM", "LW", "RW", "CM"] as const).includes(o.role as "CAM" | "LW" | "RW" | "CM")),
+    `nothing outside Striker/Attacking Mid/either wing/the one-alternate Central Mid exception is ever offered (${offered.map(o => o.role).join(",")})`);
 
   for (const { role } of offered) {
     const md = matchdayFor(c, fx, true, role);

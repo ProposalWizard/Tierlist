@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
+import { formatMoney } from "@/lib/star/money";
 
 interface Props {
   career: CareerState;
@@ -96,7 +97,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
               </div>
               <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-3 py-1 text-xs font-black text-yellow-300 border border-gray-600">
                 <StarIcon small />
-                {career.money}
+                {formatMoney(career.money)}
               </div>
             </div>
           </>

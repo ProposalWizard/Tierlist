@@ -622,13 +622,13 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "marketValue.scale", category: "Market Value", label: "Overall value scale",
-    description: "The single dial that sets how much money a market value actually comes out to — raise it to make every player's value bigger, lower it to shrink the whole market.",
-    default: 45, min: 5, max: 200, step: 5,
+    description: "The single dial that sets how much money a market value actually comes out to — raise it to make every player's value bigger, lower it to shrink the whole market. Recalibrated down from an original 45: at 45, summing a whole ~25-man squad into club valuation (requested directly) produced individual clubs worth MILLIONS, which a normally-funded owner could no longer afford at all — a real, caught regression, not a design choice. 4 keeps an elite squad's summed value roughly comparable to a club's own intangible brand value, and keeps a single very good player's price in the low thousands rather than the tens of thousands.",
+    default: 4, min: 0.5, max: 60, step: 0.5,
   },
   {
     key: "marketValue.floor", category: "Market Value", label: "Minimum market value",
     description: "No player, however poor, is worth less than this — a real floor for a squad-filler transfer.",
-    default: 200, min: 0, max: 5000, step: 100,
+    default: 20, min: 0, max: 500, step: 5,
   },
   {
     key: "marketValue.youthPremiumPerYear", category: "Market Value", label: "Youth premium per year under 22",

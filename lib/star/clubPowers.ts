@@ -182,6 +182,10 @@ export interface KitVoteProposal {
   optionA: ClubKit;
   optionB: ClubKit;
   tally: VoteTally;
+  /** Which design the owner actually nominated, if either — the vote
+   *  ceremony's pass/fail framing should track this, not always assume "A"
+   *  is the one being rooted for. See page.tsx's own note on why. */
+  favor?: "a" | "b";
 }
 
 /** Put two kit designs to the fans instead of just picking one — the real
@@ -200,7 +204,7 @@ export function proposeKitVote(
     [{ id: "a", label: "Design A" }, { id: "b", label: "Design B" }],
     FAN_ELECTORATE, favoredId, biasStrength, rng,
   );
-  return { ok: true, proposal: { club, optionA, optionB, tally } };
+  return { ok: true, proposal: { club, optionA, optionB, tally, favor } };
 }
 
 export function resolveKitVote(career: CareerState, proposal: KitVoteProposal): CareerState {

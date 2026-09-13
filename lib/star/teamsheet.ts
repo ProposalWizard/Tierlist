@@ -698,10 +698,23 @@ export interface OfferedPosition {
  * never offers a role the shape cannot seat you in to begin with.
  */
 export function offeredPositions(realPosition: string, formation: Formation): OfferedPosition[] {
-  return alternatePositions(realPosition).flatMap((role): OfferedPosition[] => {
+  const offered = alternatePositions(realPosition).flatMap((role): OfferedPosition[] => {
     const slot = formation.slots.find(s => s.role === role);
     return slot ? [{ role, label: slot.label ?? POSITION_NAMES[role] }] : [];
   });
+  // Requested directly, specific to the one shape where it actually comes
+  // up (5-3-2/"532" — two strikers, no CAM, no wide men at all): with only
+  // ST/CAM/LW/RW ever offered, a shape that seats just ONE of those four
+  // leaves "play somewhere else" as barely a choice at all. Central Mid
+  // unlocks as a genuine second option specifically in that one-alternate
+  // case (never otherwise, and never for a player already playing CM) — a
+  // property of the formation's own slot list, not a hardcoded formation
+  // id, so it applies to any shape shaped the same way, not just 532.
+  if (offered.length === 1 && realPosition !== "CM") {
+    const cmSlot = formation.slots.find(s => s.role === "CM");
+    if (cmSlot) offered.push({ role: "CM", label: cmSlot.label ?? POSITION_NAMES.CM });
+  }
+  return offered;
 }
 
 /** What to call a role in a picker — not what the pitch calls the SLOT, which

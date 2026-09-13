@@ -4963,7 +4963,18 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         Math.hypot(scenario.follower.x - ball.pos.x, scenario.follower.y - ball.pos.y));
     }
     const reachable = !capped && nearestOurs < PASS_CONTROL_R;
-    const settled = !reachable && (scenario.receiverDone || (scenario.receiverShots ?? 0) >= 2);
+    // Reported directly, from a training free-kick drill: the keeper saved
+    // and pushed the ball wide, and it took 5-10 seconds before anything
+    // happened. Root cause — `settled` only ever went true once a real
+    // receiver had genuinely finished being involved (`receiverDone`/
+    // `receiverShots`), but a direct free kick (real match OR this drill)
+    // has `runner: null` and no `secondaryRunners` — there was never anyone
+    // else who COULD have received it. With nobody else on the pitch able
+    // to contest a loose ball, waiting out the full "somebody might still
+    // pounce on this" timeout made no sense; it's genuinely settled the
+    // instant it's unreachable, same as if a receiver had already had their
+    // go, so it now gets the same short fuse.
+    const settled = !reachable && (scenario.receiverDone || (scenario.receiverShots ?? 0) >= 2 || orderableRunners(scenario).length === 0);
     const limit = settled ? DEAD_BALL_SETTLED : DEAD_BALL_TIMEOUT;
     if ((ball.restT ?? 0) > limit) {
       // A rebound the keeper put down that nobody else ever touched again is
