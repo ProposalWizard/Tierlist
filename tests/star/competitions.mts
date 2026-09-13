@@ -2,10 +2,11 @@ import {
   seedSeasonKnockouts, resolveKnockout, qualificationFor, leaguePosition,
   internationalCallUp, tournamentFor, roundsFor, nextFixtureFor, leagueWeeks, cupRoundWeek,
 } from "../../lib/star/competitions";
+import { seasonQualifiers } from "../../lib/star/qualification";
 import { CUP_ROUND_NAMES } from "../../lib/star/cups";
 import { poolFor } from "../../lib/star/euro";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, advanceSeason, awardLeagueTrophyIfWon } from "../../lib/star/careerFlow";
-import type { CareerState, MatchStats, StarPlayer, Fixture, CupRun } from "../../lib/star/types";
+import type { CareerState, LeagueTeam, MatchStats, StarPlayer, Fixture, CupRun } from "../../lib/star/types";
 
 /**
  * Cups, Europe and the national team.
@@ -275,22 +276,137 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
 
 // ── Europe is earned by where you finish — and by what you won ────────────
 {
-  // In a 10-club league: CL = round(10*0.25) = top 3, EL = 4th-5th.
-  // These mirror the draft game's rules exactly (top 5 in a 20-club PL).
+  // Rewritten 13 Sep 2026 (cont. 5) for the real rules given directly: in a
+  // 10-club league, CL = round(10*0.25) = top 3 (mirrors the real 20-club
+  // PL's top 5); ONLY the next position (4th) is an unconditional Europa
+  // League place — NOT two positions. The two cup slots are entirely
+  // separate: a cup winner outside the top 4 locks a Europa League place to
+  // their OWN real position (Lock-Down); a cup winner already inside the
+  // top 4 gets nothing extra from it (their own slot's Trickle-Down, which
+  // needs the whole-table seasonQualifiers to actually land somewhere, is
+  // tested separately below — qualificationFor only ever answers for ONE
+  // club in isolation). Winning the Champions/Europa League itself (not a
+  // domestic cup) is rule 4: it upgrades an existing Europa League place to
+  // Champions League, or is a pure bonus Champions League place if the club
+  // had no European place at all.
   check(qualificationFor(1, 10) === "Champions League", "finishing top gets you into Europe's top competition");
   check(qualificationFor(2, 10) === "Champions League", "the top two in a ten-club league both go to the CL");
   check(qualificationFor(3, 10) === "Champions League", "third place in a ten-club league also earns CL");
-  check(qualificationFor(4, 10) === "Europa League", "fourth earns Europa League");
-  check(qualificationFor(5, 10) === "Europa League", "fifth also earns Europa League");
+  check(qualificationFor(4, 10) === "Europa League", "fourth (the '6th place' equivalent) earns Europa League unconditionally");
+  check(qualificationFor(5, 10) === null, "…but fifth gets nothing from the table alone — only ONE automatic Europa League place, not two");
   check(qualificationFor(6, 10) === null, "sixth gets nothing from the table alone");
   check(qualificationFor(9, 10) === null, "finishing ninth gets you nothing");
-  // Cup winners at 8th+ earn Europa League (both cups treated equally).
-  check(qualificationFor(7, 10, true) === "Europa League", "FA Cup winner at 7th earns Europa League");
-  check(qualificationFor(8, 10, false, true) === "Europa League", "League Cup winner at 8th earns Europa League");
+  // The two cup slots: Lock-Down for a winner outside the automatic zone.
+  check(qualificationFor(7, 10, true) === "Europa League", "FA Cup winner at 7th locks a Europa League place to their own position");
+  check(qualificationFor(8, 10, false, true) === "Europa League", "League Cup winner at 8th locks a Europa League place to their own position");
   // A cup win never downgrades an already-qualified team.
   check(qualificationFor(1, 10, false, true) === "Champions League", "League Cup win can't demote a CL side");
-  check(qualificationFor(4, 10, false, true) === "Europa League", "League Cup win can't demote an EL side");
+  check(qualificationFor(4, 10, false, true) === "Europa League", "League Cup win can't demote an already-earned EL side");
+  // Rule 4 — the European Title Upgrade, tested in isolation per club.
+  check(qualificationFor(1, 10, false, false, true) === "Champions League", "a top-3 side that also won Europe stays Champions League — no effect, they're already there");
+  check(qualificationFor(4, 10, false, false, true) === "Champions League", "the automatic Europa League club is UPGRADED to Champions League if it also won Europe");
+  check(qualificationFor(7, 10, false, false, true) === "Champions League", "…and so is a cup-winner's Lock-Down Europa League place");
+  check(qualificationFor(9, 10, false, false, true) === "Champions League", "a club with NO European place at all that wins Europe gets a pure bonus Champions League place");
+  check(qualificationFor(9, 10) === null, "…but without winning Europe, that same ninth place still gets nothing");
+}
 
+// ── seasonQualifiers: the same rules applied to the whole division at once —
+// this is the version that actually builds the real Champions/Europa League
+// field every OTHER club sits in (euro.ts's seasonField). Real, named
+// 20-club table so the exact cascade/trickle/deletion behaviour is checked
+// against real positions, not just counts.
+{
+  const names = [
+    "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth",
+    "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth",
+    "Eighteenth", "Nineteenth", "Twentieth",
+  ];
+  const table = (): LeagueTeam[] => names.map((name, i) => ({
+    name, strength: 75, played: 38, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0,
+    points: 100 - i, // strictly descending, so sortLeague's order is exactly `names`
+  }));
+
+  // Baseline: no cups, no European trophy — top 5 Champions League, 6th
+  // (only 6th) Europa League.
+  {
+    const q = seasonQualifiers(table(), null, null);
+    check(q.champions.length === 5 && q.champions.includes("Fifth"), "top 5 is Champions League");
+    check(q.europa.length === 1 && q.europa.includes("Sixth"), "ONLY 6th is the automatic Europa League place — not 6th and 7th");
+  }
+
+  // Both cups won by clubs outside the top 6 — Lock-Down at their own real position.
+  {
+    const q = seasonQualifiers(table(), "Fifteenth", "Seventeenth");
+    check(q.europa.length === 3, "6th plus two Lock-Down cup places — three Europa League clubs total");
+    check(["Sixth", "Fifteenth", "Seventeenth"].every(n => q.europa.includes(n)),
+      "the real reported scenario: 6th, 15th and 17th all get Europa League, nobody else");
+    check(!q.europa.includes("Seventh"), "7th gets nothing extra just because two OTHER clubs won cups below it");
+  }
+
+  // Both cups won by top-5 clubs — Trickle-Down to the next free positions.
+  {
+    const q = seasonQualifiers(table(), "First", "Second");
+    check(q.champions.length === 5, "the cup winners were already Champions League — no change there");
+    check(q.europa.length === 3, "6th (baseline) plus two trickled-down cup slots");
+    check(["Sixth", "Seventh", "Eighth"].every(n => q.europa.includes(n)),
+      "each cup slot trickles independently to the next real position not already claimed — 7th, then 8th");
+  }
+
+  // One cup won by a top-5 club (trickles down), the other by a genuine
+  // outsider (locks to their own position) — the two mechanisms independently.
+  {
+    const q = seasonQualifiers(table(), "Third", "Twelfth");
+    check(q.europa.length === 3, "6th, one trickled slot, and Twelfth's own Lock-Down slot");
+    check(["Sixth", "Seventh", "Twelfth"].every(n => q.europa.includes(n)), "Third's slot trickles to 7th; Twelfth locks to itself");
+  }
+
+  // A club that wins the FA Cup AND already has the 6th-place Europa League
+  // slot — its cup win has nothing left to claim there, so it trickles.
+  {
+    const q = seasonQualifiers(table(), "Sixth", null);
+    check(q.europa.length === 2, "6th's own cup win can't double up on its own slot — it trickles to the next free position");
+    check(["Sixth", "Seventh"].every(n => q.europa.includes(n)), "…which is 7th");
+  }
+
+  // Rule 4 — the European Title Upgrade — never touches any OTHER club's slot.
+  {
+    // Deletion: an already-Europa-League club wins the trophy — upgraded,
+    // and the vacated slot is gone, NOT passed down to whoever was next.
+    const q = seasonQualifiers(table(), null, null, "Sixth");
+    check(q.champions.length === 6 && q.champions.includes("Sixth"), "6th is upgraded into the Champions League");
+    check(q.europa.length === 0, "…and the vacated Europa League slot is DELETED, not passed down to 7th");
+  }
+  {
+    // Pure bonus: a club with no European place at all wins the trophy —
+    // added on top, nobody else affected.
+    const q = seasonQualifiers(table(), null, null, "Fifteenth");
+    check(q.champions.length === 6 && q.champions.includes("Fifteenth"), "a club with no European place at all gets a pure bonus Champions League place");
+    check(q.europa.length === 1 && q.europa.includes("Sixth"), "…and 6th's own Europa League place is completely untouched by it");
+  }
+  {
+    // No effect: a top-5 club wins the trophy — already there.
+    const q = seasonQualifiers(table(), null, null, "First");
+    check(q.champions.length === 5, "a top-5 club winning Europe changes nothing — it was already Champions League");
+  }
+
+  // The real worked "Maximum" scenario given directly: 7th and 8th win the
+  // domestic cups (Lock-Down), 6th untouched, 9th and 10th separately win
+  // the Champions/Europa League (pure bonus each) — 7 Champions League + 3
+  // Europa League = 10 total English clubs in Europe that season.
+  {
+    let q = seasonQualifiers(table(), "Seventh", "Eighth");
+    check(q.europa.length === 3 && ["Sixth", "Seventh", "Eighth"].every(n => q.europa.includes(n)),
+      "7th and 8th lock down their own places alongside 6th's untouched one");
+    // A club can only genuinely win at most one of the two continental
+    // trophies in a season, so this is exercised as two separate calls
+    // rather than one call with two winners.
+    const qNinth = seasonQualifiers(table(), "Seventh", "Eighth", "Ninth");
+    check(qNinth.champions.length === 6 && qNinth.champions.includes("Ninth"), "9th's pure bonus stacks on top of the cup Lock-Downs");
+    check(qNinth.europa.length === 3, "…without touching any of the three Europa League places");
+  }
+}
+
+{
   // A club of its own, not qualified for Europe already (unlike Arsenal —
   // base()'s club — since Aug 2026: see the season-1 European seeding
   // below). This block is testing qualification EARNED through the table,

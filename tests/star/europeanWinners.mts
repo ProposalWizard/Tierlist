@@ -78,43 +78,49 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 }
 
 // ── European qualification, applied to the whole division ──────────────────
+//
+// Rewritten 13 Sep 2026 (cont. 5) for the real rules given directly: only
+// 6th place is an unconditional Europa League place — NOT 6th and 7th — and
+// the two domestic cup slots are entirely separate, either locking to the
+// winner's own real position (outside the top 6) or trickling down to the
+// next free table position (a winner already inside the top 6). See
+// competitions.mts's own dedicated seasonQualifiers block for the full
+// cascade/trickle/deletion matrix — this block just confirms the same real
+// rules hold against this file's own 20-club table and buildLeague-built
+// LeagueTeam shape.
 {
-  // Twenty clubs: top 5 Champions League, 6th/7th Europa League — same maths
-  // as qualificationFor, just read straight off final league position instead
-  // of asking about one club at a time.
   const table = sortLeague(LEAGUE);
   // No cup winners this round — plain league-position case.
   const q = seasonQualifiers(LEAGUE, null, null);
   check(q.champions.length === 5, `top five by table go into the Champions League (${q.champions.length})`);
-  check(q.europa.length === 2, `sixth and seventh go into the Europa League (${q.europa.length})`);
+  check(q.europa.length === 1, `ONLY sixth goes into the Europa League automatically — not sixth and seventh (${q.europa.length})`);
   check(q.champions.every(c => table.slice(0, 5).map(t => t.name).includes(c)), "the right five, specifically");
 
-  // A cup winner OUTSIDE the top seven earns a Europa League place on top.
-  const outsideTop7 = table[10].name;
-  const withCup = seasonQualifiers(LEAGUE, outsideTop7, null);
-  check(withCup.europa.includes(outsideTop7), `an unqualified cup winner (${outsideTop7}) gets the Europa League place`);
-  check(withCup.europa.length === 3, `which is a real extra place, not a swap (${withCup.europa.length})`);
+  // A cup winner OUTSIDE the top six locks a Europa League place to their own position.
+  const outsideTop6 = table[10].name;
+  const withCup = seasonQualifiers(LEAGUE, outsideTop6, null);
+  check(withCup.europa.includes(outsideTop6), `an unqualified cup winner (${outsideTop6}) gets their own Europa League place`);
+  check(withCup.europa.length === 2, `6th plus the cup winner's own Lock-Down place — a real extra place, not a swap (${withCup.europa.length})`);
 
   // A cup winner who ALREADY qualified through the league does not create a
-  // second place — the vacated berth cascades to the next club by position.
+  // second place — the vacated berth trickles down to the next FREE table
+  // position (right after 6th, which is already taken).
   const alreadyChampion = table[0].name;
-  const eighthPlace = table[7].name;
+  const seventhPlace = table[6].name;
   const cascaded = seasonQualifiers(LEAGUE, alreadyChampion, null);
   check(!cascaded.europa.includes(alreadyChampion),
     "the champion's own cup win does not double up their European spot");
-  check(cascaded.europa.includes(eighthPlace),
-    `the vacated place cascades to 8th by table position (${eighthPlace})`);
-  // Real UEFA rule: the cup's own continental berth is still used by someone
-  // even when the winner did not need it — so this IS a third place, cascaded
-  // rather than dropped, same as an outside-top-7 cup winner adds one.
-  check(cascaded.europa.length === 3, `the vacated berth still goes to someone — three places, not two (${cascaded.europa.length})`);
+  check(cascaded.europa.includes(seventhPlace),
+    `the vacated place trickles down to 7th by table position (${seventhPlace})`);
+  check(cascaded.europa.length === 2, `6th plus the trickled-down place — two places, not three (${cascaded.europa.length})`);
 
   // Both domestic cups won by the same already-qualified club: only one
-  // cascade happens per vacated place, to two DIFFERENT clubs in turn.
-  const ninthPlace = table[8].name;
+  // trickle happens per vacated place, to two DIFFERENT clubs in turn.
+  const eighthPlace = table[7].name;
   const both = seasonQualifiers(LEAGUE, alreadyChampion, alreadyChampion);
-  check(both.europa.includes(eighthPlace) && both.europa.includes(ninthPlace),
-    `two cup wins by one already-qualified club cascade to two different clubs (${[...both.europa]})`);
+  check(both.europa.includes(seventhPlace) && both.europa.includes(eighthPlace),
+    `two cup wins by one already-qualified club trickle down to two different clubs (${[...both.europa]})`);
+  check(both.europa.length === 3, `6th plus both trickled places — three total (${both.europa.length})`);
 }
 
 // ── A winner exists even when you were never in it ──────────────────────────

@@ -162,7 +162,7 @@ export function entrantsFor(competition: BetCompetition, career: CareerState): {
   }
   const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
   const uefaRules = ruleBookFor(career, "UEFA");
-  const qualifiers = seasonQualifiers(career.league, null, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
+  const qualifiers = seasonQualifiers(career.league, null, null, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
   const domestic = (competition === "championsLeague" ? qualifiers.champions : qualifiers.europa)
     .map(name => ({ name, strength: strengthOf(name) }));
   const foreign = poolFor(euroId, career).map(c => ({ name: c.name, strength: c.strength }));

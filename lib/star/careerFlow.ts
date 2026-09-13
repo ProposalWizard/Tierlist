@@ -975,7 +975,11 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
   // Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #11 — any extra European
   // places UEFA has granted this country, read off UEFA's own rule book.
   const uefaRules = ruleBookFor(career, "UEFA");
-  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
+  // No european-trophy-winner argument here: this is computing THIS season's
+  // own qualifying field, before anyone has actually played it out to know
+  // who (if anyone) wins Europe this season — that's exactly what
+  // crownWithoutYou below uses this very field to determine.
+  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
   const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
   const inYourCompetition = (id: "Champions League" | "Europa League") =>
     career.euroState?.competition === id ? career.euroState : null;

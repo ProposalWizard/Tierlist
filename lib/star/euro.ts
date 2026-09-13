@@ -337,9 +337,19 @@ const EL_NAMED_EXEMPT = new Set(["Olympiacos FC", "RSC Anderlecht", "SL Benfica"
  * How many of each main nation's clubs sit in the Champions/Europa League —
  * computed ONCE from the real season-1 `clubs.ts` rosters, never hardcoded,
  * so this can't drift from clubs.ts the way the old seed lists did. This
- * count is PERMANENT (requested directly): a main nation always has exactly
- * this many clubs in each competition, every season. Which SPECIFIC clubs
- * fill those slots is what varies — see `seasonField`'s own note.
+ * count is PERMANENT for Spain/Italy/Germany/France (requested directly): a
+ * main nation always has exactly this many clubs in each competition, every
+ * season, and which SPECIFIC clubs fill those slots is what varies instead
+ * — see `seasonField`'s own note.
+ *
+ * England is the one exception, confirmed directly during the 13 Sep 2026
+ * qualification rewrite: its real count here is a FLOOR, not a hard cap —
+ * `qualification.ts`'s rule 4 (the European Title Upgrade) can genuinely
+ * grow England's total past this number with a pure-bonus qualifier, the
+ * same way the real competition does. When that happens, the extra English
+ * club takes a real slot from the "everyone else" pool, never from this
+ * allocation itself — see `seasonField`'s own note on `mainTotalChampions`/
+ * `mainTotalEuropa`.
  */
 function computeMainNationAllocation(): Record<string, { champions: number; europa: number }> {
   const alloc: Record<string, { champions: number; europa: number }> = {};
@@ -378,21 +388,41 @@ function seasonField(competition: "Champions League" | "Europa League", career: 
   const championsParts: string[] = [];
   const europaParts: string[] = [];
 
-  // England — real Premier League qualification, never randomised.
+  // England — real Premier League qualification, never randomised. The
+  // European-trophy upgrade (qualification.ts's rule 4) only matters here
+  // if the club that won the Champions/Europa League last season was
+  // actually an ENGLISH one — an English club can't win both in one season,
+  // so at most one of these two is ever real.
   const uefaRules = ruleBookFor(career, "UEFA");
+  const englishNames = new Set(career.league.map(t => t.name));
+  const europeanTrophyWinner = [
+    career.lastSeasonWinners?.championsLeague, career.lastSeasonWinners?.europaLeague,
+  ].find(name => name && englishNames.has(name)) ?? null;
   const englishQualifiers = seasonQualifiers(
     career.league, career.lastSeasonWinners?.faCup ?? null, career.lastSeasonWinners?.leagueCup ?? null,
+    europeanTrophyWinner,
     uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots,
   );
-  // `seasonQualifiers`'s own Europa list is only ever the base 2 table
-  // slots PLUS a cup-winner cascade — real, but not guaranteed to reach
-  // England's fixed count on a season with no cup winner to cascade in.
-  // Requested directly, though: England "will always have that amount" —
-  // so a real shortfall here is topped up from the next-best-placed
-  // English club in the real table that hasn't already claimed a Champions
-  // or Europa slot, rather than leaving a place genuinely empty.
-  const englishChampions = englishQualifiers.champions.slice(0, MAIN_NATION_ALLOCATION.England.champions);
-  const englishEuropa = englishQualifiers.europa.slice(0, MAIN_NATION_ALLOCATION.England.europa);
+  // `seasonQualifiers`'s Europa list can come up short of England's normal
+  // fixed count (6th place alone, on a season with no cup cascade to fill
+  // out the other slots) — topped up from the next-best-placed English club
+  // in the real table that hasn't already claimed a spot, same as before.
+  //
+  // In the OTHER direction, England's count is deliberately NOT capped down
+  // to the fixed 5/3 any more — confirmed directly: rule 4's "pure bonus"
+  // European-trophy qualifier genuinely GROWS England's total past its
+  // normal count, same as the real thing. When that happens, the extra
+  // English club takes a real slot from the "everyone else" pool below
+  // (never from Spain/Italy/Germany/France's own fixed allocation, and
+  // obviously never from England's own) — confirmed directly. That's what
+  // feeding the REAL (possibly-grown) English count into mainTotalChampions/
+  // mainTotalEuropa below achieves: it shrinks "everyone else"'s own real
+  // capacity by exactly the excess, so one of ITS clubs is the one that
+  // misses out that season via the same random clamp that already lets a
+  // nation with more depth than slots sit out — not a second, separate
+  // mechanism.
+  const englishChampions = [...englishQualifiers.champions];
+  const englishEuropa = [...englishQualifiers.europa];
   if (englishEuropa.length < MAIN_NATION_ALLOCATION.England.europa) {
     const claimed = new Set([...englishChampions, ...englishEuropa]);
     for (const team of sortLeague(career.league)) {
@@ -446,8 +476,15 @@ function seasonField(competition: "Champions League" | "Europa League", career: 
     }
   }
   const shuffledFlex = shuffle(flexible, rng);
-  const mainTotalChampions = MAIN_NATIONS.reduce((s, n) => s + MAIN_NATION_ALLOCATION[n].champions, 0);
-  const mainTotalEuropa = MAIN_NATIONS.reduce((s, n) => s + MAIN_NATION_ALLOCATION[n].europa, 0);
+  // England's REAL count this season (which can genuinely exceed its normal
+  // fixed allocation via rule 4's pure-bonus qualifier — see above), not the
+  // fixed constant, so a grown English count shrinks "everyone else"'s own
+  // real capacity by exactly the excess rather than pushing the total field
+  // past 36.
+  const mainTotalChampions = englishChampions.length
+    + ["Spain", "Italy", "Germany", "France"].reduce((s, n) => s + MAIN_NATION_ALLOCATION[n].champions, 0);
+  const mainTotalEuropa = englishEuropa.length
+    + ["Spain", "Italy", "Germany", "France"].reduce((s, n) => s + MAIN_NATION_ALLOCATION[n].europa, 0);
   const clCapacity = CHAMPIONS_LEAGUE_CLUBS.length - mainTotalChampions;
   const elCapacity = EUROPA_LEAGUE_CLUBS.length - mainTotalEuropa;
   // Both sides are clamped to their OWN real capacity — the flexible pool

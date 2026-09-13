@@ -1,5 +1,6 @@
 import { poolFor } from "../../lib/star/euro";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
+import { sortLeague } from "../../lib/star/season";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
 
@@ -18,8 +19,12 @@ import type { CareerState, StarPlayer } from "../../lib/star/types";
  *   · Season 1 is the exact static roster clubs.ts gives — untouched.
  *   · England's slots are filled by REAL Premier League qualification
  *     (`seasonQualifiers`), never randomised — the specific clubs can
- *     genuinely change season to season as the league table changes, but
- *     the COUNT of English clubs in each competition never does.
+ *     genuinely change season to season as the league table changes, and
+ *     unlike the other four main nations, England's real COUNT is a FLOOR,
+ *     not a hard cap: a pure-bonus European-trophy qualifier (confirmed
+ *     directly, 13 Sep 2026 cont. 5) can genuinely grow it past the normal
+ *     5 Champions League/3 Europa League, taking a real slot from the
+ *     "everyone else" pool below rather than growing the field past 36.
  *   · Spain/Italy/Germany/France each have a fixed, PERMANENT count per
  *     competition (whatever season 1 actually has) — which specific clubs
  *     fill those slots is randomised each season, drawn from that nation's
@@ -120,6 +125,36 @@ for (const season of [2, 3, 4, 5, 6, 7, 8]) {
   check(germanyEl === expectedGermanyEl, `season ${season}: Germany always has exactly ${expectedGermanyEl} Europa League clubs (got ${germanyEl})`);
   check(franceCl === expectedFranceCl, `season ${season}: France always has exactly ${expectedFranceCl} Champions League clubs (got ${franceCl})`);
   check(franceEl === expectedFranceEl, `season ${season}: France always has exactly ${expectedFranceEl} Europa League clubs (got ${franceEl})`);
+}
+
+// ── England's pure-bonus qualifier genuinely grows its total past 5/3 ──────
+//
+// Confirmed directly: unlike Spain/Italy/Germany/France, England's count is
+// a floor, not a cap. A club with no domestic cup and no automatic European
+// place at all, winning the Champions or Europa League, is added on top —
+// and since the field itself stays a real 36, that extra English club takes
+// a real slot from the "everyone else" pool (never from Spain/Italy/Germany/
+// France's own fixed allocation, and never a second English slot on top of
+// itself).
+{
+  const season2 = careerAt(2);
+  const table = sortLeague(season2.league).map(t => t.name);
+  // Comfortably outside the top 8 — no cup, no automatic European place at
+  // all, so this is a genuine "pure bonus" qualifier, not an upgrade of an
+  // existing place.
+  const bonusClub = table[12];
+  const withBonus: CareerState = { ...season2, lastSeasonWinners: { ...season2.lastSeasonWinners, europaLeague: bonusClub } };
+
+  const baselineCl = poolFor("Champions League").filter(c => PREMIER_LEAGUE_CLUBS.includes(c.name)).length;
+  const cl = poolFor("Champions League", withBonus).map(c => c.name);
+  const el = poolFor("Europa League", withBonus).map(c => c.name);
+
+  check(cl.length === 36 && el.length === 36, `the field stays genuinely 36 clubs even with a pure-bonus English qualifier (CL ${cl.length}, EL ${el.length})`);
+  check(cl.includes(bonusClub), `the pure-bonus club (${bonusClub}) is genuinely in the Champions League field`);
+  const englishInCl = cl.filter(name => PREMIER_LEAGUE_CLUBS.includes(name)).length;
+  check(englishInCl === baselineCl + 1, `England's Champions League count genuinely grew past its normal ${baselineCl} to ${englishInCl}, not capped back down`);
+  check(new Set(cl).size === 36 && new Set(el).size === 36, "…and still no duplicate club in either competition");
+  check(cl.every(name => !el.includes(name)), "…and still no club in both at once");
 }
 
 // ── It genuinely varies season to season, not the same shuffle every time ──
