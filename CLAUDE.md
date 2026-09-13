@@ -279,6 +279,11 @@ npm run lint   # Run ESLint
 
 ## Recent Session
 
+**13 September 2026 (cont.) — Real-world club prestige extended to the major European clubs.**
+
+- `REAL_CLUB_PRESTIGE` (`investments.ts`) — asked directly to extend the researched prestige factor beyond the 20 English clubs. Real Madrid/FC Barcelona/FC Bayern München/Paris Saint-Germain now clamp to the same 3.0 ceiling as Manchester United (at this end of world football, precisely ranking the very biggest names against each other is genuinely not meaningful); Juventus/Atlético Madrid/Borussia Dortmund/Inter/AC Milan/Napoli sourced from real Forbes/CNBC 2025-26 global valuations. A second, explicitly lower-confidence tier (Roma, Ajax, SL Benfica, FC Porto, Sevilla FC, Galatasaray SK, Olympique Lyonnais) covers real, big, historic European names without pretending to a specific sourced figure for each. Still deliberately not exhaustive — most of the ~84 European/Other clubs this game knows about have no override and use the existing strength/tier-based estimate.
+- Full test suite and `tsc --noEmit` both clean.
+
 **13 September 2026 — CM unlock, three real Boardroom bugs, a real money stepper, training-facility-driven growth, and a researched stadium/facilities overhaul.**
 
 - **CM position unlock.** Requested directly: a formation offering only ONE of the usual four alternates (ST/CAM/LW/RW — 4-3-2-1's "Christmas tree" and 5-3-2 both qualify, no wide men or almost none) now also offers Central Mid as a genuine second choice. `offeredPositions` (`teamsheet.ts`) — a property of the formation's own slot list, not a hardcoded formation id.

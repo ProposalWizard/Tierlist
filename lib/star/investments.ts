@@ -105,15 +105,23 @@ const VALUATION_SCALE = 65;
 /**
  * A real, sourced relative prestige premium for the handful of real clubs
  * this game's roster happens to use — the actual September 2026 ORDER of
- * value among real English top-flight clubs (Man United/City/Liverpool at
+ * value among real clubs (Real Madrid/Man United/Barcelona/Bayern/PSG at
  * the very top, Burnley/Bournemouth at the bottom), NOT their real absolute
  * pound value. This game's whole money economy runs several orders of
  * magnitude smaller than real football finance on purpose (a majority
  * stake in the very best club here costs tens of thousands, not billions —
  * see VALUATION_SCALE's own note), so plugging in literal real prices would
  * dwarf every other number in the game. Instead this compresses the real
- * ~21x gap between the richest and poorest into a much gentler 0.6x-3.0x
- * multiplier that still preserves the real relative order.
+ * ~30x gap between the richest and poorest into a much gentler 0.6x-3.0x
+ * multiplier that still preserves the real relative order. The 20 English
+ * clubs below are sourced the same careful way (a real "every PL club
+ * ranked" list); the handful of European giants added afterward come from
+ * Forbes'/CNBC's own global soccer valuations and are individually less
+ * precisely sourced the further down the list they sit (Real Madrid through
+ * Napoli are all confirmed from real published rankings; anything past that
+ * — Roma, Sevilla, Ajax, Porto, Benfica, Galatasaray, Lyon — is a genuine
+ * but lower-confidence estimate of "clearly a big, historic European name,"
+ * not a specific sourced figure).
  *
  * Deliberately NOT exhaustive — most of this game's roster (lower-league
  * names, and several real clubs this game's own fictional ladder places in
@@ -123,6 +131,8 @@ const VALUATION_SCALE = 65;
  * a claim of covering every club with real research.
  */
 const REAL_CLUB_PRESTIGE: Record<string, number> = {
+  // England — sourced from a real "every Premier League club valuation,
+  // ranked" list.
   "Manchester United": 3.0, "Manchester City": 2.96, "Liverpool": 2.94,
   "Arsenal": 2.77, "Tottenham Hotspur": 2.71, "Chelsea": 2.58,
   "West Ham United": 1.6, "Newcastle United": 1.59, "Aston Villa": 1.54,
@@ -130,6 +140,17 @@ const REAL_CLUB_PRESTIGE: Record<string, number> = {
   "Leeds United": 1.32, "Crystal Palace": 1.22, "Brentford": 1.02,
   "Nottingham Forest": 1.02, "Sunderland": 0.97, "Wolverhampton Wanderers": 0.87,
   "AFC Bournemouth": 0.84, "Burnley": 0.6,
+  // Europe — the biggest global names, sourced from Forbes/CNBC's own 2025-26
+  // global soccer valuations. Real Madrid/Barcelona/Bayern/PSG all clamp to
+  // the same 3.0 ceiling as Man United — at this end of world football, "who
+  // is bigger" is genuinely too close/volatile to fake precision on.
+  "Real Madrid": 3.0, "FC Barcelona": 3.0, "FC Bayern München": 3.0, "Paris Saint-Germain": 3.0,
+  "Juventus": 2.44, "Atlético Madrid": 2.04, "Borussia Dortmund": 1.97,
+  "Inter": 1.83, "AC Milan": 1.79, "Napoli": 1.43,
+  // Real, big, historic European names — genuine but lower-confidence
+  // estimates, not individually sourced figures (see this const's own note).
+  "Roma": 1.3, "Ajax": 1.25, "SL Benfica": 1.25, "FC Porto": 1.2,
+  "Sevilla FC": 1.15, "Galatasaray SK": 1.1, "Olympique Lyonnais": 1.1,
 };
 
 function realPrestigeFactor(club: string): number {
