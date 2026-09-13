@@ -165,7 +165,7 @@ export function entrantsFor(competition: BetCompetition, career: CareerState): {
   const qualifiers = seasonQualifiers(career.league, null, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
   const domestic = (competition === "championsLeague" ? qualifiers.champions : qualifiers.europa)
     .map(name => ({ name, strength: strengthOf(name) }));
-  const foreign = poolFor(euroId).map(c => ({ name: c.name, strength: c.strength }));
+  const foreign = poolFor(euroId, career).map(c => ({ name: c.name, strength: c.strength }));
   return [...domestic, ...foreign];
 }
 

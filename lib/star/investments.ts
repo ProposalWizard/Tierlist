@@ -83,7 +83,7 @@ function strengthOf(club: string, career: CareerState): number {
   const inLeague = career.league.find(t => t.name === club);
   if (inLeague) return inLeague.strength;
   for (const comp of ["Champions League", "Europa League", "Conference League"] as const) {
-    const found = poolFor(comp).find(c => c.name === club);
+    const found = poolFor(comp, career).find(c => c.name === club);
     if (found) return found.strength;
   }
   return 68;

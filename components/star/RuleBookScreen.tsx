@@ -268,6 +268,23 @@ export default function RuleBookScreen({
               Propose: {rules.championsLeagueFormat === "groups" ? "Revert to the league phase" : "Groups of 4, then knockout"}
             </button>
             <div className="mt-1.5 text-[9px] text-white font-semibold">Real, votable data — the actual Champions League simulation still runs the current format regardless.</div>
+
+            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5 mt-2">Saudi clubs in Europe</div>
+            <div className="text-[11px] text-white font-semibold mb-2">
+              {rules.saudiClubsInEurope
+                ? "Active — two Saudi Pro League clubs join the Champions League and two join the Europa League each season."
+                : "Not active — the Saudi Pro League has no entrants in either competition."}
+            </div>
+            <button
+              disabled={!canPropose}
+              onClick={() => run(onProposeChange(body, { saudiClubsInEurope: !rules.saudiClubsInEurope }, bribe))}
+              className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+            >
+              Propose: {rules.saudiClubsInEurope ? "Remove Saudi clubs from Europe" : "Let Saudi clubs into Europe"}
+            </button>
+            <div className="mt-1.5 text-[9px] text-white font-semibold">
+              Real: two of the four Saudi clubs join each competition, randomly replacing eligible clubs — England/Spain/Italy/Germany/France's clubs are always exempt, and the two Champions League clubs bumped out drop into the Europa League that season rather than disappearing.
+            </div>
           </div>
         )}
 

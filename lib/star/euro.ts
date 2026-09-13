@@ -4,6 +4,7 @@ import { nameGoals, creditNamedGoals, type NamedOppGoal } from "./leagueSquads";
 import {
   EURO_LEAGUE_PHASE_WEEKS, EURO_KO_SLOTS_WITH_R32, EURO_KO_SLOTS_SEEDED, type CupSlot,
 } from "./calendar";
+import { ruleBookFor } from "./ruleBook";
 
 /**
  * EUROPE.
@@ -332,7 +333,86 @@ const CONFERENCE_SEEDS: EuroSeed[] = [
 ];
 const CONFERENCE_POOL: EuroClub[] = seededPool(CONFERENCE_SEEDS);
 
-export function poolFor(competition: EuroId): EuroClub[] {
+// ── Saudi Pro League clubs in Europe — a real, votable Rule Book change ──
+//
+// Requested directly, in full mechanical detail. The four Saudi clubs
+// (clubs.ts's OTHER_CLUBS — Al Hilal, Al Nassr, Al Ahli SFC, Al Ittihad)
+// already have real squads fetched every season (`externalClubsFor` already
+// includes OTHER_CLUBS) — this only changes which competition's SEEDED
+// FIELD lists them, nothing about squad-fetching, which is the exact class
+// of bug this file's own header already warns about at length. Two of the
+// four join the Champions League each season, two join the Europa League,
+// randomly — but not by replacing just anyone: England/Spain/Italy/Germany/
+// France's clubs are exempt from being bumped out of EITHER competition
+// (given directly), and the Europa League additionally exempts five named
+// clubs (Olympiacos, Anderlecht, Benfica, Rangers, Ajax — also given
+// directly). The two Champions League clubs that get replaced aren't
+// dropped outright — they demote INTO the Europa League that same season,
+// which is why the Europa League needs to make room for four incomers (two
+// Saudi, two demoted) by removing four of its own eligible clubs, not two.
+const SAUDI_CLUBS: EuroSeed[] = [
+  { name: "Al Hilal", strength: 79 },
+  { name: "Al Nassr", strength: 79 },
+  { name: "Al Ahli SFC", strength: 77 },
+  { name: "Al Ittihad", strength: 77 },
+];
+
+/** Real nationality for every club in the Champions/Europa seed pools —
+ *  built for exactly one purpose: deciding who's exempt from the Saudi
+ *  swap above. Not claimed accurate for clubs outside these two pools. */
+const CLUB_NATION: Record<string, string> = {
+  "Real Madrid": "Spain", "FC Barcelona": "Spain", "Atlético Madrid": "Spain",
+  "Sevilla FC": "Spain", "Real Betis Balompié": "Spain", "Villarreal CF": "Spain", "Real Sociedad": "Spain", "RC Celta": "Spain",
+  "Inter": "Italy", "Napoli": "Italy", "Roma": "Italy", "Como": "Italy", "Juventus": "Italy", "AC Milan": "Italy", "Lazio": "Italy",
+  "FC Bayern München": "Germany", "Borussia Dortmund": "Germany", "RB Leipzig": "Germany",
+  "Eintracht Frankfurt": "Germany", "VfB Stuttgart": "Germany", "Bayer 04 Leverkusen": "Germany", "TSG 1899 Hoffenheim": "Germany",
+  "Paris Saint-Germain": "France", "Olympique Lyonnais": "France", "RC Lens": "France", "Lille OSC": "France",
+  "Olympique de Marseille": "France", "Stade Rennais FC": "France",
+  "AFC Bournemouth": "England", "Crystal Palace": "England", "Sunderland": "England",
+};
+
+const EL_NAMED_EXEMPT = new Set(["Olympiacos FC", "RSC Anderlecht", "SL Benfica", "Rangers FC", "Ajax"]);
+
+function saudiExempt(club: EuroClub, competition: "Champions League" | "Europa League"): boolean {
+  const nation = CLUB_NATION[club.name];
+  if (nation && ["England", "Spain", "Italy", "Germany", "France"].includes(nation)) return true;
+  return competition === "Europa League" && EL_NAMED_EXEMPT.has(club.name);
+}
+
+/** Applies the swap for ONE competition's pool, given the already-decided
+ *  incoming clubs (Saudi entrants, plus — for Europa League only — the two
+ *  Champions League clubs bumped down) and a seeded rng. Removes exactly as
+ *  many eligible (non-exempt) clubs as are coming in, re-seeds the whole
+ *  field by strength (`seededPool`'s own logic, inlined here since a mixed
+ *  field of untouched clubs + new arrivals needs the same treatment). */
+function swapIn(pool: EuroClub[], incoming: EuroSeed[], competition: "Champions League" | "Europa League", rng: () => number): EuroClub[] {
+  const eligible = shuffle(pool.filter(c => !saudiExempt(c, competition)), rng);
+  const removed = new Set(eligible.slice(0, incoming.length).map(c => c.name));
+  const survivors = pool.filter(c => !removed.has(c.name));
+  return seededPool([...survivors.map(c => ({ name: c.name, strength: c.strength })), ...incoming]);
+}
+
+/** The whole season's swap, computed once and reused for both pools so the
+ *  Champions League's two demotions land as real incomers in the Europa
+ *  League field, not a second independent random draw. */
+function applySaudiSwap(competition: "Champions League" | "Europa League", seasonSeed: number): EuroClub[] {
+  const rng = mulberry32(seasonSeed);
+  const shuffledSaudis = shuffle(SAUDI_CLUBS, rng);
+  const [clA, clB, elA, elB] = shuffledSaudis;
+
+  const newChampions = swapIn(CHAMPIONS_POOL, [clA, clB], "Champions League", rng);
+  const demoted = CHAMPIONS_POOL.filter(c => !newChampions.some(n => n.name === c.name) && c.name !== clA.name && c.name !== clB.name)
+    .map(c => ({ name: c.name, strength: c.strength }));
+  const newEuropa = swapIn(EUROPA_POOL, [elA, elB, ...demoted], "Europa League", rng);
+
+  return competition === "Champions League" ? newChampions : newEuropa;
+}
+
+export function poolFor(competition: EuroId, career?: CareerState): EuroClub[] {
+  if (competition === "Conference League") return CONFERENCE_POOL;
+  if (career && ruleBookFor(career, "UEFA").saudiClubsInEurope) {
+    return applySaudiSwap(competition, career.season * 60013 + 17);
+  }
   if (competition === "Champions League") return CHAMPIONS_POOL;
   if (competition === "Europa League") return EUROPA_POOL;
   return CONFERENCE_POOL;
@@ -368,9 +448,10 @@ export function openEuro(
   clubStrength: number,
   leagueFinish: number,
   rng: () => number,
+  career?: CareerState,
 ): EuroState {
   const yourPot = potForFinish(leagueFinish);
-  const pool = poolFor(competition);
+  const pool = poolFor(competition, career);
   const you: EuroClub = { name: clubName, strength: clubStrength, pot: yourPot };
 
   // You, plus everyone in the pool — no per-pot cap. The pool's real size

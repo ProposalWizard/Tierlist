@@ -201,7 +201,7 @@ export function seedEurope(career: CareerState): { state: EuroState | null; fixt
   const rng = mulberry32(career.season * 5441 + career.league.length * 7);
   const mine = career.league.find(t => t.name === career.player.club);
   const finish = career.lastSeasonPosition ?? 4;
-  const state = openEuro(competition, career.player.club, mine?.strength ?? 75, finish, rng);
+  const state = openEuro(competition, career.player.club, mine?.strength ?? 75, finish, rng, career);
 
   const fixtures: Fixture[] = state.leaguePhase.map((m, i) => ({
     week: EURO_LEAGUE_PHASE_WEEKS[i] ?? 5 + i * 2,
