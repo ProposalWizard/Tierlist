@@ -34,7 +34,7 @@ import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier, TROPHY_FAME } from "./rating";
 import { nudgeReputation, worldReputationFromSeason, clubReputationFromSeason } from "./reputation";
 import { considerRecommendations, payPresidentWages } from "./clubPowers";
-import { creditStadiumRevenue } from "./facilities";
+import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./facilities";
 import { ruleBookFor } from "./ruleBook";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
@@ -1150,11 +1150,19 @@ export function advanceSeason(
     // otherwise just carried forward unchanged by the `...career` spread
     // above) — a High Potential player at a Champions League club is no
     // less real for being outside your own twenty.
+    // Requested directly: a club's own real training-ground level (already
+    // data — facilities.ts) should make its wonderkids grow genuinely
+    // faster there, not just be a number a majority owner can cosmetically
+    // upgrade.
     leagueSquads: growWonderkids(
       resetLeagueSquads((career.leagueSquads ?? []).filter(s => clubs.includes(s.club))),
       mulberry32(career.season * 71923 + 5),
+      club => facilitiesFor(career, club).trainingGroundTier,
     ),
-    externalSquads: growWonderkids(career.externalSquads ?? [], mulberry32(career.season * 71923 + 7)),
+    externalSquads: growWonderkids(
+      career.externalSquads ?? [], mulberry32(career.season * 71923 + 7),
+      club => facilitiesFor(career, club).trainingGroundTier,
+    ),
     seasonStats: { ...EMPTY_SEASON_STATS },
     matchFitness: 85,
     // A summer off resets both — nobody carries a knock or a tired pair of
@@ -1270,6 +1278,9 @@ export function advanceSeason(
   // Phase 7 of STAR_POWER_POLITICS.md — every owned club's own stadium
   // pays its own real gate-receipt revenue, into its own budget.
   Object.assign(next, creditStadiumRevenue(next));
+  // A commissioned stadium expansion ticks one real season closer to done —
+  // see facilities.ts's own research note on why this isn't instant.
+  Object.assign(next, progressStadiumBuilds(next));
 
   // Aged skills, a season's trophies, fresh personal bests and any
   // achievement this rollover itself unlocked are all final at this point —

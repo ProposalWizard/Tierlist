@@ -11,6 +11,8 @@ import {
   castVote, applyVoteHeldReputation, applyOverruleReputationCost,
   OVERRULE_OWNERSHIP_THRESHOLD, type VoteTally,
 } from "./voting";
+import { tierOf, TIER_MULTIPLIER } from "./clubTier";
+import { playerMarketValue } from "./marketValue";
 
 /**
  * INVESTMENTS — OWNING A PIECE OF A REAL CLUB, NOT JUST PLAYING FOR ONE.
@@ -67,21 +69,11 @@ export function allInvestableClubs(): string[] {
 
 // ── Valuation ────────────────────────────────────────────────────────────
 
-export type ClubTier = "champions" | "europa" | "premier" | "championship" | "other";
-
-export function tierOf(club: string, career: CareerState): ClubTier {
-  // Actually playing in it THIS season outranks the static list — a club
-  // punching above its usual competition (or currently in one at all) is
-  // worth what it's doing now, not its long-run reputation bucket.
-  if (career.euroState?.competition === "Champions League" && career.euroState.clubs.some(c => c.name === club)) return "champions";
-  if (career.euroState?.competition === "Europa League" && career.euroState.clubs.some(c => c.name === club)) return "europa";
-  const div = divisionOf(club);
-  if (div === "champions") return "champions";
-  if (div === "europa") return "europa";
-  if (div === "championship") return "championship";
-  if (div === "premier") return "premier";
-  return "other";
-}
+// Moved to clubTier.ts so marketValue.ts can share it without cycling back
+// through this file — re-exported here so every existing caller of
+// `tierOf`/`TIER_MULTIPLIER`/`ClubTier` FROM investments.ts still works.
+export type { ClubTier } from "./clubTier";
+export { tierOf, TIER_MULTIPLIER } from "./clubTier";
 
 /** Wherever the game actually has a number for this club right now — your
  *  own division's live table, or a European pool's seeded strength — with a
@@ -97,25 +89,88 @@ function strengthOf(club: string, career: CareerState): number {
   return 68;
 }
 
-// Prestige premium/discount by tier, layered on top of raw squad strength —
-// a Champions League regular is worth more than a Championship promotion
-// hopeful at the same nominal strength, the same way real club valuations
-// carry a competition premium independent of the current XI's quality.
-export const TIER_MULTIPLIER: Record<ClubTier, number> = {
-  champions: 1.25, europa: 0.85, premier: 1.0, championship: 0.3, other: 0.55,
-};
-
 /**
- * Calibrated so a genuinely elite club (strength ~92, Champions League
- * tier) is worth roughly ★150,000 in full — a majority stake (50.1%) costs
- * around ★75,000, genuinely "very very expensive" as requested, while 0.1%
- * of the same club (~★150) is the "reasonable amount for a rich footballer"
- * a small stake was asked to be. A mid-table Championship side, by
- * contrast, is worth a small fraction of that — buying into a smaller club
- * is genuinely cheaper, the same as it is in real football.
+ * Scales the INTANGIBLE component only (brand/history/momentum) — see
+ * `clubValuation`'s own note on why real squad value and cash budget are
+ * separate, additive, live-tracked components now rather than folded into
+ * this one constant. Originally calibrated so an elite club's intangible
+ * alone landed around ★150,000; total club valuation is now genuinely
+ * bigger and more variable than that everywhere a real squad is on file,
+ * by design — "some big teams have squads worth almost a billion,"
+ * requested directly, meaning the SQUAD should be doing real work in this
+ * number, not just this one curve.
  */
 const VALUATION_SCALE = 65;
 
+/**
+ * A real, sourced relative prestige premium for the handful of real clubs
+ * this game's roster happens to use — the actual September 2026 ORDER of
+ * value among real English top-flight clubs (Man United/City/Liverpool at
+ * the very top, Burnley/Bournemouth at the bottom), NOT their real absolute
+ * pound value. This game's whole money economy runs several orders of
+ * magnitude smaller than real football finance on purpose (a majority
+ * stake in the very best club here costs tens of thousands, not billions —
+ * see VALUATION_SCALE's own note), so plugging in literal real prices would
+ * dwarf every other number in the game. Instead this compresses the real
+ * ~21x gap between the richest and poorest into a much gentler 0.6x-3.0x
+ * multiplier that still preserves the real relative order.
+ *
+ * Deliberately NOT exhaustive — most of this game's roster (lower-league
+ * names, and several real clubs this game's own fictional ladder places in
+ * a different tier than they sit in reality) has no entry and gets no
+ * override at all; the strength/tier-based estimate below already covers
+ * them. This is a real, sourced starting point for the clubs it names, not
+ * a claim of covering every club with real research.
+ */
+const REAL_CLUB_PRESTIGE: Record<string, number> = {
+  "Manchester United": 3.0, "Manchester City": 2.96, "Liverpool": 2.94,
+  "Arsenal": 2.77, "Tottenham Hotspur": 2.71, "Chelsea": 2.58,
+  "West Ham United": 1.6, "Newcastle United": 1.59, "Aston Villa": 1.54,
+  "Brighton & Hove Albion": 1.48, "Fulham FC": 1.41, "Everton": 1.32,
+  "Leeds United": 1.32, "Crystal Palace": 1.22, "Brentford": 1.02,
+  "Nottingham Forest": 1.02, "Sunderland": 0.97, "Wolverhampton Wanderers": 0.87,
+  "AFC Bournemouth": 0.84, "Burnley": 0.6,
+};
+
+function realPrestigeFactor(club: string): number {
+  return REAL_CLUB_PRESTIGE[club] ?? 1;
+}
+
+/** The real squad this club actually has, valued the same way a transfer
+ *  negotiation would value each of them — reused here rather than a second
+ *  pricing idiom, so "how much is this squad worth" always means the same
+ *  thing everywhere it's asked. Your own club reads `career.squad` (full
+ *  `SquadPlayer`s); every other club reads its thin `LeagueSquad` record. */
+function squadMarketValueSum(club: string, career: CareerState): number {
+  if (club === career.player.club) {
+    // A generated/offline squad's `overall` is optional — same 65 fallback
+    // `leagueSquads.ts` already uses when a real row has no rating on file.
+    return (career.squad ?? []).reduce(
+      (sum, p) => sum + playerMarketValue({ ...p, overall: p.overall ?? 65 }, club, career), 0,
+    );
+  }
+  const entry = findSquadEntry(career, club);
+  if (!entry) return 0;
+  return entry.squad.players.reduce((sum, p) => sum + playerMarketValue(p, club, career), 0);
+}
+
+/**
+ * Requested directly, with a full worked example: buying a player should
+ * move club value by the GAP between what he actually cost and what he was
+ * actually worth — pay exactly his market value and the club's value
+ * doesn't change (you swapped cash for an asset of equal worth); get him
+ * for less than he's worth and the club is genuinely richer for it; overpay
+ * and it genuinely isn't. This isn't bespoke transfer-ledger bookkeeping —
+ * it falls straight out of treating club value as real components that are
+ * ALREADY tracked live: the squad's combined market value (which rises by
+ * the new player's own value the instant he joins, whatever was paid for
+ * him) plus the club's own cash budget (which drops by the fee paid, in the
+ * same transaction) plus an intangible brand/history/form component. Buy a
+ * player worth ★100 for exactly ★100 and the bracket is unchanged (+100
+ * squad, -100 budget); get him for ★60 and the club is ★40 richer; pay
+ * ★120 for him and it's ★20 poorer — exactly the mechanism asked for,
+ * without a second value-tracking system alongside the real one.
+ */
 export function clubValuation(club: string, career: CareerState): number {
   const strength = strengthOf(club, career);
   const tier = tierOf(club, career);
@@ -123,7 +178,10 @@ export function clubValuation(club: string, career: CareerState): number {
   // competitionBetting.ts's winWeight: value climbs steeply for the truly
   // elite, not linearly, the same way a real club's worth doesn't scale
   // proportionally with a handful of extra rating points at the very top.
-  const base = Math.pow(Math.max(1, strength - 40), 1.9) * TIER_MULTIPLIER[tier] * VALUATION_SCALE;
+  // This is the club's INTANGIBLE component — brand, history, commercial
+  // pull — deliberately separate from the real squad value added below, so
+  // the two don't double-count "this club is full of great players" twice.
+  const intangible = Math.pow(Math.max(1, strength - 40), 1.9) * TIER_MULTIPLIER[tier] * VALUATION_SCALE;
 
   let momentum = 1;
   const w = career.lastSeasonWinners;
@@ -132,7 +190,11 @@ export function clubValuation(club: string, career: CareerState): number {
   if (w?.league === club) momentum *= 1.15;
   if (w?.faCup === club || w?.leagueCup === club) momentum *= 1.05;
 
-  return Math.max(500, Math.round(base * momentum));
+  const squadValue = squadMarketValueSum(club, career);
+  const budget = ownedClubState(career, club).budget;
+  const prestige = realPrestigeFactor(club);
+
+  return Math.max(500, Math.round((intangible * momentum + squadValue + budget) * prestige));
 }
 
 // ── Buying and selling a stake ──────────────────────────────────────────
@@ -156,13 +218,23 @@ export function isMajorityOwner(career: CareerState, club: string): boolean {
   return (stakeIn(career, club)?.percent ?? 0) >= MAJORITY_THRESHOLD;
 }
 
-/** A player can't invest in his own employer — the same conflict-of-
- *  interest a real footballer would be barred from, and it sidesteps every
- *  question of what "majority-owning the club you play for" would even mean
- *  for the rest of this engine (your own squad/contract/wages are modelled
- *  completely differently from every other club's). */
-export function canInvestIn(career: CareerState, club: string): boolean {
-  return club !== career.player.club;
+/**
+ * Requested directly: you should be able to buy your own club too, the same
+ * as any other. The real-world conflict-of-interest objection this used to
+ * block on doesn't actually stop a footballer becoming a part-owner of his
+ * own club in reality either (several have) — the earlier restriction was
+ * really standing in for a different, narrower problem: your own squad,
+ * contract, and manager relationship are modelled by entirely different
+ * systems (`career.squad`, `career.contract`, `career.relationships.boss`)
+ * than every OTHER club's thin `LeagueSquad` record the Boardroom's sign/
+ * sell/manager tools operate on. That's still true, so majority-owning your
+ * own club is real (a stake, profit/loss, a vote weight, counts toward
+ * everything the Ownership hub shows) but its Boardroom deliberately
+ * doesn't offer squad/sign/manager tools — see `Boardroom`'s own note in
+ * Investments.tsx.
+ */
+export function canInvestIn(_career: CareerState, _club: string): boolean {
+  return true;
 }
 
 export function buyStake(career: CareerState, club: string, percent: number): CareerState {

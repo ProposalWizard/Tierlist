@@ -1,5 +1,5 @@
 import type { CareerState } from "./types";
-import { tierOf, TIER_MULTIPLIER } from "./investments";
+import { tierOf, TIER_MULTIPLIER } from "./clubTier";
 import { getTuning } from "./tuningStore";
 
 /**

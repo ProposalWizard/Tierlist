@@ -589,7 +589,25 @@ export function growthCeilingFor(playerId: string, worldClassPotential?: boolean
   return seed < getTuning("wonderkids.breakoutChance") ? worldClassCap : cap;
 }
 
-export function growWonderkids(squads: LeagueSquad[], rng: () => number): LeagueSquad[] {
+/**
+ * Requested directly: a club's OWN training-ground level (already real,
+ * per-club, deterministic data — see facilities.ts) should make its
+ * wonderkids actually grow faster there, not just be a cosmetic number a
+ * majority owner can upgrade. `trainingTierFor` is threaded in as a plain
+ * function rather than importing `facilitiesFor` here directly — this file
+ * already sits underneath `investments.ts` (which imports `leagueSquads.ts`
+ * for `FREE_AGENTS_CLUB`), and `facilitiesFor` lives in `facilities.ts`,
+ * which itself imports `investments.ts` — importing it here would cycle.
+ * `careerFlow.ts`, which already depends on both, supplies the real lookup;
+ * omitting it (existing callers, tests) keeps every wonderkid at the
+ * unmodified baseline speed, same as before this existed.
+ */
+const TRAINING_TIER_MULTIPLIER: Record<1 | 2 | 3, number> = { 1: 0.7, 2: 1.0, 3: 1.4 };
+
+export function growWonderkids(
+  squads: LeagueSquad[], rng: () => number,
+  trainingTierFor?: (club: string) => 1 | 2 | 3,
+): LeagueSquad[] {
   const ageCeiling = getTuning("wonderkids.ageCeiling");
   const chance = getTuning("wonderkids.growthChance");
   const minGain = getTuning("wonderkids.growthMin");
@@ -603,19 +621,22 @@ export function growWonderkids(squads: LeagueSquad[], rng: () => number): League
   // growthCeilingFor's own note on why the two tiers' ceilings genuinely
   // overlap rather than one strictly dominating the other.
   const worldClassMultiplier = getTuning("wonderkids.worldClassMultiplier");
-  return squads.map(s => ({
+  return squads.map(s => {
+    const trainingMultiplier = TRAINING_TIER_MULTIPLIER[trainingTierFor?.(s.club) ?? 2];
+    return {
     ...s,
     players: s.players.map(p => {
       if (!p.highPotential || (p.age ?? 0) >= ageCeiling) return p;
-      const tierChance = p.worldClassPotential ? Math.min(1, chance * worldClassMultiplier) : chance;
+      const tierChance = Math.min(1, (p.worldClassPotential ? chance * worldClassMultiplier : chance) * trainingMultiplier);
       if (rng() >= tierChance) return p;
-      const tierMin = p.worldClassPotential ? minGain * worldClassMultiplier : minGain;
-      const tierMax = p.worldClassPotential ? maxGain * worldClassMultiplier : maxGain;
+      const tierMin = (p.worldClassPotential ? minGain * worldClassMultiplier : minGain) * trainingMultiplier;
+      const tierMax = (p.worldClassPotential ? maxGain * worldClassMultiplier : maxGain) * trainingMultiplier;
       const gain = Math.round(tierMin + rng() * (tierMax - tierMin));
       const ceiling = growthCeilingFor(p.id, p.worldClassPotential);
       return { ...p, overall: Math.min(ceiling, p.overall + gain) };
     }),
-  }));
+    };
+  });
 }
 
 /**

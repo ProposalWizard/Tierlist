@@ -1,4 +1,4 @@
-import { formatMoney } from "../../lib/star/money";
+import { formatMoney, niceMoneyStep } from "../../lib/star/money";
 
 /**
  * MONEY FORMATTING — the exact worked examples given directly by the user.
@@ -17,6 +17,20 @@ check(formatMoney(0) === "0", `zero shows plainly (${formatMoney(0)})`);
 check(formatMoney(-2500) === "-2.5k", `negative amounts keep their sign (${formatMoney(-2500)})`);
 check(formatMoney(1_000_000) === "1m", `an exact million (${formatMoney(1_000_000)})`);
 check(formatMoney(1_000_000_000) === "1b", `an exact billion (${formatMoney(1_000_000_000)})`);
+
+// ── niceMoneyStep — the exact worked examples given directly ────────────
+check(niceMoneyStep(2_000_000) === 250_000, `~2M steps by 250K (${niceMoneyStep(2_000_000)})`);
+check(niceMoneyStep(50_000_000) === 1_000_000, `~50M steps by 1M (${niceMoneyStep(50_000_000)})`);
+check(niceMoneyStep(100_000_000) === 5_000_000, `~100M steps by 5M (${niceMoneyStep(100_000_000)})`);
+check(niceMoneyStep(500) === 500, `a small amount still steps by a real, non-trivial amount (${niceMoneyStep(500)})`);
+{
+  let prev = niceMoneyStep(100);
+  for (const v of [1_000, 50_000, 500_000, 5_000_000, 50_000_000, 500_000_000, 5_000_000_000]) {
+    const step = niceMoneyStep(v);
+    check(step >= prev, `steps never get SMALLER as the amount grows (${prev} -> ${step} at ${v})`);
+    prev = step;
+  }
+}
 
 if (problems.length) {
   console.log("FAIL");

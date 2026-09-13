@@ -38,6 +38,12 @@ export interface ClubFacilities {
   stadiumCapacity: number;
   trainingGroundTier: 1 | 2 | 3;
   youthAcademyTier: 1 | 2 | 3;
+  /** A commissioned expansion under construction — real research behind
+   *  this (see `upgradeStadiumCapacity`'s own note): it doesn't just apply
+   *  the moment it's paid for. `targetCapacity` is what the stadium becomes
+   *  once `seasonsRemaining` counts down to zero via `progressStadiumBuilds`
+   *  (wired into `advanceSeason`, same as `creditStadiumRevenue`). */
+  stadiumBuild?: { targetCapacity: number; seasonsRemaining: number };
 }
 
 function hash(seed: string, salt: number): number {
@@ -81,9 +87,45 @@ function withFacilities(career: CareerState, club: string, patch: Partial<ClubFa
 
 const RENAME_STADIUM_COST = 2000;
 const CAPACITY_UPGRADE_STEP = 5000;
-const CAPACITY_UPGRADE_COST_PER_SEAT = 0.5;
-const TRAINING_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 20000 };
-const YOUTH_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 20000 };
+
+/**
+ * Reported directly: expanding a stadium was "click +5,000 seats, take a
+ * flat amount off the budget" — no real relationship to how expansion
+ * actually works. Real research (Charlotte 49ers' 2023 ~6,000-seat expansion,
+ * ~$56M — roughly $9,300/seat; English top-flight new-builds like Tottenham's
+ * and Everton's run far higher, £15,000-19,000/seat) grounds two real facts
+ * this now reflects: cost per seat is substantial, and it climbs the bigger
+ * the stadium already is — going from 20,000 to 25,000 is a fundamentally
+ * different, cheaper project than 60,000 to 65,000. `perSeatCost` below is a
+ * real curve on existing capacity, not a flat constant, scaled down from
+ * literal £ into this game's own economy the same deliberate way
+ * `REAL_CLUB_PRESTIGE` (investments.ts) preserves real RELATIVE order rather
+ * than real absolute money.
+ */
+function perSeatCost(existingCapacity: number): number {
+  return 0.6 * Math.pow(1 + existingCapacity / 20_000, 1.6);
+}
+
+/**
+ * Real research on timelines (the same sources as `perSeatCost`'s own
+ * note): a stadium expansion of this scale takes roughly two to three real
+ * years once work actually starts, not an instant. Given directly, with a
+ * worked example — 10,000 extra seats on a 60,000-capacity stadium should
+ * take two full seasons — which this matches almost exactly: one season per
+ * 5,000 seats added, floored at one season for even a small expansion.
+ */
+function buildSeasonsFor(seatsAdded: number): number {
+  return Math.max(1, Math.round(seatsAdded / 5000));
+}
+
+/**
+ * Reported directly: it's easy to go from bad facilities to mediocre, hard
+ * and expensive to go from great to world-class — a flat cost per tier
+ * doesn't capture that at all. The top tier now costs several times the
+ * first upgrade, not the same again.
+ */
+const TRAINING_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 60000 };
+const YOUTH_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 60000 };
 
 function spendFromClubBudget(career: CareerState, club: string, cost: number): CareerState | { ok: false; reason: string } {
   if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
@@ -99,11 +141,45 @@ export function renameStadium(career: CareerState, club: string, name: string): 
 }
 
 export function upgradeStadiumCapacity(career: CareerState, club: string): BoardActionResult {
-  const cost = Math.round(CAPACITY_UPGRADE_STEP * CAPACITY_UPGRADE_COST_PER_SEAT);
+  const current = facilitiesFor(career, club);
+  if (current.stadiumBuild) return { career, ok: false, reason: "Already expanding — one project at a time" };
+  const cost = Math.round(CAPACITY_UPGRADE_STEP * perSeatCost(current.stadiumCapacity));
   const spent = spendFromClubBudget(career, club, cost);
   if ("ok" in spent) return { career, ok: false, reason: spent.reason };
-  const current = facilitiesFor(spent, club);
-  return { career: withFacilities(spent, club, { stadiumCapacity: current.stadiumCapacity + CAPACITY_UPGRADE_STEP }), ok: true };
+  // Paying for it commissions the work — it doesn't seat a single extra fan
+  // until `progressStadiumBuilds` (wired into advanceSeason) finishes
+  // counting the real build time down. See perSeatCost/buildSeasonsFor's
+  // own notes for the research behind both numbers.
+  const seasons = buildSeasonsFor(CAPACITY_UPGRADE_STEP);
+  return {
+    career: withFacilities(spent, club, {
+      stadiumBuild: { targetCapacity: current.stadiumCapacity + CAPACITY_UPGRADE_STEP, seasonsRemaining: seasons },
+    }),
+    ok: true,
+  };
+}
+
+/** Called from advanceSeason, alongside creditStadiumRevenue — every club
+ *  with a stadium expansion under way ticks one real season closer to it,
+ *  and finishing applies the real new capacity. Not majority-ownership
+ *  gated here on purpose: a build already commissioned keeps progressing
+ *  even if you later sell down your stake, the same way a real construction
+ *  project doesn't stop because the shares changed hands. */
+export function progressStadiumBuilds(career: CareerState): CareerState {
+  const clubs = Object.keys(career.facilities ?? {});
+  if (clubs.length === 0) return career;
+  let changed = false;
+  const next = { ...(career.facilities ?? {}) };
+  for (const club of clubs) {
+    const f = next[club];
+    if (!f?.stadiumBuild) continue;
+    const seasonsRemaining = f.stadiumBuild.seasonsRemaining - 1;
+    changed = true;
+    next[club] = seasonsRemaining <= 0
+      ? { ...f, stadiumCapacity: f.stadiumBuild.targetCapacity, stadiumBuild: undefined }
+      : { ...f, stadiumBuild: { ...f.stadiumBuild, seasonsRemaining } };
+  }
+  return changed ? { ...career, facilities: next } : career;
 }
 
 export function upgradeTrainingGround(career: CareerState, club: string): BoardActionResult {

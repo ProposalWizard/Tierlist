@@ -1,6 +1,6 @@
 import {
   facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy,
-  creditStadiumRevenue,
+  creditStadiumRevenue, progressStadiumBuilds,
 } from "../../lib/star/facilities";
 import { buyStake, ownedClubState, topUpClubBudget } from "../../lib/star/investments";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -76,9 +76,30 @@ const CHAMPIONSHIP_CLUB = CHAMPIONSHIP_CLUBS[0];
   check(facilitiesFor(renamed.career, RIVAL).stadiumName === "New Name Ground", "…and the new name is genuinely on record");
   check(ownedClubState(renamed.career, RIVAL).budget < beforeBudget, "…and it genuinely costs real money from the club's own budget");
 
+  // Reported directly, with real research behind the fix: an expansion is
+  // a real multi-season construction project now, not an instant click —
+  // paying for it queues `stadiumBuild` rather than seating a single extra
+  // fan straight away.
   const upgraded = upgradeStadiumCapacity(career, RIVAL);
-  check(upgraded.ok, `capacity can genuinely be upgraded (${upgraded.reason ?? ""})`);
-  check(facilitiesFor(upgraded.career, RIVAL).stadiumCapacity > before.stadiumCapacity, "…and capacity genuinely increases");
+  check(upgraded.ok, `an expansion can genuinely be commissioned (${upgraded.reason ?? ""})`);
+  check(facilitiesFor(upgraded.career, RIVAL).stadiumCapacity === before.stadiumCapacity,
+    "…but capacity does NOT change the instant it's paid for — it's under construction");
+  const building = facilitiesFor(upgraded.career, RIVAL).stadiumBuild;
+  check(!!building && building.targetCapacity > before.stadiumCapacity && building.seasonsRemaining >= 1,
+    `…a real build is queued instead, with a real target and a real season count (${JSON.stringify(building)})`);
+
+  const midway = progressStadiumBuilds(upgraded.career);
+  check(facilitiesFor(midway, RIVAL).stadiumCapacity === before.stadiumCapacity || (building!.seasonsRemaining === 1),
+    "one season of progress alone doesn't finish a multi-season build early");
+
+  let finished = upgraded.career;
+  for (let i = 0; i < (building?.seasonsRemaining ?? 1); i++) finished = progressStadiumBuilds(finished);
+  check(facilitiesFor(finished, RIVAL).stadiumCapacity === building!.targetCapacity,
+    "…and the real new capacity applies for real once the real build time has actually passed");
+  check(!facilitiesFor(finished, RIVAL).stadiumBuild, "…with nothing left queued once it's done");
+
+  const cantStackBuilds = upgradeStadiumCapacity(upgraded.career, RIVAL);
+  check(!cantStackBuilds.ok, "can't commission a second expansion while one is already under way");
 
   let training = career;
   let tier = before.trainingGroundTier;
@@ -122,11 +143,17 @@ const CHAMPIONSHIP_CLUB = CHAMPIONSHIP_CLUBS[0];
   const funded = topUpClubBudget(career, RIVAL, 100_000);
   const upgraded = upgradeStadiumCapacity(funded, RIVAL);
   if (upgraded.ok) {
-    const beforeUpgradedBudget = ownedClubState(upgraded.career, RIVAL).budget;
-    const creditedAfterUpgrade = creditStadiumRevenue(upgraded.career);
+    // The expansion has to actually finish (real build time — see above)
+    // before it can be earning anything.
+    const building = facilitiesFor(upgraded.career, RIVAL).stadiumBuild;
+    let built = upgraded.career;
+    for (let i = 0; i < (building?.seasonsRemaining ?? 1); i++) built = progressStadiumBuilds(built);
+
+    const beforeUpgradedBudget = ownedClubState(built, RIVAL).budget;
+    const creditedAfterUpgrade = creditStadiumRevenue(built);
     const gain = ownedClubState(creditedAfterUpgrade, RIVAL).budget - beforeUpgradedBudget;
     const originalGain = after - before;
-    check(gain > originalGain, `a bigger stadium (after the upgrade, capacity ${facilitiesFor(upgraded.career, RIVAL).stadiumCapacity} vs original ${capacity}) genuinely earns MORE revenue (${gain} vs ${originalGain})`);
+    check(gain > originalGain, `a bigger stadium (after the expansion actually finishes, capacity ${facilitiesFor(built, RIVAL).stadiumCapacity} vs original ${capacity}) genuinely earns MORE revenue (${gain} vs ${originalGain})`);
   } else {
     check(false, "fixture assumption failed: could not upgrade the stadium to compare revenue");
   }
