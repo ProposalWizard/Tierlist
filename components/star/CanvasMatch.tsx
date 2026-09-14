@@ -39,7 +39,7 @@ import {
 import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
-import { castScenario, creatorOf } from "@/lib/star/lineup";
+import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
@@ -312,6 +312,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // `startingXI`, so the opponent-goal branch below can tell "nobody to
   // draw from" apart from "a real XI with, say, no listed CAM this week".
   const oppXI = career && fixture ? opponentStartingXI(career, fixture) : null;
+  // Reshaped for castDefence (lib/star/lineup.ts) — the keeper and the men
+  // marking you, drawn from this same real sheet rather than left as
+  // anonymous shirts. See that function's own doc for why position-matching
+  // stays simple here (nothing is credited off a Defender the way a goal is
+  // credited off a Runner, so there's no wrong-man bug to guard against).
+  const oppXIForCast: OpponentSheetPlayer[] | null = oppXI
+    ? oppXI.map(p => ({
+        id: p.id, name: p.name, shortName: p.short, position: p.role,
+        overall: p.overall, face: p.face, isGK: p.role === "GK", y: p.y,
+      }))
+    : null;
 
   /**
    * Put a name to every goal in a run of hidden-match events, and record it.
@@ -1026,6 +1037,38 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     return () => { cancelled = true; };
   }, []);
 
+  /**
+   * Real player photos, composited onto the same head circle `footballer`
+   * already draws for everybody — see Identity.face and its doc.
+   *
+   * Keyed by URL rather than the one ref the ball above uses, because a
+   * single match can put dozens of different real faces on screen over its
+   * lifetime — both squads, subs included — not one fixed graphic. Lighter
+   * retry than the ball on purpose: a slow or missing photo just leaves that
+   * one man drawn as the plain circle every figure with no real identity at
+   * all already falls back to — a completely ordinary state here, not a
+   * broken one, so it isn't worth chasing as hard as the one asset the whole
+   * pitch would otherwise be missing.
+   */
+  const faceImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const getFaceImage = (url: string | undefined): HTMLImageElement | undefined => {
+    if (!url) return undefined;
+    const cache = faceImagesRef.current;
+    const existing = cache.get(url);
+    if (existing) return existing;
+    const img = new Image();
+    img.onerror = () => {
+      if (img.dataset.retried) return;
+      img.dataset.retried = "1";
+      window.setTimeout(() => {
+        img.src = `${url}${url.includes("?") ? "&" : "?"}retry=1`;
+      }, 600);
+    };
+    img.src = url;
+    cache.set(url, img);
+    return img;
+  };
+
   // Respect prefers-reduced-motion: no shake, no confetti, only a faint brief flash.
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -1553,7 +1596,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const footballer = (
       x: number, y: number, rBase: number,
       shirt: string, rim: string,
-      opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean } = {},
+      opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement } = {},
     ) => {
       const { px, py, scale } = toPx(x, y);
       // Further up the pitch is further from the camera, so figures there are
@@ -1643,10 +1686,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.stroke();
 
       // ── Head ──
+      const headR = r * 0.26;
+      const headCY = -r * 0.76;
       ctx.beginPath();
-      ctx.arc(0, -r * 0.76, r * 0.26, 0, Math.PI * 2);
+      ctx.arc(0, headCY, headR, 0, Math.PI * 2);
       ctx.fillStyle = SKIN;
       ctx.fill();
+      // A real photo, for a real player who has one on file — clipped to the
+      // exact same circle the plain fill above always draws first, so a
+      // missing or still-loading photo leaves today's plain head exactly as
+      // it always looked underneath, never a gap.
+      if (opts.face && opts.face.complete && opts.face.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, headCY, headR, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(opts.face, -headR, headCY - headR, headR * 2, headR * 2);
+        ctx.restore();
+      }
       ctx.lineWidth = Math.max(1, r * 0.10);
       ctx.strokeStyle = "rgba(0,0,0,0.35)";
       ctx.stroke();
@@ -1837,6 +1894,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
+        face: getFaceImage(sc.follower.who?.face),
       });
     }
 
@@ -1922,9 +1980,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // Decorative team-mates (the crosser on a volley/header)
     sc.teammates.forEach((t, i) => {
+      // Only teammates[0] is ever a real, named man — see castScenario,
+      // which builds sc.crosser off exactly that one. The rest are
+      // genuinely decorative, so they stay plain shirts.
       footballer(t.x, t.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor(`mate${i}`, t.x, t.y),
         phase: runPhase(t.x),
+        face: i === 0 ? getFaceImage(sc.crosser?.face) : undefined,
       });
     });
 
@@ -1938,6 +2000,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(r.pos.x, r.pos.y, R, ourKit().shirt, ourKit().trim, {
         pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
+        face: getFaceImage(r.who?.face),
       });
     });
 
@@ -1959,6 +2022,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(d.x, d.y - lift, R, theirKit().shirt, theirKit().trim, {
         pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
+        face: getFaceImage(d.who?.face),
       });
     });
     // You wear the same shirt as everybody else on your side — you are one of
@@ -2105,10 +2169,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
 
       // Head
+      const kHeadR = KR * 0.28;
+      const kHeadCY = -KR * 0.70;
       ctx.beginPath();
-      ctx.arc(0, -KR * 0.70, KR * 0.28, 0, Math.PI * 2);
+      ctx.arc(0, kHeadCY, kHeadR, 0, Math.PI * 2);
       ctx.fillStyle = SKIN;
       ctx.fill();
+      // The real opposing keeper's own face, when castDefence found one —
+      // same clipped-photo idea as every outfielder in footballer() above.
+      const kFace = getFaceImage(kk.who?.face);
+      if (kFace && kFace.complete && kFace.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, kHeadCY, kHeadR, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(kFace, -kHeadR, kHeadCY - kHeadR, kHeadR * 2, kHeadR * 2);
+        ctx.restore();
+      }
       ctx.lineWidth = Math.max(1, KR * 0.09);
       ctx.strokeStyle = "rgba(0,0,0,0.35)";
       ctx.stroke();
@@ -3236,6 +3313,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
+
+    // ── And put real faces on the shirts marking you, where there's a real
+    // sheet to draw them from ── see castDefence's own doc, lib/star/lineup.ts.
+    castDefence(scenarioRef.current, oppXIForCast);
 
     // You are RECEIVING this one, not starting with it at your feet, so the
     // defence gets the time your first touch cost them. A heavy touch and they
