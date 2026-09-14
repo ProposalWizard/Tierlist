@@ -30,7 +30,7 @@ import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
-import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
+import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, shouldUpgradeExternalSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor, conditionsLine } from "@/lib/star/weather";
@@ -1054,6 +1054,37 @@ export default function StarDevPage() {
   const handleAddMoney = useCallback((amount: number) => {
     if (!career || amount <= 0) return;
     setCareer({ ...career, money: career.money + amount });
+  }, [career]);
+
+  /**
+   * "Refresh Player Photos" (SettingsScreen) — a user-triggered version of
+   * the same background refresh already run on load (see the mount effect's
+   * shouldUpgradeSquad/shouldUpgradeLeagueSquads/shouldUpgradeExternalSquads
+   * block), minus the staleness gate: those only fire while a squad still
+   * reads as too thin or too image-sparse to trust, so a save that already
+   * cleared that bar once never rechecks, and a photo added to the database
+   * afterward never arrives on its own. Requested directly, from a real
+   * report that an old save's faces are mostly blank next to a new save's
+   * almost-complete set. Merges via the exact same functions the automatic
+   * path uses (mergeSquadStats / mergeLeagueSquadStats), so this season's
+   * goals and assists are exactly as untouched as a normal background
+   * refresh already leaves them.
+   */
+  const handleRefreshPhotos = useCallback(async () => {
+    if (!career) return;
+    const clubs = career.league.map(t => t.name);
+    const [freshSquad, freshLeague, freshExternal] = await Promise.all([
+      fetchRealSquad(career.player.club),
+      fetchLeagueSquads(clubs),
+      fetchLeagueSquads(externalClubsFor(clubs)),
+    ]);
+    setCareer(c => {
+      if (!c) return c;
+      const squad = mergeSquadStats(freshSquad, c.squad ?? []);
+      const leagueSquads = mergeLeagueSquadStats(freshLeague, c.leagueSquads ?? []);
+      const externalSquads = mergeLeagueSquadStats(freshExternal, c.externalSquads ?? []);
+      return { ...c, squad, leagueSquads, externalSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+    });
   }, [career]);
 
   /**
@@ -2141,6 +2172,7 @@ export default function StarDevPage() {
         onWatchReplay={handleWatchReplay}
         onSaveReplay={handleSaveReplay}
         onDeleteSavedReplay={handleDeleteSavedReplay}
+        onRefreshPhotos={handleRefreshPhotos}
         saves={listSaveSlots(scopeRef.current)}
         activeSlot={activeSlot}
         onSwitchSave={handleSwitchSave}

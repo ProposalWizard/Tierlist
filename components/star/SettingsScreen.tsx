@@ -7,6 +7,8 @@ import DevMoneyPanel from "./DevMoneyPanel";
 import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
+import FaceScalePanel from "./FaceScalePanel";
+import RefreshPhotosPanel from "./RefreshPhotosPanel";
 
 interface Props {
   career: CareerState;
@@ -17,6 +19,7 @@ interface Props {
   onWatchReplay: (replay: GoalReplay) => void;
   onSaveReplay: (index: number, replay: GoalReplay) => void;
   onDeleteSavedReplay: (id: string) => void;
+  onRefreshPhotos: () => Promise<void>;
   saves: SaveSlotSummary[];
   activeSlot: number;
   onSwitchSave: (slot: number) => void;
@@ -26,7 +29,7 @@ interface Props {
 
 export default function SettingsScreen({
   career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
-  saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
+  onRefreshPhotos, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
 }: Props) {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -53,6 +56,10 @@ export default function SettingsScreen({
             />
           </div>
         </div>
+
+        <FaceScalePanel />
+
+        <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
 
         <DevSkipPanel career={career} onSkip={onSkip} />
 
