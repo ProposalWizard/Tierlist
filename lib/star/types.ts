@@ -825,6 +825,12 @@ export interface CareerState {
    *  default from the club's own name rather than leaving it undefined.
    *  See lib/star/facilities.ts. */
   facilities?: Record<string, import("./facilities").ClubFacilities>;
+  /** Requested directly, 14 Sep 2026: a benched player who's genuinely
+   *  better than the man ahead of him doesn't take the shirt instantly —
+   *  the incumbent gets a real, rating-gap-sized grace period first. One
+   *  record per (club, formation role) actually being contested; absent
+   *  entirely for a role nobody's challenging. See lib/star/incumbency.ts. */
+  incumbents?: import("./incumbency").IncumbencyRecord[];
   /** §5's end-game power fantasy, previously cut for having no concrete
    *  mechanic — see lib/star/leadership.ts. Every governing body you've
    *  actually been elected (or forced your way into) the presidency of. */

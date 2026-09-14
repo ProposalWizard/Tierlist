@@ -43,6 +43,7 @@ import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./le
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
+import { advanceIncumbencyWeek } from "./incumbency";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
 } from "./potm";
@@ -355,6 +356,7 @@ export function creditMatchResult(
   // screen can show the round rather than only the table it produced.
   let weekResults = career.results ?? [];
   let leagueSquads = career.leagueSquads;
+  let incumbents = career.incumbents;
   // …and the round itself is skipped outright on a replay — see
   // `alreadyPlayed` at the top of this function.
   if (kind === "league" && !alreadyPlayed) {
@@ -400,6 +402,13 @@ export function creditMatchResult(
     leagueSquads = squads;
     // Replaying a week replaces it rather than doubling it.
     weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];
+
+    // Grace/challenge for every real rivalry across the division, this
+    // week's real results/tallies just settled above — see incumbency.ts's
+    // own header for the full rule.
+    const withIncumbency = advanceIncumbencyWeek({ ...career, leagueSquads, incumbents }, round.results);
+    leagueSquads = withIncumbency.leagueSquads;
+    incumbents = withIncumbency.incumbents;
   }
 
   const fixtures = career.fixtures.map((f) =>
@@ -719,6 +728,7 @@ export function creditMatchResult(
     results: weekResults,
     leagueSquads,
     externalSquads,
+    incumbents,
     fixtures: [...fixtures, ...extraFixtures],
     // Match-day money: the wage and bonuses the result produced, an appearance
     // fee if the deal has one, and anything a sponsor objective just paid out.
@@ -1167,6 +1177,14 @@ export function advanceSeason(
       career.externalSquads ?? [], mulberry32(career.season * 71923 + 7),
       club => facilitiesFor(career, club).trainingGroundTier,
     ),
+    // A fresh season — a rivalry's grace tracking is keyed off cumulative
+    // SEASON goals+assists (incumbency.ts's own `lastGoalsPlusAssists`),
+    // which `resetLeagueSquads` above just zeroed for everyone. Carrying an
+    // old record forward would read every real goal next season as "no
+    // improvement since a much bigger old total," never registering a real
+    // pass again. Genuine rivalries just re-establish themselves fresh from
+    // week one, the same as a brand-new signing would.
+    incumbents: undefined,
     seasonStats: { ...EMPTY_SEASON_STATS },
     matchFitness: 85,
     // A summer off resets both — nobody carries a knock or a tired pair of

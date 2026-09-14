@@ -13,6 +13,7 @@ import { formationOf } from "../../lib/star/formations";
 import { saveLineup, clearLineup } from "../../lib/star/lineupStore";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import type { CareerState, Fixture, SquadPlayer, LeagueSquad } from "../../lib/star/types";
+import type { IncumbencyRecord } from "../../lib/star/incumbency";
 
 /**
  * A LINEUP SAVED FOR ANOTHER CLUB IS THE ONE THAT CLUB PLAYS.
@@ -267,9 +268,49 @@ const FIXTURE: Fixture = { week: 1, opponent: "Liverpool", home: true, played: f
   clearLineup("Liverpool");
 }
 
+// ── A demoted incumbent gets a real recall for a cup tie, and only a cup tie ──
+//
+// Requested directly, in full mechanical detail (incumbency.ts): once a
+// better bench player has genuinely taken over a starting job, the man he
+// replaced still starts again specifically for a cup fixture — the one
+// real exception a lost job still allows. A league fixture plays the
+// saved lineup exactly as it stands; only `fixture.kind === "cup"` swaps
+// the two back for that one match.
+{
+  const shape = formationOf("433");
+  const sq = opponentSquad().players;
+  const stSlot = shape.slots.findIndex(s => s.role === "ST");
+  const striker = sq.find(p => p.position === "ST")!;
+  const secondStriker = sq.filter(p => p.position === "ST")[1]!;
+
+  // The saved lineup already reflects the swap — `striker` starts,
+  // `secondStriker` (the demoted man) sits on the bench.
+  const chosen: (string | null)[] = shape.slots.map((_, i) => (i === stSlot ? striker.id : sq[i]?.id ?? null));
+  saveLineup("Liverpool", { formation: shape.id, xi: chosen, bench: [secondStriker.id] });
+
+  const record: IncumbencyRecord = {
+    club: "Liverpool", position: "ST", starterId: striker.id, previousStarterId: secondStriker.id,
+    graceRemaining: 3, lastGoalsPlusAssists: 0,
+  };
+  const career: CareerState = { ...careerWith(), incumbents: [record] };
+
+  const leagueMd = matchdayFor(career, FIXTURE, false).away;
+  check(leagueMd.xi[stSlot]?.id === striker.id,
+    `a league fixture plays the saved lineup exactly as it stands — the current starter (${leagueMd.xi[stSlot]?.id}, wanted ${striker.id})`);
+
+  const cupFixture: Fixture = { ...FIXTURE, kind: "cup" };
+  const cupMd = matchdayFor(career, cupFixture, false).away;
+  check(cupMd.xi[stSlot]?.id === secondStriker.id,
+    `a cup tie recalls the demoted man specifically (${cupMd.xi[stSlot]?.id}, wanted ${secondStriker.id})`);
+  check(cupMd.bench.some(p => p.id === striker.id),
+    "…and the current starter genuinely makes way for him on the bench, not just an extra name added on");
+
+  clearLineup("Liverpool");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — a lineup saved for any club, yours or an opponent's, is the one that club actually fields");
+console.log("PASS — a lineup saved for any club, yours or an opponent's, is the one that club actually fields, and a demoted incumbent gets a real recall specifically for a cup tie");
