@@ -1,25 +1,32 @@
 "use client";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
+import type { SaveSlotSummary } from "@/lib/star/storage";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
+import SaveSlotsPanel from "./SaveSlotsPanel";
 
 interface Props {
   career: CareerState;
   onBack: () => void;
   onSkip: (target: SkipTarget) => void;
   onAddMoney: (amount: number) => void;
-  onNewCareer: () => void;
   onSetPortrait: (portrait: string | undefined) => void;
   onWatchReplay: (replay: GoalReplay) => void;
   onSaveReplay: (index: number, replay: GoalReplay) => void;
   onDeleteSavedReplay: (id: string) => void;
+  saves: SaveSlotSummary[];
+  activeSlot: number;
+  onSwitchSave: (slot: number) => void;
+  onStartNewInSlot: (slot: number) => void;
+  onDeleteSave: (slot: number) => void;
 }
 
 export default function SettingsScreen({
-  career, onBack, onSkip, onAddMoney, onNewCareer, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
+  career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
+  saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
 }: Props) {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -58,18 +65,13 @@ export default function SettingsScreen({
           onDeleteSavedReplay={onDeleteSavedReplay}
         />
 
-        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-center">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Start over</div>
-          <p className="mt-1 text-[11px] text-gray-200">
-            Exit leaves the career saved. This deletes it and begins a new one.
-          </p>
-          <button
-            onClick={onNewCareer}
-            className="mt-2 w-full rounded-lg border border-red-500/60 bg-red-500/15 py-2 text-xs font-black text-red-200 transition hover:bg-red-500/25"
-          >
-            New career
-          </button>
-        </div>
+        <SaveSlotsPanel
+          saves={saves}
+          activeSlot={activeSlot}
+          onSwitch={onSwitchSave}
+          onStartNew={onStartNewInSlot}
+          onDelete={onDeleteSave}
+        />
       </div>
     </div>
   );
