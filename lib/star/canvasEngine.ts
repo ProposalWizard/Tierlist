@@ -194,6 +194,16 @@ export interface Keeper {
   saveKind: SaveKind | null;
   /** Seconds of life, for idle breathing and weight shifts (render only). */
   idleT: number;
+  /**
+   * A catch/smother is decided the instant the shot arrives, same as ever —
+   * but `x` no longer jumps straight there. This is set INSTEAD of `done`
+   * for exactly that case, so stepKeeper's scrambling branch (below) is
+   * still free to carry him toward `targetX` for real over the next few
+   * frames; only once he actually arrives does `done` finally get set,
+   * freezing him. Never set for a parry/push-away — those were never
+   * "done" to begin with, and keep scrambling exactly as before.
+   */
+  pendingDone: boolean;
 }
 
 // A poacher lurking for the rebound.
@@ -544,6 +554,46 @@ const KEEPER_PATROL_PERIOD = 4.2;  // seconds for one full sweep and back — sl
 const KEEPER_SAVE_R_MIN = 1.95;    // save radius at the goal plane, weakest keeper
 const KEEPER_SAVE_R_MAX = 2.65;    // …and the strongest
 
+// ── The dive itself: a real, watched attempt, not a fact he already knew ────
+//
+// Requested directly: he must throw himself at everything, never stand
+// there and let one in, never simply appear already holding one that was
+// "close enough" — and the outcome should not read as decided before he
+// moves. None of the three numbers below touch how hard he is to beat —
+// see keeperAttempt's own doc for why the middle one is built to be exactly
+// neutral — they only decide what gets SHOWN: how far he'll throw himself
+// even at a ball he has no real chance of reaching, and how much of his
+// reach is genuine uncertainty rather than a knife-edge.
+//
+// How much wider than his real save radius he will still dive at, purely to
+// be SEEN failing rather than standing dead. Beyond this a real keeper
+// would not bother leaving his feet either, so he still does not — a shot
+// miles from him gets no animation, same as today.
+const KEEPER_ATTEMPT_MULT = 1.6;
+// The width of the band, as a fraction of his reach, where getting there is
+// genuinely in doubt rather than certain — see keeperAttempt.
+const KEEPER_QUALITY_BAND = 0.22;
+// The ramp is symmetric in isolation (proven directly — see
+// tests/star/keeperDive.mts's own controlled check of keeperAttempt), but
+// symmetric-in-probability is not automatically neutral-in-aggregate: real,
+// on-target shots are not spread evenly across the band, so even a
+// perfectly even ramp shifts the overall concede rate a little one way. The
+// direction is not the obvious one — a first, contaminated measurement of
+// this looked like it was making things noticeably EASIER, until it turned
+// out most of that gap was a completely different, pre-existing mechanic
+// (a save leading to a live rebound that a follow-up shot then scores —
+// resolveKeeper, unrelated to this formula) being miscounted as if it were
+// this one's doing. Measured properly — the ORIGINAL shot's own outcome
+// only, at a sample size large enough for the noise floor to actually
+// settle — the real effect was the other way and small. This is that
+// correction, tuned against exactly that comparison.
+const KEEPER_QUALITY_BIAS = -0.05;
+// A comfortable take is essentially never fumbled; a full-stretch one
+// sometimes is. Measured to a small, occasional share of saves overall —
+// see tests/star/keeperDive.mts and outcomes.mts's own "stays rare" check.
+const KEEPER_MISTAKE_BASE = 0.008;
+const KEEPER_MISTAKE_STRETCH_BONUS = 0.032;
+
 /**
  * Difficulty tiers.
  *
@@ -675,6 +725,7 @@ function makeKeeper(x: number, y = 0.8, rng?: () => number, allowAdvance = true)
     saveDir: 0,
     saveKind: null,
     idleT: r * 3,
+    pendingDone: false,
   };
 }
 
@@ -3454,6 +3505,16 @@ export function stepKeeper(scenario: Scenario, dt: number) {
     k.x += Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
     const wanted = clamp(k.x - k.startX, -KEEPER_LATERAL_MAX, KEEPER_LATERAL_MAX);
     k.dive += (wanted - k.dive) * Math.min(1, dt * 12);
+    // A catch/smother is decided the instant it happens (see resolveKeeper) —
+    // but he is only DRAWN as finished once this real travel has actually
+    // carried him to where it happened. `pendingDone` is never set for a
+    // parry/push-away, so a keeper chasing a genuine loose ball keeps
+    // scrambling exactly as before; this only ever fires for the two
+    // outcomes that were already terminal.
+    if (k.pendingDone && Math.abs(target - k.x) < 0.05) {
+      k.done = true;
+      k.pendingDone = false;
+    }
     return;
   }
 
@@ -4077,7 +4138,7 @@ function headedForGoal(ball: Ball, scenario: Scenario): boolean {
  * Each prior save on the same ball leaves him grounded, which is the one
  * concession to a scramble rather than a first shot.
  */
-function keeperSaveRadius(scenario: Scenario): number {
+export function keeperSaveRadius(scenario: Scenario): number {
   // Blend of the smooth rating curve and the tier's headline number, so a
   // keeper still improves gradually within a tier rather than stepping.
   const smooth = KEEPER_SAVE_R_MIN
@@ -4123,21 +4184,60 @@ function classifySave(
   return margin < 0.4 ? "fingertip" : "low";
 }
 
+/** What a shot crossing the plane at (x, z) asks of the keeper. */
+export interface KeeperAttempt {
+  /** Worth throwing himself at all — see KEEPER_ATTEMPT_MULT. False only for
+   *  a shot no real dive would ever reach; he stays on his feet, same as a
+   *  shot that beat him always has. */
+  attempts: boolean;
+  /** Whether the dive actually gets there. A roll, not a fact read off a
+   *  chart — see the doc below. */
+  reaches: boolean;
+  /** 1 = straight at him, 0 = the outer edge of a save he can still make.
+   *  Unchanged meaning from before — still what resolveKeeper and
+   *  classifySave key their own (untouched) numbers off. */
+  margin: number;
+  dist: number;
+  reach: number;
+}
+
 /**
- * Is a ball crossing the plane at (x, z) inside the keeper's save volume?
+ * Does the keeper get there, and is it even worth trying?
  *
- * Height is scaled, so the volume is a flattened ellipse — wide across the line
- * and shallow upward. That is what makes the top corners the safest target
- * without giving them any explicit bonus.
+ * Height is scaled, so his reach is a flattened ellipse — wide across the
+ * line and shallow upward. That is what makes the top corners the hardest
+ * shot to keep out without giving them any explicit bonus: they are simply
+ * furthest from him.
+ *
+ * The old version of this asked one question — `d < r`? — and the answer
+ * decided everything: certain save on one side of the line, certain goal a
+ * centimetre past it, and an animation stitched on afterward to match
+ * whichever it was. Requested directly: he should not know the answer
+ * before he dives, and it should not read as a hard radius either. So the
+ * same distance-vs-reach comparison now only decides the CERTAIN cases —
+ * well inside his reach is still an automatic take, well outside it still
+ * always beats him, nothing about the difficulty curve moves for either of
+ * those — and only the band actually worth calling a "stretch" (the last
+ * KEEPER_QUALITY_BAND of his reach, split evenly either side of the old
+ * cutoff) becomes a real roll. Centring it exactly on the old cutoff is
+ * what keeps the AGGREGATE save rate where it always was — see
+ * tests/star/keeperDive.mts for the measured comparison against the old
+ * formula — while turning the single knife-edge into the thing a stretch
+ * save actually is: sometimes he gets there, sometimes the ball he was
+ * closer to than the one before it still beats him.
  */
-function keeperCovers(scenario: Scenario, xCross: number, zCross: number): { saved: boolean; margin: number } {
+export function keeperAttempt(scenario: Scenario, xCross: number, zCross: number, rng: () => number): KeeperAttempt {
   const k = scenario.keeper;
-  const r = keeperSaveRadius(scenario);
+  const reach = keeperSaveRadius(scenario);
   const dx = xCross - k.x;
   const dz = (zCross - KEEPER_CENTRE_Z) * KEEPER_SAVE_Z_SCALE;
-  const d = Math.hypot(dx, dz);
-  // margin: 1 = straight at him, 0 = right on the edge of his reach.
-  return { saved: d < r, margin: clamp((r - d) / r, 0, 1) };
+  const dist = Math.hypot(dx, dz);
+  const margin = clamp((reach - dist) / reach, 0, 1);
+  const attempts = dist < reach * KEEPER_ATTEMPT_MULT;
+  const band = reach * KEEPER_QUALITY_BAND;
+  const p = band > 0 ? clamp(0.5 + KEEPER_QUALITY_BIAS + (reach - dist) / band, 0, 1) : (dist < reach ? 1 : 0);
+  const reaches = rng() < p;
+  return { attempts, reaches, margin, dist, reach };
 }
 
 // Resolve a keeper contact into catch / parry / tip. Returns a terminal
@@ -4152,6 +4252,24 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   ball.lastTouch = "keeper";
   ball.deflected = "keeper";
   const marginNorm = clamp((reach - dist) / reach, 0, 1); // 1 = right at the body, 0 = full stretch
+
+  // ── A genuine goalkeeping error ──
+  //
+  // New, and deliberately rare — requested directly as "a nice update", not
+  // a gimmick: even a keeper who gets there can lose his grip or misjudge
+  // the take and let a ball he reached squirm over the line anyway. Checked
+  // FIRST and returns straight away, before any of the calibrated numbers
+  // below it — carved out of the whole reached-it population rather than
+  // reweighting any of them. Scaled by how much of a stretch it was: a
+  // routine gather is almost never fumbled, a fingertip job for the top
+  // corner sometimes is. The ball's own flight is left completely alone —
+  // same trick a normal miss already uses (see the goal-line crossing
+  // block) — so it carries on and is credited exactly like any other goal,
+  // just with `lastTouch`/`deflected` already honestly set to "keeper" for
+  // the commentary to read off.
+  const mistakeChance = KEEPER_MISTAKE_BASE + (1 - marginNorm) * KEEPER_MISTAKE_STRETCH_BONUS;
+  if (rng() < mistakeChance) return null;
+
   // ── What a keeper can hold ──
   //
   // This was `speed < 17 && z < 1.2`, and the median shot he gets a hand to
@@ -4186,7 +4304,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
-    k.done = true;
+    k.pendingDone = true;
     return "caught";
   }
 
@@ -4215,7 +4333,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
-    k.done = true;
+    k.pendingDone = true;
     return "caught";
   }
 
@@ -4252,7 +4370,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // would surface as a plain, uncredited "out".
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     if (rng() < 0.22) {
-      k.done = true;
+      k.pendingDone = true;
       return "saved";
     }
     const side = ball.pos.x < CX ? -1 : 1;
@@ -4281,7 +4399,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
-    k.done = true;
+    k.pendingDone = true;
     return "caught";
   }
   const away = normalize({ x: ball.pos.x - k.x, y: ball.pos.y - k.y });
@@ -4869,22 +4987,45 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const f = (prevY - k.y) / (prevY - ball.pos.y || 1);
     const xAt = prevX + (ball.pos.x - prevX) * f;
     const zAt = prevZ + (ball.z - prevZ) * f;
-    const cover = keeperCovers(scenario, xAt, zAt);
-    if (cover.saved) {
+    const attempt = keeperAttempt(scenario, xAt, zAt, rng);
+    if (attempt.attempts) {
+      // ── He throws himself at it — for real, this time ──
+      //
+      // `scrambling` below is the SAME lateral travel-at-a-capped-speed
+      // machinery a keeper already uses to chase a spilled rebound, reused
+      // rather than duplicated: "cover real ground toward an x over the
+      // next few frames" is the same problem either way. `x` is
+      // deliberately left untouched here — it used to jump straight to the
+      // save point in the same tick the outcome was decided, which is the
+      // "teleport" this whole rework exists to remove. He starts from
+      // wherever he actually is and travels; see stepKeeper.
       k.saveDir = Math.sign(xAt - k.x) || 0;
       k.saveLunge = 0.001;
-      k.scrambling = false;
-      ball.pos.x = xAt;
-      ball.pos.y = Math.max(k.y, 0.02);
-      ball.z = Math.max(0, zAt);
-      const r = keeperSaveRadius(scenario);
-      const standingAt = k.x;
-      // He dives to it. The decision was made against where he was standing;
-      // this is only the picture agreeing with it.
-      k.x = clamp(xAt, POST_L - 2.5, POST_R + 2.5);
-      const outcome = resolveKeeper(ball, scenario, (1 - cover.margin) * r, r, speed, rng);
-      k.saveKind = classifySave(xAt, zAt, standingAt, cover.margin, outcome);
-      if (outcome) return outcome;
+      k.scrambling = true;
+      if (attempt.reaches) {
+        k.targetX = xAt;
+        ball.pos.x = xAt;
+        ball.pos.y = Math.max(k.y, 0.02);
+        ball.z = Math.max(0, zAt);
+        const outcome = resolveKeeper(ball, scenario, attempt.dist, attempt.reach, speed, rng);
+        k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, outcome);
+        if (outcome) return outcome;
+      } else {
+        // ── Beaten, but not stood there watching it happen ──
+        //
+        // He genuinely goes for it — travelling up to as far as his real
+        // reach covers, toward the ball, and no further, so a shot that
+        // only just beat him reads as a stretch that fell agonisingly
+        // short rather than a keeper who never moved. The ball itself is
+        // left completely alone: no position, velocity or outcome is
+        // touched here, so it carries on exactly as an ordinary miss
+        // always has, and the goal-line crossing block below still decides
+        // it — this is purely the picture of him failing, never a second
+        // place gameplay gets decided.
+        const dir = Math.sign(xAt - k.x) || 1;
+        k.targetX = k.x + dir * Math.min(Math.abs(xAt - k.x), attempt.reach);
+        k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, null);
+      }
     }
   }
 

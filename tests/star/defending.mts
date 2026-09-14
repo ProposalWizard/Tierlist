@@ -119,14 +119,23 @@ const snapshot = (sc: Scenario) => JSON.stringify({
     }
   }
 
-  // Not even with the ball in flight, right up until he touches it.
+  // Not even with the ball in flight, right up until it actually reaches him.
   //
-  // The rule is that he never reads your AIM — not that he is furniture. Two
-  // things legitimately move him and both are consequences of something that
-  // has already happened: a save he has made, and a ball that has been played
-  // to somebody else and is now at that man's feet. Neither is him learning
-  // where your shot is going, so both are excluded here and the second is
-  // asserted directly below.
+  // The rule is that he never reads your AIM — not that he is furniture.
+  // Three things legitimately move him and all three are consequences of
+  // something that has ALREADY happened, never a prediction of something
+  // that has not: a save he has made, a ball that has been played to
+  // somebody else and is now at that man's feet, and — since the real-dive
+  // rework — the moment the shot itself genuinely reaches his line, whether
+  // he gets there or not (canvasEngine.ts's keeperAttempt/stepBall). That
+  // third one used to be indistinguishable from "he saved it" (`saves`
+  // only ever incremented at the same instant), which is why this used to
+  // key off `saves > 0` alone; a dive that is thrown at the ball and still
+  // fails now increments neither `saves` nor `k.done`, only `saveLunge`
+  // (see stepBall's "KEEPER'S OWN LINE" block), so that is the signal
+  // checked for here instead — still gated on a REAL, already-crossed
+  // ball, never on where your shot is merely heading. `saves > 0` stays
+  // asserted too, so a genuine save is still caught by both.
   {
     let checked = 0, moved = 0;
     for (let seed = 0; seed < 40; seed++) {
@@ -137,7 +146,7 @@ const snapshot = (sc: Scenario) => JSON.stringify({
       const kx = sc.keeper.x;
       let out: Outcome | null = null, dirty = false;
       for (let i = 0; i < 600 && !out; i++) {
-        if (sc.keeper.saves > 0 || sc.keeper.adjusting) break;
+        if (sc.keeper.saves > 0 || sc.keeper.saveLunge > 0 || sc.keeper.adjusting) break;
         stepKeeper(sc, DT);
         stepReactions(sc, ball, DT, rng);
         if (sc.keeper.x !== kx) dirty = true;
@@ -146,7 +155,7 @@ const snapshot = (sc: Scenario) => JSON.stringify({
       checked++;
       if (dirty) moved++;
     }
-    check(moved === 0, `and he does not track the flight either — he never learns where it is going (${moved}/${checked})`);
+    check(moved === 0, `and he does not track the flight either — he never learns where it is going before it actually reaches him (${moved}/${checked})`);
   }
 
   // ── …but he does cover a ball played across him ──
