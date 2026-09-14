@@ -405,6 +405,28 @@ function build(
       }));
   }
 
+  // A final, unconditional safety net — reported directly: a club that had
+  // just sold two starters showed a real vacancy filled in the XI (fillGaps
+  // correctly promoted a replacement) but dropped to 7 substitutes instead
+  // of 9, despite genuinely having enough reserves left to fill both spots.
+  // Whatever upstream path is responsible for a shortfall, this always tops
+  // the bench back up to 9 from whoever in the real pool isn't already on
+  // the pitch or the bench — the same real reserves the club actually has,
+  // never inventing a player, only ever adding real, unused, non-empty
+  // slack that already exists on the books.
+  if (bench.length < 9) {
+    const onBenchAlready = new Set(bench.map(p => p.id));
+    const extra = pool
+      .filter(p => !started.has(p.id) && !onBenchAlready.has(p.id))
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
+      .slice(0, 9 - bench.length)
+      .map(p => ({
+        id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
+        overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
+      }));
+    bench = [...bench, ...extra];
+  }
+
   return { club, formation, xi, bench, yours };
 }
 

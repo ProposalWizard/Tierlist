@@ -515,6 +515,31 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
     "…and once the real roster can field eleven on its own, the free agents are left alone");
 }
 
+// ── The bench always tops back up to nine, whatever shrunk it ───────────
+//
+// Reported directly, 14 Sep 2026: selling two starters from a club with a
+// real saved lineup correctly promoted replacements into the vacated XI
+// slots, but left the bench at seven instead of nine — despite the club
+// genuinely having enough real reserves on the books to fill both spots.
+// Reproduced here directly: a real saved bench shorter than nine (the
+// same shape a shrunk-by-sales bench would have, whatever the exact
+// upstream cause), with plenty of real reserves still in the pool.
+{
+  const c = career("Liverpool");
+  const squadIds = c.squad.map(p => p.id);
+  // A saved bench naming only six real, currently-available squad members —
+  // short of nine, the same symptom two sold bench players would produce.
+  const savedBench = squadIds.slice(11, 17);
+  check(savedBench.length === 6, "test setup: a genuinely short saved bench (6, not 9)");
+
+  const md = matchdayFor(c, fixture("Arsenal", true), true, undefined, savedBench);
+  check(md.home.bench.length === 9,
+    `the bench still reaches nine from real remaining reserves, not stuck at the short saved count (${md.home.bench.length})`);
+  const starting = new Set(md.home.xi.map(p => p.id));
+  check(!md.home.bench.some(p => starting.has(p.id)), "…and nobody on that topped-up bench is also starting");
+  check(new Set(md.home.bench.map(p => p.id)).size === md.home.bench.length, "…and nobody appears on the bench twice");
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);

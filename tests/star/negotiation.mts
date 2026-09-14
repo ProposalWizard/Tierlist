@@ -126,9 +126,51 @@ const MV = 10_000_000;
   check(neutralFace === "neutral", `a middling mood score reads as neutral (got ${neutralFace})`);
 }
 
+// ── The counterpart's own numbers are always clean, real worked examples ──
+//
+// Reported directly: "sixteen thousand one hundred and seventy six" read as
+// oddly precise for an opening ask or a concession. Their own positions
+// should always land on a real, sayable round number — never your own
+// typed/preset amount, which stays exactly what you entered.
+{
+  let anyDirty = false;
+  const dirtyExamples: number[] = [];
+  const isClean = (n: number) => {
+    const a = Math.abs(n);
+    const step = a < 5_000 ? 100 : a < 50_000 ? 500 : a < 500_000 ? 5_000
+      : a < 5_000_000 ? 50_000 : a < 50_000_000 ? 500_000 : 5_000_000;
+    return n % step === 0;
+  };
+  for (let trial = 0; trial < 30; trial++) {
+    const rng = seededRng(trial * 29 + 5);
+    let state = startNegotiation(MV, trial % 2 === 0 ? "buying" : "selling", rng);
+    if (!isClean(state.theirPosition)) { anyDirty = true; dirtyExamples.push(state.theirPosition); }
+    for (let i = 0; i < 6 && state.status === "negotiating"; i++) {
+      // A real, moving offer each round — not a stubborn repeat, so real
+      // concessions actually happen and get checked too.
+      const nudge = state.mode === "buying" ? state.yourPosition * 1.05 : state.yourPosition * 0.95;
+      state = makeOffer(state, Math.round(nudge), rng);
+      if (state.status === "negotiating" && !isClean(state.theirPosition)) { anyDirty = true; dirtyExamples.push(state.theirPosition); }
+    }
+  }
+  check(!anyDirty, `every one of the counterpart's own numbers lands on a real, clean round figure (dirty examples: ${dirtyExamples.slice(0, 5).join(", ")})`);
+}
+
+// ── Offering more than needed is explained, not just silently overridden ──
+{
+  const rng = seededRng(7);
+  let state = startNegotiation(MV, "buying", rng);
+  // Deliberately overshoot their current ask by a wide margin.
+  state = makeOffer(state, state.theirPosition + 5_000_000, rng);
+  check(state.status === "accepted", "a big overshoot still closes the deal");
+  check(state.finalPrice! < state.theirPosition + 5_000_000, "…at their real price, not your inflated offer");
+  check(state.log.some(l => /more than they needed|only actually pay/i.test(l)),
+    `the log explicitly explains why you paid less than you offered (log: ${JSON.stringify(state.log)})`);
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — negotiations open away from fair value in the right direction, a generous offer closes fast, stubbornness can genuinely blow up the deal, and every negotiation reaches a real conclusion");
+console.log("PASS — negotiations open away from fair value in the right direction, a generous offer closes fast, stubbornness can genuinely blow up the deal, the counterpart's own numbers are always clean, paying less than you offered is explained rather than silently applied, and every negotiation reaches a real conclusion");
