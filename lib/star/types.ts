@@ -932,6 +932,7 @@ export type StarPhase =
   | "relegation-move"
   | "dashboard"
   | "settings"
+  | "face-editor"
   | "league"
   | "life"
   | "skills"
