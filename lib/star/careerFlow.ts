@@ -197,8 +197,12 @@ export function makeInitialCareer(
   state.manager = makeManager(state, player.club, 1);
   // The starting roster for the sacking carousel below — every real name in
   // managerPool.ts, since nobody has been hired at YOUR club yet (the only
-  // club this game actually tracks a job market for).
-  state.availableManagers = allPoolManagers();
+  // club this game actually tracks a job market for). If the Lineups sheet
+  // for your own starting club happens to name a real pool manager (real
+  // life example: the club's actual current manager), he's already "taken"
+  // the moment the career opens — leaving him in this list too would let
+  // the Boardroom hire him away from himself.
+  state.availableManagers = allPoolManagers().filter(n => n !== state.manager!.name);
   const seeded = seedSeasonKnockouts(state);
   state.cups = seeded.runs;
   // Both domestic cups: thirty-two clubs, a first-round draw, and your tie on

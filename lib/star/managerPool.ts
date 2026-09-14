@@ -107,6 +107,93 @@ export function dreamClubFor(name: string): string | undefined {
   return DREAM_CLUB_BY_NAME.get(name);
 }
 
+/**
+ * A real, one-off appointment figure for the calibre of manager each tier
+ * represents — the anchor a real negotiation (see `managerInterest` below)
+ * opens from, same idea as `marketValue.ts`'s player figure. Moved here
+ * (out of investments.ts, where it used to be a private, unexported
+ * function) so managerNegotiation-facing code can share it without a
+ * circular import back into investments.ts.
+ */
+export function managerBaseFee(name: string): number {
+  const tier = managerTier(name);
+  if (tier === "dream") return 15000000;
+  if (tier === 1) return 5000000;
+  if (tier === 2) return 1500000;
+  if (tier === 3) return 400000;
+  return 100000; // an unranked name — a cheap, low-profile hire
+}
+
+/**
+ * A handful of REAL clubs big enough that a Dream Appointment (Ferguson,
+ * Wenger, Klopp) might plausibly leave retirement/his one true club for —
+ * requested directly: "unless it was in another league, maybe at a
+ * ridiculously high reputation club." Every one of these already sits at
+ * investments.ts's own 3.0 prestige ceiling — the handful of clubs this
+ * game treats as genuinely world-elite, not ranked against each other.
+ */
+export const WORLD_GIANT_CLUBS: string[] = ["Real Madrid", "FC Barcelona", "Bayern München", "Paris Saint-Germain"];
+
+export interface ManagerInterest {
+  willing: boolean;
+  /** Set only when `willing` is false — shown in place of a Negotiate button. */
+  reason?: string;
+  /** What a negotiation should anchor around — fed straight into
+   *  negotiation.ts's `startNegotiation` as `marketValue`. */
+  anchorFee: number;
+}
+
+const JOB_PRESTIGE: Record<Ambition, number> = { Title: 3, Europe: 2, "Mid-table": 1, Survival: 0 };
+const MANAGER_PRESTIGE: Record<PoolTier, number> = { dream: 4, 1: 3, 2: 2, 3: 1 };
+
+/**
+ * Whether this real manager would even entertain a job at `club`, and what
+ * a negotiation should open around if so.
+ *
+ * Requested directly, with the exact reasoning given: the three Dream
+ * Appointments are "locked" — Ferguson, Wenger and Klopp only ever consider
+ * their own club (or, per the exception above, a genuine world giant), and
+ * refuse every other job outright, no fee changes that. Every other real
+ * name is always willing in principle, but the fee anchor moves hard with
+ * how far the job sits below his own level — cheap and eager for a job
+ * above his level (a lower-tier manager thrilled at a big chance), steeply
+ * priced — "a ridiculous fee" — for one well beneath it. A big enough gap
+ * also carries a real, if modest, chance he simply turns the approach down
+ * rather than naming any fee at all.
+ */
+export function managerInterest(career: CareerState, name: string, club: string): ManagerInterest {
+  const tier = managerTier(name);
+  const baseFee = managerBaseFee(name);
+
+  if (tier === "dream") {
+    const willing = dreamClubFor(name) === club || WORLD_GIANT_CLUBS.includes(club);
+    return willing
+      ? { willing: true, anchorFee: baseFee }
+      : { willing: false, reason: `${name}'s heart belongs to ${dreamClubFor(name)}. He won't manage anywhere else.`, anchorFee: baseFee };
+  }
+
+  if (tier === undefined) return { willing: true, anchorFee: baseFee };
+
+  const jobPrestige = JOB_PRESTIGE[clubAmbition(career, club)];
+  const gap = MANAGER_PRESTIGE[tier] - jobPrestige; // positive = job beneath him
+
+  // A real, bounded refusal chance only at the most lopsided end — a genuine
+  // Elite name asked to fight relegation. Deterministic on the club/name
+  // pairing so the same approach doesn't flip-flop on every re-render.
+  if (gap >= 3) {
+    const seed = mulberry32(clubNameSeed(club) + clubNameSeed(name));
+    if (seed() < 0.25) {
+      return { willing: false, reason: `${name} isn't interested in a job well below his level right now.`, anchorFee: baseFee };
+    }
+  }
+
+  // Every step of gap moves the anchor by 60% — a job well beneath him gets
+  // "a ridiculous fee," a job well above his level gets a real discount, on
+  // the reasoning "he'd be thrilled and wouldn't ask for as much."
+  const anchorFee = Math.max(50000, Math.round(baseFee * Math.pow(1.6, gap)));
+  return { willing: true, anchorFee };
+}
+
 /** Reputation (see manager.ts) a hire from each tier should land in. */
 export const TIER_REPUTATION_RANGE: Record<PoolTier, { min: number; max: number }> = {
   dream: { min: 95, max: 100 },

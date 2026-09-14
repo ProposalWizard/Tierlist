@@ -3,10 +3,10 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import {
   allInvestableClubs, clubValuation, stakeIn, isMajorityOwner, canInvestIn, MAJORITY_THRESHOLD,
-  ownedClubState,
+  ownedClubState, managerCurrentClub,
 } from "@/lib/star/investments";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
-import { allPoolManagers } from "@/lib/star/managerPool";
+import { allPoolManagers, managerInterest } from "@/lib/star/managerPool";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { FORMATIONS } from "@/lib/star/formations";
 import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
@@ -56,7 +56,7 @@ interface Props {
    *  to see fan reaction (and can still overrule a bad result exactly as
    *  before) rather than the only path to a sale. */
   onProposeSellVote: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
-  onReplaceManager: (club: string, managerName: string) => ActionResult;
+  onReplaceManager: (club: string, managerName: string, agreedFee?: number) => ActionResult;
   /** Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer. */
   onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
   onSetFormation: (club: string, formationId: string) => ActionResult;
@@ -86,6 +86,22 @@ function StarIcon() {
 
 function money(n: number): string {
   return formatMoney(n);
+}
+
+/** A real, if simple, jersey shape in the club's actual colours — requested
+ *  directly: "there should be an area somewhere which shows the kit of that
+ *  club because we don't always know what exactly the colors of that kit
+ *  and what they look like." Three swatch dots (still shown alongside this)
+ *  name the exact colours; this is what they actually look like worn. */
+function KitSwatch({ kit, size = 44 }: { kit: ClubKit; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className="shrink-0">
+      <path d="M8 6 L1 15 L7 20 L11 13 Z" fill={kit.secondary} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />
+      <path d="M32 6 L39 15 L33 20 L29 13 Z" fill={kit.secondary} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />
+      <path d="M11 7 Q20 12 29 7 L32 35 Q20 38.5 8 35 Z" fill={kit.primary} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />
+      <path d="M15.5 5.5 Q20 9.5 24.5 5.5 L22.5 3 Q20 5.5 17.5 3 Z" fill={kit.trim} />
+    </svg>
+  );
 }
 
 export default function Investments(props: Props) {
@@ -548,7 +564,7 @@ function Boardroom({
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
   onSellPlayer: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
   onProposeSellVote: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
-  onReplaceManager: (club: string, managerName: string) => ActionResult;
+  onReplaceManager: (club: string, managerName: string, agreedFee?: number) => ActionResult;
   onSetFormation: (club: string, formationId: string) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
@@ -585,6 +601,7 @@ function Boardroom({
   const [negotiating, setNegotiating] = useState<
     | { kind: "sign"; playerId: string; fromClub: string; playerName: string; marketValue: number }
     | { kind: "sell"; playerId: string; playerName: string; buyerClub: string; marketValue: number }
+    | { kind: "manager"; club: string; managerName: string; marketValue: number }
     | null
   >(null);
   // A completed sale negotiation waits here for one more real choice —
@@ -641,9 +658,9 @@ function Boardroom({
     const savedState = negotiating.kind === "sell" ? savedNegotiations[negotiating.buyerClub] : undefined;
     return (
       <NegotiationScreen
-        mode={negotiating.kind === "sign" ? "buying" : "selling"}
-        playerName={negotiating.playerName}
-        counterpartLabel={negotiating.kind === "sell" ? negotiating.buyerClub : undefined}
+        mode={negotiating.kind === "sell" ? "selling" : "buying"}
+        playerName={negotiating.kind === "manager" ? negotiating.managerName : negotiating.playerName}
+        counterpartLabel={negotiating.kind === "sell" ? negotiating.buyerClub : negotiating.kind === "manager" ? "His Representatives" : undefined}
         marketValue={negotiating.marketValue}
         initialState={savedState}
         onStepAway={negotiating.kind === "sell" ? state => {
@@ -665,6 +682,7 @@ function Boardroom({
             return;
           }
           if (deal.kind === "sign") { runAction(onSignPlayer(club, deal.playerId, deal.fromClub, finalPrice)); return; }
+          if (deal.kind === "manager") { runAction(onReplaceManager(deal.club, deal.managerName, finalPrice)); return; }
           setInterestList(null);
           setSavedNegotiations({});
           setPendingSale({ playerId: deal.playerId, playerName: deal.playerName, fee: finalPrice, buyerClub: deal.buyerClub });
@@ -766,9 +784,14 @@ function Boardroom({
     <div>
       <button onClick={onBack} className="mb-2 text-xs font-black text-white/90 hover:text-white">← All boards</button>
       <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
-        <div className="font-black text-white">{club}</div>
-        <div className="text-[10px] text-white/90">
-          Manager: {loadLineup(club)?.manager || state.managerName || "Vacant"}
+        <div className="flex items-center gap-2">
+          {clubKitFor(career, club) && <KitSwatch kit={clubKitFor(career, club)!} size={32} />}
+          <div>
+            <div className="font-black text-white">{club}</div>
+            <div className="text-[10px] text-white/90">
+              Manager: {loadLineup(club)?.manager || state.managerName || "Vacant"}
+            </div>
+          </div>
         </div>
         <div className="mt-2 flex items-center gap-2">
           <div className="flex-1 bg-gray-900 rounded-lg px-2 py-1.5 flex items-center justify-between">
@@ -844,7 +867,10 @@ function Boardroom({
       )}
 
       {section === "manager" && (
-        <ManagerPanel career={career} club={club} onReplaceManager={(c, n) => runAction(onReplaceManager(c, n))} />
+        <ManagerPanel
+          career={career} club={club}
+          onNegotiate={(c, n, anchorFee) => setNegotiating({ kind: "manager", club: c, managerName: n, marketValue: anchorFee })}
+        />
       )}
 
       {section === "powers" && (
@@ -939,28 +965,43 @@ function PowersPanel({
 
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Kit</div>
+        <div className="mb-2 text-[9px] text-white/70 leading-snug">
+          One kit for the whole club — not home vs away. Design A and B below are two candidates you can put to a real fan vote (or set directly); whichever wins becomes THE club's kit.
+        </div>
         {kit && (
           <div className="mb-2 flex items-center gap-2 text-[10px] text-white font-semibold">
-            Current: <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.primary }} />
-            <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.secondary }} />
-            <span className="w-4 h-4 rounded-full border border-white/30" style={{ background: kit.trim }} />
+            <KitSwatch kit={kit} size={36} />
+            <span>
+              Current
+              <span className="ml-1.5 inline-flex gap-1 align-middle">
+                <span className="w-4 h-4 rounded-full border border-white/30 inline-block" style={{ background: kit.primary }} />
+                <span className="w-4 h-4 rounded-full border border-white/30 inline-block" style={{ background: kit.secondary }} />
+                <span className="w-4 h-4 rounded-full border border-white/30 inline-block" style={{ background: kit.trim }} />
+              </span>
+            </span>
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
           <div>
             <div className="text-[9px] font-bold text-white/90 mb-1">Design A</div>
-            <div className="flex gap-1">
-              {(["primary", "secondary", "trim"] as const).map(k => (
-                <input key={k} type="color" value={kitA[k]} onChange={e => setKitA({ ...kitA, [k]: e.target.value })} className="w-6 h-6 rounded" />
-              ))}
+            <div className="flex items-center gap-2">
+              <KitSwatch kit={kitA} size={32} />
+              <div className="flex gap-1">
+                {(["primary", "secondary", "trim"] as const).map(k => (
+                  <input key={k} type="color" value={kitA[k]} onChange={e => setKitA({ ...kitA, [k]: e.target.value })} className="w-6 h-6 rounded" />
+                ))}
+              </div>
             </div>
           </div>
           <div>
             <div className="text-[9px] font-bold text-white/90 mb-1">Design B</div>
-            <div className="flex gap-1">
-              {(["primary", "secondary", "trim"] as const).map(k => (
-                <input key={k} type="color" value={kitB[k]} onChange={e => setKitB({ ...kitB, [k]: e.target.value })} className="w-6 h-6 rounded" />
-              ))}
+            <div className="flex items-center gap-2">
+              <KitSwatch kit={kitB} size={32} />
+              <div className="flex gap-1">
+                {(["primary", "secondary", "trim"] as const).map(k => (
+                  <input key={k} type="color" value={kitB[k]} onChange={e => setKitB({ ...kitB, [k]: e.target.value })} className="w-6 h-6 rounded" />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1154,28 +1195,54 @@ function SignPlayerPanel({
 }
 
 function ManagerPanel({
-  career, club, onReplaceManager,
-}: { career: CareerState; club: string; onReplaceManager: (club: string, managerName: string) => void }) {
+  career, club, onNegotiate,
+}: { career: CareerState; club: string; onNegotiate: (club: string, managerName: string, anchorFee: number) => void }) {
   // Same read priority as the Boardroom header above (line ~649): the real
   // saved lineup's manager wins over this club's own separate managerName
   // record, since that's what every other screen actually displays.
   const current = loadLineup(club)?.manager || ownedClubState(career, club).managerName;
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
-      {allPoolManagers().map(name => (
-        <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
-          <span className={`text-sm font-bold ${name === current ? "text-emerald-300" : "text-white"}`}>
-            {name}{name === current ? " (current)" : ""}
-          </span>
-          <button
-            disabled={name === current}
-            onClick={() => onReplaceManager(club, name)}
-            className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-[10px] font-black text-emerald-950"
-          >
-            Appoint
-          </button>
-        </div>
-      ))}
+      {allPoolManagers().map(name => {
+        if (name === current) {
+          return (
+            <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
+              <span className="text-sm font-bold text-emerald-300">{name} (current)</span>
+            </div>
+          );
+        }
+        // A real manager is a unique resource, exactly like a player —
+        // reported directly, from a real save, that the same man ended up
+        // "managing" two owned clubs at once. `managerCurrentClub` is the
+        // one shared truth `replaceManagerForOwnedClub` itself also checks.
+        const takenAt = managerCurrentClub(career, name);
+        if (takenAt) {
+          return (
+            <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0 opacity-50">
+              <span className="text-sm font-bold text-white">{name}</span>
+              <span className="text-[9px] font-black uppercase text-white/70">At {takenAt}</span>
+            </div>
+          );
+        }
+        const interest = managerInterest(career, name, club);
+        return (
+          <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-white truncate">{name}</div>
+              {!interest.willing && (
+                <div className="text-[9px] font-semibold text-white/60 leading-snug">{interest.reason}</div>
+              )}
+            </div>
+            <button
+              disabled={!interest.willing}
+              onClick={() => onNegotiate(club, name, interest.anchorFee)}
+              className="shrink-0 ml-2 px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-[10px] font-black text-emerald-950"
+            >
+              {interest.willing ? "Negotiate" : "Not Interested"}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
