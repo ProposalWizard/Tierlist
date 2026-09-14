@@ -3,7 +3,7 @@
 import {
   DREAM_APPOINTMENTS, ELITE_MANAGERS, STRONG_MANAGERS, RECOGNISABLE_MANAGERS,
   allPoolManagers, managerTier, dreamClubFor, rollReplacementManager,
-  TIER_REPUTATION_RANGE,
+  TIER_REPUTATION_RANGE, managerInterest, managerBaseFee, WORLD_GIANT_CLUBS, clubAmbition,
 } from "../../lib/star/managerPool";
 import { hireReplacementManager, reputationTier } from "../../lib/star/manager";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -111,6 +111,47 @@ function player(club: string): StarPlayer {
   const b = hireReplacementManager(career, "Liverpool", 3, pool);
   check(a.manager.name === b.manager.name, "same career/club/season/pool produces the same hire");
   check(a.manager.style === b.manager.style, "same inputs produce the same manager style");
+}
+
+// ── managerInterest: Dream Appointments only consider their own club (or a
+// world giant), every other real name is always willing but priced/refused
+// by how far the job sits below his level ──
+{
+  const CLUBS2 = ["Arsenal", "AFC Bournemouth", "Brentford", "Manchester United", "Liverpool"];
+  const fergie = "Sir Alex Ferguson";
+  check(dreamClubFor(fergie) === "Manchester United", "fixture assumption: Ferguson locked to Manchester United");
+
+  const atOwnClub = managerInterest(makeInitialCareer(player("Manchester United"), CLUBS2), fergie, "Manchester United");
+  check(atOwnClub.willing, "Ferguson is genuinely willing at his own club");
+
+  const atSmallClub = managerInterest(makeInitialCareer(player("Brentford"), CLUBS2), fergie, "Brentford");
+  check(!atSmallClub.willing, "Ferguson refuses a Premier League job that isn't Manchester United");
+  check(!!atSmallClub.reason && atSmallClub.reason.length > 0, "…with a real reason given, not a silent no");
+
+  check(WORLD_GIANT_CLUBS.includes("Real Madrid"), "fixture assumption: Real Madrid is on the world-giant exception list");
+  const atRealMadrid = managerInterest(makeInitialCareer(player("Arsenal"), CLUBS2), fergie, "Real Madrid");
+  check(atRealMadrid.willing, "…but a genuine world giant is a real exception to the lock");
+
+  // A non-dream real name is always willing in principle, and asks for
+  // considerably more to take a job well beneath his level than one that
+  // suits it, or one above it. Ambition (clubExpectation) is purely relative
+  // to career.league's own strengths, so the league here is forced to a
+  // known shape rather than trusted to whatever a fresh 5-club career
+  // happens to roll — Manchester United top (Title), Brentford bottom
+  // (Survival), regardless of the real world.
+  const base = makeInitialCareer(player("Manchester United"), CLUBS2);
+  const ranked = [95, 85, 70, 55, 20]; // strongest to weakest, by table index
+  const league = base.league.map((t, i) => ({ ...t, strength: ranked[i] ?? 50 }));
+  const titleClub = league[0].name, survivalClub = league[league.length - 1].name;
+  check(clubAmbition({ ...base, league }, titleClub) === "Title", "fixture assumption: the top-ranked club reads as a Title push");
+  check(clubAmbition({ ...base, league }, survivalClub) === "Survival", "fixture assumption: the bottom-ranked club reads as a Survival fight");
+
+  const dyche = STRONG_MANAGERS.find(n => n === "Sean Dyche") ?? STRONG_MANAGERS[0];
+  const fitJob = managerInterest({ ...base, league }, dyche, titleClub);
+  const beneathJob = managerInterest({ ...base, league }, dyche, survivalClub);
+  check(fitJob.willing, "a Level 2 name is willing at a genuine title-chasing job");
+  check(beneathJob.anchorFee > fitJob.anchorFee, `a job well beneath his level anchors higher, not lower (${beneathJob.anchorFee} vs ${fitJob.anchorFee})`);
+  check(fitJob.anchorFee >= managerBaseFee(dyche) * 0.5, "a job that suits him stays near his real base fee, not artificially discounted to nothing");
 }
 
 if (problems.length > 0) {

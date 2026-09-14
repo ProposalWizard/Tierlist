@@ -41,7 +41,7 @@ function player(): StarPlayer {
 
 function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const base = makeInitialCareer(player(), [...PREMIER_LEAGUE_CLUBS]);
-  return { ...base, money: 1_000_000, ...overrides };
+  return { ...base, money: 1_000_000_000, ...overrides };
 }
 
 const YES_NO: VoteOption[] = [{ id: "yes", label: "Yes" }, { id: "no", label: "No" }];
@@ -51,19 +51,22 @@ const YES_NO: VoteOption[] = [{ id: "yes", label: "Yes" }, { id: "no", label: "N
   const tally = castVote("Test?", YES_NO, 10000, "no", 0.8, mulberry32(1)); // "no" heavily favoured
   check(tally.winner === "no", "fixture assumption: 'no' really is winning before any bribe");
 
-  const bribed = bribeVote(tally, "yes", 50000);
+  // Rescaled 14 Sep 2026 — corruption.ts's MONEY_PER_BRIBED_VOTE moved from
+  // ★400 to ★800,000 (the same ×2000 personal-money multiplier as the rest
+  // of this session's economy rescale), so these bribe amounts move with it.
+  const bribed = bribeVote(tally, "yes", 100_000_000);
   check(bribed.counts.yes > tally.counts.yes, "a real bribe genuinely moves real votes toward the target");
   check(bribed.counts.no < tally.counts.no, "…taken from the option that actually had them");
   check(bribed.counts.yes + bribed.counts.no + bribed.abstentions === tally.electorate, "the whole electorate is still accounted for after a bribe");
 
-  const hugeBribe = bribeVote(tally, "yes", 100_000_000);
+  const hugeBribe = bribeVote(tally, "yes", 200_000_000_000);
   const moved = hugeBribe.counts.yes - tally.counts.yes;
   check(moved <= tally.electorate * 0.16, `even an enormous bribe is capped, not an outright landslide (moved ${moved} of ${tally.electorate})`);
 
   const zeroBribe = bribeVote(tally, "yes", 0);
   check(zeroBribe.counts.yes === tally.counts.yes, "a zero bribe changes nothing");
 
-  const fakeOption = bribeVote(tally, "not-a-real-option", 10000);
+  const fakeOption = bribeVote(tally, "not-a-real-option", 20_000_000);
   check(fakeOption.counts.yes === tally.counts.yes && fakeOption.counts.no === tally.counts.no, "bribing toward a non-existent option is a safe no-op");
 }
 
@@ -91,10 +94,12 @@ const YES_NO: VoteOption[] = [{ id: "yes", label: "Yes" }, { id: "no", label: "N
 
 // ── Getting caught: a real, shared consequence ─────────────────────────────
 {
+  // Rescaled 14 Sep 2026 alongside corruption.ts's own fine cap (★50,000 →
+  // ★100,000,000, same ×2000 personal-money multiplier as everywhere else).
   const career = freshCareer();
-  const caught = applyGettingCaught(career, "bribery", 20000, "Caught bribing officials");
+  const caught = applyGettingCaught(career, "bribery", 40_000_000, "Caught bribing officials");
   check(caught.money < career.money, "getting caught genuinely costs real money");
-  check(career.money - caught.money <= 50000, "…but the fine is capped, not unbounded");
+  check(career.money - caught.money <= 100_000_000, "…but the fine is capped, not unbounded");
   check(caught.reputation.world < career.reputation.world, "…and genuinely costs world reputation");
   check(caught.relationships.boss < career.relationships.boss, "…and damages your standing with the boss");
   check(caught.relationships.fans < career.relationships.fans, "…and damages your standing with fans");
@@ -102,7 +107,7 @@ const YES_NO: VoteOption[] = [{ id: "yes", label: "Yes" }, { id: "no", label: "N
   check(caught.injury!.note.length > 0, "…with a real reason recorded, not a blank note");
 
   const alreadyInjured = { ...career, injury: { weeksRemaining: 1, note: "A real injury, unrelated" } };
-  const caughtToo = applyGettingCaught(alreadyInjured, "blackMarket", 5000, "Caught buying banned boots");
+  const caughtToo = applyGettingCaught(alreadyInjured, "blackMarket", 10_000_000, "Caught buying banned boots");
   check(caughtToo.injury === alreadyInjured.injury, "a genuine existing injury is never overwritten by a suspension stacking on top of it");
 
   const bigFine = applyGettingCaught({ ...career, money: 10 }, "bribery", 1_000_000, "x");

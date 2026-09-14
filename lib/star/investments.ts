@@ -7,7 +7,8 @@ import { poolFor } from "./euro";
 import { transferWindowOpen, divisionOf as careerDivisionOf } from "./calendar";
 import { getTuning } from "./tuningStore";
 import { FREE_AGENTS_CLUB } from "./leagueSquads";
-import { managerTier } from "./managerPool";
+import { managerTier, managerBaseFee, allPoolManagers } from "./managerPool";
+import { loadLineup } from "./lineupStore";
 import {
   castVote, applyVoteHeldReputation, applyOverruleReputationCost,
   OVERRULE_OWNERSHIP_THRESHOLD, type VoteTally,
@@ -599,19 +600,23 @@ export function resolveSellPlayerVote(
   return sale.ok ? sale : { career: next, ok: false, reason: sale.reason };
 }
 
-// Rescaled 14 Sep 2026 alongside the rest of the club-ownership economy —
-// a club's own budget now genuinely holds real money (clubValuation lands
-// real clubs in the hundreds of millions to billions), so an appointment
-// fee at the old scale (★250-8,000) would be meaninglessly cheap next to
-// it. Real, if approximate, one-off figures for the calibre of manager
-// each tier represents.
-function managerFee(name: string): number {
-  const tier = managerTier(name);
-  if (tier === "dream") return 15000000;
-  if (tier === 1) return 5000000;
-  if (tier === 2) return 1500000;
-  if (tier === 3) return 400000;
-  return 100000; // an unranked name — a cheap, low-profile hire
+/**
+ * Which club (if any) a real pool manager currently occupies — the
+ * PLAYER's own club (`career.manager`) or any club they own
+ * (`ownedClubs[club].managerName`). Reported directly, from a real save:
+ * appointing Eddie Howe at Brentford while he was already appointed at
+ * Bournemouth left him managing both — a manager is a unique resource,
+ * exactly like a player, and this is the one check that keeps him that way.
+ * Non-owned clubs' Lineups-typed names are deliberately out of scope here —
+ * this game never dynamically reassigns a manager it doesn't itself
+ * simulate, so there is nothing to poach there.
+ */
+export function managerCurrentClub(career: CareerState, name: string): string | undefined {
+  if (career.manager?.name === name) return career.player.club;
+  for (const [c, state] of Object.entries(career.ownedClubs ?? {})) {
+    if (state.managerName === name) return c;
+  }
+  return undefined;
 }
 
 /** Appoint a manager — real data (a name, shown wherever this club's
@@ -619,15 +624,40 @@ function managerFee(name: string): number {
  *  reputation tier the pool already uses) without pretending this engine
  *  simulates a second club's tactics or morale — it doesn't, and a fake
  *  strength swing to compensate would be worse than an honestly cosmetic
- *  appointment. See this file's own header. */
-export function replaceManagerForOwnedClub(career: CareerState, club: string, managerName: string): BoardActionResult {
+ *  appointment. See this file's own header.
+ *
+ *  `agreedFee`, when given, overrides `managerBaseFee` — the real number a
+ *  negotiation (managerPool.ts's `managerInterest` + negotiation.ts) just
+ *  settled on, same pattern `signPlayerForOwnedClub`/`sellPlayerFromOwnedClub`
+ *  already use for a negotiated transfer fee. */
+export function replaceManagerForOwnedClub(
+  career: CareerState, club: string, managerName: string, agreedFee?: number,
+): BoardActionResult {
   if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
+  const takenAt = managerCurrentClub(career, managerName);
+  if (takenAt && takenAt !== club) {
+    return { career, ok: false, reason: `${managerName} already manages ${takenAt}` };
+  }
   const current = ownedClubState(career, club);
-  const fee = managerFee(managerName);
+  const fee = agreedFee ?? managerBaseFee(managerName);
   if (fee > current.budget) return { career, ok: false, reason: "Not enough in the budget for that appointment" };
+
+  // Whoever he's replacing is out of a job now — same "unemployed real
+  // managers" pool the player's own club's sacking flow already draws from
+  // (managerPool.ts/manager.ts), so that man becomes hireable again exactly
+  // like a departing player would, rather than just vanishing.
+  const outgoingName = current.managerName ?? (loadLineup(club)?.manager || undefined);
+  let availableManagers = career.availableManagers ?? allPoolManagers();
+  availableManagers = availableManagers.filter(n => n !== managerName);
+  if (outgoingName && outgoingName !== managerName
+    && managerTier(outgoingName) !== undefined && !availableManagers.includes(outgoingName)) {
+    availableManagers = [...availableManagers, outgoingName];
+  }
+
   return {
     career: {
       ...career,
+      availableManagers,
       ownedClubs: {
         ...(career.ownedClubs ?? {}),
         [club]: { ...current, budget: current.budget - fee, managerName, managerSince: career.season },

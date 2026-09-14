@@ -7,6 +7,7 @@ import { OVERRULE_OWNERSHIP_THRESHOLD, OVERRULE_REPUTATION_COST, VOTE_HELD_REPUT
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONS_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { FREE_AGENTS_CLUB } from "../../lib/star/leagueSquads";
+import { STRONG_MANAGERS } from "../../lib/star/managerPool";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
 
 function mulberry32(a: number) {
@@ -265,6 +266,50 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   check(result.ok, `appointing a real manager succeeds (${result.reason ?? ""})`);
   check(ownedClubState(result.career, RIVAL).budget < before, "…and costs real money from the club's budget");
   check(ownedClubState(result.career, RIVAL).managerName === "Pep Guardiola", "…and the appointment is on record");
+  check(!(result.career.availableManagers ?? []).includes("Pep Guardiola"), "…and he's off the market — nobody else can also appoint him");
+}
+
+// ── Governance: a manager is a unique resource, exactly like a player —
+// reported directly, from a real save: the same man ended up "managing"
+// two owned clubs (Bournemouth AND Brentford) at once ─────────────────────
+{
+  let career = freshCareer();
+  career = buyStake(career, RIVAL, 60);
+  career = buyStake(career, RIVAL2, 60);
+  career = topUpClubBudget(career, RIVAL, 50_000_000);
+  career = topUpClubBudget(career, RIVAL2, 50_000_000);
+
+  const first = replaceManagerForOwnedClub(career, RIVAL, "Pep Guardiola");
+  check(first.ok, `the first appointment succeeds (${first.reason ?? ""})`);
+
+  const poached = replaceManagerForOwnedClub(first.career, RIVAL2, "Pep Guardiola");
+  check(!poached.ok, "appointing the SAME man at a second club fails outright");
+  check(poached.ok || poached.reason?.includes(RIVAL), `…naming exactly where he's already the manager (${poached.reason})`);
+  check(ownedClubState(poached.career, RIVAL2).managerName !== "Pep Guardiola", "…and he genuinely never appears at the second club");
+
+  // Replacing him at his real club frees him up again — same "unemployed
+  // real managers" pool the player's own club's sacking flow already uses.
+  const replacement = STRONG_MANAGERS.find(n => n !== "Pep Guardiola")!;
+  const freed = replaceManagerForOwnedClub(first.career, RIVAL, replacement);
+  check(freed.ok, `replacing him with another real name succeeds (${freed.reason ?? ""})`);
+  check((freed.career.availableManagers ?? []).includes("Pep Guardiola"), "…and Guardiola is genuinely available again, exactly like a departing player would be");
+
+  // Now that he's free, the second club can genuinely appoint him.
+  const nowFree = replaceManagerForOwnedClub(freed.career, RIVAL2, "Pep Guardiola");
+  check(nowFree.ok, `once genuinely free, a different club can appoint the same man (${nowFree.reason ?? ""})`);
+}
+
+// ── An optional agreedFee (the real number a negotiation settled on)
+// overrides the flat managerBaseFee — same pattern signPlayerForOwnedClub/
+// sellPlayerFromOwnedClub already use for a negotiated transfer fee ────────
+{
+  let career = freshCareer();
+  career = buyStake(career, RIVAL, 60);
+  career = topUpClubBudget(career, RIVAL, 50_000_000);
+  const before = ownedClubState(career, RIVAL).budget;
+  const negotiated = replaceManagerForOwnedClub(career, RIVAL, "Pep Guardiola", 777_777);
+  check(negotiated.ok, `an agreedFee appointment succeeds (${negotiated.reason ?? ""})`);
+  check(before - ownedClubState(negotiated.career, RIVAL).budget === 777_777, "…and spends EXACTLY the negotiated fee, not the flat tier price");
 }
 
 // ── Governance: a club whose real squad lives in externalSquads, not

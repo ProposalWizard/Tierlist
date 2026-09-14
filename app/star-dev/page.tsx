@@ -1527,9 +1527,9 @@ export default function StarDevPage() {
     setPhase("vote-ceremony");
     return { ok: true };
   }, [career]);
-  const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
+  const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string, agreedFee?: number) => {
     if (!career) return { ok: false, reason: "No active career" };
-    const result = replaceManagerForOwnedClub(career, club, managerName);
+    const result = replaceManagerForOwnedClub(career, club, managerName, agreedFee);
     if (result.ok) {
       setCareer(result.career);
       // The Boardroom's own ownedClubs.managerName is a separate, fictional

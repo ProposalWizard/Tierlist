@@ -6,6 +6,7 @@ import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
 import { RECORDS, recordBeaten } from "@/lib/star/records";
+import { formatMoney } from "@/lib/star/money";
 
 // ---------- SPONSORS ----------
 function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }) {
@@ -18,7 +19,7 @@ function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }
         <span className={o.done ? "text-emerald-300" : "text-white"}>
           {objectiveLabel(o)}{o.done ? " ✓" : ""}
         </span>
-        <span className="text-amber-300">★{o.bonus}</span>
+        <span className="text-amber-300">★{formatMoney(o.bonus)}</span>
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/40">
         <div className={`h-full rounded-full ${o.done ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${Math.max(3, pct)}%` }} />
@@ -66,7 +67,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
                   </div>
                   {sp.active ? (
                     <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                      <StarIcon />{sponsorFee(sp.category, career)}
+                      <StarIcon />{formatMoney(sponsorFee(sp.category, career))}
                       <span className="ml-0.5 text-[9px] font-bold text-white/60">/season</span>
                     </div>
                   ) : eligible ? (
@@ -74,7 +75,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
                       onClick={() => onSign(sp.category)}
                       className="rounded px-3 py-1 text-[10px] font-black bg-emerald-500 text-white hover:bg-emerald-400 active:scale-[0.97]"
                     >
-                      Sign — ★{sponsorFee(sp.category, career)}
+                      Sign — ★{formatMoney(sponsorFee(sp.category, career))}
                     </button>
                   ) : (
                     <div className="text-[10px] text-white/85 uppercase font-black">Locked</div>
@@ -90,7 +91,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
           <div className="bg-emerald-700 py-2.5 px-3 flex items-center border-t border-black/30">
             <div className="font-black text-white text-sm flex-1">Total Per Season</div>
             <div className="flex items-center gap-1 font-black text-white text-sm">
-              <StarIcon />{total}
+              <StarIcon />{formatMoney(total)}
             </div>
           </div>
         </div>
@@ -390,16 +391,24 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
     }, 900);
   };
 
+  // Each correct guess raises your terms by a real PERCENTAGE of what you
+  // already earn — rescaled 14 Sep 2026: a flat +★1 (or +★0.5 for the
+  // bonuses) meant something when wage was ★1, but is a rounding error now
+  // wage lives on the real-money scale. Same idea as every other wage-offer
+  // formula in the game (see transfers.ts) — a good negotiation compounds
+  // off your current terms, not off a fixed placeholder amount.
+  const RAISE_PCT_PER_WIN = 0.08;
+  const raisedWage = (wage: number) => Math.round(wage * (1 + RAISE_PCT_PER_WIN * wins));
+
   const finalise = () => {
-    const bonus = wins;
-    const wage = career.contract.wage + bonus;
+    const wage = raisedWage(career.contract.wage);
     // The better the negotiation went, the more of the deal they will write in.
     // Seeded off the outcome so the same negotiation produces the same offer.
     const newContract: CareerState["contract"] = {
       club: career.contract.club,
       wage,
-      goalBonus: career.contract.goalBonus + Math.floor(bonus / 2),
-      assistBonus: career.contract.assistBonus + Math.floor(bonus / 2),
+      goalBonus: raisedWage(career.contract.goalBonus),
+      assistBonus: raisedWage(career.contract.assistBonus),
       seasonsRemaining: 3,
       ...offerClauses(career, wage, mulberry32(career.season * 71 + wins * 13 + rounds)),
     };
@@ -448,12 +457,12 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
             <div className="text-xs text-white/85 mb-3 leading-snug">
               {offerReason
                 ? "Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms."
-                : "Your contract is up. Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms by ★1 wage."}
+                : `Your contract is up. Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) raises your terms by ${Math.round(RAISE_PCT_PER_WIN * 100)}%.`}
             </div>
             <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1">
-              <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{career.contract.wage}/match</span></div>
-              <div className="flex justify-between"><span>Goal bonus</span><span className="text-yellow-300 font-black">★{career.contract.goalBonus}</span></div>
-              <div className="flex justify-between"><span>Assist bonus</span><span className="text-yellow-300 font-black">★{career.contract.assistBonus}</span></div>
+              <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.wage)}/match</span></div>
+              <div className="flex justify-between"><span>Goal bonus</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.goalBonus)}</span></div>
+              <div className="flex justify-between"><span>Assist bonus</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.assistBonus)}</span></div>
               <div className="flex justify-between"><span>Seasons remaining</span><span className="text-white/85 font-black">{career.contract.seasonsRemaining}</span></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -486,9 +495,9 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
             <div className="text-xs text-white/75 mb-1">Final terms</div>
             <div className="text-3xl font-black text-yellow-300 mb-2">{wins} correct</div>
             <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1">
-              <div className="flex justify-between"><span>New wage</span><span className="text-emerald-300 font-black">★{career.contract.wage + wins}/match</span></div>
-              <div className="flex justify-between"><span>Goal bonus</span><span className="text-emerald-300 font-black">★{career.contract.goalBonus + Math.floor(wins / 2)}</span></div>
-              <div className="flex justify-between"><span>Assist bonus</span><span className="text-emerald-300 font-black">★{career.contract.assistBonus + Math.floor(wins / 2)}</span></div>
+              <div className="flex justify-between"><span>New wage</span><span className="text-emerald-300 font-black">★{formatMoney(raisedWage(career.contract.wage))}/match</span></div>
+              <div className="flex justify-between"><span>Goal bonus</span><span className="text-emerald-300 font-black">★{formatMoney(raisedWage(career.contract.goalBonus))}</span></div>
+              <div className="flex justify-between"><span>Assist bonus</span><span className="text-emerald-300 font-black">★{formatMoney(raisedWage(career.contract.assistBonus))}</span></div>
             </div>
             <button onClick={finalise} className="w-full py-3 bg-emerald-500 rounded-xl font-black">Sign Contract →</button>
           </div>
