@@ -47,6 +47,13 @@ interface Props {
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
   onSellPlayer: (club: string, playerId: string, agreedFee?: number) => ActionResult;
+  /** Optional, reported directly 14 Sep 2026: selling used to FORCE a
+   *  shareholder vote even for a 100% owner — a real obstacle, not a real
+   *  choice. `onSellPlayer` now sells directly; this is offered as its own
+   *  button on the same confirmation screen for anyone who actually wants
+   *  to see fan reaction (and can still overrule a bad result exactly as
+   *  before) rather than the only path to a sale. */
+  onProposeSellVote: (club: string, playerId: string, agreedFee?: number) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
   /** Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer. */
   onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
@@ -133,7 +140,7 @@ export default function Investments(props: Props) {
                 career={career} club={boardroomClub} onBack={() => setBoardroomClub(null)}
                 initialSection={boardroomClub === props.initialBoardroomClub ? props.initialBoardroomSection : undefined}
                 onTopUpBudget={props.onTopUpBudget} onSignPlayer={props.onSignPlayer}
-                onSellPlayer={props.onSellPlayer} onReplaceManager={props.onReplaceManager}
+                onSellPlayer={props.onSellPlayer} onProposeSellVote={props.onProposeSellVote} onReplaceManager={props.onReplaceManager}
                 onSetFormation={props.onSetFormation} onSetKit={props.onSetKit}
                 onProposeKitVote={props.onProposeKitVote} onStandForPresident={props.onStandForPresident}
                 onSetPresidentWage={props.onSetPresidentWage}
@@ -528,7 +535,7 @@ function squadFor(career: CareerState, club: string) {
 }
 
 function Boardroom({
-  career, club, onBack, initialSection, onTopUpBudget, onSignPlayer, onSellPlayer, onReplaceManager,
+  career, club, onBack, initialSection, onTopUpBudget, onSignPlayer, onSellPlayer, onProposeSellVote, onReplaceManager,
   onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
   otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
@@ -538,6 +545,7 @@ function Boardroom({
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
   onSellPlayer: (club: string, playerId: string, agreedFee?: number) => ActionResult;
+  onProposeSellVote: (club: string, playerId: string, agreedFee?: number) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
   onSetFormation: (club: string, formationId: string) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
@@ -575,6 +583,37 @@ function Boardroom({
     | { kind: "sell"; playerId: string; playerName: string; marketValue: number }
     | null
   >(null);
+  // A completed sale negotiation waits here for one more real choice —
+  // reported directly, 14 Sep 2026: selling used to fire the moment
+  // negotiation ended, with no chance to put it to a fan vote first (and no
+  // way to skip the vote either, before that same fix). Only "sell" needs
+  // this extra step; a completed sign negotiates once and is done.
+  const [pendingSale, setPendingSale] = useState<{ playerId: string; playerName: string; fee: number } | null>(null);
+
+  if (pendingSale) {
+    return (
+      <div>
+        <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-4 mb-2 text-center">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">Confirm sale</div>
+          <div className="font-black text-white text-lg">{pendingSale.playerName}</div>
+          <div className="text-yellow-300 font-black text-sm mt-1">for ★{money(pendingSale.fee)}</div>
+        </div>
+        <button
+          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onSellPlayer(club, sale.playerId, sale.fee)); }}
+          className="w-full mb-2 px-3 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-black text-sm"
+        >
+          Confirm Sale
+        </button>
+        <button
+          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onProposeSellVote(club, sale.playerId, sale.fee)); }}
+          className="w-full mb-2 px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-xs"
+        >
+          Put It To A Shareholder Vote First
+        </button>
+        <button onClick={() => setPendingSale(null)} className="w-full text-xs font-black text-white/70 hover:text-white">Cancel</button>
+      </div>
+    );
+  }
 
   if (negotiating) {
     return (
@@ -586,8 +625,8 @@ function Boardroom({
           const deal = negotiating;
           setNegotiating(null);
           if (finalPrice === null) { setMessage("Talks broke down — no deal was made."); return; }
-          if (deal.kind === "sign") runAction(onSignPlayer(club, deal.playerId, deal.fromClub, finalPrice));
-          else runAction(onSellPlayer(club, deal.playerId, finalPrice));
+          if (deal.kind === "sign") { runAction(onSignPlayer(club, deal.playerId, deal.fromClub, finalPrice)); return; }
+          setPendingSale({ playerId: deal.playerId, playerName: deal.playerName, fee: finalPrice });
         }}
       />
     );
@@ -1025,7 +1064,10 @@ function SignPlayerPanel({
 function ManagerPanel({
   career, club, onReplaceManager,
 }: { career: CareerState; club: string; onReplaceManager: (club: string, managerName: string) => void }) {
-  const current = ownedClubState(career, club).managerName;
+  // Same read priority as the Boardroom header above (line ~649): the real
+  // saved lineup's manager wins over this club's own separate managerName
+  // record, since that's what every other screen actually displays.
+  const current = loadLineup(club)?.manager || ownedClubState(career, club).managerName;
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
       {allPoolManagers().map(name => (

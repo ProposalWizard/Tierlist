@@ -1,17 +1,16 @@
 /**
- * MONEY FORMATTING — K / M / B, WITH EVERY REMAINING DIGIT AS A DECIMAL.
+ * MONEY FORMATTING — K / M / B, ROUNDED TO A CLEAN WHOLE NUMBER.
  *
- * Requested directly, with worked examples: ★1,256 reads as "1.256k", not
- * "1.3k" — every digit below the unit boundary becomes a decimal digit
- * rather than being rounded away, so ★12,500,072 reads as "12.500072m" and
- * ★46,000,000,000 reads cleanly as "46b" (a zero remainder drops the
- * decimal point entirely, and trailing zero digits are trimmed the same
- * way — ★12,500,000 is "12.5m", not "12.500000m").
- *
- * Deliberately NOT the same convention every other `money()` helper across
- * this game's screens already used (a rounded one-or-two-decimal
- * `toFixed`) — this is the one true implementation those should now defer
- * to, so a balance reads identically everywhere it's shown.
+ * Reverted 14 Sep 2026, reported directly as messy in practice: the
+ * original version of this (see git history) showed every remaining digit
+ * as a decimal — a balance of ★10,000,003 read as "10.000003m", a club
+ * worth ★311,798 read as "311.798k". Real, but cluttered. The real amount
+ * is still tracked exactly everywhere in the game's own state (balances,
+ * fees, valuations) — this function only ever governs the DISPLAY string,
+ * so nothing is actually lost by rounding it away here; it just isn't
+ * shown. Floors rather than rounds up (doesn't matter which per the
+ * person who asked — floor keeps a balance display from ever looking
+ * bigger than what's really there).
  */
 /**
  * A "clean" step size for a +/- stepper on a money amount — requested
@@ -39,19 +38,16 @@ export function formatMoney(n: number): string {
   const negative = n < 0;
   const value = Math.round(Math.abs(n));
 
-  const UNITS: { div: number; suffix: string; digits: number }[] = [
-    { div: 1_000_000_000, suffix: "b", digits: 9 },
-    { div: 1_000_000, suffix: "m", digits: 6 },
-    { div: 1_000, suffix: "k", digits: 3 },
+  const UNITS: { div: number; suffix: string }[] = [
+    { div: 1_000_000_000, suffix: "b" },
+    { div: 1_000_000, suffix: "m" },
+    { div: 1_000, suffix: "k" },
   ];
 
   for (const u of UNITS) {
     if (value >= u.div) {
       const whole = Math.floor(value / u.div);
-      const remainder = value % u.div;
-      if (remainder === 0) return `${negative ? "-" : ""}${whole}${u.suffix}`;
-      const decimals = String(remainder).padStart(u.digits, "0").replace(/0+$/, "");
-      return `${negative ? "-" : ""}${whole}.${decimals}${u.suffix}`;
+      return `${negative ? "-" : ""}${whole}${u.suffix}`;
     }
   }
   return `${negative ? "-" : ""}${value}`;

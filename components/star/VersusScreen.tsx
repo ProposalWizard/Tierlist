@@ -9,6 +9,7 @@ import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { place, across } from "@/lib/star/pitchLayout";
 import ClubCrest from "./ClubCrest";
+import { loadLineup } from "@/lib/star/lineupStore";
 
 /**
  * THE TEAM SHEETS.
@@ -318,6 +319,13 @@ export default function VersusScreen({ matchday, date, competition, results, onK
 function TeamHeader({ club, kit, formation, form, scouted }: {
   club: string; kit: Kit; formation: string; form: Result[]; scouted: boolean;
 }) {
+  // Requested directly, 14 Sep 2026 — asked as one clarifying question
+  // ("where should this actually show?") rather than guessed at: the
+  // pre-match team sheet, right under the formation, is exactly where
+  // you'd look to size up whoever's picking the other side. Reads the
+  // same real manager record every other screen shows (loadLineup's own
+  // `.manager`, kept current by the Boardroom's appoint-a-manager action).
+  const manager = loadLineup(club)?.manager;
   return (
     <div className="flex min-w-0 flex-col items-center gap-1">
       {/* Reported directly, repeatedly: no ring, no circle, no oval around
@@ -335,6 +343,7 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
       >
         {scouted ? formation : "Unscouted"}
       </div>
+      {manager && <div className="truncate text-[8px] font-bold text-white/60">{manager}</div>}
     </div>
   );
 }

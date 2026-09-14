@@ -13,6 +13,7 @@ import {
 } from "./voting";
 import { tierOf, TIER_MULTIPLIER } from "./clubTier";
 import { playerMarketValue } from "./marketValue";
+import { formatMoney } from "./money";
 
 /**
  * INVESTMENTS — OWNING A PIECE OF A REAL CLUB, NOT JUST PLAYING FOR ONE.
@@ -539,7 +540,7 @@ export function proposeSellPlayerVote(
   // voting.ts's MAX_SWING).
   const biasStrength = (career.reputation.shareholders - 50) / 50;
   const tally = castVote(
-    `Sell ${player.name} for £${fee}m?`,
+    `Sell ${player.name} for £${formatMoney(fee)}?`,
     [{ id: "yes", label: "Sell" }, { id: "no", label: "Keep" }],
     SHAREHOLDER_ELECTORATE, "yes", biasStrength, rng,
   );
