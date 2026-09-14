@@ -461,6 +461,15 @@ export function sellPlayerFromOwnedClub(
   /** A price a real negotiation already agreed on — overrides the flat
    *  `transferFee` formula when provided. */
   agreedFee?: number,
+  /** The real destination club — reported directly, 14 Sep 2026: a sold
+   *  player used to just vanish, with no real club to actually join, which
+   *  broke transfer news (nowhere to send him) and left him unsignable
+   *  anywhere. Optional, defaulting to the old remove-only behaviour, for
+   *  any caller that genuinely has no real destination in hand (an old save
+   *  replaying a stored action, e.g.) — every real UI path now always has
+   *  one, since `transferMarket.ts`'s interested-clubs list is the only way
+   *  a sale starts. */
+  buyerClub?: string,
 ): BoardActionResult {
   if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
   const entry = findSquadEntry(career, club);
@@ -472,7 +481,11 @@ export function sellPlayerFromOwnedClub(
   }
   const player = squad.players[idx];
   const fee = agreedFee ?? transferFee(player.overall);
-  const next = setSquad(career, club, squad.players.filter((_, i) => i !== idx));
+  let next = setSquad(career, club, squad.players.filter((_, i) => i !== idx));
+  if (buyerClub) {
+    const buyerPlayers = [...(findSquadEntry(next, buyerClub)?.squad.players ?? []), player];
+    next = setSquad(next, buyerClub, buyerPlayers);
+  }
   const current = ownedClubState(next, club);
   return {
     career: { ...next, ownedClubs: { ...(next.ownedClubs ?? {}), [club]: { ...current, budget: current.budget + fee } } },
@@ -508,6 +521,10 @@ export interface SellPlayerVoteProposal {
   playerName: string;
   fee: number;
   tally: VoteTally;
+  /** The real destination club, when one's already been picked from the
+   *  interested-clubs list (transferMarket.ts) — see sellPlayerFromOwnedClub's
+   *  own note on why this is optional. */
+  buyerClub?: string;
 }
 
 /** Build and immediately resolve the shareholder vote on selling a specific
@@ -522,6 +539,7 @@ export function proposeSellPlayerVote(
   /** A price a real negotiation with the buyer already agreed on — overrides
    *  the flat `transferFee` formula the shareholders are asked to approve. */
   agreedFee?: number,
+  buyerClub?: string,
 ): { ok: true; proposal: SellPlayerVoteProposal } | { ok: false; reason: string } {
   if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
   const entry = findSquadEntry(career, club);
@@ -545,7 +563,7 @@ export function proposeSellPlayerVote(
     SHAREHOLDER_ELECTORATE, "yes", biasStrength, rng,
   );
 
-  return { ok: true, proposal: { club, playerId, playerName: player.name, fee, tally } };
+  return { ok: true, proposal: { club, playerId, playerName: player.name, fee, tally, buyerClub } };
 }
 
 /** Apply the outcome of a proposal built by `proposeSellPlayerVote`. If the
@@ -573,7 +591,7 @@ export function resolveSellPlayerVote(
   // could only diverge if the vote and the resolution happened at different
   // moments, but "the fee you sell for" should never silently change from
   // "the fee that was actually approved."
-  const sale = sellPlayerFromOwnedClub(next, proposal.club, proposal.playerId, proposal.fee);
+  const sale = sellPlayerFromOwnedClub(next, proposal.club, proposal.playerId, proposal.fee, proposal.buyerClub);
   return sale.ok ? sale : { career: next, ok: false, reason: sale.reason };
 }
 

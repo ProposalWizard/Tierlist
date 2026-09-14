@@ -31,11 +31,17 @@ const FACE_RING: Record<CounterpartMood, string> = {
 };
 
 export default function NegotiationScreen({
-  mode, playerName, marketValue, onDone,
+  mode, playerName, marketValue, counterpartLabel, onDone,
 }: {
   mode: NegotiationMode;
   playerName: string;
   marketValue: number;
+  /** A real destination club's name, when one's known (a boardroom sale
+   *  through transferMarket.ts's interested-clubs list always has one) —
+   *  shown in place of the generic "Interested Buyer"/"Their Agent" label.
+   *  Requested directly, 14 Sep 2026: negotiating no longer means haggling
+   *  with a nameless buyer. */
+  counterpartLabel?: string;
   /** `null` on the caller's side means "no deal" (rejected or walked away). */
   onDone: (finalPrice: number | null) => void;
 }) {
@@ -106,7 +112,7 @@ export default function NegotiationScreen({
               {FACE[mood]}
             </div>
             <div className="text-[9px] font-black uppercase tracking-widest text-white/85">
-              {mode === "buying" ? "Their Agent" : "Interested Buyer"}
+              {counterpartLabel ?? (mode === "buying" ? "Their Agent" : "Interested Buyer")}
             </div>
           </div>
         </div>

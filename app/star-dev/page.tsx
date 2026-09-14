@@ -1259,16 +1259,16 @@ export default function StarDevPage() {
   // `handleProposeSellPlayerVote` below is the OPTIONAL version, offered
   // as its own button on the confirmation screen for anyone who actually
   // wants to gauge fan reaction (and can still overrule a bad result).
-  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string, agreedFee?: number) => {
+  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string, agreedFee?: number, buyerClub?: string) => {
     if (!career) return { ok: false, reason: "No active career" };
-    const result = sellPlayerFromOwnedClub(career, club, playerId, agreedFee);
+    const result = sellPlayerFromOwnedClub(career, club, playerId, agreedFee, buyerClub);
     if (result.ok) setCareer(result.career);
     return { ok: result.ok, reason: result.reason };
   }, [career]);
-  const handleProposeSellPlayerVote = useCallback((club: string, playerId: string, agreedFee?: number) => {
+  const handleProposeSellPlayerVote = useCallback((club: string, playerId: string, agreedFee?: number, buyerClub?: string) => {
     if (!career) return { ok: false, reason: "No active career" };
     const rng = mulberry32(career.season * 91721 + career.week * 131 + playerId.length);
-    const result = proposeSellPlayerVote(career, club, playerId, rng, agreedFee);
+    const result = proposeSellPlayerVote(career, club, playerId, rng, agreedFee, buyerClub);
     if (!result.ok) return { ok: false, reason: result.reason };
     setPendingVote({ kind: "sellPlayer", proposal: result.proposal });
     setInvestmentsEntry({ tab: "boardroom", club, section: "squad" });

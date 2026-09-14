@@ -12,6 +12,7 @@ import { FORMATIONS } from "@/lib/star/formations";
 import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
 import { facilitiesFor } from "@/lib/star/facilities";
 import { playerMarketValue } from "@/lib/star/marketValue";
+import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
 import { formatMoney, niceMoneyStep } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 
@@ -46,14 +47,14 @@ interface Props {
   onSellStake: (club: string, percent: number) => void;
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
-  onSellPlayer: (club: string, playerId: string, agreedFee?: number) => ActionResult;
+  onSellPlayer: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
   /** Optional, reported directly 14 Sep 2026: selling used to FORCE a
    *  shareholder vote even for a 100% owner — a real obstacle, not a real
    *  choice. `onSellPlayer` now sells directly; this is offered as its own
    *  button on the same confirmation screen for anyone who actually wants
    *  to see fan reaction (and can still overrule a bad result exactly as
    *  before) rather than the only path to a sale. */
-  onProposeSellVote: (club: string, playerId: string, agreedFee?: number) => ActionResult;
+  onProposeSellVote: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
   /** Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer. */
   onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
@@ -544,8 +545,8 @@ function Boardroom({
   initialSection?: "squad" | "sign" | "manager" | "powers";
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
-  onSellPlayer: (club: string, playerId: string, agreedFee?: number) => ActionResult;
-  onProposeSellVote: (club: string, playerId: string, agreedFee?: number) => ActionResult;
+  onSellPlayer: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
+  onProposeSellVote: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
   onReplaceManager: (club: string, managerName: string) => ActionResult;
   onSetFormation: (club: string, formationId: string) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
@@ -577,10 +578,12 @@ function Boardroom({
 
   // Negotiating a real fee (negotiation.ts) before either action actually
   // fires — a free-agent signing has no seller to negotiate with, so that
-  // one path still goes straight through as before.
+  // one path still goes straight through as before. A "sell" negotiation
+  // now always names a real buyer club (`buyerClub`) — see `interestList`
+  // below, the real destination this whole flow was built around.
   const [negotiating, setNegotiating] = useState<
     | { kind: "sign"; playerId: string; fromClub: string; playerName: string; marketValue: number }
-    | { kind: "sell"; playerId: string; playerName: string; marketValue: number }
+    | { kind: "sell"; playerId: string; playerName: string; buyerClub: string; marketValue: number }
     | null
   >(null);
   // A completed sale negotiation waits here for one more real choice —
@@ -588,7 +591,17 @@ function Boardroom({
   // negotiation ended, with no chance to put it to a fan vote first (and no
   // way to skip the vote either, before that same fix). Only "sell" needs
   // this extra step; a completed sign negotiates once and is done.
-  const [pendingSale, setPendingSale] = useState<{ playerId: string; playerName: string; fee: number } | null>(null);
+  const [pendingSale, setPendingSale] = useState<{ playerId: string; playerName: string; fee: number; buyerClub: string } | null>(null);
+  // The realistic destination market itself — reported directly, 14 Sep
+  // 2026: selling used to just remove a player with nowhere to go. Clicking
+  // Sell now opens this instead of going straight to a negotiation:
+  // transferMarket.ts's real reach/need scoring decides who's genuinely
+  // interested and what they'd expect to pay. A club that walks away during
+  // negotiation (finalPrice === null) is dropped from this same list rather
+  // than ended outright — the interest was real, that specific offer wasn't.
+  const [interestList, setInterestList] = useState<
+    { playerId: string; playerName: string; interests: TransferInterest[] } | null
+  >(null);
 
   if (pendingSale) {
     return (
@@ -596,16 +609,17 @@ function Boardroom({
         <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-4 mb-2 text-center">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">Confirm sale</div>
           <div className="font-black text-white text-lg">{pendingSale.playerName}</div>
+          <div className="text-[10px] font-bold text-white/70 mt-1">to {pendingSale.buyerClub}</div>
           <div className="text-yellow-300 font-black text-sm mt-1">for ★{money(pendingSale.fee)}</div>
         </div>
         <button
-          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onSellPlayer(club, sale.playerId, sale.fee)); }}
+          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onSellPlayer(club, sale.playerId, sale.fee, sale.buyerClub)); }}
           className="w-full mb-2 px-3 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-black text-sm"
         >
           Confirm Sale
         </button>
         <button
-          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onProposeSellVote(club, sale.playerId, sale.fee)); }}
+          onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onProposeSellVote(club, sale.playerId, sale.fee, sale.buyerClub)); }}
           className="w-full mb-2 px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-xs"
         >
           Put It To A Shareholder Vote First
@@ -620,15 +634,59 @@ function Boardroom({
       <NegotiationScreen
         mode={negotiating.kind === "sign" ? "buying" : "selling"}
         playerName={negotiating.playerName}
+        counterpartLabel={negotiating.kind === "sell" ? negotiating.buyerClub : undefined}
         marketValue={negotiating.marketValue}
         onDone={finalPrice => {
           const deal = negotiating;
           setNegotiating(null);
-          if (finalPrice === null) { setMessage("Talks broke down — no deal was made."); return; }
+          if (finalPrice === null) {
+            setMessage("Talks broke down — no deal was made.");
+            if (deal.kind === "sell") {
+              setInterestList(list => list && { ...list, interests: list.interests.filter(i => i.club !== deal.buyerClub) });
+            }
+            return;
+          }
           if (deal.kind === "sign") { runAction(onSignPlayer(club, deal.playerId, deal.fromClub, finalPrice)); return; }
-          setPendingSale({ playerId: deal.playerId, playerName: deal.playerName, fee: finalPrice });
+          setInterestList(null);
+          setPendingSale({ playerId: deal.playerId, playerName: deal.playerName, fee: finalPrice, buyerClub: deal.buyerClub });
         }}
       />
+    );
+  }
+
+  if (interestList) {
+    return (
+      <div>
+        <button onClick={() => setInterestList(null)} className="mb-2 text-xs font-black text-white/90 hover:text-white">← Back</button>
+        <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/80">Selling</div>
+          <div className="font-black text-white">{interestList.playerName}</div>
+        </div>
+        {interestList.interests.length === 0 && (
+          <div className="text-center text-xs font-bold text-white/70 py-6">No club is genuinely interested right now.</div>
+        )}
+        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+          {interestList.interests.map(i => (
+            <div key={i.club} className="flex items-center justify-between px-3 py-2.5 border-b border-black/20 last:border-b-0">
+              <div>
+                <div className="text-sm font-bold text-white">{i.club}</div>
+                <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">
+                  Wants him as a {i.roleIntent} · ★{money(i.expectedOffer)} expected offer
+                </div>
+              </div>
+              <button
+                onClick={() => setNegotiating({
+                  kind: "sell", playerId: interestList.playerId, playerName: interestList.playerName,
+                  buyerClub: i.club, marketValue: i.expectedOffer,
+                })}
+                className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-[10px] font-black"
+              >
+                Negotiate
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
@@ -737,7 +795,7 @@ function Boardroom({
                 <div className="text-[10px] text-white font-semibold">{p.position} · OVR {p.overall}</div>
               </div>
               <button
-                onClick={() => setNegotiating({ kind: "sell", playerId: p.id, playerName: p.name, marketValue: playerMarketValue(p, club, career) })}
+                onClick={() => setInterestList({ playerId: p.id, playerName: p.name, interests: interestedClubs(p, club, career) })}
                 className="px-2.5 py-1 rounded-md bg-red-600/80 hover:bg-red-500 text-[10px] font-black"
               >
                 Sell
