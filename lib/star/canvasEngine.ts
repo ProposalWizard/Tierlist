@@ -556,20 +556,21 @@ const KEEPER_SAVE_R_MAX = 2.65;    // …and the strongest
 
 // ── The dive itself: a real, watched attempt, not a fact he already knew ────
 //
-// Requested directly: he must throw himself at everything, never stand
-// there and let one in, never simply appear already holding one that was
-// "close enough" — and the outcome should not read as decided before he
-// moves. None of the three numbers below touch how hard he is to beat —
-// see keeperAttempt's own doc for why the middle one is built to be exactly
-// neutral — they only decide what gets SHOWN: how far he'll throw himself
-// even at a ball he has no real chance of reaching, and how much of his
-// reach is genuine uncertainty rather than a knife-edge.
+// Requested directly, twice: he must throw himself at EVERYTHING, full
+// stop, never stand there and let one in — including a shot that was never
+// remotely reachable. A first version still let a genuinely hopeless ball
+// through with no animation at all (the real-keeper-wouldn't-bother
+// reasoning that used to justify that is explicitly overruled: watching him
+// try and fail is what makes the shot that beat him read as a real, earned
+// goal rather than an empty net nobody defended). So there is no distance
+// past which he simply does not bother anymore — every shot that reaches
+// his line gets a real dive, capped only at how far he can actually travel
+// (see the "beaten, but not stood there watching it happen" branch below).
+// Neither of the two numbers below touches how hard he is to beat — see
+// keeperAttempt's own doc for why the second is built to be exactly
+// neutral — they only decide what gets SHOWN: how much of his reach is
+// genuine uncertainty rather than a knife-edge.
 //
-// How much wider than his real save radius he will still dive at, purely to
-// be SEEN failing rather than standing dead. Beyond this a real keeper
-// would not bother leaving his feet either, so he still does not — a shot
-// miles from him gets no animation, same as today.
-const KEEPER_ATTEMPT_MULT = 1.6;
 // The width of the band, as a fraction of his reach, where getting there is
 // genuinely in doubt rather than certain — see keeperAttempt.
 const KEEPER_QUALITY_BAND = 0.22;
@@ -4186,12 +4187,10 @@ function classifySave(
 
 /** What a shot crossing the plane at (x, z) asks of the keeper. */
 export interface KeeperAttempt {
-  /** Worth throwing himself at all — see KEEPER_ATTEMPT_MULT. False only for
-   *  a shot no real dive would ever reach; he stays on his feet, same as a
-   *  shot that beat him always has. */
-  attempts: boolean;
   /** Whether the dive actually gets there. A roll, not a fact read off a
-   *  chart — see the doc below. */
+   *  chart — see the doc below. Always a real, watched attempt regardless —
+   *  see the note above KEEPER_QUALITY_BAND for why there is no longer a
+   *  distance past which he simply does not bother. */
   reaches: boolean;
   /** 1 = straight at him, 0 = the outer edge of a save he can still make.
    *  Unchanged meaning from before — still what resolveKeeper and
@@ -4233,11 +4232,10 @@ export function keeperAttempt(scenario: Scenario, xCross: number, zCross: number
   const dz = (zCross - KEEPER_CENTRE_Z) * KEEPER_SAVE_Z_SCALE;
   const dist = Math.hypot(dx, dz);
   const margin = clamp((reach - dist) / reach, 0, 1);
-  const attempts = dist < reach * KEEPER_ATTEMPT_MULT;
   const band = reach * KEEPER_QUALITY_BAND;
   const p = band > 0 ? clamp(0.5 + KEEPER_QUALITY_BIAS + (reach - dist) / band, 0, 1) : (dist < reach ? 1 : 0);
   const reaches = rng() < p;
-  return { attempts, reaches, margin, dist, reach };
+  return { reaches, margin, dist, reach };
 }
 
 // Resolve a keeper contact into catch / parry / tip. Returns a terminal
@@ -4988,44 +4986,45 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const xAt = prevX + (ball.pos.x - prevX) * f;
     const zAt = prevZ + (ball.z - prevZ) * f;
     const attempt = keeperAttempt(scenario, xAt, zAt, rng);
-    if (attempt.attempts) {
-      // ── He throws himself at it — for real, this time ──
+    // ── He throws himself at it — for real, every time ──
+    //
+    // No distance gate here anymore — see the note above KEEPER_QUALITY_BAND
+    // for why a shot with no real chance of being reached still gets a full,
+    // genuine dive rather than nothing. `scrambling` below is the SAME
+    // lateral travel-at-a-capped-speed machinery a keeper already uses to
+    // chase a spilled rebound, reused rather than duplicated: "cover real
+    // ground toward an x over the next few frames" is the same problem
+    // either way. `x` is deliberately left untouched here — it used to jump
+    // straight to the save point in the same tick the outcome was decided,
+    // which is the "teleport" this whole rework exists to remove. He starts
+    // from wherever he actually is and travels; see stepKeeper.
+    k.saveDir = Math.sign(xAt - k.x) || 0;
+    k.saveLunge = 0.001;
+    k.scrambling = true;
+    if (attempt.reaches) {
+      k.targetX = xAt;
+      ball.pos.x = xAt;
+      ball.pos.y = Math.max(k.y, 0.02);
+      ball.z = Math.max(0, zAt);
+      const outcome = resolveKeeper(ball, scenario, attempt.dist, attempt.reach, speed, rng);
+      k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, outcome);
+      if (outcome) return outcome;
+    } else {
+      // ── Beaten, but not stood there watching it happen ──
       //
-      // `scrambling` below is the SAME lateral travel-at-a-capped-speed
-      // machinery a keeper already uses to chase a spilled rebound, reused
-      // rather than duplicated: "cover real ground toward an x over the
-      // next few frames" is the same problem either way. `x` is
-      // deliberately left untouched here — it used to jump straight to the
-      // save point in the same tick the outcome was decided, which is the
-      // "teleport" this whole rework exists to remove. He starts from
-      // wherever he actually is and travels; see stepKeeper.
-      k.saveDir = Math.sign(xAt - k.x) || 0;
-      k.saveLunge = 0.001;
-      k.scrambling = true;
-      if (attempt.reaches) {
-        k.targetX = xAt;
-        ball.pos.x = xAt;
-        ball.pos.y = Math.max(k.y, 0.02);
-        ball.z = Math.max(0, zAt);
-        const outcome = resolveKeeper(ball, scenario, attempt.dist, attempt.reach, speed, rng);
-        k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, outcome);
-        if (outcome) return outcome;
-      } else {
-        // ── Beaten, but not stood there watching it happen ──
-        //
-        // He genuinely goes for it — travelling up to as far as his real
-        // reach covers, toward the ball, and no further, so a shot that
-        // only just beat him reads as a stretch that fell agonisingly
-        // short rather than a keeper who never moved. The ball itself is
-        // left completely alone: no position, velocity or outcome is
-        // touched here, so it carries on exactly as an ordinary miss
-        // always has, and the goal-line crossing block below still decides
-        // it — this is purely the picture of him failing, never a second
-        // place gameplay gets decided.
-        const dir = Math.sign(xAt - k.x) || 1;
-        k.targetX = k.x + dir * Math.min(Math.abs(xAt - k.x), attempt.reach);
-        k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, null);
-      }
+      // He genuinely goes for it — travelling up to as far as his real
+      // reach covers, toward the ball, and no further, so a shot that only
+      // just beat him reads as a stretch that fell agonisingly short, and a
+      // shot that was never reachable at all reads as a full, real dive
+      // that plainly wasn't going to get anywhere near it — never a keeper
+      // who simply never moved. The ball itself is left completely alone:
+      // no position, velocity or outcome is touched here, so it carries on
+      // exactly as an ordinary miss always has, and the goal-line crossing
+      // block below still decides it — this is purely the picture of him
+      // failing, never a second place gameplay gets decided.
+      const dir = Math.sign(xAt - k.x) || 1;
+      k.targetX = k.x + dir * Math.min(Math.abs(xAt - k.x), attempt.reach);
+      k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, null);
     }
   }
 

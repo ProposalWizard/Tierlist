@@ -7,13 +7,17 @@ import { POST_L, POST_R } from "../../lib/star/pitch";
 /**
  * THE REAL DIVE — measured, not assumed.
  *
- * Requested directly: the keeper must genuinely throw himself at everything
- * (never stand there and do nothing on a goal, never simply appear already
- * holding a ball that was "close enough"), the outcome must not read as
- * decided before he moves, and — the one hard constraint — none of this may
- * make the game noticeably easier or harder than it already was. The only
- * difference that should be FELT is that a top-corner shot now visibly, and
- * sometimes actually, beats a real stretch rather than an invisible radius.
+ * Requested directly, twice: the keeper must genuinely throw himself at
+ * EVERYTHING — never stand there and do nothing on a goal, never simply
+ * appear already holding a ball that was "close enough", and — after the
+ * first version still let a genuinely unreachable shot through with no
+ * animation at all, reported directly as making an easy goal look
+ * undefended — not even a ball with no real chance of being reached. The
+ * outcome must not read as decided before he moves, and — the one hard
+ * constraint on all of it — none of this may make the game noticeably
+ * easier or harder than it already was. The only difference that should be
+ * FELT is that a top-corner shot now visibly, and sometimes actually, beats
+ * a real stretch rather than an invisible radius.
  *
  * That last constraint is the one this file exists to prove, the same way
  * every other rebalance in this suite proves itself: by measuring the real
@@ -64,37 +68,35 @@ function freshReach(keeperStrength: number): number {
   // Mirrors the engine's own private KEEPER_CENTRE_Z.
   const Z = 0.95;
 
-  function reachRateAt(distRatio: number, n: number): { p: number; attempts: number } {
-    let reaches = 0, attempts = 0;
+  // Whether he even TRIES is no longer this function's decision at all —
+  // see the note above KEEPER_QUALITY_BAND in canvasEngine.ts — so there is
+  // nothing left to check about that here; it is checked at the full-engine
+  // level below instead, which is where that decision now actually lives.
+  function reachRateAt(distRatio: number, n: number): number {
+    let reaches = 0;
     for (let i = 0; i < n; i++) {
       const r2 = mulberry32(i * 97 + Math.round(distRatio * 1000));
       const xCross = GOAL_CX + distRatio * reach;
-      const a = keeperAttempt(sc, xCross, Z, r2);
-      if (a.attempts) attempts++;
-      if (a.reaches) reaches++;
+      if (keeperAttempt(sc, xCross, Z, r2).reaches) reaches++;
     }
-    return { p: reaches / n, attempts };
+    return reaches / n;
   }
 
   const deep = reachRateAt(0.3, 600);
-  check(deep.p > 0.97, `well inside his reach, he gets there essentially every time (${pct(deep.p * 600, 600)})`);
+  check(deep > 0.97, `well inside his reach, he gets there essentially every time (${pct(deep * 600, 600)})`);
 
   const atCutoff = reachRateAt(1.0, 800);
-  check(atCutoff.p > 0.35 && atCutoff.p < 0.65,
-    `right at the old hard cutoff, it is genuinely uncertain rather than a knife-edge (${pct(atCutoff.p * 800, 800)})`);
+  check(atCutoff > 0.35 && atCutoff < 0.65,
+    `right at the old hard cutoff, it is genuinely uncertain rather than a knife-edge (${pct(atCutoff * 800, 800)})`);
 
   const wayOut = reachRateAt(1.5, 600);
-  check(wayOut.p < 0.03, `well past his reach, he essentially never gets there (${pct(wayOut.p * 600, 600)})`);
-  check(wayOut.attempts > 0, `…but at 1.5x his reach he still THROWS himself at it`);
-
-  const hopeless = reachRateAt(2.2, 600);
-  check(hopeless.attempts === 0, `at 2.2x his reach a real keeper would not bother either, and neither does this one`);
+  check(wayOut < 0.03, `well past his reach, he essentially never gets there (${pct(wayOut * 600, 600)})`);
 
   // The ramp is centred, not shifted — the actual property that keeps the
   // aggregate save rate where it was. Sampled at equal offsets either side
   // of the old cutoff, the two reach-rates should mirror each other.
-  const below = reachRateAt(0.82, 900).p;
-  const above = reachRateAt(1.18, 900).p;
+  const below = reachRateAt(0.82, 900);
+  const above = reachRateAt(1.18, 900);
   check(Math.abs((1 - below) - above) < 0.08,
     `equally short of the old cutoff or equally past it, the miss chance is symmetric (${pct((1 - below) * 900, 900)} vs ${pct(above * 900, 900)})`);
 }
@@ -154,23 +156,6 @@ function playAimed(kind: ScenarioKind, targetOffset: number, seed: number, keepe
 }
 
 // ── A near-miss is SEEN, not silent ─────────────────────────────────────────
-//
-// "No dive at all for a genuinely hopeless ball" is already proven directly
-// and cleanly by the very first section above (keeperAttempt.attempts is
-// false past 2.2x his reach — checked with his position and the crossing
-// point both fully controlled). Re-proving it by PINNING a keeper's
-// position and firing a shot at a fixed far post turns out not to be a
-// clean re-check of the same thing: found by measuring, not assumed — a
-// pinned keeper does not stay pinned for the ~1.5 s a long-range shot
-// spends in flight, because the pre-existing "adjusting" shade (he tracks
-// the ball being moved, same as he always has — see the Keeper doc in
-// canvasEngine.ts) legitimately nudges him back toward its live line over
-// that time, which can turn a deliberately-staged "hopeless" gap into a
-// genuinely reachable one before the shot ever arrives. That is correct,
-// unrelated, pre-existing behaviour, not something this rework should
-// fight past with an artificial setup — so the integration-level check
-// here is the positive half only, which the natural (unpinned) engine
-// answers cleanly.
 {
   const reach = freshReach(62);
   let nearGoals = 0, nearDived = 0, nearTotal = 0;
@@ -189,6 +174,58 @@ function playAimed(kind: ScenarioKind, targetOffset: number, seed: number, keepe
   check(nearGoals > 30, `enough near-miss goals to read (${nearGoals})`);
   check(nearDived / Math.max(1, nearTotal) > 0.7,
     `a shot that only just beat him is SEEN beating him — a real, failed dive, not silence (${pct(nearDived, nearTotal)} of ${nearTotal})`);
+}
+
+// ── A genuinely HOPELESS ball still gets a real dive — no exceptions ───────
+//
+// The actual thing that was reported: a first version still let a shot with
+// no real chance of being reached through with the keeper standing dead
+// still, on the reasoning that a real keeper would not bother either. Told
+// directly that reasoning is overruled — an unstopped goal has to look like
+// it beat somebody, every time, or it reads as undefended rather than
+// scored. So there is now no distance gate left in keeperAttempt at all
+// (see its own doc) — this is the direct, full-engine proof that holds.
+//
+// The keeper's own x is pinned well away from the target FIRST, so the gap
+// is real and known rather than merely likely — buildScenario alone places
+// him within about a metre of centre at random, which a fixed offset can
+// still land near often enough to be a poor test of "hopeless" specifically
+// (see the corner-gradient section above, which wants exactly that
+// randomness and is right to use it). The pre-existing "adjusting" shade can
+// still nudge him back toward the ball's live line before it arrives (see
+// the Keeper doc in canvasEngine.ts) — which only ever makes the gap
+// SMALLER, never turns a real dive into no dive, so it cannot manufacture a
+// false pass here the way it could have for the old "never dives" claim
+// this section replaces.
+{
+  let hopelessGoals = 0, hopelessDived = 0, hopelessTotal = 0;
+
+  for (let seed = 0; seed < 500; seed++) {
+    const rng = mulberry32(seed * 11 + 2);
+    const sc = buildScenario("long_range", rng, 62, 60);
+    sc.keeper.x = GOAL_CX - 1.5;
+    sc.keeper.startX = sc.keeper.x;
+    initDefenders(sc, rng);
+    const tx = GOAL_CX + (POST_R - POST_L) / 2 - 0.2; // the far post from him
+    const ball = launch(sc, { x: tx - sc.ball.x, y: -Math.max(sc.ball.y, 1) }, 0.92,
+      { cx: 0, cy: -0.2 }, { power: 70, technique: 70 }, rng);
+    let out: Outcome | null = null;
+    for (let i = 0; i < 1200 && !out; i++) {
+      stepDefenders(sc, DT, ball.pos, false, ball);
+      stepKeeper(sc, DT);
+      stepReactions(sc, ball, DT, rng);
+      out = stepBall(ball, sc, rng, DT);
+    }
+    if (out === "goal" || out === "rebound") {
+      hopelessTotal++;
+      if (sc.keeper.saveLunge > 0) hopelessDived++;
+      hopelessGoals++;
+    }
+  }
+
+  check(hopelessGoals > 30, `enough hopeless-placement goals to read (${hopelessGoals})`);
+  check(hopelessDived / Math.max(1, hopelessTotal) > 0.95,
+    `even a shot nowhere near him gets a real, watched dive — never a keeper standing still (${pct(hopelessDived, hopelessTotal)} of ${hopelessTotal})`);
 }
 
 // ── The actual promise: real shots, old rule vs new, side by side ──────────
