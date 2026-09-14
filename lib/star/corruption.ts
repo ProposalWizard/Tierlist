@@ -38,8 +38,12 @@ const LAWYERS_RISK_MULTIPLIER = 0.35;
 
 /** A flat, real cost for "high-level lawyers" — every time they're hired
  *  alongside a corrupt act, not scaled to that act's own size, since a
- *  lawyer's fee is its own real thing, not a percentage of the bribe. */
-export const LAWYER_FEE = 5000;
+ *  lawyer's fee is its own real thing, not a percentage of the bribe.
+ *  Rescaled 14 Sep 2026, same ×2000 personal-money multiplier as every
+ *  other personal-spending number this session (shop catalogue, sponsor
+ *  fees) — this is money straight out of the player's own wallet, not a
+ *  club's. */
+export const LAWYER_FEE = 10_000_000;
 
 export function exposureRisk(act: CorruptAct, useLawyers: boolean): number {
   const base = BASE_EXPOSURE_RISK[act];
@@ -54,8 +58,10 @@ export function rollCaught(act: CorruptAct, useLawyers: boolean, rng: () => numb
 
 /** How much money moves one real vote — bribing the whole electorate of a
  *  governing-body-scale vote outright would need to be effectively
- *  impossible, so this is deliberately steep. */
-const MONEY_PER_BRIBED_VOTE = 400;
+ *  impossible, so this is deliberately steep. Rescaled 14 Sep 2026, same
+ *  ×2000 personal-money multiplier as LAWYER_FEE above — this also comes
+ *  straight out of the player's own wallet. */
+const MONEY_PER_BRIBED_VOTE = 800_000;
 
 /** The most votes a single bribe can move, regardless of money spent — a
  *  cap so a big enough bribe can't simply buy a landslide outright; it can
@@ -100,7 +106,10 @@ export interface CaughtConsequence {
 }
 
 function consequenceFor(act: CorruptAct, amountInvolved: number): CaughtConsequence {
-  const fine = Math.round(Math.min(amountInvolved * 0.5, 50000));
+  // Fine cap rescaled 14 Sep 2026, same ×2000 personal-money multiplier as
+  // the rest of this file — amountInvolved (a bribe or a black-market buy)
+  // is already real-money scale, so the cap needed to move with it.
+  const fine = Math.round(Math.min(amountInvolved * 0.5, 100_000_000));
   const worldReputationHit = act === "bribery" ? 10 : act === "blackMarket" ? 6 : 4;
   const suspensionWeeks = act === "blackMarket" ? 2 : act === "bribery" ? 3 : 1;
   return { fine, worldReputationHit, suspensionWeeks };

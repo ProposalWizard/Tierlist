@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan } from "@/lib/star/shopData";
 import { ruleBookFor } from "@/lib/star/ruleBook";
-import { blackMarketPrice } from "@/lib/star/corruption";
+import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { formatMoney } from "@/lib/star/money";
 import KibCanIcon from "./KibCanIcon";
 import LifestyleIcon from "./LifestyleIcon";
@@ -65,7 +65,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                      <StarIcon /> {c.price}
+                      <StarIcon /> {formatMoney(c.price)}
                     </div>
                     <button
                       disabled={!canBuy}
@@ -114,7 +114,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                     <div>{b.power.toFixed(1)}</div>
                     <div>{b.technique.toFixed(1)}</div>
                     <div>{b.matches}</div>
-                    <div className="text-yellow-300">{b.price}</div>
+                    <div className="text-yellow-300">{formatMoney(b.price)}</div>
                   </button>
                 ))}
               </div>
@@ -140,17 +140,17 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 </div>
                 <label className="flex items-center gap-2 mb-2 text-[10px] text-white/80">
                   <input type="checkbox" checked={useLawyers} onChange={e => setUseLawyers(e.target.checked)} />
-                  Hire lawyers first (★5000 — cuts the risk a lot, doesn&apos;t remove it)
+                  Hire lawyers first (★{formatMoney(LAWYER_FEE)} — cuts the risk a lot, doesn&apos;t remove it)
                 </label>
                 <button
-                  disabled={career.money < blackMarketPrice(selectedBoot.price) + (useLawyers ? 5000 : 0)}
+                  disabled={career.money < blackMarketPrice(selectedBoot.price) + (useLawyers ? LAWYER_FEE : 0)}
                   onClick={() => {
                     const result = onBuyFromBlackMarket(selectedBoot, useLawyers);
                     setBlackMarketMessage(result.ok ? "Bought — nobody official noticed. This time." : (result.reason ?? "Failed"));
                   }}
                   className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600"
                 >
-                  Buy from shady guys — ★{blackMarketPrice(selectedBoot.price)}
+                  Buy from shady guys — ★{formatMoney(blackMarketPrice(selectedBoot.price))}
                 </button>
                 {blackMarketMessage && (
                   <div className="mt-2 text-center text-[10px] font-bold text-white/85">{blackMarketMessage}</div>
@@ -162,7 +162,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 onClick={() => selectedBoot && onBuyBoot(selectedBoot)}
                 className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600 flex items-center justify-center gap-2"
               >
-                Buy {selectedBoot?.name} — ★{selectedBoot?.price}
+                Buy {selectedBoot?.name} — ★{formatMoney(selectedBoot?.price ?? 0)}
               </button>
             )}
           </>
@@ -199,7 +199,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                        <StarIcon /> {i.price}
+                        <StarIcon /> {formatMoney(i.price)}
                       </div>
                       {owned && <div className="text-[9px] text-emerald-400 font-bold">OWNED</div>}
                     </div>
@@ -213,7 +213,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 onClick={() => onBuyItem(selectedItem)}
                 className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600"
               >
-                Buy {selectedItem.name} — ★{selectedItem.price}
+                Buy {selectedItem.name} — ★{formatMoney(selectedItem.price)}
               </button>
             )}
           </>

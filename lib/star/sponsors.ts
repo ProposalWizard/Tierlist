@@ -169,7 +169,10 @@ export function sponsorFee(category: string, career: CareerState): number {
     getTuning("sponsors.upgradeMaxLevel"),
   );
   const upgrade = Math.pow(1 + getTuning("sponsors.upgradeFeeMultiplier"), Math.max(0, level - 1));
-  return Math.max(1, Math.round((r.baseFee + career.fame / getTuning("sponsors.fameDivisor")) * mult * upgrade));
+  const raw = Math.max(1, Math.round((r.baseFee + career.fame / getTuning("sponsors.fameDivisor")) * mult * upgrade));
+  // sponsors.feeScale (real-money rescale, 14 Sep 2026) is applied here,
+  // last — see its own tuning.ts comment for why baseFee itself stays small.
+  return raw * getTuning("sponsors.feeScale");
 }
 
 /**
@@ -272,12 +275,18 @@ export function makeObjective(career: CareerState, index: number, rng: () => num
     : kind === "cleanSheets" ? Math.max(3, Math.round(getTuning("sponsors.objectiveCleanSheetsBase") * seasons * streakDifficulty))
     : getTuning("sponsors.objectiveRatingBase") + Math.round(rng() * getTuning("sponsors.objectiveRatingSpread")); // rating, stored ×10
 
+  // sponsors.feeScale (real-money rescale, 14 Sep 2026) applies to the
+  // bonus's final money value only, same reasoning as sponsorFee above —
+  // objectiveBonusBase/PerIndex stay small since difficulty is computed off
+  // baseFee, not off this bonus.
+  const rawBonus = Math.max(3, Math.round((getTuning("sponsors.objectiveBonusBase") + index * getTuning("sponsors.objectiveBonusPerIndex")) * rep * seasons * difficulty));
+
   return {
     kind,
     target,
     progress: 0,
     seasonsLeft: seasons,
-    bonus: Math.max(3, Math.round((getTuning("sponsors.objectiveBonusBase") + index * getTuning("sponsors.objectiveBonusPerIndex")) * rep * seasons * difficulty)),
+    bonus: rawBonus * getTuning("sponsors.feeScale"),
     done: false,
   };
 }

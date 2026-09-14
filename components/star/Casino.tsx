@@ -17,12 +17,15 @@ interface Props {
   onPlaceBet: (bet: Omit<CompetitionBet, "id">) => void;
 }
 
-// Horses available for purchase (same as former HorseRacing.tsx STABLE)
+// Horses available for purchase (same as former HorseRacing.tsx STABLE).
+// Prices rescaled 14 Sep 2026 — same ×2000 personal-money multiplier as the
+// shop catalogue (shopDefaults.ts), so a racehorse still costs the same
+// number of weeks' wage as it always did.
 const PURCHASABLE_HORSES: { horse: Omit<Horse, "energy" | "racesRun" | "racesWon" | "earnings">; price: number }[] = [
-  { horse: { name: "Clover Lad", breed: "Cob", speed: 55, stamina: 58 }, price: 30 },
-  { horse: { name: "Midnight Dash", breed: "Thoroughbred", speed: 68, stamina: 62 }, price: 60 },
-  { horse: { name: "Golden Arrow", breed: "Arabian", speed: 78, stamina: 72 }, price: 120 },
-  { horse: { name: "Thunderhoof", breed: "Champion", speed: 88, stamina: 84 }, price: 240 },
+  { horse: { name: "Clover Lad", breed: "Cob", speed: 55, stamina: 58 }, price: 60000 },
+  { horse: { name: "Midnight Dash", breed: "Thoroughbred", speed: 68, stamina: 62 }, price: 120000 },
+  { horse: { name: "Golden Arrow", breed: "Arabian", speed: 78, stamina: 72 }, price: 240000 },
+  { horse: { name: "Thunderhoof", breed: "Champion", speed: 88, stamina: 84 }, price: 480000 },
 ];
 
 const HORSE_NAMES = [
@@ -44,12 +47,21 @@ const MY_HORSE_RACE_COST = 40;
  * sequence verbatim: 1-10 by small steps, 10-1000 in round hundreds, then
  * increasingly coarse steps up to a million, the same shape a real casino's
  * chip denominations use.
+ *
+ * Rescaled 14 Sep 2026, same ×2000 personal-money multiplier as the shop
+ * catalogue and every other personal-spending number this session — the
+ * bank this bets against (`career.money`, via `bankStart`) moved to the
+ * same real-money scale, so the chip ladder needed to move with it or every
+ * step below "500,000" would have gone meaningless overnight.
  */
 const BET_STEPS: number[] = [
-  1, 2, 5, 10, 25, 50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 900, 1000,
-  1250, 1500, 1750, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
-  12500, 15000, 17500, 20000, 25000, 30000, 35000, 40000, 50000, 60000, 70000, 80000, 90000, 100000,
-  250000, 500000, 1000000,
+  2000, 4000, 10000, 20000, 50000, 100000, 200000, 300000, 400000, 500000, 600000, 800000,
+  1000000, 1200000, 1400000, 1600000, 1800000, 2000000,
+  2500000, 3000000, 3500000, 4000000, 5000000, 6000000, 7000000, 8000000, 10000000, 12000000,
+  14000000, 16000000, 18000000, 20000000,
+  25000000, 30000000, 35000000, 40000000, 50000000, 60000000, 70000000, 80000000, 100000000,
+  120000000, 140000000, 160000000, 180000000, 200000000,
+  500000000, 1000000000, 2000000000,
 ];
 
 /** The nearest step at or below `n` — for clamping a saved/previous bet down
@@ -65,7 +77,7 @@ const BET_STORAGE_KEY = "star-casino-bet";
 export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onPlaceBet }: Props) {
   const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets">("menu");
   const [bank, setBank] = useState(bankStart);
-  const [bet, setBet] = useState(1);
+  const [bet, setBet] = useState(BET_STEPS[0]);
 
   // Persisted the same way the match speed button is (star-match-speed):
   // read once on mount, written back on every change, so it holds across
@@ -205,13 +217,13 @@ function TopBar({ bank, bet, onExit, onChangeBet }: CasinoGameProps) {
       <div className="flex-1 grid grid-cols-2 gap-1">
         <div className="bg-gray-700 rounded px-2 py-1.5 flex items-center justify-between border border-gray-600">
           <span className="font-black text-[10px] text-white">Bank</span>
-          <span className="flex items-center gap-0.5 font-black text-yellow-300 text-xs"><StarIcon />{bank}</span>
+          <span className="flex items-center gap-0.5 font-black text-yellow-300 text-xs"><StarIcon />{formatMoney(bank)}</span>
         </div>
         <div className="bg-gray-700 rounded px-2 py-1.5 flex items-center justify-between border border-gray-600">
           <span className="font-black text-[10px] text-white">Bet</span>
           <div className="flex items-center gap-1">
             <button onClick={() => onChangeBet(-1)} className="text-red-400 font-black text-sm">▼</button>
-            <span className="flex items-center gap-0.5 font-black text-yellow-300 text-xs"><StarIcon />{bet}</span>
+            <span className="flex items-center gap-0.5 font-black text-yellow-300 text-xs"><StarIcon />{formatMoney(bet)}</span>
             <button onClick={() => onChangeBet(1)} className="text-emerald-400 font-black text-sm">▲</button>
           </div>
         </div>
@@ -439,13 +451,13 @@ function HorseRacingGame(props: HorseRacingProps) {
                       {ordinal(result.finish)} Place
                     </div>
                     <div className="text-sm font-bold mt-1">
-                      {result.payout > 0 ? <span className="text-emerald-300">Won ★{result.payout}!</span> : <span className="text-white/75">Out of the money.</span>}
+                      {result.payout > 0 ? <span className="text-emerald-300">Won ★{formatMoney(result.payout)}!</span> : <span className="text-white/75">Out of the money.</span>}
                     </div>
                   </>
                 ) : (
                   <>
                     <div className={`text-2xl font-black ${result.payout > 0 ? "text-yellow-300" : "text-red-400"}`}>
-                      {result.payout > 0 ? `YOU WIN! +★${result.payout}` : "No luck!"}
+                      {result.payout > 0 ? `YOU WIN! +★${formatMoney(result.payout)}` : "No luck!"}
                     </div>
                     <div className="text-sm text-white/85 mt-1">Winner: {result.winnerName}</div>
                   </>
@@ -515,7 +527,7 @@ function HorseRacingGame(props: HorseRacingProps) {
               onClick={placeBet}
               className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
             >
-              Place Bet — ★{props.bet}
+              Place Bet — ★{formatMoney(props.bet)}
             </button>
           </>
         )}
@@ -548,7 +560,7 @@ function HorseRacingGame(props: HorseRacingProps) {
                           disabled={!canAfford}
                           className={`px-3 py-2 rounded-lg font-black text-xs flex items-center gap-1 ${canAfford ? "bg-emerald-500 hover:bg-emerald-400" : "bg-gray-700 text-white/65"}`}
                         >
-                          <StarIcon />{s.price}
+                          <StarIcon />{formatMoney(s.price)}
                         </button>
                       </div>
                     );
@@ -592,7 +604,7 @@ function HorseRacingGame(props: HorseRacingProps) {
                     </div>
                     <div className="bg-gray-900/50 rounded-lg py-1.5">
                       <div className="text-white/75 font-bold">Winnings</div>
-                      <div className="text-white font-black">★{myHorse.earnings}</div>
+                      <div className="text-white font-black">★{formatMoney(myHorse.earnings)}</div>
                     </div>
                   </div>
                 </div>
@@ -700,7 +712,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
           ))}
         </div>
         <div className="mt-2 text-[10px] text-center text-white/65">
-          Tap a club to bet ★{props.bet} on them to win the {BET_COMPETITIONS.find(c => c.id === tab)?.label}.
+          Tap a club to bet ★{formatMoney(props.bet)} on them to win the {BET_COMPETITIONS.find(c => c.id === tab)?.label}.
         </div>
 
         {pending.length > 0 && (
@@ -718,7 +730,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
                       <span className="text-white/55"> — {label}</span>
                     </div>
                     <div className="font-black text-yellow-300 tabular-nums">
-                      ★{b.stake} @ {b.odds.toFixed(2)} → ★{Math.round(b.stake * b.odds)}
+                      ★{formatMoney(b.stake)} @ {b.odds.toFixed(2)} → ★{formatMoney(Math.round(b.stake * b.odds))}
                     </div>
                   </div>
                 );
@@ -893,7 +905,7 @@ function Blackjack(props: CasinoGameProps) {
             onClick={deal}
             className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
           >
-            Deal — ★{props.bet}
+            Deal — ★{formatMoney(props.bet)}
           </button>
         )}
         {phase === "play" && (
@@ -986,7 +998,7 @@ function Roulette(props: CasinoGameProps) {
       else if (choice === "even" && winner !== 0 && winner % 2 === 0) win = props.bet * 2;
       else if (choice === "odd" && winner % 2 === 1) win = props.bet * 2;
       if (win > 0) {
-        setMessage(`WIN! +★${win - props.bet}`);
+        setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
         props.onSetBank(props.bank - props.bet + win);
       } else {
         setMessage("Lost!");
@@ -1087,7 +1099,7 @@ function Roulette(props: CasinoGameProps) {
           onClick={spin}
           className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
         >
-          {spinning ? "Spinning..." : `Spin — ★${props.bet}`}
+          {spinning ? "Spinning..." : `Spin — ★${formatMoney(props.bet)}`}
         </button>
       </div>
     </div>
@@ -1125,7 +1137,7 @@ function Slots(props: CasinoGameProps) {
           win = props.bet;
         }
         if (win > 0) {
-          setMessage(`WIN! +★${win - props.bet}`);
+          setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
           props.onSetBank(props.bank - props.bet + win);
         } else {
           setMessage("No luck");
@@ -1159,7 +1171,7 @@ function Slots(props: CasinoGameProps) {
           onClick={spin}
           className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
         >
-          {spinning ? "Spinning..." : `Pull the Lever — ★${props.bet}`}
+          {spinning ? "Spinning..." : `Pull the Lever — ★${formatMoney(props.bet)}`}
         </button>
       </div>
     </div>

@@ -131,12 +131,15 @@ function def(key: string): number {
   const maxed = attributeOverall({ pace: 100, power: 100, technique: 100, vision: 100, freeKick: 100 });
   check(Math.abs(maxed - 100) < 1e-9, `attributeOverall at maxed skills still reads 100 (got ${maxed})`);
 
+  // Prices rescaled to real money 14 Sep 2026 (×2000, same multiplier as
+  // starting wage) — these three now check the real shipped defaults, not
+  // the pre-rescale placeholders.
   const kib = KIB_CANS.find((c) => c.id === "basic");
-  check(kib?.price === 3 && kib?.restore === 25, `KIB_CANS basic still ships at price 3 / restore 25 (got ${kib?.price}/${kib?.restore})`);
+  check(kib?.price === 6000 && kib?.restore === 25, `KIB_CANS basic still ships at price 6000 / restore 25 (got ${kib?.price}/${kib?.restore})`);
   const boot = BOOTS_CATALOGUE.find((b) => b.id === "galaxy");
-  check(boot?.price === 100, `BOOTS_CATALOGUE galaxy still ships at price 100 (got ${boot?.price})`);
+  check(boot?.price === 200000, `BOOTS_CATALOGUE galaxy still ships at price 200000 (got ${boot?.price})`);
   const item = LIFESTYLE_ITEMS.find((i) => i.id === "island");
-  check(item?.price === 1500, `LIFESTYLE_ITEMS island still ships at price 1500 (got ${item?.price})`);
+  check(item?.price === 3000000, `LIFESTYLE_ITEMS island still ships at price 3000000 (got ${item?.price})`);
 }
 
 if (problems.length) {

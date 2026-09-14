@@ -376,6 +376,11 @@ export const TUNABLES: TunableDef[] = [
 
   // ── Sponsorships ─────────────────────────────────────────────────────
   {
+    key: "sponsors.feeScale", category: "Sponsorships", label: "Fee & bonus — real-money scale",
+    description: "Rescaled 14 Sep 2026: SPONSOR_REQUIREMENTS' baseFee (sponsors.ts) and every objective difficulty/bonus formula are deliberately still small numbers (6-34) — that's what objectiveDifficultyPerFee scales against, and rescaling baseFee itself would have blown up every objective's difficulty. This one multiplier is applied only at the very end, to the final money a signing fee/season fee/objective bonus actually pays out, same ×2000 personal-money multiplier as the shop catalogue and starting wage.",
+    default: 2000, min: 1, max: 100000, step: 100,
+  },
+  {
     key: "sponsors.fameDivisor", category: "Sponsorships", label: "Fee — fame ÷ this, added to base",
     description: "Your fame divided by this is added to a sponsor's base fee before the ambition multiplier.",
     default: 6, min: 1, max: 50, step: 1,
