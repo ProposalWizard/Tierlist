@@ -3,7 +3,7 @@ import {
   goalInView, SCENARIO_KINDS,
   type Outcome, type Scenario, type Ball,
 } from "../../lib/star/canvasEngine";
-import { castScenario, creatorOf } from "../../lib/star/lineup";
+import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "../../lib/star/lineup";
 import { generateSquad } from "../../lib/star/squadData";
 import { creditMatchResult, makeInitialCareer } from "../../lib/star/careerFlow";
 import type { SquadPlayer, GoalEvent } from "../../lib/star/types";
@@ -347,6 +347,105 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
       check(d.goals === 0 && d.assists === 0, `${res}: nothing is credited for a chance that did not go in`);
     }
   }
+}
+
+// ── A real face travels with a real identity ────────────────────────────────
+//
+// idOf (the one conversion point every squad player passes through on the way
+// to becoming an Identity) now carries `face` alongside `overall`. A generated
+// squad has no real photos to carry (see generateSquad), so this gives two
+// SQUAD members a fake URL each and confirms it survives the trip intact —
+// and that a man with none still resolves cleanly to `undefined`, never a
+// stale value left over from someone else.
+{
+  const FACE_A = "https://example.test/vvd.png";
+  const FACE_B = "https://example.test/salah.png";
+  // Two real outfield players, specifically — SQUAD[0] is the generated
+  // goalkeeper (generateSquad always builds one first), and castScenario
+  // never hands a GK a Runner/Follower shirt, so indexing blindly measured
+  // a man who could structurally never turn up.
+  const playerA = SQUAD.find(p => p.position === "ST")!;
+  const playerB = SQUAD.find(p => p.position === "LW")!;
+  const withFaces = SQUAD.map(p => p.id === playerA.id ? { ...p, imageUrl: FACE_A } : p.id === playerB.id ? { ...p, imageUrl: FACE_B } : p);
+  const idA = playerA.id, idB = playerB.id;
+
+  const rng = mulberry32(606);
+  let sawA = 0, wrongA = 0, sawUndefinedForNoPhoto = 0, sawDefinedForNoPhoto = 0;
+  const N = 1500;
+  for (let i = 0; i < N; i++) {
+    const sc = buildScenario(SCENARIO_KINDS[i % SCENARIO_KINDS.length], rng, 62, 60, 55);
+    castScenario(sc, withFaces);
+    for (const r of mates(sc)) {
+      if (!r.who) continue;
+      if (r.who.id === idA) {
+        sawA += 1;
+        if (r.who.face !== FACE_A) wrongA += 1;
+      } else if (r.who.id !== idB && withFaces.some(p => p.id === r.who!.id && p.imageUrl === undefined)) {
+        if (r.who.face === undefined) sawUndefinedForNoPhoto += 1;
+        else sawDefinedForNoPhoto += 1;
+      }
+    }
+  }
+  check(sawA > 20, `the man with a photo turns up enough to measure (${sawA})`);
+  check(wrongA === 0, `his face is always exactly the URL his squad row carries (${wrongA} mismatches)`);
+  check(sawDefinedForNoPhoto === 0, `nobody invents a photo for a man with none (${sawDefinedForNoPhoto} did)`);
+  check(sawUndefinedForNoPhoto > 0, `…and that no-photo case is real enough to have been checked (${sawUndefinedForNoPhoto})`);
+}
+
+// ── castDefence: the other end of the same idea ─────────────────────────────
+//
+// Nothing reads Defender.who or Keeper.who for save/tackle quality (see their
+// own doc comments) — this only checks that the right face ends up on the
+// right kind of figure, and that it is a genuine no-op with nothing to scout.
+{
+  const gk: OpponentSheetPlayer = { id: "gk1", name: "Alisson Becker", shortName: "Alisson", position: "GK", overall: 88, face: "https://example.test/alisson.png", isGK: true, y: 1 };
+  const back = (id: string, y: number, face: string): OpponentSheetPlayer =>
+    ({ id, name: id, shortName: id, position: "CB", overall: 80, face, isGK: false, y });
+  const oppXI: OpponentSheetPlayer[] = [
+    gk,
+    back("cb1", 10, "https://example.test/vvd.png"),
+    back("cb2", 20, "https://example.test/konate.png"),
+    back("fwd1", 90, "https://example.test/salah2.png"),
+  ];
+
+  const rng = mulberry32(909);
+  const sc = buildScenario("cutback", rng, 62, 60, 55);
+  // A controlled defensive line, closest-to-goal first, so the pairing can be
+  // checked exactly rather than trusting whatever buildScenario happened to
+  // place this seed — castDefence reads only x/y off each, so overwriting the
+  // rest of what initDefenders would normally fill in is safe here.
+  sc.defenders = [
+    { x: 30, y: 5 } as Scenario["defenders"][number],
+    { x: 38, y: 15 } as Scenario["defenders"][number],
+    { x: 34, y: 60 } as Scenario["defenders"][number],
+  ];
+  castDefence(sc, oppXI);
+
+  check(sc.keeper.who?.id === "gk1", `the keeper is drawn from the GK entry (${sc.keeper.who?.id})`);
+  check(sc.keeper.who?.face === gk.face, "…with his real face carried over");
+  check(sc.defenders.every(d => !!d.who), `every defender gets a real man (${sc.defenders.filter(d => d.who).length}/${sc.defenders.length})`);
+  check(sc.defenders[0].who?.id === "cb1", `the deepest defender is matched to the deepest real man (${sc.defenders[0].who?.id})`);
+  check(sc.defenders[1].who?.id === "cb2", `…the next one in, the next one in (${sc.defenders[1].who?.id})`);
+  check(sc.defenders[2].who?.id === "fwd1", `…and the furthest forward gets whoever's left (${sc.defenders[2].who?.id})`);
+  check(sc.defenders[0].who?.face === "https://example.test/vvd.png", "and each one's real face, not just his name");
+
+  // Nothing to scout — an international fixture, a side too thin, a sandbox
+  // match with no career at all — must be a genuine no-op, not a crash and
+  // not an invented identity.
+  for (const empty of [null, undefined, []] as const) {
+    const sc2 = buildScenario("cutback", rng, 62, 60, 55);
+    castDefence(sc2, empty);
+    check(sc2.keeper.who === undefined, `no sheet to draw from: the keeper stays anonymous (${JSON.stringify(empty)})`);
+    check(sc2.defenders.every(d => d.who === undefined), `…and so does every defender (${JSON.stringify(empty)})`);
+  }
+
+  // A sheet with outfield men but no listed GK still dresses the defence —
+  // only the keeper is left undrawn.
+  const sc3 = buildScenario("cutback", rng, 62, 60, 55);
+  sc3.defenders = [{ x: 30, y: 5 } as Scenario["defenders"][number]];
+  castDefence(sc3, oppXI.filter(p => !p.isGK));
+  check(sc3.keeper.who === undefined, "no GK on the sheet: the keeper is left as he was");
+  check(!!sc3.defenders[0].who, "…but a defender with real outfield men to draw from still gets one");
 }
 
 if (problems.length) {

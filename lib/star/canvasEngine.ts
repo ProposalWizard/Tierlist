@@ -204,6 +204,12 @@ export interface Keeper {
    * "done" to begin with, and keep scrambling exactly as before.
    */
   pendingDone: boolean;
+  /**
+   * The real opposing goalkeeper, when there is one to name — see Identity.
+   * Purely who to draw and who a face comes from; `keeperStrength` (Scenario)
+   * is still the one number that decides how well he actually keeps.
+   */
+  who?: Identity;
 }
 
 // A poacher lurking for the rebound.
@@ -233,6 +239,15 @@ export interface Identity {
    * reserve centre-back is the whole point of having a squad at all.
    */
   overall?: number;
+  /**
+   * His real photo, when the database has one — same "absent for a
+   * generated squad" caveat as overall. Nothing in the engine reads this for
+   * anything except drawing him: see footballer() in CanvasMatch.tsx, which
+   * composites it onto the same circle the plain head fill already draws,
+   * and falls back to that plain circle whenever this is missing or still
+   * loading. A stat is not a face — this carries no gameplay weight at all.
+   */
+  face?: string;
 }
 
 export interface Follower {
@@ -350,6 +365,14 @@ export interface Defender extends Vec2 {
   z?: number;
   /** Vertical speed of that jump. */
   vz?: number;
+  /**
+   * The real man marking you, when there's a real lineup to draw him from —
+   * see Identity and castDefence (lib/star/lineup.ts). Nothing in tackle or
+   * block resolution reads this yet; a "press" defender and a "cover"
+   * defender behave exactly the same whether or not this is set. Purely who
+   * to draw a face for, same spirit as Keeper.who.
+   */
+  who?: Identity;
 }
 
 export interface Scenario {

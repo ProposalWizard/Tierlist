@@ -37,6 +37,7 @@ type Pos = SquadPlayer["position"];
 
 const idOf = (p: SquadPlayer): Identity => ({
   id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall,
+  face: p.imageUrl,
 });
 
 /**
@@ -138,6 +139,58 @@ export function castScenario(sc: Scenario, squad: SquadPlayer[]): void {
       ? claim(pool, new Set(taken), prefer)   // may double up with a runner; he is the same man
       : already;
   }
+}
+
+/**
+ * The other end of the same idea, for the other shirts.
+ *
+ * `castScenario` puts a name to every blue shirt; nothing has ever put one to
+ * a red one. The keeper and the men marking you are drawn from the real
+ * opposing XI when there is one — same photo the pre-match team sheet
+ * already shows (see opponentStartingXI, teamsheet.ts) — so a defender on
+ * screen is Van Dijk rather than a generic dot with no name behind it.
+ *
+ * Deliberately not the nuanced position-preference matching `claim` does
+ * above: nobody scores or gets an assist off a Defender or a Keeper, so
+ * there is no wrong-man-credited bug to guard against here, only a face to
+ * put on the right kind of figure. The keeper is whoever the sheet has at
+ * GK; outfield defenders are matched to the sheet's outfield men by how far
+ * back each is standing, closest-to-goal first on both sides, which is
+ * enough to usually put a real centre-back's face on the man actually
+ * defending centrally rather than on a winger tracking back.
+ *
+ * Purely cosmetic — see Defender.who / Keeper.who. Safe to call with
+ * nothing to scout (an international fixture, a side too thin for a sheet,
+ * a sandbox match with no career at all): every figure just keeps drawing
+ * as the plain shirt it always has.
+ */
+export interface OpponentSheetPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  position: string;
+  overall?: number;
+  face?: string;
+  isGK: boolean;
+  y: number;
+}
+
+export function castDefence(sc: Scenario, oppXI: OpponentSheetPlayer[] | null | undefined): void {
+  if (!oppXI || oppXI.length === 0) return;
+  const toIdentity = (p: OpponentSheetPlayer): Identity => ({
+    id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall, face: p.face,
+  });
+
+  const gk = oppXI.find(p => p.isGK);
+  if (gk) sc.keeper.who = toIdentity(gk);
+
+  if (sc.defenders.length === 0) return;
+  const outfield = oppXI.filter(p => !p.isGK).sort((a, b) => a.y - b.y);
+  if (outfield.length === 0) return;
+  const defenders = [...sc.defenders].sort((a, b) => a.y - b.y);
+  defenders.forEach((d, i) => {
+    d.who = toIdentity(outfield[i % outfield.length]);
+  });
 }
 
 /**
