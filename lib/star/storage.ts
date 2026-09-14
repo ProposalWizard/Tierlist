@@ -18,6 +18,34 @@ const SAVED_AT_KEY = "star-career-saved-at-v1";
 export const ANON_SCOPE = "anon";
 
 /**
+ * How many separate careers one account can keep at once — see
+ * listSaveSlots/slotScope below. Capped at three deliberately, not
+ * unlimited: enough to genuinely mean something (the save you're playing
+ * now, one you're not ready to give up on, and a fresh attempt) without
+ * turning Settings into a scrolling list or meaningfully growing per-account
+ * storage — each slot is a full CareerState, the same size whichever one
+ * it's in.
+ */
+export const MAX_SAVE_SLOTS = 3;
+
+/**
+ * Turns "this account" into "this account's Nth save".
+ *
+ * Slot 1 is deliberately just `accountScope`, unchanged — the exact key
+ * every existing player's one-and-only save has always lived under, and the
+ * exact scope every call site already had before save slots existed (see
+ * app/star-match-dev/page.tsx's own loadCareer(user.id), for one). That is
+ * what makes adding save slots safe rather than a migration: an account
+ * that never opens the new saves screen keeps reading and writing the
+ * identical localStorage keys it always has, forever, because slot 1 IS
+ * those keys, not a copy of them. Only slots 2 and 3 are genuinely new,
+ * additive keys that start out empty.
+ */
+export function slotScope(accountScope: string, slot: number): string {
+  return slot === 1 ? accountScope : `${accountScope}#slot${slot}`;
+}
+
+/**
  * EVERY key below is scoped by WHICH ACCOUNT this save belongs to (or
  * ANON_SCOPE for a signed-out player) — never a bare, shared key.
  *
@@ -184,9 +212,16 @@ export function loadCareerSavedAt(scope: string): number {
   }
 }
 
-export function loadCareer(scope: string): CareerState | null {
-  claimLegacySave(scope);
-  claimAnonSave(scope);
+/**
+ * The read half of loadCareer, without the legacy/anon claiming — for
+ * listSaveSlots, which needs to peek at slots 2 and 3 without ever
+ * mistakenly claiming a stray pre-slots or signed-out save into one of
+ * them. Slot 1 IS the scope claimLegacySave/claimAnonSave have always
+ * targeted (see slotScope), so loadCareer below still runs both for slot 1
+ * exactly as it always has; a slot that did not exist before this feature
+ * has nothing legacy to claim in the first place.
+ */
+function loadCareerRaw(scope: string): CareerState | null {
   try {
     const raw = localStorage.getItem(scoped(KEY, scope));
     if (!raw) return null;
@@ -196,6 +231,12 @@ export function loadCareer(scope: string): CareerState | null {
   } catch {
     return null;
   }
+}
+
+export function loadCareer(scope: string): CareerState | null {
+  claimLegacySave(scope);
+  claimAnonSave(scope);
+  return loadCareerRaw(scope);
 }
 
 /**
@@ -329,6 +370,76 @@ export function clearCareer(scope: string) {
   } catch {}
 }
 
+// ── Multiple saves ───────────────────────────────────────────────────────────
+
+/**
+ * A summary of one save slot for the switcher in Settings — not the whole
+ * CareerState; nobody needs a division's worth of squads just to draw three
+ * cards. Local-only and synchronous, which is right for a fast list that
+ * simply redraws on every render.
+ *
+ * This can under-report a slot THIS device has never opened yet — see the
+ * account-scoping note above `scoped()` for why local and cloud are never
+ * assumed to agree — but actually switching to a slot (loadCareerIntoState,
+ * app/star-dev/page.tsx) always reconciles against the cloud properly first,
+ * the same way loading slot 1 always has. An "Empty" card here is a day-one
+ * hint, never a claim that nothing exists anywhere for that slot.
+ */
+export interface SaveSlotSummary {
+  slot: number;
+  empty: boolean;
+  club?: string;
+  playerName?: string;
+  season?: number;
+  starRating?: number;
+  retired?: boolean;
+}
+
+export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
+  const out: SaveSlotSummary[] = [];
+  for (let slot = 1; slot <= MAX_SAVE_SLOTS; slot++) {
+    const scope = slotScope(accountScope, slot);
+    // Slot 1 still gets the legacy/anon claim exactly as loadCareer always
+    // has; slots 2+ never had anything to claim — see loadCareerRaw's note.
+    const career = slot === 1 ? loadCareer(scope) : loadCareerRaw(scope);
+    if (!career) { out.push({ slot, empty: true }); continue; }
+    out.push({
+      slot,
+      empty: false,
+      club: career.player.club,
+      playerName: `${career.player.firstName} ${career.player.lastName}`,
+      season: career.season,
+      starRating: career.starRating,
+      retired: !!career.retired,
+    });
+  }
+  return out;
+}
+
+const ACTIVE_SLOT_KEY = "star-career-active-slot-v1";
+
+/**
+ * Which save this account was last looking at. Defaults to 1 — the save
+ * every account already had before slots existed — so an account that has
+ * never opened the new saves screen keeps landing exactly where it always
+ * has, on every device, forever.
+ */
+export function loadActiveSlot(accountScope: string): number {
+  try {
+    const raw = localStorage.getItem(scoped(ACTIVE_SLOT_KEY, accountScope));
+    const n = raw ? parseInt(raw, 10) : 1;
+    return Number.isInteger(n) && n >= 1 && n <= MAX_SAVE_SLOTS ? n : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export function saveActiveSlot(accountScope: string, slot: number): void {
+  try {
+    localStorage.setItem(scoped(ACTIVE_SLOT_KEY, accountScope), String(slot));
+  } catch {}
+}
+
 // ── Cloud save (Supabase) ────────────────────────────────────────────────────
 
 /**
@@ -337,10 +448,16 @@ export function clearCareer(scope: string) {
  * Fire-and-forget: errors are swallowed so a network hiccup or a logged-out
  * session never breaks the game. localStorage is always written first, so
  * data is never lost even if the cloud write fails.
+ *
+ * `slot` defaults to 1 — the save every account already had before slots
+ * existed — and works unchanged whether or not star_career_slots.sql
+ * (PENDING) has been run yet; see that migration's own note and the API
+ * route it applies to. A slot other than 1 simply stays local-only, exactly
+ * as fire-and-forget as a network hiccup, until it has.
  */
-export async function saveCareerToCloud(state: CareerState): Promise<void> {
+export async function saveCareerToCloud(state: CareerState, slot: number = 1): Promise<void> {
   try {
-    await fetch("/api/star/career", {
+    await fetch(`/api/star/career?slot=${slot}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(state),
@@ -349,18 +466,18 @@ export async function saveCareerToCloud(state: CareerState): Promise<void> {
 }
 
 /**
- * Fetch the career from Supabase, with when it was saved.
+ * Fetch one save slot from Supabase, with when it was saved.
  *
- * Returns null when the user is not logged in, has no cloud save, or the
- * request fails — in all three cases the caller should fall back to
- * localStorage. The timestamp is what lets the caller tell a cloud save that
- * is genuinely ahead of this device apart from one that is behind it — see
- * the note on loadCareerSavedAt for why blindly preferring cloud regressed
- * players' squads.
+ * Returns null when the user is not logged in, has no cloud save for this
+ * slot, or the request fails — in all three cases the caller should fall
+ * back to localStorage. The timestamp is what lets the caller tell a cloud
+ * save that is genuinely ahead of this device apart from one that is behind
+ * it — see the note on loadCareerSavedAt for why blindly preferring cloud
+ * regressed players' squads.
  */
-export async function loadCareerFromCloud(): Promise<{ career: CareerState; savedAt: number } | null> {
+export async function loadCareerFromCloud(slot: number = 1): Promise<{ career: CareerState; savedAt: number } | null> {
   try {
-    const res = await fetch("/api/star/career");
+    const res = await fetch(`/api/star/career?slot=${slot}`);
     if (!res.ok) return null;
     const data = await res.json() as { career: CareerState; updatedAt: string } | null;
     if (!data?.career || data.career.version !== 2) return null;
@@ -371,11 +488,11 @@ export async function loadCareerFromCloud(): Promise<{ career: CareerState; save
 }
 
 /**
- * Delete the cloud save — called alongside clearCareer() when starting over,
- * so the old career does not reappear on next login.
+ * Delete one save slot's cloud copy — called alongside clearCareer() when
+ * starting over, so the old career does not reappear on next login.
  */
-export async function clearCareerFromCloud(): Promise<void> {
+export async function clearCareerFromCloud(slot: number = 1): Promise<void> {
   try {
-    await fetch("/api/star/career", { method: "DELETE" });
+    await fetch(`/api/star/career?slot=${slot}`, { method: "DELETE" });
   } catch {}
 }

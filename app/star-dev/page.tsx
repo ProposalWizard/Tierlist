@@ -3,7 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
-import { loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud, clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE } from "@/lib/star/storage";
+import {
+  loadCareer, saveCareer, clearCareer, saveStarPhase, loadStarPhase, loadCareerFromCloud, saveCareerToCloud,
+  clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
+} from "@/lib/star/storage";
 import { createClient } from "@/lib/supabase/client";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
@@ -167,16 +170,38 @@ export default function StarDevPage() {
   const [signedIn, setSignedIn] = useState(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
-   * Which account's local slot every localStorage read/write below acts on
-   * for the rest of this page's life — always the signed-in user's id (see
-   * the sign-in gate: nothing past it runs without one). Resolved once,
-   * here, before anything else reads or writes a save — see storage.ts's
-   * own note on why a save must never be read or written without knowing
-   * whose it is. Signing in or out always does a full page navigation in
-   * this app (OAuth redirect / a server sign-out route), so this never goes
-   * stale mid-session.
+   * WHICH ACCOUNT — always the signed-in user's id (see the sign-in gate:
+   * nothing past it runs without one). Resolved once, here, before anything
+   * else reads or writes a save — see storage.ts's own note on why a save
+   * must never be read or written without knowing whose it is. Signing in
+   * or out always does a full page navigation in this app (OAuth redirect /
+   * a server sign-out route), so this never goes stale mid-session.
+   *
+   * WHICH SAVE, within that account, is the separate `activeSlot` just
+   * below — every actual localStorage/cloud key is built from both
+   * together via storage.ts's slotScope(scopeRef.current, activeSlot).
    */
   const scopeRef = useRef<string>(ANON_SCOPE);
+  /**
+   * The save currently on screen, 1..MAX_SAVE_SLOTS — see SaveSlotsPanel
+   * (Settings) for switching it and lib/star/storage.ts's slotScope for how
+   * it turns into an actual key. Kept as both state (so the Settings screen
+   * re-renders when it changes) and a ref (so callbacks and effects always
+   * read the current value without needing it in their dependency arrays,
+   * the same pattern scopeRef already uses) — setActiveSlot below keeps the
+   * two in lockstep so nothing has to choose between them.
+   */
+  const [activeSlot, setActiveSlotState] = useState(1);
+  const activeSlotRef = useRef(1);
+  const setActiveSlot = useCallback((slot: number) => {
+    activeSlotRef.current = slot;
+    setActiveSlotState(slot);
+    saveActiveSlot(scopeRef.current, slot);
+  }, []);
+  // A pure "please re-render" counter for the one save-list mutation that
+  // doesn't already change career/phase/activeSlot on its own — deleting a
+  // save that ISN'T the one on screen. See handleDeleteSave.
+  const [, bumpSaves] = useState(0);
 
   useEffect(() => {
     const init = async () => {
@@ -193,142 +218,38 @@ export default function StarDevPage() {
       }
       setSignedIn(true);
       scopeRef.current = user.id;
-      // Whichever actually changed more recently — NOT cloud unconditionally.
-      //
-      // The first version of this always preferred cloud, on the theory that
-      // it was the more durable copy. It regressed players' squads instead: a
-      // cloud row saved before a league-squads merge finished (or before a
-      // later session on this same device added more) is OLDER than what
-      // localStorage already has, and preferring it anyway — then immediately
-      // writing it back over localStorage in the save effect below — silently
-      // downgraded a fully-populated division back to one missing images that
-      // had already been filled in. Reported as exactly that: player photos
-      // that used to be there, gone, with nothing else about the save wrong.
-      //
-      // Comparing timestamps instead means cloud only wins when it is
-      // genuinely ahead — a different device, or recovering after local
-      // storage itself was wiped — which is the entire reason it exists.
-      const local = loadCareer(scopeRef.current);
-      const localAt = local ? loadCareerSavedAt(scopeRef.current) : -1;
-      const cloud = await loadCareerFromCloud();
-      const saved = cloud && cloud.savedAt > localAt ? cloud.career : local;
-      setCloudLoading(false);
-      if (!saved) return;
-      setCareer(saved);
-
-      // ── One shared set of team sheets, not whichever this device happens
-      // to have cached ── see lib/star/lineupStore.ts. Fired the same way the
-      // squad fetches below are: in the background, not blocking anything —
-      // by the time a team sheet is actually drawn this has almost always
-      // already landed.
-      fetchSharedLineups();
-
-    // ── An existing career gets the real dressing room too ──
-    //
-    // Careers created before the roster fetch have a generated squad — or, if
-    // they predate squads entirely, one backfilled on load. Either way the names
-    // are invented, and the club they play for is a real club whose real squad
-    // is one request away. See shouldUpgradeSquad for what the rule is and what
-    // it used to be.
-    if (shouldUpgradeSquad(saved.squad ?? [])) {
-      fetchRealSquad(saved.player.club).then((real) => {
-        setCareer(c => (c && c.player.club === saved.player.club && shouldUpgradeSquad(c.squad ?? [])
-          ? { ...c, squad: real } : c));
-      });
-    }
-
-    // ── …and so does the rest of the division ──
-    //
-    // An existing career has no league squads at all, so its Golden Boot is
-    // still the old invented race. Fetched once, in the background, and only
-    // when there is nothing there — a division that has been scoring all season
-    // must not be wiped back to nought by a page refresh.
-    if (!(saved.leagueSquads ?? []).length) {
-      fetchLeagueSquads(saved.league.map(t => t.name)).then((leagueSquads) => {
-        setCareer(c => (c && !(c.leagueSquads ?? []).length
-          ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
-      });
-    } else if (shouldUpgradeLeagueSquads(saved.leagueSquads!)) {
-      // A division fetched before faces and flags existed. Re-fetched once, in
-      // the background, and merged rather than replaced — this season's goals
-      // and assists were real and stay real; only the missing fields fill in.
-      fetchLeagueSquads(saved.league.map(t => t.name)).then((fresh) => {
-        setCareer(c => {
-          if (!c) return c;
-          const leagueSquads = mergeLeagueSquadStats(fresh, c.leagueSquads ?? []);
-          return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
-        });
-      });
-    }
-
-    // ── …and the wider world, for an existing career that predates it ──
-    if (!(saved.externalSquads ?? []).length) {
-      fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
-        setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
-      });
-    } else if (shouldUpgradeExternalSquads(saved.externalSquads!, externalClubsFor(saved.league.map(t => t.name)))) {
-      // A career that first fetched the wider world while most of those
-      // clubs still had zero real rows, OR whose snapshot simply predates a
-      // club the CURRENT code expects to find (see shouldUpgradeExternalSquads'
-      // own comment) — re-fetched and merged, same as the domestic re-fetch
-      // just above, rather than staying stuck with a stale snapshot forever.
-      fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((fresh) => {
-        setCareer(c => (c ? { ...c, externalSquads: mergeLeagueSquadStats(fresh, c.externalSquads ?? []) } : c));
-      });
-    }
-
-    // A finished career has one screen and no way back into the season.
-    if (saved.retired) { setPhase("legacy"); return; }
-
-    // Resume a phase the career cannot get out of on its own. Reloading used to
-    // always land on the dashboard, which at the end of a season meant no
-    // fixture left to play and no way to reach the Ballon d'Or — the career was
-    // stuck there for good.
-    const pending = loadStarPhase(scopeRef.current);
-    const seasonOver = saved.fixtures.every((f) => f.played);
-    if (pending?.phase === "ballon-dor" && seasonOver) {
-      setPhase("ballon-dor");
-      return;
-    }
-    if (pending?.phase === "contract-renewal") {
-      setContractOfferReason(pending.offerReason ?? null);
-      setPhase("contract-renewal");
-      return;
-    }
-    if (pending?.phase === "retirement" && retirementCheck(saved).canRetire) {
-      setWonBallonDor(!!pending.wonBallonDor);
-      setPhase("retirement");
-      return;
-    }
-    if (pending?.phase === "season-transfer") {
-      // Regenerated rather than stored: the seed is the season and the player's
-      // fame, neither of which has moved, so these are the same offers.
-      const offers = generateOffers(saved, mulberry32(saved.season * 7717 + saved.fame));
-      if (offers.length > 0) {
-        setWonBallonDor(!!pending.wonBallonDor);
-        setTransferOffers(offers);
-        setPhase("season-transfer");
-        return;
-      }
-    }
-    setPhase("dashboard");
+      const slot = loadActiveSlot(scopeRef.current);
+      activeSlotRef.current = slot;
+      setActiveSlotState(slot);
+      await loadCareerIntoState(slot);
     };
     init();
+    // loadCareerIntoState is declared further down as a useCallback with its
+    // own stable, empty dependency list (see its own doc) — this effect only
+    // ever needs to run once, at mount, exactly as it always has.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!career) return;
-    saveCareer(career, scopeRef.current); // localStorage — immediate
+    saveCareer(career, slotScope(scopeRef.current, activeSlotRef.current)); // localStorage — immediate
     // Debounced cloud save: waits 3 s after the last change so a burst of
-    // state updates (end of match, season rollover) produces one write, not many.
+    // state updates (end of match, season rollover) produces one write, not
+    // many. The slot is captured now, at the moment the timer is set, not
+    // re-read when it actually fires — see flushCloudSave's own note on why
+    // a save already in flight has to land on the slot it was really FOR,
+    // not whichever slot happens to be active three seconds from now.
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
-    cloudSaveTimer.current = setTimeout(() => { saveCareerToCloud(career); }, 3000);
+    const slotAtSaveTime = activeSlotRef.current;
+    cloudSaveTimer.current = setTimeout(() => { saveCareerToCloud(career, slotAtSaveTime); }, 3000);
   }, [career]);
 
   // Only the phases a refresh must return you to are written; everything else
   // clears the record — see RESUMABLE in storage.ts.
   useEffect(() => {
-    if (hydrated) saveStarPhase(phase, scopeRef.current, contractOfferReason ?? undefined, wonBallonDor);
+    if (hydrated) {
+      saveStarPhase(phase, slotScope(scopeRef.current, activeSlotRef.current), contractOfferReason ?? undefined, wonBallonDor);
+    }
   }, [hydrated, phase, contractOfferReason, wonBallonDor]);
 
   // The fixture the post-match screen is reporting on. Held in state because
@@ -447,7 +368,7 @@ export default function StarDevPage() {
   }, []);
 
   const handleExit = useCallback(() => {
-    if (confirm("Leave the career? It stays saved — you will come back to exactly this. To delete it and start again, use New career on the dashboard.")) {
+    if (confirm("Leave the career? It stays saved — you will come back to exactly this. To start a new one or switch saves, use Saves in Settings.")) {
       window.location.href = "/";
     }
   }, []);
@@ -1135,14 +1056,242 @@ export default function StarDevPage() {
     setCareer({ ...career, money: career.money + amount });
   }, [career]);
 
-  const handleFullReset = () => {
+  /**
+   * Every piece of UI state that belongs to WHICHEVER career happens to be
+   * on screen right now, reset back to how it looks on a fresh page load —
+   * used whenever the save actually on screen is about to change, so a save
+   * that replaces the one just showing can never inherit a stray press
+   * question, vote, or in-flight transfer offer that was really about the
+   * career being left behind.
+   *
+   * `career`, `phase` and `cloudLoading` are NOT reset here — whatever calls
+   * this sets all three itself, to the values the save actually being
+   * loaded calls for; clearing them here first would just be an extra
+   * render on the way to the same place.
+   */
+  const resetTransientState = useCallback(() => {
+    setActiveNav(null);
+    setTrainingTab("training");
+    setTrainingSkill(null);
+    setLastMatchStats(null);
+    setCurrentDilemma(null);
+    setContractOfferReason(null);
+    setInvestmentsEntry(null);
+    setUnlockedAchievements([]);
+    setRatingChange(null);
+    setRelationshipGameKind(null);
+    setPendingVote(null);
+    setTransferOffers([]);
+    setPressQuestion(null);
+    setWonBallonDor(false);
+    setPlayedFixture(null);
+    setPendingDraw(null);
+    setPotmWin(null);
+    setShowTeams(false);
+    setWatchingReplay(null);
+    setPendingSignOffer(null);
+  }, []);
+
+  /**
+   * Loads whichever save is at `slot` into every piece of state a career
+   * actually needs — the same local-vs-cloud reconciliation the game has
+   * always done for the one save an account used to have (see
+   * loadCareerFromCloud's own doc on why cloud is never simply preferred
+   * outright), now reusable for switching between several: every background
+   * squad/media fetch an existing career might still be missing still runs,
+   * and a resumable phase (the Ballon d'Or, a pending contract, …) is still
+   * resumed rather than always landing back on the dashboard.
+   *
+   * This is ALSO where a brand new, never-played slot ends up: nothing is
+   * found, `career` is left null, and `phase === "profile-setup" || !career`
+   * (the render section below) is exactly what a first-ever install of the
+   * game has always shown for that.
+   *
+   * The empty dependency array is deliberate and safe: every setter React
+   * hands back is stable across renders, `resetTransientState` above is its
+   * own stable useCallback, and everything else this closes over
+   * (fetchRealSquad, externalClubsFor, …) is a plain imported function, not
+   * component state — so this itself never needs to be recreated.
+   */
+  const loadCareerIntoState = useCallback(async (slot: number) => {
+    setCloudLoading(true);
+    resetTransientState();
+    const scope = slotScope(scopeRef.current, slot);
+    const local = loadCareer(scope);
+    const localAt = local ? loadCareerSavedAt(scope) : -1;
+    const cloud = await loadCareerFromCloud(slot);
+    const saved = cloud && cloud.savedAt > localAt ? cloud.career : local;
+    setCloudLoading(false);
+    setCareer(saved ?? null);
+    if (!saved) { setPhase("profile-setup"); return; }
+
+    // ── One shared set of team sheets, not whichever this device happens
+    // to have cached ── see lib/star/lineupStore.ts. Fired the same way the
+    // squad fetches below are: in the background, not blocking anything —
+    // by the time a team sheet is actually drawn this has almost always
+    // already landed.
+    fetchSharedLineups();
+
+    // ── An existing career gets the real dressing room too ──
+    //
+    // Careers created before the roster fetch have a generated squad — or, if
+    // they predate squads entirely, one backfilled on load. Either way the names
+    // are invented, and the club they play for is a real club whose real squad
+    // is one request away. See shouldUpgradeSquad for what the rule is and what
+    // it used to be.
+    if (shouldUpgradeSquad(saved.squad ?? [])) {
+      fetchRealSquad(saved.player.club).then((real) => {
+        setCareer(c => (c && c.player.club === saved.player.club && shouldUpgradeSquad(c.squad ?? [])
+          ? { ...c, squad: real } : c));
+      });
+    }
+
+    // ── …and so does the rest of the division ──
+    //
+    // An existing career has no league squads at all, so its Golden Boot is
+    // still the old invented race. Fetched once, in the background, and only
+    // when there is nothing there — a division that has been scoring all season
+    // must not be wiped back to nought by a page refresh.
+    if (!(saved.leagueSquads ?? []).length) {
+      fetchLeagueSquads(saved.league.map(t => t.name)).then((leagueSquads) => {
+        setCareer(c => (c && !(c.leagueSquads ?? []).length
+          ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
+      });
+    } else if (shouldUpgradeLeagueSquads(saved.leagueSquads!)) {
+      // A division fetched before faces and flags existed. Re-fetched once, in
+      // the background, and merged rather than replaced — this season's goals
+      // and assists were real and stay real; only the missing fields fill in.
+      fetchLeagueSquads(saved.league.map(t => t.name)).then((fresh) => {
+        setCareer(c => {
+          if (!c) return c;
+          const leagueSquads = mergeLeagueSquadStats(fresh, c.leagueSquads ?? []);
+          return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+        });
+      });
+    }
+
+    // ── …and the wider world, for an existing career that predates it ──
+    if (!(saved.externalSquads ?? []).length) {
+      fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
+        setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
+      });
+    } else if (shouldUpgradeExternalSquads(saved.externalSquads!, externalClubsFor(saved.league.map(t => t.name)))) {
+      // A career that first fetched the wider world while most of those
+      // clubs still had zero real rows, OR whose snapshot simply predates a
+      // club the CURRENT code expects to find (see shouldUpgradeExternalSquads'
+      // own comment) — re-fetched and merged, same as the domestic re-fetch
+      // just above, rather than staying stuck with a stale snapshot forever.
+      fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((fresh) => {
+        setCareer(c => (c ? { ...c, externalSquads: mergeLeagueSquadStats(fresh, c.externalSquads ?? []) } : c));
+      });
+    }
+
+    // A finished career has one screen and no way back into the season.
+    if (saved.retired) { setPhase("legacy"); return; }
+
+    // Resume a phase the career cannot get out of on its own. Reloading used to
+    // always land on the dashboard, which at the end of a season meant no
+    // fixture left to play and no way to reach the Ballon d'Or — the career was
+    // stuck there for good.
+    const pending = loadStarPhase(scope);
+    const seasonOver = saved.fixtures.every((f) => f.played);
+    if (pending?.phase === "ballon-dor" && seasonOver) {
+      setPhase("ballon-dor");
+      return;
+    }
+    if (pending?.phase === "contract-renewal") {
+      setContractOfferReason(pending.offerReason ?? null);
+      setPhase("contract-renewal");
+      return;
+    }
+    if (pending?.phase === "retirement" && retirementCheck(saved).canRetire) {
+      setWonBallonDor(!!pending.wonBallonDor);
+      setPhase("retirement");
+      return;
+    }
+    if (pending?.phase === "season-transfer") {
+      // Regenerated rather than stored: the seed is the season and the player's
+      // fame, neither of which has moved, so these are the same offers.
+      const offers = generateOffers(saved, mulberry32(saved.season * 7717 + saved.fame));
+      if (offers.length > 0) {
+        setWonBallonDor(!!pending.wonBallonDor);
+        setTransferOffers(offers);
+        setPhase("season-transfer");
+        return;
+      }
+    }
+    setPhase("dashboard");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sends whatever the OUTGOING save has right now to the cloud immediately,
+  // rather than trusting the cloud-save effect's 3 s debounce to still be
+  // running by the time it would have fired. That debounce is fine to just
+  // let expire everywhere else; switching away is the one moment guaranteed
+  // to leave it no chance to.
+  const flushCloudSave = useCallback(() => {
+    if (cloudSaveTimer.current) {
+      clearTimeout(cloudSaveTimer.current);
+      cloudSaveTimer.current = null;
+    }
+    if (career) saveCareerToCloud(career, activeSlotRef.current);
+  }, [career]);
+
+  /** Switch which save is on screen — see SaveSlotsPanel in Settings. */
+  const handleSwitchSave = useCallback((slot: number) => {
+    if (slot === activeSlotRef.current) return;
+    flushCloudSave();
+    setActiveSlot(slot);
+    loadCareerIntoState(slot);
+  }, [flushCloudSave, setActiveSlot, loadCareerIntoState]);
+
+  /**
+   * Start a brand new career in an EMPTY slot — every other save, including
+   * the one just left, is completely untouched. See SaveSlotsPanel in
+   * Settings; a full, destructive restart of the CURRENT slot is
+   * handleFullReset, just below.
+   */
+  const handleStartNewInSlot = useCallback((slot: number) => {
+    flushCloudSave();
+    setActiveSlot(slot);
+    resetTransientState();
+    setCareer(null);
+    setCloudLoading(false);
+    setPhase("profile-setup");
+  }, [flushCloudSave, setActiveSlot, resetTransientState]);
+
+  /**
+   * Delete one save outright. Deleting the active slot leaves it empty and
+   * open on Profile Setup, exactly like handleFullReset just below;
+   * deleting any other slot simply removes it from the list. See
+   * SaveSlotsPanel in Settings.
+   */
+  const handleDeleteSave = useCallback((slot: number) => {
+    if (!confirm("Delete this save? This cannot be undone.")) return;
+    clearCareer(slotScope(scopeRef.current, slot));
+    clearCareerFromCloud(slot);
+    if (slot === activeSlotRef.current) {
+      resetTransientState();
+      setCareer(null);
+      setPhase("profile-setup");
+    } else {
+      // Nothing about the screen actually on show just changed — bump a
+      // counter that IS state purely so the Saves list (which reads
+      // listSaveSlots fresh on every render, not from a cache) re-renders
+      // to show this slot empty.
+      bumpSaves(v => v + 1);
+    }
+  }, [resetTransientState]);
+
+  const handleFullReset = useCallback(() => {
     if (career?.retired || confirm("Delete this career and start over?")) {
-      clearCareer(scopeRef.current);
-      clearCareerFromCloud();
+      clearCareer(slotScope(scopeRef.current, activeSlotRef.current));
+      clearCareerFromCloud(activeSlotRef.current);
+      resetTransientState();
       setCareer(null);
       setPhase("profile-setup");
     }
-  };
+  }, [career, resetTransientState]);
 
   // Shop buys
   const handleBuyKib = useCallback((can: KibCan) => {
@@ -1988,11 +2137,15 @@ export default function StarDevPage() {
         onBack={handleBackToDashboard}
         onSkip={handleDevSkip}
         onAddMoney={handleAddMoney}
-        onNewCareer={handleFullReset}
         onSetPortrait={handleSetPortrait}
         onWatchReplay={handleWatchReplay}
         onSaveReplay={handleSaveReplay}
         onDeleteSavedReplay={handleDeleteSavedReplay}
+        saves={listSaveSlots(scopeRef.current)}
+        activeSlot={activeSlot}
+        onSwitchSave={handleSwitchSave}
+        onStartNewInSlot={handleStartNewInSlot}
+        onDeleteSave={handleDeleteSave}
       />
     );
   }
