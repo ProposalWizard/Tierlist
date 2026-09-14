@@ -40,6 +40,7 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "@/lib/star/lineup";
+import { loadFaceScale, FACE_SCALE_DEFAULT } from "@/lib/star/faceScale";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
@@ -1078,6 +1079,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     return () => mq.removeEventListener?.("change", on);
   }, []);
 
+  /**
+   * How big a real photo (and, for consistency, the plain fallback circle
+   * too) draws on every figure's head — see lib/star/faceScale.ts. Read
+   * once on mount, same as reduced-motion above: Settings is a separate
+   * phase this component isn't mounted during, so there's no live change to
+   * react to here — only ever a fresh value the NEXT time a match opens.
+   */
+  const faceScaleRef = useRef(FACE_SCALE_DEFAULT);
+  useEffect(() => { faceScaleRef.current = loadFaceScale(); }, []);
+
   // --- Canvas sizing (device-pixel-ratio aware) ---
   useEffect(() => {
     const resize = () => {
@@ -1686,7 +1697,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.stroke();
 
       // ── Head ──
-      const headR = r * 0.26;
+      // Scaled by faceScaleRef, not r itself — a bigger head reads as a
+      // deliberate "make faces easier to see" dial; growing the whole body
+      // with it would also grow the keeper's own footprint, which earlier
+      // work deliberately kept small so he never blocks the shot you're
+      // watching. See lib/star/faceScale.ts.
+      const headR = r * 0.26 * faceScaleRef.current;
       const headCY = -r * 0.76;
       ctx.beginPath();
       ctx.arc(0, headCY, headR, 0, Math.PI * 2);
@@ -2168,8 +2184,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.stroke();
       }
 
-      // Head
-      const kHeadR = KR * 0.28;
+      // Head — same faceScaleRef dial as every outfielder in footballer() above.
+      const kHeadR = KR * 0.28 * faceScaleRef.current;
       const kHeadCY = -KR * 0.70;
       ctx.beginPath();
       ctx.arc(0, kHeadCY, kHeadR, 0, Math.PI * 2);
@@ -2609,6 +2625,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // frame instead of stopping dead exactly where "over" was decided.
       if (phaseRef.current === "result" && ballRef.current?.overBar) {
         stepBallPastBar(ballRef.current, dt);
+      }
+      // …and a keeper mid-dive keeps travelling toward the ball, for exactly
+      // the same reason the ball itself keeps moving in the three blocks
+      // above. `stepKeeper` was only ever called from the "aim" and "flight"
+      // branches further up this loop — once resolveOutcome fires it sets
+      // phase to "result" on the very next frame, so a shot that beat him
+      // outright (pendingDone true, real travel still in progress toward
+      // targetX) simply stopped being simulated at all: he froze exactly
+      // where he happened to be the instant the outcome was decided, often
+      // having barely moved, while the result screen had already appeared.
+      // Reported directly: "the keeper should still continue its dive... it
+      // will look better if the ball goes in and hes still mid dive and
+      // falling to the ground as the goal animation pops up." Guarded on
+      // `!done` purely so this stops calling in once he's actually arrived —
+      // stepKeeper reads only his own Keeper fields, never the ball, so
+      // calling it here is exactly as safe as it was from "flight".
+      if (phaseRef.current === "result" && !scenarioRef.current.keeper.done) {
+        stepKeeper(scenarioRef.current, dt);
       }
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)
