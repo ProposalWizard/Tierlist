@@ -40,7 +40,8 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "@/lib/star/lineup";
-import { loadFaceScale, FACE_SCALE_DEFAULT } from "@/lib/star/faceScale";
+import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
+import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
@@ -1080,14 +1081,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   }, []);
 
   /**
-   * How big a real photo (and, for consistency, the plain fallback circle
-   * too) draws on every figure's head — see lib/star/faceScale.ts. Read
-   * once on mount, same as reduced-motion above: Settings is a separate
-   * phase this component isn't mounted during, so there's no live change to
-   * react to here — only ever a fresh value the NEXT time a match opens.
+   * How every head on the pitch draws — position, scale, backing circle,
+   * outline — see lib/star/faceStyle.ts and drawPlayerHead.ts. Read once on
+   * mount, same as reduced-motion above: Settings (and the Face Editor
+   * reached from it) is a separate phase this component isn't mounted
+   * during, so there's no live change to react to here — only ever a fresh
+   * value the NEXT time a match opens.
    */
-  const faceScaleRef = useRef(FACE_SCALE_DEFAULT);
-  useEffect(() => { faceScaleRef.current = loadFaceScale(); }, []);
+  const faceStyleRef = useRef(DEFAULT_FACE_STYLE);
+  useEffect(() => { faceStyleRef.current = loadFaceStyle(); }, []);
 
   // --- Canvas sizing (device-pixel-ratio aware) ---
   useEffect(() => {
@@ -1696,33 +1698,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.strokeStyle = rim;
       ctx.stroke();
 
-      // ── Head ──
-      // Scaled by faceScaleRef, not r itself — a bigger head reads as a
-      // deliberate "make faces easier to see" dial; growing the whole body
-      // with it would also grow the keeper's own footprint, which earlier
-      // work deliberately kept small so he never blocks the shot you're
-      // watching. See lib/star/faceScale.ts.
-      const headR = r * 0.26 * faceScaleRef.current;
-      const headCY = -r * 0.76;
-      ctx.beginPath();
-      ctx.arc(0, headCY, headR, 0, Math.PI * 2);
-      ctx.fillStyle = SKIN;
-      ctx.fill();
-      // A real photo, for a real player who has one on file — clipped to the
-      // exact same circle the plain fill above always draws first, so a
-      // missing or still-loading photo leaves today's plain head exactly as
-      // it always looked underneath, never a gap.
-      if (opts.face && opts.face.complete && opts.face.naturalWidth > 0) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, headCY, headR, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(opts.face, -headR, headCY - headR, headR * 2, headR * 2);
-        ctx.restore();
-      }
-      ctx.lineWidth = Math.max(1, r * 0.10);
-      ctx.strokeStyle = "rgba(0,0,0,0.35)";
-      ctx.stroke();
+      // ── Head ── See drawPlayerHead.ts — the one function that actually
+      // draws a head, both here and in the Face Editor's own live preview,
+      // so the two can never quietly draw something different from each
+      // other. Position/scale/backing/outline all come from the user's own
+      // faceStyleRef — see Settings → Player Graphics.
+      drawPlayerHead(ctx, 0, -r * 0.76, r * 0.26, r, opts.face, faceStyleRef.current);
 
       ctx.restore();
 
@@ -2050,6 +2031,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
       phase: runPhase(sc.player.x),
       star: true,
+      // Your own photo (Settings → Photo, PortraitPicker) — every OTHER
+      // figure already gets one when there's a real identity to draw from;
+      // this was the one deliberately left out of the first pass (the star
+      // marker already answers "which one is me"), and was reported
+      // directly afterward as a real gap: "for some reason my face doesnt
+      // show up." A data: URL, not an http(s) one — getFaceImage still
+      // caches and draws it exactly the same way; its onerror retry (which
+      // appends a query string) just never has anything to fire on, since a
+      // data URL either decodes immediately or not at all.
+      face: getFaceImage(careerRef.current?.player.portrait),
     });
 
     // ── Keeper ──
@@ -2184,27 +2175,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.stroke();
       }
 
-      // Head — same faceScaleRef dial as every outfielder in footballer() above.
-      const kHeadR = KR * 0.28 * faceScaleRef.current;
-      const kHeadCY = -KR * 0.70;
-      ctx.beginPath();
-      ctx.arc(0, kHeadCY, kHeadR, 0, Math.PI * 2);
-      ctx.fillStyle = SKIN;
-      ctx.fill();
-      // The real opposing keeper's own face, when castDefence found one —
-      // same clipped-photo idea as every outfielder in footballer() above.
-      const kFace = getFaceImage(kk.who?.face);
-      if (kFace && kFace.complete && kFace.naturalWidth > 0) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, kHeadCY, kHeadR, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(kFace, -kHeadR, kHeadCY - kHeadR, kHeadR * 2, kHeadR * 2);
-        ctx.restore();
-      }
-      ctx.lineWidth = Math.max(1, KR * 0.09);
-      ctx.strokeStyle = "rgba(0,0,0,0.35)";
-      ctx.stroke();
+      // Head — same drawPlayerHead as every outfielder in footballer() above,
+      // so the real opposing keeper's face (when castDefence found one) gets
+      // exactly the same style treatment. The outline's base thickness was
+      // KR*0.09 here versus footballer's r*0.10 before this was unified —
+      // a difference small enough (both round to the same 1px floor on most
+      // phone screens) that one shared formula was worth it for never having
+      // the editor's preview quietly disagree with the real keeper.
+      drawPlayerHead(ctx, 0, -KR * 0.70, KR * 0.28, KR, getFaceImage(kk.who?.face), faceStyleRef.current);
 
       ctx.restore();
     }

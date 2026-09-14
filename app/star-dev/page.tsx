@@ -67,6 +67,7 @@ import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import SettingsScreen from "@/components/star/SettingsScreen";
+import FaceEditorScreen from "@/components/star/FaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -2173,6 +2174,7 @@ export default function StarDevPage() {
         onSaveReplay={handleSaveReplay}
         onDeleteSavedReplay={handleDeleteSavedReplay}
         onRefreshPhotos={handleRefreshPhotos}
+        onOpenFaceEditor={() => setPhase("face-editor")}
         saves={listSaveSlots(scopeRef.current)}
         activeSlot={activeSlot}
         onSwitchSave={handleSwitchSave}
@@ -2180,6 +2182,9 @@ export default function StarDevPage() {
         onDeleteSave={handleDeleteSave}
       />
     );
+  }
+  if (phase === "face-editor") {
+    return <FaceEditorScreen career={career} onBack={() => setPhase("settings")} />;
   }
   if (phase === "relationship-game" && relationshipGameKind) {
     const currentValue = relationshipGameKind === "happiness"

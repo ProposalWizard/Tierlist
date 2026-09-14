@@ -7,7 +7,6 @@ import DevMoneyPanel from "./DevMoneyPanel";
 import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
-import FaceScalePanel from "./FaceScalePanel";
 import RefreshPhotosPanel from "./RefreshPhotosPanel";
 
 interface Props {
@@ -20,6 +19,7 @@ interface Props {
   onSaveReplay: (index: number, replay: GoalReplay) => void;
   onDeleteSavedReplay: (id: string) => void;
   onRefreshPhotos: () => Promise<void>;
+  onOpenFaceEditor: () => void;
   saves: SaveSlotSummary[];
   activeSlot: number;
   onSwitchSave: (slot: number) => void;
@@ -29,7 +29,7 @@ interface Props {
 
 export default function SettingsScreen({
   career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
-  onRefreshPhotos, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
+  onRefreshPhotos, onOpenFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
 }: Props) {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -57,7 +57,18 @@ export default function SettingsScreen({
           </div>
         </div>
 
-        <FaceScalePanel />
+        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Player Graphics</div>
+          <p className="mt-1 text-[11px] font-semibold text-white/90">
+            Size, position, backing circle and outline for every real face on the pitch — a full editor with a live preview, not just a slider.
+          </p>
+          <button
+            onClick={onOpenFaceEditor}
+            className="mt-2 w-full py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-[11px] font-black text-white"
+          >
+            Open Editor →
+          </button>
+        </div>
 
         <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
 
