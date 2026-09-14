@@ -11,11 +11,14 @@ import type { CareerState, StarPlayer } from "../../lib/star/types";
  * CLUB FACILITIES — PHASE 7 OF STAR_POWER_POLITICS.MD, §6.
  *
  * Every club has real, distinct facilities from the moment anything reads
- * them — generated deterministically from the club's own name, not left
- * undefined and not hand-authored per club. Majority owners can rename,
- * upgrade, and — the one real gameplay hook this phase ships — collect
- * real gate-receipt revenue into the club's own budget every season,
- * sized to a real stadium capacity.
+ * them. Rebuilt 14 Sep 2026 to read a genuine researched dataset
+ * (CLUB_DATABASE, footballClubDatabase.ts) covering every real club this
+ * game knows about, falling back to the original per-name deterministic
+ * hash only for a club genuinely outside that dataset (a freshly-merged
+ * club's brand-new name). Majority owners can rename, upgrade, and — the
+ * one real gameplay hook this phase ships — collect real gate-receipt
+ * revenue into the club's own budget every season, sized to a real stadium
+ * capacity.
  */
 
 const problems: string[] = [];
@@ -30,11 +33,10 @@ function player(): StarPlayer {
 
 function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const base = makeInitialCareer(player(), [...PREMIER_LEAGUE_CLUBS]);
-  return { ...base, money: 1_000_000, ...overrides };
+  return { ...base, money: 1_000_000_000, ...overrides };
 }
 
 const RIVAL = PREMIER_LEAGUE_CLUBS.find(c => c !== "Arsenal")!;
-const CHAMPIONSHIP_CLUB = CHAMPIONSHIP_CLUBS[0];
 
 // ── Every club has real, distinct, deterministic default facilities ──────
 {
@@ -51,10 +53,17 @@ const CHAMPIONSHIP_CLUB = CHAMPIONSHIP_CLUBS[0];
   check(a.trainingGroundTier >= 1 && a.trainingGroundTier <= 3, "training ground tier stays inside its real 1-3 range");
   check(a.youthAcademyTier >= 1 && a.youthAcademyTier <= 3, "youth academy tier stays inside its real 1-3 range");
 
-  const premierClub = facilitiesFor(career, RIVAL);
-  const championshipClub = facilitiesFor(career, CHAMPIONSHIP_CLUB);
-  check(premierClub.stadiumCapacity > championshipClub.stadiumCapacity,
-    `a real Premier League club's baseline stadium is genuinely bigger than a Championship one's (${premierClub.stadiumCapacity} vs ${championshipClub.stadiumCapacity})`);
+  // Real stadiums, not a synthetic guarantee: an individual Premier League
+  // club can genuinely have a smaller ground than an individual Championship
+  // one (AFC Bournemouth's Vitality Stadium really does hold fewer than
+  // Queens Park Rangers' Loftus Road) — checked as a real AVERAGE across
+  // each division instead, which the real data genuinely supports.
+  const avgCapacity = (clubs: readonly string[]) =>
+    clubs.reduce((sum, c) => sum + facilitiesFor(career, c).stadiumCapacity, 0) / clubs.length;
+  const premierAvg = avgCapacity(PREMIER_LEAGUE_CLUBS);
+  const championshipAvg = avgCapacity(CHAMPIONSHIP_CLUBS);
+  check(premierAvg > championshipAvg,
+    `the Premier League's real AVERAGE stadium capacity is genuinely bigger than the Championship's (${premierAvg.toFixed(0)} vs ${championshipAvg.toFixed(0)})`);
 }
 
 // ── Upgrades: majority ownership only, paid from the club's own budget ────
@@ -66,7 +75,7 @@ const CHAMPIONSHIP_CLUB = CHAMPIONSHIP_CLUBS[0];
   check(!blockedUpgrade.ok, "can't upgrade a stadium without majority ownership");
 
   career = buyStake(career, RIVAL, 60);
-  career = topUpClubBudget(career, RIVAL, 100_000);
+  career = topUpClubBudget(career, RIVAL, 200_000_000);
 
   const before = facilitiesFor(career, RIVAL);
   const beforeBudget = ownedClubState(career, RIVAL).budget;
@@ -140,7 +149,7 @@ const CHAMPIONSHIP_CLUB = CHAMPIONSHIP_CLUBS[0];
   check(credited.money === career.money, "stadium revenue never touches the PLAYER's personal money — it's a club asset");
 
   const capacity = facilitiesFor(career, RIVAL).stadiumCapacity;
-  const funded = topUpClubBudget(career, RIVAL, 100_000);
+  const funded = topUpClubBudget(career, RIVAL, 200_000_000);
   const upgraded = upgradeStadiumCapacity(funded, RIVAL);
   if (upgraded.ok) {
     // The expansion has to actually finish (real build time — see above)

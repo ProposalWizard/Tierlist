@@ -14,6 +14,7 @@ import {
 } from "./voting";
 import { tierOf, TIER_MULTIPLIER } from "./clubTier";
 import { playerMarketValue } from "./marketValue";
+import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import { formatMoney } from "./money";
 
 /**
@@ -95,68 +96,53 @@ function strengthOf(club: string, career: CareerState): number {
  * Scales the INTANGIBLE component only (brand/history/momentum) — see
  * `clubValuation`'s own note on why real squad value and cash budget are
  * separate, additive, live-tracked components now rather than folded into
- * this one constant. Originally calibrated so an elite club's intangible
- * alone landed around ★150,000; total club valuation is now genuinely
- * bigger and more variable than that everywhere a real squad is on file,
- * by design — "some big teams have squads worth almost a billion,"
- * requested directly, meaning the SQUAD should be doing real work in this
- * number, not just this one curve.
+ * this one constant.
+ *
+ * Rescaled 14 Sep 2026 alongside `marketValue.scale` — requested directly
+ * ("I want the economy like the real football world"), after research into
+ * real club valuations (Deloitte/Forbes-style figures: the biggest clubs
+ * in the €4-6bn range, a mid-table Premier League club several hundred
+ * million, a Championship club tens of millions). Deliberately kept
+ * smaller than the squad-value component it sits alongside for the
+ * biggest clubs — brand/history is real, but a real elite squad's combined
+ * player value is genuinely the bigger part of what a top club is worth,
+ * not the other way round. 140,000 lands a genuine title-calibre club's
+ * INTANGIBLE component alone around £250-300m — real, but not the whole
+ * story; the squad and budget terms below do the rest of the real work.
  */
-const VALUATION_SCALE = 65;
+const VALUATION_SCALE = 140000;
 
 /**
- * A real, sourced relative prestige premium for the handful of real clubs
- * this game's roster happens to use — the actual September 2026 ORDER of
- * value among real clubs (Real Madrid/Man United/Barcelona/Bayern/PSG at
- * the very top, Burnley/Bournemouth at the bottom), NOT their real absolute
- * pound value. This game's whole money economy runs several orders of
- * magnitude smaller than real football finance on purpose (a majority
- * stake in the very best club here costs tens of thousands, not billions —
- * see VALUATION_SCALE's own note), so plugging in literal real prices would
- * dwarf every other number in the game. Instead this compresses the real
- * ~30x gap between the richest and poorest into a much gentler 0.6x-3.0x
- * multiplier that still preserves the real relative order. The 20 English
- * clubs below are sourced the same careful way (a real "every PL club
- * ranked" list); the handful of European giants added afterward come from
- * Forbes'/CNBC's own global soccer valuations and are individually less
- * precisely sourced the further down the list they sit (Real Madrid through
- * Napoli are all confirmed from real published rankings; anything past that
- * — Roma, Sevilla, Ajax, Porto, Benfica, Galatasaray, Lyon — is a genuine
- * but lower-confidence estimate of "clearly a big, historic European name,"
- * not a specific sourced figure).
+ * A real prestige multiplier for every one of the game's 125 real clubs —
+ * rebuilt 14 Sep 2026 from the same researched spreadsheet `facilities.ts`
+ * now reads (`CLUB_DATABASE`, footballClubDatabase.ts). Replaces the
+ * earlier version, which sourced/estimated real prestige for only about 30
+ * hand-typed clubs (English clubs plus a handful of the biggest European
+ * names) and fell back to a flat, undifferentiated 1x for every other real
+ * club this game actually has — every genuine European/Other club that
+ * wasn't one of those ~30 got no real-world premium or discount at all.
  *
- * Deliberately NOT exhaustive — most of this game's roster (lower-league
- * names, and several real clubs this game's own fictional ladder places in
- * a different tier than they sit in reality) has no entry and gets no
- * override at all; the strength/tier-based estimate below already covers
- * them. This is a real, sourced starting point for the clubs it names, not
- * a claim of covering every club with real research.
+ * `currentReputation` is the dataset's own 1-10 CURRENT global-reputation
+ * figure (not the historical one — this multiplier answers "how big is
+ * this club right now," the same framing the earlier version used), mapped
+ * LINEARLY across the full 1-10 scale onto the same compressed 0.6x-3.0x
+ * band the original version used by hand. That compression is still the
+ * point, not a new decision: this game's whole money economy runs several
+ * orders of magnitude smaller than real football finance on purpose (a
+ * majority stake in the very best club here costs tens of thousands, not
+ * billions — see VALUATION_SCALE's own note above), so plugging in literal
+ * real reputation gaps would dwarf every other number in the game. A club
+ * genuinely absent from the dataset (there shouldn't be one — every real
+ * club this game knows about was cross-checked 1:1 against it before this
+ * was wired in) falls back to a neutral 1x, same as before.
  */
-const REAL_CLUB_PRESTIGE: Record<string, number> = {
-  // England — sourced from a real "every Premier League club valuation,
-  // ranked" list.
-  "Manchester United": 3.0, "Manchester City": 2.96, "Liverpool": 2.94,
-  "Arsenal": 2.77, "Tottenham Hotspur": 2.71, "Chelsea": 2.58,
-  "West Ham United": 1.6, "Newcastle United": 1.59, "Aston Villa": 1.54,
-  "Brighton & Hove Albion": 1.48, "Fulham FC": 1.41, "Everton": 1.32,
-  "Leeds United": 1.32, "Crystal Palace": 1.22, "Brentford": 1.02,
-  "Nottingham Forest": 1.02, "Sunderland": 0.97, "Wolverhampton Wanderers": 0.87,
-  "AFC Bournemouth": 0.84, "Burnley": 0.6,
-  // Europe — the biggest global names, sourced from Forbes/CNBC's own 2025-26
-  // global soccer valuations. Real Madrid/Barcelona/Bayern/PSG all clamp to
-  // the same 3.0 ceiling as Man United — at this end of world football, "who
-  // is bigger" is genuinely too close/volatile to fake precision on.
-  "Real Madrid": 3.0, "FC Barcelona": 3.0, "FC Bayern München": 3.0, "Paris Saint-Germain": 3.0,
-  "Juventus": 2.44, "Atlético Madrid": 2.04, "Borussia Dortmund": 1.97,
-  "Inter": 1.83, "AC Milan": 1.79, "Napoli": 1.43,
-  // Real, big, historic European names — genuine but lower-confidence
-  // estimates, not individually sourced figures (see this const's own note).
-  "Roma": 1.3, "Ajax": 1.25, "SL Benfica": 1.25, "FC Porto": 1.2,
-  "Sevilla FC": 1.15, "Galatasaray SK": 1.1, "Olympique Lyonnais": 1.1,
-};
+const PRESTIGE_FLOOR = 0.6;
+const PRESTIGE_CEILING = 3.0;
 
-function realPrestigeFactor(club: string): number {
-  return REAL_CLUB_PRESTIGE[club] ?? 1;
+export function realPrestigeFactor(club: string): number {
+  const rating = CLUB_DATABASE[club]?.currentReputation;
+  if (rating === undefined) return 1;
+  return PRESTIGE_FLOOR + ((rating - 1) / 9) * (PRESTIGE_CEILING - PRESTIGE_FLOOR);
 }
 
 /** The real squad this club actually has, valued the same way a transfer
@@ -217,7 +203,10 @@ export function clubValuation(club: string, career: CareerState): number {
   const budget = ownedClubState(career, club).budget;
   const prestige = realPrestigeFactor(club);
 
-  return Math.max(500, Math.round((intangible * momentum + squadValue + budget) * prestige));
+  // £5m floor — a real nominal figure for even the smallest, least
+  // fashionable club this game knows about, rescaled 14 Sep 2026 alongside
+  // everything else in this file.
+  return Math.max(5000000, Math.round((intangible * momentum + squadValue + budget) * prestige));
 }
 
 // ── Buying and selling a stake ──────────────────────────────────────────
@@ -610,13 +599,19 @@ export function resolveSellPlayerVote(
   return sale.ok ? sale : { career: next, ok: false, reason: sale.reason };
 }
 
+// Rescaled 14 Sep 2026 alongside the rest of the club-ownership economy —
+// a club's own budget now genuinely holds real money (clubValuation lands
+// real clubs in the hundreds of millions to billions), so an appointment
+// fee at the old scale (★250-8,000) would be meaninglessly cheap next to
+// it. Real, if approximate, one-off figures for the calibre of manager
+// each tier represents.
 function managerFee(name: string): number {
   const tier = managerTier(name);
-  if (tier === "dream") return 8000;
-  if (tier === 1) return 3000;
-  if (tier === 2) return 1200;
-  if (tier === 3) return 400;
-  return 250; // an unranked name — a cheap, low-profile hire
+  if (tier === "dream") return 15000000;
+  if (tier === 1) return 5000000;
+  if (tier === 2) return 1500000;
+  if (tier === 3) return 400000;
+  return 100000; // an unranked name — a cheap, low-profile hire
 }
 
 /** Appoint a manager — real data (a name, shown wherever this club's

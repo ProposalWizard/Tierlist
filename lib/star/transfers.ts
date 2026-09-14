@@ -139,15 +139,21 @@ export function generateOffers(career: CareerState, rng: () => number): Transfer
 
   return interested.map(({ team, position }) => {
     const step = team.strength - mine;
-    const wage = Math.max(1, Math.round(career.contract.wage * (1 + Math.max(0.1, step / 45)) + rep / 22));
+    // The flat reputation bumps below (`rep` is 0-100) are rescaled 14 Sep
+    // 2026 alongside the rest of the economy — they used to add at most a
+    // few whole units on top of a wage that started at ★1, which is
+    // meaningless once a wage is a real weekly figure in the thousands.
+    // Scaled by roughly the same ~2,000x the starting wage itself moved by,
+    // so reputation still buys a real, noticeable (if modest) wage premium.
+    const wage = Math.max(1, Math.round(career.contract.wage * (1 + Math.max(0.1, step / 45)) + rep * 90));
     const seasons = 2 + Math.floor(rng() * 3);
     return {
       club: team.name,
       strength: team.strength,
       position,
       wage,
-      goalBonus: Math.max(1, Math.round(career.contract.goalBonus + rep / 30)),
-      assistBonus: Math.max(1, Math.round(career.contract.assistBonus + rep / 45)),
+      goalBonus: Math.max(1, Math.round(career.contract.goalBonus + rep * 65)),
+      assistBonus: Math.max(1, Math.round(career.contract.assistBonus + rep * 45)),
       seasons,
       signingFee: Math.round(wage * seasons * (0.6 + rng() * 0.8)),
       clauses: offerClauses(career, wage, rng),

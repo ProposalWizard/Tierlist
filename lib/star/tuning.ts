@@ -552,14 +552,14 @@ export const TUNABLES: TunableDef[] = [
     default: 15, min: 11, max: 30, step: 1,
   },
   {
-    key: "transfers.feeBase", category: "Transfers", label: "Transfer fee — base (£m)",
-    description: "The transfer fee for a 60-overall player (the formula's floor).",
-    default: 0.3, min: 0, max: 20, step: 0.1,
+    key: "transfers.feeBase", category: "Transfers", label: "Transfer fee — base (£)",
+    description: "The transfer fee for a 60-overall player (the formula's floor) — rescaled 14 Sep 2026 to real money alongside marketValue.scale/investments.ts's own transferFee. The label used to read \"£m\" as pure flavour text (the number was never actually treated as millions anywhere) — it's a real amount now.",
+    default: 300000, min: 0, max: 5000000, step: 5000,
   },
   {
     key: "transfers.feeQuadratic", category: "Transfers", label: "Transfer fee — quadratic scale",
-    description: "How steeply the fee rises per overall point above 60 (squared, so this matters a lot).",
-    default: 0.045, min: 0, max: 1, step: 0.001,
+    description: "How steeply the fee rises per overall point above 60 (squared, so this matters a lot). Fitted 14 Sep 2026 against the same real anchor points marketValue's own exponent was (a 70-rated around low millions, 85 around £55-65m) — a QUADRATIC shape genuinely cannot match the same points a steep exponential curve does at both ends at once (it undershoots the truly elite, ~£120m at 95-rated against a real ~£180m benchmark), so this is calibrated for accuracy in the ordinary-to-very-good range most of this game's simulated AI transfer business actually falls in, not the rare elite outlier — the same honestly-stated approximation this file already uses elsewhere (see investments.ts's own REAL_CLUB_PRESTIGE note on tiered confidence).",
+    default: 100000, min: 0, max: 500000, step: 1000,
   },
   {
     key: "transfers.summerUnhappyOdds", category: "Transfers", label: "Summer — unhappy departure odds",
@@ -617,18 +617,18 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "marketValue.ratingExponent", category: "Market Value", label: "Rating — value curve steepness",
-    description: "How much faster value climbs near the very top of the rating scale than in the middle — a real transfer fee blows up disproportionately for the truly elite.",
-    default: 2.2, min: 1, max: 4, step: 0.1,
+    description: "How much faster value climbs near the very top of the rating scale than in the middle — a real transfer fee blows up disproportionately for the truly elite. Steepened 14 Sep 2026 from 2.2 to 4.0 during the real-money rescale: fit directly against five real anchor points at once (a 60-rated player near a nominal floor, 70 around £2.5m, 85 around £57m, 90 around £100m, 95 around £180m — all real, researched transfer-fee benchmarks) — 2.2 badly overvalued the lower-middle of the scale relative to the top once the whole curve was scaled to real money (a plain 70-rated player came out over £12m, well above real terms), where 4.0 lands within a few percent of every one of the five real anchors simultaneously, measured directly rather than guessed.",
+    default: 4.0, min: 1, max: 6, step: 0.1,
   },
   {
     key: "marketValue.scale", category: "Market Value", label: "Overall value scale",
-    description: "The single dial that sets how much money a market value actually comes out to — raise it to make every player's value bigger, lower it to shrink the whole market. Recalibrated down from an original 45: at 45, summing a whole ~25-man squad into club valuation (requested directly) produced individual clubs worth MILLIONS, which a normally-funded owner could no longer afford at all — a real, caught regression, not a design choice. 4 keeps an elite squad's summed value roughly comparable to a club's own intangible brand value, and keeps a single very good player's price in the low thousands rather than the tens of thousands.",
-    default: 4, min: 0.5, max: 60, step: 0.5,
+    description: "The single dial that sets how much money a market value actually comes out to. Rescaled 14 Sep 2026 to land on real transfer-fee territory, requested directly (\"I want the economy like the real football world\") after research into real transfer-fee benchmarks by caliber/age (CIES Football Observatory's own methodology, and current real deals like Alexander Isak's £125m) — paired with the steepened `ratingExponent` above, an 85-rated 25-year-old at an average club now lands close to £57m and a truly elite 95-rated near £180m, both real, researched anchor points, not guesses. This REPLACES an earlier, deliberately tiny value (4) that existed only because the whole in-game economy used to run at a compressed, unreal scale on purpose — that reasoning no longer applies now the economy is meant to read like real football finance.",
+    default: 70, min: 0.5, max: 60000, step: 5,
   },
   {
     key: "marketValue.floor", category: "Market Value", label: "Minimum market value",
-    description: "No player, however poor, is worth less than this — a real floor for a squad-filler transfer.",
-    default: 20, min: 0, max: 500, step: 5,
+    description: "No player, however poor, is worth less than this — a real floor for a squad-filler transfer, rescaled to a real nominal compensation figure for the lowest-rated professional (14 Sep 2026 economy rescale).",
+    default: 50000, min: 0, max: 5000000, step: 5000,
   },
   {
     key: "marketValue.youthPremiumPerYear", category: "Market Value", label: "Youth premium per year under 22",

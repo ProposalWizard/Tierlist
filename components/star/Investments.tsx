@@ -1105,8 +1105,17 @@ function SignPlayerPanel({
 }) {
   const [search, setSearch] = useState("");
   const freeAgents = (career.freeAgents ?? []).map(p => ({ ...p, fromClub: FREE_AGENTS_CLUB }));
+  // Reported directly, 14 Sep 2026, and a real bug: signing "from" the
+  // human player's own club pulled from a stale, redundant copy of that
+  // club's squad `leagueSquads` carries (fetched as part of the whole
+  // division, nothing ever excludes it) — never career.squad, the club's
+  // REAL roster. The player got added to the buying club for real but was
+  // never actually removed from his own club's real team sheet. This
+  // system was never built to touch career.squad at all, so the fix is to
+  // never offer the human's own club as a "from" option here in the first
+  // place — see transferMarket.ts's own note on the same root cause.
   const others = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
-    .filter(s => s.club !== club)
+    .filter(s => s.club !== club && s.club !== career.player.club)
     .flatMap(s => s.players.map(p => ({ ...p, fromClub: s.club })));
   const pool = [...freeAgents, ...others]
     .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))

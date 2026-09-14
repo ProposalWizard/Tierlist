@@ -61,16 +61,30 @@ function squadOf(career: CareerState, club: string): LeagueSquad | undefined {
  *  otherwise the same top-11-average approximation leagueSquads.ts's own
  *  `averageStartingXIRating` uses, read straight off that club's real
  *  fetched squad — Championship/Europa/Saudi clubs all carry one via
- *  `externalClubsFor`, so this isn't a guess for them either. */
-function clubStrengthOf(career: CareerState, club: string, squad: LeagueSquad | undefined): number {
+ *  `externalClubsFor`, so this isn't a guess for them either. `real: false`
+ *  means neither of those held and the number is a flat, uninformed guess —
+ *  see `interestedClubs`'s own note on why that specifically matters. */
+function clubStrengthOf(career: CareerState, club: string, squad: LeagueSquad | undefined): { strength: number; real: boolean } {
   const inLeague = career.league.find(t => t.name === club);
-  if (inLeague) return inLeague.strength;
+  if (inLeague) return { strength: inLeague.strength, real: true };
   if (squad && squad.players.length) {
     const xi = [...squad.players].sort((a, b) => b.overall - a.overall).slice(0, 11);
-    return Math.round(xi.reduce((s, p) => s + p.overall, 0) / xi.length);
+    return { strength: Math.round(xi.reduce((s, p) => s + p.overall, 0) / xi.length), real: true };
   }
-  return 65;
+  return { strength: 65, real: false };
 }
+
+/** A club with no real strength data on file at all shouldn't be able to
+ *  parlay a flat, uninformed guess into interest in a genuinely elite
+ *  target — reported directly, with real named examples (Ferencvárosi,
+ *  Sheffield United both showing interest in an 88-rated Chelsea starter):
+ *  neither club's squad was ever actually fetched for this career, so their
+ *  "interest" was riding entirely on the 65 fallback plus reach/potential
+ *  bonuses happening to clear the bar, not on any real evidence either club
+ *  is actually big enough to be in the conversation. A club with genuine
+ *  data (a fetched squad, or a real league strength) is judged on that
+ *  real number with no extra cap — only the blind guess gets capped. */
+const UNVERIFIED_CLUB_RATING_CAP = 75;
 
 /** Same shape as leagueTransfers.ts's own `reachDown` — a big club reaches
  *  much further down than a small one; nothing reaches far up at all. */
@@ -95,9 +109,21 @@ function slotsFor(role: Role, formationSlots: { role: Role }[]): number {
 export function interestedClubs(
   player: SellableCandidate, sellingClub: string, career: CareerState, maxResults = 5,
 ): TransferInterest[] {
+  // Your own playing club is never a real candidate here — its real roster
+  // lives in `career.squad`, a completely different place from every other
+  // club's `leagueSquads`/`externalSquads` entry. `career.leagueSquads`
+  // still carries a redundant, stale FETCHED copy of your own club too (for
+  // the league table's other nineteen clubs' squads, fetched as one whole-
+  // division batch with nothing excluding yours) — nothing else reads it,
+  // but `sellPlayerFromOwnedClub`'s buyerClub path would happily write a
+  // "purchased" player into that dead copy instead of your real squad,
+  // making him vanish from wherever he actually came from while never
+  // genuinely joining the club the game says bought him. Caught directly:
+  // signing a player away from the human's own club left him on both
+  // squads' bench at once.
   const candidateClubs = new Set<string>();
-  for (const s of career.leagueSquads ?? []) if (s.club !== sellingClub) candidateClubs.add(s.club);
-  for (const s of career.externalSquads ?? []) if (s.club !== sellingClub) candidateClubs.add(s.club);
+  for (const s of career.leagueSquads ?? []) if (s.club !== sellingClub && s.club !== career.player.club) candidateClubs.add(s.club);
+  for (const s of career.externalSquads ?? []) if (s.club !== sellingClub && s.club !== career.player.club) candidateClubs.add(s.club);
 
   const reachBonus = player.worldClassPotential
     ? getTuning("wonderkids.bigClubReachBonus") * getTuning("wonderkids.worldClassMultiplier")
@@ -106,8 +132,9 @@ export function interestedClubs(
   const results: TransferInterest[] = [];
   for (const club of Array.from(candidateClubs)) {
     const squad = squadOf(career, club);
-    const buyerStrength = clubStrengthOf(career, club, squad);
+    const { strength: buyerStrength, real: hasRealStrength } = clubStrengthOf(career, club, squad);
     const overall = player.overall ?? 65;
+    if (!hasRealStrength && overall > UNVERIFIED_CLUB_RATING_CAP) continue; // a blind guess can't justify chasing an elite target
     if (overall < buyerStrength - reachDown(buyerStrength) - reachBonus) continue; // out of their reach entirely
     if (overall > buyerStrength + REACH_UP + reachBonus) continue; // no club signs a project player hoping he grows into the shirt
 

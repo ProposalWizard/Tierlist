@@ -51,18 +51,47 @@ function randBetween(rng: () => number, min: number, max: number): number {
 }
 
 /**
+ * Reported directly, 14 Sep 2026: the counterpart's own numbers ("they
+ * offered sixteen thousand one hundred and seventy six") read as oddly
+ * precise — a real agent/buyer opens and concedes toward round, sayable
+ * numbers, not the raw output of a percentage formula. Deliberately never
+ * applied to YOUR OWN typed/preset amount — free-typing an exact number
+ * (or the negotiation screen's own presets) stays exactly what you entered.
+ * The step widens with the amount the same "clean numbers" idea
+ * `niceMoneyStep` (money.ts) already uses for the UI's own +/- stepper,
+ * just tuned finer here — a stepper button and a spoken counter-offer
+ * don't need the same granularity, and money.ts's own steps (500 below
+ * ★10k) rounded 16,166 down to 15,000, a visibly bigger jump than the
+ * ★16,000 the reported example actually expected.
+ */
+function cleanRound(amount: number): number {
+  const sign = amount < 0 ? -1 : 1;
+  const a = Math.abs(amount);
+  const step = a < 5_000 ? 100
+    : a < 50_000 ? 500
+    : a < 500_000 ? 5_000
+    : a < 5_000_000 ? 50_000
+    : a < 50_000_000 ? 500_000
+    : 5_000_000;
+  return sign * Math.max(step, Math.round(a / step) * step);
+}
+
+/**
  * Open the negotiation. A seller (buying mode's counterpart) always anchors
  * above market value; a buyer (selling mode's counterpart) always anchors
  * under it — real opening positions are never "fair," that's what the
  * rounds are for.
  */
 export function startNegotiation(marketValue: number, mode: NegotiationMode, rng: () => number): NegotiationState {
-  const theirPosition = mode === "buying"
-    ? Math.round(marketValue * (1 + randBetween(rng, getTuning("negotiation.sellerAnchorMin"), getTuning("negotiation.sellerAnchorMax"))))
-    : Math.round(marketValue * (1 - randBetween(rng, getTuning("negotiation.buyerAnchorMin"), getTuning("negotiation.buyerAnchorMax"))));
-  const yourPosition = mode === "buying"
-    ? Math.round(marketValue * (1 - randBetween(rng, getTuning("negotiation.buyerAnchorMin"), getTuning("negotiation.buyerAnchorMax"))))
-    : Math.round(marketValue * (1 + randBetween(rng, getTuning("negotiation.sellerAnchorMin"), getTuning("negotiation.sellerAnchorMax"))));
+  const theirPosition = cleanRound(mode === "buying"
+    ? marketValue * (1 + randBetween(rng, getTuning("negotiation.sellerAnchorMin"), getTuning("negotiation.sellerAnchorMax")))
+    : marketValue * (1 - randBetween(rng, getTuning("negotiation.buyerAnchorMin"), getTuning("negotiation.buyerAnchorMax"))));
+  // Only the SUGGESTED starting point, not a real position of yours until
+  // you actually submit it — cleaned the same way for the same reason, but
+  // free-typing over it afterward is completely untouched by any of this.
+  const yourPosition = cleanRound(mode === "buying"
+    ? marketValue * (1 - randBetween(rng, getTuning("negotiation.buyerAnchorMin"), getTuning("negotiation.buyerAnchorMax")))
+    : marketValue * (1 + randBetween(rng, getTuning("negotiation.sellerAnchorMin"), getTuning("negotiation.sellerAnchorMax"))));
   return {
     marketValue, mode, round: 0, yourPosition, theirPosition,
     moodScore: 60, status: "negotiating",
@@ -90,12 +119,24 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
 
   // You've met or beaten their current position outright — deal closes at
   // WHICHEVER number is more favourable to you (their position, since you
-  // didn't need to go all the way to your own offer to get there).
+  // didn't need to go all the way to your own offer to get there). Reported
+  // directly as confusing — offering ★32,000 against their ★16,166 ask and
+  // seeing the deal close at ★16,000 read as the game ignoring the offer,
+  // when it's actually the opposite: you never had to go that high, so it
+  // didn't charge you that high. The extra log line spells that out
+  // explicitly whenever your own number and the final price genuinely
+  // differ — silent the rest of the time (a close, unremarkable match
+  // doesn't need it explained).
   if (meets(mode, yourNewPosition, state.theirPosition)) {
     const finalPrice = state.theirPosition;
     log.push(mode === "buying"
       ? `Deal — they accept ★${finalPrice.toLocaleString()}.`
-      : `Deal — the buyer accepts your ★${finalPrice.toLocaleString()} asking price at ★${finalPrice.toLocaleString()}.`);
+      : `Deal — the buyer's own ★${finalPrice.toLocaleString()} offer already covers your asking price.`);
+    if (finalPrice !== yourNewPosition) {
+      log.push(mode === "buying"
+        ? `You offered ★${yourNewPosition.toLocaleString()}, but that was more than they needed — you only actually pay ★${finalPrice.toLocaleString()}.`
+        : `You asked ★${yourNewPosition.toLocaleString()}, but the buyer was already offering more than that — you get their real ★${finalPrice.toLocaleString()}, not your lower ask.`);
+    }
     return { ...state, yourPosition: yourNewPosition, status: "accepted", finalPrice, log };
   }
 
@@ -124,9 +165,9 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
 
   const moodMultiplier = Math.max(0.4, Math.min(1.6, moodScore / 60));
   const concession = gap * getTuning("negotiation.concessionRate") * moodMultiplier;
-  const theirPosition = mode === "buying"
-    ? Math.round(state.theirPosition - concession)
-    : Math.round(state.theirPosition + concession);
+  const theirPosition = cleanRound(mode === "buying"
+    ? state.theirPosition - concession
+    : state.theirPosition + concession);
 
   const round = state.round + 1;
   log.push(mode === "buying"
@@ -137,7 +178,7 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
     const finalGap = Math.abs(theirPosition - yourNewPosition);
     const finalRelativeGap = finalGap / Math.max(1, theirPosition);
     if (finalRelativeGap <= getTuning("negotiation.acceptTolerance") * 2) {
-      const finalPrice = Math.round((theirPosition + yourNewPosition) / 2);
+      const finalPrice = cleanRound((theirPosition + yourNewPosition) / 2);
       log.push(`Final round — you split the difference at ★${finalPrice.toLocaleString()}.`);
       return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, status: "accepted", finalPrice, log };
     }

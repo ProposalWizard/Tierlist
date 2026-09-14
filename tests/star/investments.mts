@@ -53,7 +53,7 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const league = base.league.map(t => ({ ...t, strength: 75 }));
   return {
     ...base,
-    money: 1_000_000,
+    money: 2_000_000_000,
     league,
     leagueSquads: PREMIER_LEAGUE_CLUBS.filter(c => c !== base.player.club).map(c => squadFor(c, 75)),
     freeAgents: [
@@ -90,7 +90,7 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   const clWinner = clubValuation(RIVAL, { ...career, lastSeasonWinners: { championsLeague: RIVAL } });
   check(clWinner > asChampion, `winning the Champions League is worth even more than winning the domestic league (${clWinner} vs ${asChampion})`);
 
-  check(clubValuation(RIVAL, career) >= 500, "valuation never collapses to zero or negative");
+  check(clubValuation(RIVAL, career) >= 5_000_000, "valuation never collapses below its real-money floor");
 }
 
 // ── buyStake / sellStake: honest arithmetic ────────────────────────────────
@@ -174,7 +174,7 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
 {
   let career = freshCareer();
   career = buyStake(career, RIVAL, 60);
-  career = topUpClubBudget(career, RIVAL, 500);
+  career = topUpClubBudget(career, RIVAL, 5_000_000);
   const before = ownedClubState(career, RIVAL).budget;
   const result = signPlayerForOwnedClub(career, RIVAL, "fa1", FREE_AGENTS_CLUB);
   check(result.ok, "signing a free agent succeeds once majority owner");
@@ -188,7 +188,7 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
 {
   let career = freshCareer();
   career = buyStake(career, RIVAL, 60);
-  career = topUpClubBudget(career, RIVAL, 100000);
+  career = topUpClubBudget(career, RIVAL, 50_000_000);
   const targetId = `${RIVAL2}:0`;
   const targetOverall = squadFor(RIVAL2, 75).players[0].overall;
   const before = ownedClubState(career, RIVAL).budget;
@@ -256,7 +256,7 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
 {
   let career = freshCareer();
   career = buyStake(career, RIVAL, 60);
-  career = topUpClubBudget(career, RIVAL, 10000);
+  career = topUpClubBudget(career, RIVAL, 50_000_000);
   const tooExpensive = replaceManagerForOwnedClub({ ...career, ownedClubs: { [RIVAL]: { budget: 1 } } }, RIVAL, "Pep Guardiola");
   check(!tooExpensive.ok, "appointing a manager the club can't afford fails");
 

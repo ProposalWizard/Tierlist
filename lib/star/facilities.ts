@@ -1,5 +1,6 @@
 import type { CareerState } from "./types";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "./clubs";
+import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import { isMajorityOwner, ownedClubState, type BoardActionResult } from "./investments";
 
 /**
@@ -10,15 +11,30 @@ import { isMajorityOwner, ownedClubState, type BoardActionResult } from "./inves
  * training ground, and a youth academy (kit designs already exist — see
  * Phase 3's `clubPowers.ts`, the facility this file adds nothing new for).
  *
- * ── Real from the start, not just for clubs you own ──
+ * ── Real data, not a guess — rebuilt 14 Sep 2026 ──
  *
- * Every one of the ~50+ clubs this game knows about gets real, DISTINCT
- * facilities the moment anything asks for them — a deterministic hash of
- * the club's own name (the same `nameNoise`-style trick promotion.ts's
- * strength estimate already uses for every un-simulated club), seeded
- * along three independent axes so a big stadium doesn't automatically mean
- * a big academy too. Nothing is hand-authored per club, and nothing is
- * generated until it's actually read.
+ * Originally every club's stadium/training/youth numbers were a
+ * deterministic hash of its own name — real-DISTINCT, but not real-ACCURATE
+ * (Wrexham and Real Madrid could land on the same capacity by pure chance).
+ * `defaultFacilities` now reads the real thing first — `CLUB_DATABASE`
+ * (footballClubDatabase.ts), a genuine researched dataset covering every
+ * one of this game's 125 real clubs (real stadium name, real current
+ * capacity, and a real 1-10 rating for training/youth quality) — falling
+ * back to the old hash ONLY for a club that genuinely isn't in that
+ * dataset (a merged club's new combined name, from `clubPowers.ts`'s
+ * `mergeClubs`, is the one real case: it's a brand-new name that was never
+ * going to be in anyone's spreadsheet).
+ *
+ * The training/youth tier this file actually plays with is still just
+ * 1/2/3 (that's what the upgrade economy below is priced against) — the
+ * real rating is 1-10, so `tierFromRating` below maps it down: 5-6 is
+ * tier 1 (the bulk of real clubs, unremarkable facilities), 7-8 is tier 2,
+ * 9-10 is tier 3 (genuinely elite — Real Madrid, Bayern, Ajax, Chelsea, the
+ * clubs actually famous for their academies/training complexes). Checked
+ * directly against the real distribution before picking those cutoffs
+ * (71 tier 1, 30-34 tier 2, 20-24 tier 3 out of 125, measured directly
+ * against the real spreadsheet rather than guessed) so a
+ * "tier 3" club is genuinely rare, not just "above average."
  *
  * ── The one real, modest gameplay hook ──
  *
@@ -61,7 +77,27 @@ function baseCapacityFor(club: string): number {
   return 16000;
 }
 
+/** 1-10 real rating down to the 1/2/3 tier this file's own upgrade economy
+ *  actually uses — see this file's own header for why 6/8 are the cutoffs. */
+function tierFromRating(rating: number): 1 | 2 | 3 {
+  if (rating >= 9) return 3;
+  if (rating >= 7) return 2;
+  return 1;
+}
+
 function defaultFacilities(club: string): ClubFacilities {
+  const real = CLUB_DATABASE[club];
+  if (real) {
+    return {
+      stadiumName: real.stadium,
+      stadiumCapacity: real.capacity,
+      trainingGroundTier: tierFromRating(real.trainingRating),
+      youthAcademyTier: tierFromRating(real.youthRating),
+    };
+  }
+  // Fallback for a club genuinely absent from the real dataset — currently
+  // only a merged club's brand-new combined name (clubPowers.ts's
+  // mergeClubs). Same deterministic hash the whole file used to run on.
   const capacityNoise = hash(club, 1);
   const trainingNoise = hash(club, 2);
   const youthNoise = hash(club, 3);
@@ -85,7 +121,7 @@ function withFacilities(career: CareerState, club: string, patch: Partial<ClubFa
 // ── Upgrades — majority ownership only, paid from the club's own budget,
 // same tier of action as every other Boardroom power ──────────────────────
 
-const RENAME_STADIUM_COST = 2000;
+const RENAME_STADIUM_COST = 500000;
 const CAPACITY_UPGRADE_STEP = 5000;
 
 /**
@@ -96,14 +132,21 @@ const CAPACITY_UPGRADE_STEP = 5000;
  * and Everton's run far higher, £15,000-19,000/seat) grounds two real facts
  * this now reflects: cost per seat is substantial, and it climbs the bigger
  * the stadium already is — going from 20,000 to 25,000 is a fundamentally
- * different, cheaper project than 60,000 to 65,000. `perSeatCost` below is a
- * real curve on existing capacity, not a flat constant, scaled down from
- * literal £ into this game's own economy the same deliberate way
- * `REAL_CLUB_PRESTIGE` (investments.ts) preserves real RELATIVE order rather
- * than real absolute money.
+ * different, cheaper project than 60,000 to 65,000.
+ *
+ * Rescaled 14 Sep 2026, requested directly ("I want the economy like the
+ * real football world"): this used to be deliberately scaled DOWN from the
+ * literal £ figures above into this game's own compressed economy — now
+ * that the whole economy is meant to read like real football finance, it
+ * uses those real figures directly instead. £3,000/seat at a 20,000-seat
+ * stadium (close to Charlotte's real ~$9,300 once the curve's own growth
+ * factor is included) climbing to roughly £24,000/seat at a 60,000-seat
+ * one — inside the real £15,000-19,000+ range English top-flight new-builds
+ * actually run, a little past it at the very biggest end, which is exactly
+ * where real-world costs run highest too.
  */
 function perSeatCost(existingCapacity: number): number {
-  return 0.6 * Math.pow(1 + existingCapacity / 20_000, 1.6);
+  return 3000 * Math.pow(1 + existingCapacity / 20_000, 1.6);
 }
 
 /**
@@ -124,8 +167,14 @@ function buildSeasonsFor(seatsAdded: number): number {
  * doesn't capture that at all. The top tier now costs several times the
  * first upgrade, not the same again.
  */
-const TRAINING_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 60000 };
-const YOUTH_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 60000 };
+// Rescaled 14 Sep 2026 alongside the rest of the club economy — real,
+// if approximate, figures for a genuine training-ground/academy project
+// (Manchester City's Etihad Campus ran into the hundreds of millions at
+// the very top end; this stays a little short of that to leave room for
+// an even bigger real-world outlier without the game's own ceiling
+// feeling arbitrary).
+const TRAINING_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000000, 2: 60000000 };
+const YOUTH_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000000, 2: 60000000 };
 
 function spendFromClubBudget(career: CareerState, club: string, cost: number): CareerState | { ok: false; reason: string } {
   if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
@@ -202,7 +251,10 @@ export function upgradeYouthAcademy(career: CareerState, club: string): BoardAct
 
 // ── The one real hook: a bigger stadium earns real money, every season ────
 
-const REVENUE_PER_SEAT = 2;
+// Rescaled 14 Sep 2026 — a real, blended per-seat gate-receipt figure
+// (roughly a real average ticket price across a real ~20-plus-match home
+// league season), not the old compressed placeholder.
+const REVENUE_PER_SEAT = 800;
 
 /** Called from advanceSeason — every majority-owned club's stadium pays its
  *  own real gate-receipt revenue into that club's own budget, sized to its

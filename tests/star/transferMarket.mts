@@ -141,6 +141,39 @@ function baseCareer(): CareerState {
   }
 }
 
+// ── A club with no real strength data can't chase an elite target ───────
+//
+// Reported directly, with real named examples: Ferencvárosi and Sheffield
+// United both showed interest in an 88-rated Chelsea starter, neither
+// club's squad ever actually fetched for that career — their "interest"
+// rode entirely on the flat 65-strength guess plus reach bonuses happening
+// to clear the bar, not on any real evidence either club belongs in that
+// conversation.
+{
+  const unverified: LeagueSquad = { club: "Ferencvárosi Torna Club", players: [] }; // known to exist, never fetched
+  const career: CareerState = { ...baseCareer(), leagueSquads: [unverified] };
+  const elite = squadPlayer(88, "ST", { age: 27 });
+  const interest = interestedClubs(elite, "Chelsea", career);
+  check(interest.length === 0, `a club with no real strength data on file shows no interest in an 88-rated player (${interest.map(i => i.club).join(", ")})`);
+
+  // The same club is a real, legitimate buyer for an ordinary player —
+  // this isn't "unverified clubs never buy anything," only "can't reach
+  // for an elite target on a blind guess."
+  const ordinary = squadPlayer(65, "ST", { age: 27 });
+  const ordinaryInterest = interestedClubs(ordinary, "Chelsea", career);
+  check(ordinaryInterest.some(i => i.club === "Ferencvárosi Torna Club"),
+    `…but the same club is a real candidate for a plain, ordinary-level player (${ordinaryInterest.map(i => i.club).join(", ")})`);
+
+  // A club with a REAL fetched squad showing the exact same strength is
+  // judged on that real number, uncapped — the cap only bites the blind
+  // guess, never real data.
+  const verified: LeagueSquad = evenSquad("Verified FC", 65);
+  const careerWithReal: CareerState = { ...baseCareer(), leagueSquads: [verified] };
+  const realStrengthInterest = interestedClubs(elite, "Chelsea", careerWithReal);
+  check(realStrengthInterest.length === 0,
+    `a real (not guessed) 65-strength club still genuinely can't reach an 88-rated player either — the cap didn't need to fire for this to already be true (${realStrengthInterest.map(i => i.club).join(", ")})`);
+}
+
 // ── Sorted by expected offer, capped at maxResults ───────────────────────
 {
   const clubs: LeagueSquad[] = Array.from({ length: 8 }, (_, i) => squadMissing(`Club ${i}`, 65 + i, "ST"));

@@ -4,6 +4,7 @@ import { FORMATIONS, formationOf, autoPick, type Formation, type Pickable, type 
 import { shortNameOf } from "./realSquad";
 import { loadLineup } from "./lineupStore";
 import { displayOverall } from "./rating";
+import { incumbencyRecordsFor } from "./incumbency";
 
 /**
  * THE TEAM SHEET.
@@ -60,30 +61,11 @@ export interface Matchday {
 
 // ── The shape a club plays ──────────────────────────────────────────────────
 
-/**
- * A club's formation, which is theirs and does not change every week.
- *
- * Seeded off the club's name alone, so Everton line up the same way in every
- * career and in every season of one — a side whose shape is redrawn each match
- * is not a side, it is a dice roll. Drawn from the handful of shapes a real
- * Premier League club actually uses rather than from all thirty, most of which
- * exist for the squad builder to offer rather than for anybody to play.
- */
-const COMMON_SHAPES = ["433", "4231", "442", "352", "4321", "4141", "3421"];
-
-export function formationForClub(club: string): Formation {
-  let h = 2166136261;
-  for (let i = 0; i < club.length; i++) {
-    h ^= club.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  const rng = mulberry32(h >>> 0);
-  rng(); rng();
-  const id = COMMON_SHAPES[Math.floor(rng() * COMMON_SHAPES.length)];
-  // A shape the catalogue does not have falls back to 4-3-3 rather than to
-  // nothing — see formationOf.
-  return formationOf(FORMATIONS.some(f => f.id === id) ? id : "433");
-}
+// Moved to clubFormation.ts so incumbency.ts can read it without cycling
+// back through this file — re-exported here so every existing importer of
+// `formationForClub` FROM "./teamsheet" keeps working unchanged.
+import { formationForClub } from "./clubFormation";
+export { formationForClub } from "./clubFormation";
 
 // ── Building a side ─────────────────────────────────────────────────────────
 
@@ -405,6 +387,28 @@ function build(
       }));
   }
 
+  // A final, unconditional safety net — reported directly: a club that had
+  // just sold two starters showed a real vacancy filled in the XI (fillGaps
+  // correctly promoted a replacement) but dropped to 7 substitutes instead
+  // of 9, despite genuinely having enough reserves left to fill both spots.
+  // Whatever upstream path is responsible for a shortfall, this always tops
+  // the bench back up to 9 from whoever in the real pool isn't already on
+  // the pitch or the bench — the same real reserves the club actually has,
+  // never inventing a player, only ever adding real, unused, non-empty
+  // slack that already exists on the books.
+  if (bench.length < 9) {
+    const onBenchAlready = new Set(bench.map(p => p.id));
+    const extra = pool
+      .filter(p => !started.has(p.id) && !onBenchAlready.has(p.id))
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
+      .slice(0, 9 - bench.length)
+      .map(p => ({
+        id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
+        overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
+      }));
+    bench = [...bench, ...extra];
+  }
+
   return { club, formation, xi, bench, yours };
 }
 
@@ -619,6 +623,34 @@ export function matchdayFor(
   const oppSavedXI: SavedXI | undefined = oppSaved && oppSaved.xi.some(Boolean)
     ? { formation: formationOf(oppSaved.formation), xi: oppSaved.xi }
     : undefined;
+  // A demoted incumbent (incumbency.ts) gets a real recall for a cup tie
+  // specifically — "he gets to play in some cup games" was given directly
+  // as the one real exception a lost starting job still allows. Only ever
+  // touches a club with an actual SAVED lineup: a club with nothing saved
+  // is already auto-picked fresh by `autoPick` every time regardless of
+  // who currently holds the job, so there's no frozen lineup here to
+  // override in the first place — see incumbency.ts's own header on why
+  // that split exists. Idempotent either way: it only swaps a pair that's
+  // still sitting where the LAST swap (or none at all) left it.
+  let effectiveOppSaved = oppSaved;
+  let effectiveOppSavedXI = oppSavedXI;
+  if (oppSaved && oppSavedXI) {
+    const rivalries = incumbencyRecordsFor(career, theirs).filter(r => r.previousStarterId);
+    if (rivalries.length > 0) {
+      const forCup = fixture.kind === "cup";
+      const xi = [...oppSavedXI.xi];
+      const bench = [...(oppSaved.bench ?? [])];
+      for (const r of rivalries) {
+        const preferId = forCup ? r.previousStarterId! : r.starterId;
+        const otherId = forCup ? r.starterId : r.previousStarterId!;
+        const xiIdx = xi.findIndex(id => id === otherId);
+        const benchIdx = bench.findIndex(id => id === preferId);
+        if (xiIdx >= 0 && benchIdx >= 0) { xi[xiIdx] = preferId; bench[benchIdx] = otherId; }
+      }
+      effectiveOppSaved = { ...oppSaved, bench };
+      effectiveOppSavedXI = { ...oppSavedXI, xi };
+    }
+  }
   // Only an opponent with nothing saved for them rotates — your own side is
   // either what you saved or your club's honest best XI, never something
   // the game changes on you.
@@ -644,7 +676,7 @@ export function matchdayFor(
   if (oppPool.length < formationForClub(theirs).slots.length) {
     oppPool = withFullRosterFallback(oppPool, fromLeagueSquad({ club: theirs, players: career.freeAgents ?? [] }));
   }
-  const them = build(theirs, oppPool, false, oppSaved?.bench, oppSavedXI, rotation);
+  const them = build(theirs, oppPool, false, effectiveOppSaved?.bench, effectiveOppSavedXI, rotation);
 
   return fixture.home
     ? { home: ours, away: them, fixture }

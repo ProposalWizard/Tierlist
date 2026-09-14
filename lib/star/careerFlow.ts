@@ -43,6 +43,7 @@ import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./le
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
+import { advanceIncumbencyWeek } from "./incumbency";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
 } from "./potm";
@@ -114,7 +115,14 @@ export function makeInitialCareer(
     // starting point `fans: 40` already sets. Club reputation starts higher,
     // matching the fresh-signing optimism `boss`/`team` already open with.
     reputation: { world: 15, club: 50, government: 5, shareholders: 5 },
-    contract: { club: player.club, wage: 1, goalBonus: 1, assistBonus: 1, seasonsRemaining: 3 },
+    // Rescaled 14 Sep 2026 alongside player/club market value — a real,
+    // modest weekly-wage-equivalent for an unproven trialist (a genuine
+    // real-world fringe-pro figure), rather than the deliberately tiny
+    // placeholder (★1) the old, deliberately-compressed economy used.
+    // Everything grows from here via the existing contract-offer/relegation-
+    // offer formulas (transfers.ts/relegationOffers.ts), themselves rescaled
+    // alongside this.
+    contract: { club: player.club, wage: 2000, goalBonus: 200, assistBonus: 150, seasonsRemaining: 3 },
     season: 1,
     division,
     week: 1,
@@ -122,7 +130,9 @@ export function makeInitialCareer(
     energy: 100,
     injury: null,
     happiness: 60,
-    money: 3,
+    // Rescaled 14 Sep 2026 alongside the contract above — a modest, real
+    // starting balance for a young pro just turning professional.
+    money: 5000,
     // Overwritten just below, once the object actually exists — see
     // computeStarRating's own note. A placeholder here only so every
     // required CareerState field is present in this one literal.
@@ -355,6 +365,7 @@ export function creditMatchResult(
   // screen can show the round rather than only the table it produced.
   let weekResults = career.results ?? [];
   let leagueSquads = career.leagueSquads;
+  let incumbents = career.incumbents;
   // …and the round itself is skipped outright on a replay — see
   // `alreadyPlayed` at the top of this function.
   if (kind === "league" && !alreadyPlayed) {
@@ -400,6 +411,13 @@ export function creditMatchResult(
     leagueSquads = squads;
     // Replaying a week replaces it rather than doubling it.
     weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];
+
+    // Grace/challenge for every real rivalry across the division, this
+    // week's real results/tallies just settled above — see incumbency.ts's
+    // own header for the full rule.
+    const withIncumbency = advanceIncumbencyWeek({ ...career, leagueSquads, incumbents }, round.results);
+    leagueSquads = withIncumbency.leagueSquads;
+    incumbents = withIncumbency.incumbents;
   }
 
   const fixtures = career.fixtures.map((f) =>
@@ -719,6 +737,7 @@ export function creditMatchResult(
     results: weekResults,
     leagueSquads,
     externalSquads,
+    incumbents,
     fixtures: [...fixtures, ...extraFixtures],
     // Match-day money: the wage and bonuses the result produced, an appearance
     // fee if the deal has one, and anything a sponsor objective just paid out.
@@ -1167,6 +1186,14 @@ export function advanceSeason(
       career.externalSquads ?? [], mulberry32(career.season * 71923 + 7),
       club => facilitiesFor(career, club).trainingGroundTier,
     ),
+    // A fresh season — a rivalry's grace tracking is keyed off cumulative
+    // SEASON goals+assists (incumbency.ts's own `lastGoalsPlusAssists`),
+    // which `resetLeagueSquads` above just zeroed for everyone. Carrying an
+    // old record forward would read every real goal next season as "no
+    // improvement since a much bigger old total," never registering a real
+    // pass again. Genuine rivalries just re-establish themselves fresh from
+    // week one, the same as a brand-new signing would.
+    incumbents: undefined,
     seasonStats: { ...EMPTY_SEASON_STATS },
     matchFitness: 85,
     // A summer off resets both — nobody carries a knock or a tired pair of
