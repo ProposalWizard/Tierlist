@@ -15,6 +15,7 @@ import { playerMarketValue } from "@/lib/star/marketValue";
 import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
 import { formatMoney, niceMoneyStep } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
+import type { NegotiationState } from "@/lib/star/negotiation";
 
 /**
  * INVESTMENTS — BUY A STAKE, AND, PAST 50.1%, RUN THE BOARDROOM.
@@ -596,12 +597,19 @@ function Boardroom({
   // 2026: selling used to just remove a player with nowhere to go. Clicking
   // Sell now opens this instead of going straight to a negotiation:
   // transferMarket.ts's real reach/need scoring decides who's genuinely
-  // interested and what they'd expect to pay. A club that walks away during
-  // negotiation (finalPrice === null) is dropped from this same list rather
-  // than ended outright — the interest was real, that specific offer wasn't.
+  // interested and what they'd expect to pay. A club that genuinely rejects
+  // or walks away (a real negotiation failure, not a pause) is dropped from
+  // this same list rather than ended outright — the interest was real,
+  // that specific attempt wasn't.
   const [interestList, setInterestList] = useState<
     { playerId: string; playerName: string; interests: TransferInterest[] } | null
   >(null);
+  // Requested directly, 14 Sep 2026: "you should be able to go back" mid-
+  // negotiation to check other clubs, then return to the SAME one later and
+  // see their real current position, not the original expected offer.
+  // Keyed by club — a full NegotiationScreen state, not just a number, so
+  // resuming restores the exact log/mood/round it was stepped away at.
+  const [savedNegotiations, setSavedNegotiations] = useState<Record<string, NegotiationState>>({});
 
   if (pendingSale) {
     return (
@@ -630,24 +638,35 @@ function Boardroom({
   }
 
   if (negotiating) {
+    const savedState = negotiating.kind === "sell" ? savedNegotiations[negotiating.buyerClub] : undefined;
     return (
       <NegotiationScreen
         mode={negotiating.kind === "sign" ? "buying" : "selling"}
         playerName={negotiating.playerName}
         counterpartLabel={negotiating.kind === "sell" ? negotiating.buyerClub : undefined}
         marketValue={negotiating.marketValue}
+        initialState={savedState}
+        onStepAway={negotiating.kind === "sell" ? state => {
+          const deal = negotiating;
+          setSavedNegotiations(s => ({ ...s, [deal.buyerClub]: state }));
+          setNegotiating(null);
+        } : undefined}
         onDone={finalPrice => {
           const deal = negotiating;
           setNegotiating(null);
           if (finalPrice === null) {
             setMessage("Talks broke down — no deal was made.");
             if (deal.kind === "sell") {
+              // A real rejection/walkout, not a step-away — this club is
+              // genuinely done, not just paused.
+              setSavedNegotiations(s => { const { [deal.buyerClub]: _, ...rest } = s; return rest; });
               setInterestList(list => list && { ...list, interests: list.interests.filter(i => i.club !== deal.buyerClub) });
             }
             return;
           }
           if (deal.kind === "sign") { runAction(onSignPlayer(club, deal.playerId, deal.fromClub, finalPrice)); return; }
           setInterestList(null);
+          setSavedNegotiations({});
           setPendingSale({ playerId: deal.playerId, playerName: deal.playerName, fee: finalPrice, buyerClub: deal.buyerClub });
         }}
       />
@@ -657,7 +676,7 @@ function Boardroom({
   if (interestList) {
     return (
       <div>
-        <button onClick={() => setInterestList(null)} className="mb-2 text-xs font-black text-white/90 hover:text-white">← Back</button>
+        <button onClick={() => { setInterestList(null); setSavedNegotiations({}); }} className="mb-2 text-xs font-black text-white/90 hover:text-white">← Back</button>
         <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/80">Selling</div>
           <div className="font-black text-white">{interestList.playerName}</div>
@@ -666,25 +685,31 @@ function Boardroom({
           <div className="text-center text-xs font-bold text-white/70 py-6">No club is genuinely interested right now.</div>
         )}
         <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-          {interestList.interests.map(i => (
-            <div key={i.club} className="flex items-center justify-between px-3 py-2.5 border-b border-black/20 last:border-b-0">
-              <div>
-                <div className="text-sm font-bold text-white">{i.club}</div>
-                <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">
-                  Wants him as a {i.roleIntent} · ★{money(i.expectedOffer)} expected offer
+          {interestList.interests.map(i => {
+            const inTalks = savedNegotiations[i.club];
+            return (
+              <div key={i.club} className="flex items-center justify-between px-3 py-2.5 border-b border-black/20 last:border-b-0">
+                <div>
+                  <div className="text-sm font-bold text-white">{i.club}</div>
+                  <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">
+                    Wants him as a {i.roleIntent} ·{" "}
+                    {inTalks
+                      ? `★${money(inTalks.theirPosition)} current offer`
+                      : `★${money(i.expectedOffer)} expected offer`}
+                  </div>
                 </div>
+                <button
+                  onClick={() => setNegotiating({
+                    kind: "sell", playerId: interestList.playerId, playerName: interestList.playerName,
+                    buyerClub: i.club, marketValue: i.expectedOffer,
+                  })}
+                  className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-[10px] font-black"
+                >
+                  {inTalks ? "Resume" : "Negotiate"}
+                </button>
               </div>
-              <button
-                onClick={() => setNegotiating({
-                  kind: "sell", playerId: interestList.playerId, playerName: interestList.playerName,
-                  buyerClub: i.club, marketValue: i.expectedOffer,
-                })}
-                className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-[10px] font-black"
-              >
-                Negotiate
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -795,7 +820,7 @@ function Boardroom({
                 <div className="text-[10px] text-white font-semibold">{p.position} · OVR {p.overall}</div>
               </div>
               <button
-                onClick={() => setInterestList({ playerId: p.id, playerName: p.name, interests: interestedClubs(p, club, career) })}
+                onClick={() => { setSavedNegotiations({}); setInterestList({ playerId: p.id, playerName: p.name, interests: interestedClubs(p, club, career) }); }}
                 className="px-2.5 py-1 rounded-md bg-red-600/80 hover:bg-red-500 text-[10px] font-black"
               >
                 Sell

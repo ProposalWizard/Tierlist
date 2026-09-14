@@ -9,6 +9,7 @@ import { detectLeagueWeek } from "./detect/league";
 import { detectWonderkidHype } from "./detect/wonderkids";
 import { mulberry32 } from "../season";
 import { getTuning } from "../tuningStore";
+import { formatMoney } from "../money";
 import { headlineEvent, scoreCareerEvents, scoreMatchEvents } from "./importance";
 import { absorbEvents, absorbMatch, coolThreads, emptyMemory, markSaid } from "./memory";
 import { buildRoster, selfAccount } from "./accounts";
@@ -113,6 +114,49 @@ export function generateForCareer(career: CareerState, moment: CareerRecord["mom
   const { memory, events } = absorbEvents(cooled, scored, { season: career.season, week: career.week });
 
   return commit(career, state, null, events, memory, id, clockAt(career.season, career.week, 0));
+}
+
+/**
+ * A boardroom sale — a player sold out of a club YOU OWN, not one you play
+ * for — is a real transfer just like any other, requested directly, 14 Sep
+ * 2026: "these are transfers just like any other... there should be news
+ * for them." `detectCareer`'s own TRANSFER detector is keyed entirely to
+ * `CareerRecord.you` (the human player's own move — see career.ts), so it
+ * can't answer for a third party moving between two OTHER clubs; this
+ * builds the same shape of event directly instead of routing through it.
+ *
+ * Deliberately only the two GENERIC events (farewell/unveiling — both club
+ * accounts, and their own fans reacting to them) — no "transfer-done"
+ * insider/fan post, which `detect/career.ts`'s own version keys to
+ * `subject.kind: "you"` (a fan's relationship with a player joining or
+ * leaving THEIR OWN club specifically). A boardroom sale of someone else's
+ * squad player is real transfer news, but it isn't about you personally the
+ * way your own move is — the two selling/buying club accounts and their
+ * fans are exactly who would actually post about it.
+ */
+export function generateForBoardroomSale(
+  career: CareerState, sellingClub: string, buyerClub: string, playerName: string, fee: number, key: string,
+): MediaState {
+  const state = mediaOf(career);
+  const id = `s${career.season}-w${career.week}-${key}`;
+  if (state.lastCycleId === id || alreadySeen(state, id)) return state;
+
+  const sellerFacts: Facts = {
+    player: playerName, short: surname(playerName), from: sellingClub, to: buyerClub,
+    feeText: `£${formatMoney(fee)}`, club: sellingClub, season: career.season, week: career.week,
+  };
+  const buyerFacts: Facts = { ...sellerFacts, club: buyerClub };
+
+  const events: FootballEvent[] = [
+    { id: "farewell", subject: { kind: "club", name: sellingClub }, baseImportance: 62, tags: ["transfer"], facts: sellerFacts, window: "hour" },
+    { id: "unveiling", subject: { kind: "club", name: buyerClub }, baseImportance: 74, tags: ["transfer"], facts: buyerFacts, window: "hour" },
+  ];
+
+  const cooled = coolThreads(state.memory);
+  const scored = scoreCareerEvents(events, cooled, career.fame);
+  const { memory, events: absorbed } = absorbEvents(cooled, scored, { season: career.season, week: career.week });
+
+  return commit(career, state, null, absorbed, memory, id, clockAt(career.season, career.week, 0));
 }
 
 /**

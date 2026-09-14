@@ -31,7 +31,7 @@ const FACE_RING: Record<CounterpartMood, string> = {
 };
 
 export default function NegotiationScreen({
-  mode, playerName, marketValue, counterpartLabel, onDone,
+  mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone,
 }: {
   mode: NegotiationMode;
   playerName: string;
@@ -42,10 +42,23 @@ export default function NegotiationScreen({
    *  Requested directly, 14 Sep 2026: negotiating no longer means haggling
    *  with a nameless buyer. */
   counterpartLabel?: string;
+  /** Resume a negotiation stepped away from earlier (see `onStepAway`)
+   *  instead of opening a fresh one — the exact state as it was left,
+   *  including the log and their current position. */
+  initialState?: NegotiationState;
+  /** Requested directly, 14 Sep 2026: "you should be able to go back" to
+   *  check other interested clubs mid-negotiation without losing this one —
+   *  only offered while a real deal is still live (`state.status ===
+   *  "negotiating"`); an actual rejection or walkout is a real, final
+   *  failure, not a pause, and has no step-away option. Absent means this
+   *  screen has nowhere to save state to (e.g. signing, which has no
+   *  "other candidates" list to step back to) — the button simply isn't
+   *  shown. */
+  onStepAway?: (state: NegotiationState) => void;
   /** `null` on the caller's side means "no deal" (rejected or walked away). */
   onDone: (finalPrice: number | null) => void;
 }) {
-  const [state, setState] = useState<NegotiationState>(() => startNegotiation(marketValue, mode, Math.random));
+  const [state, setState] = useState<NegotiationState>(() => initialState ?? startNegotiation(marketValue, mode, Math.random));
   const [amount, setAmount] = useState(() => state.yourPosition);
   const holdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -180,6 +193,14 @@ export default function NegotiationScreen({
             >
               {mode === "buying" ? "Make Offer" : "Set Asking Price"}
             </button>
+            {onStepAway && (
+              <button
+                onClick={() => onStepAway(state)}
+                className="w-full mt-2 py-2 rounded-lg font-bold text-xs text-white/80 hover:text-white bg-gray-800 hover:bg-gray-700"
+              >
+                Step Away (check other interested clubs)
+              </button>
+            )}
           </>
         )}
 

@@ -24,7 +24,7 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForCareer, generateForLeagueWeek, hasFreshMedia } from "@/lib/star/media/feed";
+import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
@@ -84,7 +84,7 @@ import Investments from "@/components/star/Investments";
 import OwnershipScreen from "@/components/star/OwnershipScreen";
 import {
   buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
-  proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, type SellPlayerVoteProposal,
+  proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, findSquadEntry, type SellPlayerVoteProposal,
 } from "@/lib/star/investments";
 import { OVERRULE_REPUTATION_COST } from "@/lib/star/voting";
 import VoteCeremony from "@/components/star/VoteCeremony";
@@ -1261,9 +1261,20 @@ export default function StarDevPage() {
   // wants to gauge fan reaction (and can still overrule a bad result).
   const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string, agreedFee?: number, buyerClub?: string) => {
     if (!career) return { ok: false, reason: "No active career" };
+    // Looked up BEFORE the sale — the player is gone from this squad the
+    // moment sellPlayerFromOwnedClub returns. Requested directly, 14 Sep
+    // 2026: "these are transfers just like any other... there should be
+    // news for them" — a boardroom sale to a real, named buyer is now real
+    // transfer news, the same farewell/unveiling posts any other move gets.
+    const playerName = findSquadEntry(career, club)?.squad.players.find(p => p.id === playerId)?.name;
     const result = sellPlayerFromOwnedClub(career, club, playerId, agreedFee, buyerClub);
-    if (result.ok) setCareer(result.career);
-    return { ok: result.ok, reason: result.reason };
+    if (!result.ok) return { ok: false, reason: result.reason };
+    let next = result.career;
+    if (buyerClub && agreedFee !== undefined && playerName) {
+      next = { ...next, media: generateForBoardroomSale(next, club, buyerClub, playerName, agreedFee, `boardroom-sale-${playerId}`) };
+    }
+    setCareer(next);
+    return { ok: true };
   }, [career]);
   const handleProposeSellPlayerVote = useCallback((club: string, playerId: string, agreedFee?: number, buyerClub?: string) => {
     if (!career) return { ok: false, reason: "No active career" };
@@ -1313,7 +1324,14 @@ export default function StarDevPage() {
       : pendingVote.kind === "president" ? resolvePresidentVote(career, pendingVote.proposal, overrule)
       : pendingVote.kind === "bodyPresidency" ? resolveBodyPresidencyVote(career, pendingVote.proposal, overrule)
       : resolveRuleChangeVote(career, pendingVote.proposal, overrule);
-    setCareer(result.career);
+    let nextCareer = result.career;
+    // Same real transfer news as the direct-sell path — a sale that went
+    // through a vote (or an overrule) is exactly as real a transfer.
+    if (pendingVote.kind === "sellPlayer" && result.ok && pendingVote.proposal.buyerClub) {
+      const { club, buyerClub, playerName, fee, playerId } = pendingVote.proposal;
+      nextCareer = { ...nextCareer, media: generateForBoardroomSale(nextCareer, club, buyerClub, playerName, fee, `boardroom-sale-${playerId}`) };
+    }
+    setCareer(nextCareer);
     const backTo = (pendingVote.kind === "ruleChange" || pendingVote.kind === "bodyPresidency") ? "rule-book" : "investments";
     setPendingVote(null);
     setPhase(backTo);

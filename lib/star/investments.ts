@@ -4,6 +4,7 @@ import {
   OTHER_CLUBS, CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS,
 } from "./clubs";
 import { poolFor } from "./euro";
+import { transferWindowOpen, divisionOf as careerDivisionOf } from "./calendar";
 import { getTuning } from "./tuningStore";
 import { FREE_AGENTS_CLUB } from "./leagueSquads";
 import { managerTier } from "./managerPool";
@@ -236,6 +237,17 @@ export function stakeIn(career: CareerState, club: string): ClubStake | undefine
   return (career.investments ?? []).find(i => i.club === club);
 }
 
+/** Requested directly, 14 Sep 2026: "you should only be able to transfer
+ *  players during transfer windows, and you already know when you're
+ *  transferring" — the exact same real calendar boundary (summer/January)
+ *  `calendar.ts`'s `transferWindowOpen` already governs the AI-vs-AI
+ *  transfer window and the competition-betting cutoff with. A boardroom
+ *  sign/sell is a real transfer, not a special boardroom-only exception to
+ *  the calendar. */
+function isTransferWindowOpen(career: CareerState): boolean {
+  return transferWindowOpen(career.player.startYear, career.season, career.week, careerDivisionOf(career));
+}
+
 export function isMajorityOwner(career: CareerState, club: string): boolean {
   return (stakeIn(career, club)?.percent ?? 0) >= MAJORITY_THRESHOLD;
 }
@@ -420,6 +432,7 @@ export function signPlayerForOwnedClub(
   agreedFee?: number,
 ): BoardActionResult {
   if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
+  if (!isTransferWindowOpen(career)) return { career, ok: false, reason: "Transfers only happen during a transfer window" };
   const budget = ownedClubState(career, club).budget;
 
   let player: LeaguePlayer | undefined;
@@ -472,6 +485,7 @@ export function sellPlayerFromOwnedClub(
   buyerClub?: string,
 ): BoardActionResult {
   if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
+  if (!isTransferWindowOpen(career)) return { career, ok: false, reason: "Transfers only happen during a transfer window" };
   const entry = findSquadEntry(career, club);
   const squad = entry?.squad;
   const idx = squad?.players.findIndex(p => p.id === playerId) ?? -1;
@@ -542,6 +556,7 @@ export function proposeSellPlayerVote(
   buyerClub?: string,
 ): { ok: true; proposal: SellPlayerVoteProposal } | { ok: false; reason: string } {
   if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
+  if (!isTransferWindowOpen(career)) return { ok: false, reason: "Transfers only happen during a transfer window" };
   const entry = findSquadEntry(career, club);
   const squad = entry?.squad;
   const idx = squad?.players.findIndex(p => p.id === playerId) ?? -1;
