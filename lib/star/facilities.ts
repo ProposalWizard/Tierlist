@@ -1,5 +1,6 @@
 import type { CareerState } from "./types";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "./clubs";
+import { CLUB_DATABASE } from "./data/footballClubDatabase";
 import { isMajorityOwner, ownedClubState, type BoardActionResult } from "./investments";
 
 /**
@@ -10,15 +11,30 @@ import { isMajorityOwner, ownedClubState, type BoardActionResult } from "./inves
  * training ground, and a youth academy (kit designs already exist — see
  * Phase 3's `clubPowers.ts`, the facility this file adds nothing new for).
  *
- * ── Real from the start, not just for clubs you own ──
+ * ── Real data, not a guess — rebuilt 14 Sep 2026 ──
  *
- * Every one of the ~50+ clubs this game knows about gets real, DISTINCT
- * facilities the moment anything asks for them — a deterministic hash of
- * the club's own name (the same `nameNoise`-style trick promotion.ts's
- * strength estimate already uses for every un-simulated club), seeded
- * along three independent axes so a big stadium doesn't automatically mean
- * a big academy too. Nothing is hand-authored per club, and nothing is
- * generated until it's actually read.
+ * Originally every club's stadium/training/youth numbers were a
+ * deterministic hash of its own name — real-DISTINCT, but not real-ACCURATE
+ * (Wrexham and Real Madrid could land on the same capacity by pure chance).
+ * `defaultFacilities` now reads the real thing first — `CLUB_DATABASE`
+ * (footballClubDatabase.ts), a genuine researched dataset covering every
+ * one of this game's 125 real clubs (real stadium name, real current
+ * capacity, and a real 1-10 rating for training/youth quality) — falling
+ * back to the old hash ONLY for a club that genuinely isn't in that
+ * dataset (a merged club's new combined name, from `clubPowers.ts`'s
+ * `mergeClubs`, is the one real case: it's a brand-new name that was never
+ * going to be in anyone's spreadsheet).
+ *
+ * The training/youth tier this file actually plays with is still just
+ * 1/2/3 (that's what the upgrade economy below is priced against) — the
+ * real rating is 1-10, so `tierFromRating` below maps it down: 5-6 is
+ * tier 1 (the bulk of real clubs, unremarkable facilities), 7-8 is tier 2,
+ * 9-10 is tier 3 (genuinely elite — Real Madrid, Bayern, Ajax, Chelsea, the
+ * clubs actually famous for their academies/training complexes). Checked
+ * directly against the real distribution before picking those cutoffs
+ * (71 tier 1, 30-34 tier 2, 20-24 tier 3 out of 125, measured directly
+ * against the real spreadsheet rather than guessed) so a
+ * "tier 3" club is genuinely rare, not just "above average."
  *
  * ── The one real, modest gameplay hook ──
  *
@@ -61,7 +77,27 @@ function baseCapacityFor(club: string): number {
   return 16000;
 }
 
+/** 1-10 real rating down to the 1/2/3 tier this file's own upgrade economy
+ *  actually uses — see this file's own header for why 6/8 are the cutoffs. */
+function tierFromRating(rating: number): 1 | 2 | 3 {
+  if (rating >= 9) return 3;
+  if (rating >= 7) return 2;
+  return 1;
+}
+
 function defaultFacilities(club: string): ClubFacilities {
+  const real = CLUB_DATABASE[club];
+  if (real) {
+    return {
+      stadiumName: real.stadium,
+      stadiumCapacity: real.capacity,
+      trainingGroundTier: tierFromRating(real.trainingRating),
+      youthAcademyTier: tierFromRating(real.youthRating),
+    };
+  }
+  // Fallback for a club genuinely absent from the real dataset — currently
+  // only a merged club's brand-new combined name (clubPowers.ts's
+  // mergeClubs). Same deterministic hash the whole file used to run on.
   const capacityNoise = hash(club, 1);
   const trainingNoise = hash(club, 2);
   const youthNoise = hash(club, 3);

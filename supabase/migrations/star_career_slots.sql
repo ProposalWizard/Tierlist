@@ -41,6 +41,14 @@ END $$;
 -- not assumed from Postgres's usual auto-naming, so this still works even
 -- if it was renamed by hand at some point. Without this step, no account
 -- could ever have a second row at all, whatever slot it claimed to be.
+--
+-- The ::name[] cast on the literal below is load-bearing, not decoration:
+-- `attname` is Postgres's internal `name` type, so `array_agg(attname...)`
+-- produces a `name[]` — compared bare against `ARRAY['user_id']` (which
+-- defaults to `text[]`), Postgres has no `=` operator between those two
+-- array types and the whole migration fails with "operator does not
+-- exist: name[] = text[]" before it ever gets to drop anything. Caught by
+-- actually running it, not guessed.
 DO $$
 DECLARE
   con record;
@@ -55,7 +63,7 @@ BEGIN
         SELECT array_agg(attname ORDER BY attname)
         FROM pg_attribute
         WHERE attrelid = pc.conrelid AND attnum = ANY(pc.conkey)
-      ) = ARRAY['user_id']
+      ) = ARRAY['user_id']::name[]
   LOOP
     EXECUTE format('ALTER TABLE star_careers DROP CONSTRAINT %I', con.conname);
   END LOOP;
