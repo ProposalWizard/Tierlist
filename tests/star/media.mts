@@ -1,5 +1,5 @@
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
-import { generateForMatch, generateForCareer, feedFor, mediaOf, hasFreshMedia } from "../../lib/star/media/feed";
+import { generateForMatch, generateForCareer, generateForBoardroomSale, feedFor, mediaOf, hasFreshMedia } from "../../lib/star/media/feed";
 import { templateCount } from "../../lib/star/media/templates";
 import { MATCH_DETECTORS, CAREER_DETECTORS, detectMatch, detectCareer } from "../../lib/star/media/detect";
 import { buildMatchRecord } from "../../lib/star/media/record";
@@ -272,6 +272,25 @@ function season(seed: number, weeks = 20): CareerState {
   c = { ...c, media: generateForCareer(c, { kind: "manager-out", name: "Bob Sharp", incoming: "Rui Faria", reason: "Five without a win." }, "m1") };
   const sacked = mediaOf(c).posts.some(p => /sack|leaves|axed/i.test(p.text));
   check(sacked, "and a sacking is reported as one");
+}
+
+// ── A boardroom sale is real transfer news too ──────────────────────────────
+//
+// Requested directly, 14 Sep 2026: "these are transfers just like any
+// other... there should be news for them" — a player sold out of a club
+// you OWN (not one you play for) used to generate nothing at all.
+{
+  let c = season(83, 8);
+  const before = mediaOf(c).posts.length;
+  c = { ...c, media: generateForBoardroomSale(c, "Chelsea", "Sevilla FC", "Some Reserve", 3341, "board-sale-1") };
+  const after = mediaOf(c).posts.length;
+  check(after > before, `a boardroom sale produces a real cycle (+${after - before})`);
+  const posts = mediaOf(c).posts.slice(before);
+  check(posts.some(p => /Some Reserve/.test(p.text)), "…and the actual sold player is named in it");
+  check(posts.some(p => /Sevilla/.test(p.text)), "…the real buying club is named too, not a generic 'a club'");
+  // Same cycle-id replay guard every other career moment gets.
+  const replay = generateForBoardroomSale(c, "Chelsea", "Sevilla FC", "Some Reserve", 3341, "board-sale-1");
+  check(mediaOf({ ...c, media: replay }).posts.length === after, "the exact same sale never posts twice");
 }
 
 // ── The news cycle has a shape ──────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import type { CareerDetector, CareerRecord, Facts, FootballEvent, Subject } from "../types";
+import { formatMoney } from "../../money";
 
 /**
  * Everything that happens away from a Saturday.
@@ -36,13 +37,13 @@ const TRANSFER: CareerDetector = (r) => {
   const m = r.moment;
   return [
     make("transfer-done", { kind: "you", name: r.you.name }, 96, ["transfer", "rumour"], {
-      ...base(r), from: m.from, to: m.to, fee: m.fee, feeText: `£${m.fee}m`,
+      ...base(r), from: m.from, to: m.to, fee: m.fee, feeText: `£${formatMoney(m.fee)}`,
     }, "instant", `transfer:${m.to}`),
     make("farewell", { kind: "club", name: m.from }, 62, ["transfer"], {
       ...base(r), from: m.from, to: m.to,
     }, "hour"),
     make("unveiling", { kind: "club", name: m.to }, 74, ["transfer"], {
-      ...base(r), from: m.from, to: m.to, feeText: `£${m.fee}m`,
+      ...base(r), from: m.from, to: m.to, feeText: `£${formatMoney(m.fee)}`,
     }, "hour"),
   ];
 };

@@ -20,14 +20,14 @@ import { fixtureDateLabel, divisionOf, leagueNameFor, type CareerDivision } from
 import { sortLeague } from "@/lib/star/season";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { matchdayFor } from "@/lib/star/teamsheet";
-import { loadLineup, fetchSharedLineups } from "@/lib/star/lineupStore";
-import { formationOf, type Role } from "@/lib/star/formations";
+import { loadLineup, saveLineup, fetchSharedLineups } from "@/lib/star/lineupStore";
+import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForCareer, generateForLeagueWeek, hasFreshMedia } from "@/lib/star/media/feed";
+import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad } from "@/lib/star/realSquad";
@@ -87,7 +87,7 @@ import Investments from "@/components/star/Investments";
 import OwnershipScreen from "@/components/star/OwnershipScreen";
 import {
   buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
-  proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, type SellPlayerVoteProposal,
+  proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, findSquadEntry, type SellPlayerVoteProposal,
 } from "@/lib/star/investments";
 import { OVERRULE_REPUTATION_COST } from "@/lib/star/voting";
 import VoteCeremony from "@/components/star/VoteCeremony";
@@ -385,6 +385,18 @@ export default function StarDevPage() {
   const handleBackToDashboard = useCallback(() => {
     setActiveNav("home");
     setPhase("dashboard");
+  }, []);
+
+  // Reputation, the Rule Book, and Investments (see the "ownership" phase
+  // below) are only ever reached FROM the Ownership hub now — Reputation/
+  // Rule Book/Invest stopped being their own separate dashboard buttons when
+  // Ownership consolidated them into one. Reported directly: their own back
+  // button dropped all the way to the dashboard instead of returning to
+  // Ownership, "the same thing if you were to click the home button" —
+  // wired to `handleBackToDashboard` because it existed already, not because
+  // dashboard is genuinely where any of them were opened from.
+  const handleBackToOwnership = useCallback(() => {
+    setPhase("ownership");
   }, []);
 
   // Back out of a Life-opened screen (shop, sponsors, contract…) onto the
@@ -1387,14 +1399,36 @@ export default function StarDevPage() {
     if (result.ok) setCareer(result.career);
     return { ok: result.ok, reason: result.reason };
   }, [career]);
-  // Phase 2 of STAR_POWER_POLITICS.md's proof-of-concept: selling a player
-  // from an owned club no longer acts instantly — it's put to a real
-  // shareholder vote (voting.ts/investments.ts's proposeSellPlayerVote),
-  // and the ceremony screen (below) decides what actually happens.
-  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string, agreedFee?: number) => {
+  // Reported directly, 14 Sep 2026: a majority (in this report, 100%)
+  // shareholder shouldn't be FORCED through a vote to sell their own
+  // player — the mandatory vote (Phase 2 of STAR_POWER_POLITICS.md's
+  // proof-of-concept) made sense as a demonstration of the voting engine,
+  // but in practice it's just a click-through obstacle for someone who
+  // already owns the club outright. The sale now goes through directly;
+  // `handleProposeSellPlayerVote` below is the OPTIONAL version, offered
+  // as its own button on the confirmation screen for anyone who actually
+  // wants to gauge fan reaction (and can still overrule a bad result).
+  const handleSellPlayerFromOwnedClub = useCallback((club: string, playerId: string, agreedFee?: number, buyerClub?: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    // Looked up BEFORE the sale — the player is gone from this squad the
+    // moment sellPlayerFromOwnedClub returns. Requested directly, 14 Sep
+    // 2026: "these are transfers just like any other... there should be
+    // news for them" — a boardroom sale to a real, named buyer is now real
+    // transfer news, the same farewell/unveiling posts any other move gets.
+    const playerName = findSquadEntry(career, club)?.squad.players.find(p => p.id === playerId)?.name;
+    const result = sellPlayerFromOwnedClub(career, club, playerId, agreedFee, buyerClub);
+    if (!result.ok) return { ok: false, reason: result.reason };
+    let next = result.career;
+    if (buyerClub && agreedFee !== undefined && playerName) {
+      next = { ...next, media: generateForBoardroomSale(next, club, buyerClub, playerName, agreedFee, `boardroom-sale-${playerId}`) };
+    }
+    setCareer(next);
+    return { ok: true };
+  }, [career]);
+  const handleProposeSellPlayerVote = useCallback((club: string, playerId: string, agreedFee?: number, buyerClub?: string) => {
     if (!career) return { ok: false, reason: "No active career" };
     const rng = mulberry32(career.season * 91721 + career.week * 131 + playerId.length);
-    const result = proposeSellPlayerVote(career, club, playerId, rng, agreedFee);
+    const result = proposeSellPlayerVote(career, club, playerId, rng, agreedFee, buyerClub);
     if (!result.ok) return { ok: false, reason: result.reason };
     setPendingVote({ kind: "sellPlayer", proposal: result.proposal });
     setInvestmentsEntry({ tab: "boardroom", club, section: "squad" });
@@ -1439,7 +1473,14 @@ export default function StarDevPage() {
       : pendingVote.kind === "president" ? resolvePresidentVote(career, pendingVote.proposal, overrule)
       : pendingVote.kind === "bodyPresidency" ? resolveBodyPresidencyVote(career, pendingVote.proposal, overrule)
       : resolveRuleChangeVote(career, pendingVote.proposal, overrule);
-    setCareer(result.career);
+    let nextCareer = result.career;
+    // Same real transfer news as the direct-sell path — a sale that went
+    // through a vote (or an overrule) is exactly as real a transfer.
+    if (pendingVote.kind === "sellPlayer" && result.ok && pendingVote.proposal.buyerClub) {
+      const { club, buyerClub, playerName, fee, playerId } = pendingVote.proposal;
+      nextCareer = { ...nextCareer, media: generateForBoardroomSale(nextCareer, club, buyerClub, playerName, fee, `boardroom-sale-${playerId}`) };
+    }
+    setCareer(nextCareer);
     const backTo = (pendingVote.kind === "ruleChange" || pendingVote.kind === "bodyPresidency") ? "rule-book" : "investments";
     setPendingVote(null);
     setPhase(backTo);
@@ -1457,7 +1498,24 @@ export default function StarDevPage() {
   const handleReplaceManagerForOwnedClub = useCallback((club: string, managerName: string) => {
     if (!career) return { ok: false, reason: "No active career" };
     const result = replaceManagerForOwnedClub(career, club, managerName);
-    if (result.ok) setCareer(result.career);
+    if (result.ok) {
+      setCareer(result.career);
+      // The Boardroom's own ownedClubs.managerName is a separate, fictional
+      // record — real reads (team sheets, VersusScreen, this very Boardroom
+      // header) all prefer the REAL saved lineup's manager first (see
+      // Investments.tsx's ManagerPanel and 13 Sep 2026's "Manager showing
+      // Vacant" fix), which an appointment never touched. Reported directly:
+      // appointing a new manager took the fee but the name on screen stayed
+      // whoever it was before. Writing the real name into the saved lineup
+      // here is what actually makes the appointment visible everywhere.
+      const existing = loadLineup(club);
+      saveLineup(club, {
+        formation: existing?.formation ?? DEFAULT_FORMATION,
+        xi: existing?.xi ?? Array(11).fill(null),
+        bench: existing?.bench,
+        manager: managerName,
+      });
+    }
     return { ok: result.ok, reason: result.reason };
   }, [career]);
 
@@ -1998,12 +2056,13 @@ export default function StarDevPage() {
         initialTab={investmentsEntry?.tab}
         initialBoardroomClub={investmentsEntry?.club}
         initialBoardroomSection={investmentsEntry?.section}
-        onBack={() => { setInvestmentsEntry(null); handleBackToDashboard(); }}
+        onBack={() => { setInvestmentsEntry(null); handleBackToOwnership(); }}
         onBuyStake={handleBuyStake}
         onSellStake={handleSellStake}
         onTopUpBudget={handleTopUpClubBudget}
         onSignPlayer={handleSignPlayerForOwnedClub}
         onSellPlayer={handleSellPlayerFromOwnedClub}
+        onProposeSellVote={handleProposeSellPlayerVote}
         onReplaceManager={handleReplaceManagerForOwnedClub}
         onRecommend={handleSubmitRecommendation}
         onSetFormation={handleSetClubFormation}
@@ -2027,7 +2086,7 @@ export default function StarDevPage() {
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
-  if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToDashboard} />;
+  if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToOwnership} />;
 
   if (phase === "ownership") {
     return (
@@ -2045,7 +2104,7 @@ export default function StarDevPage() {
   if (phase === "rule-book") {
     return (
       <RuleBookScreen
-        career={career} onBack={handleBackToDashboard}
+        career={career} onBack={handleBackToOwnership}
         onInvest={handleInvestInfluence} onProposeChange={handleProposeRuleChange}
         onForceClubIntoPremierLeague={handleForceClubIntoPremierLeague}
         onCreateCompetition={handleCreateCompetition}

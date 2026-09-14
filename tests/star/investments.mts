@@ -230,6 +230,28 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   check(blockedAt > 0, `selling is eventually blocked before the squad is emptied out (stopped at ${blockedAt} players)`);
 }
 
+// ── Governance: selling a player to a REAL named buyer club ─────────────
+//
+// Requested directly, 14 Sep 2026: a sold player used to just vanish — no
+// destination, unsignable anywhere, no real transfer news possible. The
+// optional buyerClub parameter is what transferMarket.ts's interested-clubs
+// list actually drives once a specific buyer's negotiated — this checks the
+// player genuinely lands in THAT club's real squad, not just gone from his own.
+{
+  let career = freshCareer();
+  career = buyStake(career, RIVAL, 60);
+  const sellerBefore = (career.leagueSquads ?? []).find(s => s.club === RIVAL)!.players.length;
+  const buyerBefore = (career.leagueSquads ?? []).find(s => s.club === RIVAL2)?.players.length ?? 0;
+  const result = sellPlayerFromOwnedClub(career, RIVAL, `${RIVAL}:0`, 5000, RIVAL2);
+  check(result.ok, `selling to a named real buyer succeeds (${result.reason ?? ""})`);
+  const sellerAfter = (result.career.leagueSquads ?? []).find(s => s.club === RIVAL)!.players.length;
+  const buyerSquad = (result.career.leagueSquads ?? []).find(s => s.club === RIVAL2);
+  check(sellerAfter === sellerBefore - 1, "the selling club's squad genuinely shrinks by one");
+  check(buyerSquad?.players.length === buyerBefore + 1, "…and the buying club's squad genuinely grows by one");
+  check(!!buyerSquad?.players.some(p => p.id === `${RIVAL}:0`), "…the SAME player, not a generic new one — he's really there");
+  check(ownedClubState(result.career, RIVAL).budget > ownedClubState(career, RIVAL).budget, "…and the selling club is still paid the real fee");
+}
+
 // ── Governance: appointing a manager — real cost, real record ────────────
 {
   let career = freshCareer();
