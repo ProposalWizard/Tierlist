@@ -96,14 +96,21 @@ function strengthOf(club: string, career: CareerState): number {
  * Scales the INTANGIBLE component only (brand/history/momentum) — see
  * `clubValuation`'s own note on why real squad value and cash budget are
  * separate, additive, live-tracked components now rather than folded into
- * this one constant. Originally calibrated so an elite club's intangible
- * alone landed around ★150,000; total club valuation is now genuinely
- * bigger and more variable than that everywhere a real squad is on file,
- * by design — "some big teams have squads worth almost a billion,"
- * requested directly, meaning the SQUAD should be doing real work in this
- * number, not just this one curve.
+ * this one constant.
+ *
+ * Rescaled 14 Sep 2026 alongside `marketValue.scale` — requested directly
+ * ("I want the economy like the real football world"), after research into
+ * real club valuations (Deloitte/Forbes-style figures: the biggest clubs
+ * in the €4-6bn range, a mid-table Premier League club several hundred
+ * million, a Championship club tens of millions). Deliberately kept
+ * smaller than the squad-value component it sits alongside for the
+ * biggest clubs — brand/history is real, but a real elite squad's combined
+ * player value is genuinely the bigger part of what a top club is worth,
+ * not the other way round. 140,000 lands a genuine title-calibre club's
+ * INTANGIBLE component alone around £250-300m — real, but not the whole
+ * story; the squad and budget terms below do the rest of the real work.
  */
-const VALUATION_SCALE = 65;
+const VALUATION_SCALE = 140000;
 
 /**
  * A real prestige multiplier for every one of the game's 125 real clubs —
@@ -196,7 +203,10 @@ export function clubValuation(club: string, career: CareerState): number {
   const budget = ownedClubState(career, club).budget;
   const prestige = realPrestigeFactor(club);
 
-  return Math.max(500, Math.round((intangible * momentum + squadValue + budget) * prestige));
+  // £5m floor — a real nominal figure for even the smallest, least
+  // fashionable club this game knows about, rescaled 14 Sep 2026 alongside
+  // everything else in this file.
+  return Math.max(5000000, Math.round((intangible * momentum + squadValue + budget) * prestige));
 }
 
 // ── Buying and selling a stake ──────────────────────────────────────────
@@ -589,13 +599,19 @@ export function resolveSellPlayerVote(
   return sale.ok ? sale : { career: next, ok: false, reason: sale.reason };
 }
 
+// Rescaled 14 Sep 2026 alongside the rest of the club-ownership economy —
+// a club's own budget now genuinely holds real money (clubValuation lands
+// real clubs in the hundreds of millions to billions), so an appointment
+// fee at the old scale (★250-8,000) would be meaninglessly cheap next to
+// it. Real, if approximate, one-off figures for the calibre of manager
+// each tier represents.
 function managerFee(name: string): number {
   const tier = managerTier(name);
-  if (tier === "dream") return 8000;
-  if (tier === 1) return 3000;
-  if (tier === 2) return 1200;
-  if (tier === 3) return 400;
-  return 250; // an unranked name — a cheap, low-profile hire
+  if (tier === "dream") return 15000000;
+  if (tier === 1) return 5000000;
+  if (tier === 2) return 1500000;
+  if (tier === 3) return 400000;
+  return 100000; // an unranked name — a cheap, low-profile hire
 }
 
 /** Appoint a manager — real data (a name, shown wherever this club's

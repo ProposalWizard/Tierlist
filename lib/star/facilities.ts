@@ -121,7 +121,7 @@ function withFacilities(career: CareerState, club: string, patch: Partial<ClubFa
 // ── Upgrades — majority ownership only, paid from the club's own budget,
 // same tier of action as every other Boardroom power ──────────────────────
 
-const RENAME_STADIUM_COST = 2000;
+const RENAME_STADIUM_COST = 500000;
 const CAPACITY_UPGRADE_STEP = 5000;
 
 /**
@@ -132,14 +132,21 @@ const CAPACITY_UPGRADE_STEP = 5000;
  * and Everton's run far higher, £15,000-19,000/seat) grounds two real facts
  * this now reflects: cost per seat is substantial, and it climbs the bigger
  * the stadium already is — going from 20,000 to 25,000 is a fundamentally
- * different, cheaper project than 60,000 to 65,000. `perSeatCost` below is a
- * real curve on existing capacity, not a flat constant, scaled down from
- * literal £ into this game's own economy the same deliberate way
- * `REAL_CLUB_PRESTIGE` (investments.ts) preserves real RELATIVE order rather
- * than real absolute money.
+ * different, cheaper project than 60,000 to 65,000.
+ *
+ * Rescaled 14 Sep 2026, requested directly ("I want the economy like the
+ * real football world"): this used to be deliberately scaled DOWN from the
+ * literal £ figures above into this game's own compressed economy — now
+ * that the whole economy is meant to read like real football finance, it
+ * uses those real figures directly instead. £3,000/seat at a 20,000-seat
+ * stadium (close to Charlotte's real ~$9,300 once the curve's own growth
+ * factor is included) climbing to roughly £24,000/seat at a 60,000-seat
+ * one — inside the real £15,000-19,000+ range English top-flight new-builds
+ * actually run, a little past it at the very biggest end, which is exactly
+ * where real-world costs run highest too.
  */
 function perSeatCost(existingCapacity: number): number {
-  return 0.6 * Math.pow(1 + existingCapacity / 20_000, 1.6);
+  return 3000 * Math.pow(1 + existingCapacity / 20_000, 1.6);
 }
 
 /**
@@ -160,8 +167,14 @@ function buildSeasonsFor(seatsAdded: number): number {
  * doesn't capture that at all. The top tier now costs several times the
  * first upgrade, not the same again.
  */
-const TRAINING_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 60000 };
-const YOUTH_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000, 2: 60000 };
+// Rescaled 14 Sep 2026 alongside the rest of the club economy — real,
+// if approximate, figures for a genuine training-ground/academy project
+// (Manchester City's Etihad Campus ran into the hundreds of millions at
+// the very top end; this stays a little short of that to leave room for
+// an even bigger real-world outlier without the game's own ceiling
+// feeling arbitrary).
+const TRAINING_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000000, 2: 60000000 };
+const YOUTH_UPGRADE_COST: Record<1 | 2, number> = { 1: 8000000, 2: 60000000 };
 
 function spendFromClubBudget(career: CareerState, club: string, cost: number): CareerState | { ok: false; reason: string } {
   if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
@@ -238,7 +251,10 @@ export function upgradeYouthAcademy(career: CareerState, club: string): BoardAct
 
 // ── The one real hook: a bigger stadium earns real money, every season ────
 
-const REVENUE_PER_SEAT = 2;
+// Rescaled 14 Sep 2026 — a real, blended per-seat gate-receipt figure
+// (roughly a real average ticket price across a real ~20-plus-match home
+// league season), not the old compressed placeholder.
+const REVENUE_PER_SEAT = 800;
 
 /** Called from advanceSeason — every majority-owned club's stadium pays its
  *  own real gate-receipt revenue into that club's own budget, sized to its

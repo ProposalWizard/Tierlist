@@ -33,7 +33,7 @@ function player(): StarPlayer {
 
 function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const base = makeInitialCareer(player(), [...PREMIER_LEAGUE_CLUBS]);
-  return { ...base, money: 1_000_000, ...overrides };
+  return { ...base, money: 1_000_000_000, ...overrides };
 }
 
 const RIVAL = PREMIER_LEAGUE_CLUBS.find(c => c !== "Arsenal")!;
@@ -75,7 +75,7 @@ const RIVAL = PREMIER_LEAGUE_CLUBS.find(c => c !== "Arsenal")!;
   check(!blockedUpgrade.ok, "can't upgrade a stadium without majority ownership");
 
   career = buyStake(career, RIVAL, 60);
-  career = topUpClubBudget(career, RIVAL, 100_000);
+  career = topUpClubBudget(career, RIVAL, 200_000_000);
 
   const before = facilitiesFor(career, RIVAL);
   const beforeBudget = ownedClubState(career, RIVAL).budget;
@@ -149,7 +149,7 @@ const RIVAL = PREMIER_LEAGUE_CLUBS.find(c => c !== "Arsenal")!;
   check(credited.money === career.money, "stadium revenue never touches the PLAYER's personal money — it's a club asset");
 
   const capacity = facilitiesFor(career, RIVAL).stadiumCapacity;
-  const funded = topUpClubBudget(career, RIVAL, 100_000);
+  const funded = topUpClubBudget(career, RIVAL, 200_000_000);
   const upgraded = upgradeStadiumCapacity(funded, RIVAL);
   if (upgraded.ok) {
     // The expansion has to actually finish (real build time — see above)

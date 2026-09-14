@@ -55,7 +55,7 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const league = base.league.map(t => ({ ...t, strength: 75 }));
   return {
     ...base,
-    money: 1_000_000,
+    money: 5_000_000_000,
     league,
     leagueSquads: PREMIER_LEAGUE_CLUBS.filter(c => c !== base.player.club).map(c => squadFor(c, 75)),
     ...overrides,
@@ -154,7 +154,7 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
     check(elected.ok && ownedClubState(elected.career, RIVAL).isPresident, "winning the vote makes you president for real");
 
     career = { ...elected.career };
-    career = topUpClubBudget(career, RIVAL, 2000);
+    career = topUpClubBudget(career, RIVAL, 200_000_000);
     const wageSet = setPresidentWage(career, RIVAL, 500);
     check(wageSet.ok, `once president, you can set your own wage (${wageSet.reason ?? ""})`);
 
@@ -229,8 +229,8 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   career = buyStake(career, RIVAL2, 100);
   check(canMergeClubs(career, RIVAL, RIVAL2), "100% of both clears the bar to merge");
 
-  career = topUpClubBudget(career, RIVAL, 500);
-  career = topUpClubBudget(career, RIVAL2, 300);
+  career = topUpClubBudget(career, RIVAL, 50_000_000);
+  career = topUpClubBudget(career, RIVAL2, 30_000_000);
   const beforeFans = career.relationships.fans;
   const target = getTuning("transfers.squadTarget");
 
@@ -245,7 +245,7 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
     const absorbedSquad = (merged.career.leagueSquads ?? []).find(s => s.club === RIVAL2);
     check((absorbedSquad?.players.length ?? -1) === 0, "the absorbed club's real squad is genuinely gone, not just relabeled");
 
-    check(ownedClubState(merged.career, RIVAL).budget === 800, "the combined budget lands in the surviving club (500 + 300)");
+    check(ownedClubState(merged.career, RIVAL).budget === 80_000_000, "the combined budget lands in the surviving club (50m + 30m)");
     check(ownedClubState(merged.career, RIVAL2).dissolvedInto === RIVAL, "the absorbed club is marked dissolved, into the right club");
     check(merged.career.relationships.fans === beforeFans - 15, "a merger costs real fan reputation — stealing a club isn't free");
 
@@ -270,7 +270,7 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
     const forcedWin = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "yes" } };
     const elected = resolvePresidentVote(career, forcedWin, false);
     if (elected.ok) {
-      career = topUpClubBudget(elected.career, RIVAL, 2000);
+      career = topUpClubBudget(elected.career, RIVAL, 200_000_000);
       const wageSet = setPresidentWage(career, RIVAL, 300);
       if (wageSet.ok) { career = wageSet.career; wage = 300; }
     }
@@ -283,7 +283,10 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   // rollover (creditStadiumRevenue) — a real, independent hook, not a bug
   // in this one's arithmetic, so it has to be accounted for rather than
   // assuming the wage is the only thing touching this club's budget.
-  const stadiumRevenue = Math.round(facilitiesFor(career, RIVAL).stadiumCapacity * 2);
+  // 800 mirrors facilities.ts's own REVENUE_PER_SEAT (rescaled 14 Sep 2026
+  // to a real blended per-seat gate-receipt figure) — not otherwise
+  // exported, so duplicated here the same way this test already did.
+  const stadiumRevenue = Math.round(facilitiesFor(career, RIVAL).stadiumCapacity * 800);
   const rolled = advanceSeason(career, false).career;
 
   check(!(rolled.recommendations ?? []).some(r => r.status === "pending"),

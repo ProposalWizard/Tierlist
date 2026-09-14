@@ -115,7 +115,14 @@ export function makeInitialCareer(
     // starting point `fans: 40` already sets. Club reputation starts higher,
     // matching the fresh-signing optimism `boss`/`team` already open with.
     reputation: { world: 15, club: 50, government: 5, shareholders: 5 },
-    contract: { club: player.club, wage: 1, goalBonus: 1, assistBonus: 1, seasonsRemaining: 3 },
+    // Rescaled 14 Sep 2026 alongside player/club market value — a real,
+    // modest weekly-wage-equivalent for an unproven trialist (a genuine
+    // real-world fringe-pro figure), rather than the deliberately tiny
+    // placeholder (★1) the old, deliberately-compressed economy used.
+    // Everything grows from here via the existing contract-offer/relegation-
+    // offer formulas (transfers.ts/relegationOffers.ts), themselves rescaled
+    // alongside this.
+    contract: { club: player.club, wage: 2000, goalBonus: 200, assistBonus: 150, seasonsRemaining: 3 },
     season: 1,
     division,
     week: 1,
@@ -123,7 +130,9 @@ export function makeInitialCareer(
     energy: 100,
     injury: null,
     happiness: 60,
-    money: 3,
+    // Rescaled 14 Sep 2026 alongside the contract above — a modest, real
+    // starting balance for a young pro just turning professional.
+    money: 5000,
     // Overwritten just below, once the object actually exists — see
     // computeStarRating's own note. A placeholder here only so every
     // required CareerState field is present in this one literal.

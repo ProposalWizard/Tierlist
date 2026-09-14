@@ -21,10 +21,23 @@ import { getTuning } from "./tuningStore";
  *
  * This is the ANCHOR a negotiation opens around (negotiation.ts) — not a
  * fixed price. It intentionally does NOT replace `leagueTransfers.ts`'s own
- * `feeFor` (the AI-vs-AI transfer market, which has its own tuned economy)
- * or `investments.ts`'s flat `transferFee` (a deliberately simple board-
- * action price) — this is the number shown to a human deciding whether an
- * offer is fair.
+ * `feeFor` (the AI-vs-AI transfer market) or `investments.ts`'s flat
+ * `transferFee` (a deliberately simple board-action price) — this is the
+ * number shown to a human deciding whether an offer is fair. Those other
+ * two now share this file's own real-world anchoring (see `marketValue.
+ * scale`'s own note) rather than running a separate, smaller economy.
+ *
+ * ── Rescaled to real money, 14 Sep 2026 ──
+ *
+ * Requested directly ("I want the economy like the real football world"),
+ * after research into real transfer-fee benchmarks (CIES Football
+ * Observatory's own scientific methodology, and current real deals —
+ * Alexander Isak's £125m among them). `marketValue.scale`'s own tuning
+ * entry carries the real anchor points; the SHAPE of this formula (the
+ * exponential rating curve, the age curve, the potential taper, the club
+ * tilt) is untouched — all of it was already multiplicative, so hitting
+ * real numbers only ever needed the one scale constant to change, not a
+ * rewrite of how any of these factors relate to each other.
  */
 
 interface ValuablePlayer {
