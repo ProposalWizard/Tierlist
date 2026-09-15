@@ -32,7 +32,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/tierlists" },
 };
 
-export const revalidate = 30;
+// createServiceClient()'s reads are no-store — genuinely fresh on every
+// request already, never actually cached the 30s this revalidate implied.
+// Next's build-time static generation can't reconcile "cache for 30s" with
+// a fetch that says "never cache me," and throws "Dynamic server usage"
+// trying. force-dynamic just states outright the behavior that was already
+// happening — zero change to what a visitor actually sees.
+export const dynamic = "force-dynamic";
 
 const MAX_PER_CATEGORY = 6;
 

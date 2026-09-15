@@ -42,7 +42,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 300;
+// createServiceClient()'s reads are no-store — genuinely fresh on every
+// request already, never actually cached the way this revalidate implied.
+// Next's build-time static generation can't reconcile "cache for N seconds"
+// with a fetch that says "never cache me," and throws "Dynamic server
+// usage" trying. force-dynamic just states outright the behavior that was
+// already happening — zero change to what a visitor actually sees.
+export const dynamic = "force-dynamic";
 
 export default async function BlindRankingPage({ params }: Props) {
   const { id } = await params;
