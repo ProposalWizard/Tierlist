@@ -47,7 +47,10 @@ export function drawPlayerHead(
   const r = headBaseR * style.scale;
   const cx = cx0 + style.offsetX * headBaseR;
   const cy = cy0 + style.offsetY * headBaseR;
-  const hasPhoto = !!face && face.complete && face.naturalWidth > 0;
+  // facesEnabled is a master off switch for real photos — with it off, every
+  // figure gets exactly the same fallback treatment a player with no photo
+  // on file already gets (the backing circle below), never a blank head.
+  const hasPhoto = style.facesEnabled && !!face && face.complete && face.naturalWidth > 0;
 
   // The backing fill is what "no photo" has always looked like — drawn
   // regardless of the toggle whenever there's no photo to show at all, so a

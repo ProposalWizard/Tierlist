@@ -40,7 +40,7 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "@/lib/star/lineup";
-import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
+import { loadFaceStyle, DEFAULT_FACE_STYLE, hasFaceStyleOverride, fetchGlobalDefaultFaceStyle } from "@/lib/star/faceStyle";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
@@ -1087,9 +1087,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * reached from it) is a separate phase this component isn't mounted
    * during, so there's no live change to react to here — only ever a fresh
    * value the NEXT time a match opens.
+   *
+   * A device that has never saved its own style (hasFaceStyleOverride)
+   * additionally picks up the admin's live global default in the background
+   * — see faceStyle.ts's own doc on why that's a separate fetch rather than
+   * folded into loadFaceStyle itself. The synchronous loadFaceStyle() call
+   * stays first and unconditional so a returning user with their own saved
+   * style sees it immediately, with zero network dependency — only a
+   * brand-new device without one waits the one extra frame or two for the
+   * fetch, same as any other real photo already loading in asynchronously.
    */
   const faceStyleRef = useRef(DEFAULT_FACE_STYLE);
-  useEffect(() => { faceStyleRef.current = loadFaceStyle(); }, []);
+  useEffect(() => {
+    faceStyleRef.current = loadFaceStyle();
+    if (!hasFaceStyleOverride()) {
+      fetchGlobalDefaultFaceStyle().then(g => { if (g) faceStyleRef.current = g; });
+    }
+  }, []);
 
   // --- Canvas sizing (device-pixel-ratio aware) ---
   useEffect(() => {
@@ -1708,11 +1722,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.restore();
 
       if (opts.label) {
+        // Tracks the REAL head position, not a fixed guess — a name has to
+        // clear the head to read as "above" it, and the face style's own
+        // scale/offsetY (Settings → Player Graphics) can move that head a
+        // long way from its default spot. Same local→world math drawPlayerHead
+        // itself uses for cy/headR, just enough of it duplicated here to find
+        // the head's own top edge rather than re-deriving the whole draw.
+        const fs = faceStyleRef.current;
+        const headTopY = py - r * 1.56 + r * 0.26 * (fs.offsetY - fs.scale);
+        // The star marker (below) sits at a fixed py-2.15r regardless of face
+        // style, to mark "you" — clear extra space above the head so a name
+        // on your own star-marked figure never sits under/through it.
+        const gap = r * (opts.star ? 0.75 : 0.18);
         ctx.fillStyle = opts.labelColor ?? "#fff";
         ctx.font = `bold ${Math.round(r * 0.52)}px sans-serif`;
         ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(opts.label, px, py - r * 1.02);
+        ctx.textBaseline = "bottom";
+        ctx.fillText(opts.label, px, headTopY - gap);
       }
 
       // ── The star above your head ──
@@ -1892,6 +1918,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
         face: getFaceImage(sc.follower.who?.face),
+        label: faceStyleRef.current.namesEnabled ? sc.follower.who?.shortName : undefined,
       });
     }
 
@@ -1983,7 +2010,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(t.x, t.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor(`mate${i}`, t.x, t.y),
         phase: runPhase(t.x),
+        // Only sc.teammates[0] (the crosser) is ever a real identity — the
+        // rest of this array is decoration, same reasoning as the face above.
         face: i === 0 ? getFaceImage(sc.crosser?.face) : undefined,
+        label: i === 0 && faceStyleRef.current.namesEnabled ? sc.crosser?.shortName : undefined,
       });
     });
 
@@ -1998,6 +2028,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
         face: getFaceImage(r.who?.face),
+        label: faceStyleRef.current.namesEnabled ? r.who?.shortName : undefined,
       });
     });
 
@@ -2020,6 +2051,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
         face: getFaceImage(d.who?.face),
+        label: faceStyleRef.current.namesEnabled ? d.who?.shortName : undefined,
       });
     });
     // You wear the same shirt as everybody else on your side — you are one of
@@ -2041,6 +2073,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // appends a query string) just never has anything to fire on, since a
       // data URL either decodes immediately or not at all.
       face: getFaceImage(careerRef.current?.player.portrait),
+      label: faceStyleRef.current.namesEnabled ? playerLabel() : undefined,
     });
 
     // ── Keeper ──
@@ -2185,6 +2218,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       drawPlayerHead(ctx, 0, -KR * 0.70, KR * 0.28, KR, getFaceImage(kk.who?.face), faceStyleRef.current);
 
       ctx.restore();
+
+      // Same label mechanism as footballer()'s own — world-space, upright, for
+      // the one figure that doesn't go through footballer() at all. Anchored
+      // off the keeper's own neutral translate origin (py - KR*0.8) and his
+      // own drawPlayerHead call's -KR*0.70/KR*0.28, same as that call just
+      // above — deliberately NOT tracking the small live cx/cyOff/lean terms
+      // his body draw applies during an active dive (a label a few px off
+      // during the one dive-frame that already has your full attention is a
+      // far smaller concern than the dive itself); idle, this is exact.
+      if (faceStyleRef.current.namesEnabled && kk.who?.shortName) {
+        const fs = faceStyleRef.current;
+        const headTopY = py - KR * 1.50 + KR * 0.28 * (fs.offsetY - fs.scale);
+        ctx.fillStyle = "#fff";
+        ctx.font = `bold ${Math.round(KR * 0.52)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(kk.who.shortName, px, headTopY - KR * 0.18);
+      }
     }
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---

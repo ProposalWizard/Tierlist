@@ -1,11 +1,14 @@
 /**
  * lib/star/faceStyle.ts — the Face Editor's own persisted style object.
  *
- * Purely the storage/clamping half (loadFaceStyle/saveFaceStyle); nothing
- * here can exercise drawPlayerHead itself, which needs a real
- * CanvasRenderingContext2D this test environment doesn't have — that half
- * is only verified by tsc, the full suite staying green, and reading the
- * canvas math by hand. See CLAUDE.md's own note on this.
+ * The storage/clamping half (loadFaceStyle/saveFaceStyle/hasFaceStyleOverride)
+ * plus fetchGlobalDefaultFaceStyle (the admin global default — a real fetch()
+ * boundary, faked here the same way localStorage is). Nothing here can
+ * exercise drawPlayerHead itself, which needs a real CanvasRenderingContext2D
+ * this test environment doesn't have — that half, and where facesEnabled/
+ * namesEnabled/the label position math actually draw, is only verified by
+ * tsc, the full suite staying green, and reading the canvas math by hand.
+ * See CLAUDE.md's own note on this.
  */
 
 const problems: string[] = [];
@@ -25,6 +28,7 @@ function freshStore() {
 const store = freshStore();
 const {
   loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, FACE_SCALE_RANGE, FACE_OFFSET_RANGE, CROP_ZOOM_RANGE,
+  hasFaceStyleOverride, fetchGlobalDefaultFaceStyle,
 } = await import("../../lib/star/faceStyle");
 
 // ── Real freedom, not the original too-tight range ─────────────────────────
@@ -53,6 +57,7 @@ const {
     showBacking: false, backingColor: "#112233",
     outlineEnabled: false, outlineColor: "#ffcc00", outlineWidth: 2.5,
     crop: { zoom: 2.1, x: -40, y: 12 },
+    facesEnabled: false, namesEnabled: true,
   };
   saveFaceStyle(custom);
   const back = loadFaceStyle();
@@ -67,6 +72,7 @@ const {
     showBacking: true, backingColor: "#fff",
     outlineEnabled: true, outlineColor: "#000", outlineWidth: -5,
     crop: { zoom: 999, x: 999999, y: -999999 },
+    facesEnabled: true, namesEnabled: false,
   });
   const back = loadFaceStyle();
   check(back.scale === FACE_SCALE_RANGE[1], `scale clamped to the real max (${back.scale})`);
@@ -77,6 +83,15 @@ const {
   check(Number.isFinite(back.crop.x) && Number.isFinite(back.crop.y), "crop x/y stay finite even from an absurd input");
 }
 
+// ── The two new toggles coerce to real booleans from anything, never throw ──
+{
+  store.clear();
+  store.set("star-face-style", JSON.stringify({ facesEnabled: "yes", namesEnabled: 0 }));
+  const back = loadFaceStyle();
+  check(back.facesEnabled === true, `a truthy non-boolean still reads as on (${back.facesEnabled})`);
+  check(back.namesEnabled === false, `a falsy non-boolean still reads as off (${back.namesEnabled})`);
+}
+
 // ── A missing crop (an old save from before this field existed) still loads ──
 {
   store.clear();
@@ -85,6 +100,17 @@ const {
   check(JSON.stringify(back.crop) === JSON.stringify(DEFAULT_FACE_STYLE.crop),
     `no crop on record: falls back to the real default (${JSON.stringify(back.crop)})`);
   check(back.scale === 1.6, "…without losing the field that WAS on record");
+}
+
+// ── An old save from before facesEnabled/namesEnabled existed still loads,
+// with the real defaults filled in (faces on, names off) ─────────────────
+{
+  store.clear();
+  store.set("star-face-style", JSON.stringify({ scale: 2.2, outlineEnabled: false }));
+  const back = loadFaceStyle();
+  check(back.facesEnabled === true, `no record of it: falls back to the real default, on (${back.facesEnabled})`);
+  check(back.namesEnabled === false, `no record of it: falls back to the real default, off (${back.namesEnabled})`);
+  check(back.scale === 2.2 && back.outlineEnabled === false, "…without losing the fields that WERE on record");
 }
 
 // ── The old single-slider save, carried over once ──────────────────────
@@ -105,6 +131,50 @@ const {
   try { back = loadFaceStyle(); } catch { threw = true; }
   check(!threw, "malformed saved JSON does not throw");
   check(JSON.stringify(back) === JSON.stringify(DEFAULT_FACE_STYLE), "…and falls back to the real default");
+}
+
+// ── hasFaceStyleOverride: exactly "has this device ever saved its own" ──
+{
+  store.clear();
+  check(hasFaceStyleOverride() === false, "nothing saved yet: no override");
+  saveFaceStyle(DEFAULT_FACE_STYLE);
+  check(hasFaceStyleOverride() === true, "saved once, even the default verbatim: now an override");
+
+  store.clear();
+  store.set("star-face-scale", "1.2");
+  check(hasFaceStyleOverride() === true, "the OLD single-slider save counts as an override too");
+}
+
+// ── fetchGlobalDefaultFaceStyle: the admin's own default, real fetch shapes ──
+// Faked rather than skipped — this is the one new piece of faceStyle.ts that
+// isn't pure storage/clamping, and it is fully exercisable without a real
+// server: only global fetch() is a boundary, same idea as the localStorage
+// fake at the top of this file.
+{
+  const realFetch = globalThis.fetch;
+
+  (globalThis as { fetch?: unknown }).fetch = async () =>
+    ({ ok: true, json: async () => ({ style: { scale: 2.5, offsetY: -1, facesEnabled: false } }) });
+  {
+    const g = await fetchGlobalDefaultFaceStyle();
+    check(g !== null, "a real { style } response resolves to a real style, not null");
+    check(g?.scale === 2.5 && g?.offsetY === -1 && g?.facesEnabled === false,
+      `…carrying the fields the server actually sent (${JSON.stringify(g)})`);
+    check(g?.namesEnabled === false && g?.outlineEnabled === true,
+      "…and sanitized through the exact same defaults/clamp as any locally-saved style");
+  }
+
+  (globalThis as { fetch?: unknown }).fetch = async () => ({ ok: true, json: async () => ({ style: null }) });
+  check(await fetchGlobalDefaultFaceStyle() === null,
+    "the migration has run but no admin has set one yet (style: null): no global default, not a crash");
+
+  (globalThis as { fetch?: unknown }).fetch = async () => ({ ok: false, json: async () => ({ error: "boom" }) });
+  check(await fetchGlobalDefaultFaceStyle() === null, "a non-ok response (migration not run yet, or a real error): null, not a throw");
+
+  (globalThis as { fetch?: unknown }).fetch = async () => { throw new Error("offline"); };
+  check(await fetchGlobalDefaultFaceStyle() === null, "fetch itself rejecting (offline): null, not a throw");
+
+  (globalThis as { fetch?: unknown }).fetch = realFetch;
 }
 
 if (problems.length) {
