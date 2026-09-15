@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import {
   loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, FACE_SCALE_RANGE, FACE_OFFSET_RANGE,
-  CROP_VIEWPORT, CROP_ZOOM_RANGE, hasFaceStyleOverride, fetchGlobalDefaultFaceStyle, type FaceStyle,
+  CROP_VIEWPORT, CROP_ZOOM_RANGE, type FaceStyle,
 } from "@/lib/star/faceStyle";
 import { coverScale, clampOffset, initialView } from "@/lib/star/portrait";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
@@ -54,32 +54,6 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
   const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const cropDragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const [cropImgSize, setCropImgSize] = useState({ w: 0, h: 0 });
-
-  // ── The admin's own global default ──
-  //
-  // Fetched unconditionally (not just when this device has no override of
-  // its own) because "Reset to Default" below needs a real target either
-  // way — resetting should mean "what it looks like for everyone who
-  // hasn't customised it," the live global default when there is one, not
-  // always the hardcoded fallback. A device with NO override of its own
-  // additionally gets it applied to the live preview immediately, via
-  // skipNextSaveRef so that hydration is never mistaken for a real edit and
-  // written into this device's own override — opening the editor to look
-  // should never by itself convert "never touched it" into "has an override."
-  const [globalDefault, setGlobalDefault] = useState<FaceStyle | null>(null);
-  const skipNextSaveRef = useRef(false);
-  const [savingDefault, setSavingDefault] = useState(false);
-  const [defaultMsg, setDefaultMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  useEffect(() => {
-    fetchGlobalDefaultFaceStyle().then(g => {
-      if (!g) return;
-      setGlobalDefault(g);
-      if (!hasFaceStyleOverride()) {
-        skipNextSaveRef.current = true;
-        setStyle(g);
-      }
-    });
-  }, []);
 
   const draw = () => {
     const canvas = canvasRef.current;
@@ -150,40 +124,7 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
-  useEffect(() => {
-    if (skipNextSaveRef.current) {
-      // The one programmatic hydration from the global default above — draw
-      // it, but never persist it as if the user had made this edit themselves.
-      skipNextSaveRef.current = false;
-      draw();
-      return;
-    }
-    saveFaceStyle(style);
-    draw();
-  }, [style]);
-
-  const handleSetAsDefault = async () => {
-    setSavingDefault(true);
-    setDefaultMsg(null);
-    try {
-      const res = await fetch("/api/star/face-style-default", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ style }),
-      });
-      if (res.ok) {
-        setGlobalDefault(style);
-        setDefaultMsg({ ok: true, text: "Saved — this is now what every player who hasn't set their own style sees." });
-      } else {
-        const data = await res.json().catch(() => null) as { error?: string } | null;
-        setDefaultMsg({ ok: false, text: data?.error === "Forbidden" ? "Admins only." : (data?.error ?? "Couldn't save — try again.") });
-      }
-    } catch {
-      setDefaultMsg({ ok: false, text: "Couldn't reach the server — check your connection and try again." });
-    } finally {
-      setSavingDefault(false);
-    }
-  };
+  useEffect(() => { saveFaceStyle(style); draw(); }, [style]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
@@ -393,29 +334,11 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
           </p>
 
           <button
-            onClick={() => setStyle(globalDefault ?? DEFAULT_FACE_STYLE)}
+            onClick={() => setStyle(DEFAULT_FACE_STYLE)}
             className="w-full py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-[11px] font-black text-white"
           >
             Reset to Default
           </button>
-
-          <div className="pt-2 border-t border-gray-700 space-y-1">
-            <button
-              onClick={handleSetAsDefault}
-              disabled={savingDefault}
-              className="w-full py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-[11px] font-black text-white"
-            >
-              {savingDefault ? "Saving…" : "Set as Global Default (Admin)"}
-            </button>
-            <p className="text-[10px] font-semibold text-white/55">
-              Makes exactly what&apos;s dialled in right now the default for every player who hasn&apos;t made their own — admins only.
-            </p>
-            {defaultMsg && (
-              <p className={`text-[10px] font-black ${defaultMsg.ok ? "text-emerald-400" : "text-red-400"}`}>
-                {defaultMsg.text}
-              </p>
-            )}
-          </div>
         </div>
       </div>
     </div>

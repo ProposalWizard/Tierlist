@@ -74,16 +74,22 @@ export const HEAD_SKIN = "#c68642";
  *  math — never re-interpreted differently in the two places it's used. */
 export const CROP_VIEWPORT = 256;
 
+// The values reported directly as "the perfect values for how it should
+// look": "3x size, 0.03 left/right, -2.04 left/right, like 10% circular
+// crop" — offsetY read as the second "left/right" meaning "up/down" (the
+// editor's own sliders are literally labelled that), crop.zoom read as a
+// modest 1.1 for "10% crop". No database needed for this — it's just the
+// starting point every device with no local override already opens on.
 export const DEFAULT_FACE_STYLE: FaceStyle = {
-  scale: 1.4,
-  offsetX: 0,
-  offsetY: 0,
+  scale: 3,
+  offsetX: 0.03,
+  offsetY: -2.04,
   showBacking: true,
   backingColor: HEAD_SKIN,
   outlineEnabled: true,
   outlineColor: "rgba(0,0,0,0.35)",
   outlineWidth: 1,
-  crop: { zoom: 1, x: 0, y: 0 },
+  crop: { zoom: 1.1, x: 0, y: 0 },
   facesEnabled: true,
   namesEnabled: false,
 };
@@ -152,40 +158,4 @@ export function saveFaceStyle(style: FaceStyle): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(sanitize(style)));
   } catch { /* ignore — worst case the preference just doesn't stick */ }
-}
-
-/**
- * True once this device has ever actually saved its own style — including
- * via the old single-slider key. Drives whether the admin's global default
- * (below) is allowed to apply: a real local override always wins, exactly
- * "unless the user changes it."
- */
-export function hasFaceStyleOverride(): boolean {
-  try {
-    return localStorage.getItem(KEY) !== null || localStorage.getItem(LEGACY_SCALE_KEY) !== null;
-  } catch { return false; }
-}
-
-/**
- * The admin's own global default (see supabase/migrations/
- * star_face_style_default.sql and app/api/star/face-style-default/route.ts)
- * — "an admin button to set the custom player face values as official and
- * global default values... so it naturally looks like that unless the user
- * changes it." Deliberately never written into the KEY a local override
- * lives under: callers apply the result to their own in-memory ref/state,
- * so a device that has never customised its own style keeps tracking
- * whatever the admin sets NEXT too, rather than freezing at whatever was
- * first fetched. Returns null on any failure (offline, or the migration
- * hasn't been run yet) — callers fall back to DEFAULT_FACE_STYLE, same as
- * every other pending-migration feature in this codebase.
- */
-export async function fetchGlobalDefaultFaceStyle(): Promise<FaceStyle | null> {
-  try {
-    const res = await fetch("/api/star/face-style-default");
-    if (!res.ok) return null;
-    const data = await res.json() as { style?: Partial<FaceStyle> | null };
-    return data?.style ? sanitize(data.style) : null;
-  } catch {
-    return null;
-  }
 }

@@ -3,8 +3,8 @@ import { sourceRect } from "./portrait";
 import { getFaceOutline, requestFaceOutline, type FaceEllipse } from "./faceOutline";
 
 /**
- * The one place a head — real photo or the plain fallback circle — actually
- * gets drawn. Both `footballer()` and the keeper's own separate figure
+ * The one place a head — real photo, outline, and all — actually gets
+ * drawn. Both `footballer()` and the keeper's own separate figure
  * (CanvasMatch.tsx) call this, and so does the Face Editor's own live
  * preview (FaceEditorScreen.tsx). Extracted specifically so those two things
  * can never quietly drift apart — an editor that shows you one thing while a
@@ -45,8 +45,9 @@ import { getFaceOutline, requestFaceOutline, type FaceEllipse } from "./faceOutl
  * outline actually hugs the specific face in that specific photo. Detection
  * is async and only ever resolves after this function has already returned
  * once or twice, so a not-yet-known photo (or one no face was found in, or
- * one with no photo at all) falls back to the plain circular stroke —
- * never a blocked draw, never a missing outline.
+ * one with no photo at all) draws a head-shaped OVAL instead — not a plain
+ * circle, and not dependent on detection ever succeeding — so this never
+ * reads as "just a circle" even before/without a real detection result.
  */
 export function drawPlayerHead(
   ctx: CanvasRenderingContext2D,
@@ -128,10 +129,16 @@ export function drawPlayerHead(
       ctx.ellipse(ex, ey, erx, ery, 0, 0, Math.PI * 2);
       ctx.stroke();
     } else {
-      // No photo, no detection yet, or no face found in this one — the
-      // original plain circle, exactly as it has always looked.
+      // No photo, no detection yet, or no face found in this one. Detection
+      // is real, async, per-photo work — even once it's working, a figure
+      // draws several times before its own photo's detection resolves, so
+      // this path is not rare and was reported back directly as still
+      // looking like "just a circle." A plain circle IS a circle; this
+      // fallback is a real head-shaped oval instead — taller than wide,
+      // narrower at the base — so it reads as "around a face" immediately,
+      // with no dependency on detection ever succeeding at all.
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy, r * 0.82, r * 1.04, 0, 0, Math.PI * 2);
       ctx.stroke();
     }
   }

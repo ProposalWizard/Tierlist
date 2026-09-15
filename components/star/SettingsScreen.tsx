@@ -1,11 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
-import {
-  loadFaceStyle, saveFaceStyle, hasFaceStyleOverride, fetchGlobalDefaultFaceStyle, type FaceStyle,
-} from "@/lib/star/faceStyle";
+import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import PortraitPicker from "./PortraitPicker";
@@ -36,18 +34,10 @@ export default function SettingsScreen({
   onRefreshPhotos, onOpenFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
 }: Props) {
   // Quick on/off switches, separate from the full editor — read/write the
-  // exact same shared FaceStyle object faceEditorScreen and CanvasMatch do,
+  // exact same shared FaceStyle object FaceEditorScreen and CanvasMatch do,
   // so a flip here takes effect the same "next match" way every other Player
-  // Graphics change already does. A device with no override of its own picks
-  // up the admin's live global default here too, same as everywhere else
-  // this object is read, so these two switches show the real effective
-  // starting state rather than always the hardcoded fallback.
+  // Graphics change already does.
   const [faceStyle, setFaceStyle] = useState<FaceStyle>(loadFaceStyle);
-  useEffect(() => {
-    if (!hasFaceStyleOverride()) {
-      fetchGlobalDefaultFaceStyle().then(g => { if (g) setFaceStyle(g); });
-    }
-  }, []);
   const toggleFaceStyle = (key: "facesEnabled" | "namesEnabled", value: boolean) => {
     const next = { ...faceStyle, [key]: value };
     setFaceStyle(next);

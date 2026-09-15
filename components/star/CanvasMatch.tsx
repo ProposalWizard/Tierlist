@@ -40,7 +40,7 @@ import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "@/lib/star/lineup";
-import { loadFaceStyle, DEFAULT_FACE_STYLE, hasFaceStyleOverride, fetchGlobalDefaultFaceStyle } from "@/lib/star/faceStyle";
+import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
@@ -1087,23 +1087,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * reached from it) is a separate phase this component isn't mounted
    * during, so there's no live change to react to here — only ever a fresh
    * value the NEXT time a match opens.
-   *
-   * A device that has never saved its own style (hasFaceStyleOverride)
-   * additionally picks up the admin's live global default in the background
-   * — see faceStyle.ts's own doc on why that's a separate fetch rather than
-   * folded into loadFaceStyle itself. The synchronous loadFaceStyle() call
-   * stays first and unconditional so a returning user with their own saved
-   * style sees it immediately, with zero network dependency — only a
-   * brand-new device without one waits the one extra frame or two for the
-   * fetch, same as any other real photo already loading in asynchronously.
    */
   const faceStyleRef = useRef(DEFAULT_FACE_STYLE);
-  useEffect(() => {
-    faceStyleRef.current = loadFaceStyle();
-    if (!hasFaceStyleOverride()) {
-      fetchGlobalDefaultFaceStyle().then(g => { if (g) faceStyleRef.current = g; });
-    }
-  }, []);
+  useEffect(() => { faceStyleRef.current = loadFaceStyle(); }, []);
 
   // --- Canvas sizing (device-pixel-ratio aware) ---
   useEffect(() => {
