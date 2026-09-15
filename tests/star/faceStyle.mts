@@ -24,7 +24,7 @@ function freshStore() {
 
 const store = freshStore();
 const {
-  loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, FACE_SCALE_RANGE, FACE_OFFSET_RANGE,
+  loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, FACE_SCALE_RANGE, FACE_OFFSET_RANGE, CROP_ZOOM_RANGE,
 } = await import("../../lib/star/faceStyle");
 
 // ── Real freedom, not the original too-tight range ─────────────────────────
@@ -52,6 +52,7 @@ const {
     scale: 1.8, offsetX: 0.3, offsetY: -0.15,
     showBacking: false, backingColor: "#112233",
     outlineEnabled: false, outlineColor: "#ffcc00", outlineWidth: 2.5,
+    crop: { zoom: 2.1, x: -40, y: 12 },
   };
   saveFaceStyle(custom);
   const back = loadFaceStyle();
@@ -65,12 +66,25 @@ const {
     scale: 999, offsetX: -999, offsetY: 999,
     showBacking: true, backingColor: "#fff",
     outlineEnabled: true, outlineColor: "#000", outlineWidth: -5,
+    crop: { zoom: 999, x: 999999, y: -999999 },
   });
   const back = loadFaceStyle();
   check(back.scale === FACE_SCALE_RANGE[1], `scale clamped to the real max (${back.scale})`);
   check(back.offsetX === FACE_OFFSET_RANGE[0], `offsetX clamped to the real min (${back.offsetX})`);
   check(back.offsetY === FACE_OFFSET_RANGE[1], `offsetY clamped to the real max (${back.offsetY})`);
   check(back.outlineWidth === 0, `outlineWidth never negative (${back.outlineWidth})`);
+  check(back.crop.zoom === CROP_ZOOM_RANGE[1], `crop zoom clamped to the real max (${back.crop.zoom})`);
+  check(Number.isFinite(back.crop.x) && Number.isFinite(back.crop.y), "crop x/y stay finite even from an absurd input");
+}
+
+// ── A missing crop (an old save from before this field existed) still loads ──
+{
+  store.clear();
+  store.set("star-face-style", JSON.stringify({ scale: 1.6 }));
+  const back = loadFaceStyle();
+  check(JSON.stringify(back.crop) === JSON.stringify(DEFAULT_FACE_STYLE.crop),
+    `no crop on record: falls back to the real default (${JSON.stringify(back.crop)})`);
+  check(back.scale === 1.6, "…without losing the field that WAS on record");
 }
 
 // ── The old single-slider save, carried over once ──────────────────────
