@@ -2010,18 +2010,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
     };
 
-    // Decorative team-mates (the crosser on a volley/header)
+    // Decorative team-mates (the crosser on a volley/header, everyone else
+    // milling around the box on a corner) — every one of them a real
+    // identity now (castScenario, lineup.ts), not just teammates[0]/the
+    // crosser. Reported directly: "on corners not all players face show."
     sc.teammates.forEach((t, i) => {
-      // Only teammates[0] is ever a real, named man — see castScenario,
-      // which builds sc.crosser off exactly that one. The rest are
-      // genuinely decorative, so they stay plain shirts.
       footballer(t.x, t.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor(`mate${i}`, t.x, t.y),
         phase: runPhase(t.x),
-        // Only sc.teammates[0] (the crosser) is ever a real identity — the
-        // rest of this array is decoration, same reasoning as the face above.
-        face: i === 0 ? getFaceImage(sc.crosser?.face) : undefined,
-        label: i === 0 && faceStyleRef.current.namesEnabled ? sc.crosser?.shortName : undefined,
+        face: getFaceImage(t.who?.face),
+        label: faceStyleRef.current.namesEnabled ? t.who?.shortName : undefined,
       });
     });
 

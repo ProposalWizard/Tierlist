@@ -404,7 +404,16 @@ export interface Scenario {
   goal: { x1: number; x2: number };
   crossbar: number;
   kind: ScenarioKind;
-  teammates: Vec2[];        // decorative players (crossers, support) — never pass targets
+  /**
+   * Decorative players (crossers, support) — never pass targets, but
+   * genuinely somebody: `who` is filled in by castScenario (lineup.ts) the
+   * same way a Runner/Defender's is. Used to be limited to `teammates[0]`
+   * only (the crosser, for assist credit) — every other body milling
+   * around the box on a corner drew with no identity at all, reported
+   * directly: "on corners not all players face show." Optional so every
+   * existing builder's plain `{x,y}` literal still satisfies the type.
+   */
+  teammates: (Vec2 & { who?: Identity })[];
   runner: Runner | null;    // the team-mate a pass is aimed at, if any
   passTarget: Vec2 | null;  // where the runner is heading (drawn as the aim marker)
   receiver: Receiver | null;   // set for cutback/byline_cross/through_ball — they shoot on reception
