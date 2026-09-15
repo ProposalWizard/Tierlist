@@ -133,12 +133,14 @@ export function drawPlayerHead(
       // is real, async, per-photo work — even once it's working, a figure
       // draws several times before its own photo's detection resolves, so
       // this path is not rare and was reported back directly as still
-      // looking like "just a circle." A plain circle IS a circle; this
-      // fallback is a real head-shaped oval instead — taller than wide,
-      // narrower at the base — so it reads as "around a face" immediately,
-      // with no dependency on detection ever succeeding at all.
+      // looking like "just a circle" — twice: the first ratio here (0.82 x
+      // 1.04, ~27% taller than wide) still read as basically a circle at
+      // the size these actually draw. Widened to genuinely egg-shaped —
+      // same ~1.45 ratio ellipseFromBox's own real padding now produces —
+      // so the fallback and a real detected face read as the same shape,
+      // not "circle sometimes, oval other times."
       ctx.beginPath();
-      ctx.ellipse(cx, cy, r * 0.82, r * 1.04, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy, r * 0.78, r * 1.13, 0, 0, Math.PI * 2);
       ctx.stroke();
     }
   }

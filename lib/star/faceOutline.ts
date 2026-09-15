@@ -38,11 +38,22 @@ export interface FaceEllipse {
 // Padded outward so the outline reads as "around the head" rather than
 // hugging just the inner features; more above than below for the same
 // hairline reason boxToFaceCenter biases its own Y target upward by 50%.
+//
+// The padding shape matters, not just its size: reported back directly that
+// the result "is not outlining the face but just doing a circular outline."
+// The first numbers here (0.28 / 0.45 / 0.20) padded a roughly-square
+// detection box into a still-roughly-square result — (1+0.45+0.20) tall
+// vs (1+2×0.28) wide is only a ~6% difference, which reads as a circle at
+// the size these actually draw on a phone. These pad far more vertically
+// than horizontally on purpose, so the result is genuinely egg-shaped
+// (~45% taller than wide) and unmistakably not a circle regardless of
+// exactly how square or narrow the underlying detection box was.
+//
 // Exported so tests can check ellipseFromBox's real output against these
 // exact real numbers rather than a second, driftable copy of them.
-export const PAD_X = 0.28;
-export const PAD_Y_TOP = 0.45;
-export const PAD_Y_BOTTOM = 0.20;
+export const PAD_X = 0.10;
+export const PAD_Y_TOP = 0.60;
+export const PAD_Y_BOTTOM = 0.15;
 
 export function ellipseFromBox(box: FaceBox): FaceEllipse {
   const padX = box.width * PAD_X;
