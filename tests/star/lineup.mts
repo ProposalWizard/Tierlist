@@ -397,15 +397,32 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
 // Nothing reads Defender.who or Keeper.who for save/tackle quality (see their
 // own doc comments) — this only checks that the right face ends up on the
 // right kind of figure, and that it is a genuine no-op with nothing to scout.
+//
+// A real, LIVE bug lived in this exact area, caught only after real play:
+// formations.ts's own `y` scale runs GK=0.94 down to FWD=0.17 (HIGHER is
+// DEEPER, toward the own goal) — this fixture's own `y` values below are
+// chosen on that real scale. An earlier version of both the source and this
+// very test shared the same wrong assumption (lower y = deeper) and so
+// passed against genuinely broken code — reported directly, from a real
+// played match, once real faces made the mismatch visible: "the oppositions
+// defenders are just the highest rated players im guessing coz im seeing
+// loads of attackers."
 {
-  const gk: OpponentSheetPlayer = { id: "gk1", name: "Alisson Becker", shortName: "Alisson", position: "GK", overall: 88, face: "https://example.test/alisson.png", isGK: true, y: 1 };
-  const back = (id: string, y: number, face: string): OpponentSheetPlayer =>
-    ({ id, name: id, shortName: id, position: "CB", overall: 80, face, isGK: false, y });
+  const gk: OpponentSheetPlayer = { id: "gk1", name: "Alisson Becker", shortName: "Alisson", position: "GK", overall: 88, face: "https://example.test/alisson.png", isGK: true, y: 0.94 };
+  const outfielder = (id: string, position: string, y: number, overall: number, face: string): OpponentSheetPlayer =>
+    ({ id, name: id, shortName: id, position, overall, face, isGK: false, y });
   const oppXI: OpponentSheetPlayer[] = [
     gk,
-    back("cb1", 10, "https://example.test/vvd.png"),
-    back("cb2", 20, "https://example.test/konate.png"),
-    back("fwd1", 90, "https://example.test/salah2.png"),
+    // Real centre-backs, deep on the formation's own scale (~0.75-0.80) —
+    // deliberately the LOWEST-rated men on the sheet, so a sort keyed off
+    // overall rather than position/depth would visibly fail this test.
+    outfielder("cb1", "CB", 0.80, 74, "https://example.test/vvd.png"),
+    outfielder("cb2", "CB", 0.75, 71, "https://example.test/konate.png"),
+    // A genuine forward, shallow on the formation's own scale (~0.17) and
+    // the HIGHEST-rated man on the whole sheet — exactly the reported bug's
+    // shape: a real striker who must never be cast as a defender just
+    // because he outranks the real centre-backs.
+    outfielder("fwd1", "ST", 0.17, 91, "https://example.test/salah2.png"),
   ];
 
   const rng = mulberry32(909);
@@ -424,10 +441,11 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
   check(sc.keeper.who?.id === "gk1", `the keeper is drawn from the GK entry (${sc.keeper.who?.id})`);
   check(sc.keeper.who?.face === gk.face, "…with his real face carried over");
   check(sc.defenders.every(d => !!d.who), `every defender gets a real man (${sc.defenders.filter(d => d.who).length}/${sc.defenders.length})`);
-  check(sc.defenders[0].who?.id === "cb1", `the deepest defender is matched to the deepest real man (${sc.defenders[0].who?.id})`);
-  check(sc.defenders[1].who?.id === "cb2", `…the next one in, the next one in (${sc.defenders[1].who?.id})`);
-  check(sc.defenders[2].who?.id === "fwd1", `…and the furthest forward gets whoever's left (${sc.defenders[2].who?.id})`);
+  check(sc.defenders[0].who?.id === "cb1", `the deepest scenario defender is matched to the deepest REAL centre-back, not the highest overall (${sc.defenders[0].who?.id})`);
+  check(sc.defenders[1].who?.id === "cb2", `…the next one in, the next real centre-back in (${sc.defenders[1].who?.id})`);
+  check(sc.defenders[2].who?.id === "fwd1", `…and only once real defenders are exhausted does the striker get drawn on, as the fallback he is (${sc.defenders[2].who?.id})`);
   check(sc.defenders[0].who?.face === "https://example.test/vvd.png", "and each one's real face, not just his name");
+  check(sc.defenders.some(d => d.who?.id === "fwd1"), "the striker is never simply dropped — he's the honest fallback once real defenders run out");
 
   // Nothing to scout — an international fixture, a side too thin, a sandbox
   // match with no career at all — must be a genuine no-op, not a crash and
@@ -446,6 +464,31 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
   castDefence(sc3, oppXI.filter(p => !p.isGK));
   check(sc3.keeper.who === undefined, "no GK on the sheet: the keeper is left as he was");
   check(!!sc3.defenders[0].who, "…but a defender with real outfield men to draw from still gets one");
+
+  // A back four plus a holding mid, no strikers in the pool at all — every
+  // scenario defender should draw from a genuinely defensive position, not
+  // wrap onto the highest-overall man in the whole sheet.
+  const fullBack4: OpponentSheetPlayer[] = [
+    outfielder("lb", "LB", 0.80, 68, "l.png"),
+    outfielder("cb1", "CB", 0.80, 90, "c1.png"),   // highest overall of the lot
+    outfielder("cb2", "CB", 0.80, 72, "c2.png"),
+    outfielder("rb", "RB", 0.80, 70, "r.png"),
+    outfielder("cdm", "CDM", 0.632, 75, "cdm.png"),
+    outfielder("cam", "CAM", 0.324, 85, "cam.png"), // second-highest overall
+  ];
+  const sc4 = buildScenario("cutback", rng, 62, 60, 55);
+  sc4.defenders = [
+    { x: 20, y: 2 } as Scenario["defenders"][number],
+    { x: 28, y: 4 } as Scenario["defenders"][number],
+    { x: 36, y: 6 } as Scenario["defenders"][number],
+    { x: 44, y: 8 } as Scenario["defenders"][number],
+  ];
+  castDefence(sc4, fullBack4);
+  const DEFENSIVE = new Set(["CB", "LB", "RB", "CDM"]);
+  check(
+    sc4.defenders.every(d => DEFENSIVE.has(d.who?.position ?? "")),
+    `every one of four scenario defenders is drawn from a genuinely defensive real position, not the highest-overall CAM (positions: ${sc4.defenders.map(d => d.who?.position).join(",")})`,
+  );
 }
 
 if (problems.length) {

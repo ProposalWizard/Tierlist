@@ -40,7 +40,7 @@ import {
 import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
-import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "@/lib/star/lineup";
+import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
@@ -335,13 +335,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // the honest fallback for both.
   const realKeeperOverall = oppXIForCast?.find(p => p.isGK)?.overall;
   // The same real sheet, reshaped for the first-person dribble mode's own
-  // roster (FirstPersonDribble.tsx) — outfielders only, same as
+  // roster (FirstPersonDribble.tsx) — genuinely defensive players first
+  // (orderDefensively, lib/star/lineup.ts — the same real fix castDefence
+  // just below needed: a plain outfield list, unfiltered, put whichever
+  // striker or winger the shuffle happened to land on in front of you as
+  // often as a real defender). Excludes the goalkeeper, same as
   // castDefence's own `defenders` array: a keeper never comes out to
   // contest a dribble. undefined (not []) when there's nothing to scout,
   // so newRun's own "omit for anonymous men" default applies.
   const fpRoster: FpIdentity[] | undefined = oppXIForCast
-    ?.filter(p => !p.isGK)
-    .map(p => ({ id: p.id, name: p.name, shortName: p.shortName, face: p.face, defending: p.defending, overall: p.overall }));
+    ? orderDefensively(oppXIForCast.filter(p => !p.isGK))
+        .map(p => ({ id: p.id, name: p.name, shortName: p.shortName, face: p.face, defending: p.defending, overall: p.overall }))
+    : undefined;
 
   /**
    * Put a name to every goal in a run of hidden-match events, and record it.
