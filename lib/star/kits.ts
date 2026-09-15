@@ -140,8 +140,13 @@ const BY_LOOSE: Record<string, ClubKits> = (() => {
   return out;
 })();
 
-export function kitsOf(club: string): ClubKits {
-  return CLUB_KITS[club] ?? BY_LOOSE[normalise(club)] ?? NEUTRAL;
+/** `override`, when given, is a real design a club's owner has actually
+ *  put in place via the Boardroom's kit vote (clubPowers.ts) — checked
+ *  before the real-world default, exactly the same way a club's own
+ *  facilities/prestige overrides already win over a generic fallback
+ *  elsewhere in this game. */
+export function kitsOf(club: string, override?: ClubKits): ClubKits {
+  return override ?? CLUB_KITS[club] ?? BY_LOOSE[normalise(club)] ?? NEUTRAL;
 }
 
 // ── Telling two shirts apart ────────────────────────────────────────────────
@@ -229,9 +234,11 @@ export interface MatchKits { home: Kit; away: Kit; keeper: Kit }
  * where royal, navy and sky are all the same colour), it goes to whichever of
  * near-white or near-black the home side is not.
  */
-export function kitsFor(homeClub: string, awayClub: string): MatchKits {
-  const home = kitsOf(homeClub).home;
-  const away = kitsOf(awayClub);
+export function kitsFor(
+  homeClub: string, awayClub: string, homeOverride?: ClubKits, awayOverride?: ClubKits,
+): MatchKits {
+  const home = kitsOf(homeClub, homeOverride).home;
+  const away = kitsOf(awayClub, awayOverride);
   const chosen = !clashes(home.shirt, away.home.shirt) ? away.home
     : !clashes(home.shirt, away.away.shirt) ? away.away
     : emergency(home.shirt, away.away.trim);

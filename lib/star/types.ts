@@ -802,6 +802,17 @@ export interface CareerState {
    * "unemployed" that needs tracking.
    */
   availableManagers?: string[];
+  /**
+   * Requested directly: "you either have to get the deal done right there,
+   * or... you should have to wait until the next beginning of the season" —
+   * a failed manager negotiation (rejected, walked away by either side)
+   * shouldn't be retriable immediately for the SAME club/manager pairing.
+   * Keyed by `${club}::${managerName}`, value is the season he's willing to
+   * talk again — checked in managerPool.ts's `managerInterest`. Doesn't
+   * block negotiating with a DIFFERENT manager for the same club, or the
+   * same manager for a DIFFERENT club.
+   */
+  managerNegotiationCooldowns?: Record<string, number>;
   /** Real stakes owned in real clubs — see lib/star/investments.ts for the
    *  valuation model and the buy/sell math; nothing here is read anywhere
    *  else in the engine except that file itself. */

@@ -7,6 +7,7 @@ import { castVote, applyVoteHeldReputation, applyOverruleReputationCost, type Vo
 import { clampReputation } from "./reputation";
 import { FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, bestFitness } from "./formations";
 import { getTuning } from "./tuningStore";
+import type { ClubKits } from "./kits";
 
 /**
  * PHASE 3 OF STAR_POWER_POLITICS.MD — DEEPENING CLUB OWNERSHIP.
@@ -150,11 +151,19 @@ export function clubStrengthWithFormation(career: CareerState, club: string): nu
 
 // ── C. Kit creator + a real public kit vote ─────────────────────────────────
 
-export interface ClubKit {
-  primary: string;
-  secondary: string;
-  trim: string;
-}
+/**
+ * A REAL home-and-away pair, not a single cosmetic design.
+ *
+ * Rebuilt 15 Sep 2026 — reported directly, and correctly: real football has
+ * a genuine home/away kit clash rule, and the Boardroom's own kit vote
+ * ("Design A" vs "Design B") was never actually connected to it. `ClubKit`
+ * is now exactly `kits.ts`'s own `ClubKits` shape (a real home Kit and a
+ * real away Kit, each just a shirt + trim colour) — whichever design wins a
+ * vote genuinely becomes that club's REAL match-day kit (`kitsOf`/`kitsFor`
+ * check `career.clubKits` before the fixed real-world default), clash
+ * detection included.
+ */
+export type ClubKit = ClubKits;
 
 /** However many "fans" actually vote — same stylised stand-in
  *  `investments.ts`'s shareholder electorate uses, just bigger: a kit vote

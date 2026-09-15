@@ -201,6 +201,18 @@ export default function NegotiationScreen({
                 Step Away (check other interested clubs)
               </button>
             )}
+            {/* Requested directly: there was no way to actually leave a
+                negotiation without waiting it out to a rejection — a real
+                Walk Away, ending it right now with no deal, exactly the
+                same real outcome (and, where wired up, the same real
+                cooldown before trying THIS pairing again) as talks
+                genuinely falling through on their own. */}
+            <button
+              onClick={() => onDone(null)}
+              className="w-full mt-2 py-2 rounded-lg font-bold text-xs text-red-300 hover:text-red-200 bg-red-950/40 hover:bg-red-900/40"
+            >
+              Walk Away
+            </button>
           </>
         )}
 

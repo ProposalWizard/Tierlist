@@ -1,6 +1,7 @@
 import type { CareerState } from "./types";
 import { sortLeague } from "./season";
 import { leaguePosition } from "./competitions";
+import { divisionOf } from "./clubs";
 
 /**
  * CLUB EXPECTATIONS
@@ -40,9 +41,27 @@ export interface ClubExpectation {
  */
 export function clubExpectation(career: CareerState): ClubExpectation {
   const table = [...career.league].sort((a, b) => b.strength - a.strength);
-  const rank = Math.max(1, table.findIndex(t => t.name === career.player.club) + 1);
+  const idx = table.findIndex(t => t.name === career.player.club);
   const n = career.league.length;
-  const share = rank / n;
+  // A real bug, caught 15 Sep 2026: a club genuinely outside THIS division's
+  // table (a Championship side while you're reading it from the Premier
+  // League, or a European giant) used to fall through `findIndex`'s -1 into
+  // `Math.max(1, 0)` — rank 1, the best possible share, silently claiming
+  // "top of the league" for a club that isn't even IN this league. First
+  // caught via managerPool.ts's managerInterest: a mid-table Championship
+  // club read as a Title-chasing job, pricing a top manager's reluctance far
+  // too low. A club that's really missing gets a real proxy off its own
+  // division instead — still not exact (no live table to rank it within),
+  // but no longer a false "best team here."
+  const share = idx >= 0 ? (idx + 1) / n : (() => {
+    const division = divisionOf(career.player.club);
+    return division === "champions" ? 0.1
+      : division === "europa" ? 0.3
+      : division === "premier" ? 0.35
+      : division === "championship" ? 0.6
+      : division === "pool" ? 0.8
+      : 0.5; // an "Other" club with no tracked division at all
+  })();
 
   if (share <= 0.2) {
     return {

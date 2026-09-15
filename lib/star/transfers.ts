@@ -208,8 +208,8 @@ export function acceptOffer(career: CareerState, offer: TransferOffer): CareerSt
     // A different club is a different shirt. Signing for Everton and playing on
     // in red would be a strange way to be unveiled — and the media graphics
     // build their palette off these two.
-    kitPrimary: kitsOf(offer.club).home.shirt,
-    kitSecondary: kitsOf(offer.club).home.trim,
+    kitPrimary: kitsOf(offer.club, career.clubKits?.[offer.club]).home.shirt,
+    kitSecondary: kitsOf(offer.club, career.clubKits?.[offer.club]).home.trim,
     // A different club is a different man in the dugout, and he has never picked
     // you either.
     manager,

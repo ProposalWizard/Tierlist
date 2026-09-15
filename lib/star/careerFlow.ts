@@ -249,6 +249,30 @@ export function checkForContractOffer(career: CareerState): "form" | "star" | nu
   return null;
 }
 
+/**
+ * Whether the club is actually keen to talk, for a renewal the PLAYER asks
+ * for (as opposed to `checkForContractOffer`'s unsolicited early offer).
+ *
+ * Requested directly: "it doesn't matter how long you have left on your
+ * contract... the club should be more keen to discuss contract renewals
+ * with you [if] you are performing really well... if you haven't improved
+ * that much, they'll probably just reject the renewal approach." Reuses the
+ * exact same real signals `checkForContractOffer` already judges an
+ * unsolicited offer by (a real star-rating level, or genuinely hot recent
+ * form) rather than inventing a second, parallel standard — the difference
+ * is this one can be asked for any time, doesn't require 2+ seasons left,
+ * and never consumes a milestone (asking again next week when you still
+ * meet the bar should still work, unlike the one-shot proactive nudge).
+ */
+export function willingToRenegotiate(career: CareerState): boolean {
+  if (career.starRating >= STAR_OFFER_MILESTONES[0]) return true;
+  if (career.form.length >= FORM_OFFER_MIN_MATCHES) {
+    const avg = career.form.reduce((s, r) => s + r, 0) / career.form.length;
+    if (avg >= FORM_OFFER_THRESHOLD) return true;
+  }
+  return false;
+}
+
 // Mark the triggering milestone/season so the same offer doesn't fire again.
 export function markContractOfferUsed(career: CareerState, reason: "form" | "star"): CareerState {
   if (reason === "star") {

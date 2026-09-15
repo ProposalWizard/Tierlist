@@ -8,6 +8,7 @@ import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONS_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { FREE_AGENTS_CLUB } from "../../lib/star/leagueSquads";
 import { STRONG_MANAGERS } from "../../lib/star/managerPool";
+import { bossOnArrival } from "../../lib/star/manager";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
 
 function mulberry32(a: number) {
@@ -394,6 +395,38 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
     check(overruled.ok && overruled.career.reputation.shareholders === expectedAfterCost,
       `overruling costs shareholder reputation on top of the ordinary vote-held gain (saw ${overruled.ok ? overruled.career.reputation.shareholders : "n/a"}, expected ${expectedAfterCost})`);
   }
+}
+
+// ── Governance: owning YOUR OWN club unlocks a real manager appointment too
+// — reported directly: "you cannot do anything in the boardroom, even if
+// you own a hundred percent of it." Appointing here writes into the REAL
+// career.manager (the same live system the automatic sacking flow uses),
+// not the cosmetic ownedClubs.managerName record every other club's
+// appointment writes to ─────────────────────────────────────────────────
+{
+  const OWN_CLUB = "Arsenal"; // player()'s own club, this file's whole fixture
+  let career = freshCareer();
+  career = buyStake(career, OWN_CLUB, 100);
+  check(isMajorityOwner(career, OWN_CLUB), "fixture assumption: 100% ownership of your own club is real majority ownership");
+  career = topUpClubBudget(career, OWN_CLUB, 50_000_000);
+
+  const beforeBudget = ownedClubState(career, OWN_CLUB).budget;
+  const target = STRONG_MANAGERS.find(n => n !== career.manager?.name)!;
+  const result = replaceManagerForOwnedClub(career, OWN_CLUB, target);
+  check(result.ok, `appointing a manager at your own club succeeds once you own it (${result.reason ?? ""})`);
+  check(result.career.manager?.name === target, "…and it's written into the REAL career.manager, not a cosmetic record");
+  check(ownedClubState(result.career, OWN_CLUB).managerName === undefined, "…never into the cosmetic ownedClubs.managerName for your own club");
+  check(ownedClubState(result.career, OWN_CLUB).budget < beforeBudget, "…and costs real money from the club's own budget, same as any other club");
+  check(result.career.relationships.boss === bossOnArrival(career), "…and your relationship with the boss genuinely resets — he's never picked you either, same as any new manager");
+  check(!!result.career.manager?.reputation && result.career.manager.reputation > 0, "…with a real reputation rolled, not a placeholder");
+
+  // Exclusivity applies here too: he can't also be appointed at a different
+  // owned club while he's your own club's real manager.
+  career = result.career;
+  career = buyStake(career, RIVAL, 60);
+  career = topUpClubBudget(career, RIVAL, 50_000_000);
+  const poached = replaceManagerForOwnedClub(career, RIVAL, target);
+  check(!poached.ok, "your own club's real manager can't also be appointed at a different owned club");
 }
 
 if (problems.length) {

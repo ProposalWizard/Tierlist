@@ -156,16 +156,22 @@ const MV = 10_000_000;
   check(!anyDirty, `every one of the counterpart's own numbers lands on a real, clean round figure (dirty examples: ${dirtyExamples.slice(0, 5).join(", ")})`);
 }
 
-// ── Offering more than needed is explained, not just silently overridden ──
+// ── Whatever you actually offer is the real, binding number once it clears
+// their ask — rebuilt 15 Sep 2026, reported directly (twice) as backwards
+// the other way round: offering more than their current ask used to close
+// the deal at THEIR lower position instead, which read as the game
+// ignoring a real typed number ("I offered 15m, they wanted 3m, the deal
+// closed at 3m — it should be what I offered"). A typed offer is now what
+// you actually pay if it clears their ask — over-offering is a real choice
+// with a real cost, not something the engine quietly protects you from ──
 {
   const rng = seededRng(7);
   let state = startNegotiation(MV, "buying", rng);
   // Deliberately overshoot their current ask by a wide margin.
-  state = makeOffer(state, state.theirPosition + 5_000_000, rng);
+  const overshoot = state.theirPosition + 5_000_000;
+  state = makeOffer(state, overshoot, rng);
   check(state.status === "accepted", "a big overshoot still closes the deal");
-  check(state.finalPrice! < state.theirPosition + 5_000_000, "…at their real price, not your inflated offer");
-  check(state.log.some(l => /more than they needed|only actually pay/i.test(l)),
-    `the log explicitly explains why you paid less than you offered (log: ${JSON.stringify(state.log)})`);
+  check(state.finalPrice === overshoot, "…at the REAL number you actually offered, not a discounted lower price");
 }
 
 if (problems.length) {
@@ -173,4 +179,4 @@ if (problems.length) {
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — negotiations open away from fair value in the right direction, a generous offer closes fast, stubbornness can genuinely blow up the deal, the counterpart's own numbers are always clean, paying less than you offered is explained rather than silently applied, and every negotiation reaches a real conclusion");
+console.log("PASS — negotiations open away from fair value in the right direction, a generous offer closes fast, a deal that clears their ask genuinely closes at the real number you offered, stubbornness can genuinely blow up the deal, the counterpart's own numbers are always clean, and every negotiation reaches a real conclusion");

@@ -50,6 +50,12 @@ interface Props {
   competition: string;
   /** The whole division's results so far, to read recent form off. See recentForm. */
   results?: LeagueResult[];
+  /** A real kit a majority owner has actually put in place via the
+   *  Boardroom's kit vote (clubPowers.ts) — checked before either side's
+   *  real-world default. Optional so a caller with no career in hand (there
+   *  is none left in this codebase, but the signature was public) still
+   *  shows the real default kits rather than crashing. */
+  clubKits?: Record<string, import("@/lib/star/kits").ClubKits>;
   onKickOff: () => void;
   onBack: () => void;
 }
@@ -128,9 +134,9 @@ function scouted(s: TeamSheet): boolean {
   return s.xi.length >= 9;
 }
 
-export default function VersusScreen({ matchday, date, competition, results, onKickOff, onBack }: Props) {
+export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack }: Props) {
   const { home, away } = matchday;
-  const kits = kitsFor(home.club, away.club);
+  const kits = kitsFor(home.club, away.club, clubKits?.[home.club], clubKits?.[away.club]);
   const [showSubs, setShowSubs] = useState(false);
   const yours = home.yours ? home : away;
   const homeScouted = scouted(home);

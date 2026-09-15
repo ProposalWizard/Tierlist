@@ -11,6 +11,7 @@ import { facilitiesFor } from "../../lib/star/facilities";
 import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { getTuning } from "../../lib/star/tuningStore";
+import { kitsOf } from "../../lib/star/kits";
 import type { CareerState, LeagueSquad, LeaguePlayer, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -121,19 +122,29 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   career = buyStake(career, RIVAL, 60);
   check(clubKitFor(career, RIVAL) === null, "no kit set yet reads as null, not a crash");
 
-  const kitA = { primary: "#ff0000", secondary: "#ffffff", trim: "#000000" };
+  // Rebuilt 15 Sep 2026: ClubKit is now a real home+away pair (kits.ts's own
+  // ClubKits shape), not a single cosmetic design — reported directly that
+  // real football has genuine kit clashes and away strips, and the old
+  // single-design vote never actually connected to real match kits at all.
+  const kitA = { home: { shirt: "#ff0000", trim: "#000000" }, away: { shirt: "#ffffff", trim: "#ff0000" } };
   const setDirect = setClubKit(career, RIVAL, kitA);
-  check(setDirect.ok && clubKitFor(setDirect.career, RIVAL)?.primary === "#ff0000", "a majority owner can set a kit directly");
+  check(setDirect.ok && clubKitFor(setDirect.career, RIVAL)?.home.shirt === "#ff0000", "a majority owner can set a kit directly");
 
-  const kitB = { primary: "#0000ff", secondary: "#ffffff", trim: "#ffff00" };
+  const kitB = { home: { shirt: "#0000ff", trim: "#ffff00" }, away: { shirt: "#ffffff", trim: "#0000ff" } };
   const beforeFans = career.relationships.fans;
   const proposed = proposeKitVote(career, RIVAL, kitA, kitB, "a", mulberry32(9));
   check(proposed.ok, "a majority owner can put two kit designs to a real fan vote");
   if (proposed.ok) {
     const resolved = resolveKitVote(career, proposed.proposal);
     const winningKit = proposed.proposal.tally.winner === "a" ? kitA : kitB;
-    check(clubKitFor(resolved, RIVAL)?.primary === winningKit.primary, "the real vote result is the kit that's actually set");
+    check(clubKitFor(resolved, RIVAL)?.home.shirt === winningKit.home.shirt, "the real vote result is the kit that's actually set");
     check(resolved.relationships.fans === beforeFans + 2, "letting fans decide nudges fan reputation up by its own small, real amount");
+
+    // The whole point: the winning design now IS this club's real match-day
+    // kit, not just Boardroom-screen flavour.
+    const realKits = kitsOf(RIVAL, clubKitFor(resolved, RIVAL) ?? undefined);
+    check(realKits.home.shirt === winningKit.home.shirt && realKits.away.shirt === winningKit.away.shirt,
+      "kitsOf genuinely returns the Boardroom-set kit ahead of the real-world default");
   }
 }
 

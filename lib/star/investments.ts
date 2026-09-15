@@ -7,7 +7,8 @@ import { poolFor } from "./euro";
 import { transferWindowOpen, divisionOf as careerDivisionOf } from "./calendar";
 import { getTuning } from "./tuningStore";
 import { FREE_AGENTS_CLUB } from "./leagueSquads";
-import { managerTier, managerBaseFee, allPoolManagers } from "./managerPool";
+import { managerTier, managerBaseFee, allPoolManagers, managerRng, TIER_REPUTATION_RANGE, managerCooldownKey } from "./managerPool";
+import { styleBlurb, bossOnArrival, type Manager, type ManagerStyle } from "./manager";
 import { loadLineup } from "./lineupStore";
 import {
   castVote, applyVoteHeldReputation, applyOverruleReputationCost,
@@ -619,6 +620,22 @@ export function managerCurrentClub(career: CareerState, name: string): string | 
   return undefined;
 }
 
+/** A negotiation that ends without a deal — rejected, walked away by
+ *  either side — takes this specific man off the table for THIS specific
+ *  club until next season. Requested directly: "you either have to get the
+ *  deal done right there, or you have to wait until the next beginning of
+ *  the season" — otherwise a lowball is free to keep retrying for the best
+ *  possible price with no real cost to trying. */
+export function recordFailedManagerNegotiation(career: CareerState, club: string, managerName: string): CareerState {
+  return {
+    ...career,
+    managerNegotiationCooldowns: {
+      ...(career.managerNegotiationCooldowns ?? {}),
+      [managerCooldownKey(club, managerName)]: career.season + 1,
+    },
+  };
+}
+
 /** Appoint a manager — real data (a name, shown wherever this club's
  *  manager is displayed, costing the club's own budget, priced by the same
  *  reputation tier the pool already uses) without pretending this engine
@@ -641,17 +658,46 @@ export function replaceManagerForOwnedClub(
   const current = ownedClubState(career, club);
   const fee = agreedFee ?? managerBaseFee(managerName);
   if (fee > current.budget) return { career, ok: false, reason: "Not enough in the budget for that appointment" };
+  const isOwnClub = club === career.player.club;
 
   // Whoever he's replacing is out of a job now — same "unemployed real
   // managers" pool the player's own club's sacking flow already draws from
   // (managerPool.ts/manager.ts), so that man becomes hireable again exactly
   // like a departing player would, rather than just vanishing.
-  const outgoingName = current.managerName ?? (loadLineup(club)?.manager || undefined);
+  const outgoingName = isOwnClub ? career.manager?.name : (current.managerName ?? (loadLineup(club)?.manager || undefined));
   let availableManagers = career.availableManagers ?? allPoolManagers();
   availableManagers = availableManagers.filter(n => n !== managerName);
   if (outgoingName && outgoingName !== managerName
     && managerTier(outgoingName) !== undefined && !availableManagers.includes(outgoingName)) {
     availableManagers = [...availableManagers, outgoingName];
+  }
+
+  // Requested directly: majority (or full) ownership of your OWN club used
+  // to unlock nothing but a budget top-up — squad/sign/formation genuinely
+  // can't work here yet (they read the OTHER 19 clubs' LeagueSquad shape;
+  // your own real teammates are a different, richer SquadPlayer[] this
+  // function doesn't touch), but there's no such conflict for the manager's
+  // job: you can already BE sacked, so being able to sack HIM, as the man
+  // who actually owns the club, is a real, safe power to add. This appoints
+  // into `career.manager` for real — the same live system the automatic
+  // sacking flow uses — rather than the cosmetic `ownedClubs.managerName`
+  // record every other club's appointment writes to.
+  if (isOwnClub) {
+    const tier = managerTier(managerName);
+    const rng = managerRng(career, club, career.season);
+    const styleRoll = rng();
+    const style: ManagerStyle = styleRoll < 0.38 ? "trusting" : styleRoll < 0.72 ? "demanding" : "rotational";
+    const range = tier !== undefined ? TIER_REPUTATION_RANGE[tier] : { min: 20, max: 60 };
+    const reputation = Math.round(range.min + rng() * (range.max - range.min));
+    const manager: Manager = { name: managerName, style, since: career.season, arrival: styleBlurb(style), reputation, poolTier: tier };
+    const next: CareerState = {
+      ...career,
+      manager,
+      availableManagers,
+      relationships: { ...career.relationships, boss: bossOnArrival(career) },
+      ownedClubs: { ...(career.ownedClubs ?? {}), [club]: { ...current, budget: current.budget - fee } },
+    };
+    return { career: next, ok: true };
   }
 
   return {

@@ -154,6 +154,51 @@ function player(club: string): StarPlayer {
   check(fitJob.anchorFee >= managerBaseFee(dyche) * 0.5, "a job that suits him stays near his real base fee, not artificially discounted to nothing");
 }
 
+// ── A club genuinely playing in Europe this season still reads as its REAL
+// domestic division for hiring purposes — caught directly, from a real
+// test: divisionOf(clubs.ts) has a known bug where a club on both the
+// English ladder AND the Champions/Europa League lists (Arsenal, most
+// seasons) has its real "premier" tag silently overwritten. managerPool.ts
+// must not inherit that bug for a domestic manager appointment ────────────
+{
+  const CLUBS3 = ["Arsenal", "AFC Bournemouth", "Brentford", "Manchester United", "Liverpool"];
+  const career = makeInitialCareer(player("Arsenal"), CLUBS3);
+  const dyche = STRONG_MANAGERS.find(n => n === "Sean Dyche") ?? STRONG_MANAGERS[0];
+  const arsenalJob = managerInterest(career, dyche, "Arsenal");
+  // Arsenal is genuinely a top club (Title ambition) but Level 2 Sean Dyche
+  // taking over a title-chasing Premier League job should still price well
+  // under the extreme "ridiculous fee" territory a mis-read Champions League
+  // -tier job would produce.
+  check(arsenalJob.anchorFee < managerBaseFee(dyche) * 3, `Arsenal reads as a real Premier League job, not inflated by also playing in Europe (${arsenalJob.anchorFee})`);
+}
+
+// ── A failed manager negotiation locks out THAT pairing until next season,
+// exactly as requested: "you have to get your negotiation right... or the
+// deal will fall through until the next season" ───────────────────────────
+{
+  const CLUBS4 = ["Arsenal", "AFC Bournemouth", "Brentford", "Manchester United", "Liverpool"];
+  const career = makeInitialCareer(player("Brentford"), CLUBS4);
+  const name = STRONG_MANAGERS[0];
+  const club = "Brentford";
+  const cooled = {
+    ...career,
+    managerNegotiationCooldowns: { [`${club}::${name}`]: career.season + 1 },
+  };
+  const duringCooldown = managerInterest(cooled, name, club);
+  check(!duringCooldown.willing, "the same manager refuses to talk again this season after a failed negotiation");
+  check(!!duringCooldown.reason && /next season/i.test(duringCooldown.reason), `…with a real reason naming next season (${duringCooldown.reason})`);
+
+  // A DIFFERENT manager, or the same manager at a DIFFERENT club, is
+  // completely unaffected.
+  const otherName = STRONG_MANAGERS.find(n => n !== name)!;
+  check(managerInterest(cooled, otherName, club).willing, "a different manager for the same club is unaffected by the cooldown");
+  check(managerInterest(cooled, name, "AFC Bournemouth").willing, "the same manager at a different club is unaffected by the cooldown");
+
+  // Next season, he's willing to talk again.
+  const nextSeason = { ...cooled, season: cooled.season + 1 };
+  check(managerInterest(nextSeason, name, club).willing, "once the season actually rolls over, he's willing to talk again");
+}
+
 if (problems.length > 0) {
   console.log(`FAIL (${problems.length}):`);
   for (const p of problems) console.log(` - ${p}`);
