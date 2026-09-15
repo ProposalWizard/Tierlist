@@ -1,5 +1,6 @@
 import { DEFAULT_FACE_STYLE, CROP_VIEWPORT, type FaceStyle } from "./faceStyle";
 import { sourceRect } from "./portrait";
+import { getFaceOutline, requestFaceOutline, type FaceEllipse } from "./faceOutline";
 
 /**
  * The one place a head — real photo or the plain fallback circle — actually
@@ -22,7 +23,7 @@ import { sourceRect } from "./portrait";
  * head — matches the exact pre-editor stroke-width formula when
  * `outlineWidth` is left at its default 1.
  *
- * ── The crop, and why the outline is a plain circle again ──
+ * ── The crop ──
  *
  * An earlier version assumed real player photos were alpha-cut-out
  * headshots and tried to trace that shape for the outline. Reported back
@@ -31,9 +32,21 @@ import { sourceRect } from "./portrait";
  * cleverer outline, it was a genuine CROP — `style.crop` (a `CropView`,
  * `lib/star/portrait.ts` — the exact same pan/zoom geometry the existing
  * "Your photo" picker already uses) decides which rectangle of the source
- * photo `sourceRect` samples, and THAT clipped-to-a-circle result is what
- * the outline traces — a plain circular stroke is correct again once the
- * circle itself is what's actually being shown, not an approximation of it.
+ * photo `sourceRect` samples.
+ *
+ * ── The outline traces the real detected face, not the crop circle ──
+ *
+ * A plain circular stroke around the crop was tried next and reported back
+ * as still not what was wanted: "the outline is still for the circle not
+ * the face." `faceOutline.ts` runs real face detection (face-api.js,
+ * already a dependency of this codebase for tierlist thumbnail centering)
+ * per photo, cached, and returns an ellipse in the SAME crop-transformed
+ * local space `sourceRect` already puts the photo itself in — so the
+ * outline actually hugs the specific face in that specific photo. Detection
+ * is async and only ever resolves after this function has already returned
+ * once or twice, so a not-yet-known photo (or one no face was found in, or
+ * one with no photo at all) falls back to the plain circular stroke —
+ * never a blocked draw, never a missing outline.
  */
 export function drawPlayerHead(
   ctx: CanvasRenderingContext2D,
@@ -64,8 +77,14 @@ export function drawPlayerHead(
     ctx.fill();
   }
 
-  if (hasPhoto) {
-    const rect = sourceRect(style.crop, face!.naturalWidth, face!.naturalHeight, CROP_VIEWPORT);
+  // Computed once, up here, so the outline block below can reuse the exact
+  // same crop rectangle the photo itself was drawn with — the two must never
+  // disagree about which part of the source photo "here" refers to.
+  const rect = hasPhoto
+    ? sourceRect(style.crop, face!.naturalWidth, face!.naturalHeight, CROP_VIEWPORT)
+    : null;
+
+  if (hasPhoto && rect) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -75,10 +94,49 @@ export function drawPlayerHead(
   }
 
   if (style.outlineEnabled) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.lineWidth = Math.max(1, figureR * 0.10 * style.outlineWidth);
     ctx.strokeStyle = style.outlineColor;
-    ctx.stroke();
+
+    let shape: FaceEllipse | null = null;
+    if (hasPhoto && rect) {
+      requestFaceOutline(face!.src);
+      // getFaceOutline's undefined ("not yet known") and null ("no face
+      // found") both mean the same thing here: draw the fallback circle.
+      shape = getFaceOutline(face!.src) ?? null;
+    }
+
+    if (shape && rect) {
+      // The same photo→local-head-space mapping sourceRect's own consumer
+      // (the drawImage call above) uses: a point at fraction (u,v) across
+      // the sampled rect lands at cx/cy ± (u/v - 0.5) * the full 2r
+      // diameter. Uniform (never stretching — sourceRect's sw always equals
+      // sh, a square crop viewport), so a real ellipse stays a real ellipse
+      // through the transform, just scaled and moved.
+      const faceCxPx = shape.cx * face!.naturalWidth;
+      const faceCyPx = shape.cy * face!.naturalHeight;
+      const u = (faceCxPx - rect.sx) / rect.sw;
+      const v = (faceCyPx - rect.sy) / rect.sh;
+      const ex = cx + (u - 0.5) * r * 2;
+      const ey = cy + (v - 0.5) * r * 2;
+      // A light sanity clamp, not a real bound on ordinary variation — this
+      // has never been seen live, so a genuinely bad detection (a mislabeled
+      // photo, an unusual crop) gets caught here rather than drawing a huge
+      // or vanishingly small stray shape nowhere near the actual head.
+      const erx = clamp((shape.rx * face!.naturalWidth / rect.sw) * r * 2, r * 0.3, r * 1.4);
+      const ery = clamp((shape.ry * face!.naturalHeight / rect.sh) * r * 2, r * 0.3, r * 1.4);
+      ctx.beginPath();
+      ctx.ellipse(ex, ey, erx, ery, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      // No photo, no detection yet, or no face found in this one — the
+      // original plain circle, exactly as it has always looked.
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
   }
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
 }
