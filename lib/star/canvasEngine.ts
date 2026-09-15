@@ -2954,7 +2954,13 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
    * `receiver.skill` — this is the extra, deliberate "genuinely elite"
    * edge on where he's TRYING to put it, layered on top.
    */
-  const realShooting = receiver.who?.shooting;
+  // Falls back to `overall` — a real shooting stat needs a squad refresh to
+  // reach an EXISTING save (see CLAUDE.md), and this boost was gated on
+  // `shooting` alone, no fallback, so it stayed a silent no-op for every
+  // save that hasn't refreshed yet even though `overall` has been on every
+  // real Identity for weeks. Matches curlTech's own fallback below — the
+  // same real data should unlock the same real improvement everywhere.
+  const realShooting = receiver.who?.shooting ?? receiver.who?.overall;
   const eliteBoost = realShooting !== undefined ? 1 + clamp(realShooting - 55, 0, 40) / 100 : 1;
 
   // ── HE AIMS AT THE GOAL, NOT AT THE GOALKEEPER ──
@@ -3101,9 +3107,64 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // doesn't get an unrealistically dramatic swerve just because a good
   // striker happened to get on the end of it.
   const curlControlScale = 0.4 + control * 0.6;
+  /**
+   * A real defender in the straight-line path gets bent AROUND, not just
+   * "the keeper is over there so curl this way" — the specific, literal
+   * ask, twice over: "curving shots... to get their shot on target in
+   * hard positions and angles blocked by defenders." Everything above this
+   * point curls purely off where the KEEPER is standing, completely blind
+   * to a body actually standing in the shot's direct line — a real gap,
+   * not just a magnitude problem, and the most likely reason it never read
+   * as "round the defender" even once curl itself was genuinely active.
+   *
+   * Projects each real Defender onto the straight ball→aimX line (the shot
+   * BEFORE any curl bends it) and checks how close he sits to it, between
+   * the two ends — a man near the start or end of that line isn't actually
+   * screening the shot. When one is close enough to matter, the curl
+   * DIRECTION is set to bend away from HIS side of that line — overriding
+   * the keeper-based `side` when the two disagree, because getting the
+   * ball round a body actually in the way takes priority over which
+   * corner is nominally more ambitious — with real EXTRA magnitude on top:
+   * this is the one moment the whole mechanic exists for, not an ordinary
+   * placement curl that happens not to hit anyone.
+   */
+  // Measured, then corrected: with no gate at all, this dragged corner's
+  // on-target rate down further (63.9%, below finishing.mts's own 70%
+  // floor) — a header in a crowded box realistically can't finesse it
+  // round a marker the way a composed side-footed finish can, and corners
+  // specifically have more defenders nearby for this to even find. Gated
+  // to genuinely controlled situations (control >= 0.5 — cutback/
+  // one_on_one/through_ball/tight_angle; excludes byline_cross/volley/
+  // header/corner) rather than tuning the magnitude down further, since
+  // the real issue is which situations this mechanic even makes sense for,
+  // not how strong it is within them.
+  let blockerSide: -1 | 0 | 1 = 0;
+  if (control >= 0.5) {
+    const laneDX = aimX - ball.pos.x, laneDY = -ball.pos.y; // aimX crosses at y = 0
+    const laneLen2 = laneDX * laneDX + laneDY * laneDY;
+    if (laneLen2 > 1) {
+      for (const d of scenario.defenders) {
+        const t = clamp(((d.x - ball.pos.x) * laneDX + (d.y - ball.pos.y) * laneDY) / laneLen2, 0, 1);
+        if (t < 0.12 || t > 0.92) continue; // too close to either end to actually be screening it
+        const projX = ball.pos.x + laneDX * t, projY = ball.pos.y + laneDY * t;
+        if (Math.hypot(d.x - projX, d.y - projY) < 1.4) {
+          // Positive spin curves the ball toward SMALLER x (see
+          // stepBallRaw's own "positive spin curves LEFT of travel"
+          // comment, and CURVE_SPIN_STEP's note on getting this exact
+          // sign backwards once already) — so a defender sitting at
+          // LOWER x needs NEGATIVE spin to bend the ball away from him,
+          // toward larger x, not positive.
+          blockerSide = d.x < projX ? -1 : 1;
+          break;
+        }
+      }
+    }
+  }
+  const curlSide = blockerSide !== 0 ? blockerSide : side;
+  const blockerBoost = blockerSide !== 0 ? 1.15 : 1;
   const curlTech = receiver.who?.shooting ?? receiver.who?.overall;
   const spin = curlTech !== undefined
-    ? side * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale
+    ? curlSide * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale * blockerBoost
     : (rng() - 0.5) * 0.9;
 
   ball.vel = { x: dir.x * Sh, y: dir.y * Sh };
