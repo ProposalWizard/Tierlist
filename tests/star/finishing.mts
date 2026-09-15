@@ -1,6 +1,6 @@
 import {
   buildScenario, initDefenders, stepDefenders, stepKeeper, stepReactions, stepBall,
-  launch, type Outcome, type ScenarioKind,
+  launch, type Outcome, type ScenarioKind, type Scenario,
 } from "../../lib/star/canvasEngine";
 import { POST_L, POST_R } from "../../lib/star/pitch";
 
@@ -378,6 +378,89 @@ for (const kind of KINDS) {
     const eliteRate = elite.onTarget / Math.max(1, elite.offs.length);
     check(eliteRate > poorRate - 0.08,
       `${kind}: an elite finisher isn't noticeably LESS accurate than a poor one (${pct(elite.onTarget, elite.offs.length)} vs ${pct(poor.onTarget, poor.offs.length)})`);
+  }
+}
+
+// ── The curl actually bends AROUND a real defender in the way — not just
+//    around the keeper ──────────────────────────────────────────────────────
+//
+// Reported directly, TWICE, after the eliteBoost/curl work above had
+// already shipped and gone live: "STILL doing terrible shots... i still am
+// yet to see a good curve shot... a finesse shot to get the shot around a
+// blocking defender." Investigating found the real gap: everything above
+// only ever curled off where the KEEPER stands — completely blind to a man
+// actually standing in the shot's direct line, which is the literal, named
+// ask both times. This section plants a real, static "wall" defender
+// directly between the ball and goal centre (the same real engine code
+// path a match uses, not a re-derived approximation) and proves the block
+// rate genuinely drops once a real finisher's curl is active — not just
+// that SOME number moved, but that the ball measurably gets PAST that
+// specific man more often.
+//
+// The sign here is worth real care: this exact codebase has gotten a curl
+// sign backwards once already (CURVE_SPIN_STEP's own comment) — positive
+// spin bends the ball toward SMALLER x, so a defender sitting at lower x
+// needs NEGATIVE spin to curl away from him. Caught here by measuring
+// first (a naive sign choice measurably made the block rate WORSE, not
+// better, before this was corrected) rather than trusting the arithmetic
+// alone.
+{
+  interface BlockSample { blocked: number; total: number; }
+
+  function sampleWithWall(kind: ScenarioKind, n: number, shooting: number | undefined): BlockSample {
+    const out: BlockSample = { blocked: 0, total: 0 };
+    for (let seed = 0; seed < n; seed++) {
+      const rng = mulberry32(seed * 1013 + kind.length * 7919);
+      const sc = buildScenario(kind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t || !sc.receiver) continue;
+      if (shooting !== undefined) {
+        const who = { id: "x", name: "X", shortName: "X", position: "ST", shooting, overall: shooting };
+        if (sc.runner) sc.runner.who = who;
+        for (const r of sc.secondaryRunners) r.who = who;
+      }
+
+      const d = Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y);
+      const ball = launch(sc,
+        { x: t.x - sc.ball.x + (rng() - 0.5), y: t.y - sc.ball.y + (rng() - 0.5) },
+        Math.min(0.95, 0.2 + d / 32) * (0.92 + rng() * 0.16),
+        { cx: (rng() - 0.5) * 0.6, cy: -0.1 - rng() * 0.4 },
+        { power: 60, technique: 60 }, rng);
+
+      // A static wall defender, planted once, directly goal-side of the
+      // receiver — a real body genuinely screening the direct route.
+      let planted = false;
+      let res: Outcome | null = null;
+      let struck = false;
+      for (let i = 0; i < 2500 && !res; i++) {
+        if (!planted && !struck) {
+          sc.defenders.push({ x: t.x, y: Math.max(1, t.y - 4) } as Scenario["defenders"][number]);
+          planted = true;
+        }
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        const shotsBefore = sc.receiverShots ?? 0;
+        res = stepBall(ball, sc, rng, DT);
+        if ((sc.receiverShots ?? 0) > shotsBefore) struck = true;
+      }
+      if (!struck) continue;
+      out.total++;
+      if (res === "blocked" || res === "tackled") out.blocked++;
+    }
+    return out;
+  }
+
+  // cutback/one_on_one: genuinely composed, high-control situations — the
+  // ones the mechanic is actually gated to apply in.
+  for (const kind of ["cutback", "one_on_one"] as ScenarioKind[]) {
+    const noId = sampleWithWall(kind, 400, undefined);
+    const elite = sampleWithWall(kind, 400, 92);
+    const noIdRate = noId.blocked / Math.max(1, noId.total);
+    const eliteRate = elite.blocked / Math.max(1, elite.total);
+    check(eliteRate < noIdRate - 0.03,
+      `${kind}: a real finisher genuinely gets the ball PAST a defender planted directly in his path more often (blocked ${pct(elite.blocked, elite.total)} vs no-identity ${pct(noId.blocked, noId.total)})`);
   }
 }
 
