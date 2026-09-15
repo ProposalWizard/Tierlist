@@ -464,6 +464,85 @@ for (const kind of KINDS) {
   }
 }
 
+// ── THE CHIP — a good finisher can lob an exposed keeper ────────────────────
+//
+// Requested directly, alongside the finesse-curl redesign: "good finishers
+// should also be able to CHIP the goalie like the player can; ... if the
+// goalie is far out enough of their goal to be able to be chipped (a low
+// power bottom of the ball very high shot that drops down in the goal and
+// goes over someones head)." A chip has a distinctive SHAPE — a real
+// finisher's shot elsewhere in this file runs 20-31 m/s forward with a
+// modest loft; a chip trades almost all of that pace for height — cheap to
+// detect from the outside by reading the struck ball's own vel/vz, without
+// needing an internal hook into launchReceiverShot itself.
+{
+  const CHIP_SPEED_MAX = 15;  // m/s — well under any ordinary driven/placed shot
+  const CHIP_VZ_MIN = 5;      // m/s — a real, steep initial climb
+
+  interface ChipSample { total: number; chips: number; chipGoals: number; }
+
+  function sampleOneOnOne(n: number, shooting: number | undefined, keeperOff: boolean): ChipSample {
+    const out: ChipSample = { total: 0, chips: 0, chipGoals: 0 };
+    for (let seed = 0; seed < n; seed++) {
+      const rng = mulberry32(seed * 7001 + (keeperOff ? 991 : 0) + (shooting ?? 0) * 17);
+      const sc = buildScenario("one_on_one" as ScenarioKind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      // Keep only the situation this section is actually testing — the
+      // keeper's own real band (see buildOneOnOne's "off his line and
+      // closing" comment) rather than a second, hand-picked threshold.
+      if (keeperOff !== (sc.keeper.y > 3.5)) continue;
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t || !sc.receiver) continue;
+      if (shooting !== undefined) {
+        const who = { id: "x", name: "X", shortName: "X", position: "ST", shooting, overall: shooting };
+        if (sc.runner) sc.runner.who = who;
+        for (const r of sc.secondaryRunners) r.who = who;
+      }
+      const d = Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y);
+      const ball = launch(sc,
+        { x: t.x - sc.ball.x + (rng() - 0.5), y: t.y - sc.ball.y + (rng() - 0.5) },
+        Math.min(0.95, 0.2 + d / 32) * (0.92 + rng() * 0.16),
+        { cx: (rng() - 0.5) * 0.6, cy: -0.1 - rng() * 0.4 },
+        { power: 60, technique: 60 }, rng);
+
+      let res: Outcome | null = null, struck = false, chipShot = false;
+      for (let i = 0; i < 2500 && !res; i++) {
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        const shotsBefore = sc.receiverShots ?? 0;
+        res = stepBall(ball, sc, rng, DT);
+        if ((sc.receiverShots ?? 0) > shotsBefore && !struck) {
+          struck = true;
+          const speed = Math.hypot(ball.vel.x, ball.vel.y);
+          chipShot = speed < CHIP_SPEED_MAX && ball.vz > CHIP_VZ_MIN;
+        }
+      }
+      if (!struck) continue;
+      out.total++;
+      if (chipShot) { out.chips++; if (res === "goal") out.chipGoals++; }
+    }
+    return out;
+  }
+
+  const eliteOff = sampleOneOnOne(1500, 92, true);
+  check(eliteOff.chips / Math.max(1, eliteOff.total) > 0.1,
+    `one_on_one: an elite finisher genuinely attempts a real chip against an exposed keeper (${pct(eliteOff.chips, eliteOff.total)} of chances)`);
+  check(eliteOff.chipGoals / Math.max(1, eliteOff.chips) > 0.6,
+    `one_on_one: a chip against an exposed keeper converts at a real high rate, not a coin flip (${pct(eliteOff.chipGoals, eliteOff.chips)})`);
+
+  // The gate itself: a keeper who is NOT off his line, and a generic
+  // chance with no real identity at all, should essentially never produce
+  // this shot shape.
+  const eliteOn = sampleOneOnOne(1500, 92, false);
+  check(eliteOn.chips / Math.max(1, eliteOn.total) < 0.02,
+    `one_on_one: a chip is not attempted against a keeper who is not off his line (${pct(eliteOn.chips, eliteOn.total)})`);
+
+  const noIdOff = sampleOneOnOne(1500, undefined, true);
+  check(noIdOff.chips / Math.max(1, noIdOff.total) < 0.02,
+    `one_on_one: a generic, no-identity chance never attempts a chip (${pct(noIdOff.chips, noIdOff.total)})`);
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log("  ✗ " + p);
