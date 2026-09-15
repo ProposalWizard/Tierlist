@@ -1,6 +1,6 @@
 # KnowItBall — Project Context
 
-> Auto-loaded every session — keep concise. Full history in `SESSION_LOG.md`. Last updated: 14 September 2026.
+> Auto-loaded every session — keep concise. Full history in `SESSION_LOG.md`. Last updated: 15 September 2026.
 
 ---
 
@@ -279,6 +279,15 @@ npm run lint   # Run ESLint
 ---
 
 ## Recent Session
+
+**15 September 2026 — The alpha-outline assumption was wrong; replaced with a real crop tool, and the circle clip is back.**
+
+- **The ask, and the real information it carried.** "some of the picture is in it that i dont want in it, like the neck and a bit of the shirt, i cant customise it enough to make it perfect. more customisation please, better editor still, i wanna be able to crop some bits out, have like a circular crop thing, and whatever else may help." This settled, for real, the one thing flagged as an unconfirmed assumption in the previous entry: real player photos are plain rectangles — head, neck, and a bit of shirt — not alpha-cut-out headshots. The "trace the photo's own alpha shape" outline built on that wrong assumption was never going to do anything useful against an opaque rectangle (recolouring every "visible" pixel of an opaque image recolours the WHOLE rectangle, so the outline it produced was tracing a rectangle, not a face) — so this isn't a tuning pass on top of that design, it's a real correction of it.
+- **The actual fix: a genuine crop, reusing geometry that already existed rather than inventing new geometry.** `PortraitPicker.tsx` (Settings → Photo, your own picture) already has exactly this problem solved — `lib/star/portrait.ts`'s `CropView`/`coverScale`/`clampOffset`/`sourceRect`/`initialView` are the real pan-and-zoom math a crop tool needs. `FaceStyle` (`faceStyle.ts`) gained a `crop: CropView` field — ONE shared crop, applied to every real player's photo alike, same spirit as every other field on it — and `drawPlayerHead.ts` now calls `sourceRect(style.crop, …)` to pick which rectangle of the SOURCE photo actually gets sampled, via `drawImage`'s 9-argument form, before it's clipped to the head circle.
+- **The circle clip is back, and the outline is a plain stroke again — correctly, this time.** Once cropping is the real answer to "cut the neck out," clipping the (now correctly cropped) result to a circle is exactly right, and a plain circular stroke traces that same circle honestly — no silhouette compositing, no offscreen canvas, no per-(photo,colour) cache to maintain. Deleted `silhouetteFor`/`stampOutline`/the `WeakMap` cache outright rather than leaving unused, wrong-premise code sitting in the file.
+- **New "Crop Photo" section in the Face Editor**, styled and behaved to match `PortraitPicker`'s own established crop stage as closely as reasonable — a fixed-size viewport (`CROP_VIEWPORT`, 256px, its own constant since it's a different concern from `PORTRAIT_SIZE`), drag-to-pan, a zoom slider (zooming about the viewport's own centre, matching `PortraitPicker.setZoom`'s exact reasoning for why — without it the face slides out of frame every time the slider moves), and a circular "what's kept" vignette drawn with a single CSS trick (a circular div with `box-shadow: 0 0 0 9999px rgba(0,0,0,0.6)` — the shadow's own huge spread fills everything outside the circle, no canvas overlay math needed). The crop snaps to a sensible centred `initialView` the first time a real photo loads, but only while it's still genuinely untouched (exactly `{zoom:1,x:0,y:0}`) — the moment a real drag or zoom moves it even slightly, that auto-centring permanently stops firing, on any future player switch too, so it can never fight an edit you've already made.
+- New `tests/star/faceStyle.mts` coverage for the crop field: it round-trips exactly, an absurd stored value clamps to something finite and in-range rather than corrupting, and an OLD save from before `crop` existed (no such key at all) still loads cleanly with the real default crop filled in rather than crashing or leaving `undefined`.
+- Full 108-file suite and `tsc --noEmit` both clean. As with every visual change this whole cycle, none of this has been seen live — the crop math itself is the exact same, already-in-production geometry `PortraitPicker` already uses for a different photo, which is real confidence, not a fresh guess; the new CSS vignette trick and the drag feel are the two genuinely new pieces worth a real look first.
 
 **14 September 2026 (cont. 5) — More editor freedom, and the outline redefined to trace the photo's own shape rather than a circle.**
 

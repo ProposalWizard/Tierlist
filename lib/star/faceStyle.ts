@@ -1,4 +1,5 @@
 "use client";
+import type { CropView } from "./portrait";
 
 /**
  * How a real player's head draws on the pitch — a personal DISPLAY
@@ -16,6 +17,14 @@
  * draws a head, in a real match AND in that editor's own live preview, off
  * this exact same object — so what you see there is what draws, never a
  * separate approximation that can quietly drift out of sync).
+ *
+ * `crop` was added after real player photos turned out to be plain
+ * rectangles (neck and shirt included), not the alpha-cut-out headshots an
+ * earlier version assumed — reported directly: "some of the picture is in
+ * it that i dont want in it, like the neck and a bit of the shirt." Reuses
+ * `CropView`/`sourceRect` (lib/star/portrait.ts) — the exact same pan/zoom
+ * math the existing "Your photo" picker (PortraitPicker.tsx) already uses —
+ * rather than a second copy of that geometry.
  */
 export interface FaceStyle {
   /** Multiplies the head's own base radius. 1.0 is the original, unscaled size. */
@@ -33,11 +42,24 @@ export interface FaceStyle {
   outlineColor: string;
   /** Multiplies the existing base stroke-width formula. 1.0 is the original width. */
   outlineWidth: number;
+  /** Which part of a REAL PHOTO's own rectangle shows inside the head circle
+   *  — one shared crop applied to every real player's photo alike, same as
+   *  every other field here. Defined in units of CROP_VIEWPORT, exactly the
+   *  way PortraitPicker's own crop stage defines its CropView. */
+  crop: CropView;
 }
 
 /** The exact figure-drawing SKIN colour (CanvasMatch.tsx), so "no photo, backing on" looks
  *  identical to how every head on the pitch has always looked. */
 export const HEAD_SKIN = "#c68642";
+
+/** The reference square the shared crop is defined against — see FaceStyle.crop.
+ *  Only a unit of measurement for stored x/y; the Face Editor's own crop
+ *  viewport is sized to exactly this many pixels so a drag needs no separate
+ *  conversion factor, and drawPlayerHead reads it back at whatever size a
+ *  given figure actually draws at, via sourceRect's own destination-agnostic
+ *  math — never re-interpreted differently in the two places it's used. */
+export const CROP_VIEWPORT = 256;
 
 export const DEFAULT_FACE_STYLE: FaceStyle = {
   scale: 1.4,
@@ -48,6 +70,7 @@ export const DEFAULT_FACE_STYLE: FaceStyle = {
   outlineEnabled: true,
   outlineColor: "rgba(0,0,0,0.35)",
   outlineWidth: 1,
+  crop: { zoom: 1, x: 0, y: 0 },
 };
 
 const KEY = "star-face-style";
@@ -58,6 +81,9 @@ const LEGACY_SCALE_KEY = "star-face-scale";
 // meaningfully higher or bigger than its default spot.
 export const FACE_SCALE_RANGE: [number, number] = [0.5, 5];
 export const FACE_OFFSET_RANGE: [number, number] = [-3, 3];
+/** CropView.zoom range — 1 is "just covers the circle", matching that
+ *  interface's own doc; above that is zoomed in. */
+export const CROP_ZOOM_RANGE: [number, number] = [1, 4];
 
 function sanitize(partial: Partial<FaceStyle>): FaceStyle {
   const s = { ...DEFAULT_FACE_STYLE, ...partial };
@@ -70,6 +96,16 @@ function sanitize(partial: Partial<FaceStyle>): FaceStyle {
     outlineEnabled: !!s.outlineEnabled,
     outlineColor: typeof s.outlineColor === "string" && s.outlineColor ? s.outlineColor : DEFAULT_FACE_STYLE.outlineColor,
     outlineWidth: clamp(numberOr(s.outlineWidth, 1), 0, 4),
+    // Only a loose sanity clamp — x/y can't be meaningfully bounded without
+    // a real image's own dimensions, which aren't available here. The real,
+    // precise clamp (clampOffset, portrait.ts) runs at actual use time, both
+    // in the editor's drag handler and effectively at draw time via
+    // sourceRect, which is written to tolerate an out-of-range view anyway.
+    crop: {
+      zoom: clamp(numberOr(s.crop?.zoom, 1), ...CROP_ZOOM_RANGE),
+      x: clamp(numberOr(s.crop?.x, 0), -4000, 4000),
+      y: clamp(numberOr(s.crop?.y, 0), -4000, 4000),
+    },
   };
 }
 
