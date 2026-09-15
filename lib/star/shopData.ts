@@ -1,6 +1,8 @@
 import type { Boot, OwnedItem } from "./types";
 import { applyPriceOverrides } from "./tuningStore";
-import { KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT } from "./shopDefaults";
+import {
+  KIB_CANS_DEFAULT, STAT_KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT,
+} from "./shopDefaults";
 
 /**
  * KIB CANS.
@@ -31,6 +33,33 @@ export interface KibCan {
  *  lib/star/tuningStore.ts's applyPriceOverrides. Everything else about a
  *  can (name, colour, art) stays fixed; those aren't game-balance numbers. */
 export const KIB_CANS: KibCan[] = applyPriceOverrides("kibCans", KIB_CANS_DEFAULT);
+
+/**
+ * KIB STAT CANS — the same idea, a much bigger spend.
+ *
+ * Requested directly, alongside the energy cans above: "maybe even just
+ * have 2 sets of cans, the normal ones going up in energy addition, and
+ * then another set of those cans but costing WAYYY more and giving stat
+ * boosts." A temporary boost to power AND technique — the two player
+ * skills a boot already applies additively (see page.tsx's
+ * effectivePower/effectiveTechnique) — for a handful of matches, then it
+ * wears off. Deliberately a flat preset per tier rather than a user-picked
+ * stat or a random one: the simplest version that still scales with can
+ * quality the way asked ("+3, +5, etc").
+ */
+export interface StatKibCan {
+  id: "basic" | "premium" | "elite";
+  name: string;
+  price: number;
+  /** Added to BOTH power and technique while active. */
+  boost: number;
+  /** How many matches the boost lasts before it wears off. */
+  matches: number;
+  color: string;
+  image: string;
+}
+
+export const STAT_KIB_CANS: StatKibCan[] = applyPriceOverrides("statKibCans", STAT_KIB_CANS_DEFAULT);
 
 /** Only `price` is editable at /star-tuning-dev — the stat boosts and
  *  durability are the boot's own identity, not a balance lever. */

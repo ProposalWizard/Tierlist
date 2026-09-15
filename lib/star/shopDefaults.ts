@@ -1,5 +1,5 @@
 import type { Boot, OwnedItem } from "./types";
-import type { KibCan } from "./shopData";
+import type { KibCan, StatKibCan } from "./shopData";
 
 /**
  * THE RAW SHOP CATALOGUES — before any /star-tuning-dev price override.
@@ -25,6 +25,20 @@ export const KIB_CANS_DEFAULT: KibCan[] = [
   { id: "basic", name: "Basic KIB Can", price: 6000, restore: 25, color: "bg-orange-400", image: "/star/kib-basic.png" },
   { id: "premium", name: "Premium KIB Can", price: 12000, restore: 50, color: "bg-blue-400", image: "/star/kib-premium.png" },
   { id: "elite", name: "Elite KIB Can", price: 24000, restore: 100, color: "bg-purple-400", image: "/star/kib-elite.png" },
+];
+
+// Far steeper than the energy cans above — "costing WAYYY more," requested
+// directly — sitting alongside the top of the boots/lifestyle catalogues
+// rather than the bottom of them, since a temporary boost that STACKS on
+// top of whatever boots you're already wearing is a real late-game luxury,
+// not a routine top-up. `boost` adds to power AND technique alike (the two
+// player skills a boot already applies via the same additive pattern — see
+// page.tsx's effectivePower/effectiveTechnique) for `matches` games, then
+// clears — never stacks with a second can, the later one just replaces it.
+export const STAT_KIB_CANS_DEFAULT: StatKibCan[] = [
+  { id: "basic", name: "Basic KIB Stat Can", price: 80000, boost: 3, matches: 2, color: "bg-amber-500", image: "/star/kib-stat-basic.png" },
+  { id: "premium", name: "Premium KIB Stat Can", price: 180000, boost: 5, matches: 3, color: "bg-rose-500", image: "/star/kib-stat-premium.png" },
+  { id: "elite", name: "Elite KIB Stat Can", price: 400000, boost: 8, matches: 4, color: "bg-fuchsia-500", image: "/star/kib-stat-elite.png" },
 ];
 
 export const BOOTS_CATALOGUE_DEFAULT: Boot[] = [

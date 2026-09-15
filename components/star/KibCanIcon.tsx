@@ -20,7 +20,13 @@ import type { KibCan } from "@/lib/star/shopData";
  * cut out"). `contain` shows the whole shot, letterboxed by nothing since
  * the surrounding pixels are transparent rather than a visible bar.
  */
-export default function KibCanIcon({ can, className = "h-14 w-10" }: { can: KibCan; className?: string }) {
+/** Only `color`/`image` are actually read below — narrowed to just those so
+ *  a KIB Stat Can (shopData.ts's StatKibCan, a different shape entirely
+ *  beyond those two fields) can share this same icon without either type
+ *  needing to match the other's full interface. */
+type CanLike = Pick<KibCan, "color" | "image">;
+
+export default function KibCanIcon({ can, className = "h-14 w-10" }: { can: CanLike; className?: string }) {
   const [imgOk, setImgOk] = useState(true);
 
   if (imgOk) {

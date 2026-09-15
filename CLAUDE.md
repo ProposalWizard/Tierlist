@@ -280,6 +280,15 @@ npm run lint   # Run ESLint
 
 ## Recent Session
 
+**15 September 2026 (cont. 10) — KIB Stat Cans: a second, far pricier can that temporarily boosts Power/Technique instead of restoring energy.**
+
+- Requested directly, with the fallback shape given explicitly: "2 sets of cans, the normal ones going up in energy addition, and then another set... costing WAYYY more and giving stat boosts (+3, +5, etc)." Built exactly that, reusing every existing pattern rather than inventing new ones.
+- New `StatKibCan`/`STAT_KIB_CANS` (`shopData.ts`/`shopDefaults.ts`) — same three-tier shape as `KIB_CANS`, priced 80k/180k/400k (13-16x the matching energy tier) for a flat +3/+5/+8 to BOTH Power and Technique, lasting 2/3/4 matches. A flat preset per tier, not user-picked or random stats — the simplest version that still scales with quality as asked.
+- `CareerState.statCans`/`statBoost` (new) track owned cans and the one currently-active boost; `statBoost` is set outright by `handleUseStatCan` (page.tsx) and counts down one match at a time in `creditMatchResult`, same shape `currentBoot.matches` already uses — clears to `null` at zero, replaced outright (never stacked) by using a second can. Stacks WITH a worn boot, though — both add into `effectivePower`/`effectiveTechnique` (page.tsx), which is the one real hook point that already existed for exactly this kind of temporary bonus.
+- Dashboard gets a second card (KIB Stat Cans, below the energy one) showing owned counts, a Use button per tier, and the active boost/matches-left when one is running; the Shop's existing "kib" screen gets a second buy list below the energy cans. `KibCanIcon.tsx` narrowed its prop type to just `color`/`image` (the two fields it actually draws) so both can types share the one icon component.
+- Old saves backfill both new fields to empty/`null` in `storage.ts`, same convention as `kibCans`' own existing backfill right above it.
+- Full 110-file suite and `tsc --noEmit` both clean. Not seen live — same sign-in limitation as everything else this whole cycle.
+
 **15 September 2026 (cont. 9) — Real finesse-shot geometry (aim wide, curl back onto the target — not the other way round), and a genuine AI chip over an exposed keeper.**
 
 - **The ask, two parts, in one message.** (1) A direct, correct football-domain correction to (cont. 8)'s just-shipped curl: "curved shots should mostly be a shot going wider than the goal in order to get around a defender or be further from a goalkeeper... curving towards the goal... a player on the left wing... the perfect shot... aimed more right than the right corner of the goal, curving towards the goal (so the ball curves left) so it just about gets to the right hand corner (rather than always going towards the goal... and then curving wide towards the corner, [which] would be more likely to be blocked or saved)." (2) A new, additive idea: "good finishers should also be able to CHIP the goalie like the player can; like if the goalie is far out enough of their goal to be able to be chipped (a low power bottom of the ball very high shot that drops down in the goal and goes over someones head)."
