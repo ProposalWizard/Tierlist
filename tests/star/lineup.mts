@@ -491,6 +491,101 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
   );
 }
 
+// ── castScenario's own fallback: exhausted, not blind ───────────────────────
+//
+// The SAME reported shape as castDefence's own bug above — "just the
+// highest rated players... loads of attackers" — but on the team-mate side,
+// via a different mechanism. Reported directly, from real play: "why am i
+// seeing centre backs in attack over midfielders." claim()'s exact
+// position-preference list was never the problem; once it's EXHAUSTED
+// (several runners/the poacher/several corner teammates can all want from
+// the same small pool in one scenario) it used to fall back to the single
+// highest-overall outfielder left, position ignored entirely — an elite
+// centre-back with nothing else to do would out-rate an available
+// midfielder every time.
+{
+  const mkSquad = (id: string, position: SquadPlayer["position"], overall: number): SquadPlayer => ({
+    id, name: id, shortName: id, position, overall,
+    seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
+  });
+  // Eight modest, genuinely attacking-ish players — enough to cover a
+  // corner's own worst case (up to 5 decorative team-mates, the runner and
+  // the poacher: 7 attacking-context slots in one scenario) — against six
+  // ELITE centre-backs, deliberately rated far above every one of them.
+  const EXHAUST_SQUAD: SquadPlayer[] = [
+    mkSquad("gk", "GK", 80),
+    mkSquad("st1", "ST", 68), mkSquad("st2", "ST", 66),
+    mkSquad("cam1", "CAM", 67), mkSquad("cam2", "CAM", 65),
+    mkSquad("cm1", "CM", 64), mkSquad("cm2", "CM", 62),
+    mkSquad("lw1", "LW", 63), mkSquad("rw1", "RW", 61),
+    mkSquad("lb1", "LB", 58), mkSquad("rb1", "RB", 58), mkSquad("cdm1", "CDM", 58),
+    mkSquad("cb1", "CB", 95), mkSquad("cb2", "CB", 94), mkSquad("cb3", "CB", 93),
+    mkSquad("cb4", "CB", 92), mkSquad("cb5", "CB", 91), mkSquad("cb6", "CB", 90),
+  ];
+  const eliteCBs = new Set(["cb1", "cb2", "cb3", "cb4", "cb5", "cb6"]);
+
+  const rng = mulberry32(4242);
+  let cbInAttack = 0, total = 0;
+  const N = 400;
+  for (let i = 0; i < N; i++) {
+    const sc = buildScenario("corner", rng, 62, 60, 55);
+    castScenario(sc, EXHAUST_SQUAD);
+    for (const r of [...mates(sc), sc.follower, ...sc.teammates]) {
+      if (!r.who) continue;
+      total++;
+      if (eliteCBs.has(r.who.id)) cbInAttack++;
+    }
+  }
+  check(total > N * 3, `enough real assignments happened to measure (${total} across ${N} corners)`);
+  check(cbInAttack === 0,
+    `an elite centre-back never gets cast into an attacking-context role just because he outrates the field (${cbInAttack}/${total} were)`);
+
+  // The genuine last-resort still works: a squad with nothing BUT
+  // centre-backs must still dress every role, not leave people anonymous
+  // once the "stay in category" pass comes up empty.
+  // Eight — enough to cover a corner's own worst case (up to 5 decorative
+  // team-mates, the runner and the poacher), so nobody here is left
+  // anonymous for the mundane reason of the squad being smaller than the
+  // scenario, which every OTHER test in this file already covers — this
+  // one is specifically about the fallback still finding SOMEBODY once the
+  // "stay in category" pass has nobody left to offer.
+  const cbOnly: SquadPlayer[] = [
+    mkSquad("gk", "GK", 70),
+    mkSquad("onlycb1", "CB", 80), mkSquad("onlycb2", "CB", 78),
+    mkSquad("onlycb3", "CB", 76), mkSquad("onlycb4", "CB", 74),
+    mkSquad("onlycb5", "CB", 72), mkSquad("onlycb6", "CB", 70),
+    mkSquad("onlycb7", "CB", 68), mkSquad("onlycb8", "CB", 66),
+  ];
+  const sc2 = buildScenario("corner", mulberry32(99), 62, 60, 55);
+  castScenario(sc2, cbOnly);
+  const allCast = [...mates(sc2), sc2.follower, ...sc2.teammates];
+  check(allCast.every(r => !!r.who), `with only centre-backs in the squad, a real last resort still dresses every role (${allCast.filter(r => !r.who).length} left anonymous)`);
+}
+
+// ── Every body on a corner is somebody, not just the crosser ────────────────
+//
+// Reported directly: "on corners not all players face show" — only
+// teammates[0] (the man credited with the cross) ever carried a real
+// identity; CanvasMatch.tsx's own face-drawing loop was reading that
+// correctly, the gap was upstream, here.
+{
+  const rng = mulberry32(7777);
+  let sawMultiTeammate = false;
+  let anonymous = 0, totalTeammates = 0;
+  for (let i = 0; i < 300; i++) {
+    const sc = buildScenario("corner", rng, 62, 60, 55);
+    castScenario(sc, SQUAD);
+    if (sc.teammates.length > 1) sawMultiTeammate = true;
+    for (const t of sc.teammates) {
+      totalTeammates++;
+      if (!t.who) anonymous++;
+    }
+  }
+  check(sawMultiTeammate, "a corner with more than one decorative team-mate actually got measured");
+  check(totalTeammates > 300, `enough team-mate figures happened to measure (${totalTeammates})`);
+  check(anonymous === 0, `every body on a corner — not just the crosser — is a real, named player (${anonymous}/${totalTeammates} were left blank)`);
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems) console.error("  ✗ " + p);
