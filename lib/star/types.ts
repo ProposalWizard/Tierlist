@@ -997,6 +997,7 @@ export type StarPhase =
   | "dashboard"
   | "settings"
   | "face-editor"
+  | "fake-face-editor"
   | "league"
   | "life"
   | "skills"

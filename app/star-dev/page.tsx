@@ -68,6 +68,7 @@ import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import SettingsScreen from "@/components/star/SettingsScreen";
 import FaceEditorScreen from "@/components/star/FaceEditorScreen";
+import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
@@ -2222,6 +2223,7 @@ export default function StarDevPage() {
         onDeleteSavedReplay={handleDeleteSavedReplay}
         onRefreshPhotos={handleRefreshPhotos}
         onOpenFaceEditor={() => setPhase("face-editor")}
+        onOpenFakeFaceEditor={() => setPhase("fake-face-editor")}
         saves={listSaveSlots(scopeRef.current)}
         activeSlot={activeSlot}
         onSwitchSave={handleSwitchSave}
@@ -2232,6 +2234,9 @@ export default function StarDevPage() {
   }
   if (phase === "face-editor") {
     return <FaceEditorScreen career={career} onBack={() => setPhase("settings")} />;
+  }
+  if (phase === "fake-face-editor") {
+    return <FakeFaceEditorScreen career={career} onBack={() => setPhase("settings")} />;
   }
   if (phase === "relationship-game" && relationshipGameKind) {
     const currentValue = relationshipGameKind === "happiness"

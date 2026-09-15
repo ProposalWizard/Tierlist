@@ -5,6 +5,7 @@ import {
   loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, FACE_SCALE_RANGE, FACE_OFFSET_RANGE,
   CROP_VIEWPORT, CROP_ZOOM_RANGE, type FaceStyle,
 } from "@/lib/star/faceStyle";
+import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { coverScale, clampOffset, initialView } from "@/lib/star/portrait";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { kitsOf } from "@/lib/star/kits";
@@ -54,6 +55,11 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
   // here has to match, or the editor could show you a different head than
   // the one this style will actually apply to.
   const selectedUrl = selected ? (selected.imageUrl ?? fakeFaceFor(selected.id)) : undefined;
+  // Read once — this screen only ever EDITS the real FaceStyle below; it
+  // just needs a representative fake style so the preview doesn't look
+  // wrong when the selected player happens to have no real photo. See
+  // FakeFaceEditorScreen.tsx for the tool that actually edits this one.
+  const [fakeStyle] = useState(loadFakeFaceStyle);
 
   const [style, setStyle] = useState<FaceStyle>(loadFaceStyle);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -111,7 +117,7 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
     ctx.stroke();
 
     // ── The actual configurable part — real code, real match, this preview. ──
-    drawPlayerHead(ctx, 0, -r * 0.76, HEAD_BASE_R, r, imgRef.current ?? undefined, style);
+    drawPlayerHead(ctx, 0, -r * 0.76, HEAD_BASE_R, r, imgRef.current ?? undefined, style, fakeStyle);
 
     ctx.restore();
   };
@@ -240,6 +246,12 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
           />
         </div>
         <p className="mt-1 text-center text-[10px] font-bold text-white/60">Drag the face to move it</p>
+
+        {selected && !selected.imageUrl && (
+          <p className="mt-2 rounded-lg border border-amber-700 bg-amber-900/30 p-2 text-center text-[11px] font-bold text-amber-200">
+            This player has no real photo — he&apos;s shown with a fake face instead. Size/Position/Crop here have no effect on him; use Settings → Fake Faces to tune those.
+          </p>
+        )}
 
         {selectedUrl && (
           <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
