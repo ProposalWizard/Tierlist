@@ -3,6 +3,7 @@
 // used during match resolution to assign goal/assist credit to named players.
 
 import { mulberry32 } from "./season";
+import { fakeFaceFor } from "./fakeFaces";
 import type { SquadPlayer } from "./types";
 
 const FIRST_NAMES = [
@@ -47,8 +48,9 @@ export function generateSquad(seed: number): SquadPlayer[] {
       if (++tries > 60) { full = `${first}${i}`; break; }
     }
     usedNames.add(full);
+    const id = `sp_${i}`;
     return {
-      id: `sp_${i}`,
+      id,
       name: full,
       shortName: full.split(" ")[1],
       position: pos,
@@ -56,6 +58,14 @@ export function generateSquad(seed: number): SquadPlayer[] {
       seasonAssists: 0,
       careerGoals: 0,
       careerAssists: 0,
+      // Nobody real to photograph — a fake one instead of the plain "no
+      // photo" circle every consumer used to fall back to. Keyed off
+      // `seed` too, not just the positional `id` (which is only "sp_0",
+      // "sp_1"… — identical across every club) — otherwise every club's
+      // generated goalkeeper would share the exact same fake face. Hashed
+      // rather than drawn from `rng`, so this can never shift which names
+      // the SAME seed generates for players after this one in the list.
+      imageUrl: fakeFaceFor(`${seed}:${id}`),
     };
   });
 }

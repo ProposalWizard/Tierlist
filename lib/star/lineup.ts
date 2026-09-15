@@ -1,6 +1,7 @@
 import type { SquadPlayer } from "./types";
 import type { Identity, Scenario, Runner, ScenarioKind } from "./canvasEngine";
 import { goalInView } from "./canvasEngine";
+import { fakeFaceFor } from "./fakeFaces";
 
 /**
  * THE TEAM SHEET.
@@ -37,7 +38,12 @@ type Pos = SquadPlayer["position"];
 
 const idOf = (p: SquadPlayer): Identity => ({
   id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall,
-  face: p.imageUrl,
+  // A real photo when he has one; otherwise a stable fake face rather than
+  // the plain "no photo" circle drawPlayerHead used to fall back to.
+  // Resolved here, at the point a squad player actually becomes something
+  // drawn on the pitch — `p.imageUrl` itself stays genuinely absent (see
+  // its own doc), since a staleness check elsewhere reads that real gap.
+  face: p.imageUrl ?? fakeFaceFor(p.id),
   pace: p.pace, shooting: p.shooting, passing: p.passing,
   dribbling: p.dribbling, defending: p.defending, physical: p.physical,
 });

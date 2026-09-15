@@ -8,6 +8,7 @@ import {
 import { coverScale, clampOffset, initialView } from "@/lib/star/portrait";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { kitsOf } from "@/lib/star/kits";
+import { fakeFaceFor } from "@/lib/star/fakeFaces";
 
 /**
  * A PROPER FACE EDITOR, NOT A SLIDER.
@@ -48,6 +49,11 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
   const firstWithPhoto = squad.find(p => p.imageUrl);
   const [selectedId, setSelectedId] = useState<string>(firstWithPhoto?.id ?? squad[0]?.id ?? "");
   const selected = squad.find(p => p.id === selectedId) ?? squad[0];
+  // A real photo when he has one, otherwise the same stable fake face he'd
+  // actually draw with in a real match (lineup.ts's idOf) — the preview
+  // here has to match, or the editor could show you a different head than
+  // the one this style will actually apply to.
+  const selectedUrl = selected ? (selected.imageUrl ?? fakeFaceFor(selected.id)) : undefined;
 
   const [style, setStyle] = useState<FaceStyle>(loadFaceStyle);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -116,12 +122,11 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
     imgRef.current = null;
     setCropImgSize({ w: 0, h: 0 });
     draw();
-    const url = selected?.imageUrl;
-    if (!url) return;
+    if (!selectedUrl) return;
     const img = new Image();
     img.onload = () => { imgRef.current = img; draw(); };
     img.onerror = () => { imgRef.current = null; draw(); };
-    img.src = url;
+    img.src = selectedUrl;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
@@ -204,7 +209,7 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
         </button>
         <h1 className="text-lg font-black">Player Graphics</h1>
         <p className="mt-1 text-[11px] font-semibold text-white/70">
-          Applies to every real player on the pitch — pick one below just to see it, then drag the face or use the sliders to get it exactly right. Saves as you go; takes effect next match.
+          Applies to every player on the pitch, real photo or fake face alike — pick one below just to see it, then drag the face or use the sliders to get it exactly right. Saves as you go; takes effect next match.
         </p>
 
         {squad.length > 0 && (
@@ -215,7 +220,7 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
           >
             {squad.map(p => (
               <option key={p.id} value={p.id}>
-                {p.name} · {p.position}{p.imageUrl ? "" : " (no photo)"}
+                {p.name} · {p.position}{p.imageUrl ? "" : " (fake face)"}
               </option>
             ))}
           </select>
@@ -236,11 +241,11 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
         </div>
         <p className="mt-1 text-center text-[10px] font-bold text-white/60">Drag the face to move it</p>
 
-        {selected?.imageUrl && (
+        {selectedUrl && (
           <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
             <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Crop Photo</div>
             <p className="mt-1 text-[11px] font-semibold text-white/90">
-              Real photos include the neck and shirt — drag to move, slide to zoom in, so just the face is what lands inside the circle. One shared crop, used for every real player's photo.
+              Real photos include the neck and shirt — drag to move, slide to zoom in, so just the face is what lands inside the circle. One shared crop, used for every player's photo, real or fake.
             </p>
             <div
               className="relative mx-auto mt-2 touch-none overflow-hidden rounded-lg border border-white/20 cursor-grab active:cursor-grabbing"
@@ -253,7 +258,7 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 key={selected.id}
-                src={selected.imageUrl}
+                src={selectedUrl}
                 alt=""
                 draggable={false}
                 onLoad={onCropImgLoad}
