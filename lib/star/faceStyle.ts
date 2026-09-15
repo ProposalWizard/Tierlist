@@ -47,6 +47,19 @@ export interface FaceStyle {
    *  every other field here. Defined in units of CROP_VIEWPORT, exactly the
    *  way PortraitPicker's own crop stage defines its CropView. */
   crop: CropView;
+  /** Master on/off for real photos. Off falls every figure back to the same
+   *  plain backing-circle treatment a player with no photo on file already
+   *  gets — see drawPlayerHead's own hasPhoto check — never an invisible head. */
+  facesEnabled: boolean;
+  /** Real names in clear text above each figure's head — a second, independent
+   *  display mode requested alongside faces ("a toggle for player names
+   *  instead"), not a replacement wired into drawPlayerHead itself: names draw
+   *  upright in screen space via footballer()'s own existing label mechanism
+   *  (CanvasMatch.tsx), since counter-rotating text to stay legible while a
+   *  figure turns is a different problem than anything a head-circle style
+   *  needs to solve. Off by default — an opt-in on top of faces, not instead
+   *  of them, unless the user turns faces off too. */
+  namesEnabled: boolean;
 }
 
 /** The exact figure-drawing SKIN colour (CanvasMatch.tsx), so "no photo, backing on" looks
@@ -71,6 +84,8 @@ export const DEFAULT_FACE_STYLE: FaceStyle = {
   outlineColor: "rgba(0,0,0,0.35)",
   outlineWidth: 1,
   crop: { zoom: 1, x: 0, y: 0 },
+  facesEnabled: true,
+  namesEnabled: false,
 };
 
 const KEY = "star-face-style";
@@ -85,7 +100,10 @@ export const FACE_OFFSET_RANGE: [number, number] = [-3, 3];
  *  interface's own doc; above that is zoomed in. */
 export const CROP_ZOOM_RANGE: [number, number] = [1, 4];
 
-function sanitize(partial: Partial<FaceStyle>): FaceStyle {
+/** Exported so the global-default fetch (below) can clamp whatever an admin
+ *  posted through exactly the same rules a locally-saved style already goes
+ *  through — one real set of bounds, not a second copy of them. */
+export function sanitize(partial: Partial<FaceStyle>): FaceStyle {
   const s = { ...DEFAULT_FACE_STYLE, ...partial };
   return {
     scale: clamp(numberOr(s.scale, DEFAULT_FACE_STYLE.scale), ...FACE_SCALE_RANGE),
@@ -106,6 +124,8 @@ function sanitize(partial: Partial<FaceStyle>): FaceStyle {
       x: clamp(numberOr(s.crop?.x, 0), -4000, 4000),
       y: clamp(numberOr(s.crop?.y, 0), -4000, 4000),
     },
+    facesEnabled: !!s.facesEnabled,
+    namesEnabled: !!s.namesEnabled,
   };
 }
 
@@ -132,4 +152,40 @@ export function saveFaceStyle(style: FaceStyle): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(sanitize(style)));
   } catch { /* ignore — worst case the preference just doesn't stick */ }
+}
+
+/**
+ * True once this device has ever actually saved its own style — including
+ * via the old single-slider key. Drives whether the admin's global default
+ * (below) is allowed to apply: a real local override always wins, exactly
+ * "unless the user changes it."
+ */
+export function hasFaceStyleOverride(): boolean {
+  try {
+    return localStorage.getItem(KEY) !== null || localStorage.getItem(LEGACY_SCALE_KEY) !== null;
+  } catch { return false; }
+}
+
+/**
+ * The admin's own global default (see supabase/migrations/
+ * star_face_style_default.sql and app/api/star/face-style-default/route.ts)
+ * — "an admin button to set the custom player face values as official and
+ * global default values... so it naturally looks like that unless the user
+ * changes it." Deliberately never written into the KEY a local override
+ * lives under: callers apply the result to their own in-memory ref/state,
+ * so a device that has never customised its own style keeps tracking
+ * whatever the admin sets NEXT too, rather than freezing at whatever was
+ * first fetched. Returns null on any failure (offline, or the migration
+ * hasn't been run yet) — callers fall back to DEFAULT_FACE_STYLE, same as
+ * every other pending-migration feature in this codebase.
+ */
+export async function fetchGlobalDefaultFaceStyle(): Promise<FaceStyle | null> {
+  try {
+    const res = await fetch("/api/star/face-style-default");
+    if (!res.ok) return null;
+    const data = await res.json() as { style?: Partial<FaceStyle> | null };
+    return data?.style ? sanitize(data.style) : null;
+  } catch {
+    return null;
+  }
 }

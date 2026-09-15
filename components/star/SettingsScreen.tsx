@@ -1,7 +1,11 @@
 "use client";
+import { useEffect, useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
+import {
+  loadFaceStyle, saveFaceStyle, hasFaceStyleOverride, fetchGlobalDefaultFaceStyle, type FaceStyle,
+} from "@/lib/star/faceStyle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import PortraitPicker from "./PortraitPicker";
@@ -31,6 +35,25 @@ export default function SettingsScreen({
   career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
 }: Props) {
+  // Quick on/off switches, separate from the full editor — read/write the
+  // exact same shared FaceStyle object faceEditorScreen and CanvasMatch do,
+  // so a flip here takes effect the same "next match" way every other Player
+  // Graphics change already does. A device with no override of its own picks
+  // up the admin's live global default here too, same as everywhere else
+  // this object is read, so these two switches show the real effective
+  // starting state rather than always the hardcoded fallback.
+  const [faceStyle, setFaceStyle] = useState<FaceStyle>(loadFaceStyle);
+  useEffect(() => {
+    if (!hasFaceStyleOverride()) {
+      fetchGlobalDefaultFaceStyle().then(g => { if (g) setFaceStyle(g); });
+    }
+  }, []);
+  const toggleFaceStyle = (key: "facesEnabled" | "namesEnabled", value: boolean) => {
+    const next = { ...faceStyle, [key]: value };
+    setFaceStyle(next);
+    saveFaceStyle(next);
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-md px-3 py-3">
@@ -68,6 +91,26 @@ export default function SettingsScreen({
           >
             Open Editor →
           </button>
+
+          <label className="mt-3 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-black text-white/90">Player faces</span>
+            <input type="checkbox" checked={faceStyle.facesEnabled}
+              onChange={e => toggleFaceStyle("facesEnabled", e.target.checked)}
+              className="h-4 w-4 accent-emerald-500" />
+          </label>
+          <p className="text-[10px] font-semibold text-white/55">
+            Off shows the plain shirt-coloured circle every figure already falls back to when it has no photo.
+          </p>
+
+          <label className="mt-3 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-black text-white/90">Player names</span>
+            <input type="checkbox" checked={faceStyle.namesEnabled}
+              onChange={e => toggleFaceStyle("namesEnabled", e.target.checked)}
+              className="h-4 w-4 accent-emerald-500" />
+          </label>
+          <p className="text-[10px] font-semibold text-white/55">
+            Shows each player&apos;s name in clear text above their head — works alongside faces, not instead of them, unless you turn faces off too.
+          </p>
         </div>
 
         <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
