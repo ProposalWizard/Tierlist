@@ -88,6 +88,7 @@ import OwnershipScreen from "@/components/star/OwnershipScreen";
 import {
   buyStake, sellStake, topUpClubBudget, signPlayerForOwnedClub, sellPlayerFromOwnedClub, replaceManagerForOwnedClub,
   proposeSellPlayerVote, resolveSellPlayerVote, canOverruleClubVote, findSquadEntry, type SellPlayerVoteProposal,
+  recordFailedManagerNegotiation,
 } from "@/lib/star/investments";
 import { OVERRULE_REPUTATION_COST } from "@/lib/star/voting";
 import VoteCeremony from "@/components/star/VoteCeremony";
@@ -1519,6 +1520,11 @@ export default function StarDevPage() {
     return { ok: result.ok, reason: result.reason };
   }, [career]);
 
+  const handleManagerNegotiationFailed = useCallback((club: string, managerName: string) => {
+    if (!career) return;
+    setCareer(recordFailedManagerNegotiation(career, club, managerName));
+  }, [career]);
+
   // ── Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer ──
   const handleSetClubFormation = useCallback((club: string, formationId: string) => {
     if (!career) return { ok: false, reason: "No active career" };
@@ -2064,6 +2070,7 @@ export default function StarDevPage() {
         onSellPlayer={handleSellPlayerFromOwnedClub}
         onProposeSellVote={handleProposeSellPlayerVote}
         onReplaceManager={handleReplaceManagerForOwnedClub}
+        onManagerNegotiationFailed={handleManagerNegotiationFailed}
         onRecommend={handleSubmitRecommendation}
         onSetFormation={handleSetClubFormation}
         onSetKit={handleSetClubKit}
@@ -2197,6 +2204,7 @@ export default function StarDevPage() {
           matchday={matchday}
           date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
           results={career.results}
+          clubKits={career.clubKits}
           competition={
             !nextFixture.kind || nextFixture.kind === "league"
               ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`

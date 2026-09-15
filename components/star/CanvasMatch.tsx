@@ -719,8 +719,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const kitsRef = useRef<MatchKits>(
     fixture && career
       ? (fixture.home
-        ? kitsFor(career.player.club, fixture.opponent)
-        : kitsFor(fixture.opponent, career.player.club))
+        ? kitsFor(career.player.club, fixture.opponent, career.clubKits?.[career.player.club], career.clubKits?.[fixture.opponent])
+        : kitsFor(fixture.opponent, career.player.club, career.clubKits?.[fixture.opponent], career.clubKits?.[career.player.club]))
       : { home: { shirt: C.mate, trim: C.mateRim }, away: { shirt: C.opp, trim: C.oppRim },
           keeper: { shirt: C.gk, trim: C.gkRim } },
   );

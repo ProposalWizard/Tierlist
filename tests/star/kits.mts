@@ -219,6 +219,27 @@ const CLUBS = Object.keys(CLUB_KITS);
   }
 }
 
+// ── A real Boardroom-set kit override genuinely wins over the real-world
+// default, in both kitsOf and kitsFor, clash detection included — the whole
+// point of rebuilding ClubKit around kits.ts's own home/away shape (15 Sep
+// 2026, reported directly: real football has genuine kit clashes, and the
+// Boardroom's old single-design kit vote never actually connected to the
+// real match-day kit at all) ───────────────────────────────────────────────
+{
+  const override = { home: { shirt: "#123456", trim: "#abcdef" }, away: { shirt: "#ffffff", trim: "#123456" } };
+  const real = kitsOf("Arsenal");
+  check(kitsOf("Arsenal", override).home.shirt === "#123456", "kitsOf returns the override's home shirt, not the real default");
+  check(kitsOf("Arsenal").home.shirt === real.home.shirt, "…and calling it with no override at all is completely unaffected");
+
+  // Force a real clash: Arsenal's override home shirt is near-identical to
+  // its real opponent's real home shirt (Liverpool, both red) — the away
+  // side must still genuinely change, exactly as it would for two real kits.
+  const redOverride = { home: { shirt: CLUB_KITS["Liverpool"].home.shirt, trim: "#ffffff" }, away: { shirt: "#ffffff", trim: "#111111" } };
+  const withOverride = kitsFor("Arsenal", "Liverpool", redOverride, undefined);
+  check(!clashes(withOverride.home.shirt, withOverride.away.shirt), "clash detection still genuinely applies to an overridden kit");
+  check(withOverride.home.shirt === redOverride.home.shirt, "the home side wears the REAL override, not the untouched default");
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);

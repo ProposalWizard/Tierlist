@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { objectiveLabel, sponsorEligible, sponsorFee, sponsorRequirementText } from "@/lib/star/sponsors";
 import { clauseSummary, offerClauses } from "@/lib/star/contracts";
+import { willingToRenegotiate } from "@/lib/star/careerFlow";
 import { mulberry32 } from "@/lib/star/season";
 import type { CareerState, Trophy } from "@/lib/star/types";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
@@ -342,17 +343,25 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
   offerReason?: "form" | "star";
   onComplete: (newContract: CareerState["contract"] | null) => void;
 }) {
-  const [phase, setPhase] = useState<"intro" | "playing" | "done">("intro");
+  const [phase, setPhase] = useState<"intro" | "playing">("intro");
   const [current, setCurrent] = useState(7);
   const [next, setNext] = useState<number | null>(null);
   const [rounds, setRounds] = useState(0);
   const [wins, setWins] = useState(0);
+  // Once a guess is wrong, the game is over for real — see `guess` below.
+  const [locked, setLocked] = useState(false);
   const [message, setMessage] = useState("");
 
-  // An early offer (form/star) bypasses the normal "final year only" gate.
-  // Without an offer, the Life menu can still open this screen but shows
-  // a "come back later" message if there are 2+ seasons remaining.
-  const canRenew = career.contract.seasonsRemaining <= 1 || !!offerReason;
+  // Requested directly: "it doesn't matter how long you have left on your
+  // contract... the club should be more keen to discuss... if you're
+  // performing really well... if you haven't improved that much, they'll
+  // probably just reject the renewal approach." The old "final year only"
+  // gate is gone — you can ask any time — but asking is no longer a free
+  // guarantee of a conversation either. A club-initiated offer (offerReason
+  // set) is, by definition, already willing; a player-initiated ask has to
+  // clear the same real bar `checkForContractOffer`'s own proactive offer
+  // does (see careerFlow.ts's `willingToRenegotiate`).
+  const willing = !!offerReason || willingToRenegotiate(career);
 
   // Draw a card that is never equal to the current one — a true higher-or-lower has
   // no ties, so a 6 can't be followed by another 6.
@@ -368,9 +377,19 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
     setNext(null);
     setRounds(0);
     setWins(0);
+    setLocked(false);
+    setMessage("");
   };
 
+  // Requested directly, replacing the old fixed "5 rounds then it's over"
+  // shape entirely: every correct guess raises the live offer and hands you
+  // a real choice — bank it now, or push your luck again — with no cap on
+  // how many times you can push. The first WRONG guess ends it for real:
+  // the offer drops from wherever it was, and that reduced number is now
+  // the only thing on the table (see `locked` below and the render for the
+  // "no more guessing, just accept" state that follows).
   const guess = (higher: boolean) => {
+    if (locked) return;
     const n = drawDifferent(current);
     setNext(n);
     setRounds((r) => r + 1);
@@ -378,16 +397,13 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
     setTimeout(() => {
       if (correct) {
         setWins((w) => w + 1);
-        setMessage("✓ Correct!");
+        setMessage("✓ Correct! Your offer just improved — take it, or push again.");
       } else {
-        setMessage("✗ Wrong! Negotiation ends.");
-        setPhase("done");
-        return;
+        setLocked(true);
+        setMessage("✗ Wrong — talks sour and the offer drops. This is now their final position.");
       }
       setCurrent(n);
       setNext(null);
-      setMessage("");
-      if (rounds + 1 >= 5) setPhase("done");
     }, 900);
   };
 
@@ -398,17 +414,23 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
   // formula in the game (see transfers.ts) — a good negotiation compounds
   // off your current terms, not off a fixed placeholder amount.
   const RAISE_PCT_PER_WIN = 0.08;
-  const raisedWage = (wage: number) => Math.round(wage * (1 + RAISE_PCT_PER_WIN * wins));
+  // A single wrong guess costs a real, noticeable chunk of whatever you'd
+  // already banked — applied ONCE, on top of the wins already earned, not
+  // instead of them, so a strong run that ends in one slip still lands
+  // somewhere between "nothing gained" and "the peak you reached."
+  const LOSS_PENALTY_PCT = 0.15;
+  const offerMultiplier = (1 + RAISE_PCT_PER_WIN * wins) * (locked ? (1 - LOSS_PENALTY_PCT) : 1);
+  const currentOffer = (base: number) => Math.round(base * offerMultiplier);
 
   const finalise = () => {
-    const wage = raisedWage(career.contract.wage);
+    const wage = currentOffer(career.contract.wage);
     // The better the negotiation went, the more of the deal they will write in.
     // Seeded off the outcome so the same negotiation produces the same offer.
     const newContract: CareerState["contract"] = {
       club: career.contract.club,
       wage,
-      goalBonus: raisedWage(career.contract.goalBonus),
-      assistBonus: raisedWage(career.contract.assistBonus),
+      goalBonus: currentOffer(career.contract.goalBonus),
+      assistBonus: currentOffer(career.contract.assistBonus),
       seasonsRemaining: 3,
       ...offerClauses(career, wage, mulberry32(career.season * 71 + wins * 13 + rounds)),
     };
@@ -423,20 +445,20 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
           <div className="text-lg font-black text-white">{career.contract.club}</div>
         </div>
 
-        {phase === "intro" && !canRenew && (
+        {phase === "intro" && !willing && (
           <div className="bg-gray-700 rounded-2xl p-4 border border-gray-600 text-center">
             <div className="text-4xl mb-2">📝</div>
             <div className="text-sm text-gray-200 mb-1 leading-snug font-bold">
-              You&apos;re under contract for {career.contract.seasonsRemaining} more seasons.
+              Not interested in renegotiating right now.
             </div>
             <div className="text-xs text-white/75 mb-4 leading-snug">
-              The club will only renegotiate in the final year of your deal. Come back then to improve your terms.
+              You haven&apos;t done enough lately to earn a better deal — a real hot streak of form, or a genuine jump in your star rating, and they&apos;ll be a lot more willing to talk.
             </div>
             <button onClick={() => onComplete(null)} className="w-full py-3 bg-emerald-500 rounded-xl font-black">Back</button>
           </div>
         )}
 
-        {phase === "intro" && canRenew && (
+        {phase === "intro" && willing && (
           <div className="bg-gray-700 rounded-2xl p-4 border border-gray-600">
             {offerReason === "form" && (
               <div className="mb-3 flex items-start gap-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-3 py-2.5">
@@ -455,9 +477,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               </div>
             )}
             <div className="text-xs text-white/85 mb-3 leading-snug">
-              {offerReason
-                ? "Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) improves your terms."
-                : `Your contract is up. Your agent will play higher-or-lower against the club negotiator. Each correct guess (up to 5) raises your terms by ${Math.round(RAISE_PCT_PER_WIN * 100)}%.`}
+              Your agent will play higher-or-lower against the club negotiator. Every correct guess raises your offer by {Math.round(RAISE_PCT_PER_WIN * 100)}% — take it whenever you like, or keep pushing. Get one wrong and talks sour: the offer drops, and that final number is the only one left on the table.
             </div>
             <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1">
               <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.wage)}/match</span></div>
@@ -467,7 +487,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => onComplete(null)} className="py-3 bg-gray-600 rounded-xl font-black">
-                {offerReason ? "Decline offer" : "Wait a season"}
+                {offerReason ? "Decline offer" : "Not now"}
               </button>
               <button onClick={startCard} className="py-3 bg-emerald-500 rounded-xl font-black">Start negotiation</button>
             </div>
@@ -476,30 +496,41 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
 
         {phase === "playing" && (
           <div className="bg-gray-700 rounded-2xl p-4 border border-gray-600 text-center">
-            <div className="text-xs text-white/75 mb-2">Round {rounds + 1} of 5 · {wins} correct</div>
+            <div className="text-xs text-white/75 mb-2">Round {rounds + 1} · {wins} correct</div>
             <div className="flex justify-center gap-3 items-center mb-4">
               <CardBig value={current} />
               <div className="text-xl">→</div>
               <CardBig value={next ?? "?"} />
             </div>
-            {message && <div className={`mb-3 font-black text-lg ${message.startsWith("✓") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>}
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => guess(false)} disabled={next !== null} className="py-3 bg-red-600 rounded-xl font-black disabled:opacity-50">▼ Lower</button>
-              <button onClick={() => guess(true)} disabled={next !== null} className="py-3 bg-emerald-500 rounded-xl font-black disabled:opacity-50">▲ Higher</button>
-            </div>
-          </div>
-        )}
+            {message && (
+              <div className={`mb-3 font-black text-sm leading-snug ${message.startsWith("✓") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
+            )}
 
-        {phase === "done" && (
-          <div className="bg-gray-700 rounded-2xl p-5 border border-gray-600 text-center">
-            <div className="text-xs text-white/75 mb-1">Final terms</div>
-            <div className="text-3xl font-black text-yellow-300 mb-2">{wins} correct</div>
-            <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1">
-              <div className="flex justify-between"><span>New wage</span><span className="text-emerald-300 font-black">★{formatMoney(raisedWage(career.contract.wage))}/match</span></div>
-              <div className="flex justify-between"><span>Goal bonus</span><span className="text-emerald-300 font-black">★{formatMoney(raisedWage(career.contract.goalBonus))}</span></div>
-              <div className="flex justify-between"><span>Assist bonus</span><span className="text-emerald-300 font-black">★{formatMoney(raisedWage(career.contract.assistBonus))}</span></div>
+            {/* The live offer — updates after every single guess, win or
+                loss, so the choice to stop or push again is always made
+                with real, current numbers in front of you, not a guess. */}
+            <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1 text-left">
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">
+                {locked ? "Final offer" : "Current offer"}
+              </div>
+              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.wage))}/match</span></div>
+              <div className="flex justify-between"><span>Goal bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.goalBonus))}</span></div>
+              <div className="flex justify-between"><span>Assist bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.assistBonus))}</span></div>
             </div>
-            <button onClick={finalise} className="w-full py-3 bg-emerald-500 rounded-xl font-black">Sign Contract →</button>
+
+            {!locked ? (
+              <>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <button onClick={() => guess(false)} disabled={next !== null} className="py-3 bg-red-600 rounded-xl font-black disabled:opacity-50">▼ Lower</button>
+                  <button onClick={() => guess(true)} disabled={next !== null} className="py-3 bg-emerald-500 rounded-xl font-black disabled:opacity-50">▲ Higher</button>
+                </div>
+                <button onClick={finalise} disabled={next !== null} className="w-full py-2.5 bg-gray-600 hover:bg-gray-500 rounded-xl font-black text-sm disabled:opacity-50">
+                  Accept this offer →
+                </button>
+              </>
+            ) : (
+              <button onClick={finalise} className="w-full py-3 bg-emerald-500 rounded-xl font-black">Sign Contract →</button>
+            )}
           </div>
         )}
       </div>

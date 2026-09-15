@@ -117,26 +117,18 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
   const { mode } = state;
   const log = [...state.log];
 
-  // You've met or beaten their current position outright — deal closes at
-  // WHICHEVER number is more favourable to you (their position, since you
-  // didn't need to go all the way to your own offer to get there). Reported
-  // directly as confusing — offering ★32,000 against their ★16,166 ask and
-  // seeing the deal close at ★16,000 read as the game ignoring the offer,
-  // when it's actually the opposite: you never had to go that high, so it
-  // didn't charge you that high. The extra log line spells that out
-  // explicitly whenever your own number and the final price genuinely
-  // differ — silent the rest of the time (a close, unremarkable match
-  // doesn't need it explained).
+  // You've met or beaten their current position outright — the deal closes
+  // at YOUR number. Reported directly, twice now, as confusing the other
+  // way round: this used to close at THEIR lower position instead (you
+  // "never had to go that high, so it didn't charge you that high") —
+  // real, but not what a typed offer should mean. What you actually put on
+  // the table is the number that's binding once it clears their ask; if you
+  // don't want to pay more than needed, offer less next round instead.
   if (meets(mode, yourNewPosition, state.theirPosition)) {
-    const finalPrice = state.theirPosition;
+    const finalPrice = yourNewPosition;
     log.push(mode === "buying"
-      ? `Deal — they accept ★${finalPrice.toLocaleString()}.`
-      : `Deal — the buyer's own ★${finalPrice.toLocaleString()} offer already covers your asking price.`);
-    if (finalPrice !== yourNewPosition) {
-      log.push(mode === "buying"
-        ? `You offered ★${yourNewPosition.toLocaleString()}, but that was more than they needed — you only actually pay ★${finalPrice.toLocaleString()}.`
-        : `You asked ★${yourNewPosition.toLocaleString()}, but the buyer was already offering more than that — you get their real ★${finalPrice.toLocaleString()}, not your lower ask.`);
-    }
+      ? `Deal — they accept your ★${finalPrice.toLocaleString()} offer.`
+      : `Deal — the buyer accepts your ★${finalPrice.toLocaleString()} asking price.`);
     return { ...state, yourPosition: yourNewPosition, status: "accepted", finalPrice, log };
   }
 

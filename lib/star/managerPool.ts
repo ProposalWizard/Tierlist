@@ -3,6 +3,7 @@ import type { Ambition } from "./expectations";
 import { clubExpectation } from "./expectations";
 import { mulberry32 } from "./season";
 import { clubNameSeed } from "./squadData";
+import { divisionOf, PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, type Division } from "./clubs";
 
 /**
  * THE UNEMPLOYED MANAGERS' LIST
@@ -147,6 +148,44 @@ const JOB_PRESTIGE: Record<Ambition, number> = { Title: 3, Europe: 2, "Mid-table
 const MANAGER_PRESTIGE: Record<PoolTier, number> = { dream: 4, 1: 3, 2: 2, 3: 1 };
 
 /**
+ * A within-division ambition (JOB_PRESTIGE above) can't tell a Championship
+ * title race from a Premier League one — they'd score identically, which is
+ * real, reported wrong: a mid-table CHAMPIONSHIP job read as prestigious as
+ * a genuine Premier League survival fight. This is a real, separate step
+ * DOWN (or up, for a genuine European giant) a whole division sits from the
+ * Premier League baseline, added on top of the within-division rank.
+ */
+const DIVISION_OFFSET: Record<Division, number> = {
+  champions: 2, europa: 1, premier: 0, championship: -2, pool: -3,
+};
+/** An "Other" club clubs.ts tracks no division for at all — a real, if
+ *  untracked, European name (most of the world's clubs). Treated as
+ *  slightly above the Premier League baseline: plausible for these, and
+ *  the exact number rarely matters once willing/refused is decided. */
+const UNTRACKED_DIVISION_OFFSET = 1;
+
+/**
+ * The real English-ladder division, checked FIRST — `divisionOf` (clubs.ts)
+ * has a known, already-documented bug (see euro.ts's own `ENGLISH_LADDER`
+ * workaround): `DIVISION_BY_CLUB` is built by spreading the ladder lists
+ * first and the Champions/Europa lists on top of the SAME map, so any club
+ * on both (Arsenal, Aston Villa, Liverpool, Man City, Man United, and
+ * others most seasons) has its real "premier" tag silently overwritten by
+ * "champions"/"europa". Caught here directly: it read Arsenal — a genuine
+ * Premier League club that also happens to be IN the Champions League this
+ * season — as a bigger job than it actually is for a domestic manager
+ * appointment, the exact same class of bug `euro.ts` already had to work
+ * around, not fixed at the source since ~19 other call sites depend on
+ * today's behaviour.
+ */
+function ladderDivision(club: string): Division | null {
+  if ((PREMIER_LEAGUE_CLUBS as readonly string[]).includes(club)) return "premier";
+  if ((CHAMPIONSHIP_CLUBS as readonly string[]).includes(club)) return "championship";
+  if ((PROMOTION_POOL_CLUBS as readonly string[]).includes(club)) return "pool";
+  return null;
+}
+
+/**
  * Whether this real manager would even entertain a job at `club`, and what
  * a negotiation should open around if so.
  *
@@ -161,9 +200,24 @@ const MANAGER_PRESTIGE: Record<PoolTier, number> = { dream: 4, 1: 3, 2: 2, 3: 1 
  * also carries a real, if modest, chance he simply turns the approach down
  * rather than naming any fee at all.
  */
+/** `${club}::${managerName}` — the one shared key both this file and
+ *  investments.ts's `recordFailedManagerNegotiation` use for a negotiation
+ *  cooldown (see CareerState.managerNegotiationCooldowns). */
+export function managerCooldownKey(club: string, managerName: string): string {
+  return `${club}::${managerName}`;
+}
+
 export function managerInterest(career: CareerState, name: string, club: string): ManagerInterest {
   const tier = managerTier(name);
   const baseFee = managerBaseFee(name);
+
+  // Requested directly: a failed negotiation shouldn't be free to retry
+  // instantly for the best possible price — this specific man is off the
+  // table for THIS specific club until next season.
+  const cooldownUntil = career.managerNegotiationCooldowns?.[managerCooldownKey(club, name)];
+  if (cooldownUntil !== undefined && career.season < cooldownUntil) {
+    return { willing: false, reason: `Talks broke down — ${name} isn't interested again until next season.`, anchorFee: baseFee };
+  }
 
   if (tier === "dream") {
     const willing = dreamClubFor(name) === club || WORLD_GIANT_CLUBS.includes(club);
@@ -174,15 +228,22 @@ export function managerInterest(career: CareerState, name: string, club: string)
 
   if (tier === undefined) return { willing: true, anchorFee: baseFee };
 
-  const jobPrestige = JOB_PRESTIGE[clubAmbition(career, club)];
+  const division = ladderDivision(club) ?? divisionOf(club);
+  const divisionOffset = division ? DIVISION_OFFSET[division] : UNTRACKED_DIVISION_OFFSET;
+  const jobPrestige = JOB_PRESTIGE[clubAmbition(career, club)] + divisionOffset;
   const gap = MANAGER_PRESTIGE[tier] - jobPrestige; // positive = job beneath him
 
-  // A real, bounded refusal chance only at the most lopsided end — a genuine
-  // Elite name asked to fight relegation. Deterministic on the club/name
-  // pairing so the same approach doesn't flip-flop on every re-render.
-  if (gap >= 3) {
+  // A real, bounded refusal chance once the gap is genuinely lopsided — a
+  // real name asked to take a job well below his level. Deterministic on
+  // the club/name pairing so the same approach doesn't flip-flop on every
+  // re-render. Reported directly: an all-time great being merely "a bit
+  // pricey" for a mid-table CHAMPIONSHIP job read as far too reasonable —
+  // gap 3 used to need a full division-and-a-half of difference to reach at
+  // all; with DIVISION_OFFSET now counted, a real gap this size is common
+  // enough that the threshold moved down to match.
+  if (gap >= 2) {
     const seed = mulberry32(clubNameSeed(club) + clubNameSeed(name));
-    if (seed() < 0.25) {
+    if (seed() < 0.25 + Math.min(0.5, (gap - 2) * 0.15)) {
       return { willing: false, reason: `${name} isn't interested in a job well below his level right now.`, anchorFee: baseFee };
     }
   }
