@@ -38,6 +38,8 @@ type Pos = SquadPlayer["position"];
 const idOf = (p: SquadPlayer): Identity => ({
   id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall,
   face: p.imageUrl,
+  pace: p.pace, shooting: p.shooting, passing: p.passing,
+  dribbling: p.dribbling, defending: p.defending, physical: p.physical,
 });
 
 /**
@@ -173,12 +175,21 @@ export interface OpponentSheetPlayer {
   face?: string;
   isGK: boolean;
   y: number;
+  /** See Identity's own six attribute fields. */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
 }
 
 export function castDefence(sc: Scenario, oppXI: OpponentSheetPlayer[] | null | undefined): void {
   if (!oppXI || oppXI.length === 0) return;
   const toIdentity = (p: OpponentSheetPlayer): Identity => ({
     id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall, face: p.face,
+    pace: p.pace, shooting: p.shooting, passing: p.passing,
+    dribbling: p.dribbling, defending: p.defending, physical: p.physical,
   });
 
   const gk = oppXI.find(p => p.isGK);

@@ -2,11 +2,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   newRun, applySteer, applyBurst, stepRun, BURST_T,
-  type FpRunState, type RunPhase,
+  type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor } from "@/lib/star/firstPersonView";
 import { renderFirstPerson, type DuelPip } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
+import { createFaceImageCache } from "@/lib/star/faceImageCache";
+import { loadFaceStyle } from "@/lib/star/faceStyle";
 
 /**
  * THE ONE-ON-ONE DUEL — THE COMPONENT.
@@ -202,6 +204,12 @@ export interface FirstPersonDribbleProps {
    *  uses this to enforce a hard cap on the run's total defender count;
    *  the dev sandbox keeps using `rounds` and lets each wave roll freely. */
   waveSizes?: number[];
+  /** Real opposing outfielders to cast this run's men from — see
+   *  firstPersonDribble.ts's `newRun` own doc. Real gameplay's own call
+   *  site passes the actual opposing starting XI (same sheet castDefence
+   *  already draws real match defenders from); the dev sandbox omits this
+   *  and every man stays anonymous, exactly as before. */
+  roster?: FpIdentity[];
   /** Chase-cam tuning — see DEFAULT_CHASE_* above for the reasoning behind
    *  the defaults. */
   chaseEye?: number;
@@ -235,7 +243,7 @@ export interface FirstPersonDribbleProps {
 }
 
 export default function FirstPersonDribble({
-  pace = 60, oppStrength = 55, rounds = 3, waveSizes, seed, assist = false, onComplete, embedded = false,
+  pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -243,6 +251,14 @@ export default function FirstPersonDribble({
   const wrapRef = useRef<HTMLDivElement>(null);
   const runRef = useRef<FpRunState | null>(null);
   const ballImgRef = useRef<HTMLImageElement | null>(null);
+  // Same cache shape CanvasMatch.tsx uses for real match figures — see
+  // lib/star/faceImageCache.ts — and the same shared FaceStyle, loaded once,
+  // so a defender here is tuned exactly as consistently as one in a real
+  // match. Reading `roster` is enough to know faces might be wanted at all;
+  // when it's empty (the dev sandbox) this still costs nothing per frame,
+  // only the one-time localStorage read.
+  const faceImageCacheRef = useRef(createFaceImageCache());
+  const faceStyleRef = useRef(loadFaceStyle());
   const rngRef = useRef<() => number>(() => Math.random());
   const reducedMotionRef = useRef(false);
   // Camera-lag and ball-touch-spring state — see the file header. Reset
@@ -287,7 +303,7 @@ export default function FirstPersonDribble({
   const reset = useCallback(() => {
     const rng = newRng();
     rngRef.current = rng;
-    const run = newRun({ pace, oppStrength, rounds, waveSizes, rng });
+    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng });
     runRef.current = run;
     camXRef.current = run.x;
     ballXRef.current = run.x;
@@ -518,6 +534,8 @@ export default function FirstPersonDribble({
         hud: { text: `${wavesCleared}/${run.roundSizes.length} waves`, pips },
         own: { x: run.x, y: run.y },
         ownLean: lean,
+        getFace: faceImageCacheRef.current.get,
+        faceStyle: faceStyleRef.current,
       });
     };
 

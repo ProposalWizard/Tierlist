@@ -248,6 +248,25 @@ export interface Identity {
    * loading. A stat is not a face — this carries no gameplay weight at all.
    */
   face?: string;
+  /**
+   * The real six-stat wheel (0-100), when the database has one — same
+   * "absent for a generated squad" caveat as `overall`. Unlike `overall`
+   * (a single number every part of the engine has always been able to lean
+   * on), these are read only where a SPECIFIC facet of a specific man
+   * genuinely matters more than his rating as a whole: `shooting` biases a
+   * teammate's finish toward a real curl (launchReceiverShot), `defending`
+   * biases a defender's real chance of actually winning the ball (the
+   * block/tackle roll below), and so on. Every consumer falls back to
+   * `overall` (and, failing that, a flat default) whenever a specific facet
+   * is absent, so a generated squad — or a real save from before these
+   * existed — plays exactly as it always has.
+   */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
 }
 
 export interface Follower {
@@ -660,6 +679,37 @@ const DEF_BLOCK_H = 1.9;       // defenders can only block below head height —
 const WALL_TOP = 2.05;         // …but a wall keeps its arms down, so leaping does not raise the
                                // ceiling one-for-one. It lifts their feet instead, which is what
                                // makes a ball rolled UNDER a jumping wall a real free kick too.
+
+/**
+ * How much a defender's REAL quality widens or shrinks his own reach in the
+ * block/tackle check below ("A defender gets to it") — pure geometry until
+ * now, the last piece of this whole session's "players play like
+ * themselves" ask, and the one flagged back honestly, two entries ago in
+ * CLAUDE.md, as genuinely NOT small: there was no roll and no skill check
+ * to extend, only a fixed radius everybody shared.
+ *
+ * `undefined` (no real identity on this man at all — the overwhelming
+ * majority of live saves today, until a squad refresh backfills the new
+ * attribute fields) returns exactly 1: zero behaviour change, the same flat
+ * DEF_BLOCK_R/CONTROL_R every match has always used. That is what makes
+ * this safe to ship without a full Monte-Carlo aggregate check the way the
+ * keeper-dive rework needed one — the "no data" case, which is nearly every
+ * case right now, is provably identical to today by construction, not by
+ * measurement.
+ *
+ * With a real quality (`defending`, or `overall` when that specific facet
+ * isn't known), 50 is the neutral centre — a middling defender reaches
+ * exactly as far as ever — and it widens toward a genuinely better
+ * interception radius for an elite one, shrinks toward a genuinely worse
+ * one for a poor one. Bounded well short of doubling or zeroing the reach:
+ * a bad defender should miss more, not stop defending; a great one should
+ * intercept more, not become a wall.
+ */
+export function defenderReachMultiplier(quality: number | undefined): number {
+  if (quality === undefined) return 1;
+  return clamp(0.82 + clamp(quality, 0, 100) / 100 * 0.36, 0.75, 1.25);
+}
+
 /**
  * The wall jumps.
  *
@@ -2988,7 +3038,22 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   const loft = clamp(0.10 + rng() * 0.26 + (composite / 100) * 0.14, 0.03, 0.62);
   const Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
   const vz = loft * (7 + composite * 0.04);
-  const spin = (rng() - 0.5) * 0.9;
+  // A flat, skill-independent wobble used to be the whole of it. A real
+  // finisher can bend a shot around a defender or the keeper ON PURPOSE —
+  // his technique (shooting, when we know it; overall otherwise) raises how
+  // much curl he can generate AND points it the same way he's already
+  // placing the shot (`side`, above), so it works FOR him — bending further
+  // into the same corner he's aiming at — rather than adding pure noise.
+  // Reuses curlRange(), the exact same technique-to-curl-range mapping the
+  // player's own struck shots already use (see launch()'s own `spin`)
+  // rather than a second formula. Absent real data (a generated squad, or a
+  // save from before these existed) collapses back to the old flat random
+  // wobble — unchanged difficulty for every chance that isn't off a real
+  // player.
+  const curlTech = receiver.who?.shooting ?? receiver.who?.overall;
+  const spin = curlTech !== undefined
+    ? side * curlRange(curlTech) * 0.9
+    : (rng() - 0.5) * 0.9;
 
   ball.vel = { x: dir.x * Sh, y: dir.y * Sh };
   ball.vz = vz;
@@ -4715,7 +4780,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         : foot + DEF_BLOCK_H;
       if (ball.z < foot || ball.z > top) continue;
       // Right on top of a ball travelling at pace; merely near a slow one.
-      const reach = speed > 12 ? DEF_BLOCK_R : CONTROL_R;
+      const reach = (speed > 12 ? DEF_BLOCK_R : CONTROL_R) * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < reach) {
         // A defender in the way of a ball going in has BLOCKED it; a defender
         // in the way of anything else has cut it out. Both cost you the ball and

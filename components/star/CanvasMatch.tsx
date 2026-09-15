@@ -23,6 +23,7 @@ import {
 } from "@/lib/star/dribble";
 import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
 import FirstPersonDribble from "./FirstPersonDribble";
+import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
   PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH, GOAL_H,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
@@ -42,6 +43,7 @@ import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
+import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
@@ -323,8 +325,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     ? oppXI.map(p => ({
         id: p.id, name: p.name, shortName: p.short, position: p.role,
         overall: p.overall, face: p.face, isGK: p.role === "GK", y: p.y,
+        defending: p.defending,
       }))
     : null;
+  // The real starting goalkeeper's own rating, when there's a real sheet to
+  // read one off — see the strengthRef override just below, and
+  // opponentStartingXI's own doc on why oppXI can be null (an international
+  // fixture, or a side too thin to draw a sheet from) — the flat prop stays
+  // the honest fallback for both.
+  const realKeeperOverall = oppXIForCast?.find(p => p.isGK)?.overall;
+  // The same real sheet, reshaped for the first-person dribble mode's own
+  // roster (FirstPersonDribble.tsx) — outfielders only, same as
+  // castDefence's own `defenders` array: a keeper never comes out to
+  // contest a dribble. undefined (not []) when there's nothing to scout,
+  // so newRun's own "omit for anonymous men" default applies.
+  const fpRoster: FpIdentity[] | undefined = oppXIForCast
+    ?.filter(p => !p.isGK)
+    .map(p => ({ id: p.id, name: p.name, shortName: p.shortName, face: p.face, defending: p.defending, overall: p.overall }));
 
   /**
    * Put a name to every goal in a run of hidden-match events, and record it.
@@ -711,7 +728,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
 
   const strengthRef = useRef(keeperStrength);
-  strengthRef.current = keeperStrength;
+  // `keeperStrength` (the prop) is a whole-club average with a small home/
+  // away nudge — page.tsx's own honest stand-in for "how hard is this
+  // keeper to beat" when there's nobody specific to ask. The moment there
+  // IS a real starting goalkeeper on the sheet (realKeeperOverall, above),
+  // his own rating wins outright: a real keeper isn't a different man home
+  // or away, so the nudge is deliberately dropped here too, not carried
+  // over. Clamped to the same 20-99 band the prop itself already uses.
+  strengthRef.current = realKeeperOverall !== undefined
+    ? Math.max(20, Math.min(99, realKeeperOverall))
+    : keeperStrength;
   const positionRef = useRef(position);
   positionRef.current = position;
   const teamRef = useRef(teamRelationship);
@@ -741,7 +767,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const ourKit = () => (fixtureHomeRef.current ? kitsRef.current.home : kitsRef.current.away);
   const theirKit = () => (fixtureHomeRef.current ? kitsRef.current.away : kitsRef.current.home);
 
-  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, keeperStrength, teamRelationship, career?.skills.vision ?? 55));
+  // strengthRef.current is already the real keeper's own rating here when
+  // there is one — see its own assignment just above — so the very first
+  // scenario of the match reads the same number every later one does.
+  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55));
   const ballRef = useRef<Ball | null>(null);
   /**
    * How many times THIS scenario's rng has been drawn from, since it was
@@ -1052,24 +1081,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * broken one, so it isn't worth chasing as hard as the one asset the whole
    * pitch would otherwise be missing.
    */
-  const faceImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
-  const getFaceImage = (url: string | undefined): HTMLImageElement | undefined => {
-    if (!url) return undefined;
-    const cache = faceImagesRef.current;
-    const existing = cache.get(url);
-    if (existing) return existing;
-    const img = new Image();
-    img.onerror = () => {
-      if (img.dataset.retried) return;
-      img.dataset.retried = "1";
-      window.setTimeout(() => {
-        img.src = `${url}${url.includes("?") ? "&" : "?"}retry=1`;
-      }, 600);
-    };
-    img.src = url;
-    cache.set(url, img);
-    return img;
-  };
+  // See lib/star/faceImageCache.ts — extracted from what used to be a local
+  // closure here so the first-person dribble mode can draw real faces too
+  // off the exact same cache shape, not a second copy of it.
+  const faceImageCacheRef = useRef(createFaceImageCache());
+  const getFaceImage = (url: string | undefined): HTMLImageElement | undefined =>
+    faceImageCacheRef.current.get(url);
 
   // Respect prefers-reduced-motion: no shake, no confetti, only a faint brief flash.
   useEffect(() => {
@@ -3764,6 +3781,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             pace={100}
             oppStrength={100}
             waveSizes={fpDribbleRef.current.waveSizes}
+            roster={fpRoster}
             seed={fpDribbleRef.current.seed}
             chaseEye={5}
             chasePitchDeg={5}

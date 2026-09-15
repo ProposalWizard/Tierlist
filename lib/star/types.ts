@@ -235,6 +235,25 @@ export interface LeaguePlayer {
    * "absent means no" convention as `highPotential`.
    */
   worldClassPotential?: boolean;
+  /**
+   * Real per-attribute ratings (0-100), when the database has them — same
+   * "absent for a generated squad" caveat as `image`/`nation`/`age`.
+   * Sourced from `sofifa_players.attributes` via `attributesFromJson`
+   * (lib/playerAttributes.ts) — the same unpacking the PL Draft already
+   * relies on. Deliberately not fetched by this lean endpoint until now
+   * (see league-squads/route.ts's own doc on why it avoids that JSONB
+   * blob) — added back, scoped to just these six, because "a player plays
+   * like himself" (real curl, real defending, a real goalkeeper rating)
+   * needed something finer-grained than one overall number. `shooting`
+   * doubles as "finishing" — SoFIFA's own name for the same six-stat wheel
+   * the Draft already uses.
+   */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
 }
 
 export interface LeagueSquad {
@@ -321,6 +340,14 @@ export interface SquadPlayer {
   /** See LeaguePlayer.worldClassPotential — the same stronger tier, for a
    *  man in YOUR squad. */
   worldClassPotential?: boolean;
+  /** See LeaguePlayer's own six attribute fields — the same real numbers,
+   *  for a man in YOUR squad rather than one of the other nineteen. */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
   /**
    * Every position he is actually listed for, `position` included — a real
    * player's data holds several (SoFIFA's "CAM, CM, LW"), but building the
