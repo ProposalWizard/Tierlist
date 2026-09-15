@@ -36,9 +36,9 @@ export const KIB_CANS_DEFAULT: KibCan[] = [
 // page.tsx's effectivePower/effectiveTechnique) for `matches` games, then
 // clears — never stacks with a second can, the later one just replaces it.
 export const STAT_KIB_CANS_DEFAULT: StatKibCan[] = [
-  { id: "basic", name: "Basic KIB Stat Can", price: 80000, boost: 3, matches: 2, color: "bg-amber-500", image: "/star/kib-stat-basic.png" },
-  { id: "premium", name: "Premium KIB Stat Can", price: 180000, boost: 5, matches: 3, color: "bg-rose-500", image: "/star/kib-stat-premium.png" },
-  { id: "elite", name: "Elite KIB Stat Can", price: 400000, boost: 8, matches: 4, color: "bg-fuchsia-500", image: "/star/kib-stat-elite.png" },
+  { id: "basic", name: "Basic KIB Stat Can", price: 80000, boost: 3, matches: 2, color: "bg-amber-500", image: "/star/kib-basic.png" },
+  { id: "premium", name: "Premium KIB Stat Can", price: 180000, boost: 5, matches: 3, color: "bg-rose-500", image: "/star/kib-premium.png" },
+  { id: "elite", name: "Elite KIB Stat Can", price: 400000, boost: 8, matches: 4, color: "bg-fuchsia-500", image: "/star/kib-elite.png" },
 ];
 
 export const BOOTS_CATALOGUE_DEFAULT: Boot[] = [
