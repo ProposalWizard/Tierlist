@@ -71,7 +71,7 @@ import FaceEditorScreen from "@/components/star/FaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
-import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, STAT_KIB_CANS, type KibCan, type StatKibCan } from "@/lib/star/shopData";
 
 /** The dashboard KIB Cans card's own accent per tier — the same colour as
  *  the can's real photo (see shopData.ts's `color`), as a hex value rather
@@ -81,6 +81,14 @@ const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
   basic: { hex: "#fb923c" },
   premium: { hex: "#60a5fa" },
   elite: { hex: "#c084fc" },
+};
+
+/** Same idea, for the pricier stat-boost cans — a visually distinct set so
+ *  the two shelves never read as the same product line. */
+const STAT_KIB_ACCENT: Record<StatKibCan["id"], { hex: string }> = {
+  basic: { hex: "#f59e0b" },
+  premium: { hex: "#f43f5e" },
+  elite: { hex: "#d946ef" },
 };
 import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
@@ -1346,6 +1354,30 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  const handleBuyStatKib = useCallback((can: StatKibCan) => {
+    if (!career || career.money < can.price) return;
+    setCareer({
+      ...career,
+      money: career.money - can.price,
+      statCans: { ...career.statCans, [can.id]: career.statCans[can.id] + 1 },
+    });
+  }, [career]);
+
+  // Sets statBoost outright rather than stacking — a second can while one
+  // is already running just replaces it with the new tier's own boost and
+  // matches, same "a different boot gives up what was left" precedent
+  // handleBuyBoot's own comment already establishes for the exact same
+  // "temporary item, don't stack two at once" question.
+  const handleUseStatCan = useCallback((id: "basic" | "premium" | "elite") => {
+    if (!career || career.statCans[id] === 0) return;
+    const can = STAT_KIB_CANS.find((c) => c.id === id)!;
+    setCareer({
+      ...career,
+      statCans: { ...career.statCans, [id]: career.statCans[id] - 1 },
+      statBoost: { power: can.boost, technique: can.boost, matchesLeft: can.matches },
+    });
+  }, [career]);
+
   const handleBuyBoot = useCallback((boot: Boot) => {
     if (!career || career.money < boot.price) return;
     // Buying the SAME pair you're already wearing stacks the matches left
@@ -1907,8 +1939,15 @@ export default function StarDevPage() {
     // physics uses (capped at 100). This affects the SHOT, not the aim arrow — the
     // arrow is a fixed-scale drag indicator and never grows with power.
     const bootMatchesLeft = career.currentBoot.matches > 0;
-    const effectivePower = Math.min(100, career.skills.power + (bootMatchesLeft ? career.currentBoot.power : 0));
-    const effectiveTechnique = Math.min(100, career.skills.technique + (bootMatchesLeft ? career.currentBoot.technique : 0));
+    // A KIB Stat Can's boost stacks on top of whatever boots you're already
+    // wearing — it's a separate, temporary item, not a replacement lever.
+    const statBoostActive = !!career.statBoost && career.statBoost.matchesLeft > 0;
+    const effectivePower = Math.min(100, career.skills.power
+      + (bootMatchesLeft ? career.currentBoot.power : 0)
+      + (statBoostActive ? career.statBoost!.power : 0));
+    const effectiveTechnique = Math.min(100, career.skills.technique
+      + (bootMatchesLeft ? career.currentBoot.technique : 0)
+      + (statBoostActive ? career.statBoost!.technique : 0));
     const canCurve = bootMatchesLeft && !!career.currentBoot.curve;
     return (
       <div
@@ -2076,6 +2115,7 @@ export default function StarDevPage() {
         kind={kind}
         onBack={handleBackToDashboard}
         onBuyKib={handleBuyKib}
+        onBuyStatKib={handleBuyStatKib}
         onBuyBoot={handleBuyBoot}
         onBuyItem={handleBuyItem}
         onBuyFromBlackMarket={handleBuyFromBlackMarket}
@@ -2543,6 +2583,57 @@ export default function StarDevPage() {
                       <button
                         disabled={count === 0}
                         onClick={() => handleUseCan(c.id)}
+                        className={`mt-1.5 w-full rounded-md py-1 text-[10px] font-black uppercase tracking-wide transition ${
+                          count > 0 ? "text-gray-950" : "bg-gray-700 text-white/40"
+                        }`}
+                        style={count > 0 ? { backgroundColor: accent.hex } : undefined}
+                      >
+                        Use
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] font-black uppercase text-white/85 tracking-widest">KIB Stat Cans</div>
+              {career.statBoost && career.statBoost.matchesLeft > 0 && (
+                <div className="text-[10px] font-black text-emerald-400">
+                  +{career.statBoost.power} Pow/Tec · {career.statBoost.matchesLeft} left
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {STAT_KIB_CANS.map((c) => {
+                const count = career.statCans[c.id];
+                const accent = STAT_KIB_ACCENT[c.id];
+                return (
+                  <div
+                    key={c.id}
+                    className="relative overflow-hidden rounded-xl border p-2 text-center"
+                    style={{ borderColor: `${accent.hex}66`, backgroundColor: "#15151a" }}
+                  >
+                    <div
+                      className="pointer-events-none absolute inset-0 opacity-25"
+                      style={{
+                        backgroundImage: `repeating-linear-gradient(115deg, ${accent.hex}55 0px, ${accent.hex}55 2px, transparent 2px, transparent 14px)`,
+                      }}
+                    />
+                    <div
+                      className="absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums text-gray-950"
+                      style={{ backgroundColor: accent.hex }}
+                    >
+                      ×{count}
+                    </div>
+                    <div className="relative">
+                      <KibCanIcon can={c} className="h-[84px] w-full mb-1.5" />
+                      <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Stat Can", "")}</div>
+                      <div className="text-[9px] font-bold text-white/55">+{c.boost} Pow/Tec · {c.matches}g</div>
+                      <button
+                        disabled={count === 0}
+                        onClick={() => handleUseStatCan(c.id)}
                         className={`mt-1.5 w-full rounded-md py-1 text-[10px] font-black uppercase tracking-wide transition ${
                           count > 0 ? "text-gray-950" : "bg-gray-700 text-white/40"
                         }`}

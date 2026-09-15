@@ -146,6 +146,8 @@ export function makeInitialCareer(
     status: "1st Team",
     currentBoot: starterBoot,
     kibCans: { basic: 2, premium: 0, elite: 0 },
+    statCans: { basic: 0, premium: 0, elite: 0 },
+    statBoost: null,
     ownedItems: [],
     girlfriend: null,
     sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, active: false })),
@@ -534,6 +536,14 @@ export function creditMatchResult(
   const currentBoot = alreadyPlayed ? career.currentBoot
     : { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
 
+  // A KIB Stat Can's boost wears off the same way a boot wears down — one
+  // match closer every time you actually play, never on a replay. Cleared
+  // to `null` once it hits zero rather than left sitting at 0 matches left,
+  // so `!!career.statBoost` alone is enough to know whether one is active.
+  const nextStatBoost = alreadyPlayed || !career.statBoost ? career.statBoost
+    : career.statBoost.matchesLeft <= 1 ? null
+      : { ...career.statBoost, matchesLeft: career.statBoost.matchesLeft - 1 };
+
   // A rested week for the stable: the horse regains some energy between matches.
   const horse = alreadyPlayed || !career.horse ? career.horse
     : { ...career.horse, energy: Math.min(100, career.horse.energy + 20) };
@@ -801,6 +811,7 @@ export function creditMatchResult(
     // permanently skips a real week for the rest of the career.
     week: alreadyPlayed ? career.week : career.week + 1,
     currentBoot,
+    statBoost: nextStatBoost,
     horse,
     squad: updatedSquad,
     form: alreadyPlayed ? career.form : [stats.rating, ...career.form].slice(0, 5),

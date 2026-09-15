@@ -595,6 +595,18 @@ export interface CareerState {
    *  dashboard's own KIB Cans card — a second lever on top of Rest/Skip to
    *  Match Day, not a replacement for either. */
   kibCans: { basic: number; premium: number; elite: number };
+  /** Owned KIB STAT Cans — see shopData.ts's STAT_KIB_CANS. Far pricier
+   *  than a plain KIB Can; using one sets `statBoost` instead of topping up
+   *  energy. */
+  statCans: { basic: number; premium: number; elite: number };
+  /** The currently active stat boost, if any — set by using a KIB Stat
+   *  Can, counted down one per match played in creditMatchResult (the same
+   *  shape currentBoot's own `matches` countdown already uses), cleared at
+   *  zero. Adds to `skills.power`/`skills.technique` on top of any worn
+   *  boot — see page.tsx's effectivePower/effectiveTechnique. Using a new
+   *  can while one is already active replaces it outright; boosts never
+   *  stack. */
+  statBoost: { power: number; technique: number; matchesLeft: number } | null;
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];
