@@ -2084,14 +2084,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // ── Keeper ──
     // Only where there is a goal to keep. A midfield situation has no goal in
-    // the rectangle, so it has no keeper in it either.
-    if (goalInView(sc.kind))
-    // Drawn DELIBERATELY SMALL and at reduced opacity while the ball is live.
-    // He stands right in the mouth of the goal from this camera, so a keeper
-    // drawn at full size hid the very thing you are trying to watch: whether
-    // your shot went in. He is still exactly where the save maths says he is —
-    // only the artwork is restrained.
-    {
+    // the rectangle, so it has no keeper in it either. A function now, not an
+    // inline block — see where it's called, below the ball section, for why.
+    const drawKeeper = () => {
+      // Drawn DELIBERATELY SMALL and at reduced opacity while the ball is live.
+      // He stands right in the mouth of the goal from this camera, so a keeper
+      // drawn at full size hid the very thing you are trying to watch: whether
+      // your shot went in. He is still exactly where the save maths says he is —
+      // only the artwork is restrained.
       const kk = sc.keeper;
       const { px, py, scale: kScale } = toPx(kk.x, kk.y);
       // `dive` is a lean while patrolling and a committed lunge once a save has
@@ -2242,7 +2242,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.textBaseline = "bottom";
         ctx.fillText(kk.who.shortName, px, headTopY - KR * 0.18);
       }
-    }
+    };
+
+    // He draws first, with the ball painting over him, by default — he
+    // stands between the camera and the goal until the ball actually beats
+    // him. Once the ball's own pitch-y has crossed his (into the net, or
+    // otherwise past his line rather than still approaching it), HE is the
+    // one nearer the camera, so the order flips further down and his body
+    // occludes the ball instead of the ball painting over him. Reported
+    // directly: "the ball renders in front of goalie even when its behind
+    // it in the goal."
+    const keeperInView = goalInView(sc.kind);
+    const liveBall = ballRef.current;
+    const ballY = liveBall ? liveBall.pos.y : (phaseRef.current === "aim" ? sc.ball.y : null);
+    const ballBehindKeeper = keeperInView && ballY !== null && ballY < sc.keeper.y;
+
+    if (keeperInView && !ballBehindKeeper) drawKeeper();
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---
     const trail = trailRef.current;
@@ -2334,6 +2349,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const ball = ballRef.current;
     if (ball) drawBall(ball.pos.x, ball.pos.y, ball.z);
     else if (phaseRef.current === "aim") drawBall(sc.ball.x, sc.ball.y, 0);
+
+    // He's been beaten — draw him now, after the ball, so his body is what
+    // occludes it rather than the other way round.
+    if (ballBehindKeeper) drawKeeper();
 
     // --- Curve boots: a live guide line while the swipe is in progress ---
     //
