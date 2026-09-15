@@ -42,6 +42,7 @@ import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
+import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
@@ -324,7 +325,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const oppXIForCast: OpponentSheetPlayer[] | null = oppXI
     ? oppXI.map(p => ({
         id: p.id, name: p.name, shortName: p.short, position: p.role,
-        overall: p.overall, face: p.face, isGK: p.role === "GK", y: p.y,
+        overall: p.overall,
+        // A real photo when the database has one, otherwise a stable fake
+        // face — resolved here rather than baked into LeaguePlayer.image
+        // itself, since shouldUpgradeLeagueSquads (leagueSquads.ts) reads
+        // that field's real coverage as a staleness signal. Covers
+        // castDefence AND fpRoster below in one place, since both derive
+        // from this same array.
+        face: p.face ?? fakeFaceFor(p.id),
+        isGK: p.role === "GK", y: p.y,
         defending: p.defending,
       }))
     : null;
@@ -2077,8 +2086,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // show up." A data: URL, not an http(s) one — getFaceImage still
       // caches and draws it exactly the same way; its onerror retry (which
       // appends a query string) just never has anything to fire on, since a
-      // data URL either decodes immediately or not at all.
-      face: getFaceImage(careerRef.current?.player.portrait),
+      // data URL either decodes immediately or not at all. Falls back to
+      // the default fake face — not the "no photo" circle — when nothing's
+      // been chosen; `portrait` itself stays genuinely undefined so Player
+      // of the Month/Ballon d'Or cards still fall back to the back of your
+      // shirt unless you've actually set something.
+      face: getFaceImage(careerRef.current?.player.portrait ?? DEFAULT_FAKE_FACE),
       label: faceStyleRef.current.namesEnabled ? playerLabel() : undefined,
     });
 

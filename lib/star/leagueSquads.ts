@@ -135,6 +135,13 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
     players.push({
       id: best.id, name: best.name, position: slot,
       overall: best.overall || 65, goals: 0, assists: 0,
+      // Left genuinely absent, not backfilled with a fake face here —
+      // `shouldUpgradeLeagueSquads` below reads exactly this field's real
+      // coverage to detect a stale pre-image snapshot; baking a fake value
+      // into every row would make that ratio always read 100% and blind
+      // the detector forever. The fake-face fallback for display lives at
+      // the render/Identity layer instead (CanvasMatch.tsx's
+      // `oppXIForCast`), never written back into this field.
       ...(best.image ? { image: best.image } : {}),
       ...(best.nation ? { nation: best.nation } : {}),
       ...(best.age ? { age: best.age } : {}),
@@ -188,6 +195,8 @@ function rowToLeaguePlayer(p: RosterRow): LeaguePlayer {
   return {
     id: p.id, name: p.name, position: naturalPosition(p.positions),
     overall: p.overall || 60, goals: 0, assists: 0,
+    // See buildLeagueSquad's own note just above — same reason this stays
+    // a real-or-absent field rather than ever getting a fake value baked in.
     ...(p.image ? { image: p.image } : {}),
     ...(p.nation ? { nation: p.nation } : {}),
     ...(p.age ? { age: p.age } : {}),
@@ -230,6 +239,7 @@ function generatedSquad(club: string): LeagueSquad {
       overall: 62 + ((clubNameSeed(club) + i * 7) % 22),
       goals: 0,
       assists: 0,
+      image: p.imageUrl,
     })),
   };
 }

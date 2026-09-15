@@ -177,6 +177,10 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
       seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
       sofifaId: best.sofifa_id,
       overall: best.overall || undefined,
+      // Left genuinely absent when the DB has none scraped, not backfilled
+      // with a fake face — the fake-face fallback for display lives at the
+      // render/Identity layer instead (lineup.ts's idOf), never written
+      // back into this field.
       imageUrl: best.image_url || undefined,
       nationality: best.nationality || undefined,
       age: best.age || undefined,

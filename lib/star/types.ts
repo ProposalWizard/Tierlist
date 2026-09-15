@@ -183,14 +183,25 @@ export interface LeaguePlayer {
   goals: number;
   assists: number;
   /**
-   * His portrait, when the database has one.
+   * His REAL portrait, when the database has one — genuinely absent
+   * otherwise, on purpose: `shouldUpgradeLeagueSquads` (leagueSquads.ts)
+   * reads exactly this field's real coverage to detect a stale pre-image
+   * snapshot, so a fake stand-in is never written in here, only resolved
+   * at the render/Identity layer (CanvasMatch.tsx's `oppXIForCast`,
+   * lib/star/fakeFaces.ts) — the one place that distinction stops
+   * mattering and every figure just needs SOME face to draw.
    *
    * The only field here that is not needed to answer "who scored?", and it is
    * here because the Player of the Month shortlist is eight faces and a grid of
    * monograms is not that card. About 45 characters a player, so a division's
    * worth is roughly 22 KB on top of the 15.6 KB this was sized at — still
-   * nothing against the save budget. Absent for a generated squad, which has no
-   * real footballers in it to photograph.
+   * nothing against the save budget. Absent for a generated squad, which has
+   * no real footballers in it to photograph (though see `generatedSquad`,
+   * which does give one a fake face here too — nothing downstream needs to
+   * know the difference between "no real photo yet" and "not a real player
+   * at all", and a generated squad's own players are never in the
+   * `shouldUpgradeLeagueSquads` ratio to begin with, since they never carry
+   * `nation` either).
    */
   image?: string;
   /**
@@ -327,7 +338,10 @@ export interface SquadPlayer {
   // All optional, because a squad can also be generated — offline, at a club
   // with no rows in the database, or in a career that predates this. Everything
   // downstream reads names and positions, which both squads have; these only
-  // add the face and the number next to it.
+  // add the face and the number next to it. `imageUrl` specifically stays
+  // genuinely absent for a real player the database has no scraped photo
+  // for — a fake stand-in is resolved at the render layer instead
+  // (lineup.ts's `idOf`, lib/star/fakeFaces.ts), never written back here.
   sofifaId?: string;
   overall?: number;
   imageUrl?: string;

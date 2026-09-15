@@ -5,6 +5,7 @@ import {
 } from "../../lib/star/canvasEngine";
 import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "../../lib/star/lineup";
 import { generateSquad } from "../../lib/star/squadData";
+import { fakeFaceFor } from "../../lib/star/fakeFaces";
 import { creditMatchResult, makeInitialCareer } from "../../lib/star/careerFlow";
 import type { SquadPlayer, GoalEvent } from "../../lib/star/types";
 import { commentaryBuildup, commentaryStrike, commentaryResult } from "../../lib/star/matchCommentary";
@@ -349,14 +350,17 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
   }
 }
 
-// ── A real face travels with a real identity ────────────────────────────────
+// ── A real face travels with a real identity; a stable fake one otherwise ──
 //
 // idOf (the one conversion point every squad player passes through on the way
-// to becoming an Identity) now carries `face` alongside `overall`. A generated
-// squad has no real photos to carry (see generateSquad), so this gives two
-// SQUAD members a fake URL each and confirms it survives the trip intact —
-// and that a man with none still resolves cleanly to `undefined`, never a
-// stale value left over from someone else.
+// to becoming an Identity) carries `face` alongside `overall`. A real photo
+// (SquadPlayer.imageUrl) survives the trip intact; a man with none (the DB
+// has no scraped photo yet, or this is a fully generated squad member) now
+// resolves to a real, defined face too — a stable fake one (fakeFaceFor,
+// lib/star/fakeFaces.ts) — never `undefined`, which is the "no photo" circle
+// every consumer used to fall back to. Requested directly: "fake faces for
+// all players who have no faces... I dont wanna see ANY circle faces
+// anymore."
 {
   const FACE_A = "https://example.test/vvd.png";
   const FACE_B = "https://example.test/salah.png";
@@ -366,11 +370,16 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
   // a man who could structurally never turn up.
   const playerA = SQUAD.find(p => p.position === "ST")!;
   const playerB = SQUAD.find(p => p.position === "LW")!;
-  const withFaces = SQUAD.map(p => p.id === playerA.id ? { ...p, imageUrl: FACE_A } : p.id === playerB.id ? { ...p, imageUrl: FACE_B } : p);
+  // Everyone else explicitly stripped of imageUrl — generateSquad itself now
+  // assigns every SQUAD member a fake one, so without this there would be no
+  // "no real photo" cohort left to measure at all.
+  const withFaces = SQUAD.map(p => p.id === playerA.id ? { ...p, imageUrl: FACE_A }
+    : p.id === playerB.id ? { ...p, imageUrl: FACE_B }
+    : { ...p, imageUrl: undefined });
   const idA = playerA.id, idB = playerB.id;
 
   const rng = mulberry32(606);
-  let sawA = 0, wrongA = 0, sawUndefinedForNoPhoto = 0, sawDefinedForNoPhoto = 0;
+  let sawA = 0, wrongA = 0, sawUndefinedForNoPhoto = 0, sawWrongFakeForNoPhoto = 0, sawFakeForNoPhoto = 0;
   const N = 1500;
   for (let i = 0; i < N; i++) {
     const sc = buildScenario(SCENARIO_KINDS[i % SCENARIO_KINDS.length], rng, 62, 60, 55);
@@ -382,14 +391,18 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
         if (r.who.face !== FACE_A) wrongA += 1;
       } else if (r.who.id !== idB && withFaces.some(p => p.id === r.who!.id && p.imageUrl === undefined)) {
         if (r.who.face === undefined) sawUndefinedForNoPhoto += 1;
-        else sawDefinedForNoPhoto += 1;
+        else {
+          sawFakeForNoPhoto += 1;
+          if (r.who.face !== fakeFaceFor(r.who.id)) sawWrongFakeForNoPhoto += 1;
+        }
       }
     }
   }
   check(sawA > 20, `the man with a photo turns up enough to measure (${sawA})`);
   check(wrongA === 0, `his face is always exactly the URL his squad row carries (${wrongA} mismatches)`);
-  check(sawDefinedForNoPhoto === 0, `nobody invents a photo for a man with none (${sawDefinedForNoPhoto} did)`);
-  check(sawUndefinedForNoPhoto > 0, `…and that no-photo case is real enough to have been checked (${sawUndefinedForNoPhoto})`);
+  check(sawUndefinedForNoPhoto === 0, `nobody with no real photo is ever left with an undefined face (${sawUndefinedForNoPhoto} were)`);
+  check(sawWrongFakeForNoPhoto === 0, `his fake face is always the SAME stable one fakeFaceFor picks for him (${sawWrongFakeForNoPhoto} mismatches)`);
+  check(sawFakeForNoPhoto > 0, `…and that no-real-photo case is real enough to have been checked (${sawFakeForNoPhoto})`);
 }
 
 // ── castDefence: the other end of the same idea ─────────────────────────────

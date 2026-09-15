@@ -6,6 +6,7 @@ import type {
   FootballEvent, GraphicKind, GraphicSpec, MatchRecord, StoryMemory,
 } from "./types";
 import { pick, surname, groupedGoalLines } from "./grammar";
+import { FAKE_FACES } from "../fakeFaces";
 
 /**
  * GRAPHIC DATA, NOT PICTURES.
@@ -268,9 +269,15 @@ export function buildGraphic(
  * photograph. `own` is what tells the renderer this is a picture with a room
  * behind it rather than a cut-out on transparent.
  */
-function yourFace(career: CareerState): { face: string; own: true } | { number: number } {
+function yourFace(career: CareerState): { face: string; own: true } | { face: string } | { number: number } {
   const portrait = career.player.portrait;
-  return portrait ? { face: portrait, own: true } : { number: career.squadNumber ?? 0 };
+  if (!portrait) return { number: career.squadNumber ?? 0 };
+  // A fake face is composed the exact same stylised, game-render way every
+  // OTHER player's cut-out already is — `own` exists specifically to flag a
+  // REAL uploaded photo (different lighting, a real background) as the one
+  // that needs correcting to fit in; a fake face doesn't need it any more
+  // than anyone else's does.
+  return FAKE_FACES.includes(portrait) ? { face: portrait } : { face: portrait, own: true };
 }
 
 function matchContext(r: MatchRecord | null, e?: FootballEvent): string | undefined {

@@ -5,6 +5,7 @@ import {
 } from "@/lib/star/portrait";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { paletteFor } from "@/lib/star/media/graphics/palette";
+import { FAKE_FACES } from "@/lib/star/fakeFaces";
 
 /**
  * TAKE A PICTURE, OR DON'T.
@@ -162,7 +163,7 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             <p className="flex-1 text-[11px] font-bold leading-snug text-white/85">
               {value
                 ? "This is how you will appear on Player of the Month graphics."
-                : "Without one you appear as the back of your shirt, which is what the preview shows."}
+                : "Without one you'll show up as a generic face in matches, and as the back of your shirt on Player of the Month graphics."}
             </p>
           </div>
 
@@ -185,11 +186,33 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
               Use my shirt
             </button>
           </div>
-          {value && (
+          {value && !FAKE_FACES.includes(value) && (
             <p className="mt-1.5 text-center text-[10px] font-bold text-white/60">
               Stored on this device only — about {Math.round(portraitBytes(value) / 1024)} KB.
             </p>
           )}
+
+          <div className="mt-3 border-t border-emerald-800/60 pt-3">
+            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
+              Or pick a face
+            </span>
+            <div className="mt-2 grid grid-cols-7 gap-1.5">
+              {FAKE_FACES.map((src, i) => (
+                <button
+                  key={src}
+                  onClick={() => onChange(src)}
+                  className={`relative aspect-square overflow-hidden rounded-md border-2 transition ${
+                    value === src ? "border-emerald-400" : "border-white/15 hover:border-white/50"
+                  }`}
+                  style={{ backgroundColor: kit.shirt }}
+                  aria-label={`Fake face ${i + 1}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover object-top" />
+                </button>
+              ))}
+            </div>
+          </div>
         </>
       )}
 
