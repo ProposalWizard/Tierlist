@@ -74,16 +74,15 @@ export const HEAD_SKIN = "#c68642";
  *  math — never re-interpreted differently in the two places it's used. */
 export const CROP_VIEWPORT = 256;
 
-// The values reported directly as "the perfect values for how it should
-// look": "3x size, 0.03 left/right, -2.04 left/right, like 10% circular
-// crop" — offsetY read as the second "left/right" meaning "up/down" (the
-// editor's own sliders are literally labelled that), crop.zoom read as a
-// modest 1.1 for "10% crop". No database needed for this — it's just the
+// The values reported directly, exact, off the editor's own sliders:
+// 3.00x size, -0.15 left/right, -1.95 up/down. crop.zoom stays a modest 1.1
+// for "10% crop" (unconfirmed exactly, but not part of this correction).
+// No database needed for this — it's just the
 // starting point every device with no local override already opens on.
 export const DEFAULT_FACE_STYLE: FaceStyle = {
   scale: 3,
-  offsetX: 0.03,
-  offsetY: -2.04,
+  offsetX: -0.15,
+  offsetY: -1.95,
   showBacking: true,
   backingColor: HEAD_SKIN,
   outlineEnabled: true,

@@ -1,6 +1,6 @@
 import { DEFAULT_FACE_STYLE, CROP_VIEWPORT, type FaceStyle } from "./faceStyle";
 import { sourceRect } from "./portrait";
-import { getFaceOutline, requestFaceOutline, type FaceEllipse } from "./faceOutline";
+import { getFaceContour, requestFaceContour, type FaceContour } from "./faceOutline";
 
 /**
  * The one place a head — real photo, outline, and all — actually gets
@@ -34,20 +34,23 @@ import { getFaceOutline, requestFaceOutline, type FaceEllipse } from "./faceOutl
  * "Your photo" picker already uses) decides which rectangle of the source
  * photo `sourceRect` samples.
  *
- * ── The outline traces the real detected face, not the crop circle ──
+ * ── The outline traces the real detected face, pixel-shaped, not a stand-in ──
  *
- * A plain circular stroke around the crop was tried next and reported back
- * as still not what was wanted: "the outline is still for the circle not
- * the face." `faceOutline.ts` runs real face detection (face-api.js,
- * already a dependency of this codebase for tierlist thumbnail centering)
- * per photo, cached, and returns an ellipse in the SAME crop-transformed
- * local space `sourceRect` already puts the photo itself in — so the
- * outline actually hugs the specific face in that specific photo. Detection
- * is async and only ever resolves after this function has already returned
- * once or twice, so a not-yet-known photo (or one no face was found in, or
- * one with no photo at all) draws a head-shaped OVAL instead — not a plain
- * circle, and not dependent on detection ever succeeding — so this never
- * reads as "just a circle" even before/without a real detection result.
+ * A plain circular stroke around the crop was tried next, and after that a
+ * box-derived ellipse — both reported back as still not what was wanted,
+ * the second emphatically: "I DONT WANT A SHAPE! ... I WANT THE OUTLINE
+ * AROUND THE PIXELS OF THE PLAYERS' FACES!" `faceOutline.ts` now runs real
+ * 68-point facial LANDMARK detection (face-api.js, already a dependency of
+ * this codebase for tierlist thumbnail centering — the landmark model is a
+ * separate download added specifically for this) and returns the actual
+ * detected jaw/cheek/chin contour for that one specific photo, transformed
+ * point-by-point through the SAME crop mapping `sourceRect` already puts the
+ * photo itself in — a real, different polygon per player, not one shape
+ * for all of them. Detection is async and only ever resolves after this
+ * function has already returned once or twice, so a not-yet-known photo (or
+ * one no face was found in, or one with no photo at all) draws the original
+ * plain circular stroke instead — never a blocked draw call, never a
+ * missing outline, and no shape pretending to be a specific face it isn't.
  */
 export function drawPlayerHead(
   ctx: CanvasRenderingContext2D,
@@ -98,52 +101,43 @@ export function drawPlayerHead(
     ctx.lineWidth = Math.max(1, figureR * 0.10 * style.outlineWidth);
     ctx.strokeStyle = style.outlineColor;
 
-    let shape: FaceEllipse | null = null;
+    let contour: FaceContour | null = null;
     if (hasPhoto && rect) {
-      requestFaceOutline(face!.src);
-      // getFaceOutline's undefined ("not yet known") and null ("no face
+      requestFaceContour(face!.src);
+      // getFaceContour's undefined ("not yet known") and null ("no face
       // found") both mean the same thing here: draw the fallback circle.
-      shape = getFaceOutline(face!.src) ?? null;
+      contour = getFaceContour(face!.src) ?? null;
     }
 
-    if (shape && rect) {
+    if (contour && contour.length > 0 && rect) {
       // The same photo→local-head-space mapping sourceRect's own consumer
       // (the drawImage call above) uses: a point at fraction (u,v) across
       // the sampled rect lands at cx/cy ± (u/v - 0.5) * the full 2r
       // diameter. Uniform (never stretching — sourceRect's sw always equals
-      // sh, a square crop viewport), so a real ellipse stays a real ellipse
-      // through the transform, just scaled and moved.
-      const faceCxPx = shape.cx * face!.naturalWidth;
-      const faceCyPx = shape.cy * face!.naturalHeight;
-      const u = (faceCxPx - rect.sx) / rect.sw;
-      const v = (faceCyPx - rect.sy) / rect.sh;
-      const ex = cx + (u - 0.5) * r * 2;
-      const ey = cy + (v - 0.5) * r * 2;
-      // A light sanity clamp, not a real bound on ordinary variation — this
-      // has never been seen live, so a genuinely bad detection (a mislabeled
-      // photo, an unusual crop) gets caught here rather than drawing a huge
-      // or vanishingly small stray shape nowhere near the actual head.
-      const erx = clamp((shape.rx * face!.naturalWidth / rect.sw) * r * 2, r * 0.3, r * 1.4);
-      const ery = clamp((shape.ry * face!.naturalHeight / rect.sh) * r * 2, r * 0.3, r * 1.4);
+      // sh, a square crop viewport) — applied per point, so the actual
+      // traced jaw/cheek/chin curve moves and scales with the crop exactly
+      // the way the photo underneath it does, not a re-derived approximation.
       ctx.beginPath();
-      ctx.ellipse(ex, ey, erx, ery, 0, 0, Math.PI * 2);
+      contour.forEach((p, i) => {
+        const faceXPx = p.x * face!.naturalWidth;
+        const faceYPx = p.y * face!.naturalHeight;
+        const u = (faceXPx - rect.sx) / rect.sw;
+        const v = (faceYPx - rect.sy) / rect.sh;
+        const px = cx + (u - 0.5) * r * 2;
+        const py = cy + (v - 0.5) * r * 2;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
       ctx.stroke();
     } else {
-      // No photo, no detection yet, or no face found in this one. Detection
-      // is real, async, per-photo work — even once it's working, a figure
-      // draws several times before its own photo's detection resolves, so
-      // this path is not rare and was reported back directly as still
-      // looking like "just a circle." A plain circle IS a circle; this
-      // fallback is a real head-shaped oval instead — taller than wide,
-      // narrower at the base — so it reads as "around a face" immediately,
-      // with no dependency on detection ever succeeding at all.
+      // No photo, no detection yet, or no face found in this one — the
+      // plain circular stroke this whole file always had. There is no way
+      // to trace "this specific face's pixels" without a real successful
+      // detection to trace, so this stays deliberately plain rather than
+      // another shape standing in for one.
       ctx.beginPath();
-      ctx.ellipse(cx, cy, r * 0.82, r * 1.04, 0, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
-}
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
 }

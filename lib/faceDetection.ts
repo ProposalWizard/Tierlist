@@ -106,6 +106,32 @@ async function ensureModelsLoaded(): Promise<void> {
   await modelsLoading;
 }
 
+let landmarkModelLoaded = false;
+let landmarkModelLoading: Promise<void> | null = null;
+
+/**
+ * Load the 68-point facial landmark model from /models. A real, separate
+ * model from TinyFaceDetector (which only ever finds a bounding BOX, never
+ * a shape) — this is what actually locates the jaw/cheek/chin contour of
+ * one specific face, the real per-photo data a genuine "outline around the
+ * face" needs. Safe to call multiple times — only loads once.
+ */
+async function ensureLandmarkModelLoaded(): Promise<void> {
+  if (landmarkModelLoaded) return;
+  if (landmarkModelLoading) {
+    await landmarkModelLoading;
+    return;
+  }
+
+  landmarkModelLoading = getFaceApi()
+    .then((api) => api.nets.faceLandmark68Net.loadFromUri("/models"))
+    .then(() => {
+      landmarkModelLoaded = true;
+    });
+
+  await landmarkModelLoading;
+}
+
 /**
  * Load a File (or Blob URL) into an HTMLImageElement.
  */
@@ -259,46 +285,75 @@ export async function detectFaceFromUrl(imageUrl: string): Promise<FaceCenter | 
 }
 
 /**
- * A detected face's own box, as fractions (0-1) of the image's own natural
- * width/height — resolution-independent, unlike FaceCenter which collapses
- * the box down to a single background-position point. Star Career's Face
- * Editor outline (lib/star/faceOutline.ts) is the reason this exists: an
- * outline needs a real SHAPE to trace, not just a point to centre on.
+ * A detected face's own JAW CONTOUR — 17 real points tracing that specific
+ * face's actual cheek/jaw/chin shape, plus the eyebrows' own top edge — as
+ * fractions (0-1) of the image's own natural width/height, resolution-
+ * independent. Star Career's Face Editor outline (lib/star/faceOutline.ts)
+ * is the reason this exists.
+ *
+ * A first version of this outline used only TinyFaceDetector's bounding BOX
+ * (a plain rectangle) padded into an ellipse — reported back directly,
+ * emphatically, as still not what was wanted: "I WANT THE OUTLINE AROUND
+ * THE PIXELS OF THE PLAYERS' FACES", not a generic shape standing in for
+ * one. A box genuinely cannot describe a non-rectangular contour — this is
+ * why the 68-point facial LANDMARK model (a real, separate model from
+ * TinyFaceDetector, loaded on top of it via face-api.js's own chainable
+ * `.withFaceLandmarks()`) is what's needed: getJawOutline() returns the
+ * actual detected jaw/cheek/chin curve for THIS specific photo — a
+ * genuinely different shape per player, not one padded box for all of them.
+ *
+ * The jaw outline only ever covers the lower ~60% of a face — no landmark
+ * model tracks hair or the forehead/skull above the eyebrows at all, so
+ * there is no real per-photo data for the top of the head; browTop (the
+ * eyebrows' own topmost y) is returned so the caller can approximate a
+ * believable cap there, honestly, rather than pretending that part is
+ * traced too.
  *
  * No localStorage caching here (unlike detectFaceFromUrl above) — the
  * caller owns caching, since Star Career's cache shape/key needs differ
  * from the tierlist thumbnail cache this file already keeps.
  */
-export interface FaceBox {
-  x: number; y: number; width: number; height: number;
+export interface FaceLandmarkPoint { x: number; y: number }
+export interface FaceLandmarkData {
+  /** 17 points, ear to ear around the chin — a real, specific curve. */
+  jaw: FaceLandmarkPoint[];
+  /** The topmost y (smallest value) of both eyebrows combined. */
+  browTop: number;
 }
 
-export async function detectFaceBoxFromUrl(imageUrl: string): Promise<FaceBox | null> {
+export async function detectFaceLandmarksFromUrl(imageUrl: string): Promise<FaceLandmarkData | null> {
   try {
     if (typeof window === "undefined") return null;
 
     await ensureModelsLoaded();
+    await ensureLandmarkModelLoaded();
 
     const img = await loadImage(imageUrl);
     const { canvas, scale } = resizeToCanvas(img, 512);
 
     const api = await getFaceApi();
-    const detection = await api.detectSingleFace(
-      canvas,
-      new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
-    );
+    const result = await api
+      .detectSingleFace(canvas, new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 }))
+      .withFaceLandmarks();
 
-    if (!detection) return null;
+    if (!result) return null;
 
     const { naturalWidth: nw, naturalHeight: nh } = img;
     if (!nw || !nh) return null;
 
-    return {
-      x: (detection.box.x / scale) / nw,
-      y: (detection.box.y / scale) / nh,
-      width: (detection.box.width / scale) / nw,
-      height: (detection.box.height / scale) / nh,
-    };
+    // withFaceLandmarks() (no `true` arg) already returns points aligned
+    // back to the INPUT canvas's own coordinate space — the same /scale
+    // division detection.box already needed above, not a second transform.
+    const toFrac = (p: { x: number; y: number }): FaceLandmarkPoint => ({
+      x: (p.x / scale) / nw,
+      y: (p.y / scale) / nh,
+    });
+
+    const jaw = result.landmarks.getJawOutline().map(toFrac);
+    const brows = [...result.landmarks.getLeftEyeBrow(), ...result.landmarks.getRightEyeBrow()].map(toFrac);
+    const browTop = Math.min(...brows.map((p) => p.y));
+
+    return { jaw, browTop };
   } catch {
     return null;
   }
