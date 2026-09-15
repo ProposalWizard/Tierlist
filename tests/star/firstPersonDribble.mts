@@ -1,7 +1,7 @@
 import {
   newRun, applySteer, applyBurst, stepRun, runProgress, runSpeed, pickWaveSizes,
   BASE_SPEED, PACE_SPEED, LUNGE_REACH,
-  type FpRunState, type FpDefender, type RunPhase,
+  type FpRunState, type FpDefender, type RunPhase, type FpIdentity,
 } from "../../lib/star/firstPersonDribble";
 import { mulberry32 } from "../../lib/star/season";
 
@@ -527,6 +527,57 @@ function telegraphWindows(oppStrength: number, seeds: number): number[] {
   const s = newRun({ pace: 100, oppStrength: 100, waveSizes: [2, 1, 4], rounds: 3, rng: mulberry32(5) });
   check(s.roundSizes.length === 3 && s.roundSizes[0] === 2 && s.roundSizes[1] === 1 && s.roundSizes[2] === 4,
     `waveSizes is used verbatim, not re-rolled (got ${s.roundSizes})`);
+}
+
+// ── newRun's `roster` — real opposing outfielders, not anonymous men ──
+//
+// "Players play like themselves" for the dribble mode too: a real man's
+// own defending (or overall) should replace the flat oppStrength number
+// for HIS OWN difficulty, not just decorate him with a face. Omitting the
+// option entirely must stay byte-identical to today — that's what makes
+// this safe to ship into real gameplay without its own Monte-Carlo pass.
+{
+  // No roster at all — every defender stays exactly as anonymous as before.
+  const noRoster = newRun({ pace: 100, oppStrength: 70, rounds: 3, rng: mulberry32(11) });
+  check(noRoster.defenders.every(d => d.who === undefined), "omitting roster leaves every defender with no identity, exactly as before");
+
+  // A roster of weak defenders vs a roster of elite ones, same seed, same
+  // wave shape (waveSizes pins it so both runs build the identical number
+  // of men) — the only thing that differs is the roster's own quality.
+  const weakRoster: FpIdentity[] = Array.from({ length: 10 }, (_, i) => ({ id: `w${i}`, defending: 20 }));
+  const eliteRoster: FpIdentity[] = Array.from({ length: 10 }, (_, i) => ({ id: `e${i}`, defending: 95 }));
+  const waveSizes = [3, 3, 3];
+  const weak = newRun({ pace: 100, oppStrength: 55, waveSizes, roster: weakRoster, rng: mulberry32(21) });
+  const elite = newRun({ pace: 100, oppStrength: 55, waveSizes, roster: eliteRoster, rng: mulberry32(21) });
+
+  check(weak.defenders.every(d => d.who?.defending === 20), "every weak-roster man actually carries his own real defending value");
+  check(elite.defenders.every(d => d.who?.defending === 95), "every elite-roster man actually carries his own real defending value");
+
+  // Real identity REPLACES the flat oppStrength for that man's own
+  // difficulty dials, it doesn't average with it — so the two rosters
+  // (55 flat vs 20/95 real) should differ, and elite should be harder than
+  // weak on every one of mirrorSpeed/closeSpeed (higher = harder to escape)
+  // and tellT (lower = harder to read).
+  for (let i = 0; i < weak.defenders.length; i++) {
+    const w = weak.defenders[i], e = elite.defenders[i];
+    check(e.mirrorSpeed > w.mirrorSpeed, `elite defender ${i} mirrors faster than weak (${e.mirrorSpeed} vs ${w.mirrorSpeed})`);
+    check(e.closeSpeed > w.closeSpeed, `elite defender ${i} closes faster than weak (${e.closeSpeed} vs ${w.closeSpeed})`);
+    check(e.tellT < w.tellT, `elite defender ${i} telegraphs less than weak (${e.tellT} vs ${w.tellT})`);
+  }
+
+  // A roster SMALLER than the run's total defender count wraps around
+  // rather than leaving anyone without an identity or crashing.
+  const smallRoster: FpIdentity[] = [{ id: "only-one", defending: 60 }];
+  const wrapped = newRun({ pace: 100, oppStrength: 55, waveSizes: [4, 4], roster: smallRoster, rng: mulberry32(31) });
+  check(wrapped.defenders.length === 8, `still builds every defender the wave shape asks for (got ${wrapped.defenders.length})`);
+  check(wrapped.defenders.every(d => d.who?.id === "only-one"), "a one-man roster wraps around instead of running out");
+
+  // A man with no defending AND no overall falls back to oppStrength, same
+  // as having no identity at all — never NaN, never a crash.
+  const blankRoster: FpIdentity[] = [{ id: "blank" }];
+  const blank = newRun({ pace: 100, oppStrength: 55, waveSizes: [1], roster: blankRoster, rng: mulberry32(41) });
+  const plain = newRun({ pace: 100, oppStrength: 55, waveSizes: [1], rng: mulberry32(41) });
+  check(blank.defenders[0].mirrorSpeed === plain.defenders[0].mirrorSpeed, "a real identity with neither stat set falls back to oppStrength, matching the anonymous case exactly");
 }
 
 if (problems.length) {

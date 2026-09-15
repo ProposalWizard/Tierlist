@@ -88,6 +88,9 @@ export interface RosterRow {
   id: string; name: string; positions: string; overall: number;
   image?: string; nation?: string; age?: number; highPotential?: boolean;
   worldClassPotential?: boolean;
+  /** See LeaguePlayer's own six attribute fields (types.ts). */
+  pace?: number; shooting?: number; passing?: number;
+  dribbling?: number; defending?: number; physical?: number;
 }
 
 /**
@@ -137,6 +140,12 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
       ...(best.age ? { age: best.age } : {}),
       ...(best.highPotential ? { highPotential: true } : {}),
       ...(best.worldClassPotential ? { worldClassPotential: true } : {}),
+      ...(best.pace ? { pace: best.pace } : {}),
+      ...(best.shooting ? { shooting: best.shooting } : {}),
+      ...(best.passing ? { passing: best.passing } : {}),
+      ...(best.dribbling ? { dribbling: best.dribbling } : {}),
+      ...(best.defending ? { defending: best.defending } : {}),
+      ...(best.physical ? { physical: best.physical } : {}),
       positions: rolesOf(best.positions),
     });
   }
@@ -184,6 +193,12 @@ function rowToLeaguePlayer(p: RosterRow): LeaguePlayer {
     ...(p.age ? { age: p.age } : {}),
     ...(p.highPotential ? { highPotential: true } : {}),
     ...(p.worldClassPotential ? { worldClassPotential: true } : {}),
+    ...(p.pace ? { pace: p.pace } : {}),
+    ...(p.shooting ? { shooting: p.shooting } : {}),
+    ...(p.passing ? { passing: p.passing } : {}),
+    ...(p.dribbling ? { dribbling: p.dribbling } : {}),
+    ...(p.defending ? { defending: p.defending } : {}),
+    ...(p.physical ? { physical: p.physical } : {}),
     positions: rolesOf(p.positions),
   };
 }

@@ -1,5 +1,7 @@
 import { project, horizonPx, type FpCamera } from "./firstPersonView";
 import type { FpDefender, DefenderPhase } from "./firstPersonDribble";
+import { drawPlayerHead } from "./drawPlayerHead";
+import type { FaceStyle } from "./faceStyle";
 
 /**
  * DRAWING THE FIRST-PERSON MODES.
@@ -402,7 +404,14 @@ function drawUpperBody(
   ctx: CanvasRenderingContext2D, cam: FpCamera,
   pos: { x: number; y: number }, shear: number,
   colors: { shirt: string; rim: string },
-  opts: { armFlungSide?: -1 | 1 | 0; armFlungAmount?: number; runPhase?: number; bounce?: number },
+  opts: {
+    armFlungSide?: -1 | 1 | 0; armFlungAmount?: number; runPhase?: number; bounce?: number;
+    /** A real, loaded photo — see drawDefender's own doc. Absent (every
+     *  chaser, every defender with no real identity, the roam mode, "own")
+     *  keeps the original flat fill/hair-cap/stroke below, untouched. */
+    face?: HTMLImageElement;
+    faceStyle?: FaceStyle;
+  },
 ) {
   const feet = project(cam, pos.x, pos.y, 0);
   if (!feet) return;
@@ -459,24 +468,35 @@ function drawUpperBody(
     limb(ctx, cam, elbow, hand, 0.05, 0.045, C.skin);
   }
 
-  // Head — a darker hair cap so it doesn't read as a bald ball, plus a
-  // little shading on the face itself.
+  // Head — a real photo, when one is known and loaded, drawn through
+  // drawPlayerHead (lib/star/drawPlayerHead.ts) — the exact same function a
+  // real match draws every head with, so a defender here looks exactly as
+  // consistent (same crop, same outline, same everything the Face Editor
+  // controls) as one on the actual pitch, never a second competing
+  // drawing routine that could quietly disagree with it. Otherwise: the
+  // original flat fill, dark hair-cap shading arc, and stroke — completely
+  // unchanged for every chaser, every defender with no real identity yet,
+  // and the roam mode, which never passes a face at all.
   const head = project(cam, pos.x + shear, pos.y, 1.62 + bounce);
   if (head) {
     const r = Math.max(1.5, 0.11 * sc);
-    ctx.beginPath();
-    ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
-    ctx.fillStyle = C.skin;
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(head.px, head.py - r * 0.22, r * 0.95, Math.PI, 0);
-    ctx.fillStyle = "rgba(28,20,14,0.55)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
-    ctx.lineWidth = Math.max(1, sc * 0.03);
-    ctx.beginPath();
-    ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
-    ctx.stroke();
+    if (opts.face && opts.face.complete && opts.face.naturalWidth > 0) {
+      drawPlayerHead(ctx, head.px, head.py, r, r, opts.face, opts.faceStyle);
+    } else {
+      ctx.beginPath();
+      ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
+      ctx.fillStyle = C.skin;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(head.px, head.py - r * 0.22, r * 0.95, Math.PI, 0);
+      ctx.fillStyle = "rgba(28,20,14,0.55)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = Math.max(1, sc * 0.03);
+      ctx.beginPath();
+      ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
   }
 }
 
@@ -509,7 +529,10 @@ function drawFigure(
   ctx: CanvasRenderingContext2D, cam: FpCamera,
   pos: { x: number; y: number }, shear: number,
   colors: { shirt: string; rim: string },
-  opts: LegOpts & { armFlungSide?: -1 | 1 | 0; armFlungAmount?: number } = {},
+  opts: LegOpts & {
+    armFlungSide?: -1 | 1 | 0; armFlungAmount?: number;
+    face?: HTMLImageElement; faceStyle?: FaceStyle;
+  } = {},
 ) {
   drawShadow(ctx, cam, pos);
   const { bounce, legs } = computeLegs(pos, shear, opts);
@@ -518,7 +541,10 @@ function drawFigure(
   drawShins(ctx, cam, legs, colors);
 }
 
-function drawDefender(ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefender, assist: boolean) {
+function drawDefender(
+  ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefender, assist: boolean,
+  getFace?: (url: string | undefined) => HTMLImageElement | undefined, faceStyle?: FaceStyle,
+) {
   // Drawn even while "waiting" — his wave was PLACED, not sprung on you
   // (see firstPersonDribble.ts's own header), so he's meant to be visible,
   // standing, from a distance before he ever engages.
@@ -571,6 +597,8 @@ function drawDefender(ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefen
     armFlungSide: def.phase === "committed" ? def.commitSide : 0,
     armFlungAmount: flungOut,
     runPhase,
+    face: getFace?.(def.who?.face),
+    faceStyle,
   });
 }
 
@@ -683,6 +711,18 @@ export interface RenderFirstPersonOptions {
    * is null.
    */
   ownLean?: number;
+  /**
+   * Resolves a defender's `who.face` URL to a real, loaded image — see
+   * drawDefender's own doc. Omit (the roam mode never passes one) and
+   * every defender draws exactly as before, whether or not `newRun` was
+   * given a roster: a real identity with no resolver is exactly as
+   * anonymous-looking as no identity at all.
+   */
+  getFace?: (url: string | undefined) => HTMLImageElement | undefined;
+  /** The shared FaceStyle every real photo draws through — same object a
+   *  real match reads, so a defender here looks exactly as tuned as one on
+   *  the actual pitch. Omit to fall back to drawPlayerHead's own default. */
+  faceStyle?: FaceStyle;
 }
 
 /** The one-on-one duel mode. */
@@ -696,7 +736,7 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   drawGround(ctx, W, H, cam, opts.reducedMotion ? 0 : opts.stride, opts.minX, opts.maxX);
   drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
 
-  for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist);
+  for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle);
 
   if (opts.own) {
     const ownRunPhase = (opts.stride / 1.4) * Math.PI * 2;

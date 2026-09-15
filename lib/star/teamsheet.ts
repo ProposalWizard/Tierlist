@@ -36,6 +36,17 @@ export interface SheetPlayer {
   overall?: number;
   face?: string;
   nation?: string;
+  /**
+   * His real defending rating, when the database has one — see Identity's
+   * own doc (canvasEngine.ts). The only one of the six real attribute
+   * fields this sheet threads through: a shirt on the OTHER team never
+   * curls a finish or gets picked out by a pass (those only ever happen to
+   * a man cast from YOUR OWN squad, via castScenario/idOf, which already
+   * carries the full six) — the one thing a real number here changes is
+   * how good HE is at stopping you, in castDefence's block/tackle roll and
+   * the first-person dribble mode's own per-defender difficulty.
+   */
+  defending?: number;
   /** True for exactly one man, and only when it is your club. */
   isYou?: boolean;
   /** Where on the pitch, 0-1 in the formation's own coordinates. */
@@ -74,6 +85,9 @@ interface Candidate extends Pickable {
   short: string;
   face?: string;
   nation?: string;
+  /** See SheetPlayer's own doc — the one real attribute this sheet cares
+   *  about for a man on the OTHER team. */
+  defending?: number;
   isYou?: boolean;
 }
 
@@ -88,6 +102,7 @@ function fromSquad(squad: SquadPlayer[], you?: { id: string }): Candidate[] {
     overall: p.overall ?? 68,
     face: p.imageUrl,
     nation: p.nationality,
+    defending: p.defending,
     isYou: !!you && p.id === you.id,
   }));
 }
@@ -103,6 +118,7 @@ function fromLeagueSquad(squad: LeagueSquad | undefined): Candidate[] {
     overall: p.overall,
     face: p.image,
     nation: p.nation,
+    defending: p.defending,
   }));
 }
 
@@ -337,6 +353,7 @@ function build(
       overall: p.overall,
       face: p.face,
       nation: p.nation,
+      defending: p.defending,
       isYou: p.isYou,
       x: slot.x,
       y: slot.y,
@@ -374,7 +391,8 @@ function build(
     bench = [...savedPicks, ...topUp]
       .map(p => ({
         id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
-        overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
+        overall: p.overall, face: p.face, nation: p.nation, defending: p.defending,
+        isYou: p.isYou, x: 0, y: 0,
       }));
   } else {
     bench = pool
@@ -383,7 +401,8 @@ function build(
       .slice(0, 9)
       .map(p => ({
         id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
-        overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
+        overall: p.overall, face: p.face, nation: p.nation, defending: p.defending,
+        isYou: p.isYou, x: 0, y: 0,
       }));
   }
 
@@ -404,7 +423,8 @@ function build(
       .slice(0, 9 - bench.length)
       .map(p => ({
         id: p.id, name: p.name, short: p.short, role: p.position, slot: p.position,
-        overall: p.overall, face: p.face, nation: p.nation, isYou: p.isYou, x: 0, y: 0,
+        overall: p.overall, face: p.face, nation: p.nation, defending: p.defending,
+        isYou: p.isYou, x: 0, y: 0,
       }));
     bench = [...bench, ...extra];
   }
@@ -458,7 +478,7 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
       xi: [...sheet.xi, {
         id: me.id, name: me.name, short: me.short, role: vacantSlot.role,
         slot: vacantSlot.label ?? vacantSlot.role, overall: me.overall,
-        face: me.face, nation: me.nation, isYou: true,
+        face: me.face, nation: me.nation, defending: me.defending, isYou: true,
         x: vacantSlot.x, y: vacantSlot.y,
       }],
     };
@@ -484,7 +504,7 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
     ? {
       id: me.id, name: me.name, short: me.short, role: dropped.role,
       slot: dropped.slot, overall: me.overall, face: me.face, nation: me.nation,
-      isYou: true, x: slot.x, y: slot.y,
+      defending: me.defending, isYou: true, x: slot.x, y: slot.y,
     }
     : p));
 
@@ -514,7 +534,8 @@ function forceOntoBench(sheet: TeamSheet, me: Candidate): TeamSheet {
 
   const meSheet: SheetPlayer = {
     id: me.id, name: me.name, short: me.short, role: me.position, slot: me.position,
-    overall: me.overall, face: me.face, nation: me.nation, isYou: true, x: 0, y: 0,
+    overall: me.overall, face: me.face, nation: me.nation, defending: me.defending,
+    isYou: true, x: 0, y: 0,
   };
   if (sheet.bench.length < 9) return { ...sheet, bench: [...sheet.bench, meSheet] };
 
