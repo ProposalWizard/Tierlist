@@ -558,6 +558,44 @@ const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular
                                // all; this is 3x that, so a hard shot struck on the
                                // outside of the ball bends properly round a keeper.
 
+/**
+ * A GOOD FINISHER CAN CHIP AN ADVANCING KEEPER, THE SAME WAY THE PLAYER CAN.
+ *
+ * Requested directly, alongside the finesse-curl redesign above: "good
+ * finishers should also be able to CHIP the goalie like the player can;
+ * like if the goalie is far out enough of their goal to be able to be
+ * chipped (a low power bottom of the ball very high shot that drops down
+ * in the goal and goes over someones head)." The player's own version of
+ * this is not a separate mechanic at all — launch()'s own contact model
+ * already makes a soft, under-the-ball touch pop up steeply without going
+ * far (see VZ_POWER_FLOOR's comment), and a keeper's save is judged at
+ * HIS OWN y — wherever he actually is, not the goal line (see "THE
+ * KEEPER'S OWN LINE" below) — with genuine height in the reach check
+ * (keeperAttempt's `dz`). So a shot that is safely over his head exactly
+ * when it passes his position, and has come back down under the bar by
+ * the time it reaches the goal line, already beats him through the
+ * ordinary physics — nothing about a chip needed inventing there. What a
+ * team-mate never had is the JUDGEMENT: knowing when he's far enough out
+ * to try it, and the SOFT, LOFTED strike itself, since `Sh`/`vz` below
+ * are built for an ordinary driven-or-placed finish, not a delicate lob.
+ *
+ * `CHIP_KEEPER_Y` reuses the exact boundary buildOneOnOne's own `shade`
+ * calculation already treats as "he has really come for it" — not a new
+ * number invented for this, the game's own existing line for the same
+ * judgement a real striker is making.
+ */
+const CHIP_KEEPER_Y = 3.5;     // metres off his line before a chip is even considered
+const CHIP_CLEAR_Z = 3.3;      // target ball height exactly as it passes him. Measured, not
+                               // guessed: 2.7 landed keeperAttempt's dist right on top of
+                               // reach (2.3-2.5) for most real chip attempts, since dx alone
+                               // (the shot rarely lands far from him sideways) wasn't doing
+                               // much of the work — a coin flip, not the reliably-beaten
+                               // keeper a real exposed-keeper chip should be. 3.3 pushes dz
+                               // alone to ~2.7, safely past his reach most of the time.
+const CHIP_LAND_Z = 0.5;       // target height at the goal line — low, dropping in, not
+                               // still falling from a height that could balloon over the bar
+const CHIP_MIN_KEEPER_DIST = 2;// too close to him and there is no room to arc it back down
+
 const SHOT_REF_SPEED = 32;     // m/s — about as hard as a professional strikes it
 const KEEPER_LATERAL_MAX = 3.2;// metres along the line a keeper can cover scrambling
 const KEEPER_DIVE_SPEED = 5.4; // m/s lateral when chasing a loose ball
@@ -2903,7 +2941,7 @@ function aheadOf(r: Runner, t: number): Vec2 {
 // Quality is a real simulation input (accuracy spread, power, curl), not a probability
 // roll — same physics as the player's own strike, driven by their role and how well
 // the team combines (relationships.team).
-function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
+function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, composed = true) {
   const receiver = scenario.receiver;
   if (!receiver) return;
 
@@ -3059,7 +3097,13 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // number that decides whether aiming at the corner finds it or misses the
   // target altogether — which is exactly the trade a finisher is making.
   const sigmaDeg = (1 - quality * 0.82) * 7.5 / Math.max(0.45, control);
-  const dir = rotateDeg(baseDir, gaussian(rng) * sigmaDeg);
+  // Drawn here, not where it's used below, so every OTHER rng() draw in this
+  // function (loft, the fallback spin wobble) keeps consuming the RNG
+  // stream in exactly the sequence it always has — moving this call is what
+  // actually changes a seeded trial's outcome, not the arithmetic that uses
+  // it, and finishing.mts's own calibrated numbers (and any other seeded
+  // replay) depend on that sequence staying put.
+  const noiseDeg = gaussian(rng) * sigmaDeg;
 
   // …and he is allowed to lift it. Loft used to be SUBTRACTED for quality, so
   // every good finish was along the floor: measured mean height at the line was
@@ -3167,9 +3211,197 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
     ? curlSide * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale * blockerBoost
     : (rng() - 0.5) * 0.9;
 
-  ball.vel = { x: dir.x * Sh, y: dir.y * Sh };
-  ball.vz = vz;
-  ball.spin = spin;
+  // A defender can sit close enough to the launch point to be a real
+  // obstacle for the first few metres of ANY shot, whichever corner it is
+  // ultimately aimed at, without ever registering on the chord-to-aimX
+  // check below — that check rules him out once aimX pulls the chord far
+  // enough to one side that its straight line no longer passes near him,
+  // even though a real shot from right next to him still starts out close
+  // by regardless of where it's eventually headed. Computed here, ahead of
+  // both places that read it, since the chip below needs it as much as the
+  // wide-aim placement correction does — measured directly: a defender
+  // planted right in front of the receiver blocked a CHIP far more often
+  // than an ordinary shot (73.5% of chip attempts, vs 4.5% for the same
+  // elite finisher's non-chip shots in the same test) — a slow ball spends
+  // real extra time near its own launch point still low enough to be in
+  // range, and this engine's own defender-reach check (stepBallRaw, "A
+  // defender gets to it") widens to CONTROL_R instead of DEF_BLOCK_R the
+  // moment forward speed drops under 12 m/s, which a chip's whole point is
+  // to do. A real player would not even attempt the delicate touch a chip
+  // needs with a body breathing on him — this is that same judgement, not
+  // a separate rule invented for the chip specifically.
+  let nearThreat = false;
+  for (const d of scenario.defenders) {
+    const fy = d.y - ball.pos.y;
+    if (fy < 0 && fy > -7 && Math.abs(d.x - ball.pos.x) < 2.5) { nearThreat = true; break; }
+  }
+
+  /**
+   * THE CHIP — a soft, lofted strike that drops in over an advancing
+   * keeper, the AI-teammate counterpart to what the player's own contact
+   * model already lets a human do (see CHIP_KEEPER_Y's own comment).
+   *
+   * Solves for the Sh/vz pair whose parabola passes through two real
+   * points: height CHIP_CLEAR_Z exactly at `distToKeeper` (safely over his
+   * head right where the save is actually judged — see "THE KEEPER'S OWN
+   * LINE" below), and CHIP_LAND_Z at `distToGoal` (dropped back down by
+   * the time it would reach the frame). Given the ratio r = distToGoal /
+   * distToKeeper and z(t) = vz·t − ½gt² at both points, eliminating vz
+   * between the two equations gives t1 (time to reach the keeper)
+   * directly, and vz follows from either one. A closed-form solve rather
+   * than a guessed constant because the right touch is wildly different
+   * up close than from distance — a fixed vz that clears a keeper 7 m out
+   * either overcooks a chip from 4 m or undercooks one from 12, and this
+   * is exactly the shape of mistake CROSS_VZ_CAP's own history warns
+   * about (a height picked without checking it against the actual
+   * distance it has to travel).
+   *
+   * Gated on curlTech !== undefined (a real finisher, same as everything
+   * else in this function) and a genuinely good one — `quality` already
+   * folds in real skill and team relationship, so this isn't a second,
+   * separate rating check. Not a guaranteed goal: `keeperAttempt` still
+   * rolls it for real, the same as any other shot, off the real dx/dz at
+   * the exact moment he'd be passed — this only gives a good finisher a
+   * genuinely well-executed ATTEMPT when the situation calls for one,
+   * same spirit as everything above it.
+   *
+   * Also gated on `composed` — false only for the scrambled/loose-ball
+   * call site (stepBallRaw's own "hit first time... standing over it for
+   * half a second while they get there is not a decision anybody would
+   * take"). That comment is exactly why a chip is wrong there too: the
+   * delicate touch this solves for takes composure a stumbled-onto loose
+   * ball doesn't get, and measured directly, letting it fire there anyway
+   * made the elite finisher's own block-rate-past-a-defender floor two
+   * sections down noticeably harder to clear at all sample sizes tried —
+   * a real, if occasional, second shot within the same move that this
+   * mechanic had no business volunteering for.
+   */
+  let isChip = false;
+  let chipSh = Sh, chipVz = vz;
+  if (composed && curlTech !== undefined && !nearThreat && quality > 0.55 && scenario.keeper.y > CHIP_KEEPER_Y) {
+    const distToKeeper = ball.pos.y - scenario.keeper.y;
+    const distToGoal = ball.pos.y;
+    if (distToKeeper > CHIP_MIN_KEEPER_DIST && distToGoal > distToKeeper) {
+      // A better finisher spots it more often — 40% at the quality floor
+      // that gates this at all, up to 80% for a maxed-out one.
+      const chipChance = 0.4 + clamp((quality - 0.55) / 0.45, 0, 1) * 0.4;
+      if (rng() < chipChance) {
+        const r = distToGoal / distToKeeper;
+        const t1sq = (CHIP_CLEAR_Z * r - CHIP_LAND_Z) / (0.5 * G * r * (r - 1));
+        if (t1sq > 0.01) {
+          const t1 = Math.sqrt(t1sq);
+          isChip = true;
+          // `distToKeeper`/`distToGoal` are along the pitch's own y-axis, but
+          // `chipSh` ends up multiplied by `dir.y` (below) to actually move
+          // the ball — a unit-vector COMPONENT, not the full speed, since
+          // `dir` also carries an x-component whenever aimX isn't dead
+          // ahead. Dividing straight distance by raw chipSh (as a first cut
+          // of this did) understates the real time-to-arrive by however much
+          // dir.y falls short of 1 — measured directly: the ball was
+          // consistently arriving at the keeper's line lower than intended,
+          // sometimes well under a metre, because it had already travelled
+          // further into its descent than this solve accounted for. Folding
+          // |baseDir.y| in here (dir's own noise rotation is small enough
+          // not to matter for this) recovers the intended y-speed instead.
+          const yFrac = Math.max(0.2, Math.abs(baseDir.y));
+          const vy = distToKeeper / t1;
+          chipSh = vy / yFrac;
+          chipVz = CHIP_CLEAR_Z / t1 + 0.5 * G * t1;
+        }
+      }
+    }
+  }
+
+  /**
+   * A REAL finesse shot does not aim at the target and let curl carry it
+   * further past — it aims WIDE of the target and curls BACK onto it.
+   * Reported directly, with the exact shape spelled out: "curved shots
+   * should mostly be a shot going wider than the goal in order to get
+   * around a defender or be further from a goalkeeper... curving towards
+   * the goal... a player on the left wing... the perfect shot... aimed
+   * more right than the right corner of the goal, curving towards the
+   * goal (so the ball curves left) so it just about gets to the right
+   * hand corner (rather than always going towards the goal... and then
+   * curving wide towards the corner, [which] would be more likely to be
+   * blocked or saved)." That second, rejected shape — aim at goal, curl
+   * carries it wide — is exactly what this function did before: `dir`
+   * pointed straight at `aimX` and curl was then added on top with
+   * nothing correcting for it, so every curled shot actually landed PAST
+   * its own intended target, in the curl's direction, by however much the
+   * curl bent it — an accuracy cost that's the real reason the corner
+   * on-target floor above needed the control >= 0.5 gate to begin with.
+   *
+   * `ball.spin` (see stepBallRaw's own "positive spin curves LEFT of
+   * travel" comment, matching the ax/ay formula there exactly) rotates
+   * the ball's velocity direction at a CONSTANT ANGULAR RATE — it doesn't
+   * add sideways drift, it turns the heading, tracing a circular arc.
+   * For a chord from launch point to a target on that arc, the standard
+   * tangent-chord relationship says the initial heading differs from the
+   * straight chord-to-target line by exactly HALF the arc's total turning
+   * angle — so aiming the LAUNCH `preAngleDeg` degrees wide of `aimX`,
+   * where `preAngleDeg` is half of however much this exact spin will turn
+   * the ball over its own flight time, makes the curl land it ON `aimX`
+   * rather than past it. `flightT` (chord distance over launch speed) is
+   * an approximation — AIR_DRAG means true forward speed decays a little
+   * over the flight — corrected by measurement, not just derivation, in
+   * tests/star/finishing.mts: the sign was verified against the engine's
+   * own measured on-target rate before shipping, not trusted from the
+   * geometry alone, since this file has gotten a curl sign backwards
+   * before (see CURVE_SPIN_STEP's own note).
+   *
+   * Strictly gated on curlTech !== undefined — the exact same real-data
+   * gate `spin` itself already uses — so every generic, no-identity
+   * chance finishing.mts calibrates against keeps the old direct-at-aimX
+   * launch, byte for byte.
+   *
+   * Also gated OFF when blockerSide is set — measured, not assumed: a
+   * symmetric arc that departs and arrives on the chord (this) bulges
+   * to ONE side for its entire middle stretch, the SAME side the whole
+   * way, never crossing back until it closes in on the target. For the
+   * general placement case that side doesn't matter, only the accuracy
+   * does. But a real defender standing close to the launch point (this
+   * mechanism's own wall test plants one 4 m out) is exactly where that
+   * bulge is still small and hasn't swung clear yet — measured directly:
+   * with this compensation applied unconditionally, the elite finisher's
+   * own block-rate-past-a-planted-defender test (below) got WORSE, not
+   * better (36.1% vs 33.2% no-identity — regressed past the very floor
+   * Round D shipped). A REAL curl around a near wall bulges away from it
+   * from the first instant, which is exactly what the OLD direct-at-aimX
+   * launch already does the moment curl starts acting on it — so when a
+   * blocker is the reason for this curl, that older shape is kept
+   * exactly as Round D proved it, and this wide-launch correction is for
+   * the OTHER case: placement accuracy with nothing standing in the way.
+   */
+  let launchDir = baseDir;
+  if (curlTech !== undefined && !isChip && blockerSide === 0 && !nearThreat && Math.abs(spin) > 0.0001) {
+    const chordDist = Math.max(1, Math.hypot(aimX - ball.pos.x, ball.pos.y));
+    const flightT = chordDist / Sh;
+    // The clean circular-arc derivation above (`preAngleDeg` = half the
+    // total curl rotation) assumes constant forward speed; AIR_DRAG means
+    // that is only ever approximate, and the error compounds over a longer
+    // flight — the exact same "it's struck from much further out" fragility
+    // curlDistScale exists to correct for `spin` itself. Measured directly:
+    // through_ball's on-target rate collapsed to 44-55% (below the 70%
+    // floor above) with the raw half-angle formula applied uncut. Reusing
+    // curlDistScale here — rather than a second, separately-tuned constant
+    // — keeps the same taper that's already calibrated for "this gets
+    // riskier the further out it's struck," re-measured below to confirm
+    // it actually restores the floor rather than just plausibly should.
+    const preAngleDeg = clamp(spin * CURL_K * flightT * (90 / Math.PI) * curlDistScale, -40, 40);
+    launchDir = rotateDeg(baseDir, preAngleDeg);
+  }
+  const dir = rotateDeg(launchDir, noiseDeg);
+
+  ball.vel = { x: dir.x * chipSh, y: dir.y * chipSh };
+  ball.vz = chipVz;
+  // A chip is a straight, deliberately soft lofted touch, not a side-footed
+  // finesse strike — the whole shape it needs comes from height and pace
+  // alone, and a real sideways bend on top would fight the two real points
+  // (over his head, under the bar) this was just solved to hit exactly. A
+  // small residual carries over anyway, the same honest "some spin on
+  // everything" a real strike has, rather than a hard, suspiciously exact
+  // zero.
+  ball.spin = isChip ? spin * 0.15 : spin;
   ball.z = 0.1;
   ball.loose = false;
   ball.contactCd = 0.15;
@@ -5151,7 +5383,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // one — the pause was written for the other case and applied to both.
           if (scrambled) {
             if (relay) launchReceiverPass(ball, scenario, relay, rng);
-            else launchReceiverShot(ball, scenario, rng);
+            else launchReceiverShot(ball, scenario, rng, false);
           } else {
             // Re-checked at expiry (below) rather than decided here, so a
             // relay pending right now and a relay still pending a beat later
