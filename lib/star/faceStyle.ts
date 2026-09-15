@@ -53,12 +53,18 @@ export const DEFAULT_FACE_STYLE: FaceStyle = {
 const KEY = "star-face-style";
 const LEGACY_SCALE_KEY = "star-face-scale";
 
+// Widened directly on request ("give me more freedom to customise") after
+// the original ±1 head-radius / 3x cap turned out too tight to put a face
+// meaningfully higher or bigger than its default spot.
+export const FACE_SCALE_RANGE: [number, number] = [0.5, 5];
+export const FACE_OFFSET_RANGE: [number, number] = [-3, 3];
+
 function sanitize(partial: Partial<FaceStyle>): FaceStyle {
   const s = { ...DEFAULT_FACE_STYLE, ...partial };
   return {
-    scale: clamp(numberOr(s.scale, DEFAULT_FACE_STYLE.scale), 0.5, 3),
-    offsetX: clamp(numberOr(s.offsetX, 0), -1, 1),
-    offsetY: clamp(numberOr(s.offsetY, 0), -1, 1),
+    scale: clamp(numberOr(s.scale, DEFAULT_FACE_STYLE.scale), ...FACE_SCALE_RANGE),
+    offsetX: clamp(numberOr(s.offsetX, 0), ...FACE_OFFSET_RANGE),
+    offsetY: clamp(numberOr(s.offsetY, 0), ...FACE_OFFSET_RANGE),
     showBacking: !!s.showBacking,
     backingColor: typeof s.backingColor === "string" && s.backingColor ? s.backingColor : HEAD_SKIN,
     outlineEnabled: !!s.outlineEnabled,

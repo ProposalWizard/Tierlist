@@ -23,7 +23,21 @@ function freshStore() {
 }
 
 const store = freshStore();
-const { loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE } = await import("../../lib/star/faceStyle");
+const {
+  loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, FACE_SCALE_RANGE, FACE_OFFSET_RANGE,
+} = await import("../../lib/star/faceStyle");
+
+// ── Real freedom, not the original too-tight range ─────────────────────────
+//
+// Reported directly after the first version: "let me put the faces higher
+// and bigger (give me more freedom to customise)". A pinned floor, not an
+// exact number, so a future re-tune can still widen this further without
+// this test needing to change — it only fails if it ever narrows back down.
+{
+  check(FACE_SCALE_RANGE[1] >= 5, `scale can go at least to 5x (${FACE_SCALE_RANGE[1]})`);
+  check(FACE_OFFSET_RANGE[1] >= 3, `offset can move at least 3 head-radii (${FACE_OFFSET_RANGE[1]})`);
+  check(FACE_OFFSET_RANGE[0] === -FACE_OFFSET_RANGE[1], "the offset range is symmetric either side of centred");
+}
 
 // ── Nothing stored yet: the real default, byte for byte ───────────────────
 {
@@ -48,14 +62,14 @@ const { loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE } = await import("../..
 {
   store.clear();
   saveFaceStyle({
-    scale: 99, offsetX: -99, offsetY: 99,
+    scale: 999, offsetX: -999, offsetY: 999,
     showBacking: true, backingColor: "#fff",
     outlineEnabled: true, outlineColor: "#000", outlineWidth: -5,
   });
   const back = loadFaceStyle();
-  check(back.scale <= 3 && back.scale >= 0.5, `scale clamped into range (${back.scale})`);
-  check(back.offsetX === -1, `offsetX clamped to -1 (${back.offsetX})`);
-  check(back.offsetY === 1, `offsetY clamped to 1 (${back.offsetY})`);
+  check(back.scale === FACE_SCALE_RANGE[1], `scale clamped to the real max (${back.scale})`);
+  check(back.offsetX === FACE_OFFSET_RANGE[0], `offsetX clamped to the real min (${back.offsetX})`);
+  check(back.offsetY === FACE_OFFSET_RANGE[1], `offsetY clamped to the real max (${back.offsetY})`);
   check(back.outlineWidth === 0, `outlineWidth never negative (${back.outlineWidth})`);
 }
 
