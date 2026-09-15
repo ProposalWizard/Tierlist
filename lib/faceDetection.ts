@@ -257,3 +257,49 @@ export async function detectFaceFromUrl(imageUrl: string): Promise<FaceCenter | 
     return null;
   }
 }
+
+/**
+ * A detected face's own box, as fractions (0-1) of the image's own natural
+ * width/height — resolution-independent, unlike FaceCenter which collapses
+ * the box down to a single background-position point. Star Career's Face
+ * Editor outline (lib/star/faceOutline.ts) is the reason this exists: an
+ * outline needs a real SHAPE to trace, not just a point to centre on.
+ *
+ * No localStorage caching here (unlike detectFaceFromUrl above) — the
+ * caller owns caching, since Star Career's cache shape/key needs differ
+ * from the tierlist thumbnail cache this file already keeps.
+ */
+export interface FaceBox {
+  x: number; y: number; width: number; height: number;
+}
+
+export async function detectFaceBoxFromUrl(imageUrl: string): Promise<FaceBox | null> {
+  try {
+    if (typeof window === "undefined") return null;
+
+    await ensureModelsLoaded();
+
+    const img = await loadImage(imageUrl);
+    const { canvas, scale } = resizeToCanvas(img, 512);
+
+    const api = await getFaceApi();
+    const detection = await api.detectSingleFace(
+      canvas,
+      new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
+    );
+
+    if (!detection) return null;
+
+    const { naturalWidth: nw, naturalHeight: nh } = img;
+    if (!nw || !nh) return null;
+
+    return {
+      x: (detection.box.x / scale) / nw,
+      y: (detection.box.y / scale) / nh,
+      width: (detection.box.width / scale) / nw,
+      height: (detection.box.height / scale) / nh,
+    };
+  } catch {
+    return null;
+  }
+}
