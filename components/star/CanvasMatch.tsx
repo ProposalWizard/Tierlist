@@ -42,6 +42,7 @@ import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
+import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
@@ -1121,6 +1122,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const faceStyleRef = useRef(DEFAULT_FACE_STYLE);
   useEffect(() => { faceStyleRef.current = loadFaceStyle(); }, []);
+  // A separate scale/offset/crop specifically for the seven fake headshots
+  // (lib/star/fakeFaceStyle.ts) — a different batch of images from real
+  // photos, with their own framing, so they need their own tuned values.
+  // Same load-once-per-match convention as faceStyleRef just above.
+  const fakeFaceStyleRef = useRef(DEFAULT_FAKE_FACE_STYLE);
+  useEffect(() => { fakeFaceStyleRef.current = loadFakeFaceStyle(); }, []);
 
   // --- Canvas sizing (device-pixel-ratio aware) ---
   useEffect(() => {
@@ -1733,8 +1740,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // draws a head, both here and in the Face Editor's own live preview,
       // so the two can never quietly draw something different from each
       // other. Position/scale/backing/outline all come from the user's own
-      // faceStyleRef — see Settings → Player Graphics.
-      drawPlayerHead(ctx, 0, -r * 0.76, r * 0.26, r, opts.face, faceStyleRef.current);
+      // faceStyleRef — see Settings → Player Graphics. fakeFaceStyleRef only
+      // takes over scale/offset/crop, and only when opts.face turns out to
+      // be one of the seven fake headshots.
+      drawPlayerHead(ctx, 0, -r * 0.76, r * 0.26, r, opts.face, faceStyleRef.current, fakeFaceStyleRef.current);
 
       ctx.restore();
 
@@ -2234,7 +2243,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a difference small enough (both round to the same 1px floor on most
       // phone screens) that one shared formula was worth it for never having
       // the editor's preview quietly disagree with the real keeper.
-      drawPlayerHead(ctx, 0, -KR * 0.70, KR * 0.28, KR, getFaceImage(kk.who?.face), faceStyleRef.current);
+      drawPlayerHead(ctx, 0, -KR * 0.70, KR * 0.28, KR, getFaceImage(kk.who?.face), faceStyleRef.current, fakeFaceStyleRef.current);
 
       ctx.restore();
 

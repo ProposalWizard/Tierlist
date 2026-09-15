@@ -2,6 +2,7 @@ import { project, horizonPx, type FpCamera } from "./firstPersonView";
 import type { FpDefender, DefenderPhase } from "./firstPersonDribble";
 import { drawPlayerHead } from "./drawPlayerHead";
 import type { FaceStyle } from "./faceStyle";
+import type { FakeFaceStyle } from "./fakeFaceStyle";
 
 /**
  * DRAWING THE FIRST-PERSON MODES.
@@ -411,6 +412,7 @@ function drawUpperBody(
      *  keeps the original flat fill/hair-cap/stroke below, untouched. */
     face?: HTMLImageElement;
     faceStyle?: FaceStyle;
+    fakeFaceStyle?: FakeFaceStyle;
   },
 ) {
   const feet = project(cam, pos.x, pos.y, 0);
@@ -481,7 +483,7 @@ function drawUpperBody(
   if (head) {
     const r = Math.max(1.5, 0.11 * sc);
     if (opts.face && opts.face.complete && opts.face.naturalWidth > 0) {
-      drawPlayerHead(ctx, head.px, head.py, r, r, opts.face, opts.faceStyle);
+      drawPlayerHead(ctx, head.px, head.py, r, r, opts.face, opts.faceStyle, opts.fakeFaceStyle);
     } else {
       ctx.beginPath();
       ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
@@ -531,7 +533,7 @@ function drawFigure(
   colors: { shirt: string; rim: string },
   opts: LegOpts & {
     armFlungSide?: -1 | 1 | 0; armFlungAmount?: number;
-    face?: HTMLImageElement; faceStyle?: FaceStyle;
+    face?: HTMLImageElement; faceStyle?: FaceStyle; fakeFaceStyle?: FakeFaceStyle;
   } = {},
 ) {
   drawShadow(ctx, cam, pos);
@@ -544,6 +546,7 @@ function drawFigure(
 function drawDefender(
   ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefender, assist: boolean,
   getFace?: (url: string | undefined) => HTMLImageElement | undefined, faceStyle?: FaceStyle,
+  fakeFaceStyle?: FakeFaceStyle,
 ) {
   // Drawn even while "waiting" — his wave was PLACED, not sprung on you
   // (see firstPersonDribble.ts's own header), so he's meant to be visible,
@@ -599,6 +602,7 @@ function drawDefender(
     runPhase,
     face: getFace?.(def.who?.face),
     faceStyle,
+    fakeFaceStyle,
   });
 }
 
@@ -723,6 +727,10 @@ export interface RenderFirstPersonOptions {
    *  real match reads, so a defender here looks exactly as tuned as one on
    *  the actual pitch. Omit to fall back to drawPlayerHead's own default. */
   faceStyle?: FaceStyle;
+  /** The shared FakeFaceStyle every one of the seven fake headshots draws
+   *  through — see drawPlayerHead.ts's own doc. Omit to fall back to its
+   *  default, same as `faceStyle`. */
+  fakeFaceStyle?: FakeFaceStyle;
 }
 
 /** The one-on-one duel mode. */
@@ -736,7 +744,7 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   drawGround(ctx, W, H, cam, opts.reducedMotion ? 0 : opts.stride, opts.minX, opts.maxX);
   drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
 
-  for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle);
+  for (const def of opts.defenders) drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle, opts.fakeFaceStyle);
 
   if (opts.own) {
     const ownRunPhase = (opts.stride / 1.4) * Math.PI * 2;

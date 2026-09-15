@@ -1,4 +1,6 @@
 import { DEFAULT_FACE_STYLE, CROP_VIEWPORT, type FaceStyle } from "./faceStyle";
+import { DEFAULT_FAKE_FACE_STYLE, type FakeFaceStyle } from "./fakeFaceStyle";
+import { FAKE_FACES } from "./fakeFaces";
 import { sourceRect } from "./portrait";
 
 /**
@@ -57,7 +59,29 @@ import { sourceRect } from "./portrait";
  *
  * A player with no photo has no real alpha shape to trace, so that case
  * keeps a plain circular stroke — there's nothing dishonest to fake there.
+ *
+ * ── Real style vs. fake style ──
+ *
+ * `style` (FaceStyle) also governs a FAKE face (lib/star/fakeFaces.ts) —
+ * the backing circle, the outline, and the facesEnabled/namesEnabled master
+ * toggles are photo-composition-independent, so real and fake share the one
+ * set. But `scale`/`offsetX`/`offsetY`/`crop` are NOT — the fake headshots
+ * are a different batch of images with their own framing, so applying the
+ * real photos' tuned crop to them looks wrong. `isFakeFaceImage` detects
+ * this from the loaded image's own `src` (no caller needs to say so
+ * explicitly), and those four fields are swapped in from `fakeStyle`
+ * (FakeFaceStyle, fakeFaceStyle.ts) whenever it fires — see
+ * FakeFaceEditorScreen.tsx for the tool that tunes it.
  */
+export function isFakeFaceImage(face: HTMLImageElement): boolean {
+  try {
+    const path = decodeURIComponent(new URL(face.src).pathname);
+    return (FAKE_FACES as readonly string[]).includes(path);
+  } catch {
+    return false;
+  }
+}
+
 export function drawPlayerHead(
   ctx: CanvasRenderingContext2D,
   cx0: number,
@@ -66,14 +90,19 @@ export function drawPlayerHead(
   figureR: number,
   face: HTMLImageElement | undefined,
   style: FaceStyle = DEFAULT_FACE_STYLE,
+  fakeStyle: FakeFaceStyle = DEFAULT_FAKE_FACE_STYLE,
 ): void {
-  const r = headBaseR * style.scale;
-  const cx = cx0 + style.offsetX * headBaseR;
-  const cy = cy0 + style.offsetY * headBaseR;
+  const usingFake = !!face && isFakeFaceImage(face);
+  const effective = usingFake
+    ? { ...style, scale: fakeStyle.scale, offsetX: fakeStyle.offsetX, offsetY: fakeStyle.offsetY, crop: fakeStyle.crop }
+    : style;
+  const r = headBaseR * effective.scale;
+  const cx = cx0 + effective.offsetX * headBaseR;
+  const cy = cy0 + effective.offsetY * headBaseR;
   // facesEnabled is a master off switch for real photos — with it off, every
   // figure gets exactly the same fallback treatment a player with no photo
   // on file already gets (the backing circle below), never a blank head.
-  const hasPhoto = style.facesEnabled && !!face && face.complete && face.naturalWidth > 0;
+  const hasPhoto = effective.facesEnabled && !!face && face.complete && face.naturalWidth > 0;
 
   // The backing fill is what "no photo" has always looked like — drawn
   // regardless of the toggle whenever there's no photo to show at all, so a
@@ -81,23 +110,25 @@ export function drawPlayerHead(
   // yet) are never left with an invisible head just because backing is off.
   // For a real photo it's what shows through anywhere the photo's own real
   // alpha shape doesn't reach (it no longer clips to a circle — see above).
-  if (style.showBacking || !hasPhoto) {
+  if (effective.showBacking || !hasPhoto) {
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = style.backingColor;
+    ctx.fillStyle = effective.backingColor;
     ctx.fill();
   }
 
   // Computed once, up here, so the outline block below samples the exact
   // same cropped rectangle the photo itself draws — the two must never
   // disagree about which part of the source photo "here" refers to.
+  // `effective.crop` — a fake face's own crop when this is one, never the
+  // real photos' tuned crop applied to a differently-framed image.
   const rect = hasPhoto
-    ? sourceRect(style.crop, face!.naturalWidth, face!.naturalHeight, CROP_VIEWPORT)
+    ? sourceRect(effective.crop, face!.naturalWidth, face!.naturalHeight, CROP_VIEWPORT)
     : null;
 
-  if (style.outlineEnabled && hasPhoto && rect) {
-    const dilate = Math.max(1, figureR * 0.10 * style.outlineWidth);
-    stampOutline(ctx, face!, rect, cx - r, cy - r, r * 2, dilate, style.outlineColor);
+  if (effective.outlineEnabled && hasPhoto && rect) {
+    const dilate = Math.max(1, figureR * 0.10 * effective.outlineWidth);
+    stampOutline(ctx, face!, rect, cx - r, cy - r, r * 2, dilate, effective.outlineColor);
   }
 
   if (hasPhoto && rect) {
@@ -107,13 +138,13 @@ export function drawPlayerHead(
     ctx.drawImage(face!, rect.sx, rect.sy, rect.sw, rect.sh, cx - r, cy - r, r * 2, r * 2);
   }
 
-  if (style.outlineEnabled && !(hasPhoto && rect)) {
+  if (effective.outlineEnabled && !(hasPhoto && rect)) {
     // No photo to trace a real alpha shape from — the plain circular
     // stroke this always fell back to. Nothing dishonest to fake here.
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.lineWidth = Math.max(1, figureR * 0.10 * style.outlineWidth);
-    ctx.strokeStyle = style.outlineColor;
+    ctx.lineWidth = Math.max(1, figureR * 0.10 * effective.outlineWidth);
+    ctx.strokeStyle = effective.outlineColor;
     ctx.stroke();
   }
 }

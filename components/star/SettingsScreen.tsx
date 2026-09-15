@@ -22,6 +22,7 @@ interface Props {
   onDeleteSavedReplay: (id: string) => void;
   onRefreshPhotos: () => Promise<void>;
   onOpenFaceEditor: () => void;
+  onOpenFakeFaceEditor: () => void;
   saves: SaveSlotSummary[];
   activeSlot: number;
   onSwitchSave: (slot: number) => void;
@@ -31,7 +32,7 @@ interface Props {
 
 export default function SettingsScreen({
   career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
-  onRefreshPhotos, onOpenFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
+  onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
 }: Props) {
   // Quick on/off switches, separate from the full editor — read/write the
   // exact same shared FaceStyle object FaceEditorScreen and CanvasMatch do,
@@ -73,14 +74,25 @@ export default function SettingsScreen({
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Player Graphics</div>
           <p className="mt-1 text-[11px] font-semibold text-white/90">
-            Size, position, backing circle and outline for every real face on the pitch — a full editor with a live preview, not just a slider.
+            Size, position, backing circle and outline for every face on the pitch — two full editors with a live preview, not just a slider.
           </p>
-          <button
-            onClick={onOpenFaceEditor}
-            className="mt-2 w-full py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-[11px] font-black text-white"
-          >
-            Open Editor →
-          </button>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              onClick={onOpenFaceEditor}
+              className="py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-[11px] font-black text-white"
+            >
+              Real Photos →
+            </button>
+            <button
+              onClick={onOpenFakeFaceEditor}
+              className="py-1.5 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-[11px] font-black text-white"
+            >
+              Fake Faces →
+            </button>
+          </div>
+          <p className="mt-1.5 text-[10px] font-semibold text-white/55">
+            Real photos and the seven fake faces are different images with different framing, so each gets its own size/position/crop — pick the one you want to tune.
+          </p>
 
           <label className="mt-3 flex items-center justify-between gap-2">
             <span className="text-[11px] font-black text-white/90">Player faces</span>

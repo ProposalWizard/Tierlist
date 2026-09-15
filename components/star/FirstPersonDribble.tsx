@@ -9,6 +9,7 @@ import { renderFirstPerson, type DuelPip } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
+import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 
 /**
  * THE ONE-ON-ONE DUEL — THE COMPONENT.
@@ -259,6 +260,12 @@ export default function FirstPersonDribble({
   // only the one-time localStorage read.
   const faceImageCacheRef = useRef(createFaceImageCache());
   const faceStyleRef = useRef(loadFaceStyle());
+  // Same idea, for the seven fake headshots specifically — see
+  // lib/star/fakeFaceStyle.ts and drawPlayerHead.ts's own doc on how the two
+  // styles combine. A defender here can carry a fake face exactly as often
+  // as one in a real match (both draw from the same castDefence-derived
+  // roster), so it needs the same fallback tuning to look right.
+  const fakeFaceStyleRef = useRef(loadFakeFaceStyle());
   const rngRef = useRef<() => number>(() => Math.random());
   const reducedMotionRef = useRef(false);
   // Camera-lag and ball-touch-spring state — see the file header. Reset
@@ -536,6 +543,7 @@ export default function FirstPersonDribble({
         ownLean: lean,
         getFace: faceImageCacheRef.current.get,
         faceStyle: faceStyleRef.current,
+        fakeFaceStyle: fakeFaceStyleRef.current,
       });
     };
 
