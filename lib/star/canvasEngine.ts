@@ -2931,6 +2931,31 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // His striking quality, which is his own and the understanding between you —
   // and deliberately NOT where he is standing.
   const quality = clamp(clamp(receiver.skill, 0, 100) / 100 * 0.72 + teamQuality * 0.28, 0, 1);
+  /**
+   * A REAL elite finisher aims closer to the frame than the base formula
+   * alone lets him — reported directly, after real live play: "my
+   * teammates... just shoot straight into the goalies hands or into a
+   * defender like theyre blind... i wanna see them play like a real world
+   * class attacker... shooting in corners far from goalie." `quality`'s
+   * own skill→placement scaling is real but deliberately gentle (measured:
+   * a 35→92 skill gap only reliably widens placement a modest amount,
+   * tests/star/finishing.mts's own `good > poor + 0.25` is a real but
+   * conservative bound) — right for a generic roll, where `receiver.skill`
+   * is still mostly noise even at the top end, but not enough to make a
+   * NAMED, KNOWN-ELITE finisher visibly play like one.
+   *
+   * Strictly gated on `receiver.who?.shooting` — real data only, absent
+   * for a generated squad or a save with no six-stat wheel synced yet —
+   * so every chance finishing.mts already measures and calibrates against
+   * (none of which carry a real Identity) gets the EXACT formula that
+   * already existed, unchanged. This is additive on top of quality, not a
+   * replacement for it: `quality` (and so `sigmaDeg`'s own execution
+   * tightening) already responds to the real shooting stat via
+   * `receiver.skill` — this is the extra, deliberate "genuinely elite"
+   * edge on where he's TRYING to put it, layered on top.
+   */
+  const realShooting = receiver.who?.shooting;
+  const eliteBoost = realShooting !== undefined ? 1 + clamp(realShooting - 55, 0, 40) / 100 : 1;
 
   // ── HE AIMS AT THE GOAL, NOT AT THE GOALKEEPER ──
   //
@@ -3017,7 +3042,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // rates tests/star/finishing.mts already validates do not move on average —
   // this widens the spread of what gets tried, not the average of it.
   const ambition = clamp(1 + gaussian(rng) * 0.22, 0.5, 1.3);
-  const placement = ambition * (0.22 + quality * 0.62) * (0.2 + control * 0.8);
+  const placement = ambition * (0.22 + quality * 0.62) * (0.2 + control * 0.8) * eliteBoost;
   const aimX = clamp(
     goalCx + side * placement * (halfMouth - BALL_R * 2),
     POST_L + BALL_R * 2, POST_R - BALL_R * 2,
@@ -3050,9 +3075,35 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // save from before these existed) collapses back to the old flat random
   // wobble — unchanged difficulty for every chance that isn't off a real
   // player.
+  // Requested directly, in capitals: "curving shots (SIGNIFICANTLY AND
+  // NOTICEABLY) around defenders." 1.9 is deliberately close to the
+  // player's OWN peak curl coefficient (launch()'s `1.85`, at full power)
+  // — a real elite AI finisher should bend it about as hard as the player
+  // himself can at his very best, not some fraction of it.
+  //
+  // Measured, then corrected: a flat 1.9 sent through_ball's on-target
+  // rate from 82% to 19% — not a skill effect (poor(40) regressed almost
+  // as badly as elite(92), and cutback/byline_cross were unaffected) but a
+  // DISTANCE one. CURL_K bends the ball continuously over its whole
+  // flight, and a through_ball is struck from much further out than a
+  // cutback — "it is struck from further out" is this file's own existing
+  // note on why that situation behaves differently. The same spin held for
+  // twice the flight time bends the ball twice as far off its intended
+  // line, easily clearing the frame it was aimed at. `dist` (already
+  // computed above, ball-to-goal) tapers the coefficient back down for a
+  // longer strike, so a close-range curl stays dramatic while a long-range
+  // one doesn't swerve itself clean off target.
+  const curlDistScale = clamp(1 - (dist - 10) / 30, 0.35, 1);
+  // A header (corner/byline_cross/header, all low `control`) is not a
+  // deliberately side-footed curl the way a cutback finish is — the same
+  // dampening `placement`'s own `(0.2 + control*0.8)` term already applies
+  // to ambition applies here too, so a genuinely hard, uncontrolled chance
+  // doesn't get an unrealistically dramatic swerve just because a good
+  // striker happened to get on the end of it.
+  const curlControlScale = 0.4 + control * 0.6;
   const curlTech = receiver.who?.shooting ?? receiver.who?.overall;
   const spin = curlTech !== undefined
-    ? side * curlRange(curlTech) * 0.9
+    ? side * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale
     : (rng() - 0.5) * 0.9;
 
   ball.vel = { x: dir.x * Sh, y: dir.y * Sh };
@@ -4956,12 +5007,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // is who he is, not the fresh dice roll rollReceiver() gave him at
           // kick-off — reported as "how are you calculating a player's
           // finishing?" and the honest answer was: not off the player at
-          // all, off a role-shaped random number. A real squad's overall is
-          // the closest thing this game has to a finishing stat, so it wins
-          // when there is one. Still noisy — the same real player has good
-          // days and bad ones — but centred on who he actually is.
-          if (r.who.overall !== undefined) {
-            scenario.receiver.skill = clamp(r.who.overall + gaussian(rng) * 6, 0, 100);
+          // all, off a role-shaped random number. His real `shooting` is
+          // now the first choice — a genuine finishing stat, not a proxy
+          // for it — falling back to `overall` for a man the database has
+          // no six-stat wheel for yet. Still noisy — the same real player
+          // has good days and bad ones — but centred on who he actually is.
+          const finishing = r.who.shooting ?? r.who.overall;
+          if (finishing !== undefined) {
+            scenario.receiver.skill = clamp(finishing + gaussian(rng) * 6, 0, 100);
           }
         }
         scenario.receivedAt = { x: tgt.x, y: tgt.y };

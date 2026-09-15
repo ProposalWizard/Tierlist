@@ -276,6 +276,111 @@ for (const kind of KINDS) {
   }
 }
 
+// ── A real, named finisher plays like one — and never at the cost of the
+//    target itself ──────────────────────────────────────────────────────────
+//
+// Requested directly, after real live play, with real players named (Bruno,
+// Cunha, Mbeumo, Sesko — all real, genuinely good finishers): "my teammates
+// seem AT MOST to be SLIGHTLY curving the ball sometimes... just shoot
+// straight into the goalies hands or into a defender like theyre blind... i
+// wanna see them play like a real world class attacker... shooting in
+// corners far from goalie... curving shots (SIGNIFICANTLY AND NOTICEABLY)
+// around defenders." Two real, additive-only mechanisms answer this —
+// `eliteBoost` widens `placement` for a real, known-elite `receiver.who?.
+// shooting`, and the receiver-shot `spin` term went from a flat, skill-
+// independent 0.9 wobble to a real, directional curl scaled by real
+// technique (curlRange(), the SAME mapping the player's own struck shots
+// use) — both are gated on `receiver.who?.shooting`, so a generic chance
+// (this whole file above) is byte-identical to before; nothing here can
+// regress it.
+//
+// The real danger, measured and corrected before this ever shipped: a flat,
+// strong curl coefficient sent through_ball's on-target rate from 82% to
+// 19% — not a skill effect (a POOR real finisher regressed almost as badly
+// as an elite one), a DISTANCE one. CURL_K bends the ball continuously over
+// its whole flight, and a through_ball is struck from much further out than
+// a cutback — so the same spin, held for longer, swerved the ball clean off
+// a target it was aimed AT. `curlDistScale`/`curlControlScale`
+// (launchReceiverShot) taper the coefficient back down for a longer or
+// harder-to-control strike — this section is the permanent proof that
+// correction holds, not just the scratch measurement that found it.
+{
+  interface IdSample { shots: number; onTarget: number; offs: number[]; }
+
+  function sampleWithIdentity(kind: ScenarioKind, n: number, shooting: number | undefined): IdSample {
+    const out: IdSample = { shots: 0, onTarget: 0, offs: [] };
+    for (let seed = 0; seed < n; seed++) {
+      // Same seed regardless of `shooting` — a controlled comparison of the
+      // SAME scenario with a different finisher, not three different random
+      // scenario distributions (a real mistake caught while tuning this).
+      const rng = mulberry32(seed * 1013 + kind.length * 7919);
+      const sc = buildScenario(kind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t || !sc.receiver) continue;
+      // Set on EVERY candidate runner, not just one — otherwise whichever
+      // man actually receives the ball is a coin flip between "real
+      // identity" and "the scenario's own generic roll", diluting and
+      // confounding exactly what's being measured.
+      if (shooting !== undefined) {
+        const who = { id: "x", name: "X", shortName: "X", position: "ST", shooting, overall: shooting };
+        if (sc.runner) sc.runner.who = who;
+        for (const r of sc.secondaryRunners) r.who = who;
+      }
+
+      const d = Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y);
+      const ball = launch(sc,
+        { x: t.x - sc.ball.x + (rng() - 0.5), y: t.y - sc.ball.y + (rng() - 0.5) },
+        Math.min(0.95, 0.2 + d / 32) * (0.92 + rng() * 0.16),
+        { cx: (rng() - 0.5) * 0.6, cy: -0.1 - rng() * 0.4 },
+        { power: 60, technique: 60 }, rng);
+
+      let res: Outcome | null = null;
+      let struck = false, crossed = false;
+      let prevX = ball.pos.x, prevY = ball.pos.y, prevZ = ball.z;
+      for (let i = 0; i < 2500 && !res; i++) {
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        const shotsBefore = sc.receiverShots ?? 0;
+        prevX = ball.pos.x; prevY = ball.pos.y; prevZ = ball.z;
+        res = stepBall(ball, sc, rng, DT);
+        if ((sc.receiverShots ?? 0) > shotsBefore) struck = true;
+        if (struck && !crossed && prevY > 0 && ball.pos.y <= 0) {
+          const f = prevY / (prevY - ball.pos.y);
+          const x = prevX + (ball.pos.x - prevX) * f;
+          const z = prevZ + (ball.z - prevZ) * f;
+          out.offs.push(x - GOAL_CX);
+          if (Math.abs(x - GOAL_CX) < HALF && z < 2.44) out.onTarget++;
+          crossed = true;
+        }
+      }
+      if (!struck) continue;
+      out.shots++;
+    }
+    return out;
+  }
+
+  for (const kind of KINDS) {
+    const poor = sampleWithIdentity(kind, 500, 40);
+    const elite = sampleWithIdentity(kind, 500, 92);
+
+    // The corrected floor: real curl must never tank the target rate the
+    // way the uncorrected flat coefficient did (82% -> 19% on through_ball).
+    check(poor.onTarget / Math.max(1, poor.offs.length) > 0.7,
+      `${kind}: a real (if modest) finisher still mostly hits the target (${pct(poor.onTarget, poor.offs.length)})`);
+    check(elite.onTarget / Math.max(1, elite.offs.length) > 0.7,
+      `${kind}: a real elite finisher still mostly hits the target (${pct(elite.onTarget, elite.offs.length)})`);
+
+    // Being genuinely elite should not read as LESS reliable than being
+    // merely decent — a small tolerance for noise, not an exact ordering.
+    const poorRate = poor.onTarget / Math.max(1, poor.offs.length);
+    const eliteRate = elite.onTarget / Math.max(1, elite.offs.length);
+    check(eliteRate > poorRate - 0.08,
+      `${kind}: an elite finisher isn't noticeably LESS accurate than a poor one (${pct(elite.onTarget, elite.offs.length)} vs ${pct(poor.onTarget, poor.offs.length)})`);
+  }
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log("  ✗ " + p);

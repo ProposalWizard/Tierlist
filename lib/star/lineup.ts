@@ -184,6 +184,41 @@ export interface OpponentSheetPlayer {
   physical?: number;
 }
 
+/** Positions that actually defend — used to prefer a real defender's face
+ *  for a real defender, rather than trusting formation depth (`y`) alone.
+ *  See orderDefensively's own doc for why depth alone was not safe here. */
+const DEFENSIVE_POSITIONS = new Set(["CB", "LB", "RB", "CDM"]);
+
+/**
+ * Real outfielders, genuinely defensive ones first — CB/LB/RB/CDM, deepest
+ * first within that group — everyone else (CM/CAM/wingers/strikers) after,
+ * as a fallback for when a scenario needs more defenders drawn than the
+ * side actually has back-four-or-holding-mid players.
+ *
+ * A real, live bug lived in a plain depth sort this replaces: formations.ts's
+ * own `y` scale runs `GK = 0.94` down to `FWD = 0.17` — HIGHER y is DEEPER,
+ * toward the side's own goal. Sorting ascending (the way this used to) put
+ * the LOWEST y first, which is strikers and wingers, not defenders — every
+ * "defender" drawn on the pitch was actually the opposing attack. Reported
+ * directly, from a real played match, once real faces made it obvious:
+ * "the oppositions defenders are just the highest rated players im guessing
+ * coz im seeing loads of attackers." Filtering by the real position label
+ * first (rather than just correcting the sort direction and hoping depth
+ * alone always tracks position) is the more robust fix — a CDM's `y` can
+ * sit close to a CM's, and a real defender's face belongs on him regardless
+ * of exactly where the two happen to rank against each other.
+ *
+ * Shared by castDefence (below) and the first-person dribble mode's own
+ * roster (CanvasMatch.tsx) — both need the same real answer to "who on the
+ * other side actually defends," not two copies of the same judgement call.
+ */
+export function orderDefensively(outfield: OpponentSheetPlayer[]): OpponentSheetPlayer[] {
+  const byDepth = (a: OpponentSheetPlayer, b: OpponentSheetPlayer) => b.y - a.y;
+  const real = outfield.filter(p => DEFENSIVE_POSITIONS.has(p.position)).sort(byDepth);
+  const rest = outfield.filter(p => !DEFENSIVE_POSITIONS.has(p.position)).sort(byDepth);
+  return [...real, ...rest];
+}
+
 export function castDefence(sc: Scenario, oppXI: OpponentSheetPlayer[] | null | undefined): void {
   if (!oppXI || oppXI.length === 0) return;
   const toIdentity = (p: OpponentSheetPlayer): Identity => ({
@@ -196,11 +231,11 @@ export function castDefence(sc: Scenario, oppXI: OpponentSheetPlayer[] | null | 
   if (gk) sc.keeper.who = toIdentity(gk);
 
   if (sc.defenders.length === 0) return;
-  const outfield = oppXI.filter(p => !p.isGK).sort((a, b) => a.y - b.y);
-  if (outfield.length === 0) return;
+  const pool = orderDefensively(oppXI.filter(p => !p.isGK));
+  if (pool.length === 0) return;
   const defenders = [...sc.defenders].sort((a, b) => a.y - b.y);
   defenders.forEach((d, i) => {
-    d.who = toIdentity(outfield[i % outfield.length]);
+    d.who = toIdentity(pool[i % pool.length]);
   });
 }
 
