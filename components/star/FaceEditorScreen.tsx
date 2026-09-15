@@ -29,9 +29,10 @@ import { kitsOf } from "@/lib/star/kits";
  * match actually shows.
  *
  * The Crop Photo section reuses PortraitPicker.tsx's own crop geometry
- * (coverScale/clampOffset/initialView, lib/star/portrait.ts) — added after
- * real player photos turned out to be plain rectangles, neck and shirt
- * included, not the alpha cut-outs an earlier version assumed.
+ * (coverScale/clampOffset/initialView, lib/star/portrait.ts) — real player
+ * photos can include more than just the face (neck, a bit of shirt
+ * collar), so there needed to be a way to pick which part of the photo
+ * actually shows, independent of what its own real alpha shape traces.
  */
 
 const SIZE = 260;

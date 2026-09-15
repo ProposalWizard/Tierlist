@@ -1,6 +1,5 @@
 import { DEFAULT_FACE_STYLE, CROP_VIEWPORT, type FaceStyle } from "./faceStyle";
 import { sourceRect } from "./portrait";
-import { getFaceContour, requestFaceContour, type FaceContour } from "./faceOutline";
 
 /**
  * The one place a head — real photo, outline, and all — actually gets
@@ -25,32 +24,39 @@ import { getFaceContour, requestFaceContour, type FaceContour } from "./faceOutl
  *
  * ── The crop ──
  *
- * An earlier version assumed real player photos were alpha-cut-out
- * headshots and tried to trace that shape for the outline. Reported back
- * directly that they're plain rectangles — neck and shirt included: "some
- * of the picture is in it that i dont want in it." So the real fix wasn't a
- * cleverer outline, it was a genuine CROP — `style.crop` (a `CropView`,
- * `lib/star/portrait.ts` — the exact same pan/zoom geometry the existing
- * "Your photo" picker already uses) decides which rectangle of the source
- * photo `sourceRect` samples.
+ * `style.crop` (a `CropView`, `lib/star/portrait.ts` — the exact same
+ * pan/zoom geometry the existing "Your photo" picker already uses) decides
+ * which rectangle of the source photo `sourceRect` samples — added after
+ * real player photos turned out to include more than just the face (neck,
+ * a bit of shirt collar), so there needed to be a way to pick which part of
+ * the photo actually shows.
  *
- * ── The outline traces the real detected face, pixel-shaped, not a stand-in ──
+ * ── The outline traces the photo's own real alpha shape ──
  *
- * A plain circular stroke around the crop was tried next, and after that a
- * box-derived ellipse — both reported back as still not what was wanted,
- * the second emphatically: "I DONT WANT A SHAPE! ... I WANT THE OUTLINE
- * AROUND THE PIXELS OF THE PLAYERS' FACES!" `faceOutline.ts` now runs real
- * 68-point facial LANDMARK detection (face-api.js, already a dependency of
- * this codebase for tierlist thumbnail centering — the landmark model is a
- * separate download added specifically for this) and returns the actual
- * detected jaw/cheek/chin contour for that one specific photo, transformed
- * point-by-point through the SAME crop mapping `sourceRect` already puts the
- * photo itself in — a real, different polygon per player, not one shape
- * for all of them. Detection is async and only ever resolves after this
- * function has already returned once or twice, so a not-yet-known photo (or
- * one no face was found in, or one with no photo at all) draws the original
- * plain circular stroke instead — never a blocked draw call, never a
- * missing outline, and no shape pretending to be a specific face it isn't.
+ * Two shape-based attempts (a padded bounding-box ellipse, then a 68-point
+ * facial-landmark jaw contour) both drew a shape STANDING IN for the face
+ * rather than the actual image content — the landmark version specifically
+ * excludes hair, since no landmark model tracks it. Reported back directly:
+ * "i just want the IMAGE (not the transparent areas) as in the visible
+ * image; so the head; face and hair and whatever is visible, to be able to
+ * be outlined." That's not a shape to approximate — it's the photo's own
+ * real alpha boundary, whatever it actually is.
+ *
+ * `silhouetteFor()` recolours every visible (non-transparent) pixel of the
+ * CROPPED region to the outline colour via `globalCompositeOperation =
+ * "source-in"` (the standard "solid silhouette of a sprite" technique), and
+ * `stampOutline()` stamps that silhouette at 12 points around a small ring
+ * before the real photo draws on top — the real photo covers the middle of
+ * its own dilated shadow, leaving only the newly-exposed ring visible, which
+ * reads as an outline hugging whatever the photo's own alpha shape actually
+ * is: head, hair, and anything else genuinely opaque in that photo. The
+ * photo itself no longer clips to a circle — a circle clip would trim away
+ * exactly the hair/silhouette detail the outline exists to trace, and the
+ * backing fill (still a plain circle, unchanged) already covers anywhere
+ * the unclipped photo doesn't reach.
+ *
+ * A player with no photo has no real alpha shape to trace, so that case
+ * keeps a plain circular stroke — there's nothing dishonest to fake there.
  */
 export function drawPlayerHead(
   ctx: CanvasRenderingContext2D,
@@ -73,7 +79,8 @@ export function drawPlayerHead(
   // regardless of the toggle whenever there's no photo to show at all, so a
   // generated squad's players (and anyone real whose photo hasn't loaded
   // yet) are never left with an invisible head just because backing is off.
-  // For a real photo it's what shows through any transparent part of it.
+  // For a real photo it's what shows through anywhere the photo's own real
+  // alpha shape doesn't reach (it no longer clips to a circle — see above).
   if (style.showBacking || !hasPhoto) {
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -81,63 +88,101 @@ export function drawPlayerHead(
     ctx.fill();
   }
 
-  // Computed once, up here, so the outline block below can reuse the exact
-  // same crop rectangle the photo itself was drawn with — the two must never
+  // Computed once, up here, so the outline block below samples the exact
+  // same cropped rectangle the photo itself draws — the two must never
   // disagree about which part of the source photo "here" refers to.
   const rect = hasPhoto
     ? sourceRect(style.crop, face!.naturalWidth, face!.naturalHeight, CROP_VIEWPORT)
     : null;
 
-  if (hasPhoto && rect) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(face!, rect.sx, rect.sy, rect.sw, rect.sh, cx - r, cy - r, r * 2, r * 2);
-    ctx.restore();
+  if (style.outlineEnabled && hasPhoto && rect) {
+    const dilate = Math.max(1, figureR * 0.10 * style.outlineWidth);
+    stampOutline(ctx, face!, rect, cx - r, cy - r, r * 2, dilate, style.outlineColor);
   }
 
-  if (style.outlineEnabled) {
+  if (hasPhoto && rect) {
+    // No circle clip — the photo draws at its own real shape. A circle here
+    // would trim away exactly the hair/silhouette detail the outline above
+    // exists to trace.
+    ctx.drawImage(face!, rect.sx, rect.sy, rect.sw, rect.sh, cx - r, cy - r, r * 2, r * 2);
+  }
+
+  if (style.outlineEnabled && !(hasPhoto && rect)) {
+    // No photo to trace a real alpha shape from — the plain circular
+    // stroke this always fell back to. Nothing dishonest to fake here.
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.lineWidth = Math.max(1, figureR * 0.10 * style.outlineWidth);
     ctx.strokeStyle = style.outlineColor;
+    ctx.stroke();
+  }
+}
 
-    let contour: FaceContour | null = null;
-    if (hasPhoto && rect) {
-      requestFaceContour(face!.src);
-      // getFaceContour's undefined ("not yet known") and null ("no face
-      // found") both mean the same thing here: draw the fallback circle.
-      contour = getFaceContour(face!.src) ?? null;
-    }
+/**
+ * A solid-colour silhouette of `face`'s own real alpha shape, at its
+ * natural resolution — genuinely expensive to build (a full offscreen
+ * drawImage + composite pass) but only ever needs building once per
+ * (photo, outline colour), since a real match calls this every frame for
+ * every figure on the pitch. Cached per photo actually seen; rescaled
+ * cheaply at draw time via drawImage's own destination sizing.
+ */
+const silhouetteCache = new WeakMap<HTMLImageElement, Map<string, HTMLCanvasElement>>();
 
-    if (contour && contour.length > 0 && rect) {
-      // The same photo→local-head-space mapping sourceRect's own consumer
-      // (the drawImage call above) uses: a point at fraction (u,v) across
-      // the sampled rect lands at cx/cy ± (u/v - 0.5) * the full 2r
-      // diameter. Uniform (never stretching — sourceRect's sw always equals
-      // sh, a square crop viewport) — applied per point, so the actual
-      // traced jaw/cheek/chin curve moves and scales with the crop exactly
-      // the way the photo underneath it does, not a re-derived approximation.
-      ctx.beginPath();
-      contour.forEach((p, i) => {
-        const faceXPx = p.x * face!.naturalWidth;
-        const faceYPx = p.y * face!.naturalHeight;
-        const u = (faceXPx - rect.sx) / rect.sw;
-        const v = (faceYPx - rect.sy) / rect.sh;
-        const px = cx + (u - 0.5) * r * 2;
-        const py = cy + (v - 0.5) * r * 2;
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      });
-      ctx.closePath();
-      ctx.stroke();
-    } else {
-      // No photo, no detection yet, or no face found in this one — the
-      // plain circular stroke this whole file always had. There is no way
-      // to trace "this specific face's pixels" without a real successful
-      // detection to trace, so this stays deliberately plain rather than
-      // another shape standing in for one.
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.stroke();
-    }
+function silhouetteFor(face: HTMLImageElement, color: string): HTMLCanvasElement | null {
+  let byColor = silhouetteCache.get(face);
+  if (!byColor) {
+    byColor = new Map();
+    silhouetteCache.set(face, byColor);
+  }
+  const cached = byColor.get(color);
+  if (cached) return cached;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = face.naturalWidth;
+  canvas.height = face.naturalHeight;
+  const sctx = canvas.getContext("2d");
+  if (!sctx) return null;
+
+  sctx.drawImage(face, 0, 0);
+  // The standard "solid silhouette of a sprite" trick: source-in keeps only
+  // the pixels the drawn image already made non-transparent, replacing
+  // their colour outright — the RESULT's own alpha shape is identical to
+  // the photo's, just a flat colour instead of the real image.
+  sctx.globalCompositeOperation = "source-in";
+  sctx.fillStyle = color;
+  sctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  byColor.set(color, canvas);
+  return canvas;
+}
+
+const RING_POINTS = 12;
+
+/**
+ * Stamps `face`'s own silhouette at RING_POINTS positions around a ring of
+ * radius `dilate`, all sampling the SAME cropped source rectangle the real
+ * photo itself draws at `dx,dy,size,size` — so once the real photo draws on
+ * top of this (by the caller, immediately after), it covers the centre of
+ * its own dilated shadow, leaving only the newly-exposed ring visible. That
+ * ring reads as an outline hugging the photo's own real shape, whatever it
+ * actually is — never a shape approximating it.
+ */
+function stampOutline(
+  ctx: CanvasRenderingContext2D,
+  face: HTMLImageElement,
+  rect: { sx: number; sy: number; sw: number; sh: number },
+  dx: number,
+  dy: number,
+  size: number,
+  dilate: number,
+  color: string,
+): void {
+  const silhouette = silhouetteFor(face, color);
+  if (!silhouette) return;
+  for (let i = 0; i < RING_POINTS; i++) {
+    const angle = (i / RING_POINTS) * Math.PI * 2;
+    const ox = Math.cos(angle) * dilate;
+    const oy = Math.sin(angle) * dilate;
+    ctx.drawImage(silhouette, rect.sx, rect.sy, rect.sw, rect.sh, dx + ox, dy + oy, size, size);
   }
 }
