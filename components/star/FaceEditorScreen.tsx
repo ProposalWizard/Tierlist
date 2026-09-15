@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, type FaceStyle } from "@/lib/star/faceStyle";
+import {
+  loadFaceStyle, saveFaceStyle, DEFAULT_FACE_STYLE, FACE_SCALE_RANGE, FACE_OFFSET_RANGE, type FaceStyle,
+} from "@/lib/star/faceStyle";
 import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
 import { kitsOf } from "@/lib/star/kits";
 
@@ -124,8 +126,8 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     setStyle(s => ({
       ...s,
-      offsetX: clamp(d.ox + dx / HEAD_BASE_R, -1, 1),
-      offsetY: clamp(d.oy + dy / HEAD_BASE_R, -1, 1),
+      offsetX: clamp(d.ox + dx / HEAD_BASE_R, ...FACE_OFFSET_RANGE),
+      offsetY: clamp(d.oy + dy / HEAD_BASE_R, ...FACE_OFFSET_RANGE),
     }));
   };
   const onPointerUp = () => { dragRef.current = null; };
@@ -178,15 +180,15 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
 
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3 space-y-3">
           <Row label="Size" value={`${style.scale.toFixed(2)}x`}>
-            <input type="range" min={0.5} max={3} step={0.05} value={style.scale}
+            <input type="range" min={FACE_SCALE_RANGE[0]} max={FACE_SCALE_RANGE[1]} step={0.05} value={style.scale}
               onChange={e => set("scale", Number(e.target.value))} className="w-full accent-emerald-500" />
           </Row>
           <Row label="Left / Right" value={style.offsetX.toFixed(2)}>
-            <input type="range" min={-1} max={1} step={0.02} value={style.offsetX}
+            <input type="range" min={FACE_OFFSET_RANGE[0]} max={FACE_OFFSET_RANGE[1]} step={0.05} value={style.offsetX}
               onChange={e => set("offsetX", Number(e.target.value))} className="w-full accent-emerald-500" />
           </Row>
           <Row label="Up / Down" value={style.offsetY.toFixed(2)}>
-            <input type="range" min={-1} max={1} step={0.02} value={style.offsetY}
+            <input type="range" min={FACE_OFFSET_RANGE[0]} max={FACE_OFFSET_RANGE[1]} step={0.05} value={style.offsetY}
               onChange={e => set("offsetY", Number(e.target.value))} className="w-full accent-emerald-500" />
           </Row>
 
@@ -224,6 +226,9 @@ export default function FaceEditorScreen({ career, onBack }: { career: CareerSta
               onChange={e => set("outlineWidth", Number(e.target.value))}
               className="w-full accent-emerald-500 disabled:opacity-40" />
           </Row>
+          <p className="text-[10px] font-semibold text-white/55 -mt-2">
+            Traces the photo&apos;s own shape (its real, visible pixels), not a plain circle — a player with no photo yet gets a circle outline instead, since there's no real shape to trace.
+          </p>
 
           <button
             onClick={() => setStyle(DEFAULT_FACE_STYLE)}
