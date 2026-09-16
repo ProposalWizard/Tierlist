@@ -528,10 +528,13 @@ export interface Scenario {
   relayToFollower?: boolean;
   /**
    * Touch Mode's own chase (Boot.extraTouch) — set true the first time the
-   * ball gets away from `player` by more than TOUCH_CHASE_ARM_R. Without
-   * this, the very first tick after the strike (player and ball still
-   * coincide from the kick itself) would read as "already caught up" and
-   * fire instantly. See stepTouchChase.
+   * ball gets away from `player` by more than TOUCH_CHASE_START_R, with
+   * `player` genuinely frozen (not moved at all) until that happens. Gates
+   * BOTH whether he moves at all and whether a close return counts as
+   * catching it up: chasing from tick one would let him close the gap at
+   * the same rate the ball opens it, so the distance between them could
+   * never cross the threshold at all — reported live, "he never left the
+   * 1.8m thing coz hes chasing it the whole time." See stepTouchChase.
    */
   touchChaseArmed?: boolean;
 }
@@ -4639,9 +4642,11 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
 const TOUCH_CHASE_SPEED = 7.6; // m/s — his own dead sprint after a deliberate
                                 // touch, a shade quicker than RUNNER_SPEED's
                                 // team-mate run
-const TOUCH_CHASE_ARM_R = 1.8; // metres the ball must first get away from him
-                                // before a return inside TOUCH_CHASE_CATCH_R
-                                // counts as reaching it
+const TOUCH_CHASE_START_R = 1.3; // metres the ball must first get away from
+                                  // him, completely unchased, before he sets
+                                  // off after it at all — small on purpose,
+                                  // "a little bit to the right" is all it
+                                  // should take
 const TOUCH_CHASE_CATCH_R = CONTROL_R; // the same "close enough to take it"
                                         // radius the follower/poacher's own
                                         // fetch already uses
@@ -4654,17 +4659,26 @@ const TOUCH_CHASE_CATCH_R = CONTROL_R; // the same "close enough to take it"
  * That first version never moved anything: it waited on stepBall's own
  * invisible dead-ball timeout and remapped whatever it returned. This
  * function is the real thing — it moves `scenario.player` itself, in place,
- * toward the ball every tick, which is the exact field footballer() already
- * reads live for his on-screen figure and poseFor/runPhase already animate
- * as a run the moment it moves. Nothing downstream needed touching for the
- * chase to be SEEN; it only needed to actually happen.
+ * toward the ball, which is the exact field footballer() already reads live
+ * for his on-screen figure and poseFor/runPhase already animate as a run the
+ * moment it moves. Nothing downstream needed touching for the chase to be
+ * SEEN; it only needed to actually happen.
  *
- * Arming is what stops the strike itself from reading as an instant catch:
- * player and ball still coincide on the very tick he kicks it, so a plain
- * "is he close enough" check would fire before he has taken a single step.
- * Only once the ball has first got away from him past TOUCH_CHASE_ARM_R does
- * a return inside TOUCH_CHASE_CATCH_R count as genuinely catching it up —
- * kick it away, THEN run it down, never the other way round.
+ * A second live report caught a real flaw in the FIRST version of this
+ * function itself, not just the remap it replaced: chasing from the very
+ * first tick meant he was always closing the gap at the same rate the ball
+ * was opening it, so the two of them could travel half the pitch together
+ * and the DISTANCE BETWEEN THEM — the only thing either the old arm check or
+ * this one actually measures — never once crossed the threshold. "he wont
+ * take his second touch... coz he never left the 1.8m thing coz hes chasing
+ * it the whole time," diagnosed correctly, live. The fix is to not chase at
+ * all yet: he stands dead still — `touchChaseArmed` stays false and nothing
+ * moves — until the ball has first gained TOUCH_CHASE_START_R on him with
+ * NOTHING fighting that gap from his side. Only once that is true, purely
+ * the ball's own doing, does he set off — and because the gap he then has to
+ * close is small by design, he covers it in well under a second at
+ * TOUCH_CHASE_SPEED, arriving for a genuine "half a second or a second"
+ * second touch rather than the old multi-second dead-ball wait.
  *
  * Deliberately does not itself check ball.owner, acceptsCaptainOrders, or
  * the toggle — CanvasMatch's call site already gates every one of those
@@ -4673,15 +4687,18 @@ const TOUCH_CHASE_CATCH_R = CONTROL_R; // the same "close enough to take it"
  */
 export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number): boolean {
   const p = scenario.player;
-  const before = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
-  if (before > TOUCH_CHASE_ARM_R) scenario.touchChaseArmed = true;
-  if (before > 0.02) {
-    const step = Math.min(before, TOUCH_CHASE_SPEED * dt);
-    p.x += ((ball.pos.x - p.x) / before) * step;
-    p.y += ((ball.pos.y - p.y) / before) * step;
+  const dist = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
+  if (!scenario.touchChaseArmed) {
+    if (dist > TOUCH_CHASE_START_R) scenario.touchChaseArmed = true;
+    else return false; // frozen — let the ball do the separating, unchased
+  }
+  if (dist > 0.02) {
+    const step = Math.min(dist, TOUCH_CHASE_SPEED * dt);
+    p.x += ((ball.pos.x - p.x) / dist) * step;
+    p.y += ((ball.pos.y - p.y) / dist) * step;
   }
   const after = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
-  return !!scenario.touchChaseArmed && after <= TOUCH_CHASE_CATCH_R;
+  return after <= TOUCH_CHASE_CATCH_R;
 }
 
 /**
