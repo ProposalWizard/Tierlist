@@ -1011,4 +1011,10 @@ export type StarPhase =
   | "goal-replay"
   /** Signing for a new club at the end of a season — the same contract
    *  moment "trial-reward" ends on, reused. See TransferSigning.tsx. */
-  | "transfer-signing";
+  | "transfer-signing"
+  /** Your own place — Phase 1 of STAR_GARDEN.md. A real trophy cabinet, the
+   *  horse's paddock if you own one, and a few real teammates hanging
+   *  around. All real data reused from elsewhere (career.trophies,
+   *  career.horse, career.squad); this only displays it in one place.
+   *  See GardenScreen.tsx. */
+  | "garden";
