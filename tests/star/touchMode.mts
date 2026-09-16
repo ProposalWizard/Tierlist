@@ -1,5 +1,6 @@
 import {
   OUTCOME_TEXT, stepTouchChase, buildScenario, initDefenders,
+  CHAIN_MAX, TOUCH_CHAIN_MAX,
   type Ball, type Scenario,
 } from "../../lib/star/canvasEngine";
 import { creditChance, NO_CREDIT } from "../../lib/star/credit";
@@ -74,6 +75,27 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 // ── touchOn is declared neutral, never a goal ────────────────────────────
 {
   check(OUTCOME_TEXT.touchOn.kind === "neutral", `touchOn is a neutral outcome, never "goal" (${OUTCOME_TEXT.touchOn.kind})`);
+}
+
+// ── Touch Mode's own chain budget is genuinely separate from, and more
+// generous than, the ordinary pass-chain budget — the actual reported bug.
+// "he IS catching it... instead of the game pausing and giving me a new
+// kick like the chance just started, the chance just ends." Root cause:
+// CanvasMatch's resolveOutcome originally spent the SAME chainDepth/
+// CHAIN_MAX(2) counter an ordinary pass chain uses, which a real passage of
+// play has usually already partly spent — a second or third genuine
+// re-touch routinely found it exhausted. The chain-continuation logic
+// itself lives in CanvasMatch.tsx (React component code this suite can't
+// reach, same limitation the file's own doc states above) — what IS pure
+// and worth pinning down permanently is that TOUCH_CHAIN_MAX is a real,
+// separate constant, and genuinely more generous than CHAIN_MAX, not
+// coincidentally equal to it (which is exactly what the bug looked like
+// from the outside). ─────────────────────────────────────────────────────
+{
+  check(TOUCH_CHAIN_MAX > CHAIN_MAX,
+    `Touch Mode's own chain budget is more generous than an ordinary pass chain's (TOUCH_CHAIN_MAX=${TOUCH_CHAIN_MAX}, CHAIN_MAX=${CHAIN_MAX})`);
+  check(TOUCH_CHAIN_MAX >= 4,
+    `and generous enough in absolute terms to feel unrestricted in normal play, not just relatively bigger (TOUCH_CHAIN_MAX=${TOUCH_CHAIN_MAX})`);
 }
 
 // ── touchOn never credits a shot, a pass, or a chance — whatever the
