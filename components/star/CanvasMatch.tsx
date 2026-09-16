@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
-  stepKeeper, stepDefenders, stepReactions, initDefenders,
+  stepKeeper, stepDefenders, stepReactions, stepTouchChase, initDefenders,
   chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
@@ -2712,23 +2712,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           stepDefenders(scenarioRef.current, h, ballRef.current.pos, false, ballRef.current);
           stepKeeper(scenarioRef.current, h);
           stepReactions(scenarioRef.current, ballRef.current, h, rngRef.current);
-          let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           // ── Touch Mode (Boot.extraTouch) ──
           //
-          // stepBall itself is untouched — this remaps its own dead-ball
-          // "short" into "touchOn" right here, and only when every one of
-          // these holds: the toggle is on, the boots are actually equipped,
-          // this specific dead ball is YOUR OWN uncontested touch (never a
-          // save the keeper's holding, never a ball a defender already
-          // claimed — both would have already moved ball.owner off "you"),
-          // and it's a situation orders would make sense in to begin with
-          // (no penalty/free-kick/corner nudges). resolveOutcome's own
-          // "touchOn" branch does the rest — see its own doc there.
-          if (res === "short" && touchModeOnRef.current && canExtraTouch
+          // Reported back live after the first version shipped: "my player
+          // just doesnt chase the touch at all... he never moves at all. I
+          // need him to like run to it as soon as he kicks it." That first
+          // version never moved anything — it waited on stepBall's own
+          // invisible dead-ball timeout and remapped whatever it returned.
+          // This genuinely moves scenario.player, the same field footballer()
+          // already reads live every frame for sc.player's own figure, so the
+          // chase is seen, not inferred. Live only when every one of these
+          // holds: the toggle is on, the boots are actually equipped, this
+          // specific ball is YOUR OWN uncontested touch (never a save the
+          // keeper's holding, never a ball a defender already claimed — both
+          // would have already moved ball.owner off "you"), and it's a
+          // situation orders would make sense in to begin with (no
+          // penalty/free-kick/corner nudges).
+          const touchLive = touchModeOnRef.current && canExtraTouch
               && ballRef.current.owner === "you" && ballRef.current.lastTouch !== "keeper"
-              && acceptsCaptainOrders(scenarioRef.current.kind)) {
-            res = "touchOn";
-          }
+              && acceptsCaptainOrders(scenarioRef.current.kind);
+          const caughtUp = touchLive && stepTouchChase(scenarioRef.current, ballRef.current, h);
+          let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
+          // stepBall's own resolution always wins if it fired the same tick —
+          // a defender's clearance or the ball going out is real and takes
+          // priority over a chase that only just closed the gap.
+          // resolveOutcome's own "touchOn" branch does the rest — see its own
+          // doc there.
+          if (!res && caughtUp) res = "touchOn";
           if (res) { resolveOutcome(res); break; }
         }
         // Surface mid-flight moments (pass reception / the teammate's own shot /
