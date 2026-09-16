@@ -42,6 +42,12 @@ export function creditChance(
   ctx: { youShot: boolean; receiverShot: boolean; isSimplePass: boolean },
 ): CreditDelta {
   const isGoal = OUTCOME_TEXT[res].kind === "goal";
+  // Touch Mode's own continuation (Boot.extraTouch) — a genuinely uncontested
+  // touch of your own that just repositions the same attempt, never a new
+  // shot or pass. Checked first, same as `delivered` below, so it can never
+  // fall through into the generic "you struck it" branch and get credited
+  // as a shot it never was.
+  if (res === "touchOn") return NO_CREDIT;
   // A plain pass that reached its man and stopped there.
   if (res === "delivered") return { ...NO_CREDIT, passes: 1, passesCompleted: 1 };
   // You struck it at goal — decided at YOUR contact, and it stays your shot

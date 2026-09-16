@@ -125,6 +125,7 @@ const RESULT_SELF: Partial<Record<Outcome, string[]>> = {
   out: ["Runs out of play.", "That one's gone out."],
   short: ["Doesn't have the legs on it.", "Comes up just short."],
   offside: ["The flag is up — offside!", "Offside! The linesman's flag is raised.", "Caught offside — the run was timed too early."],
+  touchOn: ["Takes it away from trouble — and he's straight onto it!", "A touch into space, and he's still got it!", "Rolls it clear of danger and picks it back up!"],
 };
 
 const RESULT_TEAMMATE_TEMPLATES: Partial<Record<Outcome, string[]>> = {
