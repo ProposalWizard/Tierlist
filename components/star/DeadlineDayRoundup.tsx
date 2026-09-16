@@ -5,6 +5,7 @@ import { kitsOf } from "@/lib/star/kits";
 import { seasonStartYear } from "@/lib/star/calendar";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { shortClub } from "@/lib/star/media/grammar";
+import { formatMoneyPrecise } from "@/lib/star/money";
 
 /**
  * DEADLINE DAY.
@@ -79,7 +80,7 @@ function buildBusiness(career: CareerState): ClubBusiness[] {
   for (const t of career.league) get(t.name);
 
   for (const m of career.leagueTransferNews ?? []) {
-    const detail = m.fee > 0 ? `£${m.fee}m` : "Free Transfer";
+    const detail = m.fee > 0 ? `£${formatMoneyPrecise(m.fee)}` : "Free Transfer";
     if (m.to !== FREE_AGENTS_CLUB) get(m.to)?.in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
     if (m.from !== FREE_AGENTS_CLUB) get(m.from)?.out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
   }

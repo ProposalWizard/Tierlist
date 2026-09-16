@@ -797,6 +797,14 @@ export interface CareerState {
    *  spent), just stops being reachable from the Boardroom until you buy
    *  back in. */
   ownedClubs?: Record<string, import("./investments").OwnedClubState>;
+  /** Every real transfer an owned club has done through the Boardroom — one
+   *  entry per completed sign/sell, newest first. Requested directly: with
+   *  real negotiated fees now varying (negotiation.ts), there was no way to
+   *  tell whether a signing had turned out to be a bargain or an overpay, or
+   *  what a player had actually cost versus what he later sold for. Keyed by
+   *  club so a chairman of several clubs sees each club's own real ledger.
+   *  See lib/star/investments.ts's `ClubTransferRecord`/`recordClubTransfer`. */
+  clubTransferHistory?: Record<string, import("./investments").ClubTransferRecord[]>;
   /** Phase 3 of STAR_POWER_POLITICS.md — a minority shareholder's real, if
    *  non-binding, suggestions to a board they don't control. See
    *  lib/star/clubPowers.ts. */

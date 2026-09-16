@@ -14,7 +14,7 @@ import { kitsOf, type Kit } from "@/lib/star/kits";
 import { facilitiesFor } from "@/lib/star/facilities";
 import { playerMarketValue } from "@/lib/star/marketValue";
 import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
-import { formatMoney, niceMoneyStep } from "@/lib/star/money";
+import { formatMoney, formatMoneyPrecise, niceMoneyStep } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 import type { NegotiationState } from "@/lib/star/negotiation";
 
@@ -44,7 +44,7 @@ interface Props {
    *  player re-navigate through tabs they just came from. */
   initialTab?: "market" | "portfolio" | "boardroom";
   initialBoardroomClub?: string;
-  initialBoardroomSection?: "squad" | "sign" | "manager" | "powers";
+  initialBoardroomSection?: "squad" | "sign" | "manager" | "powers" | "history";
   onBuyStake: (club: string, percent: number) => void;
   onSellStake: (club: string, percent: number) => void;
   onTopUpBudget: (club: string, amount: number) => void;
@@ -591,7 +591,7 @@ function Boardroom({
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
   career: CareerState; club: string; onBack: () => void;
-  initialSection?: "squad" | "sign" | "manager" | "powers";
+  initialSection?: "squad" | "sign" | "manager" | "powers" | "history";
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
   onSellPlayer: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
@@ -619,7 +619,7 @@ function Boardroom({
   // Squad/Sign genuinely can't work here yet — see the note above the
   // manager-appointment own-club branch in investments.ts — so this never
   // defaults into a tab that would just show "No squad data on file."
-  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers">(initialSection ?? (isOwnClub ? "manager" : "squad"));
+  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers" | "history">(initialSection ?? (isOwnClub ? "manager" : "squad"));
   const [topUp, setTopUp] = useState(1000);
   const [message, setMessage] = useState<string | null>(null);
   const state = ownedClubState(career, club);
@@ -813,8 +813,8 @@ function Boardroom({
         </div>
       </div>
 
-      <div className={`grid gap-1 mb-2 ${isOwnClub ? "grid-cols-2" : "grid-cols-4"}`}>
-        {(isOwnClub ? (["manager", "powers"] as const) : (["squad", "sign", "manager", "powers"] as const)).map(s => (
+      <div className={`grid gap-1 mb-2 ${isOwnClub ? "grid-cols-3" : "grid-cols-5"}`}>
+        {(isOwnClub ? (["manager", "powers", "history"] as const) : (["squad", "sign", "manager", "powers", "history"] as const)).map(s => (
           <button
             key={s}
             onClick={() => { setSection(s); setMessage(null); }}
@@ -889,6 +889,27 @@ function Boardroom({
           onUpgradeTrainingGround={(c) => runAction(onUpgradeTrainingGround(c))}
           onUpgradeYouthAcademy={(c) => runAction(onUpgradeYouthAcademy(c))}
         />
+      )}
+
+      {section === "history" && (
+        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+          {(career.clubTransferHistory?.[club] ?? []).map((t, i) => (
+            <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 border-b border-black/20 last:border-b-0">
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-white truncate">{t.playerName}</div>
+                <div className="text-[10px] text-white font-semibold">
+                  {t.direction === "in" ? `In from ${t.otherClub}` : `Out to ${t.otherClub}`} · Season {t.season}
+                </div>
+              </div>
+              <span className={`shrink-0 font-black text-sm ${t.direction === "in" ? "text-red-300" : "text-emerald-300"}`}>
+                {t.direction === "in" ? "-" : "+"}★{formatMoneyPrecise(t.fee)}
+              </span>
+            </div>
+          ))}
+          {(!career.clubTransferHistory?.[club] || career.clubTransferHistory[club].length === 0) && (
+            <div className="px-3 py-6 text-center text-xs text-white font-semibold">No transfers done through this club yet.</div>
+          )}
+        </div>
       )}
     </div>
   );

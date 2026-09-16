@@ -2,6 +2,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { Role } from "@/lib/star/formations";
 import { seasonStartYear } from "@/lib/star/calendar";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
+import { formatMoneyPrecise } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
@@ -100,7 +101,7 @@ export default function TransfersPanel({ career }: { career: CareerState }) {
           <h2 className="text-base font-black italic tracking-tight text-white">This Window</h2>
           {totalSpent > 0 && (
             <div className="rounded-lg bg-gradient-to-r from-emerald-400 to-emerald-500 px-2.5 py-1 text-[11px] font-black tabular-nums text-emerald-950 shadow-md">
-              £{totalSpent.toFixed(1)}m <span className="opacity-70">SPENT</span>
+              £{formatMoneyPrecise(totalSpent)} <span className="opacity-70">SPENT</span>
             </div>
           )}
         </div>
@@ -231,7 +232,7 @@ function TransferRow({ row }: { row: Row }) {
           <ClubDot club={row.to} />
         </div>
         {row.right.kind === "fee" && (
-          <span className="text-[11px] font-black tabular-nums text-amber-300">£{row.right.fee}m</span>
+          <span className="text-[11px] font-black tabular-nums text-amber-300">£{formatMoneyPrecise(row.right.fee)}</span>
         )}
         {row.right.kind === "free" && (
           <span className="rounded-full border border-amber-400/60 px-2 py-[1px] text-[8px] font-black uppercase tracking-wide text-amber-300">

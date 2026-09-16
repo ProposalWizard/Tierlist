@@ -87,20 +87,17 @@ const MIN_ODDS = 1.15;
  * miles off winning anything), which is what the exponent buys over a
  * straight linear weighting.
  *
- * Reported directly, with real numbers: a genuinely huge gap between the
- * best and worst squad in the division (this game's own strengths run
- * roughly 55-90) was barely showing up in the odds — a runaway favourite
- * priced around 10/1 next to a relegation-bound no-hoper at 35/1, when a
- * real division with that big a talent gap prices its favourite at 2-4/1
- * and its rank outsider in the hundreds or thousands (Leicester City's
- * real 5000/1 title win is the extreme end of exactly this). The exponent
- * and the overround/cap below are now real, tunable numbers
- * (`betting.*` in tuning.ts) rather than baked-in constants, precisely so
- * this can be recalibrated again without another code change if it still
- * reads wrong.
+ * `exponent` is passed in rather than always read off `betting.
+ * strengthExponent` — the FA Cup and League Cup deliberately use a much
+ * flatter one (`betting.cupStrengthExponent`). Reported directly: winning
+ * either domestic cup only takes 6-7 straight knockout wins, a real, far
+ * shorter and more upset-prone ask than the ~28+ wins a 38-game league title
+ * needs, so a weaker side's genuine chance of lifting a domestic cup is much
+ * better than its chance of winning the league — the odds now say so instead
+ * of pricing all three competitions off the identical curve.
  */
-function winWeight(strength: number): number {
-  return Math.pow(Math.max(1, strength - getTuning("betting.strengthBaseline")), getTuning("betting.strengthExponent"));
+function winWeight(strength: number, exponent: number): number {
+  return Math.pow(Math.max(1, strength - getTuning("betting.strengthBaseline")), exponent);
 }
 
 /**
@@ -109,16 +106,25 @@ function winWeight(strength: number): number {
  * Duplicate names are folded together (a club appearing in both the pool and
  * the qualifier list, say) so the book is never longer than the actual
  * number of contenders.
+ *
+ * `competition` picks which exponent/ceiling this market prices off —
+ * omitted (as every existing test does) defaults to the league/European
+ * shape, the steeper curve and much higher ceiling a 38-game title race
+ * genuinely deserves (a real Leicester-City-style rank outsider should be
+ * able to reach into the thousands). The FA Cup and League Cup use their
+ * own flatter, lower-ceilinged pair instead — see `winWeight`'s own note.
  */
-export function oddsFor(entrants: { name: string; strength: number }[]): BetEntrant[] {
-  const maxOdds = getTuning("betting.maxOdds");
+export function oddsFor(entrants: { name: string; strength: number }[], competition?: BetCompetition): BetEntrant[] {
+  const isCup = competition === "faCup" || competition === "leagueCup";
+  const exponent = getTuning(isCup ? "betting.cupStrengthExponent" : "betting.strengthExponent");
+  const maxOdds = getTuning(isCup ? "betting.cupMaxOdds" : "betting.maxOdds");
   const overround = getTuning("betting.overround");
   const byName = new Map<string, number>();
   for (const e of entrants) {
     const prev = byName.get(e.name);
     if (prev === undefined || e.strength > prev) byName.set(e.name, e.strength);
   }
-  const weights = Array.from(byName.entries()).map(([name, strength]) => ({ name, weight: winWeight(strength) }));
+  const weights = Array.from(byName.entries()).map(([name, strength]) => ({ name, weight: winWeight(strength, exponent) }));
   const total = weights.reduce((s, w) => s + w.weight, 0) || 1;
   return weights
     .map(w => {
