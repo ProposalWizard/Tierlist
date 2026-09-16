@@ -79,6 +79,39 @@ import { creditChance, NO_CREDIT } from "../../lib/star/credit";
  *   first, over-generous 8 down to the correct 1 — one extra touch, not a
  *   repeatable dribble. See both of their own docs for the full account.
  *
+ *   Round 5, after Round 4 shipped: "working better now kinda but most
+ *   times he gets it immediately, bad. probs to do with the side the user
+ *   kicks it (if ball on left then kick to left is mostly fine but kick to
+ *   right (towards user) means instant touch and stop)... also again, +1
+ *   touch. thats it." The real, previously-undiscovered root cause: every
+ *   scenario builder plants scenario.player 0.8-2.0m off from scenario.ball
+ *   as a natural pre-kick stand-off stance (e.g. buildOneOnOne's own
+ *   `player: {x: bx, y: by + 1.2}`) — harmless right up until Touch Mode,
+ *   the first feature ever to read that gap as gameplay-meaningful.
+ *   stepTouchChase measures separation from exactly that gap, which sits
+ *   right on top of both TOUCH_CHASE_START_R (1.3m) and
+ *   TOUCH_CHASE_CATCH_R (1.15m) — a kick that widened the PRE-EXISTING gap
+ *   blew straight past "armed" within the first substep, sometimes already
+ *   inside catch range before the ball had gone anywhere, which is exactly
+ *   "instant". A kick the other way, which shrank or ran parallel to that
+ *   same stand-off gap first, read as the genuinely fine, believable delay
+ *   Round 2 was built for — same mechanism, opposite-looking result, which
+ *   is why it read as direction-dependent rather than as one bug. Every
+ *   test in THIS file had accidentally masked it from Round 1 onward:
+ *   scenarioAt and every strikeAndResolve-style harness below always
+ *   force-synced scenario.player to the ball, which happens to be exactly
+ *   the real fix — just applied only inside test fixtures, never in
+ *   production. Fixed for real in CanvasMatch.tsx's handleContact (its own
+ *   doc there has the full account) — untestable at this level, same
+ *   limitation as the gating logic below — by snapping scenario.player to
+ *   the ball's actual launch position the instant Touch Mode could matter
+ *   for a kick. The dedicated section near the end of this file proves the
+ *   danger gap is real (sampled from genuine, unmodified buildScenario
+ *   output, not asserted) and that applying the same sync the real fix
+ *   applies eliminates instant catches across a full sweep of directions —
+ *   while, for honesty, also reproducing the bug itself by NOT applying it,
+ *   so the contrast is measured rather than assumed.
+ *
  * creditChance's own "touchOn" branch gets the same treatment as before: a
  * genuinely uncontested touch of your own that repositions the same attempt
  * is not a new shot or a new pass, and credit.ts's own doc records two real
@@ -413,6 +446,95 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   // coincidentally never being exercised.
   check(secondTouchOnButCapped >= 3,
     `the cap is genuinely exercised by real trials, not just never reached (${secondTouchOnButCapped}/${hop0Success} continuations landed a second clean touch and were still capped)`);
+}
+
+// ── THE REAL "INSTANT CATCH" BUG (Round 5) ──
+//
+// Reported live: "most times he gets it immediately, bad. probs to do with
+// the side the user kicks it (if ball on left then kick to left is mostly
+// fine but kick to right (towards user) means instant touch and stop)."
+//
+// First: confirm the danger gap is real, sampled from genuine, unmodified
+// buildScenario output — not assumed from reading the builder source once.
+{
+  let anyRealOffset = false;
+  const kinds = ["one_on_one", "cutback", "through_ball", "tight_angle", "volley"] as const;
+  for (const kind of kinds) {
+    for (let seed = 1; seed <= 10; seed++) {
+      const rng = mulberry32(seed + 7000);
+      const sc = buildScenario(kind, rng, 70, 70);
+      const offset = Math.hypot(sc.player.x - sc.ball.x, sc.player.y - sc.ball.y);
+      if (offset > 0.5) anyRealOffset = true;
+      check(offset < 2.5,
+        `a fresh ${kind} scenario's own natural stand-off gap stays in a sane range, not something absurd (${offset.toFixed(2)}m)`);
+    }
+  }
+  check(anyRealOffset,
+    "real scenario builders genuinely do place the player off from the ball at construction — the danger gap is not hypothetical");
+}
+
+// Second: with NO sync (exactly CanvasMatch.tsx's handleContact before this
+// round's fix — scenario.player stays wherever the builder's stand-off
+// stance put it), reproduce the bug on real, unmodified buildScenario
+// output. Then with the sync applied — the actual fix — prove it is gone,
+// across a full sweep of kick directions, not just the one angle that
+// happened to be reported.
+{
+  function strike(sc: Scenario, rng: () => number, dirDeg: number, power: number, applyFix: boolean) {
+    const rad = (dirDeg * Math.PI) / 180;
+    const ball = launch(sc, { x: Math.cos(rad), y: Math.sin(rad) }, power, { cx: 0, cy: 0.05 }, { power: 60, technique: 60 }, rng);
+    // The actual fix, exactly as CanvasMatch.tsx's handleContact now
+    // applies it: the instant the ball is struck, your figure is standing
+    // where it is, not wherever it was lining the kick up from.
+    if (applyFix) sc.player = { x: ball.pos.x, y: ball.pos.y };
+    let t = 0;
+    let res: string | null = null;
+    const h = DT / 3;
+    while (t < 8 && !res) {
+      stepDefenders(sc, h, ball.pos, false, ball);
+      stepKeeper(sc, h);
+      stepReactions(sc, ball, h, rng);
+      const touchLive = ball.owner === "you" && ball.lastTouch !== "keeper" && acceptsCaptainOrders(sc.kind);
+      const caughtUp = touchLive && stepTouchChase(sc, ball, h);
+      let r = stepBall(ball, sc, rng, h);
+      if (!r && caughtUp) r = "touchOn";
+      if (r) res = r;
+      t += h;
+    }
+    return { res, t };
+  }
+
+  const sweepKinds = ["one_on_one", "cutback", "through_ball"] as const;
+  const INSTANT_S = 0.35; // well under "half a second to a second" (Round 2's own target)
+
+  for (const applyFix of [false, true]) {
+    let touchOnTotal = 0, instantCount = 0;
+    for (const kind of sweepKinds) {
+      for (let dirDeg = 0; dirDeg < 360; dirDeg += 45) {
+        for (let seed = 1; seed <= 8; seed++) {
+          const rng = mulberry32(seed + dirDeg * 10 + kind.length * 137 + 9000);
+          const sc = buildScenario(kind, rng, 70, 70);
+          sc.defenders = []; // isolate from real defender-interception noise
+          const r = strike(sc, rng, dirDeg, 0.08, applyFix);
+          if (r.res === "touchOn") {
+            touchOnTotal++;
+            if (r.t < INSTANT_S) instantCount++;
+          }
+        }
+      }
+    }
+    check(touchOnTotal > 50, `${applyFix ? "the fix" : "the bug reproduction"}: a real, sizeable sample of genuine touchOn catches to check (${touchOnTotal})`);
+    if (applyFix) {
+      check(instantCount === 0,
+        `THE FIX: syncing scenario.player to the ball at the moment of the strike eliminates instant catches entirely, across every direction and kind tested (${instantCount}/${touchOnTotal} were instant)`);
+    } else {
+      // Not a weakness to route around — this IS the bug, reproduced
+      // directly rather than taken on faith, so a future reader can see
+      // exactly what "before" looked like.
+      check(instantCount > touchOnTotal * 0.9,
+        `THE BUG, reproduced: without the sync, nearly every catch is instant, in every direction — this is what was reported (${instantCount}/${touchOnTotal} instant)`);
+    }
+  }
 }
 
 if (problems.length) {
