@@ -1,11 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { GOVERNING_BODIES, GOVERNING_BODY_COMPETITIONS, influenceIn, canProposeRuleChange, type GoverningBody } from "@/lib/star/governingBodies";
 import { ruleBookFor, RULE_OVERRULE_INFLUENCE_THRESHOLD, type RuleBook } from "@/lib/star/ruleBook";
 import { BOOTS_CATALOGUE } from "@/lib/star/shopData";
 import { allInvestableClubs } from "@/lib/star/investments";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
+import { replaceableClubsIn } from "@/lib/star/euro";
+import { fetchCustomClubs, buildCustomClubEntry, type CustomClub } from "@/lib/star/customClubs";
 import type { NewCompetitionState } from "@/lib/star/newCompetition";
 import { isBodyPresident, canStandForBodyPresidency } from "@/lib/star/leadership";
 
@@ -49,6 +51,16 @@ export default function RuleBookScreen({
   const [banBoot, setBanBoot] = useState(BOOTS_CATALOGUE[0]?.id ?? "");
   const [incomingClub, setIncomingClub] = useState(allInvestableClubs().find(c => !PREMIER_LEAGUE_CLUBS.includes(c)) ?? "");
   const [newCompName, setNewCompName] = useState("Super League");
+  const [customClubs, setCustomClubs] = useState<CustomClub[]>([]);
+  const [customClubName, setCustomClubName] = useState("");
+  const [customCompetition, setCustomCompetition] = useState<"champions" | "europa">("champions");
+  const [customReplaces, setCustomReplaces] = useState("");
+  const [proposingCustom, setProposingCustom] = useState(false);
+  useEffect(() => { fetchCustomClubs().then(cs => { setCustomClubs(cs); if (cs[0]) setCustomClubName(cs[0].name); }); }, []);
+  useEffect(() => {
+    const options = replaceableClubsIn(customCompetition === "champions" ? "Champions League" : "Europa League", career);
+    setCustomReplaces(options[0] ?? "");
+  }, [customCompetition, career]);
   const rules = ruleBookFor(career, body);
   const influence = influenceIn(career, body);
   const canPropose = canProposeRuleChange(career, body);
@@ -57,6 +69,21 @@ export default function RuleBookScreen({
 
   const run = (result: ActionResult) => setMessage(result.ok ? null : (result.reason ?? "That didn't go through."));
   const bribe = bribeAmount > 0 ? { amount: bribeAmount, useLawyers } : undefined;
+
+  // Requested directly: vote a custom club (app/admin/custom-clubs) into
+  // the Champions or Europa League. `replaces`/`strength` are decided HERE,
+  // once, before the vote is even proposed — see ruleBook.ts's own note on
+  // why that has to happen up front rather than at resolution time.
+  const proposeCustomClub = async () => {
+    if (!customClubName || !customReplaces) return;
+    setProposingCustom(true);
+    try {
+      const entry = await buildCustomClubEntry(customClubName, customCompetition, customReplaces);
+      run(onProposeChange(body, { customClubEntries: [...rules.customClubEntries, entry] }, bribe));
+    } finally {
+      setProposingCustom(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col py-3 px-3">
@@ -285,6 +312,46 @@ export default function RuleBookScreen({
             <div className="mt-1.5 text-[9px] text-white font-semibold">
               Real: two of the four Saudi clubs join each competition, randomly replacing eligible clubs — England/Spain/Italy/Germany/France's clubs are always exempt, and the two Champions League clubs bumped out drop into the Europa League that season rather than disappearing.
             </div>
+
+            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5 mt-3">Custom clubs in Europe</div>
+            {customClubs.length === 0 ? (
+              <div className="text-[11px] text-white/70">
+                No custom clubs on file yet — create one at /admin/custom-clubs first.
+              </div>
+            ) : (
+              <>
+                {rules.customClubEntries.length > 0 && (
+                  <div className="text-[11px] text-white font-semibold mb-2">
+                    {rules.customClubEntries.map(e => `${e.customClub} in the ${e.competition === "champions" ? "Champions" : "Europa"} League (replacing ${e.replaces})`).join(" · ")}
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+                  <select value={customClubName} onChange={e => setCustomClubName(e.target.value)} className="rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white">
+                    {customClubs.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                  </select>
+                  <select value={customCompetition} onChange={e => setCustomCompetition(e.target.value as "champions" | "europa")} className="rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white">
+                    <option value="champions">Champions League</option>
+                    <option value="europa">Europa League</option>
+                  </select>
+                </div>
+                <div className="mb-1.5">
+                  <div className="text-[9px] text-white/60 mb-1">Replaces (weakest eligible clubs first)</div>
+                  <select value={customReplaces} onChange={e => setCustomReplaces(e.target.value)} className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white">
+                    {replaceableClubsIn(customCompetition === "champions" ? "Champions League" : "Europa League", career).map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <button
+                  disabled={!canPropose || proposingCustom || !customClubName || !customReplaces}
+                  onClick={proposeCustomClub}
+                  className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+                >
+                  {proposingCustom ? "Working out its real strength…" : `Propose: ${customClubName} into the ${customCompetition === "champions" ? "Champions" : "Europa"} League`}
+                </button>
+                <div className="mt-1.5 text-[9px] text-white font-semibold">
+                  Real: the custom club's OWN squad decides its real strength, and the real club it replaces stays out for good — England/Spain/Italy/Germany/France's clubs are always exempt from being the one replaced.
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -295,7 +362,19 @@ export default function RuleBookScreen({
           </div>
           <div className="flex items-center gap-2">
             <select value={incomingClub} onChange={e => setIncomingClub(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white">
-              {allInvestableClubs().filter(c => !PREMIER_LEAGUE_CLUBS.includes(c)).slice(0, 100).map(c => <option key={c} value={c}>{c}</option>)}
+              {/* Custom clubs (app/admin/custom-clubs) work here with no
+                  special-casing at all — forceClubIntoPremierLeague just
+                  inserts whatever name it's given into career.divisions,
+                  real or invented, so they're offered right alongside every
+                  real club. */}
+              {customClubs.length > 0 && (
+                <optgroup label="Custom clubs">
+                  {customClubs.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </optgroup>
+              )}
+              <optgroup label="Real clubs">
+                {allInvestableClubs().filter(c => !PREMIER_LEAGUE_CLUBS.includes(c)).slice(0, 100).map(c => <option key={c} value={c}>{c}</option>)}
+              </optgroup>
             </select>
             <button
               disabled={!canForceMovement || !incomingClub}

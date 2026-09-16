@@ -35,6 +35,23 @@ export default function HomePage() {
           </Link>
         ))}
       </div>
+
+      {/* Requested directly: this hero row had its own separate, hardcoded
+          four-game list (never imported NavGameLinks, so it silently drifted
+          from the site-wide nav the moment Road to Ballon d'Or was added
+          there) — given its own centered line below the rest, with the same
+          Beta pill the top nav already uses for it. */}
+      <div className="mt-4 flex items-center justify-center gap-1.5">
+        <Link
+          href="/star-dev"
+          className="text-lg font-bold text-white transition-colors hover:text-white md:text-xl"
+        >
+          Road to Ballon d&apos;Or
+        </Link>
+        <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-400">
+          Beta
+        </span>
+      </div>
     </div>
   );
 }
