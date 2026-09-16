@@ -16,13 +16,23 @@ import { creditChance, NO_CREDIT } from "../../lib/star/credit";
  * CanvasMatch.tsx-level React code this suite can't reach, same limitation
  * every other pointer/gesture fix in this codebase has always had. But the
  * chase itself — stepTouchChase — is a real, pure, exported engine function
- * now, reported back live after the first version shipped without one:
- * "my player just doesnt chase the touch at all... he never moves at all.
- * I need him to like run to it as soon as he kicks it." That first version
- * only ever remapped stepBall's own invisible dead-ball timeout, which is
- * why nothing moved — this one actually moves scenario.player, and both
- * that movement and the arming logic that stops it firing on the kick's own
- * first tick are worth a real, measured check, not an assumption.
+ * now, reported back live TWICE, each time catching a real gap the previous
+ * version's own tests hadn't:
+ *
+ *   Round 1: "my player just doesnt chase the touch at all... he never moves
+ *   at all." The first version only ever remapped stepBall's own invisible
+ *   dead-ball timeout — nothing moved scenario.player at all.
+ *
+ *   Round 2, after Round 1 shipped a real but continuous chase: "i can move
+ *   like halfway across the screen and he wont take his second touch im
+ *   guessing coz he never left the 1.8m thing coz hes chasing it the whole
+ *   time." Diagnosed correctly — chasing from the very first tick meant he
+ *   closed the gap at the same time the ball opened it, so the DISTANCE
+ *   between them (the only thing arming ever measured) could stay small even
+ *   while the two of them travelled a long way together. The fix is below:
+ *   he now stands genuinely frozen until the ball has separated from him by
+ *   itself, with nothing on his side fighting that gap, and only then sets
+ *   off after it.
  *
  * creditChance's own "touchOn" branch gets the same treatment as before: a
  * genuinely uncontested touch of your own that repositions the same attempt
@@ -95,56 +105,81 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 //
 // Player and ball still coincide the instant he strikes it — the exact
 // case the old remap never had to worry about (it wasn't watching
-// distance at all) and this one has to get right on its own.
+// distance at all) and this one has to get right on its own. He should not
+// so much as twitch: standing exactly on the ball is the "not yet
+// separated" case, same as any other distance under the start threshold.
 {
   const sc = scenarioAt(1, 40, 40);
   const ball = ballAt(40, 40);
   const caught = stepTouchChase(sc, ball, DT);
   check(caught === false, `standing exactly on the ball he just struck is not a catch (armed=${sc.touchChaseArmed})`);
   check(sc.touchChaseArmed !== true, `not armed either — the ball never got away from him (dist stayed 0)`);
+  check(sc.player.x === 40 && sc.player.y === 40, `and he has not moved an inch either (${sc.player.x}, ${sc.player.y})`);
 }
 
-// ── The player genuinely moves — the whole reported bug ──────────────────
+// ── THE REPORTED BUG, reproduced and fixed: frozen while close, only sets
+// off once the ball has genuinely separated from him under its own steam —
+// never while he is himself closing part of that gap. ────────────────────
 //
-// "my player just doesnt chase the touch at all... he never moves at all."
-// Ball placed 10m away (a settled touch), ticked once: he must have taken a
-// real step toward it, not stayed exactly where he started.
+// "i can move like halfway across the screen and he wont take his second
+// touch im guessing coz he never left the 1.8m thing coz hes chasing it the
+// whole time." Modelled here by scripting the ball's own drift by hand
+// (stepTouchChase only ever moves the player, never the ball, so a real
+// decelerating touch has to be simulated) — a slow crawl outward, well
+// under chase speed, exactly the shape a real soft touch settling under
+// friction would have. The old, continuously-chasing version would have
+// closed against this drift the entire time and the gap could plausibly
+// never have crossed 1.8m; this version must never move him at all until
+// the ball — entirely on its own — has opened real separation.
 {
-  const sc = scenarioAt(2, 30, 30);
-  const ball = ballAt(30, 40); // 10m away, straight up the pitch
+  const sc = scenarioAt(5, 60, 60);
+  const ball = ballAt(60, 60);
+  let armedAtTick = -1;
   const before = { x: sc.player.x, y: sc.player.y };
-  stepTouchChase(sc, ball, DT);
-  const moved = Math.hypot(sc.player.x - before.x, sc.player.y - before.y);
-  check(moved > 0.05, `a single tick moves him a real distance toward the ball (${moved.toFixed(4)} m)`);
-  check(sc.player.y > before.y && Math.abs(sc.player.x - before.x) < 1e-6,
-    `and specifically toward it, straight up the pitch here (x=${sc.player.x.toFixed(3)}, y=${sc.player.y.toFixed(3)})`);
+  for (let i = 0; i < 40; i++) {
+    // The ball drifts outward half a metre a tick — much slower than
+    // TOUCH_CHASE_SPEED, so a continuously-chasing player would have eaten
+    // into this the entire time and this test would never separate at all.
+    ball.pos.x += 0.5;
+    const caught = stepTouchChase(sc, ball, DT);
+    if (sc.touchChaseArmed && armedAtTick === -1) armedAtTick = i;
+    check(!caught || armedAtTick !== -1, "never reports caught before arming");
+    if (armedAtTick === -1) {
+      check(sc.player.x === before.x && sc.player.y === before.y,
+        `stays completely frozen while still within the start radius — tick ${i}, dist ${Math.hypot(sc.player.x - ball.pos.x, sc.player.y - ball.pos.y).toFixed(3)}m`);
+    }
+  }
+  check(armedAtTick !== -1, "the ball drifting away under its own steam does genuinely arm the chase eventually");
+  check(sc.player.x !== before.x || sc.player.y !== before.y, "and once armed, he has actually moved from his frozen starting spot");
 }
 
-// ── Arms once genuinely separated, then reports caught once he closes the
-// gap back down — proven by actually ticking it out, not just trusting the
-// arithmetic. ──────────────────────────────────────────────────────────────
+// ── Once armed, he closes a small gap fast — "gets to it in like half a
+// second or a second," not the old multi-second dead-ball wait. ─────────
 {
   const sc = scenarioAt(3, 20, 20);
-  const ball = ballAt(20, 30); // 10m away — well past the arm threshold
+  const ball = ballAt(20, 30); // 10m away from the start — already well past the start radius
   let caught = false;
   let ticks = 0;
   const maxTicks = Math.ceil(5 / DT); // 5 real seconds, a generous ceiling
   for (; ticks < maxTicks && !caught; ticks++) {
     caught = stepTouchChase(sc, ball, DT);
   }
-  check(sc.touchChaseArmed === true, "a 10m gap genuinely arms the chase");
+  check(sc.touchChaseArmed === true, "a 10m gap genuinely arms the chase, immediately since it starts already separated");
   check(caught, `he genuinely catches up within 5 simulated seconds (never did, after ${ticks} ticks)`);
   const finalDist = Math.hypot(sc.player.x - ball.pos.x, sc.player.y - ball.pos.y);
   check(finalDist <= 1.2, `and he is standing right next to the ball when he does (${finalDist.toFixed(3)} m away)`);
-  // 10m at 7.6 m/s is ~1.32s — well under a second either side is still a
-  // sane, responsive catch, not a multi-second wait like the old timeout.
+  // 10m at 7.6 m/s is ~1.32s — for the small nudge this mechanic is actually
+  // meant for (a metre or two) it would be well under a second; even this
+  // deliberately large 10m gap stays well clear of the old multi-second
+  // dead-ball timeout it replaces.
   const elapsed = ticks * DT;
   check(elapsed < 2.5, `and it happens quickly — a real chase, not the old multi-second dead-ball wait (${elapsed.toFixed(2)}s)`);
 }
 
-// ── A touch too soft to ever clear the arm threshold never fires — a
-// deliberate, bounded limitation, not an open question. Ticked for a
-// genuinely long time to prove it is not just "hasn't happened yet". ─────
+// ── A touch too soft to ever clear the start radius never fires, and never
+// moves him at all — a deliberate, bounded limitation, not an open
+// question. Ticked for a genuinely long time to prove it is not just
+// "hasn't happened yet". ──────────────────────────────────────────────────
 {
   const sc = scenarioAt(4, 50, 50);
   const ball = ballAt(50.5, 50); // 0.5m away — never leaves his own control radius
@@ -153,6 +188,7 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     caught = stepTouchChase(sc, ball, DT);
   }
   check(!caught, "a touch that never gets away from him never arms, and so never falsely fires as a catch");
+  check(sc.player.x === 50 && sc.player.y === 50, "and he genuinely never moved at all, not even a partial creep toward it");
 }
 
 if (problems.length) {
@@ -160,4 +196,4 @@ if (problems.length) {
   for (const p of problems) console.error("  ✗ " + p);
   process.exit(1);
 }
-console.log("PASS — the player genuinely chases the ball, arms and catches correctly, and touchOn is neutral and never credited as a shot or pass");
+console.log("PASS — the player stays frozen until the ball genuinely separates, then chases and catches correctly, and touchOn is neutral and never credited as a shot or pass");
