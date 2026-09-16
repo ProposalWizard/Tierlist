@@ -85,6 +85,36 @@ export interface RuleBook {
    *  UEFA's rule, same as the extra-slots fields above — it's the body
    *  that actually controls these competitions. */
   saudiClubsInEurope: boolean;
+  /**
+   * Requested directly: invent a whole fake club (app/admin/custom-clubs)
+   * and vote it into the Champions or Europa League. `replaces` and
+   * `strength` are decided once, at the moment this entry is proposed (see
+   * customClubs.ts's `buildCustomClubEntry`) — never re-rolled, so the same
+   * real club stays out and the custom club's real strength (its squad's
+   * own average rating at admission time) stays stable. A REAL, wired swap
+   * — see euro.ts's `poolFor`, which applies it the same way
+   * `saudiClubsInEurope` already swaps clubs in.
+   *
+   * The Premier League doesn't need a parallel mechanism here — Phase 6's
+   * existing `forceClubIntoPremierLeague` (forcedMovement.ts) already
+   * inserts ANY named club into `career.divisions`, custom or real, with no
+   * change needed; RuleBookScreen.tsx's "force a club in" picker just needs
+   * custom clubs added to its options. The Championship has no equivalent
+   * forced-movement hook at all yet — a real, separate, unbuilt piece, not
+   * silently assumed to work.
+   */
+  customClubEntries: CustomClubEntry[];
+}
+
+export interface CustomClubEntry {
+  customClub: string;
+  competition: "champions" | "europa";
+  /** The real club this entry bumped out, decided once at proposal time. */
+  replaces: string;
+  /** The custom club's own real strength at admission time — its squad's
+   *  average overall, the same number `syncLeagueStrengthFromSquads`
+   *  already derives a real club's strength from. */
+  strength: number;
 }
 
 export const DEFAULT_RULE_BOOK: RuleBook = {
@@ -93,6 +123,7 @@ export const DEFAULT_RULE_BOOK: RuleBook = {
   extraChampionsLeagueSlots: 0, extraEuropaLeagueSlots: 0,
   championsLeagueFormat: "league",
   saudiClubsInEurope: false,
+  customClubEntries: [],
 };
 
 export function ruleBookFor(career: CareerState, body: GoverningBody): RuleBook {
@@ -186,7 +217,7 @@ export interface RuleChangeProposal {
  * `noDraws` (abolishing draws outright) is treated as inherently large
  * rather than measured against a baseline that doesn't apply to a boolean.
  */
-function changeMagnitude(current: RuleBook, change: Partial<RuleBook>): number {
+export function changeMagnitude(current: RuleBook, change: Partial<RuleBook>): number {
   let magnitude = 0;
   if (change.points) {
     magnitude += Math.abs(change.points.win - current.points.win)
@@ -207,6 +238,7 @@ function changeMagnitude(current: RuleBook, change: Partial<RuleBook>): number {
   if (change.extraEuropaLeagueSlots !== undefined) magnitude += Math.abs(change.extraEuropaLeagueSlots - current.extraEuropaLeagueSlots) * 2;
   if (change.championsLeagueFormat !== undefined && change.championsLeagueFormat !== current.championsLeagueFormat) magnitude += 10;
   if (change.saudiClubsInEurope !== undefined && change.saudiClubsInEurope !== current.saudiClubsInEurope) magnitude += 14;
+  if (change.customClubEntries !== undefined && change.customClubEntries.length !== current.customClubEntries.length) magnitude += 14;
   return magnitude;
 }
 

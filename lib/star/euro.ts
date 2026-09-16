@@ -621,6 +621,43 @@ function applySaudiSwap(
   return competition === "Champions League" ? newChampions : newEuropa;
 }
 
+/** A CUSTOM CLUB (app/admin/custom-clubs), voted into this competition via
+ *  the Rule Book (see ruleBook.ts's CustomClubEntry/customClubEntries) —
+ *  applied on top of whatever the Saudi swap already produced, same
+ *  composition principle as that swap applies on top of `seasonField`. Each
+ *  entry's `replaces` and `strength` were decided once, at proposal time
+ *  (customClubs.ts's `proposeCustomClubVote`), so this is a plain, stable
+ *  substitution — no rng, no re-roll — every time this runs. */
+function applyCustomClubEntries(pool: EuroClub[], competition: "Champions League" | "Europa League", career: CareerState): EuroClub[] {
+  const key = competition === "Champions League" ? "champions" : "europa";
+  const entries = ruleBookFor(career, "UEFA").customClubEntries.filter(e => e.competition === key);
+  if (entries.length === 0) return pool;
+  let seeds: EuroSeed[] = pool.map(c => ({ name: c.name, strength: c.strength }));
+  for (const e of entries) {
+    if (seeds.some(c => c.name === e.customClub)) continue; // already applied
+    seeds = seeds.filter(c => c.name !== e.replaces);
+    seeds = [...seeds, { name: e.customClub, strength: e.strength }];
+  }
+  // Re-seeded, same as swapIn's own final step — pot assignment is a real
+  // function of the whole field's relative strengths, not something a
+  // single substitution can patch in place.
+  return seededPool(seeds);
+}
+
+/** Every real club in this competition's CURRENT field that isn't one of
+ *  the five main footballing nations — the same real exemption
+ *  `saudiExempt` already judges by, exported here so a custom-club
+ *  proposal (customClubs.ts) can pick a genuine, real replacement target
+ *  without duplicating the nation map. Weakest strength first — an
+ *  invented club displaces whoever's least missed, not a title contender. */
+export function replaceableClubsIn(competition: "Champions League" | "Europa League", career: CareerState): string[] {
+  const pool = poolFor(competition, career);
+  return pool
+    .filter(c => !saudiExempt(c, competition))
+    .sort((a, b) => a.strength - b.strength)
+    .map(c => c.name);
+}
+
 export function poolFor(competition: EuroId, career?: CareerState): EuroClub[] {
   if (competition === "Conference League") return CONFERENCE_POOL;
 
@@ -632,12 +669,22 @@ export function poolFor(competition: EuroId, career?: CareerState): EuroClub[] {
     return seededPool(names.map(name => ({ name, strength: NON_ENGLISH_CLUB_STRENGTH[name] ?? 75 })));
   }
 
-  const championsBase = seasonField("Champions League", career);
-  const europaBase = seasonField("Europa League", career);
+  const rawChampions = seasonField("Champions League", career);
+  const rawEuropa = seasonField("Europa League", career);
 
+  let championsBase = rawChampions;
+  let europaBase = rawEuropa;
   if (ruleBookFor(career, "UEFA").saudiClubsInEurope) {
-    return applySaudiSwap(championsBase, europaBase, competition, career.season * 60013 + 17);
+    // Both computed from the SAME original, pre-swap bases — `applySaudiSwap`
+    // internally derives Europa's demotions from Champions' own before/after
+    // diff, so it must never see an already-swapped pool as its "base".
+    championsBase = applySaudiSwap(rawChampions, rawEuropa, "Champions League", career.season * 60013 + 17);
+    europaBase = applySaudiSwap(rawChampions, rawEuropa, "Europa League", career.season * 60013 + 17);
   }
+
+  championsBase = applyCustomClubEntries(championsBase, "Champions League", career);
+  europaBase = applyCustomClubEntries(europaBase, "Europa League", career);
+
   return competition === "Champions League" ? championsBase : europaBase;
 }
 

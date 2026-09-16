@@ -97,7 +97,7 @@ function money(n: number): string {
  *  club now has a real home AND away kit (kits.ts's own shape), rebuilt
  *  15 Sep 2026 after it was rightly pointed out that real football has kit
  *  clashes and away strips, which the old single-design vote ignored. */
-function KitSwatch({ kit, size = 44 }: { kit: Kit; size?: number }) {
+export function KitSwatch({ kit, size = 44 }: { kit: Kit; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" className="shrink-0">
       <path d="M8 6 L1 15 L7 20 L11 13 Z" fill={kit.trim} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />

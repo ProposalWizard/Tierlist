@@ -62,7 +62,7 @@ const NEIGHBOURS: Record<Pos, string[]> = {
  *  realSquad.ts's identical helper — kept local rather than shared because
  *  the two files already duplicate positionsOf/fit/NEIGHBOURS this way. */
 const VALID_ROLES = new Set<Pos>(["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"]);
-function rolesOf(raw: string): Pos[] {
+export function rolesOf(raw: string): Pos[] {
   const out: Pos[] = [];
   for (const tok of positionsOf(raw)) {
     const role = tok as Pos;
@@ -189,7 +189,7 @@ function rowToLeaguePlayer(p: RosterRow): LeaguePlayer {
 }
 
 /** What he actually is, for a man the formation had no slot for. */
-function naturalPosition(positions: string): Pos {
+export function naturalPosition(positions: string): Pos {
   const ps = positionsOf(positions);
   const VALID: Pos[] = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
   for (const p of ps) {
