@@ -455,6 +455,13 @@ export interface Boot {
   /** Grants the swipe-to-curve mid-flight correction (see applyCurveSwipe
    *  in canvasEngine.ts) for as long as this boot has matches left. */
   curve?: boolean;
+  /** Grants Touch Mode — an in-match toggle that, once a kick is struck,
+   *  has your own player chase the ball; if he reaches it before anything
+   *  else happens, play pauses again for a fresh aim/kick from wherever it
+   *  ended up. See CanvasMatch.tsx's own Touch Mode doc comment for the
+   *  full mechanic. For as long as this boot has matches left, same as
+   *  `curve` above. */
+  extraTouch?: boolean;
 }
 
 export interface OwnedItem {

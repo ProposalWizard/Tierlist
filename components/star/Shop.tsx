@@ -142,6 +142,9 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                       {b.curve && (
                         <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
                       )}
+                      {b.extraTouch && (
+                        <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>
+                      )}
                       {bannedBoots.has(b.id) && (
                         <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
                       )}
@@ -160,12 +163,20 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                 Swipe the screen while a shot is in the air to bend, lift or dip it — each swipe stacks.
               </div>
             )}
+            {selectedBoot?.extraTouch && (
+              <div className="bg-fuchsia-900/40 border border-fuchsia-500/60 rounded-lg p-2.5 mb-3 text-[11px] text-fuchsia-100 text-center">
+                Adds a Touch Mode button in-match. Turn it on and, after you strike the ball, your player chases it — reach it before anything else happens and play pauses again for a fresh aim and kick from wherever it ended up. Nudge it into space, then take the real shot or pass.
+              </div>
+            )}
             <div className="bg-gray-700 rounded-lg p-3 border border-gray-600 text-center">
               <div className="text-xs text-white/85">Current boot</div>
               <div className="font-black text-white">
                 {career.currentBoot.name} — {career.currentBoot.matches} matches left
                 {career.currentBoot.curve && career.currentBoot.matches > 0 && (
                   <span className="ml-1.5 text-[9px] align-middle px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
+                )}
+                {career.currentBoot.extraTouch && career.currentBoot.matches > 0 && (
+                  <span className="ml-1.5 text-[9px] align-middle px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>
                 )}
               </div>
             </div>

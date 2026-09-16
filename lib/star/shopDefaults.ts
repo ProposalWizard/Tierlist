@@ -58,6 +58,16 @@ export const BOOTS_CATALOGUE_DEFAULT: Boot[] = [
   { id: "vapor", name: "NS-Vapor", pace: 15, power: 20, technique: 20, matches: 8, price: 80000 },
   { id: "phantom", name: "NS-Phantom", pace: 20, power: 20, technique: 20, matches: 10, price: 120000 },
   { id: "galaxy", name: "NS-Galaxy", pace: 25, power: 25, technique: 25, matches: 10, price: 200000 },
+  // Another whole extra ability, not a stat boost — same idiom as NS-Swerve
+  // above, just for a genuinely new mechanic (Touch Mode — see Boot.extraTouch
+  // and CanvasMatch.tsx). Requested directly, priced as the single most
+  // expensive item in the boots catalogue ("these boots should cost LOADS
+  // obvs") — 2.5x NS-Galaxy, its own top-tier stats plus a technique lean
+  // (the extra touch is a technique idea) rather than Swerve's own
+  // stats-are-an-afterthought pricing, since this is meant to read as the
+  // best boot in the game outright, not just the ability bolted onto a
+  // middling pair.
+  { id: "maestro", name: "NS-Maestro", pace: 20, power: 20, technique: 30, matches: 10, price: 500000, extraTouch: true },
 ];
 
 export const LIFESTYLE_ITEMS_DEFAULT: OwnedItem[] = [
