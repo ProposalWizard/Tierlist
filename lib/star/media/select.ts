@@ -1,5 +1,6 @@
 import type { FootballEvent, MediaAccount } from "./types";
 import { rngFor, shuffle } from "./grammar";
+import { PLAYER_GOAL_CHANTS } from "./chants";
 
 /**
  * WHO REACTS
@@ -76,6 +77,37 @@ export function selectPairings(
     const clubAcct = accounts.find(a => a.archetype === "club" && a.allegiance?.club === yourClub);
     const any = clubAcct ?? shuffle(accounts, rng)[0];
     if (any) out.push({ event: events[0], account: any, score: 1 });
+  }
+
+  // A real, authored chant (chants.ts) for the exact scorer never gets a
+  // guaranteed slot above — reported directly, with a real example: Sam
+  // Smith (eleven authored lines) scored and nothing about it ever showed
+  // up, even for a goal in a match the player didn't play (this game
+  // simulates every other fixture in the division every week — see
+  // detect/league.ts — so a chant-eligible player can score anywhere in the
+  // league, not just against you). Root cause: every "fan"/"rivalFan"
+  // account this game generates is allegiance-locked to one specific club
+  // (see accounts.ts) — so a chant about a player at a THIRD club, one you
+  // don't own and aren't rivals with, had no account willing to post it at
+  // all, whatever the score/reach formula said. `@GroundNoise` (accounts.ts)
+  // is a genuinely neutral "fan" account with no allegiance to any one
+  // club — precisely so a real chant has somewhere to land whichever club
+  // it's actually about. A real chant existing for this
+  // exact player is itself evidence the post matters, independent of the
+  // ordinary score/reach formula, so it is guaranteed a slot the same way
+  // the empty-feed fallback above is — deliberately allowed to exceed the
+  // normal per-account/per-event/budget caps, since those caps exist to stop
+  // noise, not to hide a real chant.
+  const chantAcct = accounts.find(a => a.handle === "@GroundNoise")
+    ?? accounts.find(a => a.archetype === "fan" && !a.allegiance);
+  if (chantAcct) {
+    for (const e of events) {
+      if (e.id !== "teammate-goal") continue;
+      const scorer = e.facts.scorer as string | undefined;
+      if (!scorer || !PLAYER_GOAL_CHANTS[scorer]) continue;
+      if (out.some(p => p.event.id === e.id && p.account.id === chantAcct.id && p.event.facts.scorer === scorer)) continue;
+      out.push({ event: e, account: chantAcct, score: Number.POSITIVE_INFINITY });
+    }
   }
 
   return out;

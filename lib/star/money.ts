@@ -34,6 +34,38 @@ export function niceMoneyStep(amount: number): number {
   return 25_000_000;
 }
 
+/**
+ * Like formatMoney, but keeps one real decimal digit instead of flooring it
+ * away — requested directly for the negotiation screen: agreeing a deal at
+ * ★2,500,000 should read "Deal agreed — ★2.5m", not "★2m", since the whole
+ * negotiation up to that point was conducted in real, non-round numbers.
+ * Deliberately a SEPARATE function from formatMoney rather than a shared
+ * option — formatMoney's own whole-number rounding was a direct, explicit
+ * revert of exactly this kind of decimal precision for everyday balance/
+ * valuation displays (see this file's own header), so that behaviour stays
+ * the default everywhere else; this is opt-in, for the one place a rounded
+ * number would visibly contradict a number just shown seconds earlier.
+ */
+export function formatMoneyPrecise(n: number): string {
+  const negative = n < 0;
+  const value = Math.abs(n);
+
+  const UNITS: { div: number; suffix: string }[] = [
+    { div: 1_000_000_000, suffix: "b" },
+    { div: 1_000_000, suffix: "m" },
+    { div: 1_000, suffix: "k" },
+  ];
+
+  for (const u of UNITS) {
+    if (value >= u.div) {
+      let str = (value / u.div).toFixed(1);
+      if (str.endsWith(".0")) str = str.slice(0, -2);
+      return `${negative ? "-" : ""}${str}${u.suffix}`;
+    }
+  }
+  return `${negative ? "-" : ""}${Math.round(value)}`;
+}
+
 export function formatMoney(n: number): string {
   const negative = n < 0;
   const value = Math.round(Math.abs(n));

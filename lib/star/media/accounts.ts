@@ -357,6 +357,22 @@ export function buildRoster(career: CareerState): MediaAccount[] {
     });
   }
 
+  // A genuinely neutral chant-catcher. Requested directly: a real authored
+  // chant (chants.ts) is about a specific real player or club, not about
+  // YOUR club, so it needs an account with no allegiance to any one side —
+  // every "fan"/"rivalFan" account above only ever speaks for its own club.
+  // Deliberately given no `club`/`allegiance` — select.ts's `allegiance()`
+  // reads that as "indifferent to which club this is about", exactly what a
+  // roving chants account covering the whole division needs to be. Pushed
+  // AFTER the per-club fan/rivalFan loops (not into NATIONAL, spread much
+  // earlier) so it never becomes the first "fan" account `Array.find` hits —
+  // that would silently break every test/caller expecting the first "fan"
+  // it finds to be YOUR club's own.
+  out.push(account({
+    handle: "@GroundNoise", name: "Ground Noise", archetype: "fan",
+    verified: false, followers: 38_000,
+  }, seedKey, used));
+
   // ── No real footballer gets an account ──
   //
   // This used to generate 3-4 "teammate" accounts straight off the actual

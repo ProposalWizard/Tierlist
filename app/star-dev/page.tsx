@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
+import { renameHorse } from "@/lib/star/horse";
 import { selectionFor, MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
@@ -1434,6 +1435,11 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  const handleRenameHorse = useCallback((name: string) => {
+    if (!career) return;
+    setCareer(renameHorse(career, name));
+  }, [career]);
+
   // Stake itself already left the casino's `bank` (see Casino.tsx's own
   // onSetBank call, which flows back into career.money on exit exactly like
   // any other casino loss) — this only records the bet so it can actually
@@ -2127,7 +2133,7 @@ export default function StarDevPage() {
   }
 
   if (phase === "casino-menu") {
-    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onPlaceBet={handlePlaceBet} />;
+    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />;
   }
 
   if (phase === "investments") {

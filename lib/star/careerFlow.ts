@@ -18,6 +18,7 @@ import {
 import { makeManager, sackCheck, bossOnArrival, hireReplacementManager } from "./manager";
 import { allPoolManagers } from "./managerPool";
 import { rivalryMultiplier } from "./rivalries";
+import { horseUpkeep } from "./horse";
 import { progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
@@ -778,11 +779,16 @@ export function creditMatchResult(
     incumbents,
     fixtures: [...fixtures, ...extraFixtures],
     // Match-day money: the wage and bonuses the result produced, an appearance
-    // fee if the deal has one, and anything a sponsor objective just paid out.
-    // Guarded on `alreadyPlayed` — none of this was earned twice.
+    // fee if the deal has one, and anything a sponsor objective just paid out
+    // — minus a week's real upkeep on the horse, if you own one (feed,
+    // stabling, routine vet costs — charged whether it raced or not, the
+    // same "no free lunch" reasoning the rest of this game's economy already
+    // uses elsewhere). Guarded on `alreadyPlayed` — none of this happens
+    // twice off a replayed match, same as everything else here.
     money: alreadyPlayed ? career.money : career.money + stats.totalCash
       + (isInternational ? 0 : appearanceMoney(career.contract))
-      + progressed.earned,
+      + progressed.earned
+      - (career.horse ? horseUpkeep(career.horse) : 0),
     // Twenty minutes off the bench does not sharpen you as much as ninety —
     // and a replay does not sharpen you again.
     matchFitness: alreadyPlayed ? career.matchFitness : Math.min(100, career.matchFitness + 3 * minuteShare),
@@ -1511,7 +1517,9 @@ export function simulateMissedFixture(
     euroState,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
-    money: career.money + career.contract.wage,
+    // A week you didn't play still costs the horse its keep, exactly like a
+    // played week does (see the other call site's own note above).
+    money: career.money + career.contract.wage - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
     // Not playing does not cost you energy — it is the one thing every week

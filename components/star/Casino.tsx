@@ -7,6 +7,7 @@ import {
 } from "@/lib/star/competitionBetting";
 import { getTuning } from "@/lib/star/tuningStore";
 import { formatMoney } from "@/lib/star/money";
+import { horseRacePrize, horseUpkeep } from "@/lib/star/horse";
 
 interface Props {
   bankStart: number;
@@ -14,6 +15,7 @@ interface Props {
   onExit: (finalBank: number) => void;
   onHorseRace: (finish: number, prize: number, energyCost: number) => void;
   onBuyHorse: (horse: Horse, price: number) => void;
+  onRenameHorse: (name: string) => void;
   onPlaceBet: (bet: Omit<CompetitionBet, "id">) => void;
 }
 
@@ -74,7 +76,7 @@ function stepAtOrBelow(n: number): number {
 
 const BET_STORAGE_KEY = "star-casino-bet";
 
-export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onPlaceBet }: Props) {
+export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
   const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(BET_STEPS[0]);
@@ -126,6 +128,7 @@ export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onB
         onChangeBet={changeBet}
         onHorseRace={onHorseRace}
         onBuyHorse={onBuyHorse}
+        onRenameHorse={onRenameHorse}
       />
     );
   }
@@ -289,6 +292,7 @@ interface HorseRacingProps extends CasinoGameProps {
   career: CareerState;
   onHorseRace: (finish: number, prize: number, energyCost: number) => void;
   onBuyHorse: (horse: Horse, price: number) => void;
+  onRenameHorse: (name: string) => void;
 }
 
 function HorseRacingGame(props: HorseRacingProps) {
@@ -297,6 +301,8 @@ function HorseRacingGame(props: HorseRacingProps) {
   const [selectedHorse, setSelectedHorse] = useState<number | null>(null);
   const [runners, setRunners] = useState<RaceRunner[] | null>(null);
   const [go, setGo] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
   const [result, setResult] = useState<{ finish: number; payout: number; winnerName: string } | null>(null);
   const [isMyHorseRace, setIsMyHorseRace] = useState(false);
 
@@ -319,10 +325,10 @@ function HorseRacingGame(props: HorseRacingProps) {
         const ordered = [...runners].sort((a, b) => b.score - a.score);
         const winnerName = ordered[0].name;
         if (isMyHorseRace) {
-          // My horse race — prize based on finishing position
+          // My horse race — a real fixed purse for where you finished, never
+          // a bet. See lib/star/horse.ts's own header for why this changed.
           const finish = ordered.findIndex((r) => r.isUser) + 1;
-          const prizeMult = finish === 1 ? 5 : finish === 2 ? 2 : finish === 3 ? 1 : 0;
-          const prize = props.bet * prizeMult;
+          const prize = myHorse ? horseRacePrize(finish, myHorse) : 0;
           setResult({ finish, payout: prize, winnerName });
         } else {
           // Betting race — did our pick win?
@@ -334,7 +340,7 @@ function HorseRacingGame(props: HorseRacingProps) {
       }, maxDur * 1000 + 250);
       return () => clearTimeout(t);
     }
-  }, [runners, go, result, isMyHorseRace, horses, selectedHorse, props.bet]);
+  }, [runners, go, result, isMyHorseRace, horses, selectedHorse, myHorse]);
 
   const placeBet = () => {
     if (selectedHorse === null || props.bank < props.bet) return;
@@ -538,7 +544,7 @@ function HorseRacingGame(props: HorseRacingProps) {
             {!myHorse ? (
               <>
                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-[11px] text-white/85 leading-snug text-center">
-                  Buy a racehorse and enter it in races to win prize money. Racing tires your horse — its energy comes back as the season plays out.
+                  Buy a racehorse and enter it in races to win a real prize for finishing 1st, 2nd or 3rd — no betting involved. Racing tires your horse (energy comes back as the season plays out), and owning one costs real weekly upkeep whether it races or not.
                 </div>
                 <div className="space-y-2">
                   {PURCHASABLE_HORSES.map((s) => {
@@ -572,8 +578,32 @@ function HorseRacingGame(props: HorseRacingProps) {
                 <div className="bg-gradient-to-b from-emerald-800/40 to-gray-800 border border-emerald-700/50 rounded-xl p-4 mb-3">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="text-5xl">🐎</div>
-                    <div className="flex-1">
-                      <div className="font-black text-white text-lg">{myHorse.name}</div>
+                    <div className="flex-1 min-w-0">
+                      {renaming ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus value={nameDraft} maxLength={24}
+                            onChange={e => setNameDraft(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === "Enter" && nameDraft.trim()) { props.onRenameHorse(nameDraft); setRenaming(false); }
+                              if (e.key === "Escape") setRenaming(false);
+                            }}
+                            className="min-w-0 flex-1 rounded-md bg-gray-900 border border-emerald-500/60 px-2 py-1 text-sm font-black text-white"
+                          />
+                          <button
+                            onClick={() => { if (nameDraft.trim()) { props.onRenameHorse(nameDraft); setRenaming(false); } }}
+                            className="shrink-0 rounded-md bg-emerald-500 hover:bg-emerald-400 px-2 py-1 text-[10px] font-black"
+                          >Save</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setNameDraft(myHorse.name); setRenaming(true); }}
+                          className="flex items-center gap-1.5 text-left"
+                        >
+                          <span className="font-black text-white text-lg truncate">{myHorse.name}</span>
+                          <span className="text-[10px] font-bold text-emerald-300 underline">Rename</span>
+                        </button>
+                      )}
                       <div className="text-[11px] text-white/75">{myHorse.breed}</div>
                     </div>
                   </div>
@@ -607,9 +637,15 @@ function HorseRacingGame(props: HorseRacingProps) {
                       <div className="text-white font-black">★{formatMoney(myHorse.earnings)}</div>
                     </div>
                   </div>
+                  <div className="mt-2 flex items-center justify-between rounded-lg bg-red-950/40 border border-red-500/30 px-2.5 py-1.5 text-[10px] font-bold text-red-200">
+                    <span>Upkeep — feed, keep, vet</span>
+                    <span className="font-black">-★{formatMoney(horseUpkeep(myHorse))}/week</span>
+                  </div>
                 </div>
 
-                <div className="text-[10px] text-center text-white/75 mb-2">Prize: 1st = bet x5, 2nd = bet x2, 3rd = bet x1</div>
+                <div className="text-[10px] text-center text-white/75 mb-2">
+                  Prize — 1st: ★{formatMoney(horseRacePrize(1, myHorse))} · 2nd: ★{formatMoney(horseRacePrize(2, myHorse))} · 3rd: ★{formatMoney(horseRacePrize(3, myHorse))}
+                </div>
 
                 <button
                   onClick={startMyHorseRace}
@@ -648,7 +684,7 @@ interface CompetitionBettingProps extends CasinoGameProps {
 function CompetitionBetting(props: CompetitionBettingProps) {
   const [tab, setTab] = useState<BetCompetition>("league");
   const [placed, setPlaced] = useState<{ club: string; odds: number } | null>(null);
-  const book: BetEntrant[] = oddsFor(entrantsFor(tab, props.career));
+  const book: BetEntrant[] = oddsFor(entrantsFor(tab, props.career), tab);
   const pending = (props.career.competitionBets ?? []).filter(b => b.season === props.career.season);
   // Reported directly: betting with no cutoff let a bet get placed on the
   // last day of the season, once a title was already effectively decided —
@@ -1080,7 +1116,10 @@ function Roulette(props: CasinoGameProps) {
           ))}
         </div>
         <div className="mt-2 text-[10px] text-center text-white/75">Red/Black/Even/Odd: 2x • Single number: 35x</div>
-        <div className="mt-2 grid grid-cols-6 gap-1 max-h-24 overflow-y-auto">
+        {/* Every number shown at once, no scrolling — reported directly:
+            a scrollbar here for only 37 short buttons was unnecessary when
+            the grid comfortably fits the page at a slightly smaller size. */}
+        <div className="mt-2 grid grid-cols-6 gap-1">
           {Array.from({ length: 37 }).map((_, i) => {
             const bg = i === 0 ? "bg-emerald-700" : isRed(i) ? "bg-red-700" : "bg-gray-900";
             return (
@@ -1088,7 +1127,7 @@ function Roulette(props: CasinoGameProps) {
                 key={i}
                 disabled={spinning}
                 onClick={() => setChoice(i)}
-                className={`py-2 rounded text-xs font-black text-white ${choice === i ? "ring-2 ring-yellow-400" : ""} ${bg}`}
+                className={`py-1.5 rounded text-[11px] font-black text-white ${choice === i ? "ring-2 ring-yellow-400" : ""} ${bg}`}
               >{i}</button>
             );
           })}
