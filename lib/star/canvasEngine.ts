@@ -526,6 +526,14 @@ export interface Scenario {
    * same "one lay-off order at a time" rule a real captain's armband means.
    */
   relayToFollower?: boolean;
+  /**
+   * Touch Mode's own chase (Boot.extraTouch) — set true the first time the
+   * ball gets away from `player` by more than TOUCH_CHASE_ARM_R. Without
+   * this, the very first tick after the strike (player and ball still
+   * coincide from the kick itself) would read as "already caught up" and
+   * fire instantly. See stepTouchChase.
+   */
+  touchChaseArmed?: boolean;
 }
 
 export type Outcome =
@@ -4626,6 +4634,54 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     if (dist > REACT_R) continue;
     move(d, REACT_SPEED);
   }
+}
+
+const TOUCH_CHASE_SPEED = 7.6; // m/s — his own dead sprint after a deliberate
+                                // touch, a shade quicker than RUNNER_SPEED's
+                                // team-mate run
+const TOUCH_CHASE_ARM_R = 1.8; // metres the ball must first get away from him
+                                // before a return inside TOUCH_CHASE_CATCH_R
+                                // counts as reaching it
+const TOUCH_CHASE_CATCH_R = CONTROL_R; // the same "close enough to take it"
+                                        // radius the follower/poacher's own
+                                        // fetch already uses
+
+/**
+ * Boot.extraTouch's real chase — reported back live after the first version
+ * shipped without it: "my player just doesnt chase the touch at all... he
+ * never moves at all. I need him to like run to it as soon as he kicks it."
+ *
+ * That first version never moved anything: it waited on stepBall's own
+ * invisible dead-ball timeout and remapped whatever it returned. This
+ * function is the real thing — it moves `scenario.player` itself, in place,
+ * toward the ball every tick, which is the exact field footballer() already
+ * reads live for his on-screen figure and poseFor/runPhase already animate
+ * as a run the moment it moves. Nothing downstream needed touching for the
+ * chase to be SEEN; it only needed to actually happen.
+ *
+ * Arming is what stops the strike itself from reading as an instant catch:
+ * player and ball still coincide on the very tick he kicks it, so a plain
+ * "is he close enough" check would fire before he has taken a single step.
+ * Only once the ball has first got away from him past TOUCH_CHASE_ARM_R does
+ * a return inside TOUCH_CHASE_CATCH_R count as genuinely catching it up —
+ * kick it away, THEN run it down, never the other way round.
+ *
+ * Deliberately does not itself check ball.owner, acceptsCaptainOrders, or
+ * the toggle — CanvasMatch's call site already gates every one of those
+ * exactly as the original remap did, and re-checking them here would just
+ * be a second copy of the same condition to keep in sync.
+ */
+export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number): boolean {
+  const p = scenario.player;
+  const before = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
+  if (before > TOUCH_CHASE_ARM_R) scenario.touchChaseArmed = true;
+  if (before > 0.02) {
+    const step = Math.min(before, TOUCH_CHASE_SPEED * dt);
+    p.x += ((ball.pos.x - p.x) / before) * step;
+    p.y += ((ball.pos.y - p.y) / before) * step;
+  }
+  const after = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
+  return !!scenario.touchChaseArmed && after <= TOUCH_CHASE_CATCH_R;
 }
 
 /**
