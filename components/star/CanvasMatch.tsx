@@ -101,6 +101,11 @@ interface Props {
   /** Curve boots equipped, with matches left — see Boot.curve. Lets you
    *  swipe the screen during flight to bend/lift/dip a shot already struck. */
   canCurve?: boolean;
+  /** Touch Mode boots equipped, with matches left — see Boot.extraTouch.
+   *  Shows an in-match toggle: with it on, a settled, still-uncontested
+   *  touch of your own chains into a fresh aim/kick instead of ending the
+   *  passage of play. */
+  canExtraTouch?: boolean;
   /**
    * The minute you come on. 0 when you start. Anything else means the match has
    * already been going on without you, and the score you inherit is one your
@@ -283,7 +288,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -828,10 +833,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const isCaptain = !!career?.captain;
   const isCaptainRef = useRef(isCaptain);
   isCaptainRef.current = isCaptain;
-  const captainDragRef = useRef<{ runner: Runner; from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
+  // `target` is "follower" for the poacher — he has no `.pos`, only `.x`/`.y`
+  // (see Follower's own doc), so he can't share a Runner-shaped slot here.
+  const captainDragRef = useRef<{ target: Runner | "follower"; from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
   /** Bumped whenever an order changes, purely so the React overlay re-renders. */
   const [orderTick, setOrderTick] = useState(0);
   const bumpOrders = () => setOrderTick(t => t + 1);
+
+  // Touch Mode (Boot.extraTouch) — a personal in-match toggle, not a
+  // persisted preference (unlike mute): defaulting to off every match is
+  // safer than a returning player being confused why kicks behave
+  // differently without remembering they left it on last time.
+  const [touchModeOn, setTouchModeOn] = useState(false);
+  const touchModeOnRef = useRef(touchModeOn);
+  touchModeOnRef.current = touchModeOn;
 
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
@@ -1346,18 +1361,51 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * whole ability is worthless if picking him out is fiddly. Nearest man inside
    * the radius wins, so two players standing close together still resolve to
    * one of them rather than to neither.
+   *
+   * The follower/poacher is a candidate too, drawn with a face and a name
+   * exactly like a real orderable Runner whenever he's on screen (goalInView)
+   * — reported directly as a broken hitbox ("other players work but theirs
+   * doesn't") when tapping him did nothing, because `orderableRunners` never
+   * included him at all. He returns as the literal string "follower" rather
+   * than a Runner, since he has no `.pos`-shaped fields to hand back — see
+   * onPointerUp's own handling of that case.
    */
-  const captainPickAt = (p: { x: number; y: number }): Runner | null => {
+  const captainPickAt = (p: { x: number; y: number }): Runner | "follower" | null => {
     if (!isCaptainRef.current) return null;
     const sc = scenarioRef.current;
     if (!acceptsCaptainOrders(sc.kind)) return null;
     const vp = viewportRef.current;
     const grab = Math.max(2.2, (vp.y2 - vp.y1) * 0.09);
-    let best: Runner | null = null;
+    let best: Runner | "follower" | null = null;
     let bestD = grab;
     for (const r of orderableRunners(sc)) {
       const d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y);
       if (d < bestD) { bestD = d; best = r; }
+    }
+    if (goalInView(sc.kind)) {
+      const d = Math.hypot(p.x - sc.follower.x, p.y - sc.follower.y);
+      if (d < bestD) { bestD = d; best = "follower"; }
+    }
+    return best;
+  };
+
+  /**
+   * Raw distance to the nearest captain-orderable man (Runner or follower),
+   * ignoring captainPickAt's own hit radius entirely — Infinity when
+   * captaincy isn't active, or there's nobody to order. Used only to keep a
+   * near-miss tap on a team-mate from falling through to the ball's own,
+   * much larger grab zone — see onPointerDown.
+   */
+  const nearestCaptainCandidateDist = (p: { x: number; y: number }): number => {
+    if (!isCaptainRef.current) return Infinity;
+    const sc = scenarioRef.current;
+    if (!acceptsCaptainOrders(sc.kind)) return Infinity;
+    let best = Infinity;
+    for (const r of orderableRunners(sc)) {
+      best = Math.min(best, Math.hypot(p.x - r.pos.x, p.y - r.pos.y));
+    }
+    if (goalInView(sc.kind)) {
+      best = Math.min(best, Math.hypot(p.x - sc.follower.x, p.y - sc.follower.y));
     }
     return best;
   };
@@ -1993,17 +2041,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       };
 
       // Runs already given: where each man has been sent, and where he is going
-      // to be standing when the ball gets there.
+      // to be standing when the ball gets there. The follower/poacher gets the
+      // same treatment off his own commandedTo — he has no `.pos`, so his own
+      // live `.x`/`.y` stand in for it.
       for (const r of orderableRunners(s)) {
         if (!r.commandedTo) continue;
         arrow(r.pos, r.commandedTo, 0.75, true);
+      }
+      if (s.follower.commandedTo) {
+        arrow({ x: s.follower.x, y: s.follower.y }, s.follower.commandedTo, 0.75, true);
       }
 
       // The man it gets laid off to. A ring around him rather than a marker
       // beside him: the order is about HIM, and a ring is the only shape that
       // says "this one" without pointing anywhere.
-      if (s.relayTo) {
-        const { px, py } = toPx(s.relayTo.pos.x, s.relayTo.pos.y);
+      const relayRing = (px: number, py: number) => {
         ctx.save();
         ctx.strokeStyle = GOLD;
         ctx.lineWidth = 2.5;
@@ -2018,13 +2070,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.arc(px, py, 20, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
+      };
+      if (s.relayTo) {
+        const { px, py } = toPx(s.relayTo.pos.x, s.relayTo.pos.y);
+        relayRing(px, py);
+      } else if (s.relayToFollower) {
+        const { px, py } = toPx(s.follower.x, s.follower.y);
+        relayRing(px, py);
       }
 
       // The gesture in the thumb right now, drawn solid so it is plainly the
       // live one and the committed orders behind it are plainly not.
       const drag = captainDragRef.current;
       if (drag && Math.hypot(drag.to.x - drag.from.x, drag.to.y - drag.from.y) >= CAPTAIN_DRAG_MIN) {
-        arrow(drag.runner.pos, drag.to, 1, false);
+        const from = drag.target === "follower" ? { x: s.follower.x, y: s.follower.y } : drag.target.pos;
+        arrow(from, drag.to, 1, false);
       }
     };
 
@@ -2652,7 +2712,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           stepDefenders(scenarioRef.current, h, ballRef.current.pos, false, ballRef.current);
           stepKeeper(scenarioRef.current, h);
           stepReactions(scenarioRef.current, ballRef.current, h, rngRef.current);
-          const res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
+          let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
+          // ── Touch Mode (Boot.extraTouch) ──
+          //
+          // stepBall itself is untouched — this remaps its own dead-ball
+          // "short" into "touchOn" right here, and only when every one of
+          // these holds: the toggle is on, the boots are actually equipped,
+          // this specific dead ball is YOUR OWN uncontested touch (never a
+          // save the keeper's holding, never a ball a defender already
+          // claimed — both would have already moved ball.owner off "you"),
+          // and it's a situation orders would make sense in to begin with
+          // (no penalty/free-kick/corner nudges). resolveOutcome's own
+          // "touchOn" branch does the rest — see its own doc there.
+          if (res === "short" && touchModeOnRef.current && canExtraTouch
+              && ballRef.current.owner === "you" && ballRef.current.lastTouch !== "keeper"
+              && acceptsCaptainOrders(scenarioRef.current.kind)) {
+            res = "touchOn";
+          }
           if (res) { resolveOutcome(res); break; }
         }
         // Surface mid-flight moments (pass reception / the teammate's own shot /
@@ -3001,6 +3077,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const ambition = Math.max(sc.passDifficulty, sc.passAmbition ?? 0);
         chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1, ambition };
         pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
+      }
+    } else if (res === "touchOn") {
+      // Touch Mode's own chain — deterministic, not chainReturnChance's
+      // random roll. The whole point of paying real money for this boot is
+      // that a genuinely uncontested touch always earns another go, never a
+      // coin flip on top of actually getting there. Still capped by the
+      // same CHAIN_MAX real pass-chains use — not a second, separate "how
+      // long can one move run on" budget, just another way of spending the
+      // existing one. Chains at the BALL's own resting position — never
+      // receivedAt/runner/passTarget, none of which describe a nudge you
+      // played to yourself.
+      const depth = sc.chainDepth ?? 0;
+      const b = ballRef.current;
+      if (b && depth < CHAIN_MAX) {
+        chainRef.current = { pos: { x: b.pos.x, y: b.pos.y }, depth: depth + 1, ambition: Math.max(0.3, sc.passDifficulty ?? 0) };
       }
     }
 
@@ -3544,14 +3635,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // between "pick a man" and "grab the ball" once it does.
     const r = captainPickAt(p);
     if (r) {
-      captainDragRef.current = { runner: r, from: p, to: p };
+      captainDragRef.current = { target: r, from: p, to: p };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
     // Grab radius scales with the camera so the ball is equally easy to pick up
     // whether the chance is framed tight or wide.
     const vp = viewportRef.current;
-    if (Math.hypot(p.x - b.x, p.y - b.y) > (vp.y2 - vp.y1) * 0.28) {
+    const ballD = Math.hypot(p.x - b.x, p.y - b.y);
+    // ── Still not the ball, even after missing captainPickAt's own radius ──
+    //
+    // The fix above only helps once a tap is close ENOUGH to a team-mate to
+    // register. Reported directly, still: "very frequently when tryna set a
+    // run or direct a pass it thinks im tryna aim a kick and starts the
+    // kick." Root cause: captainPickAt's own hit radius (9% of the framed
+    // pitch, floor 2.2m) is more than 3x smaller than the ball's grab radius
+    // just below (28%) — so a tap that's clearly aimed at a nearby player,
+    // but falls a little outside HIS radius, used to fall straight through
+    // into the ball's much bigger one regardless. A tap that's genuinely
+    // closer to a team-mate than to the ball never starts an aim-drag now,
+    // even when it missed every hit-circle — better a missed order than an
+    // accidental, badly-aimed kick.
+    if (ballD >= nearestCaptainCandidateDist(p)) return;
+    if (ballD > (vp.y2 - vp.y1) * 0.28) {
       // Missed both a player and the ball — nothing happens, exactly as
       // before the armband existed.
       return;
@@ -3619,19 +3725,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // a manager's hand makes on a touchline, and it means neither ability needs
     // a mode button taking up room on a phone screen.
     if (captainDragRef.current) {
-      const { runner, from, to } = captainDragRef.current;
+      const { target, from, to } = captainDragRef.current;
       captainDragRef.current = null;
       try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
       const sc = scenarioRef.current;
-      if (Math.hypot(to.x - from.x, to.y - from.y) < CAPTAIN_DRAG_MIN) {
-        // A tap: he is the man it gets laid off to, or he no longer is.
-        sc.relayTo = sc.relayTo === runner ? null : runner;
+      const isTap = Math.hypot(to.x - from.x, to.y - from.y) < CAPTAIN_DRAG_MIN;
+      if (target === "follower") {
+        if (isTap) {
+          // A tap: he is the man it gets laid off to, or he no longer is —
+          // his own version of relayTo, see relayToFollower.
+          sc.relayToFollower = !sc.relayToFollower;
+          if (sc.relayToFollower) sc.relayTo = null;
+        } else {
+          sc.follower.commandedTo = { x: to.x, y: to.y };
+        }
       } else {
-        // A drag: he runs that way, as far as you pulled, starting the moment
-        // you play the ball. Dragging from a man you had picked out for the
-        // lay-off does not take that order away — the two compose, and a man
-        // running onto it is played in front of. See launchReceiverPass.
-        runner.commandedTo = { x: to.x, y: to.y };
+        if (isTap) {
+          // A tap: he is the man it gets laid off to, or he no longer is.
+          sc.relayTo = sc.relayTo === target ? null : target;
+          if (sc.relayTo) sc.relayToFollower = false;
+        } else {
+          // A drag: he runs that way, as far as you pulled, starting the moment
+          // you play the ball. Dragging from a man you had picked out for the
+          // lay-off does not take that order away — the two compose, and a man
+          // running onto it is played in front of. See launchReceiverPass.
+          target.commandedTo = { x: to.x, y: to.y };
+        }
       }
       bumpOrders();
       return;
@@ -3814,6 +3933,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : "cursor-default"}`}
         />
 
+        {/* Touch Mode (Boot.extraTouch) — the button itself, not just the
+            mechanic. A corner toggle rather than a Settings checkbox, since
+            it's something you flip mid-match: requested directly as "a
+            little extra touch button/toggle in the corner of the screen".
+            The canvas beneath owns the whole area for its own pointer
+            handlers (aim-drag, captain orders), so this needs its own
+            explicit pointer-events-auto and a z-index above it, or a tap
+            meant for this button would fall straight through and start an
+            aim-drag underneath it — same class of bug the captain-order fix
+            elsewhere in this file exists to prevent. */}
+        {canExtraTouch && (phase === "aim" || phase === "contact" || phase === "flight" || phase === "result") && (
+          <button
+            onClick={() => setTouchModeOn(t => !t)}
+            aria-label={touchModeOn ? "Turn off Touch Mode" : "Turn on Touch Mode"}
+            className={`absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-black tracking-wide shadow-lg transition ${
+              touchModeOn ? "bg-fuchsia-500 text-white" : "bg-gray-950/70 text-fuchsia-300 border border-fuchsia-500/50"
+            }`}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+              <circle cx="12" cy="12" r="8" />
+              {touchModeOn && <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />}
+            </svg>
+            TOUCH
+          </button>
+        )}
+
         {/* The first-person duel — see USE_FIRST_PERSON_DRIBBLE. A full
             overlay over the canvas (it manages its own camera/render loop
             entirely), not something drawn onto it the way the old top-down
@@ -3948,12 +4093,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // orderTick moves and at no other time. See bumpOrders.
             void orderTick;
             const sc = scenarioRef.current;
-            const runs = orderableRunners(sc).filter(r => r.commandedTo).length;
-            const relay = !!sc.relayTo;
+            const runs = orderableRunners(sc).filter(r => r.commandedTo).length + (sc.follower.commandedTo ? 1 : 0);
+            const relay = !!sc.relayTo || !!sc.relayToFollower;
             if (!runs && !relay) return <> · tap a team-mate to have it laid off to him, drag to send him on a run</>;
+            const relayName = sc.relayTo?.who?.shortName ?? (sc.relayToFollower ? sc.follower.who?.shortName : undefined) ?? "your man";
             return (
               <>
-                {relay && <> · lay-off to <span className="font-black">{sc.relayTo?.who?.shortName ?? "your man"}</span></>}
+                {relay && <> · lay-off to <span className="font-black">{relayName}</span></>}
                 {!!runs && <> · {runs} run{runs > 1 ? "s" : ""} called</>}
               </>
             );

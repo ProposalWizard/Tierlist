@@ -278,6 +278,17 @@ export interface Follower {
   shot: boolean;     // already took its follow-up
   /** In an offside position at the last deliberate touch. See offsideSnapshot. */
   offside?: boolean;
+  /**
+   * THE CAPTAIN'S ORDERS, his own version of Runner.commandedTo — where he
+   * has been sent, and nothing else. Same rule as Runner's: only moves him
+   * once the ball is live, cleared when he arrives, a stopped ball still
+   * outranks it. He was always drawn and named exactly like an orderable
+   * team-mate (goalInView gates when — not whether — he looks like one)
+   * with no way to actually order him: reported directly as a broken
+   * hitbox ("other players work but theirs doesn't") rather than the
+   * missing feature it was.
+   */
+  commandedTo?: Vec2;
 }
 
 // The team-mate a pass is aimed at. They are a real moving entity: the renderer
@@ -504,6 +515,17 @@ export interface Scenario {
   receivedBy?: Runner | null;
   /** The lay-off has been played, so the next man to receive it shoots. */
   relayed?: boolean;
+  /**
+   * The follower/poacher's own version of `relayTo` — a flag rather than a
+   * stored reference, since there is only ever one follower in a scenario
+   * and nothing to distinguish one from another the way `relayTo` needs to
+   * for a Runner (Follower also has no `.pos`/`.moving`-shaped fields —
+   * see Follower's own doc — so folding him into `relayTo` itself isn't a
+   * clean fit). See relayFollowerTargetFor/launchReceiverFollowerPass.
+   * Mutually exclusive with `relayTo` — setting one clears the other, the
+   * same "one lay-off order at a time" rule a real captain's armband means.
+   */
+  relayToFollower?: boolean;
 }
 
 export type Outcome =
@@ -519,7 +541,18 @@ export type Outcome =
   | "tipped"
   | "over" | "post" | "wide" | "blocked" | "out" | "short" | "offside"
   /** Dwelt too long and the closing defender took it off you. */
-  | "tackled";
+  | "tackled"
+  /**
+   * Touch Mode (Boot.extraTouch): a settled, still-uncontested touch of
+   * YOUR OWN (never `stepBall` producing this on its own — see
+   * CanvasMatch.tsx's flight-phase loop, which remaps its own "short" into
+   * this the instant it would otherwise end the passage of play, but only
+   * while `ball.owner === "you"`). Never credited as a shot or a pass —
+   * see creditChance — and chains deterministically (resolveOutcome, no
+   * chainReturnChance roll) rather than ending the move, which is the
+   * entire point of paying for the boots.
+   */
+  | "touchOn";
 
 export interface KickSkills {
   power: number;      // 0-100
@@ -2935,6 +2968,65 @@ function launchReceiverPass(ball: Ball, scenario: Scenario, target: Runner, rng:
   offsideSnapshot(scenario, from);
 }
 
+/**
+ * The follower/poacher's own version of relayTargetFor — true when he's the
+ * man it gets laid off to, and the order is still live and still real.
+ *
+ * No "can't lay it off to himself" check the way relayTargetFor has —
+ * `scenario.receivedBy` is typed `Runner | null` and the follower can never
+ * be assigned to it (see Follower's own doc for why he isn't a Runner), so
+ * he structurally can never be the man who just received it in the first
+ * place. Otherwise the same two refusals: an order still pending from a
+ * PREVIOUS lay-off this move (`relayed`), and a ball that was never a real
+ * pass by any measure (`RELAY_MIN`/`RELAY_MAX`, same bounds as a Runner's).
+ */
+function relayFollowerTargetFor(scenario: Scenario): boolean {
+  if (!scenario.relayToFollower || scenario.relayed) return false;
+  const at = scenario.receivedAt;
+  if (!at) return false;
+  const d = Math.hypot(scenario.follower.x - at.x, scenario.follower.y - at.y);
+  return d >= RELAY_MIN && d <= RELAY_MAX;
+}
+
+/**
+ * launchReceiverPass's follower counterpart — deliberately its own,
+ * self-contained function rather than a shared refactor of that one, so an
+ * already-tuned, already-live formula can't pick up a silent behaviour
+ * change on the way to supporting a second kind of target.
+ *
+ * No lead calculation the way launchReceiverPass has for a Runner running
+ * onto it (aheadOf, gated on `moving`) — an honest, small simplification:
+ * the follower's own commanded run is new this same round and doesn't yet
+ * carry a comparable "is this actually a run in progress right now" signal
+ * worth leading against, so this aims flat at his current position instead.
+ */
+function launchReceiverFollowerPass(ball: Ball, scenario: Scenario, rng: () => number) {
+  const from = { x: ball.pos.x, y: ball.pos.y };
+  const f = scenario.follower;
+  const dist = Math.hypot(f.x - from.x, f.y - from.y);
+  const speed = clamp(11 + dist * 0.42, 11, 24);
+  const skill = clamp(scenario.receiver?.skill ?? 62, 0, 100) / 100;
+  const team = clamp(scenario.teamRelationship / 100, 0, 1);
+  const quality = clamp(skill * 0.62 + team * 0.38, 0, 1);
+  const sigmaDeg = (1 - quality * 0.8) * 6.5;
+  const dir = rotateDeg(normalize({ x: f.x - from.x, y: f.y - from.y }), gaussian(rng) * sigmaDeg);
+
+  ball.vel = { x: dir.x * speed, y: dir.y * speed };
+  ball.vz = 0;
+  ball.z = 0.08;
+  ball.spin = (rng() - 0.5) * 0.35;
+  ball.loose = false;
+  ball.contactCd = clamp((PASS_CONTROL_R + 0.6) / speed, 0.15, 0.4);
+  ball.lastTouch = "attack";
+  ball.event = "relay";
+  ball.shot = false;
+  markLanding(ball, scenario);
+
+  scenario.relayed = true;
+  scenario.receiverDone = false;
+  offsideSnapshot(scenario, from);
+}
+
 /** Where a man running to orders will be in `t` seconds. */
 function aheadOf(r: Runner, t: number): Vec2 {
   const to = r.commandedTo;
@@ -4472,12 +4564,29 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   // does what a striker does with a loose ball six yards out.
   {
     const f = scenario.follower;
-    const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
-    // He walks to a stopped ball whether or not he has already had a go at it.
-    // Skipping him once he had shot meant a ball could come to rest five metres
-    // from the only man near it and simply be given up on.
-    if (dead) { move(f, fetch(dist)); f.active = true; }
-    else if (!f.shot && dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
+    // A man running to the captain's orders — his own version of the Runner
+    // block above, same rule: a ball that has stopped still outranks it, so
+    // he does not jog past a loose ball to finish a commanded run either.
+    if (f.commandedTo && !dead) {
+      const dx = f.commandedTo.x - f.x, dy = f.commandedTo.y - f.y;
+      const togo = Math.hypot(dx, dy);
+      if (togo < 0.6) {
+        f.commandedTo = undefined;   // arrived; back to reacting like everybody else
+        f.active = false;
+      } else {
+        const step = Math.min(togo, RUNNER_SPEED * dt);
+        f.x += (dx / togo) * step;
+        f.y += (dy / togo) * step;
+        f.active = true;
+      }
+    } else {
+      const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
+      // He walks to a stopped ball whether or not he has already had a go at it.
+      // Skipping him once he had shot meant a ball could come to rest five metres
+      // from the only man near it and simply be given up on.
+      if (dead) { move(f, fetch(dist)); f.active = true; }
+      else if (!f.shot && dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
+    }
 
     // Raised from 1.6 — a keeper's parry launches a loose ball from dive/reach
     // height (roughly 1.8-2.2m) with real upward pace, so it was spending
@@ -5019,6 +5128,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     if (ball.receiverControlT <= 0) {
       const relay = relayTargetFor(scenario);
       if (relay) launchReceiverPass(ball, scenario, relay, rng);
+      else if (relayFollowerTargetFor(scenario)) launchReceiverFollowerPass(ball, scenario, rng);
       else launchReceiverShot(ball, scenario, rng);
     }
     return null;
@@ -5379,7 +5489,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // armband has to outrank instinct even then, not just on a clean
         // pass into his stride.
         const relay = relayTargetFor(scenario);
-        if ((scenario.receiver || relay) && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
+        const followerRelay = !relay && relayFollowerTargetFor(scenario);
+        if ((scenario.receiver || relay || followerRelay) && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
           // ── A ball you chase down is hit first time ──
@@ -5392,6 +5503,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // one — the pause was written for the other case and applied to both.
           if (scrambled) {
             if (relay) launchReceiverPass(ball, scenario, relay, rng);
+            else if (followerRelay) launchReceiverFollowerPass(ball, scenario, rng);
             else launchReceiverShot(ball, scenario, rng, false);
           } else {
             // Re-checked at expiry (below) rather than decided here, so a
@@ -5635,4 +5747,6 @@ export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass"
   // A defender reading a ball you played to somebody. Distinct from `blocked`,
   // which is a defender in the way of one you played at the goal.
   tackled: { text: "Intercepted!", kind: "miss" },
+  // Neutral, same as `short`/`out` — never a shot or a pass, see creditChance.
+  touchOn: { text: "Touch on!", kind: "neutral" },
 };

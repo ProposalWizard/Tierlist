@@ -1950,6 +1950,7 @@ export default function StarDevPage() {
       + (bootMatchesLeft ? career.currentBoot.technique : 0)
       + (statBoostActive ? career.statBoost!.technique : 0));
     const canCurve = bootMatchesLeft && !!career.currentBoot.curve;
+    const canExtraTouch = bootMatchesLeft && !!career.currentBoot.extraTouch;
     return (
       <div
         className="min-h-screen bg-gray-950 text-white py-4 px-3"
@@ -1959,6 +1960,7 @@ export default function StarDevPage() {
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
             canCurve={canCurve}
+            canExtraTouch={canExtraTouch}
             keeperStrength={oppStrength}
             position={career.playAs ?? career.player.position}
             teamRelationship={career.relationships.team}
