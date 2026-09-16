@@ -537,6 +537,14 @@ export interface Scenario {
    * 1.8m thing coz hes chasing it the whole time." See stepTouchChase.
    */
   touchChaseArmed?: boolean;
+  /**
+   * How many times THIS move has already continued via Touch Mode's own
+   * chain, checked against TOUCH_CHAIN_MAX in CanvasMatch's resolveOutcome —
+   * a separate counter from `chainDepth`/CHAIN_MAX, not a second name for
+   * the same one. See TOUCH_CHAIN_MAX's own doc for why sharing the
+   * ordinary pass-chain budget was the actual bug.
+   */
+  touchTouches?: number;
 }
 
 export type Outcome =
@@ -2816,6 +2824,25 @@ export function buildAttackingScenario(rng: () => number, keeperStrength = 62, t
 
 /** How many passes one move can be strung together from. */
 export const CHAIN_MAX = 2;
+
+/**
+ * Touch Mode's own chain budget (Boot.extraTouch) — deliberately NOT
+ * CHAIN_MAX, and not sharing its counter either. Reported live: "he IS
+ * catching it... instead of the game pausing and giving me a new kick like
+ * the chance just started, the chance just ends." Root cause — the first
+ * version of stepTouchChase's chain genuinely worked, but it spent the SAME
+ * `chainDepth` budget an ordinary pass chain uses (CHAIN_MAX=2, "how many
+ * passes one move can be strung together from"), which a real passage of
+ * play has usually already partly spent — a chase-and-kick a second or
+ * third time genuinely often needs more than two links total. A repeatable
+ * dribbling tool that silently stops working after one or two uses is not
+ * what "if he gets to it then the game stops again and he has another aim
+ * and kick" describes. Generous rather than tight on purpose: the real
+ * limiting factor on chaining touches forever is supposed to be risk (a
+ * defender closing in, the ball going out) and real elapsed time, not an
+ * arbitrary counter — see stepTouchChase's own resolveOutcome call site.
+ */
+export const TOUCH_CHAIN_MAX = 8;
 
 /**
  * The situation a completed pass has left you in.

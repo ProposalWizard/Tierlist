@@ -4,7 +4,7 @@ import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
   stepKeeper, stepDefenders, stepReactions, stepTouchChase, initDefenders,
-  chainKindFor, chainReturnChance, CHAIN_MAX, applyFirstTouch, goalInView,
+  chainKindFor, chainReturnChance, CHAIN_MAX, TOUCH_CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
   curveDirFromSwipe, applyCurveSwipe,
@@ -529,7 +529,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // actually be built instead of every chance starting from nothing.
   // `ambition` is how brave the ball that got you here was — see passAmbition.
   // The next situation is read off it as well as off where the ball arrived.
-  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number; ambition: number } | null>(null);
+  // `touchTouches` (optional) is Touch Mode's own separate re-touch count —
+  // see TOUCH_CHAIN_MAX's own doc for why it can't share `depth` with an
+  // ordinary pass chain.
+  const chainRef = useRef<{ pos: { x: number; y: number }; depth: number; ambition: number; touchTouches?: number } | null>(null);
 
   interface SimEvent {
     minute: number; text: string; isGoal?: boolean; isOpponent?: boolean;
@@ -3092,16 +3095,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Touch Mode's own chain — deterministic, not chainReturnChance's
       // random roll. The whole point of paying real money for this boot is
       // that a genuinely uncontested touch always earns another go, never a
-      // coin flip on top of actually getting there. Still capped by the
-      // same CHAIN_MAX real pass-chains use — not a second, separate "how
-      // long can one move run on" budget, just another way of spending the
-      // existing one. Chains at the BALL's own resting position — never
+      // coin flip on top of actually getting there.
+      //
+      // Its own SEPARATE budget (touchTouches/TOUCH_CHAIN_MAX), not
+      // chainDepth/CHAIN_MAX — reported live, after this originally shared
+      // CHAIN_MAX's own tight 2-link cap with ordinary passing: "he IS
+      // catching it... instead of the game pausing and giving me a new kick
+      // like the chance just started, the chance just ends." A real passage
+      // of play often reaches you via at least one pass already, so a
+      // second or third genuine re-touch was routinely finding the shared
+      // budget already spent. `chainDepth` itself is carried through
+      // UNCHANGED here (never incremented) — touch-mode re-touches spend
+      // their own budget, not the one an actual pass afterwards still needs
+      // in full. Chains at the BALL's own resting position — never
       // receivedAt/runner/passTarget, none of which describe a nudge you
       // played to yourself.
-      const depth = sc.chainDepth ?? 0;
+      const touches = sc.touchTouches ?? 0;
       const b = ballRef.current;
-      if (b && depth < CHAIN_MAX) {
-        chainRef.current = { pos: { x: b.pos.x, y: b.pos.y }, depth: depth + 1, ambition: Math.max(0.3, sc.passDifficulty ?? 0) };
+      if (b && touches < TOUCH_CHAIN_MAX) {
+        chainRef.current = {
+          pos: { x: b.pos.x, y: b.pos.y },
+          depth: sc.chainDepth ?? 0,
+          ambition: Math.max(0.3, sc.passDifficulty ?? 0),
+          touchTouches: touches + 1,
+        };
       }
     }
 
@@ -3504,6 +3521,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const kind = chainKindFor(chain.pos, rng, chain.ambition);
       scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
       scenarioRef.current.chainDepth = chain.depth;
+      // Touch Mode's own separate budget — absent (undefined, reading as 0)
+      // for a chain that came from an ordinary completed pass, so touching
+      // it always starts a fresh TOUCH_CHAIN_MAX allowance rather than
+      // inheriting whatever a PRIOR touch-mode sequence had already spent.
+      scenarioRef.current.touchTouches = chain.touchTouches;
     } else if (attacking) {
       scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current, visionRef.current);
     } else if (request) {
