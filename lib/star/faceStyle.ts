@@ -101,9 +101,19 @@ const LEGACY_SCALE_KEY = "star-face-scale";
 // meaningfully higher or bigger than its default spot.
 export const FACE_SCALE_RANGE: [number, number] = [0.5, 5];
 export const FACE_OFFSET_RANGE: [number, number] = [-3, 3];
-/** CropView.zoom range — 1 is "just covers the circle", matching that
- *  interface's own doc; above that is zoomed in. */
-export const CROP_ZOOM_RANGE: [number, number] = [1, 4];
+// Floor widened directly on request, for the fake-face crop specifically:
+// "even with like the 0% zoom on the crop thing it still doesnt fit in the
+// whole face and its cut off on top or bottom." Measured, not guessed — all
+// seven fake-face images are ~1091×1442 (width/height ≈ 0.757), so at the
+// old floor of 1 ("just covers") their height always overflowed the square
+// crop viewport no matter how it was panned; there was no zoom level that
+// showed the whole picture. 0.5 clears that measured ratio with real margin
+// — portrait.ts's clampOffset centres the picture once it no longer covers
+// the viewport in a dimension, rather than forcing it to keep covering.
+// Shared with real photos too rather than a second copy of this range: same
+// "one numeric range, not something the two photo sets need their own copy
+// of" reasoning as every other FakeFaceStyle field.
+export const CROP_ZOOM_RANGE: [number, number] = [0.5, 4];
 
 /** Exported so the global-default fetch (below) can clamp whatever an admin
  *  posted through exactly the same rules a locally-saved style already goes
