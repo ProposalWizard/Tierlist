@@ -3908,6 +3908,39 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
+    // ── Touch Mode's real "instant catch" bug ──
+    //
+    // Reported live: "most times he gets it immediately, bad. probs to do
+    // with the side the user kicks it (if ball on left then kick to left
+    // is mostly fine but kick to right (towards user) means instant touch
+    // and stop)." Root cause: every scenario builder plants scenario.player
+    // 0.8-2.0m off from scenario.ball as a natural stand-off stance (e.g.
+    // buildOneOnOne's own `player: {x: bx, y: by + 1.2}`) — never
+    // gameplay-significant before touch mode existed, since nothing before
+    // it ever read that gap for anything but drawing your figure. But that
+    // is exactly the gap stepTouchChase measures separation from, and it
+    // sits right on top of TOUCH_CHASE_START_R (1.3m) and
+    // TOUCH_CHASE_CATCH_R (1.15m) — a kick that happened to widen the
+    // pre-existing gap blew straight past "armed" within the very first
+    // substep, sometimes already inside catch range before the ball had
+    // gone anywhere, which is exactly "instant". A kick the other way,
+    // which shrank or ran roughly parallel to that same stand-off gap
+    // first, read as the genuinely fine, believable delay round 3 was
+    // built for — same mechanism, opposite-looking result, which is why it
+    // read as direction-dependent rather than as one bug.
+    //
+    // The instant your boot is actually on the ball you are standing where
+    // it is, not wherever you happened to be lining it up from — so the fix
+    // is to make that true, the moment it's struck, whenever Touch Mode
+    // could possibly matter for this kick. Scoped to that case alone
+    // (rather than always) so a player without the boots equipped sees no
+    // behaviour change at all: `scenario.player` still drives real AI
+    // reactions elsewhere in the engine during flight (initDefenders,
+    // stepReactions), and only Touch Mode's own kicks should ever see it
+    // move before it's actually kicked toward.
+    if (touchModeOnRef.current && canExtraTouch) {
+      scenarioRef.current.player = { x: ballRef.current.pos.x, y: ballRef.current.pos.y };
+    }
     setPhase("flight");
     // A header scenario can be lost in the air before your header ever
     // happens — see canvasEngine.ts's applyAerialContest: if the marker
