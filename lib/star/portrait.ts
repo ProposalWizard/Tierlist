@@ -42,7 +42,11 @@ export const PORTRAIT_QUALITY = 0.8;
 export const MAX_PORTRAIT_BYTES = 120_000;
 
 export interface CropView {
-  /** 1 is "just covers the square". Above that is zoomed in. */
+  /** 1 is "just covers the square" — the picture fills the whole viewport,
+   *  its longer dimension overflowing. Below 1 zooms out past that: once a
+   *  dimension is smaller than the viewport, clampOffset centres the
+   *  picture in it instead of forcing it to keep covering — see that
+   *  function's own doc. Above 1 is zoomed in, same as always. */
   zoom: number;
   /** Top-left of the drawn image relative to the viewport, in viewport pixels. */
   x: number;
@@ -56,20 +60,38 @@ export function coverScale(iw: number, ih: number, viewport: number): number {
 }
 
 /**
- * Keep the square covered.
+ * Keep the square covered — while zoomed in enough to still cover it.
  *
  * Dragging is unbounded input and the crop is a promise that every pixel of the
- * output came from the picture. Without this you can drag the face out of frame
- * and export a square of blank canvas.
+ * output came from the picture: while the picture does cover the square, this
+ * still clamps to its edges exactly as before, so a drag can never uncover a
+ * strip of blank canvas.
+ *
+ * Below zoom 1 the picture can end up SMALLER than the viewport in a
+ * dimension — the whole point of allowing it: a tall, narrow picture (the
+ * fake faces measure about 1091×1442, width/height ≈ 0.757) never fits in
+ * full at zoom 1 no matter how it's panned, always cropping the top or
+ * bottom. Once that happens there's no edge left to clamp against, so that
+ * dimension centres instead of pinning to a corner that no longer means
+ * anything — same idea as initialView, just applied per-axis rather than
+ * only at the very first open, and independently per dimension (a picture
+ * can have one dimension centred while the other still needs the ordinary
+ * edge clamp).
+ *
+ * Each caller's own slider is what actually bounds how far `v.zoom` can go
+ * (CROP_ZOOM_RANGE, faceStyle.ts) — the only floor enforced here is a
+ * non-positive guard against degenerate geometry (zero or negative size),
+ * not a design-intent minimum.
  */
 export function clampOffset(v: CropView, iw: number, ih: number, viewport: number): CropView {
-  const s = coverScale(iw, ih, viewport) * Math.max(1, v.zoom);
+  const zoom = Math.max(0.01, v.zoom);
+  const s = coverScale(iw, ih, viewport) * zoom;
   const w = iw * s;
   const h = ih * s;
   return {
-    zoom: Math.max(1, v.zoom),
-    x: Math.min(0, Math.max(viewport - w, v.x)),
-    y: Math.min(0, Math.max(viewport - h, v.y)),
+    zoom,
+    x: w <= viewport ? (viewport - w) / 2 : Math.min(0, Math.max(viewport - w, v.x)),
+    y: h <= viewport ? (viewport - h) / 2 : Math.min(0, Math.max(viewport - h, v.y)),
   };
 }
 
