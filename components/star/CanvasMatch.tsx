@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
-  stepKeeper, stepDefenders, stepReactions, stepTouchChase, initDefenders,
+  stepKeeper, stepDefenders, stepReactions, stepTouchChase, initDefenders, resetForTouchOn,
   chainKindFor, chainReturnChance, CHAIN_MAX, TOUCH_CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
@@ -3136,6 +3136,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // in full. Chains at the BALL's own resting position — never
       // receivedAt/runner/passTarget, none of which describe a nudge you
       // played to yourself.
+      //
+      // TOUCH_CHAIN_MAX is 1: exactly one extra touch, not a repeatable
+      // dribble. And loadScenario reads chain.touchTouches to take a
+      // completely different path for this chain than an ordinary
+      // "delivered" one — resetForTouchOn repositions the SAME scenario at
+      // this exact spot rather than rebuilding a new one via
+      // chainKindFor/buildScenario, which is what a second touch actually
+      // needs: it's one move continuing, not a new chance. See its own doc.
       const touches = sc.touchTouches ?? 0;
       const b = ballRef.current;
       if (b && touches < TOUCH_CHAIN_MAX) {
@@ -3541,11 +3549,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
 
+    // A touch-mode chain never went anywhere — it is the same move,
+    // continuing from wherever your own touch actually settled, not a new
+    // one. See resetForTouchOn's own doc for why this has to be a
+    // completely different path from an ordinary completed pass's chain,
+    // not just a different position fed into the same rebuild.
+    const isTouchContinuation = chain !== null && chain.touchTouches !== undefined;
+
     if (chain) {
-      // Built from where the pass actually arrived, so playing it into the
-      // corner gives you a cutback and finding someone central gives you a shot.
-      const kind = chainKindFor(chain.pos, rng, chain.ambition);
-      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+      if (isTouchContinuation) {
+        resetForTouchOn(scenarioRef.current, chain.pos);
+      } else {
+        // Built from where the pass actually arrived, so playing it into the
+        // corner gives you a cutback and finding someone central gives you a shot.
+        const kind = chainKindFor(chain.pos, rng, chain.ambition);
+        scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+      }
       scenarioRef.current.chainDepth = chain.depth;
       // Touch Mode's own separate budget — absent (undefined, reading as 0)
       // for a chain that came from an ordinary completed pass, so touching
@@ -3568,7 +3587,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Every blue figure on the pitch becomes a man from your squad, chosen for
     // where he is standing. Whoever the ball reaches is who shoots, is who the
     // commentary names, and is who the goal goes to. See lib/star/lineup.ts.
-    castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
+    //
+    // Skipped for a touch-mode continuation: nobody new has entered the
+    // situation, so every runner/secondaryRunner/follower/crosser already
+    // carries the exact real identity castScenario gave him a moment ago —
+    // re-running it against positions that drifted slightly during the
+    // flight risks reshuffling who's who for no reason, which is exactly
+    // the "different... everything" this whole fix exists to prevent.
+    if (!isTouchContinuation) {
+      castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
+    }
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
@@ -3580,8 +3608,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // You are RECEIVING this one, not starting with it at your feet, so the
     // defence gets the time your first touch cost them. A heavy touch and they
     // are on you before you look up; a good one and you have a moment.
+    //
+    // A touch-mode re-kick is not a reception — it never left your own
+    // feet — so it never pays this cost.
     let heavyTouch = 0;
-    if (chain) heavyTouch = applyFirstTouch(scenarioRef.current, tiredSkills().technique, rng);
+    if (chain && !isTouchContinuation) heavyTouch = applyFirstTouch(scenarioRef.current, tiredSkills().technique, rng);
 
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
@@ -3614,7 +3645,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // heavy touch costs you the POSITION you strike from, so that is what it
     // says.
     if (heavyTouch > 0.55) pushLine("Heavy touch — it has got away from you.");
-    pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
+    // A touch-mode re-kick is not a new situation arriving from nowhere —
+    // the BUILDUP lines describe exactly that ("Clean through!", "Bursts to
+    // the byline…"), which reads as a second, contradictory scene-setting
+    // moment stacked right on top of the "TOUCH ON" banner that already
+    // fired for this exact spot a moment ago.
+    if (isTouchContinuation) {
+      pushLine("Still got it — looks up again.");
+    } else {
+      pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
+    }
     playWhistle();
   };
 

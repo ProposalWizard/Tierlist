@@ -1,8 +1,8 @@
 import {
-  OUTCOME_TEXT, stepTouchChase, buildScenario, initDefenders,
+  OUTCOME_TEXT, stepTouchChase, buildScenario, initDefenders, resetForTouchOn,
   CHAIN_MAX, TOUCH_CHAIN_MAX,
   launch, stepDefenders, stepKeeper, stepReactions, stepBall,
-  chainKindFor, acceptsCaptainOrders,
+  acceptsCaptainOrders,
   type Ball, type Scenario,
 } from "../../lib/star/canvasEngine";
 import { creditChance, NO_CREDIT } from "../../lib/star/credit";
@@ -59,6 +59,26 @@ import { creditChance, NO_CREDIT } from "../../lib/star/credit";
  *   of this investigation: it is exactly the harness that ruled out the
  *   chase/chain machinery itself before the real bug was found elsewhere.
  *
+ *   Round 4, after Round 3 shipped and genuinely fixed the chase, the chain
+ *   and the possession bug: "wtf, now it works but instead of letting me
+ *   take a touch and then pausing it and letting me kick it again like a
+ *   new chance, it ACTUALLY LITERALLY GIVES ME A NEW CHANCE! LIKE IN A
+ *   DIFFERENT SITUATION AND POSITION AND EVERYTHING! ITS ONE MOVE! U TAKE A
+ *   TOUCH AND IF U GET TO IT FIRST U GET TO KICK IT AGAIN! 'AS IF' ITS THE
+ *   START OF A CHANCE! also obvs only 1 extra touch allowed not unlimited
+ *   lol." Root cause: CanvasMatch's loadScenario rebuilt EVERY chain the
+ *   same way regardless of where it came from — chainKindFor to re-roll a
+ *   semi-random new kind, then buildScenario for that kind's own canonical
+ *   position. Right for an ordinary completed pass (the ball really has
+ *   moved to a new part of the pitch); wrong for a touch-mode re-touch (the
+ *   ball never left your own feet at all), which is exactly why it read as
+ *   a new chance in a different situation and position — it was. Fixed with
+ *   resetForTouchOn (canvasEngine.ts, tested directly below), which
+ *   repositions the SAME Scenario object at the real catch spot instead of
+ *   building an unrelated new one, and TOUCH_CHAIN_MAX dropped from its
+ *   first, over-generous 8 down to the correct 1 — one extra touch, not a
+ *   repeatable dribble. See both of their own docs for the full account.
+ *
  * creditChance's own "touchOn" branch gets the same treatment as before: a
  * genuinely uncontested touch of your own that repositions the same attempt
  * is not a new shot or a new pass, and credit.ts's own doc records two real
@@ -101,25 +121,21 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(OUTCOME_TEXT.touchOn.kind === "neutral", `touchOn is a neutral outcome, never "goal" (${OUTCOME_TEXT.touchOn.kind})`);
 }
 
-// ── Touch Mode's own chain budget is genuinely separate from, and more
-// generous than, the ordinary pass-chain budget — the actual reported bug.
-// "he IS catching it... instead of the game pausing and giving me a new
-// kick like the chance just started, the chance just ends." Root cause:
-// CanvasMatch's resolveOutcome originally spent the SAME chainDepth/
-// CHAIN_MAX(2) counter an ordinary pass chain uses, which a real passage of
-// play has usually already partly spent — a second or third genuine
-// re-touch routinely found it exhausted. The chain-continuation logic
-// itself lives in CanvasMatch.tsx (React component code this suite can't
-// reach, same limitation the file's own doc states above) — what IS pure
-// and worth pinning down permanently is that TOUCH_CHAIN_MAX is a real,
-// separate constant, and genuinely more generous than CHAIN_MAX, not
-// coincidentally equal to it (which is exactly what the bug looked like
-// from the outside). ─────────────────────────────────────────────────────
+// ── Touch Mode's own chain budget is genuinely separate from the ordinary
+// pass-chain budget, and — corrected in Round 4 — capped at exactly ONE
+// extra touch, not the first version's generous-but-wrong 8. "also obvs
+// only 1 extra touch allowed not unlimited lol," told directly the same
+// session the "it gives me a whole new chance" bug was reported. The
+// chain-continuation logic itself lives in CanvasMatch.tsx (React
+// component code this suite can't reach, same limitation the file's own
+// doc states above) — what IS pure and worth pinning down permanently is
+// that TOUCH_CHAIN_MAX is this exact, deliberate value, not a stale 8 that
+// silently crept back in. ──────────────────────────────────────────────
 {
-  check(TOUCH_CHAIN_MAX > CHAIN_MAX,
-    `Touch Mode's own chain budget is more generous than an ordinary pass chain's (TOUCH_CHAIN_MAX=${TOUCH_CHAIN_MAX}, CHAIN_MAX=${CHAIN_MAX})`);
-  check(TOUCH_CHAIN_MAX >= 4,
-    `and generous enough in absolute terms to feel unrestricted in normal play, not just relatively bigger (TOUCH_CHAIN_MAX=${TOUCH_CHAIN_MAX})`);
+  check(TOUCH_CHAIN_MAX === 1,
+    `exactly one extra touch is allowed, not unlimited (TOUCH_CHAIN_MAX=${TOUCH_CHAIN_MAX})`);
+  check(TOUCH_CHAIN_MAX < CHAIN_MAX,
+    `and deliberately tighter than an ordinary pass chain's own budget, not sharing or exceeding it (TOUCH_CHAIN_MAX=${TOUCH_CHAIN_MAX}, CHAIN_MAX=${CHAIN_MAX})`);
 }
 
 // ── touchOn never credits a shot, a pass, or a chance — whatever the
@@ -237,19 +253,76 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(sc.player.x === 50 && sc.player.y === 50, "and he genuinely never moved at all, not even a partial creep toward it");
 }
 
-// ── END-TO-END, MULTIPLE REAL HOPS — the harness that ruled out the chase
-// and the chain machinery before the real (third) bug was found elsewhere.
+// ── resetForTouchOn — the actual Round 4 fix, tested directly. Repositions
+// the ball and player, arms the next kick's chase fresh, and clears the
+// flags that describe a kick already having been resolved — but leaves
+// literally everything else (kind, defenders, keeper, follower, runner and
+// every real identity already cast onto them) as the exact same objects,
+// untouched. That is the whole fix: "ITS ONE MOVE" is true by construction
+// when nothing about who-is-who or what-kind-of-situation ever changes. ──
+{
+  const rng = mulberry32(11);
+  const sc = buildScenario("cutback", rng, 70, 70);
+  initDefenders(sc, rng);
+
+  const before = {
+    kind: sc.kind, defenders: sc.defenders, keeper: sc.keeper, follower: sc.follower,
+    runner: sc.runner, secondaryRunners: sc.secondaryRunners, viewport: sc.viewport,
+    teammates: sc.teammates, receiver: sc.receiver,
+  };
+  // Dirty every field a real resolved kick would leave set, so the reset
+  // has something real to actually clear.
+  sc.touchChaseArmed = true;
+  sc.receiverDone = true;
+  sc.receiverReached = true;
+  sc.receiverShot = true;
+  sc.receiverShots = 2;
+  sc.receivedAt = { x: 1, y: 2 };
+  sc.receivedBy = sc.runner;
+  sc.relayTo = sc.runner;
+  sc.relayToFollower = true;
+  sc.relayed = true;
+  sc.offsideAgainst = true;
+
+  resetForTouchOn(sc, { x: 77, y: 33 });
+
+  check(sc.ball.x === 77 && sc.ball.y === 33, `ball moves to the real catch spot (${sc.ball.x}, ${sc.ball.y})`);
+  check(sc.player.x === 77 && sc.player.y === 33, `player moves there too — he is the one who caught it (${sc.player.x}, ${sc.player.y})`);
+  check(sc.touchChaseArmed === false, "the chase re-arms fresh — left true, the NEXT kick would think it's already armed and start moving instantly");
+  check(sc.receiverDone === false && sc.receiverReached === false && sc.receiverShot === false,
+    "the previous kick's reception flags are cleared, so the new one reads as genuinely unresolved");
+  check(sc.receiverShots === undefined, "the scramble counter resets too");
+  check(sc.receivedAt === undefined && sc.receivedBy === null, "no stale reception position/receiver carried over");
+  check(sc.relayTo === null && sc.relayToFollower === false && sc.relayed === false, "no stale captain's order carried into the new aim");
+  check(sc.offsideAgainst === undefined || sc.offsideAgainst === false, "no stale offside flag either");
+
+  check(sc.kind === before.kind, `kind is completely untouched — never re-rolled to something else (${sc.kind})`);
+  check(sc.defenders === before.defenders, "the exact same defenders array — nobody new spawned in");
+  check(sc.keeper === before.keeper, "the exact same keeper object");
+  check(sc.follower === before.follower, "the exact same follower/poacher");
+  check(sc.runner === before.runner, "the exact same runner — still the same real team-mate");
+  check(sc.secondaryRunners === before.secondaryRunners, "the exact same support options");
+  check(sc.viewport === before.viewport, "the exact same camera frame — no jump cut");
+  check(sc.teammates === before.teammates, "the exact same decorative team-mates");
+  check(sc.receiver === before.receiver, "the receiver himself (WHO he is) is untouched — only whether he's already been involved resets");
+}
+
+// ── END-TO-END — the harness that originally ruled out the chase and chain
+// machinery, now extended to prove Round 4's fix: exactly ONE continuation
+// is ever granted ("also obvs only 1 extra touch allowed not unlimited"),
+// and that continuation is the SAME move, not a new chance — same kind,
+// same defenders/keeper/runner objects, ball repositioned to the real catch
+// spot rather than some kind's own unrelated canonical position.
 //
 // Faithfully replicates CanvasMatch's own flight substep loop — real
 // stepDefenders/stepKeeper/stepReactions/stepTouchChase/stepBall calls, in
 // the same order, on a real ball from a real launch() strike — and its
-// resolveOutcome touchOn branch's exact chain-building arithmetic, chained
-// through chainKindFor/buildScenario the same way loadScenario does. Proves
-// the actual reported bug (round 3, above) was NOT in this machinery: a
-// realistic soft-to-moderate touch genuinely resolves to "touchOn", and the
-// chain genuinely carries a real touchTouches count across several real
-// hops while chainDepth stays fixed throughout — untouched by any of it,
-// exactly as an ordinary pass afterward still needs it. ───────────────────
+// resolveOutcome touchOn branch's exact chain-building arithmetic. The
+// continuation step now mirrors the FIXED loadScenario exactly: a
+// touch-mode chain calls resetForTouchOn on the SAME scenario, never
+// chainKindFor/buildScenario (that path is exercised by the ordinary
+// pass-chain tests elsewhere in this codebase; reusing it for a touch-mode
+// chain is the Round 4 bug itself). ────────────────────────────────────────
 {
   function strikeAndResolve(sc: Scenario, rng: () => number, dirX: number, dirY: number) {
     const ball = launch(sc, { x: dirX, y: dirY }, 0.08, { cx: 0, cy: 0.05 }, { power: 60, technique: 60 }, rng);
@@ -279,46 +352,67 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     }
     return { res, chain };
   }
-  function buildFromChain(chain: { pos: { x: number; y: number }; depth: number; ambition: number; touchTouches?: number }, rng: () => number): Scenario {
-    const kind = chainKindFor(chain.pos, rng, chain.ambition);
-    const s = buildScenario(kind, rng, 70, 70);
-    initDefenders(s, rng);
-    s.defenders = [];
-    s.chainDepth = chain.depth;
-    s.touchTouches = chain.touchTouches;
-    return s;
+  // Mirrors loadScenario's own (fixed) `if (chain) { if (isTouchContinuation)
+  // resetForTouchOn(...) else chainKindFor+buildScenario }` exactly, for the
+  // touch-mode branch specifically.
+  function continueTouch(
+    sc: Scenario,
+    chain: { pos: { x: number; y: number }; depth: number; ambition: number; touchTouches?: number },
+  ): Scenario {
+    resetForTouchOn(sc, chain.pos);
+    sc.chainDepth = chain.depth;
+    sc.touchTouches = chain.touchTouches;
+    return sc;
   }
 
-  const HOPS = 5;
-  const TRIALS = 40;
-  const hopSuccesses = new Array(HOPS).fill(0);
+  const TRIALS = 60;
+  let hop0Success = 0;
+  let secondTouchOnButCapped = 0;
+
   for (let seed = 1; seed <= TRIALS; seed++) {
-    const rng = mulberry32(seed + 1000);
+    const rng = mulberry32(seed + 2000);
     let sc = buildScenario("cutback", rng, 70, 70);
     initDefenders(sc, rng);
-    sc.defenders = [];
-    for (let hop = 0; hop < HOPS; hop++) {
-      const { res, chain } = strikeAndResolve(sc, rng, hop % 2 === 0 ? 1 : -1, 0);
-      if (res === "touchOn" && chain) {
-        hopSuccesses[hop]++;
-        check(chain.depth === 0, `chainDepth stays untouched by touch mode across every hop (hop ${hop}, seed ${seed}: ${chain.depth})`);
-        sc = buildFromChain(chain, rng);
-      } else {
-        break;
-      }
-    }
+    sc.defenders = []; // isolates touch mode from real defender-interception noise, same as the original harness
+    const originalKind = sc.kind;
+    const originalBall = { x: sc.ball.x, y: sc.ball.y };
+    const defendersRef = sc.defenders, keeperRef = sc.keeper, runnerRef = sc.runner, secondaryRef = sc.secondaryRunners;
+
+    const hop0 = strikeAndResolve(sc, rng, 1, 0);
+    if (hop0.res !== "touchOn" || !hop0.chain) continue; // a genuine miss/out this seed — not what this section measures
+    hop0Success++;
+    check(hop0.chain.touchTouches === 1, `the first touch spends the first (and only) allowance (seed ${seed}: touchTouches=${hop0.chain.touchTouches})`);
+    check(hop0.chain.depth === 0, `chainDepth stays untouched by touch mode (seed ${seed}: ${hop0.chain.depth})`);
+
+    sc = continueTouch(sc, hop0.chain);
+    check(sc.kind === originalKind, `the continuation is the exact same scenario kind, never re-rolled to something else (seed ${seed}: was ${originalKind}, now ${sc.kind})`);
+    check(sc.defenders === defendersRef, `the exact same defenders — nobody new spawned in for "a new chance" (seed ${seed})`);
+    check(sc.keeper === keeperRef, `the exact same keeper (seed ${seed})`);
+    check(sc.runner === runnerRef, `the exact same runner, still the same real team-mate (seed ${seed})`);
+    check(sc.secondaryRunners === secondaryRef, `the exact same support options (seed ${seed})`);
+    check(sc.touchChaseArmed !== true, `the chase re-arms fresh for this new kick rather than staying armed from before (seed ${seed})`);
+    check(sc.touchTouches === 1, `touchTouches carries the spent allowance onto the continued scenario (seed ${seed}: ${sc.touchTouches})`);
+    check(sc.ball.x === hop0.chain.pos.x && sc.ball.y === hop0.chain.pos.y,
+      `the ball sits exactly where the touch was actually caught, not some kind's own canonical spot (seed ${seed})`);
+    const dist = Math.hypot(sc.ball.x - originalBall.x, sc.ball.y - originalBall.y);
+    check(dist < 8, `and stays genuinely close to where the move started — a touch, not a teleport (seed ${seed}: ${dist.toFixed(2)}m from the original strike)`);
+
+    // Strike a second time. Win or lose, THIS one may never chain again —
+    // exactly "also obvs only 1 extra touch allowed not unlimited lol," and
+    // the actual thing TOUCH_CHAIN_MAX=1 exists to enforce.
+    const hop1 = strikeAndResolve(sc, rng, -1, 0);
+    check(hop1.chain === null, `a second touch-mode continuation is never granted, even when this touch itself lands clean too (seed ${seed}: res=${hop1.res})`);
+    if (hop1.res === "touchOn") secondTouchOnButCapped++;
   }
-  // A real, if imperfect, physical simulation — not every trial reaches
-  // every hop (a genuine miss, or the ball going out, is possible and
-  // correct), and attrition compounds across hops the way five real coin
-  // flips in a row would. Bounded well under the measured floor (a real run
-  // of this exact test measured 27/40 at hop 4) rather than pinned to it, so
-  // this stays a genuine regression check without being flaky on ordinary
-  // variance.
-  for (let hop = 0; hop < HOPS; hop++) {
-    check(hopSuccesses[hop] >= TRIALS * 0.5,
-      `a realistic soft touch reaches hop ${hop} of a real chained sequence in most trials (${hopSuccesses[hop]}/${TRIALS})`);
-  }
+
+  check(hop0Success >= TRIALS * 0.5,
+    `a realistic soft touch resolves to touchOn and earns its one allowed continuation in most trials (${hop0Success}/${TRIALS})`);
+  // Not just "never reached" — several real trials genuinely landed a
+  // second clean, uncontested touch and were STILL correctly refused a
+  // further chain, proving the cap is actually doing something rather than
+  // coincidentally never being exercised.
+  check(secondTouchOnButCapped >= 3,
+    `the cap is genuinely exercised by real trials, not just never reached (${secondTouchOnButCapped}/${hop0Success} continuations landed a second clean touch and were still capped)`);
 }
 
 if (problems.length) {

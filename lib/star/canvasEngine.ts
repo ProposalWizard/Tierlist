@@ -2833,16 +2833,65 @@ export const CHAIN_MAX = 2;
  * version of stepTouchChase's chain genuinely worked, but it spent the SAME
  * `chainDepth` budget an ordinary pass chain uses (CHAIN_MAX=2, "how many
  * passes one move can be strung together from"), which a real passage of
- * play has usually already partly spent — a chase-and-kick a second or
- * third time genuinely often needs more than two links total. A repeatable
- * dribbling tool that silently stops working after one or two uses is not
- * what "if he gets to it then the game stops again and he has another aim
- * and kick" describes. Generous rather than tight on purpose: the real
- * limiting factor on chaining touches forever is supposed to be risk (a
- * defender closing in, the ball going out) and real elapsed time, not an
- * arbitrary counter — see stepTouchChase's own resolveOutcome call site.
+ * play has usually already partly spent.
+ *
+ * First shipped generous (8), on the reasoning that the real limiting
+ * factor on chaining touches should be risk and elapsed time, not an
+ * arbitrary counter. Corrected the same day, told directly: "also obvs only
+ * 1 extra touch allowed not unlimited lol." The mechanic is one second
+ * touch from wherever the first one settles — not a repeatable
+ * dribble-forever exploit. See resetForTouchOn's own doc for the other,
+ * larger half of that same round's fix: the continuation itself was
+ * rebuilding into an unrelated new scenario, a different bug from this
+ * budget.
  */
-export const TOUCH_CHAIN_MAX = 8;
+export const TOUCH_CHAIN_MAX = 1;
+
+/**
+ * Touch Mode's continuation is not a new scenario.
+ *
+ * CanvasMatch.tsx's loadScenario used to treat every chain identically —
+ * chainKindFor to pick a kind, then buildScenario to construct one from
+ * scratch. Right for an ordinary completed pass: the ball has genuinely
+ * moved to a new part of the pitch, so a fresh kind and that kind's own
+ * canonical position for it is the correct read of what just happened.
+ * Wrong for a touch-mode re-touch, where the ball never left your own feet
+ * at all — buildScenario has no way to anchor its output at a real prior
+ * position (every builder rolls its own), so this was landing the "second
+ * touch" in an unrelated kind, position and defensive picture every time.
+ * Reported live, in full: "IT ACTUALLY LITERALLY GIVES ME A NEW CHANCE!
+ * LIKE IN A DIFFERENT SITUATION AND POSITION AND EVERYTHING! ITS ONE MOVE!
+ * U TAKE A TOUCH AND IF U GET TO IT FIRST U GET TO KICK IT AGAIN! 'AS IF'
+ * ITS THE START OF A CHANCE!"
+ *
+ * This repositions the SAME Scenario object at the real catch spot instead
+ * of building a new one — kind, viewport, defenders, keeper, follower,
+ * runner/secondaryRunners and every real identity already cast onto them
+ * all stay exactly who and where they already were. loadScenario's own
+ * initDefenders call right after this only refreshes press/cover roles off
+ * whatever positions are already live — see its own doc: nothing there
+ * moves anybody's x/y. Only the fields that describe a kick already having
+ * been resolved reset, so the next aim genuinely is fresh — "AS IF it's the
+ * start of a chance" — without the underlying picture changing under you.
+ * `touchChaseArmed` resets too: left true, the next kick's chase would
+ * treat itself as already armed and start moving immediately, which is the
+ * exact self-defeating bug an earlier round of this same feature fixed.
+ */
+export function resetForTouchOn(scenario: Scenario, at: Vec2): void {
+  scenario.ball = { x: at.x, y: at.y };
+  scenario.player = { x: at.x, y: at.y };
+  scenario.touchChaseArmed = false;
+  scenario.receiverDone = false;
+  scenario.receiverReached = false;
+  scenario.receiverShot = false;
+  scenario.receiverShots = undefined;
+  scenario.receivedAt = undefined;
+  scenario.receivedBy = null;
+  scenario.relayTo = null;
+  scenario.relayToFollower = false;
+  scenario.relayed = false;
+  scenario.offsideAgainst = false;
+}
 
 /**
  * The situation a completed pass has left you in.
