@@ -687,9 +687,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   // Translate what the physics produced into what the match needs to know.
   // Only a completed pass keeps the ball; everything else ends the move.
+  //
+  // touchOn is the one other real exception. Reported live, still broken
+  // after the chase and the chain-budget were both already fixed: "it
+  // stops... ends the chance instead of starting the new chance from that
+  // position." Root cause, found by re-reading this function specifically —
+  // touchOn matched none of the explicit cases here and fell through to the
+  // generic "saved" default, which resolveScenario (hiddenMatch.ts) treats
+  // as a miss: it calls endOfMove, flipping the HIDDEN match's own
+  // possession to the opponent and marking the move over at the simulation
+  // level — completely independent of, and invisible to, CanvasMatch's own
+  // local chainRef/loadScenario continuation, which was genuinely working
+  // the whole time. A genuinely uncontested touch of your own was being
+  // scored, underneath the visible game, as if the goalkeeper had saved it.
+  // "delivered" is the one existing result whose real meaning — "you kept
+  // the move alive and moved it forward, the ball stays yours" — is
+  // actually true of a touch-mode re-touch; there's no dedicated
+  // ScenarioResult for "touch mode continued" worth adding a whole new
+  // union member for when an existing one already means exactly this.
   const matchResultFor = (res: Outcome): ScenarioResult => {
     if (OUTCOME_TEXT[res].kind === "goal") return "goal";
-    if (res === "delivered") return "delivered";
+    if (res === "delivered" || res === "touchOn") return "delivered";
     if (res === "tackled" || res === "blocked") return "lost";
     return "saved";
   };
@@ -2946,6 +2964,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // finish, so the safe ball in midfield resolved in silence and read as
       // nothing having happened.
       showAction("PASS");
+    } else if (res === "touchOn") {
+      // Touch Mode's own catch had no banner at all — the result screen paused
+      // exactly the way a genuinely dead chance does, with nothing on screen
+      // to say a catch had just happened and another kick was coming. Reported
+      // live as part of the same "it just stops" complaint the matchResultFor
+      // fix above addresses; this is the other half — making the real
+      // continuation actually visible, not just correct underneath.
+      showAction("TOUCH ON");
     } else if (res === "post") {
       nudge(0.28, 0.25);
       playPost();

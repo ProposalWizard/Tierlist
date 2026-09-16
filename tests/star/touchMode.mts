@@ -1,6 +1,8 @@
 import {
   OUTCOME_TEXT, stepTouchChase, buildScenario, initDefenders,
   CHAIN_MAX, TOUCH_CHAIN_MAX,
+  launch, stepDefenders, stepKeeper, stepReactions, stepBall,
+  chainKindFor, acceptsCaptainOrders,
   type Ball, type Scenario,
 } from "../../lib/star/canvasEngine";
 import { creditChance, NO_CREDIT } from "../../lib/star/credit";
@@ -34,6 +36,28 @@ import { creditChance, NO_CREDIT } from "../../lib/star/credit";
  *   he now stands genuinely frozen until the ball has separated from him by
  *   itself, with nothing on his side fighting that gap, and only then sets
  *   off after it.
+ *
+ *   Round 3, after BOTH of those were genuinely fixed and CanvasMatch's own
+ *   chain-continuation logic was also given its own separate budget (see
+ *   TOUCH_CHAIN_MAX below): "he IS catching it... instead of the game
+ *   pausing and giving me a new kick like the chance just started, the
+ *   chance just ends." Investigated by faithfully replicating CanvasMatch's
+ *   real substep loop end to end (stepDefenders/stepKeeper/stepReactions/
+ *   stepTouchChase/stepBall, exactly as it calls them, with a real launch()
+ *   strike) — which proved the chase, the catch, and the chain-continuation
+ *   ALL genuinely work when exercised together, not just in isolation. The
+ *   real remaining bug was a THIRD place "touchOn" needed its own case and
+ *   didn't have one: CanvasMatch's matchResultFor(res) — which decides what
+ *   the invisible, ninety-minutes hidden match simulation should believe
+ *   happened — had no branch for it, so it fell through to the generic
+ *   "saved" default and told the hidden match the move was OVER and
+ *   possession had passed to the opponent, on every single touch, even
+ *   while the visible chain was correctly about to continue. That fix lives
+ *   in CanvasMatch.tsx itself (matchResultFor's own doc there has the full
+ *   account) — untestable at this level, same limitation as the gating
+ *   logic below — but the multi-hop chain test in this file exists BECAUSE
+ *   of this investigation: it is exactly the harness that ruled out the
+ *   chase/chain machinery itself before the real bug was found elsewhere.
  *
  * creditChance's own "touchOn" branch gets the same treatment as before: a
  * genuinely uncontested touch of your own that repositions the same attempt
@@ -211,6 +235,90 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   }
   check(!caught, "a touch that never gets away from him never arms, and so never falsely fires as a catch");
   check(sc.player.x === 50 && sc.player.y === 50, "and he genuinely never moved at all, not even a partial creep toward it");
+}
+
+// ── END-TO-END, MULTIPLE REAL HOPS — the harness that ruled out the chase
+// and the chain machinery before the real (third) bug was found elsewhere.
+//
+// Faithfully replicates CanvasMatch's own flight substep loop — real
+// stepDefenders/stepKeeper/stepReactions/stepTouchChase/stepBall calls, in
+// the same order, on a real ball from a real launch() strike — and its
+// resolveOutcome touchOn branch's exact chain-building arithmetic, chained
+// through chainKindFor/buildScenario the same way loadScenario does. Proves
+// the actual reported bug (round 3, above) was NOT in this machinery: a
+// realistic soft-to-moderate touch genuinely resolves to "touchOn", and the
+// chain genuinely carries a real touchTouches count across several real
+// hops while chainDepth stays fixed throughout — untouched by any of it,
+// exactly as an ordinary pass afterward still needs it. ───────────────────
+{
+  function strikeAndResolve(sc: Scenario, rng: () => number, dirX: number, dirY: number) {
+    const ball = launch(sc, { x: dirX, y: dirY }, 0.08, { cx: 0, cy: 0.05 }, { power: 60, technique: 60 }, rng);
+    sc.player = { x: ball.pos.x, y: ball.pos.y };
+    let t = 0;
+    let res: string | null = null;
+    const h = DT / 3;
+    while (t < 8 && !res) {
+      stepDefenders(sc, h, ball.pos, false, ball);
+      stepKeeper(sc, h);
+      stepReactions(sc, ball, h, rng);
+      const touchLive = ball.owner === "you" && ball.lastTouch !== "keeper" && acceptsCaptainOrders(sc.kind);
+      const caughtUp = touchLive && stepTouchChase(sc, ball, h);
+      const r = stepBall(ball, sc, rng, h);
+      let rr: string | null = r ?? null;
+      if (!rr && caughtUp) rr = "touchOn";
+      if (rr) res = rr;
+      t += h;
+    }
+    // Mirrors resolveOutcome's own touchOn branch exactly.
+    let chain: { pos: { x: number; y: number }; depth: number; ambition: number; touchTouches?: number } | null = null;
+    if (res === "touchOn") {
+      const touches = sc.touchTouches ?? 0;
+      if (touches < TOUCH_CHAIN_MAX) {
+        chain = { pos: { x: ball.pos.x, y: ball.pos.y }, depth: sc.chainDepth ?? 0, ambition: 0.3, touchTouches: touches + 1 };
+      }
+    }
+    return { res, chain };
+  }
+  function buildFromChain(chain: { pos: { x: number; y: number }; depth: number; ambition: number; touchTouches?: number }, rng: () => number): Scenario {
+    const kind = chainKindFor(chain.pos, rng, chain.ambition);
+    const s = buildScenario(kind, rng, 70, 70);
+    initDefenders(s, rng);
+    s.defenders = [];
+    s.chainDepth = chain.depth;
+    s.touchTouches = chain.touchTouches;
+    return s;
+  }
+
+  const HOPS = 5;
+  const TRIALS = 40;
+  const hopSuccesses = new Array(HOPS).fill(0);
+  for (let seed = 1; seed <= TRIALS; seed++) {
+    const rng = mulberry32(seed + 1000);
+    let sc = buildScenario("cutback", rng, 70, 70);
+    initDefenders(sc, rng);
+    sc.defenders = [];
+    for (let hop = 0; hop < HOPS; hop++) {
+      const { res, chain } = strikeAndResolve(sc, rng, hop % 2 === 0 ? 1 : -1, 0);
+      if (res === "touchOn" && chain) {
+        hopSuccesses[hop]++;
+        check(chain.depth === 0, `chainDepth stays untouched by touch mode across every hop (hop ${hop}, seed ${seed}: ${chain.depth})`);
+        sc = buildFromChain(chain, rng);
+      } else {
+        break;
+      }
+    }
+  }
+  // A real, if imperfect, physical simulation — not every trial reaches
+  // every hop (a genuine miss, or the ball going out, is possible and
+  // correct), and attrition compounds across hops the way five real coin
+  // flips in a row would. Bounded well under the measured floor (a real run
+  // of this exact test measured 27/40 at hop 4) rather than pinned to it, so
+  // this stays a genuine regression check without being flaky on ordinary
+  // variance.
+  for (let hop = 0; hop < HOPS; hop++) {
+    check(hopSuccesses[hop] >= TRIALS * 0.5,
+      `a realistic soft touch reaches hop ${hop} of a real chained sequence in most trials (${hopSuccesses[hop]}/${TRIALS})`);
+  }
 }
 
 if (problems.length) {
