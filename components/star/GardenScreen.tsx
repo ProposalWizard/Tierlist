@@ -1,8 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
-import ImageWithFallback from "@/components/ImageWithFallback";
 import { horseRating } from "@/lib/star/horse";
 
 /**
@@ -200,10 +198,61 @@ function StableScene({ horse }: { horse: CareerState["horse"] }) {
   );
 }
 
-/** The bench: real teammates, real faces, no names — a shirt-number badge
- *  is the same "a number, never a sentence" convention the rest of this
- *  screen uses. */
+const SHIRT_COLORS = ["#d4342c", "#2b6cb0", "#1f9142"];
+
+/** A teammate who actually stands up and walks a lap when tapped, rather
+ *  than sitting frozen forever — requested directly, pointing at the match
+ *  engine's own real moving/controllable characters as proof this game
+ *  already knows how to do it. Idle, he sways gently in place (a real,
+ *  small, always-on animation so the bench never reads as a still image);
+ *  tapped, he walks off the bench, out and back, then sits back down. Real
+ *  identity is kept — the number is his real overall (career.squad) — but
+ *  the figure itself is drawn, matching the rest of this scene, not a
+ *  photo cutout floating over it. */
+function BenchFigure({ seatX, shirt, overall }: { seatX: number; shirt: string; overall?: number }) {
+  const [walking, setWalking] = useState(false);
+  return (
+    <g
+      transform={`translate(${seatX} 400)`}
+      onClick={() => {
+        if (walking) return;
+        setWalking(true);
+        setTimeout(() => setWalking(false), 2600);
+      }}
+      style={{ cursor: "pointer" }}
+      className={walking ? "bench-figure walking" : "bench-figure idle"}
+    >
+      {typeof overall === "number" && (
+        <text x="0" y="-30" fontSize="9" textAnchor="middle" fill="#fff" fontWeight="700">{overall}</text>
+      )}
+      <g className="bench-figure-body">
+        <Figure shirt={shirt} />
+      </g>
+      <style jsx>{`
+        .bench-figure.idle .bench-figure-body { animation: sway 3.6s ease-in-out infinite; }
+        .bench-figure.walking .bench-figure-body { animation: lap 2.6s ease-in-out; }
+        @keyframes sway {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(2.5deg); }
+        }
+        @keyframes lap {
+          0% { transform: translateY(0) translateX(0); }
+          15% { transform: translateY(-6px) translateX(-14px); }
+          50% { transform: translateY(-6px) translateX(-40px); }
+          85% { transform: translateY(-6px) translateX(14px); }
+          100% { transform: translateY(0) translateX(0); }
+        }
+      `}</style>
+    </g>
+  );
+}
+
+/** The bench: real teammates (career.squad), drawn as small figures rather
+ *  than static photos — see BenchFigure for why. No names, no sentences —
+ *  a real overall rating is the only text, the same "a number, never a
+ *  caption" rule the rest of this screen already keeps. */
 function BenchScene({ visitors }: { visitors: CareerState["squad"] }) {
+  const seats = [90, 150, 210];
   return (
     <div className="relative h-full w-full overflow-hidden">
       <Ground groundColor="#4f9d3a" />
@@ -218,28 +267,10 @@ function BenchScene({ visitors }: { visitors: CareerState["squad"] }) {
           <rect x="-84" y="-46" width="8" height="20" fill="#5a3a22" />
           <rect x="76" y="-46" width="8" height="20" fill="#5a3a22" />
         </g>
-      </svg>
-      <div className="absolute left-1/2 top-[66%] flex -translate-x-1/2 gap-5">
-        {(visitors.length ? visitors : [null, null, null]).slice(0, 3).map((p, i) => (
-          <div key={p?.id ?? i} className="flex flex-col items-center">
-            {p ? (
-              <>
-                <ImageWithFallback
-                  src={p.imageUrl || SILHOUETTE_SRC}
-                  fallbackSrc={SILHOUETTE_SRC}
-                  alt=""
-                  className="h-11 w-11 rounded-full border-2 border-white/80 bg-black/40 object-cover shadow-md"
-                />
-                <div className="mt-1 rounded-full bg-black/45 px-1.5 text-[10px] font-black text-white">
-                  {p.overall ?? ""}
-                </div>
-              </>
-            ) : (
-              <div className="h-11 w-11 rounded-full border-2 border-dashed border-white/40" />
-            )}
-          </div>
+        {(visitors.length ? visitors : []).slice(0, 3).map((p, i) => (
+          <BenchFigure key={p.id} seatX={seats[i]!} shirt={SHIRT_COLORS[i % SHIRT_COLORS.length]!} overall={p.overall} />
         ))}
-      </div>
+      </svg>
     </div>
   );
 }
@@ -280,21 +311,29 @@ export default function GardenScreen({ career, onBack }: { career: CareerState; 
       </div>
 
       <div
-        className="relative flex-1 touch-pan-y overflow-hidden"
+        className="relative flex-1 min-h-0 touch-pan-y overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
+        {/* `absolute inset-0` (not a percentage `h-full`) so this track gets
+            a real, definite box straight from this positioned parent —
+            reported directly as a real bug: a chain of `height: 100%`
+            through a flex-grow ancestor rendered as a totally blank black
+            screen on the reporter's device, a known cross-browser flexbox/
+            percentage-height fragility. Children no longer need `h-full`
+            either — a flex row's default `align-items: stretch` already
+            gives every child the track's own real height for free. */}
         <div
-          className="flex h-full transition-transform duration-300 ease-out"
+          className="absolute inset-0 flex transition-transform duration-300 ease-out"
           style={{ width: `${SCENES.length * 100}%`, transform: `translateX(-${index * (100 / SCENES.length)}%)` }}
         >
-          <div className="h-full" style={{ width: `${100 / SCENES.length}%` }}>
+          <div style={{ width: `${100 / SCENES.length}%` }}>
             <StableScene horse={career.horse} />
           </div>
-          <div className="h-full" style={{ width: `${100 / SCENES.length}%` }}>
+          <div style={{ width: `${100 / SCENES.length}%` }}>
             <GardenScene trophyCount={trophyCount} ballonDors={career.ballonDorWins} />
           </div>
-          <div className="h-full" style={{ width: `${100 / SCENES.length}%` }}>
+          <div style={{ width: `${100 / SCENES.length}%` }}>
             <BenchScene visitors={visitors} />
           </div>
         </div>
