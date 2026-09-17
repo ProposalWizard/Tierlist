@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import {
   allInvestableClubs, clubValuation, stakeIn, isMajorityOwner, canInvestIn, MAJORITY_THRESHOLD,
-  ownedClubState, managerCurrentClub,
+  ownedClubState,
 } from "@/lib/star/investments";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { allPoolManagers, managerInterest } from "@/lib/star/managerPool";
@@ -1417,6 +1417,17 @@ function ManagerPanel({
   const current = club === career.player.club
     ? career.manager?.name
     : (loadLineup(club)?.manager || ownedClubState(career, club).managerName);
+  // The real, single source of truth for "who's actually on the market" —
+  // career.availableManagers, maintained by every hire/sack this game
+  // already does (careerFlow.ts's own-club sacking, replaceManagerForOwnedClub
+  // for an owned club). Reported directly: a manager already in a job used
+  // to stay ON this list, greyed out with an "At <club>" label — reads as
+  // "still technically pickable," when the whole point of a real transfer
+  // market is that an employed manager isn't in it at all. He's just left
+  // off the list now, exactly like the just-sacked man he replaced is
+  // already correctly added BACK to this same list by the code that fired
+  // him — nothing new needed there, it just was never reflected here.
+  const marketPool = career.availableManagers ?? allPoolManagers();
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
       {allPoolManagers().map(name => {
@@ -1427,19 +1438,7 @@ function ManagerPanel({
             </div>
           );
         }
-        // A real manager is a unique resource, exactly like a player —
-        // reported directly, from a real save, that the same man ended up
-        // "managing" two owned clubs at once. `managerCurrentClub` is the
-        // one shared truth `replaceManagerForOwnedClub` itself also checks.
-        const takenAt = managerCurrentClub(career, name);
-        if (takenAt) {
-          return (
-            <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0 opacity-50">
-              <span className="text-sm font-bold text-white">{name}</span>
-              <span className="text-[9px] font-black uppercase text-white/70">At {takenAt}</span>
-            </div>
-          );
-        }
+        if (!marketPool.includes(name)) return null;
         const interest = managerInterest(career, name, club);
         return (
           <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">

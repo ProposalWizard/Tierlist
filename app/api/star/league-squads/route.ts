@@ -73,10 +73,28 @@ export async function GET(request: NextRequest) {
   if (clubs.length === 0) {
     return NextResponse.json({ error: "clubs must not be empty" }, { status: 400 });
   }
-  // A league is twenty clubs. The cap is a guard against somebody asking for the
-  // whole table, not a limit anybody should reach.
-  if (clubs.length > 40) {
-    return NextResponse.json({ error: "at most 40 clubs" }, { status: 400 });
+  // Real, serious bug, found and fixed 17 Sep 2026: this cap used to be 40,
+  // on the assumption that nobody would ever ask for more than "a league" —
+  // wrong the moment `externalClubsFor` (clubs.ts) started asking for every
+  // OTHER club in the game at once, which is 100+ clubs (Champions/Europa/
+  // Other/Promotion-pool clubs minus whichever are already domestic — 125
+  // real clubs total across every list this game tracks). Every one of
+  // those requests has been failing this check, and `fetchLeagueSquads`
+  // (leagueSquads.ts) falls back to `generatedSquad` for the WHOLE batch on
+  // any failed request — meaning literally every club outside the player's
+  // own ~20-24-club domestic division has been silently 100% fake this
+  // whole time. That's the real cause behind three symptoms reported
+  // together: a majority-owned Real Madrid showing an invented squad, the
+  // highest-rated players in the game all appearing to play for domestic
+  // clubs like Arsenal (a real ~90+ rated star beats generatedSquad's
+  // formula, which tops out at exactly 83), and almost nobody outside the
+  // player's own division being signable at all (the Sign panel filters out
+  // every `gen:`-prefixed fake player). The underlying DB query below is
+  // already safely paginated via `.range()` regardless of row count, so
+  // there was never a real technical reason for a low club-count cap —
+  // raised well past the real 125-club ceiling this game actually has.
+  if (clubs.length > 200) {
+    return NextResponse.json({ error: "at most 200 clubs" }, { status: 400 });
   }
 
   const supabase = createServiceClient();
