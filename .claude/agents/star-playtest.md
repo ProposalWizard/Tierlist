@@ -62,7 +62,26 @@ You are the look.
 - **Do not ignore** 500s from `/api/star/*` or `/api/draft/*`. Those mean the
   Supabase env is missing or wrong, and every club will show "NO SQUAD YET"
   with invented players. Say so — a playtest against fake squads cannot judge
-  anything involving real players, and the pre-match screen loses its
-  "Play Match" button entirely when squad data is absent.
+  anything involving real players.
+
+## Things that have already fooled a playtest — don't repeat them
+
+- **The green pre-match button says "Team sheets →"**, not "Play Match". It
+  only reads "Play Match ⚽" when your XI is under 9 players (`teamsReady`).
+  Normally it opens VersusScreen, which has its own **KICK OFF**. An earlier
+  version of this file claimed the button vanished without squad data. That
+  was false — it came from grepping the DOM for the wrong words instead of
+  looking at the screenshot. **Look at the screenshot.**
+- **In a match the ball is not centre-bottom.** That is only true of the trial
+  penalty. `fitToView` keeps it out of the bottom fifth but its lateral
+  position varies per scenario and per camera facing, so a drag from a fixed
+  point misses and silently yields no contact screen — which looks exactly
+  like "shooting is broken" when nothing is wrong.
+- **If images are missing, suspect the sandbox first.** Player portraits and
+  club crests are fetched by the browser straight from Supabase Storage. Where
+  the browser cannot reach Supabase, every player renders as a silhouette and
+  the console logs `club_logos read failed`. That is the environment, not the
+  game. Check whether `/api/draft/roster` returns real names before calling a
+  missing face a bug.
 - Do not commit, push, or edit source. You observe and report. If you spot a
   fix, describe it; let the main session decide.

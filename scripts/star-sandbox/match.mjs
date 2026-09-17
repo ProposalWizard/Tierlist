@@ -21,7 +21,15 @@ async function shoot(aimDx,pull,cy){const cv=pg.locator("canvas").first();const 
 await pg.goto(`${val("--url","http://localhost:3000")}/star-dev`,{waitUntil:"networkidle",timeout:120000});
 await pg.waitForTimeout(4000);
 await click(/▶ *Play/i); await pg.waitForTimeout(1500); await say("pre-match");
-const started = await click(/Play Match|Kick Off|Start Match|PLAY/i,3000);
+// The green button is "Team sheets →" when your XI has 9+ players, and
+// "Play Match ⚽" only when it doesn't (page.tsx's teamsReady). Both lead to
+// the match; the first goes via VersusScreen, which then needs its own
+// kick-off press. Match on all of it.
+let started = await click(/Team sheets|Play Match|Kick Off|Start Match/i,4000);
+if (started && /Team sheets/i.test(started)) {
+  await pg.waitForTimeout(2000); await say("team-sheets");
+  started = await click(/Play Match|Kick Off|Start|Continue/i,4000) || started;
+}
 console.log("start:",started); await pg.waitForTimeout(4000); await say("match-start");
 const aims=[[50,95,.1],[-50,95,.1],[30,110,.25],[-30,110,.25],[65,100,.15],[-65,100,.15]];
 let chances=0;

@@ -215,10 +215,21 @@ NOT needed — `lib/supabase/publicRead.ts` falls back to the anon key for the
 read-only data routes, and production is unchanged whenever the service key is
 present.
 
-**Without valid Supabase env**, every club shows "NO SQUAD YET" with invented
-players AND the pre-match screen renders no "Play Match" button at all — so
-matches can't be played. Physics/layout work is still testable; anything
-involving real players is not.
+**Without valid Supabase env**, every club shows "NO SQUAD YET" and falls back
+to invented players. Physics/layout work is still testable; anything involving
+real players is not.
+
+**The green pre-match button is "Team sheets →", not "Play Match".** It reads
+"Play Match ⚽" only when your XI is under 9 players (`teamsReady`, page.tsx) —
+otherwise it routes via VersusScreen, which has its own KICK OFF. An earlier
+version of this note claimed the button disappeared entirely without squad
+data; that was wrong, and came from a script searching for the wrong text
+rather than looking at the screen. Match on all of it.
+
+**In-match, the ball is NOT centre-bottom.** That's only true of the trial
+penalty. A real scenario places it anywhere in the framed view, so a driver
+that drags from a fixed point will miss and silently produce no contact
+screen. Find the ball before aiming.
 
 ---
 
