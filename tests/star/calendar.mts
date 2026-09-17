@@ -124,15 +124,18 @@ const START_YEAR = 2027;   // a career begun in FC 27 → the 2026/27 season
   check(cupSecondLegWeek("League Cup", 3) === 28, "…and the second is week 28");
   check(cupSecondLegWeek("FA Cup", 3) === null, "the FA Cup semi-final has only one leg");
 
-  check(cupRoundWeek("FA Cup", 0) === 5, "FA Cup R32 is week 5");
-  check(cupRoundWeek("FA Cup", 1) === 12, "FA Cup R16 is week 12");
-  check(cupRoundWeek("FA Cup", 2) === 22, "FA Cup QF is week 22");
-  check(cupRoundWeek("FA Cup", 3) === 30, "FA Cup SF is week 30");
+  // The FA Cup is now sixty-four clubs — a Round of 64 ahead of the Round
+  // of 32, so every later FA Cup round index shifted up by one.
+  check(cupRoundWeek("FA Cup", 0) === 2, "FA Cup R64 is week 2");
+  check(cupRoundWeek("FA Cup", 1) === 5, "FA Cup R32 is week 5");
+  check(cupRoundWeek("FA Cup", 2) === 12, "FA Cup R16 is week 12");
+  check(cupRoundWeek("FA Cup", 3) === 22, "FA Cup QF is week 22");
+  check(cupRoundWeek("FA Cup", 4) === 30, "FA Cup SF is week 30");
 
   // Both finals are played after the league has finished.
   check(isPostSeason(cupRoundWeek("League Cup", 4)), "the League Cup final is after the season");
-  check(isPostSeason(cupRoundWeek("FA Cup", 4)), "and so is the FA Cup final");
-  check(cupRoundWeek("League Cup", 4) < cupRoundWeek("FA Cup", 4),
+  check(isPostSeason(cupRoundWeek("FA Cup", 5)), "and so is the FA Cup final");
+  check(cupRoundWeek("League Cup", 4) < cupRoundWeek("FA Cup", 5),
     "with the FA Cup last, which is how the season ends");
 
   check(EURO_LEAGUE_PHASE_WEEKS.join(",") === "5,7,9,11,13,15,22,23",

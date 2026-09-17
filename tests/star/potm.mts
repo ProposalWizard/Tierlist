@@ -245,7 +245,11 @@ const CLUBS = [
   } as never;
 
   let awardedAt: number[] = [];
-  for (let w = 0; w < 26; w++) {
+  // 30, not 26 — the FA Cup's new Round of 64 (lib/star/cups.ts) adds one
+  // extra fixture to the season, so the same number of matchdays now covers
+  // very slightly less calendar time; a few more iterations restores the
+  // same real headroom this loop always had.
+  for (let w = 0; w < 30; w++) {
     const f = nextFixtureFor(c);
     if (!f) break;
     const out = creditMatchResult(c, f, stats);

@@ -1,9 +1,12 @@
 import {
   openCup, drawRound, playCupRound, shuffle, tieWinner, cupField, cupStrength,
   currentRound, yourTie, stillIn, exitRound,
-  CUP_ROUND_NAMES, CUP_FIELD, type CupState,
+  CUP_ROUND_NAMES, CUP_FIELD, FA_CUP_ROUND_NAMES, FA_CUP_FIELD, type CupState,
 } from "../../lib/star/cups";
-import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
+import {
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
+  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
+} from "../../lib/star/clubs";
 import { buildLeague } from "../../lib/star/season";
 import { makeInitialCareer, creditMatchResult } from "../../lib/star/careerFlow";
 import { nextFixtureFor } from "../../lib/star/competitions";
@@ -39,17 +42,21 @@ const CLUBS = [
 ];
 const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 
-// ── Thirty-two in the hat ───────────────────────────────────────────────────
+// ── Thirty-two in the hat (the LEAGUE CUP — untouched by the FA Cup's own
+// expansion below) ───────────────────────────────────────────────────────────
 //
 // A Premier League season's own twenty clubs are never in question — the same
 // guarantee a Championship season needs for its own twenty-four, checked in
 // its own block below. What used to be a fixed twelve-club list is now a
 // weighted draw from the real Championship and the five-club promotion pool;
 // this checks the shape of that draw rather than which exact names show up,
-// since which names show up is now genuinely random.
+// since which names show up is now genuinely random. Passes "League Cup"
+// explicitly — cupField's own default changed to "FA Cup" when the FA Cup
+// grew its own, larger field, and this block is specifically about the
+// League Cup's original, unchanged 32-club shape.
 {
   const rng = mulberry(41);
-  const field = cupField(LEAGUE, "premier", rng);
+  const field = cupField(LEAGUE, "premier", rng, "League Cup");
   check(field.length === CUP_FIELD, `${CUP_FIELD} clubs enter (${field.length})`);
   check(new Set(field).size === CUP_FIELD, "and nobody is in it twice");
   check(CLUBS.every(c => field.includes(c)), "every top-flight club is guaranteed a place");
@@ -71,7 +78,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   // twelve-club list would fail this the same way the bug it replaced did.
   const everSeen = new Set<string>();
   for (let seed = 0; seed < 300; seed++) {
-    const f = cupField(LEAGUE, "premier", mulberry(seed * 41 + 7));
+    const f = cupField(LEAGUE, "premier", mulberry(seed * 41 + 7), "League Cup");
     for (const c of f) if (!CLUBS.includes(c)) everSeen.add(c);
   }
   check(CHAMPIONSHIP_CLUBS.some(c => everSeen.has(c)), "real Championship clubs come up from below");
@@ -79,12 +86,12 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
     "and, less often, so does the promotion pool — see the next block for how much less often");
 }
 
-// ── The pool is a much longer shot than the Championship ────────────────────
+// ── The pool is a much longer shot than the Championship (League Cup) ──────
 {
   let championshipPicks = 0, poolPicks = 0;
   for (let seed = 0; seed < 400; seed++) {
     const rng = mulberry(seed * 53 + 11);
-    const field = cupField(LEAGUE, "premier", rng);
+    const field = cupField(LEAGUE, "premier", rng, "League Cup");
     for (const c of field) {
       if (CHAMPIONSHIP_CLUBS.includes(c)) championshipPicks++;
       if (PROMOTION_POOL_CLUBS.includes(c)) poolPicks++;
@@ -102,7 +109,8 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
 }
 
 // ── A Championship season's own twenty-four are just as guaranteed, and
-// the rest of the field is the REAL Premier League, not an invented one ────
+// the rest of the field is the REAL Premier League, not an invented one
+// (League Cup) ───────────────────────────────────────────────────────────
 //
 // Reported directly, after a relegation, with a screenshot: a Championship
 // season's cup field was nothing but the Championship's own twenty-four
@@ -116,7 +124,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   const champLeague = buildLeague([...CHAMPIONSHIP_CLUBS], CHAMPIONSHIP_CLUBS[0]);
   let premierPicks = 0, fakeBTeams = 0;
   for (let seed = 0; seed < 30; seed++) {
-    const field = cupField(champLeague, "championship", mulberry(seed * 19 + 2));
+    const field = cupField(champLeague, "championship", mulberry(seed * 19 + 2), "League Cup");
     check(field.length === CUP_FIELD, `seed ${seed}: still thirty-two clubs (${field.length})`);
     check(CHAMPIONSHIP_CLUBS.every(c => field.includes(c)),
       `seed ${seed}: every Championship club — including your own — is guaranteed a place`);
@@ -128,6 +136,85 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   }
   check(premierPicks > 0, "a Championship season's cup field genuinely does draw real Premier League clubs");
   check(fakeBTeams === 0, `forty-nine real English clubs is plenty for a field of thirty-two — no invented "X B" filler needed (${fakeBTeams})`);
+}
+
+// ── The FA Cup's Round of 64: every PL and Championship club, a genuine
+// League One/Two mix, and one or two National League clubs — never zero,
+// never three or more ─────────────────────────────────────────────────────
+{
+  // The test's own fictional CLUBS fixture (used across this whole file for
+  // the League Cup too) happens to overlap the real CHAMPIONSHIP_CLUBS list
+  // (Burnley, Wolverhampton Wanderers, West Ham United all appear in both) —
+  // the real PREMIER_LEAGUE_CLUBS/CHAMPIONSHIP_CLUBS lists in clubs.ts do
+  // not overlap at all, so a real career always sees exactly 44 guaranteed
+  // and 20 left over. faCupField already de-duplicates before counting
+  // (same as belowField always has), so the guaranteed count here is
+  // computed the same way rather than hardcoded to 20, which would be wrong
+  // against this fixture's own overlap.
+  const guaranteedCount = new Set([...CLUBS, ...CHAMPIONSHIP_CLUBS]).size;
+  const restCount = FA_CUP_FIELD - guaranteedCount;
+  let sawOne = false, sawTwo = false, sawL1 = false, sawL2 = false;
+  for (let seed = 0; seed < 400; seed++) {
+    const rng = mulberry(seed * 73 + 5);
+    const field = cupField(LEAGUE, "premier", rng, "FA Cup");
+    check(field.length === FA_CUP_FIELD, `seed ${seed}: ${FA_CUP_FIELD} clubs enter (${field.length})`);
+    check(new Set(field).size === FA_CUP_FIELD, `seed ${seed}: nobody is in it twice`);
+    check(CLUBS.every(c => field.includes(c)), `seed ${seed}: every Premier League club is guaranteed a place`);
+    check(CHAMPIONSHIP_CLUBS.every(c => field.includes(c)),
+      `seed ${seed}: every Championship club is guaranteed a place too`);
+
+    const rest = field.filter(c => !CLUBS.includes(c) && !CHAMPIONSHIP_CLUBS.includes(c));
+    check(rest.length === restCount, `seed ${seed}: ${restCount} places left over (${rest.length})`);
+
+    const nationalCount = rest.filter(c => NATIONAL_LEAGUE_CLUBS.includes(c)).length;
+    check(nationalCount >= 1 && nationalCount <= 2,
+      `seed ${seed}: one or two National League clubs, never zero or three-plus (${nationalCount})`);
+    if (nationalCount === 1) sawOne = true;
+    if (nationalCount === 2) sawTwo = true;
+
+    const l1l2 = rest.filter(c => !NATIONAL_LEAGUE_CLUBS.includes(c));
+    check(l1l2.every(c => LEAGUE_ONE_CLUBS.includes(c) || LEAGUE_TWO_CLUBS.includes(c)),
+      `seed ${seed}: everything else is a real League One or League Two club (${l1l2.join(", ")})`);
+    check(l1l2.length + nationalCount === restCount, `seed ${seed}: the leftover places split correctly (${l1l2.length}+${nationalCount})`);
+    if (l1l2.some(c => LEAGUE_ONE_CLUBS.includes(c))) sawL1 = true;
+    if (l1l2.some(c => LEAGUE_TWO_CLUBS.includes(c))) sawL2 = true;
+  }
+  check(sawOne, "a one-National-League-club draw happens");
+  check(sawTwo, "a two-National-League-club draw happens too");
+  check(sawL1, "League One clubs genuinely turn up");
+  check(sawL2, "League Two clubs genuinely turn up in the SAME draw shape — a real mix, not one pool exhausted first");
+
+  // The mix is genuine within a single draw, not "League One this season,
+  // League Two next" — most individual draws should have some of each.
+  let mixedDraws = 0;
+  for (let seed = 0; seed < 200; seed++) {
+    const field = cupField(LEAGUE, "premier", mulberry(seed * 91 + 13), "FA Cup");
+    const rest = field.filter(c => !CLUBS.includes(c) && !CHAMPIONSHIP_CLUBS.includes(c));
+    const hasL1 = rest.some(c => LEAGUE_ONE_CLUBS.includes(c));
+    const hasL2 = rest.some(c => LEAGUE_TWO_CLUBS.includes(c));
+    if (hasL1 && hasL2) mixedDraws++;
+  }
+  check(mixedDraws > 150, `most draws mix League One and League Two together, not one then the other (${mixedDraws}/200)`);
+
+  // Works the other way round too — a Championship career reaches the real
+  // Premier League as its guaranteed "other" tier, same as the League Cup.
+  const champLeague = buildLeague([...CHAMPIONSHIP_CLUBS], CHAMPIONSHIP_CLUBS[0]);
+  for (let seed = 0; seed < 30; seed++) {
+    const field = cupField(champLeague, "championship", mulberry(seed * 29 + 3), "FA Cup");
+    check(field.length === FA_CUP_FIELD, `championship seed ${seed}: still sixty-four clubs (${field.length})`);
+    check(PREMIER_LEAGUE_CLUBS.every(c => field.includes(c)),
+      `championship seed ${seed}: every real Premier League club is guaranteed a place`);
+    check(CHAMPIONSHIP_CLUBS.every(c => field.includes(c)),
+      `championship seed ${seed}: every Championship club — including your own — is guaranteed a place`);
+  }
+
+  // League One/Two/National League clubs are distinctly weaker than the
+  // Championship's own 58 baseline and the old pool's 50 — an FA Cup upset
+  // from this deep should be a real upset.
+  check(cupStrength(LEAGUE_TWO_CLUBS[0], LEAGUE) < cupStrength(CHAMPIONSHIP_CLUBS[0], LEAGUE),
+    "a League Two club rates below a Championship one");
+  check(cupStrength(NATIONAL_LEAGUE_CLUBS[0], LEAGUE) < cupStrength(LEAGUE_TWO_CLUBS[0], LEAGUE),
+    "and a National League club rates below League Two");
 }
 
 // ── The shuffle is a shuffle ────────────────────────────────────────────────
@@ -150,21 +237,23 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   check(shuffle([], mulberry(1)).length === 0, "nor is an empty one");
 }
 
-// ── A cup plays out to one winner ───────────────────────────────────────────
+// ── A cup plays out to one winner — the FA Cup's new sixth round ───────────
 {
   for (let seed = 0; seed < 60; seed++) {
     const rng = mulberry(seed * 31 + 5);
     let cup = openCup("FA Cup", LEAGUE, "premier", rng);
-    check(cup.rounds[0].ties.length === 16, `seed ${seed}: sixteen first-round ties`);
-    check(cup.rounds[0].name === CUP_ROUND_NAMES[0], `seed ${seed}: it is the round of 32`);
+    check(cup.rounds[0].ties.length === 32, `seed ${seed}: thirty-two first-round ties`);
+    check(cup.rounds[0].name === FA_CUP_ROUND_NAMES[0], `seed ${seed}: it is the round of 64`);
 
     let guard = 0;
     while (!cup.winner && guard++ < 10) cup = playCupRound(cup, LEAGUE, "nobody", null, rng);
 
     check(!!cup.winner, `seed ${seed}: somebody wins it`);
-    check(cup.rounds.length === 5, `seed ${seed}: five rounds (${cup.rounds.length})`);
-    check(cup.rounds.map(r => r.ties.length).join(",") === "16,8,4,2,1",
-      `seed ${seed}: 16, 8, 4, 2, 1 ties (${cup.rounds.map(r => r.ties.length).join(",")})`);
+    check(cup.rounds.length === 6, `seed ${seed}: six rounds (${cup.rounds.length})`);
+    check(cup.rounds.map(r => r.ties.length).join(",") === "32,16,8,4,2,1",
+      `seed ${seed}: 32, 16, 8, 4, 2, 1 ties (${cup.rounds.map(r => r.ties.length).join(",")})`);
+    check(cup.rounds.map(r => r.name).join(",") === FA_CUP_ROUND_NAMES.join(","),
+      `seed ${seed}: the round names run in order (${cup.rounds.map(r => r.name).join(",")})`);
     check(cup.rounds.every(r => r.ties.every(t => t.hs !== undefined)), `seed ${seed}: every tie is played`);
     check(cup.rounds.every(r => r.ties.every(t => t.hs !== t.as || !!t.pens)),
       `seed ${seed}: no tie is left drawn`);
@@ -178,7 +267,21 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
       const wonLast = new Set(cup.rounds[i - 1].ties.map(tieWinner));
       check(clubs.every(c => wonLast.has(c)), `seed ${seed} ${round.name}: only winners are in the hat`);
     }
-    check(tieWinner(cup.rounds[4].ties[0]) === cup.winner, `seed ${seed}: the winner won the final`);
+    check(tieWinner(cup.rounds[5].ties[0]) === cup.winner, `seed ${seed}: the winner won the final`);
+  }
+}
+
+// ── The League Cup's own five rounds are still exactly what they were ──────
+{
+  for (let seed = 0; seed < 30; seed++) {
+    const rng = mulberry(seed * 47 + 5);
+    let cup = openCup("League Cup", LEAGUE, "premier", rng);
+    check(cup.rounds[0].ties.length === 16, `seed ${seed}: sixteen first-round League Cup ties`);
+    check(cup.rounds[0].name === CUP_ROUND_NAMES[0], `seed ${seed}: it is still the round of 32`);
+    let guard = 0;
+    while (!cup.winner && guard++ < 10) cup = playCupRound(cup, LEAGUE, "nobody", null, rng);
+    check(cup.rounds.length === 5, `seed ${seed}: still five rounds (${cup.rounds.length})`);
+    check(!!cup.winner, `seed ${seed}: the League Cup still reaches a winner`);
   }
 }
 
@@ -218,7 +321,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   // Lose it and you are out, and it says where.
   const out = playCupRound(cup, LEAGUE, "Liverpool", home ? { hs: 0, as: 2 } : { hs: 2, as: 0 }, mulberry(2));
   check(!stillIn(out, "Liverpool"), "losing puts you out");
-  check(exitRound(out, "Liverpool") === CUP_ROUND_NAMES[0], `and records the round (${exitRound(out, "Liverpool")})`);
+  check(exitRound(out, "Liverpool") === FA_CUP_ROUND_NAMES[0], `and records the round (${exitRound(out, "Liverpool")})`);
   check(!!currentRound(out), "the cup carries on without you");
   check(out.rounds[1].ties.every(t => t.home !== "Liverpool" && t.away !== "Liverpool"),
     "…and you are not in the next draw");
@@ -275,4 +378,4 @@ if (problems.length) {
   if (problems.length > 15) console.error(`  …and ${problems.length - 15} more`);
   process.exit(1);
 }
-console.log("PASS — thirty-two clubs, a draw every round, and cup goals stay out of the league charts");
+console.log("PASS — League Cup 32/five rounds, FA Cup 64/six rounds, a draw every round, and cup goals stay out of the league charts");

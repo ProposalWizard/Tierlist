@@ -51,7 +51,12 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   const states = c.cupState ?? [];
   check(states.some(x => x.competition === "FA Cup"), "the FA Cup runs from your first season");
   check(states.some(x => x.competition === "League Cup"), "…and so does the League Cup");
-  check(states.every(x => x.rounds[0].ties.length === 16), "thirty-two clubs, sixteen ties");
+  // The League Cup is still thirty-two clubs/sixteen ties; the FA Cup is now
+  // sixty-four/thirty-two — its own new Round of 64.
+  check(states.find(x => x.competition === "League Cup")!.rounds[0].ties.length === 16,
+    "League Cup: thirty-two clubs, sixteen ties");
+  check(states.find(x => x.competition === "FA Cup")!.rounds[0].ties.length === 32,
+    "FA Cup: sixty-four clubs, thirty-two ties");
   // Europe's own knockout draw specifically — as opposed to its league
   // phase, which CAN already be running from week one (see the block
   // below): nothing has been won yet to earn a knockout tie, and the

@@ -416,14 +416,14 @@ export function externalClubsFor(domesticClubs: string[]): string[] {
   const world = new Set([
     ...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS, ...OTHER_CLUBS, ...PROMOTION_POOL_CLUBS,
     ...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS,
-    // League One only, not League Two/National League/its pool — a
-    // Championship season's cup draw can reach one tier below it
-    // (cups.ts's belowField), same as it already reaches one tier above,
-    // and League One is now that tier. Deliberately not the two tiers
-    // below that: nothing in this game's cup/transfer logic reaches that
-    // deep, and fetching three more full 24-club rosters nobody asks for
-    // would be pure waste.
-    ...LEAGUE_ONE_CLUBS,
+    // The FA Cup's Round of 64 (cups.ts's faCupField) now genuinely draws
+    // from League One, League Two, AND the National League — not just the
+    // tier immediately below, the way the League Cup's belowField still
+    // does. All three need their squads fetchable here too, or an FA Cup
+    // opponent from League Two/the National League hits the exact
+    // "Unable to scout opponent's team" bug this list's own history
+    // already records for a Championship club once.
+    ...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS,
   ]);
   return Array.from(world).filter(c => !domestic.has(c));
 }
