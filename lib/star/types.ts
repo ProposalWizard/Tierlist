@@ -552,7 +552,17 @@ export interface CareerState {
    * them. Absent means a career that predates promotion and relegation —
    * one whose divisions still ARE those lists. See lib/star/promotion.
    */
-  divisions?: { premier: string[]; championship: string[]; pool: string[] };
+  divisions?: {
+    premier: string[]; championship: string[];
+    /** See lib/star/promotion.ts's DivisionMembership — three tiers below
+     *  the Championship, extended 17 September 2026. Optional, still: an
+     *  OLD save's `divisions` object genuinely only has premier/championship
+     *  (and an old `pool` field this type no longer names, harmlessly
+     *  ignored) — `membershipOf` fills all four of these in fresh from
+     *  clubs.ts's season-1 lists the first time such a save rolls over. */
+    leagueOne?: string[]; leagueTwo?: string[];
+    nationalLeague?: string[]; nationalLeaguePool?: string[];
+  };
   /**
    * The Championship play-offs, once your club has reached them.
    *

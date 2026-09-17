@@ -157,6 +157,7 @@ const MANAGER_PRESTIGE: Record<PoolTier, number> = { dream: 4, 1: 3, 2: 2, 3: 1 
  */
 const DIVISION_OFFSET: Record<Division, number> = {
   champions: 2, europa: 1, premier: 0, championship: -2, pool: -3,
+  league_one: -4, league_two: -5, national_league: -6, national_league_pool: -6,
 };
 /** An "Other" club clubs.ts tracks no division for at all — a real, if
  *  untracked, European name (most of the world's clubs). Treated as

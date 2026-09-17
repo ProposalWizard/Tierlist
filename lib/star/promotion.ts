@@ -2,7 +2,8 @@ import type { CareerState, LeagueTeam } from "./types";
 import { sortLeague, simulateFixtureScore } from "./season";
 import { divisionOf, type CareerDivision } from "./calendar";
 import {
-  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS,
+  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
 } from "./clubs";
 
 /**
@@ -38,15 +39,49 @@ import {
 export interface DivisionMembership {
   premier: string[];
   championship: string[];
-  /** Below the Championship. Not a division — nobody plays a season in it. */
-  pool: string[];
+  /**
+   * Three tiers below the Championship, extended (given directly) 17
+   * September 2026. None of the three is ever a division a career actually
+   * PLAYS a season in — see clubs.ts's own note on LEAGUE_ONE_CLUBS for why
+   * that stayed a deliberate scope decision rather than something this pass
+   * built — but all three are real, richly detailed hats: real clubs, real
+   * kits, real generated squads, and a real weighted promotion/relegation
+   * flow every season, below.
+   *
+   * Replaces the OLD five-club "pool" that used to sit directly below the
+   * Championship (PROMOTION_POOL_CLUBS in clubs.ts) — that constant still
+   * exists (cups.ts's belowField still reads it, and it's still shown in
+   * the Lineups picker's "Other" tab) but is no longer part of the ladder's
+   * promotion/relegation arithmetic at all; five of its members are now
+   * ALSO League One's five "already exists in the game" clubs.
+   */
+  leagueOne: string[];
+  leagueTwo: string[];
+  nationalLeague: string[];
+  /** Below the National League. Not a division, same idea as the old pool —
+   *  exactly four clubs, and (see resolveLadder) ALL FOUR rotate out every
+   *  season, since the National League relegates four with nowhere else to
+   *  go. */
+  nationalLeaguePool: string[];
 }
 
 export function membershipOf(career: CareerState): DivisionMembership {
-  return career.divisions ?? {
-    premier: [...PREMIER_LEAGUE_CLUBS],
-    championship: [...CHAMPIONSHIP_CLUBS],
-    pool: [...PROMOTION_POOL_CLUBS],
+  const d = career.divisions;
+  // Per-field fallback, not "the whole object or nothing" — an OLD save's
+  // `career.divisions` genuinely only ever had {premier, championship,
+  // pool}; reading it as a whole would either crash on the missing new
+  // fields or (with `??` at the object level) discard that save's real,
+  // already-drifted premier/championship membership just because it predates
+  // these three new tiers. A save like that starts these three tiers fresh
+  // from the season-1 lists, exactly the same "absent means not caught up
+  // yet" convention every other schema addition in this game already uses.
+  return {
+    premier: d?.premier ?? [...PREMIER_LEAGUE_CLUBS],
+    championship: d?.championship ?? [...CHAMPIONSHIP_CLUBS],
+    leagueOne: d?.leagueOne ?? [...LEAGUE_ONE_CLUBS],
+    leagueTwo: d?.leagueTwo ?? [...LEAGUE_TWO_CLUBS],
+    nationalLeague: d?.nationalLeague ?? [...NATIONAL_LEAGUE_CLUBS],
+    nationalLeaguePool: d?.nationalLeaguePool ?? [...NATIONAL_LEAGUE_POOL_CLUBS],
   };
 }
 
@@ -62,7 +97,11 @@ export function membershipOf(career: CareerState): DivisionMembership {
  * is simulating.
  */
 function baselineFor(tier: keyof DivisionMembership): number {
-  return tier === "premier" ? 78 : tier === "championship" ? 70 : 63;
+  return tier === "premier" ? 78
+    : tier === "championship" ? 70
+    : tier === "leagueOne" ? 63
+    : tier === "leagueTwo" ? 58
+    : 55; // nationalLeague, nationalLeaguePool — same tier, given directly
 }
 
 function nameNoise(club: string): number {
@@ -76,7 +115,7 @@ function nameNoise(club: string): number {
 
 function strengthTable(career: CareerState, members: DivisionMembership): Map<string, number> {
   const out = new Map<string, number>();
-  for (const tier of ["premier", "championship", "pool"] as const) {
+  for (const tier of ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague", "nationalLeaguePool"] as const) {
     for (const club of members[tier]) out.set(club, baselineFor(tier) + nameNoise(club));
   }
   // Anything this career genuinely knows about beats the estimate.
@@ -97,7 +136,10 @@ export function estimateClubStrength(career: CareerState, club: string): number 
   const tier: keyof DivisionMembership =
     members.premier.includes(club) ? "premier"
     : members.championship.includes(club) ? "championship"
-    : "pool";
+    : members.leagueOne.includes(club) ? "leagueOne"
+    : members.leagueTwo.includes(club) ? "leagueTwo"
+    : members.nationalLeague.includes(club) ? "nationalLeague"
+    : "nationalLeaguePool";
   return baselineFor(tier) + nameNoise(club);
 }
 
@@ -208,7 +250,31 @@ export function resolvePlayOffs(
 
 const PREMIER_SIZE = PREMIER_LEAGUE_CLUBS.length;
 const CHAMPIONSHIP_SIZE = CHAMPIONSHIP_CLUBS.length;
-const POOL_SIZE = PROMOTION_POOL_CLUBS.length;
+const LEAGUE_ONE_SIZE = LEAGUE_ONE_CLUBS.length;
+const LEAGUE_TWO_SIZE = LEAGUE_TWO_CLUBS.length;
+const NATIONAL_LEAGUE_SIZE = NATIONAL_LEAGUE_CLUBS.length;
+const NATIONAL_POOL_SIZE = NATIONAL_LEAGUE_POOL_CLUBS.length;
+
+// How many move at each of the three new boundaries, given directly:
+//   League One <-> Championship: 3 up (top 2 automatic + 1 playoff-modeled
+//     slot), 3 down — unchanged from the Championship's own existing "three
+//     up, three down" shape, just against League One instead of the old pool.
+//   League One <-> League Two: 4 each way (top 3 automatic + 1 modeled up;
+//     21st-24th down).
+//   League Two <-> National League: 2 each way (1 automatic + 1 modeled up;
+//     23rd-24th down).
+//   National League <-> its 4-club pool: 4 each way — the whole pool turns
+//     over every season, since the National League relegates four and this
+//     game has no National League North/South to send them to instead.
+// None of these tiers is ever a division a career actually plays a season
+// in (see clubs.ts's own note), so — same as the existing Championship<->pool
+// shape already did — every count here is a genuine table position ONLY for
+// whichever real division the career is playing; every other boundary is a
+// pure weighted draw, same fidelity as the ladder already had.
+const CHAMP_LEAGUE_ONE_COUNT = 3;
+const LEAGUE_ONE_TWO_COUNT = 4;
+const LEAGUE_TWO_NATIONAL_COUNT = 2;
+const NATIONAL_POOL_COUNT = 4;
 
 /**
  * Fix a ladder that has drifted from the shape it's supposed to have —
@@ -232,19 +298,34 @@ const POOL_SIZE = PROMOTION_POOL_CLUBS.length;
  * A fourth, optional input: `limbo` — clubs forced out of the ladder by a
  * governing-body's forced-movement rule (Phase 6 of
  * STAR_POWER_POLITICS.md, §4.4 #10 — see forcedMovement.ts), waiting to
- * re-enter the pool. Folded straight into the pool candidates before
- * dedup/resize, so an oversized pool (a real limbo return, or any other
- * drift) sheds its own weakest back OUT into limbo rather than the pool
- * silently growing past its own fixed size — the exact same shrink logic
- * every other tier already uses, just with nowhere lower to shrink INTO.
+ * re-enter League One (the tier directly below the Championship — this used
+ * to be the old five-club pool; forcedMovement.ts always displaces into
+ * "whatever's directly below the Championship", so it moved with the rest
+ * of that mechanism when League One took over that spot). Folded straight
+ * into League One's candidates before dedup/resize, so an oversized League
+ * One (a real limbo return, or any other drift) sheds its own weakest back
+ * OUT into limbo rather than growing past its own fixed size — the exact
+ * same shrink logic every other tier already uses, just with nowhere lower
+ * to shrink INTO at that one spot.
+ *
+ * Extended 17 September 2026 to cascade three tiers further down — League
+ * One, League Two, the National League, and its own four-club pool — using
+ * the exact same dedupe/shrink/grow shape the premier/championship/pool
+ * chain already had, just run twice more.
  */
 function reconcileLadder(
-  premier: string[], championship: string[], pool: string[], limbo: string[],
+  premier: string[], championship: string[], leagueOne: string[], leagueTwo: string[],
+  nationalLeague: string[], nationalPool: string[], limbo: string[],
   strength: Map<string, number>, rng: () => number,
-): { premier: string[]; championship: string[]; pool: string[]; limbo: string[] } {
+): {
+  premier: string[]; championship: string[]; leagueOne: string[]; leagueTwo: string[];
+  nationalLeague: string[]; nationalLeaguePool: string[]; limbo: string[];
+} {
   const seen = new Set<string>();
   const dedupe = (list: string[]) => list.filter(c => (seen.has(c) ? false : (seen.add(c), true)));
-  let p = dedupe(premier), c = dedupe(championship), pl = dedupe([...pool, ...limbo]);
+  let p = dedupe(premier), c = dedupe(championship);
+  let l1 = dedupe([...leagueOne, ...limbo]);
+  let l2 = dedupe(leagueTwo), nl = dedupe(nationalLeague), np = dedupe(nationalPool);
 
   const byStrengthAsc = (list: string[]) => [...list].sort((a, b) => (strength.get(a) ?? 70) - (strength.get(b) ?? 70));
 
@@ -262,24 +343,36 @@ function reconcileLadder(
     return [[...list, ...promoted], remaining];
   };
 
-  // Oversized tiers spill downward first — premier into championship, then
-  // (with whatever championship now holds) championship into the pool —
-  // before anything is topped back up, so a genuinely-too-big premier
-  // doesn't get read as "championship needs bodies" a step too early.
+  // Oversized tiers spill downward first, top to bottom, before anything is
+  // topped back up — so a genuinely-too-big tier doesn't get read as "the
+  // tier below needs bodies" a step too early.
   [p, c] = shrink(p, PREMIER_SIZE, c);
-  [c, pl] = shrink(c, CHAMPIONSHIP_SIZE, pl);
+  [c, l1] = shrink(c, CHAMPIONSHIP_SIZE, l1);
+  [l1, l2] = shrink(l1, LEAGUE_ONE_SIZE, l2);
+  [l2, nl] = shrink(l2, LEAGUE_TWO_SIZE, nl);
+  [nl, np] = shrink(nl, NATIONAL_LEAGUE_SIZE, np);
 
   // Then undersized tiers pull upward from whatever the tier below now has
-  // spare, same direction an ordinary promotion already moves in.
-  [c, pl] = grow(c, CHAMPIONSHIP_SIZE, pl);
+  // spare, same direction an ordinary promotion already moves in, bottom to
+  // top so a shortfall doesn't get "fixed" from a tier that hasn't itself
+  // been topped up yet.
+  [nl, np] = grow(nl, NATIONAL_LEAGUE_SIZE, np);
+  [l2, nl] = grow(l2, LEAGUE_TWO_SIZE, nl);
+  [l1, l2] = grow(l1, LEAGUE_ONE_SIZE, l2);
+  [c, l1] = grow(c, CHAMPIONSHIP_SIZE, l1);
   [p, c] = grow(p, PREMIER_SIZE, c);
 
-  // An oversized pool (limbo returns included) sheds its own weakest back
-  // into limbo — nowhere lower to shrink into, same as the pool's own
-  // shortfall case above has nowhere lower to grow FROM.
-  const [poolFinal, limboOut] = shrink(pl, POOL_SIZE, []);
+  // An oversized National League pool (nowhere lower than it) sheds its own
+  // weakest back into limbo — the one tier with nowhere lower to shrink
+  // into, same as League One's own shortfall case above has nowhere lower
+  // to grow FROM once League Two, National League and its pool are all
+  // already exhausted.
+  const [poolFinal, limboOut] = shrink(np, NATIONAL_POOL_SIZE, []);
 
-  return { premier: p, championship: c, pool: poolFinal, limbo: limboOut };
+  return {
+    premier: p, championship: c, leagueOne: l1, leagueTwo: l2,
+    nationalLeague: nl, nationalLeaguePool: poolFinal, limbo: limboOut,
+  };
 }
 
 // ── The whole ladder, once a season ─────────────────────────────────────────
@@ -334,7 +427,7 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     promotedToPremier = weightedDraw(members.championship, strength, 3, rng);
     const champLeft = members.championship.filter(c => !promotedToPremier.includes(c));
     relegatedFromChampionship = weightedDraw(champLeft, strength, 3, rng, true);
-    promotedToChampionship = weightedDraw(members.pool, strength, 3, rng);
+    promotedToChampionship = weightedDraw(members.leagueOne, strength, CHAMP_LEAGUE_ONE_COUNT, rng);
   } else {
     // You played the Championship: first and second go up automatically, and
     // the play-offs decide the third.
@@ -362,8 +455,29 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     // Nobody played the Premier League, so who came down is a draw — weighted
     // the other way, since it is the weak who go.
     relegatedFromPremier = weightedDraw(members.premier, strength, 3, rng, true);
-    promotedToChampionship = weightedDraw(members.pool, strength, 3, rng);
+    promotedToChampionship = weightedDraw(members.leagueOne, strength, CHAMP_LEAGUE_ONE_COUNT, rng);
   }
+
+  // ── League One down to the National League pool — none of this is your
+  // own division, so every one of these is a weighted draw, same fidelity
+  // as the old Championship<->pool boundary always had. `promotedToChampionship`
+  // above already drew League One's "went up" clubs; here is the rest of
+  // League One's own movement, then the same shape cascaded three more
+  // times. ──
+  const l1Left = members.leagueOne.filter(c => !promotedToChampionship.includes(c));
+  const relegatedFromLeagueOne = weightedDraw(l1Left, strength, LEAGUE_ONE_TWO_COUNT, rng, true);
+  const promotedToLeagueOne = weightedDraw(members.leagueTwo, strength, LEAGUE_ONE_TWO_COUNT, rng);
+
+  const l2Left = members.leagueTwo.filter(c => !promotedToLeagueOne.includes(c));
+  const relegatedFromLeagueTwo = weightedDraw(l2Left, strength, LEAGUE_TWO_NATIONAL_COUNT, rng, true);
+  const promotedToLeagueTwo = weightedDraw(members.nationalLeague, strength, LEAGUE_TWO_NATIONAL_COUNT, rng);
+
+  const nlLeft = members.nationalLeague.filter(c => !promotedToLeagueTwo.includes(c));
+  const relegatedFromNationalLeague = weightedDraw(nlLeft, strength, NATIONAL_POOL_COUNT, rng, true);
+  // The whole 4-club pool turns over every season — see clubs.ts's own note
+  // on NATIONAL_LEAGUE_POOL_CLUBS.
+  const promotedToNationalLeague = weightedDraw(
+    members.nationalLeaguePool, strength, Math.min(NATIONAL_POOL_COUNT, members.nationalLeaguePool.length), rng);
 
   const premierRaw = [
     ...members.premier.filter(c => !relegatedFromPremier.includes(c)),
@@ -375,12 +489,31 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     ...relegatedFromPremier,
     ...promotedToChampionship,
   ];
-  // Relegated Championship clubs join the pool, and the three that came up
-  // out of it leave — which is what puts a relegated club back in the hat for
-  // next time round.
-  const poolRaw = [
-    ...members.pool.filter(c => !promotedToChampionship.includes(c)),
+  // Relegated Championship clubs join League One, and the three drawn up
+  // out of it leave — which is what puts a relegated club back in the hat
+  // for next time round. This replaces the old Championship<->pool
+  // rotation entirely (see clubs.ts/DivisionMembership's own notes).
+  const leagueOneRaw = [
+    ...members.leagueOne.filter(
+      c => !promotedToChampionship.includes(c) && !relegatedFromLeagueOne.includes(c)),
     ...relegatedFromChampionship,
+    ...promotedToLeagueOne,
+  ];
+  const leagueTwoRaw = [
+    ...members.leagueTwo.filter(
+      c => !promotedToLeagueOne.includes(c) && !relegatedFromLeagueTwo.includes(c)),
+    ...relegatedFromLeagueOne,
+    ...promotedToLeagueTwo,
+  ];
+  const nationalLeagueRaw = [
+    ...members.nationalLeague.filter(
+      c => !promotedToLeagueTwo.includes(c) && !relegatedFromNationalLeague.includes(c)),
+    ...relegatedFromLeagueTwo,
+    ...promotedToNationalLeague,
+  ];
+  const nationalPoolRaw = [
+    ...members.nationalLeaguePool.filter(c => !promotedToNationalLeague.includes(c)),
+    ...relegatedFromNationalLeague,
   ];
 
   // Reported directly, from a real save at season 3: the Premier League
@@ -394,7 +527,11 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   // save regardless of what today's code does, and the fix that actually
   // reaches a player is one that heals the shape it finds, not one that
   // only proves it wouldn't have happened starting from scratch.
-  const { premier, championship, pool, limbo } = reconcileLadder(premierRaw, championshipRaw, poolRaw, career.limboClubs ?? [], strength, rng);
+  const { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeaguePool, limbo } =
+    reconcileLadder(
+      premierRaw, championshipRaw, leagueOneRaw, leagueTwoRaw, nationalLeagueRaw, nationalPoolRaw,
+      career.limboClubs ?? [], strength, rng,
+    );
 
   // Your club is one of the two by now — either it was never in the relegated
   // three, or the page already moved you to a new one before this ran (see
@@ -411,7 +548,7 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   return {
     division: nextDivision,
     clubs: nextDivision === "premier" ? premier : championship,
-    divisions: { premier, championship, pool },
+    divisions: { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeaguePool },
     yourMove,
     promotedToPremier, relegatedFromPremier,
     promotedToChampionship, relegatedFromChampionship,
