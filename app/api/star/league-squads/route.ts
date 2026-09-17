@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createPublicReadClient } from "@/lib/supabase/publicRead";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import { portraitsFromOtherEditions, isSelfHosted } from "@/lib/star/portraitFallback";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "at most 40 clubs" }, { status: 400 });
   }
 
-  const supabase = createServiceClient();
+  const supabase = createPublicReadClient();
 
   // ── Free Agents is not a club ──
   //

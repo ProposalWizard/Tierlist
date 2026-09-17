@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createPublicReadClient } from "@/lib/supabase/publicRead";
 
 /**
  * THE SHARED TEAM SHEETS.
@@ -28,7 +29,7 @@ interface Row {
 }
 
 export async function GET() {
-  const supabase = createServiceClient();
+  const supabase = createPublicReadClient();
   const { data, error } = await supabase
     .from("star_lineups")
     .select("club, formation, xi, bench, manager");

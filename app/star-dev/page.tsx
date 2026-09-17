@@ -8,6 +8,7 @@ import {
   clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
 } from "@/lib/star/storage";
 import { createClient } from "@/lib/supabase/client";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
@@ -221,9 +222,28 @@ export default function StarDevPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // No account, no career — not even a local one. See the note on
-        // `signedIn` above for why this is deliberate rather than falling
-        // back to ANON_SCOPE the way it used to.
+        // No account. In production that is the end of it — see the note on
+        // `signedIn` above for why requiring an account is deliberate.
+        //
+        // In DEVELOPMENT ONLY, fall back to the local-only ANON_SCOPE career
+        // that storage.ts still supports, so the game can actually be played
+        // (and therefore SEEN) without completing Google OAuth — impossible in
+        // a sandbox, a headless browser or CI. See lib/star/devMode.ts for the
+        // full reasoning and for why this cannot reach production.
+        //
+        // A career started this way lives in this browser's localStorage and
+        // never syncs to the cloud: the cloud step inside loadCareerIntoState
+        // is a no-op without a user id, which is correct — there is no account
+        // to sync it to.
+        if (offlineDevPlayEnabled()) {
+          setSignedIn(true);
+          scopeRef.current = ANON_SCOPE;
+          const anonSlot = loadActiveSlot(ANON_SCOPE);
+          activeSlotRef.current = anonSlot;
+          setActiveSlotState(anonSlot);
+          await loadCareerIntoState(anonSlot);
+          return;
+        }
         setSignedIn(false);
         setCloudLoading(false);
         return;

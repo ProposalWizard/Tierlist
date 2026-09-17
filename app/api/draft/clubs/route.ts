@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createPublicReadClient } from "@/lib/supabase/publicRead";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import { CLUB_KITS } from "@/lib/star/kits";
 
@@ -51,7 +51,7 @@ function isEnglishPLClub(club: string): boolean {
 const PAGE_SIZE = 1000;
 
 export async function GET() {
-  const supabase = createServiceClient();
+  const supabase = createPublicReadClient();
 
   const clubMap = new Map<string, Set<number>>();
   const add = (club: string | null, year: number | null) => {
