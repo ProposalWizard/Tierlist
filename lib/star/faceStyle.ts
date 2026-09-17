@@ -74,21 +74,29 @@ export const HEAD_SKIN = "#c68642";
  *  math — never re-interpreted differently in the two places it's used. */
 export const CROP_VIEWPORT = 256;
 
-// The values reported directly, exact, off the editor's own sliders:
-// 3.00x size, -0.15 left/right, -1.95 up/down. crop.zoom stays a modest 1.1
-// for "10% crop" (unconfirmed exactly, but not part of this correction).
-// No database needed for this — it's just the
-// starting point every device with no local override already opens on.
+// The values reported directly, exact, off the editor's own sliders/toggles:
+// 2.20x size, 0.00 left/right, -1.45 up/down, backing circle OFF, outline ON
+// (white, 0.5x thickness). Crop has no numeric readout in this editor at
+// all (see the "Crop zoom" slider — a bare slider, no value shown next to
+// it) — zoom is a best-effort reading off the reported screenshot, not a
+// confirmed exact number, same honest caveat the previous 1.1/"10% crop"
+// reading carried. x/y are NOT carried over from the old default's {0,0} —
+// they're computed (same clampOffset math the editor itself runs) to be
+// genuinely centred AT that estimated zoom, assuming a roughly square
+// source photo (SoFIFA's own face renders) — {0,0} specifically would have
+// been wrong at any zoom other than exactly 1. No database needed for this
+// — it's just the starting point every device with no local override
+// already opens on.
 export const DEFAULT_FACE_STYLE: FaceStyle = {
-  scale: 3,
-  offsetX: -0.15,
-  offsetY: -1.95,
-  showBacking: true,
+  scale: 2.2,
+  offsetX: 0,
+  offsetY: -1.45,
+  showBacking: false,
   backingColor: HEAD_SKIN,
   outlineEnabled: true,
-  outlineColor: "rgba(0,0,0,0.35)",
-  outlineWidth: 1,
-  crop: { zoom: 1.1, x: 0, y: 0 },
+  outlineColor: "#ffffff",
+  outlineWidth: 0.5,
+  crop: { zoom: 1.3, x: -38, y: -38 },
   facesEnabled: true,
   namesEnabled: false,
 };

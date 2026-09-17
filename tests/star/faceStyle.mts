@@ -115,7 +115,7 @@ const {
   store.set("star-face-scale", "1.65");
   const back = loadFaceStyle();
   check(back.scale === 1.65, `an old slider value seeds the new scale (${back.scale})`);
-  check(back.offsetX === DEFAULT_FACE_STYLE.offsetX && back.showBacking === true, "…and everything else is still the real default");
+  check(back.offsetX === DEFAULT_FACE_STYLE.offsetX && back.showBacking === DEFAULT_FACE_STYLE.showBacking, "…and everything else is still the real default");
 }
 
 // ── Corrupt data never throws, never crashes the game ──────────────────
