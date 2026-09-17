@@ -113,10 +113,23 @@ export default function ProfileSetup({ onComplete }: Props) {
   // the alphabet — see the refs' own doc. Manual scrollTop rather than
   // `scrollIntoView`, which would also drag the whole page's scroll
   // position along with it.
+  //
+  // Measured off getBoundingClientRect, NOT offsetTop. `offsetTop` is relative
+  // to the nearest POSITIONED ancestor, and this scroll container isn't one —
+  // measured in a real browser, the button's offsetParent is the page body, so
+  // England reported offsetTop 2544 when its true position inside the list was
+  // 1952. The list scrolled 592px too far (its own distance down the page) and
+  // landed on Greece/Grenada/Guadeloupe — meaning this whole effect, added to
+  // fix "Afghanistan greets you first", had never actually worked.
+  //
+  // Adding `relative` to the container would also fix it, but this way the
+  // maths stays correct no matter what CSS anybody later puts on the wrapper.
   useEffect(() => {
     const list = nationalityListRef.current;
     const selected = selectedNationalityRef.current;
-    if (list && selected) list.scrollTop = selected.offsetTop;
+    if (!list || !selected) return;
+    list.scrollTop =
+      selected.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
