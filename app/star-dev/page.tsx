@@ -127,8 +127,21 @@ import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import GardenScreen from "@/components/star/GardenScreen";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
+import ImmersiveToggle from "@/components/star/ImmersiveToggle";
 
+/** Thin wrapper so the full-screen toggle is mounted once, above every one
+ *  of StarDevInner's many phase-routed early returns, rather than needing
+ *  to be threaded into each of them individually. */
 export default function StarDevPage() {
+  return (
+    <>
+      <StarDevInner />
+      <ImmersiveToggle />
+    </>
+  );
+}
+
+function StarDevInner() {
   const [career, setCareer] = useState<CareerState | null>(null);
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);

@@ -37,3 +37,14 @@ h1, h2, h3, h4, h5, h6 {
   from { opacity: 0; transform: scale(0.92) translateY(-10px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* ── Immersive / fullscreen mode ──────────────────────────────────────────
+ * Requested directly, for /star-dev: a real "just the game" mode that hides
+ * the site's own persistent top nav and footer (both tagged
+ * data-global-chrome — see GlobalNav.tsx/SiteFooter.tsx) while a class on
+ * <body> is set. The address bar/tabs themselves aren't something CSS can
+ * touch — that half is the real browser Fullscreen API, toggled alongside
+ * this class by the component that manages it (components/star/ImmersiveToggle.tsx). */
+body.knowitball-immersive [data-global-chrome] {
+  display: none !important;
+}

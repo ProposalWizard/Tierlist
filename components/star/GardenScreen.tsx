@@ -222,8 +222,13 @@ function BenchFigure({ seatX, shirt, overall }: { seatX: number; shirt: string; 
       style={{ cursor: "pointer" }}
       className={walking ? "bench-figure walking" : "bench-figure idle"}
     >
+      {/* Reported directly from a live check: at y=-30 this sat right on
+          top of the bench's own backrest rail (which spans roughly -46 to
+          -26 in this same local space), reading as if it were part of the
+          bench rather than a label floating clearly above the figure's
+          head. Moved to -60, comfortably above the backrest's top edge. */}
       {typeof overall === "number" && (
-        <text x="0" y="-30" fontSize="9" textAnchor="middle" fill="#fff" fontWeight="700">{overall}</text>
+        <text x="0" y="-60" fontSize="9" textAnchor="middle" fill="#fff" fontWeight="700">{overall}</text>
       )}
       <g className="bench-figure-body">
         <Figure shirt={shirt} />
