@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, STAT_KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan, type StatKibCan } from "@/lib/star/shopData";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { formatMoney } from "@/lib/star/money";
@@ -15,6 +15,7 @@ interface Props {
   kind: "kib" | "boots" | "lifestyle";
   onBack: () => void;
   onBuyKib: (can: KibCan) => void;
+  onBuyStatKib: (can: StatKibCan) => void;
   onBuyBoot: (boot: Boot) => void;
   onBuyItem: (item: OwnedItem) => void;
   /** Phase 5 of STAR_POWER_POLITICS.md — buying a boot the FA's Rule Book
@@ -22,13 +23,14 @@ interface Props {
   onBuyFromBlackMarket: (boot: Boot, useLawyers: boolean) => ActionResult;
 }
 
-export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket }: Props) {
+export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket }: Props) {
   const [tab, setTab] = useState<"item" | "vehicle" | "property">("item");
   const [selectedBoot, setSelectedBoot] = useState<Boot | null>(BOOTS_CATALOGUE[0]);
   const [useLawyers, setUseLawyers] = useState(false);
   const [blackMarketMessage, setBlackMarketMessage] = useState<string | null>(null);
   const bannedBoots = new Set(ruleBookFor(career, "FA").bannedItems);
   const [selectedCan, setSelectedCan] = useState<KibCan | null>(KIB_CANS[0]);
+  const [selectedStatCan, setSelectedStatCan] = useState<StatKibCan | null>(null);
   const [selectedItem, setSelectedItem] = useState<OwnedItem | null>(null);
 
   const title = kind === "kib" ? "KIB Cans" : kind === "boots" ? "Boots" : "Lifestyle";
@@ -78,6 +80,40 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 </button>
               );
             })}
+            <div className="pt-2 pb-1 text-[10px] font-black uppercase text-white/60 tracking-widest text-center">
+              KIB Stat Cans — a temporary boost, not a top-up
+            </div>
+            {STAT_KIB_CANS.map((c) => {
+              const canBuy = career.money >= c.price;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedStatCan(c)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition ${
+                    selectedStatCan?.id === c.id ? "border-fuchsia-400 bg-gray-700" : "border-gray-700 bg-gray-800"
+                  }`}
+                >
+                  <KibCanIcon can={c} className="h-20 w-14" />
+                  <div className="flex-1 text-left">
+                    <div className="font-black text-white text-sm">{c.name}</div>
+                    <div className="text-[10px] text-fuchsia-300 font-bold">+{c.boost} Power/Technique — {c.matches} matches</div>
+                    <div className="text-[10px] text-white/75">Owned: {career.statCans[c.id]}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
+                      <StarIcon /> {formatMoney(c.price)}
+                    </div>
+                    <button
+                      disabled={!canBuy}
+                      onClick={(e) => { e.stopPropagation(); onBuyStatKib(c); }}
+                      className={`mt-1 px-3 py-1 rounded text-[10px] font-black ${canBuy ? "bg-fuchsia-500 text-white" : "bg-gray-600 text-white/75"}`}
+                    >
+                      Buy
+                    </button>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -106,6 +142,9 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                       {b.curve && (
                         <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
                       )}
+                      {b.extraTouch && (
+                        <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>
+                      )}
                       {bannedBoots.has(b.id) && (
                         <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
                       )}
@@ -124,12 +163,20 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 Swipe the screen while a shot is in the air to bend, lift or dip it — each swipe stacks.
               </div>
             )}
+            {selectedBoot?.extraTouch && (
+              <div className="bg-fuchsia-900/40 border border-fuchsia-500/60 rounded-lg p-2.5 mb-3 text-[11px] text-fuchsia-100 text-center">
+                Adds a Touch Mode button in-match. Turn it on and, after you strike the ball, your player chases it — reach it before anything else happens and play pauses again for a fresh aim and kick from wherever it ended up. Nudge it into space, then take the real shot or pass.
+              </div>
+            )}
             <div className="bg-gray-700 rounded-lg p-3 border border-gray-600 text-center">
               <div className="text-xs text-white/85">Current boot</div>
               <div className="font-black text-white">
                 {career.currentBoot.name} — {career.currentBoot.matches} matches left
                 {career.currentBoot.curve && career.currentBoot.matches > 0 && (
                   <span className="ml-1.5 text-[9px] align-middle px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
+                )}
+                {career.currentBoot.extraTouch && career.currentBoot.matches > 0 && (
+                  <span className="ml-1.5 text-[9px] align-middle px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>
                 )}
               </div>
             </div>

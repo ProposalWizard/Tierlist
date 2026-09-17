@@ -147,7 +147,7 @@ function played(kind: ScenarioKind, seed: number) {
     if (out) seen.set(out, (seen.get(out) ?? 0) + 1);
   }
 
-  // "tipped" is the one deliberate exception: resolveKeeper's old push-away
+  // "tipped" is one deliberate exception: resolveKeeper's old push-away
   // branch used to return it as a terminal outcome, ending the move outright
   // the instant the keeper got a hand to a shot he couldn't hold — which was
   // most of what the keeper actually did (measured at 59% of every save).
@@ -157,7 +157,15 @@ function played(kind: ScenarioKind, seed: number) {
   // unrelated system, TrialPenalty.tsx, still produces it, and the
   // star-match-dev fork's own separate Outcome type still does too) but
   // production's own live match can no longer produce it, on purpose.
-  const declared = (Object.keys(OUTCOME_TEXT) as Outcome[]).filter(o => o !== "tipped");
+  //
+  // "touchOn" (Boot.extraTouch, Touch Mode) is a second, different-shaped
+  // exception: stepBall itself never produces it and never will — it is a
+  // CanvasMatch.tsx-level REMAP of its own "short" (see the flight-phase
+  // substep loop there), applied only when a real player has actually
+  // bought and equipped the boots and switched the in-match toggle on. The
+  // pure engine this test exercises has no such toggle to switch, so this
+  // is unreachable here by design, not by accident.
+  const declared = (Object.keys(OUTCOME_TEXT) as Outcome[]).filter(o => o !== "tipped" && o !== "touchOn");
   const missing = declared.filter(o => !seen.has(o));
   check(missing.length === 0, `every declared outcome is reachable (never seen: ${missing.join(", ") || "none"})`);
 
@@ -183,7 +191,17 @@ function played(kind: ScenarioKind, seed: number) {
   // correct thing to call it than "saved". Genuinely rare (the loose ball
   // has to find a man who was offside when it was played), so it is counted
   // separately rather than folded into the main tally, which stays exact.
-  let keeperEnded = 0, namedForHim = 0, offsideOffRebound = 0;
+  //
+  // A second, new exception since the real-dive rework: resolveKeeper's own
+  // rare mistake branch (a keeper who genuinely gets there and still lets
+  // it in — requested directly, "a nice update") leaves the ball's own
+  // flight completely untouched and returns null, same trick a normal miss
+  // already uses, so it resolves as an ordinary "goal"/"rebound" a few
+  // frames later with `lastTouch` still honestly "keeper". That is not the
+  // grass claiming credit either — it is a real goalkeeping error, which
+  // "goal" is the correct, not the wrong, word for. Counted separately, and
+  // asserted small — the whole point of it being rare.
+  let keeperEnded = 0, namedForHim = 0, offsideOffRebound = 0, keeperMistake = 0;
   for (const kind of SHOOT) {
     for (let seed = 0; seed < 300; seed++) {
       const { out, ball, keeperTouched } = played(kind, seed + 5000);
@@ -192,11 +210,16 @@ function played(kind: ScenarioKind, seed: number) {
       keeperEnded++;
       if (out === "saved" || out === "caught" || out === "tipped") { namedForHim++; continue; }
       if (out === "offside" && ball.loose) { offsideOffRebound++; continue; }
+      if (out === "goal" || out === "rebound") { keeperMistake++; continue; }
     }
   }
   check(keeperEnded > 100, `the keeper ends a lot of chances (${keeperEnded})`);
-  check(namedForHim + offsideOffRebound === keeperEnded,
-    `and every one of them is called a save, or the more specific "offside" when a loose rebound found an offside man (${namedForHim} saves + ${offsideOffRebound} offside / ${keeperEnded})`);
+  check(namedForHim + offsideOffRebound + keeperMistake === keeperEnded,
+    `and every one of them is called a save, the more specific "offside" when a loose rebound found an offside man, or a genuine mistake (${namedForHim} saves + ${offsideOffRebound} offside + ${keeperMistake} mistakes / ${keeperEnded})`);
+  // Rare, not a redesign of how often he stops one: a small single-digit
+  // share of the chances he gets a hand to, not a coin flip.
+  check(keeperMistake / keeperEnded < 0.08,
+    `and a genuine mistake stays rare (${keeperMistake}/${keeperEnded})`);
 }
 
 // ── The woodwork gets a mention ────────────────────────────────────────────

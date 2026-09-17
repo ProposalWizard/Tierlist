@@ -1,6 +1,7 @@
 import type { SquadPlayer } from "./types";
 import type { Identity, Scenario, Runner, ScenarioKind } from "./canvasEngine";
 import { goalInView } from "./canvasEngine";
+import { fakeFaceFor } from "./fakeFaces";
 
 /**
  * THE TEAM SHEET.
@@ -37,6 +38,14 @@ type Pos = SquadPlayer["position"];
 
 const idOf = (p: SquadPlayer): Identity => ({
   id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall,
+  // A real photo when he has one; otherwise a stable fake face rather than
+  // the plain "no photo" circle drawPlayerHead used to fall back to.
+  // Resolved here, at the point a squad player actually becomes something
+  // drawn on the pitch — `p.imageUrl` itself stays genuinely absent (see
+  // its own doc), since a staleness check elsewhere reads that real gap.
+  face: p.imageUrl ?? fakeFaceFor(p.id),
+  pace: p.pace, shooting: p.shooting, passing: p.passing,
+  dribbling: p.dribbling, defending: p.defending, physical: p.physical,
 });
 
 /**
@@ -83,12 +92,36 @@ function claim(pool: SquadPlayer[], taken: Set<string>, prefer: Pos[]): Identity
     }
     if (best) { taken.add(best.id); return idOf(best); }
   }
-  let any: SquadPlayer | undefined;
-  for (const p of pool) {
-    if (taken.has(p.id) || p.position === "GK") continue;
-    if (!any || (p.overall ?? 0) > (any.overall ?? 0)) any = p;
+  /**
+   * Once the exact preference list is exhausted (every candidate at those
+   * positions already claimed elsewhere in the same scenario — several
+   * runners, a poacher and a crosser can all want from the same small
+   * pool), this used to fall back to the single highest-overall outfielder
+   * left, position ignored entirely. Reported directly, from real play:
+   * "why am i seeing centre backs in attack over midfielders" — the exact
+   * same "highest overall wins regardless of position" shape the
+   * opposition-defenders bug had (see orderDefensively's own doc), just on
+   * the other side of the ball and via a different mechanism (an
+   * exhausted-pool fallback rather than a wrong sort direction).
+   *
+   * `prefer[0]` is the role's own truest signal of what it actually is —
+   * stay within that broad attacking-vs-defensive category first, so an
+   * attacking role can't reach for a centre-back just because he outrates
+   * whoever else is left forward. Genuinely falls through to anyone once
+   * THAT narrower pool is also exhausted — a centre-back still ends up
+   * forward as the real last-man-standing case, which does happen at a
+   * corner (see "the far-post runner"'s own explicit CB entry above).
+   */
+  const wantDefensive = prefer.length > 0 && DEFENSIVE_POSITIONS.has(prefer[0]);
+  for (const stayInCategory of [true, false]) {
+    let any: SquadPlayer | undefined;
+    for (const p of pool) {
+      if (taken.has(p.id) || p.position === "GK") continue;
+      if (stayInCategory && DEFENSIVE_POSITIONS.has(p.position) !== wantDefensive) continue;
+      if (!any || (p.overall ?? 0) > (any.overall ?? 0)) any = p;
+    }
+    if (any) { taken.add(any.id); return idOf(any); }
   }
-  if (any) { taken.add(any.id); return idOf(any); }
   return undefined;
 }
 
@@ -121,11 +154,26 @@ export function castScenario(sc: Scenario, squad: SquadPlayer[]): void {
     sc.follower.who = claim(pool, taken, ["ST", "CAM", "LW", "RW"]);
   }
 
-  // The man who crossed it, on the two situations that arrive from somebody.
+  // The man who crossed it, on the two situations that arrive from somebody
+  // — and every OTHER body standing around, most visibly the extra men a
+  // corner puts in the box. `teammates[0]` alone used to be the only one
+  // that was ever really somebody; CanvasMatch.tsx's own face-drawing loop
+  // (`i === 0 ? ... : undefined`) was being honest about a real gap, not
+  // misreading real data — reported directly: "on corners not all players
+  // face show." Cast the same way a runner standing in the same spot would
+  // be (positionsForSpot, reused rather than a second heuristic), off the
+  // same shared `taken` set so nobody doubles up with a runner or the
+  // poacher.
   if (sc.teammates.length > 0) {
-    const t = sc.teammates[0];
-    const wide = Math.abs(t.x - 34) > 13;
-    sc.crosser = claim(pool, taken, wide ? ["LW", "RW", "LB", "RB"] : ["CAM", "CM", "LW", "RW"]);
+    const t0 = sc.teammates[0];
+    const wide0 = Math.abs(t0.x - 34) > 13;
+    sc.crosser = claim(pool, taken, wide0 ? ["LW", "RW", "LB", "RB"] : ["CAM", "CM", "LW", "RW"]);
+    t0.who = sc.crosser;
+    for (let i = 1; i < sc.teammates.length; i++) {
+      const t = sc.teammates[i];
+      const wide = Math.abs(t.x - 34) > 13;
+      t.who = claim(pool, taken, positionsForSpot(sc, t.y, wide));
+    }
   }
 
   // And the finisher, if the situation rolled one. He is provisional: whoever
@@ -138,6 +186,102 @@ export function castScenario(sc: Scenario, squad: SquadPlayer[]): void {
       ? claim(pool, new Set(taken), prefer)   // may double up with a runner; he is the same man
       : already;
   }
+}
+
+/**
+ * The other end of the same idea, for the other shirts.
+ *
+ * `castScenario` puts a name to every blue shirt; nothing has ever put one to
+ * a red one. The keeper and the men marking you are drawn from the real
+ * opposing XI when there is one — same photo the pre-match team sheet
+ * already shows (see opponentStartingXI, teamsheet.ts) — so a defender on
+ * screen is Van Dijk rather than a generic dot with no name behind it.
+ *
+ * Deliberately not the nuanced position-preference matching `claim` does
+ * above: nobody scores or gets an assist off a Defender or a Keeper, so
+ * there is no wrong-man-credited bug to guard against here, only a face to
+ * put on the right kind of figure. The keeper is whoever the sheet has at
+ * GK; outfield defenders are matched to the sheet's outfield men by how far
+ * back each is standing, closest-to-goal first on both sides, which is
+ * enough to usually put a real centre-back's face on the man actually
+ * defending centrally rather than on a winger tracking back.
+ *
+ * Purely cosmetic — see Defender.who / Keeper.who. Safe to call with
+ * nothing to scout (an international fixture, a side too thin for a sheet,
+ * a sandbox match with no career at all): every figure just keeps drawing
+ * as the plain shirt it always has.
+ */
+export interface OpponentSheetPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  position: string;
+  overall?: number;
+  face?: string;
+  isGK: boolean;
+  y: number;
+  /** See Identity's own six attribute fields. */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
+}
+
+/** Positions that actually defend — used to prefer a real defender's face
+ *  for a real defender, rather than trusting formation depth (`y`) alone.
+ *  See orderDefensively's own doc for why depth alone was not safe here. */
+const DEFENSIVE_POSITIONS = new Set(["CB", "LB", "RB", "CDM"]);
+
+/**
+ * Real outfielders, genuinely defensive ones first — CB/LB/RB/CDM, deepest
+ * first within that group — everyone else (CM/CAM/wingers/strikers) after,
+ * as a fallback for when a scenario needs more defenders drawn than the
+ * side actually has back-four-or-holding-mid players.
+ *
+ * A real, live bug lived in a plain depth sort this replaces: formations.ts's
+ * own `y` scale runs `GK = 0.94` down to `FWD = 0.17` — HIGHER y is DEEPER,
+ * toward the side's own goal. Sorting ascending (the way this used to) put
+ * the LOWEST y first, which is strikers and wingers, not defenders — every
+ * "defender" drawn on the pitch was actually the opposing attack. Reported
+ * directly, from a real played match, once real faces made it obvious:
+ * "the oppositions defenders are just the highest rated players im guessing
+ * coz im seeing loads of attackers." Filtering by the real position label
+ * first (rather than just correcting the sort direction and hoping depth
+ * alone always tracks position) is the more robust fix — a CDM's `y` can
+ * sit close to a CM's, and a real defender's face belongs on him regardless
+ * of exactly where the two happen to rank against each other.
+ *
+ * Shared by castDefence (below) and the first-person dribble mode's own
+ * roster (CanvasMatch.tsx) — both need the same real answer to "who on the
+ * other side actually defends," not two copies of the same judgement call.
+ */
+export function orderDefensively(outfield: OpponentSheetPlayer[]): OpponentSheetPlayer[] {
+  const byDepth = (a: OpponentSheetPlayer, b: OpponentSheetPlayer) => b.y - a.y;
+  const real = outfield.filter(p => DEFENSIVE_POSITIONS.has(p.position)).sort(byDepth);
+  const rest = outfield.filter(p => !DEFENSIVE_POSITIONS.has(p.position)).sort(byDepth);
+  return [...real, ...rest];
+}
+
+export function castDefence(sc: Scenario, oppXI: OpponentSheetPlayer[] | null | undefined): void {
+  if (!oppXI || oppXI.length === 0) return;
+  const toIdentity = (p: OpponentSheetPlayer): Identity => ({
+    id: p.id, name: p.name, shortName: p.shortName, position: p.position, overall: p.overall, face: p.face,
+    pace: p.pace, shooting: p.shooting, passing: p.passing,
+    dribbling: p.dribbling, defending: p.defending, physical: p.physical,
+  });
+
+  const gk = oppXI.find(p => p.isGK);
+  if (gk) sc.keeper.who = toIdentity(gk);
+
+  if (sc.defenders.length === 0) return;
+  const pool = orderDefensively(oppXI.filter(p => !p.isGK));
+  if (pool.length === 0) return;
+  const defenders = [...sc.defenders].sort((a, b) => a.y - b.y);
+  defenders.forEach((d, i) => {
+    d.who = toIdentity(pool[i % pool.length]);
+  });
 }
 
 /**

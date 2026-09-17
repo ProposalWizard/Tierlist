@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import { portraitsFromOtherEditions, isSelfHosted } from "@/lib/star/portraitFallback";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
+import { attributesFromJson } from "@/lib/playerAttributes";
 
 /**
  * The two spellings admin actually types for an out-of-contract player — a
@@ -30,8 +31,27 @@ export const dynamic = "force-dynamic";
  * discarding a blob — the same shape of query that froze a live draft for
  * fifteen seconds in the July audit.
  *
- * So: one request, one query, no JSONB, only the columns that get used. The
- * Draft's endpoint is untouched and goes on doing its own job.
+ * So: one request, one query, no JSONB *response payload*, only the columns
+ * that get used. The Draft's endpoint is untouched and goes on doing its
+ * own job.
+ *
+ * ── `attributes` came back, deliberately, scoped to six numbers ──
+ *
+ * Requested directly: real per-player pace/finishing/passing/dribbling/
+ * defending/physical, so a teammate curls a finish because HE can, a
+ * defender blocks because he's genuinely good at it, and the goalkeeper you
+ * face is himself and not his whole club's average. None of that is
+ * possible off `overall` alone.
+ *
+ * This is NOT the freeze from the paragraph above — that was twenty
+ * SEPARATE round trips, unbounded, each discarding a blob for nothing. This
+ * is still the one batched, paginated query this route has always run,
+ * with `attributes` added to the SELECT and unpacked server-side via
+ * `attributesFromJson` (the same parser the Draft already trusts) — the
+ * wire payload back to the client still only ever carries the six plain
+ * numbers below, never the ~30-key blob itself. The real cost is a JSON
+ * parse per row, server-side, on a few thousand rows at most (a division
+ * or a Champions League field) — not remotely the same shape of problem.
  */
 
 interface LeanPlayer {
@@ -55,6 +75,15 @@ interface LeanPlayer {
   /** The stronger tier above `highPotential` — see LeaguePlayer.
    *  worldClassPotential (types.ts). */
   worldClassPotential?: boolean;
+  /** See LeaguePlayer's own six attribute fields (types.ts) — the same real
+   *  numbers, unpacked here from the `attributes` JSONB blob rather than
+   *  read straight off a column. */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
 }
 
 export async function GET(request: NextRequest) {
@@ -138,6 +167,11 @@ export async function GET(request: NextRequest) {
   // to avoid — the shortlist graphic needs faces and twenty extra queries to
   // get them would undo the whole point of the endpoint.
   const BASE_COLUMNS = "sofifa_id, name, club, overall, manual_overall, positions, manual_positions, image_url, nationality, manual_nationality, age";
+  // `attributes` has been a real column on this table since sofifa_data.sql
+  // (RUN) — unlike high_potential/world_class_potential it's never a
+  // pending migration — but it's dropped through the exact same one-at-a-
+  // time retry below anyway: cheap insurance, and it keeps every column on
+  // this query degrading the same honest way if a select ever does fail.
   const runQuery = (columns: string, from: number, pageSize: number) =>
     supabase.from("sofifa_players").select(columns)
       .eq("fifa_year", year)
@@ -156,9 +190,11 @@ export async function GET(request: NextRequest) {
   // re-discovering the same failure on each one.
   let includeHighPotential = true;
   let includeWorldClass = true;
+  let includeAttributes = true;
   const columnsFor = () => BASE_COLUMNS
     + (includeHighPotential ? ", high_potential" : "")
-    + (includeWorldClass ? ", world_class_potential" : "");
+    + (includeWorldClass ? ", world_class_potential" : "")
+    + (includeAttributes ? ", attributes" : "");
   for (let from = 0; ; from += PAGE_SIZE) {
     let { data, error } = await runQuery(columnsFor(), from, PAGE_SIZE);
 
@@ -170,9 +206,14 @@ export async function GET(request: NextRequest) {
     // about), which broke every single real squad fetch the moment
     // `high_potential` was first added here — every club silently fell
     // back to `generatedSquad`'s fake roster instead of just missing the
-    // wonderkid flag. Retried up to twice, dropping one column at a time,
-    // so a pending migration degrades to "no potential tier yet," never
-    // "no real players in the entire division."
+    // wonderkid flag. Retried up to three times, dropping one column at a
+    // time, so a pending migration (or any surprise on `attributes`, see
+    // above) degrades to "missing that one thing," never "no real players
+    // in the entire division."
+    if (error && includeAttributes) {
+      includeAttributes = false;
+      ({ data, error } = await runQuery(columnsFor(), from, PAGE_SIZE));
+    }
     if (error && includeWorldClass) {
       includeWorldClass = false;
       ({ data, error } = await runQuery(columnsFor(), from, PAGE_SIZE));
@@ -218,6 +259,13 @@ export async function GET(request: NextRequest) {
     // kind of place a raw, unenforced boolean column could drift, and
     // every downstream hook keyed off `highPotential` should still fire).
     const highPotential = row.high_potential === true || worldClassPotential;
+    // Six numbers out of the blob, nothing else — see this file's own doc
+    // above. A row with no `attributes` at all (migration ran, but this
+    // particular row predates it existing / was never scraped with it)
+    // reads as every field 0 via attributesFromJson, same as a genuinely
+    // missing stat — both fall out of the response the same way `age`/
+    // `nation` already do when there's nothing real to report.
+    const attrs = includeAttributes ? attributesFromJson(row.attributes) : null;
     list.push({
       id: String(row.sofifa_id), name, positions, overall,
       ...(image ? { image } : {}),
@@ -225,6 +273,12 @@ export async function GET(request: NextRequest) {
       ...(age ? { age } : {}),
       ...(highPotential ? { highPotential } : {}),
       ...(worldClassPotential ? { worldClassPotential } : {}),
+      ...(attrs?.pace ? { pace: attrs.pace } : {}),
+      ...(attrs?.shooting ? { shooting: attrs.shooting } : {}),
+      ...(attrs?.passing ? { passing: attrs.passing } : {}),
+      ...(attrs?.dribbling ? { dribbling: attrs.dribbling } : {}),
+      ...(attrs?.defending ? { defending: attrs.defending } : {}),
+      ...(attrs?.physical ? { physical: attrs.physical } : {}),
     });
   }
 

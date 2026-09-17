@@ -183,14 +183,25 @@ export interface LeaguePlayer {
   goals: number;
   assists: number;
   /**
-   * His portrait, when the database has one.
+   * His REAL portrait, when the database has one — genuinely absent
+   * otherwise, on purpose: `shouldUpgradeLeagueSquads` (leagueSquads.ts)
+   * reads exactly this field's real coverage to detect a stale pre-image
+   * snapshot, so a fake stand-in is never written in here, only resolved
+   * at the render/Identity layer (CanvasMatch.tsx's `oppXIForCast`,
+   * lib/star/fakeFaces.ts) — the one place that distinction stops
+   * mattering and every figure just needs SOME face to draw.
    *
    * The only field here that is not needed to answer "who scored?", and it is
    * here because the Player of the Month shortlist is eight faces and a grid of
    * monograms is not that card. About 45 characters a player, so a division's
    * worth is roughly 22 KB on top of the 15.6 KB this was sized at — still
-   * nothing against the save budget. Absent for a generated squad, which has no
-   * real footballers in it to photograph.
+   * nothing against the save budget. Absent for a generated squad, which has
+   * no real footballers in it to photograph (though see `generatedSquad`,
+   * which does give one a fake face here too — nothing downstream needs to
+   * know the difference between "no real photo yet" and "not a real player
+   * at all", and a generated squad's own players are never in the
+   * `shouldUpgradeLeagueSquads` ratio to begin with, since they never carry
+   * `nation` either).
    */
   image?: string;
   /**
@@ -235,6 +246,25 @@ export interface LeaguePlayer {
    * "absent means no" convention as `highPotential`.
    */
   worldClassPotential?: boolean;
+  /**
+   * Real per-attribute ratings (0-100), when the database has them — same
+   * "absent for a generated squad" caveat as `image`/`nation`/`age`.
+   * Sourced from `sofifa_players.attributes` via `attributesFromJson`
+   * (lib/playerAttributes.ts) — the same unpacking the PL Draft already
+   * relies on. Deliberately not fetched by this lean endpoint until now
+   * (see league-squads/route.ts's own doc on why it avoids that JSONB
+   * blob) — added back, scoped to just these six, because "a player plays
+   * like himself" (real curl, real defending, a real goalkeeper rating)
+   * needed something finer-grained than one overall number. `shooting`
+   * doubles as "finishing" — SoFIFA's own name for the same six-stat wheel
+   * the Draft already uses.
+   */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
 }
 
 export interface LeagueSquad {
@@ -308,7 +338,10 @@ export interface SquadPlayer {
   // All optional, because a squad can also be generated — offline, at a club
   // with no rows in the database, or in a career that predates this. Everything
   // downstream reads names and positions, which both squads have; these only
-  // add the face and the number next to it.
+  // add the face and the number next to it. `imageUrl` specifically stays
+  // genuinely absent for a real player the database has no scraped photo
+  // for — a fake stand-in is resolved at the render layer instead
+  // (lineup.ts's `idOf`, lib/star/fakeFaces.ts), never written back here.
   sofifaId?: string;
   overall?: number;
   imageUrl?: string;
@@ -321,6 +354,14 @@ export interface SquadPlayer {
   /** See LeaguePlayer.worldClassPotential — the same stronger tier, for a
    *  man in YOUR squad. */
   worldClassPotential?: boolean;
+  /** See LeaguePlayer's own six attribute fields — the same real numbers,
+   *  for a man in YOUR squad rather than one of the other nineteen. */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
   /**
    * Every position he is actually listed for, `position` included — a real
    * player's data holds several (SoFIFA's "CAM, CM, LW"), but building the
@@ -414,6 +455,13 @@ export interface Boot {
   /** Grants the swipe-to-curve mid-flight correction (see applyCurveSwipe
    *  in canvasEngine.ts) for as long as this boot has matches left. */
   curve?: boolean;
+  /** Grants Touch Mode — an in-match toggle that, once a kick is struck,
+   *  has your own player chase the ball; if he reaches it before anything
+   *  else happens, play pauses again for a fresh aim/kick from wherever it
+   *  ended up. See CanvasMatch.tsx's own Touch Mode doc comment for the
+   *  full mechanic. For as long as this boot has matches left, same as
+   *  `curve` above. */
+  extraTouch?: boolean;
 }
 
 export interface OwnedItem {
@@ -568,6 +616,18 @@ export interface CareerState {
    *  dashboard's own KIB Cans card — a second lever on top of Rest/Skip to
    *  Match Day, not a replacement for either. */
   kibCans: { basic: number; premium: number; elite: number };
+  /** Owned KIB STAT Cans — see shopData.ts's STAT_KIB_CANS. Far pricier
+   *  than a plain KIB Can; using one sets `statBoost` instead of topping up
+   *  energy. */
+  statCans: { basic: number; premium: number; elite: number };
+  /** The currently active stat boost, if any — set by using a KIB Stat
+   *  Can, counted down one per match played in creditMatchResult (the same
+   *  shape currentBoot's own `matches` countdown already uses), cleared at
+   *  zero. Adds to `skills.power`/`skills.technique` on top of any worn
+   *  boot — see page.tsx's effectivePower/effectiveTechnique. Using a new
+   *  can while one is already active replaces it outright; boosts never
+   *  stack. */
+  statBoost: { power: number; technique: number; matchesLeft: number } | null;
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];
@@ -951,6 +1011,8 @@ export type StarPhase =
   | "relegation-move"
   | "dashboard"
   | "settings"
+  | "face-editor"
+  | "fake-face-editor"
   | "league"
   | "life"
   | "skills"

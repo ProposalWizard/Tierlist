@@ -1,6 +1,6 @@
 import {
   buildScenario, initDefenders, stepDefenders, stepKeeper, stepReactions, stepBall,
-  launch, type Outcome, type ScenarioKind,
+  launch, type Outcome, type ScenarioKind, type Scenario,
 } from "../../lib/star/canvasEngine";
 import { POST_L, POST_R } from "../../lib/star/pitch";
 
@@ -274,6 +274,273 @@ for (const kind of KINDS) {
     check(past / Math.max(1, s.fromKeeper.length) > 0.18,
       `${kind}: a real share of shots cross beyond his reach (${pct(past, s.fromKeeper.length)})`);
   }
+}
+
+// ── A real, named finisher plays like one — and never at the cost of the
+//    target itself ──────────────────────────────────────────────────────────
+//
+// Requested directly, after real live play, with real players named (Bruno,
+// Cunha, Mbeumo, Sesko — all real, genuinely good finishers): "my teammates
+// seem AT MOST to be SLIGHTLY curving the ball sometimes... just shoot
+// straight into the goalies hands or into a defender like theyre blind... i
+// wanna see them play like a real world class attacker... shooting in
+// corners far from goalie... curving shots (SIGNIFICANTLY AND NOTICEABLY)
+// around defenders." Two real, additive-only mechanisms answer this —
+// `eliteBoost` widens `placement` for a real, known-elite `receiver.who?.
+// shooting`, and the receiver-shot `spin` term went from a flat, skill-
+// independent 0.9 wobble to a real, directional curl scaled by real
+// technique (curlRange(), the SAME mapping the player's own struck shots
+// use) — both are gated on `receiver.who?.shooting`, so a generic chance
+// (this whole file above) is byte-identical to before; nothing here can
+// regress it.
+//
+// The real danger, measured and corrected before this ever shipped: a flat,
+// strong curl coefficient sent through_ball's on-target rate from 82% to
+// 19% — not a skill effect (a POOR real finisher regressed almost as badly
+// as an elite one), a DISTANCE one. CURL_K bends the ball continuously over
+// its whole flight, and a through_ball is struck from much further out than
+// a cutback — so the same spin, held for longer, swerved the ball clean off
+// a target it was aimed AT. `curlDistScale`/`curlControlScale`
+// (launchReceiverShot) taper the coefficient back down for a longer or
+// harder-to-control strike — this section is the permanent proof that
+// correction holds, not just the scratch measurement that found it.
+{
+  interface IdSample { shots: number; onTarget: number; offs: number[]; }
+
+  function sampleWithIdentity(kind: ScenarioKind, n: number, shooting: number | undefined): IdSample {
+    const out: IdSample = { shots: 0, onTarget: 0, offs: [] };
+    for (let seed = 0; seed < n; seed++) {
+      // Same seed regardless of `shooting` — a controlled comparison of the
+      // SAME scenario with a different finisher, not three different random
+      // scenario distributions (a real mistake caught while tuning this).
+      const rng = mulberry32(seed * 1013 + kind.length * 7919);
+      const sc = buildScenario(kind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t || !sc.receiver) continue;
+      // Set on EVERY candidate runner, not just one — otherwise whichever
+      // man actually receives the ball is a coin flip between "real
+      // identity" and "the scenario's own generic roll", diluting and
+      // confounding exactly what's being measured.
+      if (shooting !== undefined) {
+        const who = { id: "x", name: "X", shortName: "X", position: "ST", shooting, overall: shooting };
+        if (sc.runner) sc.runner.who = who;
+        for (const r of sc.secondaryRunners) r.who = who;
+      }
+
+      const d = Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y);
+      const ball = launch(sc,
+        { x: t.x - sc.ball.x + (rng() - 0.5), y: t.y - sc.ball.y + (rng() - 0.5) },
+        Math.min(0.95, 0.2 + d / 32) * (0.92 + rng() * 0.16),
+        { cx: (rng() - 0.5) * 0.6, cy: -0.1 - rng() * 0.4 },
+        { power: 60, technique: 60 }, rng);
+
+      let res: Outcome | null = null;
+      let struck = false, crossed = false;
+      let prevX = ball.pos.x, prevY = ball.pos.y, prevZ = ball.z;
+      for (let i = 0; i < 2500 && !res; i++) {
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        const shotsBefore = sc.receiverShots ?? 0;
+        prevX = ball.pos.x; prevY = ball.pos.y; prevZ = ball.z;
+        res = stepBall(ball, sc, rng, DT);
+        if ((sc.receiverShots ?? 0) > shotsBefore) struck = true;
+        if (struck && !crossed && prevY > 0 && ball.pos.y <= 0) {
+          const f = prevY / (prevY - ball.pos.y);
+          const x = prevX + (ball.pos.x - prevX) * f;
+          const z = prevZ + (ball.z - prevZ) * f;
+          out.offs.push(x - GOAL_CX);
+          if (Math.abs(x - GOAL_CX) < HALF && z < 2.44) out.onTarget++;
+          crossed = true;
+        }
+      }
+      if (!struck) continue;
+      out.shots++;
+    }
+    return out;
+  }
+
+  for (const kind of KINDS) {
+    const poor = sampleWithIdentity(kind, 500, 40);
+    const elite = sampleWithIdentity(kind, 500, 92);
+
+    // The corrected floor: real curl must never tank the target rate the
+    // way the uncorrected flat coefficient did (82% -> 19% on through_ball).
+    check(poor.onTarget / Math.max(1, poor.offs.length) > 0.7,
+      `${kind}: a real (if modest) finisher still mostly hits the target (${pct(poor.onTarget, poor.offs.length)})`);
+    check(elite.onTarget / Math.max(1, elite.offs.length) > 0.7,
+      `${kind}: a real elite finisher still mostly hits the target (${pct(elite.onTarget, elite.offs.length)})`);
+
+    // Being genuinely elite should not read as LESS reliable than being
+    // merely decent — a small tolerance for noise, not an exact ordering.
+    const poorRate = poor.onTarget / Math.max(1, poor.offs.length);
+    const eliteRate = elite.onTarget / Math.max(1, elite.offs.length);
+    check(eliteRate > poorRate - 0.08,
+      `${kind}: an elite finisher isn't noticeably LESS accurate than a poor one (${pct(elite.onTarget, elite.offs.length)} vs ${pct(poor.onTarget, poor.offs.length)})`);
+  }
+}
+
+// ── The curl actually bends AROUND a real defender in the way — not just
+//    around the keeper ──────────────────────────────────────────────────────
+//
+// Reported directly, TWICE, after the eliteBoost/curl work above had
+// already shipped and gone live: "STILL doing terrible shots... i still am
+// yet to see a good curve shot... a finesse shot to get the shot around a
+// blocking defender." Investigating found the real gap: everything above
+// only ever curled off where the KEEPER stands — completely blind to a man
+// actually standing in the shot's direct line, which is the literal, named
+// ask both times. This section plants a real, static "wall" defender
+// directly between the ball and goal centre (the same real engine code
+// path a match uses, not a re-derived approximation) and proves the block
+// rate genuinely drops once a real finisher's curl is active — not just
+// that SOME number moved, but that the ball measurably gets PAST that
+// specific man more often.
+//
+// The sign here is worth real care: this exact codebase has gotten a curl
+// sign backwards once already (CURVE_SPIN_STEP's own comment) — positive
+// spin bends the ball toward SMALLER x, so a defender sitting at lower x
+// needs NEGATIVE spin to curl away from him. Caught here by measuring
+// first (a naive sign choice measurably made the block rate WORSE, not
+// better, before this was corrected) rather than trusting the arithmetic
+// alone.
+{
+  interface BlockSample { blocked: number; total: number; }
+
+  function sampleWithWall(kind: ScenarioKind, n: number, shooting: number | undefined): BlockSample {
+    const out: BlockSample = { blocked: 0, total: 0 };
+    for (let seed = 0; seed < n; seed++) {
+      const rng = mulberry32(seed * 1013 + kind.length * 7919);
+      const sc = buildScenario(kind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t || !sc.receiver) continue;
+      if (shooting !== undefined) {
+        const who = { id: "x", name: "X", shortName: "X", position: "ST", shooting, overall: shooting };
+        if (sc.runner) sc.runner.who = who;
+        for (const r of sc.secondaryRunners) r.who = who;
+      }
+
+      const d = Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y);
+      const ball = launch(sc,
+        { x: t.x - sc.ball.x + (rng() - 0.5), y: t.y - sc.ball.y + (rng() - 0.5) },
+        Math.min(0.95, 0.2 + d / 32) * (0.92 + rng() * 0.16),
+        { cx: (rng() - 0.5) * 0.6, cy: -0.1 - rng() * 0.4 },
+        { power: 60, technique: 60 }, rng);
+
+      // A static wall defender, planted once, directly goal-side of the
+      // receiver — a real body genuinely screening the direct route.
+      let planted = false;
+      let res: Outcome | null = null;
+      let struck = false;
+      for (let i = 0; i < 2500 && !res; i++) {
+        if (!planted && !struck) {
+          sc.defenders.push({ x: t.x, y: Math.max(1, t.y - 4) } as Scenario["defenders"][number]);
+          planted = true;
+        }
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        const shotsBefore = sc.receiverShots ?? 0;
+        res = stepBall(ball, sc, rng, DT);
+        if ((sc.receiverShots ?? 0) > shotsBefore) struck = true;
+      }
+      if (!struck) continue;
+      out.total++;
+      if (res === "blocked" || res === "tackled") out.blocked++;
+    }
+    return out;
+  }
+
+  // cutback/one_on_one: genuinely composed, high-control situations — the
+  // ones the mechanic is actually gated to apply in.
+  for (const kind of ["cutback", "one_on_one"] as ScenarioKind[]) {
+    const noId = sampleWithWall(kind, 400, undefined);
+    const elite = sampleWithWall(kind, 400, 92);
+    const noIdRate = noId.blocked / Math.max(1, noId.total);
+    const eliteRate = elite.blocked / Math.max(1, elite.total);
+    check(eliteRate < noIdRate - 0.03,
+      `${kind}: a real finisher genuinely gets the ball PAST a defender planted directly in his path more often (blocked ${pct(elite.blocked, elite.total)} vs no-identity ${pct(noId.blocked, noId.total)})`);
+  }
+}
+
+// ── THE CHIP — a good finisher can lob an exposed keeper ────────────────────
+//
+// Requested directly, alongside the finesse-curl redesign: "good finishers
+// should also be able to CHIP the goalie like the player can; ... if the
+// goalie is far out enough of their goal to be able to be chipped (a low
+// power bottom of the ball very high shot that drops down in the goal and
+// goes over someones head)." A chip has a distinctive SHAPE — a real
+// finisher's shot elsewhere in this file runs 20-31 m/s forward with a
+// modest loft; a chip trades almost all of that pace for height — cheap to
+// detect from the outside by reading the struck ball's own vel/vz, without
+// needing an internal hook into launchReceiverShot itself.
+{
+  const CHIP_SPEED_MAX = 15;  // m/s — well under any ordinary driven/placed shot
+  const CHIP_VZ_MIN = 5;      // m/s — a real, steep initial climb
+
+  interface ChipSample { total: number; chips: number; chipGoals: number; }
+
+  function sampleOneOnOne(n: number, shooting: number | undefined, keeperOff: boolean): ChipSample {
+    const out: ChipSample = { total: 0, chips: 0, chipGoals: 0 };
+    for (let seed = 0; seed < n; seed++) {
+      const rng = mulberry32(seed * 7001 + (keeperOff ? 991 : 0) + (shooting ?? 0) * 17);
+      const sc = buildScenario("one_on_one" as ScenarioKind, rng, 55 + rng() * 20, 55 + rng() * 20, 55 + rng() * 20);
+      initDefenders(sc, rng);
+      // Keep only the situation this section is actually testing — the
+      // keeper's own real band (see buildOneOnOne's "off his line and
+      // closing" comment) rather than a second, hand-picked threshold.
+      if (keeperOff !== (sc.keeper.y > 3.5)) continue;
+      const t = sc.runner?.pos ?? sc.secondaryRunners[0]?.pos;
+      if (!t || !sc.receiver) continue;
+      if (shooting !== undefined) {
+        const who = { id: "x", name: "X", shortName: "X", position: "ST", shooting, overall: shooting };
+        if (sc.runner) sc.runner.who = who;
+        for (const r of sc.secondaryRunners) r.who = who;
+      }
+      const d = Math.hypot(t.x - sc.ball.x, t.y - sc.ball.y);
+      const ball = launch(sc,
+        { x: t.x - sc.ball.x + (rng() - 0.5), y: t.y - sc.ball.y + (rng() - 0.5) },
+        Math.min(0.95, 0.2 + d / 32) * (0.92 + rng() * 0.16),
+        { cx: (rng() - 0.5) * 0.6, cy: -0.1 - rng() * 0.4 },
+        { power: 60, technique: 60 }, rng);
+
+      let res: Outcome | null = null, struck = false, chipShot = false;
+      for (let i = 0; i < 2500 && !res; i++) {
+        stepDefenders(sc, DT, ball.pos, false, ball);
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        const shotsBefore = sc.receiverShots ?? 0;
+        res = stepBall(ball, sc, rng, DT);
+        if ((sc.receiverShots ?? 0) > shotsBefore && !struck) {
+          struck = true;
+          const speed = Math.hypot(ball.vel.x, ball.vel.y);
+          chipShot = speed < CHIP_SPEED_MAX && ball.vz > CHIP_VZ_MIN;
+        }
+      }
+      if (!struck) continue;
+      out.total++;
+      if (chipShot) { out.chips++; if (res === "goal") out.chipGoals++; }
+    }
+    return out;
+  }
+
+  const eliteOff = sampleOneOnOne(1500, 92, true);
+  check(eliteOff.chips / Math.max(1, eliteOff.total) > 0.1,
+    `one_on_one: an elite finisher genuinely attempts a real chip against an exposed keeper (${pct(eliteOff.chips, eliteOff.total)} of chances)`);
+  check(eliteOff.chipGoals / Math.max(1, eliteOff.chips) > 0.6,
+    `one_on_one: a chip against an exposed keeper converts at a real high rate, not a coin flip (${pct(eliteOff.chipGoals, eliteOff.chips)})`);
+
+  // The gate itself: a keeper who is NOT off his line, and a generic
+  // chance with no real identity at all, should essentially never produce
+  // this shot shape.
+  const eliteOn = sampleOneOnOne(1500, 92, false);
+  check(eliteOn.chips / Math.max(1, eliteOn.total) < 0.02,
+    `one_on_one: a chip is not attempted against a keeper who is not off his line (${pct(eliteOn.chips, eliteOn.total)})`);
+
+  const noIdOff = sampleOneOnOne(1500, undefined, true);
+  check(noIdOff.chips / Math.max(1, noIdOff.total) < 0.02,
+    `one_on_one: a generic, no-identity chance never attempts a chip (${pct(noIdOff.chips, noIdOff.total)})`);
 }
 
 if (problems.length) {

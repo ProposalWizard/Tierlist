@@ -390,10 +390,182 @@ function shortLayoffScenario(seed: number): { sc: Scenario; rng: () => number } 
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// THE FOLLOWER'S OWN VERSION OF THE ARMBAND.
+//
+// Reported directly: "sometimes i cant click on a player to direct a pass
+// or set their run, like their hitbox or something is broken, other
+// players work but theirs doesnt." Root cause: the follower/poacher is
+// drawn with a face and a name exactly like a real orderable Runner
+// (goalInView gates WHEN he's drawn that way, not WHETHER), but
+// orderableRunners never included him at all — 0% hit chance, not a
+// flaky one. He's now a real captain-order target too, via a parallel
+// (not unified) mechanism — relayToFollower/launchReceiverFollowerPass
+// and Follower.commandedTo — since he has no `.pos`/`.moving`-shaped
+// fields to slot into the existing Runner-only machinery. The pointer
+// hit-testing itself (captainPickAt/nearestCaptainCandidateDist,
+// CanvasMatch.tsx) is a React-component closure this suite can't reach —
+// same limitation as the rest of the armband's own UI layer — so what's
+// tested here is the pure engine half: does the order, once given,
+// actually move the right ball or the right man.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Same shape as twoManScenario, but the follower sits at a REAL,
+ *  receivable spot near the runner instead of parked off-pitch. */
+function scenarioWithRealFollower(seed: number): { sc: Scenario; rng: () => number } {
+  const { sc, rng } = twoManScenario(seed);
+  const from = sc.runner!.pos;
+  sc.follower = {
+    ...sc.follower, x: from.x + 4, y: from.y,
+    who: { id: "fw", name: "Follower Man", shortName: "Follower", position: "ST" },
+  };
+  return { sc, rng };
+}
+
+// ── The lay-off to the follower actually happens ─────────────────────────
+{
+  let relays = 0, arrived = 0, reachedFollower = 0;
+  for (let s = 0; s < 220; s++) {
+    const { sc, rng } = scenarioWithRealFollower(s * 31 + 7);
+    sc.relayToFollower = true;                     // the captain's order
+    const ball = passTo(sc, sc.runner!, rng);
+    let relayFrom: { x: number; y: number } | null = null;
+    let relayDir: { x: number; y: number } | null = null;
+    let followerAtRelay: { x: number; y: number } | null = null;
+    let res: Outcome | null = null;
+    for (let t = 0; t < 12 / DT && !res; t++) {
+      stepDefenders(sc, DT, sc.player, false, ball); stepKeeper(sc, DT); stepReactions(sc, ball, DT, rng);
+      const before = ball.event;
+      res = stepBall(ball, sc, rng, DT);
+      if (ball.event === "relay" && before !== "relay") {
+        relays++;
+        // The BALL's own position at the exact instant it's struck — the
+        // same `from` launchReceiverFollowerPass itself launches from —
+        // not the passer's fixture position, which keeps drifting for as
+        // long as the loop keeps running afterward. The follower's own
+        // position needs the identical snapshot, for the identical reason
+        // — stepReactions keeps moving him (reacting to the ball) for
+        // however much longer the loop runs after this instant, so reading
+        // sc.follower.x/y once the whole thing settles is just as stale.
+        relayFrom = { x: ball.pos.x, y: ball.pos.y };
+        relayDir = { x: ball.vel.x, y: ball.vel.y };
+        followerAtRelay = { x: sc.follower.x, y: sc.follower.y };
+        arrived++;
+      }
+      if (ball.event) ball.event = null;
+    }
+    // The relay's own aim: does the struck velocity actually point toward
+    // the follower's real position, not just "a relay happened, somewhere"?
+    if (relayFrom && relayDir && followerAtRelay) {
+      const toFollower = { x: followerAtRelay.x - relayFrom.x, y: followerAtRelay.y - relayFrom.y };
+      const dot = relayDir.x * toFollower.x + relayDir.y * toFollower.y;
+      const cos = dot / (Math.hypot(relayDir.x, relayDir.y) * Math.hypot(toFollower.x, toFollower.y) || 1);
+      if (cos > 0.8) reachedFollower++;             // within ~37 degrees of dead-on
+    }
+  }
+  check(arrived > 120, `the pass reaches the runner and the order is carried out often enough to measure (${arrived}/220)`);
+  check(relays === arrived, `every arrival is genuinely a relay, not a shot (${relays}/${arrived})`);
+  check(reachedFollower >= arrived * 0.95, `and the relay is actually struck AT the follower's real spot (${reachedFollower}/${arrived})`);
+}
+
+// ── …and without the order, the follower gets nothing laid off to him ────
+{
+  let relays = 0;
+  for (let s = 0; s < 120; s++) {
+    const { sc, rng } = scenarioWithRealFollower(s * 17 + 3);
+    // No sc.relayToFollower — this is the ordinary game.
+    const ball = passTo(sc, sc.runner!, rng);
+    if (playOut(sc, ball, rng).relayed) relays++;
+  }
+  check(relays === 0, `no order, no lay-off to him either (${relays})`);
+}
+
+// ── A Runner relay order always wins over a follower one, if somehow both
+// end up set at once — the UI keeps them mutually exclusive (see
+// CanvasMatch.tsx's onPointerUp), but the engine defends the same
+// invariant independently rather than trusting the caller never to.
+//
+// The follower has to sit well clear of the runner-to-target corridor for
+// this one, not merely somewhere "real": the FIRST version of this test
+// put him 4m from the runner, on almost exactly the straight line to the
+// (distant) target — so he legitimately intercepted the relay himself via
+// the engine's own genuine "anyone near the ball's path can receive it"
+// reception physics (see canvasEngine.ts's own poacher-candidate comment,
+// "everybody in a blue shirt, including the man in the box"), which is a
+// real, correct mechanic doing its actual job, not the priority bug this
+// test is meant to catch. Parked well off that corridor instead, so a
+// pass to the target is never incidentally a pass near him too. ─────────
+{
+  let relays = 0, wentToRunnerTarget = 0, wentToFollower = 0;
+  for (let s = 0; s < 150; s++) {
+    const { sc, rng } = twoManScenario(s * 23 + 13);
+    sc.follower = {
+      ...sc.follower, x: sc.runner!.pos.x - 15, y: sc.runner!.pos.y + 20,
+      who: { id: "fw", name: "Follower Man", shortName: "Follower", position: "ST" },
+    };
+    const target = sc.secondaryRunners[0];
+    sc.relayTo = target;
+    sc.relayToFollower = true;   // should never be reached
+    const ball = passTo(sc, sc.runner!, rng);
+    const out = playOut(sc, ball, rng);
+    if (out.relayed) relays++;
+    if (out.receptions >= 2) {
+      if (out.secondReceiver === target) wentToRunnerTarget++;
+      if (out.secondReceiver === null) wentToFollower++;   // follower relay never sets receivedBy
+    }
+  }
+  check(relays > 0, `a relay still fires when both orders are somehow set (${relays})`);
+  check(wentToFollower === 0, `it never goes to the follower when a Runner target is also set (${wentToFollower})`);
+  check(wentToRunnerTarget > 0, `the Runner target wins, exactly as the UI already guarantees (${wentToRunnerTarget})`);
+}
+
+// ── THE FOLLOWER'S OWN RUN: fires once live, same rule as a Runner's ─────
+{
+  const { sc, rng } = scenarioWithRealFollower(53);
+  const startX = sc.follower.x;
+  sc.follower.commandedTo = { x: startX + 12, y: sc.follower.y };
+  const ball = parkedBall(sc, rng);
+  for (let t = 0; t < 1.0 / DT; t++) stepReactions(sc, ball, DT, rng);
+  check(sc.follower.x > startX + 4, `he runs where he was sent once it is played (${(sc.follower.x - startX).toFixed(1)} m)`);
+}
+
+// ── …and does not move while the ball is still at your feet ──────────────
+{
+  const { sc } = scenarioWithRealFollower(41);
+  const before = { x: sc.follower.x, y: sc.follower.y };
+  sc.follower.commandedTo = { x: sc.follower.x + 14, y: sc.follower.y };
+  check(sc.follower.x === before.x && sc.follower.y === before.y,
+    "an order given does not move him while the ball is at your feet");
+}
+
+// ── A follower run ends when he gets there ────────────────────────────────
+{
+  const { sc, rng } = scenarioWithRealFollower(67);
+  const target = { x: sc.follower.x + 6, y: sc.follower.y - 6 };
+  sc.follower.commandedTo = { ...target };
+  const ball = parkedBall(sc, rng);
+  for (let t = 0; t < 4 / DT; t++) stepReactions(sc, ball, DT, rng);
+  check(sc.follower.commandedTo === undefined, "the order is spent once he arrives");
+  check(Math.hypot(sc.follower.x - target.x, sc.follower.y - target.y) < 1.2,
+    `and he is standing where he was pointed (${Math.hypot(sc.follower.x - target.x, sc.follower.y - target.y).toFixed(2)} m off)`);
+}
+
+// ── A loose ball still outranks a follower's commanded run too ───────────
+{
+  const { sc, rng } = scenarioWithRealFollower(71);
+  sc.follower.commandedTo = { x: sc.follower.x, y: sc.follower.y - 20 };
+  const ball = passTo(sc, sc.runner!, rng);
+  ball.pos = { x: sc.follower.x + 3, y: sc.follower.y };
+  ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0; ball.resting = true;
+  const startX = sc.follower.x;
+  for (let t = 0; t < 0.8 / DT; t++) stepReactions(sc, ball, DT, rng);
+  check(sc.follower.x > startX + 0.5, "a ball that has stopped is fetched, orders or no orders");
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);
   if (problems.length > 15) console.error(`  …and ${problems.length - 15} more`);
   process.exit(1);
 }
-console.log("PASS — the armband moves men and moves the ball on, and only when it should");
+console.log("PASS — the armband moves men and moves the ball on, and only when it should — the follower included");

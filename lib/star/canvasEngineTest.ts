@@ -192,6 +192,16 @@ export interface Keeper {
   saveKind: SaveKind | null;
   /** Seconds of life, for idle breathing and weight shifts (render only). */
   idleT: number;
+  /**
+   * Mirrors canvasEngine.ts's own field of the same name — needed here
+   * purely so this Scenario/Keeper stays structurally assignable to the
+   * production one, which lib/star/lineup.ts's creatorOf (shared by both
+   * CanvasMatch.tsx and CanvasMatchTest.tsx) is typed against. Unused by
+   * this sandbox's own dive/save logic, which is still the old
+   * instant-teleport version on purpose — the new real-dive rework lives
+   * only in canvasEngine.ts until it is deliberately ported here.
+   */
+  pendingDone: boolean;
 }
 
 // A poacher lurking for the rebound.
@@ -652,6 +662,7 @@ function makeKeeper(x: number, y = 0.8, rng?: () => number, allowAdvance = true)
     saveDir: 0,
     saveKind: null,
     idleT: r * 3,
+    pendingDone: false,
   };
 }
 

@@ -88,6 +88,9 @@ export interface RosterRow {
   id: string; name: string; positions: string; overall: number;
   image?: string; nation?: string; age?: number; highPotential?: boolean;
   worldClassPotential?: boolean;
+  /** See LeaguePlayer's own six attribute fields (types.ts). */
+  pace?: number; shooting?: number; passing?: number;
+  dribbling?: number; defending?: number; physical?: number;
 }
 
 /**
@@ -132,11 +135,24 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
     players.push({
       id: best.id, name: best.name, position: slot,
       overall: best.overall || 65, goals: 0, assists: 0,
+      // Left genuinely absent, not backfilled with a fake face here —
+      // `shouldUpgradeLeagueSquads` below reads exactly this field's real
+      // coverage to detect a stale pre-image snapshot; baking a fake value
+      // into every row would make that ratio always read 100% and blind
+      // the detector forever. The fake-face fallback for display lives at
+      // the render/Identity layer instead (CanvasMatch.tsx's
+      // `oppXIForCast`), never written back into this field.
       ...(best.image ? { image: best.image } : {}),
       ...(best.nation ? { nation: best.nation } : {}),
       ...(best.age ? { age: best.age } : {}),
       ...(best.highPotential ? { highPotential: true } : {}),
       ...(best.worldClassPotential ? { worldClassPotential: true } : {}),
+      ...(best.pace ? { pace: best.pace } : {}),
+      ...(best.shooting ? { shooting: best.shooting } : {}),
+      ...(best.passing ? { passing: best.passing } : {}),
+      ...(best.dribbling ? { dribbling: best.dribbling } : {}),
+      ...(best.defending ? { defending: best.defending } : {}),
+      ...(best.physical ? { physical: best.physical } : {}),
       positions: rolesOf(best.positions),
     });
   }
@@ -179,11 +195,19 @@ function rowToLeaguePlayer(p: RosterRow): LeaguePlayer {
   return {
     id: p.id, name: p.name, position: naturalPosition(p.positions),
     overall: p.overall || 60, goals: 0, assists: 0,
+    // See buildLeagueSquad's own note just above — same reason this stays
+    // a real-or-absent field rather than ever getting a fake value baked in.
     ...(p.image ? { image: p.image } : {}),
     ...(p.nation ? { nation: p.nation } : {}),
     ...(p.age ? { age: p.age } : {}),
     ...(p.highPotential ? { highPotential: true } : {}),
     ...(p.worldClassPotential ? { worldClassPotential: true } : {}),
+    ...(p.pace ? { pace: p.pace } : {}),
+    ...(p.shooting ? { shooting: p.shooting } : {}),
+    ...(p.passing ? { passing: p.passing } : {}),
+    ...(p.dribbling ? { dribbling: p.dribbling } : {}),
+    ...(p.defending ? { defending: p.defending } : {}),
+    ...(p.physical ? { physical: p.physical } : {}),
     positions: rolesOf(p.positions),
   };
 }
@@ -215,6 +239,7 @@ function generatedSquad(club: string): LeagueSquad {
       overall: 62 + ((clubNameSeed(club) + i * 7) % 22),
       goals: 0,
       assists: 0,
+      image: p.imageUrl,
     })),
   };
 }

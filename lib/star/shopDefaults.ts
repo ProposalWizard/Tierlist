@@ -1,5 +1,5 @@
 import type { Boot, OwnedItem } from "./types";
-import type { KibCan } from "./shopData";
+import type { KibCan, StatKibCan } from "./shopData";
 
 /**
  * THE RAW SHOP CATALOGUES — before any /star-tuning-dev price override.
@@ -27,6 +27,20 @@ export const KIB_CANS_DEFAULT: KibCan[] = [
   { id: "elite", name: "Elite KIB Can", price: 24000, restore: 100, color: "bg-purple-400", image: "/star/kib-elite.png" },
 ];
 
+// Far steeper than the energy cans above — "costing WAYYY more," requested
+// directly — sitting alongside the top of the boots/lifestyle catalogues
+// rather than the bottom of them, since a temporary boost that STACKS on
+// top of whatever boots you're already wearing is a real late-game luxury,
+// not a routine top-up. `boost` adds to power AND technique alike (the two
+// player skills a boot already applies via the same additive pattern — see
+// page.tsx's effectivePower/effectiveTechnique) for `matches` games, then
+// clears — never stacks with a second can, the later one just replaces it.
+export const STAT_KIB_CANS_DEFAULT: StatKibCan[] = [
+  { id: "basic", name: "Basic KIB Stat Can", price: 80000, boost: 3, matches: 2, color: "bg-amber-500", image: "/star/kib-basic.png" },
+  { id: "premium", name: "Premium KIB Stat Can", price: 180000, boost: 5, matches: 3, color: "bg-rose-500", image: "/star/kib-premium.png" },
+  { id: "elite", name: "Elite KIB Stat Can", price: 400000, boost: 8, matches: 4, color: "bg-fuchsia-500", image: "/star/kib-elite.png" },
+];
+
 export const BOOTS_CATALOGUE_DEFAULT: Boot[] = [
   { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, matches: 3, price: 6000 },
   { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, matches: 5, price: 10000 },
@@ -44,6 +58,16 @@ export const BOOTS_CATALOGUE_DEFAULT: Boot[] = [
   { id: "vapor", name: "NS-Vapor", pace: 15, power: 20, technique: 20, matches: 8, price: 80000 },
   { id: "phantom", name: "NS-Phantom", pace: 20, power: 20, technique: 20, matches: 10, price: 120000 },
   { id: "galaxy", name: "NS-Galaxy", pace: 25, power: 25, technique: 25, matches: 10, price: 200000 },
+  // Another whole extra ability, not a stat boost — same idiom as NS-Swerve
+  // above, just for a genuinely new mechanic (Touch Mode — see Boot.extraTouch
+  // and CanvasMatch.tsx). Requested directly, priced as the single most
+  // expensive item in the boots catalogue ("these boots should cost LOADS
+  // obvs") — 2.5x NS-Galaxy, its own top-tier stats plus a technique lean
+  // (the extra touch is a technique idea) rather than Swerve's own
+  // stats-are-an-afterthought pricing, since this is meant to read as the
+  // best boot in the game outright, not just the ability bolted onto a
+  // middling pair.
+  { id: "maestro", name: "NS-Maestro", pace: 20, power: 20, technique: 30, matches: 10, price: 500000, extraTouch: true },
 ];
 
 export const LIFESTYLE_ITEMS_DEFAULT: OwnedItem[] = [

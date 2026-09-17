@@ -289,6 +289,10 @@ function backfill(c: CareerState): CareerState {
   // been buying — zero, not the two-basic starter grant a brand new career
   // gets, since this career is well past its trial.
   if (!out.kibCans) out.kibCans = { basic: 0, premium: 0, elite: 0 };
+  // A career saved before KIB Stat Cans existed has none on the shelf and
+  // no boost running — both fields simply didn't exist to have a value.
+  if (!out.statCans) out.statCans = { basic: 0, premium: 0, elite: 0 };
+  if (out.statBoost === undefined) out.statBoost = null;
   // ── …and the squad, which is the third of exactly the same kind ──
   //
   // A squad is only ever created when a career is created or when you sign for

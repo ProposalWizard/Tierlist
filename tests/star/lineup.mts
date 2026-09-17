@@ -3,8 +3,9 @@ import {
   goalInView, SCENARIO_KINDS,
   type Outcome, type Scenario, type Ball,
 } from "../../lib/star/canvasEngine";
-import { castScenario, creatorOf } from "../../lib/star/lineup";
+import { castScenario, castDefence, creatorOf, type OpponentSheetPlayer } from "../../lib/star/lineup";
 import { generateSquad } from "../../lib/star/squadData";
+import { fakeFaceFor } from "../../lib/star/fakeFaces";
 import { creditMatchResult, makeInitialCareer } from "../../lib/star/careerFlow";
 import type { SquadPlayer, GoalEvent } from "../../lib/star/types";
 import { commentaryBuildup, commentaryStrike, commentaryResult } from "../../lib/star/matchCommentary";
@@ -347,6 +348,255 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
       check(d.goals === 0 && d.assists === 0, `${res}: nothing is credited for a chance that did not go in`);
     }
   }
+}
+
+// ── A real face travels with a real identity; a stable fake one otherwise ──
+//
+// idOf (the one conversion point every squad player passes through on the way
+// to becoming an Identity) carries `face` alongside `overall`. A real photo
+// (SquadPlayer.imageUrl) survives the trip intact; a man with none (the DB
+// has no scraped photo yet, or this is a fully generated squad member) now
+// resolves to a real, defined face too — a stable fake one (fakeFaceFor,
+// lib/star/fakeFaces.ts) — never `undefined`, which is the "no photo" circle
+// every consumer used to fall back to. Requested directly: "fake faces for
+// all players who have no faces... I dont wanna see ANY circle faces
+// anymore."
+{
+  const FACE_A = "https://example.test/vvd.png";
+  const FACE_B = "https://example.test/salah.png";
+  // Two real outfield players, specifically — SQUAD[0] is the generated
+  // goalkeeper (generateSquad always builds one first), and castScenario
+  // never hands a GK a Runner/Follower shirt, so indexing blindly measured
+  // a man who could structurally never turn up.
+  const playerA = SQUAD.find(p => p.position === "ST")!;
+  const playerB = SQUAD.find(p => p.position === "LW")!;
+  // Everyone else explicitly stripped of imageUrl — generateSquad itself now
+  // assigns every SQUAD member a fake one, so without this there would be no
+  // "no real photo" cohort left to measure at all.
+  const withFaces = SQUAD.map(p => p.id === playerA.id ? { ...p, imageUrl: FACE_A }
+    : p.id === playerB.id ? { ...p, imageUrl: FACE_B }
+    : { ...p, imageUrl: undefined });
+  const idA = playerA.id, idB = playerB.id;
+
+  const rng = mulberry32(606);
+  let sawA = 0, wrongA = 0, sawUndefinedForNoPhoto = 0, sawWrongFakeForNoPhoto = 0, sawFakeForNoPhoto = 0;
+  const N = 1500;
+  for (let i = 0; i < N; i++) {
+    const sc = buildScenario(SCENARIO_KINDS[i % SCENARIO_KINDS.length], rng, 62, 60, 55);
+    castScenario(sc, withFaces);
+    for (const r of mates(sc)) {
+      if (!r.who) continue;
+      if (r.who.id === idA) {
+        sawA += 1;
+        if (r.who.face !== FACE_A) wrongA += 1;
+      } else if (r.who.id !== idB && withFaces.some(p => p.id === r.who!.id && p.imageUrl === undefined)) {
+        if (r.who.face === undefined) sawUndefinedForNoPhoto += 1;
+        else {
+          sawFakeForNoPhoto += 1;
+          if (r.who.face !== fakeFaceFor(r.who.id)) sawWrongFakeForNoPhoto += 1;
+        }
+      }
+    }
+  }
+  check(sawA > 20, `the man with a photo turns up enough to measure (${sawA})`);
+  check(wrongA === 0, `his face is always exactly the URL his squad row carries (${wrongA} mismatches)`);
+  check(sawUndefinedForNoPhoto === 0, `nobody with no real photo is ever left with an undefined face (${sawUndefinedForNoPhoto} were)`);
+  check(sawWrongFakeForNoPhoto === 0, `his fake face is always the SAME stable one fakeFaceFor picks for him (${sawWrongFakeForNoPhoto} mismatches)`);
+  check(sawFakeForNoPhoto > 0, `…and that no-real-photo case is real enough to have been checked (${sawFakeForNoPhoto})`);
+}
+
+// ── castDefence: the other end of the same idea ─────────────────────────────
+//
+// Nothing reads Defender.who or Keeper.who for save/tackle quality (see their
+// own doc comments) — this only checks that the right face ends up on the
+// right kind of figure, and that it is a genuine no-op with nothing to scout.
+//
+// A real, LIVE bug lived in this exact area, caught only after real play:
+// formations.ts's own `y` scale runs GK=0.94 down to FWD=0.17 (HIGHER is
+// DEEPER, toward the own goal) — this fixture's own `y` values below are
+// chosen on that real scale. An earlier version of both the source and this
+// very test shared the same wrong assumption (lower y = deeper) and so
+// passed against genuinely broken code — reported directly, from a real
+// played match, once real faces made the mismatch visible: "the oppositions
+// defenders are just the highest rated players im guessing coz im seeing
+// loads of attackers."
+{
+  const gk: OpponentSheetPlayer = { id: "gk1", name: "Alisson Becker", shortName: "Alisson", position: "GK", overall: 88, face: "https://example.test/alisson.png", isGK: true, y: 0.94 };
+  const outfielder = (id: string, position: string, y: number, overall: number, face: string): OpponentSheetPlayer =>
+    ({ id, name: id, shortName: id, position, overall, face, isGK: false, y });
+  const oppXI: OpponentSheetPlayer[] = [
+    gk,
+    // Real centre-backs, deep on the formation's own scale (~0.75-0.80) —
+    // deliberately the LOWEST-rated men on the sheet, so a sort keyed off
+    // overall rather than position/depth would visibly fail this test.
+    outfielder("cb1", "CB", 0.80, 74, "https://example.test/vvd.png"),
+    outfielder("cb2", "CB", 0.75, 71, "https://example.test/konate.png"),
+    // A genuine forward, shallow on the formation's own scale (~0.17) and
+    // the HIGHEST-rated man on the whole sheet — exactly the reported bug's
+    // shape: a real striker who must never be cast as a defender just
+    // because he outranks the real centre-backs.
+    outfielder("fwd1", "ST", 0.17, 91, "https://example.test/salah2.png"),
+  ];
+
+  const rng = mulberry32(909);
+  const sc = buildScenario("cutback", rng, 62, 60, 55);
+  // A controlled defensive line, closest-to-goal first, so the pairing can be
+  // checked exactly rather than trusting whatever buildScenario happened to
+  // place this seed — castDefence reads only x/y off each, so overwriting the
+  // rest of what initDefenders would normally fill in is safe here.
+  sc.defenders = [
+    { x: 30, y: 5 } as Scenario["defenders"][number],
+    { x: 38, y: 15 } as Scenario["defenders"][number],
+    { x: 34, y: 60 } as Scenario["defenders"][number],
+  ];
+  castDefence(sc, oppXI);
+
+  check(sc.keeper.who?.id === "gk1", `the keeper is drawn from the GK entry (${sc.keeper.who?.id})`);
+  check(sc.keeper.who?.face === gk.face, "…with his real face carried over");
+  check(sc.defenders.every(d => !!d.who), `every defender gets a real man (${sc.defenders.filter(d => d.who).length}/${sc.defenders.length})`);
+  check(sc.defenders[0].who?.id === "cb1", `the deepest scenario defender is matched to the deepest REAL centre-back, not the highest overall (${sc.defenders[0].who?.id})`);
+  check(sc.defenders[1].who?.id === "cb2", `…the next one in, the next real centre-back in (${sc.defenders[1].who?.id})`);
+  check(sc.defenders[2].who?.id === "fwd1", `…and only once real defenders are exhausted does the striker get drawn on, as the fallback he is (${sc.defenders[2].who?.id})`);
+  check(sc.defenders[0].who?.face === "https://example.test/vvd.png", "and each one's real face, not just his name");
+  check(sc.defenders.some(d => d.who?.id === "fwd1"), "the striker is never simply dropped — he's the honest fallback once real defenders run out");
+
+  // Nothing to scout — an international fixture, a side too thin, a sandbox
+  // match with no career at all — must be a genuine no-op, not a crash and
+  // not an invented identity.
+  for (const empty of [null, undefined, []] as const) {
+    const sc2 = buildScenario("cutback", rng, 62, 60, 55);
+    castDefence(sc2, empty);
+    check(sc2.keeper.who === undefined, `no sheet to draw from: the keeper stays anonymous (${JSON.stringify(empty)})`);
+    check(sc2.defenders.every(d => d.who === undefined), `…and so does every defender (${JSON.stringify(empty)})`);
+  }
+
+  // A sheet with outfield men but no listed GK still dresses the defence —
+  // only the keeper is left undrawn.
+  const sc3 = buildScenario("cutback", rng, 62, 60, 55);
+  sc3.defenders = [{ x: 30, y: 5 } as Scenario["defenders"][number]];
+  castDefence(sc3, oppXI.filter(p => !p.isGK));
+  check(sc3.keeper.who === undefined, "no GK on the sheet: the keeper is left as he was");
+  check(!!sc3.defenders[0].who, "…but a defender with real outfield men to draw from still gets one");
+
+  // A back four plus a holding mid, no strikers in the pool at all — every
+  // scenario defender should draw from a genuinely defensive position, not
+  // wrap onto the highest-overall man in the whole sheet.
+  const fullBack4: OpponentSheetPlayer[] = [
+    outfielder("lb", "LB", 0.80, 68, "l.png"),
+    outfielder("cb1", "CB", 0.80, 90, "c1.png"),   // highest overall of the lot
+    outfielder("cb2", "CB", 0.80, 72, "c2.png"),
+    outfielder("rb", "RB", 0.80, 70, "r.png"),
+    outfielder("cdm", "CDM", 0.632, 75, "cdm.png"),
+    outfielder("cam", "CAM", 0.324, 85, "cam.png"), // second-highest overall
+  ];
+  const sc4 = buildScenario("cutback", rng, 62, 60, 55);
+  sc4.defenders = [
+    { x: 20, y: 2 } as Scenario["defenders"][number],
+    { x: 28, y: 4 } as Scenario["defenders"][number],
+    { x: 36, y: 6 } as Scenario["defenders"][number],
+    { x: 44, y: 8 } as Scenario["defenders"][number],
+  ];
+  castDefence(sc4, fullBack4);
+  const DEFENSIVE = new Set(["CB", "LB", "RB", "CDM"]);
+  check(
+    sc4.defenders.every(d => DEFENSIVE.has(d.who?.position ?? "")),
+    `every one of four scenario defenders is drawn from a genuinely defensive real position, not the highest-overall CAM (positions: ${sc4.defenders.map(d => d.who?.position).join(",")})`,
+  );
+}
+
+// ── castScenario's own fallback: exhausted, not blind ───────────────────────
+//
+// The SAME reported shape as castDefence's own bug above — "just the
+// highest rated players... loads of attackers" — but on the team-mate side,
+// via a different mechanism. Reported directly, from real play: "why am i
+// seeing centre backs in attack over midfielders." claim()'s exact
+// position-preference list was never the problem; once it's EXHAUSTED
+// (several runners/the poacher/several corner teammates can all want from
+// the same small pool in one scenario) it used to fall back to the single
+// highest-overall outfielder left, position ignored entirely — an elite
+// centre-back with nothing else to do would out-rate an available
+// midfielder every time.
+{
+  const mkSquad = (id: string, position: SquadPlayer["position"], overall: number): SquadPlayer => ({
+    id, name: id, shortName: id, position, overall,
+    seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
+  });
+  // Eight modest, genuinely attacking-ish players — enough to cover a
+  // corner's own worst case (up to 5 decorative team-mates, the runner and
+  // the poacher: 7 attacking-context slots in one scenario) — against six
+  // ELITE centre-backs, deliberately rated far above every one of them.
+  const EXHAUST_SQUAD: SquadPlayer[] = [
+    mkSquad("gk", "GK", 80),
+    mkSquad("st1", "ST", 68), mkSquad("st2", "ST", 66),
+    mkSquad("cam1", "CAM", 67), mkSquad("cam2", "CAM", 65),
+    mkSquad("cm1", "CM", 64), mkSquad("cm2", "CM", 62),
+    mkSquad("lw1", "LW", 63), mkSquad("rw1", "RW", 61),
+    mkSquad("lb1", "LB", 58), mkSquad("rb1", "RB", 58), mkSquad("cdm1", "CDM", 58),
+    mkSquad("cb1", "CB", 95), mkSquad("cb2", "CB", 94), mkSquad("cb3", "CB", 93),
+    mkSquad("cb4", "CB", 92), mkSquad("cb5", "CB", 91), mkSquad("cb6", "CB", 90),
+  ];
+  const eliteCBs = new Set(["cb1", "cb2", "cb3", "cb4", "cb5", "cb6"]);
+
+  const rng = mulberry32(4242);
+  let cbInAttack = 0, total = 0;
+  const N = 400;
+  for (let i = 0; i < N; i++) {
+    const sc = buildScenario("corner", rng, 62, 60, 55);
+    castScenario(sc, EXHAUST_SQUAD);
+    for (const r of [...mates(sc), sc.follower, ...sc.teammates]) {
+      if (!r.who) continue;
+      total++;
+      if (eliteCBs.has(r.who.id)) cbInAttack++;
+    }
+  }
+  check(total > N * 3, `enough real assignments happened to measure (${total} across ${N} corners)`);
+  check(cbInAttack === 0,
+    `an elite centre-back never gets cast into an attacking-context role just because he outrates the field (${cbInAttack}/${total} were)`);
+
+  // The genuine last-resort still works: a squad with nothing BUT
+  // centre-backs must still dress every role, not leave people anonymous
+  // once the "stay in category" pass comes up empty.
+  // Eight — enough to cover a corner's own worst case (up to 5 decorative
+  // team-mates, the runner and the poacher), so nobody here is left
+  // anonymous for the mundane reason of the squad being smaller than the
+  // scenario, which every OTHER test in this file already covers — this
+  // one is specifically about the fallback still finding SOMEBODY once the
+  // "stay in category" pass has nobody left to offer.
+  const cbOnly: SquadPlayer[] = [
+    mkSquad("gk", "GK", 70),
+    mkSquad("onlycb1", "CB", 80), mkSquad("onlycb2", "CB", 78),
+    mkSquad("onlycb3", "CB", 76), mkSquad("onlycb4", "CB", 74),
+    mkSquad("onlycb5", "CB", 72), mkSquad("onlycb6", "CB", 70),
+    mkSquad("onlycb7", "CB", 68), mkSquad("onlycb8", "CB", 66),
+  ];
+  const sc2 = buildScenario("corner", mulberry32(99), 62, 60, 55);
+  castScenario(sc2, cbOnly);
+  const allCast = [...mates(sc2), sc2.follower, ...sc2.teammates];
+  check(allCast.every(r => !!r.who), `with only centre-backs in the squad, a real last resort still dresses every role (${allCast.filter(r => !r.who).length} left anonymous)`);
+}
+
+// ── Every body on a corner is somebody, not just the crosser ────────────────
+//
+// Reported directly: "on corners not all players face show" — only
+// teammates[0] (the man credited with the cross) ever carried a real
+// identity; CanvasMatch.tsx's own face-drawing loop was reading that
+// correctly, the gap was upstream, here.
+{
+  const rng = mulberry32(7777);
+  let sawMultiTeammate = false;
+  let anonymous = 0, totalTeammates = 0;
+  for (let i = 0; i < 300; i++) {
+    const sc = buildScenario("corner", rng, 62, 60, 55);
+    castScenario(sc, SQUAD);
+    if (sc.teammates.length > 1) sawMultiTeammate = true;
+    for (const t of sc.teammates) {
+      totalTeammates++;
+      if (!t.who) anonymous++;
+    }
+  }
+  check(sawMultiTeammate, "a corner with more than one decorative team-mate actually got measured");
+  check(totalTeammates > 300, `enough team-mate figures happened to measure (${totalTeammates})`);
+  check(anonymous === 0, `every body on a corner — not just the crosser — is a real, named player (${anonymous}/${totalTeammates} were left blank)`);
 }
 
 if (problems.length) {

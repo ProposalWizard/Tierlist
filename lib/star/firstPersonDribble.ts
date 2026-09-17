@@ -120,6 +120,23 @@ import { CX } from "./pitch";
 
 export interface Vec2 { x: number; y: number; }
 
+/**
+ * A real opposing outfielder — deliberately its OWN minimal shape, the same
+ * decoupling `OpponentSheetPlayer` (lib/star/lineup.ts) already uses,
+ * rather than importing canvasEngine.ts's full `Identity` into what has
+ * always been a standalone simulation file with zero engine coupling.
+ * `defending` (falling back to `overall`) is the one real number this file
+ * reads — see `newRun`'s own doc on why.
+ */
+export interface FpIdentity {
+  id: string;
+  name?: string;
+  shortName?: string;
+  face?: string;
+  defending?: number;
+  overall?: number;
+}
+
 export type RunPhase = "running" | "clear" | "lost";
 
 export type DefenderPhase =
@@ -177,6 +194,12 @@ export interface FpDefender {
    *  untouched, so a man who DOES end up close still duels exactly as fairly
    *  as ever. */
   press: number;
+  /** The real man this figure is, when `newRun` was given a roster — see
+   *  its own doc. Purely who to draw a face and a name for; nothing in
+   *  `stepDefender`'s own duel math reads this, only his `defending`/
+   *  `overall` (already folded into mirrorSpeed/lagT/closeSpeed/tellT at
+   *  construction, same as every other defender). */
+  who?: FpIdentity;
 }
 
 export interface FpBurst {
@@ -308,6 +331,16 @@ function easeOutCubic(t: number): number {
   return 1 - u * u * u;
 }
 
+/** Fisher-Yates off the run's own seeded rng — never mutates its input. */
+function shuffle<T>(arr: T[], rng: () => number): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export function runSpeed(pace: number): number {
   return BASE_SPEED + clamp(pace, 0, 100) / 100 * PACE_SPEED;
 }
@@ -408,10 +441,29 @@ export function newRun(opts: {
    *  independently. The dev sandbox and existing tests don't pass this, so
    *  they keep rolling each wave's size exactly as before. */
   waveSizes?: number[];
+  /**
+   * Real opposing outfielders to cast this run's men from, instead of every
+   * defender sharing the one flat `oppStrength` number — the same "players
+   * play like themselves" ask that gave the match engine real curl and real
+   * defenders. Shuffled once up front (so which real man lands in which
+   * wave/lane still varies run to run) and cycled across however many
+   * defenders the run actually builds, wrapping around if the run needs
+   * more men than the roster has. A real man's own `defending` (falling
+   * back to his `overall`, then to `oppStrength`) REPLACES the flat number
+   * for his own mirrorSpeed/lagT/closeSpeed/tellT — it does not stack on
+   * top of it — so the existing wave-to-wave ramp (`factor`, unchanged)
+   * still applies on top of a real man's own quality exactly the way it
+   * always applied to the flat one. Omit (the dev sandbox, every existing
+   * test) and every man is exactly as anonymous and exactly as governed by
+   * `oppStrength` alone as before — unchanged.
+   */
+  roster?: FpIdentity[];
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
   const roundCount = opts.waveSizes?.length ?? opts.rounds ?? 3;
+  const roster = opts.roster && opts.roster.length > 0 ? shuffle(opts.roster, rng) : null;
+  let rosterIdx = 0;
 
   const defenders: FpDefender[] = [];
   const roundSizes: number[] = [];
@@ -419,7 +471,6 @@ export function newRun(opts: {
     const size = opts.waveSizes ? opts.waveSizes[r] : waveSize(rng);
     roundSizes.push(size);
     const factor = roundCount > 1 ? 0.85 + 0.15 * (r / (roundCount - 1)) : 1.0;
-    const str = clamp(opts.oppStrength, 0, 100) * factor;
     const y = START_Y - FIRST_DUEL_DEPTH - DUEL_GAP * r;
     const xs = placeWave(size, rng);
     // Rank this wave's men by distance from your fixed starting lane —
@@ -430,6 +481,11 @@ export function newRun(opts: {
     const press = new Array<number>(size);
     order.forEach((i, rank) => { press[i] = PRESS_STEPS[Math.min(rank, PRESS_STEPS.length - 1)]; });
     xs.forEach((x, i) => {
+      const who = roster ? roster[rosterIdx++ % roster.length] : undefined;
+      const manQuality = who
+        ? clamp(who.defending ?? who.overall ?? opts.oppStrength, 0, 100)
+        : clamp(opts.oppStrength, 0, 100);
+      const str = manQuality * factor;
       defenders.push({
         x,
         y,
@@ -449,6 +505,7 @@ export function newRun(opts: {
         lunge: 0,
         round: r,
         press: press[i],
+        who,
       });
     });
   }

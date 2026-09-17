@@ -25,7 +25,13 @@ export const metadata: Metadata = {
 import { createServiceClient } from "@/lib/supabase/service";
 import FindSearch, { type FindItem } from "@/components/FindSearch";
 
-export const revalidate = 30;
+// createServiceClient()'s reads are no-store — genuinely fresh on every
+// request already, never actually cached the 30s this revalidate implied.
+// Next's build-time static generation can't reconcile "cache for 30s" with
+// a fetch that says "never cache me," and throws "Dynamic server usage"
+// trying. force-dynamic just states outright the behavior that was already
+// happening — zero change to what a visitor actually sees.
+export const dynamic = "force-dynamic";
 
 export default async function FindPage({
   searchParams,

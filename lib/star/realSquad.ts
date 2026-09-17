@@ -29,6 +29,21 @@ interface RosterPlayer {
   image_url: string | null;
   nationality: string;
   high_potential?: boolean;
+  /**
+   * The real six-stat wheel — `/api/draft/roster` already unpacks these off
+   * `attributes` JSONB for every row it returns (it always needed the full
+   * blob; this route was just never reading these six back out of it).
+   * Threaded through to `SquadPlayer` below so a real teammate curls a
+   * finish, blocks a tackle, or gets found by a real pass because of who he
+   * actually is, not a fresh dice roll or his overall alone. 0 (not just
+   * absent) means "no real data" — see attributesFromJson.
+   */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
 }
 
 type Slot = SquadPlayer["position"];
@@ -162,11 +177,21 @@ export function buildSquadFromRoster(roster: RosterPlayer[], club: string): Squa
       seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
       sofifaId: best.sofifa_id,
       overall: best.overall || undefined,
+      // Left genuinely absent when the DB has none scraped, not backfilled
+      // with a fake face — the fake-face fallback for display lives at the
+      // render/Identity layer instead (lineup.ts's idOf), never written
+      // back into this field.
       imageUrl: best.image_url || undefined,
       nationality: best.nationality || undefined,
       age: best.age || undefined,
       positions: rolesOf(best.positions),
       ...(best.high_potential ? { highPotential: true } : {}),
+      ...(best.pace ? { pace: best.pace } : {}),
+      ...(best.shooting ? { shooting: best.shooting } : {}),
+      ...(best.passing ? { passing: best.passing } : {}),
+      ...(best.dribbling ? { dribbling: best.dribbling } : {}),
+      ...(best.defending ? { defending: best.defending } : {}),
+      ...(best.physical ? { physical: best.physical } : {}),
     });
   }
 

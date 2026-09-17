@@ -194,6 +194,22 @@ export interface Keeper {
   saveKind: SaveKind | null;
   /** Seconds of life, for idle breathing and weight shifts (render only). */
   idleT: number;
+  /**
+   * A catch/smother is decided the instant the shot arrives, same as ever —
+   * but `x` no longer jumps straight there. This is set INSTEAD of `done`
+   * for exactly that case, so stepKeeper's scrambling branch (below) is
+   * still free to carry him toward `targetX` for real over the next few
+   * frames; only once he actually arrives does `done` finally get set,
+   * freezing him. Never set for a parry/push-away — those were never
+   * "done" to begin with, and keep scrambling exactly as before.
+   */
+  pendingDone: boolean;
+  /**
+   * The real opposing goalkeeper, when there is one to name — see Identity.
+   * Purely who to draw and who a face comes from; `keeperStrength` (Scenario)
+   * is still the one number that decides how well he actually keeps.
+   */
+  who?: Identity;
 }
 
 // A poacher lurking for the rebound.
@@ -223,6 +239,34 @@ export interface Identity {
    * reserve centre-back is the whole point of having a squad at all.
    */
   overall?: number;
+  /**
+   * His real photo, when the database has one — same "absent for a
+   * generated squad" caveat as overall. Nothing in the engine reads this for
+   * anything except drawing him: see footballer() in CanvasMatch.tsx, which
+   * composites it onto the same circle the plain head fill already draws,
+   * and falls back to that plain circle whenever this is missing or still
+   * loading. A stat is not a face — this carries no gameplay weight at all.
+   */
+  face?: string;
+  /**
+   * The real six-stat wheel (0-100), when the database has one — same
+   * "absent for a generated squad" caveat as `overall`. Unlike `overall`
+   * (a single number every part of the engine has always been able to lean
+   * on), these are read only where a SPECIFIC facet of a specific man
+   * genuinely matters more than his rating as a whole: `shooting` biases a
+   * teammate's finish toward a real curl (launchReceiverShot), `defending`
+   * biases a defender's real chance of actually winning the ball (the
+   * block/tackle roll below), and so on. Every consumer falls back to
+   * `overall` (and, failing that, a flat default) whenever a specific facet
+   * is absent, so a generated squad — or a real save from before these
+   * existed — plays exactly as it always has.
+   */
+  pace?: number;
+  shooting?: number;
+  passing?: number;
+  dribbling?: number;
+  defending?: number;
+  physical?: number;
 }
 
 export interface Follower {
@@ -234,6 +278,17 @@ export interface Follower {
   shot: boolean;     // already took its follow-up
   /** In an offside position at the last deliberate touch. See offsideSnapshot. */
   offside?: boolean;
+  /**
+   * THE CAPTAIN'S ORDERS, his own version of Runner.commandedTo — where he
+   * has been sent, and nothing else. Same rule as Runner's: only moves him
+   * once the ball is live, cleared when he arrives, a stopped ball still
+   * outranks it. He was always drawn and named exactly like an orderable
+   * team-mate (goalInView gates when — not whether — he looks like one)
+   * with no way to actually order him: reported directly as a broken
+   * hitbox ("other players work but theirs doesn't") rather than the
+   * missing feature it was.
+   */
+  commandedTo?: Vec2;
 }
 
 // The team-mate a pass is aimed at. They are a real moving entity: the renderer
@@ -340,6 +395,14 @@ export interface Defender extends Vec2 {
   z?: number;
   /** Vertical speed of that jump. */
   vz?: number;
+  /**
+   * The real man marking you, when there's a real lineup to draw him from —
+   * see Identity and castDefence (lib/star/lineup.ts). Nothing in tackle or
+   * block resolution reads this yet; a "press" defender and a "cover"
+   * defender behave exactly the same whether or not this is set. Purely who
+   * to draw a face for, same spirit as Keeper.who.
+   */
+  who?: Identity;
 }
 
 export interface Scenario {
@@ -352,7 +415,16 @@ export interface Scenario {
   goal: { x1: number; x2: number };
   crossbar: number;
   kind: ScenarioKind;
-  teammates: Vec2[];        // decorative players (crossers, support) — never pass targets
+  /**
+   * Decorative players (crossers, support) — never pass targets, but
+   * genuinely somebody: `who` is filled in by castScenario (lineup.ts) the
+   * same way a Runner/Defender's is. Used to be limited to `teammates[0]`
+   * only (the crosser, for assist credit) — every other body milling
+   * around the box on a corner drew with no identity at all, reported
+   * directly: "on corners not all players face show." Optional so every
+   * existing builder's plain `{x,y}` literal still satisfies the type.
+   */
+  teammates: (Vec2 & { who?: Identity })[];
   runner: Runner | null;    // the team-mate a pass is aimed at, if any
   passTarget: Vec2 | null;  // where the runner is heading (drawn as the aim marker)
   receiver: Receiver | null;   // set for cutback/byline_cross/through_ball — they shoot on reception
@@ -443,6 +515,36 @@ export interface Scenario {
   receivedBy?: Runner | null;
   /** The lay-off has been played, so the next man to receive it shoots. */
   relayed?: boolean;
+  /**
+   * The follower/poacher's own version of `relayTo` — a flag rather than a
+   * stored reference, since there is only ever one follower in a scenario
+   * and nothing to distinguish one from another the way `relayTo` needs to
+   * for a Runner (Follower also has no `.pos`/`.moving`-shaped fields —
+   * see Follower's own doc — so folding him into `relayTo` itself isn't a
+   * clean fit). See relayFollowerTargetFor/launchReceiverFollowerPass.
+   * Mutually exclusive with `relayTo` — setting one clears the other, the
+   * same "one lay-off order at a time" rule a real captain's armband means.
+   */
+  relayToFollower?: boolean;
+  /**
+   * Touch Mode's own chase (Boot.extraTouch) — set true the first time the
+   * ball gets away from `player` by more than TOUCH_CHASE_START_R, with
+   * `player` genuinely frozen (not moved at all) until that happens. Gates
+   * BOTH whether he moves at all and whether a close return counts as
+   * catching it up: chasing from tick one would let him close the gap at
+   * the same rate the ball opens it, so the distance between them could
+   * never cross the threshold at all — reported live, "he never left the
+   * 1.8m thing coz hes chasing it the whole time." See stepTouchChase.
+   */
+  touchChaseArmed?: boolean;
+  /**
+   * How many times THIS move has already continued via Touch Mode's own
+   * chain, checked against TOUCH_CHAIN_MAX in CanvasMatch's resolveOutcome —
+   * a separate counter from `chainDepth`/CHAIN_MAX, not a second name for
+   * the same one. See TOUCH_CHAIN_MAX's own doc for why sharing the
+   * ordinary pass-chain budget was the actual bug.
+   */
+  touchTouches?: number;
 }
 
 export type Outcome =
@@ -458,7 +560,18 @@ export type Outcome =
   | "tipped"
   | "over" | "post" | "wide" | "blocked" | "out" | "short" | "offside"
   /** Dwelt too long and the closing defender took it off you. */
-  | "tackled";
+  | "tackled"
+  /**
+   * Touch Mode (Boot.extraTouch): a settled, still-uncontested touch of
+   * YOUR OWN (never `stepBall` producing this on its own — see
+   * CanvasMatch.tsx's flight-phase loop, which remaps its own "short" into
+   * this the instant it would otherwise end the passage of play, but only
+   * while `ball.owner === "you"`). Never credited as a shot or a pass —
+   * see creditChance — and chains deterministically (resolveOutcome, no
+   * chainReturnChance roll) rather than ending the move, which is the
+   * entire point of paying for the boots.
+   */
+  | "touchOn";
 
 export interface KickSkills {
   power: number;      // 0-100
@@ -506,6 +619,44 @@ const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular
                                // all; this is 3x that, so a hard shot struck on the
                                // outside of the ball bends properly round a keeper.
 
+/**
+ * A GOOD FINISHER CAN CHIP AN ADVANCING KEEPER, THE SAME WAY THE PLAYER CAN.
+ *
+ * Requested directly, alongside the finesse-curl redesign above: "good
+ * finishers should also be able to CHIP the goalie like the player can;
+ * like if the goalie is far out enough of their goal to be able to be
+ * chipped (a low power bottom of the ball very high shot that drops down
+ * in the goal and goes over someones head)." The player's own version of
+ * this is not a separate mechanic at all — launch()'s own contact model
+ * already makes a soft, under-the-ball touch pop up steeply without going
+ * far (see VZ_POWER_FLOOR's comment), and a keeper's save is judged at
+ * HIS OWN y — wherever he actually is, not the goal line (see "THE
+ * KEEPER'S OWN LINE" below) — with genuine height in the reach check
+ * (keeperAttempt's `dz`). So a shot that is safely over his head exactly
+ * when it passes his position, and has come back down under the bar by
+ * the time it reaches the goal line, already beats him through the
+ * ordinary physics — nothing about a chip needed inventing there. What a
+ * team-mate never had is the JUDGEMENT: knowing when he's far enough out
+ * to try it, and the SOFT, LOFTED strike itself, since `Sh`/`vz` below
+ * are built for an ordinary driven-or-placed finish, not a delicate lob.
+ *
+ * `CHIP_KEEPER_Y` reuses the exact boundary buildOneOnOne's own `shade`
+ * calculation already treats as "he has really come for it" — not a new
+ * number invented for this, the game's own existing line for the same
+ * judgement a real striker is making.
+ */
+const CHIP_KEEPER_Y = 3.5;     // metres off his line before a chip is even considered
+const CHIP_CLEAR_Z = 3.3;      // target ball height exactly as it passes him. Measured, not
+                               // guessed: 2.7 landed keeperAttempt's dist right on top of
+                               // reach (2.3-2.5) for most real chip attempts, since dx alone
+                               // (the shot rarely lands far from him sideways) wasn't doing
+                               // much of the work — a coin flip, not the reliably-beaten
+                               // keeper a real exposed-keeper chip should be. 3.3 pushes dz
+                               // alone to ~2.7, safely past his reach most of the time.
+const CHIP_LAND_Z = 0.5;       // target height at the goal line — low, dropping in, not
+                               // still falling from a height that could balloon over the bar
+const CHIP_MIN_KEEPER_DIST = 2;// too close to him and there is no room to arc it back down
+
 const SHOT_REF_SPEED = 32;     // m/s — about as hard as a professional strikes it
 const KEEPER_LATERAL_MAX = 3.2;// metres along the line a keeper can cover scrambling
 const KEEPER_DIVE_SPEED = 5.4; // m/s lateral when chasing a loose ball
@@ -543,6 +694,47 @@ const KEEPER_PATROL_PERIOD = 4.2;  // seconds for one full sweep and back — sl
 // covering it — see the save branch in resolveKeeper, which puts him at the ball.
 const KEEPER_SAVE_R_MIN = 1.95;    // save radius at the goal plane, weakest keeper
 const KEEPER_SAVE_R_MAX = 2.65;    // …and the strongest
+
+// ── The dive itself: a real, watched attempt, not a fact he already knew ────
+//
+// Requested directly, twice: he must throw himself at EVERYTHING, full
+// stop, never stand there and let one in — including a shot that was never
+// remotely reachable. A first version still let a genuinely hopeless ball
+// through with no animation at all (the real-keeper-wouldn't-bother
+// reasoning that used to justify that is explicitly overruled: watching him
+// try and fail is what makes the shot that beat him read as a real, earned
+// goal rather than an empty net nobody defended). So there is no distance
+// past which he simply does not bother anymore — every shot that reaches
+// his line gets a real dive, capped only at how far he can actually travel
+// (see the "beaten, but not stood there watching it happen" branch below).
+// Neither of the two numbers below touches how hard he is to beat — see
+// keeperAttempt's own doc for why the second is built to be exactly
+// neutral — they only decide what gets SHOWN: how much of his reach is
+// genuine uncertainty rather than a knife-edge.
+//
+// The width of the band, as a fraction of his reach, where getting there is
+// genuinely in doubt rather than certain — see keeperAttempt.
+const KEEPER_QUALITY_BAND = 0.22;
+// The ramp is symmetric in isolation (proven directly — see
+// tests/star/keeperDive.mts's own controlled check of keeperAttempt), but
+// symmetric-in-probability is not automatically neutral-in-aggregate: real,
+// on-target shots are not spread evenly across the band, so even a
+// perfectly even ramp shifts the overall concede rate a little one way. The
+// direction is not the obvious one — a first, contaminated measurement of
+// this looked like it was making things noticeably EASIER, until it turned
+// out most of that gap was a completely different, pre-existing mechanic
+// (a save leading to a live rebound that a follow-up shot then scores —
+// resolveKeeper, unrelated to this formula) being miscounted as if it were
+// this one's doing. Measured properly — the ORIGINAL shot's own outcome
+// only, at a sample size large enough for the noise floor to actually
+// settle — the real effect was the other way and small. This is that
+// correction, tuned against exactly that comparison.
+const KEEPER_QUALITY_BIAS = -0.05;
+// A comfortable take is essentially never fumbled; a full-stretch one
+// sometimes is. Measured to a small, occasional share of saves overall —
+// see tests/star/keeperDive.mts and outcomes.mts's own "stays rare" check.
+const KEEPER_MISTAKE_BASE = 0.008;
+const KEEPER_MISTAKE_STRETCH_BONUS = 0.032;
 
 /**
  * Difficulty tiers.
@@ -586,6 +778,37 @@ const DEF_BLOCK_H = 1.9;       // defenders can only block below head height —
 const WALL_TOP = 2.05;         // …but a wall keeps its arms down, so leaping does not raise the
                                // ceiling one-for-one. It lifts their feet instead, which is what
                                // makes a ball rolled UNDER a jumping wall a real free kick too.
+
+/**
+ * How much a defender's REAL quality widens or shrinks his own reach in the
+ * block/tackle check below ("A defender gets to it") — pure geometry until
+ * now, the last piece of this whole session's "players play like
+ * themselves" ask, and the one flagged back honestly, two entries ago in
+ * CLAUDE.md, as genuinely NOT small: there was no roll and no skill check
+ * to extend, only a fixed radius everybody shared.
+ *
+ * `undefined` (no real identity on this man at all — the overwhelming
+ * majority of live saves today, until a squad refresh backfills the new
+ * attribute fields) returns exactly 1: zero behaviour change, the same flat
+ * DEF_BLOCK_R/CONTROL_R every match has always used. That is what makes
+ * this safe to ship without a full Monte-Carlo aggregate check the way the
+ * keeper-dive rework needed one — the "no data" case, which is nearly every
+ * case right now, is provably identical to today by construction, not by
+ * measurement.
+ *
+ * With a real quality (`defending`, or `overall` when that specific facet
+ * isn't known), 50 is the neutral centre — a middling defender reaches
+ * exactly as far as ever — and it widens toward a genuinely better
+ * interception radius for an elite one, shrinks toward a genuinely worse
+ * one for a poor one. Bounded well short of doubling or zeroing the reach:
+ * a bad defender should miss more, not stop defending; a great one should
+ * intercept more, not become a wall.
+ */
+export function defenderReachMultiplier(quality: number | undefined): number {
+  if (quality === undefined) return 1;
+  return clamp(0.82 + clamp(quality, 0, 100) / 100 * 0.36, 0.75, 1.25);
+}
+
 /**
  * The wall jumps.
  *
@@ -675,6 +898,7 @@ function makeKeeper(x: number, y = 0.8, rng?: () => number, allowAdvance = true)
     saveDir: 0,
     saveKind: null,
     idleT: r * 3,
+    pendingDone: false,
   };
 }
 
@@ -2602,6 +2826,74 @@ export function buildAttackingScenario(rng: () => number, keeperStrength = 62, t
 export const CHAIN_MAX = 2;
 
 /**
+ * Touch Mode's own chain budget (Boot.extraTouch) — deliberately NOT
+ * CHAIN_MAX, and not sharing its counter either. Reported live: "he IS
+ * catching it... instead of the game pausing and giving me a new kick like
+ * the chance just started, the chance just ends." Root cause — the first
+ * version of stepTouchChase's chain genuinely worked, but it spent the SAME
+ * `chainDepth` budget an ordinary pass chain uses (CHAIN_MAX=2, "how many
+ * passes one move can be strung together from"), which a real passage of
+ * play has usually already partly spent.
+ *
+ * First shipped generous (8), on the reasoning that the real limiting
+ * factor on chaining touches should be risk and elapsed time, not an
+ * arbitrary counter. Corrected the same day, told directly: "also obvs only
+ * 1 extra touch allowed not unlimited lol." The mechanic is one second
+ * touch from wherever the first one settles — not a repeatable
+ * dribble-forever exploit. See resetForTouchOn's own doc for the other,
+ * larger half of that same round's fix: the continuation itself was
+ * rebuilding into an unrelated new scenario, a different bug from this
+ * budget.
+ */
+export const TOUCH_CHAIN_MAX = 1;
+
+/**
+ * Touch Mode's continuation is not a new scenario.
+ *
+ * CanvasMatch.tsx's loadScenario used to treat every chain identically —
+ * chainKindFor to pick a kind, then buildScenario to construct one from
+ * scratch. Right for an ordinary completed pass: the ball has genuinely
+ * moved to a new part of the pitch, so a fresh kind and that kind's own
+ * canonical position for it is the correct read of what just happened.
+ * Wrong for a touch-mode re-touch, where the ball never left your own feet
+ * at all — buildScenario has no way to anchor its output at a real prior
+ * position (every builder rolls its own), so this was landing the "second
+ * touch" in an unrelated kind, position and defensive picture every time.
+ * Reported live, in full: "IT ACTUALLY LITERALLY GIVES ME A NEW CHANCE!
+ * LIKE IN A DIFFERENT SITUATION AND POSITION AND EVERYTHING! ITS ONE MOVE!
+ * U TAKE A TOUCH AND IF U GET TO IT FIRST U GET TO KICK IT AGAIN! 'AS IF'
+ * ITS THE START OF A CHANCE!"
+ *
+ * This repositions the SAME Scenario object at the real catch spot instead
+ * of building a new one — kind, viewport, defenders, keeper, follower,
+ * runner/secondaryRunners and every real identity already cast onto them
+ * all stay exactly who and where they already were. loadScenario's own
+ * initDefenders call right after this only refreshes press/cover roles off
+ * whatever positions are already live — see its own doc: nothing there
+ * moves anybody's x/y. Only the fields that describe a kick already having
+ * been resolved reset, so the next aim genuinely is fresh — "AS IF it's the
+ * start of a chance" — without the underlying picture changing under you.
+ * `touchChaseArmed` resets too: left true, the next kick's chase would
+ * treat itself as already armed and start moving immediately, which is the
+ * exact self-defeating bug an earlier round of this same feature fixed.
+ */
+export function resetForTouchOn(scenario: Scenario, at: Vec2): void {
+  scenario.ball = { x: at.x, y: at.y };
+  scenario.player = { x: at.x, y: at.y };
+  scenario.touchChaseArmed = false;
+  scenario.receiverDone = false;
+  scenario.receiverReached = false;
+  scenario.receiverShot = false;
+  scenario.receiverShots = undefined;
+  scenario.receivedAt = undefined;
+  scenario.receivedBy = null;
+  scenario.relayTo = null;
+  scenario.relayToFollower = false;
+  scenario.relayed = false;
+  scenario.offsideAgainst = false;
+}
+
+/**
  * The situation a completed pass has left you in.
  *
  * Two things decide it, and it used to be only the first: WHERE the ball ended
@@ -2763,6 +3055,65 @@ function launchReceiverPass(ball: Ball, scenario: Scenario, target: Runner, rng:
   offsideSnapshot(scenario, from);
 }
 
+/**
+ * The follower/poacher's own version of relayTargetFor — true when he's the
+ * man it gets laid off to, and the order is still live and still real.
+ *
+ * No "can't lay it off to himself" check the way relayTargetFor has —
+ * `scenario.receivedBy` is typed `Runner | null` and the follower can never
+ * be assigned to it (see Follower's own doc for why he isn't a Runner), so
+ * he structurally can never be the man who just received it in the first
+ * place. Otherwise the same two refusals: an order still pending from a
+ * PREVIOUS lay-off this move (`relayed`), and a ball that was never a real
+ * pass by any measure (`RELAY_MIN`/`RELAY_MAX`, same bounds as a Runner's).
+ */
+function relayFollowerTargetFor(scenario: Scenario): boolean {
+  if (!scenario.relayToFollower || scenario.relayed) return false;
+  const at = scenario.receivedAt;
+  if (!at) return false;
+  const d = Math.hypot(scenario.follower.x - at.x, scenario.follower.y - at.y);
+  return d >= RELAY_MIN && d <= RELAY_MAX;
+}
+
+/**
+ * launchReceiverPass's follower counterpart — deliberately its own,
+ * self-contained function rather than a shared refactor of that one, so an
+ * already-tuned, already-live formula can't pick up a silent behaviour
+ * change on the way to supporting a second kind of target.
+ *
+ * No lead calculation the way launchReceiverPass has for a Runner running
+ * onto it (aheadOf, gated on `moving`) — an honest, small simplification:
+ * the follower's own commanded run is new this same round and doesn't yet
+ * carry a comparable "is this actually a run in progress right now" signal
+ * worth leading against, so this aims flat at his current position instead.
+ */
+function launchReceiverFollowerPass(ball: Ball, scenario: Scenario, rng: () => number) {
+  const from = { x: ball.pos.x, y: ball.pos.y };
+  const f = scenario.follower;
+  const dist = Math.hypot(f.x - from.x, f.y - from.y);
+  const speed = clamp(11 + dist * 0.42, 11, 24);
+  const skill = clamp(scenario.receiver?.skill ?? 62, 0, 100) / 100;
+  const team = clamp(scenario.teamRelationship / 100, 0, 1);
+  const quality = clamp(skill * 0.62 + team * 0.38, 0, 1);
+  const sigmaDeg = (1 - quality * 0.8) * 6.5;
+  const dir = rotateDeg(normalize({ x: f.x - from.x, y: f.y - from.y }), gaussian(rng) * sigmaDeg);
+
+  ball.vel = { x: dir.x * speed, y: dir.y * speed };
+  ball.vz = 0;
+  ball.z = 0.08;
+  ball.spin = (rng() - 0.5) * 0.35;
+  ball.loose = false;
+  ball.contactCd = clamp((PASS_CONTROL_R + 0.6) / speed, 0.15, 0.4);
+  ball.lastTouch = "attack";
+  ball.event = "relay";
+  ball.shot = false;
+  markLanding(ball, scenario);
+
+  scenario.relayed = true;
+  scenario.receiverDone = false;
+  offsideSnapshot(scenario, from);
+}
+
 /** Where a man running to orders will be in `t` seconds. */
 function aheadOf(r: Runner, t: number): Vec2 {
   const to = r.commandedTo;
@@ -2778,7 +3129,7 @@ function aheadOf(r: Runner, t: number): Vec2 {
 // Quality is a real simulation input (accuracy spread, power, curl), not a probability
 // roll — same physics as the player's own strike, driven by their role and how well
 // the team combines (relationships.team).
-function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
+function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, composed = true) {
   const receiver = scenario.receiver;
   if (!receiver) return;
 
@@ -2806,6 +3157,37 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // His striking quality, which is his own and the understanding between you —
   // and deliberately NOT where he is standing.
   const quality = clamp(clamp(receiver.skill, 0, 100) / 100 * 0.72 + teamQuality * 0.28, 0, 1);
+  /**
+   * A REAL elite finisher aims closer to the frame than the base formula
+   * alone lets him — reported directly, after real live play: "my
+   * teammates... just shoot straight into the goalies hands or into a
+   * defender like theyre blind... i wanna see them play like a real world
+   * class attacker... shooting in corners far from goalie." `quality`'s
+   * own skill→placement scaling is real but deliberately gentle (measured:
+   * a 35→92 skill gap only reliably widens placement a modest amount,
+   * tests/star/finishing.mts's own `good > poor + 0.25` is a real but
+   * conservative bound) — right for a generic roll, where `receiver.skill`
+   * is still mostly noise even at the top end, but not enough to make a
+   * NAMED, KNOWN-ELITE finisher visibly play like one.
+   *
+   * Strictly gated on `receiver.who?.shooting` — real data only, absent
+   * for a generated squad or a save with no six-stat wheel synced yet —
+   * so every chance finishing.mts already measures and calibrates against
+   * (none of which carry a real Identity) gets the EXACT formula that
+   * already existed, unchanged. This is additive on top of quality, not a
+   * replacement for it: `quality` (and so `sigmaDeg`'s own execution
+   * tightening) already responds to the real shooting stat via
+   * `receiver.skill` — this is the extra, deliberate "genuinely elite"
+   * edge on where he's TRYING to put it, layered on top.
+   */
+  // Falls back to `overall` — a real shooting stat needs a squad refresh to
+  // reach an EXISTING save (see CLAUDE.md), and this boost was gated on
+  // `shooting` alone, no fallback, so it stayed a silent no-op for every
+  // save that hasn't refreshed yet even though `overall` has been on every
+  // real Identity for weeks. Matches curlTech's own fallback below — the
+  // same real data should unlock the same real improvement everywhere.
+  const realShooting = receiver.who?.shooting ?? receiver.who?.overall;
+  const eliteBoost = realShooting !== undefined ? 1 + clamp(realShooting - 55, 0, 40) / 100 : 1;
 
   // ── HE AIMS AT THE GOAL, NOT AT THE GOALKEEPER ──
   //
@@ -2892,7 +3274,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // rates tests/star/finishing.mts already validates do not move on average —
   // this widens the spread of what gets tried, not the average of it.
   const ambition = clamp(1 + gaussian(rng) * 0.22, 0.5, 1.3);
-  const placement = ambition * (0.22 + quality * 0.62) * (0.2 + control * 0.8);
+  const placement = ambition * (0.22 + quality * 0.62) * (0.2 + control * 0.8) * eliteBoost;
   const aimX = clamp(
     goalCx + side * placement * (halfMouth - BALL_R * 2),
     POST_L + BALL_R * 2, POST_R - BALL_R * 2,
@@ -2903,7 +3285,13 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   // number that decides whether aiming at the corner finds it or misses the
   // target altogether — which is exactly the trade a finisher is making.
   const sigmaDeg = (1 - quality * 0.82) * 7.5 / Math.max(0.45, control);
-  const dir = rotateDeg(baseDir, gaussian(rng) * sigmaDeg);
+  // Drawn here, not where it's used below, so every OTHER rng() draw in this
+  // function (loft, the fallback spin wobble) keeps consuming the RNG
+  // stream in exactly the sequence it always has — moving this call is what
+  // actually changes a seeded trial's outcome, not the arithmetic that uses
+  // it, and finishing.mts's own calibrated numbers (and any other seeded
+  // replay) depend on that sequence staying put.
+  const noiseDeg = gaussian(rng) * sigmaDeg;
 
   // …and he is allowed to lift it. Loft used to be SUBTRACTED for quality, so
   // every good finish was along the floor: measured mean height at the line was
@@ -2913,11 +3301,295 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number) {
   const loft = clamp(0.10 + rng() * 0.26 + (composite / 100) * 0.14, 0.03, 0.62);
   const Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
   const vz = loft * (7 + composite * 0.04);
-  const spin = (rng() - 0.5) * 0.9;
+  // A flat, skill-independent wobble used to be the whole of it. A real
+  // finisher can bend a shot around a defender or the keeper ON PURPOSE —
+  // his technique (shooting, when we know it; overall otherwise) raises how
+  // much curl he can generate AND points it the same way he's already
+  // placing the shot (`side`, above), so it works FOR him — bending further
+  // into the same corner he's aiming at — rather than adding pure noise.
+  // Reuses curlRange(), the exact same technique-to-curl-range mapping the
+  // player's own struck shots already use (see launch()'s own `spin`)
+  // rather than a second formula. Absent real data (a generated squad, or a
+  // save from before these existed) collapses back to the old flat random
+  // wobble — unchanged difficulty for every chance that isn't off a real
+  // player.
+  // Requested directly, in capitals: "curving shots (SIGNIFICANTLY AND
+  // NOTICEABLY) around defenders." 1.9 is deliberately close to the
+  // player's OWN peak curl coefficient (launch()'s `1.85`, at full power)
+  // — a real elite AI finisher should bend it about as hard as the player
+  // himself can at his very best, not some fraction of it.
+  //
+  // Measured, then corrected: a flat 1.9 sent through_ball's on-target
+  // rate from 82% to 19% — not a skill effect (poor(40) regressed almost
+  // as badly as elite(92), and cutback/byline_cross were unaffected) but a
+  // DISTANCE one. CURL_K bends the ball continuously over its whole
+  // flight, and a through_ball is struck from much further out than a
+  // cutback — "it is struck from further out" is this file's own existing
+  // note on why that situation behaves differently. The same spin held for
+  // twice the flight time bends the ball twice as far off its intended
+  // line, easily clearing the frame it was aimed at. `dist` (already
+  // computed above, ball-to-goal) tapers the coefficient back down for a
+  // longer strike, so a close-range curl stays dramatic while a long-range
+  // one doesn't swerve itself clean off target.
+  const curlDistScale = clamp(1 - (dist - 10) / 30, 0.35, 1);
+  // A header (corner/byline_cross/header, all low `control`) is not a
+  // deliberately side-footed curl the way a cutback finish is — the same
+  // dampening `placement`'s own `(0.2 + control*0.8)` term already applies
+  // to ambition applies here too, so a genuinely hard, uncontrolled chance
+  // doesn't get an unrealistically dramatic swerve just because a good
+  // striker happened to get on the end of it.
+  const curlControlScale = 0.4 + control * 0.6;
+  /**
+   * A real defender in the straight-line path gets bent AROUND, not just
+   * "the keeper is over there so curl this way" — the specific, literal
+   * ask, twice over: "curving shots... to get their shot on target in
+   * hard positions and angles blocked by defenders." Everything above this
+   * point curls purely off where the KEEPER is standing, completely blind
+   * to a body actually standing in the shot's direct line — a real gap,
+   * not just a magnitude problem, and the most likely reason it never read
+   * as "round the defender" even once curl itself was genuinely active.
+   *
+   * Projects each real Defender onto the straight ball→aimX line (the shot
+   * BEFORE any curl bends it) and checks how close he sits to it, between
+   * the two ends — a man near the start or end of that line isn't actually
+   * screening the shot. When one is close enough to matter, the curl
+   * DIRECTION is set to bend away from HIS side of that line — overriding
+   * the keeper-based `side` when the two disagree, because getting the
+   * ball round a body actually in the way takes priority over which
+   * corner is nominally more ambitious — with real EXTRA magnitude on top:
+   * this is the one moment the whole mechanic exists for, not an ordinary
+   * placement curl that happens not to hit anyone.
+   */
+  // Measured, then corrected: with no gate at all, this dragged corner's
+  // on-target rate down further (63.9%, below finishing.mts's own 70%
+  // floor) — a header in a crowded box realistically can't finesse it
+  // round a marker the way a composed side-footed finish can, and corners
+  // specifically have more defenders nearby for this to even find. Gated
+  // to genuinely controlled situations (control >= 0.5 — cutback/
+  // one_on_one/through_ball/tight_angle; excludes byline_cross/volley/
+  // header/corner) rather than tuning the magnitude down further, since
+  // the real issue is which situations this mechanic even makes sense for,
+  // not how strong it is within them.
+  let blockerSide: -1 | 0 | 1 = 0;
+  if (control >= 0.5) {
+    const laneDX = aimX - ball.pos.x, laneDY = -ball.pos.y; // aimX crosses at y = 0
+    const laneLen2 = laneDX * laneDX + laneDY * laneDY;
+    if (laneLen2 > 1) {
+      for (const d of scenario.defenders) {
+        const t = clamp(((d.x - ball.pos.x) * laneDX + (d.y - ball.pos.y) * laneDY) / laneLen2, 0, 1);
+        if (t < 0.12 || t > 0.92) continue; // too close to either end to actually be screening it
+        const projX = ball.pos.x + laneDX * t, projY = ball.pos.y + laneDY * t;
+        if (Math.hypot(d.x - projX, d.y - projY) < 1.4) {
+          // Positive spin curves the ball toward SMALLER x (see
+          // stepBallRaw's own "positive spin curves LEFT of travel"
+          // comment, and CURVE_SPIN_STEP's note on getting this exact
+          // sign backwards once already) — so a defender sitting at
+          // LOWER x needs NEGATIVE spin to bend the ball away from him,
+          // toward larger x, not positive.
+          blockerSide = d.x < projX ? -1 : 1;
+          break;
+        }
+      }
+    }
+  }
+  const curlSide = blockerSide !== 0 ? blockerSide : side;
+  const blockerBoost = blockerSide !== 0 ? 1.15 : 1;
+  const curlTech = receiver.who?.shooting ?? receiver.who?.overall;
+  const spin = curlTech !== undefined
+    ? curlSide * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale * blockerBoost
+    : (rng() - 0.5) * 0.9;
 
-  ball.vel = { x: dir.x * Sh, y: dir.y * Sh };
-  ball.vz = vz;
-  ball.spin = spin;
+  // A defender can sit close enough to the launch point to be a real
+  // obstacle for the first few metres of ANY shot, whichever corner it is
+  // ultimately aimed at, without ever registering on the chord-to-aimX
+  // check below — that check rules him out once aimX pulls the chord far
+  // enough to one side that its straight line no longer passes near him,
+  // even though a real shot from right next to him still starts out close
+  // by regardless of where it's eventually headed. Computed here, ahead of
+  // both places that read it, since the chip below needs it as much as the
+  // wide-aim placement correction does — measured directly: a defender
+  // planted right in front of the receiver blocked a CHIP far more often
+  // than an ordinary shot (73.5% of chip attempts, vs 4.5% for the same
+  // elite finisher's non-chip shots in the same test) — a slow ball spends
+  // real extra time near its own launch point still low enough to be in
+  // range, and this engine's own defender-reach check (stepBallRaw, "A
+  // defender gets to it") widens to CONTROL_R instead of DEF_BLOCK_R the
+  // moment forward speed drops under 12 m/s, which a chip's whole point is
+  // to do. A real player would not even attempt the delicate touch a chip
+  // needs with a body breathing on him — this is that same judgement, not
+  // a separate rule invented for the chip specifically.
+  let nearThreat = false;
+  for (const d of scenario.defenders) {
+    const fy = d.y - ball.pos.y;
+    if (fy < 0 && fy > -7 && Math.abs(d.x - ball.pos.x) < 2.5) { nearThreat = true; break; }
+  }
+
+  /**
+   * THE CHIP — a soft, lofted strike that drops in over an advancing
+   * keeper, the AI-teammate counterpart to what the player's own contact
+   * model already lets a human do (see CHIP_KEEPER_Y's own comment).
+   *
+   * Solves for the Sh/vz pair whose parabola passes through two real
+   * points: height CHIP_CLEAR_Z exactly at `distToKeeper` (safely over his
+   * head right where the save is actually judged — see "THE KEEPER'S OWN
+   * LINE" below), and CHIP_LAND_Z at `distToGoal` (dropped back down by
+   * the time it would reach the frame). Given the ratio r = distToGoal /
+   * distToKeeper and z(t) = vz·t − ½gt² at both points, eliminating vz
+   * between the two equations gives t1 (time to reach the keeper)
+   * directly, and vz follows from either one. A closed-form solve rather
+   * than a guessed constant because the right touch is wildly different
+   * up close than from distance — a fixed vz that clears a keeper 7 m out
+   * either overcooks a chip from 4 m or undercooks one from 12, and this
+   * is exactly the shape of mistake CROSS_VZ_CAP's own history warns
+   * about (a height picked without checking it against the actual
+   * distance it has to travel).
+   *
+   * Gated on curlTech !== undefined (a real finisher, same as everything
+   * else in this function) and a genuinely good one — `quality` already
+   * folds in real skill and team relationship, so this isn't a second,
+   * separate rating check. Not a guaranteed goal: `keeperAttempt` still
+   * rolls it for real, the same as any other shot, off the real dx/dz at
+   * the exact moment he'd be passed — this only gives a good finisher a
+   * genuinely well-executed ATTEMPT when the situation calls for one,
+   * same spirit as everything above it.
+   *
+   * Also gated on `composed` — false only for the scrambled/loose-ball
+   * call site (stepBallRaw's own "hit first time... standing over it for
+   * half a second while they get there is not a decision anybody would
+   * take"). That comment is exactly why a chip is wrong there too: the
+   * delicate touch this solves for takes composure a stumbled-onto loose
+   * ball doesn't get, and measured directly, letting it fire there anyway
+   * made the elite finisher's own block-rate-past-a-defender floor two
+   * sections down noticeably harder to clear at all sample sizes tried —
+   * a real, if occasional, second shot within the same move that this
+   * mechanic had no business volunteering for.
+   */
+  let isChip = false;
+  let chipSh = Sh, chipVz = vz;
+  if (composed && curlTech !== undefined && !nearThreat && quality > 0.55 && scenario.keeper.y > CHIP_KEEPER_Y) {
+    const distToKeeper = ball.pos.y - scenario.keeper.y;
+    const distToGoal = ball.pos.y;
+    if (distToKeeper > CHIP_MIN_KEEPER_DIST && distToGoal > distToKeeper) {
+      // A better finisher spots it more often — 40% at the quality floor
+      // that gates this at all, up to 80% for a maxed-out one.
+      const chipChance = 0.4 + clamp((quality - 0.55) / 0.45, 0, 1) * 0.4;
+      if (rng() < chipChance) {
+        const r = distToGoal / distToKeeper;
+        const t1sq = (CHIP_CLEAR_Z * r - CHIP_LAND_Z) / (0.5 * G * r * (r - 1));
+        if (t1sq > 0.01) {
+          const t1 = Math.sqrt(t1sq);
+          isChip = true;
+          // `distToKeeper`/`distToGoal` are along the pitch's own y-axis, but
+          // `chipSh` ends up multiplied by `dir.y` (below) to actually move
+          // the ball — a unit-vector COMPONENT, not the full speed, since
+          // `dir` also carries an x-component whenever aimX isn't dead
+          // ahead. Dividing straight distance by raw chipSh (as a first cut
+          // of this did) understates the real time-to-arrive by however much
+          // dir.y falls short of 1 — measured directly: the ball was
+          // consistently arriving at the keeper's line lower than intended,
+          // sometimes well under a metre, because it had already travelled
+          // further into its descent than this solve accounted for. Folding
+          // |baseDir.y| in here (dir's own noise rotation is small enough
+          // not to matter for this) recovers the intended y-speed instead.
+          const yFrac = Math.max(0.2, Math.abs(baseDir.y));
+          const vy = distToKeeper / t1;
+          chipSh = vy / yFrac;
+          chipVz = CHIP_CLEAR_Z / t1 + 0.5 * G * t1;
+        }
+      }
+    }
+  }
+
+  /**
+   * A REAL finesse shot does not aim at the target and let curl carry it
+   * further past — it aims WIDE of the target and curls BACK onto it.
+   * Reported directly, with the exact shape spelled out: "curved shots
+   * should mostly be a shot going wider than the goal in order to get
+   * around a defender or be further from a goalkeeper... curving towards
+   * the goal... a player on the left wing... the perfect shot... aimed
+   * more right than the right corner of the goal, curving towards the
+   * goal (so the ball curves left) so it just about gets to the right
+   * hand corner (rather than always going towards the goal... and then
+   * curving wide towards the corner, [which] would be more likely to be
+   * blocked or saved)." That second, rejected shape — aim at goal, curl
+   * carries it wide — is exactly what this function did before: `dir`
+   * pointed straight at `aimX` and curl was then added on top with
+   * nothing correcting for it, so every curled shot actually landed PAST
+   * its own intended target, in the curl's direction, by however much the
+   * curl bent it — an accuracy cost that's the real reason the corner
+   * on-target floor above needed the control >= 0.5 gate to begin with.
+   *
+   * `ball.spin` (see stepBallRaw's own "positive spin curves LEFT of
+   * travel" comment, matching the ax/ay formula there exactly) rotates
+   * the ball's velocity direction at a CONSTANT ANGULAR RATE — it doesn't
+   * add sideways drift, it turns the heading, tracing a circular arc.
+   * For a chord from launch point to a target on that arc, the standard
+   * tangent-chord relationship says the initial heading differs from the
+   * straight chord-to-target line by exactly HALF the arc's total turning
+   * angle — so aiming the LAUNCH `preAngleDeg` degrees wide of `aimX`,
+   * where `preAngleDeg` is half of however much this exact spin will turn
+   * the ball over its own flight time, makes the curl land it ON `aimX`
+   * rather than past it. `flightT` (chord distance over launch speed) is
+   * an approximation — AIR_DRAG means true forward speed decays a little
+   * over the flight — corrected by measurement, not just derivation, in
+   * tests/star/finishing.mts: the sign was verified against the engine's
+   * own measured on-target rate before shipping, not trusted from the
+   * geometry alone, since this file has gotten a curl sign backwards
+   * before (see CURVE_SPIN_STEP's own note).
+   *
+   * Strictly gated on curlTech !== undefined — the exact same real-data
+   * gate `spin` itself already uses — so every generic, no-identity
+   * chance finishing.mts calibrates against keeps the old direct-at-aimX
+   * launch, byte for byte.
+   *
+   * Also gated OFF when blockerSide is set — measured, not assumed: a
+   * symmetric arc that departs and arrives on the chord (this) bulges
+   * to ONE side for its entire middle stretch, the SAME side the whole
+   * way, never crossing back until it closes in on the target. For the
+   * general placement case that side doesn't matter, only the accuracy
+   * does. But a real defender standing close to the launch point (this
+   * mechanism's own wall test plants one 4 m out) is exactly where that
+   * bulge is still small and hasn't swung clear yet — measured directly:
+   * with this compensation applied unconditionally, the elite finisher's
+   * own block-rate-past-a-planted-defender test (below) got WORSE, not
+   * better (36.1% vs 33.2% no-identity — regressed past the very floor
+   * Round D shipped). A REAL curl around a near wall bulges away from it
+   * from the first instant, which is exactly what the OLD direct-at-aimX
+   * launch already does the moment curl starts acting on it — so when a
+   * blocker is the reason for this curl, that older shape is kept
+   * exactly as Round D proved it, and this wide-launch correction is for
+   * the OTHER case: placement accuracy with nothing standing in the way.
+   */
+  let launchDir = baseDir;
+  if (curlTech !== undefined && !isChip && blockerSide === 0 && !nearThreat && Math.abs(spin) > 0.0001) {
+    const chordDist = Math.max(1, Math.hypot(aimX - ball.pos.x, ball.pos.y));
+    const flightT = chordDist / Sh;
+    // The clean circular-arc derivation above (`preAngleDeg` = half the
+    // total curl rotation) assumes constant forward speed; AIR_DRAG means
+    // that is only ever approximate, and the error compounds over a longer
+    // flight — the exact same "it's struck from much further out" fragility
+    // curlDistScale exists to correct for `spin` itself. Measured directly:
+    // through_ball's on-target rate collapsed to 44-55% (below the 70%
+    // floor above) with the raw half-angle formula applied uncut. Reusing
+    // curlDistScale here — rather than a second, separately-tuned constant
+    // — keeps the same taper that's already calibrated for "this gets
+    // riskier the further out it's struck," re-measured below to confirm
+    // it actually restores the floor rather than just plausibly should.
+    const preAngleDeg = clamp(spin * CURL_K * flightT * (90 / Math.PI) * curlDistScale, -40, 40);
+    launchDir = rotateDeg(baseDir, preAngleDeg);
+  }
+  const dir = rotateDeg(launchDir, noiseDeg);
+
+  ball.vel = { x: dir.x * chipSh, y: dir.y * chipSh };
+  ball.vz = chipVz;
+  // A chip is a straight, deliberately soft lofted touch, not a side-footed
+  // finesse strike — the whole shape it needs comes from height and pace
+  // alone, and a real sideways bend on top would fight the two real points
+  // (over his head, under the bar) this was just solved to hit exactly. A
+  // small residual carries over anyway, the same honest "some spin on
+  // everything" a real strike has, rather than a hard, suspiciously exact
+  // zero.
+  ball.spin = isChip ? spin * 0.15 : spin;
   ball.z = 0.1;
   ball.loose = false;
   ball.contactCd = 0.15;
@@ -3454,6 +4126,16 @@ export function stepKeeper(scenario: Scenario, dt: number) {
     k.x += Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
     const wanted = clamp(k.x - k.startX, -KEEPER_LATERAL_MAX, KEEPER_LATERAL_MAX);
     k.dive += (wanted - k.dive) * Math.min(1, dt * 12);
+    // A catch/smother is decided the instant it happens (see resolveKeeper) —
+    // but he is only DRAWN as finished once this real travel has actually
+    // carried him to where it happened. `pendingDone` is never set for a
+    // parry/push-away, so a keeper chasing a genuine loose ball keeps
+    // scrambling exactly as before; this only ever fires for the two
+    // outcomes that were already terminal.
+    if (k.pendingDone && Math.abs(target - k.x) < 0.05) {
+      k.done = true;
+      k.pendingDone = false;
+    }
     return;
   }
 
@@ -3969,12 +4651,29 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   // does what a striker does with a loose ball six yards out.
   {
     const f = scenario.follower;
-    const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
-    // He walks to a stopped ball whether or not he has already had a go at it.
-    // Skipping him once he had shot meant a ball could come to rest five metres
-    // from the only man near it and simply be given up on.
-    if (dead) { move(f, fetch(dist)); f.active = true; }
-    else if (!f.shot && dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
+    // A man running to the captain's orders — his own version of the Runner
+    // block above, same rule: a ball that has stopped still outranks it, so
+    // he does not jog past a loose ball to finish a commanded run either.
+    if (f.commandedTo && !dead) {
+      const dx = f.commandedTo.x - f.x, dy = f.commandedTo.y - f.y;
+      const togo = Math.hypot(dx, dy);
+      if (togo < 0.6) {
+        f.commandedTo = undefined;   // arrived; back to reacting like everybody else
+        f.active = false;
+      } else {
+        const step = Math.min(togo, RUNNER_SPEED * dt);
+        f.x += (dx / togo) * step;
+        f.y += (dy / togo) * step;
+        f.active = true;
+      }
+    } else {
+      const dist = Math.hypot(ball.pos.x - f.x, ball.pos.y - f.y);
+      // He walks to a stopped ball whether or not he has already had a go at it.
+      // Skipping him once he had shot meant a ball could come to rest five metres
+      // from the only man near it and simply be given up on.
+      if (dead) { move(f, fetch(dist)); f.active = true; }
+      else if (!f.shot && dist <= REACT_R) { move(f, REACT_SPEED); f.active = true; }
+    }
 
     // Raised from 1.6 — a keeper's parry launches a loose ball from dive/reach
     // height (roughly 1.8-2.2m) with real upward pace, so it was spending
@@ -4014,6 +4713,68 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     if (dist > REACT_R) continue;
     move(d, REACT_SPEED);
   }
+}
+
+const TOUCH_CHASE_SPEED = 7.6; // m/s — his own dead sprint after a deliberate
+                                // touch, a shade quicker than RUNNER_SPEED's
+                                // team-mate run
+const TOUCH_CHASE_START_R = 1.3; // metres the ball must first get away from
+                                  // him, completely unchased, before he sets
+                                  // off after it at all — small on purpose,
+                                  // "a little bit to the right" is all it
+                                  // should take
+const TOUCH_CHASE_CATCH_R = CONTROL_R; // the same "close enough to take it"
+                                        // radius the follower/poacher's own
+                                        // fetch already uses
+
+/**
+ * Boot.extraTouch's real chase — reported back live after the first version
+ * shipped without it: "my player just doesnt chase the touch at all... he
+ * never moves at all. I need him to like run to it as soon as he kicks it."
+ *
+ * That first version never moved anything: it waited on stepBall's own
+ * invisible dead-ball timeout and remapped whatever it returned. This
+ * function is the real thing — it moves `scenario.player` itself, in place,
+ * toward the ball, which is the exact field footballer() already reads live
+ * for his on-screen figure and poseFor/runPhase already animate as a run the
+ * moment it moves. Nothing downstream needed touching for the chase to be
+ * SEEN; it only needed to actually happen.
+ *
+ * A second live report caught a real flaw in the FIRST version of this
+ * function itself, not just the remap it replaced: chasing from the very
+ * first tick meant he was always closing the gap at the same rate the ball
+ * was opening it, so the two of them could travel half the pitch together
+ * and the DISTANCE BETWEEN THEM — the only thing either the old arm check or
+ * this one actually measures — never once crossed the threshold. "he wont
+ * take his second touch... coz he never left the 1.8m thing coz hes chasing
+ * it the whole time," diagnosed correctly, live. The fix is to not chase at
+ * all yet: he stands dead still — `touchChaseArmed` stays false and nothing
+ * moves — until the ball has first gained TOUCH_CHASE_START_R on him with
+ * NOTHING fighting that gap from his side. Only once that is true, purely
+ * the ball's own doing, does he set off — and because the gap he then has to
+ * close is small by design, he covers it in well under a second at
+ * TOUCH_CHASE_SPEED, arriving for a genuine "half a second or a second"
+ * second touch rather than the old multi-second dead-ball wait.
+ *
+ * Deliberately does not itself check ball.owner, acceptsCaptainOrders, or
+ * the toggle — CanvasMatch's call site already gates every one of those
+ * exactly as the original remap did, and re-checking them here would just
+ * be a second copy of the same condition to keep in sync.
+ */
+export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number): boolean {
+  const p = scenario.player;
+  const dist = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
+  if (!scenario.touchChaseArmed) {
+    if (dist > TOUCH_CHASE_START_R) scenario.touchChaseArmed = true;
+    else return false; // frozen — let the ball do the separating, unchased
+  }
+  if (dist > 0.02) {
+    const step = Math.min(dist, TOUCH_CHASE_SPEED * dt);
+    p.x += ((ball.pos.x - p.x) / dist) * step;
+    p.y += ((ball.pos.y - p.y) / dist) * step;
+  }
+  const after = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
+  return after <= TOUCH_CHASE_CATCH_R;
 }
 
 /**
@@ -4077,7 +4838,7 @@ function headedForGoal(ball: Ball, scenario: Scenario): boolean {
  * Each prior save on the same ball leaves him grounded, which is the one
  * concession to a scramble rather than a first shot.
  */
-function keeperSaveRadius(scenario: Scenario): number {
+export function keeperSaveRadius(scenario: Scenario): number {
   // Blend of the smooth rating curve and the tier's headline number, so a
   // keeper still improves gradually within a tier rather than stepping.
   const smooth = KEEPER_SAVE_R_MIN
@@ -4123,21 +4884,57 @@ function classifySave(
   return margin < 0.4 ? "fingertip" : "low";
 }
 
+/** What a shot crossing the plane at (x, z) asks of the keeper. */
+export interface KeeperAttempt {
+  /** Whether the dive actually gets there. A roll, not a fact read off a
+   *  chart — see the doc below. Always a real, watched attempt regardless —
+   *  see the note above KEEPER_QUALITY_BAND for why there is no longer a
+   *  distance past which he simply does not bother. */
+  reaches: boolean;
+  /** 1 = straight at him, 0 = the outer edge of a save he can still make.
+   *  Unchanged meaning from before — still what resolveKeeper and
+   *  classifySave key their own (untouched) numbers off. */
+  margin: number;
+  dist: number;
+  reach: number;
+}
+
 /**
- * Is a ball crossing the plane at (x, z) inside the keeper's save volume?
+ * Does the keeper get there, and is it even worth trying?
  *
- * Height is scaled, so the volume is a flattened ellipse — wide across the line
- * and shallow upward. That is what makes the top corners the safest target
- * without giving them any explicit bonus.
+ * Height is scaled, so his reach is a flattened ellipse — wide across the
+ * line and shallow upward. That is what makes the top corners the hardest
+ * shot to keep out without giving them any explicit bonus: they are simply
+ * furthest from him.
+ *
+ * The old version of this asked one question — `d < r`? — and the answer
+ * decided everything: certain save on one side of the line, certain goal a
+ * centimetre past it, and an animation stitched on afterward to match
+ * whichever it was. Requested directly: he should not know the answer
+ * before he dives, and it should not read as a hard radius either. So the
+ * same distance-vs-reach comparison now only decides the CERTAIN cases —
+ * well inside his reach is still an automatic take, well outside it still
+ * always beats him, nothing about the difficulty curve moves for either of
+ * those — and only the band actually worth calling a "stretch" (the last
+ * KEEPER_QUALITY_BAND of his reach, split evenly either side of the old
+ * cutoff) becomes a real roll. Centring it exactly on the old cutoff is
+ * what keeps the AGGREGATE save rate where it always was — see
+ * tests/star/keeperDive.mts for the measured comparison against the old
+ * formula — while turning the single knife-edge into the thing a stretch
+ * save actually is: sometimes he gets there, sometimes the ball he was
+ * closer to than the one before it still beats him.
  */
-function keeperCovers(scenario: Scenario, xCross: number, zCross: number): { saved: boolean; margin: number } {
+export function keeperAttempt(scenario: Scenario, xCross: number, zCross: number, rng: () => number): KeeperAttempt {
   const k = scenario.keeper;
-  const r = keeperSaveRadius(scenario);
+  const reach = keeperSaveRadius(scenario);
   const dx = xCross - k.x;
   const dz = (zCross - KEEPER_CENTRE_Z) * KEEPER_SAVE_Z_SCALE;
-  const d = Math.hypot(dx, dz);
-  // margin: 1 = straight at him, 0 = right on the edge of his reach.
-  return { saved: d < r, margin: clamp((r - d) / r, 0, 1) };
+  const dist = Math.hypot(dx, dz);
+  const margin = clamp((reach - dist) / reach, 0, 1);
+  const band = reach * KEEPER_QUALITY_BAND;
+  const p = band > 0 ? clamp(0.5 + KEEPER_QUALITY_BIAS + (reach - dist) / band, 0, 1) : (dist < reach ? 1 : 0);
+  const reaches = rng() < p;
+  return { reaches, margin, dist, reach };
 }
 
 // Resolve a keeper contact into catch / parry / tip. Returns a terminal
@@ -4152,6 +4949,24 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   ball.lastTouch = "keeper";
   ball.deflected = "keeper";
   const marginNorm = clamp((reach - dist) / reach, 0, 1); // 1 = right at the body, 0 = full stretch
+
+  // ── A genuine goalkeeping error ──
+  //
+  // New, and deliberately rare — requested directly as "a nice update", not
+  // a gimmick: even a keeper who gets there can lose his grip or misjudge
+  // the take and let a ball he reached squirm over the line anyway. Checked
+  // FIRST and returns straight away, before any of the calibrated numbers
+  // below it — carved out of the whole reached-it population rather than
+  // reweighting any of them. Scaled by how much of a stretch it was: a
+  // routine gather is almost never fumbled, a fingertip job for the top
+  // corner sometimes is. The ball's own flight is left completely alone —
+  // same trick a normal miss already uses (see the goal-line crossing
+  // block) — so it carries on and is credited exactly like any other goal,
+  // just with `lastTouch`/`deflected` already honestly set to "keeper" for
+  // the commentary to read off.
+  const mistakeChance = KEEPER_MISTAKE_BASE + (1 - marginNorm) * KEEPER_MISTAKE_STRETCH_BONUS;
+  if (rng() < mistakeChance) return null;
+
   // ── What a keeper can hold ──
   //
   // This was `speed < 17 && z < 1.2`, and the median shot he gets a hand to
@@ -4186,7 +5001,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
-    k.done = true;
+    k.pendingDone = true;
     return "caught";
   }
 
@@ -4215,7 +5030,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
-    k.done = true;
+    k.pendingDone = true;
     return "caught";
   }
 
@@ -4252,7 +5067,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
   // would surface as a plain, uncredited "out".
   if (marginNorm < 0.24 || ball.z > 1.85 || speed > 26) {
     if (rng() < 0.22) {
-      k.done = true;
+      k.pendingDone = true;
       return "saved";
     }
     const side = ball.pos.x < CX ? -1 : 1;
@@ -4281,7 +5096,7 @@ function resolveKeeper(ball: Ball, scenario: Scenario, dist: number, reach: numb
     ball.pos = { x: k.x, y: Math.max(k.y, 0.4) };
     ball.z = 0.55;
     ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.resting = true;
-    k.done = true;
+    k.pendingDone = true;
     return "caught";
   }
   const away = normalize({ x: ball.pos.x - k.x, y: ball.pos.y - k.y });
@@ -4462,6 +5277,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     if (ball.receiverControlT <= 0) {
       const relay = relayTargetFor(scenario);
       if (relay) launchReceiverPass(ball, scenario, relay, rng);
+      else if (relayFollowerTargetFor(scenario)) launchReceiverFollowerPass(ball, scenario, rng);
       else launchReceiverShot(ball, scenario, rng);
     }
     return null;
@@ -4576,7 +5392,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         : foot + DEF_BLOCK_H;
       if (ball.z < foot || ball.z > top) continue;
       // Right on top of a ball travelling at pace; merely near a slow one.
-      const reach = speed > 12 ? DEF_BLOCK_R : CONTROL_R;
+      const reach = (speed > 12 ? DEF_BLOCK_R : CONTROL_R) * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < reach) {
         // A defender in the way of a ball going in has BLOCKED it; a defender
         // in the way of anything else has cut it out. Both cost you the ball and
@@ -4752,12 +5568,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // is who he is, not the fresh dice roll rollReceiver() gave him at
           // kick-off — reported as "how are you calculating a player's
           // finishing?" and the honest answer was: not off the player at
-          // all, off a role-shaped random number. A real squad's overall is
-          // the closest thing this game has to a finishing stat, so it wins
-          // when there is one. Still noisy — the same real player has good
-          // days and bad ones — but centred on who he actually is.
-          if (r.who.overall !== undefined) {
-            scenario.receiver.skill = clamp(r.who.overall + gaussian(rng) * 6, 0, 100);
+          // all, off a role-shaped random number. His real `shooting` is
+          // now the first choice — a genuine finishing stat, not a proxy
+          // for it — falling back to `overall` for a man the database has
+          // no six-stat wheel for yet. Still noisy — the same real player
+          // has good days and bad ones — but centred on who he actually is.
+          const finishing = r.who.shooting ?? r.who.overall;
+          if (finishing !== undefined) {
+            scenario.receiver.skill = clamp(finishing + gaussian(rng) * 6, 0, 100);
           }
         }
         scenario.receivedAt = { x: tgt.x, y: tgt.y };
@@ -4820,7 +5638,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         // armband has to outrank instinct even then, not just on a clean
         // pass into his stride.
         const relay = relayTargetFor(scenario);
-        if ((scenario.receiver || relay) && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
+        const followerRelay = !relay && relayFollowerTargetFor(scenario);
+        if ((scenario.receiver || relay || followerRelay) && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
           ball.pos = { x: tgt.x, y: tgt.y };
           ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
           // ── A ball you chase down is hit first time ──
@@ -4833,7 +5652,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // one — the pause was written for the other case and applied to both.
           if (scrambled) {
             if (relay) launchReceiverPass(ball, scenario, relay, rng);
-            else launchReceiverShot(ball, scenario, rng);
+            else if (followerRelay) launchReceiverFollowerPass(ball, scenario, rng);
+            else launchReceiverShot(ball, scenario, rng, false);
           } else {
             // Re-checked at expiry (below) rather than decided here, so a
             // relay pending right now and a relay still pending a beat later
@@ -4869,22 +5689,46 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const f = (prevY - k.y) / (prevY - ball.pos.y || 1);
     const xAt = prevX + (ball.pos.x - prevX) * f;
     const zAt = prevZ + (ball.z - prevZ) * f;
-    const cover = keeperCovers(scenario, xAt, zAt);
-    if (cover.saved) {
-      k.saveDir = Math.sign(xAt - k.x) || 0;
-      k.saveLunge = 0.001;
-      k.scrambling = false;
+    const attempt = keeperAttempt(scenario, xAt, zAt, rng);
+    // ── He throws himself at it — for real, every time ──
+    //
+    // No distance gate here anymore — see the note above KEEPER_QUALITY_BAND
+    // for why a shot with no real chance of being reached still gets a full,
+    // genuine dive rather than nothing. `scrambling` below is the SAME
+    // lateral travel-at-a-capped-speed machinery a keeper already uses to
+    // chase a spilled rebound, reused rather than duplicated: "cover real
+    // ground toward an x over the next few frames" is the same problem
+    // either way. `x` is deliberately left untouched here — it used to jump
+    // straight to the save point in the same tick the outcome was decided,
+    // which is the "teleport" this whole rework exists to remove. He starts
+    // from wherever he actually is and travels; see stepKeeper.
+    k.saveDir = Math.sign(xAt - k.x) || 0;
+    k.saveLunge = 0.001;
+    k.scrambling = true;
+    if (attempt.reaches) {
+      k.targetX = xAt;
       ball.pos.x = xAt;
       ball.pos.y = Math.max(k.y, 0.02);
       ball.z = Math.max(0, zAt);
-      const r = keeperSaveRadius(scenario);
-      const standingAt = k.x;
-      // He dives to it. The decision was made against where he was standing;
-      // this is only the picture agreeing with it.
-      k.x = clamp(xAt, POST_L - 2.5, POST_R + 2.5);
-      const outcome = resolveKeeper(ball, scenario, (1 - cover.margin) * r, r, speed, rng);
-      k.saveKind = classifySave(xAt, zAt, standingAt, cover.margin, outcome);
+      const outcome = resolveKeeper(ball, scenario, attempt.dist, attempt.reach, speed, rng);
+      k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, outcome);
       if (outcome) return outcome;
+    } else {
+      // ── Beaten, but not stood there watching it happen ──
+      //
+      // He genuinely goes for it — travelling up to as far as his real
+      // reach covers, toward the ball, and no further, so a shot that only
+      // just beat him reads as a stretch that fell agonisingly short, and a
+      // shot that was never reachable at all reads as a full, real dive
+      // that plainly wasn't going to get anywhere near it — never a keeper
+      // who simply never moved. The ball itself is left completely alone:
+      // no position, velocity or outcome is touched here, so it carries on
+      // exactly as an ordinary miss always has, and the goal-line crossing
+      // block below still decides it — this is purely the picture of him
+      // failing, never a second place gameplay gets decided.
+      const dir = Math.sign(xAt - k.x) || 1;
+      k.targetX = k.x + dir * Math.min(Math.abs(xAt - k.x), attempt.reach);
+      k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, null);
     }
   }
 
@@ -5052,4 +5896,6 @@ export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass"
   // A defender reading a ball you played to somebody. Distinct from `blocked`,
   // which is a defender in the way of one you played at the goal.
   tackled: { text: "Intercepted!", kind: "miss" },
+  // Neutral, same as `short`/`out` — never a shot or a pass, see creditChance.
+  touchOn: { text: "Touch on!", kind: "neutral" },
 };
