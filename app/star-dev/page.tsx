@@ -12,6 +12,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
+import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor, MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
@@ -722,7 +723,11 @@ export default function StarDevPage() {
    */
   const handlePostMatchContinue = useCallback(() => {
     if (!career) return;
-    if (hasFreshMedia(career)) { setPhase("media"); return; }
+    // A per-device preference (Settings → Post-Match Reactions), not game
+    // data — requested directly: after the rating/money screen, some
+    // players would rather go straight back to the dashboard than always
+    // pass through the phone screen.
+    if (getPostMatchReactionsEnabled() && hasFreshMedia(career)) { setPhase("media"); return; }
     continueAfterMatch(career, !pressQuestion);
   }, [career, continueAfterMatch, pressQuestion]);
 
