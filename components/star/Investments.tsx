@@ -1220,10 +1220,25 @@ function SignPlayerPanel({
   // WHY a squad is still fake, `generatedSquad`'s own `gen:` id prefix (the
   // same tell `shouldUpgradeExternalSquads` uses) means a fictional player
   // is never offered as a signing option here.
+  // Reported directly, 16 Sep 2026, a real bug with real money lost over
+  // it: the human player's own character showed up as a signable candidate
+  // FROM a club he no longer even played for (his original club, long since
+  // left for good) — "buying" it did something (money left the buying
+  // club's budget) but connected to nothing real: this system was never
+  // built to move `career.player`/`career.squad` at all, only the
+  // LeaguePlayer-shaped records the OTHER 19 clubs carry, so it can never
+  // legitimately contain the human character in the first place. Whatever
+  // stale snapshot let a leftover record with his exact name survive under
+  // an old club long after he actually transferred away, the fix that
+  // matters is the same shape as the "gen:" filter just above it: never
+  // offer HIM as a buyable candidate, full stop, regardless of which club's
+  // data he's stuck in or why.
+  const yourName = `${career.player.firstName} ${career.player.lastName}`;
   const others = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
     .filter(s => s.club !== club && s.club !== career.player.club)
     .flatMap(s => s.players.map(p => ({ ...p, fromClub: s.club })))
-    .filter(p => !p.id.startsWith("gen:"));
+    .filter(p => !p.id.startsWith("gen:"))
+    .filter(p => p.name !== yourName);
   const everyone = [...freeAgents, ...others];
 
   // Requested directly, researched for feasibility first: every field these

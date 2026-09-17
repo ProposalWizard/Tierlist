@@ -124,6 +124,7 @@ import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
+import GardenScreen from "@/components/star/GardenScreen";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
 
 export default function StarDevPage() {
@@ -2174,6 +2175,7 @@ export default function StarDevPage() {
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
+  if (phase === "garden") return <GardenScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToOwnership} />;
 
   if (phase === "ownership") {
@@ -2558,6 +2560,9 @@ export default function StarDevPage() {
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
             <QuickBtn label="Ownership" icon="🏛️" onClick={() => setPhase("ownership")} />
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            <QuickBtn label="Garden" icon="🌳" onClick={() => setPhase("garden")} />
           </div>
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>

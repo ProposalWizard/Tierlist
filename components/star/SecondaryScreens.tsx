@@ -251,7 +251,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
 
         {kinds.length > 0 && (
           <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden mb-3">
-            <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/60 border-b border-black/20">
+            <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white border-b border-black/20">
               Individual Awards
             </div>
             {kinds.map((kind, i) => (
@@ -265,7 +265,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
         )}
 
         {trophies.length === 0 ? (
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 text-center text-white/75 text-sm">
+          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 text-center text-white text-sm">
             No trophies yet — win the league or a cup!
           </div>
         ) : (
@@ -275,7 +275,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
                 <div className="text-2xl">🥇</div>
                 <div className="flex-1">
                   <div className="font-black text-white text-sm">{t.competition}</div>
-                  <div className="text-[10px] text-white/75">{t.club} · Season {t.season}</div>
+                  <div className="text-[10px] text-white">{t.club} · Season {t.season}</div>
                 </div>
               </div>
             ))}
