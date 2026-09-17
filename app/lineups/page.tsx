@@ -5,7 +5,9 @@ import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, OTHER_CLUBS,
-  CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS, type Division,
+  CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS,
+  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
+  type Division,
 } from "@/lib/star/clubs";
 import type { LeagueSquad } from "@/lib/star/types";
 
@@ -29,6 +31,14 @@ import type { LeagueSquad } from "@/lib/star/types";
 const TABS: { key: Division; label: string; clubs: readonly string[] }[] = [
   { key: "premier", label: "Premier League", clubs: PREMIER_LEAGUE_CLUBS },
   { key: "championship", label: "Championship", clubs: CHAMPIONSHIP_CLUBS },
+  { key: "league_one", label: "League One", clubs: LEAGUE_ONE_CLUBS },
+  { key: "league_two", label: "League Two", clubs: LEAGUE_TWO_CLUBS },
+  {
+    key: "national_league", label: "National League",
+    // The four-club "waiting to be promoted" pool below the National League
+    // shares its tab — same idea as Other/the old promotion pool below.
+    clubs: [...NATIONAL_LEAGUE_CLUBS, ...NATIONAL_LEAGUE_POOL_CLUBS],
+  },
   { key: "champions", label: "Champions League", clubs: CHAMPIONS_LEAGUE_CLUBS },
   { key: "europa", label: "Europa League", clubs: EUROPA_LEAGUE_CLUBS },
   // The promotion pool and the standalone clubs are different things
