@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { DEFAULT_FACE_STYLE, loadFaceStyle, CROP_VIEWPORT, type FaceStyle } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE, loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { FAKE_FACES, fakeFaceFor } from "@/lib/star/fakeFaces";
 import { sourceRect } from "@/lib/star/portrait";
 import { createFaceImageCache, type FaceImageCache } from "@/lib/star/faceImageCache";
+import { shuffle } from "@/lib/star/cups";
 
 /**
  * THE GARDEN — YOUR OWN PLACE.
@@ -55,16 +56,20 @@ import { createFaceImageCache, type FaceImageCache } from "@/lib/star/faceImageC
 const SCENES = ["stable", "garden", "bench"] as const;
 type Scene = (typeof SCENES)[number];
 
-/** A stable pick of a few real teammates to sit on the bench — seeded off
- *  the save so the same trio holds for a while rather than reshuffling on
- *  every render. */
-function pickVisitors(career: CareerState): CareerState["squad"] {
+/** A genuinely random pick of a few real teammates to sit on the bench —
+ *  requested directly ("the 3 players... should be randomly picked each
+ *  time you go into the garden area"), replacing an earlier version that
+ *  deliberately seeded off the save (week/season) so the same trio held
+ *  for a while. Reuses the same real Fisher-Yates `shuffle` the cup draw
+ *  itself uses, fed `Math.random` rather than a seeded rng — a real reroll
+ *  every time, not a stable one. Computed once per mount of GardenScreen
+ *  (see its own `useState` lazy initializer below), not on every re-render
+ *  while already on the screen, so swiping between scenes never reshuffles
+ *  who's sitting there mid-visit. */
+function pickRandomVisitors(career: CareerState): CareerState["squad"] {
   const squad = career.squad ?? [];
   if (squad.length <= 3) return squad;
-  const start = (career.week + career.season * 7) % squad.length;
-  const out: CareerState["squad"] = [];
-  for (let i = 0; i < 3; i++) out.push(squad[(start + i) % squad.length]);
-  return out;
+  return shuffle(squad, Math.random).slice(0, 3);
 }
 
 /** A flat sky-over-grass ground, shared by all three scenes so the swipe
@@ -351,13 +356,36 @@ const SHIRT_COLORS = ["#d4342c", "#2b6cb0", "#1f9142"];
  *  same crop/scale/outline math `drawPlayerHead.ts` uses for every other
  *  figure in this game, instead of the plain flat-colour circle `Figure`
  *  draws for its head. Scaled up from `Figure`'s own proportions so a bench
- *  teammate reads as an actual player, not a doll. */
+ *  teammate reads as an actual player, not a doll.
+ *
+ *  Reported directly as reading "a bit weird" — the old torso was a flat,
+ *  uniform-width rectangle with no neck, and the legs were two identical
+ *  untapered bars. Redesigned with more human proportions, still flat
+ *  low-poly shapes matching this file's own visual language (see Figure/
+ *  Tree/Horse): a real neck gap under the head, a torso that's wider at
+ *  the shoulders than the waist, angled arms with a small hand at the end
+ *  of each, and legs that taper in slightly toward the ankle with a real
+ *  gap between them rather than two parallel blocks. Checked against
+ *  `BenchFigure`'s own `scale(1.7)` and the bench's `seatX` spacing
+ *  ([80, 150, 220], 70px apart) — the widest point (the hands, ±12 local
+ *  units → ~20px at this scale) still leaves clear room between
+ *  neighbouring seats, so nothing here needed adjusting. */
 function BenchBody({ shirt }: { shirt: string }) {
+  const skin = "#e8b593";
   return (
     <g>
-      <rect x="-8" y="-19" width="16" height="20" rx="3" fill={shirt} />
-      <rect x="-7" y="2" width="5.5" height="15" fill="#2b2b40" />
-      <rect x="1.5" y="2" width="5.5" height="15" fill="#2b2b40" />
+      {/* neck — a real gap between the head and the shoulders */}
+      <rect x="-2" y="-19" width="4" height="4" fill={skin} />
+      {/* torso — wider at the shoulders, narrower at the waist */}
+      <path d="M -8.5,-15 L 8.5,-15 L 6.5,1 C 6.5,2.6 3.6,3.4 0,3.4 C -3.6,3.4 -6.5,2.6 -6.5,1 Z" fill={shirt} />
+      {/* arms, angled out from the shoulder, with a small hand each */}
+      <path d="M -8.5,-15 L -6,-14 L -9.5,-2.5 L -12,-3 Z" fill={shirt} />
+      <path d="M 8.5,-15 L 6,-14 L 9.5,-2.5 L 12,-3 Z" fill={shirt} />
+      <circle cx="-11.5" cy="-2" r="1.5" fill={skin} />
+      <circle cx="11.5" cy="-2" r="1.5" fill={skin} />
+      {/* legs — a slight taper toward the ankle, with a real gap between them */}
+      <path d="M -6,4 L -1,4 L -1.5,18 L -5,18 Z" fill="#2b2b40" />
+      <path d="M 6,4 L 1,4 L 1.5,18 L 5,18 Z" fill="#2b2b40" />
     </g>
   );
 }
@@ -378,17 +406,46 @@ function BenchBody({ shirt }: { shirt: string }) {
  * drawPlayerHead itself calls) clipped to a circle, and a circular outline
  * stroke. The one piece deliberately NOT reproduced here is the real alpha-
  * silhouette outline trace (stamping the photo's own cutout shape at 12
- * ring points) — that's a canvas-only technique (offscreen compositing),
- * and a plain circular stroke is what drawPlayerHead itself already falls
- * back to for a figure with no photo, so this is a reasonable, honestly
- * simplified substitute for a small decorative bench figure rather than a
- * silent departure from a real rule.
+ * ring points) — that's a canvas-only technique (offscreen compositing).
+ * A plain circular stroke was tried as its substitute in an earlier round
+ * and reported directly as an unwanted "black circle... around their face
+ * that is not part of the customizable design" — a real FaceStyle-driven
+ * outline reads as an unrelated artifact on this small decorative bench
+ * figure, so BenchHead never draws one at all now, regardless of what
+ * `outlineEnabled` says elsewhere.
+ *
+ * `fallbackKey` — the "missing face" bug, root-caused. Reported twice,
+ * always exactly one bench player with no face at all. Every squad-player
+ * construction site (squadData.ts's generateSquad, realSquad.ts's
+ * buildSquadFromRoster, leagueTransfers.ts) was checked and none of them
+ * can produce an empty-string imageUrl (every one either omits the field
+ * or uses `|| undefined`) — so `p.imageUrl ?? fakeFaceFor(p.id)` in
+ * BenchScene was never actually the gap. Nor is the player's own character
+ * ever a member of `career.squad` (checked `makeInitialCareer` and every
+ * squad-rebuild site) — the bench only ever draws real teammates. And a
+ * standalone browser test confirmed an SVG `<image href>` with these real
+ * fake-face filenames' literal spaces/commas loads correctly unencoded, so
+ * it isn't a URL-escaping bug either.
+ *
+ * The real gap: a REAL, non-fake photo URL that is truthy but genuinely
+ * dead — a self-hosted `player-portraits/{sofifaId}.png` that was never
+ * actually uploaded for that specific squad member (per PL Draft — Data
+ * Status above, coverage isn't 100% for every depth player), or an old row
+ * still pointing at SoFIFA's own CDN, which has required a signed-in
+ * session for months. That case is TRUTHY, so the `??` fallback never
+ * fires — the `<image>` element gets an href that simply 404s, `natural`
+ * never resolves, and the figure is left with only its backing circle: a
+ * face-less bench player, deterministically, for that same real player,
+ * every time. `fallbackKey` lets BenchHead recover from exactly that: once
+ * the real photo's own `<img>` reports a real load failure, this switches
+ * to a genuine fake face instead of leaving the figure blank.
  */
 function BenchHead({
   cx0,
   cy0,
   headBaseR,
   imageUrl,
+  fallbackKey,
   style,
   fakeStyle,
   cache,
@@ -397,16 +454,44 @@ function BenchHead({
   cy0: number;
   headBaseR: number;
   imageUrl: string | undefined;
+  fallbackKey: string;
   style: FaceStyle;
   fakeStyle: FakeFaceStyle;
   cache: FaceImageCache;
 }) {
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [broken, setBroken] = useState(false);
   const clipId = useRef(`bench-face-clip-${Math.random().toString(36).slice(2)}`).current;
+
+  // Detect a genuinely DEAD real photo — reset whenever the underlying
+  // squad player (and so `imageUrl`) changes.
+  useEffect(() => {
+    setBroken(false);
+    if (!imageUrl || (FAKE_FACES as readonly string[]).includes(imageUrl)) return; // a fake face never needs this
+    const img = cache.get(imageUrl);
+    if (!img) return;
+    if (img.complete && img.naturalWidth > 0) return; // already loaded fine
+    // The shared cache (faceImageCache.ts) already retries once itself on a
+    // failed load, but never reports whether that retry also failed — so a
+    // genuinely dead URL used to leave this figure hanging with no face at
+    // all forever (see the block comment above). A real `error` event here
+    // starts a short timer; if the real photo still hasn't loaded by the
+    // time it fires (the cache's own retry has had a chance to fail too),
+    // this falls back to a real fake face instead of leaving the figure
+    // blank.
+    const onError = () => {
+      window.setTimeout(() => setBroken(true), 1200);
+    };
+    img.addEventListener("error", onError);
+    return () => img.removeEventListener("error", onError);
+  }, [imageUrl, cache]);
+
+  const effectiveUrl = broken ? fakeFaceFor(fallbackKey) : imageUrl;
+  const usingFake = !!effectiveUrl && (FAKE_FACES as readonly string[]).includes(effectiveUrl);
 
   useEffect(() => {
     setNatural(null);
-    const img = cache.get(imageUrl);
+    const img = cache.get(effectiveUrl);
     if (!img) return;
     if (img.complete && img.naturalWidth > 0) {
       setNatural({ w: img.naturalWidth, h: img.naturalHeight });
@@ -415,9 +500,7 @@ function BenchHead({
     const onLoad = () => setNatural({ w: img.naturalWidth, h: img.naturalHeight });
     img.addEventListener("load", onLoad);
     return () => img.removeEventListener("load", onLoad);
-  }, [imageUrl, cache]);
-
-  const usingFake = !!imageUrl && (FAKE_FACES as readonly string[]).includes(imageUrl);
+  }, [effectiveUrl, cache]);
   const effective = usingFake
     ? { ...style, scale: fakeStyle.scale, offsetX: fakeStyle.offsetX, offsetY: fakeStyle.offsetY, crop: fakeStyle.crop }
     : style;
@@ -425,22 +508,20 @@ function BenchHead({
   const r = headBaseR * effective.scale;
   const cx = cx0 + effective.offsetX * headBaseR;
   const cy = cy0 + effective.offsetY * headBaseR;
-  const hasPhoto = effective.facesEnabled && !!imageUrl && !!natural;
+  const hasPhoto = effective.facesEnabled && !!effectiveUrl && !!natural;
 
   let img: { href: string; x: number; y: number; w: number; h: number } | null = null;
   if (hasPhoto && natural) {
     const rect = sourceRect(effective.crop, natural.w, natural.h, CROP_VIEWPORT);
     const scale = (r * 2) / rect.sw;
     img = {
-      href: imageUrl!,
+      href: effectiveUrl!,
       w: natural.w * scale,
       h: natural.h * scale,
       x: cx - r - rect.sx * scale,
       y: cy - r - rect.sy * scale,
     };
   }
-
-  const strokeWidth = Math.max(0.6, headBaseR * 0.12 * effective.outlineWidth);
 
   return (
     <g>
@@ -463,9 +544,7 @@ function BenchHead({
           />
         </>
       )}
-      {effective.outlineEnabled && (
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={effective.outlineColor} strokeWidth={strokeWidth} />
-      )}
+      {/* No outline stroke here, deliberately — see the block comment above. */}
     </g>
   );
 }
@@ -490,6 +569,7 @@ function BenchFigure({
   seatX,
   shirt,
   imageUrl,
+  fallbackKey,
   style,
   fakeStyle,
   cache,
@@ -497,6 +577,7 @@ function BenchFigure({
   seatX: number;
   shirt: string;
   imageUrl: string | undefined;
+  fallbackKey: string;
   style: FaceStyle;
   fakeStyle: FakeFaceStyle;
   cache: FaceImageCache;
@@ -515,7 +596,7 @@ function BenchFigure({
     >
       <g className="bench-figure-body">
         <BenchBody shirt={shirt} />
-        <BenchHead cx0={0} cy0={-25} headBaseR={9} imageUrl={imageUrl} style={style} fakeStyle={fakeStyle} cache={cache} />
+        <BenchHead cx0={0} cy0={-25} headBaseR={9} imageUrl={imageUrl} fallbackKey={fallbackKey} style={style} fakeStyle={fakeStyle} cache={cache} />
       </g>
       <style jsx>{`
         .bench-figure.idle .bench-figure-body { animation: sway 3.6s ease-in-out infinite; }
@@ -566,6 +647,7 @@ function BenchScene({ visitors }: { visitors: CareerState["squad"] }) {
             seatX={seats[i]!}
             shirt={SHIRT_COLORS[i % SHIRT_COLORS.length]!}
             imageUrl={p.imageUrl ?? fakeFaceFor(p.id)}
+            fallbackKey={p.id}
             style={style}
             fakeStyle={fakeStyle}
             cache={cache}
@@ -593,7 +675,13 @@ export default function GardenScreen({ career, onBack }: { career: CareerState; 
   };
 
   const trophyCount = (career.trophies ?? []).length;
-  const visitors = useMemo(() => pickVisitors(career), [career]);
+  // A genuine reroll every time you come into the Garden — requested
+  // directly, replacing the old stable/seeded pick. `useState`'s lazy
+  // initializer runs exactly once per MOUNT of this screen, so swiping
+  // between scenes (or any re-render while still on this screen) never
+  // reshuffles who's sitting on the bench mid-visit — only leaving and
+  // coming back does.
+  const [visitors] = useState<CareerState["squad"]>(() => pickRandomVisitors(career));
 
   return (
     <div className="flex min-h-screen flex-col bg-black">

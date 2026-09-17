@@ -86,10 +86,14 @@ const pl = makeInitialCareer(playerAt(plClub), [...PREMIER_LEAGUE_CLUBS], "premi
   check(strays.length === 0,
     `every cup tie is on a Championship cup week (stray weeks: ${strays.join(", ") || "none"})`);
 
-  // The distinction is real: the two divisions' first cup rounds are
-  // genuinely different week numbers, so this could not pass by accident.
+  // The distinction is real: the two divisions' cup rounds are genuinely
+  // different week numbers, so this could not pass by accident. The FA
+  // Cup's very first round (index 0, the new Round of 64) happens to share
+  // the same raw week number in both divisions on purpose — both are
+  // deliberately mirrored onto the same real weekend (see calendar.ts) —
+  // so the Round of 32 (index 1) is checked here instead, which is not.
   check(CHAMPIONSHIP_LEAGUE_CUP_SLOTS[0].week !== LEAGUE_CUP_SLOTS[0].week
-      && CHAMPIONSHIP_FA_CUP_SLOTS[0].week !== FA_CUP_SLOTS[0].week,
+      && CHAMPIONSHIP_FA_CUP_SLOTS[1].week !== FA_CUP_SLOTS[1].week,
     "and the two divisions really do use different cup weeks");
 }
 

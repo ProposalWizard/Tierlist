@@ -2,7 +2,7 @@ import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad
 import type { NamedOppGoal } from "./leagueSquads";
 import {
   openCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
-  CUP_ROUND_NAMES, type CupState, type CupId,
+  roundNamesFor, type CupState, type CupId,
 } from "./cups";
 import { mulberry32, sortLeague } from "./season";
 import {
@@ -668,7 +668,7 @@ export function settleCupTie(
 
   const club = career.player.club;
   const before = states[idx];
-  const roundName = currentRound(before)?.name ?? CUP_ROUND_NAMES[0];
+  const roundName = currentRound(before)?.name ?? roundNamesFor(before.competition)[0];
   const rng = mulberry32(career.season * 977 + fixture.week * 31 + idx * 7);
 
   // Reported from your point of view; the tie wants home and away.
