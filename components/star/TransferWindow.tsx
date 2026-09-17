@@ -42,6 +42,7 @@ export default function TransferWindow({ career, offers, onAccept, onStay }: Pro
                   >
                     {step > 6 ? "Step up" : step < -6 ? "Step down" : "Sideways"} · {o.position}
                     {o.position === 1 ? "st" : o.position === 2 ? "nd" : o.position === 3 ? "rd" : "th"}
+                    {o.division ? ` in the ${o.division === "premier" ? "Premier League" : "Championship"}` : ""}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-gray-200">{o.pitch}</p>

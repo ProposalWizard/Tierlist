@@ -1,11 +1,10 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
-import { niceMoneyStep } from "@/lib/star/money";
+import { useRef, useState } from "react";
+import { niceMoneyStep, formatMoneyPrecise } from "@/lib/star/money";
 import {
   startNegotiation, makeOffer, moodToFace,
   type NegotiationMode, type NegotiationState, type CounterpartMood,
 } from "@/lib/star/negotiation";
-import { formatMoney } from "@/lib/star/money";
 
 /**
  * THE NEGOTIATION — FACE TO FACE ACROSS TWO DESKS.
@@ -19,8 +18,40 @@ import { formatMoney } from "@/lib/star/money";
  * or visibly angry, right up to the moment they might get up and leave.
  */
 
+// Requested directly: this whole screen is about real, non-round numbers
+// being haggled over — a rounded "★2m" reads as a different deal from the
+// "★2,500,000" the negotiation was actually conducted in. formatMoneyPrecise
+// (money.ts) keeps one real decimal digit instead of flooring it away, only
+// here — every other screen's own money() still uses the coarser
+// formatMoney, which was a deliberate revert for balances/valuations.
 function money(n: number): string {
-  return formatMoney(n);
+  return formatMoneyPrecise(n);
+}
+
+/** Whose move a log line is describing — drives the colour-coding requested
+ *  directly: "I should instantly know that they've come in with their
+ *  offer" without having to read the sentence. Pattern-matched off the exact
+ *  strings negotiation.ts's own log lines use, rather than adding a second
+ *  copy of that logic there — this is presentation only. */
+type LogSide = "you" | "them" | "deal" | "away";
+function logSide(line: string): LogSide {
+  if (/deal|close enough|split the difference/i.test(line)) return "deal";
+  if (/walk|out of time/i.test(line)) return "away";
+  if (/^you /i.test(line)) return "you";
+  return "them";
+}
+const LOG_STYLE: Record<LogSide, string> = {
+  you: "text-sky-300",
+  them: "text-amber-300",
+  deal: "text-emerald-300 font-black",
+  away: "text-red-300 font-black",
+};
+
+/** Comma-grouped as you type, without fighting the caret on every keystroke —
+ *  requested directly: raw digits like "1300000" don't read as obviously
+ *  different from "130000" without separators. */
+function formatAmountInput(n: number): string {
+  return n.toLocaleString();
 }
 
 const FACE: Record<CounterpartMood, string> = { happy: "😊", neutral: "😐", angry: "😠" };
@@ -83,19 +114,6 @@ export default function NegotiationScreen({
 
   const finished = state.status !== "negotiating";
 
-  const presets = useMemo(() => {
-    const meetTheirs = state.theirPosition;
-    const halfway = Math.round((state.yourPosition + state.theirPosition) / 2);
-    const smallStep = mode === "buying"
-      ? Math.round(state.yourPosition * 1.08)
-      : Math.round(state.yourPosition * 0.92);
-    return [
-      { label: "Small move", value: smallStep },
-      { label: "Meet halfway", value: halfway },
-      { label: mode === "buying" ? "Meet their price" : "Accept their price", value: meetTheirs },
-    ];
-  }, [state, mode]);
-
   function propose(value: number) {
     if (finished) return;
     const next = makeOffer(state, Math.max(1, Math.round(value)), Math.random);
@@ -107,46 +125,50 @@ export default function NegotiationScreen({
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col items-center justify-center px-4 py-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-3">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/90">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
             {mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale"}
           </div>
           <div className="font-black text-white text-lg">{playerName}</div>
-          <div className="text-[10px] font-bold text-white/80">Estimated value: ★{money(marketValue)}</div>
+          <div className="text-[10px] font-bold text-white">Estimated value: ★{money(marketValue)}</div>
         </div>
 
         {/* ── Two desks, facing each other ── */}
         <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="rounded-xl border-2 border-gray-600 bg-gray-800 p-3 text-center">
+          <div className="rounded-xl border-2 border-sky-500/60 bg-gray-800 p-3 text-center">
             <div className="text-3xl mb-1">🧑</div>
-            <div className="text-[9px] font-black uppercase tracking-widest text-white/85">You</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-white">You</div>
           </div>
           <div className={`rounded-xl border-2 p-3 text-center transition-colors ${FACE_RING[mood]}`}>
             <div className="text-3xl mb-1 transition-transform" style={{ transform: mood === "angry" ? "scale(1.1)" : "scale(1)" }}>
               {FACE[mood]}
             </div>
-            <div className="text-[9px] font-black uppercase tracking-widest text-white/85">
+            <div className="text-[9px] font-black uppercase tracking-widest text-white">
               {counterpartLabel ?? (mode === "buying" ? "Their Agent" : "Interested Buyer")}
             </div>
           </div>
         </div>
 
-        {/* ── Positions on the table ── */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2.5">
-          <div className="flex justify-between text-[11px] font-bold text-white mb-1">
-            <span>{verb}</span>
-            <span className="tabular-nums text-yellow-300 font-black">★{money(state.yourPosition)}</span>
+        {/* ── Positions on the table — the back-and-forth, made unmissable:
+            your side in blue matching your desk above, theirs in amber
+            matching neither desk's ring so it reads as "their move," not a
+            copy of the mood colour. */}
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2.5 space-y-1.5">
+          <div className="flex items-center justify-between rounded-lg bg-sky-950/50 border border-sky-500/30 px-2.5 py-1.5">
+            <span className="text-[11px] font-black text-sky-300 uppercase tracking-wide">🧑 {verb}</span>
+            <span className="tabular-nums text-sky-300 font-black text-base">★{money(state.yourPosition)}</span>
           </div>
-          <div className="flex justify-between text-[11px] font-bold text-white">
-            <span>{theirVerb}</span>
-            <span className="tabular-nums text-yellow-300 font-black">★{money(state.theirPosition)}</span>
+          <div className="flex items-center justify-between rounded-lg bg-amber-950/50 border border-amber-500/30 px-2.5 py-1.5">
+            <span className="text-[11px] font-black text-amber-300 uppercase tracking-wide">{FACE[mood]} {theirVerb}</span>
+            <span className="tabular-nums text-amber-300 font-black text-base">★{money(state.theirPosition)}</span>
           </div>
-          <div className="mt-1.5 text-[9px] font-semibold text-white/80">Round {state.round + (finished ? 0 : 1)}</div>
+          <div className="text-[9px] font-bold text-white text-right">Round {state.round + (finished ? 0 : 1)}</div>
         </div>
 
-        {/* ── Log ── */}
+        {/* ── Log — colour-coded per side (see logSide) so the back-and-forth
+            reads at a glance instead of needing the sentence read out. ── */}
         <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-2.5 mb-3 max-h-32 overflow-y-auto space-y-1">
           {state.log.map((line, i) => (
-            <div key={i} className="text-[10px] font-semibold text-white/90">{line}</div>
+            <div key={i} className={`text-[10px] font-bold ${LOG_STYLE[logSide(line)]}`}>{line}</div>
           ))}
         </div>
 
@@ -156,7 +178,7 @@ export default function NegotiationScreen({
               <span className="text-yellow-300 font-black text-sm">★</span>
               <input
                 type="text" inputMode="numeric"
-                value={amount}
+                value={formatAmountInput(amount)}
                 onChange={e => setAmount(Math.max(1, Math.round(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)))}
                 className="flex-1 min-w-0 rounded-lg bg-gray-800 border border-gray-700 px-2 py-1.5 text-sm text-white tabular-nums"
               />
@@ -175,28 +197,30 @@ export default function NegotiationScreen({
                 +
               </button>
             </div>
-            <div className="text-[9px] font-semibold text-white/70 text-right -mt-1 mb-2">± ★{niceMoneyStep(amount).toLocaleString()} per press</div>
-            <div className="grid grid-cols-3 gap-1.5 mb-2">
-              {presets.map(p => (
-                <button
-                  key={p.label}
-                  onClick={() => propose(p.value)}
-                  className="py-1.5 rounded-md bg-gray-800 hover:bg-gray-700 text-[9px] font-black text-white"
-                >
-                  {p.label}
-                </button>
-              ))}
+            <div className="text-[9px] font-bold text-white text-right -mt-1 mb-2">± ★{niceMoneyStep(amount).toLocaleString()} per press</div>
+            {/* Requested directly: down from four buttons (small move, meet
+                halfway, meet their price, make offer) to exactly two — your
+                typed amount on the left, taking their last position outright
+                on the right (the same real "meets their price" close makeOffer
+                already resolves instantly). */}
+            <div className="grid grid-cols-2 gap-1.5 mb-2">
+              <button
+                onClick={() => propose(amount)}
+                className="py-3 rounded-lg font-black text-sm bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition"
+              >
+                {mode === "buying" ? "Make Offer" : "Set Asking Price"}
+              </button>
+              <button
+                onClick={() => propose(state.theirPosition)}
+                className="py-3 rounded-lg font-black text-sm bg-amber-600 hover:bg-amber-500 active:scale-[0.98] transition"
+              >
+                Accept Offer
+              </button>
             </div>
-            <button
-              onClick={() => propose(amount)}
-              className="w-full py-3 rounded-lg font-black text-sm bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] transition"
-            >
-              {mode === "buying" ? "Make Offer" : "Set Asking Price"}
-            </button>
             {onStepAway && (
               <button
                 onClick={() => onStepAway(state)}
-                className="w-full mt-2 py-2 rounded-lg font-bold text-xs text-white/80 hover:text-white bg-gray-800 hover:bg-gray-700"
+                className="w-full mt-2 py-2 rounded-lg font-bold text-xs text-white hover:text-white bg-gray-800 hover:bg-gray-700"
               >
                 Step Away (check other interested clubs)
               </button>

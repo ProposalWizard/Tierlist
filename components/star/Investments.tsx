@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import {
   allInvestableClubs, clubValuation, stakeIn, isMajorityOwner, canInvestIn, MAJORITY_THRESHOLD,
-  ownedClubState, managerCurrentClub,
+  ownedClubState,
 } from "@/lib/star/investments";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { allPoolManagers, managerInterest } from "@/lib/star/managerPool";
@@ -14,7 +14,7 @@ import { kitsOf, type Kit } from "@/lib/star/kits";
 import { facilitiesFor } from "@/lib/star/facilities";
 import { playerMarketValue } from "@/lib/star/marketValue";
 import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
-import { formatMoney, niceMoneyStep } from "@/lib/star/money";
+import { formatMoney, formatMoneyPrecise, niceMoneyStep } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 import type { NegotiationState } from "@/lib/star/negotiation";
 
@@ -44,7 +44,7 @@ interface Props {
    *  player re-navigate through tabs they just came from. */
   initialTab?: "market" | "portfolio" | "boardroom";
   initialBoardroomClub?: string;
-  initialBoardroomSection?: "squad" | "sign" | "manager" | "powers";
+  initialBoardroomSection?: "squad" | "sign" | "manager" | "powers" | "history";
   onBuyStake: (club: string, percent: number) => void;
   onSellStake: (club: string, percent: number) => void;
   onTopUpBudget: (club: string, amount: number) => void;
@@ -591,7 +591,7 @@ function Boardroom({
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
   career: CareerState; club: string; onBack: () => void;
-  initialSection?: "squad" | "sign" | "manager" | "powers";
+  initialSection?: "squad" | "sign" | "manager" | "powers" | "history";
   onTopUpBudget: (club: string, amount: number) => void;
   onSignPlayer: (club: string, playerId: string, fromClub: string, agreedFee?: number) => ActionResult;
   onSellPlayer: (club: string, playerId: string, agreedFee?: number, buyerClub?: string) => ActionResult;
@@ -619,7 +619,7 @@ function Boardroom({
   // Squad/Sign genuinely can't work here yet — see the note above the
   // manager-appointment own-club branch in investments.ts — so this never
   // defaults into a tab that would just show "No squad data on file."
-  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers">(initialSection ?? (isOwnClub ? "manager" : "squad"));
+  const [section, setSection] = useState<"squad" | "sign" | "manager" | "powers" | "history">(initialSection ?? (isOwnClub ? "manager" : "squad"));
   const [topUp, setTopUp] = useState(1000);
   const [message, setMessage] = useState<string | null>(null);
   const state = ownedClubState(career, club);
@@ -813,8 +813,8 @@ function Boardroom({
         </div>
       </div>
 
-      <div className={`grid gap-1 mb-2 ${isOwnClub ? "grid-cols-2" : "grid-cols-4"}`}>
-        {(isOwnClub ? (["manager", "powers"] as const) : (["squad", "sign", "manager", "powers"] as const)).map(s => (
+      <div className={`grid gap-1 mb-2 ${isOwnClub ? "grid-cols-3" : "grid-cols-5"}`}>
+        {(isOwnClub ? (["manager", "powers", "history"] as const) : (["squad", "sign", "manager", "powers", "history"] as const)).map(s => (
           <button
             key={s}
             onClick={() => { setSection(s); setMessage(null); }}
@@ -889,6 +889,27 @@ function Boardroom({
           onUpgradeTrainingGround={(c) => runAction(onUpgradeTrainingGround(c))}
           onUpgradeYouthAcademy={(c) => runAction(onUpgradeYouthAcademy(c))}
         />
+      )}
+
+      {section === "history" && (
+        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+          {(career.clubTransferHistory?.[club] ?? []).map((t, i) => (
+            <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 border-b border-black/20 last:border-b-0">
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-white truncate">{t.playerName}</div>
+                <div className="text-[10px] text-white font-semibold">
+                  {t.direction === "in" ? `In from ${t.otherClub}` : `Out to ${t.otherClub}`} · Season {t.season}
+                </div>
+              </div>
+              <span className={`shrink-0 font-black text-sm ${t.direction === "in" ? "text-red-300" : "text-emerald-300"}`}>
+                {t.direction === "in" ? "-" : "+"}★{formatMoneyPrecise(t.fee)}
+              </span>
+            </div>
+          ))}
+          {(!career.clubTransferHistory?.[club] || career.clubTransferHistory[club].length === 0) && (
+            <div className="px-3 py-6 text-center text-xs text-white font-semibold">No transfers done through this club yet.</div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -1199,10 +1220,25 @@ function SignPlayerPanel({
   // WHY a squad is still fake, `generatedSquad`'s own `gen:` id prefix (the
   // same tell `shouldUpgradeExternalSquads` uses) means a fictional player
   // is never offered as a signing option here.
+  // Reported directly, 16 Sep 2026, a real bug with real money lost over
+  // it: the human player's own character showed up as a signable candidate
+  // FROM a club he no longer even played for (his original club, long since
+  // left for good) — "buying" it did something (money left the buying
+  // club's budget) but connected to nothing real: this system was never
+  // built to move `career.player`/`career.squad` at all, only the
+  // LeaguePlayer-shaped records the OTHER 19 clubs carry, so it can never
+  // legitimately contain the human character in the first place. Whatever
+  // stale snapshot let a leftover record with his exact name survive under
+  // an old club long after he actually transferred away, the fix that
+  // matters is the same shape as the "gen:" filter just above it: never
+  // offer HIM as a buyable candidate, full stop, regardless of which club's
+  // data he's stuck in or why.
+  const yourName = `${career.player.firstName} ${career.player.lastName}`;
   const others = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
     .filter(s => s.club !== club && s.club !== career.player.club)
     .flatMap(s => s.players.map(p => ({ ...p, fromClub: s.club })))
-    .filter(p => !p.id.startsWith("gen:"));
+    .filter(p => !p.id.startsWith("gen:"))
+    .filter(p => p.name !== yourName);
   const everyone = [...freeAgents, ...others];
 
   // Requested directly, researched for feasibility first: every field these
@@ -1381,6 +1417,17 @@ function ManagerPanel({
   const current = club === career.player.club
     ? career.manager?.name
     : (loadLineup(club)?.manager || ownedClubState(career, club).managerName);
+  // The real, single source of truth for "who's actually on the market" —
+  // career.availableManagers, maintained by every hire/sack this game
+  // already does (careerFlow.ts's own-club sacking, replaceManagerForOwnedClub
+  // for an owned club). Reported directly: a manager already in a job used
+  // to stay ON this list, greyed out with an "At <club>" label — reads as
+  // "still technically pickable," when the whole point of a real transfer
+  // market is that an employed manager isn't in it at all. He's just left
+  // off the list now, exactly like the just-sacked man he replaced is
+  // already correctly added BACK to this same list by the code that fired
+  // him — nothing new needed there, it just was never reflected here.
+  const marketPool = career.availableManagers ?? allPoolManagers();
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
       {allPoolManagers().map(name => {
@@ -1391,19 +1438,7 @@ function ManagerPanel({
             </div>
           );
         }
-        // A real manager is a unique resource, exactly like a player —
-        // reported directly, from a real save, that the same man ended up
-        // "managing" two owned clubs at once. `managerCurrentClub` is the
-        // one shared truth `replaceManagerForOwnedClub` itself also checks.
-        const takenAt = managerCurrentClub(career, name);
-        if (takenAt) {
-          return (
-            <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0 opacity-50">
-              <span className="text-sm font-bold text-white">{name}</span>
-              <span className="text-[9px] font-black uppercase text-white/70">At {takenAt}</span>
-            </div>
-          );
-        }
+        if (!marketPool.includes(name)) return null;
         const interest = managerInterest(career, name, club);
         return (
           <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">

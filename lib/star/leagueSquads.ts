@@ -3,6 +3,7 @@ import { generateSquad, clubNameSeed } from "./squadData";
 import { shortNameOf } from "./realSquad";
 import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
 import { getTuning } from "./tuningStore";
+import { divisionOf } from "./clubs";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS.
@@ -115,7 +116,23 @@ export function buildLeagueSquad(club: string, roster: RosterRow[], keepAll = fa
   // honest — this club has no real players on record — and every consumer
   // already has to tolerate a club with FEW real players without crashing,
   // so tolerating one with none is the same handling at its limit, not new.
-  if (!roster.length) return { club, players: [] };
+  //
+  // One deliberate, narrowly-scoped exception: League One/Two/National
+  // League/its pool are genuinely new to this game and will NEVER have a
+  // real DB row — see clubs.ts's own note on why these three tiers exist as
+  // real hats with generated squads rather than played divisions. Falling
+  // back to a generated squad ONLY for a club actually tagged one of these
+  // four divisions (never for a Championship/pool/premier club that merely
+  // has a temporarily-thin real fetch) keeps the "Bernardo Clark" bug this
+  // comment describes from ever coming back for clubs that DO have real
+  // data on file.
+  if (!roster.length) {
+    const div = divisionOf(club);
+    if (div === "league_one" || div === "league_two" || div === "national_league" || div === "national_league_pool") {
+      return generatedSquad(club, avgOverallFor(club));
+    }
+    return { club, players: [] };
+  }
 
   const taken = new Set<string>();
   const players: LeaguePlayer[] = [];
@@ -228,15 +245,37 @@ export function naturalPosition(positions: string): Pos {
   return "CM";
 }
 
-/** Nobody real available: the club still has a team, it is just an invented one. */
-function generatedSquad(club: string): LeagueSquad {
+/**
+ * The target average overall for a generated (fake) squad, by which of the
+ * new lower divisions the club is actually in — given directly: League One
+ * clubs with no real data average 63, League Two 58, National League (and
+ * its four-club waiting pool, "same tier as National League") 55. Every
+ * other generated club (Championship, the old five-club promotion pool,
+ * "Other") keeps the flat ~73 this function always used, unchanged.
+ */
+function avgOverallFor(club: string): number {
+  const div = divisionOf(club);
+  if (div === "league_one") return 63;
+  if (div === "league_two") return 58;
+  if (div === "national_league" || div === "national_league_pool") return 55;
+  return 73;
+}
+
+/**
+ * Nobody real available: the club still has a team, it is just an invented
+ * one. `avgOverall` centres the generated ratings — the original flat
+ * `62 + (hash % 22)` is exactly what falls out of the default (73), kept
+ * byte-identical for every existing caller that doesn't pass one.
+ */
+function generatedSquad(club: string, avgOverall = 73): LeagueSquad {
+  const low = Math.max(30, Math.round(avgOverall) - 11);
   return {
     club,
     players: generateSquad(clubNameSeed(club)).map((p, i) => ({
       id: `gen:${club}:${i}`,
       name: p.name,
       position: p.position,
-      overall: 62 + ((clubNameSeed(club) + i * 7) % 22),
+      overall: low + ((clubNameSeed(club) + i * 7) % 22),
       goals: 0,
       assists: 0,
       image: p.imageUrl,
@@ -355,11 +394,11 @@ export async function fetchLeagueSquads(
 ): Promise<LeagueSquad[]> {
   try {
     const res = await fetch(`/api/star/league-squads?clubs=${encodeURIComponent(clubs.join("|"))}&year=${year}`, SQUAD_FETCH_INIT);
-    if (!res.ok) return clubs.map(generatedSquad);
+    if (!res.ok) return clubs.map(c => generatedSquad(c, avgOverallFor(c)));
     const data = await res.json() as { squads?: Record<string, RosterRow[]> };
     return clubs.map(c => buildLeagueSquad(c, data.squads?.[c] ?? [], keepAll));
   } catch {
-    return clubs.map(generatedSquad);
+    return clubs.map(c => generatedSquad(c, avgOverallFor(c)));
   }
 }
 

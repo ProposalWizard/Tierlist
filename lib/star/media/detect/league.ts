@@ -1,6 +1,7 @@
 import { ev } from "./kit";
 import type { FootballEvent, Subject, Tag } from "../types";
 import type { LeagueResult } from "../../types";
+import { PLAYER_GOAL_CHANTS } from "../chants";
 
 /**
  * THE REST OF THE DIVISION.
@@ -24,11 +25,21 @@ import type { LeagueResult } from "../../types";
  * no new accounts, once `select.ts`'s `allegiance()` knows to let a club's
  * own account speak for itself and to keep everyone else's fans out of it.
  *
- * No table-position drama (went-top, champions, relegated) and no chants —
- * those stay exactly as narrow as they already were (your own club, your
- * own supporters) rather than growing twenty clubs' worth of new accounts.
- * A real result and a real hat-trick elsewhere is already the thing that
- * was asked for.
+ * No table-position drama (went-top, champions, relegated) — that stays as
+ * narrow as it already was (your own club, your own supporters) rather than
+ * growing twenty clubs' worth of new accounts.
+ *
+ * Chants ARE covered, deliberately, for one specific case: a real authored
+ * chant (media/chants.ts) for the exact real player who scored, wherever he
+ * plays. Requested directly, after a chant-eligible player (Sam Smith, with
+ * eleven authored lines) scored in a division match the player wasn't even
+ * in and nothing ever showed up for it — the whole point of an authored
+ * chant is that it's tied to a specific real name, not to whichever club
+ * happens to be yours this career. `chantEligibleGoals`, below, is scoped
+ * tightly to exactly that: a single named goal, only for a player who
+ * genuinely has a real chant on file, never a generic reaction to a third
+ * club's ordinary goal — see select.ts's `@GroundNoise`, the one neutral
+ * account this reaches.
  */
 
 function clubSubject(name: string): Subject {
@@ -176,6 +187,34 @@ function decisiveDrawEvent(
 }
 
 /**
+ * A single ordinary goal, league-wide, by a real player who has an
+ * authored chant on file — the one place this file deliberately breaks its
+ * own "no chants" rule (see this file's header). `hatTrickEvents` above
+ * only fires at 2+ for a given scorer; a chant-eligible player scoring
+ * once, on his own, in a match you didn't play, would otherwise never be
+ * seen at all. One event per distinct chant-eligible scorer per match, same
+ * dedup shape `detect/creation.ts`'s TEAMMATE_GOAL already uses for your own
+ * match — the chant is about the player, not a running tally.
+ */
+function chantEligibleGoalEvents(
+  club: string, opponent: string,
+  goals: LeagueResult["hg"] | undefined,
+  competition: string, season: number, week: number,
+): FootballEvent[] {
+  if (!goals?.length) return [];
+  const seen = new Set<string>();
+  const out: FootballEvent[] = [];
+  for (const g of goals) {
+    if (!g.full || seen.has(g.full) || !PLAYER_GOAL_CHANTS[g.full]) continue;
+    seen.add(g.full);
+    out.push(ev("teammate-goal", { kind: "teammate", name: g.full }, 26, ["goal"], {
+      club, opponent, competition, season, week, scorer: g.full,
+    }, "instant"));
+  }
+  return out;
+}
+
+/**
  * This week's news from everyone else.
  *
  * `results` is the WHOLE division's week — the same `career.results` the
@@ -200,6 +239,8 @@ export function detectLeagueWeek(
     out.push(...hatTrickEvents(r.home, r.away, r.hg, true, competition, season, week));
     out.push(...hatTrickEvents(r.away, r.home, r.ag, false, competition, season, week));
     out.push(...decisiveGoalEvents(r.home, r.away, r.hg, r.ag, r.hs, r.as, competition, season, week));
+    out.push(...chantEligibleGoalEvents(r.home, r.away, r.hg, competition, season, week));
+    out.push(...chantEligibleGoalEvents(r.away, r.home, r.ag, competition, season, week));
   }
   return out;
 }

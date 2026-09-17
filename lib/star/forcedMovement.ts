@@ -76,7 +76,11 @@ export function forceClubIntoPremierLeague(career: CareerState, incomingClub: st
   return {
     career: {
       ...career,
-      divisions: { premier, championship, pool: members.pool },
+      divisions: {
+        premier, championship,
+        leagueOne: members.leagueOne, leagueTwo: members.leagueTwo,
+        nationalLeague: members.nationalLeague, nationalLeaguePool: members.nationalLeaguePool,
+      },
       limboClubs: [...(career.limboClubs ?? []), displacedToLimbo],
     },
     ok: true,

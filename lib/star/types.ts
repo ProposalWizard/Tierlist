@@ -552,7 +552,17 @@ export interface CareerState {
    * them. Absent means a career that predates promotion and relegation —
    * one whose divisions still ARE those lists. See lib/star/promotion.
    */
-  divisions?: { premier: string[]; championship: string[]; pool: string[] };
+  divisions?: {
+    premier: string[]; championship: string[];
+    /** See lib/star/promotion.ts's DivisionMembership — three tiers below
+     *  the Championship, extended 17 September 2026. Optional, still: an
+     *  OLD save's `divisions` object genuinely only has premier/championship
+     *  (and an old `pool` field this type no longer names, harmlessly
+     *  ignored) — `membershipOf` fills all four of these in fresh from
+     *  clubs.ts's season-1 lists the first time such a save rolls over. */
+    leagueOne?: string[]; leagueTwo?: string[];
+    nationalLeague?: string[]; nationalLeaguePool?: string[];
+  };
   /**
    * The Championship play-offs, once your club has reached them.
    *
@@ -857,6 +867,14 @@ export interface CareerState {
    *  spent), just stops being reachable from the Boardroom until you buy
    *  back in. */
   ownedClubs?: Record<string, import("./investments").OwnedClubState>;
+  /** Every real transfer an owned club has done through the Boardroom — one
+   *  entry per completed sign/sell, newest first. Requested directly: with
+   *  real negotiated fees now varying (negotiation.ts), there was no way to
+   *  tell whether a signing had turned out to be a bargain or an overpay, or
+   *  what a player had actually cost versus what he later sold for. Keyed by
+   *  club so a chairman of several clubs sees each club's own real ledger.
+   *  See lib/star/investments.ts's `ClubTransferRecord`/`recordClubTransfer`. */
+  clubTransferHistory?: Record<string, import("./investments").ClubTransferRecord[]>;
   /** Phase 3 of STAR_POWER_POLITICS.md — a minority shareholder's real, if
    *  non-binding, suggestions to a board they don't control. See
    *  lib/star/clubPowers.ts. */
@@ -1065,4 +1083,10 @@ export type StarPhase =
   | "goal-replay"
   /** Signing for a new club at the end of a season — the same contract
    *  moment "trial-reward" ends on, reused. See TransferSigning.tsx. */
-  | "transfer-signing";
+  | "transfer-signing"
+  /** Your own place — Phase 1 of STAR_GARDEN.md. A real trophy cabinet, the
+   *  horse's paddock if you own one, and a few real teammates hanging
+   *  around. All real data reused from elsewhere (career.trophies,
+   *  career.horse, career.squad); this only displays it in one place.
+   *  See GardenScreen.tsx. */
+  | "garden";

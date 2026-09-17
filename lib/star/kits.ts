@@ -31,6 +31,111 @@ export interface Kit {
 export interface ClubKits { home: Kit; away: Kit }
 
 /**
+ * A small named-colour palette, and a `k(shirt, trim)` builder — used only
+ * to build LOWER_LEAGUE_KITS below (League One/Two/National League), where
+ * colours were given by NAME ("Blue, white hoops" etc.) for ~70 clubs
+ * rather than as hex, and typing 140 hand-picked hex values by eye would be
+ * slower and more error-prone than naming each colour once here.
+ */
+const NAMED: Record<string, string> = {
+  red: "#D71920", blue: "#0057B8", navy: "#001F5B", lightblue: "#6CABDD",
+  white: "#F2F4F7", offwhite: "#F2F0E6", black: "#17181A",
+  yellow: "#FBF000", amber: "#F2A900", gold: "#FDB913", orange: "#F78F1E",
+  claret: "#6C1D45", green: "#159C56", maroon: "#7A263A",
+};
+const k = (shirt: keyof typeof NAMED, trim: keyof typeof NAMED): Kit =>
+  ({ shirt: NAMED[shirt], trim: NAMED[trim] });
+const kits = (home: Kit, away: Kit): ClubKits => ({ home, away });
+
+/** League One, League Two, and the National League — see clubs.ts's own
+ *  note on these three tiers. Kept as its own record and spread into
+ *  CLUB_KITS below, rather than inline, purely so this block reads as one
+ *  clearly-scoped addition rather than 70 more lines mixed into the
+ *  hand-tuned Premier League/Championship section above it. */
+const LOWER_LEAGUE_KITS: Record<string, ClubKits> = {
+  // League One (the five real overlap clubs — Huddersfield/Leicester/
+  // Luton/Reading FC/Wigan — already have entries above and are not
+  // repeated here).
+  "AFC Wimbledon": kits(k("blue", "white"), k("yellow", "blue")),
+  "Barnsley": kits(k("red", "white"), k("white", "blue")),
+  "Blackpool": kits(k("orange", "white"), k("white", "orange")),
+  "Bradford City": kits(k("claret", "amber"), k("white", "claret")),
+  "Bromley": kits(k("red", "black"), k("white", "black")),
+  "Burton Albion": kits(k("black", "yellow"), k("white", "black")),
+  "Cambridge United": kits(k("amber", "black"), k("black", "amber")),
+  "Doncaster Rovers": kits(k("red", "white"), k("white", "red")),
+  "Leyton Orient": kits(k("red", "white"), k("white", "red")),
+  "Mansfield Town": kits(k("yellow", "blue"), k("blue", "yellow")),
+  "Milton Keynes Dons": kits(k("white", "red"), k("red", "black")),
+  "Notts County": kits(k("black", "white"), k("white", "black")),
+  "Oxford United": kits(k("yellow", "blue"), k("blue", "yellow")),
+  "Peterborough United": kits(k("blue", "white"), k("white", "blue")),
+  "Plymouth Argyle": kits(k("green", "black"), k("white", "green")),
+  "Sheffield Wednesday": kits(k("blue", "white"), k("black", "blue")),
+  "Stevenage": kits(k("red", "white"), k("white", "red")),
+  "Stockport County": kits(k("blue", "white"), k("white", "blue")),
+  "Wycombe Wanderers": kits(k("blue", "white"), k("yellow", "navy")),
+
+  // League Two
+  "Accrington Stanley": kits(k("red", "white"), k("white", "red")),
+  "Barnet": kits(k("orange", "black"), k("white", "orange")),
+  "Bristol Rovers": kits(k("blue", "white"), k("white", "blue")),
+  "Cheltenham Town": kits(k("red", "white"), k("white", "red")),
+  "Chesterfield": kits(k("blue", "white"), k("white", "blue")),
+  "Colchester United": kits(k("blue", "white"), k("yellow", "blue")),
+  "Crawley Town": kits(k("red", "white"), k("white", "red")),
+  "Crewe Alexandra": kits(k("red", "white"), k("white", "red")),
+  "Exeter City": kits(k("red", "black"), k("white", "red")),
+  "Fleetwood Town": kits(k("red", "white"), k("white", "red")),
+  "Gillingham": kits(k("blue", "white"), k("white", "blue")),
+  "Grimsby Town": kits(k("black", "white"), k("white", "black")),
+  "Newport County": kits(k("amber", "black"), k("white", "amber")),
+  "Northampton Town": kits(k("claret", "white"), k("white", "claret")),
+  "Oldham Athletic": kits(k("blue", "white"), k("white", "blue")),
+  "Port Vale": kits(k("black", "white"), k("white", "black")),
+  "Rochdale": kits(k("blue", "black"), k("white", "blue")),
+  "Rotherham United": kits(k("red", "white"), k("white", "red")),
+  "Salford City": kits(k("red", "white"), k("white", "red")),
+  "Shrewsbury Town": kits(k("navy", "lightblue"), k("amber", "navy")),
+  "Swindon Town": kits(k("red", "white"), k("white", "red")),
+  "Tranmere Rovers": kits(k("white", "blue"), k("black", "white")),
+  "Walsall": kits(k("red", "white"), k("white", "red")),
+  "York City": kits(k("red", "white"), k("white", "red")),
+
+  // National League
+  "AFC Fylde": kits(k("red", "blue"), k("blue", "white")),
+  "Aldershot Town": kits(k("red", "blue"), k("white", "red")),
+  "Altrincham": kits(k("red", "white"), k("white", "red")),
+  "Barrow": kits(k("blue", "white"), k("white", "blue")),
+  "Boreham Wood": kits(k("black", "white"), k("white", "black")),
+  "Boston United": kits(k("yellow", "black"), k("white", "yellow")),
+  "Carlisle United": kits(k("blue", "white"), k("white", "blue")),
+  "Eastleigh": kits(k("blue", "white"), k("white", "blue")),
+  "FC Halifax Town": kits(k("blue", "white"), k("yellow", "blue")),
+  "Forest Green Rovers": kits(k("green", "black"), k("white", "green")),
+  "Gateshead": kits(k("red", "black"), k("white", "red")),
+  "Harrogate Town": kits(k("black", "yellow"), k("white", "black")),
+  "Hartlepool United": kits(k("blue", "white"), k("yellow", "blue")),
+  "Hornchurch": kits(k("red", "blue"), k("white", "red")),
+  "Kidderminster Harriers": kits(k("red", "white"), k("black", "yellow")),
+  "Scunthorpe United": kits(k("red", "white"), k("blue", "white")),
+  "Solihull Moors": kits(k("black", "yellow"), k("yellow", "black")),
+  "Southend United": kits(k("blue", "white"), k("white", "blue")),
+  "Sutton United": kits(k("amber", "maroon"), k("white", "amber")),
+  "Tamworth": kits(k("red", "white"), k("offwhite", "maroon")),
+  "Wealdstone": kits(k("blue", "white"), k("white", "blue")),
+  "Woking": kits(k("red", "white"), k("yellow", "navy")),
+  "Worthing": kits(k("red", "blue"), k("blue", "red")),
+  "Yeovil Town": kits(k("green", "white"), k("white", "green")),
+
+  // National League pool — real clubs waiting to come up, given kits too
+  "Chorley": kits(k("black", "white"), k("yellow", "black")),
+  "Scarborough Athletic": kits(k("red", "white"), k("white", "red")),
+  "Dorking Wanderers": kits(k("red", "blue"), k("black", "yellow")),
+  "Torquay United": kits(k("yellow", "navy"), k("blue", "yellow")),
+};
+
+/**
  * The twenty, keyed by the names the database uses.
  *
  * `Fulham FC` and `Wolverhampton Wanderers` are spelled the way SoFIFA spells
@@ -108,6 +213,16 @@ export const CLUB_KITS: Record<string, ClubKits> = {
   "Leicester City":           { home: { shirt: "#003090", trim: "#FDBE11" }, away: { shirt: "#FFFFFF", trim: "#003090" } },
   "Reading FC":               { home: { shirt: "#004494", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#004494" } },
   "Wigan Athletic":           { home: { shirt: "#1B458F", trim: "#FFFFFF" }, away: { shirt: "#FFFFFF", trim: "#1B458F" } },
+
+  // ── League One / League Two / National League ──
+  //
+  // Given directly as named colours ("Blue, yellow, white" etc.), not hex —
+  // built from a small named-colour palette (NAMED below) rather than
+  // eyeballing 70-odd hex pairs by hand, the same idea as this file's own
+  // NEUTRAL/KEEPER_OPTIONS swatches. Real crest colours per club, so a
+  // fourth English tier reads as distinct clubs rather than a wall of the
+  // same six or seven generic shirts.
+  ...LOWER_LEAGUE_KITS,
 };
 
 /** A club nobody has colours for. Neutral, and it never clashes with much. */

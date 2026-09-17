@@ -272,10 +272,31 @@ function reachDown(buyerStrength: number): number {
   const t = clampUnit((buyerStrength - 62) / 24); // ~62 = a relegation-battler, ~86 = a title side
   return 6 + t * 10;
 }
-/** Nobody signs a project player HOPING he grows into the shirt — a cap on
- *  reaching up, so a mid-table side doesn't land an 85 just because it needed
- *  a striker. */
-const REACH_UP = 5;
+/**
+ * Nobody signs a project player HOPING he grows into the shirt — a cap on
+ * how much stronger a buyer can be than the player it signs, so a mid-table
+ * side doesn't land an 85 just because it needed a striker.
+ *
+ * Real bug, found and fixed 17 Sep 2026: at the old flat `5`, the single
+ * strongest club in a division (twenty clubs is a CLOSED system here —
+ * see this file's own header — so nothing outside it is ever consulted)
+ * could only buy a non-wonderkid replacement rated within 5 points of its
+ * own strength. For the outright best club, by definition nobody else in
+ * the division IS within 5 points of it, so it had no way to replace a
+ * departing star at anything like his own level — only a wonderkid
+ * signing (the one exempted case, via `reachBonusFor`) could ever land.
+ * Reported directly, after a multi-season dev-skip: a club that started
+ * as the league's clear best (Arsenal, in a save's own words — best
+ * squad, best market value) drifted down to a genuine relegation battle
+ * within two or three seasons, because `sellability`'s own "an elite
+ * club's own starter can still leave unhappy" rule kept firing while this
+ * cap made him irreplaceable — a real, structural one-way drain on
+ * exactly the club that should be hardest to unseat. Widened to a real,
+ * tunable value comfortably covering "a very good, proven, non-wonderkid
+ * signing," not just a project one — real elite clubs sign plenty of
+ * those, not only wonderkids and pure equals.
+ */
+const REACH_UP = getTuning("transfers.reachUp");
 
 /** A released player drops further below his own level than a loan does —
  *  he has no club at all to hold out for a better offer from. See the file

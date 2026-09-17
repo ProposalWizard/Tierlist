@@ -589,9 +589,9 @@ export const TUNABLES: TunableDef[] = [
 
   // ── Betting ───────────────────────────────────────────────────────────
   {
-    key: "betting.strengthExponent", category: "Betting", label: "Competition odds — strength exponent",
-    description: "Reported directly as too flat: a huge real gap between the best and worst squad in the division barely showed up in the odds (a ~10 shot favourite next to a ~35 shot no-hoper). Raising this widens that gap a lot — the same shape competitionBetting.ts's winWeight always used, just steeper.",
-    default: 3.5, min: 1, max: 6, step: 0.1,
+    key: "betting.strengthExponent", category: "Betting", label: "League/Europe odds — strength exponent",
+    description: "Reported directly a second time: even after the first steepening, the weakest team in the division still only priced around 137/1 — nowhere near a real Leicester-City-style 4000-5000/1 rank outsider. Raised again, and paired this time with a much higher betting.maxOdds so the formula's own output can actually reach that range instead of being clipped short of it.",
+    default: 4.5, min: 1, max: 8, step: 0.1,
   },
   {
     key: "betting.strengthBaseline", category: "Betting", label: "Competition odds — strength baseline",
@@ -604,14 +604,61 @@ export const TUNABLES: TunableDef[] = [
     default: 1.25, min: 1, max: 2, step: 0.01,
   },
   {
-    key: "betting.maxOdds", category: "Betting", label: "Competition odds — longest price offered",
-    description: "Reported directly: real long-shot title odds go into the thousands (Leicester City's real 5000/1), and this game's old 250 cap made even the weakest team in the division look like a live outright contender. Real bookmakers often cap around 500 for a big domestic league; this goes further since a bookmaker's practical cap is a business choice this game doesn't need to copy exactly.",
-    default: 1000, min: 100, max: 10000, step: 50,
+    key: "betting.maxOdds", category: "Betting", label: "League/Europe odds — longest price offered",
+    description: "Reported directly, twice now: real long-shot title odds go into the thousands (Leicester City's real 5000/1) and the weakest team in the division — a fluke-promoted side with a genuinely low-rated, barely-strengthened squad — should be able to reach that. Raised well past the first pass's 1000 cap so the steepened exponent above isn't clipped short of where it would otherwise land.",
+    default: 4000, min: 100, max: 10000, step: 50,
+  },
+  {
+    key: "betting.cupStrengthExponent", category: "Betting", label: "FA Cup/League Cup odds — strength exponent",
+    description: "Reported directly: winning the FA Cup or League Cup only takes 6-7 straight knockout wins, a real, much shorter and more upset-prone ask than winning a 38-game league season needing ~28+ wins — so a weaker side's real chance of lifting a domestic cup is genuinely much better than its chance of winning the league, and the odds should say so. A flatter exponent than the league's keeps the same favourite on top while giving every underdog a noticeably shorter, more realistic price.",
+    default: 2.2, min: 1, max: 6, step: 0.1,
+  },
+  {
+    key: "betting.cupMaxOdds", category: "Betting", label: "FA Cup/League Cup odds — longest price offered",
+    description: "The domestic cups' own, much lower ceiling — a real cup upset (a lower-league or bottom-of-the-table side going all the way) realistically prices in the hundreds, not the thousands the league title's rank outsider commands.",
+    default: 400, min: 50, max: 2000, step: 25,
   },
   {
     key: "horseRacing.raceNoise", category: "Betting", label: "Horse race — random variance",
     description: "Reported directly: the best horse/rating was winning far too often, with barely any risk. This is how much real randomness gets added on top of a horse's own rating for one race — raising it makes the field far less predictable without erasing the favourite's real edge.",
     default: 50, min: 10, max: 100, step: 1,
+  },
+
+  // ── Horse Racing — owning one, not betting on it ─────────────────────
+  //
+  // Requested directly: racing your OWN horse should never be a bet — no
+  // stake, no odds — it should pay a real fixed purse for finishing 1st,
+  // 2nd or 3rd, and owning the horse at all should cost real recurring
+  // upkeep whether it races that week or not. See lib/star/horse.ts.
+  {
+    key: "horseRacing.winPrizeBase", category: "Horse Racing", label: "Win purse — base",
+    description: "The flat part of what 1st place pays, before the horse's own rating adds anything on top.",
+    default: 800, min: 0, max: 5000, step: 50,
+  },
+  {
+    key: "horseRacing.winPrizePerRating", category: "Horse Racing", label: "Win purse — per rating point",
+    description: "How much extra the win purse is worth per point of the horse's own rating (average of speed/stamina) — a better horse races for a bigger purse.",
+    default: 30, min: 0, max: 100, step: 1,
+  },
+  {
+    key: "horseRacing.placeShare", category: "Horse Racing", label: "2nd place — share of the win purse",
+    description: "What finishing 2nd pays, as a fraction of the win purse.",
+    default: 0.4, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "horseRacing.showShare", category: "Horse Racing", label: "3rd place — share of the win purse",
+    description: "What finishing 3rd pays, as a fraction of the win purse.",
+    default: 0.15, min: 0, max: 1, step: 0.01,
+  },
+  {
+    key: "horseRacing.upkeepBase", category: "Horse Racing", label: "Weekly upkeep — base",
+    description: "Feed, stabling and routine vet costs, charged every week the horse is owned whether it races or not — the flat part, before rating adds anything on top.",
+    default: 150, min: 0, max: 2000, step: 10,
+  },
+  {
+    key: "horseRacing.upkeepPerRating", category: "Horse Racing", label: "Weekly upkeep — per rating point",
+    description: "A better horse costs more to keep, same idea as the win purse scaling with rating.",
+    default: 5, min: 0, max: 50, step: 1,
   },
 
   // ── Market Value ─────────────────────────────────────────────────────
@@ -676,6 +723,12 @@ export const TUNABLES: TunableDef[] = [
     key: "rating.maxWastePenalty", category: "Match Rating", label: "Maximum rating penalty from wasted chances",
     description: "A cap on how far wasted chances alone can drag a rating down — genuinely terrible finishing should read as a genuinely bad mark, not an impossible one.",
     default: 4, min: 1, max: 8, step: 0.5,
+  },
+
+  {
+    key: "transfers.reachUp", category: "Transfers", label: "How far above a signing's own level a buyer can reach",
+    description: "Reported directly: the league's single strongest club, once one of its own starters left unhappy, had no way to replace him at anything like his own level — this cap (a flat 5 originally) blocked buying anyone rated more than 5 points below the buyer's own strength unless the signing was a wonderkid, and by definition nobody else in the division is within 5 of the outright best club. Raised again on a second pass, past this file's own old max of 25 — a real gap between an established Premier League side and a Championship one, especially a few seasons into a save where the top club has kept developing, is genuinely bigger than 20-25 points, and the whole point of this being a real tunable now is that it can be pushed further here without another code change if a save still shows the strongest club unable to replace what it loses.",
+    default: 20, min: 5, max: 40, step: 1,
   },
 
   // ── League Simulation ────────────────────────────────────────────────

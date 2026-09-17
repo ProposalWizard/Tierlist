@@ -89,8 +89,8 @@ const AWARD_META: Record<string, { label: string; icon: string; unit: string }> 
   goldenBoot: { label: "Golden Boot", icon: "👟", unit: "goals" },
   assistKing: { label: "Assist King", icon: "🎯", unit: "assists" },
   goldenGlove: { label: "Golden Glove", icon: "🧤", unit: "clean sheets" },
-  playerOfSeason: { label: "Player of the Season", icon: "🌟", unit: "rating" },
-  youngPlayerOfSeason: { label: "Young Player of the Season", icon: "💎", unit: "rating" },
+  playerOfSeason: { label: "Player of the Season", icon: "🌟", unit: "votes" },
+  youngPlayerOfSeason: { label: "Young Player of the Season", icon: "💎", unit: "votes" },
 };
 
 function AwardCard({ id, winner }: { id: keyof typeof AWARD_META; winner: AwardWinner | null }) {

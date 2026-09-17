@@ -329,6 +329,30 @@ export function ownedClubState(career: CareerState, club: string): OwnedClubStat
   return career.ownedClubs?.[club] ?? { budget: 0 };
 }
 
+/** One completed real transfer through the Boardroom — see
+ *  CareerState.clubTransferHistory's own header for why this exists. */
+export interface ClubTransferRecord {
+  season: number;
+  direction: "in" | "out";
+  playerName: string;
+  /** The other club — who he came from (an "in") or went to (an "out"). */
+  otherClub: string;
+  fee: number;
+}
+
+const CLUB_TRANSFER_HISTORY_LIMIT = 200;
+
+function recordClubTransfer(career: CareerState, club: string, record: ClubTransferRecord): CareerState {
+  const existing = career.clubTransferHistory?.[club] ?? [];
+  return {
+    ...career,
+    clubTransferHistory: {
+      ...(career.clubTransferHistory ?? {}),
+      [club]: [record, ...existing].slice(0, CLUB_TRANSFER_HISTORY_LIMIT),
+    },
+  };
+}
+
 export function topUpClubBudget(career: CareerState, club: string, amount: number): CareerState {
   if (!isMajorityOwner(career, club) || amount <= 0 || amount > career.money) return career;
   const current = ownedClubState(career, club);
@@ -452,6 +476,10 @@ export function signPlayerForOwnedClub(
     ...next,
     ownedClubs: { ...(next.ownedClubs ?? {}), [club]: { ...ownedClubState(next, club), budget: budget - fee } },
   };
+  next = recordClubTransfer(next, club, {
+    season: next.season, direction: "in", playerName: player.name,
+    otherClub: fromClub === FREE_AGENTS_CLUB ? "Free Agent" : fromClub, fee,
+  });
   return { career: next, ok: true };
 }
 
@@ -492,10 +520,12 @@ export function sellPlayerFromOwnedClub(
     next = setSquad(next, buyerClub, buyerPlayers);
   }
   const current = ownedClubState(next, club);
-  return {
-    career: { ...next, ownedClubs: { ...(next.ownedClubs ?? {}), [club]: { ...current, budget: current.budget + fee } } },
-    ok: true,
-  };
+  next = { ...next, ownedClubs: { ...(next.ownedClubs ?? {}), [club]: { ...current, budget: current.budget + fee } } };
+  next = recordClubTransfer(next, club, {
+    season: next.season, direction: "out", playerName: player.name,
+    otherClub: buyerClub ?? "Unknown", fee,
+  });
+  return { career: next, ok: true };
 }
 
 // ── Selling a player, routed through a real shareholder vote ────────────────

@@ -3,7 +3,7 @@ import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { generateRelegationOffers } from "../../lib/star/relegationOffers";
 import { acceptOffer } from "../../lib/star/transfers";
 import { mulberry32, sortLeague } from "../../lib/star/season";
-import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
+import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, LEAGUE_ONE_CLUBS } from "../../lib/star/clubs";
 import { divisionOf, matchweeksFor } from "../../lib/star/calendar";
 import type { CareerState, StarPlayer, LeagueTeam } from "../../lib/star/types";
 
@@ -81,7 +81,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   check(out.playOffs === null, "a Premier League season has no play-offs");
 }
 
-// ── Winning the Championship goes up; the bottom goes to the pool ───────────
+// ── Winning the Championship goes up; the bottom goes to League One ─────────
 {
   const clubs = [...CHAMPIONSHIP_CLUBS];
   const you = clubs[0];
@@ -94,11 +94,11 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   check(out.division === "premier" && out.yourMove === "promoted",
     `winning it promotes you (${out.division}, ${out.yourMove})`);
   check(out.relegatedFromChampionship.length === 3, "three drop out of the Championship");
-  check(out.divisions.pool.length === PROMOTION_POOL_CLUBS.length,
-    `the pool stays the same size (${out.divisions.pool.length})`);
-  check(out.relegatedFromChampionship.every(c => out.divisions.pool.includes(c)),
-    "the relegated three land in the pool, in the hat for next time");
-  check(out.promotedToChampionship.every(c => !out.divisions.pool.includes(c)),
+  check(out.divisions.leagueOne.length === LEAGUE_ONE_CLUBS.length,
+    `League One stays the same size (${out.divisions.leagueOne.length})`);
+  check(out.relegatedFromChampionship.every(c => out.divisions.leagueOne.includes(c)),
+    "the relegated three land in League One, in the hat for next time");
+  check(out.promotedToChampionship.every(c => !out.divisions.leagueOne.includes(c)),
     "and the three drawn out of it have left it");
   check(out.playOffs !== null, "a Championship season plays its play-offs");
 }
@@ -119,7 +119,7 @@ function withStandings(career: CareerState, order: string[]): CareerState {
 
   check(out.relegatedFromChampionship.includes(you),
     "finishing bottom relegates your own club exactly like anybody else's");
-  check(out.divisions.pool.includes(you), "and it lands in the pool with the rest of the bottom three");
+  check(out.divisions.leagueOne.includes(you), "and it lands in League One with the rest of the bottom three");
   check(out.relegatedFromChampionship.length === 3, "still exactly three go down");
 }
 
@@ -193,7 +193,10 @@ function withStandings(career: CareerState, order: string[]): CareerState {
     career = withStandings(career, order);
 
     const before = membershipOf(career);
-    const beforeAll = [...before.premier, ...before.championship, ...before.pool];
+    const beforeAll = [
+      ...before.premier, ...before.championship, ...before.leagueOne,
+      ...before.leagueTwo, ...before.nationalLeague, ...before.nationalLeaguePool,
+    ];
 
     // Mirrors app/star-dev/page.tsx's openTransferWindowOrRoll: relegation
     // out of the Championship is not optional, so a real club has to be
@@ -208,7 +211,10 @@ function withStandings(career: CareerState, order: string[]): CareerState {
 
     career = advanceSeason(career, false).career;
     const m = membershipOf(career);
-    const all = [...m.premier, ...m.championship, ...m.pool];
+    const all = [
+      ...m.premier, ...m.championship, ...m.leagueOne,
+      ...m.leagueTwo, ...m.nationalLeague, ...m.nationalLeaguePool,
+    ];
 
     if (divisionOf(career) === "premier") seasonsInPremier++;
     if (career.ladderNews?.yourMove) moves++;
@@ -217,7 +223,10 @@ function withStandings(career: CareerState, order: string[]): CareerState {
 
     if (m.premier.length !== 20) fail(`Premier League has ${m.premier.length} clubs`);
     else if (m.championship.length !== 24) fail(`Championship has ${m.championship.length} clubs`);
-    else if (m.pool.length !== PROMOTION_POOL_CLUBS.length) fail(`pool has ${m.pool.length} clubs`);
+    else if (m.leagueOne.length !== LEAGUE_ONE_CLUBS.length) fail(`League One has ${m.leagueOne.length} clubs`);
+    else if (m.leagueTwo.length !== 24) fail(`League Two has ${m.leagueTwo.length} clubs`);
+    else if (m.nationalLeague.length !== 24) fail(`National League has ${m.nationalLeague.length} clubs`);
+    else if (m.nationalLeaguePool.length !== 4) fail(`National League pool has ${m.nationalLeaguePool.length} clubs`);
     else if (new Set(all).size !== all.length) {
       const dupes = all.filter((c, i) => all.indexOf(c) !== i);
       fail(`a club is in two places at once (${Array.from(new Set(dupes)).join(", ")})`);
@@ -258,7 +267,20 @@ function withStandings(career: CareerState, order: string[]): CareerState {
 {
   const premierClubs = [...PREMIER_LEAGUE_CLUBS];
   const championshipClubs = [...CHAMPIONSHIP_CLUBS];
-  const poolClubs = [...PROMOTION_POOL_CLUBS];
+  const leagueOneClubs = [...LEAGUE_ONE_CLUBS];
+  const leagueTwoClubs = ["Accrington Stanley", "Barnet", "Bristol Rovers", "Cheltenham Town",
+    "Chesterfield", "Colchester United", "Crawley Town", "Crewe Alexandra",
+    "Exeter City", "Fleetwood Town", "Gillingham", "Grimsby Town",
+    "Newport County", "Northampton Town", "Oldham Athletic", "Port Vale",
+    "Rochdale", "Rotherham United", "Salford City", "Shrewsbury Town",
+    "Swindon Town", "Tranmere Rovers", "Walsall", "York City"];
+  const nationalLeagueClubs = ["AFC Fylde", "Aldershot Town", "Altrincham", "Barrow", "Boreham Wood",
+    "Boston United", "Carlisle United", "Eastleigh", "FC Halifax Town",
+    "Forest Green Rovers", "Gateshead", "Harrogate Town", "Hartlepool United",
+    "Hornchurch", "Kidderminster Harriers", "Scunthorpe United", "Solihull Moors",
+    "Southend United", "Sutton United", "Tamworth", "Wealdstone", "Woking",
+    "Worthing", "Yeovil Town"];
+  const nationalPoolClubs = ["Chorley", "Scarborough Athletic", "Dorking Wanderers", "Torquay United"];
 
   // The 21st Premier League club is a duplicate of a real Championship club —
   // the same name sitting in two tiers at once, which is exactly what
@@ -268,7 +290,8 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   const corruptDivisions = {
     premier: [...premierClubs, strayClub],
     championship: [...championshipClubs],
-    pool: [...poolClubs],
+    leagueOne: leagueOneClubs, leagueTwo: leagueTwoClubs,
+    nationalLeague: nationalLeagueClubs, nationalLeaguePool: nationalPoolClubs,
   };
 
   const order = [...premierClubs, strayClub];
@@ -277,18 +300,19 @@ function withStandings(career: CareerState, order: string[]): CareerState {
   career = { ...career, divisions: corruptDivisions };
 
   const out = resolveLadder(career, mulberry32(23));
-  const { premier, championship, pool } = out.divisions;
+  const { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeaguePool } = out.divisions;
 
   check(premier.length === PREMIER_LEAGUE_CLUBS.length,
     `a corrupted 21-club Premier League heals to ${PREMIER_LEAGUE_CLUBS.length} (saw ${premier.length})`);
   check(championship.length === CHAMPIONSHIP_CLUBS.length,
     `the Championship still ends up at ${CHAMPIONSHIP_CLUBS.length} (saw ${championship.length})`);
-  check(pool.length === PROMOTION_POOL_CLUBS.length,
-    `the pool still ends up at ${PROMOTION_POOL_CLUBS.length} (saw ${pool.length})`);
+  check(leagueOne.length === leagueOneClubs.length,
+    `League One still ends up at ${leagueOneClubs.length} (saw ${leagueOne.length})`);
 
-  const all = [...premier, ...championship, ...pool];
+  const all = [...premier, ...championship, ...leagueOne, ...leagueTwo, ...nationalLeague, ...nationalLeaguePool];
   check(new Set(all).size === all.length, "no club is left sitting in two tiers at once");
-  check(all.length === PREMIER_LEAGUE_CLUBS.length + CHAMPIONSHIP_CLUBS.length + PROMOTION_POOL_CLUBS.length,
+  check(all.length === premierClubs.length + championshipClubs.length + leagueOneClubs.length
+      + leagueTwoClubs.length + nationalLeagueClubs.length + nationalPoolClubs.length,
     `no club was invented or dropped while healing (${all.length} total)`);
   check(new Set(all).has(strayClub), "the stray duplicate club still exists somewhere, just not doubled up");
 }

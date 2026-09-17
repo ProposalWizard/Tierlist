@@ -2,6 +2,7 @@ import type { CareerState, SponsorDeal, MatchStats } from "./types";
 import { mulberry32 } from "./season";
 import { clubExpectation, type Ambition } from "./expectations";
 import { getTuning } from "./tuningStore";
+import { clubNameSeed } from "./squadData";
 
 /**
  * SPONSORS WITH SOMETHING TO ASK
@@ -404,8 +405,28 @@ export function rollSponsorSeason(career: CareerState): {
   return { sponsors, lapsed, standingHit: lapsed.length * getTuning("sponsors.lapsedStandingHit"), seasonFees };
 }
 
-/** A newly activated deal gets something to ask for. */
+/**
+ * A newly activated deal gets something to ask for.
+ *
+ * Real bug, reported directly: signing five sponsors in the same week
+ * produced five IDENTICAL objectives (all "score in consecutive
+ * appearances"). Root cause: `signSponsor` calls this function separately
+ * for each deal as it's signed, one at a time — and the old seed
+ * (`season * 4211 + week * 17`) depends on neither the category nor which
+ * signing this is, so every call this week re-seeds `mulberry32` to the
+ * exact same starting state, and a freshly-seeded RNG's very FIRST draw
+ * (which is all `makeObjective` needs to pick a `kind`) is deterministic —
+ * so it's always the same draw. Folding the category's own name into the
+ * seed (via `clubNameSeed`, the same hash squadData.ts already uses for
+ * "always the same, but different per name") makes each category roll its
+ * own independent objective while staying exactly as deterministic as
+ * before — the same account signing Boots on the same day always gets the
+ * same Boots objective, it just no longer has to be the same as Watch's.
+ */
 export function attachObjective(career: CareerState, sponsors: SponsorDeal[]): SponsorDeal[] {
-  const rng = mulberry32(career.season * 4211 + career.week * 17);
-  return sponsors.map((s, i) => (s.active && !s.objective ? { ...s, objective: makeObjective(career, i, rng, s.category) } : s));
+  return sponsors.map((s, i) => {
+    if (!s.active || s.objective) return s;
+    const rng = mulberry32(career.season * 4211 + career.week * 17 + clubNameSeed(s.category));
+    return { ...s, objective: makeObjective(career, i, rng, s.category) };
+  });
 }

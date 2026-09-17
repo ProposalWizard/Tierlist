@@ -11,6 +11,8 @@ import { createClient } from "@/lib/supabase/client";
 import { mulberry32 } from "@/lib/star/season";
 import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
+import { renameHorse } from "@/lib/star/horse";
+import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor, MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
@@ -123,9 +125,23 @@ import { allInvestableClubs } from "@/lib/star/investments";
 import { facilitiesFor, renameStadium, upgradeStadiumCapacity, upgradeTrainingGround, upgradeYouthAcademy } from "@/lib/star/facilities";
 import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
+import GardenScreen from "@/components/star/GardenScreen";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
+import ImmersiveToggle from "@/components/star/ImmersiveToggle";
 
+/** Thin wrapper so the full-screen toggle is mounted once, above every one
+ *  of StarDevInner's many phase-routed early returns, rather than needing
+ *  to be threaded into each of them individually. */
 export default function StarDevPage() {
+  return (
+    <>
+      <StarDevInner />
+      <ImmersiveToggle />
+    </>
+  );
+}
+
+function StarDevInner() {
   const [career, setCareer] = useState<CareerState | null>(null);
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);
@@ -720,7 +736,11 @@ export default function StarDevPage() {
    */
   const handlePostMatchContinue = useCallback(() => {
     if (!career) return;
-    if (hasFreshMedia(career)) { setPhase("media"); return; }
+    // A per-device preference (Settings → Post-Match Reactions), not game
+    // data — requested directly: after the rating/money screen, some
+    // players would rather go straight back to the dashboard than always
+    // pass through the phone screen.
+    if (getPostMatchReactionsEnabled() && hasFreshMedia(career)) { setPhase("media"); return; }
     continueAfterMatch(career, !pressQuestion);
   }, [career, continueAfterMatch, pressQuestion]);
 
@@ -1434,6 +1454,11 @@ export default function StarDevPage() {
     });
   }, [career]);
 
+  const handleRenameHorse = useCallback((name: string) => {
+    if (!career) return;
+    setCareer(renameHorse(career, name));
+  }, [career]);
+
   // Stake itself already left the casino's `bank` (see Casino.tsx's own
   // onSetBank call, which flows back into career.money on exit exactly like
   // any other casino loss) — this only records the bet so it can actually
@@ -2127,7 +2152,7 @@ export default function StarDevPage() {
   }
 
   if (phase === "casino-menu") {
-    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onPlaceBet={handlePlaceBet} />;
+    return <Casino bankStart={career.money} career={career} onExit={handleCasinoExit} onHorseRace={handleHorseRace} onBuyHorse={handleBuyHorse} onRenameHorse={handleRenameHorse} onPlaceBet={handlePlaceBet} />;
   }
 
   if (phase === "investments") {
@@ -2168,6 +2193,7 @@ export default function StarDevPage() {
   if (phase === "sponsors") return <SponsorsScreen career={career} onBack={handleBackToDashboard} onSign={handleSignSponsor} />;
   if (phase === "achievements") return <AchievementsScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
+  if (phase === "garden") return <GardenScreen career={career} onBack={handleBackToDashboard} />;
   if (phase === "reputation") return <ReputationScreen career={career} onBack={handleBackToOwnership} />;
 
   if (phase === "ownership") {
@@ -2552,6 +2578,9 @@ export default function StarDevPage() {
             <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
             <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
             <QuickBtn label="Ownership" icon="🏛️" onClick={() => setPhase("ownership")} />
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            <QuickBtn label="Garden" icon="🌳" onClick={() => setPhase("garden")} />
           </div>
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
             <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>

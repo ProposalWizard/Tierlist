@@ -125,12 +125,14 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
     check(members.championship.length === membersBefore.championship.length, "the Championship also stays at its own fixed size");
     check(!!moved.displacedToLimbo && (moved.career.limboClubs ?? []).includes(moved.displacedToLimbo),
       "the club bumped out of the Championship genuinely lands in limbo, not just vanishing");
-    check(!members.championship.includes(moved.displacedToLimbo!) && !members.pool.includes(moved.displacedToLimbo!),
-      "…and is genuinely gone from both the Championship and the ordinary pool while in limbo");
+    check(!members.championship.includes(moved.displacedToLimbo!) && !members.leagueOne.includes(moved.displacedToLimbo!),
+      "…and is genuinely gone from both the Championship and League One (the tier limbo returns into) while in limbo");
 
     // A limbo club is eligible for real promotion back the FOLLOWING season —
-    // resolveLadder should fold it back into the pool draw, not lose it or
-    // leave the pool oversized.
+    // resolveLadder should fold it back into League One's draw (the tier
+    // directly below the Championship, since 17 Sep 2026 — see
+    // promotion.ts's own reconcileLadder note), not lose it or leave that
+    // tier oversized.
     const order = [...CHAMPIONSHIP_CLUBS];
     let nextCareer: CareerState = {
       ...moved.career,
@@ -138,9 +140,13 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
       league: order.map((name, i) => ({ name, strength: 75, played: 46, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: (order.length - i) * 3 })),
     };
     const ladder = resolveLadder(nextCareer, mulberry32(5));
-    const allAfter = [...ladder.divisions.premier, ...ladder.divisions.championship, ...ladder.divisions.pool, ...ladder.limbo];
+    const allAfter = [
+      ...ladder.divisions.premier, ...ladder.divisions.championship, ...ladder.divisions.leagueOne,
+      ...ladder.divisions.leagueTwo, ...ladder.divisions.nationalLeague, ...ladder.divisions.nationalLeaguePool,
+      ...ladder.limbo,
+    ];
     check(new Set(allAfter).size === allAfter.length, "after the very next ladder resolution, nobody is in two places at once, including anyone still in limbo");
-    check(ladder.divisions.pool.length === membersBefore.pool.length, "the pool is still exactly its own fixed size after folding a limbo return back in");
+    check(ladder.divisions.leagueOne.length === membersBefore.leagueOne.length, "League One is still exactly its own fixed size after folding a limbo return back in");
     check(allAfter.includes(moved.displacedToLimbo!), "the limbo club is still somewhere real in the world — never silently dropped");
   }
 }

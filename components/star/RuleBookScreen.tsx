@@ -100,7 +100,7 @@ export default function RuleBookScreen({
               key={b}
               onClick={() => { setBody(b); setMessage(null); }}
               className={`py-1.5 rounded-lg font-black text-[10px] uppercase transition ${
-                body === b ? "bg-emerald-600" : "bg-gray-700 text-white/90"
+                body === b ? "bg-emerald-600" : "bg-gray-700 text-white"
               }`}
             >
               {b}
@@ -109,7 +109,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">Controls</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1">Controls</div>
           <div className="text-[11px] text-white font-semibold">{GOVERNING_BODY_COMPETITIONS[body].join(", ")}</div>
         </div>
 
@@ -176,7 +176,7 @@ export default function RuleBookScreen({
               className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
             />
           </div>
-          <label className="flex items-center gap-2 text-[10px] text-white/80">
+          <label className="flex items-center gap-2 text-[10px] text-white">
             <input type="checkbox" checked={useLawyers} onChange={e => setUseLawyers(e.target.checked)} />
             Hire lawyers first (★5000 — cuts the risk of getting caught, doesn&apos;t remove it)
           </label>
@@ -186,7 +186,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Points per result</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Points per result</div>
           <div className="text-[11px] text-white font-semibold mb-2">Win {rules.points.win} · Draw {rules.points.draw} · Loss {rules.points.loss}</div>
           <button
             disabled={!canPropose}
@@ -198,7 +198,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Draws</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Draws</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.noDraws ? "Every draw goes to penalties" : "Draws stand, as normal"}</div>
           <button
             disabled={!canPropose}
@@ -210,7 +210,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Match length</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Match length</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.matchLengthMinutes} minutes</div>
           <div className="flex gap-1">
             <button
@@ -231,7 +231,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Banned equipment</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Banned equipment</div>
           <div className="text-[11px] text-white font-semibold mb-2">
             {rules.bannedItems.length > 0 ? `Banned: ${rules.bannedItems.join(", ")}` : "Nothing currently banned"}
           </div>
@@ -254,7 +254,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Offside</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Offside</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.offsideAbolished ? "Abolished — nobody is ever offside" : "The law applies, as normal"}</div>
           <button
             disabled={!canPropose}
@@ -266,7 +266,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Squad size per side</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Squad size per side</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.squadSize} a side</div>
           <div className="flex gap-1">
             <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { squadSize: 9 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">Propose: 9 a side</button>
@@ -277,7 +277,7 @@ export default function RuleBookScreen({
 
         {body === "UEFA" && (
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">European slots for England</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">European slots for England</div>
             <div className="text-[11px] text-white font-semibold mb-2">
               +{rules.extraChampionsLeagueSlots} Champions League · +{rules.extraEuropaLeagueSlots} Europa League
             </div>
@@ -285,7 +285,7 @@ export default function RuleBookScreen({
               <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { extraChampionsLeagueSlots: rules.extraChampionsLeagueSlots + 1 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">+1 Champions League</button>
               <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { extraEuropaLeagueSlots: rules.extraEuropaLeagueSlots + 1 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">+1 Europa League</button>
             </div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5 mt-2">Champions League format</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5 mt-2">Champions League format</div>
             <div className="text-[11px] text-white font-semibold mb-2">{rules.championsLeagueFormat === "groups" ? "Groups of 4, then knockout" : "Single league-table phase"}</div>
             <button
               disabled={!canPropose}
@@ -296,7 +296,7 @@ export default function RuleBookScreen({
             </button>
             <div className="mt-1.5 text-[9px] text-white font-semibold">Real, votable data — the actual Champions League simulation still runs the current format regardless.</div>
 
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5 mt-2">Saudi clubs in Europe</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5 mt-2">Saudi clubs in Europe</div>
             <div className="text-[11px] text-white font-semibold mb-2">
               {rules.saudiClubsInEurope
                 ? "Active — two Saudi Pro League clubs join the Champions League and two join the Europa League each season."
@@ -313,9 +313,9 @@ export default function RuleBookScreen({
               Real: two of the four Saudi clubs join each competition, randomly replacing eligible clubs — England/Spain/Italy/Germany/France's clubs are always exempt, and the two Champions League clubs bumped out drop into the Europa League that season rather than disappearing.
             </div>
 
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5 mt-3">Custom clubs in Europe</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5 mt-3">Custom clubs in Europe</div>
             {customClubs.length === 0 ? (
-              <div className="text-[11px] text-white/70">
+              <div className="text-[11px] text-white">
                 No custom clubs on file yet — create one at /admin/custom-clubs first.
               </div>
             ) : (
@@ -335,7 +335,7 @@ export default function RuleBookScreen({
                   </select>
                 </div>
                 <div className="mb-1.5">
-                  <div className="text-[9px] text-white/60 mb-1">Replaces (weakest eligible clubs first)</div>
+                  <div className="text-[9px] text-white mb-1">Replaces (weakest eligible clubs first)</div>
                   <select value={customReplaces} onChange={e => setCustomReplaces(e.target.value)} className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white">
                     {replaceableClubsIn(customCompetition === "champions" ? "Champions League" : "Europa League", career).map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -387,7 +387,7 @@ export default function RuleBookScreen({
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Create a new competition</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Create a new competition</div>
           <div className="flex items-center gap-2 mb-2">
             <input value={newCompName} onChange={e => setNewCompName(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white" />
             <button
