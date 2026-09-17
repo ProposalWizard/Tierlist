@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
+import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
@@ -34,6 +35,14 @@ export default function SettingsScreen({
   career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
 }: Props) {
+  const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
+
+  const togglePostMatchReactions = () => {
+    const next = !postMatchReactions;
+    setPostMatchReactions(next);
+    setPostMatchReactionsEnabled(next);
+  };
+
   // Quick on/off switches, separate from the full editor — read/write the
   // exact same shared FaceStyle object FaceEditorScreen and CanvasMatch do,
   // so a flip here takes effect the same "next match" way every other Player
@@ -68,6 +77,27 @@ export default function SettingsScreen({
               club={career.player.club}
               number={career.squadNumber}
             />
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-white">Post-Match Reactions</div>
+              <p className="mt-1 text-[11px] text-white">
+                After your rating and match money, skip the phone screen and go straight back to the dashboard.
+              </p>
+            </div>
+            <button
+              onClick={togglePostMatchReactions}
+              role="switch"
+              aria-checked={postMatchReactions}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${postMatchReactions ? "bg-emerald-500" : "bg-gray-600"}`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${postMatchReactions ? "translate-x-5" : "translate-x-0.5"}`}
+              />
+            </button>
           </div>
         </div>
 

@@ -21,7 +21,7 @@ export default async function GlobalNav() {
   const userIsAdmin = user ? await isAdmin(user.id) : false;
 
   return (
-    <nav className="relative sticky top-0 z-50 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
+    <nav data-global-chrome className="relative sticky top-0 z-50 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
       <div className="relative mx-auto flex items-center max-w-7xl px-4 py-3 gap-3">
         <div className="flex items-center gap-2 shrink-0">
           <GameSidebar />

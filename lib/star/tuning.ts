@@ -725,6 +725,12 @@ export const TUNABLES: TunableDef[] = [
     default: 4, min: 1, max: 8, step: 0.5,
   },
 
+  {
+    key: "transfers.reachUp", category: "Transfers", label: "How far above a signing's own level a buyer can reach",
+    description: "Reported directly: the league's single strongest club, once one of its own starters left unhappy, had no way to replace him at anything like his own level — this cap (a flat 5 originally) blocked buying anyone rated more than 5 points below the buyer's own strength unless the signing was a wonderkid, and by definition nobody else in the division is within 5 of the outright best club. Raised again on a second pass, past this file's own old max of 25 — a real gap between an established Premier League side and a Championship one, especially a few seasons into a save where the top club has kept developing, is genuinely bigger than 20-25 points, and the whole point of this being a real tunable now is that it can be pushed further here without another code change if a save still shows the strongest club unable to replace what it loses.",
+    default: 20, min: 5, max: 40, step: 1,
+  },
+
   // ── League Simulation ────────────────────────────────────────────────
   {
     key: "leagueSim.baseXg", category: "League Simulation", label: "Base expected goals",
