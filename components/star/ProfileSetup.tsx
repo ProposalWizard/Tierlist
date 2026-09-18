@@ -1,11 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { STAR_FIFA_YEAR, STAR_EDITION_LABEL } from "@/lib/star/edition";
+import { STAR_FIFA_YEAR } from "@/lib/star/edition";
 import type { StarPlayer } from "@/lib/star/types";
-import {
-  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
-} from "@/lib/star/clubs";
-import { leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { type CareerDivision } from "@/lib/star/calendar";
 import { ALL_NATIONALITIES, getFlagUrl } from "@/lib/nationalities";
 import {
   SKIN_TONES, DEFAULT_SKIN_TONE, type SkinTone,
@@ -19,33 +16,50 @@ interface Props {
 }
 
 /**
- * Every division a career can actually start in.
+ * ── THERE IS NO CLUB TO CHOOSE ANY MORE ──
  *
- * Extended 18 September 2026 from two (Premier League, Championship) to all
- * five real tiers on the English ladder — League One, League Two and the
- * National League are now genuinely playable careers, not just simulated/
- * background hats (see lib/star/calendar.ts's CareerDivision and this
- * session's own work generalizing the season/promotion/cup machinery for
- * them). Not the promotion pools below either division — none of those
- * clubs play a season of their own, so there is nothing to start a career
- * IN; they only ever arrive by being promoted mid-career.
+ * Removed 18 September 2026, reported three times and quoted here because the
+ * contradiction is the whole reason: "Get rid of this completely." · "Still,
+ * for some reason, we still got Choose Your Club." · "I've chosen a club,
+ * which is silly."
  *
- * Read from lib/star/clubs.ts rather than /api/draft/clubs, which is Draft
- * mode's own endpoint and answers a different question: every club that has
- * ever been in ITS archive's idea of the Premier League, across all editions.
- * This needs exactly this season's five divisions.
+ * It was silly. Step 2 asked you to pick a division and a club, and then the
+ * very next screen told you nobody had signed you and put you through a trial
+ * to earn one. A club ARRIVES now, from `attachClub`, when a scout actually
+ * offers — see app/star-dev/page.tsx's `handleProfileComplete` ("You arrive
+ * with NO CLUB") and the scout-offer screen's `onAccept`.
+ *
+ * ── Kept written down, because it may come back in another form ──
+ *
+ * Said directly: "just keep it in your memory somewhere how exactly it works,
+ * but we don't want that right now." Exactly how it worked, so it can be put
+ * back without re-deriving any of it:
+ *
+ *  - A `DIVISIONS` array of `{ key: CareerDivision, clubs }` for all five real
+ *    English tiers, read from lib/star/clubs.ts's `PREMIER_LEAGUE_CLUBS` /
+ *    `CHAMPIONSHIP_CLUBS` / `LEAGUE_ONE_CLUBS` / `LEAGUE_TWO_CLUBS` /
+ *    `NATIONAL_LEAGUE_CLUBS` — NOT from /api/draft/clubs, which answers a
+ *    different question (every club that has ever been in Draft mode's idea of
+ *    the Premier League, across every edition). Each list sorted
+ *    alphabetically, deliberately, because a picker is scanned by letter even
+ *    though the table order is the real order everywhere else.
+ *  - Division tabs above a scrolling club list; `leagueNameFor` (calendar.ts)
+ *    for the tab labels; switching division reset the selection to that
+ *    division's first club.
+ *  - A "NO SQUAD YET" badge, from a `GET /api/draft/clubs` fetch filtered to
+ *    `seasons.includes(STAR_FIFA_YEAR)`, in three states — unknown / loading /
+ *    loaded — because an empty `Set` is truthy and a single transient failure
+ *    once locked in "not one club has data" permanently. Never a block: a club
+ *    with no data was always still selectable and degraded to a generated
+ *    squad.
+ *  - The chosen club fed `player.club`, and `onComplete`'s `clubs` (that
+ *    division's list) and `division` arguments.
+ *
+ * The data model is untouched: `StarPlayer.club`, `CareerDivision`, this
+ * component's own `onComplete(player, clubs, division)` signature,
+ * `makeIdentity` and `attachClub` all still work exactly as they did. Only the
+ * FLOW lost the question.
  */
-// Alphabetical — requested directly: the real table/promotion order these
-// arrays live in everywhere else (clubs.ts, the league table, fixtures) is
-// not how a name should be found in a PICKER, where you already know which
-// club you want and are scanning for its letter.
-const DIVISIONS: { key: CareerDivision; clubs: readonly string[] }[] = [
-  { key: "premier", clubs: [...PREMIER_LEAGUE_CLUBS].sort((a, b) => a.localeCompare(b)) },
-  { key: "championship", clubs: [...CHAMPIONSHIP_CLUBS].sort((a, b) => a.localeCompare(b)) },
-  { key: "league_one", clubs: [...LEAGUE_ONE_CLUBS].sort((a, b) => a.localeCompare(b)) },
-  { key: "league_two", clubs: [...LEAGUE_TWO_CLUBS].sort((a, b) => a.localeCompare(b)) },
-  { key: "national_league", clubs: [...NATIONAL_LEAGUE_CLUBS].sort((a, b) => a.localeCompare(b)) },
-];
 
 /**
  * There is nothing to choose here.
@@ -81,8 +95,9 @@ const DEFAULT_PREFERRED_NUMBER = 9;
  *
  * So step 1 asks two short questions instead of one long one: who he is, then
  * what he looks like and how he plays. The OUTER step machine is untouched —
- * this is still "step 1 of 2", and step 2 (division + club) is not restructured
- * here; only the inside of step 1 has a page turn.
+ * this is still "step 1 of 2", and step 2 (an optional photo, since the
+ * division and club pickers were removed) is not restructured here; only the
+ * inside of step 1 has a page turn.
  */
 type SetupPane = "who" | "style";
 
@@ -110,8 +125,6 @@ export default function ProfileSetup({ onComplete }: Props) {
    * change it.
    */
   const [nationalityOpen, setNationalityOpen] = useState(false);
-  const [division, setDivision] = useState<CareerDivision>("premier");
-  const [selectedClub, setSelectedClub] = useState("");
   const [portrait, setPortrait] = useState<string | undefined>(undefined);
   // Scrolled to your own default nationality once, on mount — reported
   // directly: alphabetical means "Afghanistan, Albania, Algeria..." greets
@@ -120,78 +133,11 @@ export default function ProfileSetup({ onComplete }: Props) {
   // starting scroll position changes.
   const nationalityListRef = useRef<HTMLDivElement>(null);
   const selectedNationalityRef = useRef<HTMLButtonElement>(null);
-  /**
-   * Which clubs the database actually has a squad for this edition.
-   *
-   * Only ever an annotation — a club is still selectable without one, and
-   * degrades to a generated squad exactly as it always has. It is here
-   * because the Championship's own squads arrive by running a migration,
-   * so "this club has no players yet" is a real and temporary state worth
-   * saying out loud rather than letting somebody discover mid-career.
-   */
-  const [withData, setWithData] = useState<Set<string> | null>(null);
-  /** Separate from `withData` on purpose — see the effect below. An empty Set
-   *  is truthy, so the Set alone cannot tell "no answer yet" from "the answer
-   *  is none". */
-  const [clubDataState, setClubDataState] = useState<"unknown" | "loading" | "loaded">("unknown");
-
-  const clubs = DIVISIONS.find(d => d.key === division)!.clubs;
-
   const filteredNationalities = useMemo(() => {
     const q = nationalitySearch.trim().toLowerCase();
     if (!q) return ALL_NATIONALITIES;
     return ALL_NATIONALITIES.filter(n => n.toLowerCase().includes(q));
   }, [nationalitySearch]);
-
-  /**
-   * WHICH CLUBS HAVE REAL PLAYERS ON FILE.
-   *
-   * ── The bug this shape exists to avoid ──
-   *
-   * This used to bail on `if (step !== 2 || withData) return` and, on a failed
-   * fetch, `setWithData(new Set())`. An empty Set is TRUTHY, so a single
-   * transient failure — a cold dev-server compile of that route is enough —
-   * permanently locked in "confirmed: not one club has data", never retried,
-   * and every club on the list showed NO SQUAD YET.
-   *
-   * Found by playtest on a fresh career: all twenty Premier League clubs were
-   * badged as having no squad while the endpoint was returning correct data
-   * for every one of them. Purely cosmetic — the squads the game actually
-   * plays with come from a different call — but it lies to a brand-new player
-   * on the very first screen they see, and can steer them away from a club
-   * that is completely fine.
-   *
-   * So "not loaded yet" and "loaded, and it is empty" are now different
-   * states, and a failure leaves it at the first rather than asserting the
-   * second. `unknown` renders no badge at all, which is the honest thing to
-   * show when we do not know.
-   */
-  useEffect(() => {
-    if (step !== 2 || clubDataState !== "unknown") return;
-    let alive = true;
-    setClubDataState("loading");
-    fetch("/api/draft/clubs")
-      .then((r) => r.json())
-      .then((d: { clubs?: { name: string; seasons: number[] }[] }) => {
-        if (!alive) return;
-        setWithData(new Set(
-          (d.clubs ?? []).filter(c => c.seasons.includes(STAR_FIFA_YEAR)).map(c => c.name),
-        ));
-        setClubDataState("loaded");
-      })
-      .catch(() => {
-        // Back to "we do not know", NOT to "we know there is nothing" — so
-        // re-entering this step tries again instead of being wrong forever.
-        if (alive) setClubDataState("unknown");
-      });
-    return () => { alive = false; };
-  }, [step, clubDataState]);
-
-  // Whichever division is showing, start on its first club rather than on
-  // whatever was picked in the other one.
-  useEffect(() => {
-    setSelectedClub(prev => (clubs.includes(prev) ? prev : clubs[0] ?? ""));
-  }, [clubs]);
 
   // Land the nationality list on the one already picked, not on the top of
   // the alphabet — see the refs' own doc. Manual scrollTop rather than
@@ -221,7 +167,6 @@ export default function ProfileSetup({ onComplete }: Props) {
   }, [nationalityOpen]);
 
   const canProceedWho = firstName.trim().length > 0 && lastName.trim().length > 0 && !nationalityOpen;
-  const canFinish = selectedClub.length > 0;
 
   const chooseNationality = (n: string) => {
     setNationality(n);
@@ -243,7 +188,16 @@ export default function ProfileSetup({ onComplete }: Props) {
         lastName: lastName.trim(),
         age: STARTING_AGE,
         skinTone: skin,
-        club: selectedClub,
+        // ── No club, because nobody has signed him ──
+        //
+        // The honest answer for a trialist, and the one the rest of the game
+        // already expects: `hasClub` (calendar.ts) is the established test for
+        // "no club yet", `kitsOf("")` hands back its own NEUTRAL green rather
+        // than borrowing somebody else's colours, and `listSaveSlots`
+        // (storage.ts) already refuses to print a club name for an unsigned
+        // save. A real club name arrives in `attachClub`, from the offer the
+        // player accepts.
+        club: "",
         clubBadge: null,
         position: DEFAULT_POSITION,
         nationality,
@@ -255,8 +209,21 @@ export default function ProfileSetup({ onComplete }: Props) {
         ...(nickname.trim() ? { nickname: nickname.trim() } : {}),
         ...(portrait ? { portrait } : {}),
       },
-      [...clubs],
-      division,
+      // ── The two arguments a club used to answer, and what they mean now ──
+      //
+      // `clubs` was the chosen division's club list, and the only thing the
+      // page does with it is `externalClubsFor(clubs)` — "fetch every squad in
+      // the world EXCEPT my own division's". An unsigned player has no
+      // division, so nothing is excluded: the whole world is external until a
+      // club signs him, and his own division's squads are fetched properly by
+      // the scout-offer screen's own `fetchLeagueSquads(clubsForDivision(...))`
+      // the moment one does.
+      [],
+      // A placeholder, and it always was on this path: `makeIdentity` stores it
+      // on a career with no league and no fixtures, and `attachClub` overwrites
+      // it outright with the accepted offer's own division. "premier" is what
+      // both of their own defaults already are, so this changes nothing.
+      "premier",
     );
   };
 
@@ -270,7 +237,7 @@ export default function ProfileSetup({ onComplete }: Props) {
             Star Career
           </div>
           <h1 className="mt-1.5 text-xl font-black text-white leading-tight">
-            {step === 1 ? (pane === "who" ? "Who are you?" : "Your style") : "Choose your club"}
+            {step === 1 ? (pane === "who" ? "Who are you?" : "Your style") : "Your photo"}
           </h1>
           <div className="mt-1 text-[11px] text-emerald-300 font-bold">
             Step {step} of 2
@@ -456,60 +423,43 @@ export default function ProfileSetup({ onComplete }: Props) {
           </div>
         )}
 
+        {/* ── Step 2 is the photo, and that is all that is left of it ──
+
+            Checked rather than assumed: with the division tabs and the club
+            list gone, this step still holds `PortraitPicker`, which is the
+            single BIGGEST control in the whole of setup (a 64px treated tile,
+            two buttons, a seven-face grid, and a 224px crop stage once a file
+            is chosen). It is not thin enough to fold into the style pane —
+            that pane already carries the skin tones, the foot and the squad
+            number, and step 1 was split into two panes in the first place
+            because it overflowed an iPhone 13. So the outer step machine stays
+            exactly as it was, two steps; only what step 2 ASKS has changed.
+
+            It no longer waits for a club to be picked before it appears, and
+            it no longer previews against one. `kitsOf("")` is the NEUTRAL kit
+            (kits.ts) — a plain green trialist's bib — which is the honest
+            thing to show somebody nobody has signed. */}
         {step === 2 && (
-          <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-600 rounded-2xl p-5 shadow-xl">
-            <div className="bg-gray-700 text-white text-center font-black py-2 rounded-lg mb-3">Choose Your Club</div>
-
-            {/* Start in either division. A Championship career is the same
-                career with a longer season and no European football — see
-                lib/star/calendar. */}
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              {DIVISIONS.map(d => (
-                <button
-                  key={d.key}
-                  onClick={() => setDivision(d.key)}
-                  className={`min-w-[30%] flex-1 rounded-lg py-2 text-[11px] font-black uppercase tracking-wide transition ${
-                    division === d.key ? "bg-emerald-500 text-white" : "bg-gray-800 text-white/70 hover:bg-gray-700"}`}
-                >
-                  {leagueNameFor(d.key)}
-                </button>
-              ))}
-            </div>
-
-            <div className="max-h-72 overflow-y-auto space-y-1">
-              {clubs.map((c) => {
-                // Only badge a club once we have genuinely heard back. Until
-                // then we do not know, and saying "no squad yet" would be a
-                // guess presented as a fact.
-                const missing = clubDataState === "loaded" && withData !== null && !withData.has(c);
-                return (
-                  <button
-                    key={c}
-                    onClick={() => setSelectedClub(c)}
-                    className={`flex w-full items-center justify-between gap-2 rounded-lg py-2 px-3 text-left text-sm font-bold transition ${selectedClub === c ? "bg-emerald-500 text-white" : "bg-gray-800 text-white/85 hover:bg-gray-700"}`}
-                  >
-                    <span className="min-w-0 truncate">{c}</span>
-                    {missing && (
-                      <span
-                        className="shrink-0 text-[9px] font-black uppercase tracking-wide text-amber-300"
-                        title={`No ${STAR_EDITION_LABEL} squad in the database for this club yet — you can still start here, but its players will be made up until the data is imported.`}
-                      >
-                        No squad yet
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Last, and after the club, because the preview is drawn in that
-                club's colours — offering it before you have picked one would
-                mean showing you a shirt you might not end up wearing. */}
-            {selectedClub && (
-              <div className="mt-4">
-                <PortraitPicker value={portrait} onChange={setPortrait} club={selectedClub} />
-              </div>
-            )}
+          <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 border border-emerald-600 rounded-2xl p-4 shadow-xl">
+            {/* No grey header bar here. The one the club list used to sit under
+                said "Choose Your Club" directly beneath a page heading reading
+                "Choose your club", and the same bar saying "Your Photo" under
+                "Your photo" measured 11px of the Start Career button off the
+                bottom of an iPhone 13 — the exact overflow step 1 was split in
+                two to avoid. */}
+            <p className="mb-3 text-center text-[11px] font-bold leading-snug text-white/70">
+              Optional. Nobody has signed you yet, so this is shown in a plain trialist&apos;s
+              kit — you&apos;ll wear a club&apos;s colours once one comes in for you.
+            </p>
+            <PortraitPicker
+              value={portrait}
+              onChange={setPortrait}
+              // No club, so no club colours. See kitsOf's NEUTRAL.
+              club=""
+              // The number chosen a pane ago, so the shirt preview is HIS
+              // shirt rather than the hardcoded 9 this used to fall back to.
+              number={preferredNumber}
+            />
           </div>
         )}
 
@@ -542,8 +492,7 @@ export default function ProfileSetup({ onComplete }: Props) {
           {step === 2 && (
             <button
               onClick={submit}
-              disabled={!canFinish}
-              className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black transition disabled:opacity-40"
+              className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black transition"
             >
               ✓ Start Career
             </button>

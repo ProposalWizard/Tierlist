@@ -6,6 +6,8 @@ import {
   type TrialProgress, type TrialStage,
 } from "@/lib/star/trial";
 import { dribbleSetup, dribbleQuality, attemptSeed } from "@/lib/star/trialStages";
+import { simRemaining, TRIAL_SIM_QUALITY, type TrialSimLevel } from "@/lib/star/trialDev";
+import DevTrialPanel from "./DevTrialPanel";
 import FiveASide from "./FiveASide";
 import FirstPersonDribble from "./FirstPersonDribble";
 import TrialPenalties from "./stages/TrialPenalties";
@@ -103,6 +105,39 @@ export default function TrialSequence({
     }
   }, [trial, onTrial, onComplete]);
 
+  /**
+   * ── DEV ONLY: fill every remaining stage and go straight to the offers ──
+   *
+   * Deliberately NOT routed through `finishStage`: that one records a single
+   * stage and then shows its result card, which is the right beat for a stage
+   * you actually played and the wrong one for "I never want to see the trial,
+   * take me to the offers". It also skips the 1.4-second pause `finishStage`
+   * holds the final card for — there is nothing to admire about a number you
+   * did not earn.
+   *
+   * Everything else is identical to a played trial: `simRemaining` writes real
+   * results through the real `recordStage`, and `onComplete` is handed the
+   * real `trialScore`, so the offers screen cannot tell the difference. See
+   * lib/star/trialDev.ts.
+   */
+  const simAll = useCallback((level: TrialSimLevel) => {
+    const next = simRemaining(trial, level);
+    onTrial(next);
+    setShowingResult(null);
+    onComplete(trialScore(next), next);
+  }, [trial, onTrial, onComplete]);
+
+  /** The dev tool, on every stage screen and on the between-stages card, so it
+   *  is never more than one tap away from wherever the trial has stalled. */
+  const devPanel = (
+    <DevTrialPanel
+      trial={trial}
+      stage={stage}
+      onSkipStage={level => { if (stage) finishStage(stage, TRIAL_SIM_QUALITY[level]); }}
+      onSimTrial={simAll}
+    />
+  );
+
   const dribble = useMemo(() => dribbleSetup(trial), [trial]);
 
   const done = TRIAL_STAGES.filter(s => trial.results[s]);
@@ -145,6 +180,7 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-6 text-white">
         {progress}
+        {devPanel}
         <div className="rounded-2xl bg-white/5 p-5 text-center">
           <div className="text-[11px] font-black uppercase tracking-widest text-white/60">
             {STAGE_LABEL[showingResult]}
@@ -193,6 +229,7 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
+        {devPanel}
         {/* `pace` is RUNNING SPEED — the run's own header says so. This used
             to be handed `skills.power`, which is a different stat and meant
             your actual pace never reached the one stage that is entirely
@@ -230,6 +267,7 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
+        {devPanel}
         {/* THEIR keeper carries the adversity, not yours — passing it as
             `keeperStrength` made a sharp keeper defend YOUR goal, so a player
             who drew the bad break was helped by it. Caught in review. */}
@@ -265,6 +303,7 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
+        {devPanel}
         <TrialPenalties trial={trial} skills={skills} onDone={q => finishStage("penalties", q)} />
       </div>
     );
@@ -274,6 +313,7 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
+        {devPanel}
         <TrialFreeKicks trial={trial} skills={skills} onDone={q => finishStage("freeKicks", q)} />
       </div>
     );
@@ -283,6 +323,7 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
+        {devPanel}
         <TrialVision trial={trial} onDone={q => finishStage("vision", q)} />
       </div>
     );

@@ -429,6 +429,8 @@ export function StrikeStage({
   const handleContact = (contact: { cx: number; cy: number }) => {
     const sc = scRef.current;
     if (!sc || !aim) return;
+    // @ts-ignore INSTRUMENT
+    ((window as any).__TL ||= []).push(["launch", "", performance.now(), {}]);
     ballRef.current = launch(sc, aim.dir, aim.power, contact, skills, rngRef.current);
     setAim(null);
     flightTRef.current = 0;
@@ -466,6 +468,8 @@ export function StrikeStage({
     const yours = !sc?.receiverShot;
     const quality = yours ? strikeQuality(outcome, crossX) : strikeQuality("saved", null);
 
+    // @ts-ignore INSTRUMENT
+    ((window as any).__TL ||= []).push(["banner", outcome, performance.now(), {kx: sc?.keeper.x, kdive: sc?.keeper.dive, done: sc?.keeper.done}]);
     scoresRef.current = [...scoresRef.current, quality];
     setResultText(
       !yours ? "A team-mate gets on the end of it."
@@ -527,6 +531,8 @@ export function StrikeStage({
             stepKeeper(sc, h);
             const res = stepBall(ball, sc, rngRef.current, h);
             if (res) {
+              // @ts-ignore INSTRUMENT
+              ((window as any).__TL ||= []).push(["outcome", res, performance.now(), {kx: sc.keeper.x, kdive: sc.keeper.dive, scr: sc.keeper.scrambling, tx: sc.keeper.targetX}]);
               outcomeRef.current = res;
               settle = 0;
               // The outcome is decided; the ball must not stop dead on the
@@ -565,6 +571,10 @@ export function StrikeStage({
         if (!sc.keeper.done) stepKeeper(sc, dt);
       }
 
+      // @ts-ignore INSTRUMENT
+      if (phaseRef.current === "flight" || phaseRef.current === "result") {
+        ((window as any).__TK ||= []).push([performance.now(), phaseRef.current, +sc.keeper.x.toFixed(3), +sc.keeper.dive.toFixed(3), ballRef.current ? +ballRef.current.pos.y.toFixed(2) : null, !!ballRef.current?.inNet]);
+      }
       draw();
     };
     raf = requestAnimationFrame(frame);
