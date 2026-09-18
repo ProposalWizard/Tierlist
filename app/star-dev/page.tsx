@@ -293,6 +293,40 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     cloudSaveTimer.current = setTimeout(() => { saveCareerToCloud(career, slotAtSaveTime); }, 3000);
   }, [career]);
 
+  /**
+   * EVERY NEW SCREEN STARTS AT THE TOP OF ITSELF.
+   *
+   * Found by playtest, reproduced seven times across unrelated screens, and it
+   * is worst in exactly the place it can least afford to be.
+   *
+   * On a phone, almost every "next" button in this game is below the fold —
+   * "Start Career", "Continue →", "Team sheets →", "KICK OFF". So the player
+   * scrolls down to press it. Changing phase swaps what is rendered but does
+   * not touch the scroll position, so the NEXT screen opens already scrolled
+   * down by however far the last one needed.
+   *
+   * Measured: after scrolling to find KICK OFF, the live match opened at
+   * `scrollY: 333` with the canvas at `y: -128` — the pitch, the ball and both
+   * teams genuinely above the top of the screen, leaving a black area and a
+   * stats strip. The player's own match, invisible, until they think to scroll
+   * up. The same thing put the opening trial's ball off-screen, and both face
+   * editors.
+   *
+   * It is also the reason an automated driver reported "22 of 22 attempts made
+   * no contact with the ball" — it was dragging at a pitch that was not on the
+   * screen.
+   *
+   * Deliberately keyed on `phase` alone: this is about arriving somewhere new,
+   * not about re-rendering. Scrolling within a screen is untouched.
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo(0, 0);
+    // The phone frame and several screens scroll in their own element rather
+    // than the window, so the window alone is not always the thing that moved.
+    document.querySelectorAll<HTMLElement>("[data-scroll-root]").forEach(el => { el.scrollTop = 0; });
+  }, [phase]);
+
   // Only the phases a refresh must return you to are written; everything else
   // clears the record — see RESUMABLE in storage.ts.
   useEffect(() => {

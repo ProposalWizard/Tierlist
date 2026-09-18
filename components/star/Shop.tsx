@@ -51,11 +51,22 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
           <div className="space-y-2">
             {KIB_CANS.map((c) => {
               const canBuy = career.money >= c.price;
+              // The row is a div, not a button, ON PURPOSE. It used to be a
+              // <button> with the Buy <button> nested inside it, which is
+              // invalid HTML — React warns it "will cause a hydration error",
+              // and nested tap targets behave unpredictably on iOS Safari,
+              // which is the actual target platform. stopPropagation papered
+              // over the click conflict without making the markup legal.
+              // Found by playtest, in the console. Keyboard access is kept
+              // explicitly rather than lost along with the <button>.
               return (
-                <button
+                <div
                   key={c.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedCan(c)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition ${
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedCan(c); } }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition cursor-pointer ${
                     selectedCan?.id === c.id ? "border-emerald-400 bg-gray-700" : "border-gray-700 bg-gray-800"
                   }`}
                 >
@@ -77,7 +88,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                       Buy
                     </button>
                   </div>
-                </button>
+                </div>
               );
             })}
             <div className="pt-2 pb-1 text-[10px] font-black uppercase text-white/60 tracking-widest text-center">
@@ -85,11 +96,16 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
             </div>
             {STAT_KIB_CANS.map((c) => {
               const canBuy = career.money >= c.price;
+              // A div, not a button — see the note on the energy-can row
+              // above. Same nested-button bug, second copy.
               return (
-                <button
+                <div
                   key={c.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedStatCan(c)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition ${
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedStatCan(c); } }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition cursor-pointer ${
                     selectedStatCan?.id === c.id ? "border-fuchsia-400 bg-gray-700" : "border-gray-700 bg-gray-800"
                   }`}
                 >
@@ -111,7 +127,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                       Buy
                     </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

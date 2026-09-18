@@ -79,6 +79,10 @@ export default function ProfileSetup({ onComplete }: Props) {
    * saying out loud rather than letting somebody discover mid-career.
    */
   const [withData, setWithData] = useState<Set<string> | null>(null);
+  /** Separate from `withData` on purpose — see the effect below. An empty Set
+   *  is truthy, so the Set alone cannot tell "no answer yet" from "the answer
+   *  is none". */
+  const [clubDataState, setClubDataState] = useState<"unknown" | "loading" | "loaded">("unknown");
 
   const clubs = DIVISIONS.find(d => d.key === division)!.clubs;
 
@@ -88,9 +92,33 @@ export default function ProfileSetup({ onComplete }: Props) {
     return ALL_NATIONALITIES.filter(n => n.toLowerCase().includes(q));
   }, [nationalitySearch]);
 
+  /**
+   * WHICH CLUBS HAVE REAL PLAYERS ON FILE.
+   *
+   * ── The bug this shape exists to avoid ──
+   *
+   * This used to bail on `if (step !== 2 || withData) return` and, on a failed
+   * fetch, `setWithData(new Set())`. An empty Set is TRUTHY, so a single
+   * transient failure — a cold dev-server compile of that route is enough —
+   * permanently locked in "confirmed: not one club has data", never retried,
+   * and every club on the list showed NO SQUAD YET.
+   *
+   * Found by playtest on a fresh career: all twenty Premier League clubs were
+   * badged as having no squad while the endpoint was returning correct data
+   * for every one of them. Purely cosmetic — the squads the game actually
+   * plays with come from a different call — but it lies to a brand-new player
+   * on the very first screen they see, and can steer them away from a club
+   * that is completely fine.
+   *
+   * So "not loaded yet" and "loaded, and it is empty" are now different
+   * states, and a failure leaves it at the first rather than asserting the
+   * second. `unknown` renders no badge at all, which is the honest thing to
+   * show when we do not know.
+   */
   useEffect(() => {
-    if (step !== 2 || withData) return;
+    if (step !== 2 || clubDataState !== "unknown") return;
     let alive = true;
+    setClubDataState("loading");
     fetch("/api/draft/clubs")
       .then((r) => r.json())
       .then((d: { clubs?: { name: string; seasons: number[] }[] }) => {
@@ -98,10 +126,15 @@ export default function ProfileSetup({ onComplete }: Props) {
         setWithData(new Set(
           (d.clubs ?? []).filter(c => c.seasons.includes(STAR_FIFA_YEAR)).map(c => c.name),
         ));
+        setClubDataState("loaded");
       })
-      .catch(() => { if (alive) setWithData(new Set()); });
+      .catch(() => {
+        // Back to "we do not know", NOT to "we know there is nothing" — so
+        // re-entering this step tries again instead of being wrong forever.
+        if (alive) setClubDataState("unknown");
+      });
     return () => { alive = false; };
-  }, [step, withData]);
+  }, [step, clubDataState]);
 
   // Whichever division is showing, start on its first club rather than on
   // whatever was picked in the other one.
@@ -262,7 +295,10 @@ export default function ProfileSetup({ onComplete }: Props) {
 
             <div className="max-h-72 overflow-y-auto space-y-1">
               {clubs.map((c) => {
-                const missing = withData !== null && !withData.has(c);
+                // Only badge a club once we have genuinely heard back. Until
+                // then we do not know, and saying "no squad yet" would be a
+                // guess presented as a fact.
+                const missing = clubDataState === "loaded" && withData !== null && !withData.has(c);
                 return (
                   <button
                     key={c}
