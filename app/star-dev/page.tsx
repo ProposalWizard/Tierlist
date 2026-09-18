@@ -48,6 +48,7 @@ import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
 import { getTuning } from "@/lib/star/tuningStore";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialPenalty from "@/components/star/TrialPenalty";
+import TrialSequence from "@/components/star/TrialSequence";
 import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
@@ -1993,6 +1994,37 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "trial" && career) {
     return <TrialPenalty club={career.player.club} onScored={() => setPhase("trial-reward")} />;
+  }
+
+  /**
+   * The full multi-stage trial.
+   *
+   * Deliberately routed ABOVE the `profile-setup || !career` fall-through
+   * further down, and deliberately not gated on the career having a club: a
+   * trial is what a career has INSTEAD of a club, and the whole point of
+   * splitting career creation in two was that this state can exist at all.
+   *
+   * Nothing is held in React here. Every stage result goes straight onto the
+   * career, so closing the app between stages costs nothing — see
+   * TrialSequence's own note.
+   */
+  if (phase === "trial-stages" && career?.trial) {
+    return (
+      <TrialSequence
+        trial={career.trial}
+        playerName={career.player.firstName}
+        skills={{ power: career.skills.power, technique: career.skills.technique }}
+        onTrial={t => setCareer(c => (c ? { ...c, trial: t } : c))}
+        onComplete={(score, t) => {
+          setCareer(c => (c ? { ...c, trial: { ...t } } : c));
+          // Who comes in for you off that number is step 6 (the scout offers).
+          // Until it exists, a finished trial lands on the contract screen the
+          // opening has always ended on, rather than nowhere.
+          setPhase("trial-reward");
+          void score;
+        }}
+      />
+    );
   }
 
   if (phase === "trial-reward" && career) {

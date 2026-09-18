@@ -167,6 +167,10 @@ const RESUMABLE: StarPhase[] = [
   // penalty you take until it goes in, with no state of its own. Coming back
   // to it is exactly right.
   "trial",
+  // The multi-stage trial. Every stage's result is written to the career the
+  // instant it is decided, so resuming costs nothing — and the trial itself
+  // quietly gets harder each time it is re-opened rather than being blocked.
+  "trial-stages",
 ];
 
 export interface SavedPhase {

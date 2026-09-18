@@ -96,6 +96,21 @@ export interface TrialProgress {
   /** How many times this trial has been resumed. See the note above. */
   reloads: number;
   startedAt: number;
+  /**
+   * A five-a-side left half-played.
+   *
+   * The only stage long enough that closing the app in the MIDDLE of it costs
+   * anything worth keeping — the other four are a handful of attempts you
+   * would simply take again. Written at the end of every touch, so coming back
+   * puts you on the same scoreline with the same clock rather than kicking off
+   * again.
+   *
+   * Typed loosely on purpose: `lib/star/fiveASide/match.ts` imports from the
+   * canvas engine, and making this file depend on all of that to name one
+   * field would drag the whole match engine into everything that reads a
+   * trial. The one place it is actually used narrows it.
+   */
+  fiveASide?: unknown;
 }
 
 /**
