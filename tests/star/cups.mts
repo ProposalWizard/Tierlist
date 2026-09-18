@@ -372,10 +372,73 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   check((after.leagueGoals ?? 0) === mateBeforeLeague, "…and not on the chart");
 }
 
+// ── Extra time / penalties, wired into the real draw ────────────────────────
+//
+// A simulated League Cup tie before the final should never go to extra
+// time; the Final, and every FA Cup round, should sometimes need it. The old
+// `shootout()` was a single weighted coin flip with no memory of extra time
+// at all — this checks the real thing is actually reached through
+// `playCupRound`/`drawRound`, not just the pure `shootout.ts` functions in
+// isolation (see tests/star/shootout.mts for those).
+{
+  let sawExtraTimeInLeagueCupRound = false;
+  let sawPensWithNoExtraTimeInLeagueCupRound = false;
+  for (let seed = 0; seed < 400; seed++) {
+    const rng = mulberry(seed * 137 + 11);
+    const cup = playCupRound(openCup("League Cup", LEAGUE, "premier", rng), LEAGUE, "nobody", null, rng);
+    for (const tie of cup.rounds[0].ties) {
+      if (tie.wentToExtraTime) sawExtraTimeInLeagueCupRound = true;
+      if (tie.pens && !tie.wentToExtraTime) sawPensWithNoExtraTimeInLeagueCupRound = true;
+    }
+  }
+  check(!sawExtraTimeInLeagueCupRound, "a League Cup round before the final never goes to extra time, across 400 draws' worth of ties");
+  check(sawPensWithNoExtraTimeInLeagueCupRound, "…but a level tie still reaches penalties directly, with no extra time in between");
+
+  // The League Cup Final DOES get extra time when level.
+  let sawExtraTimeInFinal = false;
+  for (let seed = 0; seed < 200; seed++) {
+    const rng = mulberry(seed * 149 + 3);
+    let cup = openCup("League Cup", LEAGUE, "premier", rng);
+    let guard = 0;
+    while (!cup.winner && guard++ < 10) cup = playCupRound(cup, LEAGUE, "nobody", null, rng);
+    const final = cup.rounds[cup.rounds.length - 1];
+    if (final.ties[0]?.wentToExtraTime) sawExtraTimeInFinal = true;
+  }
+  check(sawExtraTimeInFinal, "the League Cup Final does go to extra time when it's needed, across 200 finals");
+
+  // The FA Cup gets extra time in an early round too (not just the final).
+  let sawExtraTimeInFACupR64 = false;
+  for (let seed = 0; seed < 200; seed++) {
+    const rng = mulberry(seed * 151 + 7);
+    const cup = playCupRound(openCup("FA Cup", LEAGUE, "premier", rng), LEAGUE, "nobody", null, rng);
+    if (cup.rounds[0].ties.some(t => t.wentToExtraTime)) sawExtraTimeInFACupR64 = true;
+  }
+  check(sawExtraTimeInFACupR64, "the FA Cup's Round of 64 goes to extra time when level, unlike the League Cup's early rounds");
+}
+
+// ── Your own live tie hands in a pre-decided shootout, and it's honoured ───
+{
+  const rng = mulberry(211);
+  const cup = openCup("FA Cup", LEAGUE, "premier", rng);
+  const mine = yourTie(cup, "Liverpool")!;
+  const home = mine.home === "Liverpool";
+  // A 1-1 draw the player actually took to penalties live in CanvasMatch —
+  // handed in already decided, exactly like MatchStats.shootout would be.
+  const yourResult = home
+    ? { hs: 1, as: 1, pens: { home: 5, away: 4 }, wentToExtraTime: true }
+    : { hs: 1, as: 1, pens: { home: 4, away: 5 }, wentToExtraTime: true };
+  const after = playCupRound(cup, LEAGUE, "Liverpool", yourResult, mulberry(3));
+  const played = after.rounds[0].ties.find(t => t.home === "Liverpool" || t.away === "Liverpool")!;
+  check(played.wentToExtraTime === true, "the live extra-time flag is recorded on the tie");
+  check(JSON.stringify(played.pens) === JSON.stringify(yourResult.pens),
+    `the exact live shootout result is used, not re-simulated (${JSON.stringify(played.pens)})`);
+  check(tieWinner(played) === "Liverpool", "Liverpool actually won it on the live shootout result handed in");
+}
+
 if (problems.length) {
   console.error("FAIL");
   for (const p of problems.slice(0, 15)) console.error("  ✗ " + p);
   if (problems.length > 15) console.error(`  …and ${problems.length - 15} more`);
   process.exit(1);
 }
-console.log("PASS — League Cup 32/five rounds, FA Cup 64/six rounds, a draw every round, and cup goals stay out of the league charts");
+console.log("PASS — League Cup 32/five rounds, FA Cup 64/six rounds, a draw every round, real extra time/penalties per competition, and cup goals stay out of the league charts");

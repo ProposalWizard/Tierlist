@@ -245,27 +245,57 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
             <div className="text-[10px] text-white/50">No games played yet</div>
           )}
         </div>
-        <div>
-          <div className="text-[9px] font-black uppercase tracking-wide text-emerald-300/90 mb-1">League Table</div>
-          {report.tableSnippet.length ? (
-            <div className="space-y-0.5">
-              {report.tableSnippet.map(row => (
-                <div
-                  key={row.club}
-                  className={`flex items-center gap-1 rounded-md px-1 py-1 text-[9px] ${
-                    row.isOpponent ? "bg-emerald-500 text-gray-950 font-black shadow-[0_0_10px_-2px_rgba(16,185,129,0.9)]" : "text-white/90"}`}
-                >
-                  <span className="w-3.5 shrink-0 tabular-nums">{row.position}</span>
-                  <MiniCrest club={row.club} size={14} />
-                  <span className="flex-1 truncate">{row.club}</span>
-                  <span className={`tabular-nums font-bold ${row.isOpponent ? "" : "text-emerald-300"}`}>{row.points}pts</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-[10px] text-white/50">Not in your division</div>
-          )}
-        </div>
+        {report.cupRun !== null ? (
+          <div>
+            <div className="text-[9px] font-black uppercase tracking-wide text-emerald-300/90 mb-1">Cup Run</div>
+            {report.cupRun.length ? (
+              <div className="space-y-1">
+                {[...report.cupRun].reverse().map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-1.5 rounded-md px-1 py-1 text-[9px]"
+                    style={{ background: `${RESULT_BG[r.result]}26`, boxShadow: `inset 2px 0 0 0 ${RESULT_BG[r.result]}` }}
+                  >
+                    <span
+                      className="grid h-4 w-4 shrink-0 place-items-center rounded text-[8px] font-black text-white"
+                      style={{ background: RESULT_BG[r.result] }}
+                    >
+                      {r.result}
+                    </span>
+                    <span className="text-white truncate">
+                      {r.round}: {r.result === "W" ? "beat" : "lost to"} {r.opponent} {r.scoreFor}-{r.scoreAgainst}
+                      {r.onPenalties ? " (pens)" : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[10px] text-white/50">First round of the competition</div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <div className="text-[9px] font-black uppercase tracking-wide text-emerald-300/90 mb-1">League Table</div>
+            {report.tableSnippet.length ? (
+              <div className="space-y-0.5">
+                {report.tableSnippet.map(row => (
+                  <div
+                    key={row.club}
+                    className={`flex items-center gap-1 rounded-md px-1 py-1 text-[9px] ${
+                      row.isOpponent ? "bg-emerald-500 text-gray-950 font-black shadow-[0_0_10px_-2px_rgba(16,185,129,0.9)]" : "text-white/90"}`}
+                  >
+                    <span className="w-3.5 shrink-0 tabular-nums">{row.position}</span>
+                    <MiniCrest club={row.club} size={14} />
+                    <span className="flex-1 truncate">{row.club}</span>
+                    <span className={`tabular-nums font-bold ${row.isOpponent ? "" : "text-emerald-300"}`}>{row.points}pts</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[10px] text-white/50">Not in your division</div>
+            )}
+          </div>
+        )}
       </div>
 
       {report.headToHead && (

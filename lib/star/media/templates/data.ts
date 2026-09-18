@@ -18,7 +18,11 @@ import type { Template } from "./index";
 export const DATA_TEMPLATES: Template[] = [
   // ── Statistics ────────────────────────────────────────────────────────────
   {
-    id: "st-goals", archetype: "stats", tags: ["goal"], requires: ["goals"], excludes: ["matches"],
+    // `subject: "you"` — without it this also matched TEAMMATE_HAUL (same
+    // "goal" tag, `goals` present, no `matches`), reporting a team-mate's
+    // brace as "{player} — {goals} today. {seasonTotal} this season." using
+    // YOUR OWN name and season total from `base()`.
+    id: "st-goals", archetype: "stats", tags: ["goal"], subject: "you", requires: ["goals"], excludes: ["matches"],
     body: "{player} — {goals} today. {seasonTotal} this season.",
     threadBody: "{player}: {thread.goals} goals in his last {thread.matches} matches.",
     graphic: "statLine", weight: 3,
@@ -266,7 +270,10 @@ export const DATA_TEMPLATES: Template[] = [
 
   // ── The aggregator ────────────────────────────────────────────────────────
   {
-    id: "ag-goal", archetype: "aggregator", tags: ["goal"], requires: ["short"],
+    // `subject: "you"` — without it this also matched TEAMMATE_GOAL (same
+    // "goal" tag, `short` present via base()), captioning a team-mate's goal
+    // "🎥 WATCH: {player} does it again" using YOUR OWN name.
+    id: "ag-goal", archetype: "aggregator", tags: ["goal"], subject: "you", requires: ["short"],
     body: "🎥 WATCH: {player} does it again",
     graphic: "thumbnail", weight: 3,
   },

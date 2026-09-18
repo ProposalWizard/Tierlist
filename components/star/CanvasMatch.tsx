@@ -37,7 +37,7 @@ import {
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
-import { finaliseMatch, liveRating } from "@/lib/star/matchStats";
+import { finaliseMatch, liveRating, regressForMinutes } from "@/lib/star/matchStats";
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
@@ -56,6 +56,9 @@ import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPl
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
+import ShootoutOverlay from "./ShootoutOverlay";
+import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
+import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
   line as logLine, linesFrom, halfTimeSplit, dwellFor, HALF_TIME_MINUTE,
   type LogLine,
@@ -67,7 +70,7 @@ import {
  * called `sim` and was a panel that appeared over the pitch to report minutes
  * you had already skipped past.
  */
-type Phase = "aim" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble" | "fpDribble";
+type Phase = "aim" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble" | "fpDribble" | "shootout";
 
 /**
  * WHICH DRIBBLE SCENARIO REAL MATCHES USE.
@@ -491,6 +494,46 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const fixtureHomeRef = useRef(fixture?.home !== false);
   fixtureHomeRef.current = fixture?.home !== false;
 
+  /**
+   * A knockout cannot be drawn. Returns null for anything that isn't a
+   * decisive knockout fixture (a league match, a Euro league-phase night, or
+   * the first leg of a two-legged tie — a draw genuinely stands in all
+   * three); otherwise says whether this competition/round plays extra time
+   * before penalties (see shootout.ts's `hasExtraTime`) and how to check
+   * "level" for THIS fixture — plain scoreline for a single match, real
+   * aggregate (first leg + this leg) for a Champions/Europa League second
+   * leg or final.
+   */
+  const extraTimeEligibility = (): { extraTime: boolean; isLevelNow: () => boolean } | null => {
+    if (!fixture?.competition) return null;
+    const comp = fixture.competition;
+    if (comp === "Community Shield" || comp === "Super Cup") {
+      return { extraTime: false, isLevelNow: () => userScoreRef.current === oppScoreRef.current };
+    }
+    if (fixture.kind === "cup") {
+      return {
+        extraTime: hasExtraTime(comp as ExtraTimeCompetition, fixture.round ?? "Final"),
+        isLevelNow: () => userScoreRef.current === oppScoreRef.current,
+      };
+    }
+    if (fixture.kind === "europe") {
+      const state = careerRef.current?.euroState;
+      if (!state || comp !== state.competition) return null;
+      const tie = euroCurrentTie(state);
+      if (!tie) return null; // the league phase — a draw stands
+      const legIdx = euroCurrentLeg(state) ?? 0;
+      if (tie.legs.length > 1 && legIdx === 0) return null; // first leg — the second leg decides it
+      const firstLeg = tie.legs[0];
+      const firstUs = firstLeg?.us ?? 0;
+      const firstThem = firstLeg?.them ?? 0;
+      return {
+        extraTime: true,
+        isLevelNow: () => (firstUs + userScoreRef.current) === (firstThem + oppScoreRef.current),
+      };
+    }
+    return null;
+  };
+
   // --- Session / scoreline tracking ---
   /**
    * Bumped every time a new scenario or simulation pass actually starts
@@ -834,6 +877,35 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
+
+  // ── Extra time / penalty shootout ──
+  //
+  // Set only when a level knockout tie needs a shootout — see
+  // `resolveFullTime` below, called from the Full Time pause instead of
+  // finalising the match immediately. `wentToExtraTimeRef` records whether
+  // extra time was played at all (even if it then resolved outright,
+  // without needing penalties) so the final MatchStats carries it either way.
+  const [shootoutInfo, setShootoutInfo] = useState<{
+    homeClub: string; awayClub: string; yourSide: "home" | "away";
+    yourSkill: number; teamSkill: number; oppSkill: number;
+  } | null>(null);
+  const wentToExtraTimeRef = useRef(false);
+  const shootoutResultRef = useRef<{ home: number; away: number } | null>(null);
+  // The live-chance loop's own "how far can this match still run" ceiling.
+  // Every `advanceUntilInvolved`/`advanceTo` call in `startSimulation` reads
+  // THIS, not the constant `MATCH_DURATION`, so extra time can extend it in
+  // two real 15-minute stages and the interactive aim/contact/flight loop
+  // just keeps running against the new ceiling — instead of extra time being
+  // a single non-interactive jump straight to the final minute. 0 = normal
+  // time; 1 = first half of extra time in progress; 2 = second half.
+  const matchCeilingRef = useRef(MATCH_DURATION);
+  const extraTimeStageRef = useRef<0 | 1 | 2>(0);
+  // A live, player-controlled shootout kick in progress — see
+  // `loadShootoutPenalty`. Non-null while the aim/contact/flight canvas is
+  // standing in for the corner-picker UI for exactly one kick; resolveOutcome
+  // reads this to report the REAL physical result back to the shootout state
+  // machine instead of resuming the ordinary match simulation.
+  const shootoutKickRef = useRef<{ resolve: (scored: boolean) => void } | null>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const draggingRef = useRef(false);
 
@@ -2912,30 +2984,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
 
+    // A live shootout kick (see loadShootoutPenalty) is NOT a chance in the
+    // ongoing match — there is no ongoing match while a shootout is being
+    // taken. It must not credit match stats, touch the match scoreline, or
+    // feed the hidden-match simulation; its real result is reported back to
+    // the shootout's own state machine instead, near the end of this
+    // function.
+    const isShootoutKick = shootoutKickRef.current != null;
+
     // The tally lives in a ref so it's authoritative the instant this chance
     // resolves — the rAF loop calls a stale resolveOutcome closure, so reading it
     // back off React state would risk under-counting the final chance. State is
     // just a mirror for the HUD.
     const d = creditChance(res, { youShot, receiverShot, isSimplePass });
     const t = tallyRef.current;
-    t.shots += d.shots;
-    t.goals += d.goals;
-    t.passes += d.passes;
-    t.passesCompleted += d.passesCompleted;
-    t.chances += d.chances;
-    t.assists += d.assists;
-    setStats({ ...t });
+    if (!isShootoutKick) {
+      t.shots += d.shots;
+      t.goals += d.goals;
+      t.passes += d.passes;
+      t.passesCompleted += d.passesCompleted;
+      t.chances += d.chances;
+      t.assists += d.assists;
+      setStats({ ...t });
+    }
 
     // Your team scores whenever the ball ends up in the net — your own finish or a
     // teammate you set up (same rule the old DOM match used: goal || assist).
-    if (kind === "goal") {
+    if (!isShootoutKick && kind === "goal") {
       userScoreRef.current += 1;
     }
 
     // Hand the outcome back to the match. Without this it would carry on as
     // though your moment never happened — you would score and the ball would
-    // still be in their box.
-    if (matchModeRef.current) resolveScenario(matchStateRef.current, matchResultFor(res));
+    // still be in their box. Not for a shootout kick — there is no ongoing
+    // hidden-match state to hand it back to.
+    if (!isShootoutKick && matchModeRef.current) resolveScenario(matchStateRef.current, matchResultFor(res));
 
     // Celebration / impact FX + sound, matched to what the physics produced.
     if (kind === "goal") {
@@ -2989,7 +3072,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Chain goals → a named attacker from the squad scores; user assisted.
     // Direct user goals → optionally pick a named squad member as assister.
     let commentaryRoleLabel = sc.receiver?.roleLabel;
-    if (kind === "goal" && careerRef.current) {
+    if (!isShootoutKick && kind === "goal" && careerRef.current) {
       const squad = onPitch(careerRef.current.squad ?? []);
       const pFirst = careerRef.current.player.firstName;
       const pLast = careerRef.current.player.lastName;
@@ -3104,6 +3187,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       roleLabel: commentaryRoleLabel,
       isPass: isSimplePass,
     }));
+
+    // ── Report the real outcome back to the shootout, and stop here ──
+    //
+    // A shootout kick never chains (a penalty has no receiver to lay it off
+    // to), is never a saved-goal replay, and must not resume the ordinary
+    // match simulation or the sandbox's own chance-count loop — none of the
+    // logic below this point applies to it. `scored` is read the same way
+    // every other goal/miss in this function already is: whether the
+    // outcome's own OUTCOME_TEXT kind is "goal" — the ball genuinely beat
+    // the keeper, decided by the same real physics as any other shot, not a
+    // probability roll.
+    if (isShootoutKick) {
+      const cb = shootoutKickRef.current;
+      shootoutKickRef.current = null;
+      const scored = kind === "goal";
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) cb?.resolve(scored); }, 1400);
+      return;
+    }
 
     // A pass that found its man can keep the move going. This used to apply to
     // build-up only, and jumped to a random attacking situation; now any
@@ -3318,7 +3420,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Dead balls you are not the taker for go to whoever is. Keep advancing
     // until the match hands you something that is actually yours — bounded,
     // because every pass moves the clock and the clock ends the match.
-    let step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
+    let step = advanceUntilInvolved(st, hiddenInputs(), rng, matchCeilingRef.current);
     const handedOver: HiddenMatchEvent[] = [];
     for (let guard = 0; guard < 20; guard++) {
       const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
@@ -3337,7 +3439,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
       }
       resolveScenario(st, scored ? "goal" : "saved");
-      step = advanceUntilInvolved(st, hiddenInputs(), rng, MATCH_DURATION);
+      step = advanceUntilInvolved(st, hiddenInputs(), rng, matchCeilingRef.current);
     }
 
     const raw = [...handedOver, ...step.events];
@@ -3407,7 +3509,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // `nameTeamGoals` describes for the hour BEFORE you come on, left
         // un-fixed in the mirror-image branch: the substitution that ends your
         // afternoon, rather than the one that starts it.
-        const after = advanceTo(st, hiddenInputs(), rng, MATCH_DURATION);
+        const after = advanceTo(st, hiddenInputs(), rng, matchCeilingRef.current);
         events.push(...nameTeamGoals(after, onPitch(careerRef.current?.squad ?? []), rng, false));
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
@@ -3427,6 +3529,99 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     simContinueRef.current = () => {
       if (step.fullTime) {
+        // `finalize`/`runShootout` are hoisted to the top of this branch
+        // (rather than declared after the "Full Time" bookkeeping below, as
+        // they used to be) because the two extra-time-stage branches right
+        // below need to call them too, and neither closes over anything from
+        // THIS particular call of startSimulation — only stable outer refs —
+        // so moving them earlier changes nothing about what they do.
+        const finalize = () => {
+          setPause(null);
+          const careerForStats = careerRef.current ?? FALLBACK_CAREER;
+          const t = tallyRef.current;
+          const stats: MatchStats = {
+            ...finaliseMatch(
+              attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+              Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+              userScoreRef.current, oppScoreRef.current, careerForStats,
+              goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current,
+            ),
+            // The moment the match actually ended for you — full time, or
+            // the minute you were hooked — not necessarily 90.
+            endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
+            ...(wentToExtraTimeRef.current ? { wentToExtraTime: true } : {}),
+            ...(shootoutResultRef.current ? { shootout: shootoutResultRef.current } : {}),
+          };
+          if (matchModeRef.current && onCompleteRef.current) {
+            onCompleteRef.current(stats);
+          } else {
+            setFinalStats(stats);
+            setPhase("postmatch");
+          }
+        };
+
+        const runShootout = () => {
+          const yourSide: "home" | "away" = fixtureHomeRef.current ? "home" : "away";
+          const homeClub = fixtureHomeRef.current ? (careerRef.current?.player.club ?? "Home") : (fixture?.opponent ?? "Away");
+          const awayClub = fixtureHomeRef.current ? (fixture?.opponent ?? "Away") : (careerRef.current?.player.club ?? "Home");
+          // A deliberate, honestly-scoped simplification (see
+          // ShootoutOverlay.tsx's own doc comment): every kick that isn't
+          // yours (teammate or opponent) still resolves on a real
+          // skill-weighted chance rather than a full per-player roster of
+          // shooting stats for all twenty-two takers. Your OWN kick is now a
+          // real, live aim/contact/flight penalty — see loadShootoutPenalty
+          // and handleShootoutYourKick — not a corner pick.
+          const yourSkill = ((skills.technique ?? 55) + (skills.power ?? 55)) / 2;
+          const teamSkill = Math.max(30, yourSkill - 8);
+          const oppSkill = oppStrengthRef.current;
+          setShootoutInfo({ homeClub, awayClub, yourSide, yourSkill, teamSkill, oppSkill });
+          setPhase("shootout");
+        };
+
+        // ── Reaching the ceiling mid-extra-time is not the match ending ──
+        //
+        // `matchCeilingRef`/`extraTimeStageRef` (see their own doc comments)
+        // let extra time run through this SAME interactive
+        // startSimulation/advanceUntilInvolved loop as normal time, just at
+        // an extended ceiling — reached in two real 15-minute stages with a
+        // genuine break in between, instead of one non-interactive jump
+        // straight to the 120th minute. Handled here, before the ordinary
+        // 90-minute full-time logic below, so that logic's own "is this a
+        // decisive draw" check never re-fires partway through extra time.
+        if (extraTimeStageRef.current === 1) {
+          setLog(l => [...l, logLine(
+            "End of the first half of extra time.", "period", matchCeilingRef.current,
+          )]);
+          setPause({
+            cta: "Second half (extra time) →",
+            onContinue: () => {
+              setPause(null);
+              extraTimeStageRef.current = 2;
+              matchCeilingRef.current = MATCH_DURATION + 30;
+              setLog(l => [...l, logLine(
+                "Second half of extra time.", "period", matchCeilingRef.current,
+              )]);
+              startSimulation();
+            },
+          });
+          return;
+        }
+
+        if (extraTimeStageRef.current === 2) {
+          const eligibilityAfterEt = extraTimeEligibility();
+          const stillLevel = !!eligibilityAfterEt && eligibilityAfterEt.isLevelNow();
+          if (stillLevel) {
+            runShootout();
+          } else {
+            setLog(l => [...l, logLine(
+              `After Extra Time  ${fixtureHomeRef.current ? userScoreRef.current : oppScoreRef.current} - ${fixtureHomeRef.current ? oppScoreRef.current : userScoreRef.current}`,
+              "period", matchCeilingRef.current,
+            )]);
+            setPause({ cta: "Full time →", onContinue: finalize });
+          }
+          return;
+        }
+
         // Full time stops the match rather than sliding into the summary: a
         // final whistle you did not notice is a result you find out about on a
         // stats screen.
@@ -3442,35 +3637,122 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           return [...l, logLine(`Full Time  ${homeFinal} - ${awayFinal}`, "period", MATCH_DURATION)];
         });
         setMatchMinute(MATCH_DURATION);
+
+        // ── A knockout cannot be drawn ──
+        //
+        // See shootout.ts's `hasExtraTime` for the exact per-competition
+        // table (League Cup: only the Final; FA Cup: every round;
+        // Champions/Europa League: every decisive knockout leg, on
+        // aggregate; Super Cup/Community Shield: straight to penalties).
+        // League fixtures and a Euro league-phase night are never decisive
+        // — a draw stands — `extraTimeEligibility()` returns null for both.
+        const eligibility = extraTimeEligibility();
+        const isDecisiveDraw = !!eligibility && eligibility.isLevelNow();
+
+        if (!isDecisiveDraw) {
+          setPause({ cta: "Full time →", onContinue: finalize });
+          return;
+        }
+
+        if (!eligibility!.extraTime) {
+          setPause({
+            cta: "Penalties →",
+            onContinue: () => { setPause(null); runShootout(); },
+          });
+          return;
+        }
+
         setPause({
-          cta: "Full time →",
+          cta: "Extra time →",
           onContinue: () => {
             setPause(null);
-            const careerForStats = careerRef.current ?? FALLBACK_CAREER;
-            const t = tallyRef.current;
-            const stats = {
-              ...finaliseMatch(
-                attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
-                userScoreRef.current, oppScoreRef.current, careerForStats,
-                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current,
-              ),
-              // The moment the match actually ended for you — full time, or
-              // the minute you were hooked — not necessarily 90.
-              endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
-            };
-            if (matchModeRef.current && onCompleteRef.current) {
-              onCompleteRef.current(stats);
-            } else {
-              setFinalStats(stats);
-              setPhase("postmatch");
-            }
+            wentToExtraTimeRef.current = true;
+            // Extra time now plays out exactly like normal time: real,
+            // interactive chances via startSimulation, just with the ceiling
+            // extended to the first extra-time half. A genuine break follows
+            // at that ceiling (handled by the extraTimeStageRef === 1 branch
+            // above) before the second half resumes it further still.
+            extraTimeStageRef.current = 1;
+            matchCeilingRef.current = MATCH_DURATION + 15;
+            setLog(l => [...l, logLine(
+              "Extra time — first half.", "period", MATCH_DURATION,
+            )]);
+            startSimulation();
           },
         });
       } else {
         loadScenario(false);
       }
     };
+  };
+
+  /**
+   * The player's OWN shootout kick — a real, live penalty.
+   *
+   * Every other kick in a shootout (teammate or opponent) still resolves on
+   * `penaltyConversionChance`'s skill-weighted roll — there is no real
+   * per-player roster of shooting stats for all twenty-two takers to draw
+   * on. But the PLAYER's own kick used to be the same kind of roll dressed
+   * up as a corner pick, which is exactly what was reported as
+   * unacceptable: reused directly, the SAME real dead-ball penalty
+   * `buildScenario("penalty", …)` already builds for an ordinary in-game
+   * penalty (see the `mayTake`/`loadScenario` branch above) — you drag to
+   * aim, strike, and the keeper's own real save physics decide it, with no
+   * time limit, exactly like any other player-controlled chance in this
+   * game. `onResult` is called once the real outcome is known (see
+   * `resolveOutcome`'s `shootoutKickRef` branch).
+   */
+  const loadShootoutPenalty = (oppSkill: number, onResult: (scored: boolean) => void) => {
+    sceneGenRef.current += 1;
+    seedRef.current += 1;
+    rngRef.current = countedRng(seedRef.current, rngCallCountRef);
+    const rng = rngRef.current;
+
+    chainRef.current = null;
+    dribbleRef.current = null;
+    fpDribbleRef.current = null;
+
+    scenarioRef.current = buildScenario("penalty", rng, oppSkill, teamRef.current, visionRef.current);
+    scenarioRef.current.conditions = conditionsRef.current;
+    castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
+    initDefenders(scenarioRef.current, rng);
+    castDefence(scenarioRef.current, oppXIForCast);
+
+    facingRef.current = scenarioRef.current.facing ?? "up";
+    viewportRef.current = { ...scenarioRef.current.viewport };
+    baseViewportRef.current = { ...scenarioRef.current.viewport };
+    ballRef.current = null;
+    setAim(null);
+    setOutcome(null);
+    dragRef.current = null;
+    draggingRef.current = false;
+    curveSwipeStartRef.current = null;
+    captainDragRef.current = null;
+    bumpOrders();
+    trailRef.current = [];
+    particlesRef.current = [];
+    shakeRef.current.t = 0;
+    flashRef.current.t = 0;
+    shootoutKickRef.current = { resolve: onResult };
+    setPhase("aim");
+    logMoment("Your penalty — up to you.", "you");
+    playWhistle();
+  };
+
+  /**
+   * Wired to `<ShootoutOverlay onYourKick>`. Handed a `submit` function that
+   * feeds the real outcome straight into the shootout's own state machine
+   * (`takeNextKick`, untouched) — the overlay hides itself (see the render
+   * call site's `hidden` prop) for the duration of the live kick, so the
+   * canvas underneath is what the player actually sees and plays.
+   */
+  const handleShootoutYourKick = (submit: (scored: boolean) => void) => {
+    const info = shootoutInfo;
+    if (!info) return;
+    loadShootoutPenalty(info.oppSkill, (scored) => {
+      submit(scored);
+      setPhase("shootout");
+    });
   };
 
   // Load a new scenario onto the canvas and enter aim phase.
@@ -4028,7 +4310,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
-            {statCell("Avg Rat", liveRating(stats.chances, stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp).toFixed(1), "text-sky-300")}
+            {statCell("Avg Rat", regressForMinutes(
+              liveRating(stats.chances, stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp),
+              Math.max(1, matchMinute - startMinute),
+              // Reported directly: this on-screen number used to jump the
+              // moment the match ended, because only the FINAL rating
+              // applied the cameo-minutes regression below — the live
+              // widget called liveRating() raw. Now both read the exact
+              // same formula, so the number at full time IS the number on
+              // the stats screen, not a preview that gets recalculated.
+            ).toFixed(1), "text-sky-300")}
           </div>
           <button
             onClick={toggleMuted}
@@ -4236,6 +4527,51 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             );
           })()}
         </div>
+      )}
+
+      {shootoutInfo && (
+        <ShootoutOverlay
+          // Kept MOUNTED (not just visible) for the whole shootout, even
+          // while `phase` swings away to "aim"/"contact"/"flight"/"result"
+          // for the player's own live kick — its internal running
+          // score/kick-tally state lives inside this component instance, and
+          // unmounting it between kicks would lose that state. `hidden`
+          // just stops it rendering its own UI over the canvas while the
+          // real penalty scenario underneath is the thing to look at and
+          // play; the black backdrop and score strip return the moment
+          // control comes back (see handleShootoutYourKick).
+          hidden={phase !== "shootout"}
+          homeClub={shootoutInfo.homeClub}
+          awayClub={shootoutInfo.awayClub}
+          yourSide={shootoutInfo.yourSide}
+          yourSkill={shootoutInfo.yourSkill}
+          teamSkill={shootoutInfo.teamSkill}
+          oppSkill={shootoutInfo.oppSkill}
+          onYourKick={handleShootoutYourKick}
+          onComplete={(result) => {
+            shootoutResultRef.current = result;
+            setShootoutInfo(null);
+            const careerForStats = careerRef.current ?? FALLBACK_CAREER;
+            const t = tallyRef.current;
+            const stats: MatchStats = {
+              ...finaliseMatch(
+                attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+                userScoreRef.current, oppScoreRef.current, careerForStats,
+                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current,
+              ),
+              endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
+              wentToExtraTime: wentToExtraTimeRef.current,
+              shootout: result,
+            };
+            if (matchModeRef.current && onCompleteRef.current) {
+              onCompleteRef.current(stats);
+            } else {
+              setFinalStats(stats);
+              setPhase("postmatch");
+            }
+          }}
+        />
       )}
 
       {/* Session complete — reuse the real post-match screen for the summary */}

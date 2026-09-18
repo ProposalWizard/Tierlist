@@ -38,6 +38,30 @@ export function liveRating(
   return Math.max(1, Math.min(10, 6.0 + goals * 1.2 + assists * 0.8 + passes * 0.05 + result - wastePenalty));
 }
 
+/**
+ * A cameo is judged on less evidence. A substitute who came on for twenty
+ * minutes shouldn't be rated as though he'd played the ninety — this
+ * regresses `rating` toward a neutral 6.5 in proportion to the minutes NOT
+ * played, so a short appearance can neither earn a 9 nor be blamed for a 4.
+ * A full match's `minutes` (90) multiplies by exactly 1, so nothing about a
+ * full appearance changes.
+ *
+ * Pulled out of finaliseMatch, same reason liveRating itself was: reported
+ * directly that the live in-match "Avg Rat" display (CanvasMatch.tsx) and
+ * the final post-match rating could show two different numbers for the
+ * SAME tally, because only finaliseMatch applied this regression — the live
+ * widget called liveRating() raw. A rating that quietly recalculates the
+ * moment the match ends reads as broken, not as "more accurate now" — the
+ * live display now applies this exact same step, with the minutes played
+ * SO FAR, so the number on screen at the final whistle is the number that
+ * ends up on the stats screen, not a preview of it.
+ */
+export function regressForMinutes(rating: number, minutes: number): number {
+  const share = Math.max(0.15, Math.min(1, minutes / 90));
+  const regressed = 6.5 + (rating - 6.5) * (0.45 + 0.55 * share);
+  return Math.max(1, Math.min(10, regressed));
+}
+
 export function finaliseMatch(
   chances: number,
   goals: number,
@@ -51,17 +75,8 @@ export function finaliseMatch(
   hooked: MatchStats["hooked"] = null,
   oppGoalEvents: OppGoalEvent[] = [],
 ): MatchStats {
-  let rating = liveRating(chances, goals, assists, passes, userScore, oppScore);
-
-  // A cameo is judged on less evidence. The `minutes` argument had been passed
-  // in since this function was written and never read; a substitute who came on
-  // for twenty minutes was rated as though he had played the ninety. The rating
-  // now regresses toward a neutral 6.5 in proportion to the minutes NOT played,
-  // so a short appearance can neither earn a 9 nor be blamed for a 4. A full
-  // match is multiplied by exactly 1, so nothing about starting changed.
-  const share = Math.max(0.15, Math.min(1, minutes / 90));
-  rating = 6.5 + (rating - 6.5) * (0.45 + 0.55 * share);
-  rating = Math.max(1, Math.min(10, rating));
+  const raw = liveRating(chances, goals, assists, passes, userScore, oppScore);
+  const rating = regressForMinutes(raw, minutes);
 
   const starMan = rating >= 8.5 || goals >= 2;
   const wage = career.contract.wage;

@@ -33,7 +33,11 @@ export const PRESS_TEMPLATES: Template[] = [
     body: "{club} {bigLoss}. A {score} defeat that raises harder questions than any single afternoon should have to answer.",
   },
   {
-    id: "bs-goal", archetype: "broadsheet", tags: ["goal"], requires: ["goals"], excludes: ["matches"],
+    // `subject: "you"` — without it this also matched TEAMMATE_HAUL (same
+    // "goal" tag, `goals` fact present, no `matches` fact), narrating a
+    // team-mate's brace as "{player} took {goals}" using YOUR OWN name from
+    // `base()`. See templates/index.ts's doc comment on the field.
+    id: "bs-goal", archetype: "broadsheet", tags: ["goal"], subject: "you", requires: ["goals"], excludes: ["matches"],
     body: "{player} took {goals}, and on this evidence there is little sign of it stopping.",
     threadBody: "{player} has {thread.goals} goals in {thread.matches} matches — a run that has quietly become the story of {club|possessive} season.",
     weight: 2,
@@ -57,7 +61,7 @@ export const PRESS_TEMPLATES: Template[] = [
     weight: 2,
   },
   {
-    id: "bs-individual", archetype: "broadsheet", tags: ["opinion"], requires: ["player"],
+    id: "bs-individual", archetype: "broadsheet", tags: ["opinion"], subject: "you", requires: ["player"],
     body: "{player} was the difference, and he was the difference in the quiet way — not the goals, the twenty minutes either side of them.",
     weight: 2,
   },
@@ -111,7 +115,10 @@ export const PRESS_TEMPLATES: Template[] = [
     graphic: "breaking", weight: 3,
   },
   {
-    id: "tb-goal", archetype: "tabloid", tags: ["goal"], requires: ["short"], frames: ["hype"],
+    // `subject: "you"` — without it this also matched TEAMMATE_GOAL (same
+    // "goal" tag, `short` present via base()), shouting "{short|caps} DOES IT
+    // AGAIN" using YOUR OWN short name about a team-mate's goal.
+    id: "tb-goal", archetype: "tabloid", tags: ["goal"], subject: "you", requires: ["short"], frames: ["hype"],
     body: "{short|caps} DOES IT AGAIN",
     threadBody: "{thread.goals} IN {thread.matches}. {short|caps} IS UNSTOPPABLE",
     weight: 2,

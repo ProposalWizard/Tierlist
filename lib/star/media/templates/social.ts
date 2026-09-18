@@ -16,12 +16,16 @@ import type { Template } from "./index";
 export const SOCIAL_TEMPLATES: Template[] = [
   // ── Your supporters ───────────────────────────────────────────────────────
   {
-    id: "fan-goal", archetype: "fan", tags: ["goal"], frames: ["celebrate", "hype"], requires: ["short"],
+    // `subject: "you"` — see the field's own doc comment in templates/index.ts.
+    // Without it, this matched TEAMMATE_GOAL just as happily (same "goal" tag,
+    // `short` is always present via base()) and addressed a team-mate's goal
+    // as if it were yours.
+    id: "fan-goal", archetype: "fan", tags: ["goal"], subject: "you", frames: ["celebrate", "hype"], requires: ["short"],
     body: "{short} you absolute beauty",
     weight: 3,
   },
   {
-    id: "fan-goal-2", archetype: "fan", tags: ["goal"], frames: ["celebrate", "hype"],
+    id: "fan-goal-2", archetype: "fan", tags: ["goal"], subject: "you", frames: ["celebrate", "hype"],
     body: "im actually shaking. what a player",
     weight: 2,
   },
@@ -108,6 +112,37 @@ export const SOCIAL_TEMPLATES: Template[] = [
     id: "fan-generic", archetype: "fan",
     body: "{us}-{them}. on to the next one",
     weight: 0.5,
+  },
+
+  // ── When you were genuinely poor ──────────────────────────────────────────
+  //
+  // Requested directly: "how is that relevant to the game unless they were
+  // making fun of me — that's actually pretty interesting, I like the fact
+  // that you could have hate comments." A blank, zero-goal, zero-assist, low
+  // rating afternoon (see detect/personal.ts's POOR_SHOWING) is real fodder
+  // for a fan account being sarcastic rather than a bland "on to the next
+  // one" — the exact worked example given back was "im actually shaking,
+  // what a player" over the real 0-goal/0-assist/5.4 numbers, which is the
+  // mirror image of `fan-goal-2` above turned mocking rather than adoring.
+  // `subject: "you"` (see templates/index.ts) keeps this pinned to your own
+  // bad afternoon — it can never fire off a team-mate's.
+  {
+    id: "fan-mock-flop", archetype: "fan", events: ["poor-showing"], subject: "you",
+    requires: ["goalsN", "assists", "rating"],
+    body: "im actually shaking. what a player. {goalsN} goals, {assists} assists, {rating} rating",
+    weight: 3,
+  },
+  {
+    id: "fan-mock-flop-2", archetype: "fan", events: ["poor-showing"], subject: "you",
+    requires: ["short", "rating"],
+    body: "{short} couldn't hit a barn door today. {rating} and hooked in my head",
+    weight: 2,
+  },
+  {
+    id: "fan-mock-flop-3", archetype: "fan", events: ["poor-showing"], subject: "you",
+    requires: ["rating"],
+    body: "not a single goal, not a single assist, {rating} rating. embarrassing",
+    weight: 2,
   },
 
   // ── Theirs ────────────────────────────────────────────────────────────────
@@ -201,22 +236,27 @@ export const SOCIAL_TEMPLATES: Template[] = [
   // do not refer to yourself by it — and a personal goal now reads
   // differently depending on whether it actually helped you win.
   {
-    id: "self-goal", archetype: "teammate", tags: ["goal"],
+    // `subject: "you"` on every tag-only goal line here — see templates/
+    // index.ts's doc comment. This is YOUR OWN account, first person; without
+    // the gate it matched TEAMMATE_GOAL/TEAMMATE_HAUL too (same "goal" tag)
+    // and posted "buzzing to get on the scoresheet today" about a goal a
+    // team-mate scored, not you.
+    id: "self-goal", archetype: "teammate", tags: ["goal"], subject: "you",
     body: "buzzing to get on the scoresheet today ⚽",
     weight: 2,
   },
   {
-    id: "self-goal-win", archetype: "teammate", tags: ["goal"], result: "win",
+    id: "self-goal-win", archetype: "teammate", tags: ["goal"], subject: "you", result: "win",
     body: "buzzing to score and get the three points 🔥",
     weight: 3,
   },
   {
-    id: "self-goal-draw", archetype: "teammate", tags: ["goal"], result: "draw",
+    id: "self-goal-draw", archetype: "teammate", tags: ["goal"], subject: "you", result: "draw",
     body: "happy to chip in with a goal. not the three points, but we take the point.",
     weight: 3,
   },
   {
-    id: "self-goal-loss", archetype: "teammate", tags: ["goal"], result: "loss",
+    id: "self-goal-loss", archetype: "teammate", tags: ["goal"], subject: "you", result: "loss",
     body: "gutted we didn't get the result today, but happy to chip in with a goal. we go again.",
     weight: 3,
   },
@@ -235,7 +275,7 @@ export const SOCIAL_TEMPLATES: Template[] = [
     body: "not good enough from us today. we'll be better. thanks for coming out and supporting us 🙏",
   },
   {
-    id: "self-milestone", archetype: "teammate", tags: ["milestone", "award"],
+    id: "self-milestone", archetype: "teammate", tags: ["milestone", "award"], subject: "you",
     body: "buzzing to reach that one. couldn't do it without the lads 🤝",
     weight: 2,
   },

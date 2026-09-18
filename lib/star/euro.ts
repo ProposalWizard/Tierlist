@@ -10,6 +10,7 @@ import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
 } from "./clubs";
 import { seasonQualifiers } from "./qualification";
+import { extraTimeScore, simulateShootout } from "./shootout";
 
 /**
  * EUROPE.
@@ -78,6 +79,15 @@ export interface EuroTie {
   /** Set once both legs are in. */
   result?: "W" | "L";
   onPenalties?: boolean;
+  /** True when the tie needed extra time to separate the sides on aggregate
+   *  (whether or not it still went to penalties afterward). */
+  wentToExtraTime?: boolean;
+  /** Extra-time goals, added into the second leg's own score — for the
+   *  record; `settleTie`'s returned `legs` already carry them baked into
+   *  the relevant leg's `us`/`them`. */
+  extraTime?: { us: number; them: number };
+  /** Set only when it went to penalties. */
+  pens?: { us: number; them: number };
 }
 
 export interface EuroState {
@@ -991,19 +1001,60 @@ export function currentLeg(state: EuroState): number | null {
 /**
  * Settle a tie once both legs are in.
  *
- * On aggregate, and then penalties — no away goals, which the competition itself
- * abolished. The shootout is a coin weighted by quality and bounded well inside
- * a toss, because the better side really is a little likelier and a tie decided
- * on a pure fifty-fifty reads as the game shrugging.
+ * On aggregate — no away goals, which the competition itself abolished. Still
+ * level and this competition has extra time (Champions/Europa/Conference
+ * League all do — see shootout.ts's `hasExtraTime`) and it's played, added
+ * into the SECOND leg's own score (genuinely minutes 90-120 of that match).
+ * Still level after that: a real penalty shootout — alternating kicks,
+ * sudden death, the mathematical early-stop — rather than the old single
+ * coin flip weighted by quality.
+ *
+ * A LIVE tie (the player actually watched the second leg, including any
+ * extra time, in CanvasMatch) should have its extra-time goals already
+ * folded into the leg score handed in, and its own real shootout result
+ * passed via `livePens` — this function then just records it rather than
+ * re-simulating a shootout nobody just watched.
  */
-export function settleTie(tie: EuroTie, yourStrength: number, rng: () => number): EuroTie {
+export function settleTie(
+  tie: EuroTie, yourStrength: number, rng: () => number,
+  livePens?: { us: number; them: number },
+): EuroTie {
   const done = tie.legs.every(l => l.us !== undefined);
   if (!done) return tie;
   const us = tie.legs.reduce((s, l) => s + (l.us ?? 0), 0);
   const them = tie.legs.reduce((s, l) => s + (l.them ?? 0), 0);
   if (us !== them) return { ...tie, result: us > them ? "W" : "L" };
-  const edge = Math.max(0.3, Math.min(0.7, 0.5 + (yourStrength - tie.opponentStrength) / 200));
-  return { ...tie, result: rng() < edge ? "W" : "L", onPenalties: true };
+
+  // Every real Euro competition (Champions/Europa/Conference League) plays
+  // extra time before penalties — see shootout.ts's `hasExtraTime`.
+  // Extra time — added into the last leg's own score (the second leg, or
+  // the final's one and only leg).
+  const lastLegIdx = tie.legs.length - 1;
+  const et = extraTimeScore(yourStrength, tie.opponentStrength, rng);
+  const legs = tie.legs.map((l, i) => i === lastLegIdx
+    ? { ...l, us: (l.us ?? 0) + et.hs, them: (l.them ?? 0) + et.as }
+    : l);
+  const usAfterET = legs.reduce((s, l) => s + (l.us ?? 0), 0);
+  const themAfterET = legs.reduce((s, l) => s + (l.them ?? 0), 0);
+
+  if (usAfterET !== themAfterET) {
+    return {
+      ...tie, legs, wentToExtraTime: true,
+      extraTime: { us: et.hs, them: et.as },
+      result: usAfterET > themAfterET ? "W" : "L",
+    };
+  }
+
+  const pens = livePens ?? (() => {
+    const s = simulateShootout(yourStrength, tie.opponentStrength, rng);
+    return { us: s.home, them: s.away };
+  })();
+  return {
+    ...tie, legs, wentToExtraTime: true,
+    extraTime: { us: et.hs, them: et.as },
+    result: pens.us > pens.them ? "W" : "L",
+    onPenalties: true, pens,
+  };
 }
 
 /** The round after this one, or null when that was the final. */

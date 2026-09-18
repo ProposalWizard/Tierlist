@@ -661,6 +661,11 @@ export function settleCupTie(
   fixture: Fixture,
   userScore: number,
   oppScore: number,
+  /** A real extra-time/shootout result the player just experienced live in
+   *  CanvasMatch, already decided — see MatchStats.wentToExtraTime/shootout.
+   *  Absent for a fixture that never needed either. */
+  wentToExtraTime?: boolean,
+  livePens?: { home: number; away: number },
 ): CupTieOutcome | null {
   const states = career.cupState ?? [];
   const idx = states.findIndex(st => st.competition === fixture.competition && !st.winner);
@@ -674,7 +679,10 @@ export function settleCupTie(
   // Reported from your point of view; the tie wants home and away.
   const hs = fixture.home ? userScore : oppScore;
   const as = fixture.home ? oppScore : userScore;
-  const after = playCupRound(before, career.league, club, { hs, as }, rng);
+  // `livePens` is already in home/away terms (it comes straight off
+  // CanvasMatch's own shootout, which tracks the real fixture's home/away
+  // sides) — no flip needed the way hs/as needed one above.
+  const after = playCupRound(before, career.league, club, { hs, as, pens: livePens, wentToExtraTime }, rng);
   const next = states.map((st, i) => (i === idx ? after : st));
 
   const tie = before.rounds[before.rounds.length - 1]?.ties
@@ -764,6 +772,11 @@ export function settleEuro(
   squads?: LeagueSquad[],
   userGoals?: { m: number; s: string; a?: string }[],
   userOppGoals?: NamedOppGoal[],
+  /** A real shootout the player just watched/took live in CanvasMatch,
+   *  already decided — passed through to `settleTie` so it's recorded
+   *  rather than re-simulated. Absent for a fixture that never went to
+   *  penalties, or one watched from the stands. */
+  livePens?: { us: number; them: number },
 ): EuroOutcome | null {
   const state = career.euroState;
   if (!state || fixture.kind !== "europe") return null;
@@ -847,11 +860,12 @@ export function settleEuro(
     };
   }
 
-  const decided = settleTie(played, yourStrength, rng);
+  const decided = settleTie(played, yourStrength, rng, livePens);
   const ties = state.ties.map((t, i) => (i === state.ties.length - 1 ? decided : t));
-  const us = legs.reduce((s, l) => s + (l.us ?? 0), 0);
-  const them = legs.reduce((s, l) => s + (l.them ?? 0), 0);
-  const aggregate = legs.length > 1 ? ` (${us}-${them} on aggregate)` : "";
+  const us = decided.legs.reduce((s, l) => s + (l.us ?? 0), 0);
+  const them = decided.legs.reduce((s, l) => s + (l.them ?? 0), 0);
+  const etNote = decided.wentToExtraTime ? " after extra time" : "";
+  const aggregate = legs.length > 1 ? ` (${us}-${them} on aggregate${etNote})` : etNote;
 
   if (decided.result === "L") {
     const out: EuroState = {
