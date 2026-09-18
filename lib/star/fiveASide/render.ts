@@ -1,4 +1,4 @@
-import type { Vec2 } from "../canvasEngine";
+import type { Vec2, Viewport } from "../canvasEngine";
 import { BALL_R } from "../pitch";
 import { drawPlayerHead } from "../drawPlayerHead";
 import type { FaceStyle } from "../faceStyle";
@@ -80,8 +80,74 @@ export interface Projection {
   H: number;
 }
 
-export function projectionFor(rules: MatchRules, W: number, H: number): Projection {
-  const vp = rules.view;
+/**
+ * WHERE THE CAMERA IS, WHICH IS NOT WHERE THE ENGINE THINKS THE WORLD IS.
+ *
+ * These have to be two different rectangles, and the reason is not cosmetic:
+ * the engine treats `scenario.viewport` AS the world — a ball more than a
+ * metre outside it is out of play, and nobody reacts to it out there. So the
+ * viewport handed to the engine must stay the fixed, whole-pitch frame, or
+ * panning it would drag the touchlines around with it and call a ball out
+ * halfway up the pitch.
+ *
+ * The camera is purely what gets drawn. Nothing in the engine has ever seen
+ * it, and nothing ever should.
+ *
+ * This is also, incidentally, the piece `rules.ts` names as the one unsolved
+ * thing standing between this layer and a continuous eleven-a-side match.
+ */
+export function cameraFor(
+  rules: MatchRules,
+  /** What to keep in shot — the ball. */
+  on: Vec2,
+  /** The canvas, in pixels. The camera takes its SHAPE from the screen it is
+   *  drawn on, which is the whole point: the frame is a fixed tall rectangle
+   *  and a phone is not. */
+  W: number, H: number,
+  /** Where the camera was last frame, so it eases rather than snaps. */
+  prev?: Viewport,
+  /** 0-1, how far toward the target this frame. */
+  ease = 0.1,
+): Viewport {
+  const full = rules.view;
+  const fullW = full.x2 - full.x1, fullH = full.y2 - full.y1;
+
+  // ── Full width, always ──
+  //
+  // Sideways is where a player needs to see everything at once: the far post,
+  // the man peeling off on the other flank. Lengthwise is where a real camera
+  // follows play, and where a phone has no room. So the camera shows the whole
+  // width of the frame and however much of its length the screen's shape
+  // allows, which on a frame that is already taller than the screen means it
+  // pans up and down and never sideways.
+  //
+  // On a screen at least as tall as the frame this returns the frame itself,
+  // so a five-a-side on a big display is byte-identical to no camera at all.
+  const h = Math.min(fullH, W > 0 ? (fullW * H) / W : fullH);
+
+  const cy = Math.max(full.y1 + h / 2, Math.min(full.y2 - h / 2, on.y));
+  const want: Viewport = {
+    x1: full.x1, x2: full.x2,
+    y1: cy - h / 2, y2: cy + h / 2,
+  };
+
+  if (!prev) return want;
+  // Only ease if it is the same shape of camera — a resize (or the first
+  // frame after one) should land, not slide.
+  if (Math.abs((prev.y2 - prev.y1) - h) > 0.01) return want;
+  const lerp = (a: number, b: number) => a + (b - a) * Math.max(0, Math.min(1, ease));
+  return {
+    x1: want.x1, x2: want.x2,
+    y1: lerp(prev.y1, want.y1), y2: lerp(prev.y2, want.y2),
+  };
+}
+
+export function projectionFor(
+  rules: MatchRules, W: number, H: number,
+  /** What the camera is looking at. Defaults to the whole frame. */
+  camera?: Viewport,
+): Projection {
+  const vp = camera ?? rules.view;
   const sx = W / (vp.x2 - vp.x1);
   const sy = H / (vp.y2 - vp.y1);
   return {

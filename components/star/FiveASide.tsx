@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   initDefenders, launch, stepBall, stepKeeper, stepReactions, settleBall,
   stepBallInNet, stepBallPastBar, dragForFullPower, setOffsideRuleEnabled,
-  type Ball, type Outcome, type Scenario,
+  type Ball, type Outcome, type Scenario, type Viewport,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { kitsOf } from "@/lib/star/kits";
@@ -18,7 +18,7 @@ import {
 } from "@/lib/star/fiveASide/match";
 import { passageQuality, summarise, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import {
-  projectionFor, drawPitch, drawGoal, drawFigure, drawBall, drawAim,
+  cameraFor, projectionFor, drawPitch, drawGoal, drawFigure, drawBall, drawAim,
 } from "@/lib/star/fiveASide/render";
 import ContactBall from "./ContactBall";
 
@@ -99,6 +99,7 @@ export default function FiveASide({
   const aimRef = useRef<{ dir: { x: number; y: number }; power: number } | null>(null);
   const phaseRef = useRef<Phase>("ready");
   const rafRef = useRef<number | null>(null);
+  const camRef = useRef<Viewport | null>(null);
   const settleRef = useRef(0);
   const doneRef = useRef(false);
 
@@ -192,7 +193,11 @@ export default function FiveASide({
     if (!sc || !aim) { setPhase("aim"); return; }
     // The drag is in screen fractions; the engine wants pitch metres, and the
     // frame is the same shape on both axes, so one scale does both.
-    const vp = sc.viewport;
+    // The CAMERA's metres, not the engine frame's — the drag is a fraction of
+    // what is on screen, and once the camera crops the frame those are two
+    // different rectangles. Using the frame here would stretch every aim
+    // lengthwise by however much the camera had cropped.
+    const vp = camRef.current ?? sc.viewport;
     const w = vp.x2 - vp.x1, h = vp.y2 - vp.y1;
     const dir = { x: aim.dir.x * w, y: aim.dir.y * h };
     ballRef.current = launch(sc, dir, aim.power, contact, skills, rngRef.current);
@@ -316,7 +321,18 @@ export default function FiveASide({
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const p = projectionFor(rules, cssW, cssH);
+    // ── The camera follows the ball ──
+    //
+    // The frame is taller than a phone, so something has to give: either the
+    // pitch shrinks until the whole thing fits (and everyone on it is a
+    // thumbnail), or the screen scrolls. Decided directly — it scrolls.
+    //
+    // What it follows is the ball while one is live, and otherwise wherever
+    // the next touch is going to happen, so the camera has already arrived by
+    // the time you are asked to aim.
+    const follow = ballRef.current?.pos ?? sc.ball;
+    camRef.current = cameraFor(rules, follow, cssW, cssH, camRef.current ?? undefined);
+    const p = projectionFor(rules, cssW, cssH, camRef.current);
     drawPitch(ctx, rules, p);
     drawGoal(ctx, rules, p, rules.pitch.y1);
     drawGoal(ctx, rules, p, rules.pitch.y2);
@@ -386,16 +402,15 @@ export default function FiveASide({
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
         onPointerCancel={pointerUp}
-        /* ── The whole pitch has to fit on the phone ──
-           The frame is 5:8, so at full phone width it is 600px tall — and with
-           the site nav, the stage bar and the scoreboard above it, your own
-           half ran off the bottom of the screen. Seen in a screenshot: my own
-           keeper and my own goal were simply not on the display, on a game
-           whose entire premise is that the whole pitch is in one frame.
-           Capping the HEIGHT and letting the width follow keeps the aspect
-           exact and the pitch complete; on a taller screen it just gets
-           bigger. */
-        className="relative mx-auto aspect-[5/8] max-h-[56vh] w-full touch-none overflow-hidden rounded-xl bg-black"
+        /* ── A phone-shaped box, not a frame-shaped one ──
+           The engine's frame is 5:8, which at full phone width is ~600px tall,
+           and with the site nav, the stage bar and the scoreboard above it my
+           own keeper and my own goal were off the bottom of the display —
+           seen in a screenshot, not guessed. The first fix shrank the whole
+           thing until it fitted, which made everyone on it a thumbnail. This
+           one keeps the box a comfortable shape and lets the camera scroll,
+           which is also the thing eleven-a-side will need. */
+        className="relative mx-auto aspect-[5/6] max-h-[62vh] w-full touch-none overflow-hidden rounded-xl bg-black"
       >
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
