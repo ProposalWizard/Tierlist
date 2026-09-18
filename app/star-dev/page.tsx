@@ -1285,25 +1285,31 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // answers then look exactly like a failed fetch. It gets its phase
     // resumed like any other career; it just has nothing to load.
     if (!hasClub(saved)) {
+      // ── Count the resume FIRST ──
+      //
+      // This is the anti-cheat three separate comments promised and nothing
+      // delivered. `noteReload` had no caller anywhere outside its own tests,
+      // so `reloads` was zero for every career that has ever existed.
+      //
+      // The first attempt at wiring it up put the call AFTER the resumable-
+      // phase check below — and a playtest caught that it still never fired,
+      // because "trial-stages" is itself resumable, so every ordinary reload
+      // mid-trial took the early return and walked straight past it. A fix
+      // that reads correctly and never executes is worse than no fix; this
+      // now happens before anything can return.
+      //
+      // Re-opening is still never blocked. It just quietly costs.
+      const resumed = saved.trial && !trialComplete(saved.trial)
+        ? { ...saved, trial: noteReload(saved.trial) }
+        : saved;
+      if (resumed !== saved) setCareer(resumed);
+
       const pendingNoClub = loadStarPhase(scope);
       if (pendingNoClub) { setPhase(pendingNoClub.phase); return; }
       // A real, saved career that nobody has signed — mid-trial, or a free
       // agent. It belongs on its own shell, never on the club dashboard and
       // never back at Profile Setup, which would look like losing the save.
-      // ── Count the resume ──
-      //
-      // This is the anti-cheat three separate comments promised and nothing
-      // delivered: `noteReload` had no caller anywhere outside its own tests,
-      // so `reloads` was zero for every career that has ever existed and the
-      // difficulty bump was permanently nothing. Re-opening the app is still
-      // never blocked — it just quietly costs, which is what was asked for.
-      if (saved.trial && !trialComplete(saved.trial)) {
-        const counted = { ...saved, trial: noteReload(saved.trial) };
-        setCareer(counted);
-        setPhase("trial-stages");
-        return;
-      }
-      setPhase("free-agent");
+      setPhase(resumed.trial && !trialComplete(resumed.trial) ? "trial-stages" : "free-agent");
       return;
     }
 
