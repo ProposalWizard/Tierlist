@@ -497,7 +497,12 @@ export interface FigureLook {
  * which is exactly what that slider is for.
  */
 const FIGURE_R = 1.05;
-const FEET_Y = 0.26;
+/** How far below a figure's pitch point his feet actually land, in units of
+ *  `r`. Exported because a renderer with a ROTATED camera cannot hand a
+ *  `Projection` to `drawFigure` and has to place the feet itself via
+ *  `drawFigureAt` — and hardcoding 0.26 a second time is exactly the drift
+ *  that having one renderer exists to stop. */
+export const FEET_Y = 0.26;
 const HIP_Y = -0.34;
 const SHOULDER_Y = -1.00;
 const NECK_Y = -1.10;

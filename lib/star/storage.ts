@@ -157,15 +157,10 @@ const RESUMABLE: StarPhase[] = [
   // same terms `season-transfer`'s are — seeded off the season and your
   // fame, neither of which moves while the screen is open.
   "relegation-move",
-  // The opening trial. The career is deliberately saved the instant "Start
-  // Career" is pressed, so closing the tab never leaves a half-made save —
-  // but "trial" was not resumable, so the load fell through to the dashboard
-  // and you arrived as a signed first-team player having never taken the
-  // penalty. Found by playtest, and reproduced.
-  //
-  // Safe to resume into because the trial holds nothing worth losing: it is a
-  // penalty you take until it goes in, with no state of its own. Coming back
-  // to it is exactly right.
+  // LEGACY. The one-penalty opening, whose screen is deleted. Kept resumable
+  // purely so a save still carrying it is picked up by the resume path and
+  // moved to "trial-stages" rather than falling through to a dashboard it has
+  // no club for. Nothing writes this phase any more.
   "trial",
   // The multi-stage trial. Every stage's result is written to the career the
   // instant it is decided, so resuming costs nothing — and the trial itself

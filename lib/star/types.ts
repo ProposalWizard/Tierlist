@@ -1199,7 +1199,10 @@ export type StarPhase =
    *  Season, Team of the Season and every trophy this season handed out —
    *  shown once, right after the season rolls over. See SeasonAwardsScreen. */
   | "season-awards"
-  /** The opening: one penalty, taken until it goes in. See TrialPenalty. */
+  /** LEGACY, and kept only so a save written before the five-stage trial
+   *  still parses. It was one penalty taken until it went in; its screen is
+   *  deleted, and the resume path in page.tsx moves anyone still carrying it
+   *  to "trial-stages". Nothing writes it any more. */
   | "trial"
   /** The full multi-stage trial — penalties, free kicks, taking a man on,
    *  finding the pass, and a real five-a-side. See TrialSequence. */
