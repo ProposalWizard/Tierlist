@@ -71,7 +71,14 @@ function legFixtures(you: string, opponent: string, youAreHigherSeed: boolean): 
  * already-seeded run.
  */
 export function seedPlayOffs(career: CareerState): { state: PlayOffState; fixtures: Fixture[] } | null {
-  if (divisionOf(career) !== "championship") return null;
+  // Every division except the Premier League ends in real play-offs —
+  // 3rd-to-6th, the exact same shape the Championship always had. League
+  // One/Two and the National League have their own real play-off brackets
+  // (League One 3rd-6th, League Two 4th-7th, National League 2nd-7th with
+  // byes) but this reuses the Championship's own fidelity rather than
+  // building three more distinct brackets — a deliberate simplification,
+  // matched to how deep the existing Championship simulation itself goes.
+  if (divisionOf(career) === "premier") return null;
   if (career.playOffState) return null;
 
   const table = sortLeague(career.league);

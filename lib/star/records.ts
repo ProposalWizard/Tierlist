@@ -19,7 +19,7 @@ import { divisionOf } from "./calendar";
  *
  * Every record here is Premier-League-specific by the nature of the real
  * numbers being compared against, so a Championship season contributes
- * nothing toward one — `divisionOf(c) === "championship"` opts a season out
+ * nothing toward one — `divisionOf(c) !== "premier"` opts a season out
  * of `seasonValue` rather than counting a lesser division's goals against a
  * top-flight record.
  */
@@ -60,10 +60,10 @@ function seasonBest(c: CareerState, id: string, live: (c: CareerState) => number
   return now === null ? locked : Math.max(locked, now);
 }
 
-const plAssistsSeason = (c: CareerState) => (divisionOf(c) === "championship" ? null : c.leagueSeasonStats?.assists ?? 0);
-const plGoalsSeason = (c: CareerState) => (divisionOf(c) === "championship" ? null : c.leagueSeasonStats?.goals ?? 0);
+const plAssistsSeason = (c: CareerState) => (divisionOf(c) !== "premier" ? null : c.leagueSeasonStats?.assists ?? 0);
+const plGoalsSeason = (c: CareerState) => (divisionOf(c) !== "premier" ? null : c.leagueSeasonStats?.goals ?? 0);
 const plGoalsMatch = (c: CareerState) => {
-  if (divisionOf(c) === "championship") return null;
+  if (divisionOf(c) !== "premier") return null;
   const games = playedLeagueFixtures(c);
   return games.length ? Math.max(...games.map(f => f.userGoals ?? 0)) : null;
 };

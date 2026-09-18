@@ -136,7 +136,36 @@ export interface CupSlot {
  * names the promotion pool and the two European competitions, none of which
  * a career ever plays a league season IN.
  */
-export type CareerDivision = "premier" | "championship";
+export type CareerDivision =
+  | "premier" | "championship" | "league_one" | "league_two" | "national_league";
+
+/**
+ * Top to bottom. League One, League Two and the National League are real
+ * 24-club divisions — structurally identical in size to the Championship —
+ * extended 18 September 2026 from being simulated/background-only tiers into
+ * genuinely playable careers, reusing the Championship's own 46-round season
+ * shape rather than inventing a new one (see the file note on
+ * CHAMPIONSHIP_MATCHWEEKS below).
+ */
+export const DIVISION_ORDER: CareerDivision[] =
+  ["premier", "championship", "league_one", "league_two", "national_league"];
+
+export function divisionRank(division: CareerDivision): number {
+  return DIVISION_ORDER.indexOf(division);
+}
+
+/** The division directly above this one on the English ladder, or null for
+ *  the Premier League itself. */
+export function divisionAbove(division: CareerDivision): CareerDivision | null {
+  const i = divisionRank(division);
+  return i > 0 ? DIVISION_ORDER[i - 1] : null;
+}
+
+/** The division directly below this one, or null for the National League. */
+export function divisionBelow(division: CareerDivision): CareerDivision | null {
+  const i = divisionRank(division);
+  return i >= 0 && i < DIVISION_ORDER.length - 1 ? DIVISION_ORDER[i + 1] : null;
+}
 
 /**
  * Which division a career is in, for anything that has to ask.
@@ -153,14 +182,22 @@ export function divisionOf(career: { division?: CareerDivision }): CareerDivisio
 
 /** What the division is called, on a screen or on a trophy. */
 export function leagueNameFor(division: CareerDivision): string {
-  return division === "championship" ? "Championship" : "Premier League";
+  switch (division) {
+    case "premier": return "Premier League";
+    case "championship": return "Championship";
+    case "league_one": return "League One";
+    case "league_two": return "League Two";
+    case "national_league": return "National League";
+  }
 }
 
-/** A Championship season is forty-six games, because it is twenty-four clubs. */
+/** A Championship season is forty-six games, because it is twenty-four
+ *  clubs — and so are League One, League Two and the National League, all
+ *  real 24-club divisions reusing the exact same season shape. */
 export const CHAMPIONSHIP_MATCHWEEKS = 46;
 
 export function matchweeksFor(division: CareerDivision): number {
-  return division === "championship" ? CHAMPIONSHIP_MATCHWEEKS : MATCHWEEKS;
+  return division === "premier" ? MATCHWEEKS : CHAMPIONSHIP_MATCHWEEKS;
 }
 
 /** Is this a week after the league has finished? */
@@ -271,7 +308,7 @@ export function CHAMPIONSHIP_POST_SEASON(n: number): number {
 }
 
 export function postSeasonFor(division: CareerDivision, n: number): number {
-  return division === "championship" ? CHAMPIONSHIP_POST_SEASON(n) : POST_SEASON(n);
+  return division === "premier" ? POST_SEASON(n) : CHAMPIONSHIP_POST_SEASON(n);
 }
 
 /**
@@ -324,7 +361,7 @@ export function fixtureDate(
   // A Premier League week IS its weekend. A Championship week is a round —
   // see CHAMPIONSHIP_ROUNDS — UNLESS it's a European fixture, which is
   // always already a plain weekend offset (see the file note above).
-  const calendarWeek = division === "championship" && kind !== "europe"
+  const calendarWeek = division !== "premier" && kind !== "europe"
     ? championshipCalendarWeek(week) : week;
   const saturday = opening.getTime() + (calendarWeek - 1) * 7 * DAY_MS;
   // Pre-season sits in the week BEFORE the opening Saturday, which is what
@@ -344,9 +381,11 @@ export function dayFor(
   kind: string | undefined, week: number, division: CareerDivision = "premier",
 ): MatchDay {
   const league = !kind || kind === "league";
-  // Eight Championship rounds are played on a Tuesday — see
-  // CHAMPIONSHIP_ROUNDS. Everything else about the week is unchanged.
-  if (league && division === "championship" && week >= 1 && week <= CHAMPIONSHIP_MATCHWEEKS) {
+  // Eight rounds of a 46-round season (Championship, League One, League Two,
+  // National League — all the same real 24-club shape) are played on a
+  // Tuesday — see CHAMPIONSHIP_ROUNDS. Everything else about the week is
+  // unchanged.
+  if (league && division !== "premier" && week >= 1 && week <= CHAMPIONSHIP_MATCHWEEKS) {
     return CHAMPIONSHIP_ROUNDS[week - 1].day;
   }
   if (league) return "saturday";
@@ -467,12 +506,21 @@ export const PLAY_OFF_SLOTS: CupSlot[] = [
   { round: "Play-Off Final", week: CHAMPIONSHIP_POST_SEASON(5) },
 ];
 
+/**
+ * League One and League Two clubs enter the EFL Cup (real life); the
+ * National League does not — a National League career never opens a League
+ * Cup at all (see competitions.ts's `seedCups`, which skips it outright when
+ * this returns an empty list).
+ */
 export function leagueCupSlotsFor(division: CareerDivision): CupSlot[] {
-  return division === "championship" ? CHAMPIONSHIP_LEAGUE_CUP_SLOTS : LEAGUE_CUP_SLOTS;
+  if (division === "premier") return LEAGUE_CUP_SLOTS;
+  if (division === "national_league") return [];
+  return CHAMPIONSHIP_LEAGUE_CUP_SLOTS;
 }
 
+/** Every one of the five divisions enters the FA Cup (real life). */
 export function faCupSlotsFor(division: CareerDivision): CupSlot[] {
-  return division === "championship" ? CHAMPIONSHIP_FA_CUP_SLOTS : FA_CUP_SLOTS;
+  return division === "premier" ? FA_CUP_SLOTS : CHAMPIONSHIP_FA_CUP_SLOTS;
 }
 
 // ── Months, for the award ───────────────────────────────────────────────────
