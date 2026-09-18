@@ -10,8 +10,14 @@ import {
 import {
   buildPassage, worldFromScenario, kickOffWorld, kindForBall, passLeadsToShot, type FiveWorld,
 } from "../../lib/star/fiveASide/passage";
+import {
+  newFiveMatch, applyOutcome, oppAttack, type FiveMatchState,
+} from "../../lib/star/fiveASide/match";
+import { passageQuality, fiveASideScore } from "../../lib/star/fiveASide/score";
+import { FIVE_A_SIDE } from "../../lib/star/fiveASide/rules";
 import { mulberry32 } from "../../lib/star/season";
 import { POST_L, POST_R, NET_DEPTH, CX } from "../../lib/star/pitch";
+import type { Ball, Outcome, Scenario } from "../../lib/star/canvasEngine";
 
 /**
  * THE ONE CLAIM THE WHOLE FEATURE RESTS ON.
@@ -553,6 +559,170 @@ function randomWorld(rng: () => number): FiveWorld {
     for (const m of world.mates) check(insideFivePitch(m), "every team-mate stays on the pitch");
     for (const o of world.opps) check(insideFivePitch(o), "every opponent stays on the pitch");
   }
+}
+
+// ── DOES THE SCORE REWARD PLAYING, OR REWARD HIDING? ────────────────────
+//
+// The question this answers is the one nobody can answer by reading the
+// formula, which is why it is measured: two players spend the same six minutes
+// on the same pitch, one of whom never shoots. Who scores better?
+//
+// The answer used to be the wrong one. A completed pass was worth 0.45 flat
+// and up to 0.99 if the engine called it "ambitious" — which, measured, it
+// does for any two-metre nudge to the furthest-forward man — while a shot the
+// keeper saved was 0.34, a shot he caught 0.24, and a shot wide 0.08. Keeping
+// the ball also costs you no opposition attack and no clock. A goal added
+// 0.05 and a win 0.10, neither of which was enough to make up the difference.
+//
+// MEASURED, by this very harness, on these very seeds, with only the scoring
+// rules swapped — so the two columns are the same 400 matches judged twice:
+//
+//                                            before    after
+//   keep-ball (never shoots, safe ball)         46.1     25.3
+//   shoot-on-sight, blanked                     83.7     32.9
+//   shoot-on-sight, scored but did not win      97.5     63.2
+//   shoot-on-sight, scored                      97.7     77.6
+//
+// Read the BEFORE column downward and the problem is not really that keeping
+// the ball paid — it is that almost nothing was being measured at all. A
+// striker who had a dozen shots and did not score once was given 83.7, and a
+// striker who scored was given 97.7, because in both cases most of the mark
+// came from his completed passes at 0.45-0.99 apiece. Scoring was worth two
+// points; winning was worth nothing you could see (97.5 against 97.7).
+//
+// The AFTER column is a ladder: doing nothing 25, trying and failing 33,
+// scoring 63, scoring and winning 78. That is the shape a scout's notebook
+// has.
+//
+// The matches are played out through the real reducers — `applyOutcome` and
+// `oppAttack` — and the real engine, so this measures the game rather than a
+// model of it.
+{
+  setOffsideRuleEnabled(false);
+
+  const DIFF = 0.5;
+  const GOAL_X = (FIVE_A_SIDE.goal.x1 + FIVE_A_SIDE.goal.x2) / 2;
+  type Strategy = "keep" | "shoot";
+
+  /**
+   * Both strategies start from a real open-play picture rather than from the
+   * kick-off shape, and that is deliberate: at a kick-off the opposing keeper
+   * stands exactly on his line, dead centre, and a shot from anywhere converts
+   * at about 5%. Measured. A striker who never gets a chance cannot be
+   * compared with anybody. `randomWorld` is the same helper the engine
+   * sections above already use.
+   */
+  function playMatch(seed: number, strategy: Strategy): FiveMatchState {
+    const rng = mulberry32(seed * 7919 + 13);
+    let m = newFiveMatch(seed, FIVE_A_SIDE);
+    m = { ...m, world: { ...randomWorld(rng), ball: { x: CX + (rng() - 0.5) * 12, y: 4 + rng() * 10 } } };
+
+    for (let guard = 0; guard < 200 && !m.over; guard++) {
+      if (m.possession === "them") { m = oppAttack(m, DIFF, 55); continue; }
+
+      const sc: Scenario = buildPassage(m.world, {
+        keeperStrength: 40 + DIFF * 45, teamRelationship: 55, rng,
+      });
+      sc.goal = { ...FIVE_A_SIDE.goal };
+      sc.crossbar = FIVE_A_SIDE.crossbar;
+      sc.viewport = { ...FIVE_A_SIDE.view };
+      initDefenders(sc, rng);
+
+      let dir: { x: number; y: number };
+      let power: number;
+      let contact: { cx: number; cy: number };
+
+      if (strategy === "shoot" && sc.ball.y <= 12) {
+        // Have a go, aimed inside the post the way somebody who knows what he
+        // is doing would.
+        const side = rng() < 0.5 ? -1 : 1;
+        const half = (FIVE_A_SIDE.goal.x2 - FIVE_A_SIDE.goal.x1) / 2;
+        const tx = GOAL_X + side * Math.max(0.2, half - 0.35) * (0.55 + rng() * 0.45);
+        dir = { x: tx - sc.ball.x + (rng() - 0.5) * 0.8, y: -Math.max(sc.ball.y, 1) };
+        power = Math.min(1, 0.42 + Math.hypot(sc.ball.x - GOAL_X, sc.ball.y) / 40) * (0.9 + rng() * 0.2);
+        contact = { cx: (rng() - 0.5) * 0.6, cy: -0.1 - rng() * 0.4 };
+      } else {
+        const opts = sc.secondaryRunners.map(r => r.pos);
+        if (!opts.length) break;
+        // Keep-ball takes the DEEPEST man every time — the safest ball on the
+        // pitch. The striker takes the most advanced one to make ground.
+        const t = strategy === "keep"
+          ? opts.reduce((a, b) => (b.y > a.y ? b : a))
+          : opts.reduce((a, b) => (b.y < a.y ? b : a));
+        dir = { x: t.x - sc.ball.x, y: t.y - sc.ball.y };
+        power = Math.min(0.95, 0.2 + Math.hypot(dir.x, dir.y) / 32);
+        contact = { cx: 0, cy: -0.2 };
+      }
+
+      const ball: Ball = launch(sc, dir, power, contact, { power: 70, technique: 70 }, rng);
+      let out: string | null = null;
+      for (let i = 0; i < 2000 && !out; i++) {
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        out = stepBall(ball, sc, rng, DT);
+        if (!out && leftPitch(ball.pos)) out = "out";
+      }
+      const o = (out ?? "short") as Outcome | "out";
+      const crossX = o === "goal" || o === "wide" || o === "over" || o === "post" ? ball.pos.x : null;
+      m = applyOutcome(m, o, sc, ball, passageQuality(o, sc, crossX, FIVE_A_SIDE), {
+        assist: o === "goal" && !!sc.receiverShot,
+      });
+    }
+    return m;
+  }
+
+  const seeds = Array.from({ length: 200 }, (_, i) => i + 1);
+  const keep = seeds.map(n => playMatch(n, "keep"));
+  const shoot = seeds.map(n => playMatch(n, "shoot"));
+  const mean = (rows: FiveMatchState[]) =>
+    rows.length ? rows.reduce((a, m) => a + fiveASideScore(m, DIFF), 0) / rows.length : 0;
+
+  const scored = shoot.filter(m => m.events.some(e => e.goal));
+  const blanked = shoot.filter(m => !m.events.some(e => e.goal));
+  const scoredLost = scored.filter(m => m.score[0] <= m.score[1]);
+
+  const keepMean = mean(keep), scoredMean = mean(scored);
+  console.log(
+    `      keep-ball ${keepMean.toFixed(1)} | shoot-on-sight ${mean(shoot).toFixed(1)}`
+    + ` (blanked ${mean(blanked).toFixed(1)}, scored ${scoredMean.toFixed(1)},`
+    + ` scored-not-won ${mean(scoredLost).toFixed(1)}) over ${seeds.length} matches`,
+  );
+
+  // The harness has to have measured what it claims to have measured.
+  const keepShots = keep.reduce(
+    (n, m) => n + m.events.filter(e => ["goal", "saved", "caught", "wide", "over", "post"].includes(e.outcome)).length, 0);
+  check(keepShots === 0, `the keep-ball player must never shoot, he had ${keepShots} attempts`);
+  check(
+    keep.every(m => m.events.length >= 6),
+    "…and must genuinely have played a match rather than run out of touches",
+  );
+  check(scored.length >= 25, `enough striker matches with a goal in them to average, got ${scored.length}`);
+
+  // THE ONE THAT MATTERS.
+  check(
+    scoredMean > keepMean,
+    `a striker who scores must out-score a man who refuses to shoot `
+    + `(${scoredMean.toFixed(1)} vs ${keepMean.toFixed(1)})`,
+  );
+  check(
+    scoredMean - keepMean > 20,
+    `…and by a real margin, not a rounding error (${(scoredMean - keepMean).toFixed(1)} points)`,
+  );
+  // Goals, not just the result: a striker who scored and still lost or drew
+  // must beat the man who did nothing, or the bonus is really a win bonus.
+  check(
+    mean(scoredLost) > keepMean + 10,
+    `scoring must pay even without the win (${mean(scoredLost).toFixed(1)} vs ${keepMean.toFixed(1)})`,
+  );
+  // And in absolute terms: a scout watching a kid pass sideways for six
+  // minutes and draw 0-0 does not write 0.75.
+  check(
+    keepMean < 40,
+    `six minutes of keep-ball and a goalless draw is not a good afternoon, scored ${keepMean.toFixed(1)}`,
+  );
+  check(keepMean > 5, `…but it is not nothing either, scored ${keepMean.toFixed(1)}`);
+
+  setOffsideRuleEnabled(true);
 }
 
 if (problems.length) {

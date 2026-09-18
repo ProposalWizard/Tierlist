@@ -40,6 +40,37 @@ export function ladderLevel(difficulty: number): number {
   return Math.max(0, Math.min(100, (Number.isFinite(difficulty) ? difficulty : 0) * 100));
 }
 
+/**
+ * THE SEED EVERY "WHAT DOES THIS REP ASK" ROLL IS DRAWN FROM.
+ *
+ * `trial.seed` alone is not it, and the difference is the whole of a real bug
+ * this file shipped with.
+ *
+ * Seeding off the bare seed makes a rep reproducible, which is what the trial
+ * wants BETWEEN stages: come back and you are looking at the same afternoon.
+ * But a stage's rep counter lives in React state and is not saved, so coming
+ * back MID-STAGE restarts it at rep 1 — and if the answer to rep 1 is a pure
+ * function of `trial.seed`, it is the same answer you were shown a moment ago.
+ * Play the vision stage through once watching which man rings green, close the
+ * app, reopen: six remembered taps, near-perfect score, no football in it at
+ * all. The same trick retakes a penalty stage against a keeper who leans the
+ * same way every time.
+ *
+ * `reloads` is the fix, and it is already exactly the right number: the trial
+ * counts a resume for its own difficulty bump, so a resume is already a thing
+ * the trial knows happened. Folding it in here means a resumed stage draws
+ * genuinely NEW problems — at the bumped difficulty — rather than a second
+ * showing of the ones whose answers you have just memorised.
+ *
+ * Mixed rather than added: `seed ^ reloads` would collide across trials whose
+ * seeds differ in the low bits, and the low bits are exactly where a small
+ * integer lives.
+ */
+export function attemptSeed(trial: TrialProgress): number {
+  const reloads = Math.max(0, Math.floor(Number.isFinite(trial.reloads) ? trial.reloads : 0));
+  return (((trial.seed >>> 0) ^ ((reloads + 1) * 0x9e3779b1)) >>> 0);
+}
+
 /** How many attempts each stage gives you. Enough that one fluke neither makes
  *  nor breaks it; few enough that the whole trial is minutes, not an evening. */
 export const REPS: Record<Exclude<TrialStage, "fiveASide">, number> = {
@@ -63,22 +94,49 @@ export interface PenaltySetup {
 }
 
 /**
+ * How much of the guess he shows you, at difficulty 0 and at difficulty 1.
+ *
+ * ── This used to run backwards, and it made a hard day the easy one ──
+ *
+ * The scaling was `0.3 + 0.7 × d`: the harder the trial, the FURTHER off
+ * centre he stood before you had even started your run-up. A difficulty-1
+ * keeper announced his guess at full volume and a difficulty-0 keeper barely
+ * moved, so the hardest penalties in the game were the ones where the answer
+ * was most obvious — shoot the other side, every time, and the better the
+ * keeper the more clearly he told you which side that was.
+ *
+ * It now runs the right way round. Everybody guesses just as hard — the lean
+ * is a real commitment, and `TrialPenalties` still moves his `startX` so it
+ * genuinely shuts one corner (that is what makes a penalty a decision at all).
+ * What difficulty changes is how much of it you get to SEE before you strike
+ * it: a poor keeper telegraphs it, a good one is barely shaded off centre and
+ * you have to actually look at him. The tell shrinks as the day gets harder,
+ * which is the shape it should have had all along.
+ *
+ * Not taken to zero at the top: a keeper who never commits at all is not a
+ * harder read, he is no read, and the stage stops being about anything.
+ */
+export const PENALTY_TELL_EASY = 1;
+export const PENALTY_TELL_HARD = 0.25;
+
+/**
  * A penalty is the same kick every time, so difficulty lives entirely in the
- * keeper: how good he is, and whether he has read you.
+ * keeper: how good he is, and how much of his guess he lets you see.
  */
 export function penaltySetup(trial: TrialProgress, rep: number): PenaltySetup {
   const d = difficultyFor(trial, "penalties");
   const bonus = keeperBonusFor(trial, "penalties");
-  // Seeded off the trial and the rep, so the same penalty is the same penalty
-  // however many times the app is closed and reopened.
-  const wobble = Math.sin((trial.seed % 1000) + rep * 12.9898) * 43758.5453;
+  // Seeded off the trial, the resume count and the rep — so the same penalty
+  // is the same penalty for as long as you are actually playing it, and a
+  // stage retaken after a reload is a fresh set of guesses rather than a
+  // memory test against a keeper who leans the same way every time. See
+  // `attemptSeed`.
+  const wobble = Math.sin((attemptSeed(trial) % 1000) + rep * 12.9898) * 43758.5453;
   const lean = (wobble - Math.floor(wobble)) * 2 - 1;
   return {
     ball: { x: CX, y: PEN_SPOT_Y },
     keeperStrength: Math.min(99, 45 + d * 45 + bonus),
-    // He commits harder the better he is, which is what makes a good keeper
-    // both easier to beat if you read him and harder if you do not.
-    keeperLean: lean * (0.3 + d * 0.7),
+    keeperLean: lean * (PENALTY_TELL_EASY + (PENALTY_TELL_HARD - PENALTY_TELL_EASY) * d),
   };
 }
 
@@ -158,15 +216,29 @@ export function dribbleQuality(
 // ── 4. Finding the pass ─────────────────────────────────────────────────
 
 export interface VisionSetup extends VisionDrillConfig {
-  /** Which of the options is the right one. Seeded, so a reload cannot be
-   *  used to see the answer and then restart. */
+  /**
+   * Which of the options is the right one.
+   *
+   * Seeded off `attemptSeed`, not off the bare `trial.seed`, and the comment
+   * that used to sit here claimed the opposite of what the code did: "seeded,
+   * so a reload cannot be used to see the answer and then restart" was exactly
+   * backwards. Seeding off the bare seed is what MADE that possible — the rep
+   * counter is React state and is never saved, so a resume restarted the stage
+   * at rep 1 with the same six pictures and the same six answers you had just
+   * watched ring green. Six remembered taps, near-perfect score, no football.
+   *
+   * Folding the resume count in means a resumed stage genuinely draws six new
+   * pictures, at the bumped difficulty. See `attemptSeed`, and `layoutVision`
+   * in TrialVision.tsx, which is seeded from the same number so the PICTURE
+   * changes too and not just which man in it is the answer.
+   */
   correct: number;
 }
 
 export function visionSetup(trial: TrialProgress, rep: number): VisionSetup {
   const d = difficultyFor(trial, "vision");
   const cfg = visionDrill(ladderLevel(d), rep);
-  const wobble = Math.sin((trial.seed % 997) * 7.13 + rep * 91.7) * 24634.6345;
+  const wobble = Math.sin((attemptSeed(trial) % 997) * 7.13 + rep * 91.7) * 24634.6345;
   const pick = Math.floor((wobble - Math.floor(wobble)) * cfg.options);
   return { ...cfg, correct: Math.max(0, Math.min(cfg.options - 1, pick)) };
 }

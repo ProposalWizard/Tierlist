@@ -1,13 +1,15 @@
 import {
-  startTrial, difficultyFor, keeperBonusFor, stageScore, recordStage, noteReload,
+  startTrial, difficultyFor, scoringDifficultyFor, keeperBonusFor, stageScore,
+  reloadQualityHaircut, recordStage, noteReload, beginStage, resumeInterrupted,
   nextStage, trialComplete, trialScore, TRIAL_STAGES, SHARP_KEEPER_BONUS,
-  RELOAD_DIFFICULTY_STEP, RELOAD_DIFFICULTY_CAP, type TrialStage,
+  RELOAD_DIFFICULTY_STEP, RELOAD_DIFFICULTY_CAP, RELOAD_QUALITY_STEP,
+  RELOAD_QUALITY_FLOOR, SCORE_BASE, SCORE_DIFFICULTY_SPAN, type TrialStage,
 } from "../../lib/star/trial";
 
 /**
  * THE TRIAL'S OWN ARITHMETIC.
  *
- * Three properties carry this file, and all three are things that would be
+ * Four properties carry this file, and all four are things that would be
  * invisible in a screenshot and expensive to discover live:
  *
  *  1. **Nothing is re-rolled.** The same seed is the same afternoon, forever.
@@ -18,9 +20,17 @@ import {
  *     is what makes "never lose progress" safe to promise — the result is on
  *     the career before the next screen renders, and a resume cannot replace
  *     a bad score with a better one.
- *  3. **Harder is worth more.** The same performance scores higher when more
- *     was asked of it. Tested as a property across the whole range rather
- *     than at one convenient pair of numbers.
+ *  3. **Re-opening the app can only ever cost.** It used to PAY: the reload
+ *     bump went into the same difficulty figure the score was multiplied by,
+ *     so ten resumes turned a perfect trial on seed 0 from 73 into 81. Tested
+ *     by measurement across hundreds of seeds rather than by reading the
+ *     formula, because reading the formula is exactly what missed it.
+ *  4. **Skill is always the ceiling, and always visible.** Perfect play
+ *     reaches 95-100 whatever difficulty was rolled — it used to cap at 70 on
+ *     an easy roll, which put the best outcome in the game out of reach on a
+ *     dice the player never sees — and the score moves for every extra bit of
+ *     quality at every difficulty, with no plateau at the top where a very
+ *     good player and a perfect one score the same.
  */
 
 const problems: string[] = [];
@@ -85,8 +95,12 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     climbed.push(difficultyFor(t, stage));
   }
 
-  check(t.reloads === 20, "every resume is counted");
-  check(climbed[0] > d0 || d0 === 1, "the first resume already costs something");
+  check(t.resumes === 20, "every resume is seen");
+  check(t.reloads === 19, "…and every one of them but the innocent first is charged for");
+  // The first load of an untouched trial is the one right after career
+  // creation. Nothing has been played, so there is nothing to retry.
+  check(climbed[0] === d0, "the first load after creating a career is free");
+  check(climbed[1] > d0 || d0 === 1, "…and the second, which walked out of stage one, is not");
   for (let i = 1; i < climbed.length; i++) {
     check(climbed[i] >= climbed[i - 1], "difficulty never goes DOWN as you re-open the app");
   }
@@ -107,6 +121,58 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(
     difficultyFor({ ...base, reloads: -99 }, stage) === d0,
     "a nonsense reload count cannot reduce difficulty below the real roll",
+  );
+}
+
+// ── A resume only counts when it interrupted something ──────────────────
+//
+// The anti-cheat was billing two loads that nobody chose: the first one after
+// career creation, and a phone throwing away a backgrounded tab. The first is
+// provable from the trial's own data; the second needs the stage screen to say
+// what it was showing, which is what `beginStage` is for.
+{
+  const fresh = startTrial(3001);
+  check(!resumeInterrupted(fresh), "a brand-new trial's first load interrupted nothing");
+  check(noteReload(fresh).reloads === 0, "…so it is not charged for");
+  check(noteReload(fresh).resumes === 1, "…but it is remembered, so the next one knows");
+  check(
+    resumeInterrupted(noteReload(fresh)),
+    "a SECOND load of an untouched trial means you walked out of stage one",
+  );
+
+  // Mid-trial there is no doubt at all: a stage is decided and the next is not.
+  const started = recordStage(startTrial(3001), "penalties", 0.5);
+  check(resumeInterrupted(started), "coming back to a part-played trial is a real resume");
+  check(noteReload(started).reloads === 1, "…and is charged for immediately");
+
+  // A trial with nothing left to come back into cannot be farmed.
+  const done = TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 0.5), startTrial(3001));
+  check(!resumeInterrupted(done), "a finished trial has nothing left to interrupt");
+  check(noteReload(done).reloads === 0, "…so re-opening it costs nothing");
+
+  // With the marker kept, both innocent cases are exact — including the one
+  // the fallback cannot see. Backgrounding on a between-stages result card is
+  // not a decision the player made.
+  const between = { ...started, inProgress: null };
+  check(!resumeInterrupted(between), "a tab evicted between stages is not a resume");
+  check(noteReload(between).reloads === 0, "…and is not charged for");
+  const inside = beginStage(started, "freeKicks");
+  check(inside.inProgress === "freeKicks", "beginStage records what you walked into");
+  check(resumeInterrupted(inside), "…and walking out of it mid-stage is a real resume");
+  check(
+    !resumeInterrupted(beginStage(started, "penalties")),
+    "a stale marker on a stage that already has a result cannot charge twice",
+  );
+  // The marker is only ever cleared for a trial that is actually keeping one —
+  // otherwise recording stage one would silently switch the anti-cheat off for
+  // the rest of the trial.
+  check(
+    recordStage(startTrial(3001), "penalties", 0.5).inProgress === undefined,
+    "recordStage does not invent a marker nobody is keeping",
+  );
+  check(
+    recordStage(inside, "freeKicks", 0.5).inProgress === null,
+    "…and does clear one that somebody is",
   );
 }
 
@@ -140,34 +206,144 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(landedOn.size === 3, `it should be able to land on any keeper stage, saw ${landedOn.size}`);
 }
 
-// ── Harder is worth more — as a property, not one lucky pair ────────────
+// ── The ceiling: perfect play is worth ~100 on ANY afternoon ────────────
+//
+// It used to be worth 70 on the easiest one, and difficulty comes out at
+// exactly 0 for about one stage roll in nine — so the best outcome in the
+// game was being withheld on a dice nobody sees. Checked at every tenth of
+// the range rather than at the two ends, because the two ends are exactly
+// what the old formula got right.
+{
+  for (let d = 0; d <= 1.0001; d += 0.1) {
+    const s = stageScore(1, d);
+    check(s >= 95, `flawless play at difficulty ${d.toFixed(1)} should reach 95+, got ${s}`);
+    check(s <= 100, `…and never break the scale, got ${s}`);
+  }
+  check(stageScore(1, 1) === 100, "a perfect stage in the hardest trial is worth the full 100");
+
+  // A whole perfect trial, on every seed, not just a convenient one.
+  let lowest = 100, highest = 0;
+  for (let seed = 0; seed < 1500; seed++) {
+    const t = TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 1), startTrial(seed));
+    lowest = Math.min(lowest, trialScore(t));
+    highest = Math.max(highest, trialScore(t));
+  }
+  check(lowest >= 95, `a perfect trial should never score under 95, worst seed gave ${lowest}`);
+  check(highest === 100, `…and a perfect trial on a hard afternoon should reach 100, best was ${highest}`);
+}
+
+// ── No plateau: every extra bit of quality moves the number ──────────────
+//
+// On a hard roll the old formula's product ran past 1 and got clamped, so
+// everything from about 78 % quality upward scored the same 100 — the top
+// quarter of skill was invisible and a very good player got a perfect
+// player's offer. Strictness is checked at a step (0.02) coarse enough that
+// rounding to a whole number cannot mask it: the shallowest slope in the
+// whole surface is 95 points per unit of quality, so 0.02 is worth 1.9
+// points, and two values 1.9 apart cannot round to the same integer.
+{
+  for (let d = 0; d <= 1.0001; d += 0.1) {
+    let last = -1;
+    for (let q = 0; q <= 1.0001; q += 0.02) {
+      const s = stageScore(q, d);
+      check(s >= 0 && s <= 100, `score stayed in 0-100 (${s})`);
+      check(
+        s > last,
+        `at difficulty ${d.toFixed(1)}, quality ${q.toFixed(2)} must score MORE than the step below (${s} vs ${last})`,
+      );
+      last = s;
+    }
+    check(last >= 95, `…and the top of that run is a real top (${last})`);
+  }
+}
+
+// ── Difficulty decides how HARD quality is to earn, not what it is worth ─
+//
+// The drills read `difficultyFor` and get genuinely harder. The scoring reads
+// quality. All that is left in the score is a tie-break, so that two
+// identical afternoons are not literally identical when one was harder — the
+// story itself is told by the label on the result card, off the stored
+// difficulty.
 {
   for (const q of [0, 0.25, 0.5, 0.75, 1]) {
     let last = -1;
     for (let d = 0; d <= 1.0001; d += 0.05) {
       const s = stageScore(q, d);
-      check(s >= 0 && s <= 100, `score stayed in 0-100 (${s})`);
       check(s >= last, `the same performance (${q}) must never be worth LESS when it was harder`);
       last = s;
     }
   }
-  // And better is worth more at a fixed difficulty.
-  for (const d of [0, 0.3, 0.6, 1]) {
-    let last = -1;
-    for (let q = 0; q <= 1.0001; q += 0.05) {
-      const s = stageScore(q, d);
-      check(s >= last, `a better performance must never score LESS at difficulty ${d}`);
-      last = s;
-    }
-  }
+  const spread = stageScore(1, 1) - stageScore(1, 0);
+  check(
+    spread === Math.round(100 * SCORE_DIFFICULTY_SPAN),
+    `difficulty should only be a tie-break now, worth ${spread} points end to end`,
+  );
+  check(SCORE_BASE + SCORE_DIFFICULTY_SPAN === 1, "the hardest afternoon is worth exactly the full scale");
   check(stageScore(0, 0) === 0 && stageScore(0, 1) === 0, "doing nothing scores nothing, however hard it was");
-  check(stageScore(1, 1) === 100, "a perfect stage in the hardest trial is worth the full 100");
-  check(stageScore(1, 0) === 70, "a perfect stage in the easiest trial is worth less than one in a hard trial");
+
   // Garbage in cannot produce a score outside the range.
   for (const [q, d] of [[-5, 0.5], [5, 0.5], [0.5, -5], [0.5, 5], [NaN, 0.5]] as const) {
     const s = stageScore(q, d);
     check(Number.isFinite(s) && s >= 0 && s <= 100, `nonsense input (${q}, ${d}) still gave a sane score, got ${s}`);
   }
+}
+
+// ── Re-opening the app can only ever COST ───────────────────────────────
+//
+// The bug this replaces: the reload bump lived in the same difficulty figure
+// the score was multiplied by, so every resume raised the multiplier on every
+// stage still to come. Perfect play on seed 0 scored 73 clean and 81 after
+// ten resumes. Measured here rather than read, because reading is what missed
+// it — every seed, every stage, a real spread of qualities, a real spread of
+// resume counts.
+{
+  let raised = 0, lowered = 0, level = 0;
+  for (let seed = 0; seed < 300; seed++) {
+    for (const stage of TRIAL_STAGES) {
+      for (const q of [0.15, 0.4, 0.65, 0.9, 1]) {
+        const clean = recordStage(startTrial(seed), stage, q).results[stage]!.score;
+        let t = startTrial(seed);
+        for (let r = 1; r <= 10; r++) {
+          t = noteReload(t);
+          const s = recordStage(t, stage, q).results[stage]!.score;
+          if (s > clean) raised++;
+          else if (s < clean) lowered++;
+          else level++;
+        }
+      }
+    }
+  }
+  check(raised === 0, `no resume may ever raise a stage's score, ${raised} did`);
+  check(lowered > level, `…and it should usually cost something real (${lowered} down, ${level} level)`);
+
+  // The whole trial, end to end, on the seed the bug was measured on.
+  const perfect = (reloads: number) => {
+    let t = startTrial(0);
+    for (let i = 0; i < reloads; i++) t = noteReload(t);
+    return trialScore(TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 1), t));
+  };
+  check(perfect(10) < perfect(0), `farming seed 0 must not pay (${perfect(10)} vs ${perfect(0)})`);
+  check(perfect(30) < perfect(10), "…and it must keep not paying long past the difficulty cap");
+
+  // The bump still reaches the drills, which is where it was always meant to
+  // bite: a farmed trial genuinely plays harder even though it cannot score
+  // higher for it.
+  let t = startTrial(9);
+  const asked0 = difficultyFor(t, "freeKicks");
+  const worth0 = scoringDifficultyFor(t, "freeKicks");
+  for (let i = 0; i < 8; i++) t = noteReload(t);
+  check(difficultyFor(t, "freeKicks") > asked0, "resuming still makes the stage ASK for more");
+  check(
+    scoringDifficultyFor(t, "freeKicks") === worth0,
+    "…and still cannot change what the stage is WORTH",
+  );
+
+  // The haircut itself: gentle, starts at nothing, never stops until the floor.
+  check(reloadQualityHaircut(0) === 1, "a player who just played their trial is untouched");
+  check(Math.abs(reloadQualityHaircut(2) - (1 - 2 * RELOAD_QUALITY_STEP)) < 1e-9, "two lost-signal resumes cost 4 %");
+  check(reloadQualityHaircut(5) < reloadQualityHaircut(4), "it keeps costing past the difficulty cap");
+  check(reloadQualityHaircut(1000) === RELOAD_QUALITY_FLOOR, "…down to a floor, so it is a cost and not a lockout");
+  check(reloadQualityHaircut(-7) === 1 && reloadQualityHaircut(NaN) === 1, "a nonsense count cannot hand out a bonus");
 }
 
 // ── A decided stage is decided ──────────────────────────────────────────
@@ -192,11 +368,23 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     "…and it has made the rest of the trial harder",
   );
 
-  // The stored difficulty is the one the stage was actually played at.
+  // The stored difficulty is the one the stage was actually played at — the
+  // full figure the drills were built from, which is what the result card's
+  // "they made that hard" line is talking about.
   check(
     t1.results.penalties!.difficulty === difficultyFor(t0, "penalties"),
     "a result remembers how hard the stage actually was",
   );
+  // …and a stored result can be recomputed from its own fields, so nobody has
+  // to take the number on trust. Checked on a resumed trial too, where the
+  // stored difficulty and the scored one genuinely differ.
+  for (const t of [t1, recordStage(noteReload(noteReload(startTrial(7))), "penalties", 0.8)]) {
+    const r = t.results.penalties!;
+    check(
+      r.score === stageScore(r.quality, scoringDifficultyFor(t, "penalties")),
+      `a result explains its own score (${r.score})`,
+    );
+  }
 }
 
 // ── Walking the stages ──────────────────────────────────────────────────
@@ -233,7 +421,10 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     return trialScore(t2) * TRIAL_STAGES.length;
   });
   const spread = Math.max(...perStage) - Math.min(...perStage);
-  check(spread <= 100 * 0.6 + 6, `no stage should dominate the trial score (spread ${spread})`);
+  check(
+    spread <= 100 * SCORE_DIFFICULTY_SPAN + 6,
+    `no stage should dominate the trial score (spread ${spread})`,
+  );
 }
 
 // ── A trial survives being written to disk and read back ────────────────
@@ -253,4 +444,4 @@ if (problems.length) {
   for (const p of problems) console.log("  ✗ " + p);
   process.exit(1);
 }
-console.log("PASS  the trial is seeded, final once decided, and worth more when it was harder");
+console.log("PASS  the trial is seeded, final once decided, unreachable by farming, and always winnable on skill");

@@ -8,10 +8,17 @@ import { mulberry32 } from "./season";
  * absolutely nothing — everybody arrived at the same club on the same wage
  * however they had played.
  *
- * A trial is five stages on the live match engine, each scored on how well
- * you did RELATIVE TO WHAT YOU WERE ASKED FOR, and one number at the end
- * that decides who comes in for you. Fail it badly enough and nobody does
- * (see §3.7 of STAR_CAREER_OPENING_AND_ECONOMY.md — the free-agent life).
+ * A trial is five stages on the live match engine, each scored on HOW WELL
+ * YOU DID, against an afternoon whose difficulty decides how hard doing well
+ * was — and one number at the end that decides who comes in for you. Fail it
+ * badly enough and nobody does (see §3.7 of
+ * STAR_CAREER_OPENING_AND_ECONOMY.md — the free-agent life).
+ *
+ * That is a correction of the original "scored relative to what you were
+ * asked for", which had difficulty re-pricing the result as well as setting
+ * it, and so put the top of the ladder out of reach on an easy roll and made
+ * the top quarter of skill invisible on a hard one. `stageScore` carries the
+ * full account and the measurements.
  *
  * ── Everything random is seeded and stored ──
  *
@@ -36,6 +43,26 @@ import { mulberry32 } from "./season";
  * first quietly makes the rest of the trial harder — never announced, never
  * explained, capped so somebody who genuinely lost signal twice pays almost
  * nothing. See `difficultyFor`.
+ *
+ * **That anti-cheat used to run backwards, and this is the fix.** The reload
+ * bump went into `difficultyFor`, and `stageScore` multiplied every stage by
+ * its difficulty — so each resume raised the multiplier on every stage still
+ * to come. Measured on seed 0: perfect play with ten resumes scored 81, the
+ * same perfect play with none scored 73. Farming the app was worth +8. The
+ * bump now goes only where it belongs — into what the stage ASKS, which the
+ * drills read — and is kept out of the score entirely (`scoringDifficultyFor`).
+ * What a resume costs instead is a straight haircut on the quality recorded
+ * (`reloadQualityHaircut`), so it can only ever subtract.
+ *
+ * ── A resume is only a resume if it interrupted something ──
+ *
+ * `noteReload` used to charge for any load of an unfinished trial. Two of
+ * those are innocent and were being billed anyway: the very first load after
+ * career creation (nothing has been played yet — there is nothing to retry),
+ * and a phone evicting a backgrounded tab, which iOS does routinely. A charge
+ * now needs a stage genuinely under way with no result yet — see
+ * `resumeInterrupted`, which says exactly how much of that is provable today
+ * and what is still missing.
  */
 
 export type TrialStage = "penalties" | "freeKicks" | "dribbling" | "vision" | "fiveASide";
@@ -71,12 +98,27 @@ export type TrialAdversity = "sharp-keeper" | null;
 export const SHARP_KEEPER_BONUS = 15;
 
 export interface TrialStageResult {
-  /** 0-1, how well you actually did. Raw performance, before difficulty. */
+  /**
+   * 0-1, how well you actually did — after `reloadQualityHaircut` and before
+   * anything to do with difficulty.
+   *
+   * The haircut is folded in here rather than applied to the score on its own
+   * so that the three stored numbers still explain each other: `score` is
+   * exactly `stageScore(quality, difficulty-without-the-reload-bump)`. A
+   * result that could not be recomputed from its own fields is a result
+   * nobody can check.
+   */
   quality: number;
-  /** 0-1, what was asked of you — stored so a stage's score can be explained
-   *  afterwards rather than being an unexplained number. */
+  /**
+   * 0-1, what was asked of you — the full figure the drills were actually
+   * built from, reload bump included, so the result card's "they made that
+   * hard" line is telling the truth about the afternoon you played.
+   *
+   * Deliberately NOT what the score was computed from: see `stageScore` and
+   * `scoringDifficultyFor` for why those are two different numbers now.
+   */
   difficulty: number;
-  /** 0-100, `quality` scaled by what it was worth. See `stageScore`. */
+  /** 0-100, what the watching clubs saw. See `stageScore`. */
   score: number;
   decidedAt: number;
 }
@@ -93,8 +135,38 @@ export interface TrialProgress {
   /** Which stage the adversity lands on. A sharp keeper means nothing in the
    *  dribbling stage, so it is rolled onto a stage where it bites. */
   adversityStage: TrialStage | null;
-  /** How many times this trial has been resumed. See the note above. */
+  /**
+   * How many resumes were CHARGED for. See the note above and
+   * `resumeInterrupted` — a load that interrupted nothing is not one of
+   * these. This is the number `difficultyFor` and `reloadQualityHaircut`
+   * both read, and the only one that costs the player anything.
+   */
   reloads: number;
+  /**
+   * How many resumes were SEEN, charged or not.
+   *
+   * Kept separately because "was this trial ever loaded before" is the one
+   * thing that tells an untouched trial's first load (career just created,
+   * innocent) apart from its second (you have been sitting inside stage one
+   * and walked out of it). Optional: a trial saved before this existed simply
+   * has none, and reads as zero.
+   */
+  resumes?: number;
+  /**
+   * Which stage the player is actually INSIDE, if any — `null` between
+   * stages, absent when nobody has said.
+   *
+   * The precise version of "did this resume interrupt anything". Set by
+   * `beginStage` when a stage screen opens, cleared by `recordStage`.
+   *
+   * **Nothing sets it yet.** `components/star/TrialSequence.tsx` is the one
+   * place that knows a stage screen has opened, and it is not this file's to
+   * edit; until it calls `beginStage`, `resumeInterrupted` falls back to what
+   * the trial's own data can prove (see there). The fallback gets the
+   * first-load case right and the backgrounded-tab case wrong, which is the
+   * whole reason this field exists.
+   */
+  inProgress?: TrialStage | null;
   startedAt: number;
   /**
    * A five-a-side left half-played.
@@ -126,16 +198,61 @@ export interface TrialProgress {
 const clamp01 = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
 
 /**
- * Each resume past the first makes the trial this much harder, capped.
+ * Each charged resume makes the trial this much harder, capped.
  *
  * Deliberately small and deliberately capped: at +0.03 a go, somebody whose
  * train went into a tunnel twice is playing a trial 3 % harder, which is
  * nothing. Somebody re-opening the app fifteen times to farm an easy roll
  * hits the cap and is playing a meaningfully harder afternoon than they
  * would have had if they had just played it.
+ *
+ * This raises what the stage ASKS and nothing else. It is deliberately absent
+ * from the score — see `scoringDifficultyFor`.
  */
 export const RELOAD_DIFFICULTY_STEP = 0.03;
 export const RELOAD_DIFFICULTY_CAP = 0.15;
+
+/**
+ * …and takes this much off the quality that gets recorded.
+ *
+ * The half of the anti-cheat that can only ever hurt. The difficulty bump
+ * above is capped, which is right — a harder afternoon is still an afternoon
+ * you can play well — but a cap on its own means resume number six is free,
+ * and free is exactly what a farmer is looking for. So there is a second,
+ * uncapped-in-count cost: 2 % off the recorded quality per charged resume,
+ * for as many as you take.
+ *
+ * Floored at 0.6 so it stays a cost rather than a lockout. Somebody who has
+ * genuinely re-opened the app twenty times has a trial they can still pass;
+ * they just cannot win it. Lose signal twice and you pay 4 %, which is
+ * inside the noise of a single penalty.
+ */
+export const RELOAD_QUALITY_STEP = 0.02;
+export const RELOAD_QUALITY_FLOOR = 0.6;
+
+/**
+ * What a stage is worth, at the easiest possible afternoon and at the hardest.
+ *
+ * `SCORE_BASE` is the whole of the ceiling fix. It used to be 0.70: a stage
+ * rolled at difficulty 0 could not score above 70 however flawlessly it was
+ * played, and difficulty comes out at exactly 0 for about one stage roll in
+ * nine. That meant a Premier League offer — appetite peaks at 96, see
+ * scoutOffers.ts — was unreachable on a dice roll the player never saw and
+ * could do nothing about. Perfect play now scores 95 on the kindest roll and
+ * 100 on the cruellest, so the top of the ladder is always in reach and the
+ * difficulty roll decides how hard it is to get there rather than whether it
+ * is possible at all.
+ *
+ * The 0.05 that is left is not a reward for difficulty so much as a
+ * tie-break: two identical afternoons should not be literally identical when
+ * one of them was harder. The design story — "a 70 on a hard day means more
+ * than a 70 on an easy day" — is carried by the difficulty LABEL on the
+ * result card (TrialSequence.tsx reads `TrialStageResult.difficulty` for
+ * exactly this), which is where it belongs: a sentence can say that without
+ * quietly making the number mean two different things.
+ */
+export const SCORE_BASE = 0.95;
+export const SCORE_DIFFICULTY_SPAN = 0.05;
 
 /**
  * A brand-new trial. Everything it will ever need to know is decided here,
@@ -178,6 +295,7 @@ export function startTrial(seed: number = Math.floor(Math.random() * 0xffffffff)
     adversity,
     adversityStage,
     reloads: 0,
+    resumes: 0,
     startedAt: Date.now(),
   };
 }
@@ -185,6 +303,11 @@ export function startTrial(seed: number = Math.floor(Math.random() * 0xffffffff)
 /**
  * How hard a given stage is, all in: the trial's own character, this stage's
  * own roll, and whatever the player has added by re-opening the app.
+ *
+ * **This is what the stage ASKS.** Every drill ladder reads it — keeper
+ * strength, wall distance, how many options the vision stage shows, how long
+ * you get — so a farmed trial genuinely plays harder. It is not what the
+ * stage is scored against; `scoringDifficultyFor` is.
  */
 export function difficultyFor(trial: TrialProgress, stage: TrialStage): number {
   const reloadBump = Math.min(
@@ -192,6 +315,34 @@ export function difficultyFor(trial: TrialProgress, stage: TrialStage): number {
     Math.max(0, trial.reloads) * RELOAD_DIFFICULTY_STEP,
   );
   return clamp01(trial.baseDifficulty + (trial.stageRolls[stage] ?? 0) + reloadBump);
+}
+
+/**
+ * The same stage's difficulty with the reload bump taken back out — the one
+ * the score is computed from.
+ *
+ * The bug this exists to kill: difficulty was both what the stage asked AND
+ * the score's multiplier, so re-opening the app raised the multiplier on
+ * every stage still to come. Ten resumes turned a perfect trial on seed 0
+ * from 73 into 81. The anti-cheat paid.
+ *
+ * Splitting the two is what lets a resume make the afternoon harder without
+ * making it worth more: the drills read `difficultyFor`, the scoring reads
+ * this, and the cost of resuming lives entirely in `reloadQualityHaircut`.
+ */
+export function scoringDifficultyFor(trial: TrialProgress, stage: TrialStage): number {
+  return clamp01(trial.baseDifficulty + (trial.stageRolls[stage] ?? 0));
+}
+
+/**
+ * What re-opening the app takes off the quality that gets recorded.
+ *
+ * 1 with no charged resumes, so a player who simply played their trial is
+ * never touched by any of this.
+ */
+export function reloadQualityHaircut(reloads: number): number {
+  const charged = Number.isFinite(reloads) ? Math.max(0, reloads) : 0;
+  return Math.max(RELOAD_QUALITY_FLOOR, 1 - RELOAD_QUALITY_STEP * charged);
 }
 
 /** Whether a sharp keeper is standing in this particular stage. */
@@ -202,18 +353,36 @@ export function keeperBonusFor(trial: TrialProgress, stage: TrialStage): number 
 }
 
 /**
- * What a stage was worth.
+ * What a stage was worth, 0-100.
  *
- * The shape §3.3 asks for, and the reason difficulty is stored rather than
- * discarded: **the score is performance relative to what was asked.** The
- * same finish is worth more against a keeper who was always going to save it,
- * and a miss costs less when the chance was never really on. At d = 0 a
- * perfect stage is worth 70; at d = 1 it is worth the full 100 — so a good
- * trial on an easy afternoon can still be beaten by a good trial on a hard
- * one, which is the whole point.
+ * **The score is what you did, and difficulty decides how hard that was to
+ * do.** That is a correction of the shape this used to have, and the reason
+ * for it is worth keeping written down, because the old shape reads sensible
+ * and measured badly at both ends:
+ *
+ *   score = quality × (0.70 + 0.60 × difficulty)
+ *
+ * Difficulty was doing two jobs at once — making the drills harder AND
+ * re-pricing the result — and the two multiplied. Measured over 10,000 stage
+ * rolls, difficulty has a median of 0.34 and comes out at exactly 0 for 11.6 %
+ * of them. At the bottom that meant a flawless stage capped at 70 and a
+ * flawless TRIAL at 70-73, on a roll the player never sees: the Premier
+ * League's appetite peaks at 96 (scoutOffers.ts), so the best outcome in the
+ * game was unreachable through no fault of anybody's. At the top the product
+ * ran past 1 and got clamped, so from about 78 % quality upward on a hard
+ * roll every performance scored the same 100 — the top quarter of skill was
+ * invisible and a very good player got the same offer as a perfect one.
+ *
+ * So: strictly increasing in quality across the whole range at every
+ * difficulty, no plateau at either end, and perfect play lands on 95-100
+ * whatever was rolled. What difficulty still changes is everything the drills
+ * do with `difficultyFor` — the quality itself is genuinely harder to earn on
+ * a hard afternoon, which is the honest place for that to bite. The story is
+ * told in words on the result card, off the stored `difficulty`.
  */
 export function stageScore(quality: number, difficulty: number): number {
-  return Math.round(100 * clamp01(clamp01(quality) * (0.70 + 0.60 * clamp01(difficulty))));
+  const worth = SCORE_BASE + SCORE_DIFFICULTY_SPAN * clamp01(difficulty);
+  return Math.round(100 * clamp01(clamp01(quality) * worth));
 }
 
 /**
@@ -225,29 +394,108 @@ export function stageScore(quality: number, difficulty: number): number {
  * result returns the trial untouched rather than overwriting it — so a resume
  * cannot quietly replace a bad score with a better one, and a double-fired
  * callback cannot either.
+ *
+ * Note which difficulty goes where: the stage STORES the one it was actually
+ * played at (reload bump and all, so the result card is honest about the
+ * afternoon) and is SCORED on the one without it, so no amount of re-opening
+ * the app can raise this number. What re-opening does do is take a slice off
+ * the quality before it is written down.
  */
 export function recordStage(
   trial: TrialProgress, stage: TrialStage, quality: number,
 ): TrialProgress {
   if (trial.results[stage]) return trial;
-  const difficulty = difficultyFor(trial, stage);
+  const played = clamp01(quality) * reloadQualityHaircut(trial.reloads);
   return {
     ...trial,
+    // Only clear an in-progress marker that somebody is actually keeping. If
+    // this wrote `inProgress: null` onto a trial nobody sets it on, every
+    // later resume would read as "between stages" and the anti-cheat would
+    // silently stop charging from stage two onward.
+    ...(trial.inProgress !== undefined ? { inProgress: null } : null),
     results: {
       ...trial.results,
       [stage]: {
-        quality: clamp01(quality),
-        difficulty,
-        score: stageScore(quality, difficulty),
+        quality: played,
+        difficulty: difficultyFor(trial, stage),
+        score: stageScore(played, scoringDifficultyFor(trial, stage)),
         decidedAt: Date.now(),
       },
     },
   };
 }
 
-/** Count a resume. See the note at the top of the file. */
+/**
+ * Say which stage the player has just walked into, so a resume out of it can
+ * be told apart from a resume that interrupted nothing.
+ *
+ * Wanted by `components/star/TrialSequence.tsx` — that component is the only
+ * thing that knows a stage screen has opened — and not called from anywhere
+ * yet. See `TrialProgress.inProgress`.
+ */
+export function beginStage(trial: TrialProgress, stage: TrialStage): TrialProgress {
+  if (trial.inProgress === stage) return trial;
+  return { ...trial, inProgress: stage };
+}
+
+/**
+ * Did this load actually interrupt anything?
+ *
+ * The bar the anti-cheat is supposed to clear, and did not: a charge needs a
+ * stage genuinely under way with no result yet. Two loads that were being
+ * billed and should not have been —
+ *
+ *  - **the first load after career creation.** Nothing has been played, so
+ *    there is nothing to retry and nothing to farm.
+ *  - **a phone evicting a backgrounded tab.** iOS discards backgrounded tabs
+ *    routinely; coming back to one is not a decision the player made.
+ *
+ * What is provable from the trial's own data, and what is not, stated plainly
+ * because the difference matters:
+ *
+ *  - With `inProgress` kept (nothing keeps it yet — see `beginStage`) both
+ *    cases are exact. Backgrounding the app on a between-stages result card
+ *    leaves `inProgress` at null and costs nothing.
+ *  - Without it, the fallback below can still prove the first-load case: an
+ *    untouched trial being loaded for the first time has interrupted nothing,
+ *    while a SECOND load of a still-untouched trial means the player has been
+ *    sitting inside stage one and walked out of it, which is the exact thing
+ *    the design set out to charge for. It cannot tell an eviction from a
+ *    deliberate close, so mid-trial evictions still cost — the same as they
+ *    did before, and the reason `inProgress` is worth wiring.
+ */
+export function resumeInterrupted(trial: TrialProgress): boolean {
+  // Nothing left to walk back into.
+  if (trialComplete(trial)) return false;
+
+  if (trial.inProgress !== undefined) {
+    return trial.inProgress !== null && !trial.results[trial.inProgress];
+  }
+
+  // A stage has genuinely been played, or a five-a-side is sitting half
+  // finished — either way this load came back into a trial under way.
+  if (trial.fiveASide !== undefined) return true;
+  if (Object.keys(trial.results).length > 0) return true;
+
+  // Untouched. The first sighting is the load right after career creation;
+  // anything after that is a walk-out of stage one.
+  return (trial.resumes ?? 0) > 0;
+}
+
+/**
+ * Count a resume. See the note at the top of the file.
+ *
+ * Every resume is SEEN (`resumes`) — that is what lets the next one know it
+ * is not the first. Only one that interrupted something is CHARGED
+ * (`reloads`), and only the charged ones cost anything.
+ */
 export function noteReload(trial: TrialProgress): TrialProgress {
-  return { ...trial, reloads: trial.reloads + 1 };
+  const charge = resumeInterrupted(trial);
+  return {
+    ...trial,
+    resumes: (trial.resumes ?? 0) + 1,
+    reloads: trial.reloads + (charge ? 1 : 0),
+  };
 }
 
 /** The first stage with no result yet, or null when the trial is over. */

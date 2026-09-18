@@ -4,7 +4,7 @@ import {
 } from "../../lib/star/trial";
 import { newFiveMatch, applyOutcome, type FiveMatchState } from "../../lib/star/fiveASide/match";
 import { buildPassage, kickOffWorld } from "../../lib/star/fiveASide/passage";
-import { summarise } from "../../lib/star/fiveASide/score";
+import { summarise, stageQualityFrom } from "../../lib/star/fiveASide/score";
 import { mulberry32 } from "../../lib/star/season";
 import type { Ball } from "../../lib/star/canvasEngine";
 
@@ -119,37 +119,67 @@ function playFive(seed: number, touches = Infinity): FiveMatchState {
 
 // ── The five-a-side hands back an UNSCALED quality ──────────────────────
 //
-// The sequencer divides the stage score back out by the difficulty factor
-// before recording it, because `recordStage` applies its own. Getting this
-// wrong would punish a hard trial twice, and it is invisible on screen.
+// The sequencer hands `recordStage` the raw 0-1 quality — `stageQualityFrom`,
+// which is what the real screen calls — and lets the trial do the scoring.
+// Scaling it first would have the difficulty applied twice, and it is
+// invisible on screen.
+//
+// This block used to reconstruct that quality by dividing `summarise`'s score
+// back out by the old `0.70 + 0.60 × d` factor, which is a thing the real
+// sequencer never does and which broke the moment the scoring shape changed.
+// Worse, it hid the exact bug the reshape exists to kill: `fiveASideScore`
+// clamps at 100, so on a hard afternoon a near-perfect match's score was
+// pinned to the ceiling and dividing it back out reported a quality of 0.79
+// for a performance that was really a 1.0. The real function is used here now.
 {
   for (const d of [0, 0.3, 0.7, 1]) {
     const finished = playFive(99);
-    const summary = summarise(finished, d);
-    const handedBack = summary.score / 100 / (0.70 + 0.60 * d);
+    const handedBack = stageQualityFrom(finished);
     check(
       handedBack >= 0 && handedBack <= 1.001,
       `at difficulty ${d} the quality handed to the trial is in range (${handedBack.toFixed(3)})`,
+    );
+    // Nothing about the difficulty is baked into it — the trial applies its
+    // own, and only its own.
+    check(
+      stageQualityFrom(finished) === handedBack,
+      "…and is the same number whatever the afternoon was like",
     );
     const t = recordStage(startTrial(4), "fiveASide", handedBack);
     const stored = t.results.fiveASide!;
     check(stored.score >= 0 && stored.score <= 100, `…and records a real score (${stored.score})`);
   }
 
-  // The same afternoon at two difficulties: the trial's own scaling should
-  // make the harder one worth MORE, not less.
+  // The same afternoon at two difficulties. It is now worth essentially the
+  // same either way, by design: difficulty decides how hard that quality was
+  // to produce (every drill ladder reads `difficultyFor`), not what it is
+  // worth once produced. What is left in the score is a few points of
+  // tie-break; the "you did that on a hard day" story is told in words on the
+  // result card, off the stored difficulty.
   const finished = playFive(99);
-  const easyTrial = { ...startTrial(4), baseDifficulty: 0.05, stageRolls: Object.fromEntries(TRIAL_STAGES.map(s => [s, 0])) as never };
-  const hardTrial = { ...startTrial(4), baseDifficulty: 0.95, stageRolls: Object.fromEntries(TRIAL_STAGES.map(s => [s, 0])) as never };
-  const qEasy = summarise(finished, difficultyFor(easyTrial, "fiveASide")).score / 100
-    / (0.70 + 0.60 * difficultyFor(easyTrial, "fiveASide"));
-  const qHard = summarise(finished, difficultyFor(hardTrial, "fiveASide")).score / 100
-    / (0.70 + 0.60 * difficultyFor(hardTrial, "fiveASide"));
-  const easyScore = recordStage(easyTrial, "fiveASide", qEasy).results.fiveASide!.score;
-  const hardScore = recordStage(hardTrial, "fiveASide", qHard).results.fiveASide!.score;
+  const q = stageQualityFrom(finished);
+  const flat = Object.fromEntries(TRIAL_STAGES.map(s => [s, 0])) as never;
+  const easyTrial = { ...startTrial(4), baseDifficulty: 0.05, stageRolls: flat };
+  const hardTrial = { ...startTrial(4), baseDifficulty: 0.95, stageRolls: flat };
+  const easyScore = recordStage(easyTrial, "fiveASide", q).results.fiveASide!.score;
+  const hardScore = recordStage(hardTrial, "fiveASide", q).results.fiveASide!.score;
   check(
-    hardScore > easyScore,
-    `the same five-a-side should be worth more on a hard afternoon (${hardScore}) than an easy one (${easyScore})`,
+    hardScore >= easyScore,
+    `the same five-a-side is never worth LESS on a hard afternoon (${hardScore}) than an easy one (${easyScore})`,
+  );
+  check(
+    hardScore - easyScore <= 6,
+    `…and no longer worth dramatically more either (${hardScore} vs ${easyScore})`,
+  );
+  // The part that actually matters: a great five-a-side is a great score on
+  // ANY afternoon. It used to top out at 70 on the kindest roll.
+  check(
+    Math.min(easyScore, hardScore) >= 90,
+    `a near-perfect five-a-side should score like one whatever was rolled (${easyScore}/${hardScore})`,
+  );
+  check(
+    summarise(finished, difficultyFor(hardTrial, "fiveASide")).difficulty > 0.9,
+    "…and the afternoon it was played on is still recorded, for the words on the card",
   );
 }
 

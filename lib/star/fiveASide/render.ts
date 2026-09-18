@@ -1,5 +1,8 @@
 import type { Vec2, Viewport } from "../canvasEngine";
-import { BALL_R } from "../pitch";
+import {
+  BALL_R, CX, PEN_SPOT_Y, ARC_R,
+  SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
+} from "../pitch";
 import { drawPlayerHead } from "../drawPlayerHead";
 import type { FaceStyle } from "../faceStyle";
 import type { FakeFaceStyle } from "../fakeFaceStyle";
@@ -42,6 +45,8 @@ const TC = {
   ball: "#ffffff",
   ballSeam: "rgba(20,20,20,0.55)",
   shadow: "rgba(0,0,0,0.28)",
+  skin: "#c68642",
+  boot: "#1f2937",
 };
 
 const GRASS_TILE = 96;
@@ -142,6 +147,43 @@ export function cameraFor(
   };
 }
 
+/**
+ * THE OTHER HALF OF THE SAME IDEA: make the SHOT fit the SCREEN, by containing
+ * rather than by panning.
+ *
+ * `cameraFor` above is the right camera for continuous play: a fixed zoom that
+ * follows the ball, because a tactics board that zoomed chance to chance would
+ * read as the camera being erratic. It cannot be the camera for a dead ball.
+ * A thirty-metre free kick and the goal mouth are forty metres apart; a phone
+ * is not forty metres tall in any shape, so a fixed-height camera showing full
+ * width either crops the goal or crops the ball, and a camera that panned
+ * between them during a one-second flight would be seasick.
+ *
+ * So: take the rectangle that genuinely has to be visible — the goal, the ball,
+ * and the room behind the ball the drag pulls back into — and grow it, never
+ * crop it, to the shape of the canvas. Whichever axis the screen has room to
+ * spare on simply shows more grass.
+ *
+ * Computed once per attempt, not per frame, so it holds still: the ball moves
+ * inside a shot that does not move, which is exactly how a penalty is filmed.
+ *
+ * The returned rectangle always has the canvas's own aspect, so `projectionFor`
+ * gets the same pixels-per-metre on both axes and a distance on screen means
+ * the same thing whichever way it points.
+ */
+export function cameraContaining(must: Viewport, W: number, H: number): Viewport {
+  const mw = Math.max(0.001, must.x2 - must.x1);
+  const mh = Math.max(0.001, must.y2 - must.y1);
+  // A canvas with no size yet (the first frame, before layout) has no shape to
+  // take, so keep the rectangle as asked rather than dividing by zero.
+  const aspect = W > 0 && H > 0 ? W / H : mw / mh;
+  let w = mw, h = mh;
+  if (mw / mh < aspect) w = mh * aspect;
+  else h = mw / aspect;
+  const cx = (must.x1 + must.x2) / 2, cy = (must.y1 + must.y2) / 2;
+  return { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
+}
+
 export function projectionFor(
   rules: MatchRules, W: number, H: number,
   /** What the camera is looking at. Defaults to the whole frame. */
@@ -191,6 +233,48 @@ export function drawPitch(ctx: CanvasRenderingContext2D, rules: MatchRules, p: P
     ctx.restore();
   };
   const goalMid = (rules.goal.x1 + rules.goal.x2) / 2;
+
+  // ── The attacking third of a full-size pitch ──
+  //
+  // Real IFAB markings, so the trial's striking stages get the pitch they are
+  // actually standing on rather than a small-sided one relabelled. Everything
+  // else in this function is the small-sided default and is untouched.
+  if (rules.markings === "penalty-area") {
+    wear(goalMid, pitch.y1 + 1.9, 6.2, 2.4, 0.22);
+    wear(goalMid, PEN_SPOT_Y, 3.2, 2.2, 0.16);
+
+    ctx.strokeStyle = TC.line;
+    ctx.lineWidth = Math.max(1.5, unit * 0.11);
+    // The goal line, right across the frame — the one line that is always in
+    // shot, whatever the camera is looking at.
+    ctx.beginPath();
+    ctx.moveTo(0, py(pitch.y1)); ctx.lineTo(W, py(pitch.y1));
+    ctx.stroke();
+    ctx.strokeRect(px(SIX_L), py(pitch.y1), (SIX_R - SIX_L) * unit, SIX_DEPTH * unit);
+    ctx.strokeRect(px(BOX_L), py(pitch.y1), (BOX_R - BOX_L) * unit, BOX_DEPTH * unit);
+
+    // The D: the part of the penalty arc that falls outside the box.
+    const half = Math.acos(Math.max(-1, Math.min(1, (BOX_DEPTH - PEN_SPOT_Y) / ARC_R)));
+    ctx.strokeStyle = TC.lineFaint;
+    ctx.beginPath();
+    ctx.arc(px(CX), py(PEN_SPOT_Y), ARC_R * unit, Math.PI / 2 - half, Math.PI / 2 + half);
+    ctx.stroke();
+
+    // The spot.
+    ctx.fillStyle = TC.line;
+    ctx.beginPath();
+    ctx.arc(px(CX), py(PEN_SPOT_Y), Math.max(2, unit * 0.16), 0, Math.PI * 2);
+    ctx.fill();
+
+    // The touchlines, for a free kick wide enough to see one.
+    ctx.strokeStyle = TC.lineFaint;
+    ctx.lineWidth = Math.max(1.2, unit * 0.09);
+    for (const x of [pitch.x1, pitch.x2]) {
+      ctx.beginPath(); ctx.moveTo(px(x), 0); ctx.lineTo(px(x), H); ctx.stroke();
+    }
+    return;
+  }
+
   wear(goalMid, pitch.y1 + 1.6, 4.2, 1.8, 0.2);
   wear(goalMid, pitch.y2 - 1.6, 4.2, 1.8, 0.2);
 
@@ -222,14 +306,101 @@ export function drawPitch(ctx: CanvasRenderingContext2D, rules: MatchRules, p: P
   }
 }
 
-/** The goal you are attacking, at `y = pitch.y1`, with its net. */
+/**
+ * A goal that stands up off the line: back net, two sides, the roof, the frame.
+ *
+ * Ported wholesale from the penalties stage's own painter rather than
+ * re-derived — that drawing was arrived at after the earlier hand-rolled one
+ * was reported as reading like "trash", so it is the version that has actually
+ * been looked at and approved. What changed is only where it lives: it is a
+ * function over a projection here, so the vision stage and the free kicks draw
+ * the same goal instead of each carrying a near-copy of it.
+ */
+function drawRaisedGoal(
+  ctx: CanvasRenderingContext2D, p: Projection,
+  goal: { x1: number; x2: number }, atY: number, depth: number, height: number,
+): void {
+  const { px, py, unit } = p;
+  type Pt = { px: number; py: number };
+  const hpx = height * unit;
+  const bl: Pt = { px: px(goal.x1), py: py(atY) };
+  const br: Pt = { px: px(goal.x2), py: py(atY) };
+  const tl: Pt = { px: bl.px, py: bl.py - hpx }, tr: Pt = { px: br.px, py: br.py - hpx };
+  const rl: Pt = { px: bl.px, py: py(atY - depth) }, rr: Pt = { px: br.px, py: py(atY - depth) };
+  const ul: Pt = { px: rl.px, py: rl.py - hpx }, ur: Pt = { px: rr.px, py: rr.py - hpx };
+
+  const path = (q: Pt[]) => {
+    ctx.beginPath();
+    ctx.moveTo(q[0].px, q[0].py);
+    for (let i = 1; i < q.length; i++) ctx.lineTo(q[i].px, q[i].py);
+    ctx.closePath();
+  };
+  const quad = (q: Pt[], fill: string) => { path(q); ctx.fillStyle = fill; ctx.fill(); };
+  const seg = (a: Pt, b: Pt) => { ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke(); };
+  const lerp = (a: Pt, b: Pt, f: number) => ({ px: a.px + (b.px - a.px) * f, py: a.py + (b.py - a.py) * f });
+  const netting = (q: Pt[], cols: number, rows: number, alpha: number) => {
+    ctx.save();
+    path(q); ctx.clip();
+    ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+    ctx.lineWidth = Math.max(0.7, unit * 0.028);
+    for (let i = 0; i <= cols; i++) { const f = i / cols; seg(lerp(q[0], q[1], f), lerp(q[3], q[2], f)); }
+    for (let j = 0; j <= rows; j++) { const f = j / rows; seg(lerp(q[0], q[3], f), lerp(q[1], q[2], f)); }
+    ctx.restore();
+  };
+
+  const sh = unit * 0.5;
+  quad([rl, rr, br, bl].map(q => ({ px: q.px + sh, py: q.py + sh * 0.3 })), "rgba(0,0,0,0.09)");
+  quad([bl, br, rr, rl], "rgba(20,50,32,0.05)");
+  quad([rl, rr, ur, ul], "rgba(22,52,34,0.16)");
+  netting([rl, rr, ur, ul], 34, 10, 0.42);
+  ctx.strokeStyle = "#0f1a14";
+  ctx.lineWidth = Math.max(1.8, unit * 0.15);
+  seg(rl, ul); seg(rr, ur); seg(ul, ur);
+  quad([tl, tr, ur, ul], "rgba(236,245,239,0.30)");
+  netting([tl, tr, ur, ul], 34, 5, 0.8);
+
+  ctx.lineCap = "round";
+  ctx.strokeStyle = TC.post;
+  ctx.lineWidth = Math.max(1.8, unit * 0.12);
+  seg(bl, tl); seg(br, tr);
+  ctx.lineWidth = Math.max(2, unit * 0.16);
+  seg(tl, tr);
+  ctx.lineCap = "butt";
+
+  ctx.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx.lineWidth = Math.max(1.5, unit * 0.11);
+  seg(bl, br);
+}
+
+/**
+ * The goal you are attacking, at `y = pitch.y1`, with its net.
+ *
+ * `opts.height` is the one addition: given a real crossbar height it builds the
+ * goal as five surfaces standing UP off the goal line — back net, two sides,
+ * the roof and the frame — instead of the flat rectangle a small-sided goal is
+ * drawn as. Omit it and every existing caller gets the flat goal it always got,
+ * to the pixel.
+ *
+ * Which one is right is a question about the camera, not about the goal. The
+ * five-a-side looks straight down on a whole pitch, where a two-metre goal is
+ * a couple of pixels of height and drawing it standing up would just make the
+ * net ambiguous. The trial's striking stages look at one end from behind the
+ * ball, close enough that the bar is the thing you are aiming under or over,
+ * and a flat rectangle there gives you nothing to judge height against.
+ */
 export function drawGoal(
   ctx: CanvasRenderingContext2D, rules: MatchRules, p: Projection,
-  atY: number, depth = 1.2,
+  atY: number, depth = rules.netDepth ?? 1.2,
+  opts?: { height?: number },
 ): void {
   const { px, py, unit } = p;
   const { goal } = rules;
   const behind = atY === rules.pitch.y1 ? -1 : 1;
+
+  if (opts?.height && opts.height > 0) {
+    drawRaisedGoal(ctx, p, goal, atY, depth, opts.height);
+    return;
+  }
 
   // Net.
   ctx.save();
@@ -268,6 +439,8 @@ export interface FigureLook {
   shirt: string;
   shorts: string;
   trim: string;
+  /** Skin, for arms, legs and a head with no photo behind it. */
+  skin?: string;
   /** Drawn above the head when there is a real person here. */
   label?: string;
   face?: HTMLImageElement;
@@ -276,8 +449,188 @@ export interface FigureLook {
 }
 
 /**
+ * HOW BIG A FOOTBALLER IS, AND WHY THESE NUMBERS AND NOT THE OLD ONES.
+ *
+ * Reported directly, about the trial: *"The graphics stink. Players are too
+ * small, too big. The goalie doesn't look right."* Both halves of that are one
+ * measurable fact. The old figure was `r = unit × 0.62` with a head drawn
+ * through `drawPlayerHead` at `headBaseR = 0.3r` — and `drawPlayerHead`
+ * multiplies by the Face Editor's own scale, which is **2.2** by default. So
+ * the head came out at `0.66r` radius on a figure `2.2r` tall: a head SIXTY
+ * PER CENT of the whole person. That is a bowling pin, and it is why a player
+ * read as too small (the body was a third of him) and too big (the head filled
+ * the space) at the same time.
+ *
+ * The numbers below are an anatomy rather than a set of offsets, measured in
+ * multiples of `r` from the FEET, so the proportions can be read off the file:
+ *
+ *   feet  +0.26   hip  −0.34   shoulders  −1.00   neck  −1.10
+ *
+ * and a head whose DRAWN radius, after the default 2.2× face scale, is `0.25r`
+ * — giving a head a shade over a quarter of the figure's height, which is the
+ * stylised-but-human proportion the rest of this game's figures aim at.
+ *
+ * `FIGURE_R` then sizes the whole man in real metres instead of leaving him a
+ * fraction of a pitch: at 1.05 he stands about 1.95 m tall with a head about
+ * 0.5 m across. Life-size-ish and deliberately so — the old 0.62 drew a 1.37 m
+ * man with an 0.8 m head.
+ *
+ * HEAD_ANCHOR is the one number that is not just anatomy: `drawPlayerHead`
+ * also applies the Face Editor's `offsetY` (−1.45 head-radii by default), so
+ * the point handed to it is NOT where the head lands. It is pre-compensated
+ * here so that a default-styled head sits on the shoulders. A player who has
+ * moved the slider in the Face Editor moves his head off them on purpose,
+ * which is exactly what that slider is for.
+ */
+const FIGURE_R = 1.05;
+const FEET_Y = 0.26;
+const HIP_Y = -0.34;
+const SHOULDER_Y = -1.00;
+const NECK_Y = -1.10;
+const HEAD_BASE_R = 0.114;
+const HEAD_ANCHOR = -1.184;
+
+/** How tall the drawn figure is, in units of `r` — feet to crown, at the
+ *  default face scale. Exported so a test can check the proportion rather
+ *  than trusting this comment. */
+export const FIGURE_HEIGHT_R = 1.863;
+/** …and how much of that is head, at the default face scale. */
+export const FIGURE_HEAD_R = 0.503;
+
+/**
+ * One footballer, in LOCAL coordinates with the origin between his feet and
+ * −y up the screen.
+ *
+ * Split out from `drawFigure` so the keeper can be the same man in a different
+ * pose rather than a second, differently-proportioned figure drawn by a second
+ * piece of code — which is what he was, and is most of why he "doesn't look
+ * right": the keeper had his own head size, his own body and his own arms, all
+ * slightly different from everybody else's on the same pitch.
+ */
+function paintBody(
+  ctx: CanvasRenderingContext2D, r: number, look: FigureLook,
+  faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+  pose?: {
+    /** 0 = arms by the sides, 1 = flung out wide. */
+    armSpread?: number;
+    /** −1 = arms down, 0 = level, 1 = above the head. */
+    armLift?: number;
+    /** Keeper's gloves on the ends of the arms. */
+    gloves?: boolean;
+    /** 0-1, how far he has sunk into a set position. */
+    crouch?: number;
+  },
+): void {
+  const skin = look.skin ?? TC.skin;
+  const spread = pose?.armSpread ?? 0;
+  const lift = pose?.armLift ?? -0.55;
+  const crouch = pose?.crouch ?? 0;
+  // A crouch shortens the man rather than moving him: knees bend, head drops.
+  const sink = crouch * r * 0.16;
+
+  // ── Legs ──
+  ctx.lineCap = "round";
+  ctx.strokeStyle = skin;
+  ctx.lineWidth = Math.max(1.4, r * 0.15);
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.16, HIP_Y * r + sink); ctx.lineTo(-r * 0.19, FEET_Y * r);
+  ctx.moveTo(r * 0.16, HIP_Y * r + sink); ctx.lineTo(r * 0.19, FEET_Y * r);
+  ctx.stroke();
+  // Boots, so the legs end in something rather than fading out.
+  ctx.fillStyle = TC.boot;
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(s * r * 0.19, FEET_Y * r, r * 0.11, r * 0.06, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ── Shorts ──
+  ctx.fillStyle = look.shorts;
+  const shortsTop = (HIP_Y - 0.10) * r + sink, shortsH = r * 0.3;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-r * 0.31, shortsTop, r * 0.62, shortsH, r * 0.1);
+  else ctx.rect(-r * 0.31, shortsTop, r * 0.62, shortsH);
+  ctx.fill();
+
+  // ── Shirt: shoulders genuinely wider than the waist ──
+  //
+  // Drawn as a tapered body rather than an ellipse. An ellipse has no
+  // shoulders, and shoulders are most of what makes a shape read as a person
+  // seen from behind rather than as a bean.
+  const shY = SHOULDER_Y * r + sink, waistY = (HIP_Y - 0.04) * r + sink;
+  const shW = r * 0.42, waistW = r * 0.29;
+  ctx.beginPath();
+  ctx.moveTo(-waistW, waistY);
+  ctx.lineTo(-shW, shY + r * 0.1);
+  ctx.quadraticCurveTo(-shW, shY - r * 0.04, -shW * 0.6, shY - r * 0.07);
+  ctx.lineTo(shW * 0.6, shY - r * 0.07);
+  ctx.quadraticCurveTo(shW, shY - r * 0.04, shW, shY + r * 0.1);
+  ctx.lineTo(waistW, waistY);
+  ctx.closePath();
+  ctx.fillStyle = look.shirt;
+  ctx.fill();
+  ctx.strokeStyle = look.trim;
+  ctx.lineWidth = Math.max(1, r * 0.06);
+  ctx.stroke();
+
+  // ── Arms ──
+  const armFromY = shY + r * 0.02;
+  const armLen = r * (0.42 + spread * 0.5);
+  const outX = r * 0.3 + armLen * (0.35 + spread * 0.65);
+  const handY = armFromY + armLen * (0.62 - lift * 0.85) * (1 - spread * 0.45);
+  ctx.strokeStyle = skin;
+  ctx.lineWidth = Math.max(1.2, r * 0.115);
+  ctx.beginPath();
+  for (const s of [-1, 1]) {
+    ctx.moveTo(s * shW * 0.82, armFromY);
+    ctx.lineTo(s * outX, handY);
+  }
+  ctx.stroke();
+  // A sleeve, in the shirt colour, over the top half of each arm — otherwise a
+  // pale kit and a bare arm are the same colour and the arms disappear.
+  ctx.strokeStyle = look.shirt;
+  ctx.lineWidth = Math.max(1.4, r * 0.145);
+  ctx.beginPath();
+  for (const s of [-1, 1]) {
+    ctx.moveTo(s * shW * 0.82, armFromY);
+    ctx.lineTo(s * (shW * 0.82 + (outX - shW * 0.82) * 0.42), armFromY + (handY - armFromY) * 0.42);
+  }
+  ctx.stroke();
+
+  if (pose?.gloves) {
+    ctx.fillStyle = "#f8fafc";
+    ctx.strokeStyle = look.trim;
+    ctx.lineWidth = Math.max(1, r * 0.05);
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(s * outX, handY, r * 0.14, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    }
+  }
+
+  // ── Head ──
+  //
+  // Through the one shared function every other screen draws a head with, so a
+  // face is cropped and outlined exactly as the Face Editor says. See
+  // HEAD_ANCHOR for why the y handed in is not where the head lands.
+  drawPlayerHead(
+    ctx, 0, HEAD_ANCHOR * r + sink, HEAD_BASE_R * r, r,
+    look.face, faceStyle, fakeFaceStyle,
+  );
+  // A collar, tucked just under wherever the head actually sits, so the head
+  // meets the body instead of hovering over it.
+  ctx.strokeStyle = look.trim;
+  ctx.lineWidth = Math.max(1, r * 0.07);
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.12, NECK_Y * r + sink);
+  ctx.lineTo(r * 0.12, NECK_Y * r + sink);
+  ctx.stroke();
+}
+
+/**
  * One footballer, seen from above and slightly behind — the same read as the
- * main match's figures: a shirt, shorts, two legs and a head.
+ * main match's figures: a shirt with shoulders, shorts, two legs with boots on
+ * them, arms, and a head.
  */
 export function drawFigure(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, look: FigureLook,
@@ -285,40 +638,24 @@ export function drawFigure(
 ): void {
   const { px, py, unit } = p;
   const x = px(at.x), y = py(at.y);
-  const r = Math.max(6, unit * 0.62);
+  const r = Math.max(7, unit * FIGURE_R);
 
   // Shadow first, so everybody stands ON the pitch rather than floating.
   ctx.fillStyle = TC.shadow;
   ctx.beginPath();
-  ctx.ellipse(x, y + r * 0.18, r * 0.62, r * 0.24, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + r * FEET_Y, r * 0.34, r * 0.13, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Legs.
-  ctx.strokeStyle = look.shorts;
-  ctx.lineWidth = Math.max(2, r * 0.22);
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(x - r * 0.2, y - r * 0.05); ctx.lineTo(x - r * 0.24, y + r * 0.2);
-  ctx.moveTo(x + r * 0.2, y - r * 0.05); ctx.lineTo(x + r * 0.24, y + r * 0.2);
-  ctx.stroke();
+  ctx.save();
+  ctx.translate(x, y);
+  paintBody(ctx, r, look, faceStyle, fakeFaceStyle);
+  ctx.restore();
 
-  // Shirt.
-  ctx.fillStyle = look.shirt;
-  ctx.beginPath();
-  ctx.ellipse(x, y - r * 0.28, r * 0.42, r * 0.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = look.trim;
-  ctx.lineWidth = Math.max(1, r * 0.08);
-  ctx.stroke();
-
-  // Head — through the one shared function every other screen draws a head
-  // with, so a face is cropped and outlined exactly as the Face Editor says.
-  drawPlayerHead(ctx, x, y - r * 0.92, r * 0.3, r, look.face, faceStyle, fakeFaceStyle);
-
+  const crown = y - r * (FIGURE_HEIGHT_R - FEET_Y);
   if (look.star) {
     ctx.fillStyle = "#fde68a";
     ctx.beginPath();
-    const sr = r * 0.26, sy = y - r * 1.5;
+    const sr = r * 0.22, sy = crown - sr * 1.3;
     for (let i = 0; i < 10; i++) {
       const a = -Math.PI / 2 + (i * Math.PI) / 5;
       const rad = i % 2 === 0 ? sr : sr * 0.45;
@@ -330,15 +667,68 @@ export function drawFigure(
   }
 
   if (look.label) {
-    ctx.font = `700 ${Math.max(8, r * 0.36)}px system-ui, sans-serif`;
+    ctx.font = `700 ${Math.max(8, r * 0.3)}px system-ui, sans-serif`;
     ctx.textAlign = "center";
-    ctx.lineWidth = Math.max(2, r * 0.12);
+    ctx.lineWidth = Math.max(2, r * 0.1);
     ctx.strokeStyle = "rgba(0,0,0,0.65)";
-    ctx.strokeText(look.label, x, y - r * (look.star ? 1.95 : 1.42));
+    const ly = crown - r * (look.star ? 0.78 : 0.16);
+    ctx.strokeText(look.label, x, ly);
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(look.label, x, y - r * (look.star ? 1.95 : 1.42));
+    ctx.fillText(look.label, x, ly);
     ctx.textAlign = "start";
   }
+}
+
+/**
+ * THE GOALKEEPER.
+ *
+ * The same man as everybody else — same anatomy, same head, same shared
+ * `drawPlayerHead` — in a keeper's pose: set and low with his hands out while
+ * he waits, thrown across and full stretch once he goes.
+ *
+ * He had his own figure before, hand-drawn separately in the penalties stage,
+ * with his own head size and his own arms. That is why he read as a different
+ * species standing in the same goal, and it is exactly the sort of thing three
+ * renderers for one game produces.
+ */
+export interface KeeperPose {
+  /** −1 (his right, your left) … 1, how far across he is thrown. */
+  dive: number;
+  /** 0-1, how far into the save he is — 0 is set on his line. */
+  lunge: number;
+}
+
+export function drawKeeper(
+  ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, look: FigureLook,
+  pose: KeeperPose, faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+): void {
+  const { px, py, unit } = p;
+  const x = px(at.x), y = py(at.y);
+  const r = Math.max(7, unit * FIGURE_R);
+  const dive = Math.max(-1, Math.min(1, pose.dive));
+  const lunge = Math.max(0, Math.min(1, pose.lunge));
+  // He leans into the dive and, at full stretch, is nearly horizontal — the
+  // one thing that makes a save read as a save from directly above.
+  const lean = dive * (0.25 + lunge * 0.95);
+
+  ctx.fillStyle = TC.shadow;
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * FEET_Y, r * (0.34 + lunge * 0.5), r * 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(lean);
+  paintBody(ctx, r, look, faceStyle, fakeFaceStyle, {
+    // Set: hands out and a little low. Diving: flung out over his head.
+    // Set, he has his hands out at chest height. Going, they are over his head
+    // and at full stretch — the shape you actually judge a save by.
+    armSpread: 0.5 + lunge * 0.5,
+    armLift: 0.15 + lunge * 0.9,
+    gloves: true,
+    crouch: 0.55 - lunge * 0.55,
+  });
+  ctx.restore();
 }
 
 export function drawBall(
@@ -360,10 +750,14 @@ export function drawBall(
   ctx.beginPath();
   ctx.arc(x, y - lift, r, 0, Math.PI * 2);
   ctx.fill();
+  // One thin seam, not a thick one. A short fat arc across the lower half of a
+  // five-pixel ball does not read as a panel line, it reads as a mouth — which
+  // is exactly what it looked like on the trial's penalty spot once the camera
+  // stopped drawing the ball as three pixels.
   ctx.strokeStyle = TC.ballSeam;
-  ctx.lineWidth = Math.max(0.6, r * 0.22);
+  ctx.lineWidth = Math.max(0.5, r * 0.13);
   ctx.beginPath();
-  ctx.arc(x - r * 0.18, y - lift - r * 0.18, r * 0.42, 0.4, 2.6);
+  ctx.arc(x - r * 0.1, y - lift - r * 0.1, r * 0.58, 0.55, 2.35);
   ctx.stroke();
 }
 

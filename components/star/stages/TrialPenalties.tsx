@@ -6,13 +6,17 @@ import {
   type Ball, type Outcome, type Scenario, type Viewport,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
-import {
-  CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y, SIX_L, SIX_R, SIX_DEPTH,
-  BOX_L, BOX_R, BOX_DEPTH, GOAL_H, ARC_R,
-} from "@/lib/star/pitch";
+import { CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y } from "@/lib/star/pitch";
 import { REPS, penaltySetup, strikeQuality, meanQuality } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import ContactBall from "@/components/star/ContactBall";
+import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
+import {
+  cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawKeeper,
+  drawBall,
+} from "@/lib/star/fiveASide/render";
+import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
+import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 
 /**
  * THE PENALTIES STAGE — and, in the second half of this file, the striking
@@ -43,46 +47,26 @@ import ContactBall from "@/components/star/ContactBall";
  * PENALTY_LEAN_M.
  */
 
-// ── The look, ported from TrialPenalty.tsx ─────────────────────────────────
+// ── What the picture is drawn WITH ─────────────────────────────────────────
 //
-// The single-penalty trial screen already established what a trial's pitch
-// looks like (real grass colour with a grain, IFAB lines, the five-surface
-// goal, a pose-driven keeper) and it was arrived at by being told the earlier
-// hand-rolled version read as "trash". Rather than re-derive any of that, the
-// same drawing is ported here, minus the parts that were specific to the
-// one-penalty scene (the four decorative players standing outside the D) and
-// plus the one thing it never needed: a free-kick wall that jumps.
-const SKIN = "#c68642";
-const TC = {
-  pitch: "#1f9006",
-  line: "rgba(255,255,250,0.85)",
-  lineFaint: "rgba(255,255,250,0.5)",
-  gk: "#fbbf24",
-  gkRim: "#92400e",
-  goldSoft: "#fde68a",
-};
-const GRASS_TILE = 96;
+// Nothing, any more. This file used to carry three hundred lines of its own
+// grass, its own IFAB lines, its own five-surface goal, its own wall figures
+// and its own hand-drawn keeper — a second art style, with the vision stage
+// carrying a third, so a new player met three different-looking games inside
+// the first six minutes of his career.
+//
+// All of it now goes through `lib/star/fiveASide/render.ts`, the cleanest
+// renderer in the opening: plain functions over a context, heads drawn through
+// the shared `drawPlayerHead` so real photos and the Face Editor's own
+// settings simply work. The geometry it draws from is `ELEVEN_A_SIDE_ATTACK`
+// (rules.ts) — a real penalty area, a real 7.32 m goal, a real 2.44 m bar —
+// so the striking stages get a full-size goal out of the same functions the
+// five-a-side gets a small one out of, rather than a second copy of them.
 
-export function makeGrassTile(): HTMLCanvasElement | null {
-  if (typeof document === "undefined") return null;
-  const c = document.createElement("canvas");
-  c.width = GRASS_TILE; c.height = GRASS_TILE;
-  const g = c.getContext("2d");
-  if (!g) return null;
-  const img = g.createImageData(GRASS_TILE, GRASS_TILE);
-  let seed = 0x2f6f2b;
-  for (let i = 0; i < img.data.length; i += 4) {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    const n = ((seed >>> 16) & 0xff) / 255;
-    const light = n > 0.5;
-    img.data[i] = light ? 255 : 0;
-    img.data[i + 1] = light ? 255 : 0;
-    img.data[i + 2] = light ? 255 : 0;
-    img.data[i + 3] = Math.round(Math.abs(n - 0.5) * 2 * 16);
-  }
-  g.putImageData(img, 0, 0);
-  return c;
-}
+/** The two men on the edge of the D, and a free kick's wall: not your team,
+ *  not the opposition you can name — just bodies in the way. */
+const WALL_KIT = { shirt: "#374151", shorts: "#1f2937", trim: "#e5e7eb" };
+const KEEPER_KIT = { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" };
 
 /**
  * The same aim feel as a real match, and for the same reason TrialPenalty has
@@ -113,133 +97,75 @@ type Phase = "aim" | "contact" | "flight" | "result";
 // ── The picture ────────────────────────────────────────────────────────────
 
 /**
+ * WHAT HAS TO BE IN SHOT, and why the box is not the frame.
+ *
+ * The scenario's own `viewport` is the WORLD, not the camera — the engine
+ * calls a ball more than a metre outside it out of play — so it has to stay
+ * the tall 5:8 rectangle the engine built. What it must not also be is the
+ * shape of the canvas. It was, and measured on a phone the canvas ran 108 px
+ * off the bottom of the screen: the first thing a new career shows you, and a
+ * third of it below the fold, with the bottom half of what WAS on screen empty
+ * grass nobody ever kicks a ball into.
+ *
+ * So the drawn camera is computed from what genuinely has to be visible — the
+ * goal with its net, the ball, and the room behind the ball the drag pulls
+ * back into — and `cameraContaining` grows that to the canvas's own shape.
+ * Nothing is cropped, the empty third of the pitch is simply not filmed, and
+ * a penalty is framed like a penalty instead of like a map.
+ */
+const CAMERA_SIDE_PAD = 6;
+const CAMERA_BEHIND_BALL = 7;
+
+export function strikeCamera(
+  sc: Scenario, ball: { x: number; y: number }, W: number, H: number,
+): Viewport {
+  // The men in the way count. A penalty's two defenders stand on the edge of
+  // the D, BEHIND the spot, and a frame that stopped at the drag room drew
+  // both of them sliced off at the bottom edge — seen in a screenshot after
+  // the first version of this shipped, not reasoned about.
+  let x1 = Math.min(POST_L, ball.x), x2 = Math.max(POST_R, ball.x);
+  let y2 = ball.y + CAMERA_BEHIND_BALL;
+  for (const d of sc.defenders) {
+    x1 = Math.min(x1, d.x); x2 = Math.max(x2, d.x);
+    y2 = Math.max(y2, d.y + 2.5);
+  }
+  return cameraContaining({
+    x1: x1 - CAMERA_SIDE_PAD, x2: x2 + CAMERA_SIDE_PAD,
+    y1: -NET_DEPTH - 1.5, y2,
+  }, W, H);
+}
+
+/**
  * Draw one striking scene: the pitch, the goal, the wall (if there is one),
  * the keeper, the ball and — while a drag is live — the aim arrow and power
  * meter. Exported because the free-kick stage draws the identical scene.
+ *
+ * Every mark on the grass and every figure on it now comes from
+ * `fiveASide/render.ts`. What is left here is the two things that belong to
+ * this screen rather than to football: the aim arrow and the power meter.
  */
 export function paintTrialScene(
   ctx: CanvasRenderingContext2D,
   sc: Scenario,
   opts: {
     W: number; H: number;
+    /** What the camera is looking at — see `strikeCamera`. */
+    camera: Viewport;
     ball: Ball | null;
     /** Where the thumb is now, in pitch metres — null when not dragging. */
     drag: { x: number; y: number } | null;
     power: number;
-    ballImg: HTMLImageElement | null;
-    grass: HTMLCanvasElement | null;
+    faceStyle: FaceStyle;
+    fakeFaceStyle: FakeFaceStyle;
   },
 ) {
-  const { W, H, ball, drag, power, ballImg, grass } = opts;
-  const vp = sc.viewport;
-  const sx = W / (vp.x2 - vp.x1), sy = H / (vp.y2 - vp.y1);
-  const px = (x: number) => (x - vp.x1) * sx;
-  const py = (y: number) => (y - vp.y1) * sy;
-  const unit = Math.min(sx, sy);
+  const { W, H, camera, ball, drag, power, faceStyle, fakeFaceStyle } = opts;
+  const rules = ELEVEN_A_SIDE_ATTACK;
+  const p = projectionFor(rules, W, H, camera);
+  const { px, py, unit } = p;
 
-  // ── Grass ──
-  ctx.fillStyle = TC.pitch;
-  ctx.fillRect(0, 0, W, H);
-  if (grass) {
-    const pat = ctx.createPattern(grass, "repeat");
-    if (pat) {
-      ctx.save();
-      ctx.translate(px(0) % GRASS_TILE, py(0) % GRASS_TILE);
-      ctx.fillStyle = pat;
-      ctx.fillRect(-GRASS_TILE, -GRASS_TILE, W + GRASS_TILE * 2, H + GRASS_TILE * 2);
-      ctx.restore();
-    }
-  }
-  {
-    const wear = (x: number, y: number, rx: number, ry: number, alpha: number) => {
-      const cx2 = px(x), cy2 = py(y);
-      const g = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, Math.max(rx, ry) * unit);
-      g.addColorStop(0, `rgba(120,132,26,${alpha})`);
-      g.addColorStop(1, "rgba(120,132,26,0)");
-      ctx.save();
-      ctx.translate(cx2, cy2);
-      ctx.scale(1, ry / rx);
-      ctx.translate(-cx2, -cy2);
-      ctx.fillStyle = g;
-      ctx.fillRect(cx2 - rx * unit * 1.2, cy2 - rx * unit * 1.2, rx * unit * 2.4, rx * unit * 2.4);
-      ctx.restore();
-    };
-    wear(CX, 1.9, 6.2, 2.4, 0.22);
-    wear(CX, PEN_SPOT_Y, 3.2, 2.2, 0.16);
-  }
-
-  ctx.strokeStyle = TC.line;
-  ctx.lineWidth = Math.max(1.5, unit * 0.12);
-  const line = (x1: number, y1: number, x2: number, y2: number) => {
-    ctx.beginPath(); ctx.moveTo(px(x1), py(y1)); ctx.lineTo(px(x2), py(y2)); ctx.stroke();
-  };
-  line(vp.x1, 0, vp.x2, 0);
-  ctx.strokeRect(px(SIX_L), py(0), (SIX_R - SIX_L) * sx, SIX_DEPTH * sy);
-  ctx.strokeRect(px(BOX_L), py(0), (BOX_R - BOX_L) * sx, BOX_DEPTH * sy);
-
-  // The D — real IFAB geometry, the arc clipped to the part beyond the box.
-  ctx.strokeStyle = TC.lineFaint;
-  ctx.beginPath();
-  const halfD = Math.acos(clamp((BOX_DEPTH - PEN_SPOT_Y) / ARC_R, -1, 1));
-  ctx.arc(px(CX), py(PEN_SPOT_Y), ARC_R * unit, Math.PI / 2 - halfD, Math.PI / 2 + halfD);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(px(CX), py(PEN_SPOT_Y), Math.max(2, unit * 0.16), 0, Math.PI * 2);
-  ctx.fillStyle = TC.line;
-  ctx.fill();
-
-  // ── The goal: five surfaces, back to front ──
-  {
-    const hpx = GOAL_H * sy;
-    const bl = { px: px(POST_L), py: py(0) }, br2 = { px: px(POST_R), py: py(0) };
-    const tl = { px: bl.px, py: bl.py - hpx }, tr = { px: br2.px, py: br2.py - hpx };
-    const rl = { px: px(POST_L), py: py(-NET_DEPTH) }, rr = { px: px(POST_R), py: py(-NET_DEPTH) };
-    const ul = { px: rl.px, py: rl.py - hpx }, ur = { px: rr.px, py: rr.py - hpx };
-
-    type Pt = { px: number; py: number };
-    const path = (q: Pt[]) => {
-      ctx.beginPath();
-      ctx.moveTo(q[0].px, q[0].py);
-      for (let i = 1; i < q.length; i++) ctx.lineTo(q[i].px, q[i].py);
-      ctx.closePath();
-    };
-    const quad = (q: Pt[], fill: string) => { path(q); ctx.fillStyle = fill; ctx.fill(); };
-    const seg = (a2: Pt, b2: Pt) => { ctx.beginPath(); ctx.moveTo(a2.px, a2.py); ctx.lineTo(b2.px, b2.py); ctx.stroke(); };
-    const lerp = (a2: Pt, b2: Pt, f: number) => ({ px: a2.px + (b2.px - a2.px) * f, py: a2.py + (b2.py - a2.py) * f });
-    const netting = (q: Pt[], cols: number, rows: number, alpha: number) => {
-      ctx.save();
-      path(q); ctx.clip();
-      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-      ctx.lineWidth = Math.max(0.7, unit * 0.028);
-      for (let i = 0; i <= cols; i++) { const f = i / cols; seg(lerp(q[0], q[1], f), lerp(q[3], q[2], f)); }
-      for (let j = 0; j <= rows; j++) { const f = j / rows; seg(lerp(q[0], q[3], f), lerp(q[1], q[2], f)); }
-      ctx.restore();
-    };
-
-    const sh = unit * 0.5;
-    quad([rl, rr, br2, bl].map(q => ({ px: q.px + sh, py: q.py + sh * 0.3 })), "rgba(0,0,0,0.09)");
-    quad([bl, br2, rr, rl], "rgba(20,50,32,0.05)");
-    quad([rl, rr, ur, ul], "rgba(22,52,34,0.16)");
-    netting([rl, rr, ur, ul], 34, 10, 0.42);
-    ctx.strokeStyle = "#0f1a14";
-    ctx.lineWidth = Math.max(1.8, unit * 0.15);
-    seg(rl, ul); seg(rr, ur); seg(ul, ur);
-    quad([tl, tr, ur, ul], "rgba(236,245,239,0.30)");
-    netting([tl, tr, ur, ul], 34, 5, 0.8);
-
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#f6faf7";
-    ctx.lineWidth = Math.max(1.8, unit * 0.12);
-    seg(bl, tl); seg(br2, tr);
-    ctx.lineWidth = Math.max(2, unit * 0.16);
-    seg(tl, tr);
-    ctx.lineCap = "butt";
-
-    ctx.strokeStyle = "rgba(255,255,255,0.9)";
-    ctx.lineWidth = Math.max(1.5, unit * 0.11);
-    line(POST_L, 0, POST_R, 0);
-  }
+  drawPitch(ctx, rules, p);
+  drawGoal(ctx, rules, p, 0, NET_DEPTH, { height: rules.crossbar });
 
   // ── The men in the way ──
   //
@@ -250,169 +176,52 @@ export function paintTrialScene(
   // read as a real option rather than a coincidence.
   for (const d of sc.defenders) {
     const lift = Math.max(0, d.z ?? 0);
-    const dpx = px(d.x), dpy = py(d.y);
-    const r = unit * 0.62;
-    ctx.save();
-    ctx.globalAlpha = 0.9;
-    ctx.beginPath();
-    ctx.ellipse(dpx, dpy + r * 0.9, r * 0.55, r * 0.18, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.fill();
-    // Same height-to-screen factor the ball uses below, so a man a metre off
-    // the ground and a ball a metre off the ground agree with each other.
-    ctx.translate(0, -lift * sy * 0.55);
-    ctx.strokeStyle = SKIN;
-    ctx.lineWidth = Math.max(1, r * 0.16);
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(dpx - r * 0.14, dpy + r * 0.1);
-    ctx.lineTo(dpx - r * 0.18, dpy + r * 0.82);
-    ctx.moveTo(dpx + r * 0.14, dpy + r * 0.1);
-    ctx.lineTo(dpx + r * 0.18, dpy + r * 0.82);
-    ctx.stroke();
-    ctx.fillStyle = "#374151";
-    ctx.beginPath();
-    ctx.roundRect?.(dpx - r * 0.42, dpy - r * 0.55, r * 0.84, r * 0.7, r * 0.16);
-    if (!ctx.roundRect) ctx.rect(dpx - r * 0.42, dpy - r * 0.55, r * 0.84, r * 0.7);
-    ctx.fill();
-    ctx.strokeStyle = "#e5e7eb";
-    ctx.lineWidth = Math.max(1, r * 0.08);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(dpx, dpy - r * 0.78, r * 0.26, 0, Math.PI * 2);
-    ctx.fillStyle = SKIN;
-    ctx.fill();
-    ctx.restore();
+    if (lift > 0.01) {
+      // The shadow is left on the grass at his feet by drawing him at his real
+      // spot first and then again, lifted, over the top.
+      ctx.save();
+      // Same height-to-screen factor the ball uses, so a man a metre off the
+      // ground and a ball a metre off the ground agree with each other.
+      ctx.translate(0, -lift * unit * 0.55);
+      drawFigure(ctx, p, d, WALL_KIT, faceStyle, fakeFaceStyle);
+      ctx.restore();
+    } else {
+      drawFigure(ctx, p, d, WALL_KIT, faceStyle, fakeFaceStyle);
+    }
   }
 
-  // ── The keeper — the same pose-driven figure a real match draws ──
+  // ── The keeper ──
+  //
+  // The same man as everybody else on the pitch, in a keeper's pose — see
+  // `drawKeeper`. He used to be drawn here, by hand, with his own head size
+  // and his own arms, which is most of why he read as not quite right.
   {
     const kk = sc.keeper;
-    const kpx = px(kk.x), kpy = py(kk.y);
-    const lunge = kk.saveLunge > 0 ? kk.saveLunge : 0;
-    const KIND = {
-      catch:     { lean: 0.15, armUp:  0.25, spread: 0.45, reachK: 0.55, crouch: 0.10 },
-      central:   { lean: 0.05, armUp: -0.10, spread: 1.05, reachK: 0.80, crouch: 0.22 },
-      low:       { lean: 1.15, armUp: -0.85, spread: 0.95, reachK: 1.35, crouch: 0.30 },
-      high:      { lean: 0.55, armUp:  1.00, spread: 0.80, reachK: 1.30, crouch: -0.35 },
-      fingertip: { lean: 1.30, armUp:  0.35, spread: 0.70, reachK: 1.70, crouch: 0.05 },
-    } as const;
-    const kind = kk.saveKind ?? null;
-    const K = kind ? KIND[kind] : null;
-
-    const breathe = Math.sin(kk.idleT * 2.1) * 0.02;
-    const weight = Math.sin(kk.idleT * 0.9) * 0.05;
-
-    const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
-    const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-    const KR = unit * 1.15 * 0.82;
-    const lean = sign * diveN * (K ? K.lean : 0.9);
-    const cx2 = kpx + sign * KR * lunge * (K ? K.reachK : 1.0) * 0.3;
-    const cyOff = KR * ((K ? K.crouch : 0) * lunge + breathe);
-    const gloveR = KR * 0.24;
-
-    ctx.save();
-    ctx.globalAlpha = 0.92;
-
-    ctx.beginPath();
-    ctx.ellipse(cx2, kpy, KR * (0.7 + diveN * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.fill();
-
-    ctx.translate(cx2 + KR * weight * (1 - lunge), kpy - KR * 0.8 + cyOff);
-    ctx.rotate(lean);
-    ctx.lineCap = "round";
-
-    ctx.strokeStyle = SKIN;
-    ctx.lineWidth = Math.max(1.2, KR * 0.28);
-    ctx.beginPath();
-    ctx.moveTo(-KR * 0.22, KR * 0.16);
-    ctx.lineTo(-KR * 0.30 - diveN * KR * 0.3, KR * 0.76);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(KR * 0.22, KR * 0.16);
-    ctx.lineTo(KR * 0.30 + diveN * KR * 0.3, KR * 0.76);
-    ctx.stroke();
-
-    ctx.fillStyle = TC.gkRim;
-    ctx.beginPath();
-    ctx.roundRect?.(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34, KR * 0.12);
-    if (!ctx.roundRect) ctx.rect(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34);
-    ctx.fill();
-
-    const spread = K ? K.spread : 1;
-    const armUp = K ? K.armUp : 0;
-    const reach = KR * (0.62 + diveN * 0.85) * (0.55 + spread * 0.45);
-    const armY = -KR * 0.28 - armUp * diveN * KR * 0.85;
-    ctx.strokeStyle = SKIN;
-    ctx.lineWidth = Math.max(1.1, KR * 0.24);
-    const gloves: { x: number; y: number }[] = [];
-    for (const s2 of [-1, 1]) {
-      const leading = sign === 0 || Math.sign(s2) === sign;
-      const ex2 = s2 * reach * (leading ? 1 : 0.62);
-      const ey2 = armY - (leading ? diveN * KR * 0.2 : 0);
-      ctx.beginPath();
-      ctx.moveTo(s2 * KR * 0.32, -KR * 0.28);
-      ctx.lineTo(ex2, ey2);
-      ctx.stroke();
-      gloves.push({ x: ex2, y: ey2 });
-    }
-
-    ctx.fillStyle = TC.gk;
-    ctx.beginPath();
-    ctx.roundRect?.(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58, KR * 0.15);
-    if (!ctx.roundRect) ctx.rect(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58);
-    ctx.fill();
-    ctx.lineWidth = Math.max(1, KR * 0.11);
-    ctx.strokeStyle = TC.gkRim;
-    ctx.stroke();
-
-    ctx.fillStyle = "#f8fafc";
-    ctx.strokeStyle = TC.gkRim;
-    ctx.lineWidth = Math.max(1, KR * 0.09);
-    for (const g of gloves) {
-      ctx.beginPath();
-      ctx.arc(g.x, g.y, gloveR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    ctx.beginPath();
-    ctx.arc(0, -KR * 0.70, KR * 0.28, 0, Math.PI * 2);
-    ctx.fillStyle = SKIN;
-    ctx.fill();
-    ctx.lineWidth = Math.max(1, KR * 0.09);
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
-    ctx.stroke();
-
-    ctx.restore();
+    const lunge = kk.saveLunge > 0 ? Math.min(1, kk.saveLunge) : 0;
+    const sign = kk.saveLunge > 0
+      ? (kk.saveDir || 1)
+      : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
+    const reach = clamp(Math.abs(kk.dive) / 1.6, 0, 1);
+    drawKeeper(
+      ctx, p, { x: kk.x, y: kk.y }, KEEPER_KIT,
+      { dive: sign * Math.max(reach, lunge), lunge },
+      faceStyle, fakeFaceStyle,
+    );
   }
 
   // ── The ball ──
-  const bx = ball ? px(ball.pos.x) : px(sc.ball.x);
-  const by = ball ? py(ball.pos.y) : py(sc.ball.y);
-  const lift = ball ? Math.max(0, ball.z) : 0;
-  const br = Math.max(4.5, unit * 0.5 * (1 + Math.min(lift, 8) * 0.055));
-  ctx.fillStyle = "rgba(0,0,0,0.32)";
-  ctx.beginPath();
-  ctx.ellipse(bx, by, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);
-  ctx.fill();
-  const drawnY = by - lift * sy * 0.55;
-  if (ballImg && ballImg.complete && ballImg.naturalWidth > 0) {
-    ctx.drawImage(ballImg, bx - br, drawnY - br, br * 2, br * 2);
-  } else {
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(bx, drawnY, br, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.45)";
-    ctx.lineWidth = Math.max(1, br * 0.16);
-    ctx.stroke();
-  }
+  drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0);
 
   // ── The aim arrow and power meter ──
+  //
+  // The two things on this canvas that are not football. Kept here rather than
+  // pushed into the shared renderer: a five-a-side aims with `drawAim`, and
+  // this stage's arrow is a fatter, gradient-filled one built to be readable
+  // under a thumb on a dead ball.
   if (drag) {
     const dx = sc.ball.x - drag.x, dy = sc.ball.y - drag.y;
     const len = Math.hypot(dx, dy) || 1;
-    const shown = power * (vp.y2 - vp.y1) * 0.11;
+    const shown = power * (camera.y2 - camera.y1) * 0.11;
     const ax = px(sc.ball.x), ay = py(sc.ball.y);
     const bx2 = px(sc.ball.x + (dx / len) * shown);
     const by2 = py(sc.ball.y + (dy / len) * shown);
@@ -461,10 +270,11 @@ export function paintTrialScene(
     ctx.strokeStyle = "rgba(251,191,36,0.5)";
     ctx.lineWidth = 1;
     ctx.strokeRect(meterX, meterTop, meterW, meterH);
-    ctx.fillStyle = TC.goldSoft;
+    ctx.fillStyle = "#fde68a";
     ctx.font = `bold ${Math.round(W * 0.05)}px sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText(`${Math.round(power * 100)}%`, meterX + meterW / 2, meterTop - W * 0.022);
+    ctx.textAlign = "start";
   }
 }
 
@@ -527,8 +337,12 @@ export function StrikeStage({
   const scoresRef = useRef<number[]>([]);
   const repRef = useRef(0);
   const doneRef = useRef(false);
-  const ballImgRef = useRef<HTMLImageElement | null>(null);
-  const grassRef = useRef<HTMLCanvasElement | null>(null);
+  // Read once, not per frame: the Face Editor's settings are a localStorage
+  // read, and every figure on the pitch draws its head through them.
+  const camRef = useRef<Viewport | null>(null);
+  const camKeyRef = useRef("");
+  const faceStyleRef = useRef<FaceStyle>(loadFaceStyle());
+  const fakeFaceStyleRef = useRef<FakeFaceStyle>(loadFakeFaceStyle());
 
   const [rep, setRep] = useState(0);
   const [phase, setPhaseState] = useState<Phase>("aim");
@@ -536,12 +350,6 @@ export function StrikeStage({
   const [resultText, setResultText] = useState("");
 
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
-
-  useEffect(() => {
-    const img = new Image();
-    img.src = "/star/ball.png";
-    ballImgRef.current = img;
-  }, []);
 
   /** Full power is reached at the same drag distance a real match uses for a
    *  striker with these legs. */
@@ -566,6 +374,7 @@ export function StrikeStage({
     dragRef.current = null;
     draggingRef.current = false;
     repRef.current = rep;
+    camKeyRef.current = "";
     setAim(null);
     setResultText("");
     setPhase("aim");
@@ -573,11 +382,17 @@ export function StrikeStage({
   }, [rep, seed]);
 
   // ── The thumb ──────────────────────────────────────────────────────────
+  // ── A thumb lands where it LOOKS like it landed ──
+  //
+  // Through the CAMERA, not the scenario's viewport. Those used to be the same
+  // rectangle and are not any more, and using the wrong one would put the drag
+  // somewhere other than under the finger — the aim would be wrong by whatever
+  // the camera had cropped, silently, on every kick.
   const pitchFromPointer = (e: React.PointerEvent) => {
     const c = canvasRef.current;
     const sc = scRef.current;
     if (!c || !sc) return { x: CX, y: PEN_SPOT_Y };
-    const vp = sc.viewport;
+    const vp = camRef.current ?? sc.viewport;
     const r = c.getBoundingClientRect();
     const fx = (e.clientX - r.left) / r.width;
     const fy = (e.clientY - r.top) / r.height;
@@ -612,8 +427,9 @@ export function StrikeStage({
     const sc = scRef.current;
     dragRef.current = null;
     if (!d || !sc) return;
-    if (screenPull(d, sc.ball, sc.viewport) < MIN_PULL) return;
-    const power = powerFrom(d, sc.ball, sc.viewport);
+    const vp = camRef.current ?? sc.viewport;
+    if (screenPull(d, sc.ball, vp) < MIN_PULL) return;
+    const power = powerFrom(d, sc.ball, vp);
     if (power < 0.05) return;
     setAim({ dir: { x: sc.ball.x - d.x, y: sc.ball.y - d.y }, power });
     setPhase("contact");
@@ -777,16 +593,27 @@ export function StrikeStage({
     const ctx = c.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (!grassRef.current) grassRef.current = makeGrassTile();
+
+    // The camera is fixed for the whole attempt — framed off where the ball
+    // STARTS, never off where it is now, so the shot holds still while the ball
+    // moves inside it instead of chasing it toward goal. Recomputed only when
+    // the canvas changes size or a new rep sets the ball down somewhere else.
+    const want = `${cssW}x${cssH}:${sc.ball.x.toFixed(2)},${sc.ball.y.toFixed(2)}`;
+    if (camKeyRef.current !== want) {
+      camKeyRef.current = want;
+      camRef.current = strikeCamera(sc, sc.ball, cssW, cssH);
+    }
+    const camera = camRef.current ?? strikeCamera(sc, sc.ball, cssW, cssH);
 
     const dragging = phaseRef.current === "aim" && draggingRef.current ? dragRef.current : null;
     paintTrialScene(ctx, sc, {
       W: cssW, H: cssH,
+      camera,
       ball: ballRef.current,
       drag: dragging,
-      power: dragging ? powerFrom(dragging, sc.ball, sc.viewport) : 0,
-      ballImg: ballImgRef.current,
-      grass: grassRef.current,
+      power: dragging ? powerFrom(dragging, sc.ball, camera) : 0,
+      faceStyle: faceStyleRef.current,
+      fakeFaceStyle: fakeFaceStyleRef.current,
     });
   };
 
@@ -802,10 +629,16 @@ export function StrikeStage({
         <div className="mb-1.5 text-[11px] font-bold text-white/55">{subtitle(rep)}</div>
       )}
 
+      {/* ── A phone-shaped box, not a frame-shaped one ──
+          5:8 with no height cap ran 108 px off the bottom of an iPhone 13 —
+          measured, not guessed, and the first screen of a new career. The
+          same fix the five-a-side already made: keep the box a comfortable
+          shape, cap it against the viewport, and let the camera decide what
+          of the pitch is in it. `strikeCamera` shows whatever shape this
+          ends up being, so the cap can bite without cropping anything. */}
       <div
         ref={wrapRef}
-        className="relative w-full overflow-hidden rounded-xl border border-white/15"
-        style={{ aspectRatio: "5 / 8" }}
+        className="relative mx-auto aspect-[4/5] max-h-[52vh] w-full overflow-hidden rounded-xl border border-white/15"
       >
         <canvas
           ref={canvasRef}
@@ -919,12 +752,25 @@ export default function TrialPenalties({
       hint="Drag back from the ball to aim, and pull further for more power."
       subtitle={rep => {
         const s = penaltySetup(trial, rep);
-        // What the picture already shows, said out loud: he is drawn off
-        // centre, so this is a reading of the scene rather than a hint
-        // that gives anything away.
-        return s.keeperLean > 0.25 ? "He has gone early to your right."
-          : s.keeperLean < -0.25 ? "He has gone early to your left."
-          : "He has not shown you a thing.";
+        // ── It never names the side ──
+        //
+        // It used to: "He has gone early to your right." Between that line and
+        // a keeper drawn visibly off centre, the stage was not a penalty at
+        // all — it was a caption telling you which way to shoot, five times in
+        // a row. And because the lean GREW with difficulty, the harder the day
+        // the louder the caption; a hard trial was the easy one.
+        //
+        // What is left says how much there is to SEE, never what it is. That
+        // is real information a taker has — you can tell a keeper who has
+        // committed from one who has not — and it tells you which skill this
+        // kick is asking for, without answering it for you. The lean itself
+        // now shrinks as the trial hardens (PENALTY_TELL_EASY/HARD,
+        // trialStages.ts), so at the top of the ladder there genuinely is
+        // almost nothing to read and this line says so.
+        const tell = Math.abs(s.keeperLean);
+        return tell > 0.55 ? "He's committed early. Read him."
+          : tell > 0.22 ? "He's shading one way. Look hard."
+          : "He hasn't shown you a thing.";
       }}
       onDone={onDone}
     />
