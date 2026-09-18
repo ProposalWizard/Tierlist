@@ -60,6 +60,9 @@ export function clubExpectation(career: CareerState): ClubExpectation {
       : division === "premier" ? 0.35
       : division === "championship" ? 0.6
       : division === "pool" ? 0.8
+      : division === "league_one" ? 0.85
+      : division === "league_two" ? 0.9
+      : division === "national_league" || division === "national_league_pool" ? 0.95
       : 0.5; // an "Other" club with no tracked division at all
   })();
 

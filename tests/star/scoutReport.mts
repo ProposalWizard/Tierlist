@@ -301,6 +301,81 @@ function squadFor(club: string, offset: number): LeagueSquad {
     "…but with no squad ever fetched for them, the player cards degrade honestly rather than crashing or inventing one");
 }
 
+// ── A cup fixture gets a Cup Run box, not a League Table one ────────────────
+//
+// A league position tells you nothing about a knockout draw, and the
+// opponent might not even be in your own division (the FA Cup's Round of 64
+// can draw a League Two club into a Premier League career). See
+// ScoutReport.cupRun's own doc comment in lib/star/scoutReport.ts.
+{
+  const c = base();
+  const opponent = c.league.find(t => t.name !== "Arsenal")!.name;
+  const other = c.league.find(t => t.name !== "Arsenal" && t.name !== opponent)!.name;
+
+  const fixture: Fixture = {
+    week: 5, opponent, home: true, played: false,
+    competition: "FA Cup", kind: "cup", round: "Round of 32",
+  };
+
+  // No cup state at all yet (a save from before cupState existed, or this
+  // competition simply hasn't been seeded) — degrades to an honest empty
+  // Cup Run, never a crash, and never falls back to the League Table box.
+  {
+    const r = scoutReportFor(c, opponent, 5, fixture);
+    check(r.table === null, "a cup fixture never shows a league table position");
+    check(r.cupRun !== null, "a cup fixture always has a cupRun array, even if empty");
+    check(r.cupRun?.length === 0, "…empty when there's no real round history yet");
+  }
+
+  // A real round history: the opponent beat a third club 3-1 in the Round
+  // of 64, and needed penalties to beat someone else in the Round of 32
+  // (the tie the player themselves is now about to play — the CURRENT round
+  // is never included in the opponent's own "history").
+  const withHistory: CareerState = {
+    ...c,
+    cupState: [
+      {
+        competition: "FA Cup",
+        rounds: [
+          { name: "Round of 64", ties: [{ home: opponent, away: other, hs: 3, as: 1 }] },
+          { name: "Round of 32", ties: [{ home: "Arsenal", away: opponent }] }, // current, unplayed
+        ],
+      },
+    ],
+  };
+  const r2 = scoutReportFor(withHistory, opponent, 5, fixture);
+  check(r2.cupRun !== null && r2.cupRun.length === 1, `exactly one past round is found (${r2.cupRun?.length})`);
+  check(r2.cupRun?.[0].round === "Round of 64", "the right round name");
+  check(r2.cupRun?.[0].opponent === other, "the right opponent from that round");
+  check(r2.cupRun?.[0].result === "W", "the opponent won it");
+  check(r2.cupRun?.[0].scoreFor === 3 && r2.cupRun?.[0].scoreAgainst === 1, "the real scoreline, from the opponent's own side of it");
+  check(r2.cupRun?.[0].onPenalties === false, "not on penalties");
+
+  // A penalty-shootout win in an earlier round is recorded as such.
+  const withPens: CareerState = {
+    ...c,
+    cupState: [
+      {
+        competition: "FA Cup",
+        rounds: [
+          { name: "Round of 64", ties: [{ home: other, away: opponent, hs: 1, as: 1, pens: { home: 3, away: 4 } }] },
+          { name: "Round of 32", ties: [{ home: "Arsenal", away: opponent }] },
+        ],
+      },
+    ],
+  };
+  const r3 = scoutReportFor(withPens, opponent, 5, fixture);
+  check(r3.cupRun?.[0].result === "W", "the away side (the opponent) won it on penalties");
+  check(r3.cupRun?.[0].onPenalties === true, "…and it's flagged as a penalty win");
+  check(r3.cupRun?.[0].scoreFor === 1 && r3.cupRun?.[0].scoreAgainst === 1, "the 90-minute scoreline is still the real 1-1");
+
+  // A LEAGUE fixture is completely untouched by any of this.
+  const leagueFixture: Fixture = { week: 5, opponent, home: true, played: false, kind: "league" };
+  const rLeague = scoutReportFor(withHistory, opponent, 5, leagueFixture);
+  check(rLeague.cupRun === null, "a league fixture never gets a Cup Run box");
+  check(rLeague.table !== null, "…the League Table box keeps working exactly as before");
+}
+
 // ── Grounds ──────────────────────────────────────────────────────────────
 {
   check(groundFor("Crystal Palace").name === "Selhurst Park", "a real club gets its real ground");

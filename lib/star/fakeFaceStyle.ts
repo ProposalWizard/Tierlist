@@ -36,11 +36,22 @@ export interface FakeFaceStyle {
   crop: CropView;
 }
 
+// The values reported directly, exact, off this editor's own sliders:
+// 2.00x size, -0.06 left/right, -1.19 up/down. Crop has no numeric readout
+// in this editor either — zoom is a best-effort reading off the reported
+// screenshot, not a confirmed exact number. 0.75 specifically isn't
+// arbitrary: at these images' own measured ~1091x1442 shape (see
+// CROP_ZOOM_RANGE's own doc), that's the exact zoom at which the full
+// height fits the 256px viewport with zero vertical crop — matching the
+// framing shown (full face, real headroom, nothing cut off top or bottom).
+// x/y are computed (the same clampOffset math the editor itself runs) to be
+// genuinely centred at that zoom, not carried over from the old {0,0} —
+// {0,0} would only centre it at zoom exactly 1.
 export const DEFAULT_FAKE_FACE_STYLE: FakeFaceStyle = {
-  scale: 1.4,
-  offsetX: 0,
-  offsetY: 0,
-  crop: { zoom: 1, x: 0, y: 0 },
+  scale: 2.0,
+  offsetX: -0.06,
+  offsetY: -1.19,
+  crop: { zoom: 0.75, x: 32, y: 1.1 },
 };
 
 const KEY = "star-fake-face-style";

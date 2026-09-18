@@ -69,18 +69,29 @@ export const CLUB_TEMPLATES: Template[] = [
     graphic: "hatTrick", hashtag: true, weight: 3,
   },
   {
-    id: "club-goal-tag", archetype: "club", tags: ["goal"], requires: ["minute"],
+    // `subject: "you"` on all three of these — see templates/index.ts's doc
+    // comment. `club-goal-plain` in particular was a real, live bug: it
+    // requires `goals` and excludes `matches`, which TEAMMATE_HAUL (detect/
+    // creation.ts) also satisfies (it carries `goals` and never `matches`) —
+    // so a team-mate's brace could render "{player} — {goals}. Take a bow,
+    // number {number}." using YOUR OWN name and squad number from `base()`,
+    // congratulating you for a feat that was actually a team-mate's.
+    // `club-goal-tag`/`club-goal-assist` were not reachable by an existing
+    // team-mate event (no team-mate event carries `minute`, and there is no
+    // team-mate assist detector), but the gate is added defensively so a
+    // future one can't reopen the same hole silently.
+    id: "club-goal-tag", archetype: "club", tags: ["goal"], subject: "you", requires: ["minute"],
     body: "{minute}' — {player|caps}!!",
     hashtag: true, weight: 2,
     threadBody: "{minute}' — {player|caps}! {thread.goals} in {thread.matches} now.",
   },
   {
-    id: "club-goal-plain", archetype: "club", tags: ["goal"], requires: ["goals"], excludes: ["matches"],
+    id: "club-goal-plain", archetype: "club", tags: ["goal"], subject: "you", requires: ["goals"], excludes: ["matches"],
     body: "{player} — {goals}. Take a bow, number {number}.",
     hashtag: true,
   },
   {
-    id: "club-goal-assist", archetype: "club", tags: ["assist"], requires: ["assists"], excludes: ["matches"],
+    id: "club-goal-assist", archetype: "club", tags: ["assist"], subject: "you", requires: ["assists"], excludes: ["matches"],
     body: "{assists} assist{assists|plural} for {player} today. Everything goes through him.",
     hashtag: true,
   },

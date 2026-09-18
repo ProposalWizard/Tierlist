@@ -32,9 +32,22 @@ export const CHAMPIONSHIP_CLUBS: readonly string[] = [
 ];
 
 /**
- * Not yet in the Championship. Five clubs, three of whom get drawn up at
- * each promotion cycle — the same shape as the three clubs relegated FROM
- * the Championship join next time round. See lib/star/promotion.ts.
+ * Not yet in the Championship. Five clubs — kept here unchanged (see the note
+ * below) even though all five are now ALSO the five League One overlap clubs
+ * (they carry real squad data, so they became League One's five "already
+ * exists in the game" members — see LEAGUE_ONE_CLUBS just below).
+ *
+ * Why this list isn't emptied even though its old job (feeding the
+ * Championship<->pool rotation in promotion.ts) is gone, replaced by
+ * Championship<->League One directly: `lib/star/cups.ts`'s `belowField`
+ * indexes into this array with `i % PROMOTION_POOL_CLUBS.length` to fill
+ * out a cup's below-tier field — emptying it would divide by zero there.
+ * Left exactly as-is on purpose, still real, still shown in the Lineups
+ * picker's "Other" tab — DIVISION_BY_CLUB below tags these five clubs
+ * "league_one" (LEAGUE_ONE_CLUBS is spread after this list, so its tag
+ * wins), the same "last spread wins, and that's fine" pattern this file's
+ * own OTHER_CLUBS/CHAMPIONS_LEAGUE_CLUBS notes already document for
+ * Arsenal-in-two-lists.
  *
  * Also carries thirteen standalone clubs by explicit request — not part of
  * any promotion/relegation cycle, just clubs with their own real squad,
@@ -42,6 +55,73 @@ export const CHAMPIONSHIP_CLUBS: readonly string[] = [
  */
 export const PROMOTION_POOL_CLUBS: readonly string[] = [
   "Luton Town", "Huddersfield Town", "Leicester City", "Reading FC", "Wigan Athletic",
+];
+
+/**
+ * LEAGUE ONE, LEAGUE TWO, THE NATIONAL LEAGUE — AND THE HOLDING POOL BELOW IT.
+ *
+ * Extends the ladder three tiers further down than the Championship, given
+ * directly with real club names and real kit/badge colours (see kits.ts).
+ * Five League One clubs already existed in this game with real squad/kit
+ * data as PROMOTION_POOL_CLUBS's five members — given directly, they MOVE
+ * division (their real data is untouched; only which tier they're tagged as
+ * changes, via DIVISION_BY_CLUB below). Every other club across these three
+ * tiers plus the four-club National League pool is genuinely new to this
+ * game and has no real squad on file — `leagueSquads.ts`'s `generatedSquad`
+ * fallback fires for every one of them, targeted at a real average rating
+ * per tier (63 / 58 / 55 / 55) rather than the flat ~73 every other
+ * generated club defaults to — see `AVG_RATING_BY_DIVISION` there.
+ *
+ * None of these three tiers is ever a division a career actually PLAYS a
+ * season in — `CareerDivision` (calendar.ts) is still exactly
+ * "premier" | "championship", by deliberate scope decision (see this
+ * session's own report): threading a third playable division through
+ * fixtures/cups/transfer-window/every screen that assumes those two is a
+ * much larger, separate project. These three tiers are real, richly
+ * detailed hats exactly the way the Championship's old five-club
+ * PROMOTION_POOL_CLUBS always was — not simulated with a live table, but
+ * real clubs, real kits, real generated squads, and a real weighted
+ * promotion/relegation flow every season (lib/star/promotion.ts).
+ */
+export const LEAGUE_ONE_CLUBS: readonly string[] = [
+  "AFC Wimbledon", "Barnsley", "Blackpool", "Bradford City", "Bromley",
+  "Burton Albion", "Cambridge United", "Doncaster Rovers", "Huddersfield Town",
+  "Leicester City", "Leyton Orient", "Luton Town", "Mansfield Town",
+  "Milton Keynes Dons", "Notts County", "Oxford United", "Peterborough United",
+  "Plymouth Argyle", "Reading FC", "Sheffield Wednesday", "Stevenage",
+  "Stockport County", "Wigan Athletic", "Wycombe Wanderers",
+];
+
+export const LEAGUE_TWO_CLUBS: readonly string[] = [
+  "Accrington Stanley", "Barnet", "Bristol Rovers", "Cheltenham Town",
+  "Chesterfield", "Colchester United", "Crawley Town", "Crewe Alexandra",
+  "Exeter City", "Fleetwood Town", "Gillingham", "Grimsby Town",
+  "Newport County", "Northampton Town", "Oldham Athletic", "Port Vale",
+  "Rochdale", "Rotherham United", "Salford City", "Shrewsbury Town",
+  "Swindon Town", "Tranmere Rovers", "Walsall", "York City",
+];
+
+export const NATIONAL_LEAGUE_CLUBS: readonly string[] = [
+  "AFC Fylde", "Aldershot Town", "Altrincham", "Barrow", "Boreham Wood",
+  "Boston United", "Carlisle United", "Eastleigh", "FC Halifax Town",
+  "Forest Green Rovers", "Gateshead", "Harrogate Town", "Hartlepool United",
+  "Hornchurch", "Kidderminster Harriers", "Scunthorpe United", "Solihull Moors",
+  "Southend United", "Sutton United", "Tamworth", "Wealdstone", "Woking",
+  "Worthing", "Yeovil Town",
+];
+
+/**
+ * Below the National League. Not a division — nobody plays a season in it,
+ * same idea as PROMOTION_POOL_CLUBS below the Championship. Exactly four
+ * clubs, and (per lib/star/promotion.ts) ALL four rotate out every season —
+ * the National League relegates four (nowhere for them to go but here, since
+ * this game has no National League North/South) and this pool sends
+ * (weighted-drawn) replacements up to fill every one of those four places,
+ * so the pool turns over completely rather than partially the way the
+ * Championship's five-club pool only ever loses three of five.
+ */
+export const NATIONAL_LEAGUE_POOL_CLUBS: readonly string[] = [
+  "Chorley", "Scarborough Athletic", "Dorking Wanderers", "Torquay United",
 ];
 
 /**
@@ -242,9 +322,46 @@ export const CLUB_SHORT_NAMES: Record<string, string> = {
   "Huddersfield Town": "Huddersfield",
   "Wigan Athletic": "Wigan",
   "Reading FC": "Reading",
+
+  // ── League One / League Two / National League ──
+  "AFC Wimbledon": "Wimbledon", "Barnsley": "Barnsley", "Blackpool": "Blackpool",
+  "Bradford City": "Bradford", "Bromley": "Bromley", "Burton Albion": "Burton",
+  "Cambridge United": "Cambridge", "Doncaster Rovers": "Doncaster",
+  "Leyton Orient": "Orient", "Mansfield Town": "Mansfield",
+  "Milton Keynes Dons": "MK Dons", "Notts County": "Notts County",
+  "Oxford United": "Oxford", "Peterborough United": "Peterborough",
+  "Plymouth Argyle": "Plymouth", "Sheffield Wednesday": "Sheff Wed",
+  "Stevenage": "Stevenage", "Stockport County": "Stockport",
+  "Wycombe Wanderers": "Wycombe",
+  "Accrington Stanley": "Accrington", "Barnet": "Barnet",
+  "Bristol Rovers": "Bristol Rovers", "Cheltenham Town": "Cheltenham",
+  "Chesterfield": "Chesterfield", "Colchester United": "Colchester",
+  "Crawley Town": "Crawley", "Crewe Alexandra": "Crewe",
+  "Exeter City": "Exeter", "Fleetwood Town": "Fleetwood",
+  "Gillingham": "Gillingham", "Grimsby Town": "Grimsby",
+  "Newport County": "Newport", "Northampton Town": "Northampton",
+  "Oldham Athletic": "Oldham", "Port Vale": "Port Vale",
+  "Rochdale": "Rochdale", "Rotherham United": "Rotherham",
+  "Salford City": "Salford", "Shrewsbury Town": "Shrewsbury",
+  "Swindon Town": "Swindon", "Tranmere Rovers": "Tranmere",
+  "Walsall": "Walsall", "York City": "York",
+  "AFC Fylde": "Fylde", "Aldershot Town": "Aldershot", "Altrincham": "Altrincham",
+  "Barrow": "Barrow", "Boreham Wood": "Boreham Wood", "Boston United": "Boston",
+  "Carlisle United": "Carlisle", "Eastleigh": "Eastleigh",
+  "FC Halifax Town": "Halifax", "Forest Green Rovers": "Forest Green",
+  "Gateshead": "Gateshead", "Harrogate Town": "Harrogate",
+  "Hartlepool United": "Hartlepool", "Hornchurch": "Hornchurch",
+  "Kidderminster Harriers": "Kidderminster", "Scunthorpe United": "Scunthorpe",
+  "Solihull Moors": "Solihull", "Southend United": "Southend",
+  "Sutton United": "Sutton", "Tamworth": "Tamworth", "Wealdstone": "Wealdstone",
+  "Woking": "Woking", "Worthing": "Worthing", "Yeovil Town": "Yeovil",
+  "Chorley": "Chorley", "Scarborough Athletic": "Scarborough",
+  "Dorking Wanderers": "Dorking", "Torquay United": "Torquay",
 };
 
-export type Division = "premier" | "championship" | "pool" | "champions" | "europa";
+export type Division =
+  | "premier" | "championship" | "pool" | "champions" | "europa"
+  | "league_one" | "league_two" | "national_league" | "national_league_pool";
 
 const DIVISION_BY_CLUB = new Map<string, Division>([
   ...PREMIER_LEAGUE_CLUBS.map(c => [c, "premier"] as const),
@@ -253,6 +370,14 @@ const DIVISION_BY_CLUB = new Map<string, Division>([
   ...OTHER_CLUBS.map(c => [c, "pool"] as const),
   ...CHAMPIONS_LEAGUE_CLUBS.map(c => [c, "champions"] as const),
   ...EUROPA_LEAGUE_CLUBS.map(c => [c, "europa"] as const),
+  // Spread after PROMOTION_POOL_CLUBS on purpose — five of these clubs are
+  // also in that list (see its own note above); this tag wins for them,
+  // same "last spread wins" pattern the Champions/Europa lists already rely
+  // on for a club like Arsenal.
+  ...LEAGUE_ONE_CLUBS.map(c => [c, "league_one"] as const),
+  ...LEAGUE_TWO_CLUBS.map(c => [c, "league_two"] as const),
+  ...NATIONAL_LEAGUE_CLUBS.map(c => [c, "national_league"] as const),
+  ...NATIONAL_LEAGUE_POOL_CLUBS.map(c => [c, "national_league_pool"] as const),
 ]);
 
 export function divisionOf(club: string): Division | null {
@@ -291,6 +416,14 @@ export function externalClubsFor(domesticClubs: string[]): string[] {
   const world = new Set([
     ...CHAMPIONS_LEAGUE_CLUBS, ...EUROPA_LEAGUE_CLUBS, ...OTHER_CLUBS, ...PROMOTION_POOL_CLUBS,
     ...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS,
+    // The FA Cup's Round of 64 (cups.ts's faCupField) now genuinely draws
+    // from League One, League Two, AND the National League — not just the
+    // tier immediately below, the way the League Cup's belowField still
+    // does. All three need their squads fetchable here too, or an FA Cup
+    // opponent from League Two/the National League hits the exact
+    // "Unable to scout opponent's team" bug this list's own history
+    // already records for a Championship club once.
+    ...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS, ...NATIONAL_LEAGUE_CLUBS,
   ]);
   return Array.from(world).filter(c => !domestic.has(c));
 }

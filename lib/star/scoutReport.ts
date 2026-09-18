@@ -1,7 +1,8 @@
-import type { CareerState, LeagueSquad, LeaguePlayer, LeagueResult } from "./types";
+import type { CareerState, LeagueSquad, LeaguePlayer, LeagueResult, Fixture } from "./types";
 import { sortLeague } from "./season";
 import { sortEuro } from "./euro";
 import { groundFor, crowdFor } from "./stadiums";
+import { tieWinner } from "./cups";
 
 /**
  * THE SCOUT REPORT.
@@ -79,12 +80,36 @@ export interface TableRow {
   isOpponent: boolean;
 }
 
+/** One round the opponent has already played in THIS SAME cup competition
+ *  this season — see `cupRunFor`. */
+export interface CupRunEntry {
+  round: string;
+  opponent: string;
+  result: "W" | "L";
+  scoreFor: number;
+  scoreAgainst: number;
+  onPenalties: boolean;
+}
+
 export interface ScoutReport {
   club: string;
   ground: { name: string; crowd: number };
   /** Null when the opponent isn't in your own division's table — a cup
    *  shock against an outside club, mainly. */
   table: { position: number; of: number } | null;
+  /**
+   * The opponent's own results so far in THIS SAME cup competition this
+   * season — set (a real array, possibly empty) ONLY for a cup fixture
+   * (`fixture.kind === "cup"`); `null` for a league fixture, where a Cup
+   * Run box makes no sense and the League Table box keeps its old job
+   * instead. A league position tells you nothing about a cup draw, and an
+   * opponent from outside your own division (the FA Cup's Round of 64 can
+   * pit a Premier League career against a League Two club) has no league
+   * table row for you at all — this replaces that box for a cup tie. Oldest
+   * round first, same "oldest first" convention `recentResults` already
+   * uses — the UI reverses it for display, same as Recent Form.
+   */
+  cupRun: CupRunEntry[] | null;
   topScorer: ScoutPlayer | null;
   topAssister: ScoutPlayer | null;
   bestPlayer: ScoutPlayer | null;
@@ -213,10 +238,61 @@ function playerCards(squad: LeagueSquad | undefined, opponent: string, results: 
   };
 }
 
-export function scoutReportFor(career: CareerState, opponent: string, week: number): ScoutReport {
+/**
+ * The opponent's own run in this cup competition so far this season —
+ * pulled straight from the real `CupState.rounds` history the cup engine
+ * already tracks for every club in the draw, not just you. Every round
+ * before the one currently being drawn has a settled `hs`/`as` for every
+ * tie in it (only YOUR tie in the current round can still be unplayed), so
+ * filtering to settled ties naturally excludes the fixture about to be
+ * played without needing to special-case it.
+ */
+function cupRunFor(career: CareerState, opponent: string, competition: string): CupRunEntry[] {
+  const state = (career.cupState ?? []).find(s => s.competition === competition);
+  if (!state) return [];
+  const entries: CupRunEntry[] = [];
+  for (const round of state.rounds) {
+    for (const tie of round.ties) {
+      if (tie.hs === undefined || tie.as === undefined) continue;
+      if (tie.home !== opponent && tie.away !== opponent) continue;
+      const home = tie.home === opponent;
+      entries.push({
+        round: round.name,
+        opponent: home ? tie.away : tie.home,
+        result: tieWinner(tie) === opponent ? "W" : "L",
+        scoreFor: home ? tie.hs : tie.as,
+        scoreAgainst: home ? tie.as : tie.hs,
+        onPenalties: tie.pens !== undefined,
+      });
+    }
+  }
+  return entries;
+}
+
+export function scoutReportFor(career: CareerState, opponent: string, week: number, fixture?: Fixture): ScoutReport {
   const squad = squadFor(career, opponent);
   const g = groundFor(opponent);
   const ground = { name: g.name, crowd: crowdFor(opponent, week) };
+
+  // A cup fixture (League Cup/FA Cup — the only two backed by a real
+  // CupState) gets a Cup Run box instead of a League Table one — a league
+  // position tells you nothing about a knockout draw, and the opponent may
+  // not even be in your own division at all (the FA Cup's Round of 64 can
+  // draw a League Two club into a Premier League career). See
+  // ScoutReport.cupRun's own doc comment.
+  if (fixture?.kind === "cup" && fixture.competition) {
+    const cupRun = cupRunFor(career, opponent, fixture.competition);
+    return {
+      club: opponent,
+      ground,
+      table: null,
+      cupRun,
+      ...playerCards(squad, opponent, career.results ?? []),
+      recentResults: recentResultsFor(opponent, career.results ?? []),
+      tableSnippet: [],
+      headToHead: career.headToHead?.[opponent] ?? null,
+    };
+  }
 
   // A Champions/Europa/Conference League opponent — never in the domestic
   // league table, but the campaign's own standings and fixture history
@@ -235,6 +311,7 @@ export function scoutReportFor(career: CareerState, opponent: string, week: numb
       club: opponent,
       ground,
       table: idx >= 0 ? { position: idx + 1, of: euroTable.length } : null,
+      cupRun: null,
       ...playerCards(squad, opponent, results),
       recentResults: recentResultsFor(opponent, results),
       tableSnippet: tableSnippetFor(euroTable, idx),
@@ -251,6 +328,7 @@ export function scoutReportFor(career: CareerState, opponent: string, week: numb
     club: opponent,
     ground,
     table: team ? { position: idx + 1, of: table.length } : null,
+    cupRun: null,
     ...playerCards(squad, opponent, results),
     recentResults: recentResultsFor(opponent, results),
     tableSnippet: tableSnippetFor(table, idx),

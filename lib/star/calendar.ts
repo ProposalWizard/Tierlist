@@ -58,7 +58,15 @@ export const LEAGUE_CUP_SLOTS: CupSlot[] = [
   { round: "Final", week: POST_SEASON(1) },
 ];
 
+/**
+ * The FA Cup is now sixty-four clubs (lib/star/cups.ts's FA_CUP_FIELD) — one
+ * extra round played before the Round of 32. Week 2 is genuinely free: not
+ * used by LEAGUE_CUP_SLOTS, the rest of FA_CUP_SLOTS, or any
+ * EURO_LEAGUE_PHASE_WEEKS/EURO_KO_SLOTS_WITH_R32 entry — so every existing
+ * round below keeps its own week number unchanged.
+ */
 export const FA_CUP_SLOTS: CupSlot[] = [
+  { round: "Round of 64", week: 2 },
   { round: "Round of 32", week: 5 },
   { round: "Round of 16", week: 12 },
   { round: "Quarter-Final", week: 22 },
@@ -427,7 +435,16 @@ export const CHAMPIONSHIP_LEAGUE_CUP_SLOTS: CupSlot[] = [
   { round: "Final", week: CHAMPIONSHIP_POST_SEASON(1) },
 ];
 
+/**
+ * Round 2 (weekend 2 — see the CHAMPIONSHIP_ROUNDS table) is genuinely free:
+ * not used by CHAMPIONSHIP_LEAGUE_CUP_SLOTS (round 4, weekend 3) or the rest
+ * of CHAMPIONSHIP_FA_CUP_SLOTS (round 6, weekend 5) — and it lands on the
+ * SAME real weekend as the Premier League's own new week-2 Round of 64
+ * slot (FA_CUP_SLOTS above), matching this file's own existing convention
+ * that every round mirrors the same real weekend in both divisions.
+ */
 export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
+  { round: "Round of 64", week: 2 },        // weekend 2
   { round: "Round of 32", week: 6 },        // weekend 5
   { round: "Round of 16", week: 15 },       // weekend 12
   { round: "Quarter-Final", week: 27 },     // weekend 22

@@ -626,6 +626,146 @@ const RUN_ROW = (rows: { label: string; value: string }[]) =>
   check([...win, ...loss, ...draw].every(b => !NAME.test(b)), "none of these ever say your own name");
 }
 
+// ── Regression: a team-mate's goal is never personally addressed to you ────
+//
+// Reported directly, with a real example: subbed on for the final 15-20
+// minutes, 0 goals, 0 assists, a 5.4 rating — and the post-match reactions
+// still read "{short} you absolute beauty" / "im actually shaking. what a
+// player", because TEAMMATE_GOAL/TEAMMATE_HAUL (detect/creation.ts) tag a
+// team-mate's goal `["goal"]` and spread `...base(r)` — which always sets
+// `player`/`short`/`number`/`rating` to YOUR OWN identity, never the
+// scorer's — so several templates that matched on that bare tag, with no
+// check for WHOSE goal it was, addressed the team-mate's goal as if it were
+// yours. Fixed with `Template.subject` (templates/index.ts): a template can
+// now require `event.subject.kind === "you"`, which a team-mate-subject
+// event can never satisfy. This reproduces the exact fact shapes
+// TEAMMATE_GOAL and TEAMMATE_HAUL actually emit and asserts none of the
+// vulnerable templates can be chosen for them, across every archetype that
+// had one.
+{
+  // Mirrors TEAMMATE_GOAL's real facts: `...base(r)` (your own identity) plus
+  // `scorer` — no `minute`, no `goals`.
+  const teammateGoal: FootballEvent = {
+    id: "teammate-goal", subject: { kind: "teammate", name: "Danny Reeves" },
+    tags: ["goal"], baseImportance: 26, window: "instant",
+    facts: {
+      player: "Michael Sancho", short: "Sancho", club: "Arsenal", opponent: "Everton",
+      scorer: "Danny Reeves", us: 1, them: 0, score: "1-0", result: "win",
+      rating: "5.4", number: 9, seasonTotal: 4,
+    },
+  };
+  // Mirrors TEAMMATE_HAUL's real facts: the same, plus `goals` (his own
+  // count for the match) — still no `matches`, which is what let it slip
+  // past templates gated on "goals present, matches absent".
+  const teammateHaul: FootballEvent = {
+    ...teammateGoal, id: "teammate-haul", baseImportance: 38,
+    facts: { ...teammateGoal.facts, goals: 2 },
+  };
+
+  const rng = mulberry32(9021);
+  const sample = (event: FootballEvent, archetype: Archetype, n = 300) => {
+    const seen = new Set<string>();
+    for (let i = 0; i < n; i++) {
+      const t = chooseTemplate(event, archetype, i % 2 === 0 ? "celebrate" : "hype", emptyMemory(), rng, false);
+      if (t) seen.add(t.id);
+    }
+    return seen;
+  };
+
+  const fanIds = sample(teammateGoal, "fan");
+  check(!fanIds.has("fan-goal") && !fanIds.has("fan-goal-2"),
+    `a team-mate's goal never matches a "you"-scoped fan template (${[...fanIds].join(", ")})`);
+
+  const selfIds = sample(teammateGoal, "teammate");
+  check(!selfIds.has("self-goal") && !selfIds.has("self-goal-win"),
+    `your own account never claims a team-mate's goal as its own (${[...selfIds].join(", ")})`);
+
+  const tabIds = sample(teammateGoal, "tabloid");
+  check(!tabIds.has("tb-goal"), `the tabloid never shouts YOUR name for a team-mate's goal (${[...tabIds].join(", ")})`);
+
+  const agIds = sample(teammateGoal, "aggregator");
+  check(!agIds.has("ag-goal"), `the aggregator never captions a team-mate's goal with YOUR name (${[...agIds].join(", ")})`);
+
+  const bsIds = sample(teammateHaul, "broadsheet");
+  check(!bsIds.has("bs-goal"), `the broadsheet never credits YOU for a team-mate's brace (${[...bsIds].join(", ")})`);
+
+  const stIds = sample(teammateHaul, "stats");
+  check(!stIds.has("st-goals"), `the stat page never credits YOU for a team-mate's brace (${[...stIds].join(", ")})`);
+
+  const clubIds = sample(teammateHaul, "club");
+  check(!clubIds.has("club-goal-plain"),
+    `the club account never takes a bow on YOUR behalf for a team-mate's brace (${[...clubIds].join(", ")})`);
+}
+
+// ── The new mocking detector: real hate comments for a real bad game ───────
+//
+// Requested directly, verbatim: "how is that relevant to the game unless
+// they were making fun of me — that's actually pretty interesting, I like
+// the fact that you could have hate comments... zero goals, zero assists,
+// 5.4 rating — because that is, in effect, more making fun of the
+// situation." New `poor-showing` detector (detect/personal.ts's
+// POOR_SHOWING) + the `fan-mock-flop*` templates (templates/social.ts).
+{
+  let c = newCareer(71);
+  const fixture = c.fixtures.find(f => !f.played && f.week === c.week) ?? c.fixtures.find(f => !f.played)!;
+
+  const badStats: MatchStats = {
+    chances: 4, goals: 0, assists: 0, passes: 10, rating: 5.4, starMan: false,
+    bossChange: 0, teamChange: 0, fansChange: -1, wage: 1, goalBonus: 0,
+    sponsorPay: 0, totalCash: 1, homeScore: 1, awayScore: 0,
+    goalEvents: [{ minute: 60, scorer: "Danny Reeves", isUserGoal: false, how: "cutback", distance: 8 }],
+    minutes: 18,
+  };
+  const { career: badAfter } = creditMatchResult(c, fixture, badStats);
+  const badRecord = buildMatchRecord(c, badAfter, fixture, badStats);
+  const badEvents = detectMatch(badRecord, emptyMemory());
+  const poor = badEvents.find(e => e.id === "poor-showing");
+  check(!!poor, `a genuine 0-goal/0-assist/5.4-rated cameo raises poor-showing (${badEvents.map(e => e.id).join(", ")})`);
+  if (poor) {
+    check(poor.subject.kind === "you", "…about you specifically, not the match in general");
+    check(Number(poor.facts.goalsN) === 0 && Number(poor.facts.assists) === 0,
+      `…carrying the real 0/0 numbers (${poor.facts.goalsN}/${poor.facts.assists})`);
+    check(poor.facts.rating === "5.4", `…and the real rating (${poor.facts.rating})`);
+  }
+
+  const goodStats: MatchStats = {
+    chances: 4, goals: 1, assists: 1, passes: 20, rating: 7.8, starMan: true,
+    bossChange: 0, teamChange: 0, fansChange: 1, wage: 1, goalBonus: 1,
+    sponsorPay: 0, totalCash: 2, homeScore: 2, awayScore: 0, goalEvents: [], minutes: 90,
+  };
+  const { career: goodAfter } = creditMatchResult(c, fixture, goodStats);
+  const goodRecord = buildMatchRecord(c, goodAfter, fixture, goodStats);
+  check(!detectMatch(goodRecord, emptyMemory()).some(e => e.id === "poor-showing"),
+    "a good personal game never raises poor-showing");
+
+  const dnpStats: MatchStats = {
+    chances: 0, goals: 0, assists: 0, passes: 0, rating: 0, starMan: false,
+    bossChange: 0, teamChange: 0, fansChange: 0, wage: 0, goalBonus: 0,
+    sponsorPay: 0, totalCash: 0, homeScore: 1, awayScore: 1, goalEvents: [], minutes: 0,
+  };
+  const { career: dnpAfter } = creditMatchResult(c, fixture, dnpStats);
+  const dnpRecord = buildMatchRecord(c, dnpAfter, fixture, dnpStats);
+  check(!detectMatch(dnpRecord, emptyMemory()).some(e => e.id === "poor-showing"),
+    "a match you did not actually appear in (0 minutes) never raises poor-showing");
+
+  // End to end, through the real pipeline: does an actual rendered post ever
+  // carry the real numbers into the mocking sentence? Statistical, like the
+  // rest of this file — the mocking template competes for a limited budget
+  // against every other account's take on the same bad afternoon, so it is
+  // not guaranteed on any one match.
+  let found: string | null = null;
+  for (let seed = 1; seed <= 60 && !found; seed++) {
+    let career = newCareer(200 + seed);
+    career = playOne(career, 9100 + seed, {
+      goals: 0, assists: 0, rating: 5.2 + (seed % 5) * 0.1, minutes: 15 + (seed % 10),
+      homeScore: 1, awayScore: 1, chances: 3,
+    });
+    const hit = mediaOf(career).posts.find(p => /\d goals, \d assists, [\d.]+ rating/.test(p.text));
+    if (hit) found = hit.text;
+  }
+  check(!!found, `the real pipeline eventually renders the mocking template with real numbers (none of 60 seeds hit)`);
+}
+
 // ── Trending always shows a real platform's worth of tags, not just what ───
 // ── the cycle happened to produce — reported directly: a quiet cycle only
 // ever real-trended two labels, and a real feed never looks that empty.

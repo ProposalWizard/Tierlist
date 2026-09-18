@@ -1,4 +1,4 @@
-import type { Archetype, Frame, FootballEvent, GraphicKind, StoryMemory, Tag } from "../types";
+import type { Archetype, Frame, FootballEvent, GraphicKind, StoryMemory, Subject, Tag } from "../types";
 import { pickWeighted } from "../grammar";
 import { CLUB_TEMPLATES } from "./club";
 import { PRESS_TEMPLATES } from "./press";
@@ -28,6 +28,29 @@ export interface Template {
   events?: string[];
   /** …or anything carrying one of these tags. */
   tags?: Tag[];
+  /**
+   * Restrict this template to events about a specific KIND of subject —
+   * "you", "club", "teammate", "opponent", "league", "rival", "manager".
+   *
+   * A tag or event id says WHAT happened; it never said WHO it happened to.
+   * `TEAMMATE_GOAL`/`TEAMMATE_HAUL` (detect/creation.ts) tag a team-mate's
+   * goal `["goal"]` — the exact same tag a template written to address YOU
+   * personally ("{short} you absolute beauty", tags: ["goal"]) also matches
+   * on. Nothing before this field ever checked whose event it actually was,
+   * so a personal-congratulation template could — and did — fire on a
+   * team-mate's goal, rendering the player's own name into a sentence
+   * celebrating a goal he didn't score. Reported directly, with a real
+   * example: subbed on for the final 15-20 minutes, 0 goals, 0 assists, a
+   * 5.4 rating — and the feed still showed "{short} you absolute beauty".
+   *
+   * Set this on any template that assumes/addresses its subject specifically
+   * (praising "you" by name, or a club account's own goal lines that reuse
+   * `base()`'s `player`/`short`/`number`, which are always the CAREER
+   * player's own identity regardless of who the event is actually about).
+   * Left `undefined` for templates that are genuinely subject-agnostic
+   * (result/table/streak lines, generic fallbacks).
+   */
+  subject?: Subject["kind"];
   frames?: Frame[];
   /** Fact keys that must be present and non-empty. */
   requires?: string[];
@@ -125,7 +148,8 @@ export function chooseTemplate(
     && (t.club === undefined || event.facts.club === t.club)
     && (t.score === undefined || event.facts.score === t.score)
     && (t.player === undefined || event.facts.scorer === t.player)
-    && (t.result === undefined || event.facts.result === t.result));
+    && (t.result === undefined || event.facts.result === t.result)
+    && (t.subject === undefined || event.subject.kind === t.subject));
 
   const exact = usable.filter(t => t.events?.includes(event.id));
   const tagged = usable.filter(t => !t.events && t.tags?.some(tag => event.tags.includes(tag)));

@@ -1,13 +1,18 @@
 import type { LeagueTeam } from "./types";
 import type { CareerDivision } from "./calendar";
-import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "./clubs";
+import {
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
+  LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
+} from "./clubs";
+import { hasExtraTime, extraTimeScore, simulateShootout } from "./shootout";
 
 /**
  * THE CUPS.
  *
- * Thirty-two clubs, a fresh draw every round, and every tie played. Round of 32,
- * round of 16, quarter-final, semi-final, final — five rounds, thirty-one ties,
- * one winner.
+ * A fresh draw every round, and every tie played. The League Cup is thirty-two
+ * clubs — Round of 32, Round of 16, quarter-final, semi-final, final, five
+ * rounds, thirty-one ties. The FA Cup is sixty-four clubs — a Round of 64 on
+ * top of the same five, six rounds, sixty-three ties. Either way: one winner.
  *
  * What it replaced was not a cup. A "run" was a counter: at each round the game
  * picked a random club out of the division, played you against it, and moved the
@@ -26,7 +31,23 @@ import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "
 
 export type CupId = "FA Cup" | "League Cup";
 
+/**
+ * The League Cup's own five rounds — unchanged. The FA Cup is now a
+ * separate, longer list (see FA_CUP_ROUND_NAMES) — a real 64-club
+ * competition, one round bigger than the League Cup's 32. `roundNamesFor`
+ * is the one place that picks between them; nothing else should read
+ * either list without going through it.
+ */
 export const CUP_ROUND_NAMES = ["Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
+
+/** The FA Cup: sixty-four clubs, six rounds. See CUP_ROUND_NAMES for the
+ *  League Cup's own, separate five. */
+export const FA_CUP_ROUND_NAMES = ["Round of 64", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
+
+/** Which round-name list a cup actually plays through. */
+export function roundNamesFor(competition: CupId): string[] {
+  return competition === "FA Cup" ? FA_CUP_ROUND_NAMES : CUP_ROUND_NAMES;
+}
 
 export interface CupTie {
   home: string;
@@ -36,6 +57,9 @@ export interface CupTie {
   as?: number;
   /** A knockout cannot be drawn. Set when it went to spot kicks. */
   pens?: { home: number; away: number };
+  /** True when this tie needed extra time to separate the sides (whether or
+   *  not it still went to penalties afterward). */
+  wentToExtraTime?: boolean;
 }
 
 export interface CupRound {
@@ -51,8 +75,11 @@ export interface CupState {
   winner?: string;
 }
 
-/** How many clubs a cup holds. Five rounds of halving. */
+/** How many clubs the League Cup holds. Five rounds of halving. */
 export const CUP_FIELD = 32;
+
+/** How many clubs the FA Cup holds. Six rounds of halving. */
+export const FA_CUP_FIELD = 64;
 
 // ── Who comes up from below ──────────────────────────────────────────────────
 
@@ -84,14 +111,26 @@ export const CUP_FIELD = 32;
  * decides who a cup upset comes from — more plumbing than this file's job
  * is worth.
  */
-function belowStrength(club: string, tier: "premier" | "championship" | "pool"): number {
+function belowStrength(
+  club: string,
+  tier: "premier" | "championship" | "pool" | "league_one" | "league_two" | "national_league",
+): number {
   // Deliberately well under a real division's own numbers — the same
   // baseline+noise idea lib/star/promotion.ts uses for an estimate, pitched
   // lower on purpose: a cup upset should be an upset, not a coin flip. The
   // Premier League baseline is the exception — reached only when the
   // career's own division is the CHAMPIONSHIP, where those clubs are the
-  // favourites being upset rather than the upset themselves.
-  const baseline = tier === "premier" ? 74 : tier === "championship" ? 58 : 50;
+  // favourites being upset rather than the upset themselves. League One/
+  // Two and the National League (the FA Cup's new Round of 64 — see
+  // faCupField) sit distinctly below the Championship's 58 and the
+  // pool's 50, in real ladder order.
+  const baseline =
+    tier === "premier" ? 74 :
+    tier === "championship" ? 58 :
+    tier === "pool" ? 50 :
+    tier === "league_one" ? 50 :
+    tier === "league_two" ? 45 :
+    40; // national_league
   let h = 2166136261;
   for (let i = 0; i < club.length; i++) { h ^= club.charCodeAt(i); h = Math.imul(h, 16777619); }
   return baseline + ((h >>> 0) % 700) / 100; // baseline .. baseline + 6.99
@@ -161,6 +200,55 @@ function belowField(
   return drawn;
 }
 
+/**
+ * The FA Cup's Round of 64 — a real, given composition, not another
+ * weighted reach "below" like belowField above.
+ *
+ * Every Premier League club (20) and every Championship club (24) are
+ * guaranteed in, always — 44, from the LIVE table for whichever of the two
+ * is the career's own division, and the STATIC list in clubs.ts for the
+ * other one (no live strength data exists for a division nobody is
+ * actually playing a season in — same reasoning belowField already uses).
+ * The other twenty places are a genuine mixed weighted draw across League
+ * One and League Two together (one draw over both pools at once, not one
+ * pool exhausted before the other), except one or two of those twenty —
+ * chosen at random, per draw — go to the National League instead, carved
+ * out of the same twenty rather than added on top.
+ */
+function faCupField(names: string[], division: CareerDivision, rng: () => number): string[] {
+  const guaranteedOther = division === "premier" ? CHAMPIONSHIP_CLUBS : PREMIER_LEAGUE_CLUBS;
+  const guaranteed = Array.from(new Set([...names, ...guaranteedOther]));
+  const guaranteedSet = new Set(guaranteed);
+
+  const remaining = Math.max(0, FA_CUP_FIELD - guaranteed.length); // 20, barring an odd test fixture
+  const nationalSlots = Math.min(remaining, rng() < 0.5 ? 1 : 2);
+  const l1l2Needed = remaining - nationalSlots;
+
+  const nationalCandidates = NATIONAL_LEAGUE_CLUBS
+    .filter(c => !guaranteedSet.has(c))
+    .map(name => ({ name, weight: belowStrength(name, "national_league") }));
+  const nationalDrawn = weightedDrawN(nationalCandidates, nationalSlots, rng);
+  const nationalDrawnSet = new Set(nationalDrawn);
+
+  const l1l2Candidates = [...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS]
+    .filter(c => !guaranteedSet.has(c) && !nationalDrawnSet.has(c))
+    .map(name => ({
+      name,
+      weight: belowStrength(name, LEAGUE_ONE_CLUBS.includes(name) ? "league_one" : "league_two"),
+    }));
+  const l1l2Drawn = weightedDrawN(l1l2Candidates, l1l2Needed, rng);
+
+  const drawn = [...nationalDrawn, ...l1l2Drawn];
+  // Pad if every real pool runs dry before reaching FA_CUP_FIELD — chiefly a
+  // tiny test fixture, same convention belowField already uses.
+  let i = 0;
+  while (guaranteed.length + drawn.length < FA_CUP_FIELD) {
+    drawn.push(`${NATIONAL_LEAGUE_CLUBS[i % NATIONAL_LEAGUE_CLUBS.length]} B`);
+    i++;
+  }
+  return [...guaranteed, ...drawn].slice(0, FA_CUP_FIELD);
+}
+
 // ── The draw ────────────────────────────────────────────────────────────────
 
 /**
@@ -200,13 +288,24 @@ export function drawRound(name: string, survivors: string[], rng: () => number):
 export function openCup(
   competition: CupId, league: LeagueTeam[], division: CareerDivision, rng: () => number,
 ): CupState {
-  const field = cupField(league, division, rng);
-  return { competition, rounds: [drawRound(CUP_ROUND_NAMES[0], field, rng)] };
+  const field = cupField(league, division, rng, competition);
+  return { competition, rounds: [drawRound(roundNamesFor(competition)[0], field, rng)] };
 }
 
-/** Who is in it. Exported so the strength lookup can agree with the draw. */
-export function cupField(league: LeagueTeam[], division: CareerDivision, rng: () => number): string[] {
+/**
+ * Who is in it. Exported so the strength lookup can agree with the draw.
+ *
+ * The League Cup keeps its original 32-club, "reach one tier either way"
+ * shape (belowField) untouched — `competition` defaults to "FA Cup" only
+ * because every existing caller inside this file always passes one
+ * explicitly; nothing relies on the default. The FA Cup gets its own,
+ * larger Round of 64 (see faCupField).
+ */
+export function cupField(
+  league: LeagueTeam[], division: CareerDivision, rng: () => number, competition: CupId = "FA Cup",
+): string[] {
   const names = league.map(t => t.name);
+  if (competition === "FA Cup") return faCupField(names, division, rng);
   const needed = Math.max(0, CUP_FIELD - names.length);
   const below = belowField(names, division, needed, rng);
   return [...names, ...below].slice(0, CUP_FIELD);
@@ -217,14 +316,18 @@ export function cupStrength(club: string, league: LeagueTeam[]): number {
   const inLeague = league.find(t => t.name === club);
   if (inLeague) return inLeague.strength;
   // The real OTHER English tier — Premier League clubs drawn into a
-  // Championship season's cup field, or vice versa. See belowField.
+  // Championship season's cup field, or vice versa. See belowField/faCupField.
   if (PREMIER_LEAGUE_CLUBS.includes(club)) return belowStrength(club, "premier");
   if (CHAMPIONSHIP_CLUBS.includes(club)) return belowStrength(club, "championship");
+  if (LEAGUE_ONE_CLUBS.includes(club)) return belowStrength(club, "league_one");
+  if (LEAGUE_TWO_CLUBS.includes(club)) return belowStrength(club, "league_two");
+  if (NATIONAL_LEAGUE_CLUBS.includes(club)) return belowStrength(club, "national_league");
   if (PROMOTION_POOL_CLUBS.includes(club)) return belowStrength(club, "pool");
   // A padded filler name ("X B") from a division too small to fill the
   // field on real clubs alone.
   const base = club.replace(/ B$/, "");
   if (PROMOTION_POOL_CLUBS.includes(base)) return belowStrength(base, "pool") - 3;
+  if (NATIONAL_LEAGUE_CLUBS.includes(base)) return belowStrength(base, "national_league") - 3;
   return 55;
 }
 
@@ -249,16 +352,14 @@ function tieScore(homeStr: number, awayStr: number, rng: () => number): { hs: nu
 /**
  * A knockout cannot be drawn.
  *
- * Level after ninety and it goes to spot kicks, decided on a coin weighted by
- * quality — bounded well inside a flip, because the better side really is a
- * little likelier and a run that ends on a pure toss reads as arbitrary.
+ * Level after ninety: extra time first, when this competition/round has it
+ * (see `hasExtraTime` in shootout.ts — the League Cup only in its Final, the
+ * FA Cup in every round), then a real penalty shootout — genuinely alternating
+ * kicks, sudden death, the mathematical early-stop — if it's still level
+ * after that. Replaces what used to be a single weighted coin flip.
  */
 function shootout(homeStr: number, awayStr: number, rng: () => number): { home: number; away: number } {
-  const edge = Math.max(0.32, Math.min(0.68, 0.5 + (homeStr - awayStr) / 200));
-  const homeWins = rng() < edge;
-  const loser = 3 + Math.floor(rng() * 2);
-  return homeWins ? { home: loser + 1 + Math.floor(rng() * 2), away: loser }
-    : { home: loser, away: loser + 1 + Math.floor(rng() * 2) };
+  return simulateShootout(homeStr, awayStr, rng);
 }
 
 export function tieWinner(tie: CupTie): string | null {
@@ -280,7 +381,7 @@ export function playCupRound(
   state: CupState,
   league: LeagueTeam[],
   yourClub: string,
-  yourResult: { hs: number; as: number } | null,
+  yourResult: { hs: number; as: number; pens?: { home: number; away: number }; wentToExtraTime?: boolean } | null,
   rng: () => number,
 ): CupState {
   const round = state.rounds[state.rounds.length - 1];
@@ -292,25 +393,38 @@ export function playCupRound(
     const hStr = cupStrength(tie.home, league);
     const aStr = cupStrength(tie.away, league);
     let hs: number, as: number;
+    const out: CupTie = { ...tie };
     if (yours && yourResult) {
+      // The player's own tie — CanvasMatch already decided everything
+      // (extra time, a real live shootout) when it applies; use exactly
+      // what's handed in rather than recomputing it here.
       hs = yourResult.hs; as = yourResult.as;
+      if (yourResult.pens) out.pens = yourResult.pens;
+      if (yourResult.wentToExtraTime) out.wentToExtraTime = true;
     } else {
-      ({ hs, as } = tieScore(hStr, aStr, rng));
+      const played90 = tieScore(hStr, aStr, rng);
+      hs = played90.hs; as = played90.as;
+      if (hs === as && hasExtraTime(state.competition, round.name)) {
+        out.wentToExtraTime = true;
+        const et = extraTimeScore(hStr, aStr, rng);
+        hs += et.hs; as += et.as;
+      }
     }
-    const out: CupTie = { ...tie, hs, as };
-    if (hs === as) out.pens = shootout(hStr, aStr, rng);
+    out.hs = hs; out.as = as;
+    if (hs === as && !out.pens) out.pens = shootout(hStr, aStr, rng);
     return out;
   });
 
   const rounds = [...state.rounds.slice(0, -1), { ...round, ties: played }];
   const winners = played.map(tieWinner).filter((w): w is string => !!w);
+  const names = roundNamesFor(state.competition);
 
   // The final: somebody has won it and there is nothing left to draw.
-  if (round.name === CUP_ROUND_NAMES[CUP_ROUND_NAMES.length - 1] || winners.length < 2) {
+  if (round.name === names[names.length - 1] || winners.length < 2) {
     return { ...state, rounds, winner: winners[0] };
   }
 
-  const nextName = CUP_ROUND_NAMES[Math.min(rounds.length, CUP_ROUND_NAMES.length - 1)];
+  const nextName = names[Math.min(rounds.length, names.length - 1)];
   return { ...state, rounds: [...rounds, drawRound(nextName, winners, rng)] };
 }
 
@@ -328,9 +442,9 @@ export function playCupRound(
  * `yourClub` here is deliberately whoever is already out — passing your own
  * name is safe and normal, it just will not match any tie left in the draw,
  * so every remaining round plays out exactly as it would with nobody special
- * in it. Bounded at six rounds: the competition is five rounds long end to
- * end, so a hat with only one round left to draw can never take more passes
- * than that to reach a winner.
+ * in it. Bounded at one more than the competition's own round count (five
+ * for the League Cup, six for the FA Cup) — a hat with only one round left
+ * to draw can never take more passes than that to reach a winner.
  */
 export function finishCupToWinner(
   state: CupState,
@@ -339,7 +453,8 @@ export function finishCupToWinner(
   rng: () => number,
 ): CupState {
   let s = state;
-  for (let guard = 0; guard < 6 && !s.winner; guard++) {
+  const guardLimit = roundNamesFor(state.competition).length + 1;
+  for (let guard = 0; guard < guardLimit && !s.winner; guard++) {
     const next = playCupRound(s, league, yourClub, null, rng);
     if (next === s) break; // nothing left to play — already resolved
     s = next;

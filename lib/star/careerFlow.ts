@@ -27,6 +27,7 @@ import {
 } from "./competitions";
 import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner } from "./cups";
+import { simulateShootout } from "./shootout";
 import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { settleBets, betNewsLines } from "./competitionBetting";
@@ -628,9 +629,14 @@ export function creditMatchResult(
     // domestic cup round nor a counter-style run, and asking the other two
     // handlers about it would have them answer for a competition they do not
     // know about.
-    const euro = settleEuro(career, fixture, stats.homeScore, stats.awayScore, euroSquads, euroYours, euroTheirs);
+    const livePens = stats.shootout ? { us: stats.shootout.home, them: stats.shootout.away } : undefined;
+    const euro = settleEuro(
+      career, fixture, stats.homeScore, stats.awayScore, euroSquads, euroYours, euroTheirs, livePens,
+    );
     if (euro) externalSquads = euroSquads;
-    const settled = euro ? null : settleCupTie(career, fixture, stats.homeScore, stats.awayScore);
+    const settled = euro ? null : settleCupTie(
+      career, fixture, stats.homeScore, stats.awayScore, stats.wentToExtraTime, stats.shootout,
+    );
     if (euro) {
       euroState = euro.state;
       extraFixtures = euro.nextFixture ? [euro.nextFixture] : [];
@@ -655,7 +661,26 @@ export function creditMatchResult(
       const club = career.player.club;
       const scored = stats.homeScore, conceded = stats.awayScore; // yours, not the home team's — see above
       const rng = mulberry32(career.season * 4441 + fixture.week * 17);
-      const won = scored !== conceded ? scored > conceded : rng() < 0.5;
+      // Neither competition plays extra time (see shootout.ts's
+      // `hasExtraTime`) — level after 90 goes straight to a real,
+      // skill-weighted penalty shootout instead of a flat coin flip.
+      let won: boolean;
+      if (scored !== conceded) {
+        won = scored > conceded;
+      } else if (stats.shootout) {
+        // A real shootout the player just took live in CanvasMatch — "yours"
+        // in `stats.shootout` mirrors homeScore/awayScore's own convention,
+        // so this needs the same you-not-home flip `scored`/`conceded` above
+        // already applied.
+        const yourPens = fixture.home ? stats.shootout.home : stats.shootout.away;
+        const theirPens = fixture.home ? stats.shootout.away : stats.shootout.home;
+        won = yourPens > theirPens;
+      } else {
+        const mine = career.league.find(t => t.name === club)?.strength ?? 70;
+        const theirs = fixture.opponentStrength ?? 70;
+        const pens = simulateShootout(mine, theirs, rng);
+        won = pens.home > pens.away;
+      }
       if (won) {
         cupTrophy = { season: career.season, competition: fixture.competition, club };
         knockoutMessage = `${club} win the ${fixture.competition}.`;
