@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { CareerState } from "@/lib/star/types";
+import type { CareerState, LeagueSquad } from "@/lib/star/types";
 import {
   allInvestableClubs, clubValuation, stakeIn, isMajorityOwner, canInvestIn, MAJORITY_THRESHOLD,
   ownedClubState,
@@ -8,13 +8,13 @@ import {
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { allPoolManagers, managerInterest } from "@/lib/star/managerPool";
 import { loadLineup } from "@/lib/star/lineupStore";
-import { FORMATIONS } from "@/lib/star/formations";
+import { FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, type Pickable } from "@/lib/star/formations";
 import { clubKitFor, clubStrengthWithFormation, type ClubKit, type RecommendationKind } from "@/lib/star/clubPowers";
 import { kitsOf, type Kit } from "@/lib/star/kits";
 import { facilitiesFor } from "@/lib/star/facilities";
 import { playerMarketValue } from "@/lib/star/marketValue";
 import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
-import { formatMoney, formatMoneyPrecise, niceMoneyStep } from "@/lib/star/money";
+import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 import type { NegotiationState } from "@/lib/star/negotiation";
 
@@ -332,10 +332,20 @@ function StakeControls({
         <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Buy</div>
         <div className="flex items-center gap-2">
           <span className="text-yellow-300 font-black text-sm">★</span>
+          {/* Reported directly: a plain `type="number"` input can never
+              show thousands separators at all — a browser number input
+              rejects any non-digit character in its own displayed value,
+              so a real amount like 1,000,000 always showed as a bare
+              "1000000". Text + inputMode="numeric" instead: the same
+              numeric keyboard on mobile, but the displayed value is free
+              to be comma-formatted like every other money figure in this
+              game (see money.ts's own `money()`). Typed input is parsed by
+              stripping anything that isn't a digit before it ever reaches
+              the real numeric state. */}
           <input
-            type="number" min={0} max={maxBuySpend} step={niceMoneyStep(clampedBuy)}
-            value={clampedBuy}
-            onChange={e => setBuyAmount(Math.max(0, Math.min(maxBuySpend, Math.round(Number(e.target.value) || 0))))}
+            type="text" inputMode="numeric"
+            value={clampedBuy.toLocaleString()}
+            onChange={e => setBuyAmount(Math.max(0, Math.min(maxBuySpend, Math.round(Number(e.target.value.replace(/[^\d]/g, "")) || 0))))}
             className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-2 py-1.5 text-sm text-white tabular-nums"
           />
           <span className="w-16 text-right text-xs font-black text-white font-semibold tabular-nums">
@@ -800,7 +810,8 @@ function Boardroom({
         </div>
         <div className="mt-2 flex items-center gap-2">
           <input
-            type="number" min={0} value={topUp} onChange={e => setTopUp(Math.max(0, Number(e.target.value)))}
+            type="text" inputMode="numeric" value={topUp.toLocaleString()}
+            onChange={e => setTopUp(Math.max(0, Number(e.target.value.replace(/[^\d]/g, "")) || 0))}
             className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
           />
           <button
@@ -874,7 +885,7 @@ function Boardroom({
 
       {section === "powers" && (
         <PowersPanel
-          career={career} club={club}
+          career={career} club={club} squad={squad}
           onSetFormation={(c, f) => runAction(onSetFormation(c, f))}
           onSetKit={(c, k) => runAction(onSetKit(c, k))}
           onProposeKitVote={(c, a, b, favor) => runAction(onProposeKitVote(c, a, b, favor))}
@@ -915,14 +926,82 @@ function Boardroom({
   );
 }
 
+// ── A real lineup preview + a real link to edit it ──────────────────────────
+//
+// Requested directly: for a club the player has enough rank to actually
+// decide lineups for, show a real preview of its current best XI and a way
+// to edit it. Investigated first whether to build a second lineup editor
+// inside this screen, or reuse the one that already exists — `/lineups`
+// (LineupBuilder.tsx) is already a full, tested tap-to-select/tap-to-swap
+// formation editor, persisting to the exact same `SavedLineup` store
+// (lineupStore.ts) every OTHER screen already reads a club's real lineup
+// from (the pre-match team sheet, `clubStrengthWithFormation` above). Built
+// a second editor here would mean a second, parallel way to write the same
+// data — a real risk of the two disagreeing — for no real benefit over a
+// working link into the one that's already right. So: a real preview (the
+// club's actual saved XI if one exists, falling back to the same `autoPick`
+// best-XI the team sheet itself falls back to when nothing's been saved
+// yet) plus a genuine "Edit Lineup →" link straight into `/lineups` for
+// this exact club — not a rebuild.
+function LineupPreview({ club, squad }: { club: string; squad: LeagueSquad | undefined }) {
+  if (!squad || squad.players.length === 0) {
+    return (
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Lineup</div>
+        <div className="text-[11px] text-white/70 font-semibold">No squad data on file yet to build a lineup preview from.</div>
+      </div>
+    );
+  }
+  const pickable: Pickable[] = squad.players.map(p => ({
+    id: p.id, name: p.name, position: p.position, positions: p.positions, overall: p.overall,
+  }));
+  const saved = loadLineup(club);
+  const known = new Set(pickable.map(p => p.id));
+  const hasUsableSave = !!saved && saved.xi.some(id => id && known.has(id));
+  const formation = formationOf(hasUsableSave ? saved!.formation : DEFAULT_FORMATION);
+  const xi = hasUsableSave
+    ? saved!.xi.map(id => (id && known.has(id) ? id : null))
+    : autoPick(pickable, formation);
+  const byId = new Map(pickable.map(p => [p.id, p]));
+
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="text-[10px] font-black uppercase tracking-widest text-white/60">
+          Lineup {hasUsableSave ? `· ${formation.name ?? formation.id}` : "· auto-picked (nothing saved yet)"}
+        </div>
+        <a
+          href={`/lineups?club=${encodeURIComponent(club)}`}
+          className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-[10px] font-black text-emerald-950 whitespace-nowrap"
+        >
+          Edit Lineup →
+        </a>
+      </div>
+      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+        {formation.slots.map((slot, i) => {
+          const id = xi[i];
+          const p = id ? byId.get(id) : undefined;
+          return (
+            <div key={i} className="flex items-center justify-between text-[10px] text-white font-semibold gap-1">
+              <span className="text-white/50 shrink-0 w-8">{slot.role}</span>
+              <span className="truncate flex-1 text-right">{p ? p.name : "—"}</span>
+              {p && <span className="shrink-0 text-white/60 w-6 text-right">{p.overall ?? "—"}</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── PHASE 3 OF STAR_POWER_POLITICS.MD — THE REST OF THE OWNERSHIP LAYER ────
 
 function PowersPanel({
-  career, club, onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  career, club, squad, onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
   otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
-  career: CareerState; club: string;
+  career: CareerState; club: string; squad: LeagueSquad | undefined;
   onSetFormation: (club: string, formationId: string) => void;
   onSetKit: (club: string, kit: ClubKit) => void;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => void;
@@ -1002,6 +1081,8 @@ function PowersPanel({
         </div>
       )}
 
+      {!isOwnClub && <LineupPreview club={club} squad={squad} />}
+
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Kit</div>
         <div className="mb-2 text-[9px] text-white/70 leading-snug">
@@ -1072,7 +1153,8 @@ function PowersPanel({
         {state.isPresident ? (
           <div className="flex items-center gap-2">
             <input
-              type="number" min={0} value={wage} onChange={e => setWage(Math.max(0, Number(e.target.value)))}
+              type="text" inputMode="numeric" value={wage.toLocaleString()}
+              onChange={e => setWage(Math.max(0, Number(e.target.value.replace(/[^\d]/g, "")) || 0))}
               className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
             />
             <button onClick={() => onSetPresidentWage(club, wage)} className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 font-black text-xs whitespace-nowrap">
@@ -1192,6 +1274,9 @@ function SignPlayerPanel({
   const [clubFilter, setClubFilter] = useState("");
   const [minRating, setMinRating] = useState("");
   const [maxRating, setMaxRating] = useState("");
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
+  const [maxValue, setMaxValue] = useState("");
   const [sortBy, setSortBy] = useState<"rating" | "value">("rating");
   const [sortDesc, setSortDesc] = useState(true);
   const freeAgents = (career.freeAgents ?? []).map(p => ({ ...p, fromClub: FREE_AGENTS_CLUB }));
@@ -1274,6 +1359,9 @@ function SignPlayerPanel({
 
   const min = minRating === "" ? undefined : Number(minRating);
   const max = maxRating === "" ? undefined : Number(maxRating);
+  const minA = minAge === "" ? undefined : Number(minAge);
+  const maxA = maxAge === "" ? undefined : Number(maxAge);
+  const maxV = maxValue === "" ? undefined : Number(maxValue.replace(/[^\d]/g, ""));
 
   let pool = withValue.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
   if (positionFilter.size > 0) {
@@ -1283,6 +1371,13 @@ function SignPlayerPanel({
   if (clubFilter) pool = pool.filter(p => p.fromClub === clubFilter);
   if (min !== undefined && !Number.isNaN(min)) pool = pool.filter(p => p.overall >= min);
   if (max !== undefined && !Number.isNaN(max)) pool = pool.filter(p => p.overall <= max);
+  // Age/market-value cap filters — requested directly. "You could put a cap
+  // of 20 million... it would show you every player within that limit,
+  // wouldn't show anyone above, but would show everyone below" — a single
+  // max-value input, no min, matching that description exactly.
+  if (minA !== undefined && !Number.isNaN(minA)) pool = pool.filter(p => (p.age ?? 24) >= minA);
+  if (maxA !== undefined && !Number.isNaN(maxA)) pool = pool.filter(p => (p.age ?? 24) <= maxA);
+  if (maxV !== undefined && !Number.isNaN(maxV)) pool = pool.filter(p => p.marketValue <= maxV);
 
   pool = [...pool].sort((a, b) => {
     const diff = sortBy === "rating" ? a.overall - b.overall : a.marketValue - b.marketValue;
@@ -1295,7 +1390,8 @@ function SignPlayerPanel({
     return next;
   });
 
-  const activeFilterCount = positionFilter.size + (nationFilter ? 1 : 0) + (clubFilter ? 1 : 0) + (min !== undefined ? 1 : 0) + (max !== undefined ? 1 : 0);
+  const activeFilterCount = positionFilter.size + (nationFilter ? 1 : 0) + (clubFilter ? 1 : 0) + (min !== undefined ? 1 : 0) + (max !== undefined ? 1 : 0)
+    + (minA !== undefined ? 1 : 0) + (maxA !== undefined ? 1 : 0) + (maxV !== undefined ? 1 : 0);
 
   return (
     <>
@@ -1367,6 +1463,44 @@ function SignPlayerPanel({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Age range</div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" placeholder="Min" value={minAge} onChange={e => setMinAge(e.target.value)}
+                  className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                />
+                <span className="text-white/50 text-[10px]">to</span>
+                <input
+                  type="number" placeholder="Max" value={maxAge} onChange={e => setMaxAge(e.target.value)}
+                  className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                />
+              </div>
+            </div>
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Max market value</div>
+              {/* Same comma-formatted text+numeric pattern as every other
+                  money input in this file — a plain number input can't show
+                  thousands separators. "You could put a cap of 20 million...
+                  would show you every player within that limit... but would
+                  show everyone below" — a single ceiling, no minimum. */}
+              <div className="flex items-center gap-1">
+                <span className="text-yellow-300 font-black text-xs">★</span>
+                <input
+                  type="text" inputMode="numeric"
+                  placeholder="No cap"
+                  value={maxValue === "" ? "" : Number(maxValue.replace(/[^\d]/g, "")).toLocaleString()}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/[^\d]/g, "");
+                    setMaxValue(digits);
+                  }}
+                  className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white tabular-nums"
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Sort by</div>
             <div className="flex gap-1">
@@ -1390,7 +1524,7 @@ function SignPlayerPanel({
 
           {activeFilterCount > 0 && (
             <button
-              onClick={() => { setPositionFilter(new Set()); setNationFilter(""); setClubFilter(""); setMinRating(""); setMaxRating(""); }}
+              onClick={() => { setPositionFilter(new Set()); setNationFilter(""); setClubFilter(""); setMinRating(""); setMaxRating(""); setMinAge(""); setMaxAge(""); setMaxValue(""); }}
               className="w-full py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black text-white/80"
             >
               Clear filters

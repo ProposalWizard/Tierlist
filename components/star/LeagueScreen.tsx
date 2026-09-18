@@ -9,6 +9,8 @@ import { exitRound } from "@/lib/star/cups";
 import { sortEuro, knockoutSlots } from "@/lib/star/euro";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
+import { playerMarketValue } from "@/lib/star/marketValue";
+import { formatMoney } from "@/lib/star/money";
 import { SILHOUETTE_SRC } from "@/lib/silhouette";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ClubBadge from "./ClubBadge";
@@ -613,18 +615,24 @@ export default function LeagueScreen({ career }: Props) {
               by goals+assists like everyone else, ties broken by overall
               rating the same way a real squad list would read. */}
           {(() => {
+            const yourOverall = displayOverall(career.starRating);
             const you = {
               id: "__you__", isYou: true,
               name: `${career.player.firstName} ${career.player.lastName}`,
               position: career.player.position,
               // The one shared overall formula every screen reads now
               // (rating.ts), not a formula of this screen's own.
-              overall: displayOverall(career.starRating),
+              overall: yourOverall,
               seasonGoals: career.seasonStats.goals,
               seasonAssists: career.seasonStats.assists,
               imageUrl: undefined as string | undefined,
+              age: career.player.age,
+              marketValue: playerMarketValue({ overall: yourOverall, age: career.player.age }, career.player.club, career),
             };
-            const rows = [you, ...squad.map(p => ({ ...p, isYou: false }))]
+            const rows = [you, ...squad.map(p => ({
+              ...p, isYou: false,
+              marketValue: playerMarketValue({ ...p, overall: p.overall ?? 65 }, career.player.club, career),
+            }))]
               .sort((a, b) => {
                 const byGA = (b.seasonGoals + b.seasonAssists) - (a.seasonGoals + a.seasonAssists);
                 if (byGA !== 0) return byGA;
@@ -653,7 +661,12 @@ export default function LeagueScreen({ career }: Props) {
                     className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
                   />
                 )}
-                <div className="truncate font-black">{p.name}{p.isYou ? " ★" : ""}</div>
+                <div className="truncate">
+                  <div className="truncate font-black">{p.name}{p.isYou ? " ★" : ""}</div>
+                  <div className="truncate text-[8px] font-bold text-white/70">
+                    {p.age !== undefined ? `Age ${p.age}` : ""}{p.age !== undefined ? " · " : ""}★{formatMoney(p.marketValue)}
+                  </div>
+                </div>
                 <div className="text-center font-black text-white">{p.overall ?? "—"}</div>
                 <div className="text-center text-white">{p.position}</div>
                 <div className="text-center">

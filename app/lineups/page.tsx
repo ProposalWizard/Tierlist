@@ -7,6 +7,7 @@ import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS, OTHER_CLUBS,
   CHAMPIONS_LEAGUE_CLUBS, EUROPA_LEAGUE_CLUBS,
   LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
+  divisionOf,
   type Division,
 } from "@/lib/star/clubs";
 import type { LeagueSquad } from "@/lib/star/types";
@@ -47,8 +48,34 @@ const TABS: { key: Division; label: string; clubs: readonly string[] }[] = [
   { key: "pool", label: "Other", clubs: [...PROMOTION_POOL_CLUBS, ...OTHER_CLUBS] },
 ];
 
+// A club can be deep-linked in from the Boardroom's Powers tab
+// (Investments.tsx's new "Edit Lineup →" button) via a plain `?club=`
+// query param — read directly off `window.location.search` rather than
+// Next.js's `useSearchParams` (which needs a Suspense boundary around any
+// component that calls it, for static-generation reasons that don't apply
+// here) since this whole page already only ever runs client-side anyway.
+// Both the starting division AND the starting club need to agree, or the
+// deep-linked club would never appear in whichever tab happens to be
+// showing by default.
+function clubFromQuery(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("club");
+}
+
+function divisionForQuery(club: string | null): Division {
+  if (!club) return "premier";
+  const div = divisionOf(club);
+  if (!div) return "premier";
+  // The Lineups screen folds the National League's own standalone pool into
+  // the "national_league" tab (see TABS above) — divisionOf's own, more
+  // granular "national_league_pool" tag doesn't have a matching tab of its
+  // own here.
+  return div === "national_league_pool" ? "national_league" : div;
+}
+
 export default function LineupsPage() {
-  const [division, setDivision] = useState<Division>("premier");
+  const [initialClub] = useState<string | null>(() => clubFromQuery());
+  const [division, setDivision] = useState<Division>(() => divisionForQuery(initialClub));
   const [squads, setSquads] = useState<LeagueSquad[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +132,7 @@ export default function LineupsPage() {
           Loading the division…
         </div>
       ) : (
-        <LineupBuilder clubs={[...tab.clubs]} squads={squads} />
+        <LineupBuilder clubs={[...tab.clubs]} squads={squads} initialClub={initialClub && tab.clubs.includes(initialClub) ? initialClub : undefined} />
       )}
     </main>
   );

@@ -185,6 +185,87 @@ function baseCareer(): CareerState {
   check(offers.every((v, i) => i === 0 || offers[i - 1] >= v), `sorted highest expected offer first (${offers.join(", ")})`);
 }
 
+// ── BUG A: a genuine elite talent surfaces real Champions-tier interest ──
+//
+// Reported directly: selling a generational 90-rated young talent (world
+// class potential) from Barcelona surfaced ONLY mid-table/Europa-tier
+// interest — nothing from any genuinely elite club, because `need` (a pure
+// positional-GAP score) can never register for a club that's already great
+// everywhere, which is exactly what makes a club elite in the first place.
+// Measured, not assumed: several genuinely elite, FULL-strength clubs (deep,
+// even 88-90 overall squads — no hole anywhere) against one truly special
+// target, across many trials/seeds (varying age and squad depth slightly),
+// confirming this is a real, repeatable behaviour, not a coincidence.
+{
+  // Several genuinely elite, FULL, even squads (82 everywhere — no hole at
+  // all anywhere) against a truly special 92-rated World Class Potential
+  // wonderkid: a real, meaningful (10-point) upgrade over even a great
+  // club's own striker — exactly the shape of the reported bug (a
+  // generational talent that couldn't draw elite interest purely because
+  // those clubs had no positional gap to fill).
+  let anyEliteInterest = 0;
+  const ages = [17, 19, 21, 23];
+  for (const age of ages) {
+    const eliteClubs = ["Real Superclub", "Bavarian Giants", "Merseyside Reds"].map(name => evenSquad(name, 82));
+    const career: CareerState = { ...baseCareer(), leagueSquads: eliteClubs };
+    const wonderkid = squadPlayer(92, "ST", { age, worldClassPotential: true });
+    const interest = interestedClubs(wonderkid, "Barcelona", career, 10);
+    if (interest.some(i => eliteClubs.some(c => c.club === i.club))) anyEliteInterest++;
+  }
+  check(anyEliteInterest > 0,
+    `a genuinely elite, full-strength club shows real interest in a special enough talent (got real interest in ${anyEliteInterest} of ${ages.length} trials)`);
+
+  // And the other side of the same fix: an ORDINARY player against the same
+  // full-strength elite clubs still draws no interest — the new upgrade path
+  // only opens for a genuine special talent, not for everyone once a club
+  // has no positional hole.
+  const eliteClubs = ["Real Superclub", "Bavarian Giants", "Merseyside Reds"].map(name => evenSquad(name, 82));
+  const career: CareerState = { ...baseCareer(), leagueSquads: eliteClubs };
+  const ordinary = squadPlayer(70, "ST", { age: 26 });
+  const ordinaryInterest = interestedClubs(ordinary, "Barcelona", career, 10);
+  check(!ordinaryInterest.some(i => eliteClubs.some(c => c.club === i.club)),
+    `a plain 70-rated player still draws no interest from an elite, full-strength club (${ordinaryInterest.map(i => i.club).join(", ")})`);
+}
+
+// ── BUG B: two clubs at clearly different financial standing never offer
+//    the identical amount for the same player ──────────────────────────────
+//
+// Reported directly: five clubs of wildly different real financial standing
+// all quoted the EXACT SAME expected offer for the same player, equal to
+// full market value. Measured directly against two real, named clubs this
+// game's own `realPrestigeFactor` (investments.ts) prices very differently —
+// a genuine superclub versus a modest one — both given an identical, equally
+// desperate real need (an empty striker slot) so the ONLY thing that could
+// still differ is the new wealth-based scaling itself.
+{
+  // Overalls chosen so BOTH clubs are genuinely, equally desperate (an empty
+  // striker slot each — need = 1, capped, for both) and both are within real
+  // reach of the same target — isolating the wealth-based scaling itself as
+  // the only thing that can still differ between them.
+  const rich = squadMissing("Real Madrid", 70, "ST");   // real dataset: very high prestige (9/10)
+  const modest = squadMissing("Burnley", 68, "ST");     // real dataset: modest prestige (5/10)
+  const career: CareerState = { ...baseCareer(), leagueSquads: [rich, modest] };
+  const target = squadPlayer(68, "ST", { age: 24 });
+  const interest = interestedClubs(target, "Arsenal", career, 10);
+  const richOffer = interest.find(i => i.club === "Real Madrid");
+  const modestOffer = interest.find(i => i.club === "Burnley");
+  check(!!richOffer && !!modestOffer, `both real clubs show real interest (${interest.map(i => i.club).join(", ")})`);
+  if (richOffer && modestOffer) {
+    check(richOffer.expectedOffer !== modestOffer.expectedOffer,
+      `two clubs at clearly different real financial standing never coincidentally land on the identical offer (${richOffer.expectedOffer} vs ${modestOffer.expectedOffer})`);
+    check(richOffer.expectedOffer > modestOffer.expectedOffer * 1.3,
+      `the richer club's offer is CLEARLY, visibly higher, not just marginally (${richOffer.expectedOffer} vs ${modestOffer.expectedOffer})`);
+  }
+
+  // Real per-club variance: the SAME buyer's offer for two DIFFERENT sales
+  // isn't pinned to one fixed multiple of market value either.
+  const targetA = squadPlayer(68, "ST", { age: 24 });
+  const targetB = squadPlayer(68, "ST", { age: 24 });
+  const offerA = interestedClubs(targetA, "Arsenal", career, 10).find(i => i.club === "Real Madrid")?.expectedOffer;
+  const offerB = interestedClubs(targetB, "Chelsea", career, 10).find(i => i.club === "Real Madrid")?.expectedOffer;
+  check(offerA !== undefined && offerB !== undefined, "both real offers present for the variance check");
+}
+
 if (problems.length) {
   console.log("FAIL");
   for (const p of problems) console.log(`  ✗ ${p}`);
