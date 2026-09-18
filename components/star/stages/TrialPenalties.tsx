@@ -175,19 +175,10 @@ export function paintTrialScene(
   // the grass, the figure rises off it — is what makes going under a wall
   // read as a real option rather than a coincidence.
   for (const d of sc.defenders) {
-    const lift = Math.max(0, d.z ?? 0);
-    if (lift > 0.01) {
-      // The shadow is left on the grass at his feet by drawing him at his real
-      // spot first and then again, lifted, over the top.
-      ctx.save();
-      // Same height-to-screen factor the ball uses, so a man a metre off the
-      // ground and a ball a metre off the ground agree with each other.
-      ctx.translate(0, -lift * unit * 0.55);
-      drawFigure(ctx, p, d, WALL_KIT, faceStyle, fakeFaceStyle);
-      ctx.restore();
-    } else {
-      drawFigure(ctx, p, d, WALL_KIT, faceStyle, fakeFaceStyle);
-    }
+    drawFigure(
+      ctx, p, d, { ...WALL_KIT, lift: Math.max(0, d.z ?? 0) },
+      faceStyle, fakeFaceStyle,
+    );
   }
 
   // ── The keeper ──

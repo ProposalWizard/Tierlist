@@ -1,6 +1,7 @@
 import {
   ladderLevel, REPS, penaltySetup, freeKickSetup, dribbleSetup, dribbleQuality,
-  visionSetup, visionQuality, meanQuality, strikeQuality,
+  visionSetup, visionQuality, meanQuality, strikeQuality, attemptSeed,
+  PENALTY_TELL_EASY, PENALTY_TELL_HARD,
 } from "../../lib/star/trialStages";
 import { startTrial, difficultyFor, TRIAL_STAGES, noteReload } from "../../lib/star/trial";
 import { CX, PEN_SPOT_Y } from "../../lib/star/pitch";
@@ -137,6 +138,92 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     freeKickSetup(reloaded, 0).keeperStrength > freeKickSetup(t, 0).keeperStrength,
     "farming the app for an easy trial really does make it harder",
   );
+}
+
+// ── A RESUME DRAWS NEW PROBLEMS, NOT THE ONES YOU JUST SAW THE ANSWER TO ──
+//
+// The bug this pins down, in full, because it was real and it was invisible:
+// every stage's rep counter lives in React state and is never saved. So a
+// resume restarts the stage at rep 1 — and while the setups were seeded off
+// `trial.seed` alone, rep 1 after a resume was byte-for-byte the rep 1 you had
+// just played. Watch which man rings green six times, close the app, reopen,
+// tap the six you remember: near-perfect score, no football in it at all. The
+// same trick retook a penalty stage against a keeper leaning the same way
+// every time. `visionSetup`'s own comment claimed the opposite was true.
+{
+  // Built by hand rather than through `noteReload`, deliberately: WHEN a
+  // resume is charged for is `trial.ts`'s business and has its own rules (a
+  // load that interrupted nothing is free). What is being checked here is only
+  // what a charged resume must then DO to the questions, so the input is the
+  // charged state itself.
+  const resume = (t: ReturnType<typeof startTrial>, n = 1) => ({ ...t, reloads: t.reloads + n });
+  const base = startTrial(4242);
+  const resumed = resume(base);
+  check(
+    attemptSeed(base) !== attemptSeed(resumed),
+    "a resumed trial draws from a different seed — otherwise the whole stage is a memory test",
+  );
+  check(
+    attemptSeed(base) === attemptSeed({ ...base }),
+    "…and an unresumed trial is still exactly itself",
+  );
+  // Nonsense on the field cannot produce NaN — this seed feeds every rep of
+  // three stages.
+  for (const junk of [NaN, -3, Infinity, undefined as unknown as number]) {
+    const seed = attemptSeed({ ...base, reloads: junk });
+    check(Number.isInteger(seed) && seed >= 0, `reloads ${junk} still gave a real seed (${seed})`);
+  }
+
+  // The properties that actually matter, measured across many trials rather
+  // than asserted off one: two trials differing ONLY in `reloads` must ask
+  // different questions.
+  let visionDiffered = 0, leanDiffered = 0, trials = 0;
+  for (let seed = 0; seed < 300; seed++) {
+    const a = startTrial(seed);
+    const b = resume(a);
+    trials++;
+    const answersA = Array.from({ length: REPS.vision }, (_, r) => visionSetup(a, r).correct).join(",");
+    const answersB = Array.from({ length: REPS.vision }, (_, r) => visionSetup(b, r).correct).join(",");
+    if (answersA !== answersB) visionDiffered++;
+    const leansA = Array.from({ length: REPS.penalties }, (_, r) => Math.sign(penaltySetup(a, r).keeperLean)).join(",");
+    const leansB = Array.from({ length: REPS.penalties }, (_, r) => Math.sign(penaltySetup(b, r).keeperLean)).join(",");
+    if (leansA !== leansB) leanDiffered++;
+  }
+  // Not 100 %: six answers out of three-to-eight options can coincide by luck,
+  // and so can five coin flips. What must not happen is a resume that reliably
+  // hands back the same afternoon.
+  check(visionDiffered > trials * 0.9,
+    `only ${visionDiffered}/${trials} resumes changed the vision answers`);
+  check(leanDiffered > trials * 0.85,
+    `only ${leanDiffered}/${trials} resumes changed which way the keeper went`);
+}
+
+// ── The penalty tell shrinks as the day gets harder ─────────────────────
+//
+// It used to GROW (`0.3 + 0.7 × d`), which made the hardest trials the ones
+// that announced the answer loudest — shoot the other side, and the better the
+// keeper the more clearly he told you which side that was.
+{
+  const meanTell = (d: number) => {
+    const rolls = Object.fromEntries(TRIAL_STAGES.map(s => [s, 0])) as never;
+    let total = 0, n = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const t = { ...startTrial(seed), baseDifficulty: d, stageRolls: rolls, reloads: 0 };
+      for (let rep = 0; rep < REPS.penalties; rep++) { total += Math.abs(penaltySetup(t, rep).keeperLean); n++; }
+    }
+    return total / n;
+  };
+  let last = Infinity;
+  for (let d = 0; d <= 1.0001; d += 0.125) {
+    const tell = meanTell(d);
+    check(tell < last, `the keeper's tell should shrink as the trial hardens, and did not at d=${d.toFixed(3)}`);
+    last = tell;
+  }
+  check(PENALTY_TELL_HARD < PENALTY_TELL_EASY, "the hard-day tell is the smaller one");
+  // …but never nothing. A keeper who does not commit at all is not a harder
+  // read, he is no read, and the stage stops being about anything.
+  check(PENALTY_TELL_HARD > 0, "he still commits at the top of the ladder");
+  check(meanTell(1) > 0.05, "…by a genuinely readable amount");
 }
 
 // ── The penalty spot is the penalty spot ────────────────────────────────
