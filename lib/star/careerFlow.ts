@@ -1298,10 +1298,11 @@ export function advanceSeason(
   const wonLeagueCup = thisSeason.some(t => t.competition === "League Cup");
   const wonEuroComp = thisSeason.some(t => t.competition === "Champions League" || t.competition === "Europa League");
   // Europe is a Premier League reward. Finishing fourth in the Championship
-  // qualifies you for promotion, not for the Champions League — and
-  // `qualificationFor` only knows about positions and club counts, so it
-  // would happily hand out a European place for one if it were asked.
-  const qualification = divisionOf(career) === "championship" ? null : qualificationFor(
+  // (or League One, League Two, the National League) qualifies you for
+  // promotion, not for the Champions League — and `qualificationFor` only
+  // knows about positions and club counts, so it would happily hand out a
+  // European place for one if it were asked.
+  const qualification = divisionOf(career) !== "premier" ? null : qualificationFor(
     leaguePosition(career), career.league.length, wonFaCup, wonLeagueCup, wonEuroComp,
     ruleBookFor(career, "UEFA").extraChampionsLeagueSlots, ruleBookFor(career, "UEFA").extraEuropaLeagueSlots,
   );
@@ -1328,6 +1329,12 @@ export function advanceSeason(
       relegatedFromPremier: ladder.relegatedFromPremier,
       promotedToChampionship: ladder.promotedToChampionship,
       relegatedFromChampionship: ladder.relegatedFromChampionship,
+      promotedToLeagueOne: ladder.promotedToLeagueOne,
+      relegatedFromLeagueOne: ladder.relegatedFromLeagueOne,
+      promotedToLeagueTwo: ladder.promotedToLeagueTwo,
+      relegatedFromLeagueTwo: ladder.relegatedFromLeagueTwo,
+      promotedToNationalLeague: ladder.promotedToNationalLeague,
+      relegatedFromNationalLeague: ladder.relegatedFromNationalLeague,
       ...(ladder.playOffs ? { playOffFinal: ladder.playOffs.final } : {}),
     },
     week: 1,

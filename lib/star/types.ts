@@ -616,6 +616,15 @@ export interface CareerState {
     relegatedFromPremier: string[];
     promotedToChampionship: string[];
     relegatedFromChampionship: string[];
+    /** Added 18 September 2026 alongside League One/Two/National League
+     *  becoming playable divisions — optional so an old save's ladderNews
+     *  (from before this existed) still reads fine with these simply absent. */
+    promotedToLeagueOne?: string[];
+    relegatedFromLeagueOne?: string[];
+    promotedToLeagueTwo?: string[];
+    relegatedFromLeagueTwo?: string[];
+    promotedToNationalLeague?: string[];
+    relegatedFromNationalLeague?: string[];
     playOffFinal?: { home: string; away: string; hs: number; as: number; winner: string };
   };
   week: number;

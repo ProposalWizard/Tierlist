@@ -149,6 +149,33 @@ export default function LadderScreen({ career, onContinue }: Props) {
             upLabel="Promoted in"
             downLabel="Relegated out"
           />
+          {(news.promotedToLeagueOne || news.relegatedFromLeagueOne) && (
+            <Movement
+              title="League One"
+              up={news.promotedToLeagueOne ?? []}
+              down={news.relegatedFromLeagueOne ?? []}
+              upLabel="Promoted in"
+              downLabel="Relegated out"
+            />
+          )}
+          {(news.promotedToLeagueTwo || news.relegatedFromLeagueTwo) && (
+            <Movement
+              title="League Two"
+              up={news.promotedToLeagueTwo ?? []}
+              down={news.relegatedFromLeagueTwo ?? []}
+              upLabel="Promoted in"
+              downLabel="Relegated out"
+            />
+          )}
+          {(news.promotedToNationalLeague || news.relegatedFromNationalLeague) && (
+            <Movement
+              title="National League"
+              up={news.promotedToNationalLeague ?? []}
+              down={news.relegatedFromNationalLeague ?? []}
+              upLabel="Promoted in"
+              downLabel="Relegated out"
+            />
+          )}
         </div>
 
         <button

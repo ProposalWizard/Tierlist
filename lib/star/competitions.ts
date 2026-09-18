@@ -510,8 +510,12 @@ const COMPETITION_ABBREV: Record<Competition, string> = {
 
 /** Short enough for a scoreboard badge — "Prem" / "UCL" / "L Cup" — rather
  *  than the full competition name fixtureLabel reads out on the team sheet. */
+const DIVISION_ABBREV: Record<CareerDivision, string> = {
+  premier: "Prem", championship: "Champ", league_one: "L1", league_two: "L2", national_league: "NL",
+};
+
 export function competitionAbbrev(f: Fixture, division: CareerDivision): string {
-  if (!f.kind || f.kind === "league") return division === "premier" ? "Prem" : "Champ";
+  if (!f.kind || f.kind === "league") return DIVISION_ABBREV[division];
   return (f.competition && COMPETITION_ABBREV[f.competition]) || "Cup";
 }
 
@@ -528,8 +532,13 @@ export function competitionAbbrev(f: Fixture, division: CareerDivision): string 
 export function seedCups(career: CareerState): { states: CupState[]; fixtures: Fixture[] } {
   const rng = mulberry32(career.season * 6151 + career.league.length * 13);
   const division = divisionOf(career);
+  // The National League never enters the League Cup (real life) — an empty
+  // slot table (calendar.ts's leagueCupSlotsFor) is the one signal this
+  // whole pipeline needs to skip it outright rather than open a cup with
+  // nowhere on the calendar to actually play it.
   const states = [
-    openCup("League Cup", career.league, division, rng),
+    ...(leagueCupSlotsFor(division).length > 0
+      ? [openCup("League Cup", career.league, division, rng)] : []),
     openCup("FA Cup", career.league, division, rng),
   ];
   const fixtures: Fixture[] = [];

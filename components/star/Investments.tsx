@@ -1234,11 +1234,30 @@ function SignPlayerPanel({
   // offer HIM as a buyable candidate, full stop, regardless of which club's
   // data he's stuck in or why.
   const yourName = `${career.player.firstName} ${career.player.lastName}`;
-  const others = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
+  const rawOthers = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])]
     .filter(s => s.club !== club && s.club !== career.player.club)
     .flatMap(s => s.players.map(p => ({ ...p, fromClub: s.club })))
     .filter(p => !p.id.startsWith("gen:"))
     .filter(p => p.name !== yourName);
+  // Reported directly, and a real bug: the same real player turning up
+  // "four in a row and then two more further down" — spamming filters
+  // afterward made it look like the panel had stopped responding at all,
+  // which duplicate rows explain too: this list is keyed on
+  // `${fromClub}:${id}`, and a genuinely duplicate (fromClub, id) pair
+  // gives React two siblings sharing one key, which is exactly the kind of
+  // thing that leaves a list rendering stale/wrong on the next update.
+  // `career.leagueSquads`/`career.externalSquads` aren't mutually
+  // exclusive by construction — the same real player.id can legitimately
+  // turn up in both (a stale snapshot overlap, or a club briefly present
+  // in both lists at once) — so dedupe by id here rather than chasing every
+  // possible way the two source lists could overlap upstream, keeping only
+  // the first sighting of each real player.
+  const seenIds = new Set<string>();
+  const others = rawOthers.filter(p => {
+    if (seenIds.has(p.id)) return false;
+    seenIds.add(p.id);
+    return true;
+  });
   const everyone = [...freeAgents, ...others];
 
   // Requested directly, researched for feasibility first: every field these

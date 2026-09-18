@@ -214,6 +214,16 @@ export const TUNABLES: TunableDef[] = [
     description: "World Class Potential is the stronger tier above High Potential — this multiplies growth chance, growth gain, the transfer-fee premium, and the big-club reach bonus for a World Class player on top of what High Potential alone already gives him.",
     default: 1.5, min: 1, max: 5, step: 0.1,
   },
+  {
+    key: "wonderkids.eliteDampingStart", category: "Wonderkids", label: "Overall past which growth slows down hard",
+    description: "Reported directly: a whole batch of 94-97 rated players had turned up after only five seasons — going from an 82 to an 89-91 in that time is fine (\"a good player to a great and world-class one\"), but 91 up to 97 has to be dramatically harder than that, since each further point there is the gap between \"world-class\" and \"one of the best of all time.\" Below this overall, growth is completely unaffected by the damping below — only points EARNED past it are slowed.",
+    default: 91, min: 70, max: 99, step: 1,
+  },
+  {
+    key: "wonderkids.eliteDampingRate", category: "Wonderkids", label: "How much harder each point past the start gets",
+    description: "The fraction of a normal season's growth that actually lands, for the Nth point earned past eliteDampingStart — compounding, so 91->92 is noticeably harder than 89->90, 92->93 harder again, and so on. A single big season's raw gain is walked up one point at a time against this rate (not just checked at the season's starting overall), so a large jump still has to pay the elite-tier cost for every point it crosses, not skip past the hard zone in one go.",
+    default: 0.55, min: 0.1, max: 1, step: 0.05,
+  },
 
   // ── Training gains ───────────────────────────────────────────────────
   {
@@ -669,13 +679,13 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "marketValue.ratingExponent", category: "Market Value", label: "Rating — value curve steepness",
-    description: "How much faster value climbs near the very top of the rating scale than in the middle — a real transfer fee blows up disproportionately for the truly elite. Steepened 14 Sep 2026 from 2.2 to 4.0 during the real-money rescale: fit directly against five real anchor points at once (a 60-rated player near a nominal floor, 70 around £2.5m, 85 around £57m, 90 around £100m, 95 around £180m — all real, researched transfer-fee benchmarks) — 2.2 badly overvalued the lower-middle of the scale relative to the top once the whole curve was scaled to real money (a plain 70-rated player came out over £12m, well above real terms), where 4.0 lands within a few percent of every one of the five real anchors simultaneously, measured directly rather than guessed.",
-    default: 4.0, min: 1, max: 6, step: 0.1,
+    description: "How much faster value climbs near the very top of the rating scale than in the middle — a real transfer fee blows up disproportionately for the truly elite. Steepened 14 Sep 2026 from 2.2 to 4.0 during the real-money rescale, fit against five real anchor points (60 near the floor, 70 ~£2.5m, 85 ~£57m, 90 ~£100m, 95 ~£180m). Eased back to 3.8 afterward, reported directly from a real save: a batch of genuinely 96-97 rated players (an extraordinary, once-in-a-generation tier) had come out at £478m-£631m, described directly as \"slightly too high.\" A lower exponent cuts proportionally MORE at the very top of the scale than in the middle (a power curve's high end is the most sensitive to its own exponent), which is exactly the shape asked for — mid-80s/low-90s largely untouched, the mid-90s-and-up tier brought back down toward earth.",
+    default: 3.8, min: 1, max: 6, step: 0.1,
   },
   {
     key: "marketValue.scale", category: "Market Value", label: "Overall value scale",
-    description: "The single dial that sets how much money a market value actually comes out to. Rescaled 14 Sep 2026 to land on real transfer-fee territory, requested directly (\"I want the economy like the real football world\") after research into real transfer-fee benchmarks by caliber/age (CIES Football Observatory's own methodology, and current real deals like Alexander Isak's £125m) — paired with the steepened `ratingExponent` above, an 85-rated 25-year-old at an average club now lands close to £57m and a truly elite 95-rated near £180m, both real, researched anchor points, not guesses. This REPLACES an earlier, deliberately tiny value (4) that existed only because the whole in-game economy used to run at a compressed, unreal scale on purpose — that reasoning no longer applies now the economy is meant to read like real football finance.",
-    default: 70, min: 0.5, max: 60000, step: 5,
+    description: "The single dial that sets how much money a market value actually comes out to. Rescaled 14 Sep 2026 to land on real transfer-fee territory (an 85-rated 25-year-old at an average club near £57m, a truly elite 95-rated near £180m). Nudged up slightly (70→74) alongside `ratingExponent`'s own reduction, to keep those same mid-to-high-80s anchor points from drifting down too along with the deliberate top-end cut.",
+    default: 74, min: 0.5, max: 60000, step: 5,
   },
   {
     key: "marketValue.floor", category: "Market Value", label: "Minimum market value",
@@ -699,13 +709,13 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "marketValue.highPotentialPeak", category: "Market Value", label: "High Potential — peak value multiplier",
-    description: "How much more a High Potential player is worth than an identical player with no tag, at its strongest (the youngest a potential tag can matter).",
-    default: 1.5, min: 1, max: 3, step: 0.1,
+    description: "How much more a High Potential player is worth than an identical player with no tag, at its strongest (the youngest a potential tag can matter). Eased slightly (1.5→1.4) alongside worldClassPeak's own reduction — same real report, same reasoning.",
+    default: 1.4, min: 1, max: 3, step: 0.1,
   },
   {
     key: "marketValue.worldClassPeak", category: "Market Value", label: "World Class Potential — peak value multiplier",
-    description: "The same premium as High Potential, but stronger — World Class Potential is meant to be the stronger tier directly above it.",
-    default: 2.2, min: 1, max: 4, step: 0.1,
+    description: "The same premium as High Potential, but stronger — World Class Potential is meant to be the stronger tier directly above it. Eased from 2.2 to 1.85, reported directly: two real 21-year-old World Class Potential players (already five real seasons in, not brand-new prospects) were valued at £200-231m against an 88-rated 29-year-old established star at only £91m — \"don't undervalue some of the older players sometimes... just a very small [change].\" This alone doesn't close that whole gap (see ageFactor's own extended prime plateau for the other half of it) but meaningfully narrows the young-potential premium.",
+    default: 1.85, min: 1, max: 4, step: 0.1,
   },
   {
     key: "marketValue.potentialYouthWindow", category: "Market Value", label: "Potential tag — years before it stops mattering",
