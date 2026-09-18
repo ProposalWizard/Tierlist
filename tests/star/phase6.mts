@@ -6,7 +6,7 @@ import { qualificationFor, seasonQualifiers } from "../../lib/star/competitions"
 import { resolveLadder, membershipOf } from "../../lib/star/promotion";
 import { forceClubIntoPremierLeague, canForceClubMovement } from "../../lib/star/forcedMovement";
 import { createCompetition, playCompetitionRound, playCompetitionToWinner } from "../../lib/star/newCompetition";
-import { investInfluence } from "../../lib/star/governingBodies";
+import { investInfluence, MONEY_PER_INFLUENCE_POINT } from "../../lib/star/governingBodies";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, LeagueTeam, StarPlayer } from "../../lib/star/types";
@@ -25,6 +25,17 @@ import type { CareerState, LeagueTeam, StarPlayer } from "../../lib/star/types";
  * hook yet) — checked in ruleBook.mts, not here, since there's nothing
  * behavioural in either to test yet.
  */
+
+/**
+ * Buying influence, in POINTS rather than in pounds.
+ *
+ * These fixtures used to hardcode the cash amount, which silently baked the
+ * price of influence into the test — so when that price was corrected (it had
+ * been left on the pre-rescale scale, where ★50,000 bought total control of
+ * FIFA) they all broke, and none of them broke in a way that pointed at the
+ * price. Asking for POINTS lets a future retune move the money automatically.
+ */
+const costOf = (points: number) => points * MONEY_PER_INFLUENCE_POINT;
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -47,7 +58,7 @@ function player(club: string): StarPlayer {
 
 function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const base = makeInitialCareer(player("Arsenal"), [...PREMIER_LEAGUE_CLUBS]);
-  return { ...base, money: 10_000_000, ...overrides };
+  return { ...base, money: costOf(500), ...overrides };
 }
 
 // ── Offside toggle: a real, wired switch on the real judgement ────────────
@@ -104,7 +115,7 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const blocked = forceClubIntoPremierLeague(career, "Real Madrid");
   check(!blocked.ok, "blocked without enough influence");
 
-  career = investInfluence(career, "FA", 100_000) as CareerState;
+  career = investInfluence(career, "FA", costOf(100)) as CareerState;
   check(canForceClubMovement(career, "FA"), "fixture assumption: enough influence now to force a move");
 
   const already = forceClubIntoPremierLeague(career, career.player.club === "Arsenal" ? "Arsenal" : "Chelsea");

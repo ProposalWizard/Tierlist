@@ -455,6 +455,25 @@ export interface MatchStats {
 export interface Boot {
   id: string;
   name: string;
+  /**
+   * INERT — kept for save compatibility, deliberately not shown anywhere.
+   *
+   * Nothing has ever read this for gameplay. `effectivePower`/
+   * `effectiveTechnique` (app/star-dev/page.tsx) add the two fields below to
+   * your skills before a match; there is no `effectivePace`, and the engine
+   * reads `career.skills.pace` raw. So every boot's advertised pace rating
+   * was a number that did nothing, and the shop was claiming otherwise.
+   *
+   * Removed from both places it was displayed (the boots table in Shop.tsx
+   * and the current-boot line in DashboardStats.tsx) on 18 Sep 2026 rather
+   * than wired up: making it real would change how every match plays for
+   * every existing save and could disturb the finishing distributions that
+   * were measured and tuned over many sessions.
+   *
+   * The field itself stays so that a boot stored in an existing save still
+   * matches this type. **Don't put it back on screen without making it do
+   * something first.**
+   */
   pace: number;
   power: number;
   technique: number;
@@ -526,6 +545,25 @@ export interface Horse {
 export interface CareerState {
   version: 2;
   player: StarPlayer;
+  /**
+   * The trial this career opened with, while it is being played.
+   *
+   * Optional, and absent for every career that already exists — a save from
+   * before the multi-stage trial simply never had one, which is exactly what
+   * "this career is not mid-trial" means, so no backfill is needed.
+   *
+   * Typed as `TrialProgress` from lib/star/trial.ts. Declared here rather than
+   * imported to keep this file free of imports from the modules that read it.
+   */
+  trial?: import("./trial").TrialProgress;
+  /**
+   * Weeks spent with no club since the last trial.
+   *
+   * Drives when the next one comes up — see `trialDue`/`grantTrial`
+   * (freeAgent.ts). Absent on every career that has never been a free agent,
+   * which is all of them until one fails a trial.
+   */
+  weeksSinceTrial?: number;
   skills: Skills;
   /**
    * The last career week each skill was actually TRAINED (the deliberate
@@ -1094,6 +1132,16 @@ export type StarPhase =
   | "season-awards"
   /** The opening: one penalty, taken until it goes in. See TrialPenalty. */
   | "trial"
+  /** The full multi-stage trial — penalties, free kicks, taking a man on,
+   *  finding the pass, and a real five-a-side. See TrialSequence. */
+  | "trial-stages"
+  /** What the trial earned: the afternoon's number, what each stage was
+   *  worth, and the clubs that came in for you. See ScoutOffers. */
+  | "scout-offers"
+  /** Life with no club: home, gym, video games, out with your mates. The
+   *  cut-down dashboard a trialist and a free agent live on, deliberately
+   *  without fixtures, a table, a squad or a contract. See FreeAgentShell. */
+  | "free-agent"
   /** …and what it earns you — the card, then the contract. See TrialReward. */
   | "trial-reward"
   /** Watching a saved goal happen again — see GoalReplay, goalReplays.ts. */

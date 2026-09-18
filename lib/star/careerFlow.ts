@@ -40,8 +40,9 @@ import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./fa
 import { ruleBookFor } from "./ruleBook";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
+import { transferWindowFor, divisionOf, leagueNameFor, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
+import { wageForFixture } from "./wages";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
@@ -94,11 +95,34 @@ function rollInjury(rng: () => number): { weeksRemaining: number; note: string }
   return { weeksRemaining: weeks, note: `Serious injury — expected back in ${weeks} weeks` };
 }
 
-export function makeInitialCareer(
-  player: StarPlayer, clubs: string[], division: CareerDivision = "premier",
-): CareerState {
-  const league = buildLeague(clubs, player.club);
-  const fixtures = buildFixtures(clubs, player.club);
+/**
+ * WHO YOU ARE, BEFORE ANYBODY HAS SIGNED YOU.
+ *
+ * `makeInitialCareer` used to do two unrelated jobs in one breath: invent a
+ * person (skills, relationships, reputation, money, cans, sponsors, the
+ * week's actions — roughly forty of the fifty-odd fields on `CareerState`)
+ * and put that person at a club (league table, fixture list, contract, kit
+ * colours, squad, squad number, manager, cups, Europe — the other dozen).
+ *
+ * That was fine while a career could only ever begin the same way: pick a
+ * club on the setup screen, start playing for it the same second. It stops
+ * being fine the moment the career OPENS without a club — a trialist, a
+ * free agent training in his garden — because there is no honest club to
+ * hand the second half of the work, and inventing one just to have one is
+ * exactly the kind of fake state that leaks into a save.
+ *
+ * So the two jobs are two functions. `makeIdentity` gives you a real,
+ * complete, playable-shaped `CareerState` with nobody's badge on it: every
+ * club-derived field sits at a genuinely empty value (no league, no
+ * fixtures, a contract at no club, neutral kit colours, an empty squad)
+ * rather than a placeholder pretending to be a club. `attachClub` is the
+ * signing: it fills all of them in, in exactly the order the original did.
+ *
+ * `makeInitialCareer` is kept, and is now literally the two of them in a
+ * row, so every existing caller and every test that builds a career this
+ * way is untouched and behaves identically.
+ */
+export function makeIdentity(player: StarPlayer, division: CareerDivision = "premier"): CareerState {
   const starterBoot: Boot = { ...BOOTS_CATALOGUE[0] };
   const state: CareerState = {
     version: 2,
@@ -124,6 +148,9 @@ export function makeInitialCareer(
     // Everything grows from here via the existing contract-offer/relegation-
     // offer formulas (transfers.ts/relegationOffers.ts), themselves rescaled
     // alongside this.
+    //
+    // The club on it is whatever the player already has — empty for somebody
+    // nobody has signed yet. `attachClub` writes the real one.
     contract: { club: player.club, wage: 2000, goalBonus: 200, assistBonus: 150, seasonsRemaining: 3 },
     season: 1,
     division,
@@ -142,8 +169,9 @@ export function makeInitialCareer(
     fame: 5,
     seasonStats: { ...EMPTY_SEASON_STATS },
     careerStats: { ...EMPTY_SEASON_STATS },
-    fixtures,
-    league,
+    // Club-derived, all four. Empty rather than invented — see attachClub.
+    fixtures: [],
+    league: [],
     achievements: ["first-contract"],
     status: "1st Team",
     currentBoot: starterBoot,
@@ -158,16 +186,18 @@ export function makeInitialCareer(
     // Your club's actual colours. These were `#ff0000` and `#ffffff` for every
     // club in the game — a Manchester City career stored red — and read by
     // nothing at all. The media graphics build their whole palette off them.
+    // With no club yet, `kitsOf` hands back its own neutral pair rather than
+    // anybody else's colours.
     kitPrimary: kitsOf(player.club).home.shirt,
     kitSecondary: kitsOf(player.club).home.trim,
     homeCity: "London",
     seenDilemmas: [],
     ballonDorWins: 0,
     horse: null,
-    squad: generateSquad(clubNameSeed(player.club)),
+    squad: [],
     contractStarMilestones: [],
     contractFormOfferSeason: -1,
-    europeanQualification: STARTING_EUROPEAN_QUALIFICATION[player.club] ?? null,
+    europeanQualification: null,
     weekActions: WEEK_ACTIONS,
     awards: [],
     captain: false,
@@ -195,10 +225,75 @@ export function makeInitialCareer(
   // A fresh, unproven eighteen-year-old is meant to read as exactly that —
   // computed off the starting skills (40/40/40/40/30) and an empty honours
   // list, rather than a fixed 2.5 every career opened at regardless of who
-  // you actually are yet.
+  // you actually are yet. Nothing in this computation touches a club, so it
+  // is the same number before and after signing for one.
   state.starRating = computeStarRating(state);
-  state.squadNumber = assignSquadNumber(state, player.club);
-  state.manager = makeManager(state, player.club, 1);
+  return state;
+}
+
+/**
+ * PUT AN EXISTING CAREER AT A CLUB.
+ *
+ * Everything on `CareerState` that only means something once somebody has
+ * signed you: the division's league table, your fixture list, the contract's
+ * club, your kit colours, the squad around you, your number, the manager,
+ * the job market he could be sacked into, both domestic cups and any
+ * European campaign the club brings with it.
+ *
+ * Deliberately does the work in the same order the old single function did,
+ * because several of these read the ones before them — the manager's
+ * reputation is weighted by the club's ambition, which reads the league, and
+ * both cup draws and the European seed read the fixture list they are adding
+ * to. Reordering them would quietly change what a given career opens with.
+ *
+ * Returns a new state; the one passed in is not mutated.
+ */
+export function attachClub(
+  identity: CareerState, club: string, clubs: string[], division: CareerDivision = "premier",
+): CareerState {
+  const state: CareerState = {
+    ...identity,
+    // ── Why the nested objects are copied rather than spread along ──
+    //
+    // `{ ...identity }` is a SHALLOW copy: every nested object it does not
+    // explicitly replace is the same object, shared with the identity and with
+    // any other career signed from it. That is invisible today, because
+    // `makeInitialCareer` attaches exactly one club and throws the identity
+    // away — and a JSON comparison can never see it, because aliased objects
+    // and copied ones serialise identically.
+    //
+    // It stops being invisible the moment a trial ends with several clubs
+    // wanting you: the offer screen builds a candidate career per club from
+    // ONE identity, and the first of them to train, earn or spend would
+    // silently move the others' numbers too. Found in review, before there was
+    // anything to break.
+    skills: { ...identity.skills },
+    lastTrainedWeek: { ...identity.lastTrainedWeek },
+    relationships: { ...identity.relationships },
+    reputation: { ...identity.reputation },
+    seasonStats: { ...identity.seasonStats },
+    careerStats: { ...identity.careerStats },
+    kibCans: { ...identity.kibCans },
+    statCans: { ...identity.statCans },
+    currentBoot: { ...identity.currentBoot },
+    sponsors: identity.sponsors.map(sp => ({ ...sp })),
+    trophies: [...identity.trophies],
+    form: [...identity.form],
+    achievements: [...identity.achievements],
+    seenDilemmas: [...identity.seenDilemmas],
+    ownedItems: [...identity.ownedItems],
+    player: { ...identity.player, club },
+    contract: { ...identity.contract, club },
+    division,
+    league: buildLeague(clubs, club),
+    fixtures: buildFixtures(clubs, club),
+    kitPrimary: kitsOf(club).home.shirt,
+    kitSecondary: kitsOf(club).home.trim,
+    squad: generateSquad(clubNameSeed(club)),
+    europeanQualification: STARTING_EUROPEAN_QUALIFICATION[club] ?? null,
+  };
+  state.squadNumber = assignSquadNumber(state, club);
+  state.manager = makeManager(state, club, state.season);
   // The starting roster for the sacking carousel below — every real name in
   // managerPool.ts, since nobody has been hired at YOUR club yet (the only
   // club this game actually tracks a job market for). If the Lineups sheet
@@ -223,6 +318,18 @@ export function makeInitialCareer(
   state.euroState = euro.state ?? undefined;
   state.fixtures = [...state.fixtures, ...euro.fixtures];
   return state;
+}
+
+/** Re-exported so the career module answers the question it is asked about
+ *  its own careers — it genuinely lives in calendar.ts, which imports
+ *  nothing, so `storage.ts` (and the server route that imports it) can ask
+ *  it without pulling the whole career engine in behind it. */
+export { hasClub };
+
+export function makeInitialCareer(
+  player: StarPlayer, clubs: string[], division: CareerDivision = "premier",
+): CareerState {
+  return attachClub(makeIdentity(player, division), player.club, clubs, division);
 }
 
 // Star rating thresholds that trigger an early contract offer.
@@ -1551,7 +1658,18 @@ export function simulateMissedFixture(
     knockoutMessage,
     // A week you didn't play still costs the horse its keep, exactly like a
     // played week does (see the other call site's own note above).
-    money: career.money + career.contract.wage - (career.horse ? horseUpkeep(career.horse) : 0),
+    // A week's wage, not a fixture's — see wages.ts.
+    //
+    // This is the other half of the same overpayment the played-match path
+    // had: both sites paid a full wage PER FIXTURE, so a week holding a
+    // midweek tie and a Saturday game paid twice over whether you played
+    // them, sat them out, or did one of each. Sharing the week here as well
+    // as there is what makes a week total exactly one week's wage in every
+    // combination.
+    //
+    // You are paid for the week, not for turning up, so the share is the
+    // same as it would have been had you played this one.
+    money: career.money + wageForFixture(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
     // Not playing does not cost you energy — it is the one thing every week

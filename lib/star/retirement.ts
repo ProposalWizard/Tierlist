@@ -1,4 +1,5 @@
 import type { CareerState } from "./types";
+import { MONEY_SCALE } from "./money";
 
 /**
  * RETIREMENT
@@ -118,7 +119,13 @@ export function testimonialFor(career: CareerState): { club: string; season: num
   const apps = career.clubAppearances ?? 0;
   if (apps < TESTIMONIAL_APPEARANCES) return null;
   // A bigger name fills a bigger ground, but the appearances are what earn it.
-  const payout = Math.round(apps * 0.9 + career.fame * 1.6 + career.starRating * 22);
+  //
+  // Scaled by MONEY_SCALE: this formula was left behind by the 14 Sep 2026
+  // rescale that multiplied every other money value by 2000, so a 300-
+  // appearance, 5★ career was being sent off with about ★500 — a rounding
+  // error rather than a send-off. The shape of the formula is unchanged;
+  // only the scale it lands on is.
+  const payout = Math.round((apps * 0.9 + career.fame * 1.6 + career.starRating * 22) * MONEY_SCALE);
   return { club: career.player.club, season: career.season, payout };
 }
 

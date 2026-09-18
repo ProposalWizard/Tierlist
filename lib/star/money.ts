@@ -13,6 +13,28 @@
  * bigger than what's really there).
  */
 /**
+ * THE PERSONAL-MONEY SCALE.
+ *
+ * On 14 Sep 2026 every personal-money value in the game was multiplied by
+ * 2000 — the same move that took the starting wage from ★1 to ★2,000 — so
+ * that amounts read as real money instead of small placeholder numbers,
+ * while every item's cost in weeks-of-wage stayed exactly the same. See the
+ * header of `shopDefaults.ts` for the full reasoning.
+ *
+ * Three formulas were missed by that pass and stayed on the old ★1 scale,
+ * which made them rounding errors rather than rewards: the per-match
+ * sponsor payment, the retirement testimonial, and a since-deleted orphaned
+ * copy of the horse-racing prices. This constant exists so that fixing them
+ * points at one named thing rather than three loose 2000s, and so a future
+ * reader can find every place the rescale reaches.
+ *
+ * Note this is the PERSONAL scale. Club-level money (transfer fees, club
+ * valuations, facilities) deliberately uses a much larger one — a
+ * footballer's own wallet is nowhere near a club's finances.
+ */
+export const MONEY_SCALE = 2000;
+
+/**
  * A "clean" step size for a +/- stepper on a money amount — requested
  * directly, after a real negotiation input's arrows only moved by ★1 per
  * click, meaningless once amounts run into the millions. Widens in real

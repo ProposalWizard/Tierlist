@@ -182,6 +182,83 @@ npm run lint   # Run ESLint
 
 ---
 
+## ALWAYS PLAYTEST STAR CAREER CHANGES — you can now actually see the game
+
+> This supersedes every earlier note in this file claiming `/star-dev` can't be
+> reached without Google sign-in. **It can.** Those notes are why round after
+> round of gameplay work shipped saying "none of this has been seen live", and
+> why several real bugs (keeper frozen mid-dive, the face outline tracing a
+> rectangle, Touch Mode catching instantly, every team sheet full of
+> silhouettes) each survived multiple type-clean, test-green rounds.
+
+`/star-dev` has **no server auth gate** — `middleware.ts` only guards
+`/tierlist` and `/create`. `lib/star/devMode.ts` re-enables the local-only
+`ANON_SCOPE` career in development, so the game is fully playable signed-out in
+a sandbox or CI. A production build inlines `NODE_ENV` to `"production"`, so
+this cannot reach the live site.
+
+**After ANY change to `lib/star/**`, `components/star/**`, `app/star-dev/**`,
+or the star/draft data routes, invoke the `star-playtest` subagent** (see
+`.claude/agents/star-playtest.md`) and act on what it reports. A type-check and
+a green suite are necessary, not sufficient — neither can see a frozen figure,
+a mis-cropped face, or a button that never appears.
+
+Harness: `scripts/star-sandbox/` (`drive.mjs`, `play.mjs`, `match.mjs`,
+`explore.mjs`) — read its README first.
+
+**Env:** `.env.local` needs only `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`. The anon key is **not a secret** (it ships in
+the browser bundle of every live page) and is sufficient for real player data,
+because every table the career reads is public-read by RLS: `sofifa_players`,
+`club_logos`, `league_logos`, `star_lineups`. `SUPABASE_SERVICE_ROLE_KEY` is
+NOT needed — `lib/supabase/publicRead.ts` falls back to the anon key for the
+read-only data routes, and production is unchanged whenever the service key is
+present.
+
+**Without valid Supabase env**, every club shows "NO SQUAD YET" and falls back
+to invented players. Physics/layout work is still testable; anything involving
+real players is not.
+
+**The green pre-match button is "Team sheets →", not "Play Match".** It reads
+"Play Match ⚽" only when your XI is under 9 players (`teamsReady`, page.tsx) —
+otherwise it routes via VersusScreen, which has its own KICK OFF. An earlier
+version of this note claimed the button disappeared entirely without squad
+data; that was wrong, and came from a script searching for the wrong text
+rather than looking at the screen. Match on all of it.
+
+**In-match, the ball is NOT centre-bottom.** That's only true of the trial
+penalty. A real scenario places it anywhere in the framed view, so a driver
+that drags from a fixed point will miss and silently produce no contact
+screen. Find the ball before aiming.
+
+---
+
+## Working alongside the other two developers
+
+Three people are building this. To avoid two sessions editing the same files:
+
+- **Branches are per-person and non-negotiable** — this session develops on
+  `Harry`. Never push to another person's branch.
+- **Before starting, claim a lane** — say which of these you're in, because
+  they barely overlap in files:
+
+| Lane | Primary files |
+|------|---------------|
+| Match physics / engine | `lib/star/canvasEngine.ts`, `hiddenMatch.ts`, `components/star/CanvasMatch.tsx`, `tests/star/{finishing,keeperDive,aiming,outcomes}.mts` |
+| Career/season structure | `lib/star/{careerFlow,season,competitions,euro,cups,promotion,calendar}.ts` |
+| Economy / meta systems | `lib/star/{shopData,shopDefaults,sponsors,investments,marketValue,negotiation,money}.ts`, `components/star/{Shop,Casino,Investments}.tsx` |
+| Graphics / UI | `components/star/*.tsx` (non-CanvasMatch), `lib/star/{drawPlayerHead,faceStyle,firstPersonRender,scenarioRender}.ts` |
+| Media / narrative | `lib/star/media/**`, `components/star/{MediaFeed,media/*}.tsx` |
+
+- **`app/star-dev/page.tsx` is the shared collision point** — nearly every
+  feature touches its phase machine. Keep edits there minimal and additive
+  (a new phase + handler), never a refactor, unless the whole team agrees.
+- **`lib/star/types.ts` and `tuning.ts` are also shared** — add fields, don't
+  restructure.
+- Rebase on `main` before pushing; prefer several small PRs over one large one.
+
+---
+
 ## Pending Migrations
 
 > Run in Supabase SQL Editor before touching related features.

@@ -3286,7 +3286,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ...finaliseMatch(
             attemptsRef.current, t.goals, t.assists, t.passesCompleted,
             90, userScoreRef.current, oppScoreRef.current, careerForStats,
-            goalEventsRef.current, null, oppGoalEventsRef.current,
+            goalEventsRef.current, null, oppGoalEventsRef.current, fixture,
           ),
           endEnergy: liveEnergyAt(matchMinuteRef.current),
         };
@@ -3544,7 +3544,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               attemptsRef.current, t.goals, t.assists, t.passesCompleted,
               Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
               userScoreRef.current, oppScoreRef.current, careerForStats,
-              goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current,
+              goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
             ),
             // The moment the match actually ended for you — full time, or
             // the minute you were hooked — not necessarily 90.
@@ -4558,7 +4558,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
                 attemptsRef.current, t.goals, t.assists, t.passesCompleted,
                 Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
                 userScoreRef.current, oppScoreRef.current, careerForStats,
-                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current,
+                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
               ),
               endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
               wentToExtraTime: wentToExtraTimeRef.current,

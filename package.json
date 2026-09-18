@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "star:playtest": "node scripts/star-sandbox/drive.mjs",
+    "test:star": "for f in tests/star/*.mts; do npx tsx \"$f\" || exit 1; done"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -32,6 +34,7 @@
     "eslint-config-next": "^14.2.28",
     "postcss": "^8.4.40",
     "tailwindcss": "^3.4.6",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "playwright": "^1.55.0"
   }
 }

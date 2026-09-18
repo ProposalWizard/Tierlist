@@ -1,5 +1,6 @@
 import {
   investInfluence, influenceIn, canProposeRuleChange, RULE_PROPOSAL_INFLUENCE_THRESHOLD,
+  MONEY_PER_INFLUENCE_POINT,
   GOVERNING_BODY_COMPETITIONS,
 } from "../../lib/star/governingBodies";
 import {
@@ -25,6 +26,21 @@ import type { CareerState, LeagueTeam, StarPlayer } from "../../lib/star/types";
  * machinery mirrors Phase 2/3's own pattern rather than reinventing it.
  */
 
+/**
+ * Buying influence, in POINTS rather than in pounds.
+ *
+ * These fixtures used to hardcode the cash amount — "invest 25,000" — which
+ * silently baked the price of influence into the test. When that price was
+ * corrected (it had been left on the pre-rescale scale, where ★50,000 bought
+ * total control of FIFA), every one of these broke, and none of them broke in
+ * a way that pointed at the price.
+ *
+ * Asking for a number of POINTS and letting the constant decide what that
+ * costs means a future retune moves the money here automatically, and a real
+ * failure is a real failure.
+ */
+const costOf = (points: number) => points * MONEY_PER_INFLUENCE_POINT;
+
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
@@ -46,7 +62,7 @@ function player(): StarPlayer {
 
 function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const base = makeInitialCareer(player(), [...PREMIER_LEAGUE_CLUBS]);
-  return { ...base, money: 1_000_000, ...overrides };
+  return { ...base, money: costOf(500), ...overrides };
 }
 
 // ── The governing-body map is real, structural data ─────────────────────────
@@ -62,16 +78,16 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   check(influenceIn(career, "FA") === 0, "nobody starts with any influence anywhere");
   check(!canProposeRuleChange(career, "FA"), "no influence means no standing to propose a rule change");
 
-  const tooMuch = investInfluence(career, "FA", 10_000_000);
+  const tooMuch = investInfluence(career, "FA", career.money + 1);
   check("ok" in tooMuch && tooMuch.ok === false, "can't invest more money than you actually have");
 
-  const invested = investInfluence(career, "FA", 40_000) as CareerState;
+  const invested = investInfluence(career, "FA", costOf(RULE_PROPOSAL_INFLUENCE_THRESHOLD)) as CareerState;
   check(influenceIn(invested, "FA") > 0, "a real investment genuinely raises influence");
   check(invested.money < career.money, "…and genuinely costs real money");
   check(influenceIn(invested, "FA") <= 100, "influence never exceeds its own 0-100 ceiling");
   check(influenceIn(invested, "UEFA") === 0, "investing in one body doesn't leak influence into another");
 
-  const maxed = investInfluence(invested, "FA", 10_000_000 <= invested.money ? invested.money : invested.money) as CareerState;
+  const maxed = investInfluence(invested, "FA", invested.money) as CareerState;
   check(influenceIn(maxed, "FA") >= RULE_PROPOSAL_INFLUENCE_THRESHOLD, "fixture check: enough was invested to clear the proposal threshold");
   check(canProposeRuleChange(maxed, "FA"), "enough influence really does unlock proposing a rule change");
 }
@@ -154,7 +170,7 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   const blocked = proposeRuleChangeVote(career, "FA", { points: { win: 2, draw: 1, loss: 0 } }, mulberry32Local(1));
   check(!blocked.ok, "no influence at all means no standing to propose a rule change");
 
-  career = investInfluence(career, "FA", 25_000) as CareerState;
+  career = investInfluence(career, "FA", costOf(RULE_PROPOSAL_INFLUENCE_THRESHOLD)) as CareerState;
   check(canProposeRuleChange(career, "FA"), "fixture assumption: enough influence to propose");
   check(!canOverruleRuleVote(career, "FA"), `not yet enough to overrule (bar is ${RULE_OVERRULE_INFLUENCE_THRESHOLD})`);
 
@@ -180,7 +196,7 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
 // ── Overruling a rule vote, once influence clears the higher bar ──────────
 {
   let career = freshCareer();
-  career = investInfluence(career, "FA", 1_000_000 <= career.money ? 100_000 : career.money) as CareerState;
+  career = investInfluence(career, "FA", costOf(RULE_OVERRULE_INFLUENCE_THRESHOLD)) as CareerState;
   check(influenceIn(career, "FA") >= RULE_OVERRULE_INFLUENCE_THRESHOLD, "fixture assumption: enough influence to overrule");
 
   const proposed = proposeRuleChangeVote(career, "FA", { matchLengthMinutes: 60 }, mulberry32Local(3));

@@ -1,4 +1,4 @@
-import { makeInitialCareer } from "../../lib/star/careerFlow";
+import { makeInitialCareer, makeIdentity } from "../../lib/star/careerFlow";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -74,6 +74,60 @@ const CLUBS = [
     "slot 1 is reported as occupied, with the pre-existing save's own club");
   check(summary[1].empty === true && summary[2].empty === true,
     "slots 2 and 3 are reported empty for an account that has never used them");
+}
+
+// ── A trial in progress is a real save, and must not read as a spare slot ──
+//
+// A career now genuinely exists before anybody has signed it: `makeIdentity`
+// (careerFlow.ts) gives the trial a real, saveable CareerState with no club,
+// no league and no fixtures. It is NOT an empty slot — overwriting it loses
+// the trial — but it has no club name to print, so a summary that only ever
+// reported a name and a club would render a dangling separator and quietly
+// invite the player to start over on top of the career they are mid-way
+// through.
+{
+  freshStore();
+  const trial = makeIdentity({
+    firstName: "Trialist", lastName: "Player", age: 18, position: "CAM",
+    club: "", nationality: "England",
+  } as StarPlayer);
+  const signed = makeInitialCareer(player("Signed", "Arsenal"), CLUBS);
+  saveCareer(trial, slotScope(ACCOUNT, 1));
+  saveCareer(signed, slotScope(ACCOUNT, 2));
+
+  const summary = listSaveSlots(ACCOUNT);
+  check(summary[0].empty === false, "a trial in progress occupies its slot rather than reading as empty");
+  check(summary[0].signed === false, "…and is reported as not yet signed by anybody");
+  check(summary[0].club === undefined, "…with no club name to print rather than an empty one");
+  check(summary[0].playerName === "Trialist Player", "…while still naming the player it belongs to");
+
+  check(summary[1].empty === false && summary[1].signed === true,
+    "a career with a club is still reported as signed");
+  check(summary[1].club === "Arsenal", "…and still names its club");
+
+  // And it survives a round trip like any other save — the whole point of
+  // splitting career creation was that the trial is saved by the machinery
+  // that already exists, not by a parallel one.
+  const back = loadCareer(slotScope(ACCOUNT, 1));
+  check(back?.player.firstName === "Trialist", "a trial save loads back out of the ordinary save slot");
+  check((back?.league ?? []).length === 0, "…still with no league, because nobody has signed it");
+  check(back?.starRating === trial.starRating, "…and with the player's own rating intact");
+
+  // Switching away and back is the whole point of it being a real save — a
+  // trial started on one device has to still be a trial when it is picked up
+  // again, not a half-filled career or an empty slot.
+  saveActiveSlot(ACCOUNT, 2);
+  saveActiveSlot(ACCOUNT, 1);
+  const afterSwitch = loadCareer(slotScope(ACCOUNT, loadActiveSlot(ACCOUNT)));
+  check(afterSwitch?.player.firstName === "Trialist", "a trial survives switching to another slot and back");
+  check((afterSwitch?.league ?? []).length === 0, "…and is still unsigned when it comes back");
+
+  // And it clears like any other save, rather than leaving a ghost behind.
+  clearCareer(slotScope(ACCOUNT, 1));
+  check(loadCareer(slotScope(ACCOUNT, 1)) === null, "a trial save clears like any other");
+  check(listSaveSlots(ACCOUNT)[0].empty === true, "…and the slot reads as genuinely empty afterwards");
+  check(loadCareer(slotScope(ACCOUNT, 2))?.player.firstName === "Signed",
+    "…without touching the signed career in the next slot");
 }
 
 // ── Slots are genuinely independent ─────────────────────────────────────────

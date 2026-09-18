@@ -50,7 +50,19 @@ export default function PhoneFrame({
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.3rem] bg-black">
         {/* Status bar */}
         <div className="relative z-20 flex shrink-0 items-center justify-between px-6 pb-1 pt-2.5 text-white">
-          <span className="text-[11px] font-bold tabular-nums">{statusLabel}</span>
+          {/* ── Kept clear of the notch ──
+              The dynamic island below is centred and 86px wide, so it starts
+              at (50% − 43px). This label starts at the 24px gutter and had no
+              width limit at all, so a longer one than the "9:41" this was
+              built around ran straight under it — the real in-game date
+              (22/08/26) was measured overlapping by about 16px, swallowing
+              the year. Found by playtest.
+
+              Capping the width structurally, rather than shortening the date,
+              means no future label can reach the notch either. */}
+          <span className="max-w-[calc(50%-3.5rem)] truncate text-[11px] font-bold tabular-nums">
+            {statusLabel}
+          </span>
           <div className="flex items-center gap-1">
             <SignalIcon />
             <WifiIcon />

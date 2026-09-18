@@ -4442,7 +4442,16 @@ const SHOT_MOUTH_PAD = 3;           // metres either side of the posts still cou
  * nobody needs to know where a ball would have landed if the goal were not
  * there.
  */
-export function firstBounceAt(ball: Ball, conditions?: Scenario["conditions"], horizon = 5): Vec2 | null {
+export function firstBounceAt(
+  ball: Ball,
+  conditions?: Scenario["conditions"],
+  horizon = 5,
+  /** The goal this projection is aimed at. Optional, defaulting to a real
+   *  eleven-a-side goal, so every existing caller is unchanged — see
+   *  `insideGoalMouth` (pitch.ts) for why small-sided football needs it. */
+  goal?: { x1: number; x2: number },
+  crossbar: number = GOAL_H,
+): Vec2 | null {
   if (ball.z <= 0.25 && ball.vz <= 0) return null;
   let x = ball.pos.x, y = ball.pos.y, z = ball.z;
   let vx = ball.vel.x, vy = ball.vel.y, vz = ball.vz;
@@ -4481,7 +4490,10 @@ export function firstBounceAt(ball: Ball, conditions?: Scenario["conditions"], h
       const f = py / (py - y || 1);
       const crossX = x - vx * dt * (1 - f);
       const crossZ = z + (nz - z) * f;
-      if (insideGoalMouth(crossX) && crossZ <= GOAL_H) {
+      // The goal this projection is aimed at, not necessarily the league's.
+      // Identical for every ordinary caller (both defaults are the real goal)
+      // and genuinely smaller for small-sided football.
+      if (insideGoalMouth(crossX, goal?.x1, goal?.x2) && crossZ <= crossbar) {
         return { x: crossX, y: 0 };
       }
     }
@@ -5738,7 +5750,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const xCross = prevX + (ball.pos.x - prevX) * frac;
     const zCross = prevZ + (ball.z - prevZ) * frac;
     const crossbar = scenario.crossbar;
-    if (insideGoalMouth(xCross)) {
+    // The scenario's own goal. See the note in headedForGoal.
+    if (insideGoalMouth(xCross, scenario.goal.x1, scenario.goal.x2)) {
       if (zCross > crossbar + BALL_R) { ball.overBar = true; return "over"; }
       if (zCross > crossbar - BALL_R) {
         // Off the underside of the bar. It comes back down and stays live.
@@ -5758,7 +5771,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       ball.vel.x *= 0.55; ball.vel.y *= 0.55; ball.vz = Math.min(ball.vz, 0);
       return ball.loose ? "rebound" : "goal";
     }
-    if (hitsPost(xCross)) {
+    if (hitsPost(xCross, scenario.goal.x1, scenario.goal.x2)) {
       const again = reboundOffFrame(ball, xCross, rng, scenario);
       if (again) return null;
       return "post";

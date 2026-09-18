@@ -1,0 +1,8142 @@
+[
+ {
+  "player": {
+   "firstName": "Golden",
+   "lastName": "Fixture",
+   "age": 24,
+   "skinTone": "light",
+   "club": "Arsenal",
+   "clubBadge": null,
+   "position": "ST",
+   "nationality": "England",
+   "startYear": 2027
+  },
+  "clubs": [
+   "Arsenal",
+   "AFC Bournemouth",
+   "Liverpool",
+   "Leeds United",
+   "Crystal Palace",
+   "Brentford",
+   "Hull City",
+   "Brighton & Hove Albion",
+   "Everton",
+   "Newcastle United",
+   "Nottingham Forest",
+   "Ipswich Town",
+   "Manchester City",
+   "Tottenham Hotspur",
+   "Aston Villa",
+   "Chelsea",
+   "Fulham FC",
+   "Sunderland",
+   "Manchester United",
+   "Coventry City"
+  ],
+  "division": "premier",
+  "career": {
+   "version": 2,
+   "player": {
+    "firstName": "Golden",
+    "lastName": "Fixture",
+    "age": 24,
+    "skinTone": "light",
+    "club": "Arsenal",
+    "clubBadge": null,
+    "position": "ST",
+    "nationality": "England",
+    "startYear": 2027
+   },
+   "skills": {
+    "pace": 40,
+    "power": 40,
+    "technique": 40,
+    "vision": 40,
+    "freeKick": 30
+   },
+   "lastTrainedWeek": {
+    "pace": 1,
+    "power": 1,
+    "technique": 1,
+    "vision": 1,
+    "freeKick": 1
+   },
+   "relationships": {
+    "boss": 60,
+    "team": 60,
+    "fans": 40,
+    "girlfriend": null,
+    "sponsors": 0
+   },
+   "reputation": {
+    "world": 15,
+    "club": 50,
+    "government": 5,
+    "shareholders": 5
+   },
+   "contract": {
+    "club": "Arsenal",
+    "wage": 2000,
+    "goalBonus": 200,
+    "assistBonus": 150,
+    "seasonsRemaining": 3
+   },
+   "season": 1,
+   "division": "premier",
+   "week": 1,
+   "matchFitness": 80,
+   "energy": 100,
+   "injury": null,
+   "happiness": 60,
+   "money": 5000,
+   "starRating": 1.9475000000000002,
+   "fame": 5,
+   "seasonStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "careerStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "fixtures": [
+    {
+     "week": 1,
+     "opponent": "Coventry City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 2,
+     "opponent": "Manchester United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Sunderland",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 4,
+     "opponent": "Fulham FC",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 5,
+     "opponent": "Chelsea",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 6,
+     "opponent": "Aston Villa",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 7,
+     "opponent": "Tottenham Hotspur",
+     "home": false,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 8,
+     "opponent": "Manchester City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 9,
+     "opponent": "Ipswich Town",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 10,
+     "opponent": "Nottingham Forest",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 11,
+     "opponent": "Newcastle United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 12,
+     "opponent": "Everton",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 13,
+     "opponent": "Brighton & Hove Albion",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 14,
+     "opponent": "Hull City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 15,
+     "opponent": "Brentford",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 16,
+     "opponent": "Crystal Palace",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 17,
+     "opponent": "Leeds United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 18,
+     "opponent": "Liverpool",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 19,
+     "opponent": "AFC Bournemouth",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 20,
+     "opponent": "Coventry City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 21,
+     "opponent": "Manchester United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 22,
+     "opponent": "Sunderland",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 23,
+     "opponent": "Fulham FC",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 24,
+     "opponent": "Chelsea",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 25,
+     "opponent": "Aston Villa",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 26,
+     "opponent": "Tottenham Hotspur",
+     "home": true,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 27,
+     "opponent": "Manchester City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 28,
+     "opponent": "Ipswich Town",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 29,
+     "opponent": "Nottingham Forest",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 30,
+     "opponent": "Newcastle United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 31,
+     "opponent": "Everton",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 32,
+     "opponent": "Brighton & Hove Albion",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 33,
+     "opponent": "Hull City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 34,
+     "opponent": "Brentford",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 35,
+     "opponent": "Crystal Palace",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 36,
+     "opponent": "Leeds United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 37,
+     "opponent": "Liverpool",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 38,
+     "opponent": "AFC Bournemouth",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Bolton Wanderers",
+     "home": false,
+     "played": false,
+     "competition": "League Cup",
+     "kind": "cup",
+     "round": "Round of 32",
+     "opponentStrength": 63.88
+    },
+    {
+     "week": 2,
+     "opponent": "Shrewsbury Town",
+     "home": false,
+     "played": false,
+     "competition": "FA Cup",
+     "kind": "cup",
+     "round": "Round of 64",
+     "opponentStrength": 50.87
+    },
+    {
+     "week": 5,
+     "opponent": "AEK Athens",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD1",
+     "opponentStrength": 62
+    },
+    {
+     "week": 7,
+     "opponent": "Napoli",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD2",
+     "opponentStrength": 82
+    },
+    {
+     "week": 9,
+     "opponent": "VfB Stuttgart",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD3",
+     "opponentStrength": 75
+    },
+    {
+     "week": 11,
+     "opponent": "Sporting CP",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD4",
+     "opponentStrength": 77
+    },
+    {
+     "week": 13,
+     "opponent": "Olympique Lyonnais",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD5",
+     "opponentStrength": 75
+    },
+    {
+     "week": 15,
+     "opponent": "Inter",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD6",
+     "opponentStrength": 86
+    },
+    {
+     "week": 22,
+     "opponent": "Dinamo Zagreb",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD7",
+     "opponentStrength": 70
+    },
+    {
+     "week": 23,
+     "opponent": "Villarreal CF",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD8",
+     "opponentStrength": 76
+    }
+   ],
+   "league": [
+    {
+     "name": "Arsenal",
+     "strength": 66,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "AFC Bournemouth",
+     "strength": 88,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Liverpool",
+     "strength": 66,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Leeds United",
+     "strength": 60,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Crystal Palace",
+     "strength": 66,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Brentford",
+     "strength": 76,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Hull City",
+     "strength": 86,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Brighton & Hove Albion",
+     "strength": 68,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Everton",
+     "strength": 65,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Newcastle United",
+     "strength": 67,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Nottingham Forest",
+     "strength": 71,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Ipswich Town",
+     "strength": 63,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Manchester City",
+     "strength": 72,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Tottenham Hotspur",
+     "strength": 82,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Aston Villa",
+     "strength": 87,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Chelsea",
+     "strength": 61,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Fulham FC",
+     "strength": 55,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Sunderland",
+     "strength": 64,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Manchester United",
+     "strength": 58,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Coventry City",
+     "strength": 75,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    }
+   ],
+   "achievements": [
+    "first-contract"
+   ],
+   "status": "1st Team",
+   "currentBoot": {
+    "id": "starter",
+    "name": "NS-Pure",
+    "pace": 5,
+    "power": 5,
+    "technique": 5,
+    "matches": 3,
+    "price": 6000
+   },
+   "kibCans": {
+    "basic": 2,
+    "premium": 0,
+    "elite": 0
+   },
+   "statCans": {
+    "basic": 0,
+    "premium": 0,
+    "elite": 0
+   },
+   "statBoost": null,
+   "ownedItems": [],
+   "girlfriend": null,
+   "sponsors": [
+    {
+     "category": "Boots",
+     "active": false
+    },
+    {
+     "category": "Sports Drink",
+     "active": false
+    },
+    {
+     "category": "Sports Clothing",
+     "active": false
+    },
+    {
+     "category": "Casual Clothing",
+     "active": false
+    },
+    {
+     "category": "Food",
+     "active": false
+    },
+    {
+     "category": "Cosmetics",
+     "active": false
+    },
+    {
+     "category": "Watch",
+     "active": false
+    },
+    {
+     "category": "Electronics",
+     "active": false
+    },
+    {
+     "category": "Jewelry",
+     "active": false
+    },
+    {
+     "category": "Car",
+     "active": false
+    }
+   ],
+   "trophies": [],
+   "form": [],
+   "kitPrimary": "#EF0107",
+   "kitSecondary": "#FFFFFF",
+   "homeCity": "London",
+   "seenDilemmas": [],
+   "ballonDorWins": 0,
+   "horse": null,
+   "squad": [
+    {
+     "id": "sp_0",
+     "name": "Luca Cancelo",
+     "shortName": "Cancelo",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_1",
+     "name": "Carlos Toure",
+     "shortName": "Toure",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_2",
+     "name": "Ryan Taylor",
+     "shortName": "Taylor",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_3",
+     "name": "Fabio Jones",
+     "shortName": "Jones",
+     "position": "RB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_4",
+     "name": "Fabio Barrett",
+     "shortName": "Barrett",
+     "position": "LB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_5",
+     "name": "Ryan Anderson",
+     "shortName": "Anderson",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_6",
+     "name": "Bernardo Nkrumah",
+     "shortName": "Nkrumah",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_7",
+     "name": "Harry Kovacic",
+     "shortName": "Kovacic",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_8",
+     "name": "Bruno Nkrumah",
+     "shortName": "Nkrumah",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_9",
+     "name": "Pablo Diop",
+     "shortName": "Diop",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_10",
+     "name": "Roberto Jones",
+     "shortName": "Jones",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_11",
+     "name": "Ruben Santos",
+     "shortName": "Santos",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_12",
+     "name": "Diogo Williams",
+     "shortName": "Williams",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_13",
+     "name": "Charlie Salah",
+     "shortName": "Salah",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_14",
+     "name": "Victor Ferreira",
+     "shortName": "Ferreira",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_15",
+     "name": "Riyad Garcia",
+     "shortName": "Garcia",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_16",
+     "name": "Gabriel Wright",
+     "shortName": "Wright",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_17",
+     "name": "Mamadou Coulibaly",
+     "shortName": "Coulibaly",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_18",
+     "name": "Ivan Wilson",
+     "shortName": "Wilson",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_19",
+     "name": "Alexis Toure",
+     "shortName": "Toure",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    }
+   ],
+   "contractStarMilestones": [],
+   "contractFormOfferSeason": -1,
+   "europeanQualification": "Champions League",
+   "weekActions": 3,
+   "awards": [],
+   "captain": false,
+   "clubAppearances": 0,
+   "cups": [],
+   "caps": 0,
+   "internationalGoals": 0,
+   "knockoutMessage": null,
+   "lastTransferWindowKey": "1-summer",
+   "deadlineDayShownFor": "1-summer",
+   "squadNumber": 9,
+   "manager": {
+    "name": "Gianluca Marchetti",
+    "style": "demanding",
+    "since": 1,
+    "arrival": "Expects a lot, every week. Form is the only currency with him.",
+    "reputation": 57
+   },
+   "availableManagers": [
+    "Sir Alex Ferguson",
+    "Arsène Wenger",
+    "Jürgen Klopp",
+    "Pep Guardiola",
+    "Antonio Conte",
+    "Arne Slot",
+    "Eddie Howe",
+    "Didier Deschamps",
+    "Julian Nagelsmann",
+    "Gareth Southgate",
+    "Zinedine Zidane",
+    "Xavi Hernández",
+    "Ernesto Valverde",
+    "Joachim Löw",
+    "Maurizio Sarri",
+    "Thomas Tuchel",
+    "Sean Dyche",
+    "Igor Tudor",
+    "Marcelino",
+    "Erik Ten Hag",
+    "Rafael Benítez",
+    "Gennaro Gattuso",
+    "Vincenzo Italiano",
+    "Kasper Hjulmand",
+    "Ole Gunnar Solskjær",
+    "Marcelo Bielsa",
+    "Thiago Motta",
+    "Louis van Gaal",
+    "Kieran McKenna",
+    "Ronald Koeman",
+    "Claudio Ranieri",
+    "Liam Rosenior",
+    "Roberto Martínez",
+    "Ralph Rangnick",
+    "Stefano Pioli",
+    "Mick McCarthy",
+    "Steve Bruce",
+    "Imanol Alguacil",
+    "Sam Allardyce",
+    "Laurent Blanc",
+    "Bruno Lage",
+    "Steven Gerrard",
+    "Patrick Vieira",
+    "Robin van Persie",
+    "Scott Parker",
+    "Adi Hütter",
+    "Ralph Hasenhüttl"
+   ],
+   "cupState": [
+    {
+     "competition": "League Cup",
+     "rounds": [
+      {
+       "name": "Round of 32",
+       "ties": [
+        {
+         "home": "Swansea City",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Manchester City",
+         "away": "Fulham FC"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "West Ham United"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Hull City",
+         "away": "Southampton"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Stoke City"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Nottingham Forest",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Brentford",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Millwall FC",
+         "away": "Aston Villa"
+        },
+        {
+         "home": "Bolton Wanderers",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Blackburn Rovers",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "AFC Bournemouth",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Everton",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Manchester United",
+         "away": "Brighton & Hove Albion"
+        },
+        {
+         "home": "Liverpool",
+         "away": "Wigan Athletic"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "competition": "FA Cup",
+     "rounds": [
+      {
+       "name": "Round of 64",
+       "ties": [
+        {
+         "home": "Watford",
+         "away": "Blackburn Rovers"
+        },
+        {
+         "home": "Northampton Town",
+         "away": "Millwall FC"
+        },
+        {
+         "home": "Manchester United",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Chesterfield",
+         "away": "Bolton Wanderers"
+        },
+        {
+         "home": "Stoke City",
+         "away": "Swindon Town"
+        },
+        {
+         "home": "York City",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Portsmouth",
+         "away": "Doncaster Rovers"
+        },
+        {
+         "home": "Brighton & Hove Albion",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Southampton",
+         "away": "Manchester City"
+        },
+        {
+         "home": "Middlesbrough",
+         "away": "Brentford"
+        },
+        {
+         "home": "Wycombe Wanderers",
+         "away": "Swansea City"
+        },
+        {
+         "home": "Shrewsbury Town",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Aston Villa",
+         "away": "Plymouth Argyle"
+        },
+        {
+         "home": "Bristol City",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "Hull City",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "West Bromwich Albion"
+        },
+        {
+         "home": "Reading FC",
+         "away": "Birmingham City"
+        },
+        {
+         "home": "Preston North End",
+         "away": "Wigan Athletic"
+        },
+        {
+         "home": "Wrexham",
+         "away": "Liverpool"
+        },
+        {
+         "home": "Milton Keynes Dons",
+         "away": "Leyton Orient"
+        },
+        {
+         "home": "Scunthorpe United",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Norwich City"
+        },
+        {
+         "home": "Bristol Rovers",
+         "away": "Derby County"
+        },
+        {
+         "home": "Leicester City",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Stevenage"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Wolverhampton Wanderers"
+        },
+        {
+         "home": "Barnet",
+         "away": "Rotherham United"
+        },
+        {
+         "home": "Burton Albion",
+         "away": "Burnley"
+        },
+        {
+         "home": "West Ham United",
+         "away": "Nottingham Forest"
+        },
+        {
+         "home": "Fulham FC",
+         "away": "Queens Park Rangers"
+        },
+        {
+         "home": "Exeter City",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Everton",
+         "away": "AFC Bournemouth"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "euroState": {
+    "competition": "Champions League",
+    "clubs": [
+     {
+      "name": "Arsenal",
+      "strength": 66,
+      "pot": 3
+     },
+     {
+      "name": "Real Madrid",
+      "strength": 92,
+      "pot": 1
+     },
+     {
+      "name": "FC Bayern München",
+      "strength": 91,
+      "pot": 1
+     },
+     {
+      "name": "FC Barcelona",
+      "strength": 89,
+      "pot": 1
+     },
+     {
+      "name": "Paris Saint-Germain",
+      "strength": 88,
+      "pot": 1
+     },
+     {
+      "name": "Aston Villa",
+      "strength": 87,
+      "pot": 1
+     },
+     {
+      "name": "Inter",
+      "strength": 86,
+      "pot": 1
+     },
+     {
+      "name": "Atlético Madrid",
+      "strength": 85,
+      "pot": 1
+     },
+     {
+      "name": "Borussia Dortmund",
+      "strength": 84,
+      "pot": 1
+     },
+     {
+      "name": "Napoli",
+      "strength": 82,
+      "pot": 1
+     },
+     {
+      "name": "RB Leipzig",
+      "strength": 80,
+      "pot": 2
+     },
+     {
+      "name": "Roma",
+      "strength": 80,
+      "pot": 2
+     },
+     {
+      "name": "FC Porto",
+      "strength": 79,
+      "pot": 2
+     },
+     {
+      "name": "PSV",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Real Betis Balompié",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Sporting CP",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Villarreal CF",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Fenerbahçe SK",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Eintracht Frankfurt",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Feyenoord",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "RC Lens",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Lille OSC",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "VfB Stuttgart",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Olympique Lyonnais",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Galatasaray SK",
+      "strength": 74,
+      "pot": 3
+     },
+     {
+      "name": "Club Brugge KV",
+      "strength": 72,
+      "pot": 3
+     },
+     {
+      "name": "Manchester City",
+      "strength": 72,
+      "pot": 3
+     },
+     {
+      "name": "Shakhtar Donetsk",
+      "strength": 72,
+      "pot": 3
+     },
+     {
+      "name": "Celtic",
+      "strength": 72,
+      "pot": 4
+     },
+     {
+      "name": "SK Slavia Praha",
+      "strength": 70,
+      "pot": 4
+     },
+     {
+      "name": "Dinamo Zagreb",
+      "strength": 70,
+      "pot": 4
+     },
+     {
+      "name": "FK Bodø/Glimt",
+      "strength": 69,
+      "pot": 4
+     },
+     {
+      "name": "Liverpool",
+      "strength": 66,
+      "pot": 4
+     },
+     {
+      "name": "Como",
+      "strength": 64,
+      "pot": 4
+     },
+     {
+      "name": "AEK Athens",
+      "strength": 62,
+      "pot": 4
+     },
+     {
+      "name": "Manchester United",
+      "strength": 58,
+      "pot": 4
+     }
+    ],
+    "leaguePhase": [
+     {
+      "opponent": "AEK Athens",
+      "home": false
+     },
+     {
+      "opponent": "Napoli",
+      "home": false
+     },
+     {
+      "opponent": "VfB Stuttgart",
+      "home": false
+     },
+     {
+      "opponent": "Sporting CP",
+      "home": true
+     },
+     {
+      "opponent": "Olympique Lyonnais",
+      "home": true
+     },
+     {
+      "opponent": "Inter",
+      "home": true
+     },
+     {
+      "opponent": "Dinamo Zagreb",
+      "home": true
+     },
+     {
+      "opponent": "Villarreal CF",
+      "home": false
+     }
+    ],
+    "ties": [],
+    "liveTable": [
+     {
+      "name": "Arsenal",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": true
+     },
+     {
+      "name": "Real Madrid",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Bayern München",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Barcelona",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Paris Saint-Germain",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Aston Villa",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Inter",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Atlético Madrid",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Borussia Dortmund",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Napoli",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "RB Leipzig",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Roma",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Porto",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "PSV",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Real Betis Balompié",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Sporting CP",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Villarreal CF",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Fenerbahçe SK",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Eintracht Frankfurt",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Feyenoord",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "RC Lens",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Lille OSC",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "VfB Stuttgart",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Olympique Lyonnais",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Galatasaray SK",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Club Brugge KV",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Manchester City",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Shakhtar Donetsk",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Celtic",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "SK Slavia Praha",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Dinamo Zagreb",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FK Bodø/Glimt",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Liverpool",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Como",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "AEK Athens",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Manchester United",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     }
+    ],
+    "results": [],
+    "matchdaysPlayed": 0
+   }
+  }
+ },
+ {
+  "player": {
+   "firstName": "Golden",
+   "lastName": "Fixture",
+   "age": 24,
+   "skinTone": "light",
+   "club": "Manchester City",
+   "clubBadge": null,
+   "position": "CM",
+   "nationality": "England",
+   "startYear": 2027
+  },
+  "clubs": [
+   "Arsenal",
+   "AFC Bournemouth",
+   "Liverpool",
+   "Leeds United",
+   "Crystal Palace",
+   "Brentford",
+   "Hull City",
+   "Brighton & Hove Albion",
+   "Everton",
+   "Newcastle United",
+   "Nottingham Forest",
+   "Ipswich Town",
+   "Manchester City",
+   "Tottenham Hotspur",
+   "Aston Villa",
+   "Chelsea",
+   "Fulham FC",
+   "Sunderland",
+   "Manchester United",
+   "Coventry City"
+  ],
+  "division": "premier",
+  "career": {
+   "version": 2,
+   "player": {
+    "firstName": "Golden",
+    "lastName": "Fixture",
+    "age": 24,
+    "skinTone": "light",
+    "club": "Manchester City",
+    "clubBadge": null,
+    "position": "CM",
+    "nationality": "England",
+    "startYear": 2027
+   },
+   "skills": {
+    "pace": 40,
+    "power": 40,
+    "technique": 40,
+    "vision": 40,
+    "freeKick": 30
+   },
+   "lastTrainedWeek": {
+    "pace": 1,
+    "power": 1,
+    "technique": 1,
+    "vision": 1,
+    "freeKick": 1
+   },
+   "relationships": {
+    "boss": 60,
+    "team": 60,
+    "fans": 40,
+    "girlfriend": null,
+    "sponsors": 0
+   },
+   "reputation": {
+    "world": 15,
+    "club": 50,
+    "government": 5,
+    "shareholders": 5
+   },
+   "contract": {
+    "club": "Manchester City",
+    "wage": 2000,
+    "goalBonus": 200,
+    "assistBonus": 150,
+    "seasonsRemaining": 3
+   },
+   "season": 1,
+   "division": "premier",
+   "week": 1,
+   "matchFitness": 80,
+   "energy": 100,
+   "injury": null,
+   "happiness": 60,
+   "money": 5000,
+   "starRating": 1.9475000000000002,
+   "fame": 5,
+   "seasonStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "careerStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "fixtures": [
+    {
+     "week": 1,
+     "opponent": "Brighton & Hove Albion",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 2,
+     "opponent": "Brentford",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Leeds United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 4,
+     "opponent": "AFC Bournemouth",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 5,
+     "opponent": "Manchester United",
+     "home": true,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 6,
+     "opponent": "Fulham FC",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 7,
+     "opponent": "Aston Villa",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 8,
+     "opponent": "Arsenal",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 9,
+     "opponent": "Nottingham Forest",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 10,
+     "opponent": "Everton",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 11,
+     "opponent": "Hull City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 12,
+     "opponent": "Crystal Palace",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 13,
+     "opponent": "Liverpool",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 14,
+     "opponent": "Coventry City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 15,
+     "opponent": "Sunderland",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 16,
+     "opponent": "Chelsea",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 17,
+     "opponent": "Tottenham Hotspur",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 18,
+     "opponent": "Ipswich Town",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 19,
+     "opponent": "Newcastle United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 20,
+     "opponent": "Brighton & Hove Albion",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 21,
+     "opponent": "Brentford",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 22,
+     "opponent": "Leeds United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 23,
+     "opponent": "AFC Bournemouth",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 24,
+     "opponent": "Manchester United",
+     "home": false,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 25,
+     "opponent": "Fulham FC",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 26,
+     "opponent": "Aston Villa",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 27,
+     "opponent": "Arsenal",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 28,
+     "opponent": "Nottingham Forest",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 29,
+     "opponent": "Everton",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 30,
+     "opponent": "Hull City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 31,
+     "opponent": "Crystal Palace",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 32,
+     "opponent": "Liverpool",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 33,
+     "opponent": "Coventry City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 34,
+     "opponent": "Sunderland",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 35,
+     "opponent": "Chelsea",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 36,
+     "opponent": "Tottenham Hotspur",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 37,
+     "opponent": "Ipswich Town",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 38,
+     "opponent": "Newcastle United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Fulham FC",
+     "home": true,
+     "played": false,
+     "competition": "League Cup",
+     "kind": "cup",
+     "round": "Round of 32",
+     "opponentStrength": 78
+    },
+    {
+     "week": 2,
+     "opponent": "Southampton",
+     "home": false,
+     "played": false,
+     "competition": "FA Cup",
+     "kind": "cup",
+     "round": "Round of 64",
+     "opponentStrength": 58.57
+    },
+    {
+     "week": 5,
+     "opponent": "Como",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD1",
+     "opponentStrength": 64
+    },
+    {
+     "week": 7,
+     "opponent": "Napoli",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD2",
+     "opponentStrength": 82
+    },
+    {
+     "week": 9,
+     "opponent": "VfB Stuttgart",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD3",
+     "opponentStrength": 75
+    },
+    {
+     "week": 11,
+     "opponent": "Sporting CP",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD4",
+     "opponentStrength": 77
+    },
+    {
+     "week": 13,
+     "opponent": "Olympique Lyonnais",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD5",
+     "opponentStrength": 75
+    },
+    {
+     "week": 15,
+     "opponent": "Atlético Madrid",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD6",
+     "opponentStrength": 85
+    },
+    {
+     "week": 22,
+     "opponent": "Manchester United",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD7",
+     "opponentStrength": 71
+    },
+    {
+     "week": 23,
+     "opponent": "Villarreal CF",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD8",
+     "opponentStrength": 76
+    }
+   ],
+   "league": [
+    {
+     "name": "Arsenal",
+     "strength": 73,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "AFC Bournemouth",
+     "strength": 68,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Liverpool",
+     "strength": 83,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Leeds United",
+     "strength": 67,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Crystal Palace",
+     "strength": 58,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Brentford",
+     "strength": 88,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Hull City",
+     "strength": 69,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Brighton & Hove Albion",
+     "strength": 67,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Everton",
+     "strength": 69,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Newcastle United",
+     "strength": 56,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Nottingham Forest",
+     "strength": 82,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Ipswich Town",
+     "strength": 84,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Manchester City",
+     "strength": 68,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Tottenham Hotspur",
+     "strength": 71,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Aston Villa",
+     "strength": 74,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Chelsea",
+     "strength": 69,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Fulham FC",
+     "strength": 78,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Sunderland",
+     "strength": 68,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Manchester United",
+     "strength": 71,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Coventry City",
+     "strength": 89,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    }
+   ],
+   "achievements": [
+    "first-contract"
+   ],
+   "status": "1st Team",
+   "currentBoot": {
+    "id": "starter",
+    "name": "NS-Pure",
+    "pace": 5,
+    "power": 5,
+    "technique": 5,
+    "matches": 3,
+    "price": 6000
+   },
+   "kibCans": {
+    "basic": 2,
+    "premium": 0,
+    "elite": 0
+   },
+   "statCans": {
+    "basic": 0,
+    "premium": 0,
+    "elite": 0
+   },
+   "statBoost": null,
+   "ownedItems": [],
+   "girlfriend": null,
+   "sponsors": [
+    {
+     "category": "Boots",
+     "active": false
+    },
+    {
+     "category": "Sports Drink",
+     "active": false
+    },
+    {
+     "category": "Sports Clothing",
+     "active": false
+    },
+    {
+     "category": "Casual Clothing",
+     "active": false
+    },
+    {
+     "category": "Food",
+     "active": false
+    },
+    {
+     "category": "Cosmetics",
+     "active": false
+    },
+    {
+     "category": "Watch",
+     "active": false
+    },
+    {
+     "category": "Electronics",
+     "active": false
+    },
+    {
+     "category": "Jewelry",
+     "active": false
+    },
+    {
+     "category": "Car",
+     "active": false
+    }
+   ],
+   "trophies": [],
+   "form": [],
+   "kitPrimary": "#6CABDD",
+   "kitSecondary": "#1C2C5B",
+   "homeCity": "London",
+   "seenDilemmas": [],
+   "ballonDorWins": 0,
+   "horse": null,
+   "squad": [
+    {
+     "id": "sp_0",
+     "name": "Wilfried Mane",
+     "shortName": "Mane",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_1",
+     "name": "Marcus Watkins",
+     "shortName": "Watkins",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_2",
+     "name": "Ruben Barrett",
+     "shortName": "Barrett",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_3",
+     "name": "Charlie Cancelo",
+     "shortName": "Cancelo",
+     "position": "RB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_4",
+     "name": "Oumar Santos",
+     "shortName": "Santos",
+     "position": "LB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_5",
+     "name": "Wilfried Santos",
+     "shortName": "Santos",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_6",
+     "name": "Victor Mane",
+     "shortName": "Mane",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_7",
+     "name": "Carlos Nkrumah",
+     "shortName": "Nkrumah",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_8",
+     "name": "Mason Werner",
+     "shortName": "Werner",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_9",
+     "name": "James Jones",
+     "shortName": "Jones",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_10",
+     "name": "Rodrygo Taylor",
+     "shortName": "Taylor",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_11",
+     "name": "Kylian Taylor",
+     "shortName": "Taylor",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_12",
+     "name": "Oumar Coulibaly",
+     "shortName": "Coulibaly",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_13",
+     "name": "Andres Firmino",
+     "shortName": "Firmino",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_14",
+     "name": "Vinicius Traore",
+     "shortName": "Traore",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_15",
+     "name": "Ryan Wilson",
+     "shortName": "Wilson",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_16",
+     "name": "Theo Salah",
+     "shortName": "Salah",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_17",
+     "name": "Wilfried Traore",
+     "shortName": "Traore",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_18",
+     "name": "Christian Ba",
+     "shortName": "Ba",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_19",
+     "name": "Mamadou Kovacic",
+     "shortName": "Kovacic",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    }
+   ],
+   "contractStarMilestones": [],
+   "contractFormOfferSeason": -1,
+   "europeanQualification": "Champions League",
+   "weekActions": 3,
+   "awards": [],
+   "captain": false,
+   "clubAppearances": 0,
+   "cups": [],
+   "caps": 0,
+   "internationalGoals": 0,
+   "knockoutMessage": null,
+   "lastTransferWindowKey": "1-summer",
+   "deadlineDayShownFor": "1-summer",
+   "squadNumber": 8,
+   "manager": {
+    "name": "Bruno Pryce",
+    "style": "rotational",
+    "since": 1,
+    "arrival": "Rotates freely. Nobody is guaranteed, and nobody is frozen out.",
+    "reputation": 65
+   },
+   "availableManagers": [
+    "Sir Alex Ferguson",
+    "Arsène Wenger",
+    "Jürgen Klopp",
+    "Pep Guardiola",
+    "Antonio Conte",
+    "Arne Slot",
+    "Eddie Howe",
+    "Didier Deschamps",
+    "Julian Nagelsmann",
+    "Gareth Southgate",
+    "Zinedine Zidane",
+    "Xavi Hernández",
+    "Ernesto Valverde",
+    "Joachim Löw",
+    "Maurizio Sarri",
+    "Thomas Tuchel",
+    "Sean Dyche",
+    "Igor Tudor",
+    "Marcelino",
+    "Erik Ten Hag",
+    "Rafael Benítez",
+    "Gennaro Gattuso",
+    "Vincenzo Italiano",
+    "Kasper Hjulmand",
+    "Ole Gunnar Solskjær",
+    "Marcelo Bielsa",
+    "Thiago Motta",
+    "Louis van Gaal",
+    "Kieran McKenna",
+    "Ronald Koeman",
+    "Claudio Ranieri",
+    "Liam Rosenior",
+    "Roberto Martínez",
+    "Ralph Rangnick",
+    "Stefano Pioli",
+    "Mick McCarthy",
+    "Steve Bruce",
+    "Imanol Alguacil",
+    "Sam Allardyce",
+    "Laurent Blanc",
+    "Bruno Lage",
+    "Steven Gerrard",
+    "Patrick Vieira",
+    "Robin van Persie",
+    "Scott Parker",
+    "Adi Hütter",
+    "Ralph Hasenhüttl"
+   ],
+   "cupState": [
+    {
+     "competition": "League Cup",
+     "rounds": [
+      {
+       "name": "Round of 32",
+       "ties": [
+        {
+         "home": "Swansea City",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Manchester City",
+         "away": "Fulham FC"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "West Ham United"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Hull City",
+         "away": "Southampton"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Stoke City"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Nottingham Forest",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Brentford",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Millwall FC",
+         "away": "Aston Villa"
+        },
+        {
+         "home": "Bolton Wanderers",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Blackburn Rovers",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "AFC Bournemouth",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Everton",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Manchester United",
+         "away": "Brighton & Hove Albion"
+        },
+        {
+         "home": "Liverpool",
+         "away": "Wigan Athletic"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "competition": "FA Cup",
+     "rounds": [
+      {
+       "name": "Round of 64",
+       "ties": [
+        {
+         "home": "Watford",
+         "away": "Blackburn Rovers"
+        },
+        {
+         "home": "Northampton Town",
+         "away": "Millwall FC"
+        },
+        {
+         "home": "Manchester United",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Chesterfield",
+         "away": "Bolton Wanderers"
+        },
+        {
+         "home": "Stoke City",
+         "away": "Swindon Town"
+        },
+        {
+         "home": "York City",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Portsmouth",
+         "away": "Doncaster Rovers"
+        },
+        {
+         "home": "Brighton & Hove Albion",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Southampton",
+         "away": "Manchester City"
+        },
+        {
+         "home": "Middlesbrough",
+         "away": "Brentford"
+        },
+        {
+         "home": "Wycombe Wanderers",
+         "away": "Swansea City"
+        },
+        {
+         "home": "Shrewsbury Town",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Aston Villa",
+         "away": "Plymouth Argyle"
+        },
+        {
+         "home": "Bristol City",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "Hull City",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "West Bromwich Albion"
+        },
+        {
+         "home": "Reading FC",
+         "away": "Birmingham City"
+        },
+        {
+         "home": "Preston North End",
+         "away": "Wigan Athletic"
+        },
+        {
+         "home": "Wrexham",
+         "away": "Liverpool"
+        },
+        {
+         "home": "Milton Keynes Dons",
+         "away": "Leyton Orient"
+        },
+        {
+         "home": "Scunthorpe United",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Norwich City"
+        },
+        {
+         "home": "Bristol Rovers",
+         "away": "Derby County"
+        },
+        {
+         "home": "Leicester City",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Stevenage"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Wolverhampton Wanderers"
+        },
+        {
+         "home": "Barnet",
+         "away": "Rotherham United"
+        },
+        {
+         "home": "Burton Albion",
+         "away": "Burnley"
+        },
+        {
+         "home": "West Ham United",
+         "away": "Nottingham Forest"
+        },
+        {
+         "home": "Fulham FC",
+         "away": "Queens Park Rangers"
+        },
+        {
+         "home": "Exeter City",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Everton",
+         "away": "AFC Bournemouth"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "euroState": {
+    "competition": "Champions League",
+    "clubs": [
+     {
+      "name": "Manchester City",
+      "strength": 68,
+      "pot": 3
+     },
+     {
+      "name": "Real Madrid",
+      "strength": 92,
+      "pot": 1
+     },
+     {
+      "name": "FC Bayern München",
+      "strength": 91,
+      "pot": 1
+     },
+     {
+      "name": "FC Barcelona",
+      "strength": 89,
+      "pot": 1
+     },
+     {
+      "name": "Paris Saint-Germain",
+      "strength": 88,
+      "pot": 1
+     },
+     {
+      "name": "Inter",
+      "strength": 86,
+      "pot": 1
+     },
+     {
+      "name": "Atlético Madrid",
+      "strength": 85,
+      "pot": 1
+     },
+     {
+      "name": "Borussia Dortmund",
+      "strength": 84,
+      "pot": 1
+     },
+     {
+      "name": "Liverpool",
+      "strength": 83,
+      "pot": 1
+     },
+     {
+      "name": "Napoli",
+      "strength": 82,
+      "pot": 1
+     },
+     {
+      "name": "RB Leipzig",
+      "strength": 80,
+      "pot": 2
+     },
+     {
+      "name": "Roma",
+      "strength": 80,
+      "pot": 2
+     },
+     {
+      "name": "FC Porto",
+      "strength": 79,
+      "pot": 2
+     },
+     {
+      "name": "PSV",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Real Betis Balompié",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Sporting CP",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Villarreal CF",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Fenerbahçe SK",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Eintracht Frankfurt",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Feyenoord",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "RC Lens",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Lille OSC",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "VfB Stuttgart",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Olympique Lyonnais",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Aston Villa",
+      "strength": 74,
+      "pot": 3
+     },
+     {
+      "name": "Galatasaray SK",
+      "strength": 74,
+      "pot": 3
+     },
+     {
+      "name": "Arsenal",
+      "strength": 73,
+      "pot": 3
+     },
+     {
+      "name": "Club Brugge KV",
+      "strength": 72,
+      "pot": 3
+     },
+     {
+      "name": "Shakhtar Donetsk",
+      "strength": 72,
+      "pot": 4
+     },
+     {
+      "name": "Celtic",
+      "strength": 72,
+      "pot": 4
+     },
+     {
+      "name": "Manchester United",
+      "strength": 71,
+      "pot": 4
+     },
+     {
+      "name": "SK Slavia Praha",
+      "strength": 70,
+      "pot": 4
+     },
+     {
+      "name": "Dinamo Zagreb",
+      "strength": 70,
+      "pot": 4
+     },
+     {
+      "name": "FK Bodø/Glimt",
+      "strength": 69,
+      "pot": 4
+     },
+     {
+      "name": "Como",
+      "strength": 64,
+      "pot": 4
+     },
+     {
+      "name": "AEK Athens",
+      "strength": 62,
+      "pot": 4
+     }
+    ],
+    "leaguePhase": [
+     {
+      "opponent": "Como",
+      "home": false
+     },
+     {
+      "opponent": "Napoli",
+      "home": false
+     },
+     {
+      "opponent": "VfB Stuttgart",
+      "home": false
+     },
+     {
+      "opponent": "Sporting CP",
+      "home": true
+     },
+     {
+      "opponent": "Olympique Lyonnais",
+      "home": true
+     },
+     {
+      "opponent": "Atlético Madrid",
+      "home": true
+     },
+     {
+      "opponent": "Manchester United",
+      "home": true
+     },
+     {
+      "opponent": "Villarreal CF",
+      "home": false
+     }
+    ],
+    "ties": [],
+    "liveTable": [
+     {
+      "name": "Manchester City",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": true
+     },
+     {
+      "name": "Real Madrid",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Bayern München",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Barcelona",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Paris Saint-Germain",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Inter",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Atlético Madrid",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Borussia Dortmund",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Liverpool",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Napoli",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "RB Leipzig",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Roma",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Porto",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "PSV",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Real Betis Balompié",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Sporting CP",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Villarreal CF",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Fenerbahçe SK",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Eintracht Frankfurt",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Feyenoord",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "RC Lens",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Lille OSC",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "VfB Stuttgart",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Olympique Lyonnais",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Aston Villa",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Galatasaray SK",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Arsenal",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Club Brugge KV",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Shakhtar Donetsk",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Celtic",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Manchester United",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "SK Slavia Praha",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Dinamo Zagreb",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FK Bodø/Glimt",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Como",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "AEK Athens",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     }
+    ],
+    "results": [],
+    "matchdaysPlayed": 0
+   }
+  }
+ },
+ {
+  "player": {
+   "firstName": "Golden",
+   "lastName": "Fixture",
+   "age": 31,
+   "skinTone": "light",
+   "club": "Liverpool",
+   "clubBadge": null,
+   "position": "GK",
+   "nationality": "England",
+   "startYear": 2027
+  },
+  "clubs": [
+   "Arsenal",
+   "AFC Bournemouth",
+   "Liverpool",
+   "Leeds United",
+   "Crystal Palace",
+   "Brentford",
+   "Hull City",
+   "Brighton & Hove Albion",
+   "Everton",
+   "Newcastle United",
+   "Nottingham Forest",
+   "Ipswich Town",
+   "Manchester City",
+   "Tottenham Hotspur",
+   "Aston Villa",
+   "Chelsea",
+   "Fulham FC",
+   "Sunderland",
+   "Manchester United",
+   "Coventry City"
+  ],
+  "division": "premier",
+  "career": {
+   "version": 2,
+   "player": {
+    "firstName": "Golden",
+    "lastName": "Fixture",
+    "age": 31,
+    "skinTone": "light",
+    "club": "Liverpool",
+    "clubBadge": null,
+    "position": "GK",
+    "nationality": "England",
+    "startYear": 2027
+   },
+   "skills": {
+    "pace": 40,
+    "power": 40,
+    "technique": 40,
+    "vision": 40,
+    "freeKick": 30
+   },
+   "lastTrainedWeek": {
+    "pace": 1,
+    "power": 1,
+    "technique": 1,
+    "vision": 1,
+    "freeKick": 1
+   },
+   "relationships": {
+    "boss": 60,
+    "team": 60,
+    "fans": 40,
+    "girlfriend": null,
+    "sponsors": 0
+   },
+   "reputation": {
+    "world": 15,
+    "club": 50,
+    "government": 5,
+    "shareholders": 5
+   },
+   "contract": {
+    "club": "Liverpool",
+    "wage": 2000,
+    "goalBonus": 200,
+    "assistBonus": 150,
+    "seasonsRemaining": 3
+   },
+   "season": 1,
+   "division": "premier",
+   "week": 1,
+   "matchFitness": 80,
+   "energy": 100,
+   "injury": null,
+   "happiness": 60,
+   "money": 5000,
+   "starRating": 1.9475000000000002,
+   "fame": 5,
+   "seasonStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "careerStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "fixtures": [
+    {
+     "week": 1,
+     "opponent": "Sunderland",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 2,
+     "opponent": "Chelsea",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Tottenham Hotspur",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 4,
+     "opponent": "Ipswich Town",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 5,
+     "opponent": "Newcastle United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 6,
+     "opponent": "Brighton & Hove Albion",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 7,
+     "opponent": "Brentford",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 8,
+     "opponent": "Leeds United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 9,
+     "opponent": "AFC Bournemouth",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 10,
+     "opponent": "Manchester United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 11,
+     "opponent": "Fulham FC",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 12,
+     "opponent": "Aston Villa",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 13,
+     "opponent": "Manchester City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 14,
+     "opponent": "Nottingham Forest",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 15,
+     "opponent": "Everton",
+     "home": true,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 16,
+     "opponent": "Hull City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 17,
+     "opponent": "Crystal Palace",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 18,
+     "opponent": "Arsenal",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 19,
+     "opponent": "Coventry City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 20,
+     "opponent": "Sunderland",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 21,
+     "opponent": "Chelsea",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 22,
+     "opponent": "Tottenham Hotspur",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 23,
+     "opponent": "Ipswich Town",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 24,
+     "opponent": "Newcastle United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 25,
+     "opponent": "Brighton & Hove Albion",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 26,
+     "opponent": "Brentford",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 27,
+     "opponent": "Leeds United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 28,
+     "opponent": "AFC Bournemouth",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 29,
+     "opponent": "Manchester United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 30,
+     "opponent": "Fulham FC",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 31,
+     "opponent": "Aston Villa",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 32,
+     "opponent": "Manchester City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 33,
+     "opponent": "Nottingham Forest",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 34,
+     "opponent": "Everton",
+     "home": false,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 35,
+     "opponent": "Hull City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 36,
+     "opponent": "Crystal Palace",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 37,
+     "opponent": "Arsenal",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 38,
+     "opponent": "Coventry City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Wigan Athletic",
+     "home": true,
+     "played": false,
+     "competition": "League Cup",
+     "kind": "cup",
+     "round": "Round of 32",
+     "opponentStrength": 51.15
+    },
+    {
+     "week": 2,
+     "opponent": "Wrexham",
+     "home": false,
+     "played": false,
+     "competition": "FA Cup",
+     "kind": "cup",
+     "round": "Round of 64",
+     "opponentStrength": 63.53
+    },
+    {
+     "week": 5,
+     "opponent": "Como",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD1",
+     "opponentStrength": 64
+    },
+    {
+     "week": 7,
+     "opponent": "Napoli",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD2",
+     "opponentStrength": 82
+    },
+    {
+     "week": 9,
+     "opponent": "Galatasaray SK",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD3",
+     "opponentStrength": 74
+    },
+    {
+     "week": 11,
+     "opponent": "Real Betis Balompié",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD4",
+     "opponentStrength": 77
+    },
+    {
+     "week": 13,
+     "opponent": "Lille OSC",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD5",
+     "opponentStrength": 75
+    },
+    {
+     "week": 15,
+     "opponent": "Inter",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD6",
+     "opponentStrength": 86
+    },
+    {
+     "week": 22,
+     "opponent": "AEK Athens",
+     "home": true,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD7",
+     "opponentStrength": 62
+    },
+    {
+     "week": 23,
+     "opponent": "Sporting CP",
+     "home": false,
+     "played": false,
+     "competition": "Champions League",
+     "kind": "europe",
+     "round": "League Phase · MD8",
+     "opponentStrength": 77
+    }
+   ],
+   "league": [
+    {
+     "name": "Arsenal",
+     "strength": 63,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "AFC Bournemouth",
+     "strength": 65,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Liverpool",
+     "strength": 73,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Leeds United",
+     "strength": 58,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Crystal Palace",
+     "strength": 60,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Brentford",
+     "strength": 71,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Hull City",
+     "strength": 63,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Brighton & Hove Albion",
+     "strength": 79,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Everton",
+     "strength": 61,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Newcastle United",
+     "strength": 81,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Nottingham Forest",
+     "strength": 82,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Ipswich Town",
+     "strength": 74,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Manchester City",
+     "strength": 88,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Tottenham Hotspur",
+     "strength": 76,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Aston Villa",
+     "strength": 78,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Chelsea",
+     "strength": 86,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Fulham FC",
+     "strength": 56,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Sunderland",
+     "strength": 67,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Manchester United",
+     "strength": 68,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Coventry City",
+     "strength": 82,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    }
+   ],
+   "achievements": [
+    "first-contract"
+   ],
+   "status": "1st Team",
+   "currentBoot": {
+    "id": "starter",
+    "name": "NS-Pure",
+    "pace": 5,
+    "power": 5,
+    "technique": 5,
+    "matches": 3,
+    "price": 6000
+   },
+   "kibCans": {
+    "basic": 2,
+    "premium": 0,
+    "elite": 0
+   },
+   "statCans": {
+    "basic": 0,
+    "premium": 0,
+    "elite": 0
+   },
+   "statBoost": null,
+   "ownedItems": [],
+   "girlfriend": null,
+   "sponsors": [
+    {
+     "category": "Boots",
+     "active": false
+    },
+    {
+     "category": "Sports Drink",
+     "active": false
+    },
+    {
+     "category": "Sports Clothing",
+     "active": false
+    },
+    {
+     "category": "Casual Clothing",
+     "active": false
+    },
+    {
+     "category": "Food",
+     "active": false
+    },
+    {
+     "category": "Cosmetics",
+     "active": false
+    },
+    {
+     "category": "Watch",
+     "active": false
+    },
+    {
+     "category": "Electronics",
+     "active": false
+    },
+    {
+     "category": "Jewelry",
+     "active": false
+    },
+    {
+     "category": "Car",
+     "active": false
+    }
+   ],
+   "trophies": [],
+   "form": [],
+   "kitPrimary": "#C8102E",
+   "kitSecondary": "#FFFFFF",
+   "homeCity": "London",
+   "seenDilemmas": [],
+   "ballonDorWins": 0,
+   "horse": null,
+   "squad": [
+    {
+     "id": "sp_0",
+     "name": "Raphael Taylor",
+     "shortName": "Taylor",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_1",
+     "name": "Roberto Sterling",
+     "shortName": "Sterling",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_2",
+     "name": "Antoine Lopez",
+     "shortName": "Lopez",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_3",
+     "name": "Harry Muller",
+     "shortName": "Muller",
+     "position": "RB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_4",
+     "name": "Mohamed Kovacic",
+     "shortName": "Kovacic",
+     "position": "LB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_5",
+     "name": "Wilfried Mane",
+     "shortName": "Mane",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_6",
+     "name": "Kylian Brown",
+     "shortName": "Brown",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_7",
+     "name": "Tom Suarez",
+     "shortName": "Suarez",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_8",
+     "name": "Kylian Silva",
+     "shortName": "Silva",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_9",
+     "name": "Kylian Wilson",
+     "shortName": "Wilson",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_10",
+     "name": "Harry Cancelo",
+     "shortName": "Cancelo",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_11",
+     "name": "Kylian Hernandez",
+     "shortName": "Hernandez",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_12",
+     "name": "Diego Wright",
+     "shortName": "Wright",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_13",
+     "name": "Christian Firmino",
+     "shortName": "Firmino",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_14",
+     "name": "Andres Modric",
+     "shortName": "Modric",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_15",
+     "name": "Diego Firmino",
+     "shortName": "Firmino",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_16",
+     "name": "Emre Toure",
+     "shortName": "Toure",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_17",
+     "name": "Rodrygo Garcia",
+     "shortName": "Garcia",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_18",
+     "name": "Harry Silva",
+     "shortName": "Silva",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_19",
+     "name": "Mason Cancelo",
+     "shortName": "Cancelo",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    }
+   ],
+   "contractStarMilestones": [],
+   "contractFormOfferSeason": -1,
+   "europeanQualification": "Champions League",
+   "weekActions": 3,
+   "awards": [],
+   "captain": false,
+   "clubAppearances": 0,
+   "cups": [],
+   "caps": 0,
+   "internationalGoals": 0,
+   "knockoutMessage": null,
+   "lastTransferWindowKey": "1-summer",
+   "deadlineDayShownFor": "1-summer",
+   "squadNumber": 25,
+   "manager": {
+    "name": "Alan Hobbs",
+    "style": "trusting",
+    "since": 1,
+    "arrival": "Picks a side and sticks with it. Slow to drop you, slow to bring you back.",
+    "reputation": 47
+   },
+   "availableManagers": [
+    "Sir Alex Ferguson",
+    "Arsène Wenger",
+    "Jürgen Klopp",
+    "Pep Guardiola",
+    "Antonio Conte",
+    "Arne Slot",
+    "Eddie Howe",
+    "Didier Deschamps",
+    "Julian Nagelsmann",
+    "Gareth Southgate",
+    "Zinedine Zidane",
+    "Xavi Hernández",
+    "Ernesto Valverde",
+    "Joachim Löw",
+    "Maurizio Sarri",
+    "Thomas Tuchel",
+    "Sean Dyche",
+    "Igor Tudor",
+    "Marcelino",
+    "Erik Ten Hag",
+    "Rafael Benítez",
+    "Gennaro Gattuso",
+    "Vincenzo Italiano",
+    "Kasper Hjulmand",
+    "Ole Gunnar Solskjær",
+    "Marcelo Bielsa",
+    "Thiago Motta",
+    "Louis van Gaal",
+    "Kieran McKenna",
+    "Ronald Koeman",
+    "Claudio Ranieri",
+    "Liam Rosenior",
+    "Roberto Martínez",
+    "Ralph Rangnick",
+    "Stefano Pioli",
+    "Mick McCarthy",
+    "Steve Bruce",
+    "Imanol Alguacil",
+    "Sam Allardyce",
+    "Laurent Blanc",
+    "Bruno Lage",
+    "Steven Gerrard",
+    "Patrick Vieira",
+    "Robin van Persie",
+    "Scott Parker",
+    "Adi Hütter",
+    "Ralph Hasenhüttl"
+   ],
+   "cupState": [
+    {
+     "competition": "League Cup",
+     "rounds": [
+      {
+       "name": "Round of 32",
+       "ties": [
+        {
+         "home": "Swansea City",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Manchester City",
+         "away": "Fulham FC"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "West Ham United"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Hull City",
+         "away": "Southampton"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Stoke City"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Nottingham Forest",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Brentford",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Millwall FC",
+         "away": "Aston Villa"
+        },
+        {
+         "home": "Bolton Wanderers",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Blackburn Rovers",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "AFC Bournemouth",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Everton",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Manchester United",
+         "away": "Brighton & Hove Albion"
+        },
+        {
+         "home": "Liverpool",
+         "away": "Wigan Athletic"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "competition": "FA Cup",
+     "rounds": [
+      {
+       "name": "Round of 64",
+       "ties": [
+        {
+         "home": "Watford",
+         "away": "Blackburn Rovers"
+        },
+        {
+         "home": "Northampton Town",
+         "away": "Millwall FC"
+        },
+        {
+         "home": "Manchester United",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Chesterfield",
+         "away": "Bolton Wanderers"
+        },
+        {
+         "home": "Stoke City",
+         "away": "Swindon Town"
+        },
+        {
+         "home": "York City",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Portsmouth",
+         "away": "Doncaster Rovers"
+        },
+        {
+         "home": "Brighton & Hove Albion",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Southampton",
+         "away": "Manchester City"
+        },
+        {
+         "home": "Middlesbrough",
+         "away": "Brentford"
+        },
+        {
+         "home": "Wycombe Wanderers",
+         "away": "Swansea City"
+        },
+        {
+         "home": "Shrewsbury Town",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Aston Villa",
+         "away": "Plymouth Argyle"
+        },
+        {
+         "home": "Bristol City",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "Hull City",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "West Bromwich Albion"
+        },
+        {
+         "home": "Reading FC",
+         "away": "Birmingham City"
+        },
+        {
+         "home": "Preston North End",
+         "away": "Wigan Athletic"
+        },
+        {
+         "home": "Wrexham",
+         "away": "Liverpool"
+        },
+        {
+         "home": "Milton Keynes Dons",
+         "away": "Leyton Orient"
+        },
+        {
+         "home": "Scunthorpe United",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Norwich City"
+        },
+        {
+         "home": "Bristol Rovers",
+         "away": "Derby County"
+        },
+        {
+         "home": "Leicester City",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Stevenage"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Wolverhampton Wanderers"
+        },
+        {
+         "home": "Barnet",
+         "away": "Rotherham United"
+        },
+        {
+         "home": "Burton Albion",
+         "away": "Burnley"
+        },
+        {
+         "home": "West Ham United",
+         "away": "Nottingham Forest"
+        },
+        {
+         "home": "Fulham FC",
+         "away": "Queens Park Rangers"
+        },
+        {
+         "home": "Exeter City",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Everton",
+         "away": "AFC Bournemouth"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "euroState": {
+    "competition": "Champions League",
+    "clubs": [
+     {
+      "name": "Liverpool",
+      "strength": 73,
+      "pot": 3
+     },
+     {
+      "name": "Real Madrid",
+      "strength": 92,
+      "pot": 1
+     },
+     {
+      "name": "FC Bayern München",
+      "strength": 91,
+      "pot": 1
+     },
+     {
+      "name": "FC Barcelona",
+      "strength": 89,
+      "pot": 1
+     },
+     {
+      "name": "Manchester City",
+      "strength": 88,
+      "pot": 1
+     },
+     {
+      "name": "Paris Saint-Germain",
+      "strength": 88,
+      "pot": 1
+     },
+     {
+      "name": "Inter",
+      "strength": 86,
+      "pot": 1
+     },
+     {
+      "name": "Atlético Madrid",
+      "strength": 85,
+      "pot": 1
+     },
+     {
+      "name": "Borussia Dortmund",
+      "strength": 84,
+      "pot": 1
+     },
+     {
+      "name": "Napoli",
+      "strength": 82,
+      "pot": 1
+     },
+     {
+      "name": "RB Leipzig",
+      "strength": 80,
+      "pot": 2
+     },
+     {
+      "name": "Roma",
+      "strength": 80,
+      "pot": 2
+     },
+     {
+      "name": "FC Porto",
+      "strength": 79,
+      "pot": 2
+     },
+     {
+      "name": "Aston Villa",
+      "strength": 78,
+      "pot": 2
+     },
+     {
+      "name": "PSV",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Real Betis Balompié",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Sporting CP",
+      "strength": 77,
+      "pot": 2
+     },
+     {
+      "name": "Villarreal CF",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Fenerbahçe SK",
+      "strength": 76,
+      "pot": 2
+     },
+     {
+      "name": "Eintracht Frankfurt",
+      "strength": 76,
+      "pot": 3
+     },
+     {
+      "name": "Feyenoord",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "RC Lens",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Lille OSC",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "VfB Stuttgart",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Olympique Lyonnais",
+      "strength": 75,
+      "pot": 3
+     },
+     {
+      "name": "Galatasaray SK",
+      "strength": 74,
+      "pot": 3
+     },
+     {
+      "name": "Club Brugge KV",
+      "strength": 72,
+      "pot": 3
+     },
+     {
+      "name": "Shakhtar Donetsk",
+      "strength": 72,
+      "pot": 4
+     },
+     {
+      "name": "Celtic",
+      "strength": 72,
+      "pot": 4
+     },
+     {
+      "name": "SK Slavia Praha",
+      "strength": 70,
+      "pot": 4
+     },
+     {
+      "name": "Dinamo Zagreb",
+      "strength": 70,
+      "pot": 4
+     },
+     {
+      "name": "FK Bodø/Glimt",
+      "strength": 69,
+      "pot": 4
+     },
+     {
+      "name": "Manchester United",
+      "strength": 68,
+      "pot": 4
+     },
+     {
+      "name": "Como",
+      "strength": 64,
+      "pot": 4
+     },
+     {
+      "name": "Arsenal",
+      "strength": 63,
+      "pot": 4
+     },
+     {
+      "name": "AEK Athens",
+      "strength": 62,
+      "pot": 4
+     }
+    ],
+    "leaguePhase": [
+     {
+      "opponent": "Como",
+      "home": false
+     },
+     {
+      "opponent": "Napoli",
+      "home": false
+     },
+     {
+      "opponent": "Galatasaray SK",
+      "home": false
+     },
+     {
+      "opponent": "Real Betis Balompié",
+      "home": true
+     },
+     {
+      "opponent": "Lille OSC",
+      "home": true
+     },
+     {
+      "opponent": "Inter",
+      "home": true
+     },
+     {
+      "opponent": "AEK Athens",
+      "home": true
+     },
+     {
+      "opponent": "Sporting CP",
+      "home": false
+     }
+    ],
+    "ties": [],
+    "liveTable": [
+     {
+      "name": "Liverpool",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": true
+     },
+     {
+      "name": "Real Madrid",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Bayern München",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Barcelona",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Manchester City",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Paris Saint-Germain",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Inter",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Atlético Madrid",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Borussia Dortmund",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Napoli",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "RB Leipzig",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Roma",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FC Porto",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Aston Villa",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "PSV",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Real Betis Balompié",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Sporting CP",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Villarreal CF",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Fenerbahçe SK",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Eintracht Frankfurt",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Feyenoord",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "RC Lens",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Lille OSC",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "VfB Stuttgart",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Olympique Lyonnais",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Galatasaray SK",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Club Brugge KV",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Shakhtar Donetsk",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Celtic",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "SK Slavia Praha",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Dinamo Zagreb",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "FK Bodø/Glimt",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Manchester United",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Como",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "Arsenal",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     },
+     {
+      "name": "AEK Athens",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "points": 0,
+      "isYou": false
+     }
+    ],
+    "results": [],
+    "matchdaysPlayed": 0
+   }
+  }
+ },
+ {
+  "player": {
+   "firstName": "Golden",
+   "lastName": "Fixture",
+   "age": 18,
+   "skinTone": "light",
+   "club": "Queens Park Rangers",
+   "clubBadge": null,
+   "position": "CB",
+   "nationality": "England",
+   "startYear": 2027
+  },
+  "clubs": [
+   "Queens Park Rangers",
+   "Millwall FC",
+   "Bolton Wanderers",
+   "Watford",
+   "Middlesbrough",
+   "Charlton Athletic",
+   "Swansea City",
+   "West Bromwich Albion",
+   "Blackburn Rovers",
+   "Burnley",
+   "West Ham United",
+   "Wolverhampton Wanderers",
+   "Cardiff City",
+   "Wrexham",
+   "Birmingham City",
+   "Sheffield United",
+   "Lincoln City",
+   "Preston North End",
+   "Norwich City",
+   "Stoke City",
+   "Derby County",
+   "Portsmouth",
+   "Bristol City",
+   "Southampton"
+  ],
+  "division": "championship",
+  "career": {
+   "version": 2,
+   "player": {
+    "firstName": "Golden",
+    "lastName": "Fixture",
+    "age": 18,
+    "skinTone": "light",
+    "club": "Queens Park Rangers",
+    "clubBadge": null,
+    "position": "CB",
+    "nationality": "England",
+    "startYear": 2027
+   },
+   "skills": {
+    "pace": 40,
+    "power": 40,
+    "technique": 40,
+    "vision": 40,
+    "freeKick": 30
+   },
+   "lastTrainedWeek": {
+    "pace": 1,
+    "power": 1,
+    "technique": 1,
+    "vision": 1,
+    "freeKick": 1
+   },
+   "relationships": {
+    "boss": 60,
+    "team": 60,
+    "fans": 40,
+    "girlfriend": null,
+    "sponsors": 0
+   },
+   "reputation": {
+    "world": 15,
+    "club": 50,
+    "government": 5,
+    "shareholders": 5
+   },
+   "contract": {
+    "club": "Queens Park Rangers",
+    "wage": 2000,
+    "goalBonus": 200,
+    "assistBonus": 150,
+    "seasonsRemaining": 3
+   },
+   "season": 1,
+   "division": "championship",
+   "week": 1,
+   "matchFitness": 80,
+   "energy": 100,
+   "injury": null,
+   "happiness": 60,
+   "money": 5000,
+   "starRating": 1.9475000000000002,
+   "fame": 5,
+   "seasonStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "careerStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "fixtures": [
+    {
+     "week": 1,
+     "opponent": "Southampton",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 2,
+     "opponent": "Bristol City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Portsmouth",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 4,
+     "opponent": "Derby County",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 5,
+     "opponent": "Stoke City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 6,
+     "opponent": "Norwich City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 7,
+     "opponent": "Preston North End",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 8,
+     "opponent": "Lincoln City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 9,
+     "opponent": "Sheffield United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 10,
+     "opponent": "Birmingham City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 11,
+     "opponent": "Wrexham",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 12,
+     "opponent": "Cardiff City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 13,
+     "opponent": "Wolverhampton Wanderers",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 14,
+     "opponent": "West Ham United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 15,
+     "opponent": "Burnley",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 16,
+     "opponent": "Blackburn Rovers",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 17,
+     "opponent": "West Bromwich Albion",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 18,
+     "opponent": "Swansea City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 19,
+     "opponent": "Charlton Athletic",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 20,
+     "opponent": "Middlesbrough",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 21,
+     "opponent": "Watford",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 22,
+     "opponent": "Bolton Wanderers",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 23,
+     "opponent": "Millwall FC",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 24,
+     "opponent": "Southampton",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 25,
+     "opponent": "Bristol City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 26,
+     "opponent": "Portsmouth",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 27,
+     "opponent": "Derby County",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 28,
+     "opponent": "Stoke City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 29,
+     "opponent": "Norwich City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 30,
+     "opponent": "Preston North End",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 31,
+     "opponent": "Lincoln City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 32,
+     "opponent": "Sheffield United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 33,
+     "opponent": "Birmingham City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 34,
+     "opponent": "Wrexham",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 35,
+     "opponent": "Cardiff City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 36,
+     "opponent": "Wolverhampton Wanderers",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 37,
+     "opponent": "West Ham United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 38,
+     "opponent": "Burnley",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 39,
+     "opponent": "Blackburn Rovers",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 40,
+     "opponent": "West Bromwich Albion",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 41,
+     "opponent": "Swansea City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 42,
+     "opponent": "Charlton Athletic",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 43,
+     "opponent": "Middlesbrough",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 44,
+     "opponent": "Watford",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 45,
+     "opponent": "Bolton Wanderers",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 46,
+     "opponent": "Millwall FC",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 4,
+     "opponent": "Lincoln City",
+     "home": true,
+     "played": false,
+     "competition": "League Cup",
+     "kind": "cup",
+     "round": "Round of 32",
+     "opponentStrength": 64
+    },
+    {
+     "week": 2,
+     "opponent": "Lincoln City",
+     "home": false,
+     "played": false,
+     "competition": "FA Cup",
+     "kind": "cup",
+     "round": "Round of 64",
+     "opponentStrength": 64
+    }
+   ],
+   "league": [
+    {
+     "name": "Queens Park Rangers",
+     "strength": 59,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Millwall FC",
+     "strength": 86,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Bolton Wanderers",
+     "strength": 85,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Watford",
+     "strength": 85,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Middlesbrough",
+     "strength": 82,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Charlton Athletic",
+     "strength": 56,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Swansea City",
+     "strength": 77,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "West Bromwich Albion",
+     "strength": 73,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Blackburn Rovers",
+     "strength": 62,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Burnley",
+     "strength": 72,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "West Ham United",
+     "strength": 68,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Wolverhampton Wanderers",
+     "strength": 62,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Cardiff City",
+     "strength": 73,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Wrexham",
+     "strength": 86,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Birmingham City",
+     "strength": 60,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Sheffield United",
+     "strength": 56,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Lincoln City",
+     "strength": 64,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Preston North End",
+     "strength": 77,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Norwich City",
+     "strength": 69,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Stoke City",
+     "strength": 78,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Derby County",
+     "strength": 55,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Portsmouth",
+     "strength": 74,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Bristol City",
+     "strength": 69,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Southampton",
+     "strength": 75,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    }
+   ],
+   "achievements": [
+    "first-contract"
+   ],
+   "status": "1st Team",
+   "currentBoot": {
+    "id": "starter",
+    "name": "NS-Pure",
+    "pace": 5,
+    "power": 5,
+    "technique": 5,
+    "matches": 3,
+    "price": 6000
+   },
+   "kibCans": {
+    "basic": 2,
+    "premium": 0,
+    "elite": 0
+   },
+   "statCans": {
+    "basic": 0,
+    "premium": 0,
+    "elite": 0
+   },
+   "statBoost": null,
+   "ownedItems": [],
+   "girlfriend": null,
+   "sponsors": [
+    {
+     "category": "Boots",
+     "active": false
+    },
+    {
+     "category": "Sports Drink",
+     "active": false
+    },
+    {
+     "category": "Sports Clothing",
+     "active": false
+    },
+    {
+     "category": "Casual Clothing",
+     "active": false
+    },
+    {
+     "category": "Food",
+     "active": false
+    },
+    {
+     "category": "Cosmetics",
+     "active": false
+    },
+    {
+     "category": "Watch",
+     "active": false
+    },
+    {
+     "category": "Electronics",
+     "active": false
+    },
+    {
+     "category": "Jewelry",
+     "active": false
+    },
+    {
+     "category": "Car",
+     "active": false
+    }
+   ],
+   "trophies": [],
+   "form": [],
+   "kitPrimary": "#0057B8",
+   "kitSecondary": "#F2C94C",
+   "homeCity": "London",
+   "seenDilemmas": [],
+   "ballonDorWins": 0,
+   "horse": null,
+   "squad": [
+    {
+     "id": "sp_0",
+     "name": "Diego Martinez",
+     "shortName": "Martinez",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_1",
+     "name": "Jordan Williams",
+     "shortName": "Williams",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_2",
+     "name": "Mamadou Diop",
+     "shortName": "Diop",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_3",
+     "name": "Ben Toure",
+     "shortName": "Toure",
+     "position": "RB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_4",
+     "name": "Raphael Modric",
+     "shortName": "Modric",
+     "position": "LB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_5",
+     "name": "Vinicius Firmino",
+     "shortName": "Firmino",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_6",
+     "name": "Bruno Salah",
+     "shortName": "Salah",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_7",
+     "name": "Roberto Rodrigues",
+     "shortName": "Rodrigues",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_8",
+     "name": "Kai Silva",
+     "shortName": "Silva",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_9",
+     "name": "Diego Konate",
+     "shortName": "Konate",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_10",
+     "name": "Jack Perisic",
+     "shortName": "Perisic",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_11",
+     "name": "Oliver Silva",
+     "shortName": "Silva",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_12",
+     "name": "Diego Watkins",
+     "shortName": "Watkins",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_13",
+     "name": "Luke Barrett",
+     "shortName": "Barrett",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_14",
+     "name": "Marcus Toure",
+     "shortName": "Toure",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_15",
+     "name": "Raphael Perisic",
+     "shortName": "Perisic",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_16",
+     "name": "Diego Hernandez",
+     "shortName": "Hernandez",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_17",
+     "name": "Sergio Salah",
+     "shortName": "Salah",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_18",
+     "name": "Carlos Gomez",
+     "shortName": "Gomez",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_19",
+     "name": "Wilfried Clarke",
+     "shortName": "Clarke",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    }
+   ],
+   "contractStarMilestones": [],
+   "contractFormOfferSeason": -1,
+   "europeanQualification": null,
+   "weekActions": 3,
+   "awards": [],
+   "captain": false,
+   "clubAppearances": 0,
+   "cups": [],
+   "caps": 0,
+   "internationalGoals": 0,
+   "knockoutMessage": null,
+   "lastTransferWindowKey": "1-summer",
+   "deadlineDayShownFor": "1-summer",
+   "squadNumber": 24,
+   "manager": {
+    "name": "Roberto Doherty",
+    "style": "rotational",
+    "since": 1,
+    "arrival": "Rotates freely. Nobody is guaranteed, and nobody is frozen out.",
+    "reputation": 37
+   },
+   "availableManagers": [
+    "Sir Alex Ferguson",
+    "Arsène Wenger",
+    "Jürgen Klopp",
+    "Pep Guardiola",
+    "Antonio Conte",
+    "Arne Slot",
+    "Eddie Howe",
+    "Didier Deschamps",
+    "Julian Nagelsmann",
+    "Gareth Southgate",
+    "Zinedine Zidane",
+    "Xavi Hernández",
+    "Ernesto Valverde",
+    "Joachim Löw",
+    "Maurizio Sarri",
+    "Thomas Tuchel",
+    "Sean Dyche",
+    "Igor Tudor",
+    "Marcelino",
+    "Erik Ten Hag",
+    "Rafael Benítez",
+    "Gennaro Gattuso",
+    "Vincenzo Italiano",
+    "Kasper Hjulmand",
+    "Ole Gunnar Solskjær",
+    "Marcelo Bielsa",
+    "Thiago Motta",
+    "Louis van Gaal",
+    "Kieran McKenna",
+    "Ronald Koeman",
+    "Claudio Ranieri",
+    "Liam Rosenior",
+    "Roberto Martínez",
+    "Ralph Rangnick",
+    "Stefano Pioli",
+    "Mick McCarthy",
+    "Steve Bruce",
+    "Imanol Alguacil",
+    "Sam Allardyce",
+    "Laurent Blanc",
+    "Bruno Lage",
+    "Steven Gerrard",
+    "Patrick Vieira",
+    "Robin van Persie",
+    "Scott Parker",
+    "Adi Hütter",
+    "Ralph Hasenhüttl"
+   ],
+   "cupState": [
+    {
+     "competition": "League Cup",
+     "rounds": [
+      {
+       "name": "Round of 32",
+       "ties": [
+        {
+         "home": "Fulham FC",
+         "away": "Aston Villa"
+        },
+        {
+         "home": "Millwall FC",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Derby County",
+         "away": "Stoke City"
+        },
+        {
+         "home": "Blackburn Rovers",
+         "away": "Bristol City"
+        },
+        {
+         "home": "Birmingham City",
+         "away": "Swansea City"
+        },
+        {
+         "home": "West Bromwich Albion",
+         "away": "Southampton"
+        },
+        {
+         "home": "Wrexham",
+         "away": "Middlesbrough"
+        },
+        {
+         "home": "Queens Park Rangers",
+         "away": "Lincoln City"
+        },
+        {
+         "home": "Portsmouth",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Wolverhampton Wanderers",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Newcastle United",
+         "away": "Burnley"
+        },
+        {
+         "home": "Norwich City",
+         "away": "Watford"
+        },
+        {
+         "home": "Preston North End",
+         "away": "Huddersfield Town"
+        },
+        {
+         "home": "West Ham United",
+         "away": "Brentford"
+        },
+        {
+         "home": "Bolton Wanderers",
+         "away": "Sunderland"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "competition": "FA Cup",
+     "rounds": [
+      {
+       "name": "Round of 64",
+       "ties": [
+        {
+         "home": "Burnley",
+         "away": "Stoke City"
+        },
+        {
+         "home": "Cheltenham Town",
+         "away": "Portsmouth"
+        },
+        {
+         "home": "Rotherham United",
+         "away": "Middlesbrough"
+        },
+        {
+         "home": "Sheffield United",
+         "away": "Swindon Town"
+        },
+        {
+         "home": "Manchester City",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "Derby County",
+         "away": "Millwall FC"
+        },
+        {
+         "home": "Hull City",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Liverpool",
+         "away": "Notts County"
+        },
+        {
+         "home": "Leeds United",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Barnet",
+         "away": "Sutton United"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Bolton Wanderers"
+        },
+        {
+         "home": "Swansea City",
+         "away": "Brighton & Hove Albion"
+        },
+        {
+         "home": "AFC Wimbledon",
+         "away": "Mansfield Town"
+        },
+        {
+         "home": "Fleetwood Town",
+         "away": "Fulham FC"
+        },
+        {
+         "home": "Aston Villa",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Rochdale",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "West Ham United",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Bristol Rovers",
+         "away": "Crewe Alexandra"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Queens Park Rangers"
+        },
+        {
+         "home": "Watford",
+         "away": "AFC Bournemouth"
+        },
+        {
+         "home": "Southampton",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Hartlepool United"
+        },
+        {
+         "home": "West Bromwich Albion",
+         "away": "Manchester United"
+        },
+        {
+         "home": "Crawley Town",
+         "away": "Brentford"
+        },
+        {
+         "home": "Wrexham",
+         "away": "Preston North End"
+        },
+        {
+         "home": "Doncaster Rovers",
+         "away": "Nottingham Forest"
+        },
+        {
+         "home": "Plymouth Argyle",
+         "away": "Wigan Athletic"
+        },
+        {
+         "home": "Grimsby Town",
+         "away": "Burton Albion"
+        },
+        {
+         "home": "Birmingham City",
+         "away": "Cambridge United"
+        },
+        {
+         "home": "Blackburn Rovers",
+         "away": "Wolverhampton Wanderers"
+        },
+        {
+         "home": "Bristol City",
+         "away": "Charlton Athletic"
+        },
+        {
+         "home": "Everton",
+         "away": "Norwich City"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "player": {
+   "firstName": "Golden",
+   "lastName": "Fixture",
+   "age": 24,
+   "skinTone": "light",
+   "club": "West Bromwich Albion",
+   "clubBadge": null,
+   "position": "LW",
+   "nationality": "England",
+   "startYear": 2027
+  },
+  "clubs": [
+   "Queens Park Rangers",
+   "Millwall FC",
+   "Bolton Wanderers",
+   "Watford",
+   "Middlesbrough",
+   "Charlton Athletic",
+   "Swansea City",
+   "West Bromwich Albion",
+   "Blackburn Rovers",
+   "Burnley",
+   "West Ham United",
+   "Wolverhampton Wanderers",
+   "Cardiff City",
+   "Wrexham",
+   "Birmingham City",
+   "Sheffield United",
+   "Lincoln City",
+   "Preston North End",
+   "Norwich City",
+   "Stoke City",
+   "Derby County",
+   "Portsmouth",
+   "Bristol City",
+   "Southampton"
+  ],
+  "division": "championship",
+  "career": {
+   "version": 2,
+   "player": {
+    "firstName": "Golden",
+    "lastName": "Fixture",
+    "age": 24,
+    "skinTone": "light",
+    "club": "West Bromwich Albion",
+    "clubBadge": null,
+    "position": "LW",
+    "nationality": "England",
+    "startYear": 2027
+   },
+   "skills": {
+    "pace": 40,
+    "power": 40,
+    "technique": 40,
+    "vision": 40,
+    "freeKick": 30
+   },
+   "lastTrainedWeek": {
+    "pace": 1,
+    "power": 1,
+    "technique": 1,
+    "vision": 1,
+    "freeKick": 1
+   },
+   "relationships": {
+    "boss": 60,
+    "team": 60,
+    "fans": 40,
+    "girlfriend": null,
+    "sponsors": 0
+   },
+   "reputation": {
+    "world": 15,
+    "club": 50,
+    "government": 5,
+    "shareholders": 5
+   },
+   "contract": {
+    "club": "West Bromwich Albion",
+    "wage": 2000,
+    "goalBonus": 200,
+    "assistBonus": 150,
+    "seasonsRemaining": 3
+   },
+   "season": 1,
+   "division": "championship",
+   "week": 1,
+   "matchFitness": 80,
+   "energy": 100,
+   "injury": null,
+   "happiness": 60,
+   "money": 5000,
+   "starRating": 1.9475000000000002,
+   "fame": 5,
+   "seasonStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "careerStats": {
+    "appearances": 0,
+    "goals": 0,
+    "hatTricks": 0,
+    "passes": 0,
+    "assists": 0,
+    "starMan": 0,
+    "totalRating": 0,
+    "ratingCount": 0
+   },
+   "fixtures": [
+    {
+     "week": 1,
+     "opponent": "Lincoln City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 2,
+     "opponent": "Birmingham City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 3,
+     "opponent": "Cardiff City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 4,
+     "opponent": "West Ham United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 5,
+     "opponent": "Blackburn Rovers",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 6,
+     "opponent": "Swansea City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 7,
+     "opponent": "Middlesbrough",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 8,
+     "opponent": "Bolton Wanderers",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 9,
+     "opponent": "Southampton",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 10,
+     "opponent": "Portsmouth",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 11,
+     "opponent": "Stoke City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 12,
+     "opponent": "Preston North End",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 13,
+     "opponent": "Sheffield United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 14,
+     "opponent": "Wrexham",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 15,
+     "opponent": "Wolverhampton Wanderers",
+     "home": false,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 16,
+     "opponent": "Burnley",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 17,
+     "opponent": "Queens Park Rangers",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 18,
+     "opponent": "Charlton Athletic",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 19,
+     "opponent": "Watford",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 20,
+     "opponent": "Millwall FC",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 21,
+     "opponent": "Bristol City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 22,
+     "opponent": "Derby County",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 23,
+     "opponent": "Norwich City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 24,
+     "opponent": "Lincoln City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 25,
+     "opponent": "Birmingham City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 26,
+     "opponent": "Cardiff City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 27,
+     "opponent": "West Ham United",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 28,
+     "opponent": "Blackburn Rovers",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 29,
+     "opponent": "Swansea City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 30,
+     "opponent": "Middlesbrough",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 31,
+     "opponent": "Bolton Wanderers",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 32,
+     "opponent": "Southampton",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 33,
+     "opponent": "Portsmouth",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 34,
+     "opponent": "Stoke City",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 35,
+     "opponent": "Preston North End",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 36,
+     "opponent": "Sheffield United",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 37,
+     "opponent": "Wrexham",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 38,
+     "opponent": "Wolverhampton Wanderers",
+     "home": true,
+     "played": false,
+     "derby": true
+    },
+    {
+     "week": 39,
+     "opponent": "Burnley",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 40,
+     "opponent": "Queens Park Rangers",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 41,
+     "opponent": "Charlton Athletic",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 42,
+     "opponent": "Watford",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 43,
+     "opponent": "Millwall FC",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 44,
+     "opponent": "Bristol City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 45,
+     "opponent": "Derby County",
+     "home": true,
+     "played": false
+    },
+    {
+     "week": 46,
+     "opponent": "Norwich City",
+     "home": false,
+     "played": false
+    },
+    {
+     "week": 4,
+     "opponent": "Southampton",
+     "home": true,
+     "played": false,
+     "competition": "League Cup",
+     "kind": "cup",
+     "round": "Round of 32",
+     "opponentStrength": 79
+    },
+    {
+     "week": 2,
+     "opponent": "Manchester United",
+     "home": true,
+     "played": false,
+     "competition": "FA Cup",
+     "kind": "cup",
+     "round": "Round of 64",
+     "opponentStrength": 74.54
+    }
+   ],
+   "league": [
+    {
+     "name": "Queens Park Rangers",
+     "strength": 76,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Millwall FC",
+     "strength": 70,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Bolton Wanderers",
+     "strength": 78,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Watford",
+     "strength": 89,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Middlesbrough",
+     "strength": 85,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Charlton Athletic",
+     "strength": 66,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Swansea City",
+     "strength": 86,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "West Bromwich Albion",
+     "strength": 76,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Blackburn Rovers",
+     "strength": 81,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Burnley",
+     "strength": 63,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "West Ham United",
+     "strength": 66,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Wolverhampton Wanderers",
+     "strength": 81,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Cardiff City",
+     "strength": 57,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Wrexham",
+     "strength": 77,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Birmingham City",
+     "strength": 79,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Sheffield United",
+     "strength": 83,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Lincoln City",
+     "strength": 62,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Preston North End",
+     "strength": 86,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Norwich City",
+     "strength": 73,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Stoke City",
+     "strength": 74,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Derby County",
+     "strength": 63,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Portsmouth",
+     "strength": 85,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Bristol City",
+     "strength": 64,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    },
+    {
+     "name": "Southampton",
+     "strength": 79,
+     "played": 0,
+     "won": 0,
+     "drawn": 0,
+     "lost": 0,
+     "goalsFor": 0,
+     "goalsAgainst": 0,
+     "points": 0
+    }
+   ],
+   "achievements": [
+    "first-contract"
+   ],
+   "status": "1st Team",
+   "currentBoot": {
+    "id": "starter",
+    "name": "NS-Pure",
+    "pace": 5,
+    "power": 5,
+    "technique": 5,
+    "matches": 3,
+    "price": 6000
+   },
+   "kibCans": {
+    "basic": 2,
+    "premium": 0,
+    "elite": 0
+   },
+   "statCans": {
+    "basic": 0,
+    "premium": 0,
+    "elite": 0
+   },
+   "statBoost": null,
+   "ownedItems": [],
+   "girlfriend": null,
+   "sponsors": [
+    {
+     "category": "Boots",
+     "active": false
+    },
+    {
+     "category": "Sports Drink",
+     "active": false
+    },
+    {
+     "category": "Sports Clothing",
+     "active": false
+    },
+    {
+     "category": "Casual Clothing",
+     "active": false
+    },
+    {
+     "category": "Food",
+     "active": false
+    },
+    {
+     "category": "Cosmetics",
+     "active": false
+    },
+    {
+     "category": "Watch",
+     "active": false
+    },
+    {
+     "category": "Electronics",
+     "active": false
+    },
+    {
+     "category": "Jewelry",
+     "active": false
+    },
+    {
+     "category": "Car",
+     "active": false
+    }
+   ],
+   "trophies": [],
+   "form": [],
+   "kitPrimary": "#122F67",
+   "kitSecondary": "#FFFFFF",
+   "homeCity": "London",
+   "seenDilemmas": [],
+   "ballonDorWins": 0,
+   "horse": null,
+   "squad": [
+    {
+     "id": "sp_0",
+     "name": "Ben Cancelo",
+     "shortName": "Cancelo",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_1",
+     "name": "Sergio Barrett",
+     "shortName": "Barrett",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_2",
+     "name": "Eddie Werner",
+     "shortName": "Werner",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_3",
+     "name": "Mason Mbappe",
+     "shortName": "Mbappe",
+     "position": "RB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_4",
+     "name": "Marcus Toure",
+     "shortName": "Toure",
+     "position": "LB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_5",
+     "name": "Fabio Moreno",
+     "shortName": "Moreno",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_6",
+     "name": "Oliver Toney",
+     "shortName": "Toney",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_7",
+     "name": "Harry Salah",
+     "shortName": "Salah",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_8",
+     "name": "Mason Suarez",
+     "shortName": "Suarez",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_9",
+     "name": "Pablo Rodrigues",
+     "shortName": "Rodrigues",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_10",
+     "name": "Kai Costa",
+     "shortName": "Costa",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    },
+    {
+     "id": "sp_11",
+     "name": "Ivan Toure",
+     "shortName": "Toure",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_25 PM.png"
+    },
+    {
+     "id": "sp_12",
+     "name": "Moussa Silva",
+     "shortName": "Silva",
+     "position": "GK",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_13",
+     "name": "James Anderson",
+     "shortName": "Anderson",
+     "position": "CB",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_14",
+     "name": "Jack Lopez",
+     "shortName": "Lopez",
+     "position": "CDM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_29 PM.png"
+    },
+    {
+     "id": "sp_15",
+     "name": "Diogo Wilson",
+     "shortName": "Wilson",
+     "position": "CM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_47 PM.png"
+    },
+    {
+     "id": "sp_16",
+     "name": "Emre Ba",
+     "shortName": "Ba",
+     "position": "RW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_12 PM.png"
+    },
+    {
+     "id": "sp_17",
+     "name": "Moussa Williams",
+     "shortName": "Williams",
+     "position": "LW",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_24_37 PM.png"
+    },
+    {
+     "id": "sp_18",
+     "name": "Mohamed Santos",
+     "shortName": "Santos",
+     "position": "CAM",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_40 PM.png"
+    },
+    {
+     "id": "sp_19",
+     "name": "James Konate",
+     "shortName": "Konate",
+     "position": "ST",
+     "seasonGoals": 0,
+     "seasonAssists": 0,
+     "careerGoals": 0,
+     "careerAssists": 0,
+     "imageUrl": "/ChatGPT Image Sep 15, 2026, 11_23_33 PM.png"
+    }
+   ],
+   "contractStarMilestones": [],
+   "contractFormOfferSeason": -1,
+   "europeanQualification": null,
+   "weekActions": 3,
+   "awards": [],
+   "captain": false,
+   "clubAppearances": 0,
+   "cups": [],
+   "caps": 0,
+   "internationalGoals": 0,
+   "knockoutMessage": null,
+   "lastTransferWindowKey": "1-summer",
+   "deadlineDayShownFor": "1-summer",
+   "squadNumber": 31,
+   "manager": {
+    "name": "Paul Lindberg",
+    "style": "demanding",
+    "since": 1,
+    "arrival": "Expects a lot, every week. Form is the only currency with him.",
+    "reputation": 38
+   },
+   "availableManagers": [
+    "Sir Alex Ferguson",
+    "Arsène Wenger",
+    "Jürgen Klopp",
+    "Pep Guardiola",
+    "Antonio Conte",
+    "Arne Slot",
+    "Eddie Howe",
+    "Didier Deschamps",
+    "Julian Nagelsmann",
+    "Gareth Southgate",
+    "Zinedine Zidane",
+    "Xavi Hernández",
+    "Ernesto Valverde",
+    "Joachim Löw",
+    "Maurizio Sarri",
+    "Thomas Tuchel",
+    "Sean Dyche",
+    "Igor Tudor",
+    "Marcelino",
+    "Erik Ten Hag",
+    "Rafael Benítez",
+    "Gennaro Gattuso",
+    "Vincenzo Italiano",
+    "Kasper Hjulmand",
+    "Ole Gunnar Solskjær",
+    "Marcelo Bielsa",
+    "Thiago Motta",
+    "Louis van Gaal",
+    "Kieran McKenna",
+    "Ronald Koeman",
+    "Claudio Ranieri",
+    "Liam Rosenior",
+    "Roberto Martínez",
+    "Ralph Rangnick",
+    "Stefano Pioli",
+    "Mick McCarthy",
+    "Steve Bruce",
+    "Imanol Alguacil",
+    "Sam Allardyce",
+    "Laurent Blanc",
+    "Bruno Lage",
+    "Steven Gerrard",
+    "Patrick Vieira",
+    "Robin van Persie",
+    "Scott Parker",
+    "Adi Hütter",
+    "Ralph Hasenhüttl"
+   ],
+   "cupState": [
+    {
+     "competition": "League Cup",
+     "rounds": [
+      {
+       "name": "Round of 32",
+       "ties": [
+        {
+         "home": "Fulham FC",
+         "away": "Aston Villa"
+        },
+        {
+         "home": "Millwall FC",
+         "away": "Sheffield United"
+        },
+        {
+         "home": "Derby County",
+         "away": "Stoke City"
+        },
+        {
+         "home": "Blackburn Rovers",
+         "away": "Bristol City"
+        },
+        {
+         "home": "Birmingham City",
+         "away": "Swansea City"
+        },
+        {
+         "home": "West Bromwich Albion",
+         "away": "Southampton"
+        },
+        {
+         "home": "Wrexham",
+         "away": "Middlesbrough"
+        },
+        {
+         "home": "Queens Park Rangers",
+         "away": "Lincoln City"
+        },
+        {
+         "home": "Portsmouth",
+         "away": "Leeds United"
+        },
+        {
+         "home": "Wolverhampton Wanderers",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Charlton Athletic",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "Newcastle United",
+         "away": "Burnley"
+        },
+        {
+         "home": "Norwich City",
+         "away": "Watford"
+        },
+        {
+         "home": "Preston North End",
+         "away": "Huddersfield Town"
+        },
+        {
+         "home": "West Ham United",
+         "away": "Brentford"
+        },
+        {
+         "home": "Bolton Wanderers",
+         "away": "Sunderland"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "competition": "FA Cup",
+     "rounds": [
+      {
+       "name": "Round of 64",
+       "ties": [
+        {
+         "home": "Burnley",
+         "away": "Stoke City"
+        },
+        {
+         "home": "Cheltenham Town",
+         "away": "Portsmouth"
+        },
+        {
+         "home": "Rotherham United",
+         "away": "Middlesbrough"
+        },
+        {
+         "home": "Sheffield United",
+         "away": "Swindon Town"
+        },
+        {
+         "home": "Manchester City",
+         "away": "Ipswich Town"
+        },
+        {
+         "home": "Derby County",
+         "away": "Millwall FC"
+        },
+        {
+         "home": "Hull City",
+         "away": "Arsenal"
+        },
+        {
+         "home": "Liverpool",
+         "away": "Notts County"
+        },
+        {
+         "home": "Leeds United",
+         "away": "Chelsea"
+        },
+        {
+         "home": "Barnet",
+         "away": "Sutton United"
+        },
+        {
+         "home": "Crystal Palace",
+         "away": "Bolton Wanderers"
+        },
+        {
+         "home": "Swansea City",
+         "away": "Brighton & Hove Albion"
+        },
+        {
+         "home": "AFC Wimbledon",
+         "away": "Mansfield Town"
+        },
+        {
+         "home": "Fleetwood Town",
+         "away": "Fulham FC"
+        },
+        {
+         "home": "Aston Villa",
+         "away": "Sunderland"
+        },
+        {
+         "home": "Rochdale",
+         "away": "Cardiff City"
+        },
+        {
+         "home": "West Ham United",
+         "away": "Newcastle United"
+        },
+        {
+         "home": "Bristol Rovers",
+         "away": "Crewe Alexandra"
+        },
+        {
+         "home": "Lincoln City",
+         "away": "Queens Park Rangers"
+        },
+        {
+         "home": "Watford",
+         "away": "AFC Bournemouth"
+        },
+        {
+         "home": "Southampton",
+         "away": "Tottenham Hotspur"
+        },
+        {
+         "home": "Coventry City",
+         "away": "Hartlepool United"
+        },
+        {
+         "home": "West Bromwich Albion",
+         "away": "Manchester United"
+        },
+        {
+         "home": "Crawley Town",
+         "away": "Brentford"
+        },
+        {
+         "home": "Wrexham",
+         "away": "Preston North End"
+        },
+        {
+         "home": "Doncaster Rovers",
+         "away": "Nottingham Forest"
+        },
+        {
+         "home": "Plymouth Argyle",
+         "away": "Wigan Athletic"
+        },
+        {
+         "home": "Grimsby Town",
+         "away": "Burton Albion"
+        },
+        {
+         "home": "Birmingham City",
+         "away": "Cambridge United"
+        },
+        {
+         "home": "Blackburn Rovers",
+         "away": "Wolverhampton Wanderers"
+        },
+        {
+         "home": "Bristol City",
+         "away": "Charlton Athletic"
+        },
+        {
+         "home": "Everton",
+         "away": "Norwich City"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+]

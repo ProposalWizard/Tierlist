@@ -2,7 +2,7 @@ import {
   isBodyPresident, canStandForBodyPresidency, proposeBodyPresidencyVote, resolveBodyPresidencyVote,
   canOverrulePresidencyVote,
 } from "../../lib/star/leadership";
-import { investInfluence } from "../../lib/star/governingBodies";
+import { investInfluence, MONEY_PER_INFLUENCE_POINT } from "../../lib/star/governingBodies";
 import { proposeRuleChangeVote, canOverruleRuleVote } from "../../lib/star/ruleBook";
 import { forceClubIntoPremierLeague, canForceClubMovement } from "../../lib/star/forcedMovement";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
@@ -22,6 +22,17 @@ import type { CareerState, StarPlayer } from "../../lib/star/types";
  * influence level, because those three real gates (in ruleBook.ts and
  * forcedMovement.ts) each check the presidency as an alternative path.
  */
+
+/**
+ * Buying influence, in POINTS rather than in pounds.
+ *
+ * These fixtures used to hardcode the cash amount, which silently baked the
+ * price of influence into the test — so when that price was corrected (it had
+ * been left on the pre-rescale scale, where ★50,000 bought total control of
+ * FIFA) they all broke, and none of them broke in a way that pointed at the
+ * price. Asking for POINTS lets a future retune move the money automatically.
+ */
+const costOf = (points: number) => points * MONEY_PER_INFLUENCE_POINT;
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -95,7 +106,8 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   // 92, deliberately: clears the 90-level bar to STAND, but sits below the
   // 95-level bar to OVERRULE — the two are genuinely different thresholds.
   let career = freshCareer({ reputation: { world: 92, club: 50, government: 50, shareholders: 50 } });
-  career = investInfluence(career, "FA", 46_000) as CareerState; // just enough influence to stand, not to overrule
+  // Just enough influence to stand for the presidency, not enough to overrule.
+career = investInfluence(career, "FA", costOf(92)) as CareerState;
 
   const proposed = proposeBodyPresidencyVote(career, "FA", mulberry32(4));
   if (proposed.ok) {
@@ -106,7 +118,8 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
     check(!canOverrulePresidencyVote(career, "FA"), "the 90-level bar that lets you STAND is not automatically enough to overrule a loss");
 
     let evenHigherStanding = { ...career, reputation: { ...career.reputation, world: 96 } };
-    evenHigherStanding = investInfluence(evenHigherStanding, "FA", 5_000) as CareerState; // tops influence up past the overrule bar too
+    // Tops influence up past the overrule bar too.
+    evenHigherStanding = investInfluence(evenHigherStanding, "FA", costOf(6)) as CareerState;
     check(canOverrulePresidencyVote(evenHigherStanding, "FA"), "…but clearing the genuinely higher overrule bar (both reputation AND influence) does allow it");
     const overruled = resolveBodyPresidencyVote(evenHigherStanding, losing, true);
     check(overruled.ok && isBodyPresident(overruled.career, "FA"), "overruling a lost presidency vote at high enough standing genuinely grants the title anyway");

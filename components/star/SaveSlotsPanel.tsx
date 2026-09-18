@@ -57,7 +57,17 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
                     <div className="mt-0.5 text-[11px] text-white/50">Empty</div>
                   ) : (
                     <div className="mt-0.5 truncate text-[12px] font-bold text-white">
-                      {save.playerName} <span className="font-normal text-white/60">· {save.club} · Season {save.season} · {save.starRating?.toFixed(1)}★</span>
+                      {save.playerName}{" "}
+                      <span className="font-normal text-white/60">
+                        {/* A save with no club is a trial in progress — a real
+                            career nobody has signed yet (see hasClub,
+                            calendar.ts). Naming it rather than printing an
+                            empty club keeps it from reading as a broken or
+                            spare slot to start over on. */}
+                        {save.signed
+                          ? <>· {save.club} · Season {save.season} · {save.starRating?.toFixed(1)}★</>
+                          : <>· No club yet · {save.starRating?.toFixed(1)}★</>}
+                      </span>
                     </div>
                   )}
                 </div>

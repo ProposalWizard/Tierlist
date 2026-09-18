@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createPublicReadClient } from "@/lib/supabase/publicRead";
 import { portraitsFromOtherEditions, isSelfHosted } from "@/lib/star/portraitFallback";
 
 function parseAttr(val: unknown): number {
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const supabase = createServiceClient();
+  const supabase = createPublicReadClient();
 
   const { data, error } = await supabase
     .from("sofifa_players")
