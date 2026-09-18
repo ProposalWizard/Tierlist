@@ -580,10 +580,23 @@ whole career**; `HorseRacing.tsx` holds an orphaned un-rescaled horse list
   wages already move club money into personal money by design.
 
 ### Tests to write
-`startingWage` monotonic and bounded across all 44 clubs; clause-to-wage ratio
-invariant after negotiation; identity-career round-trips through
-save/load/clear/slot-switch; resume from every trial stage; **no-offers never
-softlocks**.
+`startingWage` monotonic and bounded across all 44 clubs (step 6); resume from
+every trial stage (step 5); **no-offers never softlocks** (step 6).
+
+**Written:**
+- `tests/star/moneyScale.mts` — nothing is left behind by a rescale (step 1)
+- `tests/star/wages.mts` — a week pays exactly one week's wage, however many
+  games it has (step 2)
+- `tests/star/clauseInvariant.mts` — clause-to-wage ratio survives a
+  negotiation, and the bug is demonstrated as well as fixed (step 3)
+- `tests/star/identity.mts` — `makeInitialCareer` is byte-identical to
+  `makeIdentity` + `attachClub`; an identity is genuinely clubless, not
+  placeholdered; the same identity can be signed by different clubs (step 4)
+- `tests/star/saveSlots.mts` — an identity career round-trips through
+  save / load / clear / slot-switch and is summarised as a trial, not an
+  empty slot (step 4)
+- `tests/star/career.mts` — `relegation-move` resumes after a reload, and
+  does not lose a Ballon d'Or won on the way to it (step 4)
 
 ---
 
@@ -611,27 +624,98 @@ v1 claimed steps 1–5 were independently shippable. **They weren't:**
 `startingWage`'s only consumer is the call site the restructure deletes, and the
 cheap band depends on the negotiation that was scheduled after it.
 
-| # | Step | Risk |
-|---|---|---|
-| 1 | Economy sweep (§6.7) + delete the fake "Pac" column | Low |
-| 2 | Wages become weekly (§4.4) | Medium — changes existing saves |
-| 3 | Clause recomputation invariant (§4.5) | Low, and a prerequisite for §5 |
-| 4 | **`makeIdentity`/`attachClub` split + resume path** (§3.1) | **Highest** — lands alone |
-| 5 | The four trial stages (§3.2–3.4) | Medium, lots of surface |
-| 6 | Scout offers **+ `startingWage` + club-anchored wages** (§3.6, §4.1–4.2) | Medium — one system, ship together |
-| 7 | Starting money scaling (§6.3) | Low |
-| 8 | Negotiation, added alongside the card game (§5) | Medium |
-| 9 | Full shop reprice + cheap band (§6.4–6.5) | Medium — priced against the wages that now exist |
-| 10 | Free-agent life (§3.7) | **Highest** — depends on 4 |
-| 11 | Cross-division summer window (§4.3) | Medium — new mechanic |
-| 12 | Status-scaled wage (§4.1a) | Low — `selectionFor` already computes the input |
-| 13 | Player loans (§3.6a) | Medium — real foundation exists; needs Mikey's agreement (§8) |
-| 14 | Real five-a-side (§3.5) | Its own project |
+| # | Step | Risk | Status |
+|---|---|---|---|
+| 1 | Economy sweep (§6.7) + delete the fake "Pac" column | Low | **BUILT** |
+| 2 | Wages become weekly (§4.4) | Medium — changes existing saves | **BUILT** |
+| 3 | Clause recomputation invariant (§4.5) | Low, and a prerequisite for §5 | **BUILT** |
+| 4 | **`makeIdentity`/`attachClub` split + resume path** (§3.1) | **Highest** — lands alone | **BUILT** — see §9a |
+| 5 | The four trial stages (§3.2–3.4) | Medium, lots of surface | Next |
+| 6 | Scout offers **+ `startingWage` + club-anchored wages** (§3.6, §4.1–4.2) | Medium — one system, ship together | |
+| 7 | Starting money scaling (§6.3) | Low | |
+| 8 | Negotiation, added alongside the card game (§5) | Medium | |
+| 9 | Full shop reprice + cheap band (§6.4–6.5) | Medium — priced against the wages that now exist | |
+| 10 | Free-agent life (§3.7) | **Highest** — depends on 4 | |
+| 11 | Cross-division summer window (§4.3) | Medium — new mechanic | |
+| 12 | Status-scaled wage (§4.1a) | Low — `selectionFor` already computes the input | |
+| 13 | Player loans (§3.6a) | Medium — real foundation exists; needs Mikey's agreement (§8) | |
+| 14 | Real five-a-side (§3.5) | Its own project | |
 
 **Note on 12:** it is listed late but is genuinely cheap, and it makes the
 giant-club start work. If §3.6 ships without it, a benched sixteen-year-old at
 United is on ★20,000 a week, which is the opposite of the intended feel. Pull it
 forward if the trial lands first.
+
+---
+
+## 9a. Step 4, checked line by line against §3.1
+
+Everything §3.1 asked for, and what actually happened to it. Written after
+building it, against the real files — several of §3.1's own claims were
+assertions that had never been measured, and two of them were slightly wrong.
+
+### Done
+
+| §3.1 asked for | What was built |
+|---|---|
+| Split `makeInitialCareer` into `makeIdentity` + `attachClub` | Done. `makeInitialCareer` is kept and is now literally the two of them in a row |
+| Every existing consumer keeps working | Proven, not asserted: a test builds five real careers (both divisions, five clubs) both ways and compares the **whole JSON**. Identical. The eight suites that call `makeInitialCareer` needed no change |
+| Fix `relegation-move` "while we're there" | Done — added to `RESUMABLE`, plus the resume branch in `loadCareerIntoState` that actually reads it. Offers are regenerated from the same seed (`season * 8831 + fame`) the same way `season-transfer`'s already are, and a Ballon d'Or won on the way to the screen survives the reload |
+| `listSaveSlots` must not summarise a trial as "Empty" | Done. `SaveSlotSummary` gained `signed`, and Settings now reads **"No club yet"** instead of printing a blank club name with a dangling separator |
+
+### Verified rather than taken on trust
+
+- **Autosave.** §3.1 claimed the cloud-save effect "returns early on a null
+  career" and so would save a trial normally. Checked: true. It gates on
+  `if (!career) return` and nothing else, and `saveCareerToCloud` is a blind
+  POST of the whole state. A trial started on a phone will reach a laptop.
+- **`handleStartNewInSlot`.** Claimed not to touch localStorage. True — it
+  only calls `setCareer(null)`. Nothing is orphaned.
+- **`npm run build`** fails in the sandbox with
+  `PageNotFoundError: Cannot find module for page: /_document`. Confirmed
+  **pre-existing** by stashing every change and reproducing it identically on
+  a clean tree. This project has no `pages/` directory and no `_document`
+  anywhere in source, so it is an artefact of the install here, not the repo.
+  `tsc --noEmit` is clean and the app runs.
+
+### Two things §3.1 got slightly wrong
+
+1. **`cups` is not a club-dependent field to fill in.** §3.1 lists "cups"
+   among the fields needing a club. `career.cups` is the season's finished
+   RUNS and is legitimately `[]` in August for every career ever created; the
+   actual draw lives in `cupState`. `attachClub` seeds both, but a test
+   asserting "signing enters you into the cups" has to look at `cupState`.
+   Caught by that assertion failing.
+2. **The line numbers have drifted.** `page.tsx:1208` (the early bail),
+   `page.tsx:1939` (the render fall-through) and `storage.ts:147`
+   (`RESUMABLE`) are all off by tens of lines now. Find them by name.
+
+### Deliberately deferred to step 5, and why
+
+- **"Add the trial phases to `RESUMABLE`."** There are no trial phases yet —
+  they are step 5. Adding names for screens that do not exist would be
+  scaffolding nobody could test.
+- **Render fall-through** (`phase === "profile-setup" || !career`) and
+  dropping the `&& career` guards above it. Same reason: nothing to route to
+  yet. The early-bail fix that made this reachable at all **is** done — a
+  clubless career now returns from `loadCareerIntoState` with its phase
+  resumed instead of falling through to the three club-data fetches.
+- **Prefetching the candidate clubs** at the offer screen — step 6 builds the
+  offer screen.
+- **Deleting `ProfileSetup` step 2** and moving its `/api/draft/clubs`
+  availability filter into the offer generator — step 5/6, and the filter has
+  nowhere to move to until the generator exists.
+
+### One new question step 4 surfaced
+
+§12 asks for two things that pull against each other: refreshing mid-trial
+must **not lose the opening**, and must **not be usable to retry a bad
+stage**. With the phase resumable and the stage's result held in React state
+until the stage ends, a refresh mid-stage IS a retry. The only way to get
+both is for **each stage to write its result onto the career the moment it
+is decided**, so a reload always resumes into the NEXT stage. That is a
+constraint on how step 5 is built, and it is cheap if it is designed in and
+expensive if it is bolted on. Logged as open question 5 below.
 
 ---
 
@@ -659,6 +743,29 @@ forward if the trial lands first.
 3. **Multi-axis negotiation, or money-then-promise?** The current engine holds
    one number (§5.3).
 4. **Can a career be played below the Championship?** Depends on Mikey (§8).
+5. **How does a mid-trial refresh avoid becoming a retry?** Surfaced by step 4
+   — see §9a. Recommendation: each stage writes its result onto the career the
+   instant it is decided, so a reload resumes into the next stage and never
+   the same one. Needs deciding **before** step 5 is built, not after.
+6. **What does a clubless career's navigation look like?** The trial now runs
+   on a real saved career, which means the dashboard, Settings and the save
+   slots are all technically reachable from it. Settings is handled ("No club
+   yet"). The dashboard is not — it is a screen about a club. Does the trial
+   get its own shell with no bottom nav, or a cut-down dashboard? Step 5.
+7. **Does a trial occupy a save slot from the moment it starts?** It does
+   today, as a consequence of the split — which is what makes it survive a
+   refresh and reach a second device. Worth confirming that is wanted: it
+   means a player with three slots full cannot start a trial without deleting
+   one.
+
+### Still needs sign-off before it ships (from §11)
+
+| # | Change | Status |
+|---|---|---|
+| 2 | Wages anchored to the paying club (15/85) — every save, smaller clubs pay less | **Not built.** Step 6 |
+| 3 | Career creation split — new careers only | **BUILT.** Behaviour-identical today; the change only becomes visible when step 5 lands |
+| 4 | Card game retired at renewal — every save | **Not built.** Step 8, and to be added alongside the card game first |
+| 5 | Full shop reprice — every save | **Not built.** Step 9 |
 
 ---
 

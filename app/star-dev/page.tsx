@@ -10,7 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
-import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
@@ -1223,6 +1223,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // are invented, and the club they play for is a real club whose real squad
     // is one request away. See shouldUpgradeSquad for what the rule is and what
     // it used to be.
+    // ── A career with no club yet has no club data to fetch ──
+    //
+    // `makeIdentity` (careerFlow.ts) gives a real, saveable career to
+    // somebody nobody has signed: no league, no fixtures, an empty squad.
+    // Every fetch below keys off a club name or a division's team list, so
+    // for that career they would ask the server for the squad of "" and the
+    // division made of no clubs — three pointless round trips whose empty
+    // answers then look exactly like a failed fetch. It gets its phase
+    // resumed like any other career; it just has nothing to load.
+    if (!hasClub(saved)) {
+      const pendingNoClub = loadStarPhase(scope);
+      if (pendingNoClub) { setPhase(pendingNoClub.phase); return; }
+      setPhase("profile-setup");
+      return;
+    }
+
     if (shouldUpgradeSquad(saved.squad ?? [])) {
       fetchRealSquad(saved.player.club).then((real) => {
         setCareer(c => (c && c.player.club === saved.player.club && shouldUpgradeSquad(c.squad ?? [])
@@ -1292,6 +1308,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setWonBallonDor(!!pending.wonBallonDor);
       setPhase("retirement");
       return;
+    }
+    if (pending?.phase === "relegation-move") {
+      // The one transfer screen you cannot walk away from — see RESUMABLE in
+      // storage.ts. Regenerated on the same terms as the window below it:
+      // the seed is the season and your fame, neither of which has moved, so
+      // these are the same clubs that were on screen when the page reloaded.
+      const offers = generateRelegationOffers(saved, mulberry32(saved.season * 8831 + saved.fame));
+      if (offers.length > 0) {
+        setWonBallonDor(!!pending.wonBallonDor);
+        setTransferOffers(offers);
+        setPhase("relegation-move");
+        return;
+      }
     }
     if (pending?.phase === "season-transfer") {
       // Regenerated rather than stored: the seed is the season and the player's

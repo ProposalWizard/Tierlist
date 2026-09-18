@@ -1,4 +1,5 @@
 import type { CareerState, StarPhase } from "./types";
+import { hasClub } from "./calendar";
 import type { EuroStanding } from "./euro";
 import { makeManager } from "./manager";
 import { allPoolManagers } from "./managerPool";
@@ -144,7 +145,19 @@ function claimAnonSave(scope: string): void {
  * they can be regenerated on load and are the same offers. A retired career is
  * handled separately, by the flag on the career itself.
  */
-const RESUMABLE: StarPhase[] = ["ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer"];
+const RESUMABLE: StarPhase[] = [
+  "ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer",
+  // Relegated out of the Championship: the club you were at has dropped into
+  // a pool with no fixtures and no table, so a new one has to be chosen
+  // before the season can roll over at all — `advanceSeason` needs to know
+  // which real division to build next season in. That makes this the one
+  // transfer screen with no "stay put" button, and refreshing on it dropped
+  // you on a dashboard with every fixture played and no way forward: the
+  // exact soft-lock this list exists for. Its offers are regenerable on the
+  // same terms `season-transfer`'s are — seeded off the season and your
+  // fame, neither of which moves while the screen is open.
+  "relegation-move",
+];
 
 export interface SavedPhase {
   phase: StarPhase;
@@ -397,6 +410,17 @@ export interface SaveSlotSummary {
   season?: number;
   starRating?: number;
   retired?: boolean;
+  /**
+   * Whether anybody has signed this save yet — see `hasClub` (calendar.ts).
+   *
+   * A career now genuinely exists before it has a club: the trial runs on a
+   * real, saved CareerState with no league and no fixtures. That save is NOT
+   * empty — overwriting it loses the trial — but `club` is legitimately
+   * blank, so a summary that only reported a name and a club would render a
+   * dangling separator and invite the player to start over on top of the
+   * career they are in the middle of.
+   */
+  signed?: boolean;
 }
 
 export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
@@ -407,10 +431,14 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
     // has; slots 2+ never had anything to claim — see loadCareerRaw's note.
     const career = slot === 1 ? loadCareer(scope) : loadCareerRaw(scope);
     if (!career) { out.push({ slot, empty: true }); continue; }
+    const signed = hasClub(career);
     out.push({
       slot,
       empty: false,
-      club: career.player.club,
+      signed,
+      // Blank for a trial rather than "" — the panel says what is happening
+      // instead of printing an empty club name.
+      club: signed ? career.player.club : undefined,
       playerName: `${career.player.firstName} ${career.player.lastName}`,
       season: career.season,
       starRating: career.starRating,

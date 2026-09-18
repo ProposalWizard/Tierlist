@@ -118,6 +118,19 @@ function playWholeSeason(start: CareerState): CareerState {
   saveStarPhase("dilemma", SCOPE);
   check(loadStarPhase(SCOPE)?.phase === "dilemma", "an unanswered dilemma is resumed");
 
+  // Relegated out of the Championship. This is the one transfer screen with
+  // no "stay put" button — the club you were at has dropped into a pool with
+  // no fixtures and no table, so a new one HAS to be chosen before the season
+  // can roll over. Refreshing on it used to land you on a dashboard with
+  // every fixture played and no way forward, which is precisely the soft-lock
+  // the rest of this block exists to prevent.
+  saveStarPhase("relegation-move", SCOPE, undefined, true);
+  check(loadStarPhase(SCOPE)?.phase === "relegation-move", "a forced relegation move is resumed");
+  check(
+    loadStarPhase(SCOPE)?.wonBallonDor === true,
+    "…and it does not lose a Ballon d'Or won on the way to it",
+  );
+
   // Everything else clears the record rather than leaving a stale one behind —
   // resuming into a match whose state was never saved would be worse than the
   // bug this fixes.

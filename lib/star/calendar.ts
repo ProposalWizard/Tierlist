@@ -151,6 +151,31 @@ export function divisionOf(career: { division?: CareerDivision }): CareerDivisio
   return career.division ?? "premier";
 }
 
+/**
+ * Has anybody actually signed this career yet?
+ *
+ * The one question that separates a `makeIdentity` career from an
+ * `attachClub` one (careerFlow.ts): during a trial a real, saveable
+ * CareerState exists with no club on it — no league, no fixtures, an empty
+ * squad — and the screens that would break on that need a single place to
+ * ask, rather than each inventing its own test (`!player.club`,
+ * `!league.length`, `contract.club === ""` — three checks that agree today
+ * and drift apart the first time one of them gets a special case).
+ *
+ * Wants BOTH: a club name with no division to play in is broken in exactly
+ * the way callers need told about, because every screen that breaks on a
+ * clubless career (the fixture list, the table, the squad) breaks on the
+ * missing table rather than the missing name.
+ *
+ * Lives here, beside `divisionOf`, for the same reason that one does — this
+ * file imports nothing, so `storage.ts` and the `/api/star/career` server
+ * route can both ask it without dragging the whole career engine into their
+ * bundles.
+ */
+export function hasClub(career: { player?: { club?: string }; league?: unknown[] }): boolean {
+  return !!career.player?.club && (career.league?.length ?? 0) > 0;
+}
+
 /** What the division is called, on a screen or on a trophy. */
 export function leagueNameFor(division: CareerDivision): string {
   return division === "championship" ? "Championship" : "Premier League";
