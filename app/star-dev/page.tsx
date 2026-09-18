@@ -10,8 +10,10 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
-import { trialComplete, startTrial } from "@/lib/star/trial";
-import { makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { trialComplete, startTrial, trialScore } from "@/lib/star/trial";
+import { generateScoutOffers, clubsForDivision } from "@/lib/star/scoutOffers";
+import ScoutOffers from "@/components/star/ScoutOffers";
+import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
@@ -404,30 +406,30 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // through. Both squad fetches below still run during it, which is time the
     // trial is spending anyway.
     //
-    // ── The one thing this is NOT yet ──
+    // ── You arrive with NO CLUB ──
     //
-    // The club is still chosen up front, and a finished trial still signs you
-    // for that club. In the finished design the trial comes FIRST and its
-    // score decides who comes in for you (step 6 of the rework, the scout
-    // offers) — until that exists, this reads as "a trial at the club you
-    // picked", which is a coherent thing rather than a broken one, and it
-    // means the whole trial is real and playable now instead of waiting.
-    const created = { ...makeInitialCareer(player, clubs, division), trial: startTrial() };
+    // This is what the whole `makeIdentity`/`attachClub` split was for. A
+    // trialist is a real, complete, saveable career that nobody has signed:
+    // real skills, real money, real relationships, and no league, no fixtures
+    // and no squad, because he does not have a club to have them at.
+    //
+    // The club you picked on the setup screen is where the trial IS, not where
+    // you play — `attachClub` runs later, once somebody actually offers.
+    const created = { ...makeIdentity(player, division), trial: startTrial() };
     setCareer(created);
     setPhase("trial-stages");
-    fetchSharedLineups();
-    fetchRealSquad(player.club).then((squad) => {
-      setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
-    });
-    // ── And the other nineteen dressing rooms ──
+    // ── The squad fetches have MOVED to the signing ──
     //
-    // One request for the whole division, not nineteen. See
-    // app/api/star/league-squads — the Draft's roster endpoint reads a JSONB
-    // blob per player, which is right for the Draft and far too heavy to ask
-    // twenty times for six fields.
-    fetchLeagueSquads(clubs).then((leagueSquads) => {
-      setCareer(c => (c ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
-    });
+    // They used to fire here, on the reasoning that the trial was time they
+    // could spend anyway. That was right when the club was already known; it
+    // is wrong now, because at this moment there is no club — which club's
+    // dressing room to fetch is the question the trial is about to answer.
+    // They fire the instant an offer is accepted instead (see the scout-offers
+    // screen), which is still before the first screen that needs them.
+    //
+    // The shared team sheets are not club-specific and still fire now.
+    fetchSharedLineups();
+    void clubs;
     // Whoever the database currently has out of contract — signable by any
     // club, yours included, the moment a transfer window opens. See
     // lib/star/leagueSquads.ts's fetchFreeAgents.
@@ -2027,6 +2029,61 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * TrialSequence's own note.
    */
   /**
+   * The clubs that came in.
+   *
+   * Offers are REGENERATED from the trial's own seed and its final score
+   * rather than stored, exactly as the end-of-season transfer window already
+   * does: neither of those numbers can move once the trial is over, so these
+   * are the same clubs every time the screen is opened. Storing them would be
+   * equivalent; re-rolling them would make this the most farmable screen in
+   * the game.
+   */
+  if (phase === "scout-offers" && career?.trial) {
+    const offers = generateScoutOffers(
+      trialScore(career.trial),
+      mulberry32(career.trial.seed ^ 0x5c0a7),
+    );
+    return (
+      <ScoutOffers
+        trial={career.trial}
+        offers={offers}
+        playerName={career.player.firstName}
+        onNoOffers={() => setPhase("free-agent")}
+        onAccept={offer => {
+          // THE SIGNING. Everything a club brings — the league, the fixture
+          // list, the squad, the manager, your number, the cups — arrives now,
+          // in one call, onto the person the trial just built.
+          const clubs = clubsForDivision(offer.division);
+          const signed = attachClub(career, offer.club, clubs, offer.division);
+          const withDeal: CareerState = {
+            ...signed,
+            contract: {
+              club: offer.club,
+              wage: offer.wage,
+              goalBonus: offer.goalBonus,
+              assistBonus: offer.assistBonus,
+              seasonsRemaining: offer.seasons,
+            },
+          };
+          setCareer(withDeal);
+          setActiveNav("home");
+          setPhase("trial-reward");
+          // The real dressing room, now that there is one to fetch.
+          fetchRealSquad(offer.club).then(squad => {
+            setCareer(c => (c && c.player.club === offer.club ? { ...c, squad } : c));
+          });
+          fetchLeagueSquads(clubs).then(leagueSquads => {
+            setCareer(c => (c ? {
+              ...c, leagueSquads,
+              league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+            } : c));
+          });
+        }}
+      />
+    );
+  }
+
+  /**
    * Life with no club. Routed above the `profile-setup || !career`
    * fall-through for the same reason the trial is: a clubless career is a real
    * career, and the ordinary dashboard has nothing to show it.
@@ -2052,11 +2109,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onTrial={t => setCareer(c => (c ? { ...c, trial: t } : c))}
         onComplete={(score, t) => {
           setCareer(c => (c ? { ...c, trial: { ...t } } : c));
-          // Who comes in for you off that number is step 6 (the scout offers).
-          // Until it exists, a finished trial lands on the contract screen the
-          // opening has always ended on, rather than nowhere.
-          setPhase("trial-reward");
-          void score;
+          void score;   // read back off the trial by the offers screen
+          setPhase("scout-offers");
         }}
       />
     );

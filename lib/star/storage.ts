@@ -175,6 +175,10 @@ const RESUMABLE: StarPhase[] = [
   // this list: it is a screen you cannot navigate back to from the ordinary
   // dashboard, because the ordinary dashboard is about a club you do not have.
   "free-agent",
+  // The clubs that came in. Regenerable from the trial's own seed and score,
+  // so a reload shows the same clubs rather than re-rolling them — which
+  // would be the single most farmable screen in the game otherwise.
+  "scout-offers",
 ];
 
 export interface SavedPhase {

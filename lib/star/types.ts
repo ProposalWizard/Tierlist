@@ -1127,6 +1127,9 @@ export type StarPhase =
   /** The full multi-stage trial — penalties, free kicks, taking a man on,
    *  finding the pass, and a real five-a-side. See TrialSequence. */
   | "trial-stages"
+  /** What the trial earned: the afternoon's number, what each stage was
+   *  worth, and the clubs that came in for you. See ScoutOffers. */
+  | "scout-offers"
   /** Life with no club: home, gym, video games, out with your mates. The
    *  cut-down dashboard a trialist and a free agent live on, deliberately
    *  without fixtures, a table, a squad or a contract. See FreeAgentShell. */

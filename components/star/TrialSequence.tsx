@@ -4,9 +4,12 @@ import {
   TRIAL_STAGES, STAGE_LABEL, nextStage, recordStage, trialScore, trialComplete,
   difficultyFor, keeperBonusFor, type TrialProgress, type TrialStage,
 } from "@/lib/star/trial";
-import { REPS, dribbleSetup, dribbleQuality } from "@/lib/star/trialStages";
+import { dribbleSetup, dribbleQuality } from "@/lib/star/trialStages";
 import FiveASide from "./FiveASide";
 import FirstPersonDribble from "./FirstPersonDribble";
+import TrialPenalties from "./stages/TrialPenalties";
+import TrialFreeKicks from "./stages/TrialFreeKicks";
+import TrialVision from "./stages/TrialVision";
 import type { FiveASideSummary } from "@/lib/star/fiveASide/score";
 import type { FiveMatchState } from "@/lib/star/fiveASide/match";
 
@@ -167,25 +170,38 @@ export default function TrialSequence({
 
   // ── Penalties, free kicks, finding the pass ────────────────────────────
   //
-  // These three are struck or picked on the live engine, and their screens are
-  // the next piece of work. Until then the sequencer says so plainly rather
-  // than pretending — a stage that silently scored itself would be worse than
-  // one that admits it is not built.
-  return (
-    <div className="mx-auto w-full max-w-md px-4 py-6 text-white">
-      {progress}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center">
-        <div className="text-sm font-black uppercase tracking-widest">{STAGE_LABEL[stage]}</div>
-        <div className="mt-2 text-[12px] font-bold text-white/60">
-          {REPS[stage as keyof typeof REPS]} attempts · this stage&apos;s screen is still being built
-        </div>
+  // Each one reports a 0-1 mean quality for the whole stage and nothing else —
+  // the difficulty scaling is `recordStage`'s job, and a screen that applied
+  // it too would apply it twice (the mistake the five-a-side's own scoring
+  // already had to have measured out of it).
+  if (stage === "penalties") {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+        {progress}
+        <TrialPenalties trial={trial} skills={skills} onDone={q => finishStage("penalties", q)} />
       </div>
-      <button
-        onClick={() => finishStage(stage, 0)}
-        className="mt-5 w-full rounded-xl bg-white/10 py-3 text-sm font-black uppercase tracking-widest text-white/70 hover:bg-white/20"
-      >
-        Skip for now
-      </button>
-    </div>
-  );
+    );
+  }
+
+  if (stage === "freeKicks") {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+        {progress}
+        <TrialFreeKicks trial={trial} skills={skills} onDone={q => finishStage("freeKicks", q)} />
+      </div>
+    );
+  }
+
+  if (stage === "vision") {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+        {progress}
+        <TrialVision trial={trial} onDone={q => finishStage("vision", q)} />
+      </div>
+    );
+  }
+
+  // Every stage in TRIAL_STAGES is handled above; this is the unreachable
+  // arm that keeps the switch honest if a sixth is ever added.
+  return null;
 }
