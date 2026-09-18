@@ -129,9 +129,12 @@ while we're there** — it has the same bug today.
   availability filter must move into the offer generator, or you can be scouted
   by a club with no squad in the database.
 
-### 3.2 The four stages
+### 3.2 The stages
 
-**Cut from five to four for v1.** The small-sided game moves to §3.5.
+**Four of them are settled. The fifth — the five-a-side — is back in (§3.5)
+and is being planned separately before anything is built.** So build these
+four first, in this order, and slot the small-sided game in as stage 5 when
+its own plan lands.
 
 | # | Stage | Built from | Score from |
 |---|---|---|---|
@@ -162,6 +165,41 @@ score is *performance relative to what was asked*.
 each stage's roll, the adversity event, and the scout offers. Otherwise a
 refresh re-rolls them and players farm for an easy trial.
 
+### 3.3a Closing the app mid-trial — DECIDED
+
+**This is a phone game, so "refresh" is really "closed the app".** That
+reframes the whole question, and the answer given directly is:
+
+> *"The more important thing from a refresh is that they don't lose progress.
+> If people want to cheat we shouldn't necessarily stop them, but it should be
+> difficult — maybe a hidden feature where if someone refreshes more than once
+> in a trial the difficulty gets bumped. If people are trying to cheat to get
+> a better start, that means the game is pretty cool."*
+
+So, three rules for building the trial:
+
+1. **Never lose progress.** Every stage writes its result onto the career the
+   instant it is decided, and the trial resumes into the stage you were on. A
+   train going into a tunnel must never cost somebody their opening.
+2. **Do not hard-block a retry.** Closing the app during a stage and coming
+   back to that stage is allowed. No lockout, no "you already had your go".
+3. **Make farming cost something, quietly.** A counter on the career records
+   how many times this trial has been resumed. Past the first, each resume
+   **bumps the difficulty** of the stage being replayed. Never announced,
+   never explained, no error message — the trial simply gets harder the more
+   you re-open it.
+
+Rule 3 is the whole of the anti-cheat. It is deliberately not a wall: a player
+who lost signal twice pays almost nothing, and a player grinding for a perfect
+roll walks into a genuinely harder trial. It also costs almost nothing to
+build — the difficulty roll (§3.3) already takes a number, so this adds to
+that number rather than adding a mechanism.
+
+**What this replaces:** the earlier plan's "a reload must resume into the NEXT
+stage, never the same one". That was the only way to get both halves of §12's
+promise while treating a retry as something to prevent. It isn't, so the
+simpler rule wins.
+
 ### 3.4 Adversity — ship exactly one
 
 v1 listed six events. **Two of them had no plumbing at all** — neither
@@ -172,20 +210,39 @@ window internally with no parameter to turn.
 **v1 ships one: "the keeper is better than he should be" (+15 keeper
 strength)** — a single existing field. More can follow once the trial ships.
 
-### 3.5 The five-a-side — wanted, and out of v1
+### 3.5 The five-a-side — IN, and being planned properly
 
-**You've said you want this and aren't backing down. It is not dropped.**
+**Previously deferred out of v1. That is reversed.** Asked whether to attempt
+it now, the answer was: *"Should we just try it and we might surprise
+ourselves?"*
 
-But the review's argument is worth hearing: even the cheap version is a new
-scenario-sequencing component, it's the *fifth* stage of a trial that already
-has four, and it's the largest open question on the critical path.
+So it is stage 5 of the trial, and it is the **real** thing — reduced squads
+on a smaller pitch — not the "run of chances" compromise an earlier draft
+proposed as a cheaper stand-in. The argument for deferring it was never that
+it was a bad idea; it was that it is the largest open question on the critical
+path. That is still true, which is why it gets its own plan before a line of
+it is written.
 
-**Recommendation: ship the four-stage trial, then add the small-sided game as
-its own piece** — and when we do, build the *real* one (reduced squads, smaller
-pitch) rather than the chance-run compromise. The rule book already carries a
-`squadSize` field whose own comment admits it does nothing yet; that's its home.
+**Being planned separately in `STAR_FIVE_A_SIDE_PLAN.md`.** That plan has to
+answer, against the real engine code rather than from memory:
 
-**This is a recommendation, not a decision — see §10.**
+- what actually has to be parameterised to get a smaller pitch, and whether it
+  can be done additively so no existing caller changes;
+- how four outfielders and a keeper a side get placed and driven, and how much
+  of the existing defender/runner machinery carries over;
+- whether continuous play comes from chaining scenarios or from a new
+  sequencing layer above the engine;
+- who the opponents are, when the player has no club and no squad yet;
+- what number it reports into `trialScore`;
+- how closing the app mid-game resumes (§3.3a);
+- and whether the rule book's `squadSize` field is genuinely its home or a red
+  herring — **honestly**, because wiring `squadSize` would otherwise mean
+  touching the 11-a-side engine for every existing save, which the governing
+  rule forbids.
+
+**The governing rule applies in full here**: the five-a-side is built from the
+live engine, additively. Nothing about how an ordinary match plays may change
+to accommodate it.
 
 ### 3.6 Who scouts you
 
@@ -258,16 +315,42 @@ together.**
 
 #### The loop
 Weeks pass. You train. Skills improve slowly with nobody coaching you. Trials
-come up periodically — the same four stages, fully reused.
+come up periodically — the same stages, fully reused. This is the second
+reason the trial has to be a reusable piece rather than a one-off opening
+sequence, and it is why the five-a-side (§3.5) has to be reusable too.
 
 #### The two dangers
 1. **It must not be an inescapable grind.** Trials earned from this state must
    be at **lower-tier clubs with a lower bar**, so the way back is *downward
    into the leagues* — which gets much better once Mikey's tiers land (§8).
 2. **Zero money plus a shop is a dead screen.** With ★0 you cannot buy a ★150
-   item. Either the free-agent life carries a small income (trial expenses,
-   non-contract appearance money, a part-time job) **or** the shop is honestly
-   closed until you sign. **Needs a decision (§10).**
+   item. **DECIDED: ★10 a week.** Asked directly, and deliberately much lower
+   than the ★50 originally floated — it is a scrape, not a living. The point is
+   that the cheap shop band is *reachable if you save for it*, which is exactly
+   the feeling this phase is meant to have. At ★10/week a ★150 item is fifteen
+   weeks of doing nothing else, so the free-agent shop's own cheapest tier has
+   to be priced against that number, not against a signed player's wage.
+
+### 3.8 What a career with no club actually looks like — DECIDED
+
+The trial and the free-agent life both run on a real saved career with no
+club, which makes every screen in the game technically reachable from them.
+Most of those screens are about a club and would be nonsense.
+
+**Decided: a cut-down dashboard, not the club dashboard.** What's on it:
+
+- **Home** — where you are, what's next, the trial or the road back to one
+- **Video games** — already exists
+- **Gym** — training on your own, the free agent's only way to improve
+- **Social** — already exists
+
+And by omission, what is NOT on it: fixtures, the league table, the squad, the
+team sheet, the manager, cups, Europe, the transfer window, the contract
+screen. None of them have anything to point at.
+
+Settings is already handled — it reads **"No club yet"** for a trial in
+progress rather than a blank club name, so nobody starts a new career on top
+of the one they're halfway through.
 
 ---
 
@@ -454,8 +537,22 @@ money for no guarantees"* — **is not expressible in the current engine.** Eith
 - **(b)** agree the money first, then present the promise/targets as a separate
   beat afterwards (cheaper, weaker).
 
-**Needs a decision (§10).** v1 asserted the feature without noticing the engine
-can't hold it.
+**Still open — and the question needed rewriting before it could be answered.**
+Asked once in this form, the reply was *"what?"*, which is fair: "multi-axis"
+means nothing outside code. In plain English it is:
+
+> When you sit down to agree a contract, is the ONLY thing you're haggling
+> over the money — or can you also push for things that aren't money, like
+> "promise me I'll start games", a shorter deal, or a release clause so you
+> can leave if a big club comes in?
+
+**Recommendation: (b) for v1 — money only — but shaped so (a) can be added
+later without a rewrite.** Concretely, that means the deal object carries a
+`terms` bag from day one even while money is the only thing in it, so adding
+a promise later is a new entry rather than a new engine. Needed before step
+8; blocks nothing being built now.
+
+v1 asserted the feature without noticing the engine can't hold it.
 
 ---
 
@@ -602,6 +699,14 @@ every trial stage (step 5); **no-offers never softlocks** (step 6).
 
 ## 8. Below the Championship — MIKEY'S LANE
 
+**Decision, given directly:** yes, a career below the Championship is agreed in
+principle — *"but it's more about not breaking anything right now."* So it is
+agreed as a direction, not as work to start. Nothing in steps 5-9 may assume
+it, and nothing already working may be reshaped in anticipation of it. When it
+does happen it is Mikey's, and `CareerDivision` widening from
+`"premier" | "championship"` is where it starts.
+
+
 Mikey is adding League Two and below as simulated clubs down to **National
 League South**, and expanding the FA Cup to take them in.
 
@@ -639,7 +744,7 @@ cheap band depends on the negotiation that was scheduled after it.
 | 11 | Cross-division summer window (§4.3) | Medium — new mechanic | |
 | 12 | Status-scaled wage (§4.1a) | Low — `selectionFor` already computes the input | |
 | 13 | Player loans (§3.6a) | Medium — real foundation exists; needs Mikey's agreement (§8) | |
-| 14 | Real five-a-side (§3.5) | Its own project | |
+| 14 | Real five-a-side (§3.5) | Its own project | **Being planned now** — `STAR_FIVE_A_SIDE_PLAN.md`. Slots in as trial stage 5 |
 
 **Note on 12:** it is listed late but is genuinely cheap, and it makes the
 giant-club start work. If §3.6 ships without it, a benched sixteen-year-old at
@@ -734,38 +839,53 @@ expensive if it is bolted on. Logged as open question 5 below.
 | Being a reserve | **Never.** Bench every week, or loaned out (Mikey) |
 | Shop structure | **Item families, five tiers each** (Mikey, §6.4a) |
 | Tier locks | **Money first, no explicit locks.** Add one simple rule only if needed (§6.4a) |
+| Five-a-side in v1? | **Yes — attempt it now.** *"Should we just try it and we might surprise ourselves?"* Plan it properly first (§3.5a) |
+| Free-agent income | **★10 a week.** Enough to keep the cheap shop band alive, not enough to be comfortable (§3.7) |
+| Mid-trial refresh | **Never lose progress. Don't hard-block cheating — make it cost.** See §3.3a |
+| A clubless career's navigation | **A cut-down dashboard** — Home, video games, gym, social. Not the club dashboard (§3.8) |
+| Does a trial take a save slot? | **Yes**, for now (§3.1) |
+| Playable below the Championship | **Agreed in principle** — but not now, and nothing already working may break for it (§8) |
+| Wages anchored to the paying club | **Signed off** (§4.2) |
+| Career creation split | **Signed off** — built (§3.1, §9a) |
+| Card game retired at renewal | **Signed off** (§5.2) |
+| Full shop reprice | **Signed off** (§6.5) |
 
 ### Open — needed before the relevant step
-1. **Five-a-side in v1, or after?** Recommendation: after, and build the real
-   one rather than the compromise (§3.5).
-2. **Does a free agent have any income?** Without it the shop is a locked door
-   during exactly the phase the cheap items exist for (§3.7).
-3. **Multi-axis negotiation, or money-then-promise?** The current engine holds
-   one number (§5.3).
-4. **Can a career be played below the Championship?** Depends on Mikey (§8).
-5. **How does a mid-trial refresh avoid becoming a retry?** Surfaced by step 4
-   — see §9a. Recommendation: each stage writes its result onto the career the
-   instant it is decided, so a reload resumes into the next stage and never
-   the same one. Needs deciding **before** step 5 is built, not after.
-6. **What does a clubless career's navigation look like?** The trial now runs
-   on a real saved career, which means the dashboard, Settings and the save
-   slots are all technically reachable from it. Settings is handled ("No club
-   yet"). The dashboard is not — it is a screen about a club. Does the trial
-   get its own shell with no bottom nav, or a cut-down dashboard? Step 5.
-7. **Does a trial occupy a save slot from the moment it starts?** It does
-   today, as a consequence of the split — which is what makes it survive a
-   refresh and reach a second device. Worth confirming that is wanted: it
-   means a player with three slots full cannot start a trial without deleting
-   one.
 
-### Still needs sign-off before it ships (from §11)
+Only one left, and it is open because the question itself was not clear.
 
-| # | Change | Status |
-|---|---|---|
-| 2 | Wages anchored to the paying club (15/85) — every save, smaller clubs pay less | **Not built.** Step 6 |
-| 3 | Career creation split — new careers only | **BUILT.** Behaviour-identical today; the change only becomes visible when step 5 lands |
-| 4 | Card game retired at renewal — every save | **Not built.** Step 8, and to be added alongside the card game first |
-| 5 | Full shop reprice — every save | **Not built.** Step 9 |
+1. **Multi-axis negotiation, or money-then-promise? (§5.3, step 8.)** Asked
+   once and came back *"what?"* — which is a fair answer, because it was asked
+   in jargon. Restated in plain English, it is this:
+
+   > When you sit down to agree a contract, is the ONLY thing you are haggling
+   > over the money — or can you also push for things that aren't money, like
+   > "promise me I'll start games", "only a two-year deal, not five", or "put a
+   > release clause in so I can leave if a big club comes"?
+   >
+   > **Money only** is simpler, is what the game's negotiation code already
+   > holds today (one number), and ships sooner.
+   >
+   > **Money plus promises** is a far better scene — a club that won't pay more
+   > might offer game time instead, which is a real football conversation — but
+   > it is genuinely more work, and a broken promise needs the game to remember
+   > it and hold it against the club later, or it means nothing.
+
+   **Recommendation: money only for v1, with the code shaped so promises can be
+   added later without a rewrite.** Needs an answer before step 8, not before
+   step 5 — so this does not block anything being built now.
+
+### Signed off (previously §11's open column)
+
+All four were signed off directly. They still ship in build order, and each
+still gets its own team message before it lands.
+
+| # | Change | Who feels it | Status |
+|---|---|---|---|
+| 2 | Wages anchored to the paying club (15/85) | Every save — smaller clubs pay less | **Signed off.** Not built, step 6 |
+| 3 | Career creation split | New careers only | **Signed off. BUILT** — behaviour-identical until step 5 lands |
+| 4 | Card game retired at renewal | Every save | **Signed off.** Not built, step 8 — add the replacement alongside it first |
+| 5 | Full shop reprice | Every save | **Signed off.** Not built, step 9 |
 
 ---
 
@@ -793,8 +913,9 @@ expensive if it is bolted on. Logged as open question 5 below.
 - Two trials produce **visibly different suitors**.
 - There is something worth buying **in week one** — and still something worth
   saving for in year ten.
-- Refreshing mid-trial **doesn't lose the opening**, and can't be used to retry
-  a bad stage.
+- Closing the app mid-trial **never loses the opening** — and somebody who
+  re-opens it over and over to farm an easy roll finds the trial quietly
+  getting harder rather than being told off (§3.3a).
 - A failed trial is a **story**, not a dead end.
 
 ---
