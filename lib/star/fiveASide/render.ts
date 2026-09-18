@@ -521,40 +521,67 @@ export const FIGURE_HEAD_R = 0.503;
  * right": the keeper had his own head size, his own body and his own arms, all
  * slightly different from everybody else's on the same pitch.
  */
+export interface BodyPose {
+  /** 0 = arms by the sides, 1 = flung out wide. */
+  armSpread?: number;
+  /** −1 = arms down, 0 = level, 1 = above the head. */
+  armLift?: number;
+  /** Keeper's gloves on the ends of the arms. */
+  gloves?: boolean;
+  /** 0-1, how far he has sunk into a set position. */
+  crouch?: number;
+  /**
+   * −1…1, the running scissor: the legs open one way and close the other, and
+   * the arms counter-swing against them. Zero — the default — is the still
+   * figure the trial and the five-a-side already draw, so every existing call
+   * site is untouched.
+   */
+  legSwing?: number;
+  /** 0-1, one leg thrown through a kick and the arms out for balance. */
+  kick?: number;
+  /**
+   * −1…1: which arm is the leading one. A keeper thrown to his right reaches
+   * with that hand and tucks the other; symmetric (0, the default) is what
+   * everybody else does, so no existing figure changes.
+   */
+  armLead?: number;
+}
+
 function paintBody(
   ctx: CanvasRenderingContext2D, r: number, look: FigureLook,
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
-  pose?: {
-    /** 0 = arms by the sides, 1 = flung out wide. */
-    armSpread?: number;
-    /** −1 = arms down, 0 = level, 1 = above the head. */
-    armLift?: number;
-    /** Keeper's gloves on the ends of the arms. */
-    gloves?: boolean;
-    /** 0-1, how far he has sunk into a set position. */
-    crouch?: number;
-  },
+  pose?: BodyPose,
 ): void {
   const skin = look.skin ?? TC.skin;
   const spread = pose?.armSpread ?? 0;
   const lift = pose?.armLift ?? -0.55;
   const crouch = pose?.crouch ?? 0;
+  const swing = pose?.legSwing ?? 0;
+  const kick = pose?.kick ?? 0;
   // A crouch shortens the man rather than moving him: knees bend, head drops.
   const sink = crouch * r * 0.16;
+  // How far the feet travel from their standing spot. The legs scissor apart
+  // and back; a kick throws one leg right through. Both feet lift a little as
+  // they open, which is what stops a stride reading as a man doing the splits.
+  const stride = (swing * 0.42 + kick * 0.55) * r;
+  const footRise = Math.abs(stride) * 0.15;
 
   // ── Legs ──
   ctx.lineCap = "round";
   ctx.strokeStyle = skin;
   ctx.lineWidth = Math.max(1.4, r * 0.15);
+  const footY = FEET_Y * r - footRise;
+  const footL = -r * 0.19 - stride * 0.35;
+  const footR = r * 0.19 + stride * 0.35;
   ctx.beginPath();
-  ctx.moveTo(-r * 0.16, HIP_Y * r + sink); ctx.lineTo(-r * 0.19, FEET_Y * r);
-  ctx.moveTo(r * 0.16, HIP_Y * r + sink); ctx.lineTo(r * 0.19, FEET_Y * r);
+  ctx.moveTo(-r * 0.16, HIP_Y * r + sink); ctx.lineTo(footL, footY);
+  ctx.moveTo(r * 0.16, HIP_Y * r + sink); ctx.lineTo(footR, footY);
   ctx.stroke();
   // Boots, so the legs end in something rather than fading out.
   ctx.fillStyle = TC.boot;
-  for (const s of [-1, 1]) {
+  for (const fx of [footL, footR]) {
     ctx.beginPath();
-    ctx.ellipse(s * r * 0.19, FEET_Y * r, r * 0.11, r * 0.06, 0, 0, Math.PI * 2);
+    ctx.ellipse(fx, footY, r * 0.11, r * 0.06, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -592,12 +619,19 @@ function paintBody(
   const armLen = r * (0.42 + spread * 0.5);
   const outX = r * 0.3 + armLen * (0.35 + spread * 0.65);
   const handY = armFromY + armLen * (0.62 - lift * 0.85) * (1 - spread * 0.45);
+  // The arms counter-swing against the legs, which is what turns a scissor
+  // into a run rather than a man being dragged along. Zero by default.
+  const handYFor = (s: number) => handY - s * swing * r * 0.22;
+  // The trailing arm of a dive stays tucked; without this a keeper thrown to
+  // one side reaches equally far the other way and reads as a starfish.
+  const lead = pose?.armLead ?? 0;
+  const handXFor = (s: number) => s * outX * (lead === 0 || Math.sign(s) === Math.sign(lead) ? 1 : 0.62);
   ctx.strokeStyle = skin;
   ctx.lineWidth = Math.max(1.2, r * 0.115);
   ctx.beginPath();
   for (const s of [-1, 1]) {
     ctx.moveTo(s * shW * 0.82, armFromY);
-    ctx.lineTo(s * outX, handY);
+    ctx.lineTo(handXFor(s), handYFor(s));
   }
   ctx.stroke();
   // A sleeve, in the shirt colour, over the top half of each arm — otherwise a
@@ -607,7 +641,7 @@ function paintBody(
   ctx.beginPath();
   for (const s of [-1, 1]) {
     ctx.moveTo(s * shW * 0.82, armFromY);
-    ctx.lineTo(s * (shW * 0.82 + (outX - shW * 0.82) * 0.42), armFromY + (handY - armFromY) * 0.42);
+    ctx.lineTo(s * shW * 0.82 + (handXFor(s) - s * shW * 0.82) * 0.42, armFromY + (handYFor(s) - armFromY) * 0.42);
   }
   ctx.stroke();
 
@@ -617,7 +651,7 @@ function paintBody(
     ctx.lineWidth = Math.max(1, r * 0.05);
     for (const s of [-1, 1]) {
       ctx.beginPath();
-      ctx.arc(s * outX, handY, r * 0.14, 0, Math.PI * 2);
+      ctx.arc(handXFor(s), handYFor(s), r * 0.14, 0, Math.PI * 2);
       ctx.fill(); ctx.stroke();
     }
   }
@@ -651,25 +685,128 @@ export function drawFigure(
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
 ): void {
   const { px, py, unit } = p;
-  const x = px(at.x), y = py(at.y);
   const r = Math.max(7, unit * FIGURE_R);
   const lift = Math.max(0, look.lift ?? 0);
-  const up = lift * unit * 0.55;
+  drawFigureAt(ctx, px(at.x), py(at.y) + r * FEET_Y, r, look, faceStyle, fakeFaceStyle, {
+    liftPx: lift * unit * 0.55,
+    shadowR: r * 0.34 * (1 - Math.min(0.35, lift * 0.12)),
+    label: look.label,
+    star: look.star,
+  });
+}
+
+/**
+ * HOW BIG TO DRAW A FIGURE WHEN SOMETHING ELSE ALREADY DECIDED HIS HEIGHT.
+ *
+ * `drawFigure` sizes a man in metres, which is right for a renderer that owns
+ * its own camera. The main match does not: `CanvasMatch` has drawn its figures
+ * at a fixed, deliberately larger-than-life height for a long time, tuned
+ * against a reference frame, and shrinking every player by a third to make him
+ * life-size would be a gameplay-legibility change rather than a cosmetic one.
+ *
+ * So it asks for the radius that yields the height it already draws, and only
+ * the PROPORTIONS change. Everything downstream of `r` is anatomy.
+ */
+export function figureRForHeight(heightPx: number): number {
+  return Math.max(6, heightPx / FIGURE_HEIGHT_R);
+}
+
+/**
+ * THE 46% HEAD, AND WHY THE FULL-MATCH FIGURES ARE THE SAME HEIGHT AS BEFORE.
+ *
+ * `CanvasMatch` and its `/star-match-dev` fork drew their figures here, by
+ * hand, separately from every other screen — and the real match's had drifted
+ * into the shape the trial's had. Measured rather than eyeballed: the old
+ * anatomy put the boots 0.80r below the body origin and, once `drawPlayerHead`
+ * applied the Face Editor's own default scale of 2.2 and offset of −1.45, the
+ * crown 1.709r above it. A figure 2.509r tall wearing a head 1.144r across —
+ * a head FORTY-SIX PER CENT of the whole person. The keeper, drawn by a second
+ * piece of code with his own numbers, was fifty. Both read as bowling pins.
+ *
+ * What deliberately did NOT change is how TALL a player is drawn. `drawFigure`
+ * sizes a man in real metres (~1.95 m); that camera has always drawn
+ * deliberately larger-than-life figures, tuned against a reference frame, and
+ * shrinking every player by a third is a legibility change to a game people
+ * play rather than the cosmetic one that was asked for. So the old drawn
+ * height is kept exactly, and only the proportions move: the head shrinks by
+ * more than half, and the body grows by about a third into the space it was
+ * taking.
+ *
+ * Both full-match renderers read it from here rather than each keeping a copy,
+ * which is the whole reason they diverged in the first place.
+ */
+export const MATCH_FIGURE_HEIGHT_R = 2.509;
+
+/**
+ * Radians. A keeper at full stretch is horizontal. He is not upside down.
+ *
+ * The match's own dive commitment runs to 2.15 on a fingertip save, which
+ * against that save's lean of 1.30 is 2.8 radians — a hundred and sixty
+ * degrees, head below his boots. That is what it has always drawn; it was
+ * survivable while he was a blob with two white dots for hands and has no
+ * chance of being survivable now he has shoulders and a face. Purely the
+ * artwork: the lean is a rotation and nothing in the engine reads it, so where
+ * a save is made and whether it is made are untouched.
+ */
+export const MAX_KEEPER_LEAN = 1.75;
+
+export interface FigureDrawOpts {
+  /** Radians. Turns the whole man about his ankles to face where he is
+   *  going — the main match's figures do, the five-a-side's do not. */
+  facing?: number;
+  pose?: BodyPose;
+  /** Pixels the body is raised off the grass; his shadow stays behind. */
+  liftPx?: number;
+  /** Horizontal radius of the ground shadow. Defaults to the standing one. */
+  shadowR?: number;
+  label?: string;
+  /** Defaults to white, as the five-a-side and the trial draw it. */
+  labelColor?: string;
+  star?: boolean;
+  /**
+   * A dark rim under the star. Off by default — the trial's figures stand on
+   * grass with nothing behind them. The main match asks for it because a gold
+   * star on a bright shirt or against a floodlit sky dissolves without one.
+   */
+  starRim?: string;
+}
+
+/**
+ * One footballer, at a point on the SCREEN rather than a point on a pitch:
+ * `(x, groundY)` is where his boots are, `r` is the anatomy unit above.
+ *
+ * This is the same drawing `drawFigure` does — that function is now a thin
+ * wrapper that works out the two numbers from a projection — split out so a
+ * renderer with its own camera, its own idea of how big a player is and its
+ * own poses can still draw the ONE figure this game has agreed on rather than
+ * growing a fourth hand-drawn man of its own.
+ */
+export function drawFigureAt(
+  ctx: CanvasRenderingContext2D,
+  x: number, groundY: number, r: number,
+  look: FigureLook,
+  faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+  opts: FigureDrawOpts = {},
+): void {
+  const up = opts.liftPx ?? 0;
 
   // Shadow first, and on the GRASS — a man in the air leaves his behind.
   ctx.fillStyle = TC.shadow;
   ctx.beginPath();
-  ctx.ellipse(x, y + r * FEET_Y, r * 0.34 * (1 - Math.min(0.35, lift * 0.12)), r * 0.13, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, groundY, opts.shadowR ?? r * 0.34, r * 0.13, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.save();
-  ctx.translate(x, y - up);
-  paintBody(ctx, r, look, faceStyle, fakeFaceStyle);
+  ctx.translate(x, groundY - r * FEET_Y - up);
+  if (opts.facing) ctx.rotate(opts.facing);
+  paintBody(ctx, r, look, faceStyle, fakeFaceStyle, opts.pose);
   ctx.restore();
 
-  const crown = y - up - r * (FIGURE_HEIGHT_R - FEET_Y);
-  if (look.star) {
-    ctx.fillStyle = "#fde68a";
+  // Both markers are drawn upright in screen space, outside the rotation —
+  // a name that leaned with the man it names would be unreadable.
+  const crown = groundY - up - r * FIGURE_HEIGHT_R;
+  if (opts.star) {
+    ctx.save();
     ctx.beginPath();
     const sr = r * 0.22, sy = crown - sr * 1.3;
     for (let i = 0; i < 10; i++) {
@@ -679,18 +816,30 @@ export function drawFigure(
       i === 0 ? ctx.moveTo(fx, fy) : ctx.lineTo(fx, fy);
     }
     ctx.closePath();
+    if (opts.starRim) {
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(1.5, sr * 0.34);
+      ctx.strokeStyle = opts.starRim;
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#fde68a";
     ctx.fill();
+    ctx.restore();
   }
 
-  if (look.label) {
+  if (opts.label) {
     ctx.font = `700 ${Math.max(8, r * 0.3)}px system-ui, sans-serif`;
     ctx.textAlign = "center";
+    // Pinned, not inherited: a caller that last drew a scoreboard may well
+    // have left the baseline somewhere else, and a name half a head out of
+    // place reads as a bug rather than as a setting.
+    ctx.textBaseline = "alphabetic";
     ctx.lineWidth = Math.max(2, r * 0.1);
     ctx.strokeStyle = "rgba(0,0,0,0.65)";
-    const ly = crown - r * (look.star ? 0.78 : 0.16);
-    ctx.strokeText(look.label, x, ly);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(look.label, x, ly);
+    const ly = crown - r * (opts.star ? 0.78 : 0.16);
+    ctx.strokeText(opts.label, x, ly);
+    ctx.fillStyle = opts.labelColor ?? "#ffffff";
+    ctx.fillText(opts.label, x, ly);
     ctx.textAlign = "start";
   }
 }
@@ -719,35 +868,47 @@ export function drawKeeper(
   pose: KeeperPose, faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
 ): void {
   const { px, py, unit } = p;
-  const x = px(at.x), y = py(at.y);
   const r = Math.max(7, unit * FIGURE_R);
+  drawKeeperAt(ctx, px(at.x), py(at.y) + r * FEET_Y, r, look, pose, faceStyle, fakeFaceStyle);
+}
+
+/**
+ * The keeper, at a point on the SCREEN — `drawKeeper`'s body, for a renderer
+ * with its own camera. See `drawFigureAt`, of which this is the goalkeeping
+ * pose: the same anatomy, the same head, the same shared `drawPlayerHead`.
+ */
+export function drawKeeperAt(
+  ctx: CanvasRenderingContext2D,
+  x: number, groundY: number, r: number,
+  look: FigureLook, pose: KeeperPose,
+  faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+  opts: FigureDrawOpts = {},
+): void {
   const dive = Math.max(-1, Math.min(1, pose.dive));
   const lunge = Math.max(0, Math.min(1, pose.lunge));
   // He leans into the dive and, at full stretch, is nearly horizontal — the
   // one thing that makes a save read as a save from directly above.
   const lean = dive * (0.25 + lunge * 0.95);
 
-  ctx.fillStyle = TC.shadow;
-  ctx.beginPath();
-  ctx.ellipse(x, y + r * FEET_Y, r * (0.34 + lunge * 0.5), r * 0.13, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(lean);
-  paintBody(ctx, r, look, faceStyle, fakeFaceStyle, {
-    // Set: hands out and a little low. Diving: flung out over his head.
-    // Set, his hands are genuinely OUT — measured off a screenshot rather than
-    // guessed: at a narrower spread the arms ran barely half a head's width
-    // before the glove, the sleeve covered most of that, and he read as a blob
-    // with two white dots stuck to it. Going, they are over his head and at
-    // full stretch, which is the shape you actually judge a save by.
-    armSpread: 0.75 + lunge * 0.25,
-    armLift: 0.15 + lunge * 0.9,
-    gloves: true,
-    crouch: 0.55 - lunge * 0.55,
+  drawFigureAt(ctx, x, groundY, r, look, faceStyle, fakeFaceStyle, {
+    ...opts,
+    facing: lean + (opts.facing ?? 0),
+    shadowR: opts.shadowR ?? r * (0.34 + lunge * 0.5),
+    pose: {
+      // Set: hands out and a little low. Diving: flung out over his head.
+      // Set, his hands are genuinely OUT — measured off a screenshot rather
+      // than guessed: at a narrower spread the arms ran barely half a head's
+      // width before the glove, the sleeve covered most of that, and he read
+      // as a blob with two white dots stuck to it. Going, they are over his
+      // head and at full stretch, which is the shape you actually judge a
+      // save by.
+      armSpread: 0.75 + lunge * 0.25,
+      armLift: 0.15 + lunge * 0.9,
+      gloves: true,
+      crouch: 0.55 - lunge * 0.55,
+      ...opts.pose,
+    },
   });
-  ctx.restore();
 }
 
 export function drawBall(
