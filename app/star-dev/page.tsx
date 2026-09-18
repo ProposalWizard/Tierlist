@@ -10,7 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
-import { trialComplete } from "@/lib/star/trial";
+import { trialComplete, startTrial } from "@/lib/star/trial";
 import { makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
@@ -394,17 +394,27 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * squad.
    */
   const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision) => {
-    const created = makeInitialCareer(player, clubs, division);
-    setCareer(created);
     // ── Into the trial, not the dashboard ──
     //
-    // A career now opens on one penalty you cannot fail, only not have passed
-    // yet, and the contract it earns. The career itself is fully built before
-    // any of that — the trial is a scene played over a career that already
-    // exists, so nothing about it can leave a half-made save behind if the tab
-    // closes halfway through. Both squad fetches below still run during it,
-    // which is time the trial is spending anyway.
-    setPhase("trial");
+    // A career opens on a trial: five stages on the live match engine, seeded
+    // once so it is the same afternoon however many times the app is closed
+    // and re-opened. The career itself is fully built before any of it — the
+    // trial is a scene played over a career that already exists, so nothing
+    // about it can leave a half-made save behind if the tab closes halfway
+    // through. Both squad fetches below still run during it, which is time the
+    // trial is spending anyway.
+    //
+    // ── The one thing this is NOT yet ──
+    //
+    // The club is still chosen up front, and a finished trial still signs you
+    // for that club. In the finished design the trial comes FIRST and its
+    // score decides who comes in for you (step 6 of the rework, the scout
+    // offers) — until that exists, this reads as "a trial at the club you
+    // picked", which is a coherent thing rather than a broken one, and it
+    // means the whole trial is real and playable now instead of waiting.
+    const created = { ...makeInitialCareer(player, clubs, division), trial: startTrial() };
+    setCareer(created);
+    setPhase("trial-stages");
     fetchSharedLineups();
     fetchRealSquad(player.club).then((squad) => {
       setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
