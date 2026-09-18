@@ -4,6 +4,8 @@ import { bestFitness } from "./formations";
 import { formationForClub } from "./teamsheet";
 import { playerMarketValue } from "./marketValue";
 import { getTuning } from "./tuningStore";
+import { realPrestigeFactor } from "./investments";
+import { clubNameSeed } from "./squadData";
 
 /** Works against either representation a player can be read as — your own
  *  SquadPlayer, or a LeaguePlayer on the far side of a fetched squad — since
@@ -150,19 +152,84 @@ export function interestedClubs(
     while (depth.length < slots) depth.push(0); // an empty slot is the strongest possible need
     const avgDepth = depth.reduce((s, v) => s + v, 0) / slots;
     const need = clampUnit((buyerStrength - avgDepth) / 12);
-    if (need < 0.12) continue; // plenty of good cover there already — not remotely interested
 
-    const roleIntent: RoleIntent = (avgDepth === 0 || overall - avgDepth >= 6) ? "starter"
-      : need >= 0.35 ? "squad" : "reserve";
+    // BUG FOUND, 18 Sep 2026: `need` is purely a positional-GAP score — a
+    // genuinely elite club almost always already has a great player at every
+    // position (that's what makes it elite), so `avgDepth` sits close to or
+    // above `buyerStrength` and `need` reads near zero for them specifically.
+    // That made it structurally impossible for a top club to EVER show up as
+    // interested in even the best player in the game, since the model only
+    // ever asked "do you have a hole to fill," never "is this a genuine
+    // upgrade over what you already have" — reported directly: selling a
+    // 90-rated wonderkid from Barcelona surfaced only mid-table/Europa-tier
+    // interest, nothing from Bayern/Liverpool/City/Real Madrid/etc. Real big
+    // clubs chase special talents as upgrades regardless of existing depth.
+    // A second, independent path into interest: a clear rating upgrade over
+    // the buyer's own current best at the position, reusing the exact same
+    // margin `roleIntent` below already treats as "obviously walks into the
+    // team" — set a little higher here since this is now an INCLUSION gate,
+    // not just a labelling one; a modest 2-3 point edge shouldn't override
+    // "already has plenty of good cover," but a truly special talent should.
+    const upgradeGap = overall - avgDepth;
+    const UPGRADE_THRESHOLD = 8;
+    const genuineUpgrade = upgradeGap >= UPGRADE_THRESHOLD;
+    if (need < 0.12 && !genuineUpgrade) continue; // plenty of good cover there already — not remotely interested
+
+    // A club coming in purely off the upgrade path (not real positional
+    // need) still has to be treated as a real, competitive suitor for
+    // pricing purposes below — a `need` of near-zero would otherwise price
+    // a superclub's genuine interest in a generational talent as an
+    // afterthought bid, which isn't realistic: a special player draws a real
+    // offer even from a club that isn't desperate.
+    const pricingNeed = genuineUpgrade ? Math.max(need, 0.5) : need;
+
+    const roleIntent: RoleIntent = (avgDepth === 0 || upgradeGap >= 6) ? "starter"
+      : pricingNeed >= 0.35 ? "squad" : "reserve";
 
     // A desperate buyer offers close to (or past) market value; indifferent
     // interest well under it — the same "expected offer" spread requested
     // directly (a title side low-balls a squad-filler, a club in genuine
     // need pays close to what he's really worth).
-    const fitMultiplier = 0.65 + need * 0.7;
+    const fitMultiplier = 0.65 + pricingNeed * 0.7;
+
+    // BUG FOUND, 18 Sep 2026: every interested club offered the exact same
+    // amount — market value scaled only by `fitMultiplier` — regardless of
+    // how rich or big the buying club actually is. Reported directly: five
+    // clubs of wildly different real financial standing all quoted the
+    // identical expected offer, equal to full market value, for the same
+    // player ("if they were to offer 50 million, that would be an
+    // astounding figure for these clubs"). Reuses `realPrestigeFactor`
+    // (investments.ts) — the SAME real, per-club (not per-tier) financial/
+    // reputation dataset `clubValuation` already prices a whole CLUB with —
+    // rather than `clubTier.ts`'s coarser tier multiplier, which can't tell
+    // Bayern Munich from Sevilla FC if both happen to sit in the same
+    // competition tier this season. `realPrestigeFactor` runs 0.6-3.0;
+    // remapped here onto a 0.25-1.10x ceiling on a PLAYER's own expected
+    // offer — wide enough that a genuinely rich superclub can approach or
+    // slightly clear real market value while a modest club's realistic
+    // ceiling sits clearly, visibly lower (real worked numbers: a ~179m
+    // valuation reads as ~197m from a top club and ~45m from a modest one —
+    // matching the user's own "50 million would be astounding" framing).
+    const prestige = realPrestigeFactor(club);
+    const wealthFactor = clampUnit((prestige - 0.6) / (3.0 - 0.6)) * 0.85 + 0.25;
+
+    // A small, real per-club variance so two clubs at genuinely different
+    // financial standing (or even two at a similar one) don't coincidentally
+    // land on the identical offer — reported directly as "a bit odd."
+    // `interestedClubs` is otherwise pure with no `rng` parameter of its own
+    // (its one real call site, Investments.tsx, doesn't thread one through,
+    // and adding one here would be a bigger signature change than this fix
+    // needs), so this reuses `clubNameSeed` — the same "stable pseudo-random
+    // number keyed off a name" idiom this codebase's engine files already
+    // use elsewhere (manager.ts, sponsors.ts, leagueSquads.ts) — keyed off
+    // both the buying club AND the seller's own club, so the SAME buyer
+    // varies between two different sales rather than always nudging the
+    // same fixed direction for that club.
+    const variance = 0.92 + (clubNameSeed(`${club}:${sellingClub}`) % 1000) / 1000 * 0.16; // 0.92–1.08
+
     const expectedOffer = Math.max(
       getTuning("marketValue.floor"),
-      Math.round(playerMarketValue({ ...player, overall }, sellingClub, career) * fitMultiplier),
+      Math.round(playerMarketValue({ ...player, overall }, sellingClub, career) * fitMultiplier * wealthFactor * variance),
     );
     results.push({ club, roleIntent, expectedOffer });
   }
