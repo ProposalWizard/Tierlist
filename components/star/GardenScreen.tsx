@@ -30,27 +30,34 @@ import { shuffle } from "@/lib/star/cups";
  * with real faces (see BenchFigure below). No new game data, no new
  * mechanics — this is a display, not a feature.
  *
- * Entirely drawn (SVG + CSS), not photographic — no Adobe imagery, no image
- * assets on disk at all for the backdrop/scenery. A licensed photo was
- * tried first and rejected directly ("not some real image of a garden... a
- * game version"). The one deliberate exception is real teammate PHOTOS on
- * the bench — those are existing, already-live game data (career.squad's
- * own imageUrl / the established fake-face fallback), not new licensed
- * imagery, so reusing them here is the same "display, not a feature" rule
- * as the trophy count or the horse.
+ * ── A dedicated visual-quality pass (this round) ──
+ * This screen used to be flat, single-colour SVG shapes on purpose — an
+ * earlier round's own rule was "no image assets on disk, nothing
+ * photographic." That constraint was explicitly LIFTED by direct
+ * instruction for this pass: "use real image textures, gradients, shadows,
+ * whatever gets the best look — don't restrict yourself to flat hand-drawn
+ * shapes." Real raster/photo assets still can't be sourced into this repo
+ * from this sandboxed session, so the actual approach taken (agreed with
+ * the user) is to stay in SVG/CSS but use it far more richly: real
+ * multi-stop linear/radial gradients for material and volume (sky, grass,
+ * honey wood grain, glass, muscle shading), soft drop-shadows for depth
+ * (a single shared `<filter>`, reused rather than duplicated), layered
+ * highlight/shadow shapes, and real considered proportions on the tree,
+ * horse, trophy cabinet, stable building and bench — all built against the
+ * user's own real reference photos, described in words in this round's own
+ * brief. Every real game-data mechanism (trophy count, Ballon d'Or badge,
+ * horse ownership state, the walker figure, the bench's real teammate
+ * faces/tap-to-walk, the random bench trio, the centered-column layout, the
+ * swipe/dot navigation) is untouched — this is scenery and material quality
+ * only. `<SceneDefs>` holds the one shared set of gradients/filters, reused
+ * (not redefined per shape) across all three scenes for both consistency
+ * and performance on a real phone.
  *
- * ── Live feedback incorporated this round ──
- * - The whole screen now renders inside the same `max-w-md w-full mx-auto`
- *   centered column every other screen in this game uses (DashboardShell)
- *   — it used to be full-bleed, which was reported as not matching.
- * - The stable is now an open grazing field (no fence/pen), with a real
- *   drawn bay horse (brown body, black mane/tail/socks) that ambles back
- *   and forth and occasionally lowers its head to graze — no emoji, no
- *   rating-number badge.
- * - Bench teammates are bigger and show a real face/photo (or the game's
- *   own fake-face fallback), no rating-number label, and tapping one now
- *   sends them off toward the garden (the scene to the bench's own left)
- *   before they come back and sit down.
+ * The one deliberate exception to "not photographic" remains real teammate
+ * PHOTOS on the bench — those are existing, already-live game data
+ * (career.squad's own imageUrl / the established fake-face fallback), not
+ * new licensed imagery, so reusing them here is the same "display, not a
+ * feature" rule as the trophy count or the horse.
  */
 
 const SCENES = ["stable", "garden", "bench"] as const;
@@ -72,25 +79,169 @@ function pickRandomVisitors(career: CareerState): CareerState["squad"] {
   return shuffle(squad, Math.random).slice(0, 3);
 }
 
-/** A flat sky-over-grass ground, shared by all three scenes so the swipe
- *  reads as one continuous place rather than three unrelated cards. */
-function Ground({ groundColor }: { groundColor: string }) {
+/**
+ * The one shared set of gradients/filters every scene draws from. Kept as a
+ * single reused `<defs>` block per scene's own `<svg>` document (SVG ids
+ * only need to be unique within their own document, so the same id string
+ * in three separate `<svg>`s is fine) rather than inventing a fresh gradient
+ * per shape — real material variety, without asking a phone to composite
+ * dozens of unique gradient/filter definitions.
+ */
+function SceneDefs() {
+  return (
+    <defs>
+      {/* Sky — a real reference: a thin pale band right at the horizon,
+          blending smoothly up into a rich, saturated blue at the top. */}
+      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#2f6fb0" />
+        <stop offset="52%" stopColor="#5b9bd9" />
+        <stop offset="86%" stopColor="#bfe4f5" />
+        <stop offset="100%" stopColor="#eef8fb" />
+      </linearGradient>
+
+      {/* Grass — darker/cooler further away (top of the grass band),
+          lighter/warmer close to camera (bottom), plus a fine blade-texture
+          pattern laid on top so it never reads as a flat rectangle. */}
+      <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#3d7a34" />
+        <stop offset="100%" stopColor="#6fbf4a" />
+      </linearGradient>
+      <pattern id="grassTexture" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(4)">
+        <path d="M2,16 C2,11 3,8 3,3" stroke="rgba(255,255,255,0.10)" strokeWidth="0.8" fill="none" />
+        <path d="M9,16 C9,11 8,7 9,2" stroke="rgba(0,35,0,0.14)" strokeWidth="0.9" fill="none" />
+        <path d="M13,16 C13,12 14,8 13,4" stroke="rgba(255,255,255,0.08)" strokeWidth="0.7" fill="none" />
+      </pattern>
+
+      {/* Honey wood — trophy cabinet, bench slats, plinth. */}
+      <linearGradient id="woodGrad" x1="0" y1="0" x2="1" y2="0.15">
+        <stop offset="0%" stopColor="#a8703c" />
+        <stop offset="16%" stopColor="#8f5a2d" />
+        <stop offset="32%" stopColor="#b17b42" />
+        <stop offset="50%" stopColor="#96602f" />
+        <stop offset="68%" stopColor="#bd8750" />
+        <stop offset="84%" stopColor="#8a5629" />
+        <stop offset="100%" stopColor="#a8703c" />
+      </linearGradient>
+      <linearGradient id="woodDarkGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#5c3a1e" />
+        <stop offset="50%" stopColor="#734524" />
+        <stop offset="100%" stopColor="#4a2c16" />
+      </linearGradient>
+
+      {/* Glass — cabinet front/shelves. */}
+      <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="rgba(214,232,242,0.32)" />
+        <stop offset="50%" stopColor="rgba(255,255,255,0.10)" />
+        <stop offset="100%" stopColor="rgba(180,205,220,0.26)" />
+      </linearGradient>
+      <radialGradient id="spotGlow" cx="50%" cy="0%" r="80%">
+        <stop offset="0%" stopColor="rgba(255,236,180,0.55)" />
+        <stop offset="100%" stopColor="rgba(255,236,180,0)" />
+      </radialGradient>
+
+      {/* Tree — bark shading, layered sunlit/shadowed canopy tones. */}
+      <linearGradient id="trunkGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#43290f" />
+        <stop offset="45%" stopColor="#7a5230" />
+        <stop offset="100%" stopColor="#583a1e" />
+      </linearGradient>
+      <radialGradient id="canopyLight" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stopColor="#75c95d" />
+        <stop offset="100%" stopColor="#3f8a3a" />
+      </radialGradient>
+      <radialGradient id="canopyDark" cx="60%" cy="65%" r="75%">
+        <stop offset="0%" stopColor="#357a38" />
+        <stop offset="100%" stopColor="#1e4a22" />
+      </radialGradient>
+
+      {/* Stable building — painted board wall, corrugated metal roof. */}
+      <linearGradient id="stableWallGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#436260" />
+        <stop offset="100%" stopColor="#28403e" />
+      </linearGradient>
+      <linearGradient id="metalGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#d3dbde" />
+        <stop offset="55%" stopColor="#9aa6ab" />
+        <stop offset="100%" stopColor="#78868b" />
+      </linearGradient>
+
+      {/* Horse — chestnut-bay muscle shading. */}
+      <linearGradient id="horseBodyGrad" x1="0" y1="0" x2="0.15" y2="1">
+        <stop offset="0%" stopColor="#af6b41" />
+        <stop offset="50%" stopColor="#8a4a2c" />
+        <stop offset="100%" stopColor="#5c2f16" />
+      </linearGradient>
+      <linearGradient id="horseDarkGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#7a4024" />
+        <stop offset="100%" stopColor="#472312" />
+      </linearGradient>
+
+      {/* Black metal — bench frame legs. */}
+      <linearGradient id="metalDarkGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#0f0f0f" />
+        <stop offset="50%" stopColor="#2c2c2c" />
+        <stop offset="100%" stopColor="#0a0a0a" />
+      </linearGradient>
+
+      {/* One shared soft drop-shadow, reused everywhere something needs to
+          lift off the grass (trees, cabinet, stable, bench, horse). */}
+      <filter id="softShadow" x="-60%" y="-60%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#000000" floodOpacity="0.28" />
+      </filter>
+    </defs>
+  );
+}
+
+/** A gradient sky-over-textured-grass ground, shared by all three scenes so
+ *  the swipe reads as one continuous place rather than three unrelated
+ *  cards, and now carries the real gradient/texture treatment described in
+ *  this round's brief instead of two flat colour rects. */
+function Ground() {
   return (
     <svg viewBox="0 0 300 500" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
-      <rect x="0" y="0" width="300" height="220" fill="#8fd3f4" />
-      <rect x="0" y="210" width="300" height="290" fill={groundColor} />
-      <rect x="0" y="205" width="300" height="10" fill="rgba(0,0,0,0.08)" />
+      <defs>
+        <linearGradient id="skyGradG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#2f6fb0" />
+          <stop offset="52%" stopColor="#5b9bd9" />
+          <stop offset="86%" stopColor="#bfe4f5" />
+          <stop offset="100%" stopColor="#eef8fb" />
+        </linearGradient>
+        <linearGradient id="grassGradG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3d7a34" />
+          <stop offset="100%" stopColor="#6fbf4a" />
+        </linearGradient>
+        <pattern id="grassTextureG" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(4)">
+          <path d="M2,16 C2,11 3,8 3,3" stroke="rgba(255,255,255,0.10)" strokeWidth="0.8" fill="none" />
+          <path d="M9,16 C9,11 8,7 9,2" stroke="rgba(0,35,0,0.14)" strokeWidth="0.9" fill="none" />
+          <path d="M13,16 C13,12 14,8 13,4" stroke="rgba(255,255,255,0.08)" strokeWidth="0.7" fill="none" />
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="300" height="220" fill="url(#skyGradG)" />
+      <rect x="0" y="210" width="300" height="290" fill="url(#grassGradG)" />
+      <rect x="0" y="210" width="300" height="290" fill="url(#grassTextureG)" opacity="0.4" />
+      <rect x="0" y="205" width="300" height="10" fill="rgba(0,0,0,0.10)" />
     </svg>
   );
 }
 
+/** A real, layered tree — a shaded bark trunk with a couple of asymmetric
+ *  branch strokes, and a full rounded canopy built from several overlapping
+ *  sunlit/shadowed tones instead of three flat same-colour circles, so it
+ *  reads as elegant and strong without dominating the scene. */
 function Tree({ x, y, scale = 1 }: { x: number; y: number; scale?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      <rect x="-4" y="0" width="8" height="26" fill="#7a5230" />
-      <circle cx="0" cy="-14" r="24" fill="#3f9142" />
-      <circle cx="-14" cy="-4" r="16" fill="#4aa64d" />
-      <circle cx="14" cy="-6" r="17" fill="#357a38" />
+      <ellipse cx="0" cy="1" rx="15" ry="3.5" fill="rgba(0,0,0,0.18)" />
+      <path d="M -3,0 C -5,-11 -3,-19 -2,-30 C -1,-19 1,-11 3,0 Z" fill="url(#trunkGrad)" />
+      <path d="M -2,-15 C -8,-17 -10,-11 -15,-13" stroke="#43290f" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <path d="M 2,-17 C 7,-20 9,-14 14,-16" stroke="#43290f" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <g filter="url(#softShadow)">
+        <circle cx="-7" cy="-31" r="17" fill="url(#canopyDark)" />
+        <circle cx="8" cy="-33" r="16" fill="url(#canopyLight)" />
+        <circle cx="0" cy="-42" r="15" fill="url(#canopyLight)" opacity="0.92" />
+        <circle cx="-11" cy="-41" r="12" fill="url(#canopyDark)" opacity="0.88" />
+        <circle cx="7" cy="-46" r="11" fill="url(#canopyLight)" />
+      </g>
     </g>
   );
 }
@@ -106,9 +257,7 @@ function Flower({ x, y, color }: { x: number; y: number; color: string }) {
   );
 }
 
-/** A tuft of longer grass — the open field's own decoration, replacing the
- *  stable's old fence posts/rails now that the horse roams free rather
- *  than being penned in. */
+/** A tuft of longer grass — the open field's own decoration. */
 function GrassTuft({ x, y, color = "#3f8a34" }: { x: number; y: number; color?: string }) {
   return (
     <g transform={`translate(${x} ${y})`} stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none">
@@ -119,12 +268,11 @@ function GrassTuft({ x, y, color = "#3f8a34" }: { x: number; y: number; color?: 
   );
 }
 
-/** A tiny figure — head, body, two legs — reused for the walker, drawn
- *  rather than an emoji so it reads as part of the scene's own art rather
- *  than a sticker on top of it. */
+/** A tiny figure — head, body, two legs — reused for the walker. */
 function Figure({ skin = "#e8b593", shirt = "#2b6cb0" }: { skin?: string; shirt?: string }) {
   return (
     <g>
+      <ellipse cx="0" cy="9" rx="6" ry="1.6" fill="rgba(0,0,0,0.16)" />
       <circle cx="0" cy="-16" r="5" fill={skin} />
       <rect x="-4.5" y="-11" width="9" height="12" rx="2" fill={shirt} />
       <rect x="-4" y="1" width="3" height="8" fill="#2b2b40" />
@@ -134,38 +282,37 @@ function Figure({ skin = "#e8b593", shirt = "#2b6cb0" }: { skin?: string; shirt?
 }
 
 /**
- * A real bay horse, drawn — the old ellipse-plus-🐴-emoji was reported
- * directly as not good enough ("what even is that, get rid of it"). Bay
- * colouring: a warm chestnut-brown body/neck/head, with a BLACK mane, tail,
- * and lower-leg "socks" — standing in profile with an arched neck and
- * alert ears, not a cartoon blob.
+ * A real bay horse, rebuilt this round for real gradient muscle shading and
+ * a leaner, more athletic racehorse-like build (a taller barrel, more
+ * forward lean through the neck) while keeping a soft, warm, loved-pet
+ * expression in the eye rather than a fierce one — per the user's own
+ * explicit "powerful and quick... but also loving, pet-like" brief.
  *
  * `grazing` toggles a slow, occasional head-down dip (via CSS, see the
- * `.horse-head` keyframes below) — "eating grass every now and again."
- * `faded` draws the same shape as a soft outline instead of a solid fill,
- * for the empty "no horse yet" state — a picture, not a caption or a lock.
+ * `.horse-head` keyframes below). `faded` draws the same shape as a soft
+ * outline instead of a solid fill, for the empty "no horse yet" state.
  */
 function Horse({ faded = false }: { faded?: boolean }) {
-  const body = "#8a4a2c";
-  const bodyDark = "#6e3a22";
   const black = "#1c1712";
-  const fill = faded ? "none" : body;
-  const fillDark = faded ? "none" : bodyDark;
+  const fill = faded ? "none" : "url(#horseBodyGrad)";
+  const fillDark = faded ? "none" : "url(#horseDarkGrad)";
   const fillBlack = faded ? "none" : black;
   const stroke = faded ? "rgba(60,40,25,0.35)" : "none";
   const strokeBlack = faded ? "rgba(20,15,10,0.3)" : "none";
   const sw = faded ? 2 : 0;
 
   return (
-    <g opacity={faded ? 1 : 1}>
-      {/* back legs (drawn first, sit behind the barrel) */}
+    <g filter={faded ? undefined : "url(#softShadow)"}>
+      <ellipse cx="6" cy="1" rx="42" ry="6" fill="rgba(0,0,0,0.2)" />
+
+      {/* back legs — leaner, slightly more extended for an athletic stride */}
       <g fill={fillDark} stroke={stroke} strokeWidth={sw}>
-        <rect x="10" y="-40" width="7" height="34" rx="2" />
-        <rect x="22" y="-40" width="7" height="34" rx="2" />
+        <rect x="11" y="-40" width="6.5" height="34" rx="2" />
+        <rect x="23" y="-40" width="6.5" height="34" rx="2" />
       </g>
       <g fill={fillBlack} stroke={strokeBlack} strokeWidth={sw}>
-        <rect x="10" y="-14" width="7" height="14" rx="1.5" />
-        <rect x="22" y="-14" width="7" height="14" rx="1.5" />
+        <rect x="11" y="-14" width="6.5" height="14" rx="1.5" />
+        <rect x="23" y="-14" width="6.5" height="14" rx="1.5" />
       </g>
 
       {/* tail */}
@@ -176,60 +323,68 @@ function Horse({ faded = false }: { faded?: boolean }) {
         strokeWidth={sw}
       />
 
-      {/* barrel */}
-      <ellipse cx="6" cy="-46" rx="34" ry="19" fill={fill} stroke={stroke} strokeWidth={sw} />
+      {/* barrel — a touch leaner/taller than a flat oval, for a racehorse
+          build, with a soft highlight streak for muscle definition */}
+      <ellipse cx="6" cy="-47" rx="33" ry="17" fill={fill} stroke={stroke} strokeWidth={sw} />
+      {!faded && <ellipse cx="0" cy="-53" rx="19" ry="5.5" fill="rgba(255,255,255,0.14)" />}
+      {!faded && <ellipse cx="10" cy="-40" rx="16" ry="5" fill="rgba(0,0,0,0.12)" />}
 
-      {/* front legs */}
+      {/* front legs, slightly more forward-planted */}
       <g fill={fill} stroke={stroke} strokeWidth={sw}>
-        <rect x="-24" y="-38" width="7" height="32" rx="2" />
-        <rect x="-12" y="-38" width="7" height="32" rx="2" />
+        <rect x="-25" y="-39" width="6.5" height="32" rx="2" />
+        <rect x="-13" y="-39" width="6.5" height="32" rx="2" />
       </g>
       <g fill={fillBlack} stroke={strokeBlack} strokeWidth={sw}>
-        <rect x="-24" y="-14" width="7" height="14" rx="1.5" />
-        <rect x="-12" y="-14" width="7" height="14" rx="1.5" />
+        <rect x="-25" y="-14" width="6.5" height="14" rx="1.5" />
+        <rect x="-13" y="-14" width="6.5" height="14" rx="1.5" />
       </g>
 
-      {/* neck + head, grouped so the whole thing can nod down to graze */}
+      {/* neck + head, grouped so the whole thing can nod down to graze —
+          arched a touch further forward for a more alert, dynamic stance */}
       <g className="horse-head">
-        {/* mane, behind the neck/head */}
         <path
-          d="M -18,-58 C -30,-62 -40,-72 -46,-84 C -40,-78 -30,-70 -20,-64 C -14,-68 -8,-70 -2,-70 C -10,-64 -16,-60 -18,-58 Z"
+          d="M -18,-58 C -30,-62 -40,-72 -47,-85 C -41,-79 -30,-71 -20,-65 C -14,-69 -8,-71 -2,-71 C -10,-65 -16,-60 -18,-58 Z"
           fill={fillBlack}
           stroke={strokeBlack}
           strokeWidth={sw}
         />
-        {/* neck */}
         <path
-          d="M -8,-52 C -22,-60 -36,-72 -44,-86 L -34,-92 C -26,-78 -14,-66 2,-58 Z"
+          d="M -8,-52 C -23,-61 -37,-73 -46,-87 L -35,-93 C -27,-79 -14,-67 3,-59 Z"
           fill={fill}
           stroke={stroke}
           strokeWidth={sw}
         />
-        {/* head */}
         <path
-          d="M -44,-86 C -50,-92 -50,-100 -44,-104 C -37,-108 -28,-106 -22,-100 C -18,-96 -18,-90 -22,-86 L -34,-80 Z"
+          d="M -46,-87 C -52,-93 -52,-101 -46,-105 C -38,-109 -29,-107 -23,-101 C -19,-97 -19,-91 -23,-87 L -35,-81 Z"
           fill={fill}
           stroke={stroke}
           strokeWidth={sw}
         />
-        {/* ear */}
-        <path d="M -38,-102 L -34,-112 L -29,-101 Z" fill={fill} stroke={stroke} strokeWidth={sw} />
-        {/* forelock, a small tuft of mane between the ears */}
-        <path d="M -36,-104 C -39,-108 -37,-112 -33,-112 C -35,-109 -35,-106 -36,-104 Z" fill={fillBlack} stroke={strokeBlack} strokeWidth={sw} />
+        <path d="M -39,-103 L -35,-113 L -30,-102 Z" fill={fill} stroke={stroke} strokeWidth={sw} />
+        <path d="M -37,-105 C -40,-109 -38,-113 -34,-113 C -36,-110 -36,-107 -37,-105 Z" fill={fillBlack} stroke={strokeBlack} strokeWidth={sw} />
+        {!faded && (
+          <>
+            {/* a warm, soft, pet-like eye — not a fierce one */}
+            <ellipse cx="-31" cy="-96" rx="2.6" ry="2.9" fill="#241408" />
+            <circle cx="-30.2" cy="-97.1" r="1" fill="#fff" opacity="0.9" />
+            <path d="M -34,-99 C -32,-101 -29,-101 -27,-99" stroke="#3a2314" strokeWidth="0.8" fill="none" strokeLinecap="round" opacity="0.6" />
+          </>
+        )}
       </g>
     </g>
   );
 }
 
-/** The garden scene: grass, trees, flowers, a real trophy-count HUD (a
- *  cabinet glyph + a number, never a sentence) and a small figure ambling
- *  between a few fixed spots on its own — "someone walking around the
- *  garden" — via a slow CSS animation, not free-roam pathfinding. */
+/** The garden scene: rich gradient grass, layered trees, a real elevated
+ *  glass-and-wood trophy cabinet (a real trophy-count HUD — a cabinet glyph
+ *  + a number, never a sentence) and a small figure ambling between a few
+ *  fixed spots on its own via a slow CSS animation. */
 function GardenScene({ trophyCount, ballonDors }: { trophyCount: number; ballonDors: number }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <Ground groundColor="#4f9d3a" />
+      <Ground />
       <svg viewBox="0 0 300 500" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
+        <SceneDefs />
         <Tree x={48} y={300} scale={1.1} />
         <Tree x={252} y={280} scale={0.9} />
         <Tree x={230} y={400} scale={0.75} />
@@ -237,17 +392,39 @@ function GardenScene({ trophyCount, ballonDors }: { trophyCount: number; ballonD
         <Flower x={130} y={420} color="#f4c542" />
         <Flower x={190} y={340} color="#e857e8" />
         <Flower x={220} y={450} color="#f4728a" />
-        {/* the trophy cabinet, drawn — a wooden case with however many real
-            trophies (career.trophies) fit on its shelf, capped visually at
-            six so the case never overflows its own frame */}
+
+        {/* the trophy cabinet — a real elevated wood-and-glass display case:
+            warm honey wood-grain frame, a solid plinth with cupboard doors
+            and small round handles, glass panels with diagonal reflective
+            highlight streaks, and a warm top-spotlight glow pooling onto
+            the shelves. However many real trophies (career.trophies) fit,
+            capped visually at six so the case never overflows its frame. */}
         <g transform="translate(150 250)">
-          <rect x="-34" y="-30" width="68" height="60" rx="4" fill="#6b4a2b" stroke="#4a3319" strokeWidth="3" />
-          <rect x="-28" y="-24" width="56" height="48" fill="#3a2818" />
+          <ellipse cx="0" cy="48" rx="42" ry="6" fill="rgba(0,0,0,0.22)" />
+          {/* plinth / base with cupboard doors */}
+          <rect x="-38" y="26" width="76" height="20" rx="2" fill="url(#woodDarkGrad)" filter="url(#softShadow)" />
+          <line x1="0" y1="27" x2="0" y2="45" stroke="#3f2711" strokeWidth="1.4" />
+          <circle cx="-13" cy="36" r="1.5" fill="#e8c98a" />
+          <circle cx="13" cy="36" r="1.5" fill="#e8c98a" />
+          {/* cabinet frame */}
+          <rect x="-34" y="-34" width="68" height="62" rx="4" fill="url(#woodGrad)" stroke="#4a3319" strokeWidth="2.5" filter="url(#softShadow)" />
+          {/* warm spotlight glow from recessed top lights */}
+          <rect x="-30" y="-31" width="60" height="26" fill="url(#spotGlow)" />
+          {/* glass + interior */}
+          <rect x="-28" y="-28" width="56" height="50" fill="#241a10" />
+          <rect x="-28" y="-28" width="56" height="50" fill="url(#glassGrad)" />
+          {/* glass reflective highlight streaks */}
+          <path d="M -23,-26 L -12,20" stroke="rgba(255,255,255,0.32)" strokeWidth="2" />
+          <path d="M -3,-26 L 9,20" stroke="rgba(255,255,255,0.18)" strokeWidth="1.4" />
+          {/* glass shelves */}
+          <rect x="-26" y="-6" width="52" height="1.6" fill="rgba(255,255,255,0.28)" />
+          <rect x="-26" y="14" width="52" height="1.6" fill="rgba(255,255,255,0.2)" />
           {Array.from({ length: Math.min(trophyCount, 6) }).map((_, i) => {
             const col = i % 3, row = Math.floor(i / 3);
-            return <text key={i} x={-18 + col * 18} y={-2 + row * 20} fontSize="14">🏆</text>;
+            return <text key={i} x={-18 + col * 18} y={-4 + row * 20} fontSize="14">🏆</text>;
           })}
         </g>
+
         <g className="garden-walker" style={{ transformOrigin: "150px 400px" }}>
           <g transform="translate(150 400)">
             <Figure shirt="#e0a020" />
@@ -287,21 +464,53 @@ function GardenScene({ trophyCount, ballonDors }: { trophyCount: number; ballonD
   );
 }
 
+/** A real wooden stable building — painted board wall, white trim, a
+ *  corrugated metal roof, and a few split stable doors with the white
+ *  X-brace pattern — as a background element in the stable scene. */
+function StableBuilding({ x, y, scale = 1 }: { x: number; y: number; scale?: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`} filter="url(#softShadow)">
+      <ellipse cx="0" cy="12" rx="70" ry="7" fill="rgba(0,0,0,0.2)" />
+      {/* wall */}
+      <rect x="-55" y="-60" width="110" height="70" fill="url(#stableWallGrad)" />
+      {/* roof */}
+      <polygon points="-63,-60 63,-60 50,-79 -50,-79" fill="url(#metalGrad)" stroke="#647377" strokeWidth="1" />
+      {Array.from({ length: 8 }).map((_, i) => (
+        <line key={i} x1={-58 + i * 15} y1={-60} x2={-46 + i * 15} y2={-79} stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
+      ))}
+      {/* trim */}
+      <rect x="-56" y="-62" width="112" height="4" fill="#f2f0e6" />
+      <rect x="-56" y="8" width="112" height="4" fill="#f2f0e6" />
+      {/* three split stable doors, each with a white X-brace */}
+      {[-34, 0, 34].map((dx, i) => (
+        <g key={i} transform={`translate(${dx} 0)`}>
+          <rect x="-13" y="-40" width="26" height="40" fill="#f2f0e6" stroke="#c9c6b8" strokeWidth="0.6" />
+          <rect x="-11" y="-38" width="22" height="17" fill="#33504d" />
+          <rect x="-11" y="-19" width="22" height="19" fill="#2b4744" />
+          <path d="M -11,-38 L 11,-21 M 11,-38 L -11,-21" stroke="#f2f0e6" strokeWidth="1.4" />
+          <path d="M -11,-19 L 11,0 M 11,-19 L -11,0" stroke="#f2f0e6" strokeWidth="1.4" />
+        </g>
+      ))}
+    </g>
+  );
+}
+
 /**
- * The stable — redesigned into an open grazing FIELD, not a fenced pen: a
- * real horse (career.horse) should look like it's roaming free, not penned
- * in. A real drawn bay horse (see Horse above) ambles back and forth and
+ * The stable — an open grazing FIELD, not a fenced pen: a real horse
+ * (career.horse) roams free rather than being penned in, with the real
+ * stable BUILDING now sitting in the background rather than fence posts.
+ * A real drawn bay horse (see Horse above) ambles back and forth and
  * occasionally grazes when one is owned; an empty field shows the same
- * horse shape as a soft, faded outline instead — "no horse yet" read from
- * the picture alone, no caption, no number, no emoji.
+ * horse shape as a soft, faded outline instead.
  */
 function StableScene({ horse }: { horse: CareerState["horse"] }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <Ground groundColor="#5aa645" />
+      <Ground />
       <svg viewBox="0 0 300 500" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
-        <Tree x={38} y={270} scale={0.65} />
-        <Tree x={266} y={245} scale={0.5} />
+        <SceneDefs />
+        <StableBuilding x={68} y={260} scale={0.85} />
+        <Tree x={252} y={255} scale={0.7} />
         {[
           [30, 460], [70, 480], [120, 470], [175, 485], [230, 465], [270, 478],
           [50, 420], [200, 430], [255, 415], [95, 495],
@@ -352,38 +561,16 @@ function StableScene({ horse }: { horse: CareerState["horse"] }) {
 const SHIRT_COLORS = ["#d4342c", "#2b6cb0", "#1f9142"];
 
 /** Draws just the body/legs of a bench teammate — the head is handled
- *  separately below so a real photo/face can be composited onto it via the
- *  same crop/scale/outline math `drawPlayerHead.ts` uses for every other
- *  figure in this game, instead of the plain flat-colour circle `Figure`
- *  draws for its head. Scaled up from `Figure`'s own proportions so a bench
- *  teammate reads as an actual player, not a doll.
- *
- *  Reported directly as reading "a bit weird" — the old torso was a flat,
- *  uniform-width rectangle with no neck, and the legs were two identical
- *  untapered bars. Redesigned with more human proportions, still flat
- *  low-poly shapes matching this file's own visual language (see Figure/
- *  Tree/Horse): a real neck gap under the head, a torso that's wider at
- *  the shoulders than the waist, angled arms with a small hand at the end
- *  of each, and legs that taper in slightly toward the ankle with a real
- *  gap between them rather than two parallel blocks. Checked against
- *  `BenchFigure`'s own `scale(1.7)` and the bench's `seatX` spacing
- *  ([80, 150, 220], 70px apart) — the widest point (the hands, ±12 local
- *  units → ~20px at this scale) still leaves clear room between
- *  neighbouring seats, so nothing here needed adjusting. */
+ *  separately below so a real photo/face can be composited onto it. */
 function BenchBody({ shirt }: { shirt: string }) {
   const skin = "#e8b593";
   return (
     <g>
-      {/* neck — a real gap between the head and the shoulders */}
-      <rect x="-2" y="-19" width="4" height="4" fill={skin} />
-      {/* torso — wider at the shoulders, narrower at the waist */}
-      <path d="M -8.5,-15 L 8.5,-15 L 6.5,1 C 6.5,2.6 3.6,3.4 0,3.4 C -3.6,3.4 -6.5,2.6 -6.5,1 Z" fill={shirt} />
-      {/* arms, angled out from the shoulder, with a small hand each */}
-      <path d="M -8.5,-15 L -6,-14 L -9.5,-2.5 L -12,-3 Z" fill={shirt} />
-      <path d="M 8.5,-15 L 6,-14 L 9.5,-2.5 L 12,-3 Z" fill={shirt} />
-      <circle cx="-11.5" cy="-2" r="1.5" fill={skin} />
-      <circle cx="11.5" cy="-2" r="1.5" fill={skin} />
-      {/* legs — a slight taper toward the ankle, with a real gap between them */}
+      <path d="M -8.5,-19 L 8.5,-19 L 6.5,1 C 6.5,2.6 3.6,3.4 0,3.4 C -3.6,3.4 -6.5,2.6 -6.5,1 Z" fill={shirt} />
+      <path d="M -8.5,-19 L -6,-18 L -9.5,-6.5 L -12,-7 Z" fill={shirt} />
+      <path d="M 8.5,-19 L 6,-18 L 9.5,-6.5 L 12,-7 Z" fill={shirt} />
+      <circle cx="-11.5" cy="-6" r="1.5" fill={skin} />
+      <circle cx="11.5" cy="-6" r="1.5" fill={skin} />
       <path d="M -6,4 L -1,4 L -1.5,18 L -5,18 Z" fill="#2b2b40" />
       <path d="M 6,4 L 1,4 L 1.5,18 L 5,18 Z" fill="#2b2b40" />
     </g>
@@ -393,52 +580,10 @@ function BenchBody({ shirt }: { shirt: string }) {
 /**
  * A real teammate face on a bench figure — reusing the game's own real
  * crop/scale/outline convention (FaceStyle/FakeFaceStyle, faceStyle.ts /
- * fakeFaceStyle.ts) rather than inventing new geometry, so a face here
- * looks consistent with how the same photo looks everywhere else in the
- * game. `drawPlayerHead.ts` itself is a canvas-2d function (used by
- * CanvasMatch.tsx and the Face Editor) and this whole screen is pure SVG
- * with no canvas anywhere — rather than layering an HTML <canvas> on top of
- * an SVG that's stretched non-uniformly (`preserveAspectRatio="none"`,
- * whose real on-screen scale depends on the container's own aspect ratio
- * and can't be matched by a plain HTML element without a resize observer),
- * this re-expresses drawPlayerHead's core geometry as SVG: a backing
- * circle, a cropped `<image>` (using the same `sourceRect` math
- * drawPlayerHead itself calls) clipped to a circle, and a circular outline
- * stroke. The one piece deliberately NOT reproduced here is the real alpha-
- * silhouette outline trace (stamping the photo's own cutout shape at 12
- * ring points) — that's a canvas-only technique (offscreen compositing).
- * A plain circular stroke was tried as its substitute in an earlier round
- * and reported directly as an unwanted "black circle... around their face
- * that is not part of the customizable design" — a real FaceStyle-driven
- * outline reads as an unrelated artifact on this small decorative bench
- * figure, so BenchHead never draws one at all now, regardless of what
- * `outlineEnabled` says elsewhere.
- *
- * `fallbackKey` — the "missing face" bug, root-caused. Reported twice,
- * always exactly one bench player with no face at all. Every squad-player
- * construction site (squadData.ts's generateSquad, realSquad.ts's
- * buildSquadFromRoster, leagueTransfers.ts) was checked and none of them
- * can produce an empty-string imageUrl (every one either omits the field
- * or uses `|| undefined`) — so `p.imageUrl ?? fakeFaceFor(p.id)` in
- * BenchScene was never actually the gap. Nor is the player's own character
- * ever a member of `career.squad` (checked `makeInitialCareer` and every
- * squad-rebuild site) — the bench only ever draws real teammates. And a
- * standalone browser test confirmed an SVG `<image href>` with these real
- * fake-face filenames' literal spaces/commas loads correctly unencoded, so
- * it isn't a URL-escaping bug either.
- *
- * The real gap: a REAL, non-fake photo URL that is truthy but genuinely
- * dead — a self-hosted `player-portraits/{sofifaId}.png` that was never
- * actually uploaded for that specific squad member (per PL Draft — Data
- * Status above, coverage isn't 100% for every depth player), or an old row
- * still pointing at SoFIFA's own CDN, which has required a signed-in
- * session for months. That case is TRUTHY, so the `??` fallback never
- * fires — the `<image>` element gets an href that simply 404s, `natural`
- * never resolves, and the figure is left with only its backing circle: a
- * face-less bench player, deterministically, for that same real player,
- * every time. `fallbackKey` lets BenchHead recover from exactly that: once
- * the real photo's own `<img>` reports a real load failure, this switches
- * to a genuine fake face instead of leaving the figure blank.
+ * fakeFaceStyle.ts) rather than inventing new geometry. Unchanged this
+ * round, per the brief's own instruction not to touch the bench figures'
+ * faces/bodies/interactions — only the surrounding scenery and the bench
+ * object itself were in scope.
  */
 function BenchHead({
   cx0,
@@ -463,22 +608,12 @@ function BenchHead({
   const [broken, setBroken] = useState(false);
   const clipId = useRef(`bench-face-clip-${Math.random().toString(36).slice(2)}`).current;
 
-  // Detect a genuinely DEAD real photo — reset whenever the underlying
-  // squad player (and so `imageUrl`) changes.
   useEffect(() => {
     setBroken(false);
-    if (!imageUrl || (FAKE_FACES as readonly string[]).includes(imageUrl)) return; // a fake face never needs this
+    if (!imageUrl || (FAKE_FACES as readonly string[]).includes(imageUrl)) return;
     const img = cache.get(imageUrl);
     if (!img) return;
-    if (img.complete && img.naturalWidth > 0) return; // already loaded fine
-    // The shared cache (faceImageCache.ts) already retries once itself on a
-    // failed load, but never reports whether that retry also failed — so a
-    // genuinely dead URL used to leave this figure hanging with no face at
-    // all forever (see the block comment above). A real `error` event here
-    // starts a short timer; if the real photo still hasn't loaded by the
-    // time it fires (the cache's own retry has had a chance to fail too),
-    // this falls back to a real fake face instead of leaving the figure
-    // blank.
+    if (img.complete && img.naturalWidth > 0) return;
     const onError = () => {
       window.setTimeout(() => setBroken(true), 1200);
     };
@@ -544,27 +679,12 @@ function BenchHead({
           />
         </>
       )}
-      {/* No outline stroke here, deliberately — see the block comment above. */}
     </g>
   );
 }
 
-/** A teammate who actually stands up and walks when tapped, rather than
- *  sitting frozen forever — requested directly, pointing at the match
- *  engine's own real moving/controllable characters as proof this game
- *  already knows how to do it. Idle, he sways gently in place; tapped, he
- *  walks off the LEFT edge of this scene's own viewBox — toward the garden,
- *  which sits immediately to the bench's own left in the scene order
- *  (stable, garden, bench) — pauses briefly as if now over there, then
- *  walks back and sits down. A literal cross-scene walk isn't practical
- *  here (the three scenes are separate SVGs in a swiped flex track, not one
- *  shared canvas), so this is the honest equivalent: visibly leaving toward
- *  the garden and coming back, not a bigger cross-component restructure.
- *
- *  Shows the teammate's real face/photo (career.squad's imageUrl, or the
- *  game's own fake-face fallback so nobody is ever a blank circle) instead
- *  of the old flat-colour head — see BenchHead. The old small overall-
- *  rating number above the head is gone entirely, per direct feedback. */
+/** A teammate who actually stands up and walks when tapped. Unchanged this
+ *  round — scenery/material only, per the brief. */
 function BenchFigure({
   seatX,
   shirt,
@@ -618,9 +738,36 @@ function BenchFigure({
   );
 }
 
-/** The bench: real teammates (career.squad), drawn bigger, with a real
- *  face/photo apiece — see BenchFigure/BenchHead for why. No numbers, no
- *  sentences at all now — the old overall-rating label is gone. */
+/** A real park bench — horizontal honey wood-grain slats with visible gaps,
+ *  and a black painted metal A-frame of legs/armrests, per the user's own
+ *  reference photo. */
+function BenchStructure() {
+  return (
+    <g transform="translate(150 400)" filter="url(#softShadow)">
+      <ellipse cx="0" cy="30" rx="96" ry="7" fill="rgba(0,0,0,0.22)" />
+      {/* black metal A-frame: two side frames with an angled armrest */}
+      {[-84, 84].map((lx, i) => (
+        <g key={i}>
+          <path d={`M ${lx},-46 L ${lx},28`} stroke="url(#metalDarkGrad)" strokeWidth="5" strokeLinecap="round" fill="none" />
+          <path d={`M ${lx * 0.86},-6 L ${lx},-6 L ${lx},4`} stroke="url(#metalDarkGrad)" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+          <path d={`M ${lx * 0.9},-46 L ${lx},-38`} stroke="url(#metalDarkGrad)" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+        </g>
+      ))}
+      {/* backrest slats — horizontal, with real gaps between them */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <rect key={`back-${i}`} x={-88} y={-44 + i * 8} width="176" height="5.4" rx="1.4" fill="url(#woodGrad)" stroke="rgba(0,0,0,0.18)" strokeWidth="0.5" />
+      ))}
+      {/* seat slats */}
+      {Array.from({ length: 5 }).map((_, i) => (
+        <rect key={`seat-${i}`} x={-92} y={-4 + i * 5.2} width="184" height="4" rx="1.2" fill="url(#woodGrad)" stroke="rgba(0,0,0,0.18)" strokeWidth="0.5" />
+      ))}
+    </g>
+  );
+}
+
+/** The bench scene: two trees in the right background, the real park bench
+ *  above near the front of the grass, with real teammates (career.squad)
+ *  sitting on it — see BenchFigure/BenchHead, both unchanged this round. */
 function BenchScene({ visitors }: { visitors: CareerState["squad"] }) {
   const seats = [80, 150, 220];
   const [cache] = useState<FaceImageCache>(() => createFaceImageCache());
@@ -629,18 +776,12 @@ function BenchScene({ visitors }: { visitors: CareerState["squad"] }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <Ground groundColor="#4f9d3a" />
+      <Ground />
       <svg viewBox="0 0 300 500" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
-        <Tree x={30} y={280} scale={0.85} />
-        <Tree x={270} y={310} scale={0.7} />
-        <g transform="translate(150 400)">
-          <rect x="-90" y="-6" width="180" height="10" fill="#8a5a34" />
-          <rect x="-90" y="-34" width="180" height="8" fill="#8a5a34" />
-          <rect x="-80" y="4" width="8" height="24" fill="#5a3a22" />
-          <rect x="72" y="4" width="8" height="24" fill="#5a3a22" />
-          <rect x="-84" y="-46" width="8" height="20" fill="#5a3a22" />
-          <rect x="76" y="-46" width="8" height="20" fill="#5a3a22" />
-        </g>
+        <SceneDefs />
+        <Tree x={228} y={250} scale={0.68} />
+        <Tree x={268} y={300} scale={0.8} />
+        <BenchStructure />
         {(visitors.length ? visitors : []).slice(0, 3).map((p, i) => (
           <BenchFigure
             key={p.id}
@@ -675,18 +816,10 @@ export default function GardenScreen({ career, onBack }: { career: CareerState; 
   };
 
   const trophyCount = (career.trophies ?? []).length;
-  // A genuine reroll every time you come into the Garden — requested
-  // directly, replacing the old stable/seeded pick. `useState`'s lazy
-  // initializer runs exactly once per MOUNT of this screen, so swiping
-  // between scenes (or any re-render while still on this screen) never
-  // reshuffles who's sitting on the bench mid-visit — only leaving and
-  // coming back does.
   const [visitors] = useState<CareerState["squad"]>(() => pickRandomVisitors(career));
 
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      {/* Same centered column every other screen uses (DashboardShell) —
-          this used to be full-bleed, reported directly as not matching. */}
       <div className="flex-1 min-h-0 flex flex-col max-w-md w-full mx-auto">
         <div className="flex items-center justify-between px-3 py-2">
           <button onClick={onBack} className="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-lg text-white">←</button>
@@ -707,14 +840,6 @@ export default function GardenScreen({ career, onBack }: { career: CareerState; 
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {/* `absolute inset-0` (not a percentage `h-full`) so this track gets
-              a real, definite box straight from this positioned parent —
-              reported directly as a real bug: a chain of `height: 100%`
-              through a flex-grow ancestor rendered as a totally blank black
-              screen on the reporter's device, a known cross-browser flexbox/
-              percentage-height fragility. Children no longer need `h-full`
-              either — a flex row's default `align-items: stretch` already
-              gives every child the track's own real height for free. */}
           <div
             className="absolute inset-0 flex transition-transform duration-300 ease-out"
             style={{ width: `${SCENES.length * 100}%`, transform: `translateX(-${index * (100 / SCENES.length)}%)` }}
