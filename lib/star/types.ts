@@ -55,12 +55,54 @@ export interface StarPlayer {
   firstName: string;
   lastName: string;
   age: number;
-  skinTone: "light" | "dark";
+  /**
+   * WIDENED, never restructured — see lib/star/playerIdentity.ts's SKIN_TONES.
+   *
+   * Was `"light" | "dark"`, a binary. It is now one of eight tones, of which
+   * `"light"` and `"dark"` are still two, carrying the exact hex values the
+   * old picker shipped. So every save ever written already names a tone that
+   * exists and resolves to the identical colour: there is no migration, and
+   * nothing that assigned `"light"`/`"dark"` needs touching. Read it through
+   * `resolveSkinTone`/`skinToneHex` rather than directly, so a value from a
+   * hand-edited or future save still renders something.
+   */
+  skinTone: import("./playerIdentity").SkinTone;
   club: string;
   clubBadge: string | null;
   position: string;
   nationality: string;
   startYear: number;
+  /**
+   * What he's actually called, if it isn't his name.
+   *
+   * Optional and absent for every career that exists — which is exactly what
+   * "he hasn't got one" means, so no backfill is needed. Where it IS set it
+   * should win over firstName/lastName in commentary, the media feed and the
+   * team sheet; `displayName`/`shortDisplayName` (playerIdentity.ts) are the
+   * one place that rule lives, rather than a nickname check at twenty call
+   * sites.
+   */
+  nickname?: string;
+  /**
+   * The squad number he'd ASK for. Not the one he's been given.
+   *
+   * `CareerState.squadNumber` stays the number the club actually handed him
+   * (recognition.ts's assignSquadNumber). This is the preference, and it is
+   * changeable at any time — the intent being that once he's earned enough
+   * standing at a club, the club gives him the number he wants. That stature
+   * mechanic is deliberately NOT built yet; this is the field it will read.
+   * Optional, so an older save simply has no preference on file.
+   */
+  preferredNumber?: number;
+  /**
+   * Left or right, chosen at creation and permanent.
+   *
+   * There is deliberately no UI anywhere in the game that changes this. A
+   * weak-foot system is intended later; this is the field that decides which
+   * foot is the weak one. Optional, so an older save reads as right-footed
+   * (see playerIdentity.ts's resolveFoot) rather than undefined.
+   */
+  preferredFoot?: import("./playerIdentity").PreferredFoot;
   /**
    * A picture of you, cropped square and stored as a data URI.
    *
