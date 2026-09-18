@@ -198,11 +198,54 @@ compares each offer against your current contract. **During a trial there is no
 contract to compare against.** What's reusable is the `TransferOffer` *type* and
 the card's *layout*; the generator and its anchor formula are new work.
 
-**A ceiling is required.** A perfect trial must not produce Arsenal. An
-18-year-old with 40/40/40/40/30 skills signed to a top-five club is benched
-immediately by `selectionFor`, and season-1 reputation (~22) means no summer
-offers — a career stuck on a bench it cannot leave. **A 100 trial means
-upper-mid Premier League, not the title race.**
+**No ceiling — handle the consequences instead.** A first draft proposed
+capping a perfect trial at upper-mid Premier League, because an 18-year-old
+with 40/40/40/40/30 skills at a top-five club is benched immediately by
+`selectionFor`, and season-1 reputation (~22) means no summer offers — a career
+stuck on a bench it cannot leave.
+
+**Overruled, and the replacement is better.** Keep the tiny chance of signing
+for a giant, and fix what happens next:
+
+- **You are never a reserve.** Mikey, directly: *"I think you should never be a
+  reserve, it's too boring."* The floor is a place on the bench every week.
+- **Or you get loaned out.** A manager who rates your potential but can't play
+  you sends you somewhere you will play. That is a real football career, and a
+  far better story than a cap.
+- **The wage follows your standing, not just the badge** — see §4.1a.
+
+This turns the 0.1% outcome from a trap into the most interesting start in the
+game.
+
+### 3.6a Going out on loan — and loans already half-exist
+
+Mikey's answer to the giant-club problem (§3.6) needs you to be loanable.
+**Checked before costing it: loans are already a real, tested system in this
+game** — just not for you.
+
+What exists today, for AI squad and league players:
+
+- `activeLoans` on `CareerState` — everybody currently out on loan, with parent
+  club, loan club and the player's stable id.
+- `returnLoansHome` — runs automatically at every season rollover and puts
+  them back.
+- `leagueLoanNews` — loan moves already reach the media feed as real stories.
+- `tests/star/loans.mts` — real coverage, including that a borrowing club
+  can't deal a player it's only borrowing.
+
+What does **not** exist: the player character being the one loaned out. Every
+one of those paths moves a `SquadPlayer` or `LeaguePlayer`; `career.player.club`
+is only ever *read*, to know which club is yours.
+
+So this is **new work on a real, tested foundation** rather than from scratch —
+the data shape, the season-end return and the news story are all already there.
+The genuinely new parts are: choosing the loan club, moving your own career to
+it for a season, playing a real season in another club's fixtures, and coming
+back with whatever you earned.
+
+**Honest flag:** "play a season at a club that isn't yours" touches the league
+and fixture model, which is the one area §8 reserves for Mikey. Worth agreeing
+who builds it before either of us starts.
 
 ### 3.7 Failing the trial — the free-agent life
 
@@ -266,6 +309,39 @@ with `base/top` of **★4,500 → ★20,000** (Premier) and **★600 → ★2,50
 `customClubs.ts`) and won't be in the database. Fall back to `base` for the
 division explicitly — never let `undefined` reach the arithmetic.
 
+### 4.1a Your standing changes the wage too — Mikey's idea, and it's a good one
+
+> *"Maybe you just earn less wage if you're at United and not a starter — so
+> similar wage to a League Two or National League player."*
+
+§4.1 prices the **club**. This prices **you at that club**, and the two multiply:
+
+```
+wage = startingWage(club) × statusFactor(yourStanding)
+```
+
+A benched sixteen-year-old at Manchester United is not on ★20,000 a week — he's
+on a fraction of it, which lands him near a starting Championship player. A
+first-teamer at the same club gets the full figure.
+
+Why this is worth doing beyond realism:
+
+- **It fixes the giant-club problem from the money side** at the same time §3.6
+  fixes it from the football side. You can sign for United; you just aren't
+  rich until you play.
+- **It makes the Ballon d'Or harder to win early**, which Mikey called out
+  directly as a goal — and it is currently far too easy to snowball.
+- **It gives being dropped a real, felt cost**, which nothing in the game does
+  today.
+
+The hook already exists: `selectionFor` (`selection.ts`) already computes your
+standing and status every week. Nothing new needs measuring — the number is
+already there, it just never touches money.
+
+**One thing to watch:** combined with §6.3's ★50 starting money, a benched
+player at a big club is poor for a long stretch. That is probably the intended
+feel, but it should be a deliberate choice rather than a surprise.
+
 ### 4.2 The real wage fault — v1 diagnosed it backwards
 
 v1 claimed the ratchet traps a low-wage player. **Worked numerically, it
@@ -289,8 +365,13 @@ underdog and accelerates the runaway.
 **Correct fix: blend toward the paying club in both directions.**
 
 ```
-offered = 0.35 × ratchet + 0.65 × clubAnchor(clubQuality, yourReputation)
+offered = 0.15 × ratchet + 0.85 × clubAnchor(clubQuality, yourReputation)
 ```
+
+**Set at 15/85 by Mikey**, up from a first-draft 35/65 — the club paying you
+should dominate; what you used to earn is a minor influence, not a co-equal one.
+He is right, and it makes the fix stronger: at 35/65 a lucky early ratchet still
+followed you for several moves.
 
 So joining a smaller club genuinely costs you money — which is the decision the
 transfer screen exists to present, and which today it never does.
@@ -411,12 +492,48 @@ can't hold it.
 |---|---|---|---|
 | ~~Energy gel ★150~~ | **★1,500** | +8 energy | **Repriced.** At ★150 it was ★18.75/energy point against the Basic KIB Can's ★240 — **12.8× better**, obsoleting the entire can line and making the energy gate (which drives selection) purchasable |
 | Strapping & tape | ★300 | Injury risk down N matches | Needs the `statBoost` countdown pattern **with a replay guard** |
-| ~~Bus pass~~ | — | **Cut.** `WEEK_ACTIONS` is a module constant; `startNewWeek()` takes no career. Changing it means signature changes in the two most replay-sensitive functions in the codebase. Highest risk on the list, disguised as the cheapest |
+| ~~Bus pass~~ (Mikey: *"what's a bus pass?"*) | — | **Already cut.** It was a proposed free-agent item — a cheap way to get an extra action in a week. `WEEK_ACTIONS` is a module constant; `startNewWeek()` takes no career. Changing it means signature changes in the two most replay-sensitive functions in the codebase. Highest risk on the list, disguised as the cheapest |
 | Second-hand boots | ★800 | Weak stats, poor durability | Cheap and clean |
 | Ice baths | ★1,200 | Better Rest regen | `REST_ENERGY` is read in **three** places that must agree, or the pre-match screen promises energy the match doesn't grant |
 | Training aid (merged) | ★2,000 | Training XP up | **Video analysis and gym membership merged** — two items with identical mechanics failed §6.2's own rule |
 | Physio | ★3,500 | Injury weeks tick faster | One line |
 | Agent retainer | ★5,000 | Better negotiation opening mood | **Ships with §5, not before** — earlier it's a dead item |
+
+### 6.4a Tiered items — Mikey's restructure of the whole catalogue
+
+> *"Change the prices of the shop so they have 5 standards. So level 1 car maybe
+> costs £500, then level 3 car maybe costs £7,500."*
+
+Instead of 31 unrelated items, the shop becomes **item families with five
+tiers each** — a car, a house, a watch, each climbing from something a
+non-league trialist can save for to something only a Ballon d'Or winner owns.
+
+This is the best single idea in the shop section, because it solves several
+problems at once with one restructure:
+
+- **It fills the empty 0–5,000 band naturally** — every family's tier 1 lives
+  there, rather than us inventing a separate set of cheap items.
+- **It fixes the top end at the same time** (§6.5), because every family's
+  tier 5 can be priced against a late-career wage.
+- **It gives a real sense of climbing** — the same object, visibly better,
+  rather than a list of unrelated things.
+- **It replaces "lifestyle value" as the only progression axis**, which §6.1
+  showed is degenerate at both ends.
+
+**On locking tiers behind level or seasons played** — Mikey's own observation is
+the important one: *"you wouldn't be able to afford level 2 unless you reach the
+next division anyway."* Affordability is already a natural gate. So:
+
+- **Start with no explicit locks.** Price the tiers so the gate is money.
+- **Add locks only where money alone doesn't bite** — and keep them to one
+  simple rule (seasons played, or division), never a per-item unlock table.
+  Harry's steer: *"don't want it too complex, just a feeling like you unlock
+  stuff."*
+
+Mikey also noted locking *"entices people to play more seasons"* and *"makes it
+harder to win the Ballon d'Or early on"* — both real design goals, and both
+better served by §4.1a's status-scaled wage, which slows early money without
+adding any new rules at all.
 
 ### 6.5 The top of the shop needs repricing too
 
@@ -507,7 +624,14 @@ cheap band depends on the negotiation that was scheduled after it.
 | 9 | Full shop reprice + cheap band (§6.4–6.5) | Medium — priced against the wages that now exist |
 | 10 | Free-agent life (§3.7) | **Highest** — depends on 4 |
 | 11 | Cross-division summer window (§4.3) | Medium — new mechanic |
-| 12 | Real five-a-side (§3.5) | Its own project |
+| 12 | Status-scaled wage (§4.1a) | Low — `selectionFor` already computes the input |
+| 13 | Player loans (§3.6a) | Medium — real foundation exists; needs Mikey's agreement (§8) |
+| 14 | Real five-a-side (§3.5) | Its own project |
+
+**Note on 12:** it is listed late but is genuinely cheap, and it makes the
+giant-club start work. If §3.6 ships without it, a benched sixteen-year-old at
+United is on ★20,000 a week, which is the opposite of the intended feel. Pull it
+forward if the trial lands first.
 
 ---
 
@@ -521,6 +645,11 @@ cheap band depends on the negotiation that was scheduled after it.
 | Wage labelled "/match" | **Fix it** — it's weekly (§4.4) |
 | Lifestyle ladder | **Save it** (§6.6) |
 | Career creation | **Split, don't defer** (§3.1) |
+| Wage blend toward the paying club | **15/85**, set by Mikey (§4.2) |
+| Can a perfect trial get you to a giant? | **Yes — no cap.** Handled by never being a reserve, loans, and a status-scaled wage (§3.6, §3.6a, §4.1a) |
+| Being a reserve | **Never.** Bench every week, or loaned out (Mikey) |
+| Shop structure | **Item families, five tiers each** (Mikey, §6.4a) |
+| Tier locks | **Money first, no explicit locks.** Add one simple rule only if needed (§6.4a) |
 
 ### Open — needed before the relevant step
 1. **Five-a-side in v1, or after?** Recommendation: after, and build the real
