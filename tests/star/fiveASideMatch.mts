@@ -1,15 +1,18 @@
 import {
   newFiveMatch, applyOutcome, oppAttack, isFullTime, resultOf, zoneOf, halfAt,
-  MINUTES_PER_PASSAGE, type FiveMatchState,
+  resumeAction, MINUTES_PER_PASSAGE, MINUTES_PER_OPP_ATTACK, type FiveMatchState,
 } from "../../lib/star/fiveASide/match";
 import {
   FIVE_A_SIDE, ELEVEN_A_SIDE, rulesAreSane, fullTimeMinutes, centreSpot, goalCentreX,
 } from "../../lib/star/fiveASide/rules";
 import {
   passageQuality, shotPlacementQuality, fiveASideScore, summarise, stageQualityFrom, rawQuality,
+  PASS_AMBITION_BAR, SAFE_PASS_CAP, OWN_HALF_PASS_CAP, GOAL_BONUS, WIN_BONUS, isShotOutcome,
 } from "../../lib/star/fiveASide/score";
 import { buildPassage, kickOffWorld } from "../../lib/star/fiveASide/passage";
 import { insideFivePitch, FIVE_GOAL } from "../../lib/star/fiveASide/geometry";
+import { halfwayY } from "../../lib/star/fiveASide/rules";
+import { stageScore } from "../../lib/star/trial";
 import { mulberry32 } from "../../lib/star/season";
 import type { Ball, Outcome, Scenario } from "../../lib/star/canvasEngine";
 
@@ -254,28 +257,226 @@ const fakeScenario = () =>
 }
 
 // ── A pass is judged on the engine's own reading of it ──────────────────
+//
+// It used to take the better of `passDifficulty` and `passAmbition` flatly,
+// and this section used to assert exactly that. That assertion is GONE rather
+// than weakened, because the behaviour it described is the thing that was
+// wrong: ambition is a RELATIVE question and on a 24 x 36 pitch it degenerates
+// to "did the ball go more than two metres forward". Measured, by playing a
+// real match out through the engine: eleven consecutive two-metre nudges
+// scored ambition 0.94, 0.98, then 0.99 every touch after that. So ambition
+// now only counts once the ball genuinely was a ball.
 {
-  const sc = fakeScenario();
-  const easy = { ...sc, passDifficulty: 0.1, passAmbition: 0.1 } as Scenario;
-  const hard = { ...sc, passDifficulty: 0.9, passAmbition: 0.2 } as Scenario;
-  const ambitious = { ...sc, passDifficulty: 0.2, passAmbition: 0.9 } as Scenario;
+  const up = (y: number) => ({ ...fakeScenario(), ball: { x: 34, y } } as Scenario);
+  const upfield = up(halfwayY(FIVE_A_SIDE) - 6);
+  const ownHalf = up(halfwayY(FIVE_A_SIDE) + 6);
+  const q = (sc: Scenario) => passageQuality("delivered", sc, null, FIVE_A_SIDE);
+  const withPass = (sc: Scenario, d: number, a: number) =>
+    ({ ...sc, passDifficulty: d, passAmbition: a } as Scenario);
 
+  const safe = withPass(upfield, 0.1, 0.1);
+  const hard = withPass(upfield, 0.9, 0.2);
+  check(q(hard) > q(safe), "a harder pass is worth more");
+
+  // Above the bar, ambition still does exactly the job it was added for: a
+  // ball that was not technically hard but WAS the brave one scores.
+  const brave = withPass(upfield, PASS_AMBITION_BAR + 0.05, 0.95);
+  const plain = withPass(upfield, PASS_AMBITION_BAR + 0.05, 0);
+  check(q(brave) > q(plain), "above the bar, the ambitious ball is still worth more");
+
+  // Below it, it does not — which is the whole fix. A "0.99 ambition"
+  // two-metre nudge must be worth no more than any other safe ball.
+  const nudge = withPass(upfield, 0.12, 0.99);
   check(
-    passageQuality("delivered", hard, null, FIVE_A_SIDE) > passageQuality("delivered", easy, null, FIVE_A_SIDE),
-    "a harder pass is worth more",
+    q(nudge) <= SAFE_PASS_CAP + 1e-9,
+    `a two-metre nudge that the engine calls 0.99 ambitious is still a safe ball, got ${q(nudge)}`,
   );
   check(
-    passageQuality("delivered", ambitious, null, FIVE_A_SIDE) > passageQuality("delivered", easy, null, FIVE_A_SIDE),
-    "so is the ambitious ball, even when it was not technically hard",
+    Math.abs(q(nudge) - q(safe)) < 1e-9,
+    "…and is worth exactly what any other safe ball is worth",
+  );
+
+  // Deeper is worth less: a safe ball in your own half has not made ground.
+  check(
+    q(withPass(ownHalf, 0.12, 0.99)) < q(nudge),
+    "a safe ball in your own half is worth less than a safe ball up the pitch",
   );
   check(
-    passageQuality("delivered", easy, null, FIVE_A_SIDE) > passageQuality("tackled", easy, null, FIVE_A_SIDE),
-    "any completed pass beats losing it",
+    q(withPass(ownHalf, 0.12, 0.99)) <= OWN_HALF_PASS_CAP + 1e-9,
+    "…and no more than the own-half cap",
   );
+
+  // The incentive the whole rebalance is for, stated as a property: keeping
+  // the ball is not worth more than having a go at the goal.
+  check(
+    q(nudge) < passageQuality("saved", upfield, null, FIVE_A_SIDE),
+    "a safe completed pass is worth less than a shot the keeper had to save",
+  );
+
+  check(q(safe) > passageQuality("tackled", safe, null, FIVE_A_SIDE), "any completed pass beats losing it");
   for (const out of ["goal", "delivered", "saved", "tackled", "out", "short"] as const) {
-    const q = passageQuality(out, sc, null, FIVE_A_SIDE);
-    check(q >= 0 && q <= 1 && Number.isFinite(q), `${out} is judged in range, got ${q}`);
+    const v = passageQuality(out, fakeScenario(), null, FIVE_A_SIDE);
+    check(v >= 0 && v <= 1 && Number.isFinite(v), `${out} is judged in range, got ${v}`);
   }
+  // A scenario carrying no pass reading at all must not produce a NaN.
+  const blankRead = { ...upfield, passDifficulty: undefined, passAmbition: undefined } as unknown as Scenario;
+  check(Number.isFinite(q(blankRead)), "a pass the engine never read still scores a real number");
+}
+
+// ── Shots carry more of the verdict than safe touches ───────────────────
+{
+  check(isShotOutcome("goal") && isShotOutcome("saved") && isShotOutcome("wide"),
+    "a touch at goal is a shot, whatever became of it");
+  check(!isShotOutcome("delivered") && !isShotOutcome("short") && !isShotOutcome("out"),
+    "a pass is not a shot");
+  // Deliberately NOT counted, because the engine does not say whether a
+  // blocked or tackled touch was a shot or a pass cut out.
+  check(!isShotOutcome("blocked") && !isShotOutcome("tackled"),
+    "the ambiguous outcomes are left out rather than guessed at");
+
+  // Same qualities, same count of touches — only WHICH of them were shots
+  // differs, and the shots have to move the number.
+  const play = (outs: (Outcome | "out")[], q: number) => {
+    let s = newFiveMatch(5);
+    for (const o of outs) s = applyOutcome(s, o, fakeScenario(), fakeBall({ x: 34, y: 18 }), q);
+    return s;
+  };
+  const shotsGood = rawQuality(play(["saved", "saved", "delivered", "delivered"], 0.8));
+  const passesGood = rawQuality(play(["delivered", "delivered", "saved", "saved"], 0.8));
+  check(Math.abs(shotsGood - passesGood) < 1e-9, "the weighting is on the outcome, not the order");
+
+  // A player who shot and a player who passed, each judged 0.9 on the shots
+  // and 0.3 on the rest: the one whose GOOD touches were the shots must win.
+  let a = newFiveMatch(5), b = newFiveMatch(5);
+  for (const [o, q] of [["saved", 0.9], ["saved", 0.9], ["delivered", 0.3], ["delivered", 0.3]] as const) {
+    a = applyOutcome(a, o, fakeScenario(), fakeBall({ x: 34, y: 18 }), q);
+  }
+  for (const [o, q] of [["saved", 0.3], ["saved", 0.3], ["delivered", 0.9], ["delivered", 0.9]] as const) {
+    b = applyOutcome(b, o, fakeScenario(), fakeBall({ x: 34, y: 18 }), q);
+  }
+  check(rawQuality(a) > rawQuality(b), "the shots carry more of the verdict than the passes");
+}
+
+// ── Half time is a reset, not a caption ─────────────────────────────────
+{
+  // Play into the interval and check the picture actually goes back to a
+  // kick-off shape rather than carrying on from wherever the last touch left
+  // everybody — which is what it used to do.
+  let s = newFiveMatch(31);
+  // Move everybody somewhere they could not possibly be at a kick-off.
+  s = {
+    ...s,
+    world: {
+      ...s.world,
+      ball: { x: 30, y: 3 },
+      mates: [{ x: 26, y: 2 }, { x: 40, y: 3 }, { x: 34, y: 4 }],
+      opps: [{ x: 27, y: 4 }, { x: 41, y: 5 }, { x: 33, y: 2 }, { x: 35, y: 6 }],
+    },
+  };
+  const kickOff = newFiveMatch(31).world;
+  let crossed: FiveMatchState | null = null;
+  for (let i = 0; i < 40 && !s.over; i++) {
+    const before = s.half;
+    s = applyOutcome(s, "delivered", fakeScenario(), fakeBall({ x: 30, y: 3 }), 0.5);
+    if (s.half !== before) { crossed = s; break; }
+  }
+  check(crossed !== null, "the match reaches half time");
+  if (crossed) {
+    check(crossed.half === 2, `it is the second half afterwards, got ${crossed.half}`);
+    check(crossed.restart === "kick-off", "…and it restarts with a kick-off");
+    check(crossed.possession === "you", "…which is yours, so the half opens on a kick-off and not their attack");
+    check(
+      JSON.stringify(crossed.world) === JSON.stringify(kickOff),
+      "…and everybody is back in the kick-off shape rather than where the last touch left them",
+    );
+    check(crossed.log.includes("Half time."), "…and it says so");
+    check(!crossed.over, "half time is not full time");
+  }
+  // The interval must not fire twice, or the second half is a series of resets.
+  if (crossed) {
+    const on = applyOutcome(crossed, "delivered", fakeScenario(), fakeBall({ x: 30, y: 9 }), 0.5);
+    check(on.restart !== "kick-off", "the second half only kicks off once");
+    check(on.half === 2, "…and stays in the second half");
+  }
+}
+
+// ── Resuming their ball plays THEIR attack first ────────────────────────
+//
+// The exploit this closes, in full: every touch of yours that hands the ball
+// over saves the match with `possession: "them"` and the screen waits a beat
+// before rolling their attack. Closing the app in that beat and re-opening it
+// used to skip the attack entirely and hand you the ball wherever the restart
+// had left it — after a save, two metres from their goal line, dead centre.
+{
+  // A real saved shot, folded in by the real reducer, so the position under
+  // test is the one the game actually writes.
+  let s = newFiveMatch(4242);
+  s = applyOutcome(s, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34);
+  check(s.possession === "them", "a save hands the ball over");
+  check(s.restart === "goal-kick", "…for a goal kick");
+  // The tap-in that made it worth doing: the restart really is on their line.
+  check(s.world.ball.y < 3, `the restart sits on their goal line (y=${s.world.ball.y})`);
+
+  const saved = JSON.parse(JSON.stringify(s)) as FiveMatchState;
+  check(resumeAction(saved) === "opp", "a resumed match with their ball plays their attack first");
+
+  // Follow the rule through and prove the attack genuinely happened.
+  const after = oppAttack(saved, 0.5, 60);
+  check(
+    Math.abs(after.minute - (saved.minute + MINUTES_PER_OPP_ATTACK)) < 1e-9,
+    `their attack costs the clock (${saved.minute} -> ${after.minute})`,
+  );
+  check(after.possession === "you", "…and hands the ball back afterwards");
+  check(after.draws > saved.draws, "…having actually rolled for it");
+  check(
+    after.world.ball.y > saved.world.ball.y,
+    "…and you do not simply get the ball back where the save left it",
+  );
+
+  // The other two branches of the rule.
+  check(resumeAction(after) === "passage", "with your own ball, a resume just builds the passage");
+  check(resumeAction({ ...saved, over: true }) === "done", "a finished match is finished");
+  check(
+    resumeAction({ ...saved, over: false, minute: 999 }) === "done",
+    "…and so is one whose clock has run out, however it was saved",
+  );
+
+  // Repeating the exploit must not pay: doing it ten times in a row costs the
+  // clock ten times, rather than being free.
+  let loop = saved;
+  for (let i = 0; i < 10 && !loop.over; i++) {
+    check(resumeAction(loop) !== "passage", "a re-opened app never skips their attack");
+    loop = oppAttack(loop, 0.5, 60);
+    if (!loop.over) loop = applyOutcome(loop, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34);
+  }
+  check(loop.over, "ten shots and ten attacks is a whole match, not a free loop");
+}
+
+// ── The screen's own stream survives a resume too ───────────────────────
+{
+  // `passageDraws` is additive: a save written before it existed has no such
+  // field, and must still load and still play.
+  const legacy = JSON.parse(JSON.stringify(newFiveMatch(9))) as Record<string, unknown>;
+  delete legacy.passageDraws;
+  const old = legacy as unknown as FiveMatchState;
+  check(old.passageDraws === undefined, "the fixture really is a save from before the field existed");
+  const played = applyOutcome(old, "delivered", fakeScenario(), fakeBall({ x: 34, y: 18 }), 0.5);
+  check(played.events.length === 1, "an old save still plays");
+  check(played.passageDraws === undefined, "…and is left alone when the caller does not track a stream");
+  check((old.passageDraws ?? 0) === 0, "…reading as zero, which is exactly the old behaviour");
+
+  // A caller that DOES track one has it carried through both reducers.
+  let s = newFiveMatch(9);
+  s = applyOutcome(s, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34, { passageDraws: 512 });
+  check(s.passageDraws === 512, `the stream position is recorded, got ${s.passageDraws}`);
+  const kept = oppAttack(s, 0.5, 60);
+  check(kept.passageDraws === 512, "…and survives their attack when the caller does not update it");
+  const moved = oppAttack(s, 0.5, 60, { passageDraws: 900 });
+  check(moved.passageDraws === 900, "…or moves on when it does, because their attack is a save point too");
+  check(
+    JSON.stringify(JSON.parse(JSON.stringify(s)).passageDraws) === "512",
+    "…and it round-trips through JSON, which is how it reaches the next session",
+  );
 }
 
 // ── The stage score behaves ─────────────────────────────────────────────
@@ -333,16 +534,25 @@ const fakeScenario = () =>
     "the quality handed to the trial is the unscaled one — the trial applies its own "
     + "difficulty scaling, and applying it twice would punish a hard trial twice over",
   );
-  // The relationship that has to hold between the two, stated directly.
+  // The relationship that has to hold between the two, checked against the
+  // TRIAL's own function rather than a copy of its arithmetic. This used to
+  // restate `0.70 + 0.60 * d` by hand, which is how the five-a-side's own
+  // number and the stage score shown a moment later on the result card came
+  // to disagree once the trial's ceiling was fixed.
   for (const d of [0, 0.25, 0.5, 0.75, 1]) {
-    // Clamped, because a strong afternoon at the hardest difficulty scales
-    // past 1 and a score is capped at 100 — a real ceiling, not an error.
-    const expected = Math.round(100 * Math.min(1, rawQuality(good) * (0.70 + 0.60 * d)));
     check(
-      Math.abs(fiveASideScore(good, d) - expected) <= 1,
-      `the stage score is the raw quality scaled by difficulty (at ${d}: ${fiveASideScore(good, d)} vs ${expected})`,
+      fiveASideScore(good, d) === stageScore(rawQuality(good), d),
+      `the five-a-side's own number is the trial's own formula (at ${d}: `
+      + `${fiveASideScore(good, d)} vs ${stageScore(rawQuality(good), d)})`,
     );
   }
+  // …and the ceiling fix reaches this screen too: perfect play must not be
+  // capped below the top of the ladder on the kindest difficulty roll.
+  const perfect = { ...good, events: good.events.map(e => ({ ...e, quality: 1 })), score: [3, 0] as [number, number] };
+  check(
+    fiveASideScore(perfect, 0) >= 95,
+    `a flawless afternoon is not capped on an easy roll, got ${fiveASideScore(perfect, 0)}`,
+  );
 }
 
 // ── A match survives being saved and picked up again ────────────────────

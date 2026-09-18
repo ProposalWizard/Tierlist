@@ -56,6 +56,28 @@ export interface FiveMatchState {
   /** How far into the seeded stream we are, so a resume continues it rather
    *  than replaying it. */
   draws: number;
+  /**
+   * The same thing for the SCREEN's own stream — the one that builds each
+   * passage, launches the ball and steps the physics.
+   *
+   * Two streams, deliberately, because they are drawn from in two different
+   * places: `draws` belongs to this file and is spent by `oppAttack`, and this
+   * one belongs to the component and is spent by `buildPassage`/`launch`/
+   * `stepBall`. Folding them into one would mean the component reaching into
+   * the match state on every physics substep.
+   *
+   * OPTIONAL, and it has to stay optional: a career saved before this existed
+   * has no such field, and a save that cannot be loaded is worse than a save
+   * that re-rolls one passage. Absent reads as zero, which is exactly what the
+   * old behaviour was.
+   *
+   * Without it the exploit is real and cheap: the component rebuilt
+   * `mulberry32(seed)` from scratch on every mount, so closing the app and
+   * re-opening it replayed numbers the match had already used — a way to
+   * re-roll a passage you did not like, which is the same thing `draws` was
+   * added to stop on the other stream.
+   */
+  passageDraws?: number;
   minute: number;
   half: number;
   /** Yours first. */
@@ -111,6 +133,7 @@ export function newFiveMatch(seed: number, rules: MatchRules = FIVE_A_SIDE): Fiv
     rules,
     seed,
     draws: 0,
+    passageDraws: 0,
     minute: 0,
     half: 1,
     score: [0, 0],
@@ -228,7 +251,12 @@ export function applyOutcome(
   scenario: Scenario,
   ball: Ball,
   quality: number,
-  opts: { assist?: boolean } = {},
+  opts: {
+    assist?: boolean;
+    /** How far into the SCREEN's own stream this passage left it. See
+     *  `FiveMatchState.passageDraws`. */
+    passageDraws?: number;
+  } = {},
 ): FiveMatchState {
   if (state.over) return state;
 
@@ -254,6 +282,7 @@ export function applyOutcome(
     ...state,
     minute,
     score,
+    passageDraws: opts.passageDraws ?? state.passageDraws,
     possession: next.possession,
     restart: next.restart,
     // A goal or a restart puts everybody back in a sensible shape rather than
@@ -289,6 +318,10 @@ export function oppAttack(
   difficulty: number,
   /** 0-100, your keeper. */
   keeper: number,
+  /** The screen's own stream position, if the caller is tracking one — an
+   *  opposition attack is a save point too, and leaving it stale here would
+   *  put back a slice of the very re-roll `passageDraws` exists to stop. */
+  opts: { passageDraws?: number } = {},
 ): FiveMatchState {
   if (state.over) return state;
   const stream = rngAt(state);
@@ -308,6 +341,7 @@ export function oppAttack(
   const s: FiveMatchState = {
     ...state,
     draws: state.draws + stream.used(),
+    passageDraws: opts.passageDraws ?? state.passageDraws,
     minute,
     score,
     possession: "you",
@@ -324,9 +358,36 @@ export function oppAttack(
 
 function closeOutIfDone(state: FiveMatchState): FiveMatchState {
   const half = halfAt(state);
-  const withHalf = half !== state.half
-    ? { ...state, half, log: push(state.log, half > state.rules.halves ? "Full time." : `Half time.`) }
-    : state;
+  let withHalf = state;
+  if (half !== state.half) {
+    // `halfAt` is clamped to `rules.halves`, so it can only ever step UP at a
+    // real interval — never past the last one. The old version branched on
+    // `half > rules.halves` for a "Full time." caption, which that clamp makes
+    // unreachable; full time is handled below, where it actually happens.
+    withHalf = { ...state, half, log: push(state.log, "Half time.") };
+    if (!isFullTime(withHalf)) {
+      // ── The interval is a reset, not just a caption ──
+      //
+      // It used to be a log line and nothing else: both sides stayed exactly
+      // where the last passage had left them and play resumed from that
+      // picture, which is not what happens at half time in any game of
+      // football. Everybody goes back to the kick-off shape.
+      //
+      // The ball is given to YOU rather than swapped to them, which is the one
+      // departure from the real law and is deliberate: `possession` here also
+      // decides who ATTACKS next, and a kick-off is not an attack — handing it
+      // over would open the second half with an opposition chance rather than
+      // a kick-off. Ends are not swapped either; the engine only knows one
+      // direction (see geometry.ts's `mirror`), so the kick-off shape is the
+      // same shape both halves.
+      withHalf = {
+        ...withHalf,
+        possession: "you",
+        restart: "kick-off",
+        world: kickOffWorld(true),
+      };
+    }
+  }
   if (!isFullTime(withHalf)) return withHalf;
   return {
     ...withHalf,
@@ -335,6 +396,33 @@ function closeOutIfDone(state: FiveMatchState): FiveMatchState {
       ? withHalf.log
       : push(withHalf.log, "Full time."),
   };
+}
+
+/**
+ * WHAT A RESUMED MATCH MUST DO BEFORE IT DOES ANYTHING ELSE.
+ *
+ * Pure, and exported, so the rule can be tested — the screen that obeys it is
+ * a React mount effect and cannot be. It exists because that effect used to
+ * build the next passage flatly, without ever asking whose ball it was, and
+ * that single missing question is a complete exploit:
+ *
+ * every touch of yours that hands the ball over — a save, a miss, a tackle, a
+ * goal — writes the match away with `possession: "them"`, and the screen then
+ * waits a beat before rolling their attack. Close the app in that beat and
+ * re-open it, and their attack was skipped entirely: you got the ball back
+ * wherever `afterOutcome` had left it, which after a save is two metres from
+ * their goal line, dead centre. Tap in. Repeat. You could never concede, every
+ * failed shot became a tap-in, and each skipped attack skipped its 0.7 of a
+ * minute too, so you got more touches into the bargain.
+ *
+ *   "opp"     — it is their ball. Their attack runs FIRST.
+ *   "passage" — it is yours. Build the picture and let them aim.
+ *   "done"    — the match is already over; finish the stage rather than
+ *               sitting on it with no way forward.
+ */
+export function resumeAction(state: FiveMatchState): "opp" | "passage" | "done" {
+  if (state.over || isFullTime(state)) return "done";
+  return state.possession === "them" ? "opp" : "passage";
 }
 
 /** Who won, from your side of it. */

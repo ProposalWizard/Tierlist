@@ -14,7 +14,7 @@ import { FIVE_A_SIDE, type MatchRules } from "@/lib/star/fiveASide/rules";
 import { buildPassage, passLeadsToShot, type FiveCast } from "@/lib/star/fiveASide/passage";
 import { leftPitch } from "@/lib/star/fiveASide/geometry";
 import {
-  newFiveMatch, applyOutcome, oppAttack, type FiveMatchState,
+  newFiveMatch, applyOutcome, oppAttack, resumeAction, type FiveMatchState,
 } from "@/lib/star/fiveASide/match";
 import { passageQuality, summarise, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import {
@@ -47,6 +47,31 @@ import ContactBall from "./ContactBall";
  *  same way `CanvasMatch` computes it — `TrialPenalty` once had stale copies
  *  of both and quietly felt different from the game it was the opening of. */
 const MIN_PULL = 0.008;
+
+/**
+ * The SCREEN's own random stream, wound forward to where it left off.
+ *
+ * The same trick `match.ts`'s `rngAt` already plays on the match's own stream,
+ * for the other one: everything you can see — the picture each passage is
+ * built from, the strike, the physics — comes out of here, and it used to be
+ * rebuilt from the bare seed on every mount. Closing the app and re-opening it
+ * therefore REPLAYED numbers the match had already spent, which is a re-roll
+ * of the passage you did not like.
+ *
+ * `drawn()` is the ABSOLUTE position in the stream (it starts at `wound`, not
+ * at zero), because that is what gets written into the save. Returning the
+ * count since mount instead would restart the match's own record of where it
+ * was every time the app was opened, which is the same bug with extra steps.
+ */
+function countingRng(seed: number, wound: number): { next: () => number; drawn: () => number } {
+  // A save could carry anything; a number that is not a sane count must not be
+  // able to hang the app in a loop or poison the stream with NaN.
+  const from = Math.max(0, Math.min(2_000_000, Math.floor(wound) || 0));
+  const base = mulberry32(seed);
+  for (let i = 0; i < from; i++) base();
+  let n = from;
+  return { next: () => { n++; return base(); }, drawn: () => n };
+}
 
 type Phase = "ready" | "aim" | "contact" | "flight" | "result" | "opp" | "done";
 
@@ -94,7 +119,10 @@ export default function FiveASide({
   const matchRef = useRef<FiveMatchState>(resumeFrom ?? newFiveMatch(seed, rules));
   const scRef = useRef<Scenario | null>(null);
   const ballRef = useRef<Ball | null>(null);
-  const rngRef = useRef<() => number>(mulberry32(seed));
+  // Lazily, exactly once — `useState`'s initialiser is the only hook that
+  // guarantees that, and winding a stream forward on every render would be
+  // thousands of wasted draws a frame.
+  const [rng] = useState(() => countingRng(seed, resumeFrom?.passageDraws ?? 0));
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const aimRef = useRef<{ dir: { x: number; y: number }; power: number } | null>(null);
   const phaseRef = useRef<Phase>("ready");
@@ -129,26 +157,81 @@ export default function FiveASide({
     return () => { setOffsideRuleEnabled(true); };
   }, [rules.offside]);
 
-  /** Build the picture for the touch that is about to happen. */
-  const loadPassage = useCallback(() => {
-    const m = matchRef.current;
-    const sc = buildPassage(m.world, {
+  /** The engine's picture of the world as it stands, from a given stream. */
+  const buildCurrent = useCallback((rand: () => number) => {
+    const sc = buildPassage(matchRef.current.world, {
       cast,
       keeperStrength: Math.min(99, oppKeeperStrength ?? (40 + difficulty * 45)),
       teamRelationship: 55,
-      rng: rngRef.current,
+      rng: rand,
     });
     sc.goal = { ...rules.goal };
     sc.crossbar = rules.crossbar;
     sc.viewport = { ...rules.view };
-    initDefenders(sc, rngRef.current);
-    scRef.current = sc;
+    initDefenders(sc, rand);
+    return sc;
+  }, [cast, difficulty, oppKeeperStrength, rules]);
+
+  /**
+   * Build the picture for the touch that is about to happen.
+   *
+   * The draws this costs are NOT written to the save here, and that is right
+   * rather than an omission: they are recorded at the end of the passage, so a
+   * resume winds the stream back to just before this build and puts the SAME
+   * picture back up. Closing the app while looking at a chance you did not
+   * fancy therefore gets you that same chance again, not a new one.
+   */
+  const loadPassage = useCallback(() => {
+    scRef.current = buildCurrent(rng.next);
     ballRef.current = null;
     aimRef.current = null;
     setPhase("aim");
-  }, [cast, difficulty, oppKeeperStrength, rules]);
+  }, [buildCurrent, rng]);
 
+  /**
+   * ── WHOSE BALL IS IT, ON THE WAY IN ──
+   *
+   * This used to call `loadPassage()` flatly, without ever asking. It is the
+   * whole of a real and cheap exploit, and it is worth writing down because
+   * nothing on screen shows it:
+   *
+   * every touch of yours that hands the ball over — a save, a miss, a tackle,
+   * a goal — saves the match with `possession: "them"` and then waits 900 ms
+   * before rolling their attack. Close the app while "They break…" is up and
+   * re-open it, and the old mount skipped their attack entirely and handed you
+   * the ball wherever `afterOutcome` had left it. After a save that is two
+   * metres from their goal line, dead centre. Tap in, repeat: you can never
+   * concede, every failed shot becomes a tap-in, and each skipped attack skips
+   * its 0.7 of a minute too, so you get more touches as well.
+   *
+   * So the first thing a resumed match does is find out whose ball it is.
+   */
   useEffect(() => {
+    const m = matchRef.current;
+    const action = resumeAction(m);
+    if (action === "done") {
+      // Only reachable from a save written between the last passage and the
+      // stage being recorded. Finishing it is the recovery; sitting on a
+      // finished match with no way forward is not.
+      if (!doneRef.current) {
+        doneRef.current = true;
+        setPhase("done");
+        onComplete(summarise(m, difficulty), m);
+      }
+      return;
+    }
+    if (action === "opp") {
+      // Something to look at while they break — the pitch as it stands, built
+      // off a THROWAWAY stream so the match's own numbers are untouched. Using
+      // the real one would make a resumed match diverge from an uninterrupted
+      // one by however many draws the picture cost, which is exactly the
+      // property `passageDraws` was added to protect.
+      scRef.current = buildCurrent(mulberry32(seed ^ 0x5eed));
+      ballRef.current = null;
+      aimRef.current = null;
+      setPhase("opp");
+      return;
+    }
     loadPassage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -200,7 +283,7 @@ export default function FiveASide({
     const vp = camRef.current ?? sc.viewport;
     const w = vp.x2 - vp.x1, h = vp.y2 - vp.y1;
     const dir = { x: aim.dir.x * w, y: aim.dir.y * h };
-    ballRef.current = launch(sc, dir, aim.power, contact, skills, rngRef.current);
+    ballRef.current = launch(sc, dir, aim.power, contact, skills, rng.next);
     settleRef.current = 0;
     setPhase("flight");
   }, [skills]);
@@ -218,7 +301,9 @@ export default function FiveASide({
     // this away" — a clean team-mate finish reports as "goal" just like yours.
     const assist = outcome === "goal" && !!sc.receiverShot;
 
-    const next = applyOutcome(matchRef.current, outcome, sc, ball, quality, { assist });
+    const next = applyOutcome(matchRef.current, outcome, sc, ball, quality, {
+      assist, passageDraws: rng.drawn(),
+    });
     matchRef.current = next;
     // Saved at every passage end, which is what makes closing the app safe.
     onProgress?.(next);
@@ -233,13 +318,15 @@ export default function FiveASide({
     }
     if (next.possession === "them") { setPhase("opp"); return; }
     loadPassage();
-  }, [difficulty, loadPassage, onComplete, onProgress, rules]);
+  }, [difficulty, loadPassage, onComplete, onProgress, rng, rules]);
 
   /** Their turn. A beat, then the ball is yours again. */
   useEffect(() => {
     if (phase !== "opp") return;
     const t = window.setTimeout(() => {
-      const next = oppAttack(matchRef.current, difficulty, keeperStrength);
+      const next = oppAttack(matchRef.current, difficulty, keeperStrength, {
+        passageDraws: rng.drawn(),
+      });
       matchRef.current = next;
       onProgress?.(next);
       if (next.over) {
@@ -253,7 +340,7 @@ export default function FiveASide({
       loadPassage();
     }, 900);
     return () => window.clearTimeout(t);
-  }, [phase, difficulty, keeperStrength, loadPassage, onComplete, onProgress]);
+  }, [phase, difficulty, keeperStrength, loadPassage, onComplete, onProgress, rng]);
 
   // ── The loop ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -277,8 +364,8 @@ export default function FiveASide({
           for (let i = 0; i < 3 && !res; i++) {
             const h = dt / 3;
             stepKeeper(sc, h);
-            stepReactions(sc, ball, h, rngRef.current);
-            res = stepBall(ball, sc, rngRef.current, h);
+            stepReactions(sc, ball, h, rng.next);
+            res = stepBall(ball, sc, rng.next, h);
           }
           // Our own touchline, which is inside the engine's frame — the
           // engine only calls "out" at the frame edge, a metre further on.
