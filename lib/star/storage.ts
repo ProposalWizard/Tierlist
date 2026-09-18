@@ -171,6 +171,10 @@ const RESUMABLE: StarPhase[] = [
   // instant it is decided, so resuming costs nothing — and the trial itself
   // quietly gets harder each time it is re-opened rather than being blocked.
   "trial-stages",
+  // Life with no club. Resumable for the same reason as everything else in
+  // this list: it is a screen you cannot navigate back to from the ordinary
+  // dashboard, because the ordinary dashboard is about a club you do not have.
+  "free-agent",
 ];
 
 export interface SavedPhase {

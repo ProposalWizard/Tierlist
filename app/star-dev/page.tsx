@@ -10,6 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
+import { trialComplete } from "@/lib/star/trial";
 import { makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
@@ -49,6 +50,7 @@ import { getTuning } from "@/lib/star/tuningStore";
 import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialPenalty from "@/components/star/TrialPenalty";
 import TrialSequence from "@/components/star/TrialSequence";
+import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
@@ -1270,7 +1272,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!hasClub(saved)) {
       const pendingNoClub = loadStarPhase(scope);
       if (pendingNoClub) { setPhase(pendingNoClub.phase); return; }
-      setPhase("profile-setup");
+      // A real, saved career that nobody has signed — mid-trial, or a free
+      // agent. It belongs on its own shell, never on the club dashboard and
+      // never back at Profile Setup, which would look like losing the save.
+      setPhase(saved.trial && !trialComplete(saved.trial) ? "trial-stages" : "free-agent");
       return;
     }
 
@@ -2008,6 +2013,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * career, so closing the app between stages costs nothing — see
    * TrialSequence's own note.
    */
+  /**
+   * Life with no club. Routed above the `profile-setup || !career`
+   * fall-through for the same reason the trial is: a clubless career is a real
+   * career, and the ordinary dashboard has nothing to show it.
+   */
+  if (phase === "free-agent" && career) {
+    return (
+      <FreeAgentShell
+        career={career}
+        onCareer={next => setCareer(next)}
+        onTrial={career.trial ? () => setPhase("trial-stages") : undefined}
+        onSettings={() => setPhase("settings")}
+        onExit={() => setPhase("dashboard")}
+      />
+    );
+  }
+
   if (phase === "trial-stages" && career?.trial) {
     return (
       <TrialSequence
