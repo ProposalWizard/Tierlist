@@ -537,20 +537,45 @@ money for no guarantees"* — **is not expressible in the current engine.** Eith
 - **(b)** agree the money first, then present the promise/targets as a separate
   beat afterwards (cheaper, weaker).
 
-**Still open — and the question needed rewriting before it could be answered.**
-Asked once in this form, the reply was *"what?"*, which is fair: "multi-axis"
-means nothing outside code. In plain English it is:
+**DECIDED: (b) — money only for v1, shaped so (a) can be added later.**
+
+The question needed rewriting before it could be answered. Asked as
+"multi-axis negotiation, or money-then-promise?" the reply was *"what?"* —
+fair, because that means nothing outside code. In plain English it is:
 
 > When you sit down to agree a contract, is the ONLY thing you're haggling
 > over the money — or can you also push for things that aren't money, like
 > "promise me I'll start games", a shorter deal, or a release clause so you
 > can leave if a big club comes in?
 
-**Recommendation: (b) for v1 — money only — but shaped so (a) can be added
-later without a rewrite.** Concretely, that means the deal object carries a
-`terms` bag from day one even while money is the only thing in it, so adding
-a promise later is a new entry rather than a new engine. Needed before step
-8; blocks nothing being built now.
+Agreed directly: **money only, built so promises can be added later without a
+rewrite.**
+
+**What that actually obliges step 8 to do**, because "shaped so it can be
+extended later" is the kind of promise that means nothing unless it is
+written down as a constraint:
+
+1. The thing being negotiated is a **deal object with a `terms` collection**
+   from day one, even while money is the only term in it. Adding a game-time
+   promise later is then a new entry in that collection, not a new engine.
+2. Each term carries **its own concession behaviour** — how far the club will
+   move on it, and what moving costs them. Money's is the existing single-
+   scalar haggle, unchanged. A promise's would be its own, added beside it.
+3. The counterpart's mood (`negotiation.ts` already has one, and
+   `NegotiationScreen.tsx` already draws it as a face) reads the **whole
+   deal**, not the money field specifically — so a term added later
+   automatically affects mood rather than needing mood rewritten around it.
+4. **Nothing in the UI hard-codes "one row".** The screen renders the terms
+   collection, so a second term appears without the screen being rebuilt.
+
+If step 8 ships without those four, it has shipped (b) and closed the door on
+(a), which is not what was agreed.
+
+**And the honest caveat that comes with (a) whenever it lands:** a promise
+nobody remembers is set dressing. "You'll start games" only means something if
+the game records it, checks it against what actually happened, and lets you
+hold it against the club — which is real work in its own right, not a
+follow-on afternoon. Worth knowing before it is scheduled.
 
 v1 asserted the feature without noticing the engine can't hold it.
 
@@ -849,31 +874,22 @@ expensive if it is bolted on. Logged as open question 5 below.
 | Career creation split | **Signed off** — built (§3.1, §9a) |
 | Card game retired at renewal | **Signed off** (§5.2) |
 | Full shop reprice | **Signed off** (§6.5) |
+| What you haggle over in a contract | **Money only for now** — built so promises can be added later without a rewrite (§5.3) |
 
 ### Open — needed before the relevant step
 
-Only one left, and it is open because the question itself was not clear.
+**None.** Every question this plan raised has been answered.
 
-1. **Multi-axis negotiation, or money-then-promise? (§5.3, step 8.)** Asked
-   once and came back *"what?"* — which is a fair answer, because it was asked
-   in jargon. Restated in plain English, it is this:
+The last one to close was the negotiation question (§5.3), and it is worth
+recording how, because the lesson generalises: asked as *"multi-axis
+negotiation, or money-then-promise?"* it came back **"what?"** — correctly,
+because that sentence means nothing outside code. Re-asked as *"is the only
+thing you're haggling over the money, or can you also push for things that
+aren't money — game time, a shorter deal, a release clause?"* it was answered
+immediately.
 
-   > When you sit down to agree a contract, is the ONLY thing you are haggling
-   > over the money — or can you also push for things that aren't money, like
-   > "promise me I'll start games", "only a two-year deal, not five", or "put a
-   > release clause in so I can leave if a big club comes"?
-   >
-   > **Money only** is simpler, is what the game's negotiation code already
-   > holds today (one number), and ships sooner.
-   >
-   > **Money plus promises** is a far better scene — a club that won't pay more
-   > might offer game time instead, which is a real football conversation — but
-   > it is genuinely more work, and a broken promise needs the game to remember
-   > it and hold it against the club later, or it means nothing.
-
-   **Recommendation: money only for v1, with the code shaped so promises can be
-   added later without a rewrite.** Needs an answer before step 8, not before
-   step 5 — so this does not block anything being built now.
+**Any future question in this doc gets asked the second way.** A question the
+person answering can't parse isn't an open question, it's a badly written one.
 
 ### Signed off (previously §11's open column)
 
