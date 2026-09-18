@@ -4,7 +4,8 @@ import type { CareerState } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
 import { formatMoney } from "@/lib/star/money";
 import {
-  spendOn, endFreeAgentWeek, GARDEN_GYM_CAP, FREE_AGENT_WEEKLY_PAY, type LeisureAction,
+  spendOn, endFreeAgentWeek, grantTrial, trialDue, WEEKS_BETWEEN_TRIALS,
+  GARDEN_GYM_CAP, FREE_AGENT_WEEKLY_PAY, type LeisureAction,
 } from "@/lib/star/freeAgent";
 import { nextStage, STAGE_LABEL, trialScore, trialComplete } from "@/lib/star/trial";
 
@@ -98,12 +99,37 @@ export default function FreeAgentShell({
               </Panel>
             )}
 
+            {/* ── The way back ──
+                A failed trial used to be a permanent dead end: startTrial was
+                called in exactly one place in the whole game, career creation,
+                so a player nobody wanted could never reach a club again by any
+                path — while this very screen told him "now you wait" for
+                something that did not exist. */}
             {trial && finished && (
-              <Panel title="Your trial">
+              <Panel title="Your last trial">
                 <div className="text-4xl font-black tabular-nums">{trialScore(trial)}</div>
-                <p className="mt-1 text-[12px] font-bold text-white/60">
-                  out of 100. Now you wait.
-                </p>
+                {trialDue(career) ? (
+                  <>
+                    <p className="mt-2 text-[12px] font-bold leading-relaxed text-emerald-300">
+                      A club down the leagues wants a look at you. Lower bar,
+                      same afternoon.
+                    </p>
+                    <button
+                      onClick={() => { onCareer(grantTrial(career)); setNote("They want you in on Tuesday."); }}
+                      className="mt-3 w-full rounded-xl bg-emerald-500 py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-emerald-400"
+                    >
+                      Take the trial →
+                    </button>
+                  </>
+                ) : (
+                  <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/60">
+                    out of 100. Nothing this week — keep yourself right.
+                    Somebody usually comes looking within a month.
+                    <span className="mt-1 block text-white/40">
+                      {Math.max(0, WEEKS_BETWEEN_TRIALS - (career.weeksSinceTrial ?? 0))} week(s) to go
+                    </span>
+                  </p>
+                )}
               </Panel>
             )}
 

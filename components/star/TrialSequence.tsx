@@ -55,7 +55,13 @@ export default function TrialSequence({
 
   /** One stage is over. Record it, show what it was worth, move on. */
   const finishStage = useCallback((which: TrialStage, quality: number) => {
-    const next = recordStage(trial, which, quality);
+    // The half-played five-a-side is dropped once the stage is over. It only
+    // ever existed so closing the app mid-match did not lose it; kept, it
+    // rides on the career into every cloud save forever, and the last
+    // passage's snapshot is stale anyway (this runs in the same tick as the
+    // one that wrote it).
+    const from = which === "fiveASide" ? { ...trial, fiveASide: undefined } : trial;
+    const next = recordStage(from, which, quality);
     onTrial(next);
     setShowingResult(which);
     if (trialComplete(next)) {

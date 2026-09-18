@@ -1,4 +1,5 @@
 import { canAct, spendAction, startNewWeek } from "./week";
+import { startTrial } from "./trial";
 import type { CareerState } from "./types";
 
 /**
@@ -147,9 +148,56 @@ export function spendOn(career: CareerState, what: LeisureAction): LeisureResult
  * This is also the only thing that ever pays him. `FREE_AGENT_WEEKLY_PAY` was
  * written, displayed on screen, and credited by nothing.
  */
+/**
+ * How many weeks out of work before somebody gives you a look.
+ *
+ * Long enough to be a real stretch of nothing, short enough that the phase is
+ * a story rather than a punishment. Four is about a month of the garden, the
+ * console and your mates, which is what the whole thing is for.
+ */
+export const WEEKS_BETWEEN_TRIALS = 4;
+
+/** Has somebody invited you in? */
+export function trialDue(career: CareerState): boolean {
+  if (career.trial && !career.trial.results.fiveASide) return false;
+  return (career.weeksSinceTrial ?? 0) >= WEEKS_BETWEEN_TRIALS;
+}
+
+/**
+ * A new trial, at a lower bar than the one that turned you down.
+ *
+ * ── The dead end this exists to close ──
+ *
+ * `startTrial` was called in exactly one place in the whole game: career
+ * creation. So a player whose first trial scored under the interest bar went
+ * to the free-agent shell and could NEVER reach a club again, by any path —
+ * while the file beside this one told him "the real way out is another trial"
+ * and the screen told him "now you wait". He was waiting for something that
+ * did not exist. Found by an independent check of the review.
+ *
+ * The bar is lower because the way back is downward into the leagues: a man
+ * nobody in the Premier League wanted is being looked at by a National League
+ * club, and the afternoon should be winnable. That is the shape §3.7 of the
+ * rework asks for — the route back is real, and it starts at the bottom.
+ */
+export function grantTrial(career: CareerState): CareerState {
+  const trial = startTrial();
+  return {
+    ...career,
+    weeksSinceTrial: 0,
+    trial: {
+      ...trial,
+      // A shade easier than a first trial, because a lower-tier club is asking
+      // for less. Not free: you still have to play it.
+      baseDifficulty: Math.max(0, trial.baseDifficulty - 0.15),
+    },
+  };
+}
+
 export function endFreeAgentWeek(career: CareerState): CareerState {
   return {
     ...career,
+    weeksSinceTrial: (career.weeksSinceTrial ?? 0) + 1,
     ...startNewWeek(),
     week: career.week + 1,
     money: career.money + FREE_AGENT_WEEKLY_PAY,

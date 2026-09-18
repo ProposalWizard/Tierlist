@@ -28,8 +28,11 @@ export interface ScoutOffersProps {
   offers: ScoutOffer[];
   playerName: string;
   onAccept: (offer: ScoutOffer) => void;
-  /** Nobody came in. The only way on is the free-agent life. */
-  onNoOffers?: () => void;
+  /** Nobody came in. The only way on is the free-agent life.
+   *  REQUIRED, not optional: the "Go home" button is the only way off this
+   *  screen for a player nobody signed, and an optional handler behind an
+   *  unconditional button is a dead end waiting to happen. */
+  onNoOffers: () => void;
 }
 
 export default function ScoutOffers({

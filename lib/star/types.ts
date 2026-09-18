@@ -556,6 +556,14 @@ export interface CareerState {
    * imported to keep this file free of imports from the modules that read it.
    */
   trial?: import("./trial").TrialProgress;
+  /**
+   * Weeks spent with no club since the last trial.
+   *
+   * Drives when the next one comes up — see `trialDue`/`grantTrial`
+   * (freeAgent.ts). Absent on every career that has never been a free agent,
+   * which is all of them until one fails a trial.
+   */
+  weeksSinceTrial?: number;
   skills: Skills;
   /**
    * The last career week each skill was actually TRAINED (the deliberate

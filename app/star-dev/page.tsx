@@ -10,7 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
-import { trialComplete, startTrial, trialScore } from "@/lib/star/trial";
+import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
 import { generateScoutOffers, clubsForDivision } from "@/lib/star/scoutOffers";
 import ScoutOffers from "@/components/star/ScoutOffers";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
@@ -1290,7 +1290,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // A real, saved career that nobody has signed — mid-trial, or a free
       // agent. It belongs on its own shell, never on the club dashboard and
       // never back at Profile Setup, which would look like losing the save.
-      setPhase(saved.trial && !trialComplete(saved.trial) ? "trial-stages" : "free-agent");
+      // ── Count the resume ──
+      //
+      // This is the anti-cheat three separate comments promised and nothing
+      // delivered: `noteReload` had no caller anywhere outside its own tests,
+      // so `reloads` was zero for every career that has ever existed and the
+      // difficulty bump was permanently nothing. Re-opening the app is still
+      // never blocked — it just quietly costs, which is what was asked for.
+      if (saved.trial && !trialComplete(saved.trial)) {
+        const counted = { ...saved, trial: noteReload(saved.trial) };
+        setCareer(counted);
+        setPhase("trial-stages");
+        return;
+      }
+      setPhase("free-agent");
       return;
     }
 
@@ -2090,13 +2103,36 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   if (phase === "free-agent" && career) {
     return (
+      // Only offer the trial when there is one left to play. This guard used
+      // to live in the child as a presentational check, which meant any
+      // reordering of its JSX re-opened the blank-screen bug above.
       <FreeAgentShell
         career={career}
         onCareer={next => setCareer(next)}
-        onTrial={career.trial ? () => setPhase("trial-stages") : undefined}
+        onTrial={career.trial && !trialComplete(career.trial)
+          ? () => setPhase("trial-stages")
+          : undefined}
         onSettings={() => setPhase("settings")}
       />
     );
+  }
+
+  /**
+   * A FINISHED trial goes straight to the offers, never back to the
+   * sequencer.
+   *
+   * The sequencer renders `null` once there are no stages left, and it only
+   * ever leaves that state through a 1.4-second timer. But the career is
+   * written to disk the instant the last stage ends, while the phase pointer
+   * still says "trial-stages" — so closing the tab, refreshing, or simply
+   * letting a phone lock the screen inside that window brought you back to a
+   * blank page with no navigation and no other route to the offers. A
+   * permanently stranded career. Found by an independent check of the review,
+   * not by playing it.
+   */
+  if (phase === "trial-stages" && career?.trial && trialComplete(career.trial)) {
+    setPhase("scout-offers");
+    return null;
   }
 
   if (phase === "trial-stages" && career?.trial) {
