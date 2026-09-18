@@ -50,7 +50,6 @@ import { checkNewAchievements } from "@/lib/star/achievements";
 import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
 import { getTuning } from "@/lib/star/tuningStore";
 import ProfileSetup from "@/components/star/ProfileSetup";
-import TrialPenalty from "@/components/star/TrialPenalty";
 import TrialSequence from "@/components/star/TrialSequence";
 import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
@@ -1414,9 +1413,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("retirement");
       return;
     }
-    // The opening trial, which you have not finished. See RESUMABLE.
+    // A save from before the five-stage trial existed, caught mid-penalty.
+    // "trial" was one penalty taken until it went in, on a screen that is
+    // gone; the opening is TrialSequence now. Nothing is lost by moving them
+    // across — that screen held no state of its own, which is exactly why it
+    // was safe to resume into in the first place.
     if (pending?.phase === "trial" && !saved.clubAppearances) {
-      setPhase("trial");
+      setPhase("trial-stages");
       return;
     }
     if (pending?.phase === "relegation-move") {
@@ -2060,10 +2063,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         </div>
       </div>
     );
-  }
-
-  if (phase === "trial" && career) {
-    return <TrialPenalty club={career.player.club} onScored={() => setPhase("trial-reward")} />;
   }
 
   /**

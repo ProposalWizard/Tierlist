@@ -1,7 +1,7 @@
 import { project, horizonPx, type FpCamera } from "./firstPersonView";
 import type { FpDefender, DefenderPhase } from "./firstPersonDribble";
 import { drawPlayerHead } from "./drawPlayerHead";
-import type { FaceStyle } from "./faceStyle";
+import { DEFAULT_FACE_STYLE, type FaceStyle } from "./faceStyle";
 import type { FakeFaceStyle } from "./fakeFaceStyle";
 
 /**
@@ -250,11 +250,136 @@ function shearFor(def: FpDefender): number {
   return 0;
 }
 
+/**
+ * HOW BIG A FOOTBALLER IS IN HERE, AND WHY THESE NUMBERS.
+ *
+ * The same anatomy the trial's shared renderer (`lib/star/fiveASide/render.ts`)
+ * was rebuilt onto after the product owner said its figures read as bowling
+ * pins — ported as PROPORTIONS, not as code. That file draws from above and
+ * slightly behind through a flat `toPx`; this one draws in elevation through a
+ * real divide-by-depth camera (`firstPersonView.ts`), so there is no shared
+ * `drawFigure` to call. What is shared is the shape: every number below is
+ * `fiveASide/render.ts`'s own value for that landmark, expressed as a fraction
+ * of its `FIGURE_HEIGHT_R` and multiplied by `FIGURE_HEIGHT` here. Change one
+ * there and this should follow; `tests/star/firstPersonFigure.mts` pins the
+ * two together so a drift fails rather than quietly diverging.
+ *
+ * Coordinates are WORLD METRES ABOVE THE TURF (+z up), not local canvas units,
+ * so the whole man is life-size and the camera decides how big he lands.
+ *
+ * ── The head, and the trap in drawPlayerHead ──
+ *
+ * `drawPlayerHead` multiplies the radius it is handed by the Face Editor's own
+ * `scale` — 2.2 by default — and its doc says so: pass an UNSCALED base radius.
+ * `HEAD_BASE_R` is that base. `HEAD_DRAWN_R` is what actually lands.
+ *
+ * The bug this replaced was NOT that the base was wrong. 0.11 m is very nearly
+ * exactly right for a 1.80 m man at this proportion, and that is what was being
+ * passed. It was that the NO-PHOTO branch drew its own circle at that same
+ * number as a FINAL radius — so a defender with a real photo had a head 2.2×
+ * the size of the identical defender standing next to him without one — and
+ * that nothing pre-compensated for `offsetY`, so the photo head floated a clear
+ * 0.16 m above the shoulders with the neck stub showing underneath. Both are
+ * visible side by side in the same frame and both are fixed here: one geometry
+ * (`headGeometry`) now decides the size and the centre, and both branches draw
+ * to it.
+ *
+ * `HEAD_ANCHOR_Z` is the one number that is not anatomy: it is `HEAD_CENTRE_Z`
+ * pushed DOWN by the default `offsetY` so that a default-styled head lands on
+ * the shoulders. Somebody who has moved that slider moves his head off them on
+ * purpose — same deliberate behaviour `fiveASide/render.ts` documents.
+ */
+/** Feet to crown, metres, at the default face scale. */
+export const FIGURE_HEIGHT = 1.80;
+/** The whole figure's own `r`, the way fiveASide/render.ts means it —
+ *  `FIGURE_HEIGHT / FIGURE_HEIGHT_R`. Only `drawPlayerHead`'s outline
+ *  thickness is a fraction of this rather than of the head. */
+const FIGURE_R = FIGURE_HEIGHT / 1.863;
+
+const SOLE_Z = 0.0;
+const ANKLE_Z = 0.10;
+const KNEE_Z = 0.30;
+/** 0.3221 of the height — where the legs meet the shorts. */
+const HIP_Z = 0.3221 * FIGURE_HEIGHT;
+/** 0.3435 — the torso's own bottom edge, a shade above the leg join. */
+const WAIST_Z = 0.3435 * FIGURE_HEIGHT;
+/** 0.3757 — the waistband. */
+const SHORTS_TOP_Z = 0.3757 * FIGURE_HEIGHT;
+/** 0.2147 — the hem. */
+const SHORTS_BOT_Z = 0.2147 * FIGURE_HEIGHT;
+const SHOULDER_Z = 0.6763 * FIGURE_HEIGHT;
+const NECK_Z = 0.7300 * FIGURE_HEIGHT;
+const HEAD_CENTRE_Z = 0.8638 * FIGURE_HEIGHT;
+/** 0.0612 of the height — UNSCALED; see the note above. */
+const HEAD_BASE_R = 0.0612 * FIGURE_HEIGHT;
+/** Where `drawPlayerHead` is actually handed, pre-compensated for the default
+ *  `offsetY` (−1.45 head-radii) so the head lands at `HEAD_CENTRE_Z`. */
+const HEAD_ANCHOR_Z = HEAD_CENTRE_Z + DEFAULT_FACE_STYLE.offsetY * HEAD_BASE_R;
+
+/**
+ * Where the head actually ends up, for a given style — the ONE answer both
+ * the photo branch and the no-photo branch draw to.
+ *
+ * `drawPlayerHead` works in screen pixels, but every offset it applies is a
+ * multiple of the base radius it was handed, and a world metre at the
+ * figure's own depth is exactly one `scale` of pixels — so a screen offset of
+ * `offsetY · headBaseR` pixels is the same thing as `offsetY · HEAD_BASE_R`
+ * metres of height, and the two can be reasoned about in world units without
+ * approximating anything. Screen `y` grows downward, so a negative `offsetY`
+ * raises the head, which is why `anchorZ` sits BELOW `centreZ`.
+ */
+function headGeometry(style?: FaceStyle): { anchorZ: number; centreZ: number; drawnR: number } {
+  const s = style ?? DEFAULT_FACE_STYLE;
+  // The anchor is a fixed part of the anatomy: a player who has moved the
+  // Face Editor's slider moves his head off his shoulders on purpose.
+  const anchorZ = HEAD_ANCHOR_Z;
+  return {
+    anchorZ,
+    centreZ: anchorZ - s.offsetY * HEAD_BASE_R,
+    drawnR: HEAD_BASE_R * s.scale,
+  };
+}
+
+/** Half-widths, metres — fiveASide's 0.42r / 0.29r / 0.31r shoulder, waist
+ *  and shorts, which is the taper that makes a shape read as a person seen
+ *  from behind rather than as a slab. */
+const SHOULDER_HALF = 0.2254 * FIGURE_HEIGHT;
+const WAIST_HALF = 0.1557 * FIGURE_HEIGHT;
+const SHORTS_HALF = 0.1664 * FIGURE_HEIGHT;
+const HEM_HALF = 0.1520 * FIGURE_HEIGHT;
+
+/**
+ * The anatomy above, in one object, so a test can measure it rather than
+ * trusting this file's comments. `tests/star/firstPersonFigure.mts` checks it
+ * against `fiveASide/render.ts`'s own exported proportions — the two figures
+ * are meant to be the same man drawn by two cameras, and a drift should fail
+ * rather than quietly happen.
+ */
+export const FP_ANATOMY = {
+  height: FIGURE_HEIGHT,
+  figureR: FIGURE_R,
+  hipZ: HIP_Z,
+  shoulderZ: SHOULDER_Z,
+  neckZ: NECK_Z,
+  headCentreZ: HEAD_CENTRE_Z,
+  headAnchorZ: HEAD_ANCHOR_Z,
+  headBaseR: HEAD_BASE_R,
+  shoulderHalf: SHOULDER_HALF,
+  waistHalf: WAIST_HALF,
+} as const;
+
+
+/** How far down the knee→ankle line the sock starts. A footballer's sock
+ *  tops sit just below the knee, not on it. */
+const SOCK_TOP_F = 0.34;
+
 /** Metres a foot swings forward/back from under the hip, and how high it
  *  lifts while swinging through — the whole stylised running gait is these
- *  two numbers fed through one sine each. */
-const STRIDE_REACH = 0.30;
-const LIFT_H = 0.16;
+ *  two numbers fed through one sine each. Trimmed with the hip: the old 0.16
+ *  lift was set against a hip 0.34 m higher than this one, and kept there it
+ *  swung the foot up past its own knee. */
+const STRIDE_REACH = 0.24;
+const LIFT_H = 0.12;
 
 /** One limb's forward/back + lift offset at a given phase (radians). Used
  *  for both legs and arms — an arm just passes `lift = 0`, since only a
@@ -280,7 +405,6 @@ interface LegOpts {
 interface LegPoints {
   hip: { x: number; y: number; z: number };
   knee: { x: number; y: number; z: number };
-  kneeBand: { x: number; y: number; z: number };
   ankle: { x: number; y: number; z: number };
   soleMid: { x: number; y: number; z: number };
   toe: { x: number; y: number; z: number };
@@ -298,7 +422,7 @@ function computeLegs(
   const phase = opts.runPhase ?? 0;
   const P = (dx: number, dy: number, z: number) => ({ x: pos.x + dx + shear, y: pos.y + dy, z });
   const baseSpread = opts.legSpread ?? 0.15;
-  const hipZ = 0.92;
+  const hipZ = HIP_Z;
   // A small double-bounce per stride (two footfalls per full gait cycle) —
   // cheap, but it's the difference between "gliding" and "running".
   const bounce = Math.max(0, Math.sin(phase * 2)) * 0.03;
@@ -332,8 +456,8 @@ function computeLegs(
     const lateral = side * baseSpread * 1.4 + reachLateral;
 
     const hip = P(side * baseSpread, 0, hipZ + bounce);
-    const knee = P(side * baseSpread * 1.1 + reachLateral * 0.5, fwd * 0.45, hipZ * 0.5 + up * 0.5 + bounce * 0.5);
-    const ankle = P(lateral, fwd, 0.22 + up);
+    const knee = P(side * baseSpread * 1.1 + reachLateral * 0.5, fwd * 0.45, KNEE_Z + up * 0.5 + bounce * 0.5);
+    const ankle = P(lateral, fwd, ANKLE_Z + up);
     // Forward (the direction of travel) is DECREASING world y — see gait():
     // a positive sin phase swings the foot forward via a NEGATIVE fwd
     // offset. So the toe (points forward) needs the smaller/more-negative
@@ -341,10 +465,9 @@ function computeLegs(
     // SAME `+ up` lift as the ankle above them — an earlier version scaled
     // the boot's lift down (`up * 0.6`) so the boot rose slower than the
     // sock during a swing and visibly detached from it mid-stride.
-    const soleZ = Math.max(0, ankle.z - 0.12);
-    const kneeBand = P(side * baseSpread * 1.1 + reachLateral * 0.5, fwd * 0.45 * 0.94, hipZ * 0.5 + up * 0.5 + bounce * 0.5 - 0.05);
+    const soleZ = Math.max(SOLE_Z, ankle.z - (ANKLE_Z - SOLE_Z));
     legs.push({
-      hip, knee, kneeBand, ankle,
+      hip, knee, ankle,
       soleMid: P(lateral, fwd, soleZ),
       toe: P(lateral, fwd - 0.16, soleZ),
       heel: P(lateral, fwd + 0.06, soleZ + 0.02),
@@ -367,11 +490,18 @@ function drawThighs(ctx: CanvasRenderingContext2D, cam: FpCamera, legs: LegPoint
  *  it's the one part allowed to hide it. */
 function drawShins(ctx: CanvasRenderingContext2D, cam: FpCamera, legs: LegPoints[], colors: { shirt: string; rim: string }) {
   for (const L of legs) {
-    // Sock — covers the shin, team-trim coloured, same taper the skin tube
-    // had before so it still reads as a leg, not a separate cylinder.
-    limb(ctx, cam, L.knee, L.ankle, 0.058, 0.05, colors.rim);
-    // A thin skin band right at the knee, where a real sock stops short.
-    limb(ctx, cam, L.knee, L.kneeBand, 0.06, 0.058, C.skin);
+    // Bare shin from the knee down to where a real sock actually starts —
+    // a sock drawn from the knee itself leaves almost no skin below the
+    // shorts' hem, so the whole leg reads as one coloured tube.
+    const sockTop = {
+      x: L.knee.x + (L.ankle.x - L.knee.x) * SOCK_TOP_F,
+      y: L.knee.y + (L.ankle.y - L.knee.y) * SOCK_TOP_F,
+      z: L.knee.z + (L.ankle.z - L.knee.z) * SOCK_TOP_F,
+    };
+    limb(ctx, cam, L.knee, sockTop, 0.062, 0.058, C.skin);
+    // Sock — covers the rest of the shin, team-trim coloured, same taper the
+    // skin tube had before so it still reads as a leg, not a separate cylinder.
+    limb(ctx, cam, sockTop, L.ankle, 0.058, 0.05, colors.rim);
     // Boot — an ankle-to-sole "cuff" closes the gap the sock leaves above
     // the sole (an earlier version placed the boot at a fixed depth well
     // below the ankle with nothing drawn in between, which read as a
@@ -390,7 +520,7 @@ function drawShadow(ctx: CanvasRenderingContext2D, cam: FpCamera, pos: { x: numb
   if (!feet) return;
   const sc = feet.scale;
   ctx.beginPath();
-  ctx.ellipse(feet.px, feet.py, 0.42 * sc, 0.14 * sc, 0, 0, Math.PI * 2);
+  ctx.ellipse(feet.px, feet.py, 0.36 * sc, 0.13 * sc, 0, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(0,0,0,0.38)";
   ctx.fill();
 }
@@ -423,51 +553,82 @@ function drawUpperBody(
   const P = (dx: number, dy: number, z: number) => ({ x: pos.x + dx + shear, y: pos.y + dy, z });
 
   // Shorts — a filled trapezoid on the hips, not a rounded rectangle.
-  const shortsTL = project(cam, pos.x - 0.24 + shear, pos.y, 1.02 + bounce);
-  const shortsTR = project(cam, pos.x + 0.24 + shear, pos.y, 1.02 + bounce);
-  const shortsBR = project(cam, pos.x + 0.20 + shear, pos.y, 0.80 + bounce);
-  const shortsBL = project(cam, pos.x - 0.20 + shear, pos.y, 0.80 + bounce);
+  // Narrower than the torso's own waist rather than wider than it: hips that
+  // stick out past the body read as a nappy, which is what these were doing.
+  const shortsTL = project(cam, pos.x - SHORTS_HALF + shear, pos.y, SHORTS_TOP_Z + bounce);
+  const shortsTR = project(cam, pos.x + SHORTS_HALF + shear, pos.y, SHORTS_TOP_Z + bounce);
+  const shortsBR = project(cam, pos.x + HEM_HALF + shear, pos.y, SHORTS_BOT_Z + bounce);
+  const shortsBL = project(cam, pos.x - HEM_HALF + shear, pos.y, SHORTS_BOT_Z + bounce);
   if (shortsTL && shortsTR && shortsBR && shortsBL) {
     quad(ctx, [shortsTL, shortsTR, shortsBR, shortsBL], colors.rim);
   }
 
-  // Torso — tapered (shoulders wider than the waist) and shaded with a
-  // light-to-dark sweep so it reads as a rounded body, not a flat card.
-  const shoulderL = project(cam, pos.x - 0.28 + shear, pos.y, 1.48 + bounce);
-  const shoulderR = project(cam, pos.x + 0.28 + shear, pos.y, 1.48 + bounce);
-  const waistR = project(cam, pos.x + 0.22 + shear, pos.y, 1.02 + bounce);
-  const waistL = project(cam, pos.x - 0.22 + shear, pos.y, 1.02 + bounce);
-  if (shoulderL && shoulderR && waistR && waistL) {
+  // Torso — tapered (shoulders genuinely wider than the waist) and shaded
+  // with a light-to-dark sweep so it reads as a rounded body, not a flat
+  // card. The old numbers tapered 0.28 → 0.22, which at this camera is not a
+  // taper you can see; these are fiveASide's own 0.42r → 0.29r.
+  const shoulderL = project(cam, pos.x - SHOULDER_HALF + shear, pos.y, SHOULDER_Z - 0.05 + bounce);
+  const shoulderR = project(cam, pos.x + SHOULDER_HALF + shear, pos.y, SHOULDER_Z - 0.05 + bounce);
+  const capL = project(cam, pos.x - SHOULDER_HALF * 0.58 + shear, pos.y, SHOULDER_Z + 0.02 + bounce);
+  const capR = project(cam, pos.x + SHOULDER_HALF * 0.58 + shear, pos.y, SHOULDER_Z + 0.02 + bounce);
+  const waistR = project(cam, pos.x + WAIST_HALF + shear, pos.y, WAIST_Z + bounce);
+  const waistL = project(cam, pos.x - WAIST_HALF + shear, pos.y, WAIST_Z + bounce);
+  if (shoulderL && shoulderR && capL && capR && waistR && waistL) {
     const grad = ctx.createLinearGradient(shoulderL.px, 0, shoulderR.px, 0);
     grad.addColorStop(0, colors.shirt);
     grad.addColorStop(0.55, colors.shirt);
     grad.addColorStop(1, colors.rim);
-    quad(ctx, [shoulderL, shoulderR, waistR, waistL], grad);
+    ctx.beginPath();
+    ctx.moveTo(waistL.px, waistL.py);
+    ctx.lineTo(shoulderL.px, shoulderL.py);
+    ctx.quadraticCurveTo(shoulderL.px, capL.py, capL.px, capL.py);
+    ctx.lineTo(capR.px, capR.py);
+    ctx.quadraticCurveTo(shoulderR.px, capR.py, shoulderR.px, shoulderR.py);
+    ctx.lineTo(waistR.px, waistR.py);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
   }
 
   // Neck — the head used to sit floating directly on the shoulders with no
   // join at all. A short skin-toned taper closes that gap.
-  limb(ctx, cam, P(0, 0, 1.45 + bounce), P(0, 0, 1.58 + bounce), 0.09, 0.07, C.skin);
+  limb(ctx, cam, P(0, 0, SHOULDER_Z - 0.03 + bounce), P(0, 0, NECK_Z + 0.02 + bounce),
+    HEAD_BASE_R * 0.80, HEAD_BASE_R * 0.62, C.skin);
 
   // Arms — swing opposite the same-side leg (a natural gait is
   // contralateral). A committed defender's flung arm — his dive telegraph —
   // overrides its own side's target instead of the ordinary running swing;
   // the other arm keeps running normally.
+  //
+  // Each arm is drawn TWICE: bare skin end to end, then a shorter shirt-
+  // coloured sleeve over the top of the upper arm. Without it the arm leaves
+  // the shoulder as bare skin and the shirt has no sleeves at all — which is
+  // exactly how these read, two tan planks hung off a slab.
   const flung = opts.armFlungAmount ?? 0;
+  const armTopZ = SHOULDER_Z - 0.02;
   for (const side of [-1, 1] as const) {
-    const shoulder = P(side * 0.28, 0, 1.46 + bounce);
+    const shoulder = P(side * SHOULDER_HALF * 0.80, 0, armTopZ + bounce);
     let elbow: { x: number; y: number; z: number };
     let hand: { x: number; y: number; z: number };
     if (opts.armFlungSide === side) {
-      elbow = P(side * (0.45 + flung * 0.5), 0.1, 1.35 + bounce);
-      hand = P(side * (0.65 + flung), 0.15, 1.50 + bounce);
+      elbow = P(side * (SHOULDER_HALF * 1.5 + flung * 0.5), 0.1, armTopZ - 0.12 + bounce);
+      hand = P(side * (SHOULDER_HALF * 2.1 + flung), 0.15, armTopZ + 0.03 + bounce);
     } else {
-      const g = gait(phase + (side === 1 ? 0 : Math.PI), 0.22, 0);
-      elbow = P(side * 0.30, g.fwd, 1.15 + bounce);
-      hand = P(side * 0.32, g.fwd * 1.4, 1.00 + bounce);
+      const g = gait(phase + (side === 1 ? 0 : Math.PI), 0.20, 0);
+      elbow = P(side * SHOULDER_HALF * 0.98, g.fwd, armTopZ - 0.24 + bounce);
+      hand = P(side * SHOULDER_HALF * 1.04, g.fwd * 1.4, armTopZ - 0.45 + bounce);
     }
     limb(ctx, cam, shoulder, elbow, 0.055, 0.05, C.skin);
     limb(ctx, cam, elbow, hand, 0.05, 0.045, C.skin);
+    // Sleeve: the top ~45% of the upper arm, a shade thicker than the skin
+    // under it so it reads as cloth over the arm rather than a stripe on it.
+    const sleeveEnd = {
+      x: shoulder.x + (elbow.x - shoulder.x) * 0.62,
+      y: shoulder.y + (elbow.y - shoulder.y) * 0.62,
+      z: shoulder.z + (elbow.z - shoulder.z) * 0.62,
+    };
+    limb(ctx, cam, P(side * SHOULDER_HALF * 0.70, 0, armTopZ - 0.02 + bounce), sleeveEnd,
+      0.078, 0.060, colors.shirt);
   }
 
   // Head — a real photo, when one is known and loaded, drawn through
@@ -475,28 +636,44 @@ function drawUpperBody(
   // real match draws every head with, so a defender here looks exactly as
   // consistent (same crop, same outline, same everything the Face Editor
   // controls) as one on the actual pitch, never a second competing
-  // drawing routine that could quietly disagree with it. Otherwise: the
-  // original flat fill, dark hair-cap shading arc, and stroke — completely
-  // unchanged for every chaser, every defender with no real identity yet,
-  // and the roam mode, which never passes a face at all.
-  const head = project(cam, pos.x + shear, pos.y, 1.62 + bounce);
+  // drawing routine that could quietly disagree with it.
+  //
+  // BOTH branches now draw to ONE geometry (`headGeometry`). They did not:
+  // `drawPlayerHead` multiplies the base radius it is handed by the Face
+  // Editor's `scale` (2.2 by default) and the no-photo branch below used the
+  // same number as a finished radius, so two identical defenders standing
+  // side by side had heads 2.2× different, and the photo one floated a clear
+  // 0.16 m above its own shoulders because nothing compensated for `offsetY`.
+  // See the anatomy block at the top of this file.
+  const geo = headGeometry(opts.faceStyle);
+  const head = project(cam, pos.x + shear, pos.y, geo.anchorZ + bounce);
   if (head) {
-    const r = Math.max(1.5, 0.11 * sc);
     if (opts.face && opts.face.complete && opts.face.naturalWidth > 0) {
-      drawPlayerHead(ctx, head.px, head.py, r, r, opts.face, opts.faceStyle, opts.fakeFaceStyle);
+      drawPlayerHead(
+        ctx, head.px, head.py,
+        Math.max(1, HEAD_BASE_R * sc), Math.max(1, FIGURE_R * sc),
+        opts.face, opts.faceStyle, opts.fakeFaceStyle,
+      );
     } else {
+      // No photo: the same circle, at the same drawn size, in the same place
+      // — plus the dark hair cap, which is the one thing this branch has that
+      // a photo does not need.
+      const centre = project(cam, pos.x + shear, pos.y, geo.centreZ + bounce) ?? head;
+      const r = Math.max(1.5, geo.drawnR * sc);
       ctx.beginPath();
-      ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
+      ctx.arc(centre.px, centre.py, r, 0, Math.PI * 2);
       ctx.fillStyle = C.skin;
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(head.px, head.py - r * 0.22, r * 0.95, Math.PI, 0);
+      ctx.arc(centre.px, centre.py, r, Math.PI, 0);
+      ctx.quadraticCurveTo(centre.px, centre.py - r * 0.34, centre.px - r, centre.py);
+      ctx.closePath();
       ctx.fillStyle = "rgba(28,20,14,0.55)";
       ctx.fill();
       ctx.strokeStyle = "rgba(0,0,0,0.35)";
-      ctx.lineWidth = Math.max(1, sc * 0.03);
+      ctx.lineWidth = Math.max(1, FIGURE_R * sc * 0.03);
       ctx.beginPath();
-      ctx.arc(head.px, head.py, r, 0, Math.PI * 2);
+      ctx.arc(centre.px, centre.py, r, 0, Math.PI * 2);
       ctx.stroke();
     }
   }

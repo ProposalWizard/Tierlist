@@ -44,7 +44,7 @@ import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSh
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
-import { drawPlayerHead } from "@/lib/star/drawPlayerHead";
+import { drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MAX_KEEPER_LEAN } from "@/lib/star/fiveASide/render";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
@@ -98,6 +98,10 @@ const USE_FIRST_PERSON_DRIBBLE = true;
 // local `MATCH_DURATION` shadow inside the component, which reads it off
 // `career.ruleBook`'s FA entry when a real career is attached.
 const DEFAULT_MATCH_DURATION = 90;
+
+// The figures' anatomy, their height and the keeper's lean cap all live in
+// lib/star/fiveASide/render.ts, which is the one place this game draws a
+// footballer — see MATCH_FIGURE_HEIGHT_R there for what they mean and why.
 
 interface Props {
   skills?: KickSkills;
@@ -1793,7 +1797,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const { px, py, scale } = toPx(x, y);
       // Further up the pitch is further from the camera, so figures there are
       // drawn smaller. This is most of what sells the depth.
-      const r = rBase * scale;
+      const r = figureRForHeight(rBase * scale * MATCH_FIGURE_HEIGHT_R);
       const pose = opts.pose ?? "idle";
       const phase = opts.phase ?? 0;
       // Shorts default to the shirt's rim rather than a near-black everybody
@@ -1803,147 +1807,47 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // arms and legs dominated, so at any distance both sides were the same
       // tan smudge and a crowd in the box was unreadable.
       const shorts = opts.shorts ?? rim;
-      const lw = Math.max(1.3, r * 0.24);
-
-      // ── Anchored at the FEET ──
-      //
-      // (px, py) is where this man is standing, and it is now where his boots
-      // are: the shadow goes there and the body is drawn upward from it. The
-      // figure used to hang off its own middle, so every player was drawn half a
-      // body ahead of the spot he actually occupied — a keeper on his line had
-      // his head on the line and his feet two metres in front of it, and looked
-      // like he had come out. It also put the ball, which IS drawn at its ground
-      // point, level with a player's waist rather than his boots.
-      ctx.beginPath();
-      ctx.ellipse(px, py, r * 0.78, r * 0.30, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.34)";
-      ctx.fill();
-
-      ctx.save();
-      ctx.translate(px, py - r * 0.8);
-      if (opts.facing) ctx.rotate(opts.facing);
 
       // Limb swing. Running scissors the legs and counter-swings the arms;
-      // a kick throws one leg through and the arms wide for balance.
+      // a kick throws one leg through and the arms wide for balance; a man
+      // waiting for the ball opens his arms.
       const swing = pose === "run" ? Math.sin(phase) : 0;
       const kick = pose === "kick" ? 1 : 0;
       const open = pose === "receive" ? 1 : 0;
 
-      ctx.lineCap = "round";
-      ctx.lineWidth = lw;
-
-      // ── Legs ──
-      ctx.strokeStyle = SKIN;
-      const hipY = r * 0.18;
-      const legL = r * 0.62;
-      const legSwing = swing * r * 0.42 + kick * r * 0.55;
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.24, hipY);
-      ctx.lineTo(-r * 0.24 - legSwing * 0.35, hipY + legL - Math.abs(legSwing) * 0.15);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(r * 0.24, hipY);
-      ctx.lineTo(r * 0.24 + legSwing * 0.35, hipY + legL - Math.abs(legSwing) * 0.15);
-      ctx.stroke();
-
-      // ── Shorts ──
-      ctx.fillStyle = shorts;
-      ctx.beginPath();
-      ctx.roundRect?.(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36, r * 0.12);
-      if (!ctx.roundRect) ctx.rect(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36);
-      ctx.fill();
-
-      // ── Arms ── (counter-swing to the legs, thrown wide to receive)
-      ctx.strokeStyle = SKIN;
-      ctx.lineWidth = lw * 0.85;
-      const armOut = r * (0.52 + open * 0.34 + kick * 0.26);
-      const armDrop = r * (0.24 - open * 0.18);
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.34, -r * 0.30);
-      ctx.lineTo(-armOut, armDrop + swing * r * 0.22);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(r * 0.34, -r * 0.30);
-      ctx.lineTo(armOut, armDrop - swing * r * 0.22);
-      ctx.stroke();
-
-      // ── Shirt ── (deliberately the biggest thing on the figure)
-      ctx.fillStyle = shirt;
-      ctx.beginPath();
-      ctx.roundRect?.(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72, r * 0.17);
-      if (!ctx.roundRect) ctx.rect(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72);
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, r * 0.12);
-      ctx.strokeStyle = rim;
-      ctx.stroke();
-
-      // ── Head ── See drawPlayerHead.ts — the one function that actually
-      // draws a head, both here and in the Face Editor's own live preview,
-      // so the two can never quietly draw something different from each
-      // other. Position/scale/backing/outline all come from the user's own
-      // faceStyleRef — see Settings → Player Graphics. fakeFaceStyleRef only
-      // takes over scale/offset/crop, and only when opts.face turns out to
-      // be one of the seven fake headshots.
-      drawPlayerHead(ctx, 0, -r * 0.76, r * 0.26, r, opts.face, faceStyleRef.current, fakeFaceStyleRef.current);
-
-      ctx.restore();
-
-      if (opts.label) {
-        // Tracks the REAL head position, not a fixed guess — a name has to
-        // clear the head to read as "above" it, and the face style's own
-        // scale/offsetY (Settings → Player Graphics) can move that head a
-        // long way from its default spot. Same local→world math drawPlayerHead
-        // itself uses for cy/headR, just enough of it duplicated here to find
-        // the head's own top edge rather than re-deriving the whole draw.
-        const fs = faceStyleRef.current;
-        const headTopY = py - r * 1.56 + r * 0.26 * (fs.offsetY - fs.scale);
-        // The star marker (below) sits at a fixed py-2.15r regardless of face
-        // style, to mark "you" — clear extra space above the head so a name
-        // on your own star-marked figure never sits under/through it.
-        const gap = r * (opts.star ? 0.75 : 0.18);
-        ctx.fillStyle = opts.labelColor ?? "#fff";
-        ctx.font = `bold ${Math.round(r * 0.52)}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText(opts.label, px, headTopY - gap);
-      }
-
-      // ── The star above your head ──
+      // ── Anchored at the FEET ──
       //
-      // Which man is you, said the way a game says it rather than the way a
-      // diagram does. The word YOU was three letters of chrome sitting on the
-      // one figure you are actually watching, and at this size it was wider
-      // than the player wearing it. A star reads instantly, costs no width,
-      // and does not have to be read.
-      if (opts.star) {
-        // Half the old radius, and centred clear of the crown rather than on
-        // the chin: the head (drawn above) spans roughly py-1.82r to py-1.30r
-        // in these same absolute coords, and the star used to be centred at
-        // py-1.30r — the bottom of the head — so its own radius carried it
-        // back down over most of the face. This sits it above the head with a
-        // small gap, the way a marker over a unit reads, not a hat on it.
-        const sr = r * 0.23;
-        const cx = px, cy = py - r * 2.15;
-        ctx.save();
-        // Drawn from the point down, so it sits upright over the head.
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-          const ang = -Math.PI / 2 + (i * Math.PI) / 5;
-          const rad = i % 2 === 0 ? sr : sr * 0.44;
-          const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad;
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        // A dark rim under it, because a gold star on a bright shirt or against
-        // a floodlit sky needs an edge or it dissolves into whatever is behind.
-        ctx.lineJoin = "round";
-        ctx.lineWidth = Math.max(1.5, sr * 0.34);
-        ctx.strokeStyle = "rgba(0,0,0,0.55)";
-        ctx.stroke();
-        ctx.fillStyle = "#fbbf24";
-        ctx.fill();
-        ctx.restore();
-      }
+      // (px, py) is where this man is standing, and it is where his boots are:
+      // the shadow goes there and the body is drawn upward from it. The figure
+      // used to hang off its own middle, so every player was drawn half a body
+      // ahead of the spot he actually occupied — a keeper on his line had his
+      // head on the line and his feet two metres in front of it, and looked
+      // like he had come out. It also put the ball, which IS drawn at its
+      // ground point, level with a player's waist rather than his boots.
+      drawFigureAt(
+        ctx, px, py, r,
+        { shirt, shorts, trim: rim, skin: SKIN, face: opts.face },
+        faceStyleRef.current, fakeFaceStyleRef.current,
+        {
+          facing: opts.facing,
+          shadowR: r * 0.42,
+          pose: {
+            legSwing: swing,
+            kick,
+            // Arms out to receive, and out for balance through a kick. Down
+            // by his sides otherwise, which is `armSpread` 0 — the same
+            // still figure the trial's stages already draw.
+            armSpread: open * 0.5 + kick * 0.3,
+            armLift: -0.55 + open * 0.5,
+          },
+          label: opts.label,
+          labelColor: opts.labelColor,
+          star: opts.star,
+          // A gold star on a bright shirt or against a floodlit sky needs an
+          // edge or it dissolves into whatever is behind it.
+          starRim: "rgba(0,0,0,0.55)",
+        },
+      );
     };
 
     // Sized against the reference rather than against the laws of the game: a
@@ -2302,121 +2206,66 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
       const KR = R * 0.82 * kScale;   // smaller than an outfielder, smaller again far away
-      const lean = sign * diveN * (K ? K.lean : 0.9);
+      // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
+      // nothing in the engine reads this rotation.
+      const lean = clamp(sign * diveN * (K ? K.lean : 0.9), -MAX_KEEPER_LEAN, MAX_KEEPER_LEAN);
       // He is already standing at the ball by the time a save is drawn (the
       // engine puts him there), so the lunge is a pose rather than a journey —
       // a big horizontal offset here would throw the figure straight past the
       // thing he just saved.
       const cx = px + sign * KR * lunge * (K ? K.reachK : 1.0) * 0.3;
       const cyOff = KR * ((K ? K.crouch : 0) * lunge + breathe);
-      const gloveR = KR * 0.24;
+      // The same man as everybody else, in a keeper's pose — see the note on
+      // MATCH_FIGURE_HEIGHT_R. He used to be a second figure drawn by a second
+      // piece of code with his own head size, his own body and his own arms,
+      // which is why he read as a different species standing in the same goal.
+      // His old drawn height was 2.482 KR against an outfielder's 2.509 r —
+      // inside 1%, so one conversion does for both.
+      const kr = figureRForHeight(KR * MATCH_FIGURE_HEIGHT_R);
+      const spread = K ? K.spread : 1;
+      const armUp = K ? K.armUp : 0;
 
       ctx.save();
       ctx.globalAlpha = 0.92;
 
-      ctx.beginPath();
-      ctx.ellipse(cx, py, KR * (0.7 + diveN * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.3)";
-      ctx.fill();
-
       // No highlight ring on a save. The dive is the thing you are watching;
       // a yellow disc drawn over it only told you what you had already seen.
-
-      ctx.translate(cx + KR * weight * (1 - lunge), py - KR * 0.8 + cyOff);
-      ctx.rotate(lean);
-      ctx.lineCap = "round";
-
-      // Legs
-      ctx.strokeStyle = SKIN;
-      ctx.lineWidth = Math.max(1.2, KR * 0.28);
-      ctx.beginPath();
-      ctx.moveTo(-KR * 0.22, KR * 0.16);
-      ctx.lineTo(-KR * 0.30 - diveN * KR * 0.3, KR * 0.76);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(KR * 0.22, KR * 0.16);
-      ctx.lineTo(KR * 0.30 + diveN * KR * 0.3, KR * 0.76);
-      ctx.stroke();
-
-      // Shorts — the keeper's own kit, like everybody else, so he reads as the
-      // keeper rather than as another outfield player who happens to be near
-      // the goal. Wider than an outfielder's: he is stood square and low.
-      ctx.fillStyle = kitsRef.current.keeper.trim;
-      ctx.beginPath();
-      ctx.roundRect?.(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34, KR * 0.12);
-      if (!ctx.roundRect) ctx.rect(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34);
-      ctx.fill();
-
-      // Arms — direction and spread come from the save being played. A high save
-      // drives them up, a low save down, a catch brings them together in front.
-      const spread = K ? K.spread : 1;
-      const armUp = K ? K.armUp : 0;
-      const reach = KR * (0.62 + diveN * 0.85) * (0.55 + spread * 0.45);
-      const armY = -KR * 0.28 - armUp * diveN * KR * 0.85;
-      ctx.strokeStyle = SKIN;
-      ctx.lineWidth = Math.max(1.1, KR * 0.24);
-      const gloves: { x: number; y: number }[] = [];
-      for (const s2 of [-1, 1]) {
-        // The leading glove goes furthest; the trailing one stays tucked.
-        const leading = sign === 0 || Math.sign(s2) === sign;
-        const ex = s2 * reach * (leading ? 1 : 0.62);
-        const ey = armY - (leading ? diveN * KR * 0.2 : 0);
-        ctx.beginPath();
-        ctx.moveTo(s2 * KR * 0.32, -KR * 0.28);
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-        gloves.push({ x: ex, y: ey });
-      }
-
-      // Shirt
-      ctx.fillStyle = kitsRef.current.keeper.shirt;
-      ctx.beginPath();
-      ctx.roundRect?.(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58, KR * 0.15);
-      if (!ctx.roundRect) ctx.rect(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58);
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, KR * 0.11);
-      ctx.strokeStyle = kitsRef.current.keeper.trim;
-      ctx.stroke();
-
-      // Gloves — what actually makes him read as a keeper
-      ctx.fillStyle = "#f8fafc";
-      ctx.strokeStyle = kitsRef.current.keeper.trim;
-      ctx.lineWidth = Math.max(1, KR * 0.09);
-      for (const g of gloves) {
-        ctx.beginPath();
-        ctx.arc(g.x, g.y, gloveR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-
-      // Head — same drawPlayerHead as every outfielder in footballer() above,
-      // so the real opposing keeper's face (when castDefence found one) gets
-      // exactly the same style treatment. The outline's base thickness was
-      // KR*0.09 here versus footballer's r*0.10 before this was unified —
-      // a difference small enough (both round to the same 1px floor on most
-      // phone screens) that one shared formula was worth it for never having
-      // the editor's preview quietly disagree with the real keeper.
-      drawPlayerHead(ctx, 0, -KR * 0.70, KR * 0.28, KR, getFaceImage(kk.who?.face), faceStyleRef.current, fakeFaceStyleRef.current);
+      drawKeeperAt(
+        ctx,
+        cx + KR * weight * (1 - lunge), py, kr,
+        {
+          shirt: kitsRef.current.keeper.shirt,
+          shorts: kitsRef.current.keeper.trim,
+          trim: kitsRef.current.keeper.trim,
+          skin: SKIN,
+          face: getFaceImage(kk.who?.face),
+        },
+        // The lean below is this screen's own, per-save-kind one rather than
+        // the shared renderer's generic one, so every save still pitches over
+        // exactly as far as it did — hence dive 0 and the lean handed in as a
+        // facing. `lunge` still drives the shared set-crouch-to-full-stretch.
+        { dive: 0, lunge },
+        faceStyleRef.current, fakeFaceStyleRef.current,
+        {
+          facing: lean,
+          // cyOff is the save's own vertical drop plus his breathing. It moves
+          // the BODY, never the shadow, which is what a negative lift means.
+          liftPx: -cyOff,
+          shadowR: kr * (0.53 + diveN * 0.38),
+          pose: {
+            // Direction and spread come from the save being played. A high
+            // save drives the arms up, a low save down, a catch brings them
+            // together in front; the leading glove goes furthest and the
+            // trailing one stays tucked.
+            armSpread: clamp(0.45 + spread * 0.35 + diveN * 0.4, 0, 1),
+            armLift: 0.15 + armUp * diveN * 0.85 + lunge * 0.5,
+            armLead: sign,
+          },
+          label: faceStyleRef.current.namesEnabled ? kk.who?.shortName : undefined,
+        },
+      );
 
       ctx.restore();
-
-      // Same label mechanism as footballer()'s own — world-space, upright, for
-      // the one figure that doesn't go through footballer() at all. Anchored
-      // off the keeper's own neutral translate origin (py - KR*0.8) and his
-      // own drawPlayerHead call's -KR*0.70/KR*0.28, same as that call just
-      // above — deliberately NOT tracking the small live cx/cyOff/lean terms
-      // his body draw applies during an active dive (a label a few px off
-      // during the one dive-frame that already has your full attention is a
-      // far smaller concern than the dive itself); idle, this is exact.
-      if (faceStyleRef.current.namesEnabled && kk.who?.shortName) {
-        const fs = faceStyleRef.current;
-        const headTopY = py - KR * 1.50 + KR * 0.28 * (fs.offsetY - fs.scale);
-        ctx.fillStyle = "#fff";
-        ctx.font = `bold ${Math.round(KR * 0.52)}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText(kk.who.shortName, px, headTopY - KR * 0.18);
-      }
     };
 
     // He draws first, with the ball painting over him, by default — he
