@@ -65,8 +65,13 @@ function ratingFactor(overall: number): number {
  */
 function ageFactor(age: number): number {
   if (age <= 22) return 1 + (22 - age) * getTuning("marketValue.youthPremiumPerYear");
-  if (age <= 28) return 1;
-  const declineYears = age - 28;
+  // Reported directly: a genuinely great 29-year-old was being valued as if
+  // his decline had already started — "players are still generally in
+  // their prime years when they're between the ages of 27 and 29... if you
+  // buy them you're buying perfection most of the time." The plateau now
+  // runs through 29, not 28; real decline starts at 30.
+  if (age <= 29) return 1;
+  const declineYears = age - 29;
   return Math.max(getTuning("marketValue.ageFloor"), 1 - declineYears * getTuning("marketValue.declinePerYear"));
 }
 

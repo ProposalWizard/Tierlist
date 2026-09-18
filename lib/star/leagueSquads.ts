@@ -668,6 +668,39 @@ export function growthCeilingFor(playerId: string, worldClassPotential?: boolean
  */
 const TRAINING_TIER_MULTIPLIER: Record<1 | 2 | 3, number> = { 1: 0.7, 2: 1.0, 3: 1.4 };
 
+/**
+ * Reported directly, from a real save five seasons in: two 97s, two 96s and
+ * two 94s had already turned up — going from 82 to 89-91 in five seasons is
+ * fine ("a good player to a great and world-class one"), but 91 up past
+ * that has to be dramatically harder each further point, since it's the
+ * gap between "world-class" and "one of the best of all time." Below
+ * `wonderkids.eliteDampingStart` (91), this returns exactly `rawGain` —
+ * ordinary growth is completely untouched. Past it, `rawGain` is walked up
+ * ONE POINT AT A TIME, each point's own share scaled down by
+ * `eliteDampingRate` raised to how far past the start line it already is —
+ * compounding, so 92 costs more than 91 did, 93 more again, and so on. This
+ * is deliberately NOT a flat multiplier applied once at the season's
+ * starting overall: a big single-season raw gain (a World Class player's
+ * growthMax * worldClassMultiplier can be double digits) would otherwise
+ * jump straight from, say, 85 to 95 in one go and never actually pay the
+ * elite-tier cost for any of the points in between.
+ */
+function applyEliteDamping(startingOverall: number, rawGain: number): number {
+  const start = getTuning("wonderkids.eliteDampingStart");
+  const rate = getTuning("wonderkids.eliteDampingRate");
+  let overall = startingOverall;
+  let remaining = rawGain;
+  let total = 0;
+  while (remaining > 0) {
+    const step = Math.min(remaining, 1);
+    const over = Math.max(0, overall - start);
+    total += step * Math.pow(rate, over);
+    overall += step;
+    remaining -= step;
+  }
+  return total;
+}
+
 export function growWonderkids(
   squads: LeagueSquad[], rng: () => number,
   trainingTierFor?: (club: string) => 1 | 2 | 3,
@@ -695,7 +728,8 @@ export function growWonderkids(
       if (rng() >= tierChance) return p;
       const tierMin = (p.worldClassPotential ? minGain * worldClassMultiplier : minGain) * trainingMultiplier;
       const tierMax = (p.worldClassPotential ? maxGain * worldClassMultiplier : maxGain) * trainingMultiplier;
-      const gain = Math.round(tierMin + rng() * (tierMax - tierMin));
+      const rawGain = tierMin + rng() * (tierMax - tierMin);
+      const gain = Math.round(applyEliteDamping(p.overall, rawGain));
       const ceiling = growthCeilingFor(p.id, p.worldClassPotential);
       return { ...p, overall: Math.min(ceiling, p.overall + gain) };
     }),
