@@ -1,13 +1,18 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { mulberry32 } from "@/lib/star/season";
+import { CX, NET_DEPTH } from "@/lib/star/pitch";
+import type { Viewport } from "@/lib/star/canvasEngine";
 import {
-  CX, POST_L, POST_R, NET_DEPTH, SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
-} from "@/lib/star/pitch";
-import {
-  REPS, visionSetup, visionQuality, meanQuality, type VisionSetup,
+  REPS, visionSetup, visionQuality, meanQuality, attemptSeed, type VisionSetup,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
+import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
+import {
+  cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawBall,
+} from "@/lib/star/fiveASide/render";
+import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
+import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 
 /**
  * FINDING THE PASS.
@@ -36,15 +41,21 @@ import type { TrialProgress } from "@/lib/star/trial";
 //
 // Not the match engine's 5:8 camera. That frame is 26 m wide, and a vision
 // picture needs to hold up to nine men and their markers without them
-// standing on each other — so this is its own, squarer frame, and this screen
-// draws it itself rather than going through the engine's scenario rendering
-// (there is no ball to strike here, so there is no scenario to build).
-const VIEW_ASPECT_VISION = 3 / 4;   // width / height
-const VIEW = (() => {
-  const w = 34;
-  const h = w / VIEW_ASPECT_VISION;
-  return { x1: CX - w / 2, x2: CX + w / 2, y1: -4, y2: -4 + h };
-})();
+// standing on each other.
+//
+// This is the rectangle that genuinely has to be ON SCREEN — every marker, you
+// with the ball at the bottom, and the goal at the top for orientation. The
+// camera is then `cameraContaining(MUST_SEE, …)`, which grows it to whatever
+// shape the canvas turns out to be rather than cropping it to fit.
+//
+// It has to be containment rather than the five-a-side's panning camera, and
+// the reason is what this stage IS: a picture you read in one look. A camera
+// that scrolled would be hiding part of the question.
+//
+// The frame this replaced was a fixed 3:4 with no height cap, and on a phone
+// it ran off the bottom of the screen — you, and the ball at your feet, below
+// the fold on the one stage that is entirely about looking at the picture.
+const MUST_SEE = { x1: 16.5, x2: 51.5, y1: -NET_DEPTH - 2, y2: 39 };
 
 /** Where you stand with the ball — bottom-centre, facing the goal. */
 export const VISION_YOU = { x: CX, y: 36 };
@@ -179,8 +190,10 @@ export function layoutVision(setup: VisionSetup, seed: number, rep: number): Vis
 
 type Phase = "ready" | "live" | "reveal";
 
-const KIT = { shirt: "#f8fafc", trim: "#0f172a" };
-const OPP = { shirt: "#1e3a8a", trim: "#e2e8f0" };
+/** Your shirt, and theirs. Two kits that could not be confused at a glance
+ *  under a one-second clock. */
+const KIT = { shirt: "#f8fafc", shorts: "#0f172a", trim: "#0f172a" };
+const OPP = { shirt: "#1e3a8a", shorts: "#0b1f4d", trim: "#e2e8f0" };
 
 export interface TrialVisionProps {
   trial: TrialProgress;
@@ -190,6 +203,10 @@ export interface TrialVisionProps {
 export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const camRef = useRef<Viewport | null>(null);
+  // Read once, not per frame — every head on the pitch draws through these.
+  const faceStyleRef = useRef<FaceStyle>(loadFaceStyle());
+  const fakeFaceStyleRef = useRef<FakeFaceStyle>(loadFakeFaceStyle());
   const startedRef = useRef(0);
   const phaseRef = useRef<Phase>("ready");
   const scoresRef = useRef<number[]>([]);
@@ -206,7 +223,14 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   // internally until the picture is fair — worth computing once per rep rather
   // than on every render the phase changes cause.
   const setup = useMemo(() => visionSetup(trial, rep), [trial, rep]);
-  const layout = useMemo(() => layoutVision(setup, trial.seed, rep), [setup, trial.seed, rep]);
+  // ── `attemptSeed`, not `trial.seed` ──
+  //
+  // Which man is the answer already moves with the resume count (visionSetup);
+  // the PICTURE has to move with it too, or a resumed stage would redraw the
+  // exact same six pictures with the answer moved inside them — still most of
+  // the way to a memory test, since the picture is what you remember.
+  const seed = useMemo(() => attemptSeed(trial), [trial]);
+  const layout = useMemo(() => layoutVision(setup, seed, rep), [setup, seed, rep]);
   // The loop reads both every frame; keeping them on refs means the animation
   // frame never closes over a stale rep the way it would over state.
   const setupRef = useRef(setup);
@@ -256,10 +280,12 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
     const c = canvasRef.current;
     if (!c) return;
     const r = c.getBoundingClientRect();
+    const vp = camRef.current;
+    if (!vp) return;
     const fx = (e.clientX - r.left) / r.width;
     const fy = (e.clientY - r.top) / r.height;
-    const x = VIEW.x1 + fx * (VIEW.x2 - VIEW.x1);
-    const y = VIEW.y1 + fy * (VIEW.y2 - VIEW.y1);
+    const x = vp.x1 + fx * (vp.x2 - vp.x1);
+    const y = vp.y1 + fy * (vp.y2 - vp.y1);
     // A generous tap radius in METRES, converted from a real thumb-sized
     // target: a phone at this frame width draws a metre as roughly ten
     // pixels, so three metres is about a fingertip. Nearest man wins, so two
@@ -308,91 +334,56 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const W = cssW, H = cssH;
-    const sx = W / (VIEW.x2 - VIEW.x1), sy = H / (VIEW.y2 - VIEW.y1);
-    const px = (x: number) => (x - VIEW.x1) * sx;
-    const py = (y: number) => (y - VIEW.y1) * sy;
-    const unit = Math.min(sx, sy);
+    // Everything in MUST_SEE, grown to the canvas's own shape. Nothing is
+    // cropped and nothing scrolls — a picture you read in one look has to be
+    // all there in one look.
+    const camera = cameraContaining(MUST_SEE, W, H);
+    camRef.current = camera;
+    const rules = ELEVEN_A_SIDE_ATTACK;
+    const p = projectionFor(rules, W, H, camera);
+    const { px, py, unit } = p;
 
-    ctx.fillStyle = "#1f9006";
-    ctx.fillRect(0, 0, W, H);
+    drawPitch(ctx, rules, p);
+    // Flat, deliberately: this is a passing picture, not a shooting one, and a
+    // full raised net would pull the eye to the one part of the screen the
+    // answer is never in. Same function the striking stages call, without the
+    // `height` option.
+    drawGoal(ctx, rules, p, 0, NET_DEPTH);
 
-    ctx.strokeStyle = "rgba(255,255,250,0.8)";
-    ctx.lineWidth = Math.max(1.4, unit * 0.11);
-    ctx.beginPath(); ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0)); ctx.stroke();
-    ctx.strokeRect(px(SIX_L), py(0), (SIX_R - SIX_L) * sx, SIX_DEPTH * sy);
-    ctx.strokeRect(px(BOX_L), py(0), (BOX_R - BOX_L) * sx, BOX_DEPTH * sy);
-
-    // The goal, flat — this is a passing picture, not a shooting one, and a
-    // full five-surface net would pull the eye to the one part of the screen
-    // the answer is never in.
-    ctx.fillStyle = "rgba(255,255,255,0.18)";
-    ctx.fillRect(px(POST_L), py(-NET_DEPTH), (POST_R - POST_L) * sx, NET_DEPTH * sy);
-    ctx.strokeStyle = "#f6faf7";
-    ctx.lineWidth = Math.max(2, unit * 0.16);
-    ctx.strokeRect(px(POST_L), py(-NET_DEPTH), (POST_R - POST_L) * sx, NET_DEPTH * sy);
-    const l = layoutRef.current, s = setupRef.current;
+    const l = layoutRef.current, st = setupRef.current;
     const reveal = phaseRef.current === "reveal";
 
-    const figure = (x: number, y: number, shirt: string, trim: string, ring: string | null) => {
-      const fx = px(x), fy = py(y);
-      const r = unit * 0.85;
+    /** A ring on the grass under a man — how the answer is shown, and how you
+     *  are shown. Drawn on the turf rather than around the figure so it never
+     *  fights the head, which is now a real head with a real face in it. */
+    const ring = (x: number, y: number, colour: string) => {
+      const r = Math.max(6, unit * 1.05);
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = Math.max(2, r * 0.16);
       ctx.beginPath();
-      ctx.ellipse(fx, fy + r * 0.85, r * 0.5, r * 0.18, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.3)";
-      ctx.fill();
-      if (ring) {
-        ctx.beginPath();
-        ctx.arc(fx, fy, r * 1.15, 0, Math.PI * 2);
-        ctx.strokeStyle = ring;
-        ctx.lineWidth = Math.max(2, r * 0.22);
-        ctx.stroke();
-      }
-      ctx.strokeStyle = "#c68642";
-      ctx.lineWidth = Math.max(1, r * 0.15);
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(fx - r * 0.13, fy + r * 0.1);
-      ctx.lineTo(fx - r * 0.17, fy + r * 0.78);
-      ctx.moveTo(fx + r * 0.13, fy + r * 0.1);
-      ctx.lineTo(fx + r * 0.17, fy + r * 0.78);
+      ctx.ellipse(px(x), py(y) + r * 0.26, r * 0.62, r * 0.26, 0, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.fillStyle = shirt;
-      ctx.beginPath();
-      ctx.roundRect?.(fx - r * 0.4, fy - r * 0.52, r * 0.8, r * 0.68, r * 0.15);
-      if (!ctx.roundRect) ctx.rect(fx - r * 0.4, fy - r * 0.52, r * 0.8, r * 0.68);
-      ctx.fill();
-      ctx.strokeStyle = trim;
-      ctx.lineWidth = Math.max(1, r * 0.09);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(fx, fy - r * 0.74, r * 0.25, 0, Math.PI * 2);
-      ctx.fillStyle = "#c68642";
-      ctx.fill();
     };
 
     // Markers first, so a team-mate is never hidden behind the man on him.
-    for (const m of l.men) figure(m.marker.x, m.marker.y, OPP.shirt, OPP.trim, null);
+    for (const m of l.men) drawFigure(ctx, p, m.marker, OPP, faceStyleRef.current, fakeFaceStyleRef.current);
     l.men.forEach((m, i) => {
-      const ring = reveal
-        ? (i === s.correct ? "#34d399" : i === pickedRef.current ? "#f43f5e" : null)
+      const colour = reveal
+        ? (i === st.correct ? "#34d399" : i === pickedRef.current ? "#f43f5e" : null)
         : null;
-      figure(m.x, m.y, KIT.shirt, KIT.trim, ring);
+      if (colour) ring(m.x, m.y, colour);
+      drawFigure(ctx, p, m, KIT, faceStyleRef.current, fakeFaceStyleRef.current);
     });
 
     // You, with the ball at your feet.
-    figure(l.you.x, l.you.y, KIT.shirt, KIT.trim, "#fbbf24");
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(px(l.you.x) + unit * 0.55, py(l.you.y) + unit * 0.6, Math.max(3, unit * 0.32), 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.45)";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
+    ring(l.you.x, l.you.y, "#fbbf24");
+    drawFigure(ctx, p, l.you, { ...KIT, star: true }, faceStyleRef.current, fakeFaceStyleRef.current);
+    drawBall(ctx, p, { x: l.you.x + 0.9, y: l.you.y + 0.7 }, 0);
 
     // The clock, as a bar across the top. A number counting down in tenths is
     // unreadable inside a one-second window; a bar draining is not.
     if (phaseRef.current === "live") {
-      const left = Math.max(0, 1 - (performance.now() - startedRef.current) / 1000 / s.window);
+      const left = Math.max(0, 1 - (performance.now() - startedRef.current) / 1000 / setupRef.current.window);
       ctx.fillStyle = "rgba(0,0,0,0.45)";
       ctx.fillRect(0, 0, W, H * 0.018);
       ctx.fillStyle = left > 0.4 ? "#34d399" : left > 0.18 ? "#fbbf24" : "#f43f5e";
@@ -412,10 +403,15 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
         {setup.options} options · {setup.window.toFixed(1)}s
       </div>
 
+      {/* ── A phone-shaped box, not a picture-shaped one ──
+          3:4 with no height cap put you, and the ball at your feet, off the
+          bottom of an iPhone 13 — on the one stage that is entirely about
+          reading the whole picture. The box is now capped against the
+          viewport and `cameraContaining` shows all of MUST_SEE inside
+          whatever shape that leaves, so the cap never crops the question. */}
       <div
         ref={wrapRef}
-        className="relative w-full overflow-hidden rounded-xl border border-white/15"
-        style={{ aspectRatio: "3 / 4" }}
+        className="relative mx-auto aspect-[4/5] max-h-[52vh] w-full overflow-hidden rounded-xl border border-white/15"
       >
         <canvas
           ref={canvasRef}

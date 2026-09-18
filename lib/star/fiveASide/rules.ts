@@ -1,5 +1,5 @@
-import type { Viewport, Vec2 } from "../canvasEngine";
-import { CX, POST_L, POST_R, GOAL_H } from "../pitch";
+import { VIEW_ASPECT, type Viewport, type Vec2 } from "../canvasEngine";
+import { CX, POST_L, POST_R, GOAL_H, NET_DEPTH, HALF_LEN, PITCH_W } from "../pitch";
 import { FIVE_PITCH, FIVE_VIEW, FIVE_GOAL, FIVE_CROSSBAR } from "./geometry";
 
 /**
@@ -71,6 +71,27 @@ export interface MatchRules {
    * camera, they build a camera, not a second match layer.
    */
   needsMovingCamera?: boolean;
+  /**
+   * Which lines `drawPitch` paints, and how tall `drawGoal` builds the goal.
+   *
+   * Omitted is "small-sided" — a halfway line, a centre spot and a D at each
+   * end, drawn flat — which is every existing entry and every existing caller,
+   * byte-identical.
+   *
+   * "penalty-area" is the OTHER real shape this renderer has to draw: a single
+   * attacking end of a full-size pitch, seen from behind the ball, with the
+   * six-yard box, the penalty area, the D and the spot. It is what the trial's
+   * striking stages need, and it is added here rather than given its own
+   * renderer because a third copy of "draw a pitch that looks like the real
+   * one" is exactly the maintenance cost render.ts's own header already names
+   * as this layer's price.
+   */
+  markings?: "small-sided" | "penalty-area";
+  /**
+   * How far the netting reaches back behind the goal line. Omitted keeps
+   * `drawGoal`'s own default, which is what every existing caller gets.
+   */
+  netDepth?: number;
 }
 
 /** The one that is actually built. */
@@ -114,6 +135,54 @@ export const ELEVEN_A_SIDE: MatchRules = {
   kickFloorY: FIVE_VIEW.y2 - (FIVE_VIEW.y2 - FIVE_VIEW.y1) * 0.2,
   offside: true,
   // The honest part. See the field's own note.
+  needsMovingCamera: true,
+};
+
+/**
+ * THE ATTACKING END OF A FULL-SIZE PITCH — the shape the trial's striking
+ * stages are played on.
+ *
+ * `ELEVEN_A_SIDE` above is the whole half, written down to prove the shape is
+ * data rather than a constant, and honest that nothing plays it. This is the
+ * part of it that IS played today: a penalty, a free kick and a vision picture
+ * all happen inside the attacking third, in front of a real 7.32 × 2.44 m goal,
+ * with the real penalty area around it.
+ *
+ * It exists so `drawPitch`/`drawGoal`/`drawFigure` can draw a full-size goal
+ * for the trial stages without a second copy of any of them. Before this, the
+ * penalties stage carried its own three-hundred-line pitch-and-goal painter
+ * and the vision stage carried a third one, so a new player met three
+ * different art styles inside six minutes.
+ *
+ * ── `needsMovingCamera`, honestly ──
+ *
+ * True, for exactly the reason the flag exists: a 68 m pitch does not fit the
+ * engine's 26.25 m frame. The striking stages don't fit one either — a
+ * thirty-metre free kick and the goal mouth are forty metres apart and a phone
+ * is not that shape. They use `cameraContaining` (render.ts), which is the
+ * camera this flag has always been waiting for, pointed at a dead ball rather
+ * than at continuous play.
+ */
+export const ELEVEN_A_SIDE_ATTACK: MatchRules = {
+  name: "Eleven-a-side (attacking third)",
+  outfieldPerSide: 10,
+  // The goal line to a little past the halfway line, the full width of a real
+  // pitch. The camera decides what of it is actually in shot.
+  pitch: { x1: 0, x2: PITCH_W, y1: 0, y2: HALF_LEN },
+  // The engine's own frame, as an outer limit for a camera that wants one.
+  view: (() => {
+    const h = 48;
+    const w = h * VIEW_ASPECT;
+    return { x1: CX - w / 2, x2: CX + w / 2, y1: -NET_DEPTH - 3, y2: -NET_DEPTH - 3 + h };
+  })(),
+  goal: { x1: POST_L, x2: POST_R },
+  crossbar: GOAL_H,
+  halves: 2,
+  minutesPerHalf: 45,
+  kickFloorY: 6,
+  offside: true,
+  markings: "penalty-area",
+  netDepth: NET_DEPTH,
   needsMovingCamera: true,
 };
 

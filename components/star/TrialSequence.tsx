@@ -1,10 +1,11 @@
 "use client";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  TRIAL_STAGES, STAGE_LABEL, nextStage, recordStage, trialScore, trialComplete,
-  difficultyFor, keeperBonusFor, type TrialProgress, type TrialStage,
+  TRIAL_STAGES, STAGE_LABEL, nextStage, recordStage, beginStage, trialScore,
+  trialComplete, difficultyFor, keeperBonusFor,
+  type TrialProgress, type TrialStage,
 } from "@/lib/star/trial";
-import { dribbleSetup, dribbleQuality } from "@/lib/star/trialStages";
+import { dribbleSetup, dribbleQuality, attemptSeed } from "@/lib/star/trialStages";
 import FiveASide from "./FiveASide";
 import FirstPersonDribble from "./FirstPersonDribble";
 import TrialPenalties from "./stages/TrialPenalties";
@@ -52,6 +53,38 @@ export default function TrialSequence({
 }: TrialSequenceProps) {
   const stage = nextStage(trial);
   const [showingResult, setShowingResult] = useState<TrialStage | null>(null);
+
+  /**
+   * ── SAY WHICH STAGE IS ACTUALLY OPEN ──
+   *
+   * This component is the only thing in the game that knows a stage SCREEN has
+   * appeared, which is why `beginStage` asks for it here. Without the call the
+   * anti-cheat cannot tell the two kinds of resume apart: walking out of a
+   * half-played stage (which should cost) and a phone quietly evicting a
+   * backgrounded tab while you sit on a result card (which should not).
+   *
+   * Marked when the stage a screen is being shown for CHANGES, not on every
+   * render — `beginStage` is idempotent anyway, but an effect that fired every
+   * render would write to the career on every frame of a React update.
+   *
+   * It deliberately does not fire while a result card is up: between stages is
+   * exactly the state that is meant to be free, and marking the next stage as
+   * open before you have pressed the button to walk into it would charge you
+   * for closing the app on the card. And it never fights the result writes —
+   * `recordStage` clears the marker itself, and the guard below means this
+   * effect will not immediately re-set it, because by then `showingResult` is
+   * up and `open` is null.
+   */
+  const open = showingResult ? null : stage;
+  const markedRef = useRef<TrialStage | null>(null);
+  useEffect(() => {
+    if (!open || markedRef.current === open) return;
+    markedRef.current = open;
+    onTrial(beginStage(trial, open));
+    // `trial` is deliberately not a dependency: this fires on the stage
+    // changing, not on every edit to the trial it is writing to.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   /** One stage is over. Record it, show what it was worth, move on. */
   const finishStage = useCallback((which: TrialStage, quality: number) => {
@@ -118,10 +151,19 @@ export default function TrialSequence({
           </div>
           <div className="mt-2 text-5xl font-black tabular-nums">{r.score}</div>
           <div className="mt-1 text-[11px] font-bold text-white/60">out of 100</div>
-          {/* Difficulty is shown because the whole scoring rule is "relative to
-              what was asked" — a 70 against a hard afternoon means more than a
-              70 against an easy one, and hiding that makes the number feel
-              arbitrary. */}
+          {/* ── What this line is, now that the score is not difficulty-scaled ──
+              It used to be load-bearing: the score really was `quality ×
+              (0.70 + 0.60 × difficulty)`, so a 70 on a hard afternoon and a 70
+              on an easy one were different performances and hiding which was
+              which made the number feel arbitrary. `stageScore` is now
+              `100 × quality × (0.95 + 0.05 × difficulty)` — perfect play is
+              worth 95-100 whatever the day — so difficulty barely moves the
+              score at all and this is no longer an explanation of it.
+              It stays because it is still TRUE and still worth saying: it
+              reads `TrialStageResult.difficulty`, which still stores the full
+              difficulty the stage was actually played at, reload bump and all.
+              It tells you what the afternoon asked of you, not how the number
+              was arrived at. */}
           <div className="mt-3 text-[11px] font-bold text-white/50">
             {r.difficulty > 0.66 ? "They made that hard."
               : r.difficulty > 0.33 ? "A fair test."
@@ -159,8 +201,20 @@ export default function TrialSequence({
             picks its own waves and `dribbleQuality` divided by a number
             unrelated to them, so beating everyone could score 0.72 while
             beating three of nine scored 1.0. Both caught in review. */}
+        {/* ── Seeded, like everything else in the trial ──
+            `trial.ts`'s own header says it outright: "one seed on the career,
+            every roll derived from it, nothing regenerated." The dribbling
+            stage was the one place that was not true — with no `seed` prop the
+            run falls back to `Date.now() ^ Math.random()`, so it re-rolled on
+            every attempt and the file's claim was false for a fifth of the
+            trial.
+            `attemptSeed` rather than `trial.seed` for the same reason as the
+            vision and penalty stages: the run is reproducible while you are
+            playing it, and a resume genuinely gets new waves at the bumped
+            difficulty rather than a replay of the run you just watched. */}
         <FirstPersonDribble
           embedded
+          seed={attemptSeed(trial)}
           pace={skills.pace}
           oppStrength={dribble.oppStrength}
           waveSizes={dribble.waveSizes}
