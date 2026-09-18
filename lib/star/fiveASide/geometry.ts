@@ -84,6 +84,38 @@ export const FIVE_HALFWAY_Y = (FIVE_PITCH.y1 + FIVE_PITCH.y2) / 2;
  */
 export const KICK_FLOOR_Y = FIVE_VIEW.y2 - (FIVE_VIEW.y2 - FIVE_VIEW.y1) * 0.2;
 
+/**
+ * THE GOAL — a real small-sided one, not a full-size one on a small pitch.
+ *
+ * Decided directly: make it small. It matters more than it sounds. A real
+ * eleven-a-side goal is 7.32 m, which on a 24 m-wide pitch is THIRTY PER CENT
+ * of the width — put that in front of a keeper who can reach about two metres
+ * and it is a shooting gallery, not five-a-side. Real five-a-side is 3.66 m
+ * (twelve feet), about 15% of the width, which is the proportion futsal uses
+ * too.
+ *
+ * ── The one honest departure ──
+ *
+ * The real goal is 3.66 × 1.22 m (twelve by four feet). The WIDTH here is
+ * exactly that. The HEIGHT is futsal's 2 m rather than four feet, and that is
+ * a deliberate compromise rather than an oversight: the engine's striking
+ * model — how much lift you get from where you hit the ball — is tuned against
+ * a 2.44 m crossbar, and a 1.22 m bar would send a large share of ordinary,
+ * well-struck shots over it. Raising it to a real futsal height keeps the goal
+ * genuinely small without fighting physics that are tuned for something else.
+ *
+ * Nothing in the engine was changed to allow this. `Scenario.goal` and
+ * `Scenario.crossbar` are fields every scenario in the game already carries;
+ * they simply were not read by the code that decides whether a ball has gone
+ * in. Now they are, and since all thirteen of the engine's own builders set
+ * them to the real goal, every existing match is byte-identical — which the
+ * four tuned engine suites (finishing, keeperDive, aiming, outcomes) confirm
+ * by still passing unchanged.
+ */
+export const FIVE_GOAL_W = 3.66;
+export const FIVE_CROSSBAR = 2.0;
+export const FIVE_GOAL = { x1: CX - FIVE_GOAL_W / 2, x2: CX + FIVE_GOAL_W / 2 };
+
 /** Is this ball still on our pitch? The engine only notices at the frame
  *  edge, which is wider — see FIVE_PITCH's note. */
 export function insideFivePitch(p: Vec2): boolean {

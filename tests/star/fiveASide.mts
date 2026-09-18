@@ -1,6 +1,7 @@
 import {
   FIVE_VIEW, FIVE_PITCH, FIVE_PITCH_W, FIVE_PITCH_L, FIVE_HALFWAY_Y,
   KICK_FLOOR_Y, insideFivePitch, leftPitch, mirror, clampToPitch,
+  FIVE_GOAL, FIVE_GOAL_W, FIVE_CROSSBAR,
 } from "../../lib/star/fiveASide/geometry";
 import {
   buildScenario, VIEW_ASPECT, initDefenders, stepReactions, stepKeeper, stepBall, launch,
@@ -78,9 +79,45 @@ const near = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) < eps;
   );
 
   // The goal you are shooting at has to be ON the pitch, or you can never score.
-  check(POST_L > FIVE_PITCH.x1 && POST_R < FIVE_PITCH.x2, "both posts are inside the touchlines");
+  check(FIVE_GOAL.x1 > FIVE_PITCH.x1 && FIVE_GOAL.x2 < FIVE_PITCH.x2, "both posts are inside the touchlines");
   check(FIVE_PITCH.y1 === 0, "you attack the engine's own goal line");
   check(near(FIVE_HALFWAY_Y, 18), `halfway is halfway (${FIVE_HALFWAY_Y})`);
+}
+
+// ── The goal is a real small-sided goal, not a full-size one ───────────
+//
+// A full-size goal on a 24 m pitch is 30% of the width, in front of a keeper
+// who reaches about two metres. That is a shooting gallery. This pins the
+// proportion rather than the number, so it stays honest if the pitch changes.
+{
+  check(Math.abs(FIVE_GOAL_W - 3.66) < 1e-9, `a real five-a-side goal is 3.66 m, got ${FIVE_GOAL_W}`);
+  check(FIVE_GOAL_W < (POST_R - POST_L) / 1.7, "it is meaningfully smaller than an eleven-a-side goal");
+  const share = FIVE_GOAL_W / FIVE_PITCH_W;
+  check(
+    share > 0.12 && share < 0.20,
+    `the goal should be 12-20% of the pitch width like real five-a-side and futsal, got ${(share * 100).toFixed(1)}%`,
+  );
+  check(Math.abs((FIVE_GOAL.x1 + FIVE_GOAL.x2) / 2 - CX) < 1e-9, "the goal is centred");
+  check(FIVE_CROSSBAR < 2.44 && FIVE_CROSSBAR >= 2, "the bar is lower than a full goal, at a real futsal height");
+}
+
+// ── …and the eleven-a-side game is untouched by that being possible ────
+//
+// The goal became per-scenario rather than a fixed constant. Every one of the
+// engine's own builders sets it to the real goal, so a normal match must be
+// byte-identical — this checks the engine really does still use a full-size
+// goal when nobody asks for anything else. (The four tuned engine suites —
+// finishing, keeperDive, aiming, outcomes — are the real proof; this is the
+// direct statement of the property they imply.)
+{
+  for (const kind of ["one_on_one", "tight_angle", "long_range", "penalty"] as const) {
+    const sc = buildScenario(kind, mulberry32(kind.length * 31 + 7));
+    check(
+      Math.abs(sc.goal.x1 - POST_L) < 1e-9 && Math.abs(sc.goal.x2 - POST_R) < 1e-9,
+      `an ordinary ${kind} still has a full-size goal (${sc.goal.x1}..${sc.goal.x2})`,
+    );
+    check(Math.abs(sc.crossbar - 2.44) < 1e-9, `an ordinary ${kind} still has a full-height bar`);
+  }
 }
 
 // ── The drag floor matches the engine's own, derived not copied ─────────
@@ -343,9 +380,13 @@ function randomWorld(rng: () => number): FiveWorld {
     const sc = buildPassage(world, { keeperStrength: 45 + rng() * 30, rng });
     initDefenders(sc, rng);
 
-    // Aim for a corner, the way somebody who knows what they are doing would.
+    // Aim for a corner OF THE GOAL THAT IS ACTUALLY THERE, the way somebody
+    // who knows what they are doing would. Aiming at a full-size goal's
+    // corners scored 6.9% against the small goal — which is the small goal
+    // working, not a bug, but it made this measure the wrong thing.
     const side = rng() < 0.5 ? -1 : 1;
-    const tx = GOAL_CX + side * ((POST_R - POST_L) / 2 - 0.6) * (0.55 + rng() * 0.45);
+    const half = (sc.goal.x2 - sc.goal.x1) / 2;
+    const tx = GOAL_CX + side * Math.max(0.2, half - 0.35) * (0.55 + rng() * 0.45);
     const dir = { x: tx - sc.ball.x + (rng() - 0.5) * 1.2, y: -Math.max(sc.ball.y, 1) };
     const power = Math.min(1, 0.42 + Math.hypot(sc.ball.x - GOAL_CX, sc.ball.y) / 40) * (0.85 + rng() * 0.3);
 

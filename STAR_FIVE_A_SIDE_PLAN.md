@@ -531,13 +531,92 @@ thing a player sees.
 
 ---
 
+---
+
+## 13a. DECIDED — and two pieces of new scope
+
+Answered directly, after the plan was written and reviewed.
+
+### The goal is small
+
+> *"make the 5 aside goals small"*
+
+**3.66 m wide** (real five-a-side, twelve feet) on a 24 m pitch — about 15% of
+the width, the proportion futsal uses too. A full-size 7.32 m goal would have
+been **30%** of the width in front of a keeper who reaches about two metres:
+a shooting gallery, not five-a-side.
+
+**The crossbar is 2 m, not the real 1.22 m**, and that is a deliberate
+compromise stated rather than hidden: the engine's striking model is tuned
+against a 2.44 m bar, and a four-foot bar would put a large share of ordinary
+well-struck shots over it. Two metres is a real futsal height and keeps the
+goal genuinely small without fighting physics tuned for something else.
+
+**This cost the engine nothing**, and open question 1's own cost estimate was
+wrong in the other direction — it proposed adding a `goalMouth` field.
+`Scenario.goal` and `Scenario.crossbar` ALREADY EXIST on every scenario in the
+game; the three places that decide whether a ball has gone in simply never read
+them, using the module constants instead. They read the scenario now. All
+thirteen of the engine's own builders set those fields to the real goal, so
+every existing match is unchanged — confirmed by the four tuned engine suites
+(`finishing`, `keeperDive`, `aiming`, `outcomes`) still passing untouched, and
+pinned by a test asserting an ordinary scenario still has a full-size goal.
+
+### This way of playing is eventually for the ELEVEN-a-side match too
+
+> *"we also need to add this new match playing to the 11 aside goals — for now
+> it isn't going to supersede the engine we've worked on but I could see it
+> being good in the future, like when u get certain boots you get to play more
+> of the match, or if you get to a certain level"*
+
+Not built now, and it does not supersede anything. But it changes how the match
+layer is BUILT, today:
+
+- **Side size and goal size are parameters, not constants.** A continuous
+  eleven-a-side match becomes a configuration of the same layer rather than a
+  second implementation of it.
+- Nothing in the layer may assume "four outfielders", "24 × 36", or a small
+  goal. The pitch, the frame, the goal and the squad sizes all arrive as data.
+- **The natural gate is already in the game.** `Boot.extraTouch` (NS-Maestro)
+  is exactly this shape: a boot that unlocks a whole ability rather than a stat
+  bump. "Better boots let you play more of the match" fits that idiom exactly,
+  and the same is true of a level or star-rating gate.
+
+What that future feature actually IS, stated plainly so it is not mistaken for
+something smaller: today you play the handful of moments the ball reaches you
+and the other 89 minutes are simulated. Continuous play would let you keep
+playing after your touch instead of cutting away — the same passages-in-a-row
+machinery the five-a-side needs, pointed at a full pitch. That is a real
+feature in its own right and wants its own round; the point here is only that
+the five-a-side must not make it harder to build.
+
+### The five-a-side comes back in TRAINING
+
+> *"the 5 aside will also come back in training… let's say level 20 of a
+> passing drill will turn into a 5 aside drill, as difficulty increases we can
+> increase drill difficulty by introducing 5 aside scenarios"*
+
+The drills already climb a ladder (`trainingDrills.ts`: `ladder(level)` reads a
+stat 0-100 and every drill's numbers ramp along it). Adding a five-a-side at
+the top of a ladder is a natural extension of a system that already exists, and
+it is the single strongest argument for building the five-a-side as a reusable
+piece rather than a one-off trial screen — it will have at least three callers:
+the opening trial, a free agent's replayed trial, and training.
+
+**One assumption stated rather than guessed:** "level 20" is read as a point on
+the existing ladder, which is the STAT (0-100), not a session count — so a
+passing drill becomes a five-a-side once your vision is high enough that cones
+and gates stop testing anything. The exact threshold is a tuning number, not a
+design decision, and belongs in `tuning.ts` with the rest. **Worth confirming
+before that round is built**, because if "level 20" meant something else — a
+twentieth session, say — the trigger is a different thing entirely.
+
+Not built in this round. The match layer is built to make it cheap.
+
 ## 13. Open questions — in plain English (Question 10)
 
-1. **Goal size.** The match engine's goalkeeper is built for a full-size goal
-   (7.32 m wide, 2.44 m high). Do you want the five-a-side to keep that
-   full-size goal (recommended — the keeper plays exactly as he does in a
-   match), or a small five-a-side goal (needs one small addition to the engine,
-   and the keeper would then be untested in front of it)?
+1. ~~**Goal size.**~~ **ANSWERED: small.** See §13a — and it turned out to cost
+   the engine nothing at all, because the fields it needed were already there.
 2. **Who you play against.** In v1 both teams are other made-up trialists with
    invented names and generated faces, because you have no club yet. Later, when
    a real club invites a free agent to a trial, it can be that club's real young

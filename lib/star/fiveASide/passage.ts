@@ -5,6 +5,7 @@ import {
 import { POST_L, POST_R, CX } from "../pitch";
 import {
   FIVE_PITCH, FIVE_VIEW, FIVE_HALFWAY_Y, KICK_FLOOR_Y, clampToPitch, insideFivePitch,
+  FIVE_GOAL, FIVE_CROSSBAR,
 } from "./geometry";
 
 /**
@@ -282,8 +283,10 @@ export function buildPassage(world: FiveWorld, opts: PassageOpts): Scenario {
     keeper: keeperFrom(world.theirKeeper, ball, rng, cast?.theirKeeper),
     keeperStrength,
     follower,
-    goal: { x1: POST_L, x2: POST_R },
-    crossbar: 2.44,
+    // A real small-sided goal. See FIVE_GOAL's own note for why it is this
+    // size, and why setting it needed nothing added to the engine.
+    goal: { ...FIVE_GOAL },
+    crossbar: FIVE_CROSSBAR,
     kind,
     // Your own keeper is drawn and is genuinely somebody, but is never a pass
     // target — `teammates` is the engine's decorative list. Deliberately NOT
