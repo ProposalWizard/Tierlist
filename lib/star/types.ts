@@ -442,6 +442,14 @@ export interface MatchStats {
    *  injury roll in creditMatchResult; falls back to the pre-match energy
    *  value when a caller doesn't supply it. */
   endEnergy?: number;
+  /** True when a level knockout tie needed extra time (added into
+   *  `homeScore`/`awayScore` already) to try to separate the sides — see
+   *  shootout.ts's `hasExtraTime`/CanvasMatch's extra-time phase. */
+  wentToExtraTime?: boolean;
+  /** A real penalty shootout the player watched/took live, already decided
+   *  — `home`/`away` mirror the match's own home/away sides, same as
+   *  `homeScore`/`awayScore`. Absent when the tie never needed one. */
+  shootout?: { home: number; away: number };
 }
 
 export interface Boot {

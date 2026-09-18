@@ -127,21 +127,23 @@ import DilemmaModal from "@/components/star/DilemmaModal";
 import { SponsorsScreen, AchievementsScreen, TrophiesScreen, ReputationScreen, ContractRenewal } from "@/components/star/SecondaryScreens";
 import GardenScreen from "@/components/star/GardenScreen";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
-import ImmersiveToggle from "@/components/star/ImmersiveToggle";
+import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
 
-/** Thin wrapper so the full-screen toggle is mounted once, above every one
- *  of StarDevInner's many phase-routed early returns, rather than needing
- *  to be threaded into each of them individually. */
+/** The full-screen toggle used to be a fixed floating button, rendered here
+ *  above every one of StarDevInner's phase-routed early returns. Reported
+ *  directly as blocking the real Settings button on most phone screens —
+ *  moved into Settings as a plain on/off switch instead (see
+ *  ImmersiveToggle.tsx's own header and SettingsScreen.tsx's "Full Screen"
+ *  section). `useImmersiveMode()` is still called once here, at this same
+ *  outer level, so the fullscreen state itself survives every phase change
+ *  underneath it — only the SWITCH that controls it moved, not the
+ *  mechanism, which is why this wrapper still exists at all. */
 export default function StarDevPage() {
-  return (
-    <>
-      <StarDevInner />
-      <ImmersiveToggle />
-    </>
-  );
+  const immersive = useImmersiveMode();
+  return <StarDevInner immersive={immersive} />;
 }
 
-function StarDevInner() {
+function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
   const [career, setCareer] = useState<CareerState | null>(null);
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);
@@ -2257,6 +2259,8 @@ function StarDevInner() {
         onSwitchSave={handleSwitchSave}
         onStartNewInSlot={handleStartNewInSlot}
         onDeleteSave={handleDeleteSave}
+        immersiveActive={immersive.active}
+        onToggleImmersive={immersive.toggle}
       />
     );
   }
@@ -2428,7 +2432,7 @@ function StarDevInner() {
               only: an international opponent is a nation, not a squad to
               scout the way this reads. */}
           {nextFixture.kind !== "international" && (
-            <ScoutReportCard report={scoutReportFor(career, nextFixture.opponent, nextFixture.week)} />
+            <ScoutReportCard report={scoutReportFor(career, nextFixture.opponent, nextFixture.week, nextFixture)} />
           )}
 
           {/* The manager's team sheet. Boss, form, reputation and sharpness used

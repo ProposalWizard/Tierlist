@@ -91,7 +91,42 @@ const SUBSTITUTE_IMPACT: Detector = (r) => {
   }, "hour");
 };
 
+/**
+ * The other side of ANONYMOUS: a real, mockable flop rather than just a
+ * quiet fact.
+ *
+ * Requested directly: "how is that relevant to the game unless they were
+ * making fun of me — that's actually pretty interesting, I like the fact
+ * that you could have hate comments." The real example given was a
+ * substitute appearance — on for the final 15-20 minutes, 0 goals, 0
+ * assists, a 5.4 rating — which ANONYMOUS never covers at all (it requires
+ * `minutes >= 45`, so a short cameo never fires it). This fires on ANY
+ * genuine appearance (`minutes > 0` — never a DNP), whatever the length of
+ * it, whenever there is truly nothing to show for it: no goal, no assist,
+ * and a rating bad enough that "quiet" undersells it. It can coexist with
+ * ANONYMOUS on a longer, equally bad afternoon — a broadsheet's measured
+ * "he was quiet" (bs-individual, gated `subject: "you"`) and a fan's "im
+ * actually shaking, what a player" over the exact same numbers are two
+ * different accounts taking two different angles on the same match, which
+ * is exactly how every other event in this engine already works; it is not
+ * the same account saying the same thing twice.
+ */
+const POOR_SHOWING: Detector = (r) => {
+  if (r.you.minutes <= 0) return null;
+  if (r.you.goals > 0 || r.you.assists > 0) return null;
+  if (r.you.rating >= 6.0) return null;
+  return ev("poor-showing", you(r), 34, ["shame"], {
+    // `goalsN` alongside `goals` — see detect/streaks.ts's own comment on the
+    // same split: `{goals}` resolves through grammar.ts's phrase pool
+    // ("a hat-trick", "three goals"…), which for zero would render as a
+    // second, redundant "goals" bolted onto a template that already writes
+    // the word itself ("{goalsN} goals" reads as "0 goals"; "{goals} goals"
+    // would have read as "0 goals goals").
+    ...base(r), goals: r.you.goals, goalsN: r.you.goals, assists: r.you.assists, minutes: r.you.minutes,
+  }, "hour", "form-cold");
+};
+
 export const PERSONAL_DETECTORS: Detector[] = [
   DEBUT, APPEARANCE_MILESTONE, STAR_MAN, MASTERCLASS, ANONYMOUS, HOOKED,
-  CAPTAIN_PERFORMANCE, FORM_SWING, SUBSTITUTE_IMPACT,
+  CAPTAIN_PERFORMANCE, FORM_SWING, SUBSTITUTE_IMPACT, POOR_SHOWING,
 ];

@@ -4,6 +4,7 @@ import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
   LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
 } from "./clubs";
+import { hasExtraTime, extraTimeScore, simulateShootout } from "./shootout";
 
 /**
  * THE CUPS.
@@ -56,6 +57,9 @@ export interface CupTie {
   as?: number;
   /** A knockout cannot be drawn. Set when it went to spot kicks. */
   pens?: { home: number; away: number };
+  /** True when this tie needed extra time to separate the sides (whether or
+   *  not it still went to penalties afterward). */
+  wentToExtraTime?: boolean;
 }
 
 export interface CupRound {
@@ -348,16 +352,14 @@ function tieScore(homeStr: number, awayStr: number, rng: () => number): { hs: nu
 /**
  * A knockout cannot be drawn.
  *
- * Level after ninety and it goes to spot kicks, decided on a coin weighted by
- * quality — bounded well inside a flip, because the better side really is a
- * little likelier and a run that ends on a pure toss reads as arbitrary.
+ * Level after ninety: extra time first, when this competition/round has it
+ * (see `hasExtraTime` in shootout.ts — the League Cup only in its Final, the
+ * FA Cup in every round), then a real penalty shootout — genuinely alternating
+ * kicks, sudden death, the mathematical early-stop — if it's still level
+ * after that. Replaces what used to be a single weighted coin flip.
  */
 function shootout(homeStr: number, awayStr: number, rng: () => number): { home: number; away: number } {
-  const edge = Math.max(0.32, Math.min(0.68, 0.5 + (homeStr - awayStr) / 200));
-  const homeWins = rng() < edge;
-  const loser = 3 + Math.floor(rng() * 2);
-  return homeWins ? { home: loser + 1 + Math.floor(rng() * 2), away: loser }
-    : { home: loser, away: loser + 1 + Math.floor(rng() * 2) };
+  return simulateShootout(homeStr, awayStr, rng);
 }
 
 export function tieWinner(tie: CupTie): string | null {
@@ -379,7 +381,7 @@ export function playCupRound(
   state: CupState,
   league: LeagueTeam[],
   yourClub: string,
-  yourResult: { hs: number; as: number } | null,
+  yourResult: { hs: number; as: number; pens?: { home: number; away: number }; wentToExtraTime?: boolean } | null,
   rng: () => number,
 ): CupState {
   const round = state.rounds[state.rounds.length - 1];
@@ -391,13 +393,25 @@ export function playCupRound(
     const hStr = cupStrength(tie.home, league);
     const aStr = cupStrength(tie.away, league);
     let hs: number, as: number;
+    const out: CupTie = { ...tie };
     if (yours && yourResult) {
+      // The player's own tie — CanvasMatch already decided everything
+      // (extra time, a real live shootout) when it applies; use exactly
+      // what's handed in rather than recomputing it here.
       hs = yourResult.hs; as = yourResult.as;
+      if (yourResult.pens) out.pens = yourResult.pens;
+      if (yourResult.wentToExtraTime) out.wentToExtraTime = true;
     } else {
-      ({ hs, as } = tieScore(hStr, aStr, rng));
+      const played90 = tieScore(hStr, aStr, rng);
+      hs = played90.hs; as = played90.as;
+      if (hs === as && hasExtraTime(state.competition, round.name)) {
+        out.wentToExtraTime = true;
+        const et = extraTimeScore(hStr, aStr, rng);
+        hs += et.hs; as += et.as;
+      }
     }
-    const out: CupTie = { ...tie, hs, as };
-    if (hs === as) out.pens = shootout(hStr, aStr, rng);
+    out.hs = hs; out.as = as;
+    if (hs === as && !out.pens) out.pens = shootout(hStr, aStr, rng);
     return out;
   });
 
