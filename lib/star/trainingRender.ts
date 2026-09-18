@@ -2,6 +2,11 @@ import {
   PITCH_W, CX, POST_L, POST_R, NET_DEPTH, GOAL_H,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R,
 } from "./pitch";
+import {
+  drawFigure, drawKeeper, drawBall as drawSharedBall, type Projection,
+} from "./fiveASide/render";
+import { DEFAULT_FACE_STYLE } from "./faceStyle";
+import { DEFAULT_FAKE_FACE_STYLE } from "./fakeFaceStyle";
 
 /**
  * DRAWING A TRAINING SESSION.
@@ -241,79 +246,34 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     line(POST_L, 0, POST_R, 0);
   }
 
-  // ── A footballer — same figure grammar the match uses ──
+  // ── A footballer ──
+  //
+  // This used to be a fourth hand-drawn copy of the same man: a rounded-
+  // rectangle shirt with no shoulders, stroked lines for limbs and no boots.
+  // It now calls the ONE figure `lib/star/fiveASide/render.ts` owns — the
+  // anatomy the trial's screens were rebuilt onto — so a drill and a trial
+  // stage draw the same footballer rather than two that drift apart. That
+  // file's `Projection` is exactly the `{px, py, unit, W, H}` this renderer
+  // already computes, which is why this is a call and not another copy.
+  const proj: Projection = { px, py, unit, W, H };
   const footballer = (
     x: number, y: number, shirt: string, rim: string,
     o: { star?: boolean; z?: number; dim?: boolean; ring?: string } = {},
   ) => {
-    const lift = (o.z ?? 0) * sy * 0.55;
-    const fx = px(x), fy = py(y);
-    const r = Math.max(5, unit * 1.0);
     ctx.save();
     if (o.dim) ctx.globalAlpha = 0.55;
-
-    ctx.beginPath();
-    ctx.ellipse(fx, fy, r * 0.78, r * 0.30, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.34)";
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(fx, fy - r * 0.8 - lift);
-    ctx.lineCap = "round";
-    ctx.lineWidth = Math.max(1.3, r * 0.24);
-    ctx.strokeStyle = C.skin;
-    const hipY = r * 0.18, legL = r * 0.62;
-    ctx.beginPath(); ctx.moveTo(-r * 0.24, hipY); ctx.lineTo(-r * 0.24, hipY + legL); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(r * 0.24, hipY); ctx.lineTo(r * 0.24, hipY + legL); ctx.stroke();
-    ctx.fillStyle = rim;
-    ctx.beginPath();
-    ctx.roundRect?.(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36, r * 0.12);
-    if (!ctx.roundRect) ctx.rect(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36);
-    ctx.fill();
-    ctx.strokeStyle = C.skin;
-    ctx.lineWidth = Math.max(1.2, r * 0.20);
-    ctx.beginPath(); ctx.moveTo(-r * 0.34, -r * 0.30); ctx.lineTo(-r * 0.52, r * 0.24); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(r * 0.34, -r * 0.30); ctx.lineTo(r * 0.52, r * 0.24); ctx.stroke();
-    ctx.fillStyle = shirt;
-    ctx.beginPath();
-    ctx.roundRect?.(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72, r * 0.17);
-    if (!ctx.roundRect) ctx.rect(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72);
-    ctx.fill();
-    ctx.lineWidth = Math.max(1, r * 0.12);
-    ctx.strokeStyle = rim;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(0, -r * 0.76, r * 0.26, 0, Math.PI * 2);
-    ctx.fillStyle = C.skin; ctx.fill();
-    ctx.lineWidth = Math.max(1, r * 0.10);
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
-    ctx.stroke();
-    ctx.restore();
-
     if (o.ring) {
+      const r = Math.max(5, unit * 1.0);
       ctx.beginPath();
-      ctx.arc(fx, fy, r * 1.5, 0, Math.PI * 2);
+      ctx.arc(px(x), py(y), r * 1.5, 0, Math.PI * 2);
       ctx.strokeStyle = o.ring;
       ctx.lineWidth = Math.max(1.6, r * 0.16);
       ctx.stroke();
     }
-    if (o.star) {
-      const sr = r * 0.23, cx = fx, cy = fy - r * 2.15 - lift;
-      ctx.beginPath();
-      for (let i = 0; i < 10; i++) {
-        const ang = -Math.PI / 2 + (i * Math.PI) / 5;
-        const rad = i % 2 === 0 ? sr : sr * 0.44;
-        const ax = cx + Math.cos(ang) * rad, ay = cy + Math.sin(ang) * rad;
-        if (i === 0) ctx.moveTo(ax, ay); else ctx.lineTo(ax, ay);
-      }
-      ctx.closePath();
-      ctx.lineJoin = "round";
-      ctx.lineWidth = Math.max(1.5, sr * 0.34);
-      ctx.strokeStyle = "rgba(0,0,0,0.55)";
-      ctx.stroke();
-      ctx.fillStyle = "#fbbf24";
-      ctx.fill();
-    }
+    drawFigure(ctx, proj, { x, y }, {
+      shirt, shorts: rim, trim: rim, skin: C.skin,
+      star: o.star, lift: o.z,
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE);
     ctx.restore();
   };
 
@@ -367,62 +327,19 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
   }
 
   // ── The keeper ──
+  //
+  // The same man in a different pose, not a second differently-proportioned
+  // figure — see `drawKeeperAt`'s own note on why he "doesn't look right"
+  // whenever he is drawn by his own separate piece of code, which is what
+  // this block used to be.
   if (opts.keeper) {
     const k = opts.keeper;
-    const kpx = px(k.x), kpy = py(k.y);
-    const KR = unit * 1.15 * 0.82;
-    const dive = k.dive ?? 0;
-    const lunge = k.lunge ?? 0;
-    const reach = KR * (0.62 + Math.abs(dive) * 0.9);
-    ctx.save();
-    ctx.globalAlpha = 0.94;
-    ctx.beginPath();
-    ctx.ellipse(kpx, kpy, KR * (0.7 + Math.abs(dive) * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.fill();
-    ctx.translate(kpx + dive * KR * lunge * 0.4, kpy - KR * 0.8);
-    ctx.rotate(dive * 0.5 * lunge);
-    ctx.lineCap = "round";
-    ctx.strokeStyle = C.skin;
-    ctx.lineWidth = Math.max(1.2, KR * 0.28);
-    ctx.beginPath(); ctx.moveTo(-KR * 0.22, KR * 0.16); ctx.lineTo(-KR * 0.30, KR * 0.76); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(KR * 0.22, KR * 0.16); ctx.lineTo(KR * 0.30, KR * 0.76); ctx.stroke();
-    ctx.fillStyle = C.gkRim;
-    ctx.beginPath();
-    ctx.roundRect?.(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34, KR * 0.12);
-    if (!ctx.roundRect) ctx.rect(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34);
-    ctx.fill();
-    ctx.strokeStyle = C.skin;
-    ctx.lineWidth = Math.max(1.1, KR * 0.24);
-    const gloves: { x: number; y: number }[] = [];
-    for (const s of [-1, 1]) {
-      const leading = dive === 0 || Math.sign(s) === Math.sign(dive);
-      const ex = s * reach * (leading ? 1 : 0.62);
-      const ey = -KR * 0.28;
-      ctx.beginPath(); ctx.moveTo(s * KR * 0.32, -KR * 0.28); ctx.lineTo(ex, ey); ctx.stroke();
-      gloves.push({ x: ex, y: ey });
-    }
-    ctx.fillStyle = C.gk;
-    ctx.beginPath();
-    ctx.roundRect?.(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58, KR * 0.15);
-    if (!ctx.roundRect) ctx.rect(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58);
-    ctx.fill();
-    ctx.lineWidth = Math.max(1, KR * 0.11);
-    ctx.strokeStyle = C.gkRim;
-    ctx.stroke();
-    ctx.fillStyle = "#f8fafc";
-    ctx.strokeStyle = C.gkRim;
-    ctx.lineWidth = Math.max(1, KR * 0.09);
-    for (const g of gloves) {
-      ctx.beginPath(); ctx.arc(g.x, g.y, KR * 0.24, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    }
-    ctx.beginPath();
-    ctx.arc(0, -KR * 0.70, KR * 0.28, 0, Math.PI * 2);
-    ctx.fillStyle = C.skin; ctx.fill();
-    ctx.lineWidth = Math.max(1, KR * 0.09);
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
-    ctx.stroke();
-    ctx.restore();
+    drawKeeper(ctx, proj, { x: k.x, y: k.y }, {
+      shirt: C.gk, shorts: C.gkRim, trim: C.gkRim, skin: C.skin,
+    }, {
+      dive: Math.max(-1, Math.min(1, k.dive ?? 0)),
+      lunge: Math.max(0, Math.min(1, k.lunge ?? 0)),
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE);
   }
 
   if (opts.you) footballer(opts.you.x, opts.you.y, C.you, C.youRim, { star: true });
@@ -441,27 +358,28 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     ctx.restore();
   }
 
-  // ── The ball — height reads as size plus a shadow that stays on the grass,
-  // the same +5.5%-per-metre cue the real match uses. ──
+  // ── The ball ──
+  //
+  // Through the shared `drawBall`, for the same reason the figures are: this
+  // used to draw its own white disc at `unit * 0.5` — a ball a METRE across,
+  // nearly as wide as a player's torso, against the 2.6x-life-size
+  // exaggeration the rest of the game settled on. It also keeps that file's
+  // rim-and-panel treatment, which is there specifically so a ball never
+  // reads as a face at the size a drill draws one.
   if (opts.ball) {
     const b = opts.ball;
-    const bx = px(b.x), by = py(b.y);
-    const lift = Math.max(0, b.z);
-    const br = Math.max(4, unit * 0.5 * (1 + Math.min(lift, 8) * 0.055));
-    ctx.fillStyle = "rgba(0,0,0,0.32)";
-    ctx.beginPath();
-    ctx.ellipse(bx, by, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);
-    ctx.fill();
-    const drawnY = by - lift * sy * 0.55;
     const img = opts.ballImage;
     if (img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, bx - br, drawnY - br, br * 2, br * 2);
+      const lift = Math.max(0, b.z);
+      const br = Math.max(2.5, unit * 0.286 * (1 + lift * 0.06));
+      const bx = px(b.x), by = py(b.y);
+      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.beginPath();
+      ctx.ellipse(bx, by, br * (1 - Math.min(0.4, lift * 0.05)), br * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.drawImage(img, bx - br, by - lift * unit * 0.5 - br, br * 2, br * 2);
     } else {
-      ctx.beginPath(); ctx.arc(bx, drawnY, br, 0, Math.PI * 2);
-      ctx.fillStyle = "#fefefe"; ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,0.45)";
-      ctx.lineWidth = Math.max(1, br * 0.16);
-      ctx.stroke();
+      drawSharedBall(ctx, proj, { x: b.x, y: b.y }, Math.max(0, b.z));
     }
   }
 
