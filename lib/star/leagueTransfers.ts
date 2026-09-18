@@ -386,7 +386,35 @@ function positionNeed(role: Role, club: string, pool: Candidate[], formation: Fo
   const squadSizeFactor = squadSize < SQUAD_TARGET ? 1 + (SQUAD_TARGET - squadSize) * 0.15
     : squadSize > 26 ? clampUnit((32 - squadSize) / 6)
     : 1;
-  return gap * multiplicity * squadSizeFactor;
+
+  /**
+   * ── Being short of bodies is a need ON ITS OWN ──
+   *
+   * `squadSizeFactor` above MULTIPLIES the positional gap, and the comment
+   * beside it promises that a club which cannot field itself "wants bodies
+   * well beyond what its per-position gaps say". Multiplying cannot deliver
+   * that: a club four players short of filling a bench, whose existing
+   * players are all perfectly decent, has a gap of zero — and zero times any
+   * urgency is still zero. It sat below the `need <= 0.12` gate and signed
+   * nobody, forever.
+   *
+   * That is not a hypothetical. `tests/star/squadSize.mts` had been failing
+   * for exactly this reason: a sixteen-man club and a twenty-man club both
+   * signed an available centre-back in 0 of 200 windows, because every player
+   * in the fixture was the same quality and so no gap existed anywhere.
+   *
+   * So the shortfall is ADDED as well. A club below the target wants somebody
+   * in any position it actually plays, regardless of how good the men it
+   * already has are — because eleven start and nine sit on the bench, and if
+   * you have sixteen you cannot do both. Deliberately modest: it has to clear
+   * the same `need <= 0.12` gate and win the same buyer comparison as any
+   * other signing, so this is a thin club doing real business rather than
+   * panic-buying.
+   */
+  const shortfall = Math.max(0, SQUAD_TARGET - squadSize);
+  const bodiesNeeded = shortfall * 0.045 * multiplicity;
+
+  return gap * multiplicity * squadSizeFactor + bodiesNeeded;
 }
 
 // ── Who is actually for sale ────────────────────────────────────────────────

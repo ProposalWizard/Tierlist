@@ -1343,6 +1343,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("retirement");
       return;
     }
+    // The opening trial, which you have not finished. See RESUMABLE.
+    if (pending?.phase === "trial" && !saved.clubAppearances) {
+      setPhase("trial");
+      return;
+    }
     if (pending?.phase === "relegation-move") {
       // The one transfer screen you cannot walk away from — see RESUMABLE in
       // storage.ts. Regenerated on the same terms as the window below it:

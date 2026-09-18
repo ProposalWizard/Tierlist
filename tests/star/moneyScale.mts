@@ -25,6 +25,21 @@ import type { CareerState, StarPlayer } from "../../lib/star/types";
  * a number sitting quietly at the wrong order of magnitude for days while
  * every relative check around it still passed, so a relative test would not
  * have caught it and would not catch a regression either.
+ *
+ * ── …and then three MORE were found, which is why this file now sweeps ──
+ *
+ * A review pointed out that everything above is a regression pin on the two
+ * things already fixed: it cannot find anything new, so describing it as
+ * "nothing is left behind by a rescale" was a claim the file could not
+ * support. It was right, and the sweep at the bottom of this file found three
+ * more pockets of the old scale — eleven money figures across the dilemmas, a
+ * flat influence price, and the cost of having a child.
+ *
+ * The sweep reads the SOURCE of the files that hold money constants and
+ * insists any bare figure is either scaled, or listed below with a reason. It
+ * is a blunt instrument and deliberately so: the failure it guards against is
+ * somebody adding a plausible-looking small number years from now, and no
+ * clever test catches that. A comment does.
  */
 
 const problems: string[] = [];
@@ -131,6 +146,50 @@ check(MONEY_SCALE === 2000, `MONEY_SCALE should be 2000, got ${MONEY_SCALE}`);
     typeof anyBoot.pace === "number",
     "Boot.pace should still exist so a boot stored in an old save still matches the type",
   );
+}
+
+// ── THE SWEEP: no bare money literals hiding on the old scale ──────────
+//
+// Reads the real source of every file that prices something in stars, and
+// flags a bare number where a scaled one belongs. Anything legitimately
+// unscaled has to say so, in the file, next to itself.
+{
+  const { readFileSync } = await import("node:fs");
+  const read = (f: string) => readFileSync(new URL(`../../lib/star/${f}`, import.meta.url), "utf8");
+
+  // Files that set a price or pay out money, and the pattern that would find
+  // an unscaled figure in each.
+  const checks: { file: string; what: string; pattern: RegExp }[] = [
+    // A dilemma's money effect. Must go through `cash()`, which scales.
+    { file: "dilemmas.ts", what: "a dilemma's money effect", pattern: /money:\s*-?\d+(?![\d*])/g },
+    // A flat price constant.
+    { file: "governingBodies.ts", what: "the price of influence", pattern: /MONEY_PER_INFLUENCE_POINT\s*=\s*\d+\s*;/g },
+    { file: "clubPowers.ts", what: "the cost of a son", pattern: /HAVE_A_SON_COST\s*=\s*\d+\s*;/g },
+  ];
+
+  for (const c of checks) {
+    const src = read(c.file);
+    const hits = src.match(c.pattern) ?? [];
+    check(
+      hits.length === 0,
+      `${c.file}: ${c.what} looks like it is still on the pre-rescale scale — `
+      + `found ${hits.length} (${hits.slice(0, 3).join(", ")}). Multiply by MONEY_SCALE, `
+      + `or if it is genuinely not money, rename it so this stops matching.`,
+    );
+  }
+
+  // …and the positive half: the files that SHOULD reference the scale, do.
+  for (const f of ["dilemmas.ts", "governingBodies.ts", "clubPowers.ts", "retirement.ts"]) {
+    check(
+      read(f).includes("MONEY_SCALE") || read(f).includes("feeScale"),
+      `${f} prices things in stars but never mentions MONEY_SCALE — either it is on the old scale, or it should say why not`,
+    );
+  }
+
+  // The scale itself has not quietly moved. Every absolute assertion above is
+  // written against 2000; if this changes, they all need re-deriving rather
+  // than silently passing against a different world.
+  check(MONEY_SCALE === 2000, `MONEY_SCALE is 2000 — if it has changed, every figure in this file needs re-deriving (got ${MONEY_SCALE})`);
 }
 
 if (problems.length) {

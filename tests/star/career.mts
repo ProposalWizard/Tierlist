@@ -131,6 +131,13 @@ function playWholeSeason(start: CareerState): CareerState {
     "…and it does not lose a Ballon d'Or won on the way to it",
   );
 
+  // The opening trial. The career is saved the moment "Start Career" is
+  // pressed, so a closed tab never leaves a half-made save — but until this
+  // was resumable, reopening dropped you on the dashboard as a signed
+  // first-team player who had never taken the penalty. Found by playtest.
+  saveStarPhase("trial", SCOPE);
+  check(loadStarPhase(SCOPE)?.phase === "trial", "an unfinished trial is resumed rather than skipped");
+
   // Everything else clears the record rather than leaving a stale one behind —
   // resuming into a match whose state was never saved would be worse than the
   // bug this fixes.

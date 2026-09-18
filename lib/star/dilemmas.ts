@@ -1,4 +1,26 @@
 import type { CareerState } from "./types";
+import { MONEY_SCALE, formatMoney } from "./money";
+
+/**
+ * A dilemma's money, on the scale the rest of the game actually uses.
+ *
+ * Every figure in this file was written before the 14 Sep 2026 rescale that
+ * multiplied every money value in the game by `MONEY_SCALE`, and this file was
+ * missed. It has been quietly meaningless ever since: a starting wage is
+ * ★2,000 a week, so a "±3" was a rounding error and the match-fixing bribe at
+ * line ~97 paid ★40 — two per cent of one week's wage — in exchange for
+ * wrecking your relationship with the manager, the dressing room and the fans.
+ *
+ * Found in review. Dormant rather than live (dilemmas are currently switched
+ * off — see app/star-dev/page.tsx) but it is the largest surviving pocket of
+ * the old scale in the game, and it would have come back on with the numbers
+ * still wrong.
+ *
+ * Written as `cash(n)` rather than as scaled literals so the original,
+ * hand-balanced RELATIVE values stay legible: a ±3 gesture is still a small
+ * one next to a ±40 payday, which is the part that was designed.
+ */
+const cash = (n: number) => n * MONEY_SCALE;
 
 export interface DilemmaEffect {
   money?: number;
@@ -61,7 +83,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "A youth football charity has invited you to run a coaching session.",
     choices: [
       { label: "Attend", effects: { fans: 10, fame: 4, sponsors: 3 }, narrative: "Coverage everywhere. Kids loved it." },
-      { label: "Send a signed shirt", effects: { money: -3, fans: 3 }, narrative: "Nice gesture — modest coverage." },
+      { label: "Send a signed shirt", effects: { money: cash(-3), fans: 3 }, narrative: "Nice gesture — modest coverage." },
       { label: "Politely decline", effects: { fans: -3, sponsors: -2 } },
     ],
   },
@@ -82,8 +104,8 @@ export const DILEMMAS: Dilemma[] = [
     text: "Your boot sponsor wants you for a half-day shoot mid-week.",
     when: (c) => c.relationships.sponsors > 20,
     choices: [
-      { label: "Do the shoot", effects: { money: 5, sponsors: 6, fame: 3 }, narrative: "Long day but the paycheque's decent." },
-      { label: "Cancel", effects: { sponsors: -10, money: -2 }, narrative: "The sponsor is not pleased." },
+      { label: "Do the shoot", effects: { money: cash(5), sponsors: 6, fame: 3 }, narrative: "Long day but the paycheque's decent." },
+      { label: "Cancel", effects: { sponsors: -10, money: cash(-2) }, narrative: "The sponsor is not pleased." },
     ],
   },
   {
@@ -94,7 +116,7 @@ export const DILEMMAS: Dilemma[] = [
     choices: [
       { label: "Refuse and report it", effects: { boss: 8, fans: 6, fame: 3 }, narrative: "The club appreciates the honesty. Word gets out." },
       { label: "Ignore it", effects: {} },
-      { label: "Take the money", effects: { money: 40, boss: -20, team: -15, fans: -25, fame: -10 }, narrative: "You take it. If this ever comes out..." },
+      { label: "Take the money", effects: { money: cash(40), boss: -20, team: -15, fans: -25, fame: -10 }, narrative: "You take it. If this ever comes out..." },
     ],
   },
   {
@@ -135,7 +157,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Your partner wants a proper date night — you've been distant lately.",
     when: (c) => c.girlfriend !== null,
     choices: [
-      { label: "Take them out", effects: { money: -4, happiness: 10 }, narrative: "Great evening." },
+      { label: "Take them out", effects: { money: cash(-4), happiness: 10 }, narrative: "Great evening." },
       { label: "Postpone", effects: { happiness: -8 }, narrative: "They're not impressed." },
     ],
   },
@@ -146,7 +168,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "A trusted advisor suggests putting some money aside for a long-term investment.",
     when: (c) => c.money >= 30,
     choices: [
-      { label: "Invest ★20", effects: { money: -20, happiness: 3, fame: 2 }, narrative: "You'll thank yourself later." },
+      { label: `Invest ${formatMoney(cash(20))}`, effects: { money: cash(-20), happiness: 3, fame: 2 }, narrative: "You'll thank yourself later." },
       { label: "Keep it liquid", effects: {} },
     ],
   },
@@ -157,7 +179,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "A young fan in hospital wants to meet their idol — you.",
     choices: [
       { label: "Visit them", effects: { fans: 15, fame: 6, happiness: 8 }, narrative: "Beautiful moment. Cameras were there too." },
-      { label: "Send a signed jersey", effects: { money: -2, fans: 5 } },
+      { label: "Send a signed jersey", effects: { money: cash(-2), fans: 5 } },
     ],
   },
   {
@@ -187,7 +209,7 @@ export const DILEMMAS: Dilemma[] = [
     title: "Card Night",
     text: "A senior player invites you to a private card game after training.",
     choices: [
-      { label: "Play a few hands", effects: { money: -5, team: 4 }, narrative: "Small loss but you fit in." },
+      { label: "Play a few hands", effects: { money: cash(-5), team: 4 }, narrative: "Small loss but you fit in." },
       { label: "Decline", effects: { team: -2 } },
     ],
   },
@@ -198,7 +220,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Your sponsor is launching a new boot and wants you as the face.",
     when: (c) => c.relationships.sponsors > 40,
     choices: [
-      { label: "Do the campaign", effects: { money: 20, sponsors: 10, fame: 8 }, narrative: "Big paycheque and coverage." },
+      { label: "Do the campaign", effects: { money: cash(20), sponsors: 10, fame: 8 }, narrative: "Big paycheque and coverage." },
       { label: "Decline this one", effects: { sponsors: -8 } },
     ],
   },
@@ -219,7 +241,7 @@ export const DILEMMAS: Dilemma[] = [
     choices: [
       { label: "Address it publicly", effects: { fame: 4, team: 3, sponsors: -2 }, narrative: "Clean-cut clarification." },
       { label: "Ignore it — it'll blow over", effects: { team: -6, fans: -3 } },
-      { label: "Sue the paper", effects: { money: -8, fame: 6, sponsors: -4 } },
+      { label: "Sue the paper", effects: { money: cash(-8), fame: 6, sponsors: -4 } },
     ],
   },
   {
@@ -239,7 +261,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "A football game wants your face on the cover for a regional edition.",
     when: (c) => c.starRating >= 3.5,
     choices: [
-      { label: "Accept", effects: { money: 25, fame: 15, sponsors: 8 }, narrative: "You're on billboards now." },
+      { label: "Accept", effects: { money: cash(25), fame: 15, sponsors: 8 }, narrative: "You're on billboards now." },
       { label: "Turn it down", effects: {} },
     ],
   },
