@@ -89,9 +89,18 @@ export default function TrialSequence({
           );
         })}
       </div>
-      <div className="mt-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/60">
-        <span>{stage ? STAGE_LABEL[stage] : "Trial complete"}</span>
-        <span>{done.length} / {TRIAL_STAGES.length}</span>
+      {/* ── Says where you are in the TRIAL, not which stage this is ──
+          Every stage screen already prints its own name and its own rep count,
+          so repeating them here produced two near-identical headers stacked on
+          top of each other — "PENALTIES 0/5" directly above "PENALTIES 1/5",
+          the first counting stages and the second counting kicks. Spotted in a
+          screenshot; the text-only playtest read both lines and never noticed
+          they were the same shape. */}
+      <div className="mt-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/45">
+        <span>Trial day</span>
+        <span>
+          {stage ? `Stage ${done.length + 1} of ${TRIAL_STAGES.length}` : "Complete"}
+        </span>
       </div>
     </div>
   );

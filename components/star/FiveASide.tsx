@@ -386,7 +386,16 @@ export default function FiveASide({
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
         onPointerCancel={pointerUp}
-        className="relative aspect-[5/8] w-full touch-none overflow-hidden rounded-xl bg-black"
+        /* ── The whole pitch has to fit on the phone ──
+           The frame is 5:8, so at full phone width it is 600px tall — and with
+           the site nav, the stage bar and the scoreboard above it, your own
+           half ran off the bottom of the screen. Seen in a screenshot: my own
+           keeper and my own goal were simply not on the display, on a game
+           whose entire premise is that the whole pitch is in one frame.
+           Capping the HEIGHT and letting the width follow keeps the aspect
+           exact and the pitch complete; on a taller screen it just gets
+           bigger. */
+        className="relative mx-auto aspect-[5/8] max-h-[56vh] w-full touch-none overflow-hidden rounded-xl bg-black"
       >
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
