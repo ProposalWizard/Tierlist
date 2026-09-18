@@ -606,6 +606,33 @@ export interface CareerState {
    * which is all of them until one fails a trial.
    */
   weeksSinceTrial?: number;
+  /**
+   * How many weeks this career spent with no club at all, across every spell
+   * of it — the garden weeks.
+   *
+   * `career.week` restarts at 1 when a club signs you (`attachClub`), because
+   * the fixture list it builds starts there and transfer windows, Player of
+   * the Month, deadline day and the competition-betting cutoff all read the
+   * raw week. Without that reset a player who failed a trial, sat out twelve
+   * weeks and then signed got the January window while his fixtures said
+   * October. This is where those weeks go, so they still happened for the CV
+   * rather than being silently deleted.
+   *
+   * Absent on every career that has never been out of work, which is all of
+   * them until one fails a trial.
+   */
+  gardenWeeks?: number;
+  /**
+   * How many trials this career has been given, including the one it opened
+   * with.
+   *
+   * Anything above 1 is a second look earned back from the free-agent life
+   * (`grantTrial`, freeAgent.ts), and the scout offers it produces are judged
+   * against a lower bar and a ladder shifted a rung down — see `ScoutContext`
+   * in scoutOffers.ts. Absent on a career that has only ever had its first,
+   * which reads as exactly that.
+   */
+  trialsTaken?: number;
   skills: Skills;
   /**
    * The last career week each skill was actually TRAINED (the deliberate

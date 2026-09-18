@@ -1,4 +1,6 @@
-import { makeIdentity, attachClub, makeInitialCareer } from "../../lib/star/careerFlow";
+import {
+  makeIdentity, attachClub, makeInitialCareer, SIGNING_ON_FEE, STARTER_CONTRACT,
+} from "../../lib/star/careerFlow";
 // Deliberately imported from where it actually lives, not through careerFlow's
 // re-export: `hasClub` sits in calendar.ts precisely BECAUSE that file imports
 // nothing, so storage.ts and the /api/star/career server route can ask it
@@ -75,7 +77,6 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
 {
   const id = makeIdentity(unsigned({ position: "CM", age: 18 }));
 
-  check(id.money > 0, "an unsigned career still has his own money");
   check(id.skills.technique > 0, "an unsigned career still has trained attributes");
   check(id.starRating > 0, "an unsigned career still has a star rating");
   check(id.weekActions > 0, "an unsigned career still has a week to spend");
@@ -96,10 +97,114 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     `a signed career's rating must still be the one its own skills and honours give it `
     + `— stored ${signed.starRating}, recomputed ${computeStarRating(signed)}`,
   );
+  // NOT compared against `computeStarRating(id)`. Signing unlocks
+  // "first-contract", and `honourPoints` (rating.ts) counts every achievement,
+  // so the rating legitimately moves by exactly that one unlock — which is why
+  // `attachClub` recomputes it rather than carrying the identity's forward.
+  // What must hold is that nothing ABOUT THE CLUB moved it, and the check
+  // above proves that by recomputing from the signed career itself.
   check(
-    signed.starRating === computeStarRating(id),
-    "…and it is the same rating the unsigned player already had",
+    signed.starRating > computeStarRating(id),
+    "signing unlocks an achievement, so the rating it recomputes is the one that includes it",
   );
+  check(
+    signed.starRating - computeStarRating(id) < 0.2,
+    "…and a badge is worth an achievement, not a promotion",
+  );
+}
+
+// ── Nobody has signed you, so nothing has been paid ─────────────────────
+//
+// All three of these used to be handed out by `makeIdentity`: ★5,000 in the
+// bank, a ★2,000-a-week three-year contract at whichever club was picked on
+// the profile screen, and the "first-contract" achievement — on a career
+// nobody had made an offer to. The rejection screen said "nothing in the
+// bank" while the next screen showed ★5,000, and at the free agent's ★10 a
+// week that balance was five hundred weeks of pay before a ball was kicked.
+{
+  const id = makeIdentity(unsigned());
+
+  check(id.money === 0, `an unsigned career has nothing in the bank (had ${id.money})`);
+  check(id.contract.wage === 0, `…and is on no wage (had ${id.contract.wage})`);
+  check(id.contract.seasonsRemaining === 0, "…for no seasons");
+  check(id.contract.goalBonus === 0 && id.contract.assistBonus === 0, "…with no bonuses");
+  check(
+    !id.achievements.includes("first-contract"),
+    "…and has not unlocked the achievement for a contract he does not have",
+  );
+
+  // …and every one of them arrives the moment a club actually signs him.
+  const signed = attachClub(id, "Arsenal", [...PREMIER_LEAGUE_CLUBS], "premier");
+  check(signed.money === SIGNING_ON_FEE, `signing pays the fee (got ${signed.money})`);
+  check(signed.contract.wage === STARTER_CONTRACT.wage, "signing puts you on a wage");
+  check(signed.contract.club === "Arsenal", "…at the club that signed you");
+  check(signed.achievements.includes("first-contract"), "signing unlocks the first contract");
+}
+
+// ── …and it is a SIGNING-ON fee, paid once ──────────────────────────────
+//
+// A career that moves club later must not collect ★5,000 again, and must keep
+// the deal it already has rather than being reset to the starter terms.
+{
+  const first = attachClub(makeIdentity(unsigned()), "Arsenal", [...PREMIER_LEAGUE_CLUBS], "premier");
+  const earned: CareerState = {
+    ...first,
+    money: first.money + 1_000_000,
+    contract: { ...first.contract, wage: 40_000, seasonsRemaining: 4 },
+  };
+  const moved = attachClub(earned, CHAMPIONSHIP_CLUBS[0], [...CHAMPIONSHIP_CLUBS], "championship");
+
+  check(moved.money === earned.money, `a second club pays no signing-on fee (got ${moved.money})`);
+  check(moved.contract.wage === 40_000, "…and does not reset you to a starter wage");
+  check(moved.contract.seasonsRemaining === 4, "…or a starter contract length");
+  check(moved.contract.club === CHAMPIONSHIP_CLUBS[0], "…but the deal is at the new club");
+  check(
+    moved.achievements.filter(a => a === "first-contract").length === 1,
+    "…and the first contract is only ever unlocked once",
+  );
+}
+
+// ── Signing restarts the week, and the garden weeks are kept ────────────
+//
+// `attachClub` builds a fixture list starting at week 1, but `career.week`
+// keeps counting while a free agent sits at home — and transfer windows,
+// Player of the Month, deadline day and the competition-betting cutoff all
+// read the raw week. A player who failed a trial, spent twelve weeks in the
+// garden and then signed got the January window while his own fixtures said
+// October, silently and permanently for that save.
+{
+  const gardened: CareerState = { ...makeIdentity(unsigned()), week: 13 };
+  const signed = attachClub(gardened, "Arsenal", [...PREMIER_LEAGUE_CLUBS], "premier");
+
+  check(signed.week === 1, `signing at week 13 restarts the week (got ${signed.week})`);
+
+  // The claim that actually matters: the week and the fixtures agree, so
+  // nothing that reads the raw week is looking at a different month from the
+  // one the fixture list is playing.
+  // `Fixture.kind` is optional and `buildFixtures` leaves it unset for an
+  // ordinary league game — filtering on the string alone finds nothing.
+  const league = signed.fixtures
+    .filter(f => f.kind === undefined || f.kind === "league")
+    .sort((a, b) => a.week - b.week);
+  check(league.length > 0, "signing builds league fixtures, or this proves nothing");
+  check(
+    league[0].week === signed.week,
+    `the first fixture and the week must agree — fixture at week ${league[0].week}, career at week ${signed.week}`,
+  );
+
+  // The twelve weeks still happened.
+  check(signed.gardenWeeks === 12, `the garden weeks are kept (got ${signed.gardenWeeks})`);
+
+  // A career that was never out of work does not grow the field at all — a
+  // key that is always there would change every save built the old way, which
+  // is what the golden fixtures below would catch.
+  const straight = attachClub(makeIdentity(unsigned()), "Arsenal", [...PREMIER_LEAGUE_CLUBS], "premier");
+  check(straight.gardenWeeks === undefined, "a career signed straight away has no garden weeks");
+
+  // …and a second spell adds to the first rather than replacing it.
+  const secondSpell: CareerState = { ...signed, week: 6 };
+  const resigned = attachClub(secondSpell, CHAMPIONSHIP_CLUBS[0], [...CHAMPIONSHIP_CLUBS], "championship");
+  check(resigned.gardenWeeks === 17, `a second spell adds to the first (got ${resigned.gardenWeeks})`);
 }
 
 // ── Attaching a club fills in everything a club owns ────────────────────
@@ -189,9 +294,16 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
 
   check(b.skills.technique === id.skills.technique, "training at one club must not train you at another");
   check(b.relationships.boss === id.relationships.boss, "relationships must not be shared between two careers");
-  check(b.money === id.money, "money must not be shared between two careers");
+  // Compared against what a signing leaves rather than against the identity:
+  // `attachClub` pays a signing-on fee, so both careers are legitimately
+  // ★5,000 up on the identity they came from. What must not happen is one of
+  // them seeing the OTHER's ★1,234.
+  check(b.money === id.money + SIGNING_ON_FEE, "money must not be shared between two careers");
   check(b.trophies.length === id.trophies.length, "a trophy won in one career must not appear in another");
-  check(b.achievements.length === id.achievements.length, "achievements must not be shared");
+  // Both signings unlock "first-contract", so both are one ahead of the
+  // identity — but the "test-only" one pushed onto `a` must not be on `b`.
+  check(b.achievements.length === id.achievements.length + 1, "achievements must not be shared");
+  check(!b.achievements.includes("test-only"), "…not even one pushed on after the fact");
   check(b.sponsors[0].active === false, "a sponsor signed in one career must not be signed in another");
   check(b.kibCans.basic === id.kibCans.basic, "stock must not be shared between two careers");
   check(b.currentBoot.technique === id.currentBoot.technique, "boots must not be shared between two careers");

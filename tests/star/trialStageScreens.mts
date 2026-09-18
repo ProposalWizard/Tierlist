@@ -5,12 +5,20 @@ import {
 import { mulberry32 } from "../../lib/star/season";
 import { POST_L, POST_R, NET_DEPTH, CX, PEN_SPOT_Y } from "../../lib/star/pitch";
 import { startTrial } from "../../lib/star/trial";
-import { REPS, freeKickSetup, visionSetup, penaltySetup } from "../../lib/star/trialStages";
-import { buildPenaltyScenario } from "../../components/star/stages/TrialPenalties";
+import {
+  REPS, freeKickSetup, visionSetup, penaltySetup, attemptSeed,
+} from "../../lib/star/trialStages";
+import {
+  buildPenaltyScenario, strikeCamera,
+} from "../../components/star/stages/TrialPenalties";
 import {
   buildFreeKickScenario, freeKickView, freeKickWall,
 } from "../../components/star/stages/TrialFreeKicks";
 import { layoutVision } from "../../components/star/stages/TrialVision";
+import { ELEVEN_A_SIDE_ATTACK, rulesAreSane } from "../../lib/star/fiveASide/rules";
+import {
+  cameraContaining, FIGURE_HEIGHT_R, FIGURE_HEAD_R,
+} from "../../lib/star/fiveASide/render";
 
 /**
  * THE THREE TRIAL-STAGE SCREENS — the parts of them that are not a browser.
@@ -281,6 +289,152 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   // loop does not call `stepReactions`. Worth asserting separately, because it
   // is the difference between "rare" and "one line away from common".
   check(woke === 0, `${woke}/${attempts} attempts woke the poacher without stepReactions`);
+}
+
+// ── 7. A RESUME REDRAWS THE PICTURE, NOT JUST THE ANSWER INSIDE IT ─────────
+//
+// `visionSetup` moving `correct` with the resume count is only half of it. If
+// the PICTURE stayed the same, a resumed stage would show you the same six
+// arrangements of men with the right answer moved — which is still most of the
+// way to a memory test, because the picture is the thing you remember. So the
+// layout is seeded from the same `attemptSeed`, and this checks it.
+{
+  let differed = 0, trials = 0, sameWhenNotResumed = 0;
+  for (let seed = 0; seed < 150; seed++) {
+    const a = startTrial(seed);
+    const b = { ...a, reloads: a.reloads + 1 };
+    trials++;
+
+    const layoutsA = Array.from({ length: REPS.vision }, (_, rep) =>
+      JSON.stringify(layoutVision(visionSetup(a, rep), attemptSeed(a), rep)));
+    const layoutsB = Array.from({ length: REPS.vision }, (_, rep) =>
+      JSON.stringify(layoutVision(visionSetup(b, rep), attemptSeed(b), rep)));
+    if (layoutsA.every((l, i) => l !== layoutsB[i])) differed++;
+
+    // …and the other half of the same rule: WITHOUT a resume, the picture is
+    // still exactly itself, so leaving the app between stages costs nothing.
+    const again = Array.from({ length: REPS.vision }, (_, rep) =>
+      JSON.stringify(layoutVision(visionSetup(a, rep), attemptSeed(a), rep)));
+    if (again.every((l, i) => l === layoutsA[i])) sameWhenNotResumed++;
+  }
+  check(differed === trials,
+    `${trials - differed}/${trials} resumed trials redrew at least one identical vision picture`);
+  check(sameWhenNotResumed === trials,
+    "a trial that was NOT resumed drew a different picture — a reload must not lose your place");
+
+  // The answers move too, which is `trialStages.mts`'s own test; here it is
+  // only worth confirming the two are not accidentally the same change.
+  const a = startTrial(11), b = { ...a, reloads: 1 };
+  check(
+    Array.from({ length: REPS.vision }, (_, r) => visionSetup(a, r).correct).join(",")
+      !== Array.from({ length: REPS.vision }, (_, r) => visionSetup(b, r).correct).join(","),
+    "the right man is the same man after a resume",
+  );
+}
+
+// ── 8. THE CAMERA, which is why the screen no longer runs off the phone ────
+//
+// Measured on a simulated iPhone 13 before this: the penalties canvas was
+// `aspectRatio: 5 / 8` with no height cap and ran 108 px off the bottom of a
+// 664 px viewport — the first screen of a new career, a third of it below the
+// fold. The fix is a phone-shaped, height-capped box plus a camera that fits
+// the SHOT to the SCREEN. What that camera must guarantee is checked here at
+// every canvas shape a phone can actually be.
+{
+  // Real phone canvas shapes, and two deliberately extreme ones — the box is
+  // capped against the viewport, so it genuinely does end up short and wide on
+  // a small screen, and that is exactly when a fixed-frame camera would crop.
+  const SHAPES = [[356, 445], [356, 343], [356, 250], [390, 600], [300, 300], [430, 200]];
+
+  for (let s = 0; s < 60; s++) {
+    const trial = startTrial(2_000_000 + s * 7919);
+
+    for (let rep = 0; rep < REPS.penalties; rep++) {
+      const sc = buildPenaltyScenario(trial, rep, mulberry32((s * 7 + rep) >>> 0));
+      for (const [W, H] of SHAPES) {
+        const cam = strikeCamera(sc, sc.ball, W, H);
+        const w = cam.x2 - cam.x1, h = cam.y2 - cam.y1;
+        // Square pixels, or every distance on screen lies about itself.
+        check(Math.abs(w / h - W / H) < 1e-6, `penalty camera is not the canvas shape at ${W}x${H}`);
+        check(cam.x1 <= POST_L && cam.x2 >= POST_R, "penalty camera cuts off the goal mouth");
+        check(cam.y1 <= -NET_DEPTH, "penalty camera cuts off the net");
+        check(sc.ball.x > cam.x1 && sc.ball.x < cam.x2, "the ball is off the side of the shot");
+        check(sc.ball.y > cam.y1 && sc.ball.y < cam.y2, "the ball is off the end of the shot");
+        // The drag pulls BACK from the ball, so the room behind it is the whole
+        // gesture — a shot that ended at the ball's own feet could not be aimed.
+        check(cam.y2 - sc.ball.y >= 6.5, "no room behind the ball to drag back into");
+        // And the men in the way, whole. A frame that stopped at the drag room
+        // sliced both of a penalty's defenders off at the bottom edge — seen in
+        // a screenshot after the first version of this shipped.
+        for (const d of sc.defenders) {
+          check(d.x > cam.x1 && d.x < cam.x2 && d.y > cam.y1 && d.y < cam.y2,
+            "a man in the way is drawn half off the screen");
+        }
+      }
+    }
+
+    for (let rep = 0; rep < REPS.freeKicks; rep++) {
+      const sc = buildFreeKickScenario(trial, rep, mulberry32((s * 13 + rep) >>> 0));
+      for (const [W, H] of SHAPES) {
+        const cam = strikeCamera(sc, sc.ball, W, H);
+        check(Math.abs((cam.x2 - cam.x1) / (cam.y2 - cam.y1) - W / H) < 1e-6,
+          `free-kick camera is not the canvas shape at ${W}x${H}`);
+        check(cam.x1 <= POST_L && cam.x2 >= POST_R, "free-kick camera cuts off the goal mouth");
+        check(cam.y1 <= -NET_DEPTH, "free-kick camera cuts off the net");
+        check(sc.ball.x > cam.x1 && sc.ball.x < cam.x2, "the free kick is off the side of the shot");
+        check(cam.y2 - sc.ball.y >= 6.5, "no room behind the free kick to drag back into");
+        for (const d of sc.defenders) {
+          check(d.x > cam.x1 && d.x < cam.x2 && d.y > cam.y1 && d.y < cam.y2,
+            "a wall man is drawn half off the screen");
+        }
+      }
+    }
+  }
+
+  // `cameraContaining` itself: it must GROW, never crop. That is the whole
+  // difference between it and `cameraFor`, and it is what the vision stage —
+  // a picture you read in one look — depends on.
+  const must = { x1: 10, x2: 40, y1: -3, y2: 39 };
+  for (const [W, H] of SHAPES) {
+    const cam = cameraContaining(must, W, H);
+    check(cam.x1 <= must.x1 && cam.x2 >= must.x2 && cam.y1 <= must.y1 && cam.y2 >= must.y2,
+      `cameraContaining cropped what it was asked to contain at ${W}x${H}`);
+    check(Math.abs((cam.x2 - cam.x1) / (cam.y2 - cam.y1) - W / H) < 1e-6,
+      `cameraContaining did not take the canvas shape at ${W}x${H}`);
+    check(Math.abs((cam.x1 + cam.x2) / 2 - (must.x1 + must.x2) / 2) < 1e-6
+      && Math.abs((cam.y1 + cam.y2) / 2 - (must.y1 + must.y2) / 2) < 1e-6,
+      "cameraContaining moved what it was asked to centre on");
+  }
+  // A canvas with no size yet must not produce NaN — this runs on the first
+  // frame, before layout.
+  const zero = cameraContaining(must, 0, 0);
+  check(Number.isFinite(zero.x1) && Number.isFinite(zero.y2), "cameraContaining produced nonsense on a 0x0 canvas");
+}
+
+// ── 9. A FOOTBALLER IS SHAPED LIKE A FOOTBALLER ────────────────────────────
+//
+// Reported directly: "The graphics stink. Players are too small, too big. The
+// goalie doesn't look right." Both halves are one number. The head is drawn
+// through `drawPlayerHead`, which multiplies by the Face Editor's own scale
+// (2.2 by default) — so the old `headBaseR = 0.3r` came out at `0.66r` radius
+// on a figure `2.2r` tall: a head SIXTY PER CENT of the whole person.
+//
+// Pinned as a band rather than a number so the figure can still be tuned, and
+// so this fails if anybody quietly walks it back toward a bowling pin.
+{
+  const share = FIGURE_HEAD_R / FIGURE_HEIGHT_R;
+  check(share > 0.2 && share < 0.34,
+    `a footballer's head is ${(share * 100).toFixed(0)} % of him — human is about a quarter`);
+  check(FIGURE_HEIGHT_R > 1.5, "a figure needs a body under the head, not just a chin");
+}
+
+// ── 10. The shape the striking stages are drawn on ─────────────────────────
+{
+  const r = ELEVEN_A_SIDE_ATTACK;
+  check(rulesAreSane(r).length === 0, `the striking stages' pitch is not sane: ${rulesAreSane(r).join("; ")}`);
+  check(r.goal.x1 === POST_L && r.goal.x2 === POST_R, "the striking stages must use a real full-size goal");
+  check(r.markings === "penalty-area", "…with a real penalty area drawn around it");
+  check((r.crossbar ?? 0) > 2, "…and a real crossbar to lift it over");
 }
 
 if (problems.length) {

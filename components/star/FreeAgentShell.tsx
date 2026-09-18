@@ -209,7 +209,26 @@ export default function FreeAgentShell({
         {/* No Exit to the club dashboard — this career has no club, and that
             screen has nothing to show it. Settings is reachable from the
             header; there is nowhere else to be. */}
-        <Nav label="Week" icon="📅" active={false} onClick={() => { onCareer(endFreeAgentWeek(career)); setNote("A new week."); }} />
+        {/* ── This used to be the cheapest re-roll in the game ──
+            It called `endFreeAgentWeek` with no check on whether the week had
+            been lived, so four taps rolled four weeks over, a trial came due,
+            and `grantTrial` rolled a brand-new random seed. Failing a trial on
+            purpose was the fastest way to get a better one — the exact
+            opposite of the "closing the app should cost you" design the whole
+            seeded trial is built around. The week now ends the one way it was
+            always meant to: through the panel above, once the days are gone.
+            `endFreeAgentWeek` refuses it too, so this is a message rather than
+            the guard. */}
+        <Nav
+          label="Week"
+          icon="📅"
+          active={false}
+          onClick={() => setNote(
+            left > 0
+              ? `Not yet — you have ${left} day${left === 1 ? "" : "s"} left in the week.`
+              : "That is the week gone. End it from Home.",
+          )}
+        />
       </div>
     </div>
   );

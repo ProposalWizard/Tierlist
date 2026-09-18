@@ -55,10 +55,12 @@ import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle"
 // The frame this replaced was a fixed 3:4 with no height cap, and on a phone
 // it ran off the bottom of the screen — you, and the ball at your feet, below
 // the fold on the one stage that is entirely about looking at the picture.
-const MUST_SEE = { x1: 16.5, x2: 51.5, y1: -NET_DEPTH - 2, y2: 39 };
 
 /** Where you stand with the ball — bottom-centre, facing the goal. */
-export const VISION_YOU = { x: CX, y: 36 };
+const VISION_YOU_Y = 36;
+export const VISION_YOU = { x: CX, y: VISION_YOU_Y };
+
+const MUST_SEE = { x1: 16.5, x2: 51.5, y1: -NET_DEPTH - 1, y2: VISION_YOU_Y + 1.6 };
 
 /** The box the team-mates are placed in. Inset from the frame so nobody is
  *  drawn half off the edge. */

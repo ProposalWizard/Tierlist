@@ -309,6 +309,11 @@ export function drawPitch(ctx: CanvasRenderingContext2D, rules: MatchRules, p: P
 /**
  * A goal that stands up off the line: back net, two sides, the roof, the frame.
  *
+ * Built for the goal you ATTACK — the net goes back, away from the camera, at
+ * `atY - depth`. That is the only goal a dead-ball stage ever draws standing
+ * up, and it is why `drawGoal` only reaches this for a caller that asked for a
+ * height.
+ *
  * Ported wholesale from the penalties stage's own painter rather than
  * re-derived — that drawing was arrived at after the earlier hand-rolled one
  * was reported as reading like "trash", so it is the version that has actually
@@ -446,6 +451,15 @@ export interface FigureLook {
   face?: HTMLImageElement;
   /** A marker over your own figure, so you can always find yourself. */
   star?: boolean;
+  /**
+   * Metres off the ground — a free kick's wall as it jumps.
+   *
+   * The shadow stays on the grass while the body rises, which is the only
+   * thing that makes height readable from directly above; it is the same trick
+   * `drawBall` uses for a ball in the air, and the same factor, so a man a
+   * metre up and a ball a metre up agree with each other.
+   */
+  lift?: number;
 }
 
 /**
@@ -639,19 +653,21 @@ export function drawFigure(
   const { px, py, unit } = p;
   const x = px(at.x), y = py(at.y);
   const r = Math.max(7, unit * FIGURE_R);
+  const lift = Math.max(0, look.lift ?? 0);
+  const up = lift * unit * 0.55;
 
-  // Shadow first, so everybody stands ON the pitch rather than floating.
+  // Shadow first, and on the GRASS — a man in the air leaves his behind.
   ctx.fillStyle = TC.shadow;
   ctx.beginPath();
-  ctx.ellipse(x, y + r * FEET_Y, r * 0.34, r * 0.13, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + r * FEET_Y, r * 0.34 * (1 - Math.min(0.35, lift * 0.12)), r * 0.13, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(x, y - up);
   paintBody(ctx, r, look, faceStyle, fakeFaceStyle);
   ctx.restore();
 
-  const crown = y - r * (FIGURE_HEIGHT_R - FEET_Y);
+  const crown = y - up - r * (FIGURE_HEIGHT_R - FEET_Y);
   if (look.star) {
     ctx.fillStyle = "#fde68a";
     ctx.beginPath();
@@ -721,9 +737,12 @@ export function drawKeeper(
   ctx.rotate(lean);
   paintBody(ctx, r, look, faceStyle, fakeFaceStyle, {
     // Set: hands out and a little low. Diving: flung out over his head.
-    // Set, he has his hands out at chest height. Going, they are over his head
-    // and at full stretch — the shape you actually judge a save by.
-    armSpread: 0.5 + lunge * 0.5,
+    // Set, his hands are genuinely OUT — measured off a screenshot rather than
+    // guessed: at a narrower spread the arms ran barely half a head's width
+    // before the glove, the sleeve covered most of that, and he read as a blob
+    // with two white dots stuck to it. Going, they are over his head and at
+    // full stretch, which is the shape you actually judge a save by.
+    armSpread: 0.75 + lunge * 0.25,
     armLift: 0.15 + lunge * 0.9,
     gloves: true,
     crouch: 0.55 - lunge * 0.55,
@@ -750,15 +769,22 @@ export function drawBall(
   ctx.beginPath();
   ctx.arc(x, y - lift, r, 0, Math.PI * 2);
   ctx.fill();
-  // One thin seam, not a thick one. A short fat arc across the lower half of a
-  // five-pixel ball does not read as a panel line, it reads as a mouth — which
-  // is exactly what it looked like on the trial's penalty spot once the camera
-  // stopped drawing the ball as three pixels.
+  // ── A rim and a panel, not a seam ──
+  //
+  // It used to be a single fat arc across the lower half. At the size a
+  // five-a-side draws a ball that is invisible; at the size the trial's
+  // penalty spot draws one it is unmistakably a MOUTH, which is what a
+  // screenshot showed. A thin full rim plus one dark panel reads as a football
+  // at every size this renderer is ever asked for and can never read as a face.
   ctx.strokeStyle = TC.ballSeam;
-  ctx.lineWidth = Math.max(0.5, r * 0.13);
+  ctx.lineWidth = Math.max(0.5, r * 0.16);
   ctx.beginPath();
-  ctx.arc(x - r * 0.1, y - lift - r * 0.1, r * 0.58, 0.55, 2.35);
+  ctx.arc(x, y - lift, r * 0.92, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.fillStyle = TC.ballSeam;
+  ctx.beginPath();
+  ctx.arc(x, y - lift, r * 0.3, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 /** The aim arrow, while you are dragging back from the ball. */

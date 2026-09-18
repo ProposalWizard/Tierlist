@@ -1,4 +1,7 @@
-import { spendOn, GARDEN_GYM_CAP, FREE_AGENT_WEEKLY_PAY } from "../../lib/star/freeAgent";
+import {
+  spendOn, GARDEN_GYM_CAP, FREE_AGENT_WEEKLY_PAY, endFreeAgentWeek, grantTrial,
+  WEEKS_BETWEEN_TRIALS, trialDue,
+} from "../../lib/star/freeAgent";
 import { makeIdentity } from "../../lib/star/careerFlow";
 import { hasClub } from "../../lib/star/calendar";
 import { actionsLeft } from "../../lib/star/week";
@@ -132,6 +135,69 @@ const unsigned = (o: Partial<CareerState> = {}): CareerState => ({
     check(r.happiness >= 0 && r.happiness <= 100, `${what} kept happiness in range`);
     check(r.energy >= 0 && r.energy <= 100, `${what} kept energy in range`);
   }
+}
+
+// ── A week cannot be skipped, which is what closed the re-roll ──────────
+//
+// The shell's bottom-nav "Week" button called `endFreeAgentWeek` with no check
+// on whether the week had been lived. Four taps rolled four weeks over,
+// `weeksSinceTrial` reached `WEEKS_BETWEEN_TRIALS`, and a fresh trial came due
+// — with a brand-new random seed, since `grantTrial` calls `startTrial()`.
+// Failing a trial on purpose was therefore the cheapest re-roll in the game,
+// which is the exact opposite of the seeded-trial anti-cheat's whole design.
+{
+  const fresh = unsigned();
+  check(actionsLeft(fresh) > 0, "a fresh week has days in it, or this proves nothing");
+  check(
+    endFreeAgentWeek(fresh) === fresh,
+    "a week with days left in it cannot be ended",
+  );
+
+  // Four taps used to be a new trial. Now they are four nothings.
+  let spam = fresh;
+  for (let i = 0; i < 20; i++) spam = endFreeAgentWeek(spam);
+  check(spam === fresh, "…however many times it is pressed");
+  check((spam.weeksSinceTrial ?? 0) === 0, "…and no week goes by");
+  check(spam.money === fresh.money, "…and nobody is paid for a week they did not live");
+
+  // Lived out properly, it ends exactly as it always did.
+  let lived = fresh;
+  while (actionsLeft(lived) > 0) lived = spendOn(lived, "games").career;
+  const next = endFreeAgentWeek(lived);
+  check(next !== lived, "a week that has been spent does end");
+  check(next.money === lived.money + FREE_AGENT_WEEKLY_PAY, "…and pays the week's money");
+  check((next.weeksSinceTrial ?? 0) === 1, "…and counts toward the next trial");
+  check(actionsLeft(next) > 0, "…and hands you a fresh week");
+}
+
+// ── A second look is counted, because that is what lowers the bar ────────
+//
+// `trialsTaken` is the whole mechanism behind a retrial being easier —
+// `generateScoutOffers` reads it (as `ScoutContext.retrial`) and judges the
+// afternoon against a lower bar on a ladder shifted a rung down. Lowering
+// `baseDifficulty`, which is all `grantTrial` used to do, is close to neutral
+// on the score under the scoring model in trial.ts today: a stage is worth
+// `0.95 + 0.05 × difficulty`, so an easier afternoon has a very slightly LOWER
+// ceiling.
+{
+  const waited: CareerState = {
+    ...unsigned(),
+    weeksSinceTrial: WEEKS_BETWEEN_TRIALS,
+  };
+  check(trialDue(waited), "after the wait, a trial is due");
+
+  const second = grantTrial(waited);
+  check(second.trialsTaken === 2, `a second look is the second trial (got ${second.trialsTaken})`);
+  check(!!second.trial, "…and there is actually a trial to play");
+  check((second.weeksSinceTrial ?? -1) === 0, "…and the wait starts again");
+
+  // A career that has only ever had the one it opened with reads as 1 without
+  // needing a backfill — the field is absent, not zero.
+  check(waited.trialsTaken === undefined, "a first trial is not counted onto old saves");
+
+  // …and it keeps counting, so a third and fourth look are still retrials.
+  const third = grantTrial({ ...second, weeksSinceTrial: WEEKS_BETWEEN_TRIALS, trial: undefined });
+  check(third.trialsTaken === 3, `a third look counts too (got ${third.trialsTaken})`);
 }
 
 if (problems.length) {

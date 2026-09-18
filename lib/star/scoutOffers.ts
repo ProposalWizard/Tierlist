@@ -57,14 +57,81 @@ const LADDER: { division: CareerDivision; clubs: readonly string[]; strength: nu
 ];
 
 /**
- * Below this, nobody signs you.
+ * Below this, nobody signs you — at all, on any roll.
  *
- * Deliberately low. Failing the trial has to be a real outcome or the whole
- * free-agent life is decoration — but it should be something you did, not
- * something that happened to you, and a bar at a third of the marks available
- * is one a player who tried will clear.
+ * ── Why this moved from 22 to 30, and why the bar was never the real problem ──
+ *
+ * Failing the trial was supposed to be a real outcome. Measured, under the
+ * scoring model in trial.ts today, it was not one: 4,000 trials at every
+ * quality from 10 % to 100 % produced a step function. Anything scoring under
+ * the bar brought nobody, and anything scoring over it brought somebody
+ * **100.0 % of the time** — at 25 % quality, at 50 %, at every level. Playing
+ * a genuinely mediocre afternoon could not cost you a contract, so the whole
+ * free-agent life was a substantial build that almost nobody would ever see.
+ *
+ * Two things caused that, and raising this number only fixes the first:
+ *
+ *  1. `appetite` peaked at exactly 1 — a certainty, not a chance. A score
+ *     sitting on any rung's peak was signed by that rung every single time.
+ *     `keenness` is the fix: how likely ANYBODY is takes a separate, rising
+ *     ramp, and the bell curve below only decides WHICH rung.
+ *  2. The "must not come back with nothing" fallback at the bottom of
+ *     `generateScoutOffers` ran for every score above this bar, which turned
+ *     any run of bad rolls back into a guaranteed signing. It is now gated on
+ *     `GUARANTEED_INTEREST_ABOVE` — a genuinely good trial still cannot be
+ *     left in limbo, a mediocre one genuinely can.
+ *
+ * Decided directly: failure should be a real possibility, not a rare safety
+ * net. The target was roughly a coin flip at 50 % quality, and that is what
+ * these numbers measure at — see `tests/star/scoutOffers.mts`, which asserts
+ * the measured rate at 25/50/75/100 % quality rather than trusting the shape.
  */
-export const NO_INTEREST_BELOW = 22;
+export const NO_INTEREST_BELOW = 30;
+
+/**
+ * …and the same bar for a SECOND look, which is deliberately lower.
+ *
+ * The way back is downward into the leagues (see `grantTrial`, freeAgent.ts):
+ * a man nobody in the Premier League wanted is being watched by a National
+ * League club, and that club is not asking for 30 out of 100. A retrial score
+ * that would have brought nobody first time around genuinely brings somebody
+ * down the bottom of the ladder.
+ */
+export const RETRIAL_NO_INTEREST_BELOW = 18;
+
+/**
+ * The score at which every rung that wants you at all is genuinely coming.
+ *
+ * `keenness` ramps from 0 at the bar to 1 here, and multiplies the bell curve
+ * below. This is the dial that makes a mediocre trial a coin flip rather than
+ * a certainty: it is how seriously the watching clubs take you AT ALL, kept
+ * separate from which rung of the ladder you fit on.
+ */
+const FULLY_KEEN_AT = 95;
+const RETRIAL_FULLY_KEEN_AT = 36;
+
+/**
+ * Above this, somebody always comes.
+ *
+ * A trial clearly good enough to be signed must not come back with nothing
+ * because every roll went against it — that reads as a bug, not as bad luck.
+ * That was always the intent of the fallback at the bottom of
+ * `generateScoutOffers`; what was wrong was that it applied to EVERY score
+ * above `NO_INTEREST_BELOW`, which is what made a 50 %-quality trial a
+ * guaranteed contract. It now only protects a trial that genuinely earned it.
+ */
+export const GUARANTEED_INTEREST_ABOVE = 70;
+export const RETRIAL_GUARANTEED_INTEREST_ABOVE = 60;
+
+/** What a second look changes about a club's decision. */
+export interface ScoutContext {
+  /**
+   * This is a trial a free agent earned back, not the one his career opened
+   * with. Lowers the bar and moves every rung's peak down the score range —
+   * see `appetite`.
+   */
+  retrial?: boolean;
+}
 
 /** A weekly wage for a division, before anything about you. Anchored to the
  *  paying club's level, which is the fix §4.2 of the rework asks for. */
@@ -78,21 +145,76 @@ function baseWage(division: CareerDivision): number {
   }
 }
 
+/** Where on the 0-100 score range each rung is most interested. */
+const PEAK: Record<CareerDivision, number> = {
+  premier: 96, championship: 80, league_one: 64, league_two: 48, national_league: 32,
+};
+
+/** How wide each rung's interest runs either side of its peak. */
+const SPREAD = 22;
+
 /**
- * How much each rung wants you, given how you played.
+ * Where each rung peaks on a SECOND look — every peak moved down a rung of the
+ * ladder, which means up the score range.
  *
- * A curve per division rather than a threshold: each one has a score it is
- * most interested at, and interest falls away either side — a National League
- * club is not chasing the boy who tore the trial up, and a Premier League club
- * is not watching the one who could not hit the target.
+ * ── Which direction "down a rung" goes, and the exploit the other one opens ──
+ *
+ * The first cut of this dropped every peak by a flat 16 points of score. It
+ * measured backwards: a retrial at 75 % quality reached the Premier League
+ * 90.5 % of the time against a first trial's 22.4 %, because a peak at a lower
+ * SCORE means a given score reaches a HIGHER division. That is a re-roll with
+ * a prize on it — fail on purpose, take the second look, come out at a better
+ * club — which is the exact thing the four-tap week-skip fix exists to close.
+ *
+ * So the peaks move the other way. Each rung now wants the score the rung
+ * above it used to want, so the same afternoon that first time brought a
+ * League Two club brings a National League one on the second look: the way
+ * back is genuinely downward into the leagues (§3.7 of the rework, and
+ * `grantTrial`'s own note in freeAgent.ts). What makes the second look EASIER
+ * is the bar and the keenness ramp, not the badge on the offer.
+ *
+ * The National League does not move — there is no rung below it to be pushed
+ * onto, and somebody has to be the club that takes a chance on a bad
+ * afternoon. Its peak drops slightly instead, so it genuinely catches the
+ * bottom of the range rather than leaving it empty.
+ *
+ * The Premier League's 110 is deliberately past the top of the range rather
+ * than out of reach: a perfect retrial still lands there about two times in
+ * three, so a second chance is not a ceiling — it is just no longer the
+ * quickest way up.
  */
-function appetite(division: CareerDivision, score: number): number {
-  const peak: Record<CareerDivision, number> = {
-    premier: 96, championship: 80, league_one: 64, league_two: 48, national_league: 32,
-  };
-  const spread = 22;
-  const d = (score - peak[division]) / spread;
-  return Math.exp(-d * d);
+const RETRIAL_PEAK: Record<CareerDivision, number> = {
+  premier: 110, championship: 94, league_one: 76, league_two: 56, national_league: 26,
+};
+
+const clamp01 = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
+
+/**
+ * How much each rung wants you, given how you played, as a real probability.
+ *
+ * Two independent things, deliberately separated — conflating them is what
+ * made every trial above the bar a guaranteed contract:
+ *
+ *  • **Which rung.** A curve per division rather than a threshold: each one
+ *    has a score it is most interested at, and interest falls away either
+ *    side — a National League club is not chasing the boy who tore the trial
+ *    up, and a Premier League club is not watching the one who could not hit
+ *    the target.
+ *  • **Whether anybody at all.** `keenness`, a straight ramp from nothing at
+ *    the bar to everything at `FULLY_KEEN_AT`. This used to be missing
+ *    entirely, which meant the curve peaked at exactly 1 and a score sitting
+ *    on a rung's peak was signed by that rung 100 % of the time.
+ */
+function appetite(division: CareerDivision, score: number, ctx: ScoutContext = {}): number {
+  const peak = (ctx.retrial ? RETRIAL_PEAK : PEAK)[division];
+  const d = (score - peak) / SPREAD;
+  const shape = Math.exp(-d * d);
+
+  const bar = ctx.retrial ? RETRIAL_NO_INTEREST_BELOW : NO_INTEREST_BELOW;
+  const keenAt = ctx.retrial ? RETRIAL_FULLY_KEEN_AT : FULLY_KEEN_AT;
+  const keenness = clamp01((score - bar) / Math.max(1, keenAt - bar));
+
+  return shape * keenness;
 }
 
 function pick<T>(arr: readonly T[], rng: () => number): T {
@@ -119,15 +241,18 @@ const BIG_PITCHES = [
  * Returns an empty list when nobody did, which is a real, designed outcome —
  * see NO_INTEREST_BELOW and the free-agent life.
  */
-export function generateScoutOffers(trialScore: number, rng: () => number): ScoutOffer[] {
+export function generateScoutOffers(
+  trialScore: number, rng: () => number, ctx: ScoutContext = {},
+): ScoutOffer[] {
   const score = Math.max(0, Math.min(100, Number.isFinite(trialScore) ? trialScore : 0));
-  if (score < NO_INTEREST_BELOW) return [];
+  const bar = ctx.retrial ? RETRIAL_NO_INTEREST_BELOW : NO_INTEREST_BELOW;
+  if (score < bar) return [];
 
   const offers: ScoutOffer[] = [];
   const takenClubs = new Set<string>();
 
   for (const rung of LADDER) {
-    const want = appetite(rung.division, score);
+    const want = appetite(rung.division, score, ctx);
     // Interest is a chance, not a guarantee — the same trial brings different
     // clubs on different days, which is what stops this being a lookup table.
     if (rng() > want) continue;
@@ -155,11 +280,21 @@ export function generateScoutOffers(trialScore: number, rng: () => number): Scou
     });
   }
 
+  // ── The one thing that is still a guarantee, and the line it now sits behind ──
+  //
   // A trial clearly good enough to be signed must not come back with nothing
   // because every roll went against it — that reads as a bug, not as bad luck.
-  if (!offers.length) {
+  // But this used to run for ANY score above the bar, which is most of why a
+  // 50 %-quality afternoon was signed 100 % of the time: however the five rolls
+  // went, this put a club back on the screen. It now protects only a trial that
+  // genuinely earned the protection — below `GUARANTEED_INTEREST_ABOVE` an
+  // empty list is a real, designed outcome and the free-agent life is where you
+  // are going.
+  const guaranteedAbove = ctx.retrial
+    ? RETRIAL_GUARANTEED_INTEREST_ABOVE : GUARANTEED_INTEREST_ABOVE;
+  if (!offers.length && score >= guaranteedAbove) {
     const rung = LADDER.reduce((best, r) =>
-      appetite(r.division, score) > appetite(best.division, score) ? r : best, LADDER[0]);
+      appetite(r.division, score, ctx) > appetite(best.division, score, ctx) ? r : best, LADDER[0]);
     const wage = Math.round(baseWage(rung.division) * (0.8 + (score / 100) * 0.5));
     offers.push({
       club: pick(rung.clubs, rng),
