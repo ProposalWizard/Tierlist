@@ -42,6 +42,7 @@ import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
+import { wageForFixture } from "./wages";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
@@ -1544,7 +1545,18 @@ export function simulateMissedFixture(
     knockoutMessage,
     // A week you didn't play still costs the horse its keep, exactly like a
     // played week does (see the other call site's own note above).
-    money: career.money + career.contract.wage - (career.horse ? horseUpkeep(career.horse) : 0),
+    // A week's wage, not a fixture's — see wages.ts.
+    //
+    // This is the other half of the same overpayment the played-match path
+    // had: both sites paid a full wage PER FIXTURE, so a week holding a
+    // midweek tie and a Saturday game paid twice over whether you played
+    // them, sat them out, or did one of each. Sharing the week here as well
+    // as there is what makes a week total exactly one week's wage in every
+    // combination.
+    //
+    // You are paid for the week, not for turning up, so the share is the
+    // same as it would have been had you played this one.
+    money: career.money + wageForFixture(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
     // Not playing does not cost you energy — it is the one thing every week

@@ -1,4 +1,5 @@
-import type { CareerState, MatchStats, GoalEvent, OppGoalEvent } from "./types";
+import type { CareerState, MatchStats, GoalEvent, OppGoalEvent, Fixture } from "./types";
+import { wageForFixture } from "./wages";
 import { getTuning } from "./tuningStore";
 
 // Canonical end-of-match scoring for career mode: turns a match tally
@@ -74,15 +75,37 @@ export function finaliseMatch(
   goalEvents: GoalEvent[] = [],
   hooked: MatchStats["hooked"] = null,
   oppGoalEvents: OppGoalEvent[] = [],
+  /**
+   * The fixture this match IS, when the caller has one.
+   *
+   * Only used to work out this match's share of the week's wage — a wage is
+   * a week's wage, paid at the weekend game or split across that week's
+   * midweek games (see wages.ts). Optional, and omitting it pays the full
+   * wage exactly as before, which is what the /star-match-dev sandbox fork
+   * and the standalone match sandbox want: neither is a real fixture in a
+   * real season, so neither has a week to share with.
+   */
+  fixture?: Fixture,
 ): MatchStats {
   const raw = liveRating(chances, goals, assists, passes, userScore, oppScore);
   const rating = regressForMinutes(raw, minutes);
 
   const starMan = rating >= 8.5 || goals >= 2;
-  const wage = career.contract.wage;
+  // A week's wage, not a match's — see wages.ts. Without a fixture there is
+  // no week to divide, so the full wage is the honest answer.
+  const wage = fixture ? wageForFixture(career, fixture) : career.contract.wage;
   const goalBonus = goals * career.contract.goalBonus;
   const assistBonusPay = assists * career.contract.assistBonus;
-  const sponsorPay = Math.floor(career.relationships.sponsors / 20);
+  // Image-rights money from how well your sponsors are being served.
+  //
+  // This was `sponsors / 20` — a maximum of ★5 a match, left behind by the
+  // 14 Sep 2026 rescale that multiplied every other money value by 2000. It
+  // has been effectively zero ever since: ★5 against a ★2,000 wage.
+  //
+  // Scaled by `sponsors.feeScale` — the SAME constant `sponsorFee` already
+  // uses (sponsors.ts) — rather than a second hardcoded 2000, so every piece
+  // of sponsor money moves together if that scale is ever retuned.
+  const sponsorPay = Math.floor((career.relationships.sponsors / 20) * getTuning("sponsors.feeScale"));
   const totalCash = wage + goalBonus + assistBonusPay + sponsorPay;
 
   let boss = 0, team = 0, fans = 0;

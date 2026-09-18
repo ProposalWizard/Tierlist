@@ -120,9 +120,8 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
         {kind === "boots" && (
           <>
             <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 mb-3">
-              <div className="grid grid-cols-[1fr_40px_40px_40px_50px_40px] py-1.5 bg-gray-800 text-[10px] font-black text-center text-white">
+              <div className="grid grid-cols-[1fr_40px_40px_50px_40px] py-1.5 bg-gray-800 text-[10px] font-black text-center text-white">
                 <div>Boot</div>
-                <div>Pac</div>
                 <div>Pow</div>
                 <div>Tec</div>
                 <div>Match</div>
@@ -133,7 +132,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                   <button
                     key={b.id}
                     onClick={() => setSelectedBoot(b)}
-                    className={`w-full grid grid-cols-[1fr_40px_40px_40px_50px_40px] py-2 text-[10px] font-bold text-center ${
+                    className={`w-full grid grid-cols-[1fr_40px_40px_50px_40px] py-2 text-[10px] font-bold text-center ${
                       selectedBoot?.id === b.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white hover:bg-gray-600"
                     }`}
                   >
@@ -149,7 +148,6 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                         <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
                       )}
                     </div>
-                    <div>{b.pace.toFixed(1)}</div>
                     <div>{b.power.toFixed(1)}</div>
                     <div>{b.technique.toFixed(1)}</div>
                     <div>{b.matches}</div>

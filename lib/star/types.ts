@@ -455,6 +455,25 @@ export interface MatchStats {
 export interface Boot {
   id: string;
   name: string;
+  /**
+   * INERT — kept for save compatibility, deliberately not shown anywhere.
+   *
+   * Nothing has ever read this for gameplay. `effectivePower`/
+   * `effectiveTechnique` (app/star-dev/page.tsx) add the two fields below to
+   * your skills before a match; there is no `effectivePace`, and the engine
+   * reads `career.skills.pace` raw. So every boot's advertised pace rating
+   * was a number that did nothing, and the shop was claiming otherwise.
+   *
+   * Removed from both places it was displayed (the boots table in Shop.tsx
+   * and the current-boot line in DashboardStats.tsx) on 18 Sep 2026 rather
+   * than wired up: making it real would change how every match plays for
+   * every existing save and could disturb the finishing distributions that
+   * were measured and tuned over many sessions.
+   *
+   * The field itself stays so that a boot stored in an existing save still
+   * matches this type. **Don't put it back on screen without making it do
+   * something first.**
+   */
   pace: number;
   power: number;
   technique: number;

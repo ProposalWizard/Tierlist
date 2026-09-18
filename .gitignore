@@ -29,3 +29,6 @@ __pycache__/
 
 # claude code agent scratch worktrees
 .claude/worktrees/
+
+# playtest agent scratch files
+scripts/star-sandbox/_tmp_*
