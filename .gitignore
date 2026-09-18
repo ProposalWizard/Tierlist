@@ -41,3 +41,9 @@ scripts/star-sandbox/_*
 # project has been found by looking at a rendered frame, so these get written
 # often — and they are never part of the app.
 app/gfx-harness-tmp/
+
+# Throwaway measurement scripts an agent writes beside the real suites to put a
+# number on something (how noisy a 3-rep stage is, where the time actually
+# goes) before deciding anything. This project settles arguments by measuring,
+# so these get written often — a keeper becomes a real test with a real name.
+tests/star/_*
