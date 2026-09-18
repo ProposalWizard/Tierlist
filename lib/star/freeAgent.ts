@@ -1,4 +1,4 @@
-import { canAct, spendAction } from "./week";
+import { canAct, spendAction, startNewWeek } from "./week";
 import type { CareerState } from "./types";
 
 /**
@@ -20,10 +20,15 @@ import type { CareerState } from "./types";
  * ── The money ──
  *
  * ★10 a week, decided directly and deliberately much lower than the ★50 first
- * floated: it is a scrape, not a living. The point is that the cheap end of
- * the shop is REACHABLE IF YOU SAVE FOR IT, which is exactly the feeling this
- * phase is meant to have — at this rate the cheapest useful thing is weeks of
- * doing without, and that is the story.
+ * floated: it is a scrape, not a living.
+ *
+ * Against the shop as it stands today — cheapest item ★6,000 — that is not
+ * "save up for a while", it is out of reach for the entire phase. An earlier
+ * version of this note claimed both things in the same file, which is the sort
+ * of contradiction that only survives because nobody reads two paragraphs
+ * together. The honest statement is the second one: the shop is closed to a
+ * free agent until step 9 of the rework prices a cheap band against THIS
+ * number rather than against a signed player's wage.
  */
 
 /**
@@ -54,6 +59,18 @@ import type { CareerState } from "./types";
  * a signed player's wage, or the free agent's shop is a locked door.
  */
 export const FREE_AGENT_WEEKLY_PAY = 10;
+
+/**
+ * The ceiling on training alone.
+ *
+ * Declared here, above its only user, because there were briefly TWO of it — a
+ * `const cap = 55` inside the function and this one — in a file whose own
+ * comment said the number was "stated once". Caught in review.
+ *
+ * Shown on the bar in the screen, so a player sees where the garden runs out
+ * rather than discovering it by grinding into a wall.
+ */
+export const GARDEN_GYM_CAP = 55;
 
 export type LeisureAction = "games" | "social" | "gym";
 
@@ -96,8 +113,7 @@ export function spendOn(career: CareerState, what: LeisureAction): LeisureResult
     case "gym": {
       // Training alone improves you, slowly, and only to a point — there is no
       // coach, no team, and nobody telling you what you are doing wrong.
-      const cap = 55;
-      const bump = (v: number) => (v >= cap ? v : Math.min(cap, v + 1));
+      const bump = (v: number) => (v >= GARDEN_GYM_CAP ? v : Math.min(GARDEN_GYM_CAP, v + 1));
       return {
         career: {
           ...base,
@@ -109,7 +125,7 @@ export function spendOn(career: CareerState, what: LeisureAction): LeisureResult
           energy: Math.max(0, base.energy - 8),
           happiness: Math.max(0, base.happiness - 2),
         },
-        note: base.skills.technique >= cap
+        note: base.skills.technique >= GARDEN_GYM_CAP
           ? "You are as sharp as a garden gym is going to get you."
           : "Weights, then the wall. Nobody watching.",
       };
@@ -117,6 +133,30 @@ export function spendOn(career: CareerState, what: LeisureAction): LeisureResult
   }
 }
 
-/** The ceiling on training alone — stated once so the screen can say it
- *  rather than the player discovering it by grinding into a wall. */
-export const GARDEN_GYM_CAP = 55;
+
+
+
+/**
+ * END THE WEEK.
+ *
+ * A free agent has no fixtures, and a week normally rolls over when a fixture
+ * is settled — so without this the week simply never ended: three actions and
+ * the screen said "that is the week gone" forever. Found in review, and it is
+ * the difference between a loop and a dead end.
+ *
+ * This is also the only thing that ever pays him. `FREE_AGENT_WEEKLY_PAY` was
+ * written, displayed on screen, and credited by nothing.
+ */
+export function endFreeAgentWeek(career: CareerState): CareerState {
+  return {
+    ...career,
+    ...startNewWeek(),
+    week: career.week + 1,
+    money: career.money + FREE_AGENT_WEEKLY_PAY,
+    // Living on nothing wears at you. Small, and Rest and the other actions
+    // are there to push back against it — this is a drift, not a doom clock.
+    happiness: Math.max(0, career.happiness - 1),
+    // Nobody is taking it out of you, so you arrive at the next week fresh.
+    energy: Math.min(100, career.energy + 25),
+  };
+}

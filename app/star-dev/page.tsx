@@ -2095,7 +2095,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onCareer={next => setCareer(next)}
         onTrial={career.trial ? () => setPhase("trial-stages") : undefined}
         onSettings={() => setPhase("settings")}
-        onExit={() => setPhase("dashboard")}
       />
     );
   }
@@ -2105,7 +2104,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <TrialSequence
         trial={career.trial}
         playerName={career.player.firstName}
-        skills={{ power: career.skills.power, technique: career.skills.technique }}
+        skills={{
+          power: career.skills.power,
+          technique: career.skills.technique,
+          // The dribbling stage runs on this and nothing else.
+          pace: career.skills.pace,
+        }}
         onTrial={t => setCareer(c => (c ? { ...c, trial: t } : c))}
         onComplete={(score, t) => {
           setCareer(c => (c ? { ...c, trial: { ...t } } : c));

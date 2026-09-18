@@ -3,7 +3,9 @@ import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { actionsLeft } from "@/lib/star/week";
 import { formatMoney } from "@/lib/star/money";
-import { spendOn, GARDEN_GYM_CAP, FREE_AGENT_WEEKLY_PAY, type LeisureAction } from "@/lib/star/freeAgent";
+import {
+  spendOn, endFreeAgentWeek, GARDEN_GYM_CAP, FREE_AGENT_WEEKLY_PAY, type LeisureAction,
+} from "@/lib/star/freeAgent";
 import { nextStage, STAGE_LABEL, trialScore, trialComplete } from "@/lib/star/trial";
 
 /**
@@ -31,11 +33,10 @@ export interface FreeAgentShellProps {
   /** Go and play the trial you have been offered. */
   onTrial?: () => void;
   onSettings: () => void;
-  onExit: () => void;
 }
 
 export default function FreeAgentShell({
-  career, onCareer, onTrial, onSettings, onExit,
+  career, onCareer, onTrial, onSettings,
 }: FreeAgentShellProps) {
   const [tab, setTab] = useState<Tab>("home");
   const [note, setNote] = useState<string>("");
@@ -152,9 +153,24 @@ export default function FreeAgentShell({
             {note}
           </div>
         )}
+        {/* ── The week has to be able to end ──
+            A free agent has no fixtures, and a week normally rolls over when
+            one is settled. Without this button the screen said "that is the
+            week gone" and stayed that way forever: three actions and the
+            career was over. Found in review. It is also the only thing that
+            ever pays the ★10 — it was displayed here and credited by nothing. */}
         {left <= 0 && (
-          <div className="mt-3 rounded-lg bg-amber-500/15 px-3 py-2 text-[12px] font-bold text-amber-200">
-            That is the week gone.
+          <div className="mt-3 rounded-xl bg-amber-500/15 p-3">
+            <div className="text-[12px] font-bold text-amber-200">That is the week gone.</div>
+            <button
+              onClick={() => {
+                onCareer(endFreeAgentWeek(career));
+                setNote(`A new week. ${formatMoney(FREE_AGENT_WEEKLY_PAY)} in.`);
+              }}
+              className="mt-2 w-full rounded-lg bg-amber-400 py-2.5 text-[12px] font-black uppercase tracking-widest text-amber-950 hover:bg-amber-300"
+            >
+              Next week →
+            </button>
           </div>
         )}
       </div>
@@ -164,7 +180,10 @@ export default function FreeAgentShell({
         <Nav label="Gym" icon="🏋️" active={tab === "gym"} onClick={() => setTab("gym")} />
         <Nav label="Games" icon="🎮" active={tab === "games"} onClick={() => setTab("games")} />
         <Nav label="Social" icon="🍻" active={tab === "social"} onClick={() => setTab("social")} />
-        <Nav label="Exit" icon="←" active={false} onClick={onExit} />
+        {/* No Exit to the club dashboard — this career has no club, and that
+            screen has nothing to show it. Settings is reachable from the
+            header; there is nowhere else to be. */}
+        <Nav label="Week" icon="📅" active={false} onClick={() => { onCareer(endFreeAgentWeek(career)); setNote("A new week."); }} />
       </div>
     </div>
   );

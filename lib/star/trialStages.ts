@@ -103,8 +103,18 @@ export function freeKickSetup(trial: TrialProgress, rep: number): FreeKickSetup 
 export interface DribbleSetup {
   /** 0-100, fed straight to the first-person run. */
   oppStrength: number;
-  /** How many men, in waves. The existing run builds its own waves; this is
-   *  the ceiling it works to. */
+  /**
+   * The waves, and therefore exactly how many men you face.
+   *
+   * Passed to the run rather than left to it. It used to only carry a total,
+   * which was never handed over — so the run picked its own waves and the
+   * scoring then divided the men you beat by a number unrelated to the men on
+   * the screen. Beating everyone could score 0.72 while beating three of nine
+   * scored 1.0. Caught in review.
+   */
+  waveSizes: number[];
+  /** How many men that adds up to — what `dribbleQuality` divides by, and now
+   *  genuinely the number you faced. */
   defenders: number;
 }
 
@@ -115,9 +125,23 @@ export interface DribbleSetup {
  */
 export function dribbleSetup(trial: TrialProgress): DribbleSetup {
   const d = difficultyFor(trial, "dribbling");
+  // Two to four waves, widening with the difficulty, capped at the run's own
+  // ceiling of ten — a real match has eleven men and one of them is in goal.
+  const waves = Math.round(2 + d * 2);
+  const sizes: number[] = [];
+  let total = 0;
+  for (let i = 0; i < waves; i++) {
+    const want = Math.max(1, Math.round(1 + d * 2 + (i === waves - 1 ? 1 : 0)));
+    const room = Math.max(0, 10 - total);
+    const take = Math.min(want, room);
+    if (take <= 0) break;
+    sizes.push(take);
+    total += take;
+  }
   return {
     oppStrength: 35 + d * 60,
-    defenders: Math.round(3 + d * 5),
+    waveSizes: sizes,
+    defenders: total,
   };
 }
 

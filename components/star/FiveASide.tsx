@@ -11,7 +11,7 @@ import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { FIVE_A_SIDE, type MatchRules } from "@/lib/star/fiveASide/rules";
-import { buildPassage, type FiveCast } from "@/lib/star/fiveASide/passage";
+import { buildPassage, passLeadsToShot, type FiveCast } from "@/lib/star/fiveASide/passage";
 import { leftPitch } from "@/lib/star/fiveASide/geometry";
 import {
   newFiveMatch, applyOutcome, oppAttack, type FiveMatchState,
@@ -53,8 +53,19 @@ type Phase = "ready" | "aim" | "contact" | "flight" | "result" | "opp" | "done";
 export interface FiveASideProps {
   /** 0-1. Sets how good the opposition are — see rules/score. */
   difficulty: number;
-  /** 0-100, your own keeper, for their attacks. */
+  /** 0-100, YOUR OWN keeper. Only used for how well he stops THEIR attacks. */
   keeperStrength?: number;
+  /**
+   * 0-100, THEIR keeper — the one standing between you and the goal.
+   *
+   * Separate from `keeperStrength` because they are opposite forces and
+   * conflating them inverts the adversity: the trial's "sharp keeper" event
+   * was being passed as `keeperStrength`, which made a player who drew the
+   * bad break HARDER TO SCORE AGAINST rather than harder to score past.
+   * Caught in review. Defaults to the difficulty curve, which is what every
+   * caller without an opinion wants.
+   */
+  oppKeeperStrength?: number;
   /** Your power and technique, fed straight to the engine's striking model. */
   skills?: { power: number; technique: number };
   seed: number;
@@ -73,7 +84,7 @@ export interface FiveASideProps {
 }
 
 export default function FiveASide({
-  difficulty, keeperStrength = 60, skills = { power: 55, technique: 55 },
+  difficulty, keeperStrength = 60, oppKeeperStrength, skills = { power: 55, technique: 55 },
   seed, cast, yourKit, theirKit, rules = FIVE_A_SIDE, embedded,
   onComplete, onProgress, resumeFrom,
 }: FiveASideProps) {
@@ -122,7 +133,7 @@ export default function FiveASide({
     const m = matchRef.current;
     const sc = buildPassage(m.world, {
       cast,
-      keeperStrength: Math.min(99, 40 + difficulty * 45),
+      keeperStrength: Math.min(99, oppKeeperStrength ?? (40 + difficulty * 45)),
       teamRelationship: 55,
       rng: rngRef.current,
     });
@@ -134,7 +145,7 @@ export default function FiveASide({
     ballRef.current = null;
     aimRef.current = null;
     setPhase("aim");
-  }, [cast, difficulty, rules]);
+  }, [cast, difficulty, oppKeeperStrength, rules]);
 
   useEffect(() => {
     loadPassage();
@@ -333,9 +344,19 @@ export default function FiveASide({
         ...mine, label: r.who?.shortName, face: face(r.who?.face),
       }, faceStyle.current, fakeFaceStyle.current);
     }
-    drawFigure(ctx, p, { x: sc.follower.x, y: sc.follower.y }, {
-      ...mine, label: sc.follower.who?.shortName, face: face(sc.follower.who?.face),
-    }, faceStyle.current, fakeFaceStyle.current);
+    // ── Only where he is a real man ──
+    //
+    // In a midfield passage the engine ignores the follower entirely and all
+    // three of your outfielders are runners instead (see passage.ts). Drawing
+    // him anyway put a STATIC DUPLICATE on the pitch — a second white shirt
+    // standing where a team-mate had been while the real one ran off — in
+    // roughly half of all play, on a pitch small enough that it would be the
+    // first thing anybody noticed. Caught in review.
+    if (passLeadsToShot(sc.kind)) {
+      drawFigure(ctx, p, { x: sc.follower.x, y: sc.follower.y }, {
+        ...mine, label: sc.follower.who?.shortName, face: face(sc.follower.who?.face),
+      }, faceStyle.current, fakeFaceStyle.current);
+    }
     drawFigure(ctx, p, sc.player, { ...mine, star: true }, faceStyle.current, fakeFaceStyle.current);
 
     const ball = ballRef.current;

@@ -10,7 +10,7 @@ import FirstPersonDribble from "./FirstPersonDribble";
 import TrialPenalties from "./stages/TrialPenalties";
 import TrialFreeKicks from "./stages/TrialFreeKicks";
 import TrialVision from "./stages/TrialVision";
-import type { FiveASideSummary } from "@/lib/star/fiveASide/score";
+import { stageQualityFrom, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import type { FiveMatchState } from "@/lib/star/fiveASide/match";
 
 /**
@@ -42,11 +42,13 @@ export interface TrialSequenceProps {
   /** The whole trial is done, here is what the scouts saw (0-100). */
   onComplete: (score: number, trial: TrialProgress) => void;
   playerName: string;
-  skills?: { power: number; technique: number };
+  /** Pace is here because the dribbling stage is entirely about it — see the
+   *  note at its call site. */
+  skills?: { power: number; technique: number; pace: number };
 }
 
 export default function TrialSequence({
-  trial, onTrial, onComplete, playerName, skills = { power: 40, technique: 40 },
+  trial, onTrial, onComplete, playerName, skills = { power: 40, technique: 40, pace: 40 },
 }: TrialSequenceProps) {
   const stage = nextStage(trial);
   const [showingResult, setShowingResult] = useState<TrialStage | null>(null);
@@ -134,10 +136,19 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
+        {/* `pace` is RUNNING SPEED — the run's own header says so. This used
+            to be handed `skills.power`, which is a different stat and meant
+            your actual pace never reached the one stage that is entirely
+            about it. And `waveSizes` is passed so the men you are scored
+            against are the men actually on the screen: without it the run
+            picks its own waves and `dribbleQuality` divided by a number
+            unrelated to them, so beating everyone could score 0.72 while
+            beating three of nine scored 1.0. Both caught in review. */}
         <FirstPersonDribble
           embedded
-          pace={skills.power}
+          pace={skills.pace}
           oppStrength={dribble.oppStrength}
+          waveSizes={dribble.waveSizes}
           onComplete={(res: { cleared: boolean; beaten: number }) =>
             finishStage("dribbling", dribbleQuality(res, dribble))}
         />
@@ -150,18 +161,25 @@ export default function TrialSequence({
     return (
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
+        {/* THEIR keeper carries the adversity, not yours — passing it as
+            `keeperStrength` made a sharp keeper defend YOUR goal, so a player
+            who drew the bad break was helped by it. Caught in review. */}
         <FiveASide
           embedded
           seed={trial.seed}
           difficulty={difficultyFor(trial, "fiveASide")}
-          keeperStrength={55 + keeperBonusFor(trial, "fiveASide")}
+          oppKeeperStrength={40 + difficultyFor(trial, "fiveASide") * 45 + keeperBonusFor(trial, "fiveASide")}
+          keeperStrength={55}
           skills={skills}
           resumeFrom={(trial.fiveASide as FiveMatchState | undefined) ?? null}
           onProgress={state => onTrial({ ...trial, fiveASide: state })}
-          onComplete={(summary: FiveASideSummary) => {
-            // The unscaled quality: the trial applies its own difficulty
-            // scaling, and applying it twice would punish a hard trial twice.
-            finishStage("fiveASide", summary.score / 100 / (0.70 + 0.60 * summary.difficulty));
+          onComplete={(_summary: FiveASideSummary, state: FiveMatchState) => {
+            // `stageQualityFrom` IS the unscaled quality — the trial applies
+            // its own difficulty scaling and applying it twice would punish a
+            // hard trial twice over. This used to divide the rounded, clamped
+            // score back out by the same factor, which is exactly the mistake
+            // score.ts's own note describes and is lossy by up to a point.
+            finishStage("fiveASide", stageQualityFrom(state));
           }}
         />
       </div>
