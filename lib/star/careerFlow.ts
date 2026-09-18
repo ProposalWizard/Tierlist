@@ -253,6 +253,35 @@ export function attachClub(
 ): CareerState {
   const state: CareerState = {
     ...identity,
+    // ── Why the nested objects are copied rather than spread along ──
+    //
+    // `{ ...identity }` is a SHALLOW copy: every nested object it does not
+    // explicitly replace is the same object, shared with the identity and with
+    // any other career signed from it. That is invisible today, because
+    // `makeInitialCareer` attaches exactly one club and throws the identity
+    // away — and a JSON comparison can never see it, because aliased objects
+    // and copied ones serialise identically.
+    //
+    // It stops being invisible the moment a trial ends with several clubs
+    // wanting you: the offer screen builds a candidate career per club from
+    // ONE identity, and the first of them to train, earn or spend would
+    // silently move the others' numbers too. Found in review, before there was
+    // anything to break.
+    skills: { ...identity.skills },
+    lastTrainedWeek: { ...identity.lastTrainedWeek },
+    relationships: { ...identity.relationships },
+    reputation: { ...identity.reputation },
+    seasonStats: { ...identity.seasonStats },
+    careerStats: { ...identity.careerStats },
+    kibCans: { ...identity.kibCans },
+    statCans: { ...identity.statCans },
+    currentBoot: { ...identity.currentBoot },
+    sponsors: identity.sponsors.map(sp => ({ ...sp })),
+    trophies: [...identity.trophies],
+    form: [...identity.form],
+    achievements: [...identity.achievements],
+    seenDilemmas: [...identity.seenDilemmas],
+    ownedItems: [...identity.ownedItems],
     player: { ...identity.player, club },
     contract: { ...identity.contract, club },
     division,

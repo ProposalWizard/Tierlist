@@ -4,8 +4,10 @@ import { makeIdentity, attachClub, makeInitialCareer } from "../../lib/star/care
 // nothing, so storage.ts and the /api/star/career server route can ask it
 // without pulling the whole career engine into their bundles.
 import { hasClub } from "../../lib/star/calendar";
+import { computeStarRating } from "../../lib/star/rating";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
+import { readFileSync } from "node:fs";
 
 /**
  * WHO YOU ARE vs WHERE YOU PLAY.
@@ -84,10 +86,19 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
 
   // The rating is computed off skills and honours, neither of which a club
   // touches — so signing must not move it.
+  // Deliberately compared against a rating computed independently of
+  // attachClub, not against the identity it copies from — `attachClub` spreads
+  // the identity and never writes starRating, so comparing the two is `x === x`
+  // and would pass however wrong the rating was. Caught in review.
   const signed = attachClub(id, "Arsenal", [...PREMIER_LEAGUE_CLUBS], "premier");
   check(
-    signed.starRating === id.starRating,
-    `signing for a club must not change the player's rating — ${id.starRating} became ${signed.starRating}`,
+    signed.starRating === computeStarRating(signed),
+    `a signed career's rating must still be the one its own skills and honours give it `
+    + `— stored ${signed.starRating}, recomputed ${computeStarRating(signed)}`,
+  );
+  check(
+    signed.starRating === computeStarRating(id),
+    "…and it is the same rating the unsigned player already had",
   );
 }
 
@@ -155,37 +166,90 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     JSON.stringify(a.relationships) === JSON.stringify(b.relationships),
     "relationships are about the player, not the club",
   );
+
+  // ── …and they are genuinely two careers, not one wearing two badges ──
+  //
+  // Comparing `a.skills` and `b.skills` with JSON, as the two checks above do,
+  // passes whether they are copies OR THE SAME OBJECT. That is not a hair
+  // being split: the offer screen builds a candidate career per interested
+  // club from one identity, and if those share their nested objects then
+  // training in one moves the others. Caught in review; this is the test that
+  // would have caught it instead.
+  //
+  // Checked by mutating, because that is the only thing that can tell an alias
+  // from a copy.
+  a.skills.technique += 11;
+  a.relationships.boss += 7;
+  a.money += 1234;
+  a.trophies.push({ competition: "Premier League", season: 1 } as never);
+  a.achievements.push("test-only");
+  a.sponsors[0].active = true;
+  a.kibCans.basic += 3;
+  a.currentBoot.technique += 5;
+
+  check(b.skills.technique === id.skills.technique, "training at one club must not train you at another");
+  check(b.relationships.boss === id.relationships.boss, "relationships must not be shared between two careers");
+  check(b.money === id.money, "money must not be shared between two careers");
+  check(b.trophies.length === id.trophies.length, "a trophy won in one career must not appear in another");
+  check(b.achievements.length === id.achievements.length, "achievements must not be shared");
+  check(b.sponsors[0].active === false, "a sponsor signed in one career must not be signed in another");
+  check(b.kibCans.basic === id.kibCans.basic, "stock must not be shared between two careers");
+  check(b.currentBoot.technique === id.currentBoot.technique, "boots must not be shared between two careers");
+  // And the identity itself is untouched by either signing.
+  check(id.skills.technique !== a.skills.technique, "the identity is not the career that was signed from it");
 }
 
 // ── makeInitialCareer is unchanged, which is what keeps every save safe ──
 //
-// The strongest available check: the two halves in a row must produce
-// exactly what the one function produced, for real clubs in both real
-// divisions. An assertion on a handful of fields would pass happily while
-// something further down had quietly moved.
+// ── The version of this test that proved nothing ──
+//
+// The obvious check is to build a career both ways and compare:
+//
+//     makeInitialCareer(p, clubs, div)   vs   attachClub(makeIdentity(p, div), ...)
+//
+// That is what this file did first, and it is a TAUTOLOGY: `makeInitialCareer`
+// IS literally that expression now, so the two sides are the same code and the
+// assertion cannot fail under any change to either function. It was caught in
+// review, not by running it — which is exactly the kind of test that is worse
+// than no test, because it reads like proof.
+//
+// The real question is whether the split changed what the OLD function
+// produced, and the only thing that can answer it is the old function. So
+// `tests/star/fixtures/preSplitCareers.json` holds five whole careers built by
+// `makeInitialCareer` as it was at commit 014febb, the last commit before the
+// split. This compares against those.
 {
-  const cases: [StarPlayer, string[], "premier" | "championship"][] = [
-    [player(), [...PREMIER_LEAGUE_CLUBS], "premier"],
-    [player({ club: "Manchester City", position: "CM" }), [...PREMIER_LEAGUE_CLUBS], "premier"],
-    [player({ club: "Liverpool", position: "GK", age: 31 }), [...PREMIER_LEAGUE_CLUBS], "premier"],
-    [player({ club: CHAMPIONSHIP_CLUBS[0], position: "CB", age: 18 }), [...CHAMPIONSHIP_CLUBS], "championship"],
-    [player({ club: CHAMPIONSHIP_CLUBS[7], position: "LW" }), [...CHAMPIONSHIP_CLUBS], "championship"],
-  ];
+  const golden = JSON.parse(
+    readFileSync(new URL("./fixtures/preSplitCareers.json", import.meta.url), "utf8"),
+  ) as { player: StarPlayer; clubs: string[]; division: "premier" | "championship"; career: CareerState }[];
 
-  for (const [p, clubs, division] of cases) {
-    const whole = makeInitialCareer(p, clubs, division);
-    const halves = attachClub(makeIdentity(p, division), p.club, clubs, division);
+  check(golden.length >= 5, `expected a real set of golden careers, got ${golden.length}`);
+
+  for (const g of golden) {
+    const now = makeInitialCareer(g.player, g.clubs, g.division);
     check(
-      JSON.stringify(whole) === JSON.stringify(halves),
-      `${p.club}: makeInitialCareer must be exactly makeIdentity + attachClub`,
+      JSON.stringify(now) === JSON.stringify(g.career),
+      `${g.player.club} (${g.division}): today's career differs from the one built before the split`,
     );
-    check(hasClub(whole), `${p.club}: a career built the old way still has a club`);
+    check(hasClub(now), `${g.player.club}: a career built the old way still has a club`);
   }
 
-  // And it is still deterministic — two calls with the same inputs agree.
-  const [p0, c0, d0] = cases[0];
+  // And the two halves agree with the old function too — which is the claim
+  // that actually matters, and is NOT a tautology because the right-hand side
+  // is a recorded fixture rather than the same expression.
+  for (const g of golden) {
+    const halves = attachClub(makeIdentity(g.player, g.division), g.player.club, g.clubs, g.division);
+    check(
+      JSON.stringify(halves) === JSON.stringify(g.career),
+      `${g.player.club}: makeIdentity + attachClub differs from the pre-split career`,
+    );
+  }
+
+  // Still deterministic — two calls with the same inputs agree.
+  const g0 = golden[0];
   check(
-    JSON.stringify(makeInitialCareer(p0, c0, d0)) === JSON.stringify(makeInitialCareer(p0, c0, d0)),
+    JSON.stringify(makeInitialCareer(g0.player, g0.clubs, g0.division))
+      === JSON.stringify(makeInitialCareer(g0.player, g0.clubs, g0.division)),
     "the same player at the same club opens the same career every time",
   );
 }
