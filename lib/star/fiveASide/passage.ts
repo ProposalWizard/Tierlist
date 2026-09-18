@@ -133,6 +133,36 @@ export function kindForBall(ball: Vec2): ScenarioKind {
 const dist = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
 
 /**
+ * WHICH OF YOUR THREE MEN ENDED UP IN WHICH ENGINE SLOT.
+ *
+ * Recorded when the picture is built, and read back when it is finished, so a
+ * team-mate is the same person from touch to touch.
+ *
+ * ── Why this is recorded rather than worked out again ──
+ *
+ * The cast depends on the kind (see buildPassage): in the last third one of
+ * your men is the engine's poacher and the other two are runners; in your own
+ * half all three are runners. `worldFromScenario` used to re-derive that by
+ * sorting the PREVIOUS world and assuming the last-third shape — which is
+ * right half the time and silently wrong the other half, dropping one run
+ * and writing two mates into each other's positions. Measured effect: about a
+ * fourteen-metre lateral swap on a twenty-four-metre pitch, which is exactly
+ * the teleporting this whole design exists to prevent, and the "nobody
+ * teleports" test allowed thirty metres of movement so it could never see it.
+ *
+ * Caught in review. Held in a WeakMap rather than on the Scenario so nothing
+ * is added to an engine type for a caller's bookkeeping.
+ */
+interface PassageSlots {
+  /** Slot index in `FiveWorld.mates` for each entry of `secondaryRunners`. */
+  runners: number[];
+  /** Slot index for the follower, or null when he is not one of your three
+   *  (which is every passage where the goal is not in view). */
+  poacher: number | null;
+}
+const SLOTS = new WeakMap<Scenario, PassageSlots>();
+
+/**
  * Push a man far enough off the ball to satisfy the engine's own spacing,
  * keeping him as close as possible to where he really was.
  *
@@ -275,8 +305,12 @@ export function buildPassage(world: FiveWorld, opts: PassageOpts): Scenario {
 
   const secondaryRunners: Runner[] = runnerIdx.map(i => runnerAt(mates[i], cast?.mates?.[i]));
   const follower = followerAt(mates[poacherIdx], cast?.mates?.[poacherIdx]);
+  const slots: PassageSlots = {
+    runners: runnerIdx,
+    poacher: goalIsInView ? poacherIdx : null,
+  };
 
-  return {
+  const scenario: Scenario = {
     ball,
     player,
     defenders,
@@ -318,6 +352,8 @@ export function buildPassage(world: FiveWorld, opts: PassageOpts): Scenario {
     // clock is what ends a five-a-side, not a link counter.
     chainDepth: 0,
   };
+  SLOTS.set(scenario, slots);
+  return scenario;
 }
 
 /**
@@ -328,14 +364,21 @@ export function buildPassage(world: FiveWorld, opts: PassageOpts): Scenario {
  * his line — and where they ended up is where they start the next one.
  */
 export function worldFromScenario(sc: Scenario, ballAt: Vec2, prev: FiveWorld): FiveWorld {
-  const supports = sc.secondaryRunners.map(r => ({ x: r.pos.x, y: r.pos.y }));
-  const poacher = { x: sc.follower.x, y: sc.follower.y };
-  // Put the three back in their original slots, so a given team-mate stays the
-  // same person from touch to touch rather than being re-sorted each time.
   const mates = [...prev.mates] as [Vec2, Vec2, Vec2];
-  const order = [0, 1, 2].sort((a, b) => prev.mates[a].y - prev.mates[b].y);
-  mates[order[0]] = poacher;
-  order.slice(1).forEach((slot, i) => { if (supports[i]) mates[slot] = supports[i]; });
+  // The mapping this exact picture was built with — see PassageSlots. Falling
+  // back to leaving everybody where they were is the safe answer for a
+  // scenario this file did not build: standing still is wrong, but it is far
+  // less wrong than writing two men into each other's positions.
+  const slots = SLOTS.get(sc);
+  if (slots) {
+    slots.runners.forEach((slot, i) => {
+      const r = sc.secondaryRunners[i];
+      if (r) mates[slot] = { x: r.pos.x, y: r.pos.y };
+    });
+    if (slots.poacher !== null) {
+      mates[slots.poacher] = { x: sc.follower.x, y: sc.follower.y };
+    }
+  }
 
   return {
     ball: clampToPitch(ballAt),

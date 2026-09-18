@@ -148,9 +148,10 @@ export const RELOAD_DIFFICULTY_CAP = 0.15;
 export function startTrial(seed: number = Math.floor(Math.random() * 0xffffffff)): TrialProgress {
   const rng = mulberry32(seed);
 
-  // A trial is usually a fair test and occasionally a brutal one. Squared so
-  // the distribution leans easy-to-middling, with a real tail: most trials
-  // are winnable, a few are the afternoon you were unlucky to draw.
+  // A trial is usually a fair test and occasionally a brutal one. The exponent
+  // (1.6, not 2 — an earlier comment here said "squared" and was simply wrong)
+  // leans the distribution easy-to-middling while leaving a real tail: most
+  // trials are winnable, a few are the afternoon you were unlucky to draw.
   const baseDifficulty = clamp01(Math.pow(rng(), 1.6));
 
   const stageRolls = {} as Record<TrialStage, number>;

@@ -102,22 +102,17 @@ export function passageQuality(
 /** A goal you scored yourself, or one you set up, is worth more than the
  *  placement alone says — it is the thing the whole move was for. */
 export const GOAL_BONUS = 0.05;
-export const ASSIST_BONUS = 0.25;
+/**
+ * Setting one up. Worth REAL points, and worth more than a tap-in.
+ *
+ * Was 0.25 and then applied as `ASSIST_BONUS * assists * 0.2`, which made an
+ * assist worth 0.05 — the same as a goal, and a fifth of what its own name
+ * said. Caught in review. The 0.2 is gone and the constant means what it says.
+ */
+export const ASSIST_BONUS = 0.12;
 export const WIN_BONUS = 0.10;
 export const DRAW_BONUS = 0.03;
 
-/**
- * The whole stage, 0-100.
- *
- * Deliberately NOT a plain average of your touches: a five-a-side you won 3-0
- * having done everything asked of you should beat one you lost 0-3 with the
- * same shot placement, because the scouts watching are watching a game, not a
- * shooting drill.
- *
- * `difficulty` scales the whole thing rather than any one part, so the same
- * afternoon is worth more when the opposition were better — the rule stated
- * at the top of this file.
- */
 /**
  * How well you played, 0-1, BEFORE any allowance for how hard it was.
  *
@@ -144,7 +139,7 @@ export function rawQuality(state: FiveMatchState): number {
 
   const raw = mean
     + GOAL_BONUS * Math.min(goals, 3)
-    + ASSIST_BONUS * Math.min(assists, 2) * 0.2
+    + ASSIST_BONUS * Math.min(assists, 2)
     + (result === "win" ? WIN_BONUS : result === "draw" ? DRAW_BONUS : 0);
 
   return Math.max(0, Math.min(1, raw));

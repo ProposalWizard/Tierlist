@@ -70,9 +70,15 @@ export interface FiveMatchState {
   over: boolean;
 }
 
-/** How much of the clock one touch of yours costs. A five-a-side is a lot of
- *  touches in a few minutes; this is what makes the clock move at a rate that
- *  gives you roughly a dozen of them. */
+/**
+ * How much of the clock one touch of yours costs.
+ *
+ * A dozen touches if you keep the ball; nearer five if you shoot every time
+ * you see the goal, because every shot outcome — scored, saved, wide, off the
+ * post — hands possession over, and their attack costs the clock too. That is
+ * the honest number, and it is worth knowing: the comment here used to claim
+ * "roughly a dozen" flatly, which is only true of a player who never shoots.
+ */
 export const MINUTES_PER_PASSAGE = 0.5;
 /** …and what one of their attacks costs. Slightly more, because it covers
  *  them building it as well as finishing it. */
@@ -226,8 +232,12 @@ export function applyOutcome(
 ): FiveMatchState {
   if (state.over) return state;
 
-  const ballAt = insideFivePitch(ball.pos) ? ball.pos : ball.pos;
-  const next = afterOutcome(outcome, ballAt, state.rules);
+  // Where the ball actually finished. `afterOutcome` decides what that means
+  // and clamps it; this hands it the raw position, because a ball that has
+  // genuinely left the pitch is exactly what its "out" branch needs to see.
+  // (A previous version read `insideFivePitch(ball.pos) ? ball.pos : ball.pos`
+  // — a condition whose two branches were identical. Caught in review.)
+  const next = afterOutcome(outcome, ball.pos, state.rules);
   const scored = outcome === "goal";
   const minute = Math.min(fullTimeMinutes(state.rules), state.minute + MINUTES_PER_PASSAGE);
 
