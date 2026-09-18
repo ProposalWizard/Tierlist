@@ -35,9 +35,10 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y);
 
 /** Strike a built scenario roughly at goal and run the real 3-substep loop
- *  until the engine says what happened. Returns null if it never resolves —
- *  which is itself the interesting answer, since a rep that never ends would
- *  strand the whole trial. */
+ *  the screens themselves run — including their deliberate omission of
+ *  `stepReactions` — until the engine says what happened. Returns null if it
+ *  never resolves, which is itself the interesting answer: a rep that never
+ *  ends would strand the whole trial on a screen with no way forward. */
 function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome | null {
   const dir = { x: CX - sc.ball.x, y: -sc.ball.y };
   const ball: Ball = launch(sc, dir, 0.85, { cx: 0, cy }, { power: 60, technique: 60 }, rng);
@@ -241,6 +242,45 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
     `${pictures - fullMargin}/${pictures} pictures fell short of the margin the drill asked for`);
   check(tightest > 3, `two team-mates were drawn ${tightest.toFixed(2)} m apart`);
   check(worstGapShare > 0.55, `worst gap was only ${(worstGapShare * 100).toFixed(0)} % of the margin`);
+}
+
+// ── 6. Somebody else finishing it ──────────────────────────────────────────
+//
+// Both striking stages score YOUR strike, and both grade a goal somebody else
+// finished as a save rather than as a 1.0. Leaving `stepReactions` out of the
+// loop LOOKS like it should make that impossible — and the guard was very
+// nearly documented as dead code on exactly that reasoning. It is not:
+// `stepBall` has its own way onto a loose ball. So this pins down the real
+// shape of it instead. It must genuinely happen, or the guard is untested;
+// and it must stay a small minority, or the stage is quietly scoring
+// somebody else's finishing rather than yours.
+{
+  let attempts = 0, touched = 0, woke = 0;
+  for (let s = 0; s < 40; s++) {
+    const trial = startTrial(606_060 + s * 3391);
+    for (let rep = 0; rep < REPS.penalties; rep++) {
+      const sc = buildPenaltyScenario(trial, rep, mulberry32((s * 13 + rep) >>> 0));
+      strikeAndResolve(sc, mulberry32(s + rep), rep % 2 ? 0.35 : -0.25);
+      attempts++;
+      if (sc.receiverShot) touched++;
+      if (sc.follower.active) woke++;
+    }
+    for (let rep = 0; rep < REPS.freeKicks; rep++) {
+      const sc = buildFreeKickScenario(trial, rep, mulberry32((s * 29 + rep) >>> 0));
+      strikeAndResolve(sc, mulberry32(s * 3 + rep), 0.4);
+      attempts++;
+      if (sc.receiverShot) touched++;
+      if (sc.follower.active) woke++;
+    }
+  }
+  check(attempts > 300, "not enough struck attempts to be worth measuring");
+  check(touched > 0, "no attempt was ever finished by a team-mate — the guard is untested");
+  check(touched < attempts * 0.1,
+    `${touched}/${attempts} attempts were finished by somebody else — too many to call rare`);
+  // And the reason it stays rare: nothing ever sends him chasing, because the
+  // loop does not call `stepReactions`. Worth asserting separately, because it
+  // is the difference between "rare" and "one line away from common".
+  check(woke === 0, `${woke}/${attempts} attempts woke the poacher without stepReactions`);
 }
 
 if (problems.length) {

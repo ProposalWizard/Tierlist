@@ -637,17 +637,25 @@ export function StrikeStage({
       || outcome === "wide" || outcome === "over" || outcome === "post")
       ? ball.pos.x : null;
 
-    // A team-mate can genuinely get on the end of a rebound and finish it —
-    // both dead-ball scenarios put men on the edge of the box, and a clean
-    // team-mate finish reports as "goal" exactly like yours would.
-    // `receiverShot` is the one reliable signal that somebody else struck it
-    // (see TrialPenalty, which had to make the same distinction).
+    // ── Somebody else finishing it ──
     //
-    // Crediting that as a goal of yours was rejected outright: this stage is
-    // measuring YOUR striking, and a scuffed kick a striker rescued would
-    // otherwise score a perfect 1.0. It is graded as a save instead — the
-    // ball was struck, something stopped it going straight in, and the
-    // rebound is not yours to claim.
+    // In a real match a team-mate can get on the end of a rebound, and a
+    // clean team-mate finish reports as "goal" exactly like yours would —
+    // `receiverShot` is the one reliable signal that somebody else struck it
+    // (TrialPenalty had to make the same distinction). Crediting that as a
+    // goal of YOURS is wrong here: this stage measures your striking, and a
+    // scuffed kick a striker rescued would otherwise score a perfect 1.0. It
+    // is graded as a save instead — the ball was struck, something stopped it
+    // going straight in, and the rebound is not yours to claim.
+    //
+    // It genuinely fires, and it was worth measuring rather than reasoning
+    // about: leaving `stepReactions` out of the loop looked like it should
+    // make a team-mate finish impossible, and it does not — `stepBall` has
+    // its own path onto a loose ball that does not need reactions at all.
+    // About one struck attempt in forty ends this way
+    // (tests/star/trialStageScreens.mts measures it on the real engine), so
+    // without this guard roughly that many scuffed kicks a trial would score
+    // a perfect 1.0.
     const yours = !sc?.receiverShot;
     const quality = yours ? strikeQuality(outcome, crossX) : strikeQuality("saved", null);
 
@@ -694,6 +702,15 @@ export function StrikeStage({
           // this engine uses. One coarse step per frame is measurably worse
           // at the boundary checks — over the bar, in the net, off the post —
           // that decide the outcome.
+          //
+          // `stepReactions` is deliberately absent, following TrialPenalty
+          // rather than FiveASide. It is what sends team-mates chasing a
+          // loose ball, and a drill that judges YOUR strike should not be
+          // decided by somebody following it in — the more so because
+          // neither dead-ball scenario draws those men, so a goal one of
+          // them scored would arrive from nowhere on screen. It makes a
+          // team-mate finish rare rather than impossible; `finishAttempt`'s
+          // own guard is what actually handles the rest.
           for (let i = 0; i < 3; i++) {
             const h = dt / 3;
             // The wall jumps as the ball is struck. A no-op for anything that
