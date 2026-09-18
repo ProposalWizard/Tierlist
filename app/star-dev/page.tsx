@@ -965,15 +965,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career, continueAfterRollover]);
 
   const openTransferWindowOrRoll = useCallback((from: CareerState, userWon: boolean) => {
-    // ── Relegated out of the Championship ──
+    // ── Relegated out of the National League ──
     //
-    // The pool the old club drops into has no fixtures, no table, no season —
-    // so this cannot be the ordinary optional window (TransferWindow, with its
-    // "stay put" button). A new club has to be chosen before the season can
-    // roll over at all, because advanceSeason needs to know which real
-    // division to build next season's fixtures in.
-    if (divisionOf(from) === "championship"
-      && sortLeague(from.league).slice(-3).map(t => t.name).includes(from.player.club)) {
+    // The four-club pool the old club drops into has no fixtures, no table,
+    // no season — so this cannot be the ordinary optional window
+    // (TransferWindow, with its "stay put" button). A new club has to be
+    // chosen before the season can roll over at all, because advanceSeason
+    // needs to know which real division to build next season's fixtures in.
+    // Every OTHER boundary (including Championship -> League One) now just
+    // carries on into next season's real fixtures, since League One, League
+    // Two and the National League are all real playable divisions.
+    if (divisionOf(from) === "national_league"
+      && sortLeague(from.league).slice(-4).map(t => t.name).includes(from.player.club)) {
       const offers = generateRelegationOffers(from, mulberry32(from.season * 8831 + from.fame));
       // Guaranteed non-empty in the normal game — a division this small only
       // happens in a test fixture, and rolling over rather than showing an

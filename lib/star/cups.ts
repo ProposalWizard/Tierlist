@@ -179,11 +179,29 @@ function weightedDrawN(
  * a distant second, weighted hard down in both directions — these five
  * should be an occasional story, not a regular fixture, in either division.
  */
+/**
+ * The League Cup's own "reach one real tier" opponent — generalized 18
+ * September 2026 for League One/League Two, which now genuinely enter this
+ * competition too (real life). The National League never calls this at all
+ * (see calendar.ts's leagueCupSlotsFor, which returns no slots for it).
+ */
+function leagueCupOtherTier(division: CareerDivision): {
+  clubs: readonly string[];
+  name: "premier" | "championship" | "league_one" | "league_two";
+} {
+  switch (division) {
+    case "premier": return { clubs: CHAMPIONSHIP_CLUBS, name: "championship" };
+    case "championship": return { clubs: PREMIER_LEAGUE_CLUBS, name: "premier" };
+    case "league_one": return { clubs: CHAMPIONSHIP_CLUBS, name: "championship" };
+    case "league_two": return { clubs: LEAGUE_ONE_CLUBS, name: "league_one" };
+    default: return { clubs: CHAMPIONSHIP_CLUBS, name: "championship" }; // unreached (national_league has no League Cup)
+  }
+}
+
 function belowField(
   names: string[], division: CareerDivision, needed: number, rng: () => number,
 ): string[] {
-  const otherTierClubs = division === "premier" ? CHAMPIONSHIP_CLUBS : PREMIER_LEAGUE_CLUBS;
-  const otherTierName: "premier" | "championship" = division === "premier" ? "championship" : "premier";
+  const { clubs: otherTierClubs, name: otherTierName } = leagueCupOtherTier(division);
   const otherTierCandidates = otherTierClubs.filter(c => !names.includes(c))
     .map(name => ({ name, weight: belowStrength(name, otherTierName) }));
   const poolCandidates = PROMOTION_POOL_CLUBS.filter(c => !names.includes(c))
@@ -215,22 +233,51 @@ function belowField(
  * chosen at random, per draw — go to the National League instead, carved
  * out of the same twenty rather than added on top.
  */
+/**
+ * The FA Cup's Round of 64 — generalized 18 September 2026 so League One,
+ * League Two and the National League can be the career's OWN division too,
+ * not just background reaches from a Premier League/Championship career.
+ *
+ * Every Premier League (20) and Championship (24) club is still guaranteed
+ * in, always — 44, from the LIVE table when the career's own division is
+ * one of those two, the static list otherwise (same reasoning as before).
+ * When the career's own division is League One/Two/the National League,
+ * its own live table is ALSO guaranteed in full (`names`) — that is what
+ * makes the competition actually playable from down there; real life is far
+ * stingier about how many lower-league sides survive to this exact round,
+ * an honest, deliberate simplification kept for the sake of every one of
+ * these divisions being a genuinely playable FA Cup run. The remaining
+ * places are a weighted draw across whichever of League One/League Two/the
+ * National League ISN'T already the career's own guaranteed division.
+ */
 function faCupField(names: string[], division: CareerDivision, rng: () => number): string[] {
-  const guaranteedOther = division === "premier" ? CHAMPIONSHIP_CLUBS : PREMIER_LEAGUE_CLUBS;
+  // Premier League and Championship careers guarantee only the REAL other
+  // one of the two (their own division is already `names`) — exactly the
+  // original two-way behaviour. A League One/Two/National League career's
+  // own division is neither, so both are guaranteed on top of its own table.
+  const guaranteedOther: readonly string[] =
+    division === "premier" ? CHAMPIONSHIP_CLUBS
+    : division === "championship" ? PREMIER_LEAGUE_CLUBS
+    : [...PREMIER_LEAGUE_CLUBS, ...CHAMPIONSHIP_CLUBS];
   const guaranteed = Array.from(new Set([...names, ...guaranteedOther]));
   const guaranteedSet = new Set(guaranteed);
 
   const remaining = Math.max(0, FA_CUP_FIELD - guaranteed.length); // 20, barring an odd test fixture
-  const nationalSlots = Math.min(remaining, rng() < 0.5 ? 1 : 2);
+  const includeNational = division !== "national_league";
+  const nationalSlots = includeNational ? Math.min(remaining, rng() < 0.5 ? 1 : 2) : 0;
   const l1l2Needed = remaining - nationalSlots;
 
-  const nationalCandidates = NATIONAL_LEAGUE_CLUBS
-    .filter(c => !guaranteedSet.has(c))
-    .map(name => ({ name, weight: belowStrength(name, "national_league") }));
+  const nationalCandidates = includeNational
+    ? NATIONAL_LEAGUE_CLUBS
+        .filter(c => !guaranteedSet.has(c))
+        .map(name => ({ name, weight: belowStrength(name, "national_league") }))
+    : [];
   const nationalDrawn = weightedDrawN(nationalCandidates, nationalSlots, rng);
   const nationalDrawnSet = new Set(nationalDrawn);
 
-  const l1l2Candidates = [...LEAGUE_ONE_CLUBS, ...LEAGUE_TWO_CLUBS]
+  const l1Pool = division === "league_one" ? [] : LEAGUE_ONE_CLUBS;
+  const l2Pool = division === "league_two" ? [] : LEAGUE_TWO_CLUBS;
+  const l1l2Candidates = [...l1Pool, ...l2Pool]
     .filter(c => !guaranteedSet.has(c) && !nationalDrawnSet.has(c))
     .map(name => ({
       name,

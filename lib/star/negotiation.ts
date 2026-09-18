@@ -162,16 +162,37 @@ export function makeOffer(state: NegotiationState, yourNewPosition: number, rng:
     : state.theirPosition + concession);
 
   const round = state.round + 1;
-  log.push(mode === "buying"
-    ? `You offer ★${yourNewPosition.toLocaleString()} — they come down to ★${theirPosition.toLocaleString()}.`
-    : `You ask ★${yourNewPosition.toLocaleString()} — they raise their offer to ★${theirPosition.toLocaleString()}.`);
+  // Reported directly: repeating the same offer twice in a row both times
+  // logged "they come down to ★95,000,000" — the SAME number they were
+  // already at. A stalled round still computes a real (if tiny, mood-
+  // shrunk) concession, and `cleanRound` can round that tiny move right
+  // back to the position they started the round at — the number genuinely
+  // didn't move, so the message shouldn't claim it did.
+  const theyActuallyMoved = theirPosition !== state.theirPosition;
+  if (theyActuallyMoved) {
+    log.push(mode === "buying"
+      ? `You offer ★${yourNewPosition.toLocaleString()} — they come down to ★${theirPosition.toLocaleString()}.`
+      : `You ask ★${yourNewPosition.toLocaleString()} — they raise their offer to ★${theirPosition.toLocaleString()}.`);
+  } else {
+    log.push(mode === "buying"
+      ? `You offer ★${yourNewPosition.toLocaleString()} — they're standing firm at ★${theirPosition.toLocaleString()}.`
+      : `You ask ★${yourNewPosition.toLocaleString()} — they're standing firm at ★${theirPosition.toLocaleString()}.`);
+  }
 
   if (round >= getTuning("negotiation.maxRounds")) {
+    // Reported directly, twice, as a real bug: this used to force-close the
+    // deal at a synthetic AVERAGE of their position and your offer the
+    // moment the two were even loosely close — a price you never actually
+    // offered or agreed to ("I offered 330, it agreed at 340... I never
+    // offered that"). Talks running out of time now only ever closes at a
+    // price you genuinely put on the table (the same real "close enough,
+    // they accept" rule every other round already uses — see
+    // `acceptTolerance` above), never an invented midpoint.
     const finalGap = Math.abs(theirPosition - yourNewPosition);
     const finalRelativeGap = finalGap / Math.max(1, theirPosition);
-    if (finalRelativeGap <= getTuning("negotiation.acceptTolerance") * 2) {
-      const finalPrice = cleanRound((theirPosition + yourNewPosition) / 2);
-      log.push(`Final round — you split the difference at ★${finalPrice.toLocaleString()}.`);
+    if (finalRelativeGap <= getTuning("negotiation.acceptTolerance")) {
+      const finalPrice = yourNewPosition;
+      log.push(`Final round — close enough, they accept ★${finalPrice.toLocaleString()}.`);
       return { ...state, yourPosition: yourNewPosition, theirPosition, moodScore, round, status: "accepted", finalPrice, log };
     }
     log.push("Talks run out of time with no deal.");

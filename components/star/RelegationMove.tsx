@@ -3,16 +3,18 @@ import type { CareerState } from "@/lib/star/types";
 import type { TransferOffer } from "@/lib/star/transfers";
 import { reputation, MOVE_RESET } from "@/lib/star/transfers";
 import { clauseSummary } from "@/lib/star/contracts";
+import { divisionOf, divisionRank, leagueNameFor } from "@/lib/star/calendar";
 
 /**
  * THE OLD CLUB IS GONE. WHO NEXT?
  *
- * Reached only when relegation from the Championship is certain and the
- * ordinary transfer window (TransferWindow.tsx) would not make sense — there
- * is no "stay", because the pool your old club drops into has no season to
- * stay for. Otherwise built the same way: real offers, priced off the same
- * reputation and the same move-cost numbers, so a relegation does not feel
- * like a different game from a normal transfer.
+ * Reached only when relegation out of the National League (into its own
+ * four-club pool, which has no fixtures, no table, no season) is certain —
+ * every other boundary on the ladder is a real division now, so the
+ * ordinary transfer window (TransferWindow.tsx) works fine for it.
+ * Otherwise built the same way: real offers, priced off the same reputation
+ * and the same move-cost numbers, so a relegation does not feel like a
+ * different game from a normal transfer.
  */
 
 interface Props {
@@ -42,15 +44,16 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
 
         <div className="mt-4 space-y-3">
           {offers.map((o) => {
-            const premier = o.division === "premier";
+            const offerDivision = o.division ?? divisionOf(career);
+            const stepUp = divisionRank(offerDivision) < divisionRank(divisionOf(career));
             return (
               <div key={o.club} className="rounded-xl border border-gray-700 bg-gray-800 p-4">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-lg font-black text-white">{o.club}</span>
                   <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest ${
-                    premier ? "text-emerald-300" : "text-gray-200"}`}
+                    stepUp ? "text-emerald-300" : "text-gray-200"}`}
                   >
-                    {premier ? "Premier League" : "Championship"}
+                    {leagueNameFor(offerDivision)}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-gray-200">{o.pitch}</p>

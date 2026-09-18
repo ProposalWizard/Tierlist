@@ -2,7 +2,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { STAR_FIFA_YEAR, STAR_EDITION_LABEL } from "@/lib/star/edition";
 import type { StarPlayer } from "@/lib/star/types";
-import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "@/lib/star/clubs";
+import {
+  PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
+} from "@/lib/star/clubs";
 import { leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
 import { ALL_NATIONALITIES, getFlagUrl } from "@/lib/nationalities";
 import PortraitPicker from "./PortraitPicker";
@@ -12,24 +14,32 @@ interface Props {
 }
 
 /**
- * Both divisions a career can actually start in.
+ * Every division a career can actually start in.
  *
- * Not the promotion pool — those five clubs play no season of their own, so
- * there is nothing to start a career IN. They only ever arrive in the
- * Championship by being promoted into it mid-career.
+ * Extended 18 September 2026 from two (Premier League, Championship) to all
+ * five real tiers on the English ladder — League One, League Two and the
+ * National League are now genuinely playable careers, not just simulated/
+ * background hats (see lib/star/calendar.ts's CareerDivision and this
+ * session's own work generalizing the season/promotion/cup machinery for
+ * them). Not the promotion pools below either division — none of those
+ * clubs play a season of their own, so there is nothing to start a career
+ * IN; they only ever arrive by being promoted mid-career.
  *
  * Read from lib/star/clubs.ts rather than /api/draft/clubs, which is Draft
  * mode's own endpoint and answers a different question: every club that has
  * ever been in ITS archive's idea of the Premier League, across all editions.
- * This needs exactly this season's two divisions.
+ * This needs exactly this season's five divisions.
  */
 // Alphabetical — requested directly: the real table/promotion order these
-// two arrays live in everywhere else (clubs.ts, the league table, fixtures)
-// is not how a name should be found in a PICKER, where you already know
-// which club you want and are scanning for its letter.
+// arrays live in everywhere else (clubs.ts, the league table, fixtures) is
+// not how a name should be found in a PICKER, where you already know which
+// club you want and are scanning for its letter.
 const DIVISIONS: { key: CareerDivision; clubs: readonly string[] }[] = [
   { key: "premier", clubs: [...PREMIER_LEAGUE_CLUBS].sort((a, b) => a.localeCompare(b)) },
   { key: "championship", clubs: [...CHAMPIONSHIP_CLUBS].sort((a, b) => a.localeCompare(b)) },
+  { key: "league_one", clubs: [...LEAGUE_ONE_CLUBS].sort((a, b) => a.localeCompare(b)) },
+  { key: "league_two", clubs: [...LEAGUE_TWO_CLUBS].sort((a, b) => a.localeCompare(b)) },
+  { key: "national_league", clubs: [...NATIONAL_LEAGUE_CLUBS].sort((a, b) => a.localeCompare(b)) },
 ];
 
 /**
@@ -234,12 +244,12 @@ export default function ProfileSetup({ onComplete }: Props) {
             {/* Start in either division. A Championship career is the same
                 career with a longer season and no European football — see
                 lib/star/calendar. */}
-            <div className="mb-3 flex gap-1.5">
+            <div className="mb-3 flex flex-wrap gap-1.5">
               {DIVISIONS.map(d => (
                 <button
                   key={d.key}
                   onClick={() => setDivision(d.key)}
-                  className={`flex-1 rounded-lg py-2 text-[11px] font-black uppercase tracking-wide transition ${
+                  className={`min-w-[30%] flex-1 rounded-lg py-2 text-[11px] font-black uppercase tracking-wide transition ${
                     division === d.key ? "bg-emerald-500 text-white" : "bg-gray-800 text-white/70 hover:bg-gray-700"}`}
                 >
                   {leagueNameFor(d.key)}

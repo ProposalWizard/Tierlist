@@ -114,9 +114,13 @@ function rollOverSilently(career: CareerState): CareerState {
   let cur = awardLeagueTrophyIfWon(career).career;
 
   let forcedRelegationMove = false;
-  if (divisionOf(cur) === "championship") {
-    const bottomThree = sortLeague(cur.league).slice(-3).map(t => t.name);
-    if (bottomThree.includes(cur.player.club)) {
+  // The only genuine dead end left on the ladder is relegation out of the
+  // National League into its own four-club pool — every other boundary
+  // (including Championship -> League One, now that League One is a real
+  // playable division) simply carries on into next season's real fixtures.
+  if (divisionOf(cur) === "national_league") {
+    const bottomFour = sortLeague(cur.league).slice(-4).map(t => t.name);
+    if (bottomFour.includes(cur.player.club)) {
       const offers = generateRelegationOffers(cur, mulberry32(cur.season * 8831 + cur.fame));
       if (offers.length > 0) {
         cur = acceptOffer(cur, offers[0]);
@@ -187,7 +191,8 @@ export function deadlineDayWeek(career: CareerState, window: "summer" | "january
 /** The very last thing on this season's calendar — final(s) included. */
 export function seasonEndWeek(career: CareerState): number {
   const division = divisionOf(career);
-  // Play-offs run later than the cup finals in the Championship; everywhere
-  // else the domestic cup finals are the last thing on the calendar.
-  return division === "championship" ? postSeasonFor(division, 5) : postSeasonFor(division, 2);
+  // Play-offs run later than the cup finals in every division except the
+  // Premier League; there the domestic cup finals are the last thing on the
+  // calendar.
+  return division !== "premier" ? postSeasonFor(division, 5) : postSeasonFor(division, 2);
 }

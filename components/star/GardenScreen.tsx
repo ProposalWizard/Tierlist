@@ -295,79 +295,104 @@ function Figure({ skin = "#e8b593", shirt = "#2b6cb0" }: { skin?: string; shirt?
 function Horse({ faded = false }: { faded?: boolean }) {
   const black = "#1c1712";
   const fill = faded ? "none" : "url(#horseBodyGrad)";
-  const fillDark = faded ? "none" : "url(#horseDarkGrad)";
   const fillBlack = faded ? "none" : black;
   const stroke = faded ? "rgba(60,40,25,0.35)" : "none";
   const strokeBlack = faded ? "rgba(20,15,10,0.3)" : "none";
   const sw = faded ? 2 : 0;
 
+  // Reported directly against the real reference photo: the previous build
+  // "kind of looked like a horse" but wasn't one — a short, disconnected
+  // neck jutting off at a steep angle from a plain oval body, with legs set
+  // too close together near the centre rather than under the body's own
+  // front/back ends. Rebuilt on real horse proportions instead of guessed
+  // ones: one continuous body mass (a barrel PLUS a rounded rump at the
+  // back and a chest bulge at the front, all overlapping into one shape,
+  // the way a real horse's torso reads in silhouette), legs planted
+  // directly under the chest and the rump rather than bunched centrally,
+  // and a neck that's a real, single, continuously-widening arch running
+  // from the chest up into the head — not two disconnected pieces stapled
+  // together at an angle. Also asked for directly: more muscular/beefy —
+  // the rump and chest masses are deliberately large and rounded, and a
+  // rump-shading ellipse reads as real hindquarter muscle, matching a
+  // racehorse's build rather than a slim, spindly one.
   return (
     <g filter={faded ? undefined : "url(#softShadow)"}>
-      <ellipse cx="6" cy="1" rx="42" ry="6" fill="rgba(0,0,0,0.2)" />
+      <ellipse cx="2" cy="2" rx="44" ry="6" fill="rgba(0,0,0,0.2)" />
 
-      {/* back legs — leaner, slightly more extended for an athletic stride */}
-      <g fill={fillDark} stroke={stroke} strokeWidth={sw}>
-        <rect x="11" y="-40" width="6.5" height="34" rx="2" />
-        <rect x="23" y="-40" width="6.5" height="34" rx="2" />
+      {/* back legs — planted directly under the rump */}
+      <g fill={fill} stroke={stroke} strokeWidth={sw}>
+        <rect x="12" y="-27" width="8" height="25" rx="2.5" />
+        <rect x="25" y="-27" width="8" height="25" rx="2.5" />
       </g>
       <g fill={fillBlack} stroke={strokeBlack} strokeWidth={sw}>
-        <rect x="11" y="-14" width="6.5" height="14" rx="1.5" />
-        <rect x="23" y="-14" width="6.5" height="14" rx="1.5" />
+        <rect x="12" y="-11" width="8" height="12" rx="1.5" />
+        <rect x="25" y="-11" width="8" height="12" rx="1.5" />
       </g>
 
-      {/* tail */}
+      {/* tail, flowing from the rump */}
       <path
-        d="M 30,-58 C 42,-52 46,-30 38,-4 C 44,-28 40,-46 28,-54 Z"
+        d="M 33,-42 C 47,-34 49,-10 39,12 C 43,-10 39,-30 27,-38 Z"
         fill={fillBlack}
         stroke={strokeBlack}
         strokeWidth={sw}
       />
 
-      {/* barrel — a touch leaner/taller than a flat oval, for a racehorse
-          build, with a soft highlight streak for muscle definition */}
-      <ellipse cx="6" cy="-47" rx="33" ry="17" fill={fill} stroke={stroke} strokeWidth={sw} />
-      {!faded && <ellipse cx="0" cy="-53" rx="19" ry="5.5" fill="rgba(255,255,255,0.14)" />}
-      {!faded && <ellipse cx="10" cy="-40" rx="16" ry="5" fill="rgba(0,0,0,0.12)" />}
+      {/* one continuous body mass — barrel, a rounded rump behind it, a
+          chest bulge in front — rather than a single plain oval, so the
+          silhouette actually reads as a muscular horse's torso */}
+      <ellipse cx="0" cy="-32" rx="30" ry="14" fill={fill} stroke={stroke} strokeWidth={sw} />
+      <ellipse cx="20" cy="-35" rx="16" ry="15" fill={fill} stroke={stroke} strokeWidth={sw} />
+      <ellipse cx="-22" cy="-33" rx="12" ry="13" fill={fill} stroke={stroke} strokeWidth={sw} />
+      {!faded && <ellipse cx="-4" cy="-41" rx="22" ry="6" fill="rgba(255,255,255,0.13)" />}
+      {!faded && <ellipse cx="22" cy="-30" rx="10" ry="9" fill="rgba(0,0,0,0.12)" />}
+      {!faded && <ellipse cx="6" cy="-22" rx="20" ry="6" fill="rgba(0,0,0,0.1)" />}
 
-      {/* front legs, slightly more forward-planted */}
+      {/* front legs — planted directly under the chest */}
       <g fill={fill} stroke={stroke} strokeWidth={sw}>
-        <rect x="-25" y="-39" width="6.5" height="32" rx="2" />
-        <rect x="-13" y="-39" width="6.5" height="32" rx="2" />
+        <rect x="-33" y="-26" width="8" height="24" rx="2.5" />
+        <rect x="-21" y="-26" width="8" height="24" rx="2.5" />
       </g>
       <g fill={fillBlack} stroke={strokeBlack} strokeWidth={sw}>
-        <rect x="-25" y="-14" width="6.5" height="14" rx="1.5" />
-        <rect x="-13" y="-14" width="6.5" height="14" rx="1.5" />
+        <rect x="-33" y="-11" width="8" height="12" rx="1.5" />
+        <rect x="-21" y="-11" width="8" height="12" rx="1.5" />
       </g>
 
-      {/* neck + head, grouped so the whole thing can nod down to graze —
-          arched a touch further forward for a more alert, dynamic stance */}
+      {/* neck + head, grouped so the whole thing can nod down to graze — a
+          single arch from the chest's own top, widening smoothly into the
+          head rather than two pieces meeting at a hard angle */}
       <g className="horse-head">
+        {/* mane, behind the neck/head */}
         <path
-          d="M -18,-58 C -30,-62 -40,-72 -47,-85 C -41,-79 -30,-71 -20,-65 C -14,-69 -8,-71 -2,-71 C -10,-65 -16,-60 -18,-58 Z"
+          d="M -16,-42 C -27,-49 -37,-60 -42,-75 C -37,-66 -28,-57 -18,-51 C -14,-55 -9,-58 -3,-58 C -10,-53 -14,-47 -16,-42 Z"
           fill={fillBlack}
           stroke={strokeBlack}
           strokeWidth={sw}
         />
+        {/* neck — a real single arch, base wide at the chest, tapering
+            smoothly up into the head */}
         <path
-          d="M -8,-52 C -23,-61 -37,-73 -46,-87 L -35,-93 C -27,-79 -14,-67 3,-59 Z"
+          d="M -6,-40 C -18,-49 -30,-61 -37,-76 C -34,-80 -30,-82 -25,-83 C -20,-68 -10,-55 5,-46 Z"
           fill={fill}
           stroke={stroke}
           strokeWidth={sw}
         />
+        {/* head — a real elongated wedge: poll high at the back, muzzle
+            reaching forward and slightly down */}
         <path
-          d="M -46,-87 C -52,-93 -52,-101 -46,-105 C -38,-109 -29,-107 -23,-101 C -19,-97 -19,-91 -23,-87 L -35,-81 Z"
+          d="M -37,-76 C -42,-83 -43,-91 -37,-96 C -30,-100 -20,-98 -14,-91 C -10,-87 -11,-82 -18,-78 L -26,-75 Z"
           fill={fill}
           stroke={stroke}
           strokeWidth={sw}
         />
-        <path d="M -39,-103 L -35,-113 L -30,-102 Z" fill={fill} stroke={stroke} strokeWidth={sw} />
-        <path d="M -37,-105 C -40,-109 -38,-113 -34,-113 C -36,-110 -36,-107 -37,-105 Z" fill={fillBlack} stroke={strokeBlack} strokeWidth={sw} />
+        {/* ear */}
+        <path d="M -32,-95 L -29,-105 L -23,-93 Z" fill={fill} stroke={stroke} strokeWidth={sw} />
+        <path d="M -30,-97 C -32,-101 -30,-105 -26,-105 C -28,-102 -28,-99 -30,-97 Z" fill={fillBlack} stroke={strokeBlack} strokeWidth={sw} />
         {!faded && (
           <>
             {/* a warm, soft, pet-like eye — not a fierce one */}
-            <ellipse cx="-31" cy="-96" rx="2.6" ry="2.9" fill="#241408" />
-            <circle cx="-30.2" cy="-97.1" r="1" fill="#fff" opacity="0.9" />
-            <path d="M -34,-99 C -32,-101 -29,-101 -27,-99" stroke="#3a2314" strokeWidth="0.8" fill="none" strokeLinecap="round" opacity="0.6" />
+            <ellipse cx="-24" cy="-88" rx="2.6" ry="2.9" fill="#241408" />
+            <circle cx="-23.2" cy="-89.1" r="1" fill="#fff" opacity="0.9" />
+            <path d="M -27,-91 C -25,-93 -22,-93 -20,-91" stroke="#3a2314" strokeWidth="0.8" fill="none" strokeLinecap="round" opacity="0.6" />
           </>
         )}
       </g>
@@ -413,15 +438,20 @@ function GardenScene({ trophyCount, ballonDors }: { trophyCount: number; ballonD
           {/* glass + interior */}
           <rect x="-28" y="-28" width="56" height="50" fill="#241a10" />
           <rect x="-28" y="-28" width="56" height="50" fill="url(#glassGrad)" />
-          {/* glass reflective highlight streaks */}
-          <path d="M -23,-26 L -12,20" stroke="rgba(255,255,255,0.32)" strokeWidth="2" />
-          <path d="M -3,-26 L 9,20" stroke="rgba(255,255,255,0.18)" strokeWidth="1.4" />
-          {/* glass shelves */}
-          <rect x="-26" y="-6" width="52" height="1.6" fill="rgba(255,255,255,0.28)" />
-          <rect x="-26" y="14" width="52" height="1.6" fill="rgba(255,255,255,0.2)" />
+          {/* Reported directly: the diagonal reflective streaks used above
+              were steep enough (much taller than wide) that they read as
+              vertical glass-pane dividers cutting the case up, not as a
+              reflection — "don't have any vertical glass panes there."
+              Removed outright. Three real horizontal shelf lines, evenly
+              spaced with real headroom between them, take their place —
+              "just have three horizontal ones that have enough space to
+              fit trophies into." */}
+          <rect x="-26" y="-15.5" width="52" height="1.6" fill="rgba(255,255,255,0.26)" />
+          <rect x="-26" y="0" width="52" height="1.6" fill="rgba(255,255,255,0.22)" />
+          <rect x="-26" y="15.5" width="52" height="1.6" fill="rgba(255,255,255,0.18)" />
           {Array.from({ length: Math.min(trophyCount, 6) }).map((_, i) => {
             const col = i % 3, row = Math.floor(i / 3);
-            return <text key={i} x={-18 + col * 18} y={-4 + row * 20} fontSize="14">🏆</text>;
+            return <text key={i} x={-18 + col * 18} y={-9 + row * 15.5} fontSize="14">🏆</text>;
           })}
         </g>
 
@@ -475,9 +505,18 @@ function StableBuilding({ x, y, scale = 1 }: { x: number; y: number; scale?: num
       <rect x="-55" y="-60" width="110" height="70" fill="url(#stableWallGrad)" />
       {/* roof */}
       <polygon points="-63,-60 63,-60 50,-79 -50,-79" fill="url(#metalGrad)" stroke="#647377" strokeWidth="1" />
-      {Array.from({ length: 8 }).map((_, i) => (
-        <line key={i} x1={-58 + i * 15} y1={-60} x2={-46 + i * 15} y2={-79} stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
-      ))}
+      {/* Reported directly: the old fixed x1/x2 step (15 vs the roof's own
+          eave-to-ridge run of ~12.5) drifted apart line by line, so the
+          8th ridge line's own end point (x2=59) landed past the ridge
+          edge's real right corner (x=50) — a stray line visibly poking out
+          past the roof outline. Each line's endpoints are now interpolated
+          exactly along the polygon's own two real edges (the eave from
+          -63..63, the ridge from -50..50), so the last one always lands
+          precisely on the roof's own top-right corner, never past it. */}
+      {Array.from({ length: 8 }).map((_, i) => {
+        const t = i / 7;
+        return <line key={i} x1={-63 + t * 126} y1={-60} x2={-50 + t * 100} y2={-79} stroke="rgba(0,0,0,0.15)" strokeWidth="1" />;
+      })}
       {/* trim */}
       <rect x="-56" y="-62" width="112" height="4" fill="#f2f0e6" />
       <rect x="-56" y="8" width="112" height="4" fill="#f2f0e6" />
@@ -753,13 +792,20 @@ function BenchStructure() {
           <path d={`M ${lx * 0.9},-46 L ${lx},-38`} stroke="url(#metalDarkGrad)" strokeWidth="4.5" strokeLinecap="round" fill="none" />
         </g>
       ))}
+      {/* Reported directly: the backrest (ending at -14.6) and the seat
+          (starting at -4) used to leave a real 10-unit empty gap between
+          them, with nothing bridging it — two floating slat-blocks stacked
+          with daylight in between, not a bench anyone could sit on. The
+          backrest now runs straight down to meet the seat's own top slat,
+          matching where the frame's armrest bend (below) actually sits. */}
       {/* backrest slats — horizontal, with real gaps between them */}
       {Array.from({ length: 4 }).map((_, i) => (
-        <rect key={`back-${i}`} x={-88} y={-44 + i * 8} width="176" height="5.4" rx="1.4" fill="url(#woodGrad)" stroke="rgba(0,0,0,0.18)" strokeWidth="0.5" />
+        <rect key={`back-${i}`} x={-88} y={-46 + i * 7} width="176" height="6" rx="1.4" fill="url(#woodGrad)" stroke="rgba(0,0,0,0.18)" strokeWidth="0.5" />
       ))}
-      {/* seat slats */}
-      {Array.from({ length: 5 }).map((_, i) => (
-        <rect key={`seat-${i}`} x={-92} y={-4 + i * 5.2} width="184" height="4" rx="1.2" fill="url(#woodGrad)" stroke="rgba(0,0,0,0.18)" strokeWidth="0.5" />
+      {/* seat slats — starts right where the backrest ends, at the frame's
+          own armrest height, not floating below it with a gap */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <rect key={`seat-${i}`} x={-92} y={-18 + i * 6} width="184" height="5.4" rx="1.2" fill="url(#woodGrad)" stroke="rgba(0,0,0,0.18)" strokeWidth="0.5" />
       ))}
     </g>
   );

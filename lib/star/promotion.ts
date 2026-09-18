@@ -1,6 +1,6 @@
 import type { CareerState, LeagueTeam } from "./types";
 import { sortLeague, simulateFixtureScore } from "./season";
-import { divisionOf, type CareerDivision } from "./calendar";
+import { divisionOf, divisionRank, type CareerDivision } from "./calendar";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS,
   LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_POOL_CLUBS,
@@ -383,13 +383,25 @@ export interface LadderOutcome {
   /** Its clubs, next season. */
   clubs: string[];
   divisions: DivisionMembership;
-  /** Set when your own club went up or down. */
+  /** Set when your own club went up or down — any adjacent-tier crossover,
+   *  not just Premier League <-> Championship. */
   yourMove: "promoted" | "relegated" | null;
   promotedToPremier: string[];
   relegatedFromPremier: string[];
   promotedToChampionship: string[];
   relegatedFromChampionship: string[];
-  /** Only when a Championship season was the one being played. */
+  /** The three tiers below the Championship — added 18 September 2026
+   *  alongside the rest of the League One/Two/National League generalization.
+   *  `relegatedFromNationalLeague` moves into its own four-club pool, not a
+   *  playable division. */
+  promotedToLeagueOne: string[];
+  relegatedFromLeagueOne: string[];
+  promotedToLeagueTwo: string[];
+  relegatedFromLeagueTwo: string[];
+  promotedToNationalLeague: string[];
+  relegatedFromNationalLeague: string[];
+  /** Only when the season being played ends in real play-offs — every
+   *  division except the Premier League (see playoffs.ts). */
   playOffs: PlayOffResult | null;
   /** Clubs still in limbo after this season's reconciliation — a forced
    *  movement that happened DURING this same rollover before the ladder
@@ -406,6 +418,34 @@ export interface LadderOutcome {
  * Championship, by real play-offs), and the other division's three are drawn
  * weighted by strength because there is no table to read.
  */
+/**
+ * Which tier key (DivisionMembership's own field names) a CareerDivision
+ * corresponds to — the ladder itself always deals in the five real English
+ * tiers below, "premier" through "nationalLeague"; "nationalLeaguePool" is
+ * never a division a career plays, same as the old five-club pool never was.
+ */
+const TIER_KEYS = ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague"] as const;
+type TierKey = typeof TIER_KEYS[number];
+const TIER_TO_DIVISION: Record<TierKey, CareerDivision> = {
+  premier: "premier", championship: "championship", leagueOne: "league_one",
+  leagueTwo: "league_two", nationalLeague: "national_league",
+};
+
+/**
+ * Each adjacent pair on the real English ladder, and how many clubs move
+ * across it each season. Generalized 18 September 2026 from a Premier
+ * League <-> Championship-only chain — League One, League Two and the
+ * National League are now genuinely playable careers, so their own
+ * boundaries need the exact same "your own division's table is a fact,
+ * everybody else is a weighted draw" treatment the top boundary always had.
+ */
+const BOUNDARIES: { above: TierKey; below: TierKey; count: number }[] = [
+  { above: "premier", below: "championship", count: 3 },
+  { above: "championship", below: "leagueOne", count: CHAMP_LEAGUE_ONE_COUNT },
+  { above: "leagueOne", below: "leagueTwo", count: LEAGUE_ONE_TWO_COUNT },
+  { above: "leagueTwo", below: "nationalLeague", count: LEAGUE_TWO_NATIONAL_COUNT },
+];
+
 export function resolveLadder(career: CareerState, rng: () => number): LadderOutcome {
   const members = membershipOf(career);
   const strength = strengthTable(career, members);
@@ -414,102 +454,95 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   const table = sortLeague(career.league);
   const names = table.map(t => t.name);
 
-  let relegatedFromPremier: string[];
-  let promotedToPremier: string[];
-  let relegatedFromChampionship: string[];
-  let promotedToChampionship: string[];
+  const working: Record<TierKey, string[]> = {
+    premier: [...members.premier], championship: [...members.championship],
+    leagueOne: [...members.leagueOne], leagueTwo: [...members.leagueTwo],
+    nationalLeague: [...members.nationalLeague],
+  };
+  const promotedInto: Record<TierKey, string[]> = {
+    premier: [], championship: [], leagueOne: [], leagueTwo: [], nationalLeague: [],
+  };
+  const relegatedFrom: Record<TierKey, string[]> = {
+    premier: [], championship: [], leagueOne: [], leagueTwo: [], nationalLeague: [],
+  };
   let playOffs: PlayOffResult | null = null;
 
-  if (division === "premier") {
-    // Your table is the Premier League's, so its bottom three is a fact.
-    relegatedFromPremier = names.slice(-3);
-    // Nobody played the Championship, so who came up is a draw.
-    promotedToPremier = weightedDraw(members.championship, strength, 3, rng);
-    const champLeft = members.championship.filter(c => !promotedToPremier.includes(c));
-    relegatedFromChampionship = weightedDraw(champLeft, strength, 3, rng, true);
-    promotedToChampionship = weightedDraw(members.leagueOne, strength, CHAMP_LEAGUE_ONE_COUNT, rng);
-  } else {
-    // You played the Championship: first and second go up automatically, and
-    // the play-offs decide the third.
-    // A play-off your own club reached was PLAYED, not simulated — see
-    // lib/star/playoffs — so its result is the truth and must not be
-    // re-rolled here. Everybody else's is simulated as normal.
-    const played = career.playOffState?.promoted;
-    playOffs = played ? null : resolvePlayOffs(career.league, strength, rng);
-    const auto = names.slice(0, 2);
-    const third = played ?? playOffs?.promoted;
-    promotedToPremier = third ? [...auto, third] : auto;
-    // ── Your own club really can go down ──
-    //
-    // The pool is a hat, not a division — no fixtures, no table, no season —
-    // so relegation out of the Championship cannot just drop you into it and
-    // carry on: there is nowhere for the career to play next. That is handled
-    // upstream of here, not by reprieving you. Before this ever runs, the page
-    // notices your club is in the bottom three and makes you sign for a new
-    // one — a genuine Championship survivor always, occasionally a Premier
-    // League side if the season was good enough (lib/star/relegationOffers.ts,
-    // RelegationMove.tsx) — so by the time resolveLadder runs, `you` already
-    // names a club with a real division to be placed in. Bottom three is
-    // simply the table's, exactly like every other club's.
-    relegatedFromChampionship = names.slice(-3);
-    // Nobody played the Premier League, so who came down is a draw — weighted
-    // the other way, since it is the weak who go.
-    relegatedFromPremier = weightedDraw(members.premier, strength, 3, rng, true);
-    promotedToChampionship = weightedDraw(members.leagueOne, strength, CHAMP_LEAGUE_ONE_COUNT, rng);
+  // Top boundary to bottom — every tier's "who left" is decided (real table
+  // or weighted draw) before it's asked to top itself back up, same order
+  // the original two-tier version always used.
+  for (const { above, below, count } of BOUNDARIES) {
+    const playingAbove = TIER_TO_DIVISION[above] === division;
+    const playingBelow = TIER_TO_DIVISION[below] === division;
+
+    // ── Who goes DOWN, from `above` into `below` ──
+    const relegated = playingAbove
+      // Your table is real, so its bottom N is a fact.
+      ? names.slice(-count)
+      // Nobody played this tier, so who came down is a draw — weighted the
+      // other way, since it is the weak who go.
+      : weightedDraw(working[above], strength, count, rng, true);
+    relegatedFrom[above] = relegated;
+
+    // ── Who goes UP, from `below` into `above` ──
+    let promoted: string[];
+    if (playingBelow) {
+      // You played this tier: the top (count - 1) go up automatically, and
+      // the play-offs decide the last place. A play-off your own club
+      // reached was PLAYED, not simulated — see lib/star/playoffs — so its
+      // result is the truth and must not be re-rolled here. Everybody
+      // else's is simulated as normal.
+      const played = career.playOffState?.promoted;
+      playOffs = played ? null : resolvePlayOffs(career.league, strength, rng);
+      const auto = names.slice(0, count - 1);
+      const last = played ?? playOffs?.promoted;
+      promoted = last ? [...auto, last] : auto;
+    } else {
+      // Nobody played this tier, so who came up is a draw.
+      promoted = weightedDraw(working[below], strength, count, rng);
+    }
+    promotedInto[above] = promoted;
+
+    working[above] = working[above].filter(c => !relegated.includes(c));
+    working[below] = working[below].filter(c => !promoted.includes(c));
   }
 
-  // ── League One down to the National League pool — none of this is your
-  // own division, so every one of these is a weighted draw, same fidelity
-  // as the old Championship<->pool boundary always had. `promotedToChampionship`
-  // above already drew League One's "went up" clubs; here is the rest of
-  // League One's own movement, then the same shape cascaded three more
-  // times. ──
-  const l1Left = members.leagueOne.filter(c => !promotedToChampionship.includes(c));
-  const relegatedFromLeagueOne = weightedDraw(l1Left, strength, LEAGUE_ONE_TWO_COUNT, rng, true);
-  const promotedToLeagueOne = weightedDraw(members.leagueTwo, strength, LEAGUE_ONE_TWO_COUNT, rng);
-
-  const l2Left = members.leagueTwo.filter(c => !promotedToLeagueOne.includes(c));
-  const relegatedFromLeagueTwo = weightedDraw(l2Left, strength, LEAGUE_TWO_NATIONAL_COUNT, rng, true);
-  const promotedToLeagueTwo = weightedDraw(members.nationalLeague, strength, LEAGUE_TWO_NATIONAL_COUNT, rng);
-
-  const nlLeft = members.nationalLeague.filter(c => !promotedToLeagueTwo.includes(c));
-  const relegatedFromNationalLeague = weightedDraw(nlLeft, strength, NATIONAL_POOL_COUNT, rng, true);
+  // ── National League down to its own four-club pool ──
+  //
+  // Not a real division a career ever plays (the pool has no fixtures, no
+  // table, no season — see clubs.ts's own note), so relegation into it
+  // cannot just drop you there and carry on, the same way relegation out of
+  // the Championship used to be a dead end before League One became a real
+  // division. That case is handled upstream of here (see app/star-dev/
+  // page.tsx's openTransferWindowOrRoll and relegationOffers.ts) — by the
+  // time this runs, `you` already names a club with a real division to be
+  // placed in, so bottom-N here is simply the table's, like every other
+  // club's.
+  const playingNationalLeague = division === "national_league";
+  const relegatedFromNationalLeague = playingNationalLeague
+    ? names.slice(-NATIONAL_POOL_COUNT)
+    : weightedDraw(working.nationalLeague, strength, NATIONAL_POOL_COUNT, rng, true);
   // The whole 4-club pool turns over every season — see clubs.ts's own note
-  // on NATIONAL_LEAGUE_POOL_CLUBS.
+  // on NATIONAL_LEAGUE_POOL_CLUBS. No real season for it to be promoted
+  // FROM, so this is always a weighted draw regardless of division.
   const promotedToNationalLeague = weightedDraw(
     members.nationalLeaguePool, strength, Math.min(NATIONAL_POOL_COUNT, members.nationalLeaguePool.length), rng);
+  working.nationalLeague = working.nationalLeague.filter(c => !relegatedFromNationalLeague.includes(c));
 
-  const premierRaw = [
-    ...members.premier.filter(c => !relegatedFromPremier.includes(c)),
-    ...promotedToPremier,
-  ];
+  const premierRaw = [...working.premier, ...promotedInto.premier];
   const championshipRaw = [
-    ...members.championship.filter(
-      c => !promotedToPremier.includes(c) && !relegatedFromChampionship.includes(c)),
-    ...relegatedFromPremier,
-    ...promotedToChampionship,
+    ...working.championship, ...relegatedFrom.premier, ...promotedInto.championship,
   ];
-  // Relegated Championship clubs join League One, and the three drawn up
+  // Relegated Championship clubs join League One, and the clubs drawn up
   // out of it leave — which is what puts a relegated club back in the hat
-  // for next time round. This replaces the old Championship<->pool
-  // rotation entirely (see clubs.ts/DivisionMembership's own notes).
+  // for next time round. Same shape cascades three more times below.
   const leagueOneRaw = [
-    ...members.leagueOne.filter(
-      c => !promotedToChampionship.includes(c) && !relegatedFromLeagueOne.includes(c)),
-    ...relegatedFromChampionship,
-    ...promotedToLeagueOne,
+    ...working.leagueOne, ...relegatedFrom.championship, ...promotedInto.leagueOne,
   ];
   const leagueTwoRaw = [
-    ...members.leagueTwo.filter(
-      c => !promotedToLeagueOne.includes(c) && !relegatedFromLeagueTwo.includes(c)),
-    ...relegatedFromLeagueOne,
-    ...promotedToLeagueTwo,
+    ...working.leagueTwo, ...relegatedFrom.leagueOne, ...promotedInto.leagueTwo,
   ];
   const nationalLeagueRaw = [
-    ...members.nationalLeague.filter(
-      c => !promotedToLeagueTwo.includes(c) && !relegatedFromNationalLeague.includes(c)),
-    ...relegatedFromLeagueTwo,
-    ...promotedToNationalLeague,
+    ...working.nationalLeague, ...relegatedFrom.leagueTwo, ...promotedToNationalLeague,
   ];
   const nationalPoolRaw = [
     ...members.nationalLeaguePool.filter(c => !promotedToNationalLeague.includes(c)),
@@ -533,25 +566,36 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
       career.limboClubs ?? [], strength, rng,
     );
 
-  // Your club is one of the two by now — either it was never in the relegated
-  // three, or the page already moved you to a new one before this ran (see
-  // the note on relegatedFromChampionship above). Falling back to the
-  // division you were already in only matters for a save from before any of
-  // this existed, where nothing upstream has done that swap.
-  const nextDivision: CareerDivision = premier.includes(you) ? "premier"
-    : championship.includes(you) ? "championship"
-    : division;
+  const NEXT_TIERS: { division: CareerDivision; clubs: string[] }[] = [
+    { division: "premier", clubs: premier },
+    { division: "championship", clubs: championship },
+    { division: "league_one", clubs: leagueOne },
+    { division: "league_two", clubs: leagueTwo },
+    { division: "national_league", clubs: nationalLeague },
+  ];
+
+  // Your club is in exactly one of these five by now — either it was never
+  // in the relegated group, or the page already moved you to a new one
+  // before this ran (see the note above on the National League <-> pool
+  // boundary). Falling back to the division you were already in only
+  // matters for a save from before any of this existed.
+  const next = NEXT_TIERS.find(t => t.clubs.includes(you));
+  const nextDivision: CareerDivision = next?.division ?? division;
+  const nextClubs = next?.clubs ?? (division === "premier" ? premier : championship);
 
   const yourMove = nextDivision === division ? null
-    : nextDivision === "premier" ? "promoted" : "relegated";
+    : divisionRank(nextDivision) < divisionRank(division) ? "promoted" : "relegated";
 
   return {
     division: nextDivision,
-    clubs: nextDivision === "premier" ? premier : championship,
+    clubs: nextClubs,
     divisions: { premier, championship, leagueOne, leagueTwo, nationalLeague, nationalLeaguePool },
     yourMove,
-    promotedToPremier, relegatedFromPremier,
-    promotedToChampionship, relegatedFromChampionship,
+    promotedToPremier: promotedInto.premier, relegatedFromPremier: relegatedFrom.premier,
+    promotedToChampionship: promotedInto.championship, relegatedFromChampionship: relegatedFrom.championship,
+    promotedToLeagueOne: promotedInto.leagueOne, relegatedFromLeagueOne: relegatedFrom.leagueOne,
+    promotedToLeagueTwo: promotedInto.leagueTwo, relegatedFromLeagueTwo: relegatedFrom.leagueTwo,
+    promotedToNationalLeague, relegatedFromNationalLeague,
     playOffs,
     limbo,
   };

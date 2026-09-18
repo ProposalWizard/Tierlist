@@ -3,6 +3,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { TransferOffer } from "@/lib/star/transfers";
 import { reputation, MOVE_RESET } from "@/lib/star/transfers";
 import { clauseSummary } from "@/lib/star/contracts";
+import { leagueNameFor } from "@/lib/star/calendar";
 
 interface Props {
   career: CareerState;
@@ -42,7 +43,7 @@ export default function TransferWindow({ career, offers, onAccept, onStay }: Pro
                   >
                     {step > 6 ? "Step up" : step < -6 ? "Step down" : "Sideways"} · {o.position}
                     {o.position === 1 ? "st" : o.position === 2 ? "nd" : o.position === 3 ? "rd" : "th"}
-                    {o.division ? ` in the ${o.division === "premier" ? "Premier League" : "Championship"}` : ""}
+                    {o.division ? ` in the ${leagueNameFor(o.division)}` : ""}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-gray-200">{o.pitch}</p>

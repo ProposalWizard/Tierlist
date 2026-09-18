@@ -54,7 +54,7 @@ export interface TransferOffer {
    * rather than guess it from a strength gap that a strong Championship
    * survivor could cross just as easily as a real top-flight side.
    */
-  division?: "championship" | "premier";
+  division?: import("./calendar").CareerDivision;
 }
 
 /** A move that happened, for the legacy screen. */
