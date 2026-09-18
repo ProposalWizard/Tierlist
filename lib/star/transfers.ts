@@ -4,7 +4,7 @@ import { sortLeague } from "./season";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { assignSquadNumber } from "./recognition";
 import { makeManager, bossOnArrival } from "./manager";
-import { offerClauses, canTriggerClause } from "./contracts";
+import { offerClauses, canTriggerClause, rescaleClauses } from "./contracts";
 import { isDerby, strongestTier } from "./rivalries";
 
 /**
@@ -184,14 +184,31 @@ export const MOVE_RESET = {
   matchFitness: -8,
 } as const;
 
-export function acceptOffer(career: CareerState, offer: TransferOffer): CareerState {
+export function acceptOffer(
+  career: CareerState,
+  offer: TransferOffer,
+  /**
+   * The wage actually agreed, when it differs from the wage first offered.
+   *
+   * Optional: without it this signs the offer exactly as made, which is what
+   * every caller does today and is byte-identical to before.
+   *
+   * With it, the clauses are restated in terms of the agreed wage rather
+   * than the opening one — see rescaleClauses (contracts.ts). Skipping that
+   * step would leave a release clause pinned to the opening wage while the
+   * trigger test used the signed one, so negotiating a rise would quietly
+   * make you easier to buy.
+   */
+  agreedWage?: number,
+): CareerState {
+  const wage = agreedWage ?? offer.wage;
   const contract: Contract = {
     club: offer.club,
-    wage: offer.wage,
+    wage,
     goalBonus: offer.goalBonus,
     assistBonus: offer.assistBonus,
     seasonsRemaining: offer.seasons,
-    ...offer.clauses,
+    ...rescaleClauses(offer.clauses, offer.wage, wage),
   };
   const record: TransferRecord = {
     season: career.season,

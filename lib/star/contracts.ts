@@ -53,6 +53,62 @@ export function offerClauses(career: CareerState, wage: number, rng: () => numbe
   return out;
 }
 
+/**
+ * MOVE CLAUSES ONTO A DIFFERENT WAGE, KEEPING THEIR MEANING.
+ *
+ * Every clause `offerClauses` writes is `wage × some multiple` — an
+ * appearance fee is a fraction of a week, a release clause is a couple of
+ * dozen weeks. That multiple is what the clause actually MEANS, and it is
+ * what `canTriggerClause` compares against: it works out a buyer's means as
+ * `wage × (base + strength)` and tests it against the release clause. Both
+ * sides are wage-derived, so the comparison is scale-invariant and a wage
+ * ten times bigger changes nothing about how hard the clause is to trigger.
+ *
+ * That only holds while the clause and the wage came from the SAME number.
+ *
+ * ── Why this exists ──
+ *
+ * Clauses are written when an offer is BUILT. Wage negotiation happens
+ * afterwards. So the moment you can haggle your wage upward, the release
+ * clause stays pinned to the wage you were first offered while the trigger
+ * test uses the wage you actually signed — and the clause silently becomes
+ * far easier to meet. The better you negotiated, the faster you would get
+ * sold out from under yourself, which is the opposite of the intended
+ * reward.
+ *
+ * Rescaling rather than re-rolling is deliberate: re-rolling would need an
+ * rng at the point of signing and would let a player who negotiated well
+ * also reroll into softer clauses, which is a second, different reward.
+ * This keeps the terms they were offered and only restates them in the
+ * currency they signed for.
+ *
+ * Keeps the same floors `offerClauses` applies, so a rescale downward can
+ * never produce a free release clause.
+ */
+export function rescaleClauses(
+  clauses: Partial<Contract>,
+  fromWage: number,
+  toWage: number,
+): Partial<Contract> {
+  // A missing or nonsensical source wage would turn every clause into NaN or
+  // Infinity, which is far worse than leaving them alone.
+  if (!(fromWage > 0) || !(toWage > 0) || fromWage === toWage) return { ...clauses };
+
+  const factor = toWage / fromWage;
+  const out: Partial<Contract> = { ...clauses };
+
+  if (clauses.appearanceFee !== undefined) {
+    out.appearanceFee = Math.max(1, Math.round(clauses.appearanceFee * factor));
+  }
+  if (clauses.loyaltyBonus !== undefined) {
+    out.loyaltyBonus = Math.max(2, Math.round(clauses.loyaltyBonus * factor));
+  }
+  if (clauses.releaseClause !== undefined) {
+    out.releaseClause = Math.max(10, Math.round(clauses.releaseClause * factor));
+  }
+  return out;
+}
+
 export function clauseSummary(contract: Contract): ClauseSummary[] {
   const out: ClauseSummary[] = [];
   if (contract.appearanceFee) {
