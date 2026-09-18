@@ -30,7 +30,6 @@ __pycache__/
 # claude code agent scratch worktrees
 .claude/worktrees/
 
-# playtest agent scratch files
 # Playtest driver scratch files. The sandbox harness (and the star-playtest
 # agent) writes throwaway Playwright drivers next to the real scripts; they are
 # never part of the repo. Any leading underscore, not just _tmp_ — an agent
