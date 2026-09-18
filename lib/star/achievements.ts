@@ -1,4 +1,6 @@
 import type { CareerState } from "./types";
+// calendar.ts imports nothing, so asking it this costs no bundle weight here.
+import { hasClub } from "./calendar";
 
 export interface Achievement {
   id: string;
@@ -19,7 +21,13 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "10-goals", label: "10 Career Goals", description: "Reach 10 career goals", check: (c) => c.careerStats.goals >= 10 },
   { id: "50-goals", label: "50 Career Goals", description: "Reach 50 career goals", check: (c) => c.careerStats.goals >= 50 },
   { id: "100-goals", label: "Century of Goals", description: "Score 100 career goals", check: (c) => c.careerStats.goals >= 100 },
-  { id: "first-contract", label: "First Contract", description: "Sign your first contract", check: () => true },
+  // `() => true` until 18 Sep 2026, which was only ever safe because
+  // `makeIdentity` handed this out at career creation — so nothing could ever
+  // be checked that did not already have it. Now that it is unlocked by
+  // `attachClub`, when a club genuinely signs you, the predicate has to be able
+  // to answer the question honestly: a clubless career reaching any future
+  // achievement sweep must not be handed a contract it does not have.
+  { id: "first-contract", label: "First Contract", description: "Sign your first contract", check: (c) => hasClub(c) },
   { id: "boss-90", label: "Manager's Favourite", description: "Reach 90 Boss rating", check: (c) => c.relationships.boss >= 90 },
   { id: "team-90", label: "Dressing Room Leader", description: "Reach 90 Team rating", check: (c) => c.relationships.team >= 90 },
   { id: "fans-90", label: "Fan Favourite", description: "Reach 90 Fans rating", check: (c) => c.relationships.fans >= 90 },

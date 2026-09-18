@@ -485,6 +485,30 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("dashboard");
   }, []);
 
+  /**
+   * ── Back out of Settings, to wherever this career actually lives ──
+   *
+   * Settings is the one screen a career with no club can legitimately be on,
+   * and its back button was `handleBackToDashboard` because that handler
+   * already existed. So a free agent — or a player mid-trial — who opened
+   * Settings and tapped Back landed on the CLUB dashboard: the shop, the
+   * casino, every club button, and, because the "is the season over" check
+   * passes trivially on an empty fixture list, an "End of Season 🏆" button
+   * that would run the awards and season-advance flow on a career with no
+   * league at all.
+   *
+   * `hasClub` (calendar.ts) is the question, and it is exactly the question
+   * the load path already asks to decide which shell to resume onto.
+   */
+  const handleBackFromSettings = useCallback(() => {
+    if (career && !hasClub(career)) {
+      setPhase(career.trial && !trialComplete(career.trial) ? "trial-stages" : "free-agent");
+      return;
+    }
+    setActiveNav("home");
+    setPhase("dashboard");
+  }, [career]);
+
   // Reputation, the Rule Book, and Investments (see the "ownership" phase
   // below) are only ever reached FROM the Ownership hub now — Reputation/
   // Rule Book/Invest stopped being their own separate dashboard buttons when
@@ -1299,9 +1323,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // now happens before anything can return.
       //
       // Re-opening is still never blocked. It just quietly costs.
-      const resumed = saved.trial && !trialComplete(saved.trial)
-        ? { ...saved, trial: noteReload(saved.trial) }
-        : saved;
+      // `noteReload` returns the SAME trial object when the load interrupted
+      // nothing and so was not charged for. Building `{ ...saved, ... }`
+      // unconditionally threw that away — the object identity differed every
+      // time, so `resumed !== saved` was always true and the career was
+      // re-saved on every load, including the ones that cost nothing. Compare
+      // the trial, which is the thing that can actually have changed.
+      const nextTrial = saved.trial && !trialComplete(saved.trial)
+        ? noteReload(saved.trial)
+        : saved.trial;
+      const resumed = nextTrial === saved.trial ? saved : { ...saved, trial: nextTrial };
       if (resumed !== saved) setCareer(resumed);
 
       const pendingNoClub = loadStarPhase(scope);
@@ -2061,6 +2092,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const offers = generateScoutOffers(
       trialScore(career.trial),
       mulberry32(career.trial.seed ^ 0x5c0a7),
+      // A second look is judged against a lower bar and a ladder shifted a
+      // rung down — see ScoutContext (scoutOffers.ts) and `grantTrial`
+      // (freeAgent.ts). `trialsTaken` is absent on a career that has only ever
+      // had the trial it opened with, which reads as 1.
+      { retrial: (career.trialsTaken ?? 1) > 1 },
     );
     return (
       <ScoutOffers
@@ -2499,7 +2535,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <SettingsScreen
         career={career}
-        onBack={handleBackToDashboard}
+        onBack={handleBackFromSettings}
         onSkip={handleDevSkip}
         onAddMoney={handleAddMoney}
         onSetPortrait={handleSetPortrait}
@@ -2763,6 +2799,31 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </div>
         </div>
       </div>
+    );
+  }
+
+  // ── A career with no club can never reach the club dashboard ──
+  //
+  // The belt to `handleBackFromSettings`'s braces, and the reason it is here
+  // rather than only there: everything below this line is a club — a league
+  // table, a fixture list, a squad, a shop, a manager — and the "season over"
+  // check passes trivially on an empty fixture list, so a clubless career that
+  // arrives here by ANY route (a stale saved phase pointer, a future screen
+  // wired to `handleBackToDashboard` without thinking about it) is offered
+  // "End of Season 🏆" and can run the awards and season-advance flow on a
+  // career with no league. The trial and free-agent phases are handled well
+  // above this; anything else that gets here is a routing bug, and this is
+  // where it stops being a corrupted save.
+  if (!hasClub(career)) {
+    return (
+      <FreeAgentShell
+        career={career}
+        onCareer={next => setCareer(next)}
+        onTrial={career.trial && !trialComplete(career.trial)
+          ? () => setPhase("trial-stages")
+          : undefined}
+        onSettings={() => setPhase("settings")}
+      />
     );
   }
 

@@ -185,16 +185,55 @@ export function grantTrial(career: CareerState): CareerState {
   return {
     ...career,
     weeksSinceTrial: 0,
+    // ── What actually makes a retrial a lower bar ──
+    //
+    // Counting this is the whole mechanism. `generateScoutOffers` reads it
+    // (via `ScoutContext.retrial`, scoutOffers.ts) and judges the afternoon
+    // against a bar of 18 rather than 30, on a ladder shifted a rung down — so
+    // an afternoon that brought nobody first time genuinely brings a National
+    // League club on the second look.
+    //
+    // It has to live here rather than on `TrialProgress` because the trial's
+    // own shape is not this module's to change, and because "how many looks
+    // has this career had" is a fact about the career, not about one
+    // afternoon. `undefined` reads as 1 — a career that has only ever had the
+    // trial it opened with.
+    trialsTaken: (career.trialsTaken ?? 1) + 1,
     trial: {
       ...trial,
       // A shade easier than a first trial, because a lower-tier club is asking
       // for less. Not free: you still have to play it.
+      //
+      // Worth being honest about how little this does on its own now. Under
+      // the scoring model in trial.ts today a stage is worth
+      // `0.95 + 0.05 × difficulty`, so an EASIER afternoon has a very slightly
+      // LOWER ceiling — the drills genuinely get kinder (everything reading
+      // `difficultyFor` does), but the number at the end barely moves, and a
+      // retrial that only did this would be neutral at best. The real drop in
+      // the bar is `trialsTaken` above.
       baseDifficulty: Math.max(0, trial.baseDifficulty - 0.15),
     },
   };
 }
 
+/**
+ * ── The four-tap re-roll this refuses ──
+ *
+ * The free-agent shell's bottom-nav "Week" button called this with no check on
+ * whether the week had actually been lived. Four taps rolled the week over
+ * four times, `weeksSinceTrial` hit `WEEKS_BETWEEN_TRIALS`, and a fresh trial
+ * was due — with a brand-new random seed, since `grantTrial` calls
+ * `startTrial()`. Failing a trial on purpose was therefore the cheapest re-roll
+ * in the game, which is the exact opposite of the "closing the app should cost
+ * you" design the whole seeded-trial anti-cheat is built around (see trial.ts).
+ *
+ * A week ends when it has been spent, and not before. Returning the career
+ * untouched rather than throwing keeps this the same shape as `spendOn` above,
+ * which already refuses an action there is no day left for — and lets the
+ * screen tell the player why instead of silently doing nothing.
+ */
 export function endFreeAgentWeek(career: CareerState): CareerState {
+  if (canAct(career)) return career;
   return {
     ...career,
     weeksSinceTrial: (career.weeksSinceTrial ?? 0) + 1,
