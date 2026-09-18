@@ -4,11 +4,6 @@ import { useEffect, useState } from "react";
 /**
  * FULL SCREEN — "JUST THE GAME."
  *
- * Requested directly: a button that removes the site's own chrome around
- * the game (the persistent top nav, the footer) AND the browser's own UI
- * (the address bar, the tabs), leaving only the game's own rectangle on
- * screen.
- *
  * Two genuinely different things, done together:
  *  1. The site's own chrome — CSS-only, via a `knowitball-immersive` class
  *     on <body> that hides everything tagged `data-global-chrome`
@@ -24,21 +19,33 @@ import { useEffect, useState } from "react";
  *     outside the page itself. Not available on every platform (notably
  *     iPhone Safari has no Fullscreen API for arbitrary elements at all —
  *     iPad and desktop browsers support it) — the site-chrome half above
- *     still works everywhere regardless, so the button is never a no-op,
+ *     still works everywhere regardless, so toggling it on is never a no-op,
  *     just sometimes only half of what it asks for.
  *
- * The native `fullscreenchange` event (fired when the user backs out via
- * Esc or the browser's own UI, not this button) keeps the body class and
- * this button's own label in sync either way.
+ * ── Moved into Settings, reported directly ──
+ *
+ * This used to be a fixed floating button in the corner of every screen.
+ * Reported directly: on a real phone, that button sits right where the
+ * Settings button already is for most layouts, so it was permanently in the
+ * way rather than a convenience. Asked directly which fix made more sense —
+ * shrinking/repositioning it, or moving it into Settings as a plain on/off
+ * switch — and agreed a Settings switch is the better call: no floating
+ * element left anywhere to collide with anything else on any device, and it
+ * matches every other toggle-shaped preference in this game (Post-Match
+ * Reactions, Player Graphics) rather than needing its own special case.
+ *
+ * `useImmersiveMode()` is the whole mechanism, exported as a hook so
+ * SettingsScreen can render a plain switch against it — no more floating
+ * button component at all.
  */
 
 const IMMERSIVE_CLASS = "knowitball-immersive";
 
 function isNativelyFullscreen(): boolean {
-  return document.fullscreenElement !== null;
+  return typeof document !== "undefined" && document.fullscreenElement !== null;
 }
 
-export default function ImmersiveToggle() {
+export function useImmersiveMode() {
   const [active, setActive] = useState(false);
 
   useEffect(() => {
@@ -76,13 +83,7 @@ export default function ImmersiveToggle() {
     }
   };
 
-  return (
-    <button
-      onClick={active ? exit : enter}
-      aria-label={active ? "Exit full screen" : "Full screen"}
-      className="fixed right-2 top-2 z-[999] grid h-8 w-8 place-items-center rounded-full bg-black/50 text-sm text-white shadow-lg backdrop-blur hover:bg-black/70"
-    >
-      {active ? "⤢" : "⛶"}
-    </button>
-  );
+  const toggle = () => { if (active) void exit(); else void enter(); };
+
+  return { active, enter, exit, toggle };
 }

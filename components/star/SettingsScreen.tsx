@@ -29,11 +29,19 @@ interface Props {
   onSwitchSave: (slot: number) => void;
   onStartNewInSlot: (slot: number) => void;
   onDeleteSave: (slot: number) => void;
+  /** The full-screen toggle used to be a fixed floating button — reported
+   *  directly as blocking the real Settings button on most phones. Moved
+   *  here as a plain on/off switch instead; the actual mechanism
+   *  (useImmersiveMode) still lives one level up in page.tsx so it survives
+   *  navigating away from Settings, this screen just reads/flips it. */
+  immersiveActive: boolean;
+  onToggleImmersive: () => void;
 }
 
 export default function SettingsScreen({
   career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
+  immersiveActive, onToggleImmersive,
 }: Props) {
   const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
 
@@ -96,6 +104,27 @@ export default function SettingsScreen({
             >
               <span
                 className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${postMatchReactions ? "translate-x-5" : "translate-x-0.5"}`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-white">Full Screen</div>
+              <p className="mt-1 text-[11px] text-white">
+                Hide the site's top bar and footer, and go full screen where your browser supports it.
+              </p>
+            </div>
+            <button
+              onClick={onToggleImmersive}
+              role="switch"
+              aria-checked={immersiveActive}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${immersiveActive ? "bg-emerald-500" : "bg-gray-600"}`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${immersiveActive ? "translate-x-5" : "translate-x-0.5"}`}
               />
             </button>
           </div>
