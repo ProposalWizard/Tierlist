@@ -22,7 +22,7 @@ import { fixtureDateLabel, divisionOf, leagueNameFor, type CareerDivision } from
 import { sortLeague } from "@/lib/star/season";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { matchdayFor } from "@/lib/star/teamsheet";
-import { loadLineup, saveLineup, fetchSharedLineups } from "@/lib/star/lineupStore";
+import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
@@ -109,7 +109,7 @@ import {
   proposePresidentVote, resolvePresidentVote, setPresidentWage, type PresidentVoteProposal,
   submitRecommendation, type RecommendationKind,
   haveASon, ageUpSonWithPotion, promoteSonToFirstTeam, transferSon,
-  mergeClubs,
+  mergeClubs, setOwnedLineup,
 } from "@/lib/star/clubPowers";
 import { investInfluence, type GoverningBody } from "@/lib/star/governingBodies";
 import { proposeRuleChangeVote, resolveRuleChangeVote, canOverruleRuleVote, type RuleChangeProposal, type RuleBook } from "@/lib/star/ruleBook";
@@ -1628,6 +1628,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return { ok: result.ok, reason: result.reason };
   }, [career]);
 
+  const handleSetOwnedLineup = useCallback((club: string, lineup: SavedLineup) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = setOwnedLineup(career, club, lineup);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
   const handleSetClubKit = useCallback((club: string, kit: ClubKit) => {
     if (!career) return { ok: false, reason: "No active career" };
     const result = setClubKit(career, club, kit);
@@ -2178,6 +2185,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onManagerNegotiationFailed={handleManagerNegotiationFailed}
         onRecommend={handleSubmitRecommendation}
         onSetFormation={handleSetClubFormation}
+        onSetOwnedLineup={handleSetOwnedLineup}
         onSetKit={handleSetClubKit}
         onProposeKitVote={handleProposeKitVote}
         onStandForPresident={handleProposePresidentVote}

@@ -884,6 +884,27 @@ export interface CareerState {
    *  spent), just stops being reachable from the Boardroom until you buy
    *  back in. */
   ownedClubs?: Record<string, import("./investments").OwnedClubState>;
+  /**
+   * A lineup override for a club the player owns, scoped to THIS SAVE ONLY —
+   * never the shared, global `lineupStore.ts` store every other save (and
+   * every other club's own opponents) also reads.
+   *
+   * The Boardroom's "Edit Lineup" tool (Investments.tsx's PowersPanel, gated
+   * the same way every other real club-decision power there is — majority
+   * ownership, `isMajorityOwner`) writes here, not to `saveLineup`. A
+   * previous pass linked straight into `/lineups` — the GLOBAL template
+   * editor every save starts from — and was corrected directly: editing a
+   * club's matchday XI from inside one save's Boardroom must never be able
+   * to corrupt the template every other save also reads. This field is the
+   * real fix — the exact same `SavedLineup` shape, just living on the
+   * career instead of in localStorage/the shared table.
+   *
+   * `teamsheet.ts`'s `resolveLineupFor` checks this FIRST for any club with
+   * an entry here, falling back to the existing global `loadLineup(club)`/
+   * auto-pick chain exactly as before when there is none — so a club this
+   * save has never touched behaves byte-identically to today.
+   */
+  ownedLineups?: Record<string, import("./lineupStore").SavedLineup>;
   /** Every real transfer an owned club has done through the Boardroom — one
    *  entry per completed sign/sell, newest first. Requested directly: with
    *  real negotiated fees now varying (negotiation.ts), there was no way to

@@ -7,6 +7,7 @@ import {
 } from "@/lib/star/formations";
 import {
   loadLineup, saveLineup, exportAll, importAll, fetchSharedLineups, pushLineupShared, pushAllShared,
+  type SavedLineup,
 } from "@/lib/star/lineupStore";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 
@@ -34,6 +35,25 @@ interface Props {
   clubs: string[];
   squads: LeagueSquad[];
   initialClub?: string;
+  /**
+   * Redirects load/save away from the shared global store (`lineupStore.ts`)
+   * and toward whatever the caller actually wants persisted — the Boardroom's
+   * save-scoped `career.ownedLineups` (see OwnedLineupEditor.tsx), in
+   * particular. Every bit of tap-to-swap editing logic below is unchanged;
+   * only where a sheet is read from and written to moves. Omitted, this
+   * behaves exactly as it always has — the shared table, synced and pushed
+   * on save. Provided, the shared-table sync/push/Backup tooling below is
+   * skipped entirely: none of it makes sense for data that must never touch
+   * the global store.
+   */
+  persistence?: {
+    load: (club: string) => SavedLineup | null;
+    save: (club: string, lineup: SavedLineup) => void;
+  };
+  /** Hides the club dropdown — the caller has already fixed one club (e.g.
+   *  a single owned club's Boardroom editor) and switching away from it
+   *  makes no sense in that context. */
+  lockClub?: boolean;
 }
 
 /**
@@ -55,20 +75,25 @@ interface Sheet {
   manager: string;
 }
 
-export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
+export default function LineupBuilder({ clubs, squads, initialClub, persistence, lockClub }: Props) {
   const [club, setClub] = useState(initialClub ?? clubs[0] ?? "");
   const [sheet, setSheet] = useState<Sheet>({ club: "", formationId: DEFAULT_FORMATION, xi: [], bench7: [], manager: "" });
   const [held, setHeld] = useState<string | null>(null);
   const [showBackup, setShowBackup] = useState(false);
   const { formationId, xi, bench7, manager } = sheet;
+  const load = persistence?.load ?? loadLineup;
 
   // Pull the shared table down into the local cache before anything reads
   // it — otherwise the very first render's "load the saved side" effect
   // below would run against whatever (possibly nothing, possibly stale)
-  // happened to already be in this browser's storage.
-  const [synced, setSynced] = useState(false);
+  // happened to already be in this browser's storage. A caller with its own
+  // `persistence` has nothing to sync from the shared table at all — its
+  // data already lives wherever `load` reads it, synchronously.
+  const [synced, setSynced] = useState(!!persistence);
   useEffect(() => {
+    if (persistence) return;
     fetchSharedLineups().finally(() => setSynced(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── One screen ──
@@ -105,7 +130,7 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
   // real one that's already on the server.
   useEffect(() => {
     if (!synced || squad.length === 0) return;
-    const saved = loadLineup(club);
+    const saved = load(club);
     const known = new Set(squad.map(p => p.id));
     if (saved && saved.xi.some(id => id && known.has(id))) {
       const loadedXi = saved.xi.map(id => (id && known.has(id) ? id : null));
@@ -147,6 +172,16 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     if (!sheet.club || sheet.xi.length === 0) return;
     const t = window.setTimeout(async () => {
       const lineup = { formation: sheet.formationId, xi: sheet.xi, bench: sheet.bench7, manager: sheet.manager };
+      if (persistence) {
+        // Save-scoped data — never touches the shared table, so there is
+        // nothing to push and nothing that can fail beyond the caller's own
+        // save function throwing (it doesn't; setOwnedLineup is pure).
+        persistence.save(sheet.club, lineup);
+        setSaveError(null);
+        setSaved(true);
+        window.setTimeout(() => setSaved(false), 1400);
+        return;
+      }
       saveLineup(sheet.club, lineup);
       const result = await pushLineupShared(sheet.club, lineup);
       if (result.ok) {
@@ -303,14 +338,20 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
     >
       {/* ── Controls: one row, always ── */}
       <div className="flex shrink-0 items-stretch gap-1.5">
-        <select
-          value={club}
-          onChange={e => setClub(e.target.value)}
-          aria-label="Club"
-          className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1.5 text-[12px] font-black text-white"
-        >
-          {clubs.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        {lockClub ? (
+          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-gray-700 bg-gray-900 px-2 py-1.5 text-[12px] font-black text-white">
+            {club}
+          </div>
+        ) : (
+          <select
+            value={club}
+            onChange={e => setClub(e.target.value)}
+            aria-label="Club"
+            className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1.5 text-[12px] font-black text-white"
+          >
+            {clubs.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
         <select
           value={formationId}
           onChange={e => changeFormation(e.target.value)}
@@ -335,14 +376,16 @@ export default function LineupBuilder({ clubs, squads, initialClub }: Props) {
         >
           Best XI
         </button>
-        <button
-          onClick={() => setShowBackup(true)}
-          aria-label="Backup lineups"
-          title="Backup / restore all saved lineups"
-          className="shrink-0 rounded-lg bg-gray-700 px-2.5 text-[11px] font-black uppercase text-white transition hover:bg-gray-600"
-        >
-          Backup
-        </button>
+        {!persistence && (
+          <button
+            onClick={() => setShowBackup(true)}
+            aria-label="Backup lineups"
+            title="Backup / restore all saved lineups"
+            className="shrink-0 rounded-lg bg-gray-700 px-2.5 text-[11px] font-black uppercase text-white transition hover:bg-gray-600"
+          >
+            Backup
+          </button>
+        )}
       </div>
 
       {/* ── The dugout ── */}

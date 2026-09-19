@@ -16,6 +16,7 @@ import { playerMarketValue } from "@/lib/star/marketValue";
 import { interestedClubs, type TransferInterest } from "@/lib/star/transferMarket";
 import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
+import OwnedLineupEditor from "./OwnedLineupEditor";
 import type { NegotiationState } from "@/lib/star/negotiation";
 
 /**
@@ -62,6 +63,10 @@ interface Props {
   /** Phase 3 of STAR_POWER_POLITICS.md — the rest of the ownership layer. */
   onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
   onSetFormation: (club: string, formationId: string) => ActionResult;
+  /** Save-scoped lineup override — writes to THIS career's own
+   *  `ownedLineups`, never the shared global `lineupStore.ts` table. See
+   *  types.ts's `ownedLineups` doc and clubPowers.ts's `setOwnedLineup`. */
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
   onStandForPresident: (club: string) => ActionResult;
@@ -164,7 +169,7 @@ export default function Investments(props: Props) {
                 onTopUpBudget={props.onTopUpBudget} onSignPlayer={props.onSignPlayer}
                 onSellPlayer={props.onSellPlayer} onProposeSellVote={props.onProposeSellVote} onReplaceManager={props.onReplaceManager}
                 onManagerNegotiationFailed={props.onManagerNegotiationFailed}
-                onSetFormation={props.onSetFormation} onSetKit={props.onSetKit}
+                onSetFormation={props.onSetFormation} onSetOwnedLineup={props.onSetOwnedLineup} onSetKit={props.onSetKit}
                 onProposeKitVote={props.onProposeKitVote} onStandForPresident={props.onStandForPresident}
                 onSetPresidentWage={props.onSetPresidentWage}
                 otherOwnedClubs={owned.map(i => i.club).filter(c => c !== boardroomClub && c !== career.player.club)}
@@ -596,7 +601,7 @@ function squadFor(career: CareerState, club: string) {
 function Boardroom({
   career, club, onBack, initialSection, onTopUpBudget, onSignPlayer, onSellPlayer, onProposeSellVote, onReplaceManager,
   onManagerNegotiationFailed,
-  onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  onSetFormation, onSetOwnedLineup, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
   otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
@@ -609,6 +614,7 @@ function Boardroom({
   onReplaceManager: (club: string, managerName: string, agreedFee?: number) => ActionResult;
   onManagerNegotiationFailed: (club: string, managerName: string) => void;
   onSetFormation: (club: string, formationId: string) => ActionResult;
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
   onStandForPresident: (club: string) => ActionResult;
@@ -887,6 +893,7 @@ function Boardroom({
         <PowersPanel
           career={career} club={club} squad={squad}
           onSetFormation={(c, f) => runAction(onSetFormation(c, f))}
+          onSetOwnedLineup={(c, l) => runAction(onSetOwnedLineup(c, l))}
           onSetKit={(c, k) => runAction(onSetKit(c, k))}
           onProposeKitVote={(c, a, b, favor) => runAction(onProposeKitVote(c, a, b, favor))}
           onStandForPresident={(c) => runAction(onStandForPresident(c))}
@@ -926,24 +933,36 @@ function Boardroom({
   );
 }
 
-// ── A real lineup preview + a real link to edit it ──────────────────────────
+// ── A real lineup preview, plus a real, save-scoped editor ──────────────────
 //
 // Requested directly: for a club the player has enough rank to actually
-// decide lineups for, show a real preview of its current best XI and a way
-// to edit it. Investigated first whether to build a second lineup editor
-// inside this screen, or reuse the one that already exists — `/lineups`
-// (LineupBuilder.tsx) is already a full, tested tap-to-select/tap-to-swap
-// formation editor, persisting to the exact same `SavedLineup` store
-// (lineupStore.ts) every OTHER screen already reads a club's real lineup
-// from (the pre-match team sheet, `clubStrengthWithFormation` above). Built
-// a second editor here would mean a second, parallel way to write the same
-// data — a real risk of the two disagreeing — for no real benefit over a
-// working link into the one that's already right. So: a real preview (the
-// club's actual saved XI if one exists, falling back to the same `autoPick`
-// best-XI the team sheet itself falls back to when nothing's been saved
-// yet) plus a genuine "Edit Lineup →" link straight into `/lineups` for
-// this exact club — not a rebuild.
-function LineupPreview({ club, squad }: { club: string; squad: LeagueSquad | undefined }) {
+// decide lineups for, show a real preview of its current best XI, reflecting
+// THIS save's actual current squad, and a way to genuinely edit it.
+//
+// A previous pass linked straight into `/lineups` (LineupBuilder.tsx) — the
+// tool that sets a club's lineup TEMPLATE for the start of a save, and every
+// save that reuses it — on the reasoning that it was "already a full, tested
+// editor." That was wrong, reported directly and corrected: this Boardroom
+// view is about the CURRENT save's own in-game lineup for this specific
+// club, never the shared starting template every save reads from. Editing
+// through that link risked corrupting the global template from inside one
+// save's Boardroom.
+//
+// The real fix: `career.ownedLineups[club]` (types.ts), a save-scoped
+// override written by `setOwnedLineup` (clubPowers.ts) and read FIRST by
+// `teamsheet.ts`'s `resolveLineupFor` — never touching `lineupStore.ts`'s
+// shared table. The preview below reads it first, falling back to the exact
+// same global-save/auto-pick chain as before when this save has never set
+// one; the "Edit Lineup" button opens `OwnedLineupEditor.tsx`, which reuses
+// `LineupBuilder.tsx`'s own tap-to-swap editing wholesale, redirected at its
+// new `persistence` prop.
+function LineupPreview({
+  club, squad, career, onSetOwnedLineup,
+}: {
+  club: string; squad: LeagueSquad | undefined; career: CareerState;
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => void;
+}) {
+  const [editing, setEditing] = useState(false);
   if (!squad || squad.players.length === 0) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
@@ -955,27 +974,33 @@ function LineupPreview({ club, squad }: { club: string; squad: LeagueSquad | und
   const pickable: Pickable[] = squad.players.map(p => ({
     id: p.id, name: p.name, position: p.position, positions: p.positions, overall: p.overall,
   }));
-  const saved = loadLineup(club);
   const known = new Set(pickable.map(p => p.id));
+  const ownedOverride = career.ownedLineups?.[club];
+  const saved = (ownedOverride && ownedOverride.xi.some(id => id && known.has(id)))
+    ? ownedOverride
+    : loadLineup(club);
   const hasUsableSave = !!saved && saved.xi.some(id => id && known.has(id));
   const formation = formationOf(hasUsableSave ? saved!.formation : DEFAULT_FORMATION);
   const xi = hasUsableSave
     ? saved!.xi.map(id => (id && known.has(id) ? id : null))
     : autoPick(pickable, formation);
   const byId = new Map(pickable.map(p => [p.id, p]));
+  const isOwnedOverride = !!ownedOverride && ownedOverride === saved;
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60">
-          Lineup {hasUsableSave ? `· ${formation.name ?? formation.id}` : "· auto-picked (nothing saved yet)"}
+          Lineup {isOwnedOverride
+            ? `· ${formation.name ?? formation.id} (your edit — this save only)`
+            : hasUsableSave ? `· ${formation.name ?? formation.id}` : "· auto-picked (nothing saved yet)"}
         </div>
-        <a
-          href={`/lineups?club=${encodeURIComponent(club)}`}
-          className="px-2.5 py-1 rounded-md bg-emerald-500 hover:bg-emerald-400 text-[10px] font-black text-emerald-950 whitespace-nowrap"
+        <button
+          onClick={() => setEditing(true)}
+          className="shrink-0 rounded-lg bg-emerald-600 px-2 py-1 text-[9px] font-black uppercase text-white transition hover:bg-emerald-500"
         >
-          Edit Lineup →
-        </a>
+          Edit Lineup
+        </button>
       </div>
       <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
         {formation.slots.map((slot, i) => {
@@ -990,6 +1015,13 @@ function LineupPreview({ club, squad }: { club: string; squad: LeagueSquad | und
           );
         })}
       </div>
+      {editing && (
+        <OwnedLineupEditor
+          club={club} squad={squad} career={career}
+          onClose={() => setEditing(false)}
+          onSave={onSetOwnedLineup}
+        />
+      )}
     </div>
   );
 }
@@ -997,12 +1029,13 @@ function LineupPreview({ club, squad }: { club: string; squad: LeagueSquad | und
 // ── PHASE 3 OF STAR_POWER_POLITICS.MD — THE REST OF THE OWNERSHIP LAYER ────
 
 function PowersPanel({
-  career, club, squad, onSetFormation, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  career, club, squad, onSetFormation, onSetOwnedLineup, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
   otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
   career: CareerState; club: string; squad: LeagueSquad | undefined;
   onSetFormation: (club: string, formationId: string) => void;
+  onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => void;
   onSetKit: (club: string, kit: ClubKit) => void;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => void;
   onStandForPresident: (club: string) => void;
@@ -1081,7 +1114,12 @@ function PowersPanel({
         </div>
       )}
 
-      {!isOwnClub && <LineupPreview club={club} squad={squad} />}
+      {!isOwnClub && (
+        <LineupPreview
+          club={club} squad={squad} career={career}
+          onSetOwnedLineup={onSetOwnedLineup}
+        />
+      )}
 
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Kit</div>

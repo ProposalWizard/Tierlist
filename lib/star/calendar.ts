@@ -507,15 +507,22 @@ export const PLAY_OFF_SLOTS: CupSlot[] = [
 ];
 
 /**
- * League One and League Two clubs enter the EFL Cup (real life); the
- * National League does not — a National League career never opens a League
- * Cup at all (see competitions.ts's `seedCups`, which skips it outright when
- * this returns an empty list).
+ * The League Cup stays exactly what it always was — a Premier League/
+ * Championship competition — regardless of League One/League Two/the
+ * National League becoming playable divisions. Reported directly and
+ * corrected: an earlier pass had reasoned from real life (League One/Two
+ * clubs genuinely do enter the real EFL Cup) and given them League Cup
+ * slots too, but that's not what was wanted here — "the League Cup should
+ * not have changed since we added in those three leagues... it is not a
+ * competition available to be played by those clubs." A career started in
+ * any of the three new divisions never opens a League Cup at all (see
+ * competitions.ts's `seedCups`, which skips it outright when this returns
+ * an empty list) — same as the National League already correctly had.
  */
 export function leagueCupSlotsFor(division: CareerDivision): CupSlot[] {
   if (division === "premier") return LEAGUE_CUP_SLOTS;
-  if (division === "national_league") return [];
-  return CHAMPIONSHIP_LEAGUE_CUP_SLOTS;
+  if (division === "championship") return CHAMPIONSHIP_LEAGUE_CUP_SLOTS;
+  return [];
 }
 
 /** Every one of the five divisions enters the FA Cup (real life). */
