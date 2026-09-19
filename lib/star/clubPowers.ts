@@ -8,6 +8,7 @@ import { clampReputation } from "./reputation";
 import { FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, bestFitness } from "./formations";
 import { getTuning } from "./tuningStore";
 import type { ClubKits } from "./kits";
+import type { SavedLineup } from "./lineupStore";
 import { MONEY_SCALE } from "./money";
 
 /**
@@ -110,6 +111,31 @@ export function setClubFormation(career: CareerState, club: string, formationId:
   const current = ownedClubState(career, club);
   return {
     career: { ...career, ownedClubs: { ...(career.ownedClubs ?? {}), [club]: { ...current, formation: formationId } } },
+    ok: true,
+  };
+}
+
+/**
+ * Set a save-scoped lineup override for an owned club — see `ownedLineups`'s
+ * own doc on `CareerState` (types.ts) for why this is a genuinely different
+ * thing from `lineupStore.ts`'s `saveLineup`. Gated exactly like every other
+ * real Boardroom power (`isMajorityOwner`), and every id in the submitted XI/
+ * bench is checked against the club's REAL current squad in this save
+ * (`findSquadEntry`) — a stale id from a player since sold, or one that was
+ * never on this roster to begin with, is silently dropped rather than
+ * corrupting the sheet with someone who no longer exists here.
+ */
+export function setOwnedLineup(career: CareerState, club: string, lineup: SavedLineup): BoardActionResult {
+  if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
+  if (!FORMATIONS.some(f => f.id === lineup.formation)) return { career, ok: false, reason: "Not a real formation" };
+  const known = new Set((findSquadEntry(career, club)?.squad.players ?? []).map(p => p.id));
+  const xi = lineup.xi.map(id => (id && known.has(id) ? id : null));
+  const bench = (lineup.bench ?? []).filter(id => known.has(id));
+  return {
+    career: {
+      ...career,
+      ownedLineups: { ...(career.ownedLineups ?? {}), [club]: { formation: lineup.formation, xi, bench, manager: lineup.manager } },
+    },
     ok: true,
   };
 }

@@ -66,10 +66,15 @@ for (const { division, clubs, name } of TIERS) {
   const expectFACup = faCupSlotsFor(division).length > 0;
   const expectLeagueCup = leagueCupSlotsFor(division).length > 0;
   check(expectFACup, `${name}: enters the FA Cup (real life)`);
-  if (division === "national_league") {
-    check(!expectLeagueCup, `${name}: does NOT enter the League Cup (real life)`);
+  // The League Cup stays exactly what it always was — Premier League and
+  // Championship only. Reported directly and corrected: an earlier pass
+  // gave League One/Two real-life EFL Cup entry too, but that's not what
+  // was wanted — the League Cup was never meant to change at all when
+  // these three divisions became playable.
+  if (division === "premier" || division === "championship") {
+    check(expectLeagueCup, `${name}: enters the League Cup`);
   } else {
-    check(expectLeagueCup, `${name}: enters the League Cup (real life)`);
+    check(!expectLeagueCup, `${name}: does NOT enter the League Cup (unchanged by these divisions becoming playable)`);
   }
   check(cupWeeks.size > 0, `${name}: is entered in at least one cup`);
   const validSlots = new Set([

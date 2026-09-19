@@ -2,7 +2,7 @@ import type { CareerState, Fixture, LeagueSquad, SquadPlayer } from "./types";
 import { mulberry32 } from "./season";
 import { FORMATIONS, formationOf, autoPick, type Formation, type Pickable, type Role } from "./formations";
 import { shortNameOf } from "./realSquad";
-import { loadLineup } from "./lineupStore";
+import { loadLineup, type SavedLineup } from "./lineupStore";
 import { displayOverall } from "./rating";
 import { incumbencyRecordsFor } from "./incumbency";
 
@@ -77,6 +77,23 @@ export interface Matchday {
 // `formationForClub` FROM "./teamsheet" keeps working unchanged.
 import { formationForClub } from "./clubFormation";
 export { formationForClub } from "./clubFormation";
+
+/**
+ * A club's real saved lineup — this SAVE's own override first, the shared
+ * global template second.
+ *
+ * `career.ownedLineups` (types.ts) is a genuinely different thing from the
+ * `lineupStore.ts` table this used to read exclusively: the global store is
+ * one shared template every save (and every OTHER save's own opponents)
+ * reads, while `ownedLineups` is a per-save decision the Boardroom's "Edit
+ * Lineup" tool writes for a club the PLAYER owns in THIS career alone. A
+ * club with no override here behaves exactly as it always has — falls
+ * straight through to `loadLineup(club)`, byte-identical to before this
+ * field existed.
+ */
+function resolveLineupFor(career: CareerState, club: string): SavedLineup | null {
+  return career.ownedLineups?.[club] ?? loadLineup(club);
+}
 
 // ── Building a side ─────────────────────────────────────────────────────────
 
@@ -640,7 +657,7 @@ export function matchdayFor(
   // Skips rotation entirely when a lineup was actually saved, the same way
   // your own club's does — a side you set out by hand is not something the
   // game should be quietly shuffling.
-  const oppSaved = loadLineup(theirs);
+  const oppSaved = resolveLineupFor(career, theirs);
   const oppSavedXI: SavedXI | undefined = oppSaved && oppSaved.xi.some(Boolean)
     ? { formation: formationOf(oppSaved.formation), xi: oppSaved.xi }
     : undefined;
@@ -823,7 +840,7 @@ export function startingTeammateRoles(career: CareerState, fixture: Fixture): Ma
     // credited with the winner. `loadLineup` is localStorage-backed and
     // returns null anywhere there is no localStorage (the tests, SSR), which
     // is the same "nothing saved" answer as a career that never picked a side.
-    const saved = loadLineup(career.player.club);
+    const saved = resolveLineupFor(career, career.player.club);
     const savedXI = saved && saved.xi.some(Boolean)
       ? { formation: formationOf(saved.formation), xi: saved.xi }
       : undefined;
@@ -858,7 +875,7 @@ export function startingTeammateRoles(career: CareerState, fixture: Fixture): Ma
 export function opponentStartingXI(career: CareerState, fixture: Fixture): SheetPlayer[] | null {
   if (fixture.kind === "international") return null;
   try {
-    const saved = loadLineup(career.player.club);
+    const saved = resolveLineupFor(career, career.player.club);
     const savedXI = saved && saved.xi.some(Boolean)
       ? { formation: formationOf(saved.formation), xi: saved.xi }
       : undefined;
