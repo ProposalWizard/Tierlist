@@ -15,10 +15,12 @@ import { clampToPitch } from "./geometry";
  *    football scenarios."
  *
  * The version before this one placed the defending four as FIXED OFFSETS FROM
- * THE ATTACKING FOUR (`slotsFor`, flow.ts): the presser five per cent of the
- * pitch behind the carrier, the cover five per cent behind the runner, and the
- * other two anchored on the middle of the pitch. Not one of the four slots
- * mentioned the goal they were defending, the near post, or the ball.
+ * THE ATTACKING FOUR (`slotsFor`, flow.ts — itself since replaced by
+ * `attackingShape`, attack.ts, for the very same reason): the presser five
+ * per cent of the pitch behind the carrier, the cover five per cent behind the
+ * runner, and the other two anchored on the middle of the pitch. Not one of
+ * the four slots mentioned the goal they were defending, the near post, or
+ * the ball.
  *
  * MEASURED, over 500 real chances the flow actually produced:
  *
@@ -189,7 +191,8 @@ export interface DefensiveShape {
 /**
  * The four defensive slots for a ball here, against these attackers.
  *
- * Written in the canonical frame `slotsFor` uses: the ATTACKING side is going
+ * Written in the canonical frame `attackingShape` (attack.ts) uses: the
+ * ATTACKING side is going
  * toward `y1`, so the goal being defended is the one at `y1`. The caller turns
  * the whole thing round when it is the other way up — one shape, not two.
  *

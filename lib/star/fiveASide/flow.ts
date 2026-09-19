@@ -1,7 +1,8 @@
 import type { Vec2 } from "../canvasEngine";
 import type { MatchRules } from "./rules";
 import { clampToPitch } from "./geometry";
-import { clearOfBall, defensiveShape, type DefendRole } from "./shape";
+import { clearOfBall, defensiveShape, laneClearance, type DefendRole } from "./shape";
+import { attackingShape } from "./attack";
 import type { FiveWorld } from "./passage";
 
 /**
@@ -139,33 +140,102 @@ const CHANCE_BOX = 0.55;
 const STARVED = 16;
 
 /**
- * How often a chance your side works actually falls to YOU.
+ * ── THE FLAT ROLL THIS REPLACED, AND THE NUMBER IT WAS CALIBRATED TO ──
  *
- * The big match's own shape — a base, a skill term, and a starve bonus so you
- * are never stranded watching — with its energy and impact-sub terms dropped,
- * since neither exists in a trial.
+ * `involvement` was a single probability — a base, a skill term and a starve
+ * bonus — with nothing in it about where anybody was standing, because until
+ * this round nobody was standing anywhere in particular: all four of your men
+ * were in the same metre-wide column in the middle of the pitch, so there was
+ * nothing for a shape to decide between.
  *
- * The BASE is not the big match's 0.36, and that is the point rather than a
- * drift. What was asked for was the same highlight count as a full match:
+ * Its base was measured rather than guessed, and the target it was measured
+ * against still stands and is still pinned by tests/star/fiveASideFlow.mts:
+ * what was asked for was the same highlight count as a full match — "let's
+ * make it exactly the same as a 90 min game highlights wise but cut the game
+ * down to 45 minutes" — and a real ninety minutes calls the player in 7.79
+ * times on average (400 simulated matches through `hiddenMatch`, median 7,
+ * p10 5, p90 11), or 7.23 for a player who SHOOTS every chance he gets.
  *
- *   "let's make it exactly the same as a 90 min game highlights wise but cut
- *    the game down to 45 minutes."
- *
- * So it was measured, not copied. A real ninety minutes calls the player in
- * 7.79 times on average (400 simulated matches through `hiddenMatch`, median
- * 7, p10 5, p90 11) — and 7.23 for a player who SHOOTS every chance he gets,
- * because a shot hands the ball over and his side has to win it back. This
- * pitch has fewer beats to work with, so the big match's own 0.36 base
- * produced 6.0; 0.60 lands it at 7.8 played out through the pure reducers and
- * 6.9 for a real shooting striker measured through the live engine — either
- * way inside the range the real match gives the same player.
- * tests/star/fiveASideFlow.mts pins it to that range rather than to a figure.
+ * `chanceFindsYou` below replaces it and keeps that target: see its own note.
  */
-function involvement(flow: FiveFlowState, inputs: FlowInputs): number {
-  return 0.60
-    + (inputs.playerSkill / 100) * 0.26
-    + Math.min(0.3, Math.max(0, flow.sinceInvolved - 6) * 0.03);
+
+/**
+ * WHO THE CHANCE ACTUALLY FALLS TO — the shape decides, and the tie goes to
+ * you.
+ *
+ * Asked for directly, and it is the whole of this half of the round:
+ *
+ *   "Shape decides, but bias to you. The attacking shape is real and a
+ *    team-mate genuinely better placed can be the one the move finds — but
+ *    when it is close, the tie goes to the player."
+ *
+ * So each of your four is scored where he actually stands — the room he has,
+ * how much of the goal he can see from there, and how far up the pitch he is —
+ * and how likely the ball is to find you follows from how you compare to the
+ * best-placed of the other three. You carry `PLAYER_EDGE` on top, which is
+ * what "the tie goes to the player" means as a number: a team-mate has to be
+ * genuinely better placed, not merely equal, before it goes to him.
+ *
+ * Still a roll rather than a winner-takes-all, for a reason that is real: a
+ * hard argmax makes the stage streaky, because the same man is best placed
+ * several beats running, so you get everything or nothing.
+ *
+ * MEASURED, over 600 matches: a chance your side works finds you 80.1% of the
+ * time, against 89.1% for the flat roll this replaces. Pure realism — four
+ * men, one ball, nobody favoured — would be 25%.
+ */
+function chanceFindsYou(
+  rules: MatchRules, w: FiveWorld, flow: FiveFlowState, inputs: FlowInputs,
+): number {
+  const placed = (p: Vec2): number => {
+    let room = Infinity;
+    for (const o of w.opps) room = Math.min(room, Math.hypot(o.x - p.x, o.y - p.y));
+    const toGoal = Math.hypot(p.x - (rules.goal.x1 + rules.goal.x2) / 2, p.y - rules.pitch.y1);
+    const sight = toGoal < SHOOTING_RANGE
+      ? goalSight(p, rules, rules.pitch.y1, [...w.opps]) * SIGHT_WEIGHT
+      : 0;
+    // How far up the pitch he is. A man twenty metres from goal is not the man
+    // the chance falls to, however much room he has.
+    return Math.min(room, SPACE_ENOUGH) + sight - (p.y - rules.pitch.y1) * FORWARD_WEIGHT;
+  };
+
+  const you = placed(w.you) + PLAYER_EDGE + (inputs.playerSkill / 100) * SKILL_EDGE;
+  let best = -Infinity;
+  for (const m of w.mates) best = Math.max(best, placed(m));
+
+  // ── …and the match is never allowed to forget you ──
+  //
+  // The same starve term the flat roll had, made into a real guarantee rather
+  // than a nudge: it climbs from nothing at six beats to CERTAIN at `STARVED`,
+  // which is eight minutes of football without a touch. A shape that decides
+  // who gets the ball can strand a striker having a bad half, and this stage's
+  // own tests pin that it must not — with the starve term left as the old
+  // gentle nudge, a keep-ball player who never progresses the ball was
+  // measured down to two touches in a whole match, against a floor of three.
+  const starved = Math.max(0, flow.sinceInvolved - 6) / (STARVED - 6);
+  if (starved >= 1) return 1;
+  return Math.min(1, Math.max(
+    FINDS_YOU_FLOOR,
+    Math.min(FINDS_YOU_CEILING, 0.5 + (you - best) * FINDS_YOU_SLOPE),
+  ) + starved * (1 - FINDS_YOU_FLOOR));
 }
+
+/** What "the tie goes to the player" is worth, in the units the score is
+ *  measured in — metres of room. */
+const PLAYER_EDGE = 1.2;
+/** …and how much of that edge a better player earns for himself. Better
+ *  players see more of the ball; the same idea the flat roll already had. */
+const SKILL_EDGE = 1.2;
+/** How steeply being better placed turns into getting the ball. */
+const FINDS_YOU_SLOPE = 0.22;
+/** It is never certain either way: a striker who has drifted into a bad spot
+ *  still gets the odd one, and one standing in the perfect place still sees a
+ *  team-mate take it. */
+const FINDS_YOU_FLOOR = 0.22;
+const FINDS_YOU_CEILING = 0.88;
+/** How much a metre further from the goal costs a man, against a metre of
+ *  room. */
+const FORWARD_WEIGHT = 0.20;
 
 /** How often a chance a TEAM-MATE takes ends in the net, by area. */
 const MATE_CONVERT_DEEP = 0.09;
@@ -304,47 +374,90 @@ function worthWatching(rules: MatchRules, w: FiveWorld): boolean {
  */
 const SPACE_ENOUGH = 5.5;
 
-interface Slots {
-  /** Attacking side, carrier first — the man the ball is with. */
-  attack: Vec2[];
+/**
+ * How near the goal a run has to be made before a sight of it matters more
+ * than having grass around you.
+ *
+ * See `intoSpace`. MEASURED, with room the only thing scored and the attack
+ * genuinely spread across the pitch for the first time: 21.5% of your touches
+ * arrived more than 8 m off centre, against 8.7% before — because the
+ * emptiest spot within reach of a striker standing in front of goal is, every
+ * single time, the corner nobody is defending.
+ */
+const SHOOTING_RANGE = 14;
+/** How far a body has to be off the line to a piece of the net before that
+ *  piece counts as visible. A man is about this wide with a leg out. */
+const BODY_R = 0.95;
+/** What a completely clear view of the goal is worth, against `SPACE_ENOUGH`
+ *  metres of room. Measured — see the sweep in this round's write-up. */
+const SIGHT_WEIGHT = 1.0;
+
+// ── TRIED, MEASURED, AND NOT SHIPPED: just keep the chance nearer the middle
+//
+// A flat cost on drifting more than five metres off centre inside shooting
+// range. It reads right — a striker's run in the box is toward the goal, not
+// toward the corner flag — and it fixes the symptom outright: chances struck
+// from more than 8 m off centre went back to 8.8%, from 21.5%, against a
+// baseline of 8.7%.
+//
+// It also destroys the one number the defensive round was built to move.
+// Pulling the chance to the middle REGARDLESS of where the defence is standing
+// means where it is standing stops predicting where the ball ends up: over 400
+// real chances, "does the defence follow the ball" fell from r=0.60 to r=0.26
+// at a modest cost and r=0.19 at a firmer one. A stage whose chances all
+// appear in the same place is the fault this round exists to remove, just
+// moved from the shape to the chance.
+//
+// What shipped instead is `goalSight`, which gets to the same place by asking
+// the football question — can I see the net from here — rather than by
+// pulling on the coordinate.
+
+/**
+ * How much of the goal you can actually see from here: the fraction of the
+ * mouth with nobody's body on the line to it.
+ *
+ * The honest version of "is this a shooting position". It falls away for the
+ * two reasons a real chance falls away — somebody is in the way, and the angle
+ * has closed — so it is one number for both, and from the byline both happen
+ * at once, which is exactly why the emptiest grass near a goal is worth
+ * nothing.
+ *
+ * Deliberately measured across the WHOLE mouth rather than to its centre. An
+ * earlier version scored the lane to the middle of the goal, and that trains
+ * the run to find precisely the chance a shot straight down the middle
+ * converts from: MEASURED over 500 real chances, a central ball went from
+ * 20.0% to 30.4% against an open post of 56.8%, narrowing the stage's own "a
+ * shot straight at him must not be as good as a placed one" guard — whose
+ * comment says it cost this project a round — from 2.7x to 1.9x, which is
+ * inside the 2x the guard demands.
+ */
+function goalSight(from: Vec2, rules: MatchRules, goalY: number, markers: Vec2[]): number {
+  const SAMPLES = 7;
+  const gx1 = rules.goal.x1 + 0.3, gx2 = rules.goal.x2 - 0.3;
+  let open = 0;
+  for (let i = 0; i < SAMPLES; i++) {
+    const aim = { x: gx1 + ((gx2 - gx1) * i) / (SAMPLES - 1), y: goalY };
+    let clear = true;
+    for (const m of markers) {
+      if (laneClearance(m, from, aim) < BODY_R) { clear = false; break; }
+    }
+    if (clear) open++;
+  }
+  return open / SAMPLES;
 }
 
 /**
- * The attacking side's four, for a ball in this band. Written in "attacking
- * toward y1" terms and turned round by the caller when it is the other side's
- * ball, so there is one shape and not two.
+ * The attacking side's four used to be built here, as `slotsFor`: four fixed
+ * offsets from the middle of the pitch, scaled by `lean`, the ball's own
+ * offset from that middle. They are now `attackingShape` (attack.ts), which
+ * derives each man's spot from the band, the flank the move is on and where
+ * the other side's four actually are — see that file's header for the
+ * measurements that made the old version untenable, and for why a shape driven
+ * by `lean` could not escape the centre circle from a kick-off.
  *
- * The DEFENDING four used to be built here too, as fixed offsets from these
- * ones. They are now `defensiveShape` (shape.ts), which derives each man's
- * spot from the ball, the goal he is defending and who he is picking up —
- * see that file's header for the measurements that made the old version
- * untenable.
+ * The DEFENDING four moved out to `defensiveShape` (shape.ts) the round
+ * before, for the same reason.
  */
-function slotsFor(rules: MatchRules, ay: number, ballX: number, jitter: () => number): Slots {
-  const { x1, x2, y1, y2 } = rules.pitch;
-  const W = x2 - x1;
-  const L = y2 - y1;
-  const cx = (x1 + x2) / 2;
-  const at = (x: number, y: number): Vec2 =>
-    clampToPitch({ x, y: Math.max(y1 + L * 0.03, Math.min(y2 - L * 0.03, y)) }, 0.6);
-
-  const j = (m: number) => (jitter() - 0.5) * m;
-  // Which flank the move is on, so the shape leans the way the ball does.
-  const lean = Math.max(-1, Math.min(1, (ballX - cx) / (W / 2)));
-
-  const attack: Vec2[] = [
-    // The carrier.
-    at(cx + lean * W * 0.30 + j(W * 0.10), ay + j(L * 0.03)),
-    // Running beyond him, off the far shoulder.
-    at(cx - lean * W * 0.22 + j(W * 0.12), ay - L * 0.11 + j(L * 0.04)),
-    // Square, on the near side.
-    at(cx + lean * W * 0.34 + j(W * 0.12), ay + L * 0.03 + j(L * 0.04)),
-    // The deep man, holding.
-    at(cx + j(W * 0.20), ay + L * 0.20 + j(L * 0.04)),
-  ];
-
-  return { attack };
-}
 
 /** Turn a point round so "attacking y1" becomes "attacking y2". Not
  *  geometry.ts's `mirror`, which is about the engine's own frame — this is
@@ -482,16 +595,48 @@ function assignRoles(
  * defending side did not so much as turn its head. The shape handed to the
  * picture-builder was therefore arranged around where the ball USED to be,
  * which is most of why it read as four men standing nowhere in particular.
+ *
+ * ── It was 3.2, and this is the one place the DEFENDING side's behaviour
+ * ── changed this round. Said plainly rather than buried.
+ *
+ * Nothing in `shape.ts` moved. What moved is how far a defender is allowed to
+ * travel while the ball is being played, and it moved because the ball now
+ * travels much further: before `attackingShape`, the whole attack lived in a
+ * 1.35 m-wide column and a "switch of play" was a couple of metres, so 3.2 m
+ * of reaction covered it. With four men genuinely spread over ten metres the
+ * same 3.2 m covers a third of a switch, and the defence stops having any
+ * relationship to where the ball ended up.
+ *
+ * MEASURED over 400 real chances and 600 whole matches per setting, against
+ * the defensive round's own published numbers (spread 1.67 m, nearest pair
+ * 1.95 m, nearest man to the ball 4.33 m, tracks the ball r=0.60) and a
+ * baseline of 1.635 goals and 1.042 conceded a match at stage score 72.0:
+ *
+ *   REACT_SHIFT   spread   pair   nearest  goal-side  tracks   goals  conc  stage
+ *      3.2       2.20 m  2.76 m   4.60 m    1.66/4    r=0.42   1.870  1.082  74.5
+ *      4.0       2.18 m  2.70 m   4.27 m    1.75/4    r=0.56   1.723  1.010  72.4
+ *      4.2       2.19 m  2.63 m   4.24 m    1.79/4    r=0.63   1.747  0.990  73.8
+ *      5.2       2.23 m  2.52 m   4.08 m    1.88/4    r=0.77   1.600  0.960  70.1
+ *
+ * 4.2 is where the defensive picture comes back to where the defensive round
+ * left it — tracking at r=0.63 against its published 0.60 — while the attack
+ * still scores more than it did. Leaving it at 3.2 scores more again (1.870,
+ * +14% on the baseline against +7%) and leaves a defence that has largely
+ * stopped following the ball, which is the thing the previous round was built
+ * to fix. That is the trade, and it is a judgement rather than a measurement:
+ * both settings are real, and 3.2 is a one-line change if more goals are worth
+ * more than the defence reading properly.
  */
-export const REACT_SHIFT = 3.2;
+export const REACT_SHIFT = 4.2;
 
 /**
  * One beat of football nobody is playing.
  *
  * Moves both sides into the shape the band asks for and puts the ball with
- * whoever has it. `youAttackingSlot` is which of the attacking slots is YOURS
- * when it is your team's ball — the striker's, so when the move finds you it
- * finds you in front of goal rather than at right back.
+ * whoever has it. Which of the attacking slots is YOURS is the shape's own
+ * answer (`AttackingShape.yours`) — the most advanced man who is not the one
+ * being played to, so when the move finds you it finds you in front of goal
+ * rather than at right back.
  */
 function moveWorld(
   rules: MatchRules, world: FiveWorld, flow: FiveFlowState, rng: () => number,
@@ -500,8 +645,8 @@ function moveWorld(
 
   // ── The one that has to be got right, and was not ──
   //
-  // `slotsFor` writes its shape in a canonical frame where the attacking side
-  // is going toward `y1`, and the caller turns it round when the attackers are
+  // Both shapes are written in a canonical frame where the attacking side is
+  // going toward `y1`, and the caller turns them round when the attackers are
   // them. The anchor handed in must therefore be a distance from the goal
   // BEING ATTACKED, not a position on the pitch — and bands are named from
   // your point of view, so when it is their ball the depth is the other way
@@ -514,17 +659,21 @@ function moveWorld(
   // long way through your defence. They scored 0.00 goals a match across 250.
   const depth = yours ? BAND_DEPTH[flow.band] : 1 - BAND_DEPTH[flow.band];
   const L0 = rules.pitch.y2 - rules.pitch.y1;
-  const { attack } = slotsFor(
-    rules, rules.pitch.y1 + L0 * depth, world.ball.x, rng,
-  );
-
-  // ── The defence is built from the situation, not from the attack ──
-  //
-  // `defensiveShape` wants the same canonical frame `slotsFor` writes in:
-  // attacking toward y1, so the goal being defended is the one at y1. `flip`
-  // only turns y round, which is exactly what "how far from the goal I am
-  // defending" means, so the ball goes through it too when it is their ball.
   const canonBall = yours ? world.ball : flip(rules, world.ball);
+
+  // ── Both shapes are built from the situation ──
+  //
+  // The attack reads where the DEFENDERS REALLY ARE, one beat old — their
+  // actual positions rather than the spots `defensiveShape` is about to hand
+  // them. That is deliberate twice over: a man's real position cannot be
+  // wrong, and asking the defensive shape first would be circular, since it
+  // takes the attack as its own input.
+  const canonDefenders = (yours ? [...world.opps] : [world.you, ...world.mates])
+    .map(p => (yours ? { ...p } : flip(rules, p)));
+  const att = attackingShape(
+    rules, rules.pitch.y1 + L0 * depth, canonBall, canonDefenders, rng,
+  );
+  const attack = att.slots;
   const shape = defensiveShape(rules, canonBall, attack, rng);
 
   // The attacking shape is written attacking y1, which is YOUR direction. When
@@ -542,7 +691,7 @@ function moveWorld(
   // point of a beat you are not involved in — and when it does not, you are
   // the highest presser (defend slot 0).
   const mySlots = yours ? attackSlots : defendSlots;
-  const myIdx = yours ? 1 : 0;
+  const myIdx = yours ? att.yours : 0;
 
   // ── Who is doing which job, and why it is remembered ──
   //
@@ -577,10 +726,13 @@ function moveWorld(
     movedTheirs = assign([...world.opps], attackSlots);
   }
 
-  // The ball is with whoever has it: the attacking carrier.
+  // The ball is with whoever has it: the man nearest the slot the attacking
+  // shape has decided the ball should be in this beat. `attackingShape`
+  // guarantees that slot is never yours, so a beat never finds you already on
+  // the ball — which is the whole point of the layer this lives in.
   const carrier = yours
-    ? nearestOther(movedYours, attackSlots[0], 0)
-    : nearestOther(movedTheirs, attackSlots[0], -1);
+    ? nearestOther(movedYours, attackSlots[att.carrier], 0)
+    : nearestOther(movedTheirs, attackSlots[att.carrier], -1);
 
   return {
     ball: clampToPitch({ ...carrier }, 0.4),
@@ -797,7 +949,7 @@ export function playOn(
 
       if (rng() < rate) {
         if (yours) {
-          if (rng() < involvement(flow, inputs)) {
+          if (rng() < chanceFindsYou(rules, w, flow, inputs)) {
             flow.sinceInvolved = 0;
             w = receiveInSpace(rules, w, flow, rng);
             beats.push(snapshot(w, flow));
@@ -1003,6 +1155,7 @@ function intoSpace(
   const W = x2 - x1;
   const L = rules.pitch.y2 - rules.pitch.y1;
   const lean = towardY < ay ? -1 : 1;
+  const gcx = (rules.goal.x1 + rules.goal.x2) / 2;
 
   let best = from;
   let bestScore = -Infinity;
@@ -1029,7 +1182,26 @@ function intoSpace(
     // Space is the point, but the shorter run is still the better one.
     const travel = Math.hypot(cand.x - from.x, cand.y - from.y);
     if (travel > RECEIVE_RUN) continue;
-    const score = Math.min(nearest, SPACE_ENOUGH) - travel * 0.18;
+    // ── …and near goal, a sight of it ──
+    //
+    // Room alone is the emptiest grass within reach, and the emptiest grass
+    // near a goal is always the byline: everybody else is in front of the net,
+    // so the corner flag scores perfectly and is worth nothing. A run made in
+    // the last third is made to SHOOT from, and what makes a spot worth
+    // shooting from is HOW MUCH OF THE GOAL YOU CAN SEE from it — which falls
+    // away both when a body is in the way and when the angle closes, so it is
+    // one number for the two things that actually ruin a chance.
+    //
+    // Only inside `SHOOTING_RANGE`: out in midfield a clear view of the goal
+    // is not what the run is for, and weighting it there would drag every
+    // build-up pass into the middle of the pitch, which is the fault this
+    // whole round exists to remove.
+    let sight = 0;
+    const toGoal = Math.hypot(cand.x - gcx, cand.y - towardY);
+    if (toGoal < SHOOTING_RANGE) {
+      sight = goalSight(cand, rules, towardY, markers) * SIGHT_WEIGHT;
+    }
+    const score = Math.min(nearest, SPACE_ENOUGH) + sight - travel * 0.18;
     if (score > bestScore) { bestScore = score; best = cand; }
   }
 
