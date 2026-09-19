@@ -16,8 +16,8 @@ interface ActionResult { ok: boolean; reason?: string; }
  *
  * Every price in this game is a number of weeks multiplied out into stars
  * (economy.ts), and until now the shop was the one place that number could
- * not be read back. "★4,600" tells a player nothing on its own; "4 weeks"
- * or "131 weeks" tells them everything, and it is the same sentence the
+ * not be read back. "★14,500" tells a player nothing on its own; "4 weeks"
+ * or "414 weeks" tells them everything, and it is the same sentence the
  * design is actually written in. Against the wage on their real contract,
  * grossed up the same way every band is — not against a tier's notional
  * first-teamer, who is not them.

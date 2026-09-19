@@ -31,6 +31,27 @@
  * Note this is the PERSONAL scale. Club-level money (transfer fees, club
  * valuations, facilities) deliberately uses a much larger one — a
  * footballer's own wallet is nowhere near a club's finances.
+ *
+ * ── HISTORY NOW, NOT A LIVE DIAL. 19 Sep 2026. ──
+ *
+ * NOTHING IN THE GAME MULTIPLIES BY THIS ANY MORE. The rescale it describes
+ * was a real fix to a real problem, and it turned out to be the wrong KIND
+ * of fix: multiplying a number by 2000 corrects its order of magnitude once
+ * and leaves it derived from nothing, so every figure it touched drifted
+ * back out of proportion the moment economy.ts gave the game an income
+ * curve, and again when that curve was sharpened. Each of them — the
+ * testimonial, per-match image rights, dilemma payouts, influence, lawyers,
+ * the black market, the §4.5 son, sponsor fees — is now priced in weeks of
+ * income off `economy.ts` instead, and cannot be left behind by the next
+ * retune.
+ *
+ * The constant is kept, exported and at its historical value because a
+ * reader will find it named in comments across half a dozen files that
+ * explain what happened to them, and because `tests/star/moneyScale.mts`
+ * asserts that it has no live multiplier left anywhere.
+ *
+ * THE ONE DIAL IS NOW `WAGE_FLOOR` (economy.ts). See that file's header for
+ * the still-open question of which unit the game should read in.
  */
 export const MONEY_SCALE = 2000;
 

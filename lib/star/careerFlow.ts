@@ -43,7 +43,7 @@ import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
-import { signingOnFee, typicalWeeklyWage } from "./economy";
+import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
@@ -315,10 +315,14 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
  * middling top-flight club is worth, with the bonuses on the same 10%/7% of
  * a week they have always been.
  */
+const STARTER_WAGE = Math.round(typicalWeeklyWage("premier"));
 export const STARTER_CONTRACT = {
-  wage: Math.round(typicalWeeklyWage("premier")),
-  goalBonus: Math.round(typicalWeeklyWage("premier") * 0.10),
-  assistBonus: Math.round(typicalWeeklyWage("premier") * 0.07),
+  wage: STARTER_WAGE,
+  // Off the shared helpers (economy.ts) rather than re-typing 0.10/0.07 —
+  // and off the ROUNDED wage, so the bonuses are the same ones anything
+  // else deriving them from this contract's own wage would arrive at.
+  goalBonus: goalBonusFor(STARTER_WAGE),
+  assistBonus: assistBonusFor(STARTER_WAGE),
   seasonsRemaining: 3,
 };
 

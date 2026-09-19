@@ -19,6 +19,9 @@ import {
   tierWeeklyIncome, tierPrice, bandPrice, bandWeeks, weeksOfIncome,
   priceIsInBand, bootMatchesFor, bootWeeksPerMatch, weeksOfWallet,
   signingOnFee, SIGNING_ON_WEEKS_MIN, SIGNING_ON_WEEKS_MAX,
+  offerStanding, offerWageFor, goalBonusFor, assistBonusFor,
+  GOAL_BONUS_WAGE_SHARE, ASSIST_BONUS_WAGE_SHARE,
+  TOTAL_INCOME_MULTIPLE as INCOME_MULT,
   type ShopTierId, type PriceBandId,
 } from "../../lib/star/economy";
 import { DIVISION_ORDER } from "../../lib/star/calendar";
@@ -507,6 +510,131 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   check(bootWeeks > 15 && bootWeeks < 45,
     `the entry boot is ${bootWeeks.toFixed(1)} weeks of non-league income — the figure the owners' `
     + "worked example ('boots at 1,000, wage 30 a week') is about");
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  10 — THE CURVE IS GENUINELY SHARP, AND AN OFFER CANNOT COMPOUND
+// ═══════════════════════════════════════════════════════════════════════
+{
+  // ── The sharpening, 19 Sep 2026 ──
+  //
+  // "The curve should be sharper, a top prem contract should be way more
+  // with the top end items also being more, it should just match that and be
+  // difficult to get there." Asserted as a FLOOR on how far apart the ends
+  // are rather than as today's exact figure, the same way section 3 handles
+  // the boots window: the intent is "the top is a long way from the bottom",
+  // and pinning 104.9 here would break this suite the next time somebody
+  // turns the dial in the direction they were asked to.
+  const spread = typicalWeeklyWage("premier") / typicalWeeklyWage("national_league");
+  check(
+    spread >= 50,
+    `the ladder must run at least fifty times from the bottom rung to the top — got ${spread.toFixed(1)}x. `
+    + "It was 33x before the sharpening and the owners asked for the top to be way further away.",
+  );
+
+  // …AND THE BOTTOM DID NOT MOVE WITH IT. This is the other half of the
+  // instruction ("steepen without making the early game longer") and it is
+  // the property that makes the sharpening safe: the ladder is anchored at
+  // its BOTTOM rung, so stretching it moves the top away from a fixed
+  // National League rather than dragging the whole thing up.
+  check(
+    Math.abs(typicalWeeklyWage("national_league") - WAGE_FLOOR * 1.25) < 1e-9,
+    "the bottom rung is WAGE_FLOOR and nothing else — a sharper curve must not lengthen the early game",
+  );
+  const entryBoot = weeksOfIncome(bandPrice("starter", "upgrade", 0.15), "starter");
+  check(
+    entryBoot > 15 && entryBoot < 45,
+    `the first pair of boots must still be 15-45 weeks of non-league income after any sharpening `
+    + `— got ${entryBoot.toFixed(1)}`,
+  );
+
+  // ── Bonuses follow the wage ──
+  check(goalBonusFor(1_000) === Math.round(1_000 * GOAL_BONUS_WAGE_SHARE), "a goal bonus is a share of the wage");
+  check(assistBonusFor(1_000) === Math.round(1_000 * ASSIST_BONUS_WAGE_SHARE), "an assist bonus is a share of the wage");
+  check(goalBonusFor(2_000) === 2 * goalBonusFor(1_000), "…and is a pure multiple of it");
+  check(assistBonusFor(0) >= 1 && goalBonusFor(0) >= 1, "a zero wage still yields a real, if token, bonus");
+
+  // ── Standing on arrival ──
+  check(offerStanding(0, 0) < offerStanding(100, 0), "a bigger reputation arrives higher up the pecking order");
+  check(offerStanding(60, 20) < offerStanding(60, 0), "stepping UP to a stronger club costs standing");
+  check(offerStanding(60, -20) > offerStanding(60, 0), "dropping DOWN to a smaller one buys it");
+  for (const rep of [-50, 0, 50, 100, 500, NaN]) {
+    for (const step of [-999, -10, 0, 10, 999, NaN]) {
+      const st = offerStanding(rep, step);
+      check(st >= 0 && st <= 1 && Number.isFinite(st), `offerStanding(${rep}, ${step}) = ${st}, outside 0-1`);
+    }
+  }
+
+  // ── THE COMPOUNDING BUG, PINNED SHUT ──
+  //
+  // `transfers.ts` and `relegationOffers.ts` both used to compute an offer as
+  // `your last wage x (1 + at least 10%) + reputation x ★90`. Measured over
+  // five moves that ran ★829 → ★9,372 → ★18,769 → ★29,106 → ★40,477 →
+  // ★52,985: thirty-three times the intended ceiling of the whole ladder,
+  // because the previous wage — the one thing that should NOT determine what
+  // a different club pays — was the entire formula.
+  //
+  // The claim now is structural: an offer can never exceed the most that
+  // club could pay ANY player, unless your current wage already did, because
+  // your wage is a floor and nothing more. Walked over every club in the
+  // Premier League from a wage that has already run away.
+  {
+    const CEILING = (club: string, d: CareerDivision) => weeklyWageFor(club, d, 1);
+    for (const club of PREMIER_LEAGUE_CLUBS) {
+      for (const rep of [0, 50, 100]) {
+        for (const step of [-30, 0, 30]) {
+          const fresh = offerWageFor(club, "premier", rep, step, 0);
+          check(
+            fresh <= CEILING(club, "premier"),
+            `${club}: an offer (★${fresh}) can never beat what that club pays its very best player `
+            + `(★${CEILING(club, "premier")})`,
+          );
+        }
+      }
+    }
+
+    // Iterated: move five times in a row, always taking the offer, and the
+    // wage must converge on what the clubs actually pay rather than running
+    // away from it. This is the exact shape of the measurement that found
+    // the bug.
+    let wage = Math.round(typicalWeeklyWage("premier"));
+    const start = wage;
+    for (let i = 0; i < 5; i++) {
+      const club = PREMIER_LEAGUE_CLUBS[i % PREMIER_LEAGUE_CLUBS.length];
+      wage = offerWageFor(club, "premier", 100, 0, wage);
+    }
+    const topPossible = Math.max(...PREMIER_LEAGUE_CLUBS.map(c => CEILING(c, "premier")));
+    check(
+      wage <= topPossible,
+      `five moves in a row must not compound: ★${start} → ★${wage}, against a ceiling of ★${topPossible}`,
+    );
+    check(
+      wage < start * 4,
+      `five moves within the same division cannot multiply a wage several-fold (★${start} → ★${wage})`,
+    );
+
+    // A move never costs you money — your old wage really is a floor.
+    for (const club of NATIONAL_LEAGUE_CLUBS.slice(0, 5)) {
+      const held = Math.round(typicalWeeklyWage("premier"));
+      check(
+        offerWageFor(club, "national_league", 80, -40, held) >= held,
+        `${club}: nobody takes a pay cut to join a club that came looking for them`,
+      );
+    }
+  }
+
+  // ── The signing-on fee, in weeks, under the sharpened curve ──
+  for (const [d, clubs] of ([["national_league", NATIONAL_LEAGUE_CLUBS], ["premier", PREMIER_LEAGUE_CLUBS]] as const)) {
+    for (const club of clubs) {
+      const w = weeklyWageFor(club, d);
+      const weeks = signingOnFee(club, w) / (w * INCOME_MULT);
+      check(
+        weeks >= 1 && weeks <= SIGNING_ON_WEEKS_MAX,
+        `${club}: a signing-on fee should read as a sensible number of weeks of that tier's income `
+        + `— got ${weeks.toFixed(1)}`,
+      );
+    }
+  }
 }
 
 if (problems.length) {

@@ -3,6 +3,7 @@ import { mulberry32 } from "./season";
 import { clubExpectation, type Ambition } from "./expectations";
 import { getTuning } from "./tuningStore";
 import { clubNameSeed } from "./squadData";
+import { WAGE_FLOOR } from "./economy";
 
 /**
  * SPONSORS WITH SOMETHING TO ASK
@@ -139,6 +140,23 @@ const AMBITION_FEE_MULT: Record<Ambition, number> = {
 };
 
 /**
+ * THE ONE PLACE SPONSOR MONEY BECOMES REAL MONEY.
+ *
+ * `SPONSOR_REQUIREMENTS`' `baseFee` and every objective bonus formula stay
+ * deliberately small numbers (6-34) — that is what `objectiveDifficultyPerFee`
+ * scales against, and inflating them directly would blow up every objective's
+ * difficulty alongside its pay. So the conversion happens once, here, at the
+ * very end: `raw` points become weeks of the player's own weekly wage.
+ *
+ * `WAGE_FLOOR` is the floor rather than zero so a career caught mid-signing
+ * with no contract written yet still pays something sane rather than nothing.
+ */
+function moneyFromRaw(raw: number, career: CareerState): number {
+  const wage = Math.max(WAGE_FLOOR, career.contract?.wage ?? 0);
+  return Math.max(1, Math.round(raw * getTuning("sponsors.feeWageWeeksPerUnit") * wage));
+}
+
+/**
  * What this category is worth, right now.
  *
  * Recomputed fresh every time it's needed rather than frozen at signing — a
@@ -171,9 +189,23 @@ export function sponsorFee(category: string, career: CareerState): number {
   );
   const upgrade = Math.pow(1 + getTuning("sponsors.upgradeFeeMultiplier"), Math.max(0, level - 1));
   const raw = Math.max(1, Math.round((r.baseFee + career.fame / getTuning("sponsors.fameDivisor")) * mult * upgrade));
-  // sponsors.feeScale (real-money rescale, 14 Sep 2026) is applied here,
-  // last — see its own tuning.ts comment for why baseFee itself stays small.
-  return raw * getTuning("sponsors.feeScale");
+  // ── WAGE-RELATIVE, 19 Sep 2026 ──
+  //
+  // This used to be `raw × 2000`, a flat multiplier from the 14 Sep rescale.
+  // `raw` runs about 10-60, so a single deal paid ★20,000-120,000 — between
+  // seventeen and a hundred weeks of Premier League income, EVERY SEASON,
+  // from every active deal at once. Sponsorship was quietly paying more than
+  // football.
+  //
+  // A sponsor pays you in proportion to what you are worth, and the game
+  // already has a number for what you are worth: your wage. So the raw score
+  // is now converted at `sponsors.feeWageWeeksPerUnit` weeks of YOUR OWN
+  // weekly wage per point — which puts one deal at roughly half a week to
+  // three weeks of your money whatever rung you are on, and makes the whole
+  // sponsor book add up to about the `TOTAL_INCOME_SHARES.lumps` share
+  // economy.ts always said it should be. It stays on the curve for the rest
+  // of time without anybody having to remember to rescale it again.
+  return moneyFromRaw(raw, career);
 }
 
 /**
@@ -276,10 +308,9 @@ export function makeObjective(career: CareerState, index: number, rng: () => num
     : kind === "cleanSheets" ? Math.max(3, Math.round(getTuning("sponsors.objectiveCleanSheetsBase") * seasons * streakDifficulty))
     : getTuning("sponsors.objectiveRatingBase") + Math.round(rng() * getTuning("sponsors.objectiveRatingSpread")); // rating, stored ×10
 
-  // sponsors.feeScale (real-money rescale, 14 Sep 2026) applies to the
-  // bonus's final money value only, same reasoning as sponsorFee above —
-  // objectiveBonusBase/PerIndex stay small since difficulty is computed off
-  // baseFee, not off this bonus.
+  // Converted to real money the same wage-relative way `sponsorFee` is, and
+  // for the same reason — objectiveBonusBase/PerIndex stay small numbers
+  // since difficulty is computed off baseFee, not off this bonus.
   const rawBonus = Math.max(3, Math.round((getTuning("sponsors.objectiveBonusBase") + index * getTuning("sponsors.objectiveBonusPerIndex")) * rep * seasons * difficulty));
 
   return {
@@ -287,7 +318,7 @@ export function makeObjective(career: CareerState, index: number, rng: () => num
     target,
     progress: 0,
     seasonsLeft: seasons,
-    bonus: rawBonus * getTuning("sponsors.feeScale"),
+    bonus: moneyFromRaw(rawBonus, career),
     done: false,
   };
 }

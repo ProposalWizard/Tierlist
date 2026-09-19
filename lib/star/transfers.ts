@@ -6,6 +6,8 @@ import { assignSquadNumber } from "./recognition";
 import { makeManager, bossOnArrival } from "./manager";
 import { offerClauses, canTriggerClause, rescaleClauses } from "./contracts";
 import { isDerby, strongestTier } from "./rivalries";
+import { divisionOf } from "./calendar";
+import { offerWageFor, goalBonusFor, assistBonusFor, signingOnFee } from "./economy";
 
 /**
  * TRANSFERS
@@ -139,23 +141,32 @@ export function generateOffers(career: CareerState, rng: () => number): Transfer
 
   return interested.map(({ team, position }) => {
     const step = team.strength - mine;
-    // The flat reputation bumps below (`rep` is 0-100) are rescaled 14 Sep
-    // 2026 alongside the rest of the economy — they used to add at most a
-    // few whole units on top of a wage that started at ★1, which is
-    // meaningless once a wage is a real weekly figure in the thousands.
-    // Scaled by roughly the same ~2,000x the starting wage itself moved by,
-    // so reputation still buys a real, noticeable (if modest) wage premium.
-    const wage = Math.max(1, Math.round(career.contract.wage * (1 + Math.max(0.1, step / 45)) + rep * 90));
+    // WHAT THIS CLUB PAYS, not what your last one did.
+    //
+    // This was `career.contract.wage × (1 + at least 10%) + rep × ★90` — a
+    // formula with no club, no division and no stature in it at all, which
+    // compounded every move: ★829 → ★9,372 → ★18,769 → ★29,106 → ★40,477 →
+    // ★52,985 over five, thirty-three times the ladder's intended ceiling.
+    // It now reads the offering club's own pay through the same
+    // `weeklyWageFor` every other contract in the game uses, with your
+    // current wage as a floor and nothing more. See `offerStanding`
+    // (economy.ts) for the whole account.
+    const wage = offerWageFor(team.name, divisionOf(career), rep, step, career.contract.wage);
     const seasons = 2 + Math.floor(rng() * 3);
     return {
       club: team.name,
       strength: team.strength,
       position,
       wage,
-      goalBonus: Math.max(1, Math.round(career.contract.goalBonus + rep * 65)),
-      assistBonus: Math.max(1, Math.round(career.contract.assistBonus + rep * 45)),
+      goalBonus: goalBonusFor(wage),
+      assistBonus: assistBonusFor(wage),
       seasons,
-      signingFee: Math.round(wage * seasons * (0.6 + rng() * 0.8)),
+      // The same `signingOnFee` every other move in the game pays (2-12
+      // weeks, by the club's real reputation), rather than a second,
+      // unrelated formula. The rng draw survives as a modest ±20% of
+      // haggling so two offers from the same club are not identical — and
+      // so the seeded stream keeps its shape.
+      signingFee: Math.max(1, Math.round(signingOnFee(team.name, wage) * (0.8 + rng() * 0.4))),
       clauses: offerClauses(career, wage, rng),
       viaClause: canTriggerClause(career.contract, team.strength, career.contract.wage),
       pitch: step > 6
