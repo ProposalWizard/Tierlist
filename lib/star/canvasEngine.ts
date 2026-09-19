@@ -411,6 +411,45 @@ export interface Scenario {
   defenders: Defender[];
   keeper: Keeper;
   keeperStrength: number;   // 0-100 — better keepers cover more of the goal
+  /**
+   * How much of his normal reach this keeper gets, as a multiplier. 1 (and
+   * `undefined`, which every builder in this file leaves it as) is exactly
+   * today's behaviour.
+   *
+   * ── Why this exists, and why it is not a difficulty dial ──
+   *
+   * `keeperSaveRadius` is a function of `keeperStrength` alone. That is
+   * correct for every scenario this file builds, because they all share one
+   * goal — a real 7.32 m one. It stops being correct the moment a caller
+   * uses a SMALLER goal, because the keeper's reach and the goal's width are
+   * not independent: what the player actually aims at is the net either side
+   * of him, and that gap is the difference between the two.
+   *
+   * Measured on the five-a-side's 5.2 m goal: the save radius at its floor
+   * is 2.04 m against a 2.60 m half-goal, leaving 0.56 m of open net either
+   * side of a central keeper, where the eleven-a-side game leaves 1.34 m.
+   * The result was not "harder" — it was differently shaped and much worse:
+   * aiming dead centre converted at 5.4 % against the real game's 50.1 %,
+   * so placement mattered about nine times as much as it should and the
+   * middle of the goal was effectively dead.
+   *
+   * A smaller-goal caller scales this down to restore the same proportion of
+   * open net, which is the only thing that keeps a shot at the middle worth
+   * the same as it is in a real match.
+   *
+   * ── The rule this bends, and on whose say-so ──
+   *
+   * This file is not to be modified. That rule exists because everything in
+   * here is tuned against measurements that are expensive to re-take, and it
+   * has been worth having. This one field was authorised directly after the
+   * alternative — a near-post keeper shade, which was built and measured and
+   * does help — was shown not to actually fix the shape of the problem.
+   *
+   * It is additive and optional, so every existing scenario is byte-identical
+   * with it absent. Nothing else in the engine reads it. If you are adding a
+   * second field here, that is a different decision and needs asking again.
+   */
+  keeperReach?: number;
   follower: Follower;
   goal: { x1: number; x2: number };
   crossbar: number;
@@ -4858,7 +4897,11 @@ export function keeperSaveRadius(scenario: Scenario): number {
   const tier = KEEPER_TIERS[keeperTierFor(scenario.keeperStrength)].radius;
   const base = smooth * 0.5 + tier * 0.5;
   const wear = Math.max(0.45, 1 - 0.35 * scenario.keeper.saves);
-  return base * wear;
+  // Absent on every scenario this file builds, so this multiplies by exactly
+  // 1 for all of them. See `Scenario.keeperReach`.
+  const r = scenario.keeperReach;
+  const scale = typeof r === "number" && Number.isFinite(r) && r > 0 ? r : 1;
+  return base * wear * scale;
 }
 
 /**

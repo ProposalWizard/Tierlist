@@ -5,7 +5,7 @@ import {
 import { POST_L, POST_R, CX } from "../pitch";
 import {
   FIVE_PITCH, FIVE_VIEW, FIVE_HALFWAY_Y, KICK_FLOOR_Y, clampToPitch, insideFivePitch,
-  FIVE_GOAL, FIVE_CROSSBAR, mirror,
+  FIVE_GOAL, FIVE_CROSSBAR, FIVE_KEEPER_REACH, mirror,
 } from "./geometry";
 
 /**
@@ -335,6 +335,9 @@ export function buildPassage(world: FiveWorld, opts: PassageOpts): Scenario {
     defenders,
     keeper: keeperFrom(world.theirKeeper, ball, rng, cast?.theirKeeper),
     keeperStrength,
+    // A 5.2 m goal needs a keeper scaled to it, or the middle of the net is
+    // dead. See FIVE_KEEPER_REACH for the measured before/after.
+    keeperReach: FIVE_KEEPER_REACH,
     follower,
     // A real small-sided goal. See FIVE_GOAL's own note for why it is this
     // size, and why setting it needed nothing added to the engine.
@@ -492,6 +495,9 @@ export function buildTheirAttack(world: FiveWorld, opts: PassageOpts): Scenario 
     // keeps, which is why a good keeper is worth having.
     keeper: keeperFrom(mirror(world.yourKeeper), ball, rng, cast?.yourKeeper),
     keeperStrength,
+    // A 5.2 m goal needs a keeper scaled to it, or the middle of the net is
+    // dead. See FIVE_KEEPER_REACH for the measured before/after.
+    keeperReach: FIVE_KEEPER_REACH,
     follower,
     goal: { ...FIVE_GOAL },
     crossbar: FIVE_CROSSBAR,

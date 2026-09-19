@@ -14,7 +14,7 @@ import {
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
-import { TeachCard, TEACH_COMPACT_AFTER_REP } from "./TrialPenalties";
+import { TeachCard, TEACH_COMPACT_AFTER_REP, TEACH_PERSISTS } from "./TrialPenalties";
 
 /**
  * FINDING THE PASS.
@@ -507,7 +507,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                 And, as asked, it stays until it is tapped rather than until
                 the rep counter moves: `rep === 0` no longer gates it. */}
             <div className="w-full max-w-xs text-center">
-              {!teachDone && (
+              {(TEACH_PERSISTS || rep === 0) && !teachDone && (
                 <TeachCard
                   inline
                   gesture="tap"

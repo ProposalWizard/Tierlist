@@ -158,6 +158,49 @@ export const FIVE_CROSSBAR = 2.0;
  * with `difficulty`.
  */
 export const FIVE_KEEPER_STRENGTH = 40;
+
+/**
+ * How much of his normal reach the keeper gets in a five-a-side, as a
+ * multiplier on `keeperSaveRadius` — see `Scenario.keeperReach`.
+ *
+ * ── Why a smaller goal needs this at all ──
+ *
+ * Reach and goal width are not independent. What you actually aim at is the
+ * net either side of the keeper, and that gap is the difference between the
+ * two. The engine's reach is tuned against a 7.32 m goal; dropped unchanged
+ * onto a 5.2 m one it left 0.56 m of open net either side of a central
+ * keeper where the real game leaves 1.34 m.
+ *
+ * 0.71 is 5.2 / 7.32 — the goal scaled, so the keeper is scaled with it, and
+ * the proportion of net he covers is the same as in a real match. Not a
+ * tuned number; a derived one, which is why it is written as the division.
+ *
+ * ── What it fixed, and what it did NOT ──
+ *
+ * Measured over 400 real chances the flow actually produces, four balls from
+ * each. Dead-centre conversion went 6.3% -> 15.0%, and the gap between the
+ * open post and the middle narrowed from 7.7x to 3.5x (a real 90' is 1.2x).
+ *
+ * It does not close that gap, and the reason is worth writing down because
+ * it was originally misdiagnosed as the keeper's. Broken down by what
+ * actually happens to a ball aimed dead centre:
+ *
+ *                       reach 1.00   reach 0.71
+ *   blocked by a man       43.3%        43.5%
+ *   saved or caught        25.3%        16.5%
+ *   out                    21.0%        20.0%
+ *   GOAL                    6.3%        15.0%
+ *
+ * The keeper was a quarter of the problem. **A defender's body is nearly
+ * half of it** — the middle of a small goal is the most crowded line on the
+ * pitch, and shooting through traffic is a real part of five-a-side rather
+ * than a bug. Shrinking the reach further does almost nothing: at 0.50 the
+ * middle only reaches 17.3%, because the blocking is untouched.
+ *
+ * So if the middle ever needs to open up further, the lever is how many men
+ * are between you and the goal when a chance is built, NOT this number.
+ */
+export const FIVE_KEEPER_REACH = 5.2 / 7.32;
 export const FIVE_GOAL = { x1: CX - FIVE_GOAL_W / 2, x2: CX + FIVE_GOAL_W / 2 };
 
 /** Is this ball still on our pitch? The engine only notices at the frame

@@ -267,7 +267,11 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
 // somebody else's finishing rather than yours.
 {
   let attempts = 0, touched = 0, woke = 0;
-  for (let s = 0; s < 40; s++) {
+  // 60 seeds, not 40: the sample size here was implicitly tied to the rep
+  // count (40 x 8 attempts cleared the 300 bar with room), and the striking
+  // stages have since gone from four kicks each to three. Raising the seeds
+  // keeps the same sample rather than lowering the bar to fit.
+  for (let s = 0; s < 60; s++) {
     const trial = startTrial(606_060 + s * 3391);
     for (let rep = 0; rep < REPS.penalties; rep++) {
       const sc = buildPenaltyScenario(trial, rep, mulberry32((s * 13 + rep) >>> 0));

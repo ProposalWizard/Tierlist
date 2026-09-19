@@ -78,9 +78,13 @@ export function attemptSeed(trial: TrialProgress): number {
  * How many attempts each stage gives you. Enough that one fluke neither makes
  * nor breaks it; few enough that the whole trial is minutes, not an evening.
  *
- * ── Penalties is FOUR, and it is a floor rather than a preference ──
+ * ── THREE ON THE STRIKING STAGES: asked for, measured against, chosen anyway
  *
- * Three was asked for by name. Do not quietly put it back.
+ * This said FOUR, and it said "three was asked for by name, do not quietly
+ * put it back". Three has now been asked for a second time, with the
+ * measurement in front of him, so it is going back deliberately rather than
+ * quietly, and the number that argued the other way is kept here rather than
+ * deleted.
  *
  * `strikeQuality` bands an attempt widely on purpose — a block is 0.16, a
  * save 0.34, a goal 0.55 to 1.0 depending on where it crossed — so a single
@@ -91,22 +95,29 @@ export function attemptSeed(trial: TrialProgress): number {
  *
  *   3 reps — 32.1 %      4 reps — 29.4 %      6 reps — 25.2 %
  *
- * Worth being straight about what that does and does not say. Four is a real
- * improvement on three and it is not a large one; the curve is shallow, and
- * a stage short enough to sit inside a five-stage trial is never going to be
- * a clean read on a player. Four is the point where the stage stops being
- * decided by one kick without turning the trial into an evening — a floor
- * arrived at by measurement, not an optimum. If the trial ever gets room to
- * breathe, five or six is strictly better and the numbers above say by how
- * much.
+ * So three is a genuinely worse read on a player than four, by 2.7 points of
+ * upset rate. It is also a shallow curve: a stage short enough to sit inside
+ * a five-stage trial was never going to be a clean read either way, and the
+ * cost of the fourth kick is a longer trial, which was the complaint. That
+ * is a taste call about pacing rather than a correctness one, and it was
+ * made with the number visible.
  *
- * Four also happens to be exactly the length the tell ramp wants: rep 1 is
- * the telegraphed one, rep 2 is shaded, and reps 3 and 4 are the pure
- * placement test the stage builds toward (`PENALTY_TELL_RAMP`).
+ * Three is also exactly the length both ramps already wanted, which is why
+ * neither needed touching: `PENALTY_TELL_RAMP` is [1, 0.42, 0.12] — kick one
+ * telegraphed, kick two shaded, kick three telling you nothing — and
+ * `REP_WEIGHT_RAMP` is [1, 1.25, 1.5]. At four reps both were clamping their
+ * last value and repeating it.
+ *
+ * ── Finding the pass stays at SIX, deliberately ──
+ *
+ * Excluded by name from the cut. It is the one stage whose reps are seconds
+ * long rather than a whole kick each, so six of them is not the pacing cost
+ * four penalties is — and its scoring needs the count more, because a single
+ * tap is a much coarser read than a struck ball.
  */
 export const REPS: Record<Exclude<TrialStage, "fiveASide">, number> = {
-  penalties: 4,
-  freeKicks: 4,
+  penalties: 3,
+  freeKicks: 3,
   dribbling: 3,
   vision: 6,
 };

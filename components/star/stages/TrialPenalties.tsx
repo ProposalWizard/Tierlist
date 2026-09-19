@@ -661,6 +661,34 @@ const TEACH_CARD_CSS = `
  */
 export const TEACH_COMPACT_AFTER_REP = 1;
 
+/**
+ * Does the teaching card stay up across the whole stage, or only the first
+ * attempt?
+ *
+ * `false` — the shipped answer — means the first attempt only, and the card
+ * goes when that attempt ends whether or not it was tapped. Tapping it is
+ * still worth doing and does something different: it writes `teachSeen`, so
+ * the drill never teaches you again on this device.
+ *
+ * ── Why this is a switch and not a deletion ──
+ *
+ * Both behaviours were built and both were measured in a real browser. It
+ * stayed-until-tapped first, then was looked at and changed — "the box should
+ * automatically leave after the first attempt imo" — which is a taste call
+ * about a screen, exactly the kind that gets looked at again.
+ *
+ * Flipping this to `true` restores the persistent card in full, including the
+ * compact one-row form it needs to clear the free-kick ball on the later
+ * attempts (`TEACH_COMPACT_AFTER_REP`) and the short headlines each drill
+ * carries for that row. None of that is reachable while this is `false`, and
+ * it is kept rather than deleted because the sizing behind it cost two rounds
+ * of real browser measurement to get right and would have to be re-taken.
+ *
+ * Same idiom as `USE_FIRST_PERSON_DRIBBLE` in CanvasMatch.tsx: one constant,
+ * both paths real, the off one documented rather than rotting.
+ */
+export const TEACH_PERSISTS = false;
+
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, onStrike, onDone,
 }: StrikeStageProps) {
@@ -1061,19 +1089,22 @@ export function StrikeStage({
         {/* The hint sits in the strip a drag never reaches: full power only
             ever needs `dragForFullPower` (about 14 %) of the canvas height,
             and it is pointer-transparent besides. */}
-        {/* ── It stays until it is tapped ──
-            "Instead of making every drill /4 just make the player have to
-            click to remove the tutorial box." It used to be gated on
-            `rep === 0`, so it took itself away after one kick whether or not
-            it had been read — which on a stage whose first attempt is over in
-            three seconds is most of a tutorial nobody finished. There is no
-            rep test here any more: the card is on screen until `teachDone`,
-            and the only two things that set that are this card's own button
-            and having dismissed this drill before on this device. It goes
-            compact from the second rep so it still clears the ball — see
-            `TEACH_COMPACT_AFTER_REP`. */}
+        {/* ── The first attempt only, with the tap as an early out ──
+            Built first as "stays until tapped", then looked at and changed:
+            "the box should automatically leave after the first attempt imo."
+            So the rep gate is back — but the tap is not just cosmetic, and
+            the two do different jobs:
+
+              the ATTEMPT ending hides it for this stage
+              the TAP hides it for this drill, permanently, on this device
+
+            That distinction is the reason both exist. Somebody meeting the
+            drill for the first time gets a whole attempt to read it without
+            having to do anything; somebody on their fourth career taps once
+            and never sees it again. `teachSeen` is what makes the second one
+            stick, and only the button writes it. */}
         {phase === "aim" && (
-          teach && !teachDone
+          (TEACH_PERSISTS || rep === 0) && teach && !teachDone
             ? (
               <TeachCard
                 headline={teach.headline}
@@ -1100,14 +1131,13 @@ export function StrikeStage({
           // dismissed this drill's teaching, since the contact badges are the
           // same lesson one screen later.
           //
-          // Tied to `teachDone` alone now, not to the rep: one drill's
-          // teaching is one thing, and the card on the previous screen is
-          // where you turn it off. A contact tutorial that outlived the aim
-          // card it belongs to would be a box with no button on it.
+          // Same gate as the aim card it belongs to: one drill's teaching is
+          // one thing, and it is the first attempt's. A contact tutorial that
+          // outlived the aim card would be a box with no button on it.
           <ContactBall
             power={aim.power}
             onContact={handleContact}
-            tutorial={!teachDone}
+            tutorial={(TEACH_PERSISTS || rep === 0) && !teachDone}
           />
         )}
 
