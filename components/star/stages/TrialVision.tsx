@@ -14,6 +14,7 @@ import {
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
+import { TeachCard, TEACH_COMPACT_AFTER_REP } from "./TrialPenalties";
 
 /**
  * FINDING THE PASS.
@@ -495,42 +496,38 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
 
         {phase === "ready" && (
           <div className="absolute inset-0 z-30 grid place-items-center bg-black/70 px-5">
-            {rep === 0 && count !== null ? (
-              /* ── The first one: told properly, and counted in ──
-                 A stage that starts on its own needs to say so BEFORE it
-                 starts. Scored exactly like every other rep regardless — the
-                 badge says as much, so nobody plays the first one as a
-                 throwaway and then finds out it counted.
+            {/* ── One card, the same card every other drill uses ──
+                This stage used to hand-roll its own badge/headline/paragraph,
+                which drifted: a different badge ("First one" vs "How to
+                play"), a different dismiss button, no drawn gesture at all,
+                and a drag glyph would have been wrong here anyway — this is
+                the one stage you TAP. It is now `TeachCard` with the tap
+                glyph, so all four drills teach in the same box.
 
-                 The words can be dismissed and the numeral cannot. See
-                 `teachDone`. */
-              <div className="text-center">
-                {!teachDone && (
-                  <>
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
-                        First one
-                      </span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
-                        It still counts
-                      </span>
-                      <button
-                        type="button"
-                        onClick={dismissTeach}
-                        className="-my-1 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white/60 transition hover:bg-white/10 hover:text-white"
-                      >
-                        Got it ✕
-                      </button>
-                    </div>
-                    <div className="mt-3 text-xl font-black leading-tight text-white">
-                      Tap the team-mate in the most space.
-                    </div>
-                    <p className="mt-1.5 text-[11px] font-bold leading-snug text-white/75">
-                      The blue shirts are marking. The clock starts on zero and it
-                      does not wait — if you never pick, it scores nothing.
-                    </p>
-                  </>
-                )}
+                And, as asked, it stays until it is tapped rather than until
+                the rep counter moves: `rep === 0` no longer gates it. */}
+            <div className="w-full max-w-xs text-center">
+              {!teachDone && (
+                <TeachCard
+                  inline
+                  gesture="tap"
+                  compact={rep >= TEACH_COMPACT_AFTER_REP}
+                  headline="Tap the team-mate in the most space."
+                  lines={[
+                    "The blue shirts are marking.",
+                    "The clock starts on zero and does not wait — never picking scores nothing.",
+                  ]}
+                  onDismiss={dismissTeach}
+                />
+              )}
+
+              {rep === 0 && count !== null ? (
+                /* ── The numeral cannot be dismissed, and never could ──
+                   A stage that starts on its own needs to say so BEFORE it
+                   starts, and this is the only thing telling you when a clock
+                   that can be under a second long actually begins. Dismissing
+                   drops the words above it and leaves this exactly where it
+                   was. */
                 <div
                   key={count}
                   className="mt-3 text-7xl font-black tabular-nums text-amber-300"
@@ -538,13 +535,13 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                 >
                   {count}
                 </div>
-              </div>
-            ) : (
-              <div className="text-center">
-                <div className="text-sm font-black uppercase tracking-widest text-white/70">Heads up</div>
-                <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
-              </div>
-            )}
+              ) : (
+                <div className="mt-3">
+                  <div className="text-sm font-black uppercase tracking-widest text-white/70">Heads up</div>
+                  <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

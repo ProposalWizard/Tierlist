@@ -448,51 +448,175 @@ export interface StrikeStageProps {
  * leaves the screen in the state rep 2 is in rather than in a state nothing
  * else in the game produces.
  */
+export type TeachGesture = "drag" | "tap" | "flick";
+
+/**
+ * The gesture, drawn. The one thing a sentence is worst at describing, and
+ * the reason these cards exist at all rather than a longer hint line.
+ *
+ * One per gesture the trial actually asks for, because a drag arrow on the
+ * stage you tap is a wrong instruction rather than a missing one:
+ *
+ *   drag  — a ball, the thumb pulled back off it, the arrow showing where it
+ *           goes. Penalties and free kicks.
+ *   tap   — a finger on a man, with the ring a tap makes. Finding the pass.
+ *   flick — a finger on the ball and a quick swipe past. Taking a man on.
+ */
+function TeachGlyph({ gesture, compact }: { gesture: TeachGesture; compact: boolean }) {
+  const cls = compact ? "h-5 w-6 shrink-0" : "h-6 w-8 shrink-0";
+  if (gesture === "tap") {
+    return (
+      <svg viewBox="0 0 64 48" className={cls} aria-hidden="true">
+        <circle cx="30" cy="24" r="13" fill="none" stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 3" />
+        <circle cx="30" cy="24" r="6.5" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
+        <path d="M44 38 L52 30 L58 42 Z" fill="#f97316" />
+      </svg>
+    );
+  }
+  if (gesture === "flick") {
+    return (
+      <svg viewBox="0 0 64 48" className={cls} aria-hidden="true">
+        <circle cx="18" cy="30" r="6" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
+        <line x1="26" y1="30" x2="52" y2="18" stroke="#fbbf24" strokeWidth="2.5"
+          strokeLinecap="round" strokeDasharray="5 3" />
+        <path d="M56 16 L48 12 L50 22 Z" fill="#f97316" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 64 48" className={cls} aria-hidden="true">
+      <line x1="46" y1="30" x2="12" y2="42" stroke="#fbbf24" strokeWidth="2.5"
+        strokeLinecap="round" strokeDasharray="4 3" />
+      <circle cx="12" cy="42" r="4.5" fill="none" stroke="#fbbf24" strokeWidth="2" />
+      <line x1="46" y1="30" x2="46" y2="10" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
+      <path d="M46 5 L51 14 L41 14 Z" fill="#f97316" />
+      <circle cx="46" cy="30" r="6" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 export function TeachCard(
-  { headline, lines, onDismiss }: {
+  { headline, lines, onDismiss, compact = false, inline = false, gesture = "drag" }: {
     headline: string; lines: string[]; onDismiss: () => void;
+    /** Headline only, no paragraph — see `TEACH_COMPACT_AFTER_REP`. */
+    compact?: boolean;
+    /** Render the panel alone, with no positioning of its own, for a caller
+     *  that already has an overlay to put it in (the vision stage). */
+    inline?: boolean;
+    /** Which gesture to draw on the badge row. A drag arrow on a stage you
+     *  tap is worse than no picture at all — it is a wrong instruction in the
+     *  one place a card is meant to be clearer than words. */
+    gesture?: TeachGesture;
   },
 ) {
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-2">
-      <div className="w-full rounded-xl border border-amber-300/30 bg-black/85 px-3 py-2 shadow-lg">
-        <div className="flex items-center gap-1.5">
-          {/* The gesture, drawn, inline on the badge row — a ball, the thumb
-              pulled back off it, the arrow showing where it goes. The one
-              thing a sentence is worst at describing. It used to be a 56 px
-              block beside the text, which is most of what made this card tall
-              enough to cover the ball. */}
-          <svg viewBox="0 0 64 48" className="h-6 w-8 shrink-0" aria-hidden="true">
-            <line x1="46" y1="30" x2="12" y2="42" stroke="#fbbf24" strokeWidth="2.5"
-              strokeLinecap="round" strokeDasharray="4 3" />
-            <circle cx="12" cy="42" r="4.5" fill="none" stroke="#fbbf24" strokeWidth="2" />
-            <line x1="46" y1="30" x2="46" y2="10" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
-            <path d="M46 5 L51 14 L41 14 Z" fill="#f97316" />
-            <circle cx="46" cy="30" r="6" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
-          </svg>
-          <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
-            First one
-          </span>
+  const panel = (
+    <div
+      className={
+        "teach-card w-full rounded-xl border border-amber-300/40 bg-black/85 px-3 py-2 shadow-lg"
+      }
+    >
+      {/* Self-contained so the shared tailwind config stays untouched; a
+          duplicated @keyframes block is harmless CSS. Slow and small on
+          purpose — this now stays on screen until it is tapped, so anything
+          faster than a breath would be a nuisance rather than a nudge. */}
+      <style>{TEACH_CARD_CSS}</style>
+      <div className="flex items-center gap-1.5">
+        {/* Inline on the badge row, 24 px. It used to be a 56 px block
+            beside the text, which is most of what made this card tall enough
+            to cover the ball. See `TeachGlyph`. */}
+        <TeachGlyph gesture={gesture} compact={compact} />
+        <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
+          How to play
+        </span>
+        {!compact && (
           <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
             It counts
           </span>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="pointer-events-auto -my-1 -mr-1 ml-auto rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white/60 transition hover:bg-white/10 hover:text-white"
-          >
-            Got it ✕
-          </button>
-        </div>
-
-        <div className="mt-1.5 text-[12px] font-black leading-tight text-white">{headline}</div>
-        {lines.map(l => (
-          <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white/80">{l}</p>
-        ))}
+        )}
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="teach-dismiss pointer-events-auto -my-1 -mr-1 ml-auto rounded-lg border border-amber-300/50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200 transition hover:bg-white/10 hover:text-white"
+        >
+          Got it ✕
+        </button>
       </div>
+
+      <div className={compact
+        ? "mt-1 text-[11.5px] font-black leading-tight text-white"
+        : "mt-1.5 text-[12px] font-black leading-tight text-white"}>{headline}</div>
+      {!compact && lines.map(l => (
+        <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white/80">{l}</p>
+      ))}
+    </div>
+  );
+
+  if (inline) return panel;
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-2">
+      {panel}
     </div>
   );
 }
+
+/**
+ * The nudge. Two things, both deliberately slow.
+ *
+ * The card breathes — a faint amber glow that rises and falls over two and a
+ * half seconds — and the dismiss button pulses very slightly in step with it,
+ * so the eye is drawn to the one part of the card that is a control rather
+ * than to the card as a whole.
+ *
+ * Asked for directly: "give the box a small animation until clicked." The
+ * animation IS the until-clicked signal now that the card no longer times
+ * itself out — it is the only thing on the screen saying this is waiting on
+ * you rather than on the next kick.
+ *
+ * `prefers-reduced-motion` turns both off and leaves the card at its resting
+ * state, which is legible on its own.
+ */
+const TEACH_CARD_CSS = `
+@keyframes teachBreathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+  50%      { box-shadow: 0 0 14px 1px rgba(251,191,36,0.32); }
+}
+@keyframes teachNudge {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
+}
+.teach-card { animation: teachBreathe 2.4s ease-in-out infinite; }
+.teach-dismiss { animation: teachNudge 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .teach-card, .teach-dismiss { animation: none; }
+}
+`;
+
+/**
+ * From this rep on the card drops its paragraph and keeps its headline.
+ *
+ * ── Why it has to shrink at all ──
+ *
+ * The card used to vanish when the rep counter moved off 1, so it only ever
+ * had to fit above the FIRST ball of a stage. It now stays until it is
+ * tapped, which means it has to fit above the LAST one — and on the striking
+ * stages the ball moves down the screen as the stage gets harder.
+ *
+ * Measured against the real view maths (`freeKickView`, `BEHIND_BALL = 7`):
+ * a first free kick at 16 m leaves 51 % of the canvas below the ball, and the
+ * hardest rep of the hardest trial — 30 m of ladder, +0.9 m a rep, plus the
+ * long-range adversity event — leaves about 16 %, which on a phone is roughly
+ * 80 px. The full card is about 100. So a card that persisted at full height
+ * would sit on the ball at exactly the moment the kick is hardest, which is
+ * the "boxing on the penalties" complaint all over again one stage later.
+ *
+ * The headline row alone is about 45 px and clears it with room. The
+ * paragraph is first-attempt teaching anyway — by the second kick of a stage
+ * you have done the gesture once, and what is still worth carrying is the one
+ * line naming what you are being asked to do, plus the button that makes it
+ * go away.
+ */
+export const TEACH_COMPACT_AFTER_REP = 1;
 
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, onStrike, onDone,
@@ -894,12 +1018,24 @@ export function StrikeStage({
         {/* The hint sits in the strip a drag never reaches: full power only
             ever needs `dragForFullPower` (about 14 %) of the canvas height,
             and it is pointer-transparent besides. */}
+        {/* ── It stays until it is tapped ──
+            "Instead of making every drill /4 just make the player have to
+            click to remove the tutorial box." It used to be gated on
+            `rep === 0`, so it took itself away after one kick whether or not
+            it had been read — which on a stage whose first attempt is over in
+            three seconds is most of a tutorial nobody finished. There is no
+            rep test here any more: the card is on screen until `teachDone`,
+            and the only two things that set that are this card's own button
+            and having dismissed this drill before on this device. It goes
+            compact from the second rep so it still clears the ball — see
+            `TEACH_COMPACT_AFTER_REP`. */}
         {phase === "aim" && (
-          rep === 0 && teach && !teachDone
+          teach && !teachDone
             ? (
               <TeachCard
                 headline={teach.headline}
                 lines={teach.lines}
+                compact={rep >= TEACH_COMPACT_AFTER_REP}
                 onDismiss={dismissTeach}
               />
             )
@@ -916,14 +1052,18 @@ export function StrikeStage({
           // The three contact badges and the line under them: the strike
           // screen's own tutorial copy, which has a prop for exactly this
           // and — checked at every call site — has never once been passed
-          // by anybody. First rep of the stage only; by the second you have
-          // done it once — and not at all for somebody who has already
+          // by anybody. Not shown at all to somebody who has already
           // dismissed this drill's teaching, since the contact badges are the
           // same lesson one screen later.
+          //
+          // Tied to `teachDone` alone now, not to the rep: one drill's
+          // teaching is one thing, and the card on the previous screen is
+          // where you turn it off. A contact tutorial that outlived the aim
+          // card it belongs to would be a box with no button on it.
           <ContactBall
             power={aim.power}
             onContact={handleContact}
-            tutorial={rep === 0 && !teachDone}
+            tutorial={!teachDone}
           />
         )}
 
