@@ -1,6 +1,6 @@
 import {
   startTrial, recordStage, trialComplete, trialScore, nextStage, noteReload,
-  TRIAL_STAGES, type TrialProgress,
+  difficultyFor, RELOAD_GRACE, TRIAL_STAGES, type TrialProgress,
 } from "../../lib/star/trial";
 import {
   simStage, simRemaining, simScore, stageToSkip,
@@ -109,17 +109,37 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     "…while the simmed stages around it carry the simmed level");
 }
 
-// ── The anti-cheat still applies, exactly as it would to real play ──────
+// ── The anti-cheat applies here exactly as it does to real play ─────────
 //
-// A dev tool that quietly opted out of `reloadQualityHaircut` would let a
-// simmed trial score higher than a played one from the same position, which is
-// the one way this could become a cheat rather than a shortcut.
+// The rule this used to check was "a simmed trial still pays the reload
+// haircut" — and the haircut is gone, deliberately: "don't give their score a
+// penalty, just kind of troll them, just make it hard." So the rule it checks
+// now is the one that replaced it, and it is the stricter of the two, because
+// the dev tool is exactly where an accidental divergence would hide.
+//
+// A simmed stage is handed a flat quality and never plays a drill, so the
+// difficulty side of the inverted penalty — the whole of what a resume now
+// costs — cannot reach it at all. That is fine and it is not a cheat, for
+// precisely the reason it would have BEEN one under the old design: the score
+// no longer moves with the resume count for anybody, played or simmed. What
+// must hold is that the tool has not quietly acquired a second scoring model
+// on the way: a farmed trial and a clean one must sim to the SAME number, the
+// same way two real players performing identically now score the same.
 {
   let farmed = startTrial(55);
   for (let i = 0; i < 8; i++) farmed = noteReload({ ...farmed, inProgress: "penalties" });
   check(farmed.reloads > 0, "the test actually charged some resumes");
-  check(simScore(farmed, "great") < simScore(startTrial(55), "great"),
-    "a simmed trial still pays the reload haircut");
+  check(simScore(farmed, "great") === simScore(startTrial(55), "great"),
+    "a simmed trial's score is untouched by the resume count, exactly like a played one");
+
+  // And the half that DOES still apply: the stages the farmer has left to
+  // play are genuinely harder, whether or not he then reaches for the dev
+  // tool. The tool skips the football; it does not un-charge the resumes.
+  check(farmed.reloads > RELOAD_GRACE, "the test charged enough to get past the grace period");
+  check(
+    difficultyFor(farmed, "freeKicks") > difficultyFor(startTrial(55), "freeKicks"),
+    "…and the trial it was reached from is still the harder afternoon",
+  );
 }
 
 // ── The half-played five-a-side is dropped, same as a played one ────────

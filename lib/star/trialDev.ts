@@ -23,9 +23,11 @@ import {
  * ── Nothing here is a second scoring model ──
  *
  * These functions decide ONE number: the 0-1 quality a stage is handed. Every
- * other part of a result — the difficulty it was played at, the reload
- * haircut, the 0-100 score, whether the trial is over — is `recordStage`'s,
- * untouched, exactly as it is for a stage somebody actually played. A simmed
+ * other part of a result — the difficulty it was played at, the 0-100 score,
+ * whether the trial is over — is `recordStage`'s, untouched, exactly as it is
+ * for a stage somebody actually played. (It used to say "the reload haircut"
+ * here too; there is no longer such a thing — a resume now costs difficulty
+ * rather than score. See `RELOAD_GRACE`.) A simmed
  * trial is therefore a real `TrialProgress` full of real `TrialStageResult`s,
  * and everything downstream (the offers, the free-agent branch, the reward
  * screen) behaves exactly as it would normally. That is deliberate: a dev tool

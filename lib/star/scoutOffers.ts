@@ -3,7 +3,8 @@ import {
   LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
 } from "./clubs";
 import { leagueNameFor, type CareerDivision } from "./calendar";
-import { MONEY_SCALE } from "./money";
+import { weeklyWageFor } from "./economy";
+import { clubStanding } from "./clubReputation";
 
 /**
  * WHO COMES IN FOR YOU.
@@ -133,16 +134,52 @@ export interface ScoutContext {
   retrial?: boolean;
 }
 
-/** A weekly wage for a division, before anything about you. Anchored to the
- *  paying club's level, which is the fix §4.2 of the rework asks for. */
-function baseWage(division: CareerDivision): number {
-  switch (division) {
-    case "premier": return 6 * MONEY_SCALE;
-    case "championship": return 2 * MONEY_SCALE;
-    case "league_one": return 1 * MONEY_SCALE;
-    case "league_two": return 0.6 * MONEY_SCALE;
-    case "national_league": return 0.3 * MONEY_SCALE;
-  }
+/**
+ * WHAT THIS CLUB OFFERS YOU — per club, not per division.
+ *
+ * ── The bug this replaces ──
+ *
+ * There used to be one hardcoded weekly wage per DIVISION here
+ * (6/2/1/0.6/0.3 × MONEY_SCALE), multiplied by a `quality` factor read off
+ * the trial score. Every club in a division was therefore literally the
+ * same club with a different badge: Wrexham offered exactly what Worthing
+ * offered, and Leicester City — a Premier League champion inside living
+ * memory, two rungs down — offered exactly what Bromley offered.
+ *
+ * Worse, the quality factor ran 0.8-1.3 free of any bound, so nothing in
+ * the shape of the formula stopped a great trial at a small club out-paying
+ * a poor one at a bigger club one rung up. Measured at the time, today's
+ * five constants happened to be far enough apart that it did not actually
+ * occur — but that was an accident of the numbers, not a property of the
+ * code, and it would have broken the moment a per-club spread was added on
+ * top of it.
+ *
+ * `weeklyWageFor` (economy.ts) is both fixes at once: the wage reads the
+ * club's real standing in its own division, and it can never leave that
+ * division's band, so "a division's best club never out-pays the division
+ * above's worst" holds by construction rather than by luck. Every magnitude
+ * involved lives in economy.ts, which is the one file a coherent
+ * recalibration of the game's money has to touch.
+ */
+function offerWage(club: string, division: CareerDivision, score: number): number {
+  return weeklyWageFor(club, division, Math.max(0, Math.min(1, score / 100)));
+}
+
+/**
+ * How good this club is, 0-100 — the number the offer screen sorts on and
+ * everything downstream reads.
+ *
+ * Was one flat figure per division (see LADDER). Now the division sets the
+ * middle of the range and the club's own standing moves it within a bounded
+ * spread, so "best club first" genuinely means the best club rather than
+ * whichever of five identical badges the roll happened to pick. Bounded at
+ * half the gap between rungs so it can never reorder two divisions.
+ */
+const STRENGTH_SPREAD = 4;
+
+function clubStrength(club: string, division: CareerDivision, divisionStrength: number): number {
+  const standing = clubStanding(club, division);
+  return Math.round(divisionStrength + (standing - 0.5) * 2 * STRENGTH_SPREAD);
 }
 
 /** Where on the 0-100 score range each rung is most interested. */
@@ -264,9 +301,9 @@ export function generateScoutOffers(
     takenClubs.add(club);
 
     // A better trial earns a better deal at the SAME club, not just a better
-    // club — so the number matters even when the badge does not change.
-    const quality = 0.8 + (score / 100) * 0.5;
-    const wage = Math.round(baseWage(rung.division) * quality);
+    // club — so the number matters even when the badge does not change. That
+    // is `score` inside `offerWage`, bounded by the club's own band.
+    const wage = offerWage(club, rung.division, score);
     offers.push({
       club,
       division: rung.division,
@@ -276,7 +313,7 @@ export function generateScoutOffers(
       // A club further up the ladder ties you down for longer.
       seasons: rung.division === "premier" || rung.division === "championship" ? 3 : 2,
       pitch: rung.division === "premier" && score > 85 ? pick(BIG_PITCHES, rng) : pick(PITCHES, rng),
-      strength: rung.strength,
+      strength: clubStrength(club, rung.division, rung.strength),
     });
   }
 
@@ -295,16 +332,17 @@ export function generateScoutOffers(
   if (!offers.length && score >= guaranteedAbove) {
     const rung = LADDER.reduce((best, r) =>
       appetite(r.division, score, ctx) > appetite(best.division, score, ctx) ? r : best, LADDER[0]);
-    const wage = Math.round(baseWage(rung.division) * (0.8 + (score / 100) * 0.5));
+    const club = pick(rung.clubs, rng);
+    const wage = offerWage(club, rung.division, score);
     offers.push({
-      club: pick(rung.clubs, rng),
+      club,
       division: rung.division,
       wage,
       goalBonus: Math.round(wage * 0.1),
       assistBonus: Math.round(wage * 0.07),
       seasons: 2,
       pitch: pick(PITCHES, rng),
-      strength: rung.strength,
+      strength: clubStrength(club, rung.division, rung.strength),
     });
   }
 

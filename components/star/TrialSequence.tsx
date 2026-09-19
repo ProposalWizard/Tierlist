@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TRIAL_STAGES, STAGE_LABEL, nextStage, recordStage, beginStage, trialScore,
-  trialComplete, difficultyFor, keeperBonusFor,
+  trialComplete, difficultyFor, keeperBonusFor, adversityOn,
   type TrialProgress, type TrialStage,
 } from "@/lib/star/trial";
 import { dribbleSetup, dribbleQuality, attemptSeed } from "@/lib/star/trialStages";
@@ -140,6 +140,42 @@ export default function TrialSequence({
 
   const dribble = useMemo(() => dribbleSetup(trial), [trial]);
 
+  /**
+   * ── SAY WHAT WENT AGAINST YOU, ON THE STAGE IT LANDED ON ──
+   *
+   * Every adversity event already changes something real before this renders
+   * — a better keeper, a sixth man in the wall, a second off the window — and
+   * without a line saying so, a player on the wrong end of one just has a
+   * stage that is inexplicably harder than the four around it. The event
+   * carries its own blurb; this prints it, once, on the stage it was rolled
+   * onto.
+   *
+   * The two flavour events are marked as flavour and say nothing about
+   * difficulty, because they change nothing: a face you recognise standing by
+   * the dugout is worth exactly zero to the score (`weight: 0`) and the pill
+   * must not imply otherwise. They are here at all because a flavour event
+   * nobody is ever shown is not flavour, it is dead data.
+   */
+  const event = stage ? adversityOn(trial, stage) : null;
+  const eventBanner = event && (
+    <div
+      className={`mb-3 rounded-xl border px-3 py-2 ${
+        event.flavour
+          ? "border-white/15 bg-white/5"
+          : "border-amber-400/30 bg-amber-500/10"
+      }`}
+    >
+      <div
+        className={`text-[10px] font-black uppercase tracking-widest ${
+          event.flavour ? "text-white/50" : "text-amber-300"
+        }`}
+      >
+        {event.flavour ? "Trial day" : "That's not ideal"} · {event.label}
+      </div>
+      <p className="mt-1 text-[11px] font-bold leading-snug text-white/80">{event.blurb}</p>
+    </div>
+  );
+
   const done = TRIAL_STAGES.filter(s => trial.results[s]);
   const progress = (
     <div className="mb-3">
@@ -181,6 +217,10 @@ export default function TrialSequence({
       <div className="mx-auto w-full max-w-md px-4 py-6 text-white">
         {progress}
         {devPanel}
+        {/* Deliberately no `eventBanner` here. On this card `stage` is the one
+            you have not walked into yet, so printing it would announce the bad
+            break before the stage it belongs to, and then print it again on
+            arrival. It belongs on the stage, once. */}
         <div className="rounded-2xl bg-white/5 p-5 text-center">
           <div className="text-[11px] font-black uppercase tracking-widest text-white/60">
             {STAGE_LABEL[showingResult]}
@@ -230,6 +270,7 @@ export default function TrialSequence({
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
         {devPanel}
+        {eventBanner}
         {/* `pace` is RUNNING SPEED — the run's own header says so. This used
             to be handed `skills.power`, which is a different stat and meant
             your actual pace never reached the one stage that is entirely
@@ -268,6 +309,7 @@ export default function TrialSequence({
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
         {devPanel}
+        {eventBanner}
         {/* THEIR keeper carries the adversity, not yours — passing it as
             `keeperStrength` made a sharp keeper defend YOUR goal, so a player
             who drew the bad break was helped by it. Caught in review. */}
@@ -304,6 +346,7 @@ export default function TrialSequence({
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
         {devPanel}
+        {eventBanner}
         <TrialPenalties trial={trial} skills={skills} onDone={q => finishStage("penalties", q)} />
       </div>
     );
@@ -314,6 +357,7 @@ export default function TrialSequence({
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
         {devPanel}
+        {eventBanner}
         <TrialFreeKicks trial={trial} skills={skills} onDone={q => finishStage("freeKicks", q)} />
       </div>
     );
@@ -324,6 +368,7 @@ export default function TrialSequence({
       <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
         {progress}
         {devPanel}
+        {eventBanner}
         <TrialVision trial={trial} onDone={q => finishStage("vision", q)} />
       </div>
     );

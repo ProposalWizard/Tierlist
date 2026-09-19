@@ -156,6 +156,13 @@ export default function TrialFreeKicks({
       seed={(trial.seed ^ 0x5f5e) >>> 0}
       title="Free kicks"
       hint="Bend it round the wall or lift it over — sides of the ball curl it, the bottom lifts it."
+      teach={{
+        headline: "There is no through the wall.",
+        lines: [
+          "Drag back to aim, pull further for power — same as the penalties.",
+          "Then strike the SIDE of the ball to bend it round them, or the bottom to lift it over.",
+        ],
+      }}
       subtitle={rep => {
         const s = freeKickSetup(trial, rep);
         const men = Math.max(1, Math.round(s.wall));
