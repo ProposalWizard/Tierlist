@@ -5,7 +5,9 @@ import {
   trialComplete, difficultyFor, keeperBonusFor, adversityOn,
   type TrialProgress, type TrialStage,
 } from "@/lib/star/trial";
-import { dribbleSetup, dribbleQuality, attemptSeed } from "@/lib/star/trialStages";
+import {
+  dribbleSetup, dribbleQuality, attemptSeed, teachSeen, markTeachSeen,
+} from "@/lib/star/trialStages";
 import { simRemaining, TRIAL_SIM_QUALITY, type TrialSimLevel } from "@/lib/star/trialDev";
 import DevTrialPanel from "./DevTrialPanel";
 import FiveASide from "./FiveASide";
@@ -13,6 +15,7 @@ import FirstPersonDribble from "./FirstPersonDribble";
 import TrialPenalties from "./stages/TrialPenalties";
 import TrialFreeKicks from "./stages/TrialFreeKicks";
 import TrialVision from "./stages/TrialVision";
+import { TeachCard } from "./stages/TrialPenalties";
 import { stageQualityFrom, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import type { FiveMatchState } from "@/lib/star/fiveASide/match";
 
@@ -141,6 +144,32 @@ export default function TrialSequence({
   const dribble = useMemo(() => dribbleSetup(trial), [trial]);
 
   /**
+   * ── THE ONE DRILL THAT TAUGHT NOTHING ──
+   *
+   * `TEACHABLE_DRILLS` has always listed four, and only three of them ever
+   * showed a card: penalties and free kicks through `StrikeStage`, finding
+   * the pass through its own overlay. Taking a man on had a single 10 px grey
+   * line along the bottom of the run — which is the size of thing you put a
+   * reminder in, and this is a gesture that appears NOWHERE else in the
+   * trial. Everything before it is a drag; this one is taps and a flick.
+   *
+   * So it gets the same card as the other three, with the flick glyph, and
+   * remembers being dismissed under the `"dribbling"` key that was already
+   * sitting there unused.
+   *
+   * Read from storage on mount, not in the initialiser: `window` does not
+   * exist during Next's server render of this client component, and a first
+   * client render that disagreed with the server's HTML is its own bug. The
+   * same reasoning the other three stages' own notes give.
+   */
+  const [dribbleTeachDone, setDribbleTeachDone] = useState(false);
+  useEffect(() => { if (teachSeen("dribbling")) setDribbleTeachDone(true); }, []);
+  const dismissDribbleTeach = useCallback(() => {
+    markTeachSeen("dribbling");
+    setDribbleTeachDone(true);
+  }, []);
+
+  /**
    * ── SAY WHAT WENT AGAINST YOU, ON THE STAGE IT LANDED ON ──
    *
    * Every adversity event already changes something real before this renders
@@ -177,9 +206,21 @@ export default function TrialSequence({
   );
 
   const done = TRIAL_STAGES.filter(s => trial.results[s]);
+  // ── ONE row, not two ──
+  //
+  // This used to be the pip strip plus a whole second line underneath it
+  // ("Trial day" / "Stage N of 5") — 37 px of chrome saying, in words, almost
+  // exactly what the five coloured pips already say in colour: how far
+  // through the trial this is. Measured on an iPhone 13 alongside every other
+  // header row eating into the one thing this screen is actually for (the
+  // pitch): with the pips already carrying the shape of "stage N of 5" (done
+  // = green, current = white, left = grey), the ordinal only needed a few
+  // characters, not a whole row. It now rides the same line as the pips
+  // rather than under them, and "Trial day" — branding, not information —
+  // is gone outright.
   const progress = (
-    <div className="mb-3">
-      <div className="flex items-center gap-1">
+    <div className="mb-2 flex items-center gap-2">
+      <div className="flex flex-1 items-center gap-1">
         {TRIAL_STAGES.map(s => {
           const r = trial.results[s];
           const current = s === stage;
@@ -193,19 +234,9 @@ export default function TrialSequence({
           );
         })}
       </div>
-      {/* ── Says where you are in the TRIAL, not which stage this is ──
-          Every stage screen already prints its own name and its own rep count,
-          so repeating them here produced two near-identical headers stacked on
-          top of each other — "PENALTIES 0/5" directly above "PENALTIES 1/5",
-          the first counting stages and the second counting kicks. Spotted in a
-          screenshot; the text-only playtest read both lines and never noticed
-          they were the same shape. */}
-      <div className="mt-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/45">
-        <span>Trial day</span>
-        <span>
-          {stage ? `Stage ${done.length + 1} of ${TRIAL_STAGES.length}` : "Complete"}
-        </span>
-      </div>
+      <span className="shrink-0 text-[10px] font-black tabular-nums uppercase tracking-widest text-white/45">
+        {stage ? `${done.length + 1}/${TRIAL_STAGES.length}` : "Done"}
+      </span>
     </div>
   );
 
@@ -267,7 +298,7 @@ export default function TrialSequence({
   // ── Taking a man on — the existing first-person run, unmodified ────────
   if (stage === "dribbling") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -290,15 +321,39 @@ export default function TrialSequence({
             vision and penalty stages: the run is reproducible while you are
             playing it, and a resume genuinely gets new waves at the bumped
             difficulty rather than a replay of the run you just watched. */}
-        <FirstPersonDribble
-          embedded
-          seed={attemptSeed(trial)}
-          pace={skills.pace}
-          oppStrength={dribble.oppStrength}
-          waveSizes={dribble.waveSizes}
-          onComplete={(res: { cleared: boolean; beaten: number }) =>
-            finishStage("dribbling", dribbleQuality(res, dribble))}
-        />
+        {/* ── `embedded` needs a box, and never had one here ──
+            `FirstPersonDribble`'s embedded branch renders `absolute inset-0`
+            — by design, so it fills whatever the caller already sized (in a
+            real match that is CanvasMatch's own `aspect-[5/8]` wrapper). This
+            call site never gave it one, so it was positioning itself against
+            whatever happened to be the nearest positioned ancestor up the
+            page rather than against the stage. The wrapper is the same shape
+            the penalty and free-kick stages use, so all three stages are now
+            the same size box. */}
+        <div className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15">
+          <FirstPersonDribble
+            embedded
+            seed={attemptSeed(trial)}
+            pace={skills.pace}
+            oppStrength={dribble.oppStrength}
+            waveSizes={dribble.waveSizes}
+            hideHint={!dribbleTeachDone}
+            onComplete={(res: { cleared: boolean; beaten: number }) =>
+              finishStage("dribbling", dribbleQuality(res, dribble))}
+          />
+
+          {!dribbleTeachDone && (
+            <TeachCard
+              gesture="flick"
+              headline="Get past them."
+              lines={[
+                "Tap the left or right of the screen to touch the ball that way.",
+                "Flick to burst past him — time it as he commits, not before.",
+              ]}
+              onDismiss={dismissDribbleTeach}
+            />
+          )}
+        </div>
       </div>
     );
   }
@@ -306,7 +361,7 @@ export default function TrialSequence({
   // ── The five-a-side ────────────────────────────────────────────────────
   if (stage === "fiveASide") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -343,7 +398,7 @@ export default function TrialSequence({
   // already had to have measured out of it).
   if (stage === "penalties") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -354,7 +409,7 @@ export default function TrialSequence({
 
   if (stage === "freeKicks") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -365,7 +420,7 @@ export default function TrialSequence({
 
   if (stage === "vision") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}

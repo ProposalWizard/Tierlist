@@ -28,15 +28,32 @@ export interface ScoutOffersProps {
   offers: ScoutOffer[];
   playerName: string;
   onAccept: (offer: ScoutOffer) => void;
-  /** Nobody came in. The only way on is the free-agent life.
-   *  REQUIRED, not optional: the "Go home" button is the only way off this
-   *  screen for a player nobody signed, and an optional handler behind an
-   *  unconditional button is a dead end waiting to happen. */
+  /**
+   * The club whose youth team will take you if nobody offers terms, or null
+   * if even that is not on the table.
+   *
+   * This screen used to tell every unsigned player the same thing — "no club,
+   * no contract, nothing in the bank, just you and a garden" — and that
+   * stopped being true when the youth team landed: a trial that falls short
+   * now usually means somebody's academy, and only a trial nobody wanted at
+   * all means the garden. The same screen saying otherwise would be a lie on
+   * the one screen a player reads most carefully.
+   *
+   * Passed in rather than worked out here: `youthTakerFor` is a pure function
+   * of the trial, and page.tsx computes it once so what this screen promises
+   * and what the button actually does cannot drift apart.
+   */
+  youthClub: string | null;
+  /** Nobody offered terms. Goes to the youth team, or to the free-agent life
+   *  when `youthClub` is null.
+   *  REQUIRED, not optional: this button is the only way off this screen for
+   *  a player nobody signed, and an optional handler behind an unconditional
+   *  button is a dead end waiting to happen. */
   onNoOffers: () => void;
 }
 
 export default function ScoutOffers({
-  trial, offers, playerName, onAccept, onNoOffers,
+  trial, offers, playerName, youthClub, onAccept, onNoOffers,
 }: ScoutOffersProps) {
   const [open, setOpen] = useState(false);
   const score = trialScore(trial);
@@ -105,19 +122,28 @@ export default function ScoutOffers({
         {breakdown}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-black uppercase tracking-widest text-amber-300">
-            Nobody came in
+            No contract
           </div>
-          <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/70">
-            They thanked you and said they&apos;d be in touch. They won&apos;t be.
-            No club, no contract, nothing in the bank — just you, a garden and
-            whatever you can make of the next few months, {playerName}.
-          </p>
+          {youthClub ? (
+            <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/70">
+              Nobody put professional terms in front of you, {playerName}. But
+              somebody watched: {youthClub} will take you into their youth
+              team. Scholarship money, and a coach who will look at you every
+              week. Play well enough and you go up.
+            </p>
+          ) : (
+            <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/70">
+              They thanked you and said they&apos;d be in touch. They won&apos;t be.
+              No club, no contract, not even an academy — just you, a garden and
+              whatever you can make of the next few months, {playerName}.
+            </p>
+          )}
         </div>
         <button
           onClick={onNoOffers}
           className="mt-5 w-full rounded-xl bg-white/10 py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-white/20"
         >
-          Go home →
+          {youthClub ? `Report to ${youthClub} →` : "Go home →"}
         </button>
       </div>
     );

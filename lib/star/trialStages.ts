@@ -78,9 +78,13 @@ export function attemptSeed(trial: TrialProgress): number {
  * How many attempts each stage gives you. Enough that one fluke neither makes
  * nor breaks it; few enough that the whole trial is minutes, not an evening.
  *
- * ── Penalties is FOUR, and it is a floor rather than a preference ──
+ * ── THREE ON THE STRIKING STAGES: asked for, measured against, chosen anyway
  *
- * Three was asked for by name. Do not quietly put it back.
+ * This said FOUR, and it said "three was asked for by name, do not quietly
+ * put it back". Three has now been asked for a second time, with the
+ * measurement in front of him, so it is going back deliberately rather than
+ * quietly, and the number that argued the other way is kept here rather than
+ * deleted.
  *
  * `strikeQuality` bands an attempt widely on purpose — a block is 0.16, a
  * save 0.34, a goal 0.55 to 1.0 depending on where it crossed — so a single
@@ -91,22 +95,29 @@ export function attemptSeed(trial: TrialProgress): number {
  *
  *   3 reps — 32.1 %      4 reps — 29.4 %      6 reps — 25.2 %
  *
- * Worth being straight about what that does and does not say. Four is a real
- * improvement on three and it is not a large one; the curve is shallow, and
- * a stage short enough to sit inside a five-stage trial is never going to be
- * a clean read on a player. Four is the point where the stage stops being
- * decided by one kick without turning the trial into an evening — a floor
- * arrived at by measurement, not an optimum. If the trial ever gets room to
- * breathe, five or six is strictly better and the numbers above say by how
- * much.
+ * So three is a genuinely worse read on a player than four, by 2.7 points of
+ * upset rate. It is also a shallow curve: a stage short enough to sit inside
+ * a five-stage trial was never going to be a clean read either way, and the
+ * cost of the fourth kick is a longer trial, which was the complaint. That
+ * is a taste call about pacing rather than a correctness one, and it was
+ * made with the number visible.
  *
- * Four also happens to be exactly the length the tell ramp wants: rep 1 is
- * the telegraphed one, rep 2 is shaded, and reps 3 and 4 are the pure
- * placement test the stage builds toward (`PENALTY_TELL_RAMP`).
+ * Three is also exactly the length both ramps already wanted, which is why
+ * neither needed touching: `PENALTY_TELL_RAMP` is [1, 0.42, 0.12] — kick one
+ * telegraphed, kick two shaded, kick three telling you nothing — and
+ * `REP_WEIGHT_RAMP` is [1, 1.25, 1.5]. At four reps both were clamping their
+ * last value and repeating it.
+ *
+ * ── Finding the pass stays at SIX, deliberately ──
+ *
+ * Excluded by name from the cut. It is the one stage whose reps are seconds
+ * long rather than a whole kick each, so six of them is not the pacing cost
+ * four penalties is — and its scoring needs the count more, because a single
+ * tap is a much coarser read than a struck ball.
  */
 export const REPS: Record<Exclude<TrialStage, "fiveASide">, number> = {
-  penalties: 4,
-  freeKicks: 4,
+  penalties: 3,
+  freeKicks: 3,
   dribbling: 3,
   vision: 6,
 };
@@ -122,6 +133,15 @@ export interface PenaltySetup {
    *  what makes a penalty a decision rather than a formality; zero means he
    *  has not committed and you are simply picking a corner. */
   keeperLean: number;
+  /**
+   * How far he sets off along his line the moment the ball is struck, in
+   * metres — 0 meaning he holds his ground and backs himself to react.
+   *
+   * The direction is `keeperLean`'s own sign; this is only the distance. See
+   * `penaltyCommit` for why this exists at all, and `commitKeeperGuess` in
+   * TrialPenalties.tsx for what does it.
+   */
+  keeperCommit: number;
 }
 
 /**
@@ -283,8 +303,75 @@ export function penaltyTell(trial: TrialProgress, rep: number): number {
 export const COLD_KEEPER_TELL = 0.35;
 
 /**
+ * ── WHETHER HE ACTUALLY GOES, AND HOW FAR ──
+ *
+ * The trial penalty was very nearly unmissable, and measuring it found
+ * something more useful than "make the keeper better".
+ *
+ * Conversion of a real trial penalty through the real engine, by how far off
+ * centre it was aimed (n = 300 a point): 2.7 % down the middle, 52.3 % at
+ * 2 m, and **88.0 % in the corner**. With the stage's own tell in play:
+ * read the lean and shoot the other way, 99.8 % — and with the lean deleted
+ * entirely, 99.5 %. **The tell was worth three tenths of a point.** So the
+ * ramp was never the lever, and shrinking it would have fixed nothing.
+ *
+ * The cause is geometry, not strength. `keeperAttempt` only fires when the
+ * ball reaches the keeper's OWN line, and nothing moves him before then, so
+ * the save collapses to a static test of `|xCross − keeper.x|` against a save
+ * radius that measures 2.37 m on a real trial penalty — against a goal half
+ * width of 3.66 m. **A band roughly 1.0-1.3 m inside each post cannot be
+ * saved at any keeper strength**; even a 99-rated keeper reaches 2.65 m, a
+ * metre short of the post. `keeperStrength` genuinely cannot reach this.
+ *
+ * What a penalty actually is, is a guess made before the ball is struck. So
+ * he makes one: `commitKeeperGuess` (TrialPenalties.tsx) sets him travelling
+ * the instant it is hit, and this decides whether and how far.
+ *
+ * ── Both numbers are measured, and the first one that was tried was wrong ──
+ *
+ * The obvious version — he always goes, as far as the engine lets him
+ * (3.2 m) — was built first and measured, and it replaced "too easy" with
+ * "no football in it at all": a corner converted 0 % when he guessed right
+ * and 100 % when he guessed wrong, so placement stopped mattering entirely
+ * and the stage became a coin flip. Worse, he vacated the middle every time,
+ * which turned a 2.7 % shot into a 96.8 % one.
+ *
+ * A grid over (how far, how often), n = 250 a cell, against two targets: a
+ * corner should convert about what the same shot converts in a real match's
+ * `one_on_one` (64-71 %), and the middle should stay clearly the worst
+ * option so that placement still means something.
+ *
+ *   how far   how often   corner   2 m out   middle
+ *     1.4 m      65 %      74.0 %   46.0 %    9.6 %
+ *     1.4 m      80 %      67.2 %   47.6 %   12.8 %   ← the shape wanted
+ *     1.9 m      80 %      59.2 %   47.6 %   46.8 %
+ *     3.2 m     100 %      50.0 %   50.0 %   96.0 %   ← the first attempt
+ *
+ * 1.4 m is the whole point: it is far enough that a correct guess puts the
+ * corner right at the edge of his reach — a marginal save rather than a
+ * certainty — and short enough that he never abandons the middle. How OFTEN
+ * he commits is then the difficulty dial, which is the honest place for it.
+ */
+export const PENALTY_COMMIT_M = 1.4;
+export const PENALTY_COMMIT_CHANCE_EASY = 0.65;
+export const PENALTY_COMMIT_CHANCE_HARD = 0.95;
+
+/** Metres he sets off to travel on this rep, or 0 if he holds his ground. */
+export function penaltyCommit(trial: TrialProgress, rep: number): number {
+  const d = difficultyFor(trial, "penalties");
+  const chance = PENALTY_COMMIT_CHANCE_EASY
+    + (PENALTY_COMMIT_CHANCE_HARD - PENALTY_COMMIT_CHANCE_EASY) * d;
+  // The same seeded-wobble idiom `penaltySetup` already uses for the side, on
+  // its own multipliers so the two draws can never move together — a rep where
+  // he leans left must not also be the rep where he always commits.
+  const wobble = Math.sin((attemptSeed(trial) % 1013) * 3.77 + rep * 57.31) * 12911.7;
+  return (wobble - Math.floor(wobble)) < chance ? PENALTY_COMMIT_M : 0;
+}
+
+/**
  * A penalty is the same kick every time, so difficulty lives entirely in the
- * keeper: how good he is, and how much of his guess he lets you see.
+ * keeper: how good he is, how much of his guess he lets you see, and whether
+ * he backs that guess by actually going.
  */
 export function penaltySetup(trial: TrialProgress, rep: number): PenaltySetup {
   const d = difficultyFor(trial, "penalties");
@@ -301,6 +388,7 @@ export function penaltySetup(trial: TrialProgress, rep: number): PenaltySetup {
     ball: { x: CX, y: PEN_SPOT_Y },
     keeperStrength: Math.min(99, 45 + d * 45 + bonus),
     keeperLean: side * penaltyTell(trial, rep),
+    keeperCommit: penaltyCommit(trial, rep),
   };
 }
 
@@ -556,4 +644,76 @@ export function weightedQuality(reps: number[]): number {
  *  way, using the drills' own existing shot judgement. */
 export function strikeQuality(outcome: string, crossX: number | null): number {
   return shotQuality(outcome, crossX);
+}
+
+// ── Having already been taught ──────────────────────────────────────────
+
+/**
+ * WHETHER THE PLAYER HAS BEEN SHOWN A DRILL'S INSTRUCTION BEFORE.
+ *
+ * Reported directly: "you should be able to get rid of the little tutorial."
+ * Two halves to that, and only one of them is a close button.
+ *
+ * The teaching is genuinely good the first time — it is the whole reason the
+ * first rep of every drill carries a card instead of an 11 px grey hint. It
+ * is not good the fourth time. A trial can be re-taken, a stage can be
+ * resumed (`reloads`), and a second career starts the whole thing again from
+ * penalty one, so somebody who already knows the game can meet the same
+ * paragraph a dozen times over. So dismissing it has to STICK.
+ *
+ * ── Why localStorage, and why per device ──
+ *
+ * "Has this person been told how to drag a ball" is a display preference, not
+ * a fact about a career: it belongs to whoever is holding the phone, not to
+ * the save. Putting it on `TrialProgress` would reset it with every new
+ * career, sync a returning player's knowledge onto a friend's borrowed
+ * account, and grow the cloud save for nothing. The same reasoning
+ * `star-match-muted` and the Face Editor's own keys already follow.
+ *
+ * Every read and write is wrapped: a private window, blocked site data, or a
+ * server render all throw on `localStorage` (a bare reference, the same way
+ * `faceStyle.ts` reaches it, so a test can inject one), and the honest
+ * failure here is "show the tutorial" — never a stage that will not open.
+ */
+export type TeachableDrill = Exclude<TrialStage, "fiveASide">;
+
+export const TEACH_SEEN_KEY = "star-trial-taught";
+
+/** Every drill that teaches. The five-a-side is not one: it has no single
+ *  first rep to hang an instruction on. */
+export const TEACHABLE_DRILLS: TeachableDrill[] = [
+  "penalties", "freeKicks", "dribbling", "vision",
+];
+
+function teachKeyFor(drill: TeachableDrill): string {
+  return `${TEACH_SEEN_KEY}-${drill}`;
+}
+
+/** Has this drill's instruction been dismissed before, on this device? */
+export function teachSeen(drill: TeachableDrill): boolean {
+  try {
+    return localStorage.getItem(teachKeyFor(drill)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Remember that it has. Never throws — a device that cannot store this just
+ *  teaches the drill again next time, which is the harmless failure. */
+export function markTeachSeen(drill: TeachableDrill): void {
+  try {
+    localStorage.setItem(teachKeyFor(drill), "1");
+  } catch {
+    /* A tutorial nobody can dismiss permanently is a nuisance, not a bug. */
+  }
+}
+
+/** Teach every drill again — exported for a settings/dev control and for the
+ *  tests, which must be able to put a device back to never-taught. */
+export function clearTeachSeen(): void {
+  try {
+    for (const d of TEACHABLE_DRILLS) localStorage.removeItem(teachKeyFor(d));
+  } catch {
+    /* Nothing stored, nothing to clear. */
+  }
 }

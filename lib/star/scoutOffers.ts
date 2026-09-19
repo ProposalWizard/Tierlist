@@ -3,7 +3,7 @@ import {
   LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
 } from "./clubs";
 import { leagueNameFor, type CareerDivision } from "./calendar";
-import { weeklyWageFor } from "./economy";
+import { weeklyWageFor, goalBonusFor, assistBonusFor } from "./economy";
 import { clubStanding } from "./clubReputation";
 
 /**
@@ -308,8 +308,8 @@ export function generateScoutOffers(
       club,
       division: rung.division,
       wage,
-      goalBonus: Math.round(wage * 0.1),
-      assistBonus: Math.round(wage * 0.07),
+      goalBonus: goalBonusFor(wage),
+      assistBonus: assistBonusFor(wage),
       // A club further up the ladder ties you down for longer.
       seasons: rung.division === "premier" || rung.division === "championship" ? 3 : 2,
       pitch: rung.division === "premier" && score > 85 ? pick(BIG_PITCHES, rng) : pick(PITCHES, rng),
@@ -338,8 +338,8 @@ export function generateScoutOffers(
       club,
       division: rung.division,
       wage,
-      goalBonus: Math.round(wage * 0.1),
-      assistBonus: Math.round(wage * 0.07),
+      goalBonus: goalBonusFor(wage),
+      assistBonus: assistBonusFor(wage),
       seasons: 2,
       pitch: pick(PITCHES, rng),
       strength: clubStrength(club, rung.division, rung.strength),

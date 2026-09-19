@@ -1,4 +1,5 @@
 import type { CareerState } from "./types";
+import { tierPrice } from "./economy";
 
 /**
  * GOVERNING BODIES — PHASE 4 OF STAR_POWER_POLITICS.MD.
@@ -58,13 +59,18 @@ function clampInfluence(n: number): number {
  * derived now.
  *
  * So it is priced against the top of the shop, which is the one place in the
- * game that already says what a huge amount of money looks like: the Private
- * Island at ★3,000,000. Full influence (100 points) in one body costs
- * ★2,000,000 — a genuine late-career purchase, in the same bracket as the
- * biggest thing you can own, and meaningfully out of reach of a young player
- * who has just signed.
+ * game that already says what a huge amount of money looks like — and since
+ * 19 Sep 2026 the shop no longer names its own prices either, so this reads
+ * the same ladder the shop reads instead of a snapshot of one of its rows.
+ *
+ * ONE POINT OF INFLUENCE COSTS ONE WEEK OF TOP-FLIGHT INCOME. Total control
+ * of a governing body is therefore a hundred weeks of it: about two-thirds
+ * of the Private Island, the most expensive thing in the game, which is the
+ * bracket the earlier hand-picked ★2,000,000 was aiming at and no longer
+ * hit once the shop was rebuilt around the income ladder.
  */
-export const MONEY_PER_INFLUENCE_POINT = 20_000;
+export const INFLUENCE_WEEKS_PER_POINT = 1;
+export const MONEY_PER_INFLUENCE_POINT = tierPrice("world_class", INFLUENCE_WEEKS_PER_POINT);
 
 /** What total control of one governing body actually costs, for anything that
  *  wants to state the price rather than re-derive it. */

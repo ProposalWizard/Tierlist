@@ -83,6 +83,19 @@ import { clubStanding, clubReputation } from "./clubReputation";
  * arithmetic, without a single `if (locked)` anywhere. You cannot afford
  * tier-3 money until you earn tier-3 money.
  *
+ * ── The second number a price implies: how long the thing lasts ──
+ *
+ * A price on its own is only half of what a boot costs. The catalogue this
+ * replaces let price span EIGHTY-fold while durability spanned three, so
+ * the cheapest boots in the game worked out at about three weeks' wages per
+ * match — the one item the early game is built around saving for was also
+ * the worst value on the shelf. Durability is therefore no longer typed in
+ * beside a price; it is derived FROM it, which makes "cost per match is a
+ * small fraction of a week" true at every tier by construction rather than
+ * by choosing fourteen pairs of numbers carefully. See
+ * `BOOT_WEEKS_PER_MATCH` in PART 4, including why the consequence is that
+ * cheap boots last far longer than dear ones.
+ *
  * ── The one thing that survives the rewrite unchanged ──
  *
  * A consumable that converts money into RATING — the stat cans, and more
@@ -99,27 +112,95 @@ import { clubStanding, clubReputation } from "./clubReputation";
  * that wages would stop reading as placeholders. Both cannot be true at
  * once, and this pass deliberately does NOT pick.
  *
- * What it does instead is make the choice ONE DIAL. `WAGE_FLOOR` below is
- * the only absolute number in the entire personal economy; every wage, fee
- * and price is a pure multiple of it. Setting it to 20 gives the NSS
- * reading (a bottom-rung bench player on ★10 a week, boots at ★70). Setting
- * it to ~400 gives the illustrative figures the design pass used (a ★50 can
- * in the National League, ★4,000 at the top). Nothing else has to change
- * either way, and every ratio in this file — and every test over it — holds
- * identically at both.
+ * What it does instead is make the choice ONE DIAL, and as of 19 Sep 2026
+ * that is now literally true of the whole game rather than of this file
+ * alone: `MONEY_SCALE` multiplies nothing any more, and `WAGE_FLOOR` below
+ * is the ONLY absolute number left in the entire personal economy. Every
+ * wage, fee, price, fine, bribe, testimonial and sponsor cheque is a pure
+ * multiple of it.
  *
- * ── What is NOT in here, stated plainly ──
+ * At `WAGE_FLOOR = 20` a bench player at the smallest non-league club earns
+ * ★10 a week and his first boots cost ★650. Halving it to 10 halves every
+ * figure in the game and changes nothing else — the ratios, which are the
+ * actual design, are untouched, and so is every test over them.
+ * `tests/star/economy.mts` proves that by checking the ladder's ratios come
+ * out as exact multiples of `DIVISION_STEP`, which they could not if any
+ * figure anywhere had a constant in it that did not come from this dial.
  *
- * Sponsorship fees (`sponsors.ts`), the per-match sponsor payment
- * (`matchStats.ts`), transfer and relegation wage offers (`transfers.ts`,
- * `relegationOffers.ts`), dilemma payouts (`dilemmas.ts`), the retirement
- * testimonial (`retirement.ts`), influence pricing (`governingBodies.ts`)
- * and the son mechanic (`clubPowers.ts`) are all still on the flat ×2000
- * `MONEY_SCALE` rescale of 14 Sep 2026, independent of anything here. They
- * are income and spending on the SAME wallet, so this recalibration leaves
- * them mis-sized until they are moved onto `TOTAL_INCOME_SHARES` below.
- * They live in files this workstream does not own — see the handover report
- * for the two that matter most and the exact change each needs.
+ * WHAT THE QUESTION HAS NARROWED TO, after the 19 Sep sharpening. The
+ * BOTTOM of the ladder already reads in NSS numbers, and lands almost
+ * exactly on the owners' own worked example: "boots at 1,000 and your wage
+ * is like 30 a week" against a real ★25 a week and a real ★650 first pair.
+ * What no longer reads small is the TOP — ★2,621 a week, ★14,500 boots —
+ * and that is a consequence of the CURVE being 105x end to end, not of the
+ * unit. Turning this dial down to make the top read small drags the bottom
+ * below the point where prices round cleanly (`priceStep` is coarse, and a
+ * starter consumable is already only ★16).
+ *
+ * TWO THINGS TURNING IT WOULD COST, stated so neither is a surprise:
+ *   - A SAVE IN PROGRESS stores absolute stars — a balance, a contract, the
+ *     price paid for an owned item. Every NEW figure would move and those
+ *     would not, so an existing career would find its bank balance suddenly
+ *     worth twice or half as much against the shop. A migration question,
+ *     not a code one.
+ *   - CLUB MONEY DOES NOT MOVE WITH IT. Valuations, transfer fees and
+ *     facilities are on their own, much larger scale (`marketValue.scale`,
+ *     and `clubValuation`'s ★5,000,000 floor), deliberately — a
+ *     footballer's wallet is nowhere near a club's finances. So this dial
+ *     is also the only thing that moves the personal-to-club gap: turning
+ *     it DOWN widens it, UP narrows it. See the note on that gap below.
+ *
+ * ── THE PERSONAL-TO-CLUB GAP, MEASURED AND LEFT ALONE ──
+ *
+ * The cheapest club in the game is valued at ★5,000,000 (a hard floor in
+ * `investments.ts`). Twenty Premier League seasons of personal income was
+ * ★2,789,212 — so buying the smallest club outright was 1.79x out of reach
+ * of a career that could not be bettered, down from 5.7x before the 19 Sep
+ * sharpening but still short.
+ *
+ * RESOLVED, and by the shape that was asked for rather than the one this
+ * note predicted. Four were on the table: drop the club floor, raise
+ * late-career earnings, add a non-wage income route, or make part-ownership
+ * the entry point. The answer was the second — "I think we just scale
+ * championship and premier league wages late game sharper" — which is why
+ * the fix is `DIVISION_STEP_INTO` and not a second money scale.
+ *
+ * Twenty Premier League seasons is now ★6,741,504, and the floor is 1.35x
+ * COVERED rather than 1.79x away. See `DIVISION_STEP_INTO` for what the two
+ * numbers buy at ten, fifteen and twenty seasons, and for why the bottom of
+ * the ladder is untouched by it.
+ *
+ * ── What used to be outside this file, and is not any more ──
+ *
+ * The first version of this header listed eight systems that were still on
+ * the flat ×2000 `MONEY_SCALE` rescale of 14 Sep 2026 and therefore
+ * mis-sized against everything here. As of 19 Sep 2026 every one of them is
+ * on the curve, and two of them were doing real damage:
+ *
+ *   `matchStats.ts`      per-match image rights paid a flat ★10,000 — 8.6
+ *                        weeks of Premier League income PER MATCH, and over
+ *                        a season 8.6 TIMES the whole modelled income of the
+ *                        career. Now `sponsorPayPerMatch` below, which is
+ *                        exactly `TOTAL_INCOME_SHARES.sponsorPerMatch`.
+ *   `transfers.ts`,      an offer was `your last wage x (1 + something) +
+ *   `relegationOffers.ts` reputation`, which has no club in it at all and
+ *                        compounds: five moves took ★829 to ★52,985, 33x the
+ *                        ladder's whole ceiling. Now `offerWageFor` below.
+ *   `sponsors.ts`        signing and season fees were `raw x 2000`, 17-100
+ *                        weeks of top-flight income per deal per season.
+ *                        Now weeks of the player's OWN wage.
+ *   `corruption.ts`      lawyers, bribes and the fine cap — now weeks of
+ *                        top-flight income.
+ *   `governingBodies.ts` a point of influence is a week of top-flight
+ *                        income; total control is a hundred of them.
+ *   `clubPowers.ts`      the §4.5 son and his potion, ratio preserved.
+ *   `dilemmas.ts`        payouts, anchored at `elite` — see that file for
+ *                        the one honest limitation static data leaves.
+ *   `retirement.ts`      the testimonial, formula unchanged, unit derived.
+ *
+ * `MONEY_SCALE` now multiplies nothing at all. `tests/star/moneyScale.mts`
+ * sweeps the source of all of them and fails on a bare figure or a
+ * reintroduced flat multiplier.
  */
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -148,10 +229,42 @@ export const WAGE_FLOOR = 20;
  * Geometric, deliberately: the gap between the National League and League
  * Two should FEEL the same as the gap between the Championship and the
  * Premier League, and a fixed multiple is the only shape that does that.
- * Explicitly NOT "your last wage times something" — see `transfers.ts` in
- * the handover report for what that produces.
+ * Explicitly NOT "your last wage times something" — see `transfers.ts`, and
+ * `offerStanding` below, for what that produces and what replaced it.
+ *
+ * ── SHARPENED, 19 Sep 2026: 2.4 → 3.2 ──
+ *
+ * The owners, after playing the 2.4 ladder: "the curve should be sharper, a
+ * top prem contract should be way more with the top end items also being
+ * more, it should just match that and be difficult to get there."
+ *
+ * 3.2 makes the ladder exactly 3.2^4 ≈ 105x from the bottom rung to the top,
+ * where 2.4 was 33x. A top-flight first-teamer goes from ★829 a week to
+ * ★2,621, and the star of the biggest club in the country from ★1,593 to
+ * ★5,033 — "way more", by a factor of a little over three.
+ *
+ * WHY THIS IS THE WHOLE CHANGE, AND WHY IT DOES NOT LENGTHEN THE EARLY GAME.
+ * `WAGE_FLOOR` is the bottom of the ladder and it did not move, so the
+ * National League's wage, its income and every price at the `starter` tier
+ * are all byte-identical to before: the first pair of boots is still ★650
+ * and still twenty-odd weeks of non-league money. Everything above the
+ * bottom rung stretches away from it. That is exactly the asked-for shape —
+ * the top is further away, the slog at the bottom is not longer — and it is
+ * a property of anchoring the ladder at its BOTTOM rather than its top.
+ *
+ * "The top end items also being more" needs no separate edit either: every
+ * price at the `elite` and `world_class` tiers is a number of weeks of those
+ * tiers' income, so they climb by the same 3.2 per rung the wages do. The
+ * best boot in the game goes from ★4,600 to ★14,750; the Private Island from
+ * ★174,000 to ★557,000. What a top-flight player pays in WEEKS is unchanged,
+ * which is right — the difficulty is in getting to that income, not in the
+ * price once you are there.
+ *
+ * Everything that reads as "unreachable from down here" gets sharper with
+ * it, without a single lock: the best boot in the game is 131 weeks of
+ * non-league income at 2.4 and 415 at 3.2.
  */
-export const DIVISION_STEP = 2.4;
+export const DIVISION_STEP = 3.2;
 
 /**
  * The most a club's own stature adds to a wage, over the smallest club in
@@ -219,16 +332,105 @@ export const TOTAL_INCOME_MULTIPLE =
 const LADDER_UP: CareerDivision[] = [...DIVISION_ORDER].reverse();
 
 /**
+ * THE TWO RUNGS THAT ARE STEEPER THAN THE REST, and the one thing they fix.
+ *
+ * Every rung used to be the same `DIVISION_STEP`. These two are not, and it
+ * was a deliberate answer to a specific problem rather than a feel-tune:
+ *
+ *   "I think we just scale championship and premier league wages late game
+ *    sharper."
+ *
+ * ── The problem ──
+ *
+ * The cheapest club in the game is ★5,000,000 (a hard floor in
+ * `investments.ts`), and club money is deliberately on its own much larger
+ * scale — a footballer's wallet is nowhere near a club's finances. Twenty
+ * Premier League seasons of personal income came to ★2,789,212, so buying
+ * the smallest club outright was 1.79x out of reach of a career that could
+ * not actually be bettered. The end-game goal was unreachable by design
+ * rather than by difficulty, which is the worst version of a goal.
+ *
+ * ── Why the top rungs specifically, and not the whole dial ──
+ *
+ * Turning `DIVISION_STEP` up moves every rung, which drags the bottom of
+ * the ladder with it — and the bottom is the one part already confirmed to
+ * read right (★25 a week, a ★650 first pair of boots, NSS numbers). The
+ * gap is at the top, so the change belongs at the top.
+ *
+ * It also matches how football actually pays. The step from League Two to
+ * League One is a pay rise; the step into the Premier League is a different
+ * order of money entirely. A flat multiple between every division was the
+ * simplification, not this.
+ *
+ * ── What these two numbers buy, measured ──
+ *
+ * A season is `matchweeksFor("premier")` = 38 weeks of
+ * `typicalWeeklyIncome`. Against the ★5,000,000 floor:
+ *
+ *                       10 seasons   15 seasons   20 seasons
+ *   flat 3.2 (before)      0.28x        0.42x        0.56x
+ *   4.5 / 5.5 (now)        0.67x        1.01x        1.35x
+ *
+ * So a strong fifteen-season top-flight career buys the smallest club, and
+ * a full twenty leaves real change — rather than a perfect career falling
+ * short. Chosen over 4.0/5.0 (1.09x at twenty, 0.82x at fifteen) precisely
+ * because that one needed a career with nothing spent along the way, and
+ * boots and the shop are the whole point of earning it.
+ *
+ * Weekly wages: the Championship goes ★819 -> ★1,152, the Premier League
+ * ★2,621 -> ★6,336. End to end the ladder is 253x rather than 105x.
+ *
+ * ── What it does NOT change ──
+ *
+ * `WAGE_FLOOR` and the two bottom rungs are untouched, so the National
+ * League, League Two and every `starter`-tier price are byte-identical.
+ * Shop prices at the top tiers climb with the wages that anchor them, which
+ * is right and is not a side effect: those prices are written in WEEKS of
+ * that tier's income, and a top-flight player pays the same number of weeks
+ * as before. The only thing that genuinely got closer is the club, because
+ * `clubValuation` is on its own scale and did not move with any of this.
+ *
+ * ── The invariant still holds, on every rung ──
+ *
+ * "A division's best club never out-pays the division above's worst" needs
+ * `1 + REPUTATION_PREMIUM_MAX` to be under EVERY step, not just the uniform
+ * one. 1.5 against a minimum step of 3.2 — see `MIN_DIVISION_STEP` and the
+ * test over it.
+ */
+export const DIVISION_STEP_INTO: Partial<Record<CareerDivision, number>> = {
+  championship: 4.5,
+  premier: 5.5,
+};
+
+/** The multiple this division's floor is above the floor of the one below.
+ *  `DIVISION_STEP` unless this rung is one of the steep ones. */
+export function divisionStepInto(division: CareerDivision): number {
+  return DIVISION_STEP_INTO[division] ?? DIVISION_STEP;
+}
+
+/** The shallowest rung on the ladder — what `REPUTATION_PREMIUM_MAX` has to
+ *  stay under for the no-overlap guarantee to hold everywhere. */
+export const MIN_DIVISION_STEP = Math.min(
+  DIVISION_STEP,
+  ...Object.values(DIVISION_STEP_INTO).filter((v): v is number => typeof v === "number"),
+);
+
+/**
  * The wage the smallest club in this division pays a bench player: the
- * whole geometric ladder, and the only thing a division contributes.
+ * whole ladder, and the only thing a division contributes.
+ *
+ * Geometric, but no longer at one uniform ratio — the top two rungs are
+ * steeper. See `DIVISION_STEP_INTO`.
  */
 export const DIVISION_BASE_WAGE: Record<CareerDivision, number> = (() => {
   const out = {} as Record<CareerDivision, number>;
   let base = WAGE_FLOOR;
-  for (const division of LADDER_UP) {
+  LADDER_UP.forEach((division, i) => {
+    // The bottom rung IS the floor; every rung above it is the one below
+    // multiplied by its own step.
+    if (i > 0) base *= divisionStepInto(division);
     out[division] = base;
-    base *= DIVISION_STEP;
-  }
+  });
   return out;
 })();
 
@@ -303,6 +505,136 @@ export function typicalWeeklyWage(division: CareerDivision): number {
 /** …and everything that arrives in the same week alongside it. */
 export function typicalWeeklyIncome(division: CareerDivision): number {
   return typicalWeeklyWage(division) * TOTAL_INCOME_MULTIPLE;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PART 1b — THE REST OF THE INCOME, AND WHAT A RIVAL CLUB OFFERS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * GOAL AND ASSIST MONEY, as fractions of a week's wage.
+ *
+ * `scoutOffers.ts` already writes exactly these onto a first contract
+ * (`wage * 0.1` / `wage * 0.07`); they were literals there and are named
+ * here so every OTHER place that has to build a contract — a transfer
+ * offer, a relegation offer, a renewal — derives the same numbers instead
+ * of inventing its own. Together with a realistic scoring rate they are
+ * what `TOTAL_INCOME_SHARES.bonuses` is the sum of.
+ */
+export const GOAL_BONUS_WAGE_SHARE = 0.10;
+export const ASSIST_BONUS_WAGE_SHARE = 0.07;
+
+export function goalBonusFor(wage: number): number {
+  return Math.max(1, Math.round(wage * GOAL_BONUS_WAGE_SHARE));
+}
+export function assistBonusFor(wage: number): number {
+  return Math.max(1, Math.round(wage * ASSIST_BONUS_WAGE_SHARE));
+}
+
+/**
+ * How many fixtures an ordinary week actually contains, averaged over a
+ * season with a cup run in it. Only used to turn a PER-MATCH payment into
+ * the per-WEEK share `TOTAL_INCOME_SHARES` is written in.
+ */
+export const SPONSOR_MATCHES_PER_WEEK = 0.8;
+
+/**
+ * IMAGE-RIGHTS MONEY, PER MATCH — and the single worst number in the old
+ * personal economy.
+ *
+ * `matchStats.ts` paid `floor(sponsors / 20) × ★2,000` — a flat ★10,000 a
+ * match at full sponsor standing, with no relationship to anything the
+ * player earns. That is 8.6 weeks of Premier League income PER MATCH, and
+ * 286 weeks of National League income per match. Over a 38-match season it
+ * paid ★380,000 against a modelled season income of ★44,126: eight and a
+ * half times the entire intended income of the career, arriving through one
+ * line nobody was reading. Every other figure in this file was meaningless
+ * while it stood, because the wallet it was all priced against was being
+ * filled from somewhere else entirely.
+ *
+ * It was ★5 before the 14 Sep 2026 rescale multiplied it like a one-off
+ * fee. It is not a one-off fee: it fires about forty times a season.
+ *
+ * So it is now what `TOTAL_INCOME_SHARES.sponsorPerMatch` always said it
+ * should be, read literally: at FULL sponsor standing, and at
+ * `SPONSOR_MATCHES_PER_WEEK` matches a week, it contributes exactly that
+ * share of a week's wage. Below full standing it falls off in proportion,
+ * so serving your sponsors well is worth real money and ignoring them
+ * genuinely costs you — which is the mechanic; ★10,000 flat was not a
+ * mechanic, it was a leak.
+ *
+ * `wage` is the WEEK's wage share this fixture carries (see wages.ts), not
+ * a whole week, so a midweek-and-weekend double still pays one week's worth
+ * of image rights across the two rather than two.
+ */
+export const SPONSOR_PAY_WEEKS_PER_MATCH =
+  TOTAL_INCOME_SHARES.sponsorPerMatch / SPONSOR_MATCHES_PER_WEEK;
+
+export function sponsorPayPerMatch(wage: number, sponsorStanding: number): number {
+  const standing = Math.max(0, Math.min(100, Number.isFinite(sponsorStanding) ? sponsorStanding : 0)) / 100;
+  return Math.max(0, Math.round(Math.max(0, wage) * SPONSOR_PAY_WEEKS_PER_MATCH * standing));
+}
+
+/**
+ * WHERE A MOVE PUTS YOU IN THE NEW CLUB'S PECKING ORDER, 0-1.
+ *
+ * ── The bug this exists to end ──
+ *
+ * `transfers.ts` and `relegationOffers.ts` both computed an offer as
+ * `old wage × (1 + at least 10%) + reputation × ★90`. A wage built that way
+ * has NO RELATIONSHIP TO WHO IS PAYING IT: the club's name, its division and
+ * its stature are all absent from the formula, and the previous wage — which
+ * is the one thing that should not determine what a different club pays —
+ * is the whole of it. Because it compounds, it also runs away: measured over
+ * five moves it went ★829 → ★9,372 → ★18,769 → ★29,106 → ★40,477 → ★52,985,
+ * which is thirty-three times the intended ceiling of the entire ladder. Two
+ * more moves and a Premier League player out-earns the ladder's top rung by
+ * two orders of magnitude, and every price in this file stops meaning
+ * anything again.
+ *
+ * ── What replaces it ──
+ *
+ * An offer now reads `weeklyWageFor(their club, their division, standing)` —
+ * the same function that prices every other contract in the game — with the
+ * player's CURRENT wage as a floor, because nobody takes a pay cut to join a
+ * club that came looking for them. Your old wage can hold an offer up; it
+ * can no longer drive it.
+ *
+ * All that is left to decide is the standing, which is the honest question:
+ * how well thought of will you be once you get there. Reputation raises it;
+ * stepping UP to a stronger club lowers it, because a bigger club's first
+ * team is a harder room to walk into, and dropping DOWN raises it, because
+ * a smaller club is signing you to be the man. `strengthStep` is their
+ * strength minus yours, on the 0-100 club-strength scale.
+ */
+export const OFFER_STANDING_AT_ZERO_REPUTATION = 0.30;
+export const OFFER_STANDING_AT_FULL_REPUTATION = 1.0;
+/** How much of the standing scale a full-size step between clubs is worth. */
+export const OFFER_STANDING_STEP_WEIGHT = 0.20;
+/** The club-strength gap treated as a full-size step, either way. */
+export const OFFER_STANDING_STEP_SPAN = 25;
+
+export function offerStanding(reputation: number, strengthStep: number): number {
+  const rep = Math.max(0, Math.min(100, Number.isFinite(reputation) ? reputation : 0)) / 100;
+  const base = OFFER_STANDING_AT_ZERO_REPUTATION
+    + rep * (OFFER_STANDING_AT_FULL_REPUTATION - OFFER_STANDING_AT_ZERO_REPUTATION);
+  const step = Math.max(-1, Math.min(1,
+    (Number.isFinite(strengthStep) ? strengthStep : 0) / OFFER_STANDING_STEP_SPAN));
+  return Math.max(0, Math.min(1, base - step * OFFER_STANDING_STEP_WEIGHT));
+}
+
+/**
+ * THE WAGE A RIVAL CLUB OFFERS — the one function both offer generators use.
+ *
+ * `currentWage` is a floor and nothing more. See `offerStanding` above for
+ * the whole of why.
+ */
+export function offerWageFor(
+  club: string, division: CareerDivision, reputation: number,
+  strengthStep: number, currentWage: number,
+): number {
+  const theirs = weeklyWageFor(club, division, offerStanding(reputation, strengthStep));
+  return Math.max(1, Math.round(Math.max(theirs, currentWage || 0)));
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -445,24 +777,72 @@ export function tierAnchorWage(tier: ShopTierId): number {
 }
 
 /**
+ * How coarse a price is allowed to be at this size — coarse steps that
+ * widen as the numbers grow, the same instinct `niceMoneyStep` (money.ts)
+ * already applies to a stepper. Exported so `bandPrice` below can round
+ * BACK INTO a band in the same units it rounded out of.
+ */
+export function priceStep(raw: number): number {
+  return raw < 20 ? 1
+    : raw < 100 ? 5
+      : raw < 1_000 ? 25
+        : raw < 10_000 ? 100
+          : raw < 100_000 ? 500
+            : 1_000;
+}
+
+/**
  * A price, from a tier and how many weeks of that tier's income it costs.
  *
  * Rounded to something a player reads as a price rather than as a
- * calculation — coarse steps that widen as the numbers grow, the same
- * instinct `niceMoneyStep` (money.ts) already applies to a stepper. The
- * rounding is small relative to every band's own width, so a price never
- * rounds out of the band it was written in.
+ * calculation. The rounding is small relative to every band's own width,
+ * but at a band's exact EDGE it can still land a star or two outside it —
+ * `tierPrice("starter", 18)` is ★630 raw and rounds to ★625, which is
+ * 17.86 weeks and therefore no longer inside an 18-36 week band. That is
+ * why a catalogue entry should be priced with `bandPrice` below rather than
+ * with this directly: it does the same rounding and then guarantees the
+ * result is still in the band it claims.
  */
 export function tierPrice(tier: ShopTierId, weeks: number): number {
   const raw = tierWeeklyIncome(tier) * weeks;
-  const step =
-    raw < 20 ? 1
-      : raw < 100 ? 5
-        : raw < 1_000 ? 25
-          : raw < 10_000 ? 100
-            : raw < 100_000 ? 500
-              : 1_000;
+  const step = priceStep(raw);
   return Math.max(step, Math.round(raw / step) * step);
+}
+
+/**
+ * THE FUNCTION EVERY CATALOGUE ENTRY IS PRICED WITH.
+ *
+ * "Put this item in the `upgrade` band of the `starter` tier, `at` 15% of
+ * the way up that band" — and get back a round number that is provably
+ * inside it. `at` is 0-1 across the band's own width, so an entry never
+ * names a number of weeks (which would have to be re-derived by hand every
+ * time `SQUEEZE_STEP` or `WAGE_FLOOR` moves) and never names an absolute
+ * price (which is what the shop used to be, and why nothing was tied to
+ * anything).
+ *
+ * The clamp matters and is not defensive decoration: `priceStep` is coarse
+ * — ★100 at four figures — so a request at `at: 0` or `at: 1` rounds off
+ * the edge about half the time. When that happens the price moves to the
+ * nearest whole step INSIDE the band rather than outside it. Only if the
+ * band is narrower than one step (which no band in this file is) does it
+ * fall back to the middle of the band, un-stepped.
+ */
+export function bandPrice(tier: ShopTierId, band: PriceBandId, at = 0.5): number {
+  const { min, max } = bandWeeks(band, tier);
+  const income = tierWeeklyIncome(tier);
+  const lo = min * income;
+  const hi = max * income;
+
+  const t = Math.max(0, Math.min(1, Number.isFinite(at) ? at : 0.5));
+  const raw = lo + (hi - lo) * t;
+  const step = priceStep(raw);
+
+  let price = Math.max(step, Math.round(raw / step) * step);
+  if (price < lo) price = Math.ceil(lo / step) * step;
+  if (price > hi) price = Math.floor(hi / step) * step;
+  if (price < lo || price > hi) price = Math.round((lo + hi) / 2);
+
+  return Math.max(1, Math.round(price));
 }
 
 /** The reverse, and the number every test and every tooltip actually wants:
@@ -525,3 +905,101 @@ export const RATING_CONVERTER_TIERS = {
   energy: ["starter", "pro", "world_class"] as ShopTierId[],
   stats: ["pro", "elite", "world_class"] as ShopTierId[],
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PART 4 — DURABILITY, WHICH IS THE OTHER HALF OF A BOOT'S PRICE
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * TWO THINGS HAVE TO BE TRUE OF A BOOT AT ONCE, AND ONLY ONE OF THEM WAS.
+ *
+ * The catalogue this replaces ran from ★6,000 to ★500,000 — a factor of
+ * EIGHTY — while durability ran from 3 matches to 10, a factor of three.
+ * Nothing reconciled the two, so at the bottom of the shop a pair of boots
+ * worked out at roughly three weeks' wages PER MATCH: a player who bought
+ * the cheapest boots in the game could not afford to keep wearing them, and
+ * the item that was supposed to be his first real purchase was in fact the
+ * worst-value thing on the shelf.
+ *
+ * So durability is no longer typed in next to a price. It IS the price:
+ *
+ *     matches  =  weeks of income up front  ÷  BOOT_WEEKS_PER_MATCH
+ *
+ * which makes both invariants hold by construction rather than by careful
+ * choice of fourteen pairs of numbers:
+ *
+ *   1. COST PER MATCH is `BOOT_WEEKS_PER_MATCH` of a week at EVERY tier —
+ *      identical for the ★725 starter boot and the ★4,600 world-class one,
+ *      because both are derived from the same ratio.
+ *   2. THE UP-FRONT PRICE is still a real goal at its own tier, because it
+ *      is still whatever the `upgrade` band says it is. Durability moved;
+ *      the price did not.
+ *
+ * ── Which way round, and why ──
+ *
+ * The brief allowed either: make cheap boots last far longer, or make
+ * expensive ones last a whole season. This file does the FIRST, and the
+ * second falls out of it as a consequence rather than being chosen
+ * separately. A starter boot at ~20 weeks of non-league income lasts around
+ * 65 matches — the better part of two seasons — and the best boot in the
+ * game lasts about a dozen.
+ *
+ * That inversion is deliberate, and it is also how boots actually work: a
+ * hard-wearing budget boot survives seasons of it, and an elite lightweight
+ * boot is a race-day item that gets replaced constantly. It gives the
+ * catalogue a real trade-off it never had — stats against durability —
+ * instead of a single dominant column where the dearest boot won on both.
+ *
+ * It also fixes the specific absurdity above: a non-league player saving 20
+ * weeks for boots now gets two seasons out of them rather than three
+ * matches.
+ */
+export const BOOT_WEEKS_PER_MATCH = 0.30;
+
+/** Hard ends, so a rounding change can never produce a boot that is used up
+ *  in a single match or one that outlasts an entire career. */
+export const BOOT_MATCHES_MIN = 4;
+export const BOOT_MATCHES_MAX = 120;
+
+/**
+ * How many matches a boot at this price, at this tier, is good for.
+ *
+ * Rounded coarsely on the same instinct as `priceStep` — nobody reads "67
+ * matches" as more precise than "65", and a round number survives a
+ * retune of the curve looking deliberate rather than computed.
+ */
+export function bootMatchesFor(price: number, tier: ShopTierId): number {
+  const weeks = weeksOfIncome(price, tier);
+  const raw = weeks / BOOT_WEEKS_PER_MATCH;
+  const rounded =
+    raw < 20 ? Math.round(raw)
+      : raw < 60 ? Math.round(raw / 2) * 2
+        : Math.round(raw / 5) * 5;
+  return Math.max(BOOT_MATCHES_MIN, Math.min(BOOT_MATCHES_MAX, rounded));
+}
+
+/** What a boot actually works out at per match, in weeks of the income of
+ *  the tier it belongs to — the number invariant (1) above is checked on. */
+export function bootWeeksPerMatch(price: number, matches: number, tier: ShopTierId): number {
+  return weeksOfIncome(price, tier) / Math.max(1, matches);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PART 5 — READING A PRICE FROM A REAL WALLET
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * "How many weeks of MY money is this?" — for a specific career rather than
+ * for a tier's notional first-teamer.
+ *
+ * Every price in this game is a number of weeks that has been multiplied
+ * out into stars, and the shop is the one place a player should be able to
+ * read it back the other way. Takes the wage off the actual contract and
+ * grosses it up by `TOTAL_INCOME_MULTIPLE`, so it answers with total income
+ * rather than wage alone — the same denominator every band is written
+ * against, which is what makes the answer comparable to `bandWeeks`.
+ */
+export function weeksOfWallet(price: number, weeklyWage: number): number {
+  const income = Math.max(1, weeklyWage) * TOTAL_INCOME_MULTIPLE;
+  return price / income;
+}

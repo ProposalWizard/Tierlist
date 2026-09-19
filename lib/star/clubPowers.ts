@@ -8,8 +8,8 @@ import { clampReputation } from "./reputation";
 import { FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, bestFitness } from "./formations";
 import { getTuning } from "./tuningStore";
 import type { ClubKits } from "./kits";
+import { tierPrice } from "./economy";
 import type { SavedLineup } from "./lineupStore";
-import { MONEY_SCALE } from "./money";
 
 /**
  * PHASE 3 OF STAR_POWER_POLITICS.MD — DEEPENING CLUB OWNERSHIP.
@@ -355,10 +355,21 @@ export interface SonState {
   playerId: string | null;
 }
 
-/** Scaled by `MONEY_SCALE` — the bare 500 predates the 14 Sep 2026 rescale
- *  and was missed by it, leaving a quarter of one week's starting wage as the
- *  price of having a child. Found in review. */
-const HAVE_A_SON_COST = 500 * MONEY_SCALE;
+/**
+ * THE §4.5 SON, PRICED OFF THE LADDER RATHER THAN OFF A MULTIPLIER.
+ *
+ * The bare 500 predated the 14 Sep 2026 rescale; multiplying it by
+ * `MONEY_SCALE` fixed the symptom (a quarter of a week's wage) and left the
+ * figure still derived from nothing. It is now SIXTY WEEKS of top-flight
+ * income — an endgame purchase in the same bracket as the largest things in
+ * the shop, and unreachable on anything but a top-flight wallet.
+ *
+ * `SON_COST_UNIT_WEEKS` keeps the original hand-balanced RATIO between this
+ * and the potion below (500 units against 200 + 40 per year of his age)
+ * intact, so only the scale moved and none of the relative design did.
+ */
+const SON_COST_UNIT_WEEKS = 60 / 500;
+const HAVE_A_SON_COST = tierPrice("world_class", 500 * SON_COST_UNIT_WEEKS);
 const SON_START_AGE = 0;
 const SON_START_OVERALL = 35;
 /** However many times you use the potion, he never plays before this age —
@@ -387,8 +398,11 @@ export function haveASon(career: CareerState): CareerState | { ok: false; reason
  */
 export function ageUpSonWithPotion(career: CareerState, rng: () => number): CareerState | { ok: false; reason: string } {
   if (!career.son) return { ok: false, reason: "You don't have a son yet" };
-  // Scaled by MONEY_SCALE, same missed-rescale as HAVE_A_SON_COST above.
-  const cost = (200 + career.son.age * 40) * MONEY_SCALE;
+  // Same unit as HAVE_A_SON_COST above, so the original 500-vs-(200+40·age)
+  // balance survives: a first potion is about twenty-four weeks of top-flight
+  // income and each year he has already been aged up makes the next one
+  // dearer.
+  const cost = tierPrice("world_class", (200 + career.son.age * 40) * SON_COST_UNIT_WEEKS);
   if (career.money < cost) return { ok: false, reason: "Not enough money for the potion" };
   const ageGain = 3 + Math.floor(rng() * 6); // 3-8
   const overallGain = 2 + Math.floor(rng() * 7); // 2-8

@@ -233,6 +233,61 @@ screen. Find the ball before aiming.
 
 ---
 
+## How to talk to this team (standing, not per-session)
+
+Neither Harry nor Mikey writes code. Stated directly: *"we AREN'T coders -
+english only."* Everything below is a standing instruction, confirmed more
+than once.
+
+**Answer shape — key point, key number, key change.** Reported directly:
+*"there's sometimes too much fluff in how you speak… I'm having to skim
+through too much yap."* No preamble, no restating the request, no praise for
+the idea, no tour of the code. Name things the way they appear on screen; put
+the file in brackets after, once, only if someone needs to find it.
+
+**Every claim carries a number, or admits it has none.** "Scoring is hard" is
+not a finding. "A clean one-on-one converts at 0.0% over 250 simulated
+matches" is. Always give the before alongside the after.
+
+**Say whether you saw it, measured it, or reasoned it.** This project's real
+bugs have all lived in "reasoned it" — a keeper who reacted and didn't, a
+price that was three weeks and was three weeks *per match*. "I read the code
+and worked it out, I haven't seen it on a screen" is a fine thing to say and
+tells them whether to go and look.
+
+**Show, don't describe, anything with a size or a shape in it.** Goal width,
+figure proportions, prices, framing, difficulty. Render the options at real
+phone size and let them point. Use the `show-options` agent.
+
+**Play it before claiming it works.** A type-check and a green suite cannot
+see a frozen figure or a box sitting on the ball. Use `star-playtest`.
+
+**Ask about the one ambiguous word; build the rest.** Never block a whole
+message on one unclear clause. Build what is clear, then ask one question with
+its options so it can be answered in a word from a phone.
+
+**Do not agree to be agreeable.** Caught directly: *"a lot of times you're
+just agreeing with us… I want to know for sure if that is a good idea."*
+Before agreeing with a design call, go and find what argues against it. If
+nothing does, say what you checked.
+
+**The change list goes out before the push, every time** — written so it
+survives being forwarded to someone who wasn't in the conversation. Shared
+files (`app/star-dev/page.tsx`, `lib/star/types.ts`, tailwind config) get
+named explicitly.
+
+**Two hard rules on the match engine, from Mikey:** only ever ADD to gameplay,
+never change it; and never modify `lib/star/canvasEngine.ts`.
+
+### The agent skills, and when each fires
+
+| Agent | Use it when |
+|-------|-------------|
+| `star-playtest` | Any change to `lib/star/**`, `components/star/**`, `app/star-dev/**`. Boots a real browser and reports what it SAW. |
+| `show-options` | A number, size, colour, shape or layout a non-coder has to judge. Renders candidates at phone size, labels each with its cost, never ships the choice. |
+| `explain-and-prompt` | Writing up a build so it can be judged without opening a file, or working out which of two meanings a request had. |
+| `make-artifact` | A build, review or batch of changes that needs a shareable page. Verdict, decisions needed, changes, numbers, what's broken, what wasn't seen — in that order. |
+
 ## Working alongside the other two developers
 
 Three people are building this. To avoid two sessions editing the same files:

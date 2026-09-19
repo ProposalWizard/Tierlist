@@ -44,6 +44,9 @@ const TC = {
   net: "rgba(255,255,255,0.30)",
   ball: "#ffffff",
   ballSeam: "rgba(20,20,20,0.55)",
+  /** The ring OUTSIDE the white, so a white ball on a white line is still a
+   *  ball. See drawBall. */
+  ballEdge: "rgba(12,16,12,0.9)",
   shadow: "rgba(0,0,0,0.28)",
   skin: "#c68642",
   boot: "#1f2937",
@@ -916,19 +919,52 @@ export function drawKeeperAt(
   });
 }
 
+/**
+ * The smallest a ball may be drawn, in pixels.
+ *
+ * The same idea as `drawFigure`'s own 7 px floor, and for the same reason: a
+ * regulation ball at this camera's scale is a smudge, and the one thing on the
+ * screen that everything else is about cannot be a smudge. Named rather than
+ * inlined because it is a legibility decision, not a magic number.
+ */
+export const BALL_MIN_R = 6;
+
 export function drawBall(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, z = 0,
 ): void {
   const { px, py, unit } = p;
   const x = px(at.x), y = py(at.y);
   const lift = z * unit * 0.5;
-  const r = Math.max(2.5, unit * BALL_R * 2.6 * (1 + z * 0.06));
+  /**
+   * ── A real minimum, the way a figure already has one ──
+   *
+   * `drawFigure` floors its radius at 7 px because a man drawn to scale on a
+   * phone is a smudge. The ball had a floor of 2.5, which is not a floor at
+   * all: MEASURED against the camera this stage actually uses, it drew 7.8 px
+   * across, and once the rim below takes its 16% there is about a pixel and a
+   * half of white left in the middle. At kick-off it sits on the halfway line,
+   * which is also white — so the one thing the whole screen is about was
+   * invisible against the one line it starts on.
+   *
+   * A ball is not to scale for the same reason a player is not: it has to be
+   * findable. This is the size the eye needs, not the size the laws of the
+   * game specify.
+   */
+  const r = Math.max(BALL_MIN_R, unit * BALL_R * 2.6 * (1 + z * 0.06));
 
   // Its shadow stays on the grass while it climbs, which is the only thing
   // that makes height readable from directly above.
   ctx.fillStyle = TC.shadow;
   ctx.beginPath();
   ctx.ellipse(x, y, r * (1 - Math.min(0.4, z * 0.05)), r * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // A dark ring right round the outside, OUTSIDE the white, so the ball reads
+  // against a white line as well as against grass. The old rim was drawn
+  // inside the ball and ate most of it at this size.
+  ctx.fillStyle = TC.ballEdge;
+  ctx.beginPath();
+  ctx.arc(x, y - lift, r + Math.max(1, r * 0.18), 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = TC.ball;
@@ -942,14 +978,9 @@ export function drawBall(
   // penalty spot draws one it is unmistakably a MOUTH, which is what a
   // screenshot showed. A thin full rim plus one dark panel reads as a football
   // at every size this renderer is ever asked for and can never read as a face.
-  ctx.strokeStyle = TC.ballSeam;
-  ctx.lineWidth = Math.max(0.5, r * 0.16);
-  ctx.beginPath();
-  ctx.arc(x, y - lift, r * 0.92, 0, Math.PI * 2);
-  ctx.stroke();
   ctx.fillStyle = TC.ballSeam;
   ctx.beginPath();
-  ctx.arc(x, y - lift, r * 0.3, 0, Math.PI * 2);
+  ctx.arc(x, y - lift, r * 0.34, 0, Math.PI * 2);
   ctx.fill();
 }
 

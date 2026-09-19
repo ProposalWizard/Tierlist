@@ -1,7 +1,8 @@
 import {
   ladderLevel, REPS, penaltySetup, freeKickSetup, dribbleSetup, dribbleQuality,
   visionSetup, visionQuality, meanQuality, weightedQuality, strikeQuality,
-  attemptSeed, penaltyTell,
+  attemptSeed, penaltyTell, teachSeen, markTeachSeen, clearTeachSeen,
+  TEACHABLE_DRILLS,
   PENALTY_TELL_EASY, PENALTY_TELL_HARD, PENALTY_TELL_RAMP, REP_WEIGHT_RAMP,
   COLD_KEEPER_TELL, BIG_WALL_MEN, LONG_RANGE_M, QUICK_FEET_BONUS, EXTRA_MAN,
   SNAP_DECISION_FLOOR, CROWDED_PICTURE_MAX, TIGHT_MARGINS_FLOOR,
@@ -366,19 +367,40 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   }
 }
 
-// ── Four penalties, and it is a floor ───────────────────────────────────
+// ── What a short stage costs you, kept measurable after the length changed ─
 //
-// Three was asked for and three does not hold up, which is worth proving here
-// rather than leaving as a claim in a comment somebody can talk themselves
-// out of. `strikeQuality`'s bands are wide on purpose — a block is 0.16, a
-// save 0.34, a goal 0.55-1.0 — so at three reps a single unlucky attempt
-// swings the mean by about a fifth of the whole scale.
+// This used to assert `REPS.penalties >= 4` and existed to stop three being
+// put back. Three has since been chosen deliberately, with this measurement
+// in front of the person choosing, so the assertion would now be defending a
+// decision that has been overturned rather than a property worth keeping.
 //
-// Measured against the real bands with a real pair of takers: one who scores
-// 70 % of the time, one who scores 50 %, and how often the WORSE one comes
-// out ahead over a stage.
+// The measurement stays, because the thing worth defending is the SHAPE, not
+// the number: a longer stage must read a player better, and the weighting
+// must not distort who the better player is. If a future change makes a
+// longer stage read WORSE, something is broken in the scoring and this says
+// so. It also keeps the real cost of the current length on the record —
+// roughly 32 % upset rate at three against 29 % at four — so nobody has to
+// re-derive it to have the conversation again.
+//
+// `strikeQuality`'s bands are wide on purpose — a block is 0.16, a save 0.34,
+// a goal 0.55-1.0 — so at three reps a single unlucky attempt swings the mean
+// by about a fifth of the whole scale. Measured against those real bands with
+// a real pair of takers: one who scores 70 % of the time, one who scores
+// 50 %, and how often the WORSE one comes out ahead over a stage.
 {
-  check(REPS.penalties >= 4, `penalties needs at least four reps, has ${REPS.penalties}`);
+  // The two ramps are indexed by rep and clamp at their last entry, so a
+  // stage longer than a ramp silently repeats its hardest rung. Both are
+  // three long, so this is the length at which every rung is used exactly
+  // once — which is a real property of the current shipped number, and the
+  // one thing that would actually break if the count moved again.
+  check(
+    REPS.penalties === PENALTY_TELL_RAMP.length,
+    `the tell ramp has ${PENALTY_TELL_RAMP.length} rungs and the stage has ${REPS.penalties} kicks`,
+  );
+  check(
+    REPS.penalties === REP_WEIGHT_RAMP.length,
+    `the weight ramp has ${REP_WEIGHT_RAMP.length} rungs and the stage has ${REPS.penalties} kicks`,
+  );
 
   // A deterministic little RNG, so this measurement is the same measurement
   // every time it runs.
@@ -406,29 +428,30 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     }
     return upsets / N;
   };
-  // Rep count alone, with the weighting held off, so the two changes in this
-  // round are not measured as one.
+  // Rep count alone, with the weighting held off, so length and weighting are
+  // never measured as one thing.
   const three = upsetRate(3, false);
-  const four = upsetRate(REPS.penalties, false);
+  const four = upsetRate(4, false);
   const six = upsetRate(6, false);
   // …and then what the weighting does on top, at the length actually shipped.
-  const fourWeighted = upsetRate(REPS.penalties, true);
+  const shippedWeighted = upsetRate(REPS.penalties, true);
+  const shippedFlat = upsetRate(REPS.penalties, false);
 
   check(three > 0.15,
-    `three reps should genuinely read as a coin flip — that is why it is not three (${(three * 100).toFixed(1)}%)`);
+    `a three-kick stage genuinely reads close to a coin flip — this is what the current length costs (${(three * 100).toFixed(1)}%)`);
   check(four < three,
-    `${REPS.penalties} reps must be a better read than three (${(four * 100).toFixed(1)}% vs ${(three * 100).toFixed(1)}%)`);
+    `a longer stage must read a player better (four ${(four * 100).toFixed(1)}% vs three ${(three * 100).toFixed(1)}%)`);
   check(six < four,
-    "…and it keeps improving with length, which is why four is a FLOOR and not a target");
+    "…and keep improving with length, or the scoring is not measuring skill at all");
   // Stated plainly rather than implied: the weighting is not an accuracy
   // measure and does not pretend to be. It exists so that surviving the
   // hardest rep is worth something, and against a taker whose quality does
   // not change rep to rep it should barely move this number either way.
-  check(Math.abs(fourWeighted - four) < 0.05,
-    `weighting the later reps should not distort who the better player is (${(fourWeighted * 100).toFixed(1)}% vs ${(four * 100).toFixed(1)}%)`);
+  check(Math.abs(shippedWeighted - shippedFlat) < 0.05,
+    `weighting the later reps should not distort who the better player is (${(shippedWeighted * 100).toFixed(1)}% vs ${(shippedFlat * 100).toFixed(1)}%)`);
   if (process.env.TRIAL_MEASURE) {
     console.log(`  flat: three ${(three * 100).toFixed(1)}%  four ${(four * 100).toFixed(1)}%  six ${(six * 100).toFixed(1)}%`
-      + `  |  weighted four ${(fourWeighted * 100).toFixed(1)}%`);
+      + `  |  shipped ${REPS.penalties} weighted ${(shippedWeighted * 100).toFixed(1)}%`);
   }
 }
 
@@ -594,6 +617,88 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
         `${e.id} must not touch the vision setup`);
     }
   }
+}
+
+// ── The tutorial you have already read ─────────────────────────────────────
+//
+// Reported directly: "you should be able to get rid of the little tutorial",
+// with the explicit follow-on that dismissing it should be REMEMBERED, so a
+// returning player is not re-taught every trial and every retrial.
+//
+// The card itself is React over a canvas and is not reachable from here. The
+// thing underneath it — whether this device has been taught a given drill —
+// is a plain function pair, and it is the half that has to survive a reload,
+// so it is the half worth pinning down.
+{
+  // Every read and write goes through a bare `localStorage`, the same way
+  // faceStyle.ts reaches it, so a fake one can be handed to it here.
+  const store = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, String(v)); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+  };
+
+  clearTeachSeen();
+  check(TEACHABLE_DRILLS.every(d => !teachSeen(d)),
+    "a device nobody has taught anything to reports every drill as untaught");
+
+  // The whole point: it sticks. Nothing here reloads a module, but nothing in
+  // `teachSeen` caches either — it reads storage every time, which IS what
+  // surviving a reload means for a function with no state of its own.
+  markTeachSeen("penalties");
+  check(teachSeen("penalties"), "a dismissed drill stays dismissed");
+
+  // Per drill, not one flag for the lot. Penalties teach the drag; free kicks
+  // teach striking the side of the ball to bend it; the vision stage teaches a
+  // clock that starts on its own. Dismissing one must not silently skip the
+  // other two, which are genuinely different lessons.
+  check(!teachSeen("freeKicks") && !teachSeen("vision") && !teachSeen("dribbling"),
+    "dismissing one drill's teaching does not dismiss the others");
+
+  for (const d of TEACHABLE_DRILLS) markTeachSeen(d);
+  check(TEACHABLE_DRILLS.every(d => teachSeen(d)), "every drill can be dismissed");
+  clearTeachSeen();
+  check(TEACHABLE_DRILLS.every(d => !teachSeen(d)), "clearing puts every drill back to untaught");
+
+  // Distinct keys, so this can never collide with another per-device
+  // preference (`star-match-muted`, the face-style keys) sharing the store.
+  markTeachSeen("vision");
+  const keys = [...store.keys()];
+  check(keys.length === 1 && keys[0].includes("vision") && keys[0].startsWith("star-"),
+    `one namespaced key per drill (${JSON.stringify(keys)})`);
+  clearTeachSeen();
+
+  // ── Storage that throws must not take a stage down with it ──
+  //
+  // A private window, blocked site data, or the server render of a client
+  // component all throw on `localStorage`. The honest failure is "teach the
+  // drill again", never an exception on the way into a trial stage.
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: () => { throw new Error("blocked"); },
+    setItem: () => { throw new Error("blocked"); },
+    removeItem: () => { throw new Error("blocked"); },
+  };
+  let threw = false;
+  try {
+    markTeachSeen("penalties");
+    clearTeachSeen();
+    check(teachSeen("penalties") === false, "unreadable storage reports untaught rather than throwing");
+  } catch {
+    threw = true;
+  }
+  check(!threw, "storage that throws is swallowed, not propagated into the stage");
+
+  delete (globalThis as { localStorage?: unknown }).localStorage;
+  let threwMissing = false;
+  try {
+    check(teachSeen("vision") === false, "no storage at all reports untaught");
+    markTeachSeen("vision");
+  } catch {
+    threwMissing = true;
+  }
+  check(!threwMissing, "a missing localStorage is survived too (server render)");
 }
 
 if (problems.length) {

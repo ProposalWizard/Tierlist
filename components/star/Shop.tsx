@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { KIB_CANS, STAT_KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, type KibCan, type StatKibCan } from "@/lib/star/shopData";
+import { KIB_CANS, STAT_KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, shopTierOf, type KibCan, type StatKibCan } from "@/lib/star/shopData";
+import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { formatMoney } from "@/lib/star/money";
@@ -9,6 +10,33 @@ import KibCanIcon from "./KibCanIcon";
 import LifestyleIcon from "./LifestyleIcon";
 
 interface ActionResult { ok: boolean; reason?: string; }
+
+/**
+ * HOW MANY WEEKS OF YOUR OWN MONEY THIS IS.
+ *
+ * Every price in this game is a number of weeks multiplied out into stars
+ * (economy.ts), and until now the shop was the one place that number could
+ * not be read back. "★14,500" tells a player nothing on its own; "4 weeks"
+ * or "414 weeks" tells them everything, and it is the same sentence the
+ * design is actually written in. Against the wage on their real contract,
+ * grossed up the same way every band is — not against a tier's notional
+ * first-teamer, who is not them.
+ */
+function formatWeeks(weeks: number): string {
+  if (!Number.isFinite(weeks)) return "";
+  if (weeks >= 100) return `${Math.round(weeks)} wks`;
+  if (weeks >= 10) return `${weeks.toFixed(0)} wks`;
+  if (weeks >= 1) return `${weeks.toFixed(1)} wks`;
+  return `${weeks.toFixed(2)} wks`;
+}
+
+function Weeks({ price, wage }: { price: number; wage: number }) {
+  return (
+    <div className="text-[9px] font-bold text-white/60 leading-none">
+      {formatWeeks(weeksOfWallet(price, wage))} of your income
+    </div>
+  );
+}
 
 interface Props {
   career: CareerState;
@@ -80,6 +108,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                     <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
                       <StarIcon /> {formatMoney(c.price)}
                     </div>
+                    <Weeks price={c.price} wage={career.contract.wage} />
                     <button
                       disabled={!canBuy}
                       onClick={(e) => { e.stopPropagation(); onBuyKib(c); }}
@@ -119,6 +148,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                     <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
                       <StarIcon /> {formatMoney(c.price)}
                     </div>
+                    <Weeks price={c.price} wage={career.contract.wage} />
                     <button
                       disabled={!canBuy}
                       onClick={(e) => { e.stopPropagation(); onBuyStatKib(c); }}
@@ -143,33 +173,51 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                 <div>Match</div>
                 <div>★</div>
               </div>
+              {/* Grouped by tier, in ladder order — the shop's whole
+                  progression used to be invisible because the catalogue was
+                  one flat list of absolute prices with nothing to group on.
+                  Every boot sits in its tier's `upgrade` band, so a header
+                  here is also a real statement about price: these are the
+                  boots that cost about this many weeks of THAT rung's money. */}
               <div className="max-h-[380px] overflow-y-auto">
-                {BOOTS_CATALOGUE.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setSelectedBoot(b)}
-                    className={`w-full grid grid-cols-[1fr_40px_40px_50px_40px] py-2 text-[10px] font-bold text-center ${
-                      selectedBoot?.id === b.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white hover:bg-gray-600"
-                    }`}
-                  >
-                    <div className="text-left pl-3 flex items-center gap-1">
-                      {b.name}
-                      {b.curve && (
-                        <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
-                      )}
-                      {b.extraTouch && (
-                        <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>
-                      )}
-                      {bannedBoots.has(b.id) && (
-                        <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
-                      )}
+                {SHOP_TIERS.map((tier) => {
+                  const boots = BOOTS_CATALOGUE.filter((b) => shopTierOf("boots", b.id) === tier.id);
+                  if (boots.length === 0) return null;
+                  return (
+                  <div key={tier.id}>
+                    <div className="px-3 py-1.5 bg-gray-900/70 border-y border-black/30">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">{tier.label}</div>
+                      <div className="text-[9px] font-bold text-white/60 leading-tight">{tier.blurb}</div>
                     </div>
-                    <div>{b.power.toFixed(1)}</div>
-                    <div>{b.technique.toFixed(1)}</div>
-                    <div>{b.matches}</div>
-                    <div className="text-yellow-300">{formatMoney(b.price)}</div>
-                  </button>
-                ))}
+                    {boots.map((b) => (
+                      <button
+                        key={b.id}
+                        onClick={() => setSelectedBoot(b)}
+                        className={`w-full grid grid-cols-[1fr_40px_40px_50px_40px] py-2 text-[10px] font-bold text-center ${
+                          selectedBoot?.id === b.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white hover:bg-gray-600"
+                        }`}
+                      >
+                        <div className="text-left pl-3 flex items-center gap-1">
+                          {b.name}
+                          {b.curve && (
+                            <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
+                          )}
+                          {b.extraTouch && (
+                            <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>
+                          )}
+                          {bannedBoots.has(b.id) && (
+                            <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
+                          )}
+                        </div>
+                        <div>{b.power.toFixed(1)}</div>
+                        <div>{b.technique.toFixed(1)}</div>
+                        <div>{b.matches}</div>
+                        <div className="text-yellow-300">{formatMoney(b.price)}</div>
+                      </button>
+                    ))}
+                  </div>
+                  );
+                })}
               </div>
             </div>
             {selectedBoot?.curve && (
@@ -180,6 +228,26 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
             {selectedBoot?.extraTouch && (
               <div className="bg-fuchsia-900/40 border border-fuchsia-500/60 rounded-lg p-2.5 mb-3 text-[11px] text-fuchsia-100 text-center">
                 Adds a Touch Mode button in-match. Turn it on and, after you strike the ball, your player chases it — reach it before anything else happens and play pauses again for a fresh aim and kick from wherever it ended up. Nudge it into space, then take the real shot or pass.
+              </div>
+            )}
+            {selectedBoot && (
+              /* The two numbers that decide whether a boot is worth it, and
+                 neither was on screen before: what it costs in weeks of the
+                 player's own income, and what that works out at per match.
+                 The second is the one the old catalogue got badly wrong —
+                 the cheapest boots in the game used to cost about three
+                 weeks' wages for every match they lasted. */
+              <div className="bg-gray-800 rounded-lg p-2.5 mb-3 border border-gray-600 flex items-center justify-between">
+                <div className="text-left">
+                  <div className="text-[11px] font-black text-white">{selectedBoot.name}</div>
+                  <div className="text-[9px] font-bold text-white/60">
+                    {selectedBoot.matches} matches — {formatWeeks(weeksOfWallet(selectedBoot.price / selectedBoot.matches, career.contract.wage))} per match
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-black text-yellow-300 text-sm">★{formatMoney(selectedBoot.price)}</div>
+                  <Weeks price={selectedBoot.price} wage={career.contract.wage} />
+                </div>
               </div>
             )}
             <div className="bg-gray-700 rounded-lg p-3 border border-gray-600 text-center">
@@ -262,6 +330,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                       <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
                         <StarIcon /> {formatMoney(i.price)}
                       </div>
+                      <Weeks price={i.price} wage={career.contract.wage} />
                       {owned && <div className="text-[9px] text-emerald-400 font-bold">OWNED</div>}
                     </div>
                   </button>

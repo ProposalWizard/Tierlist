@@ -1,5 +1,6 @@
 import {
   makeIdentity, attachClub, makeInitialCareer, FIRST_CONTRACT_SIGNING_FEE, STARTER_CONTRACT,
+  STARTER_BOOT_MATCHES,
 } from "../../lib/star/careerFlow";
 // Deliberately imported from where it actually lives, not through careerFlow's
 // re-export: `hasClub` sits in calendar.ts precisely BECAUSE that file imports
@@ -9,6 +10,8 @@ import { hasClub } from "../../lib/star/calendar";
 import { computeStarRating } from "../../lib/star/rating";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
+import { typicalWeeklyWage } from "../../lib/star/economy";
+import { BOOTS_CATALOGUE } from "../../lib/star/shopData";
 import { readFileSync } from "node:fs";
 
 /**
@@ -353,13 +356,18 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
   //    club") because a windfall the moment you sign undoes the early slog.
   //  - `contract`: the starter deal was rescaled when the economy was put on
   //    one curve; a National League wage is no longer a Premier League one.
+  //  - `currentBoot`: the free pair you open with is a copy of the cheapest
+  //    catalogue entry, and that entry's PRICE is now derived from the one
+  //    curve rather than typed in (shopDefaults.ts), so it came down with
+  //    everything else. Its matches are pinned separately and deliberately —
+  //    see STARTER_BOOT_MATCHES (careerFlow.ts) and the assertion below.
   //
   // They are excluded from the whole-object comparison and asserted below on
   // their own terms. Everything ELSE must still match byte for byte, because
   // that is the claim this fixture exists to make: splitting one function
   // into two changed nothing it was not meant to change. Deleting the
   // comparison instead would have thrown that away to make a red test green.
-  const EXPECTED_DIFFS = ["money", "contract"] as const;
+  const EXPECTED_DIFFS = ["money", "contract", "currentBoot"] as const;
   const withoutChanged = (c: CareerState) => {
     const rest: Record<string, unknown> = { ...c };
     for (const k of EXPECTED_DIFFS) delete rest[k];
@@ -395,10 +403,59 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
       now.money === FIRST_CONTRACT_SIGNING_FEE,
       `${g.player.club}: the first contract pays nothing (got ${now.money}, fixture had ${g.career.money})`,
     );
+    // ASSERTED AS DERIVATION, NOT AS A DIRECTION. This used to read
+    // `now.contract.wage < g.career.contract.wage` — true while the curve
+    // happened to put a top-flight wage under the fixture's flat ★2,000,
+    // and false the moment the curve was sharpened on 19 Sep 2026 (a
+    // Premier League first-teamer is ★2,621) WITHOUT anything actually
+    // being wrong. That is a test pinning a figure through the back door.
+    //
+    // What is genuinely claimed, and stays true at any setting of the dial:
+    // the starter deal is no longer one hand-typed number paid identically
+    // by everybody, it is read off the income curve.
     check(
-      now.contract.wage < g.career.contract.wage,
-      `${g.player.club}: the starter wage came down with the rescale `
-      + `(now ${now.contract.wage}, was ${g.career.contract.wage})`,
+      now.contract.wage === STARTER_CONTRACT.wage
+        && STARTER_CONTRACT.wage === Math.round(typicalWeeklyWage("premier")),
+      `${g.player.club}: the starter wage is derived from the curve, not typed in `
+      + `(got ${now.contract.wage}, curve says ${Math.round(typicalWeeklyWage("premier"))}, `
+      + `fixture had a flat ${g.career.contract.wage})`,
+    );
+    check(
+      now.contract.wage !== g.career.contract.wage,
+      `${g.player.club}: …and it is genuinely no longer the fixture's flat figure`,
+    );
+    check(
+      now.contract.goalBonus === Math.round(now.contract.wage * 0.10)
+        && now.contract.assistBonus === Math.round(now.contract.wage * 0.07),
+      `${g.player.club}: the bonuses follow the wage rather than being typed in beside it`,
+    );
+
+    // The free pair, on the same terms: what it IS has not changed at all
+    // (same boot, same stats, same three matches somebody handed you), only
+    // what it would cost to buy. Asserted as the intent rather than as a
+    // figure, for the same reason as the wage above.
+    const boot = now.currentBoot;
+    const was = g.career.currentBoot;
+    check(boot.id === was.id && boot.name === was.name,
+      `${g.player.club}: still opens on the same boot (${boot.name} vs ${was.name})`);
+    check(
+      boot.power === was.power && boot.technique === was.technique && boot.pace === was.pace,
+      `${g.player.club}: the starter boot's stats are untouched`,
+    );
+    check(
+      boot.matches === STARTER_BOOT_MATCHES && boot.matches === was.matches,
+      `${g.player.club}: the free pair is still worth ${was.matches} matches, not a brand-new boot off `
+      + `the shelf (got ${boot.matches})`,
+    );
+    // Same treatment as the wage above: what is claimed is that the price
+    // is DERIVED (it is whatever the catalogue's cheapest entry costs today,
+    // which economy.ts prices off the curve), not that it moved in some
+    // particular direction away from a fixture recorded before the curve
+    // existed.
+    check(
+      boot.price === BOOTS_CATALOGUE[0].price && boot.price !== was.price,
+      `${g.player.club}: the starter boot's price is the catalogue's own derived figure `
+      + `(now ${boot.price}, catalogue says ${BOOTS_CATALOGUE[0].price}, fixture had ${was.price})`,
     );
   }
 

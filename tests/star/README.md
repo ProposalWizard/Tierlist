@@ -1669,3 +1669,61 @@ bypasses the ordinary influence gate on THREE separate real powers this
 session already built (proposing a Rule Book change, overruling a vote,
 forcing a club's league position), checked with a fixture that has ZERO
 ordinary influence and would fail every one of those gates on its own.
+
+**economy** — the one curve the whole personal economy hangs off
+(`lib/star/economy.ts`), and the shop catalogue derived from it.
+
+Two rules that run in opposite directions, both asserted tier by tier,
+because the obvious tidy-up is to reconcile them into one and doing that
+silently destroys whichever half gets dropped:
+
+- **Nearly everything gets CHEAPER in weeks-of-income as you climb.** A
+  pair of boots is 18-36 weeks of National League money and 2-4 weeks of
+  top-flight money. A previous framework specified CONSTANT fractions and
+  was rejected for it — a fixed fraction makes the early game feel
+  identical to the late game in purchasing terms while claiming to avoid
+  exactly that. `SQUEEZE_STEP > 1` and the band-by-band strict decrease
+  are pinned here so it cannot quietly go back.
+- **…except anything that converts money into RATING, which gets DEARER.**
+  Stat cans and (more weakly) energy cans climb from 3 weeks at League One
+  money to 8 weeks at top-flight money, because held flat a rich late
+  career simply buys past the growth curve.
+
+The rest holds the catalogue to the curve. Every one of the 51 shipped
+prices is checked to sit inside the band it claims — which is a real
+check, not a tautology, because `bandPrice` rounds to coarse steps and at
+a band's exact edge that rounding lands OUTSIDE it about half the time;
+`bandPrice`'s clamp is what fixes that, and it is fuzzed at seven points
+across every band of every tier, plus negative, huge and NaN inputs.
+
+**The boot invariant is the one the old catalogue broke worst.** Price
+used to span 80× (★6,000 to ★500,000) against durability spanning 3× (3
+matches to 10), which put the cheapest boots in the game at roughly three
+weeks' wages PER MATCH — unaffordable precisely where affordability was
+the whole point. Durability is no longer typed in beside a price; it is
+derived from it, so cost-per-match is `BOOT_WEEKS_PER_MATCH` of a week at
+every tier by construction. Both halves are asserted: the per-match cost
+stays a small fraction of a week, AND the up-front price is still a real
+goal at its own tier. The consequence — cheap boots lasting far longer
+than dear ones (70 matches against 13) — is asserted too, because it is a
+deliberate inversion and not an accident: a budget boot survives seasons,
+an elite one is a race-day item.
+
+Also checked: the boots ladder is strictly ascending in price even though
+the five tiers' bands overlap in absolute stars (without the `at` values
+climbing within each tier, a better boot a rung up would undercut a worse
+boot a rung down); nothing in the lifestyle catalogue is strictly
+dominated (costs more while being worth the same or less — the Games
+Console and the Headphones tie on both, deliberately, rather than one
+being a pure downgrade); and the free starter pair is NOT the catalogue's
+durability, since copying the cheapest entry wholesale would hand every
+new career the better part of two free seasons of boots.
+
+The last section is about the unit rather than the balance. The owners
+talk in NSS numbers ("10 a week") while `MONEY_SCALE = 2000` exists so
+wages stop reading as placeholders; both cannot be true, and this
+workstream deliberately does not pick. What it guarantees instead is that
+picking is ONE edit, and that is checked by ratio: every division's
+typical wage divided by the one below it must equal `DIVISION_STEP`
+EXACTLY. If any figure in the ladder had a constant baked into it that
+did not come from `WAGE_FLOOR`, those ratios would not come out clean.

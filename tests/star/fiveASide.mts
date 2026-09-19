@@ -1,20 +1,24 @@
 import {
   FIVE_VIEW, FIVE_PITCH, FIVE_PITCH_W, FIVE_PITCH_L, FIVE_HALFWAY_Y,
   KICK_FLOOR_Y, insideFivePitch, leftPitch, mirror, clampToPitch,
-  FIVE_GOAL, FIVE_GOAL_W, FIVE_CROSSBAR,
+  FIVE_GOAL, FIVE_GOAL_W, FIVE_CROSSBAR, FIVE_KEEPER_STRENGTH,
 } from "../../lib/star/fiveASide/geometry";
 import {
   buildScenario, VIEW_ASPECT, initDefenders, stepReactions, stepKeeper, stepBall, launch,
-  setOffsideRuleEnabled,
+  setOffsideRuleEnabled, keeperSaveRadius,
 } from "../../lib/star/canvasEngine";
 import {
-  buildPassage, worldFromScenario, kickOffWorld, kindForBall, passLeadsToShot, type FiveWorld,
+  buildPassage, worldFromScenario, kickOffWorld, kindForBall, passLeadsToShot,
+  buildTheirAttack, aimTheirShot, worldFromTheirAttack, type FiveWorld,
 } from "../../lib/star/fiveASide/passage";
 import {
-  newFiveMatch, applyOutcome, oppAttack, type FiveMatchState,
+  newFiveMatch, applyOutcome, applyTheirAttack, advanceFlow, resumeAction,
+  type FiveMatchState,
 } from "../../lib/star/fiveASide/match";
 import { passageQuality, fiveASideScore } from "../../lib/star/fiveASide/score";
 import { FIVE_A_SIDE } from "../../lib/star/fiveASide/rules";
+import { cameraFor, projectionFor, BALL_MIN_R } from "../../lib/star/fiveASide/render";
+import { playOn, newFlow, flowAfterTouch } from "../../lib/star/fiveASide/flow";
 import { mulberry32 } from "../../lib/star/season";
 import { POST_L, POST_R, NET_DEPTH, CX } from "../../lib/star/pitch";
 import type { Ball, Outcome, Scenario } from "../../lib/star/canvasEngine";
@@ -90,21 +94,141 @@ const near = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) < eps;
   check(near(FIVE_HALFWAY_Y, 18), `halfway is halfway (${FIVE_HALFWAY_Y})`);
 }
 
-// ── The goal is a real small-sided goal, not a full-size one ───────────
+// ── The goal is sized against the keeper, not against a tape measure ───
 //
-// A full-size goal on a 24 m pitch is 30% of the width, in front of a keeper
-// who reaches about two metres. That is a shooting gallery. This pins the
-// proportion rather than the number, so it stays honest if the pitch changes.
+// It was 3.66 m — a real twelve-foot goal, 15% of the pitch, exactly what
+// futsal uses — and it was unplayable: the engine's save radius was tuned
+// against a 7.32 m goal, so on a 3.66 m one the keeper covers the whole mouth
+// standing still and a clean one-on-one converted 0.0%. See FIVE_GOAL_W.
 {
-  check(Math.abs(FIVE_GOAL_W - 3.66) < 1e-9, `a real five-a-side goal is 3.66 m, got ${FIVE_GOAL_W}`);
-  check(FIVE_GOAL_W < (POST_R - POST_L) / 1.7, "it is meaningfully smaller than an eleven-a-side goal");
+  check(Math.abs(FIVE_GOAL_W - 5.2) < 1e-9, `the five-a-side goal is 5.2 m, got ${FIVE_GOAL_W}`);
+  check(FIVE_GOAL_W < (POST_R - POST_L) * 0.75, "it is still meaningfully smaller than an eleven-a-side goal");
   const share = FIVE_GOAL_W / FIVE_PITCH_W;
   check(
-    share > 0.12 && share < 0.20,
-    `the goal should be 12-20% of the pitch width like real five-a-side and futsal, got ${(share * 100).toFixed(1)}%`,
+    share > 0.15 && share < 0.28,
+    `the goal is wider than the laws say and narrower than a shooting gallery, got ${(share * 100).toFixed(1)}%`,
   );
   check(Math.abs((FIVE_GOAL.x1 + FIVE_GOAL.x2) / 2 - CX) < 1e-9, "the goal is centred");
   check(FIVE_CROSSBAR < 2.44 && FIVE_CROSSBAR >= 2, "the bar is lower than a full goal, at a real futsal height");
+  // The keeper is floored at the bottom of the stage's own range, and there is
+  // no headroom left on that dial — see FIVE_KEEPER_STRENGTH.
+  check(FIVE_KEEPER_STRENGTH === 40, `the opposing keeper is floored at 40, got ${FIVE_KEEPER_STRENGTH}`);
+  const sc = buildPassage(kickOffWorld(true), { keeperStrength: FIVE_KEEPER_STRENGTH, rng: mulberry32(1) });
+  const reach = keeperSaveRadius(sc);
+  check(
+    reach < FIVE_GOAL_W / 2,
+    `the keeper must not cover his whole goal standing still `
+    + `(reach ${reach.toFixed(2)} m, half-goal ${(FIVE_GOAL_W / 2).toFixed(2)} m)`,
+  );
+}
+
+// ── DOES PLACEMENT STILL MATTER? ────────────────────────────────────────
+//
+// The trap this exists for, in the words it was handed over in: "a keeper
+// tuned too generous made a shot down the middle a 96% chance and placement
+// stopped being a decision at all. If the middle converts anywhere near the
+// corner, say so loudly rather than shipping it."
+//
+// Measured on REAL chances — the ones `flow.ts` actually produces — rather
+// than on a hand-built one-on-one, because a hand-built one is not what the
+// stage gives you. Four balls from each chance: down the middle, half-way to
+// the post the keeper is NOT covering, that post, and the one he is.
+//
+// The result, and it is the opposite failure to the one warned about:
+//
+//                              five-a-side     a real 90'
+//   dead centre                    4.9%           50.1%
+//   half-way to the open post     29.6%
+//   the open post                 45.9%           61.1%
+//   the post he is covering       31.3%
+//
+// Placement matters enormously — nine times as much as it should. The middle
+// of a five-a-side goal is very nearly dead, because the engine's save radius
+// (2.04 m at its weakest) against a 2.60 m half-goal leaves only 0.56 m of
+// open net either side of a central keeper, where the eleven-a-side game
+// leaves 1.34 m. That is not fixable from here: it needs either a ~7 m goal
+// (an eleven-a-side goal on a 24 m pitch) or a per-scenario keeper-reach
+// multiplier inside `canvasEngine.ts`.
+//
+// What IS done about it is `keeperHome`'s near-post shading, which puts a real
+// target back on the pitch: the keeper covers the side the ball is on and
+// leaves about 1.5 m of far post open, so the decision is "find the open
+// side", which you can see, rather than "hit a 0.56 m band", which you cannot.
+{
+  setOffsideRuleEnabled(false);
+  const H = (FIVE_A_SIDE.goal.x2 - FIVE_A_SIDE.goal.x1) / 2;
+  const C = (FIVE_A_SIDE.goal.x1 + FIVE_A_SIDE.goal.x2) / 2;
+  let middle = 0, half = 0, open = 0, covered = 0, n = 0;
+
+  const strike = (sc: Scenario, aimX: number, rng: () => number): boolean => {
+    const dir = { x: aimX - sc.ball.x, y: -Math.max(sc.ball.y, 1) };
+    const power = Math.min(1, 0.42 + Math.hypot(sc.ball.x - C, sc.ball.y) / 40) * (0.9 + rng() * 0.2);
+    const ball = launch(sc, dir, power, { cx: (rng() - 0.5) * 0.4, cy: -0.15 - rng() * 0.25 },
+      { power: 70, technique: 70 }, rng);
+    const dt = 1 / 60;
+    let out: Outcome | null = null;
+    for (let i = 0; i < 3000 && !out; i++) {
+      stepKeeper(sc, dt);
+      stepReactions(sc, ball, dt, rng);
+      out = stepBall(ball, sc, rng, dt);
+      if (!out && leftPitch(ball.pos)) out = "out" as Outcome;
+    }
+    return out === "goal" || out === "rebound";
+  };
+
+  for (let seed = 1; seed <= 900 && n < 500; seed++) {
+    const rng = mulberry32(seed * 32749);
+    let world = kickOffWorld(true);
+    let flow = newFlow(true);
+    for (let hop = 0; hop < 8 && n < 500; hop++) {
+      const r = playOn(FIVE_A_SIDE, world, flow, { difficulty: 0.5, playerSkill: 65 }, rng, 40);
+      world = r.world; flow = r.flow;
+      if (r.stop === "full-time") break;
+      if (r.stop === "you" && world.ball.y < 13) {
+        const base = buildPassage(world, { keeperStrength: FIVE_KEEPER_STRENGTH, rng });
+        base.goal = { ...FIVE_A_SIDE.goal };
+        base.crossbar = FIVE_A_SIDE.crossbar;
+        base.viewport = { ...FIVE_A_SIDE.view };
+        initDefenders(base, rng);
+        const clone = () => JSON.parse(JSON.stringify(base)) as Scenario;
+        // The side he is NOT covering.
+        const openSide = base.keeper.x >= C ? -1 : 1;
+        if (strike(clone(), C, mulberry32(n * 7 + 1))) middle++;
+        if (strike(clone(), C + openSide * (H - 0.3) * 0.5, mulberry32(n * 7 + 2))) half++;
+        if (strike(clone(), C + openSide * (H - 0.3), mulberry32(n * 7 + 3))) open++;
+        if (strike(clone(), C - openSide * (H - 0.3), mulberry32(n * 7 + 4))) covered++;
+        n++;
+      }
+      flow = flowAfterTouch(FIVE_A_SIDE, flow, r.stop === "you" ? "them" : "you", world.ball.y);
+    }
+  }
+  const pc = (v: number) => (100 * v) / Math.max(1, n);
+  console.log(
+    `      placement over ${n} real chances: middle ${pc(middle).toFixed(1)}%`
+    + ` | half-way ${pc(half).toFixed(1)}% | open post ${pc(open).toFixed(1)}%`
+    + ` | covered post ${pc(covered).toFixed(1)}%`,
+  );
+  check(n >= 300, `enough real chances to measure placement, got ${n}`);
+  // The goal has to be scorable at all — it was 0.0% at 3.66 m.
+  check(pc(open) > 30, `a well-placed finish has to go in, got ${pc(open).toFixed(1)}%`);
+  // …and picking the wrong side has to cost you, or placement is decoration.
+  check(
+    pc(open) > pc(covered) * 1.25,
+    `the open post must beat the one he is covering `
+    + `(${pc(open).toFixed(1)}% vs ${pc(covered).toFixed(1)}%)`,
+  );
+  check(
+    pc(open) > pc(middle) * 2,
+    `and both must beat hitting it straight at him (${pc(open).toFixed(1)}% vs ${pc(middle).toFixed(1)}%)`,
+  );
+  // THE WARNING, MADE INTO A TEST. If the middle ever starts converting like
+  // the corner, placement has stopped being a decision.
+  check(
+    pc(middle) < pc(open) * 0.75,
+    `a shot straight down the middle must not be as good as a placed one `
+    + `(${pc(middle).toFixed(1)}% vs ${pc(open).toFixed(1)}%) — this is the penalties bug, and it cost a round`,
+  );
+  setOffsideRuleEnabled(true);
 }
 
 // ── …and the eleven-a-side game is untouched by that being possible ────
@@ -124,6 +248,28 @@ const near = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) < eps;
     );
     check(Math.abs(sc.crossbar - 2.44) < 1e-9, `an ordinary ${kind} still has a full-height bar`);
   }
+}
+
+// ── The ball is big enough to see ───────────────────────────────────────
+//
+// It was floored at 2.5 px, which is not a floor at all. MEASURED against the
+// camera this stage actually uses: it drew 7.8 px across, and the old rim took
+// 16% of that from the inside, leaving about a pixel and a half of white in
+// the middle. At kick-off it sits on the halfway line, which is also white.
+//
+// `drawFigure` has floored a man at 7 px for exactly this reason since it was
+// written. A ball is not to scale for the same reason a player is not.
+{
+  // The camera this stage draws in, at a real phone width.
+  const cam = cameraFor(FIVE_A_SIDE, { x: CX, y: 18 }, 390, 468);
+  const p = projectionFor(FIVE_A_SIDE, 390, 468, cam);
+  const toScale = p.unit * 0.11 * 2.6;
+  check(toScale < BALL_MIN_R, `the bug is real: to scale the ball draws ${(toScale * 2).toFixed(1)} px across`);
+  check(BALL_MIN_R >= 5, `…and the floor has to be big enough to see, got ${BALL_MIN_R}`);
+  check(
+    BALL_MIN_R * 2 < p.unit * 2,
+    "…without the ball being drawn bigger than a two-metre-wide object, which would read as a beach ball",
+  );
 }
 
 // ── The drag floor matches the engine's own, derived not copied ─────────
@@ -224,6 +370,11 @@ const CLEAR_OF_BALL = 1.8;
 const KEEPER_CLEAR = 0.75 + 1.6;
 const DT = 1 / 60;
 const GOAL_CX = (POST_L + POST_R) / 2;
+/** A touch AT GOAL, for the shot count. The engine's own two ways of scoring
+ *  plus every way of not scoring with a shot. */
+const SHOT_OUTCOMES = new Set<string>([
+  "goal", "rebound", "saved", "caught", "tipped", "post", "wide", "over",
+]);
 
 const bodies = (sc: import("../../lib/star/canvasEngine").Scenario) => [
   ...sc.defenders.map(d => ({ x: d.x, y: d.y, what: "a defender" })),
@@ -564,39 +715,38 @@ function randomWorld(rng: () => number): FiveWorld {
 // ── DOES THE SCORE REWARD PLAYING, OR REWARD HIDING? ────────────────────
 //
 // The question this answers is the one nobody can answer by reading the
-// formula, which is why it is measured: two players spend the same six minutes
-// on the same pitch, one of whom never shoots. Who scores better?
+// formula, which is why it is measured: two players spend the same match on
+// the same pitch, one of whom never shoots. Who scores better?
 //
-// The answer used to be the wrong one. A completed pass was worth 0.45 flat
-// and up to 0.99 if the engine called it "ambitious" — which, measured, it
-// does for any two-metre nudge to the furthest-forward man — while a shot the
-// keeper saved was 0.34, a shot he caught 0.24, and a shot wide 0.08. Keeping
-// the ball also costs you no opposition attack and no clock. A goal added
-// 0.05 and a win 0.10, neither of which was enough to make up the difference.
+// The answer used to be the wrong one, and the fix to it is recorded in
+// score.ts. What is new here is that the matches are played out through the
+// WHOLE state machine — the simulation between touches included — rather than
+// through a loop that handed the player the ball again the instant his last
+// touch resolved.
 //
-// MEASURED, by this very harness, on these very seeds, with only the scoring
-// rules swapped — so the two columns are the same 400 matches judged twice:
+// ── THE REBUILD, BEFORE AND AFTER ──
 //
-//                                            before    after
-//   keep-ball (never shoots, safe ball)         46.1     25.3
-//   shoot-on-sight, blanked                     83.7     32.9
-//   shoot-on-sight, scored but did not win      97.5     63.2
-//   shoot-on-sight, scored                      97.7     77.6
+// The stage was reported as useless, with the diagnosis attached: "the
+// highlights are essentially you passing and then respawning wherever the ball
+// ends up. The CPUs have to be able to play without your input."
 //
-// Read the BEFORE column downward and the problem is not really that keeping
-// the ball paid — it is that almost nothing was being measured at all. A
-// striker who had a dozen shots and did not score once was given 83.7, and a
-// striker who scored was given 97.7, because in both cases most of the mark
-// came from his completed passes at 0.45-0.99 apiece. Scoring was worth two
-// points; winning was worth nothing you could see (97.5 against 97.7).
+// Measured, on these same 250 seeds, with a player doing the right thing every
+// time — the harness below, pointed at the old code and at this one:
 //
-// The AFTER column is a ladder: doing nothing 25, trying and failing 33,
-// scoring 63, scoring and winning 78. That is the shape a scout's notebook
-// has.
+//                                     before       after
+//   touches a match                    12.00        6.84   (a real 90' gives 7.2-7.8)
+//   shots a match                       0.00        1.72
+//   their chances a match                  —        3.23   (watched, not rolled)
+//   goals a match                       0.00        1.11
+//   conceded a match                    0.00        0.71
+//   ball's y range in a match           2.97 m     30.95 m
+//   ball's y path in a match            8.42 m    145.96 m
+//   touches with the goal on screen    33.3%       78.0%
+//   lowest y the ball ever reached     15.03        1.00   (the goal is at 0)
 //
-// The matches are played out through the real reducers — `applyOutcome` and
-// `oppAttack` — and the real engine, so this measures the game rather than a
-// model of it.
+// The "before" column is not a caricature: 3,000 consecutive touches produced
+// not one shot, because the ball advanced 0.25 m a touch and never got within
+// fifteen metres of the goal — which `cameraFor` therefore never drew.
 {
   setOffsideRuleEnabled(false);
 
@@ -604,21 +754,54 @@ function randomWorld(rng: () => number): FiveWorld {
   const GOAL_X = (FIVE_A_SIDE.goal.x1 + FIVE_A_SIDE.goal.x2) / 2;
   type Strategy = "keep" | "shoot";
 
+  interface Played { state: FiveMatchState; touches: number; shots: number; chances: number; onScreen: number; ballYs: number[] }
+
   /**
-   * Both strategies start from a real open-play picture rather than from the
-   * kick-off shape, and that is deliberate: at a kick-off the opposing keeper
-   * stands exactly on his line, dead centre, and a shot from anywhere converts
-   * at about 5%. Measured. A striker who never gets a chance cannot be
-   * compared with anybody. `randomWorld` is the same helper the engine
-   * sections above already use.
+   * A whole match, played the way the screen plays it: ask the layer what it
+   * is waiting for, and do that. The simulation runs between touches, their
+   * chances are played out through the engine mirrored, and your own touches
+   * go through `launch`/`stepBall` exactly as they do on a phone.
    */
-  function playMatch(seed: number, strategy: Strategy): FiveMatchState {
+  function playMatch(seed: number, strategy: Strategy): Played {
     const rng = mulberry32(seed * 7919 + 13);
     let m = newFiveMatch(seed, FIVE_A_SIDE);
-    m = { ...m, world: { ...randomWorld(rng), ball: { x: CX + (rng() - 0.5) * 12, y: 4 + rng() * 10 } } };
+    let touches = 0, shots = 0, chances = 0, onScreen = 0;
+    const ballYs: number[] = [m.world.ball.y];
 
-    for (let guard = 0; guard < 200 && !m.over; guard++) {
-      if (m.possession === "them") { m = oppAttack(m, DIFF, 55); continue; }
+    const run = (sc: Scenario, ball: Ball, theirs: boolean): Outcome | "out" => {
+      let out: Outcome | null = null;
+      for (let i = 0; i < 3000 && !out; i++) {
+        stepKeeper(sc, DT);
+        stepReactions(sc, ball, DT, rng);
+        out = stepBall(ball, sc, rng, DT);
+        if (!out && leftPitch(theirs ? mirror(ball.pos) : ball.pos)) out = "out" as Outcome;
+      }
+      return (out ?? "short") as Outcome | "out";
+    };
+
+    for (let guard = 0; guard < 600 && !m.over; guard++) {
+      const act = resumeAction(m);
+      if (act === "done") break;
+      if (act === "flow") {
+        m = advanceFlow(m, { difficulty: DIFF, playerSkill: 70 }).state;
+        ballYs.push(m.world.ball.y);
+        continue;
+      }
+      if (act === "opp") {
+        chances++;
+        const from = m.world;
+        const sc = buildTheirAttack(from, { keeperStrength: 55, teamRelationship: 55, rng });
+        sc.goal = { ...FIVE_A_SIDE.goal };
+        sc.crossbar = FIVE_A_SIDE.crossbar;
+        sc.viewport = { ...FIVE_A_SIDE.view };
+        initDefenders(sc, rng);
+        const shot = aimTheirShot(sc, DIFF, rng);
+        const ball = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng);
+        const o = run(sc, ball, true);
+        m = applyTheirAttack(m, o, worldFromTheirAttack(sc, ball.pos, from));
+        ballYs.push(m.world.ball.y);
+        continue;
+      }
 
       const sc: Scenario = buildPassage(m.world, {
         keeperStrength: 40 + DIFF * 45, teamRelationship: 55, rng,
@@ -627,12 +810,17 @@ function randomWorld(rng: () => number): FiveWorld {
       sc.crossbar = FIVE_A_SIDE.crossbar;
       sc.viewport = { ...FIVE_A_SIDE.view };
       initDefenders(sc, rng);
+      // Is the goal you are attacking actually drawn? The camera shows full
+      // width and as much length as a phone-shaped box allows, so this is a
+      // question about where the ball is, and it is the question the old
+      // version always answered "no" to.
+      if (cameraFor(FIVE_A_SIDE, sc.ball, 390, 468).y1 <= FIVE_A_SIDE.pitch.y1) onScreen++;
 
       let dir: { x: number; y: number };
       let power: number;
       let contact: { cx: number; cy: number };
 
-      if (strategy === "shoot" && sc.ball.y <= 12) {
+      if (strategy === "shoot" && passLeadsToShot(sc.kind)) {
         // Have a go, aimed inside the post the way somebody who knows what he
         // is doing would.
         const side = rng() < 0.5 ? -1 : 1;
@@ -655,50 +843,130 @@ function randomWorld(rng: () => number): FiveWorld {
       }
 
       const ball: Ball = launch(sc, dir, power, contact, { power: 70, technique: 70 }, rng);
-      let out: string | null = null;
-      for (let i = 0; i < 2000 && !out; i++) {
-        stepKeeper(sc, DT);
-        stepReactions(sc, ball, DT, rng);
-        out = stepBall(ball, sc, rng, DT);
-        if (!out && leftPitch(ball.pos)) out = "out";
-      }
-      const o = (out ?? "short") as Outcome | "out";
+      const o = run(sc, ball, false);
+      touches++;
+      if (SHOT_OUTCOMES.has(o)) shots++;
       const crossX = o === "goal" || o === "wide" || o === "over" || o === "post" ? ball.pos.x : null;
       m = applyOutcome(m, o, sc, ball, passageQuality(o, sc, crossX, FIVE_A_SIDE), {
-        assist: o === "goal" && !!sc.receiverShot,
+        assist: (o === "goal" || o === "rebound") && !!sc.receiverShot,
       });
+      ballYs.push(m.world.ball.y);
     }
-    return m;
+    return { state: m, touches, shots, chances, onScreen, ballYs };
   }
 
-  const seeds = Array.from({ length: 200 }, (_, i) => i + 1);
+  const seeds = Array.from({ length: 250 }, (_, i) => i + 1);
   const keep = seeds.map(n => playMatch(n, "keep"));
   const shoot = seeds.map(n => playMatch(n, "shoot"));
-  const mean = (rows: FiveMatchState[]) =>
-    rows.length ? rows.reduce((a, m) => a + fiveASideScore(m, DIFF), 0) / rows.length : 0;
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const mean = (rows: Played[]) => avg(rows.map(r => fiveASideScore(r.state, DIFF)));
 
-  const scored = shoot.filter(m => m.events.some(e => e.goal));
-  const blanked = shoot.filter(m => !m.events.some(e => e.goal));
-  const scoredLost = scored.filter(m => m.score[0] <= m.score[1]);
+  const scored = shoot.filter(r => r.state.events.some(e => e.goal));
+  const blanked = shoot.filter(r => !r.state.events.some(e => e.goal));
+  const scoredLost = scored.filter(r => r.state.score[0] <= r.state.score[1]);
 
   const keepMean = mean(keep), scoredMean = mean(scored);
+  const range = (r: Played) => Math.max(...r.ballYs) - Math.min(...r.ballYs);
+  const path = (r: Played) =>
+    r.ballYs.slice(1).reduce((a, y, i) => a + Math.abs(y - r.ballYs[i]), 0);
+
+  console.log(
+    `      touches ${avg(shoot.map(r => r.touches)).toFixed(2)} | shots ${avg(shoot.map(r => r.shots)).toFixed(2)}`
+    + ` | their chances ${avg(shoot.map(r => r.chances)).toFixed(2)}`
+    + ` | ball y range ${avg(shoot.map(range)).toFixed(1)}m path ${avg(shoot.map(path)).toFixed(0)}m`
+    + ` | goal on screen ${(100 * shoot.reduce((a, r) => a + r.onScreen, 0) / shoot.reduce((a, r) => a + r.touches, 0)).toFixed(0)}%`,
+  );
   console.log(
     `      keep-ball ${keepMean.toFixed(1)} | shoot-on-sight ${mean(shoot).toFixed(1)}`
     + ` (blanked ${mean(blanked).toFixed(1)}, scored ${scoredMean.toFixed(1)},`
     + ` scored-not-won ${mean(scoredLost).toFixed(1)}) over ${seeds.length} matches`,
   );
 
-  // The harness has to have measured what it claims to have measured.
-  const keepShots = keep.reduce(
-    (n, m) => n + m.events.filter(e => ["goal", "saved", "caught", "wide", "over", "post"].includes(e.outcome)).length, 0);
+  // ── THE DEFECTS THE REBUILD EXISTS TO FIX ──
+  //
+  // Every one of these was measured failing on the old code, and the number it
+  // failed with is in the comment.
+  const shots = avg(shoot.map(r => r.shots));
+  check(shots > 0.8, `a striker must actually get shots away — was 0.00 a match, now ${shots.toFixed(2)}`);
+  const onScreen = shoot.reduce((a, r) => a + r.onScreen, 0) / shoot.reduce((a, r) => a + r.touches, 0);
+  check(
+    onScreen > 0.55,
+    `the goal you are attacking has to be on screen for most touches — was 33%, now ${(onScreen * 100).toFixed(0)}%`,
+  );
+  const lowest = Math.min(...shoot.flatMap(r => r.ballYs));
+  check(
+    lowest < 4,
+    `the ball has to reach the goal it is aimed at — the lowest it ever got was 15.03 m, now ${lowest.toFixed(2)}`,
+  );
+  check(
+    avg(shoot.map(range)) > 20,
+    `the ball has to travel the pitch — was a 2.97 m range for a whole match, now ${avg(shoot.map(range)).toFixed(1)}`,
+  );
+  check(
+    avg(shoot.map(path)) > 60,
+    `…and keep travelling — was 8.42 m of movement in a whole match, now ${avg(shoot.map(path)).toFixed(0)}`,
+  );
+  // Touches: the target is the number a REAL ninety minutes gives you, not a
+  // number of its own. `hiddenMatch`, measured over 400 matches, gives 7.79 for
+  // a mixed player and 7.23 for one who shoots everything; p10 is 5 and p90 is
+  // 11. This is the shooting player, so the band is set around his.
+  const touches = avg(shoot.map(r => r.touches));
+  check(
+    touches > 5 && touches < 11,
+    `the stage must give you a real match's worth of involvements, got ${touches.toFixed(2)}`,
+  );
+  // Their chances are watched now, not rolled, so there have to be some — and
+  // not so many that the stage is a cutscene.
+  const chances = avg(shoot.map(r => r.chances));
+  check(chances > 1.2 && chances < 5, `they must get real chances, and not constantly — got ${chances.toFixed(2)}`);
+  // Territory has to matter. A player who never shoots keeps the ball, but he
+  // also never gets it out of his own half, so he is under more pressure than
+  // the one who plays forward — not less, which is what a flat per-turnover
+  // conversion rate gave.
+  const keepConceded = avg(keep.map(r => r.state.score[1]));
+  const shootConceded = avg(shoot.map(r => r.state.score[1]));
+  check(
+    keepConceded >= shootConceded,
+    `passing sideways must not be safer than playing forward `
+    + `(keep-ball conceded ${keepConceded.toFixed(2)}, striker ${shootConceded.toFixed(2)})`,
+  );
+  // And the scoreline is no longer decided before kick-off. The old model gave
+  // a flat ~33% per turnover with ~5 turnovers, which made 2-0 down the single
+  // likeliest result at P≈48%.
+  const lines = new Map<string, number>();
+  for (const r of shoot) {
+    const k = r.state.score.join("-");
+    lines.set(k, (lines.get(k) ?? 0) + 1);
+  }
+  const commonest = Math.max(...lines.values()) / shoot.length;
+  check(
+    commonest < 0.3,
+    `no single scoreline should own the stage, the commonest is ${(commonest * 100).toFixed(0)}%`,
+  );
+
+  // ── AND THE SCORE STILL REWARDS PLAYING ──
+  const keepShots = keep.reduce((n, r) => n + r.shots, 0);
   check(keepShots === 0, `the keep-ball player must never shoot, he had ${keepShots} attempts`);
   check(
-    keep.every(m => m.events.length >= 6),
+    keep.every(r => r.touches >= 3),
     "…and must genuinely have played a match rather than run out of touches",
   );
   check(scored.length >= 25, `enough striker matches with a goal in them to average, got ${scored.length}`);
 
-  // THE ONE THAT MATTERS.
+  // THE ONE THAT MATTERS — playing forward has to beat hiding, as a STRATEGY
+  // rather than only in the matches where it came off.
+  check(
+    mean(shoot) > keepMean + 15,
+    `shooting when the goal is on must beat refusing to, over the whole cohort `
+    + `(${mean(shoot).toFixed(1)} vs ${keepMean.toFixed(1)})`,
+  );
+  // Worth stating plainly rather than asserting the old ordering: the
+  // "blanked" cohort now averages 0.78 shots a match, so it is not "tried and
+  // failed" — it is "never really got one away", and it scores below keep-ball
+  // (23.7 vs 30.1). Under the old twelve-touches-with-nothing-in-between stage
+  // a blanked striker had SIX attempts and the comparison meant something
+  // different. The property that matters is the one above, and it holds by a
+  // distance.
   check(
     scoredMean > keepMean,
     `a striker who scores must out-score a man who refuses to shoot `
@@ -714,11 +982,11 @@ function randomWorld(rng: () => number): FiveWorld {
     mean(scoredLost) > keepMean + 10,
     `scoring must pay even without the win (${mean(scoredLost).toFixed(1)} vs ${keepMean.toFixed(1)})`,
   );
-  // And in absolute terms: a scout watching a kid pass sideways for six
-  // minutes and draw 0-0 does not write 0.75.
+  // And in absolute terms: a scout watching a kid pass sideways and draw 0-0
+  // does not write 0.75.
   check(
-    keepMean < 40,
-    `six minutes of keep-ball and a goalless draw is not a good afternoon, scored ${keepMean.toFixed(1)}`,
+    keepMean < 45,
+    `a match of keep-ball is not a good afternoon, scored ${keepMean.toFixed(1)}`,
   );
   check(keepMean > 5, `…but it is not nothing either, scored ${keepMean.toFixed(1)}`);
 

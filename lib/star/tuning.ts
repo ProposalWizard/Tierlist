@@ -386,9 +386,9 @@ export const TUNABLES: TunableDef[] = [
 
   // ── Sponsorships ─────────────────────────────────────────────────────
   {
-    key: "sponsors.feeScale", category: "Sponsorships", label: "Fee & bonus — real-money scale",
-    description: "Rescaled 14 Sep 2026: SPONSOR_REQUIREMENTS' baseFee (sponsors.ts) and every objective difficulty/bonus formula are deliberately still small numbers (6-34) — that's what objectiveDifficultyPerFee scales against, and rescaling baseFee itself would have blown up every objective's difficulty. This one multiplier is applied only at the very end, to the final money a signing fee/season fee/objective bonus actually pays out, same ×2000 personal-money multiplier as the shop catalogue and starting wage.",
-    default: 2000, min: 1, max: 100000, step: 100,
+    key: "sponsors.feeWageWeeksPerUnit", category: "Sponsorships", label: "Fee & bonus — weeks of YOUR wage per point",
+    description: "SPONSOR_REQUIREMENTS' baseFee (sponsors.ts) and every objective difficulty/bonus formula are deliberately still small numbers (6-34) — that's what objectiveDifficultyPerFee scales against, and inflating baseFee itself would blow up every objective's difficulty alongside its pay. This converts those points into real money once, at the very end, as weeks of the player's OWN weekly wage: at 0.05 a raw 10 pays half a week and a raw 60 pays three. Replaces the flat ×2000 of 14 Sep 2026, which paid 17-100 weeks of Premier League income PER DEAL PER SEASON and made sponsorship worth more than football. Renamed rather than re-defaulted so a stale ×2000 override saved in somebody's browser is ignored rather than applied to a wage.",
+    default: 0.05, min: 0.001, max: 2, step: 0.005,
   },
   {
     key: "sponsors.fameDivisor", category: "Sponsorships", label: "Fee — fame ÷ this, added to base",

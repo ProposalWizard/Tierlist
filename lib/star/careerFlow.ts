@@ -43,7 +43,7 @@ import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
-import { signingOnFee, typicalWeeklyWage } from "./economy";
+import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
@@ -97,6 +97,30 @@ function rollInjury(rng: () => number): { weeksRemaining: number; note: string }
 }
 
 /**
+ * HOW MANY MATCHES THE FREE PAIR IS GOOD FOR — its own number, not the
+ * catalogue's.
+ *
+ * It used to be neither: a career opened with a literal copy of the
+ * cheapest catalogue entry, and that entry happened to say 3 matches, so
+ * the boots you are handed on day one wore out after three games without
+ * anybody having decided that they should.
+ *
+ * Boot durability is now derived from price (economy.ts's
+ * `bootMatchesFor`), and the cheapest boot in the game is deliberately the
+ * longest-lasting — around seventy matches, because a non-league player
+ * saving twenty weeks of income for boots cannot also be replacing them
+ * every three games. Copying the catalogue entry wholesale would therefore
+ * have handed every new career the better part of two free seasons of
+ * boots, which quietly removes the first thing the opening of the game is
+ * supposed to be about earning.
+ *
+ * So the free pair keeps the three matches it has always had, stated here
+ * rather than inherited by accident. They are a battered pair somebody
+ * found for you, not a purchase.
+ */
+export const STARTER_BOOT_MATCHES = 3;
+
+/**
  * WHO YOU ARE, BEFORE ANYBODY HAS SIGNED YOU.
  *
  * `makeInitialCareer` used to do two unrelated jobs in one breath: invent a
@@ -124,7 +148,7 @@ function rollInjury(rng: () => number): { weeksRemaining: number; note: string }
  * way is untouched and behaves identically.
  */
 export function makeIdentity(player: StarPlayer, division: CareerDivision = "premier"): CareerState {
-  const starterBoot: Boot = { ...BOOTS_CATALOGUE[0] };
+  const starterBoot: Boot = { ...BOOTS_CATALOGUE[0], matches: STARTER_BOOT_MATCHES };
   const state: CareerState = {
     version: 2,
     player,
@@ -291,10 +315,14 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
  * middling top-flight club is worth, with the bonuses on the same 10%/7% of
  * a week they have always been.
  */
+const STARTER_WAGE = Math.round(typicalWeeklyWage("premier"));
 export const STARTER_CONTRACT = {
-  wage: Math.round(typicalWeeklyWage("premier")),
-  goalBonus: Math.round(typicalWeeklyWage("premier") * 0.10),
-  assistBonus: Math.round(typicalWeeklyWage("premier") * 0.07),
+  wage: STARTER_WAGE,
+  // Off the shared helpers (economy.ts) rather than re-typing 0.10/0.07 —
+  // and off the ROUNDED wage, so the bonuses are the same ones anything
+  // else deriving them from this contract's own wage would arrive at.
+  goalBonus: goalBonusFor(STARTER_WAGE),
+  assistBonus: assistBonusFor(STARTER_WAGE),
   seasonsRemaining: 3,
 };
 
