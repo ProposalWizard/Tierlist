@@ -468,25 +468,40 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
 
   return (
     <div className="w-full">
-      <div className="mb-1.5 flex items-baseline justify-between">
+      <div className="mb-1 flex items-baseline justify-between">
         <span className="text-[11px] font-black uppercase tracking-widest text-white/80">Find the pass</span>
         <span className="text-[11px] font-black tabular-nums text-white/60">
           {Math.min(rep + 1, REPS.vision)} / {REPS.vision}
         </span>
       </div>
-      <div className="mb-1.5 text-[11px] font-bold text-white/55">
+      <div className="mb-1 text-[11px] font-bold text-white/55">
         {setup.options} options · {setup.window.toFixed(1)}s
       </div>
 
       {/* ── A phone-shaped box, not a picture-shaped one ──
           3:4 with no height cap put you, and the ball at your feet, off the
           bottom of an iPhone 13 — on the one stage that is entirely about
-          reading the whole picture. The box is now capped against the
-          viewport and `cameraContaining` shows all of MUST_SEE inside
-          whatever shape that leaves, so the cap never crops the question. */}
+          reading the whole picture. The box is capped against the viewport
+          and `cameraContaining` shows all of MUST_SEE inside whatever shape
+          that leaves, so the cap never crops the question.
+
+          ── Cap raised alongside the striking stages' ──
+          52vh was measured against the same oversized header (see the note
+          in TrialPenalties.tsx's own wrapper) this screen used to carry —
+          title row, subtitle row, the old two-line progress block, the
+          uncompacted dev-panel button. Once those were trimmed the same way,
+          this screen's own header-to-canvas and canvas-to-bottom footprint
+          measured byte-for-byte the same as the striking stages' (both build
+          the identical title/rep/subtitle rows and the identical pip-row
+          footer, and both sit under the same sticky global nav, whose
+          102 px is real, permanent budget lost — see TrialPenalties.tsx's
+          own note), so the height budget is the same 438 px ceiling and the
+          same 64vh applies here too — `max-h` caps a PIXEL height, so the box's own aspect ratio
+          (4:5 here, 5:8 there) has no bearing on what a given vh number
+          means; only the chrome around the box does. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto aspect-[4/5] max-h-[52vh] w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto aspect-[4/5] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15"
       >
         <canvas
           ref={canvasRef}
@@ -555,7 +570,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
         )}
       </div>
 
-      <div className="mt-2 flex items-center gap-1">
+      <div className="mt-1 flex items-center gap-1">
         {Array.from({ length: REPS.vision }, (_, i) => {
           const q = scoresRef.current[i];
           return (

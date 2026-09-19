@@ -40,10 +40,18 @@ export default function DevTrialPanel({
   const [level, setLevel] = useState<TrialSimLevel>("average");
 
   if (!open) {
+    // ── As small as a real control can get ──
+    //
+    // This sits directly above the live canvas on every one of these screens
+    // and is dev-only — no real player ever needs it — so its resting line is
+    // trimmed to the smallest tap target that is still comfortably tappable
+    // (py-1, not py-1.5) with a tighter margin under it, rather than the
+    // fuller padding a screen without a canvas fighting it for room could
+    // afford.
     return (
       <button
         onClick={() => setOpen(true)}
-        className="mb-2 w-full rounded-lg border border-sky-500/50 bg-sky-500/10 py-1.5 text-[10px] font-black uppercase tracking-widest text-sky-200 transition hover:bg-sky-500/20"
+        className="mb-1.5 w-full rounded-lg border border-sky-500/50 bg-sky-500/10 py-1 text-[10px] font-black uppercase tracking-widest text-sky-200 transition hover:bg-sky-500/20"
       >
         🛠 Dev: Skip / Sim Trial
       </button>

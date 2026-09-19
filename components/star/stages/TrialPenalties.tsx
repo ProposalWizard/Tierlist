@@ -393,6 +393,27 @@ export interface StrikeStageProps {
    */
   onStrike?: (sc: Scenario, rep: number) => void;
   onDone: (quality: number) => void;
+  /**
+   * ── FOR A DRILL WHERE THE BALL MOVES DOWN THE SCREEN ──
+   *
+   * Measured directly, on `freeKicks`: `TEACH_PERSISTS` is `false`, so this
+   * card only ever shows on rep 0 — but rep 0's own distance still ranges
+   * 16-33 m depending on the day's difficulty, and the FULL card (headline
+   * plus its two lines) is tall enough to sit on top of the ball at every
+   * distance in that range, not just the hard end. A screenshot at the
+   * EASIEST free kick (16 m) showed the ball's own circle drawn through the
+   * middle of the "IT COUNTS" badge — this is not an edge case, it is the
+   * ordinary first free kick of an ordinary trial.
+   *
+   * Penalties never needs this: the spot is fixed close to goal, and its own
+   * screenshot at rep 0 clears the card by a comfortable margin every time.
+   * So this is a prop, not a hardcoded change to `TeachCard` itself — only
+   * the drill that actually moves the ball down the frame forces its one
+   * rep-0 card into the compact, one-row form the OLD (now-unreachable,
+   * `TEACH_PERSISTS`-only) later-rep logic already built for exactly this
+   * shape of problem.
+   */
+  forceCompactTeach?: boolean;
 }
 
 /**
@@ -691,6 +712,7 @@ export const TEACH_PERSISTS = false;
 
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, onStrike, onDone,
+  forceCompactTeach = false,
 }: StrikeStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -1042,14 +1064,14 @@ export function StrikeStage({
 
   return (
     <div className="w-full">
-      <div className="mb-1.5 flex items-baseline justify-between">
+      <div className="mb-1 flex items-baseline justify-between">
         <span className="text-[11px] font-black uppercase tracking-widest text-white/80">{title}</span>
         <span className="text-[11px] font-black tabular-nums text-white/60">
           {Math.min(rep + 1, reps)} / {reps}
         </span>
       </div>
       {subtitle && (
-        <div className="mb-1.5 text-[11px] font-bold text-white/55">{subtitle(rep)}</div>
+        <div className="mb-1 text-[11px] font-bold text-white/55">{subtitle(rep)}</div>
       )}
 
       {/* ── A phone-shaped box, not a frame-shaped one ──
@@ -1069,13 +1091,39 @@ export function StrikeStage({
           different (both draw at 13.56 px/m and the goal is 99 px wide on
           both); what differed is how much pitch got screen, 25 m against
           42 m.
-          So: the declared shape is now the match's own 5:8, and the cap is
-          62vh — the same cap the five-a-side next door already uses, which
-          is the precedent for how much of one of these screens a phone can
-          actually give. On an iPhone 13 that is 412 px rather than 345. */}
+          So: the declared shape is now the match's own 5:8, and the cap was
+          62vh — the same cap the five-a-side next door uses, which was the
+          precedent for how much of one of these screens a phone can give.
+
+          ── Raised again once the chrome above it was trimmed ──
+          62vh (412 px) was measured against the header this screen used to
+          carry: a "Trial day / Stage N of 5" line the pip bar already said,
+          16 px of top padding a canvas-first screen didn't need, and a dev
+          panel sized for a screen that wasn't fighting a canvas for room.
+          Trimmed, the same header costs about half what it did — see
+          TrialSequence.tsx's `progress` and DevTrialPanel.tsx's collapsed
+          button.
+
+          The real ceiling is NOT "how much header did we save" — it is the
+          STICKY global nav (GlobalNav.tsx, not this file's to touch), which
+          occupies the first 102 px of every screen permanently, scrolled or
+          not. Re-measured on a real iPhone 13 (664 px viewport) after the
+          trim above: 664 − 102 (nav) − 106 (this screen's own header down to
+          the box) − 18 (the score-pip row and the container's bottom
+          padding below the box, trimmed alongside this) = 438 px is the
+          hard ceiling for the box itself to still leave the pip row on
+          screen too. 64vh is 425 px — a real ~13 px of slack, not a number
+          pinned to the exact edge — up from the original 412 px. An earlier
+          pass here read the nav's own height out of the sum by mistake and
+          shipped 76vh (505 px), which drove the canvas 46 px past the
+          bottom of the viewport; caught by re-measuring in a real browser
+          rather than trusting the arithmetic, which is the whole reason this
+          file insists on measuring rather than assuming. Re-measure the
+          header/footer figures above before raising this further; either
+          one growing again eats straight into the 13 px that is left. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto aspect-[5/8] max-h-[62vh] w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15"
       >
         <canvas
           ref={canvasRef}
@@ -1110,7 +1158,7 @@ export function StrikeStage({
                 headline={teach.headline}
                 lines={teach.lines}
                 short={teach.short}
-                compact={rep >= TEACH_COMPACT_AFTER_REP}
+                compact={forceCompactTeach || rep >= TEACH_COMPACT_AFTER_REP}
                 onDismiss={dismissTeach}
               />
             )
@@ -1153,7 +1201,7 @@ export function StrikeStage({
       {/* What each attempt was worth, as a row of pips — the mean of these is
           the stage's whole score, so seeing them fill up is seeing the score
           being built rather than a number arriving from nowhere at the end. */}
-      <div className="mt-2 flex items-center gap-1">
+      <div className="mt-1 flex items-center gap-1">
         {Array.from({ length: reps }, (_, i) => {
           const q = scoresRef.current[i];
           return (

@@ -173,6 +173,12 @@ export default function TrialFreeKicks({
         const men = Math.max(1, Math.round(s.wall));
         return `${Math.round(s.distance)} m out · ${men} in the wall`;
       }}
+      // See the doc on `forceCompactTeach` in TrialPenalties.tsx: this is the
+      // one drill where the ball's own screen position moves enough, rep to
+      // rep and day to day, that the full teach card can sit on top of it —
+      // measured at the EASIEST free kick this ladder offers, not just the
+      // reload-escalated worst case.
+      forceCompactTeach
       onDone={onDone}
     />
   );

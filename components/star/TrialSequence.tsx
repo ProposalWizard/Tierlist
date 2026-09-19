@@ -206,9 +206,21 @@ export default function TrialSequence({
   );
 
   const done = TRIAL_STAGES.filter(s => trial.results[s]);
+  // ── ONE row, not two ──
+  //
+  // This used to be the pip strip plus a whole second line underneath it
+  // ("Trial day" / "Stage N of 5") — 37 px of chrome saying, in words, almost
+  // exactly what the five coloured pips already say in colour: how far
+  // through the trial this is. Measured on an iPhone 13 alongside every other
+  // header row eating into the one thing this screen is actually for (the
+  // pitch): with the pips already carrying the shape of "stage N of 5" (done
+  // = green, current = white, left = grey), the ordinal only needed a few
+  // characters, not a whole row. It now rides the same line as the pips
+  // rather than under them, and "Trial day" — branding, not information —
+  // is gone outright.
   const progress = (
-    <div className="mb-3">
-      <div className="flex items-center gap-1">
+    <div className="mb-2 flex items-center gap-2">
+      <div className="flex flex-1 items-center gap-1">
         {TRIAL_STAGES.map(s => {
           const r = trial.results[s];
           const current = s === stage;
@@ -222,19 +234,9 @@ export default function TrialSequence({
           );
         })}
       </div>
-      {/* ── Says where you are in the TRIAL, not which stage this is ──
-          Every stage screen already prints its own name and its own rep count,
-          so repeating them here produced two near-identical headers stacked on
-          top of each other — "PENALTIES 0/5" directly above "PENALTIES 1/5",
-          the first counting stages and the second counting kicks. Spotted in a
-          screenshot; the text-only playtest read both lines and never noticed
-          they were the same shape. */}
-      <div className="mt-1 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/45">
-        <span>Trial day</span>
-        <span>
-          {stage ? `Stage ${done.length + 1} of ${TRIAL_STAGES.length}` : "Complete"}
-        </span>
-      </div>
+      <span className="shrink-0 text-[10px] font-black tabular-nums uppercase tracking-widest text-white/45">
+        {stage ? `${done.length + 1}/${TRIAL_STAGES.length}` : "Done"}
+      </span>
     </div>
   );
 
@@ -296,7 +298,7 @@ export default function TrialSequence({
   // ── Taking a man on — the existing first-person run, unmodified ────────
   if (stage === "dribbling") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -328,7 +330,7 @@ export default function TrialSequence({
             page rather than against the stage. The wrapper is the same shape
             the penalty and free-kick stages use, so all three stages are now
             the same size box. */}
-        <div className="relative mx-auto aspect-[5/8] max-h-[62vh] w-full overflow-hidden rounded-xl border border-white/15">
+        <div className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15">
           <FirstPersonDribble
             embedded
             seed={attemptSeed(trial)}
@@ -359,7 +361,7 @@ export default function TrialSequence({
   // ── The five-a-side ────────────────────────────────────────────────────
   if (stage === "fiveASide") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -396,7 +398,7 @@ export default function TrialSequence({
   // already had to have measured out of it).
   if (stage === "penalties") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -407,7 +409,7 @@ export default function TrialSequence({
 
   if (stage === "freeKicks") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
@@ -418,7 +420,7 @@ export default function TrialSequence({
 
   if (stage === "vision") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-4 text-white">
+      <div className="mx-auto w-full max-w-md px-4 pt-2 pb-2 text-white">
         {progress}
         {devPanel}
         {eventBanner}
