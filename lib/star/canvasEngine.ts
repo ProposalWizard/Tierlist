@@ -4699,6 +4699,19 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
       ball.lastTouch = "attack";
       markLanding(ball, scenario);
       f.shot = true;
+      // Reported directly, a real bug: a shot saved into a loose rebound,
+      // then turned in by this team-mate, was still being scored as YOUR
+      // goal — `ball.youStruckAtGoal` is set once, at your own original
+      // strike, and nothing ever cleared it once somebody else took over
+      // the ball. It is genuinely no longer your shot the moment he strikes
+      // it, so the flag is cleared here, and `scenario.receiverShot` is set
+      // the same way it already is for an ordinary pass-and-shoot — reusing
+      // creditChance's existing "you found a man and he had the shot"
+      // credit path, which is exactly right for this: an assist for you if
+      // it goes in, not a goal.
+      ball.youStruckAtGoal = false;
+      scenario.receiverShot = true;
+      scenario.receiverShots = (scenario.receiverShots ?? 0) + 1;
       // Deliberately does NOT tell the keeper where this is going. He keeps
       // patrolling; whether he is in the way is settled when the ball arrives.
     }
