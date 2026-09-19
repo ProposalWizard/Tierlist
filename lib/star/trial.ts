@@ -39,20 +39,10 @@ import { mulberry32 } from "./season";
  *    get a better start, that means the game is pretty cool."
  *
  * So there is no lockout and no "you have already had your go". You come back
- * to exactly where you were. But `reloads` counts, and every resume past the
- * first quietly makes the rest of the trial harder — never announced, never
- * explained, capped so somebody who genuinely lost signal twice pays almost
- * nothing. See `difficultyFor`.
- *
- * **That anti-cheat used to run backwards, and this is the fix.** The reload
- * bump went into `difficultyFor`, and `stageScore` multiplied every stage by
- * its difficulty — so each resume raised the multiplier on every stage still
- * to come. Measured on seed 0: perfect play with ten resumes scored 81, the
- * same perfect play with none scored 73. Farming the app was worth +8. The
- * bump now goes only where it belongs — into what the stage ASKS, which the
- * drills read — and is kept out of the score entirely (`scoringDifficultyFor`).
- * What a resume costs instead is a straight haircut on the quality recorded
- * (`reloadQualityHaircut`), so it can only ever subtract.
+ * to exactly where you were. Two resumes are genuinely free. From the third
+ * on, the football gets sharply harder and the SCORE IS LEFT ALONE — "don't
+ * give their score a penalty, just kind of troll them" — see `RELOAD_GRACE`
+ * for the full account of that reversal and what it replaced.
  *
  * ── A resume is only a resume if it interrupted something ──
  *
@@ -81,32 +71,258 @@ export const STAGE_LABEL: Record<TrialStage, string> = {
 };
 
 /**
- * The one adversity event v1 ships, and why it is one rather than six.
+ * THE RARE THINGS THAT GO AGAINST YOU (and two that just watch).
  *
- * An earlier draft listed six — a heavy pitch, a hostile crowd, playing out
- * of position, and so on. Checked against the code, two of them had no
- * plumbing at all: nothing in the trial or the drills passes conditions to
- * any engine call, so "heavy pitch" is new plumbing in two components before
- * it is a feature. "The keeper is better than he should be" is a single
- * existing field (`keeperStrength`, already the dial every striking drill
- * turns), so it is real today. More can follow once the trial has shipped.
+ * v1 shipped exactly one — a sharper keeper — and its note explained why:
+ * five others had been drafted and cut because nothing in the trial or the
+ * drills passed conditions to any engine call, so a "heavy pitch" was new
+ * plumbing in two components before it was a feature.
+ *
+ * That instinct was right and it still applies. Every event below is here
+ * because a REAL dial already exists for it and `trialStages.ts` already
+ * turns that dial — the keeper's strength, how much of his guess he shows,
+ * how many men are in the wall, how far out the ball is, how quick the
+ * defenders are, how many of them there are, how long you get to look and
+ * how much clearer the right pass is than the wrong one. Nothing here is a
+ * caption pretending to be a mechanic.
+ *
+ * Two of them ARE captions, and say so: `flavour: true`, weight exactly 0.
+ * A notable figure standing on the touchline is worth having precisely
+ * because it changes no football at all — but it must never be confused with
+ * the ones that do, because the ones that do are what makes a good score
+ * worth more (see `adversityWeightFor`).
+ *
+ * ── Rejected, and why ──
+ *
+ *  - **Weather (rain, a heavy pitch).** Ruled out directly by the owners for
+ *    now, and the code agrees: nothing in `canvasEngine.ts` reads a surface
+ *    or a wind, so it would be a label over unchanged physics.
+ *  - **"The wall jumps higher."** Asked for by name, and there is genuinely
+ *    no hook: `stepDefenders` sets every jumping man to the module constant
+ *    `WALL_JUMP_VZ`, with no per-defender override to write to, and the
+ *    engine is not this lane's to edit. `big-wall` is the honest version of
+ *    the same feeling — more bodies in the way — using a dial that is real.
+ *  - **A hostile crowd / playing out of position.** Same as v1: no
+ *    plumbing, and inventing some is a feature, not an adversity event.
  */
-export type TrialAdversity = "sharp-keeper" | null;
+export type TrialAdversityId =
+  // ── Striking ──
+  | "sharp-keeper"
+  | "cold-keeper"
+  | "big-wall"
+  | "long-range"
+  // ── Running at men ──
+  | "quick-feet"
+  | "extra-man"
+  // ── Looking up ──
+  | "snap-decision"
+  | "crowded-picture"
+  | "tight-margins"
+  // ── Flavour: no football changes hands ──
+  | "legend-watching"
+  | "packed-touchline";
 
-/** How much a sharp keeper is worth, in the same 0-100 units every drill's
- *  own ladder already speaks. */
+/** Kept as the stored shape it has always been — a string or null — so a
+ *  career saved when "sharp-keeper" was the only value reads back unchanged. */
+export type TrialAdversity = TrialAdversityId | null;
+
+export interface TrialAdversityEvent {
+  id: TrialAdversityId;
+  /** Shown on the result card and the scouts' summary. */
+  label: string;
+  /** One line, in the trial's own voice. */
+  blurb: string;
+  /** The stages it can land on. A flavour event lists every stage — which one
+   *  it draws makes no difference, but keeping the field uniform means
+   *  nothing downstream has to special-case it. */
+  stages: TrialStage[];
+  /**
+   * 0-1, HOW MUCH HARDER the stage it lands on genuinely is, in the same
+   * units `baseDifficulty` speaks.
+   *
+   * This is the one number that reaches the score, and it is exactly 0 for a
+   * flavour event by definition: something that changed no football cannot
+   * make the afternoon worth more. See `adversityWeightFor`.
+   */
+  weight: number;
+  /** True for the two that are a caption and nothing else. */
+  flavour: boolean;
+}
+
+/**
+ * How much a sharp keeper is worth, in the same 0-100 units every drill's
+ * own ladder already speaks. Kept as its own exported constant because
+ * `trialStages.ts` adds it to a keeper's strength directly, and it is the
+ * only event whose effect is a number rather than a reshaped setup.
+ */
 export const SHARP_KEEPER_BONUS = 15;
+
+const KEEPER_STAGES: TrialStage[] = ["penalties", "freeKicks", "fiveASide"];
+
+/**
+ * The catalogue. Order is meaningless; the roll is uniform over it.
+ *
+ * The weights are not vibes — each one is roughly the fraction of that
+ * stage's OWN ladder the effect moves you up. A sharp keeper is +15 on a
+ * 45-99 strength range, which is about a third of it, so 0.30. A fifth man
+ * in a 2-5 wall is about a third of that range, so 0.22 once you allow that
+ * the extra man is partly shootable-round. Being exact here is not possible
+ * and not the point: what matters is that a genuinely harder afternoon is
+ * worth more than an easy one, and that a caption is worth nothing.
+ */
+export const TRIAL_ADVERSITY: TrialAdversityEvent[] = [
+  {
+    id: "sharp-keeper",
+    label: "Keeper's on fire",
+    blurb: "Their keeper has turned up in the mood of his life. He is saving things he has no business saving.",
+    stages: KEEPER_STAGES,
+    weight: 0.30,
+    flavour: false,
+  },
+  {
+    id: "cold-keeper",
+    label: "Gives nothing away",
+    blurb: "This one does not flinch. He waits, he watches, and he tells you absolutely nothing before you strike it.",
+    stages: ["penalties"],
+    // Measured against the sharp keeper on the real engine rather than
+    // eyeballed: across a whole stage the two cost a taker almost the same
+    // (−6.0 points of conversion against −6.4), even though they get there
+    // very differently — this one takes the first two kicks apart and is
+    // worth nothing by the third, because by then the ramp has already taken
+    // the tell away. See `COLD_KEEPER_TELL`.
+    weight: 0.28,
+    flavour: false,
+  },
+  {
+    id: "big-wall",
+    label: "One more in the wall",
+    blurb: "They have put an extra body in front of you. Round it or over it — there is no through it.",
+    stages: ["freeKicks"],
+    weight: 0.22,
+    flavour: false,
+  },
+  {
+    id: "long-range",
+    label: "Pushed further out",
+    blurb: "The coach keeps waving the ball back. Every one of these is from further than you would pick.",
+    stages: ["freeKicks"],
+    weight: 0.25,
+    flavour: false,
+  },
+  {
+    id: "quick-feet",
+    label: "They're rapid",
+    blurb: "Whoever these lads are, they are quick. You are not going to stroll past anybody today.",
+    stages: ["dribbling"],
+    weight: 0.25,
+    flavour: false,
+  },
+  {
+    id: "extra-man",
+    label: "An extra body",
+    blurb: "Somebody has been thrown into the last wave. One more to beat than the man before you had.",
+    stages: ["dribbling"],
+    weight: 0.20,
+    flavour: false,
+  },
+  {
+    id: "snap-decision",
+    label: "No time on it",
+    blurb: "They are closing you down the instant you look up. Whatever you see, you see it fast.",
+    stages: ["vision"],
+    weight: 0.28,
+    flavour: false,
+  },
+  {
+    id: "crowded-picture",
+    label: "Busy in there",
+    blurb: "More bodies than the picture wants. Finding the right one means discounting the wrong ones first.",
+    stages: ["vision"],
+    weight: 0.20,
+    flavour: false,
+  },
+  {
+    id: "tight-margins",
+    label: "Nothing in it",
+    blurb: "Nobody is properly free. The best ball today is barely better than the second best.",
+    stages: ["vision"],
+    weight: 0.25,
+    flavour: false,
+  },
+  {
+    id: "legend-watching",
+    label: "Somebody's watching",
+    blurb: "A face you have seen lift trophies is standing by the dugout with his arms folded. Nobody says why.",
+    stages: TRIAL_STAGES,
+    weight: 0,
+    flavour: true,
+  },
+  {
+    id: "packed-touchline",
+    label: "Three deep on the touchline",
+    blurb: "Word got round. There are more people watching a trial than watched your last four games put together.",
+    stages: TRIAL_STAGES,
+    weight: 0,
+    flavour: true,
+  },
+];
+
+/**
+ * How often ANY of them fires.
+ *
+ * 0.42 rather than v1's 0.34 on purpose: two of the eleven are pure flavour,
+ * so 0.42 × 9/11 leaves the rate of a genuinely harder afternoon at almost
+ * exactly the 34 % it has always been, and puts the two flavour events on
+ * top of it rather than taking a slice out of it.
+ */
+export const ADVERSITY_CHANCE = 0.42;
+
+/** The event a trial actually drew, or null. Unknown ids — a save from a
+ *  build that named an event this one does not — read as null rather than
+ *  crashing, which is the same "a stage that did nothing reads as nothing"
+ *  rule `clamp01` follows. */
+export function adversityFor(trial: Pick<TrialProgress, "adversity">): TrialAdversityEvent | null {
+  if (!trial.adversity) return null;
+  return TRIAL_ADVERSITY.find(e => e.id === trial.adversity) ?? null;
+}
+
+/** The event, but only when asking about the stage it actually landed on. */
+export function adversityOn(
+  trial: Pick<TrialProgress, "adversity" | "adversityStage">, stage: TrialStage,
+): TrialAdversityEvent | null {
+  if (trial.adversityStage !== stage) return null;
+  return adversityFor(trial);
+}
+
+/**
+ * What the adversity adds to how hard this stage genuinely was.
+ *
+ * **This is the half of the design the owners were explicit about**: "if you
+ * performed better in a harder trial… they're worth more." v1 could not
+ * actually deliver that — a sharp keeper made the stage harder and was worth
+ * precisely nothing, because it reached `keeperStrength` and never reached
+ * any difficulty figure at all. So the same performance against a better
+ * keeper scored LESS, which is the opposite of the stated rule.
+ *
+ * It is deliberately kept OUT of `difficultyFor`, which is the drills' own
+ * dial: the event already applies its own effect there (a bigger wall, a
+ * shorter window), and adding its weight on top would apply it twice.
+ */
+export function adversityWeightFor(
+  trial: Pick<TrialProgress, "adversity" | "adversityStage">, stage: TrialStage,
+): number {
+  return adversityOn(trial, stage)?.weight ?? 0;
+}
 
 export interface TrialStageResult {
   /**
-   * 0-1, how well you actually did — after `reloadQualityHaircut` and before
-   * anything to do with difficulty.
+   * 0-1, how well you actually did, and nothing else.
    *
-   * The haircut is folded in here rather than applied to the score on its own
-   * so that the three stored numbers still explain each other: `score` is
-   * exactly `stageScore(quality, difficulty-without-the-reload-bump)`. A
-   * result that could not be recomputed from its own fields is a result
-   * nobody can check.
+   * Genuinely nothing else, as of the reload reversal: no haircut, no hidden
+   * multiplier, no adjustment for how the trial was reached. Whatever the
+   * stage's own reps averaged out at is what is written here, which is what
+   * makes `score` recomputable from the trial's own fields — a result nobody
+   * can check is a result nobody should trust.
    */
   quality: number;
   /**
@@ -138,8 +354,9 @@ export interface TrialProgress {
   /**
    * How many resumes were CHARGED for. See the note above and
    * `resumeInterrupted` — a load that interrupted nothing is not one of
-   * these. This is the number `difficultyFor` and `reloadQualityHaircut`
-   * both read, and the only one that costs the player anything.
+   * these. `difficultyFor` reads it — via `reloadDifficultyBump` — and it is
+   * the only one that costs the player anything. It no longer touches the
+   * score at all; see `RELOAD_GRACE`.
    */
   reloads: number;
   /**
@@ -198,37 +415,64 @@ export interface TrialProgress {
 const clamp01 = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
 
 /**
- * Each charged resume makes the trial this much harder, capped.
+ * ── THE RELOAD PENALTY, INVERTED: TROLL THEM, DO NOT DOCK THEM ──
  *
- * Deliberately small and deliberately capped: at +0.03 a go, somebody whose
- * train went into a tunnel twice is playing a trial 3 % harder, which is
- * nothing. Somebody re-opening the app fifteen times to farm an easy roll
- * hits the cap and is playing a meaningfully harder afternoon than they
- * would have had if they had just played it.
+ * This reverses the shape that shipped a day earlier, and the reversal was a
+ * direct decision:
  *
- * This raises what the stage ASKS and nothing else. It is deliberately absent
- * from the score — see `scoringDifficultyFor`.
+ *   "Obviously, if someone's cheating and reloading more than 2 times on a
+ *    trial, then instantly start giving them that penalty. Don't give their
+ *    score a penalty. Just kind of troll them. Just make it hard, way harder
+ *    than it should be, and keep that score the same."
+ *
+ * What was there before: a gentle +0.03-a-go difficulty bump (capped at
+ * +0.15, so a farmer hit the ceiling almost immediately and every resume
+ * after that was free) PLUS a quiet 2 %-per-resume haircut on the recorded
+ * quality. The haircut is gone entirely — `reloadQualityHaircut` and its two
+ * constants are deleted, not left disabled, because a hidden multiplier
+ * eating a number the player can see is exactly the thing being overruled.
+ * A score now means what it says, whatever the player did to get to it.
+ *
+ * What replaces it is the same idea pointed at the football instead:
+ *
+ *  - **Two charged resumes are genuinely free** (`RELOAD_GRACE`). Somebody
+ *    whose train went into a tunnel, or whose phone evicted the tab twice,
+ *    pays nothing at all — not "almost nothing", nothing. That is a real
+ *    improvement on the old shape, where the very first resume already cost.
+ *  - **The third and every one after it is steep** — +0.18 each, six times
+ *    the old step, running all the way to +0.90. A trial rolled at the
+ *    median (0.34) is asking near the top of every drill's ladder by the
+ *    fifth resume and is pinned at the ceiling by the seventh.
+ *
+ * So the cheat stops paying because the football gets hard, not because a
+ * multiplier quietly ate the number. And reloading still cannot be
+ * PROFITABLE — the score for a given performance is now exactly unchanged by
+ * how many times the app was re-opened (`scoringDifficultyFor` has never read
+ * the bump), while the performance itself is much harder to produce.
+ *
+ * Worth keeping in view: the bump is not the only thing a resume does.
+ * `attemptSeed` (trialStages.ts) mixes `reloads` into every "what does this
+ * rep ask" roll, so a resumed stage draws genuinely new problems rather than
+ * a second showing of the ones whose answers were just memorised. That is a
+ * separate defence against a different cheat, and it fires on resume one —
+ * the grace period below is about PUNISHMENT, not about re-rolling.
  */
-export const RELOAD_DIFFICULTY_STEP = 0.03;
-export const RELOAD_DIFFICULTY_CAP = 0.15;
+export const RELOAD_GRACE = 2;
+export const RELOAD_DIFFICULTY_STEP = 0.18;
+export const RELOAD_DIFFICULTY_CAP = 0.9;
 
 /**
- * …and takes this much off the quality that gets recorded.
+ * What the charged resumes add to what every drill ASKS.
  *
- * The half of the anti-cheat that can only ever hurt. The difficulty bump
- * above is capped, which is right — a harder afternoon is still an afternoon
- * you can play well — but a cap on its own means resume number six is free,
- * and free is exactly what a farmer is looking for. So there is a second,
- * uncapped-in-count cost: 2 % off the recorded quality per charged resume,
- * for as many as you take.
- *
- * Floored at 0.6 so it stays a cost rather than a lockout. Somebody who has
- * genuinely re-opened the app twenty times has a trial they can still pass;
- * they just cannot win it. Lose signal twice and you pay 4 %, which is
- * inside the noise of a single penalty.
+ * Zero through the grace period, then steep. Never negative, whatever
+ * nonsense is in the field — a hand-edited save claiming −99 resumes must
+ * not buy an easier trial.
  */
-export const RELOAD_QUALITY_STEP = 0.02;
-export const RELOAD_QUALITY_FLOOR = 0.6;
+export function reloadDifficultyBump(reloads: number): number {
+  const charged = Number.isFinite(reloads) ? Math.max(0, Math.floor(reloads)) : 0;
+  const past = Math.max(0, charged - RELOAD_GRACE);
+  return Math.min(RELOAD_DIFFICULTY_CAP, past * RELOAD_DIFFICULTY_STEP);
+}
 
 /**
  * What a stage is worth, at the easiest possible afternoon and at the hardest.
@@ -279,13 +523,19 @@ export function startTrial(seed: number = Math.floor(Math.random() * 0xffffffff)
     stageRolls[stage] = (rng() - 0.5) * 0.4;
   }
 
-  // Roughly a third of trials have something go against you.
-  const adversity: TrialAdversity = rng() < 0.34 ? "sharp-keeper" : null;
-  // Only the stages where a keeper actually stands between you and the goal.
-  const keeperStages: TrialStage[] = ["penalties", "freeKicks", "fiveASide"];
-  const adversityStage = adversity
-    ? keeperStages[Math.floor(rng() * keeperStages.length)]
-    : null;
+  // Something out of the ordinary about roughly two trials in five — which,
+  // after the two pure-flavour events take their share, leaves the rate of a
+  // genuinely HARDER afternoon at almost exactly the third it has always
+  // been. See ADVERSITY_CHANCE.
+  const pick = <T,>(xs: T[], r: number) => xs[Math.min(xs.length - 1, Math.floor(r * xs.length))];
+  const event = rng() < ADVERSITY_CHANCE ? pick(TRIAL_ADVERSITY, rng()) : null;
+  const adversity: TrialAdversity = event ? event.id : null;
+  // Onto a stage it can actually bite on. A sharp keeper means nothing in the
+  // dribbling stage and a shorter look at the picture means nothing outside
+  // the vision stage, so each event carries its own list rather than every
+  // event drawing from one shared one. A flavour event lists all five and
+  // simply draws one — nothing depends on which.
+  const adversityStage = event ? pick(event.stages, rng()) : null;
 
   return {
     seed,
@@ -310,42 +560,43 @@ export function startTrial(seed: number = Math.floor(Math.random() * 0xffffffff)
  * stage is scored against; `scoringDifficultyFor` is.
  */
 export function difficultyFor(trial: TrialProgress, stage: TrialStage): number {
-  const reloadBump = Math.min(
-    RELOAD_DIFFICULTY_CAP,
-    Math.max(0, trial.reloads) * RELOAD_DIFFICULTY_STEP,
+  return clamp01(
+    trial.baseDifficulty + (trial.stageRolls[stage] ?? 0) + reloadDifficultyBump(trial.reloads),
   );
-  return clamp01(trial.baseDifficulty + (trial.stageRolls[stage] ?? 0) + reloadBump);
 }
 
 /**
- * The same stage's difficulty with the reload bump taken back out — the one
- * the score is computed from.
+ * What the stage was WORTH — the figure the score is computed from.
  *
- * The bug this exists to kill: difficulty was both what the stage asked AND
- * the score's multiplier, so re-opening the app raised the multiplier on
- * every stage still to come. Ten resumes turned a perfect trial on seed 0
- * from 73 into 81. The anti-cheat paid.
+ * Two things are deliberately different about it from `difficultyFor`:
  *
- * Splitting the two is what lets a resume make the afternoon harder without
- * making it worth more: the drills read `difficultyFor`, the scoring reads
- * this, and the cost of resuming lives entirely in `reloadQualityHaircut`.
+ *  - **The reload bump is not in it.** The bug that killed: difficulty was
+ *    both what the stage asked AND the score's multiplier, so re-opening the
+ *    app raised the multiplier on every stage still to come. Ten resumes
+ *    turned a perfect trial on seed 0 from 73 into 81 — the anti-cheat paid.
+ *    Splitting the two is what lets a resume make the afternoon much harder
+ *    (it now does, steeply — see `reloadDifficultyBump`) without making a
+ *    single point of it worth more.
+ *  - **The adversity weight IS in it**, and was not before. "If you performed
+ *    better in a harder trial… they're worth more" could not be true of an
+ *    adversity event that never reached a difficulty figure at all: a sharp
+ *    keeper made the stage harder and was worth exactly nothing, so the same
+ *    performance against a better keeper scored LESS. See
+ *    `adversityWeightFor`, which is also where the reason it stays out of
+ *    `difficultyFor` is written down.
+ *
+ * The effect is bounded and small by construction — `SCORE_DIFFICULTY_SPAN`
+ * is 0.05, so the hardest event in the catalogue is worth at most about one
+ * and a half points out of a hundred. It is a tie-break between two
+ * identical afternoons, never a reason to hope for a bad break: the quality
+ * the event costs you dwarfs the credit it pays back.
  */
 export function scoringDifficultyFor(trial: TrialProgress, stage: TrialStage): number {
-  return clamp01(trial.baseDifficulty + (trial.stageRolls[stage] ?? 0));
+  return clamp01(
+    trial.baseDifficulty + (trial.stageRolls[stage] ?? 0) + adversityWeightFor(trial, stage),
+  );
 }
 
-/**
- * What re-opening the app takes off the quality that gets recorded.
- *
- * 1 with no charged resumes, so a player who simply played their trial is
- * never touched by any of this.
- */
-export function reloadQualityHaircut(reloads: number): number {
-  const charged = Number.isFinite(reloads) ? Math.max(0, reloads) : 0;
-  return Math.max(RELOAD_QUALITY_FLOOR, 1 - RELOAD_QUALITY_STEP * charged);
-}
-
-/** Whether a sharp keeper is standing in this particular stage. */
 export function keeperBonusFor(trial: TrialProgress, stage: TrialStage): number {
   return trial.adversity === "sharp-keeper" && trial.adversityStage === stage
     ? SHARP_KEEPER_BONUS
@@ -405,7 +656,10 @@ export function recordStage(
   trial: TrialProgress, stage: TrialStage, quality: number,
 ): TrialProgress {
   if (trial.results[stage]) return trial;
-  const played = clamp01(quality) * reloadQualityHaircut(trial.reloads);
+  // No haircut any more. The score is what you did — see the note above
+  // RELOAD_GRACE for why re-opening the app now costs difficulty rather than
+  // a quiet slice off a number the player can see.
+  const played = clamp01(quality);
   return {
     ...trial,
     // Only clear an in-progress marker that somebody is actually keeping. If
@@ -417,7 +671,12 @@ export function recordStage(
       ...trial.results,
       [stage]: {
         quality: played,
-        difficulty: difficultyFor(trial, stage),
+        // The FELT difficulty: what the drills were built from (reload bump
+        // and all, so the result card is honest about the afternoon) PLUS
+        // whatever the adversity event added on top, which the drill dial
+        // deliberately does not carry. This is the label's number, not the
+        // score's — see `scoringDifficultyFor` for that one.
+        difficulty: clamp01(difficultyFor(trial, stage) + adversityWeightFor(trial, stage)),
         score: stageScore(played, scoringDifficultyFor(trial, stage)),
         decidedAt: Date.now(),
       },

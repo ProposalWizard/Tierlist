@@ -43,6 +43,7 @@ import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
+import { signingOnFee, typicalWeeklyWage } from "./economy";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
@@ -167,9 +168,11 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // This used to be ★5,000, on a career nobody had signed. Against the free
     // agent's ★10 a week (freeAgent.ts) that is five hundred weeks of pay
     // sitting there on day one — the whole point of the garden phase being a
-    // scrape, handed over before a ball was kicked. The ★5,000 is real and
-    // still arrives; it is a SIGNING-ON FEE now, paid by `attachClub` when a
-    // club actually puts its name to you. See `SIGNING_ON_FEE`.
+    // scrape, handed over before a ball was kicked.
+    //
+    // It does not arrive later either. The first contract a trial gets you
+    // pays NOTHING — see `FIRST_CONTRACT_SIGNING_FEE` — so this zero is the
+    // number a career genuinely starts the shop on.
     money: 0,
     // Overwritten just below, once the object actually exists — see
     // computeStarRating's own note. A placeholder here only so every
@@ -269,11 +272,11 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
  * the bank", and the free agent's ★10 a week meant the balance alone was five
  * hundred weeks of pay.
  *
- * They are the SIGNING now. `attachClub` pays the fee and writes the deal the
- * first time a club actually puts its name to you — and only the first time,
- * so a later transfer does not hand out a second signing-on fee (the
- * "first-contract" achievement is what records that it has happened, which is
- * also the honest thing for that achievement to mean).
+ * They are the SIGNING now. `attachClub` writes the deal the first time a
+ * club actually puts its name to you, and pays nothing for it — a
+ * signing-on fee is what a LATER move earns you, never the first one. The
+ * "first-contract" achievement is what tells the two apart, which is also
+ * the honest thing for that achievement to mean.
  *
  * The starter terms are a FALLBACK, not the usual path. A career that reaches
  * a club through the trial is signed on the terms of the offer it accepted —
@@ -281,11 +284,57 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
  * over these. These are what `makeInitialCareer` still opens on, which is what
  * keeps every pre-split career, save and test byte-identical.
  */
-export const SIGNING_ON_FEE = 5000;
-export const STARTER_CONTRACT = { wage: 2000, goalBonus: 200, assistBonus: 150, seasonsRemaining: 3 };
+/**
+ * The fallback terms, for a career that arrives here without a deal of its
+ * own. Derived from `economy.ts` rather than typed out, so the one curve
+ * reaches even the fallback: this is what an ordinary first-teamer at a
+ * middling top-flight club is worth, with the bonuses on the same 10%/7% of
+ * a week they have always been.
+ */
+export const STARTER_CONTRACT = {
+  wage: Math.round(typicalWeeklyWage("premier")),
+  goalBonus: Math.round(typicalWeeklyWage("premier") * 0.10),
+  assistBonus: Math.round(typicalWeeklyWage("premier") * 0.07),
+  seasonsRemaining: 3,
+};
+
+/**
+ * ── THE FIRST CONTRACT PAYS NOTHING. ──
+ *
+ * It used to be `SIGNING_ON_FEE = 5000`, paid identically by Manchester
+ * United and by Hornchurch. Reported directly: "I don't think someone
+ * signing at a National League club should start at a 5,000 signing-on fee,
+ * especially when we spoke about having a bunch of different things in the
+ * shop from 0 to 5,000 and having it feel like a bit of a slog at the
+ * start."
+ *
+ * The first attempt at fixing that scaled the fee by the club's reputation.
+ * It was still wrong, and the owners said so: ANY windfall on the day a
+ * trial gets you signed undoes the opening of the game. You would walk into
+ * the National League already able to buy the things the first months are
+ * supposed to be about earning. So the first, scouted-out-of-a-trial
+ * contract now pays exactly zero, and a career starts on the nothing
+ * `makeIdentity` already gave it.
+ *
+ * The MECHANISM survives, because a real transfer genuinely does come with a
+ * signing-on payment: every LATER move pays `signingOnFee` (economy.ts),
+ * scaled by the club's real reputation and the wage actually agreed. That is
+ * a reward for having got somewhere, which is the opposite of a head start.
+ */
+export const FIRST_CONTRACT_SIGNING_FEE = 0;
 
 export function attachClub(
   identity: CareerState, club: string, clubs: string[], division: CareerDivision = "premier",
+  /**
+   * The wage actually agreed, when the caller already knows it.
+   *
+   * The signing-on fee is a multiple of the wage, and the scout-offer screen
+   * writes the real wage onto the contract a moment AFTER this call — so
+   * without this the fee would always be computed against the fallback
+   * `STARTER_CONTRACT` wage instead of the deal genuinely being signed.
+   * Optional, so `makeInitialCareer` and any other caller is unchanged.
+   */
+  agreedWage?: number,
 ): CareerState {
   // ── Is this the first club that has ever signed him? ──
   //
@@ -348,7 +397,11 @@ export function attachClub(
     contract: firstSigning && !identity.contract.wage
       ? { ...identity.contract, club, ...STARTER_CONTRACT }
       : { ...identity.contract, club },
-    money: firstSigning ? identity.money + SIGNING_ON_FEE : identity.money,
+    // Nothing on the first contract — see `FIRST_CONTRACT_SIGNING_FEE`. Every
+    // later move to a new club pays a real, reputation-scaled fee.
+    money: firstSigning
+      ? identity.money + FIRST_CONTRACT_SIGNING_FEE
+      : identity.money + signingOnFee(club, agreedWage ?? (identity.contract.wage || STARTER_CONTRACT.wage)),
     achievements: firstSigning
       ? [...identity.achievements, "first-contract"]
       : [...identity.achievements],

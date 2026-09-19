@@ -4,9 +4,9 @@ import {
 } from "../../lib/star/canvasEngine";
 import { mulberry32 } from "../../lib/star/season";
 import { POST_L, POST_R, NET_DEPTH, CX, PEN_SPOT_Y } from "../../lib/star/pitch";
-import { startTrial } from "../../lib/star/trial";
+import { startTrial, type TrialProgress } from "../../lib/star/trial";
 import {
-  REPS, freeKickSetup, visionSetup, penaltySetup, attemptSeed,
+  REPS, freeKickSetup, visionSetup, penaltySetup, attemptSeed, penaltyTell,
 } from "../../lib/star/trialStages";
 import {
   buildPenaltyScenario, strikeCamera,
@@ -435,6 +435,113 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   check(r.goal.x1 === POST_L && r.goal.x2 === POST_R, "the striking stages must use a real full-size goal");
   check(r.markings === "penalty-area", "…with a real penalty area drawn around it");
   check((r.crossbar ?? 0) > 2, "…and a real crossbar to lift it over");
+}
+
+// ── 11. The sharp keeper standing behind the no-tell rep ───────────────────
+//
+// The one combination in this stage that nobody had ever run, and the reason
+// it was worth running on the real engine rather than reasoning about: the
+// "keeper's on fire" event adds +15 to a keeper who is already 45 + 45·d, and
+// the tell ramp takes his guess away entirely by the third kick. The biggest
+// save radius in the game, behind the one rep that shows you nothing, on the
+// same stage. Two mitigations were on the table — a tell floor whenever an
+// event is live, or having the event pick a different stage — and the
+// measurement is what decided whether either was needed.
+//
+// The taker modelled here is a real one rather than a machine: he reads the
+// lean when there is one to read and picks a side when there is not, aims
+// just inside the post, and misses by a realistic amount. Everything from
+// `buildPenaltyScenario` down is the screen's own code and the real engine.
+{
+  const resolveAt = (
+    sc: Scenario, rng: () => number, targetX: number, power: number,
+    skills: { power: number; technique: number },
+  ): Outcome | null => {
+    const dir = { x: targetX - sc.ball.x, y: -sc.ball.y };
+    const ball: Ball = launch(sc, dir, power, { cx: 0, cy: -0.15 }, skills, rng);
+    const dt = 1 / 60;
+    for (let f = 0; f < 600; f++) {
+      for (let i = 0; i < 3; i++) {
+        const h = dt / 3;
+        stepDefenders(sc, h, sc.player, false, ball);
+        stepKeeper(sc, h);
+        const res = stepBall(ball, sc, rng, h);
+        if (res) return res;
+      }
+    }
+    return null;
+  };
+
+  const convert = (
+    sharp: boolean, rep: number, difficulty: number,
+    skills: { power: number; technique: number }, n: number,
+  ) => {
+    let goals = 0;
+    for (let k = 0; k < n; k++) {
+      const t0 = startTrial(1000 + k);
+      const t: TrialProgress = {
+        ...t0,
+        baseDifficulty: difficulty,
+        stageRolls: { ...t0.stageRolls, penalties: 0 },
+        adversity: sharp ? "sharp-keeper" : null,
+        adversityStage: sharp ? "penalties" : null,
+      };
+      const rng = mulberry32((0x51ed270b ^ (k * 2654435761)) >>> 0);
+      const sc = buildPenaltyScenario(t, rep, rng);
+      // Read him if there is anything to read; otherwise pick a side.
+      const tell = penaltyTell(t, rep);
+      const side = tell > 0.2 ? -Math.sign(penaltySetup(t, rep).keeperLean) : (rng() < 0.5 ? -1 : 1);
+      const post = side < 0 ? POST_L : POST_R;
+      const targetX = post - side * (0.55 + rng() * 0.5) + (rng() - 0.5) * 1.5;
+      const res = resolveAt(sc, rng, targetX, 0.72 + rng() * 0.18, skills);
+      if (res === "goal" || res === "rebound") goals++;
+    }
+    return goals / n;
+  };
+
+  const N = 500;
+  const GOOD = { power: 60, technique: 60 };
+  const POOR = { power: 30, technique: 30 };
+  const LAST = REPS.penalties - 1;
+
+  // The four corners of the question, at the two ends of the skill range.
+  const goodFirst = convert(false, 0, 0.8, GOOD, N);
+  const goodLastClean = convert(false, LAST, 0.8, GOOD, N);
+  const goodLastSharp = convert(true, LAST, 0.8, GOOD, N);
+  // The genuinely worst cell in the game: a poor taker, the hardest possible
+  // afternoon, a keeper on fire, and the rep that shows him nothing.
+  const worstCell = convert(true, LAST, 1, POOR, N);
+  const worstClean = convert(false, LAST, 1, POOR, N);
+
+  if (process.env.TRIAL_MEASURE) {
+    console.log(`  penalties: rep1 ${(goodFirst * 100).toFixed(1)}%  `
+      + `last clean ${(goodLastClean * 100).toFixed(1)}%  last sharp ${(goodLastSharp * 100).toFixed(1)}%  `
+      + `| worst cell ${(worstCell * 100).toFixed(1)}% (clean ${(worstClean * 100).toFixed(1)}%)`);
+  }
+
+  // ── The ramp is real on the pitch, not just in the numbers ──
+  check(goodFirst > goodLastClean + 0.05,
+    `the telegraphed first kick must genuinely be easier than the no-tell last one `
+    + `(${(goodFirst * 100).toFixed(1)}% vs ${(goodLastClean * 100).toFixed(1)}%)`);
+
+  // ── The sharp keeper genuinely bites ──
+  check(goodLastSharp < goodLastClean,
+    `a keeper on fire must actually be harder to beat `
+    + `(${(goodLastSharp * 100).toFixed(1)}% vs ${(goodLastClean * 100).toFixed(1)}%)`);
+
+  // ── …and stacking it on the no-tell rep is not a lockout ──
+  //
+  // This is the assertion the whole section exists for. The measured figure
+  // is around 51 %; the bar is set at 35 % so it is a real regression check
+  // on the stacking rather than a pin on one run's noise. If a future change
+  // to the keeper, the ramp or the bonus drops the worst cell under this,
+  // the mitigation that was ruled out here (a tell floor, or the event
+  // picking a different stage) becomes necessary after all.
+  check(worstCell > 0.35,
+    `the worst cell in the stage must still be winnable, got ${(worstCell * 100).toFixed(1)}%`);
+  check(worstCell > worstClean * 0.6,
+    `…and the bonus must not turn that rep into a different game entirely `
+    + `(${(worstCell * 100).toFixed(1)}% against a clean ${(worstClean * 100).toFixed(1)}%)`);
 }
 
 if (problems.length) {

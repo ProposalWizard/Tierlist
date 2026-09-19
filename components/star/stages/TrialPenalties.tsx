@@ -7,7 +7,7 @@ import {
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y } from "@/lib/star/pitch";
-import { REPS, penaltySetup, strikeQuality, meanQuality } from "@/lib/star/trialStages";
+import { REPS, penaltySetup, strikeQuality, weightedQuality } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import ContactBall from "@/components/star/ContactBall";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
@@ -308,11 +308,80 @@ export interface StrikeStageProps {
   /** Extra line under the rep counter: distance, wall size, whatever the
    *  stage wants the player to actually read before he strikes it. */
   subtitle?: (rep: number) => string;
+  /**
+   * The instruction shown, properly and at a readable size, on the FIRST rep
+   * of the stage — see `TeachCard`.
+   *
+   * Optional only so `StrikeStage` stays a generic component; both stages
+   * that use it pass one, because a first rep with nothing on it is the case
+   * this exists to remove.
+   */
+  teach?: { headline: string; lines: string[] };
   onDone: (quality: number) => void;
 }
 
+/**
+ * ── THE FIRST REP TEACHES, AND IT STILL COUNTS ──
+ *
+ * Decided directly: "I do think the first rep of each drill should count
+ * towards your score, even though it's tutorial… Just give them a second to
+ * understand what's happening." So this is not a practice go and nothing
+ * anywhere treats it as one — rep 1 is scored by exactly the same
+ * `strikeQuality` as every other rep and carries the lightest weight in
+ * `REP_WEIGHT_RAMP` only because it is the EASIEST rep, never because it is
+ * the tutorial one.
+ *
+ * What changes is what you are told before you take it. The stage's own hint
+ * was an 11px grey line in a black pill along the bottom edge, which is the
+ * size of thing you put a reminder in, not the size of thing you teach a
+ * gesture with — and this is the first ball anybody in this game ever kicks.
+ * They asked for "a proper graphic", so: a real card, the drag drawn rather
+ * than described, and the stage's own instruction underneath it.
+ *
+ * Pointer-transparent throughout. It sits over the canvas and the canvas owns
+ * every pointer event on this screen; a card that swallowed the first drag
+ * would teach the gesture and then refuse it.
+ */
+export function TeachCard({ headline, lines }: { headline: string; lines: string[] }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 flex items-end justify-center p-3">
+      <div className="w-full rounded-xl border border-amber-300/30 bg-black/80 px-3.5 py-3 shadow-lg">
+        <div className="flex items-center gap-1.5">
+          <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
+            First one
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+            It still counts
+          </span>
+        </div>
+
+        <div className="mt-2 flex items-center gap-3">
+          {/* The gesture, drawn. A ball, the thumb pulled back off it, and the
+              arrow showing where it goes — the one thing a sentence is worst
+              at describing and a picture is best at. */}
+          <svg viewBox="0 0 64 48" className="h-14 w-[4.6rem] shrink-0" aria-hidden="true">
+            <line x1="46" y1="30" x2="12" y2="42" stroke="#fbbf24" strokeWidth="2.5"
+              strokeLinecap="round" strokeDasharray="4 3" />
+            <circle cx="12" cy="42" r="4.5" fill="none" stroke="#fbbf24" strokeWidth="2" />
+            <line x1="46" y1="30" x2="46" y2="10" stroke="#f97316" strokeWidth="3" strokeLinecap="round" />
+            <path d="M46 5 L51 14 L41 14 Z" fill="#f97316" />
+            <circle cx="46" cy="30" r="6" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
+          </svg>
+
+          <div>
+            <div className="text-[13px] font-black leading-tight text-white">{headline}</div>
+            {lines.map(l => (
+              <p key={l} className="mt-1 text-[11px] font-bold leading-snug text-white/80">{l}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StrikeStage({
-  reps, build, skills, seed, title, hint, subtitle, onDone,
+  reps, build, skills, seed, title, hint, subtitle, teach, onDone,
 }: StrikeStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -476,7 +545,11 @@ export function StrikeStage({
       if (repRef.current + 1 >= reps) {
         if (doneRef.current) return;
         doneRef.current = true;
-        onDone(meanQuality(scoresRef.current));
+        // Weighted, not a flat mean: the last kick of this stage is the
+        // hardest one in it (a ball walked backwards, or a keeper who has
+        // stopped telling you anything) and surviving it is worth more than
+        // surviving the opener. See `weightedQuality`.
+        onDone(weightedQuality(scoresRef.current));
       } else {
         setRep(r => r + 1);
       }
@@ -644,15 +717,24 @@ export function StrikeStage({
             ever needs `dragForFullPower` (about 14 %) of the canvas height,
             and it is pointer-transparent besides. */}
         {phase === "aim" && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-4">
-            <p className="rounded-lg bg-black/55 px-3 py-1.5 text-center text-[11px] font-bold text-white/85">
-              {hint}
-            </p>
-          </div>
+          rep === 0 && teach
+            ? <TeachCard headline={teach.headline} lines={teach.lines} />
+            : (
+              <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-4">
+                <p className="rounded-lg bg-black/55 px-3 py-1.5 text-center text-[11px] font-bold text-white/85">
+                  {hint}
+                </p>
+              </div>
+            )
         )}
 
         {phase === "contact" && aim && (
-          <ContactBall power={aim.power} onContact={handleContact} />
+          // The three contact badges and the line under them: the strike
+          // screen's own tutorial copy, which has a prop for exactly this
+          // and — checked at every call site — has never once been passed
+          // by anybody. First rep of the stage only; by the second you have
+          // done it once.
+          <ContactBall power={aim.power} onContact={handleContact} tutorial={rep === 0} />
         )}
 
         {phase === "result" && resultText && (
@@ -741,6 +823,13 @@ export default function TrialPenalties({
       seed={trial.seed}
       title="Penalties"
       hint="Drag back from the ball to aim, and pull further for more power."
+      teach={{
+        headline: "Drag back from the ball, then let go.",
+        lines: [
+          "Pull further for more power. The arrow is where it is going.",
+          "Watch the keeper before you strike it — he has already guessed.",
+        ],
+      }}
       subtitle={rep => {
         const s = penaltySetup(trial, rep);
         // ── It never names the side ──

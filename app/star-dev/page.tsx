@@ -2108,7 +2108,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           // list, the squad, the manager, your number, the cups — arrives now,
           // in one call, onto the person the trial just built.
           const clubs = clubsForDivision(offer.division);
-          const signed = attachClub(career, offer.club, clubs, offer.division);
+          // The agreed wage is passed through so the signing-on fee is a
+          // multiple of the deal actually being signed rather than of the
+          // fallback starter terms — see `signingOnFee` (economy.ts).
+          const signed = attachClub(career, offer.club, clubs, offer.division, offer.wage);
           const withDeal: CareerState = {
             ...signed,
             contract: {

@@ -5,7 +5,7 @@ import { offerLeagueName } from "@/lib/star/scoutOffers";
 import { formatMoney } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import type { TrialProgress } from "@/lib/star/trial";
-import { TRIAL_STAGES, STAGE_LABEL, trialScore } from "@/lib/star/trial";
+import { TRIAL_STAGES, STAGE_LABEL, trialScore, adversityFor } from "@/lib/star/trial";
 
 /**
  * WHAT THE TRIAL WAS FOR.
@@ -62,11 +62,33 @@ export default function ScoutOffers({
           </div>
         );
       })}
-      {trial.adversity === "sharp-keeper" && trial.adversityStage && (
-        <div className="mt-2 inline-block rounded-full bg-amber-500/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200">
-          Keeper was on fire · {STAGE_LABEL[trial.adversityStage]}
-        </div>
-      )}
+      {/* ── Whatever went on that day, not just the one event ──
+          This used to read `trial.adversity === "sharp-keeper"` with the
+          label hardcoded beside it, which was fine while a sharp keeper was
+          the only event there was. There are eleven now, so a hardcoded
+          check would have silently hidden ten of them — the whole catalogue
+          drawn, rolled onto a stage, genuinely changing the football, and
+          never once mentioned. The event carries its own label; the pill
+          just prints it.
+
+          The two flavour events show here too, on purpose. Somebody famous
+          on the touchline changed no football at all and is worth exactly
+          nothing (`weight: 0`, so `scoringDifficultyFor` ignores it) — but it
+          is still a true thing about the afternoon, and this pill is a
+          description of the day rather than a claim about the score. */}
+      {(() => {
+        const ev = adversityFor(trial);
+        if (!ev || !trial.adversityStage) return null;
+        return (
+          <div
+            className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
+              ev.flavour ? "bg-white/10 text-white/70" : "bg-amber-500/20 text-amber-200"
+            }`}
+          >
+            {ev.label}{ev.flavour ? "" : ` · ${STAGE_LABEL[trial.adversityStage]}`}
+          </div>
+        );
+      })()}
     </div>
   );
 

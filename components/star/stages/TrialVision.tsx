@@ -4,7 +4,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { CX, NET_DEPTH } from "@/lib/star/pitch";
 import type { Viewport } from "@/lib/star/canvasEngine";
 import {
-  REPS, visionSetup, visionQuality, meanQuality, attemptSeed, type VisionSetup,
+  REPS, visionSetup, visionQuality, weightedQuality, attemptSeed, type VisionSetup,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
@@ -197,6 +197,10 @@ type Phase = "ready" | "live" | "reveal";
 const KIT = { shirt: "#f8fafc", shorts: "#0f172a", trim: "#0f172a" };
 const OPP = { shirt: "#1e3a8a", shorts: "#0b1f4d", trim: "#e2e8f0" };
 
+/** The first rep's countdown: three numerals, a second apart. */
+const TEACH_COUNT_FROM = 3;
+const TEACH_COUNT_MS = 1000;
+
 export interface TrialVisionProps {
   trial: TrialProgress;
   onDone: (quality: number) => void;
@@ -218,6 +222,9 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   const [rep, setRep] = useState(0);
   const [phase, setPhaseState] = useState<Phase>("ready");
   const [verdict, setVerdict] = useState("");
+  /** The big numeral on the first rep, counting down to the clock starting.
+   *  Null on every other rep — see the effect below. */
+  const [count, setCount] = useState<number | null>(null);
 
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
@@ -256,25 +263,59 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
       if (rep + 1 >= REPS.vision) {
         if (doneRef.current) return;
         doneRef.current = true;
-        onDone(meanQuality(scoresRef.current));
+        // Weighted, not flat: `visionDrill` shaves the window every rep and
+        // adds a man from the fourth on, so the later pictures are genuinely
+        // the harder ones and count for more. See `weightedQuality`.
+        onDone(weightedQuality(scoresRef.current));
       } else {
         setRep(r => r + 1);
       }
     }, 1200);
   }, [onDone, rep]);
 
-  // A fresh rep: a beat to get your eyes on the screen, then the clock starts.
-  // Without it the window — which can be under a second at the top of the
-  // ladder — would be partly spent on the transition rather than on looking.
+  /**
+   * ── THE FIRST REP GETS A REAL COUNTDOWN, AND IT STILL COUNTS ──
+   *
+   * Asked for by name for this stage specifically, and it is the stage that
+   * most needs it: every other drill in the trial starts when YOU move, and
+   * this one starts on its own. A window that can be under a second at the
+   * top of the ladder, opening 650 ms after a screen you have never seen
+   * before appeared, is a rep you lose to not knowing it had begun rather
+   * than to not seeing the pass.
+   *
+   * So rep 1 gets three seconds of "3 · 2 · 1", with the instruction on
+   * screen the whole way down, and the clock starts on zero. It is still
+   * scored exactly like every other rep — the tutorial is the warning, not a
+   * free go.
+   *
+   * Every rep after it keeps the original 650 ms beat: by then you know what
+   * the screen does, and a full countdown five more times is padding.
+   */
   useEffect(() => {
     pickedRef.current = null;
     setVerdict("");
     setPhase("ready");
-    const t = window.setTimeout(() => {
-      startedRef.current = performance.now();
-      setPhase("live");
-    }, 650);
-    return () => window.clearTimeout(t);
+    const timers: number[] = [];
+    if (rep === 0) {
+      setCount(TEACH_COUNT_FROM);
+      for (let n = TEACH_COUNT_FROM - 1; n >= 1; n--) {
+        timers.push(window.setTimeout(
+          () => setCount(n), (TEACH_COUNT_FROM - n) * TEACH_COUNT_MS,
+        ));
+      }
+      timers.push(window.setTimeout(() => {
+        setCount(null);
+        startedRef.current = performance.now();
+        setPhase("live");
+      }, TEACH_COUNT_FROM * TEACH_COUNT_MS));
+    } else {
+      setCount(null);
+      timers.push(window.setTimeout(() => {
+        startedRef.current = performance.now();
+        setPhase("live");
+      }, 650));
+    }
+    return () => { for (const t of timers) window.clearTimeout(t); };
   }, [rep]);
 
   const tap = (e: React.PointerEvent) => {
@@ -422,11 +463,43 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
         />
 
         {phase === "ready" && (
-          <div className="absolute inset-0 z-30 grid place-items-center bg-black/70">
-            <div className="text-center">
-              <div className="text-sm font-black uppercase tracking-widest text-white/70">Heads up</div>
-              <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
-            </div>
+          <div className="absolute inset-0 z-30 grid place-items-center bg-black/70 px-5">
+            {rep === 0 && count !== null ? (
+              /* ── The first one: told properly, and counted in ──
+                 A stage that starts on its own needs to say so BEFORE it
+                 starts. Scored exactly like every other rep regardless — the
+                 badge says as much, so nobody plays the first one as a
+                 throwaway and then finds out it counted. */
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
+                    First one
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                    It still counts
+                  </span>
+                </div>
+                <div className="mt-3 text-xl font-black leading-tight text-white">
+                  Tap the team-mate in the most space.
+                </div>
+                <p className="mt-1.5 text-[11px] font-bold leading-snug text-white/75">
+                  The blue shirts are marking. The clock starts on zero and it
+                  does not wait — if you never pick, it scores nothing.
+                </p>
+                <div
+                  key={count}
+                  className="mt-3 text-7xl font-black tabular-nums text-amber-300"
+                  style={{ textShadow: "0 4px 12px rgba(0,0,0,0.8)" }}
+                >
+                  {count}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="text-sm font-black uppercase tracking-widest text-white/70">Heads up</div>
+                <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
+              </div>
+            )}
           </div>
         )}
 

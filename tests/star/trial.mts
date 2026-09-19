@@ -1,9 +1,11 @@
 import {
   startTrial, difficultyFor, scoringDifficultyFor, keeperBonusFor, stageScore,
-  reloadQualityHaircut, recordStage, noteReload, beginStage, resumeInterrupted,
+  reloadDifficultyBump, recordStage, noteReload, beginStage, resumeInterrupted,
   nextStage, trialComplete, trialScore, TRIAL_STAGES, SHARP_KEEPER_BONUS,
-  RELOAD_DIFFICULTY_STEP, RELOAD_DIFFICULTY_CAP, RELOAD_QUALITY_STEP,
-  RELOAD_QUALITY_FLOOR, SCORE_BASE, SCORE_DIFFICULTY_SPAN, type TrialStage,
+  RELOAD_DIFFICULTY_STEP, RELOAD_DIFFICULTY_CAP, RELOAD_GRACE,
+  SCORE_BASE, SCORE_DIFFICULTY_SPAN, TRIAL_ADVERSITY, ADVERSITY_CHANCE,
+  adversityFor, adversityOn, adversityWeightFor,
+  type TrialStage, type TrialAdversityId,
 } from "../../lib/star/trial";
 
 /**
@@ -20,11 +22,19 @@ import {
  *     is what makes "never lose progress" safe to promise — the result is on
  *     the career before the next screen renders, and a resume cannot replace
  *     a bad score with a better one.
- *  3. **Re-opening the app can only ever cost.** It used to PAY: the reload
- *     bump went into the same difficulty figure the score was multiplied by,
- *     so ten resumes turned a perfect trial on seed 0 from 73 into 81. Tested
- *     by measurement across hundreds of seeds rather than by reading the
- *     formula, because reading the formula is exactly what missed it.
+ *  3. **Re-opening the app cannot change the score at all, and past two
+ *     resumes it makes the football much harder.** This has been wrong in
+ *     both directions. It used to PAY — the reload bump went into the same
+ *     difficulty figure the score was multiplied by, so ten resumes turned a
+ *     perfect trial on seed 0 from 73 into 81. The fix for that was a quiet
+ *     haircut on the recorded quality, and that has now been overruled too:
+ *     "don't give their score a penalty, just kind of troll them, just make
+ *     it hard". So the property tested here is no longer "a resume costs
+ *     score" but the sharper pair — a resume moves the score by EXACTLY
+ *     nothing, and past `RELOAD_GRACE` it moves what the drills ask by a
+ *     lot. Tested by measurement across hundreds of seeds rather than by
+ *     reading the formula, because reading the formula is exactly what
+ *     missed it the first time.
  *  4. **Skill is always the ceiling, and always visible.** Perfect play
  *     reaches 95-100 whatever difficulty was rolled — it used to cap at 70 on
  *     an easy roll, which put the best outcome in the game out of reach on a
@@ -82,7 +92,7 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(shaped > 150, `most trials should vary stage to stage, only ${shaped}/200 did`);
 }
 
-// ── Re-opening the app costs, a little, and stops costing ───────────────
+// ── Two resumes are free; the third onward is steep ─────────────────────
 {
   const base = startTrial(42);
   const stage: TrialStage = "penalties";
@@ -97,14 +107,29 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
   check(t.resumes === 20, "every resume is seen");
   check(t.reloads === 19, "…and every one of them but the innocent first is charged for");
-  // The first load of an untouched trial is the one right after career
-  // creation. Nothing has been played, so there is nothing to retry.
-  check(climbed[0] === d0, "the first load after creating a career is free");
-  check(climbed[1] > d0 || d0 === 1, "…and the second, which walked out of stage one, is not");
+
+  // The grace period, which is the half of this the player is meant to
+  // benefit from: somebody whose train went into a tunnel twice pays NOTHING,
+  // not "almost nothing". `climbed[i]` is the difficulty after i+1 resumes,
+  // and the first of those is free anyway (nothing had been played yet), so
+  // the first genuinely charged one is `climbed[1]`.
+  for (let i = 0; i <= RELOAD_GRACE; i++) {
+    check(climbed[i] === d0, `resume ${i + 1} is still free (${climbed[i]} vs ${d0})`);
+  }
+  check(
+    climbed[RELOAD_GRACE + 1] > d0 || d0 === 1,
+    "…and the one past the grace period is not",
+  );
+
+  // Steep once it starts, not a token nudge. The step is what makes this a
+  // troll rather than a tax — six times the old one.
+  check(
+    RELOAD_DIFFICULTY_STEP >= 0.15,
+    `a charged resume should genuinely hurt the football, step is ${RELOAD_DIFFICULTY_STEP}`,
+  );
   for (let i = 1; i < climbed.length; i++) {
     check(climbed[i] >= climbed[i - 1], "difficulty never goes DOWN as you re-open the app");
   }
-  // Capped: a player who genuinely lost signal is not punished indefinitely.
   const capped = Math.min(1, d0 + RELOAD_DIFFICULTY_CAP);
   check(
     Math.abs(climbed[climbed.length - 1] - capped) < 1e-9,
@@ -112,12 +137,24 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   );
   check(
     RELOAD_DIFFICULTY_CAP / RELOAD_DIFFICULTY_STEP === 5,
-    "the cap should be reached in a handful of resumes, not dozens",
+    "the cap should be reached in a handful of charged resumes, not dozens",
   );
 
-  // And a negative or nonsense count can never make the trial EASIER than
-  // its own roll — that would be a way to cheat rather than a guard against
-  // one.
+  // The bump on its own, away from any trial: free through the grace period,
+  // linear after it, capped, and never negative however the field is
+  // tampered with. A hand-edited save claiming -99 resumes must not buy an
+  // easier trial.
+  for (let r = 0; r <= RELOAD_GRACE; r++) {
+    check(reloadDifficultyBump(r) === 0, `${r} charged resumes cost nothing`);
+  }
+  check(
+    Math.abs(reloadDifficultyBump(RELOAD_GRACE + 1) - RELOAD_DIFFICULTY_STEP) < 1e-9,
+    "the first charged resume past the grace period is exactly one step",
+  );
+  check(reloadDifficultyBump(10_000) === RELOAD_DIFFICULTY_CAP, "…and it caps");
+  for (const junk of [-99, -1, NaN, Infinity, -Infinity]) {
+    check(reloadDifficultyBump(junk) === 0, `a nonsense reload count (${junk}) buys nothing`);
+  }
   check(
     difficultyFor({ ...base, reloads: -99 }, stage) === d0,
     "a nonsense reload count cannot reduce difficulty below the real roll",
@@ -176,34 +213,134 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   );
 }
 
-// ── Adversity is real, lands somewhere it bites, and only there ─────────
+// ── The adversity catalogue itself is coherent ──────────────────────────
+//
+// v1 had one event, so "the catalogue" was a string literal and there was
+// nothing to check. There are eleven now, nine of which genuinely change the
+// football and two of which are captions, and the difference between those
+// two groups is load-bearing: a caption that earned score would be paying a
+// player for a thing that never happened.
 {
-  let withAdversity = 0;
-  const landedOn = new Set<string>();
-  for (let seed = 1; seed <= 600; seed++) {
+  const ids = TRIAL_ADVERSITY.map(e => e.id);
+  check(new Set(ids).size === ids.length, "no two events share an id");
+  check(TRIAL_ADVERSITY.length >= 10, `around ten events was the ask, got ${TRIAL_ADVERSITY.length}`);
+
+  for (const e of TRIAL_ADVERSITY) {
+    check(e.label.length > 0 && e.blurb.length > 0, `${e.id} says what it is`);
+    check(e.stages.length > 0, `${e.id} can actually land somewhere`);
+    check(new Set(e.stages).size === e.stages.length, `${e.id} lists each stage once`);
+    check(e.weight >= 0 && e.weight <= 1, `${e.id}'s weight is in range (${e.weight})`);
+    // The rule the whole flavour/real split rests on, in both directions.
+    check(
+      e.flavour === (e.weight === 0),
+      `${e.id}: flavour means worth nothing, and worth nothing means flavour`,
+    );
+  }
+  const real = TRIAL_ADVERSITY.filter(e => !e.flavour);
+  const flavour = TRIAL_ADVERSITY.filter(e => e.flavour);
+  check(real.length >= 8, `most of them should genuinely bite, ${real.length} do`);
+  check(flavour.length >= 1 && flavour.length <= 3,
+    `a couple of pure-flavour ones, got ${flavour.length}`);
+
+  // A save naming an event this build has never heard of reads as "nothing
+  // went against you" rather than crashing the trial it is attached to.
+  check(
+    adversityFor({ adversity: "a-thing-from-the-future" as TrialAdversityId }) === null,
+    "an unknown event id resolves to nothing rather than throwing",
+  );
+  check(adversityFor({ adversity: null }) === null, "…and so does no event at all");
+}
+
+// ── A drawn event lands where it bites, and nowhere else ────────────────
+{
+  let withAdversity = 0, withReal = 0;
+  const drawn = new Set<string>();
+  for (let seed = 1; seed <= 2000; seed++) {
     const t = startTrial(seed);
     if (t.adversity === null) {
       check(t.adversityStage === null, "no adversity means no stage carries it");
       for (const s of TRIAL_STAGES) {
         check(keeperBonusFor(t, s) === 0, "a trial with no adversity has no keeper bonus anywhere");
+        check(adversityWeightFor(t, s) === 0, "…and no stage is worth more for it");
+        check(adversityOn(t, s) === null, "…and no stage reports one");
       }
       continue;
     }
     withAdversity++;
+    drawn.add(t.adversity);
+    const ev = adversityFor(t);
+    check(ev !== null, `a drawn event (${t.adversity}) is in the catalogue`);
     check(t.adversityStage !== null, "an adversity event lands on a real stage");
-    landedOn.add(t.adversityStage!);
+    if (!ev || !t.adversityStage) continue;
+    if (!ev.flavour) withReal++;
 
-    // Exactly one stage carries it, and it is a stage with a keeper in it.
-    const carrying = TRIAL_STAGES.filter(s => keeperBonusFor(t, s) > 0);
-    check(carrying.length === 1, `exactly one stage carries the adversity, got ${carrying.length}`);
-    check(keeperBonusFor(t, t.adversityStage!) === SHARP_KEEPER_BONUS, "…and it is worth the full bonus");
+    // It landed on a stage it can actually do something to — a sharper
+    // keeper means nothing in the dribbling stage, and a shorter look at the
+    // picture means nothing outside the vision stage.
     check(
-      t.adversityStage !== "dribbling" && t.adversityStage !== "vision",
-      `a sharp keeper must not land on ${t.adversityStage} — there is no keeper to beat`,
+      ev.stages.includes(t.adversityStage),
+      `${ev.id} landed on ${t.adversityStage}, which is not on its own list`,
     );
+
+    // Exactly one stage carries it, and every other stage is untouched.
+    const carrying = TRIAL_STAGES.filter(s => adversityOn(t, s) !== null);
+    check(carrying.length === 1 && carrying[0] === t.adversityStage,
+      `exactly one stage carries the event, got ${carrying.length}`);
+    for (const s of TRIAL_STAGES) {
+      if (s === t.adversityStage) continue;
+      check(adversityWeightFor(t, s) === 0, `${s} is worth nothing extra for an event elsewhere`);
+      check(keeperBonusFor(t, s) === 0, `${s} gets no keeper bonus for an event elsewhere`);
+    }
+
+    // The keeper bonus is the SHARP KEEPER's, and only his. Ten other events
+    // exist now and none of them may quietly hand out a save-radius bonus.
+    const keeperStages = TRIAL_STAGES.filter(s => keeperBonusFor(t, s) > 0);
+    if (ev.id === "sharp-keeper") {
+      check(keeperStages.length === 1, "a sharp keeper lands on exactly one stage");
+      check(keeperBonusFor(t, t.adversityStage) === SHARP_KEEPER_BONUS, "…and is worth the full bonus");
+      check(
+        t.adversityStage !== "dribbling" && t.adversityStage !== "vision",
+        `a sharp keeper must not land on ${t.adversityStage} — there is no keeper to beat`,
+      );
+    } else {
+      check(keeperStages.length === 0, `${ev.id} must not hand out a keeper bonus`);
+    }
+
+    // ── What the event is WORTH, which only a real one is ──
+    //
+    // "If you performed better in a harder trial… they're worth more" — so a
+    // real event adds to what the stage was worth, and a caption adds
+    // exactly nothing, because a caption changed no football.
+    const worthWith = scoringDifficultyFor(t, t.adversityStage);
+    const worthWithout = scoringDifficultyFor(
+      { ...t, adversity: null, adversityStage: null }, t.adversityStage,
+    );
+    if (ev.flavour) {
+      check(worthWith === worthWithout, `${ev.id} is a caption and must be worth nothing`);
+    } else {
+      check(
+        worthWith > worthWithout || worthWithout === 1,
+        `${ev.id} made the stage harder and should be worth more for it`,
+      );
+    }
   }
-  check(withAdversity > 100 && withAdversity < 400, `adversity should be occasional, fired ${withAdversity}/600`);
-  check(landedOn.size === 3, `it should be able to land on any keeper stage, saw ${landedOn.size}`);
+
+  // Every event in the catalogue is reachable. One that never draws is a
+  // dead entry wearing a weight.
+  for (const e of TRIAL_ADVERSITY) {
+    check(drawn.has(e.id), `${e.id} never came up in 2000 trials`);
+  }
+
+  // The rate. `ADVERSITY_CHANCE` is deliberately above the old 0.34 so that
+  // the two flavour events sit ON TOP of the old rate of a genuinely harder
+  // afternoon rather than taking a slice out of it — checked here, because
+  // that reasoning is only true if the roll really is uniform over the
+  // catalogue.
+  const rate = withAdversity / 2000, realRate = withReal / 2000;
+  check(Math.abs(rate - ADVERSITY_CHANCE) < 0.05,
+    `something should go on in about ${ADVERSITY_CHANCE} of trials, got ${rate.toFixed(3)}`);
+  check(Math.abs(realRate - 0.34) < 0.05,
+    `a genuinely harder afternoon should still be about a third, got ${realRate.toFixed(3)}`);
 }
 
 // ── The ceiling: perfect play is worth ~100 on ANY afternoon ────────────
@@ -288,14 +425,27 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   }
 }
 
-// ── Re-opening the app can only ever COST ───────────────────────────────
+// ── Re-opening the app changes the SCORE by exactly nothing ─────────────
 //
-// The bug this replaces: the reload bump lived in the same difficulty figure
-// the score was multiplied by, so every resume raised the multiplier on every
-// stage still to come. Perfect play on seed 0 scored 73 clean and 81 after
-// ten resumes. Measured here rather than read, because reading is what missed
-// it — every seed, every stage, a real spread of qualities, a real spread of
-// resume counts.
+// This property has been wrong in both directions, which is why it is
+// measured rather than read.
+//
+// It used to PAY: the reload bump lived in the same difficulty figure the
+// score was multiplied by, so every resume raised the multiplier on every
+// stage still to come, and perfect play on seed 0 scored 73 clean and 81
+// after ten resumes. That was fixed by splitting the two figures and adding a
+// quiet 2 %-per-resume haircut on the recorded quality — which has now been
+// overruled in turn:
+//
+//   "Don't give their score a penalty. Just kind of troll them. Just make it
+//    hard, way harder than it should be, and keep that score the same."
+//
+// So the bar is no longer "a resume costs something". It is stricter than
+// that in one direction and deliberately empty in the other: the score for a
+// given performance must be IDENTICAL however many times the app was
+// re-opened, and the football must get much harder. Reloading stops paying
+// because a farmer cannot produce the performance any more, not because a
+// multiplier quietly ate the number he can see.
 {
   let raised = 0, lowered = 0, level = 0;
   for (let seed = 0; seed < 300; seed++) {
@@ -314,36 +464,56 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
     }
   }
   check(raised === 0, `no resume may ever raise a stage's score, ${raised} did`);
-  check(lowered > level, `…and it should usually cost something real (${lowered} down, ${level} level)`);
+  check(lowered === 0, `…and none may lower it either, ${lowered} did`);
+  check(level > 0, "the measurement actually ran");
 
-  // The whole trial, end to end, on the seed the bug was measured on.
+  // The quality that gets recorded is the quality that was played. No
+  // haircut, no hidden multiplier — a result a player cannot recompute is a
+  // result nobody should trust.
+  for (const reloads of [0, 1, 5, 40]) {
+    let t = startTrial(3);
+    for (let i = 0; i < reloads; i++) t = noteReload(t);
+    check(
+      recordStage(t, "penalties", 0.8).results.penalties!.quality === 0.8,
+      `${reloads} resumes still record the quality actually played`,
+    );
+  }
+
+  // The whole trial, end to end, on the seed the original bug was measured
+  // on. Farming it must be worth exactly nothing — not "slightly less", which
+  // is what the haircut version gave.
   const perfect = (reloads: number) => {
     let t = startTrial(0);
     for (let i = 0; i < reloads; i++) t = noteReload(t);
     return trialScore(TRIAL_STAGES.reduce((acc, s) => recordStage(acc, s, 1), t));
   };
-  check(perfect(10) < perfect(0), `farming seed 0 must not pay (${perfect(10)} vs ${perfect(0)})`);
-  check(perfect(30) < perfect(10), "…and it must keep not paying long past the difficulty cap");
+  check(perfect(10) === perfect(0), `farming seed 0 must not pay (${perfect(10)} vs ${perfect(0)})`);
+  check(perfect(30) === perfect(0), "…however far past the difficulty cap it is farmed");
 
-  // The bump still reaches the drills, which is where it was always meant to
-  // bite: a farmed trial genuinely plays harder even though it cannot score
-  // higher for it.
+  // …and the reason that is safe: the football itself is a different
+  // afternoon. A farmed trial ASKS for much more even though it cannot score
+  // higher for it, which is the whole of the inverted penalty.
   let t = startTrial(9);
   const asked0 = difficultyFor(t, "freeKicks");
   const worth0 = scoringDifficultyFor(t, "freeKicks");
   for (let i = 0; i < 8; i++) t = noteReload(t);
-  check(difficultyFor(t, "freeKicks") > asked0, "resuming still makes the stage ASK for more");
+  check(
+    difficultyFor(t, "freeKicks") >= Math.min(1, asked0 + 4 * RELOAD_DIFFICULTY_STEP),
+    "eight resumes should make the stage ask for a great deal more",
+  );
   check(
     scoringDifficultyFor(t, "freeKicks") === worth0,
     "…and still cannot change what the stage is WORTH",
   );
 
-  // The haircut itself: gentle, starts at nothing, never stops until the floor.
-  check(reloadQualityHaircut(0) === 1, "a player who just played their trial is untouched");
-  check(Math.abs(reloadQualityHaircut(2) - (1 - 2 * RELOAD_QUALITY_STEP)) < 1e-9, "two lost-signal resumes cost 4 %");
-  check(reloadQualityHaircut(5) < reloadQualityHaircut(4), "it keeps costing past the difficulty cap");
-  check(reloadQualityHaircut(1000) === RELOAD_QUALITY_FLOOR, "…down to a floor, so it is a cost and not a lockout");
-  check(reloadQualityHaircut(-7) === 1 && reloadQualityHaircut(NaN) === 1, "a nonsense count cannot hand out a bonus");
+  // The one thing a resume is still allowed to change about the RECORD: the
+  // difficulty it remembers, which is the afternoon's own story and not the
+  // score's arithmetic.
+  check(
+    recordStage(t, "freeKicks", 0.5).results.freeKicks!.difficulty >
+      recordStage(startTrial(9), "freeKicks", 0.5).results.freeKicks!.difficulty,
+    "a resumed stage remembers that it was played harder",
+  );
 }
 
 // ── A decided stage is decided ──────────────────────────────────────────
@@ -359,21 +529,34 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   check(t2.results.penalties!.score === first, "…and cannot replace a bad score with a better one");
 
   // The realistic version of that attack: play badly, close the app, come
-  // back, play the same stage well. The first score stands — and the resume
-  // has made everything after it harder.
+  // back, play the same stage well. The first score stands.
   const cheated = recordStage(noteReload(t1), "penalties", 1.0);
   check(cheated.results.penalties!.score === first, "re-opening the app cannot rescore a finished stage");
+
+  // …and once he stops being somebody whose phone died and starts being
+  // somebody farming the app, the rest of the trial is a different
+  // afternoon. Deliberately checked past `RELOAD_GRACE` rather than at one
+  // resume: the first two are free ON PURPOSE, which is the half of this
+  // design the honest player benefits from.
+  let farmed = t1;
+  for (let i = 0; i <= RELOAD_GRACE + 1; i++) farmed = noteReload(farmed);
   check(
-    difficultyFor(cheated, "freeKicks") > difficultyFor(t1, "freeKicks"),
-    "…and it has made the rest of the trial harder",
+    difficultyFor(farmed, "freeKicks") > difficultyFor(t1, "freeKicks"),
+    "…and farming it has made the rest of the trial harder",
+  );
+  check(
+    difficultyFor(recordStage(noteReload(t1), "penalties", 1), "freeKicks")
+      === difficultyFor(t1, "freeKicks"),
+    "…while one honest resume has changed nothing at all",
   );
 
   // The stored difficulty is the one the stage was actually played at — the
   // full figure the drills were built from, which is what the result card's
   // "they made that hard" line is talking about.
   check(
-    t1.results.penalties!.difficulty === difficultyFor(t0, "penalties"),
-    "a result remembers how hard the stage actually was",
+    t1.results.penalties!.difficulty ===
+      Math.min(1, difficultyFor(t0, "penalties") + adversityWeightFor(t0, "penalties")),
+    "a result remembers how hard the stage actually was — bad break and all",
   );
   // …and a stored result can be recomputed from its own fields, so nobody has
   // to take the number on trust. Checked on a resumed trial too, where the
