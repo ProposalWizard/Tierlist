@@ -55,12 +55,54 @@ export interface StarPlayer {
   firstName: string;
   lastName: string;
   age: number;
-  skinTone: "light" | "dark";
+  /**
+   * WIDENED, never restructured — see lib/star/playerIdentity.ts's SKIN_TONES.
+   *
+   * Was `"light" | "dark"`, a binary. It is now one of eight tones, of which
+   * `"light"` and `"dark"` are still two, carrying the exact hex values the
+   * old picker shipped. So every save ever written already names a tone that
+   * exists and resolves to the identical colour: there is no migration, and
+   * nothing that assigned `"light"`/`"dark"` needs touching. Read it through
+   * `resolveSkinTone`/`skinToneHex` rather than directly, so a value from a
+   * hand-edited or future save still renders something.
+   */
+  skinTone: import("./playerIdentity").SkinTone;
   club: string;
   clubBadge: string | null;
   position: string;
   nationality: string;
   startYear: number;
+  /**
+   * What he's actually called, if it isn't his name.
+   *
+   * Optional and absent for every career that exists — which is exactly what
+   * "he hasn't got one" means, so no backfill is needed. Where it IS set it
+   * should win over firstName/lastName in commentary, the media feed and the
+   * team sheet; `displayName`/`shortDisplayName` (playerIdentity.ts) are the
+   * one place that rule lives, rather than a nickname check at twenty call
+   * sites.
+   */
+  nickname?: string;
+  /**
+   * The squad number he'd ASK for. Not the one he's been given.
+   *
+   * `CareerState.squadNumber` stays the number the club actually handed him
+   * (recognition.ts's assignSquadNumber). This is the preference, and it is
+   * changeable at any time — the intent being that once he's earned enough
+   * standing at a club, the club gives him the number he wants. That stature
+   * mechanic is deliberately NOT built yet; this is the field it will read.
+   * Optional, so an older save simply has no preference on file.
+   */
+  preferredNumber?: number;
+  /**
+   * Left or right, chosen at creation and permanent.
+   *
+   * There is deliberately no UI anywhere in the game that changes this. A
+   * weak-foot system is intended later; this is the field that decides which
+   * foot is the weak one. Optional, so an older save reads as right-footed
+   * (see playerIdentity.ts's resolveFoot) rather than undefined.
+   */
+  preferredFoot?: import("./playerIdentity").PreferredFoot;
   /**
    * A picture of you, cropped square and stored as a data URI.
    *
@@ -455,6 +497,25 @@ export interface MatchStats {
 export interface Boot {
   id: string;
   name: string;
+  /**
+   * INERT — kept for save compatibility, deliberately not shown anywhere.
+   *
+   * Nothing has ever read this for gameplay. `effectivePower`/
+   * `effectiveTechnique` (app/star-dev/page.tsx) add the two fields below to
+   * your skills before a match; there is no `effectivePace`, and the engine
+   * reads `career.skills.pace` raw. So every boot's advertised pace rating
+   * was a number that did nothing, and the shop was claiming otherwise.
+   *
+   * Removed from both places it was displayed (the boots table in Shop.tsx
+   * and the current-boot line in DashboardStats.tsx) on 18 Sep 2026 rather
+   * than wired up: making it real would change how every match plays for
+   * every existing save and could disturb the finishing distributions that
+   * were measured and tuned over many sessions.
+   *
+   * The field itself stays so that a boot stored in an existing save still
+   * matches this type. **Don't put it back on screen without making it do
+   * something first.**
+   */
   pace: number;
   power: number;
   technique: number;
@@ -526,6 +587,52 @@ export interface Horse {
 export interface CareerState {
   version: 2;
   player: StarPlayer;
+  /**
+   * The trial this career opened with, while it is being played.
+   *
+   * Optional, and absent for every career that already exists — a save from
+   * before the multi-stage trial simply never had one, which is exactly what
+   * "this career is not mid-trial" means, so no backfill is needed.
+   *
+   * Typed as `TrialProgress` from lib/star/trial.ts. Declared here rather than
+   * imported to keep this file free of imports from the modules that read it.
+   */
+  trial?: import("./trial").TrialProgress;
+  /**
+   * Weeks spent with no club since the last trial.
+   *
+   * Drives when the next one comes up — see `trialDue`/`grantTrial`
+   * (freeAgent.ts). Absent on every career that has never been a free agent,
+   * which is all of them until one fails a trial.
+   */
+  weeksSinceTrial?: number;
+  /**
+   * How many weeks this career spent with no club at all, across every spell
+   * of it — the garden weeks.
+   *
+   * `career.week` restarts at 1 when a club signs you (`attachClub`), because
+   * the fixture list it builds starts there and transfer windows, Player of
+   * the Month, deadline day and the competition-betting cutoff all read the
+   * raw week. Without that reset a player who failed a trial, sat out twelve
+   * weeks and then signed got the January window while his fixtures said
+   * October. This is where those weeks go, so they still happened for the CV
+   * rather than being silently deleted.
+   *
+   * Absent on every career that has never been out of work, which is all of
+   * them until one fails a trial.
+   */
+  gardenWeeks?: number;
+  /**
+   * How many trials this career has been given, including the one it opened
+   * with.
+   *
+   * Anything above 1 is a second look earned back from the free-agent life
+   * (`grantTrial`, freeAgent.ts), and the scout offers it produces are judged
+   * against a lower bar and a ladder shifted a rung down — see `ScoutContext`
+   * in scoutOffers.ts. Absent on a career that has only ever had its first,
+   * which reads as exactly that.
+   */
+  trialsTaken?: number;
   skills: Skills;
   /**
    * The last career week each skill was actually TRAINED (the deliberate
@@ -1113,8 +1220,21 @@ export type StarPhase =
    *  Season, Team of the Season and every trophy this season handed out —
    *  shown once, right after the season rolls over. See SeasonAwardsScreen. */
   | "season-awards"
-  /** The opening: one penalty, taken until it goes in. See TrialPenalty. */
+  /** LEGACY, and kept only so a save written before the five-stage trial
+   *  still parses. It was one penalty taken until it went in; its screen is
+   *  deleted, and the resume path in page.tsx moves anyone still carrying it
+   *  to "trial-stages". Nothing writes it any more. */
   | "trial"
+  /** The full multi-stage trial — penalties, free kicks, taking a man on,
+   *  finding the pass, and a real five-a-side. See TrialSequence. */
+  | "trial-stages"
+  /** What the trial earned: the afternoon's number, what each stage was
+   *  worth, and the clubs that came in for you. See ScoutOffers. */
+  | "scout-offers"
+  /** Life with no club: home, gym, video games, out with your mates. The
+   *  cut-down dashboard a trialist and a free agent live on, deliberately
+   *  without fixtures, a table, a squad or a contract. See FreeAgentShell. */
+  | "free-agent"
   /** …and what it earns you — the card, then the contract. See TrialReward. */
   | "trial-reward"
   /** Watching a saved goal happen again — see GoalReplay, goalReplays.ts. */

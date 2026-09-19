@@ -38,11 +38,37 @@ function clampInfluence(n: number): number {
   return Math.max(0, Math.min(100, n));
 }
 
-/** How much money buys one point of influence — a flat rate, not priced off
- *  any live valuation the way a club stake is: there is no analogous "how
- *  good is this body right now" fact to read, so unlike `clubValuation`
- *  this is deliberately just a constant. */
-const MONEY_PER_INFLUENCE_POINT = 500;
+/**
+ * How much money buys one point of influence — a flat rate, not priced off any
+ * live valuation the way a club stake is: there is no analogous "how good is
+ * this body right now" fact to read, so unlike `clubValuation` this is
+ * deliberately just a constant.
+ *
+ * ── DERIVED, not multiplied ──
+ *
+ * The old figure (500) predates the 14 Sep 2026 rescale and was missed by it,
+ * which left ★50,000 — two and a half weeks of a Manchester United wage —
+ * buying total control of FIFA. Found in review.
+ *
+ * But the obvious fix, multiplying by `MONEY_SCALE` like every other stranded
+ * value, is wrong here and it is worth saying why: it would price full
+ * influence at ★100,000,000, roughly thirty times the most expensive thing in
+ * the entire shop, and nobody would ever buy any. A value that was never
+ * derived in the first place cannot be repaired by scaling it; it has to be
+ * derived now.
+ *
+ * So it is priced against the top of the shop, which is the one place in the
+ * game that already says what a huge amount of money looks like: the Private
+ * Island at ★3,000,000. Full influence (100 points) in one body costs
+ * ★2,000,000 — a genuine late-career purchase, in the same bracket as the
+ * biggest thing you can own, and meaningfully out of reach of a young player
+ * who has just signed.
+ */
+export const MONEY_PER_INFLUENCE_POINT = 20_000;
+
+/** What total control of one governing body actually costs, for anything that
+ *  wants to state the price rather than re-derive it. */
+export const FULL_INFLUENCE_COST = MONEY_PER_INFLUENCE_POINT * 100;
 
 export function investInfluence(career: CareerState, body: GoverningBody, amount: number): CareerState | { ok: false; reason: string } {
   if (amount <= 0) return { ok: false, reason: "Invest a positive amount" };

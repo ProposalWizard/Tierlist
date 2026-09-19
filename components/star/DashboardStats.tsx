@@ -76,7 +76,7 @@ export default function DashboardStats({ career, onRenew }: Props) {
             ["Club", career.contract.club],
             ["League", leagueNameFor(divisionOf(career))],
             ["Position", career.player.position],
-            ["Wage", `★ ${career.contract.wage} / match`],
+            ["Wage", `★ ${career.contract.wage} / week`],
             ["Goal Bonus", `★ ${career.contract.goalBonus}`],
             ["Assist Bonus", `★ ${career.contract.assistBonus}`],
             ["Seasons Left", career.contract.seasonsRemaining],
@@ -257,7 +257,7 @@ export default function DashboardStats({ career, onRenew }: Props) {
           <div className="rounded-lg border-l-4 border-orange-400 bg-gray-800 p-3">
             <div className="text-[10px] font-black uppercase tracking-widest text-orange-300">👟 Boots — {career.currentBoot.name}</div>
             <div className="mt-1 text-[11px] font-bold text-white">
-              {career.currentBoot.matches} matches remaining · Pace +{career.currentBoot.pace} · Pow +{career.currentBoot.power} · Tec +{career.currentBoot.technique}
+              {career.currentBoot.matches} matches remaining · Pow +{career.currentBoot.power} · Tec +{career.currentBoot.technique}
             </div>
           </div>
           <div className="rounded-lg border-l-4 border-emerald-400 bg-gray-800 p-3">

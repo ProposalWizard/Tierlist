@@ -51,11 +51,22 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
           <div className="space-y-2">
             {KIB_CANS.map((c) => {
               const canBuy = career.money >= c.price;
+              // The row is a div, not a button, ON PURPOSE. It used to be a
+              // <button> with the Buy <button> nested inside it, which is
+              // invalid HTML — React warns it "will cause a hydration error",
+              // and nested tap targets behave unpredictably on iOS Safari,
+              // which is the actual target platform. stopPropagation papered
+              // over the click conflict without making the markup legal.
+              // Found by playtest, in the console. Keyboard access is kept
+              // explicitly rather than lost along with the <button>.
               return (
-                <button
+                <div
                   key={c.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedCan(c)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition ${
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedCan(c); } }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition cursor-pointer ${
                     selectedCan?.id === c.id ? "border-emerald-400 bg-gray-700" : "border-gray-700 bg-gray-800"
                   }`}
                 >
@@ -77,7 +88,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                       Buy
                     </button>
                   </div>
-                </button>
+                </div>
               );
             })}
             <div className="pt-2 pb-1 text-[10px] font-black uppercase text-white/60 tracking-widest text-center">
@@ -85,11 +96,16 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
             </div>
             {STAT_KIB_CANS.map((c) => {
               const canBuy = career.money >= c.price;
+              // A div, not a button — see the note on the energy-can row
+              // above. Same nested-button bug, second copy.
               return (
-                <button
+                <div
                   key={c.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedStatCan(c)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition ${
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedStatCan(c); } }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition cursor-pointer ${
                     selectedStatCan?.id === c.id ? "border-fuchsia-400 bg-gray-700" : "border-gray-700 bg-gray-800"
                   }`}
                 >
@@ -111,7 +127,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                       Buy
                     </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -120,9 +136,8 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
         {kind === "boots" && (
           <>
             <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 mb-3">
-              <div className="grid grid-cols-[1fr_40px_40px_40px_50px_40px] py-1.5 bg-gray-800 text-[10px] font-black text-center text-white">
+              <div className="grid grid-cols-[1fr_40px_40px_50px_40px] py-1.5 bg-gray-800 text-[10px] font-black text-center text-white">
                 <div>Boot</div>
-                <div>Pac</div>
                 <div>Pow</div>
                 <div>Tec</div>
                 <div>Match</div>
@@ -133,7 +148,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                   <button
                     key={b.id}
                     onClick={() => setSelectedBoot(b)}
-                    className={`w-full grid grid-cols-[1fr_40px_40px_40px_50px_40px] py-2 text-[10px] font-bold text-center ${
+                    className={`w-full grid grid-cols-[1fr_40px_40px_50px_40px] py-2 text-[10px] font-bold text-center ${
                       selectedBoot?.id === b.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white hover:bg-gray-600"
                     }`}
                   >
@@ -149,7 +164,6 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                         <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
                       )}
                     </div>
-                    <div>{b.pace.toFixed(1)}</div>
                     <div>{b.power.toFixed(1)}</div>
                     <div>{b.technique.toFixed(1)}</div>
                     <div>{b.matches}</div>

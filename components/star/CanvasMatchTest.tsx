@@ -43,6 +43,12 @@ import { castScenario, creatorOf } from "@/lib/star/lineup";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
+// The one place this game draws a footballer — the real match uses exactly
+// these, so the sandbox and the thing it is a sandbox for cannot drift apart
+// the way they already had.
+import { drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MAX_KEEPER_LEAN } from "@/lib/star/fiveASide/render";
+import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
+import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import type { CareerState, MatchStats, Fixture, GoalEvent, SquadPlayer } from "@/lib/star/types";
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
@@ -1194,140 +1200,43 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       const { px, py, scale } = toPx(x, y);
       // Further up the pitch is further from the camera, so figures there are
       // drawn smaller. This is most of what sells the depth.
-      const r = rBase * scale;
+      //
+      // The same shared anatomy the real match and the trial now draw — see
+      // MATCH_FIGURE_HEIGHT_R in CanvasMatch.tsx. This fork's own head was
+      // never the oversized one (it never went through drawPlayerHead, so the
+      // Face Editor's 2.2x scale never reached it), but its BODY was the old
+      // rounded-rect with no shoulders, sleeves or boots, and the point of a
+      // sandbox fork is that it looks like the thing it is a sandbox for.
+      //
+      // No faces here: this fork has no face plumbing at all — no career, no
+      // faceStyleRef, nothing to load a photo from — so it passes the shipped
+      // defaults and no image, which is exactly the plain head it always drew.
+      const r = figureRForHeight(rBase * scale * MATCH_FIGURE_HEIGHT_R);
       const pose = opts.pose ?? "idle";
       const phase = opts.phase ?? 0;
-      // Shorts default to the shirt's rim rather than a near-black everybody
-      // shares. Two blocks of team colour instead of one is most of what makes
-      // a figure readable when it is the size of a thumbnail: on the old
-      // proportions the shirt was a small patch and the skin-coloured head,
-      // arms and legs dominated, so at any distance both sides were the same
-      // tan smudge and a crowd in the box was unreadable.
-      const shorts = opts.shorts ?? rim;
-      const lw = Math.max(1.3, r * 0.24);
-
-      // ── Anchored at the FEET ──
-      //
-      // (px, py) is where this man is standing, and it is now where his boots
-      // are: the shadow goes there and the body is drawn upward from it. The
-      // figure used to hang off its own middle, so every player was drawn half a
-      // body ahead of the spot he actually occupied — a keeper on his line had
-      // his head on the line and his feet two metres in front of it, and looked
-      // like he had come out. It also put the ball, which IS drawn at its ground
-      // point, level with a player's waist rather than his boots.
-      ctx.beginPath();
-      ctx.ellipse(px, py, r * 0.78, r * 0.30, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.34)";
-      ctx.fill();
-
-      ctx.save();
-      ctx.translate(px, py - r * 0.8);
-      if (opts.facing) ctx.rotate(opts.facing);
-
-      // Limb swing. Running scissors the legs and counter-swings the arms;
-      // a kick throws one leg through and the arms wide for balance.
       const swing = pose === "run" ? Math.sin(phase) : 0;
       const kick = pose === "kick" ? 1 : 0;
       const open = pose === "receive" ? 1 : 0;
 
-      ctx.lineCap = "round";
-      ctx.lineWidth = lw;
-
-      // ── Legs ──
-      ctx.strokeStyle = SKIN;
-      const hipY = r * 0.18;
-      const legL = r * 0.62;
-      const legSwing = swing * r * 0.42 + kick * r * 0.55;
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.24, hipY);
-      ctx.lineTo(-r * 0.24 - legSwing * 0.35, hipY + legL - Math.abs(legSwing) * 0.15);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(r * 0.24, hipY);
-      ctx.lineTo(r * 0.24 + legSwing * 0.35, hipY + legL - Math.abs(legSwing) * 0.15);
-      ctx.stroke();
-
-      // ── Shorts ──
-      ctx.fillStyle = shorts;
-      ctx.beginPath();
-      ctx.roundRect?.(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36, r * 0.12);
-      if (!ctx.roundRect) ctx.rect(-r * 0.46, -r * 0.02, r * 0.92, r * 0.36);
-      ctx.fill();
-
-      // ── Arms ── (counter-swing to the legs, thrown wide to receive)
-      ctx.strokeStyle = SKIN;
-      ctx.lineWidth = lw * 0.85;
-      const armOut = r * (0.52 + open * 0.34 + kick * 0.26);
-      const armDrop = r * (0.24 - open * 0.18);
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.34, -r * 0.30);
-      ctx.lineTo(-armOut, armDrop + swing * r * 0.22);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(r * 0.34, -r * 0.30);
-      ctx.lineTo(armOut, armDrop - swing * r * 0.22);
-      ctx.stroke();
-
-      // ── Shirt ── (deliberately the biggest thing on the figure)
-      ctx.fillStyle = shirt;
-      ctx.beginPath();
-      ctx.roundRect?.(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72, r * 0.17);
-      if (!ctx.roundRect) ctx.rect(-r * 0.52, -r * 0.56, r * 1.04, r * 0.72);
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, r * 0.12);
-      ctx.strokeStyle = rim;
-      ctx.stroke();
-
-      // ── Head ──
-      ctx.beginPath();
-      ctx.arc(0, -r * 0.76, r * 0.26, 0, Math.PI * 2);
-      ctx.fillStyle = SKIN;
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, r * 0.10);
-      ctx.strokeStyle = "rgba(0,0,0,0.35)";
-      ctx.stroke();
-
-      ctx.restore();
-
-      if (opts.label) {
-        ctx.fillStyle = opts.labelColor ?? "#fff";
-        ctx.font = `bold ${Math.round(r * 0.52)}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(opts.label, px, py - r * 1.02);
-      }
-
-      // ── The star above your head ──
-      //
-      // Which man is you, said the way a game says it rather than the way a
-      // diagram does. The word YOU was three letters of chrome sitting on the
-      // one figure you are actually watching, and at this size it was wider
-      // than the player wearing it. A star reads instantly, costs no width,
-      // and does not have to be read.
-      if (opts.star) {
-        // Synced from CanvasMatch.tsx: half radius, centred above the crown.
-        const sr = r * 0.23;
-        const cx = px, cy = py - r * 2.15;
-        ctx.save();
-        // Drawn from the point down, so it sits upright over the head.
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-          const ang = -Math.PI / 2 + (i * Math.PI) / 5;
-          const rad = i % 2 === 0 ? sr : sr * 0.44;
-          const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad;
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        // A dark rim under it, because a gold star on a bright shirt or against
-        // a floodlit sky needs an edge or it dissolves into whatever is behind.
-        ctx.lineJoin = "round";
-        ctx.lineWidth = Math.max(1.5, sr * 0.34);
-        ctx.strokeStyle = "rgba(0,0,0,0.55)";
-        ctx.stroke();
-        ctx.fillStyle = "#fbbf24";
-        ctx.fill();
-        ctx.restore();
-      }
+      drawFigureAt(
+        ctx, px, py, r,
+        { shirt, shorts: opts.shorts ?? rim, trim: rim, skin: SKIN },
+        DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE,
+        {
+          facing: opts.facing,
+          shadowR: r * 0.42,
+          pose: {
+            legSwing: swing,
+            kick,
+            armSpread: open * 0.5 + kick * 0.3,
+            armLift: -0.55 + open * 0.5,
+          },
+          label: opts.label,
+          labelColor: opts.labelColor,
+          star: opts.star,
+          starRim: "rgba(0,0,0,0.55)",
+        },
+      );
     };
 
     // Sized against the reference rather than against the laws of the game: a
@@ -1640,101 +1549,44 @@ export default function CanvasMatchTest({ skills = { power: 55, technique: 55 },
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
       const KR = R * 0.82 * kScale;   // smaller than an outfielder, smaller again far away
-      const lean = sign * diveN * (K ? K.lean : 0.9);
+      // Capped just past flat — see CanvasMatch.tsx's own note; a keeper at
+      // full stretch is horizontal, not upside down.
+      const lean = clamp(sign * diveN * (K ? K.lean : 0.9), -MAX_KEEPER_LEAN, MAX_KEEPER_LEAN);
       // He is already standing at the ball by the time a save is drawn (the
       // engine puts him there), so the lunge is a pose rather than a journey —
       // a big horizontal offset here would throw the figure straight past the
       // thing he just saved.
       const cx = px + sign * KR * lunge * (K ? K.reachK : 1.0) * 0.3;
       const cyOff = KR * ((K ? K.crouch : 0) * lunge + breathe);
-      const gloveR = KR * 0.24;
+      const kr = figureRForHeight(KR * MATCH_FIGURE_HEIGHT_R);
+      const spread = K ? K.spread : 1;
+      const armUp = K ? K.armUp : 0;
 
       ctx.save();
       ctx.globalAlpha = 0.92;
 
-      ctx.beginPath();
-      ctx.ellipse(cx, py, KR * (0.7 + diveN * 0.5), KR * 0.26, 0, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.3)";
-      ctx.fill();
-
-      // No highlight ring on a save. The dive is the thing you are watching;
-      // a yellow disc drawn over it only told you what you had already seen.
-
-      ctx.translate(cx + KR * weight * (1 - lunge), py - KR * 0.8 + cyOff);
-      ctx.rotate(lean);
-      ctx.lineCap = "round";
-
-      // Legs
-      ctx.strokeStyle = SKIN;
-      ctx.lineWidth = Math.max(1.2, KR * 0.28);
-      ctx.beginPath();
-      ctx.moveTo(-KR * 0.22, KR * 0.16);
-      ctx.lineTo(-KR * 0.30 - diveN * KR * 0.3, KR * 0.76);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(KR * 0.22, KR * 0.16);
-      ctx.lineTo(KR * 0.30 + diveN * KR * 0.3, KR * 0.76);
-      ctx.stroke();
-
-      // Shorts — the keeper's own kit, like everybody else, so he reads as the
-      // keeper rather than as another outfield player who happens to be near
-      // the goal. Wider than an outfielder's: he is stood square and low.
-      ctx.fillStyle = kitsRef.current.keeper.trim;
-      ctx.beginPath();
-      ctx.roundRect?.(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34, KR * 0.12);
-      if (!ctx.roundRect) ctx.rect(-KR * 0.52, -KR * 0.02, KR * 1.04, KR * 0.34);
-      ctx.fill();
-
-      // Arms — direction and spread come from the save being played. A high save
-      // drives them up, a low save down, a catch brings them together in front.
-      const spread = K ? K.spread : 1;
-      const armUp = K ? K.armUp : 0;
-      const reach = KR * (0.62 + diveN * 0.85) * (0.55 + spread * 0.45);
-      const armY = -KR * 0.28 - armUp * diveN * KR * 0.85;
-      ctx.strokeStyle = SKIN;
-      ctx.lineWidth = Math.max(1.1, KR * 0.24);
-      const gloves: { x: number; y: number }[] = [];
-      for (const s2 of [-1, 1]) {
-        // The leading glove goes furthest; the trailing one stays tucked.
-        const leading = sign === 0 || Math.sign(s2) === sign;
-        const ex = s2 * reach * (leading ? 1 : 0.62);
-        const ey = armY - (leading ? diveN * KR * 0.2 : 0);
-        ctx.beginPath();
-        ctx.moveTo(s2 * KR * 0.32, -KR * 0.28);
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-        gloves.push({ x: ex, y: ey });
-      }
-
-      // Shirt
-      ctx.fillStyle = kitsRef.current.keeper.shirt;
-      ctx.beginPath();
-      ctx.roundRect?.(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58, KR * 0.15);
-      if (!ctx.roundRect) ctx.rect(-KR * 0.56, -KR * 0.50, KR * 1.12, KR * 0.58);
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, KR * 0.11);
-      ctx.strokeStyle = kitsRef.current.keeper.trim;
-      ctx.stroke();
-
-      // Gloves — what actually makes him read as a keeper
-      ctx.fillStyle = "#f8fafc";
-      ctx.strokeStyle = kitsRef.current.keeper.trim;
-      ctx.lineWidth = Math.max(1, KR * 0.09);
-      for (const g of gloves) {
-        ctx.beginPath();
-        ctx.arc(g.x, g.y, gloveR, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-
-      // Head
-      ctx.beginPath();
-      ctx.arc(0, -KR * 0.70, KR * 0.28, 0, Math.PI * 2);
-      ctx.fillStyle = SKIN;
-      ctx.fill();
-      ctx.lineWidth = Math.max(1, KR * 0.09);
-      ctx.strokeStyle = "rgba(0,0,0,0.35)";
-      ctx.stroke();
+      drawKeeperAt(
+        ctx,
+        cx + KR * weight * (1 - lunge), py, kr,
+        {
+          shirt: kitsRef.current.keeper.shirt,
+          shorts: kitsRef.current.keeper.trim,
+          trim: kitsRef.current.keeper.trim,
+          skin: SKIN,
+        },
+        { dive: 0, lunge },
+        DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE,
+        {
+          facing: lean,
+          liftPx: -cyOff,
+          shadowR: kr * (0.53 + diveN * 0.38),
+          pose: {
+            armSpread: clamp(0.45 + spread * 0.35 + diveN * 0.4, 0, 1),
+            armLift: 0.15 + armUp * diveN * 0.85 + lunge * 0.5,
+            armLead: sign,
+          },
+        },
+      );
 
       ctx.restore();
     }

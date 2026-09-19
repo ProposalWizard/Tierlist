@@ -244,8 +244,11 @@ function commit(
   // couple of scrolls apart is the same tell as reading them side by side.
   const recentText = new Set(state.posts.slice(-24).map(p => p.text));
 
-  for (const p of pairings) {
-    const made = render(p, career, record, memory, cycleId, usedThisCycle);
+  // Indexed rather than `.entries()` — this project's TypeScript target does
+  // not down-level iterate an array iterator.
+  for (let slot = 0; slot < pairings.length; slot++) {
+    const p = pairings[slot];
+    const made = render(p, career, record, memory, cycleId, usedThisCycle, slot);
     if (!made) continue;
     if (recentText.has(made.post.text)) continue;
     recentText.add(made.post.text);
@@ -277,6 +280,10 @@ function render(
   memory: StoryMemory,
   cycleId: string,
   usedThisCycle: Set<string>,
+  /** Where this post sits in the cycle. Used ONLY to keep the post's own key
+   *  unique — see the id below. Deliberately not fed to `rngFor`, which would
+   *  reshuffle every generated post in the game. */
+  slot: number,
 ): { post: StoredPost; templateId: string } | null {
   const { event, account } = p;
   const rng = rngFor("post", cycleId, event.id, account.id);
@@ -312,7 +319,26 @@ function render(
   return {
     templateId: template.id,
     post: {
-      id: `${cycleId}:${event.id}:${account.id}`,
+      // ── Why the slot is in the key ──
+      //
+      // An event's id is its KIND ("win", "brace", "late-winner"), not its
+      // subject — which is right, because that is what a template matches on.
+      // But it means two different clubs winning in the same week produce two
+      // events with the same id, and if the same account posts about both, two
+      // posts with the same key. React then warns that "non-unique keys may
+      // cause children to be duplicated and/or omitted", which is a real risk
+      // of a post vanishing from the feed, not just console noise.
+      //
+      // Found by playtest, in the console, on the first visit to the phone:
+      // `s1-w1-leagueweek:late-w…` collided the week the England tab started
+      // reporting other clubs' matches — before that, every event in a cycle
+      // was about your club and the clash could not arise.
+      //
+      // The slot is appended rather than the club being folded into the event
+      // id, because the id is load-bearing for template matching, and rather
+      // than being fed into `rngFor`, because that seeds every post's wording
+      // and changing it would rewrite all of them.
+      id: `${cycleId}:${event.id}:${account.id}:${slot}`,
       at: timeFor(season, week, event.window, rng()),
       author: {
         handle: account.handle,

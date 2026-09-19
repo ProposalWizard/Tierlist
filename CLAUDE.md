@@ -1,6 +1,6 @@
 # KnowItBall — Project Context
 
-> Auto-loaded every session — keep concise. Full history in `SESSION_LOG.md`. Last updated: 16 September 2026.
+> Auto-loaded every session — keep concise. Full history in `SESSION_LOG.md`. Last updated: 17 September 2026.
 
 ---
 
@@ -182,6 +182,83 @@ npm run lint   # Run ESLint
 
 ---
 
+## ALWAYS PLAYTEST STAR CAREER CHANGES — you can now actually see the game
+
+> This supersedes every earlier note in this file claiming `/star-dev` can't be
+> reached without Google sign-in. **It can.** Those notes are why round after
+> round of gameplay work shipped saying "none of this has been seen live", and
+> why several real bugs (keeper frozen mid-dive, the face outline tracing a
+> rectangle, Touch Mode catching instantly, every team sheet full of
+> silhouettes) each survived multiple type-clean, test-green rounds.
+
+`/star-dev` has **no server auth gate** — `middleware.ts` only guards
+`/tierlist` and `/create`. `lib/star/devMode.ts` re-enables the local-only
+`ANON_SCOPE` career in development, so the game is fully playable signed-out in
+a sandbox or CI. A production build inlines `NODE_ENV` to `"production"`, so
+this cannot reach the live site.
+
+**After ANY change to `lib/star/**`, `components/star/**`, `app/star-dev/**`,
+or the star/draft data routes, invoke the `star-playtest` subagent** (see
+`.claude/agents/star-playtest.md`) and act on what it reports. A type-check and
+a green suite are necessary, not sufficient — neither can see a frozen figure,
+a mis-cropped face, or a button that never appears.
+
+Harness: `scripts/star-sandbox/` (`drive.mjs`, `play.mjs`, `match.mjs`,
+`explore.mjs`) — read its README first.
+
+**Env:** `.env.local` needs only `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`. The anon key is **not a secret** (it ships in
+the browser bundle of every live page) and is sufficient for real player data,
+because every table the career reads is public-read by RLS: `sofifa_players`,
+`club_logos`, `league_logos`, `star_lineups`. `SUPABASE_SERVICE_ROLE_KEY` is
+NOT needed — `lib/supabase/publicRead.ts` falls back to the anon key for the
+read-only data routes, and production is unchanged whenever the service key is
+present.
+
+**Without valid Supabase env**, every club shows "NO SQUAD YET" and falls back
+to invented players. Physics/layout work is still testable; anything involving
+real players is not.
+
+**The green pre-match button is "Team sheets →", not "Play Match".** It reads
+"Play Match ⚽" only when your XI is under 9 players (`teamsReady`, page.tsx) —
+otherwise it routes via VersusScreen, which has its own KICK OFF. An earlier
+version of this note claimed the button disappeared entirely without squad
+data; that was wrong, and came from a script searching for the wrong text
+rather than looking at the screen. Match on all of it.
+
+**In-match, the ball is NOT centre-bottom.** That's only true of the trial
+penalty. A real scenario places it anywhere in the framed view, so a driver
+that drags from a fixed point will miss and silently produce no contact
+screen. Find the ball before aiming.
+
+---
+
+## Working alongside the other two developers
+
+Three people are building this. To avoid two sessions editing the same files:
+
+- **Branches are per-person and non-negotiable** — this session develops on
+  `Harry`. Never push to another person's branch.
+- **Before starting, claim a lane** — say which of these you're in, because
+  they barely overlap in files:
+
+| Lane | Primary files |
+|------|---------------|
+| Match physics / engine | `lib/star/canvasEngine.ts`, `hiddenMatch.ts`, `components/star/CanvasMatch.tsx`, `tests/star/{finishing,keeperDive,aiming,outcomes}.mts` |
+| Career/season structure | `lib/star/{careerFlow,season,competitions,euro,cups,promotion,calendar}.ts` |
+| Economy / meta systems | `lib/star/{shopData,shopDefaults,sponsors,investments,marketValue,negotiation,money}.ts`, `components/star/{Shop,Casino,Investments}.tsx` |
+| Graphics / UI | `components/star/*.tsx` (non-CanvasMatch), `lib/star/{drawPlayerHead,faceStyle,firstPersonRender,scenarioRender}.ts` |
+| Media / narrative | `lib/star/media/**`, `components/star/{MediaFeed,media/*}.tsx` |
+
+- **`app/star-dev/page.tsx` is the shared collision point** — nearly every
+  feature touches its phase machine. Keep edits there minimal and additive
+  (a new phase + handler), never a refactor, unless the whole team agrees.
+- **`lib/star/types.ts` and `tuning.ts` are also shared** — add fields, don't
+  restructure.
+- Rebase on `main` before pushing; prefer several small PRs over one large one.
+
+---
+
 ## Pending Migrations
 
 > Run in Supabase SQL Editor before touching related features.
@@ -279,6 +356,14 @@ npm run lint   # Run ESLint
 ---
 
 ## Recent Session
+
+**17 September 2026 — New default values for both Face Editors, given directly via two screenshots of the live sliders.**
+
+- **The ask.** Two screenshots — one of `FakeFaceEditorScreen.tsx` (the fake-face editor), one of `FaceEditorScreen.tsx` (the real-photo editor) — each showing a dialled-in style, with "put these in" as the whole instruction: set these as the new defaults.
+- **What was exact vs. estimated, stated plainly rather than presented as more precise than it is.** Every field with an on-screen numeric readout was read and set EXACTLY: `DEFAULT_FAKE_FACE_STYLE` → scale 2.00, left/right -0.06, up/down -1.19; `DEFAULT_FACE_STYLE` → scale 2.20, left/right 0.00, up/down -1.45, outline thickness 0.5, and the two on/off toggles (read from the checkbox state, not the color swatch) — backing circle OFF, outline ON. Two things have NO numeric readout anywhere in either editor's UI, same real ambiguity this exact feature has hit before (the earlier "10% crop... unconfirmed exactly" note): the crop zoom/pan slider, and the exact colour under a swatch. `outlineColor` was read as white (`#ffffff`) — confident, since `FaceEditorScreen.tsx`'s own `toHex()` falls back to a plain BLACK swatch for any non-hex colour, including the actual pre-existing default (`rgba(0,0,0,0.35)`), so a visibly WHITE swatch could only mean the user had genuinely picked one. `backingColor` was left unchanged (`HEAD_SKIN`) rather than guessed — its swatch renders at 40% opacity while backing is off (`disabled:opacity-40`), which is exactly consistent with the existing tan default dimmed against a dark background, not clear evidence of an actually different colour choice.
+- **Crop zoom/pan doesn't just default to `{x:0,y:0}` at a new zoom — that would only be centred at zoom exactly 1.** Read `portrait.ts`'s real geometry (`coverScale`/`clampOffset`) before guessing: at any OTHER zoom, `{0,0}` is the picture's top-left corner pinned to the viewport's, not centred — carrying the *shape* of the old default (`zoom: 1.1, x: 0, y: 0`) forward at a new zoom without recomputing x/y would have shipped a visibly off-centre crop. For the fake faces specifically, this had a real, principled anchor rather than a guess: their own measured real dimensions (~1091×1442, documented from an earlier session's direct PNG measurement) mean **zoom 0.75 is the exact value at which the full height fits the 256px viewport with zero vertical crop** — matching the framing shown in the screenshot (full face, real headroom, nothing cut off) — and `x`/`y` were computed from that zoom via the same `clampOffset` math the editor itself runs (`x: 32, y: 1.1`), not guessed. The real-photo editor's crop doesn't have a documented source size the same way, so `zoom: 1.3` is a genuine best-effort reading of the visibly tighter framing shown (up from the old 1.1), with `x`/`y` computed assuming a roughly square source (SoFIFA's own face renders) — `x: -38, y: -38`.
+- **A real, if narrow, latent test bug found and fixed in the process — not caused by this change, just newly exposed by it.** `tests/star/faceStyle.mts`'s legacy-slider-migration test asserted `back.showBacking === true` — a hardcoded literal, unlike every other assertion in this same file which correctly compares against `DEFAULT_FACE_STYLE`'s own live fields symbolically. Since `showBacking` flipped to `false` as part of this round's real correction, that hardcoded `true` would have been silently testing the WRONG thing (the old default, not "whatever the real default currently is," which is what the test's own name — "…and everything else is still the real default" — actually promises). Fixed to `back.showBacking === DEFAULT_FACE_STYLE.showBacking`, matching the pattern already used everywhere else in the file.
+- Both `tests/star/faceStyle.mts`/`fakeFaceStyle.mts` pass (all their own assertions compare against the live `DEFAULT_FACE_STYLE`/`DEFAULT_FAKE_FACE_STYLE` constants rather than hardcoded old numbers, so neither needed any further changes beyond the one bug above). Full 113-file suite, `tsc --noEmit`, and a real `npm run build` all clean. Worth a direct check next time someone's signed in, specifically on the two estimated pieces: does the fake-face crop now show the whole face with real headroom (not cut off top/bottom), and does the real-photo crop's zoom/position look right rather than noticeably off-centre — say so directly if either needs a nudge, exactly like every other value in this feature's history.
 
 **16 September 2026 (cont. 7) — Touch Mode's real "instant catch" bug: every scenario has always stood the player 0.8-2.0m off from the ball as a cosmetic stand-off stance, and Touch Mode was the first feature to ever read that gap as real — colliding directly with the chase's own 1.3m/1.15m thresholds.**
 

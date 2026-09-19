@@ -480,7 +480,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               Your agent will play higher-or-lower against the club negotiator. Every correct guess raises your offer by {Math.round(RAISE_PCT_PER_WIN * 100)}% — take it whenever you like, or keep pushing. Get one wrong and talks sour: the offer drops, and that final number is the only one left on the table.
             </div>
             <div className="bg-gray-800 rounded-lg p-3 text-xs mb-3 space-y-1">
-              <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.wage)}/match</span></div>
+              <div className="flex justify-between"><span>Current wage</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.wage)}/week</span></div>
               <div className="flex justify-between"><span>Goal bonus</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.goalBonus)}</span></div>
               <div className="flex justify-between"><span>Assist bonus</span><span className="text-yellow-300 font-black">★{formatMoney(career.contract.assistBonus)}</span></div>
               <div className="flex justify-between"><span>Seasons remaining</span><span className="text-white/85 font-black">{career.contract.seasonsRemaining}</span></div>
@@ -513,7 +513,7 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
               <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">
                 {locked ? "Final offer" : "Current offer"}
               </div>
-              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.wage))}/match</span></div>
+              <div className="flex justify-between"><span>Wage</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.wage))}/week</span></div>
               <div className="flex justify-between"><span>Goal bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.goalBonus))}</span></div>
               <div className="flex justify-between"><span>Assist bonus</span><span className={`font-black ${locked ? "text-red-300" : "text-emerald-300"}`}>★{formatMoney(currentOffer(career.contract.assistBonus))}</span></div>
             </div>

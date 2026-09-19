@@ -1,6 +1,6 @@
 import { poolFor, replaceableClubsIn } from "../../lib/star/euro";
 import { proposeRuleChangeVote, resolveRuleChangeVote, ruleBookFor, changeMagnitude, fanCostOf, DEFAULT_RULE_BOOK, type CustomClubEntry } from "../../lib/star/ruleBook";
-import { investInfluence } from "../../lib/star/governingBodies";
+import { investInfluence, MONEY_PER_INFLUENCE_POINT } from "../../lib/star/governingBodies";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
@@ -16,6 +16,17 @@ import type { CareerState, StarPlayer } from "../../lib/star/types";
  * resulting CustomClubEntry by hand and check what euro.ts's `poolFor` does
  * with it, which is the real, testable mechanism).
  */
+
+/**
+ * Buying influence, in POINTS rather than in pounds.
+ *
+ * These fixtures used to hardcode the cash amount, which silently baked the
+ * price of influence into the test — so when that price was corrected (it had
+ * been left on the pre-rescale scale, where ★50,000 bought total control of
+ * FIFA) they all broke, and none of them broke in a way that pointed at the
+ * price. Asking for POINTS lets a future retune move the money automatically.
+ */
+const costOf = (points: number) => points * MONEY_PER_INFLUENCE_POINT;
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -37,7 +48,7 @@ function player(): StarPlayer {
 }
 
 function freshCareer(): CareerState {
-  return { ...makeInitialCareer(player(), [...PREMIER_LEAGUE_CLUBS]), money: 1_000_000 };
+  return { ...makeInitialCareer(player(), [...PREMIER_LEAGUE_CLUBS]), money: costOf(500) };
 }
 
 // ── replaceableClubsIn: real names, never a main-nation club, sorted weakest first ──
@@ -104,7 +115,7 @@ function freshCareer(): CareerState {
 // ── A real vote can actually admit a custom club ──────────────────────────
 {
   let career = freshCareer();
-  career = investInfluence(career, "UEFA", 25_000) as CareerState;
+  career = investInfluence(career, "UEFA", costOf(100)) as CareerState;
   const target = replaceableClubsIn("Champions League", career)[0];
   const entry: CustomClubEntry = { customClub: "Dockside Athletic", competition: "champions", replaces: target, strength: 82 };
   const current = ruleBookFor(career, "UEFA");

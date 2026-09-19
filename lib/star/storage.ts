@@ -1,4 +1,5 @@
 import type { CareerState, StarPhase } from "./types";
+import { hasClub } from "./calendar";
 import type { EuroStanding } from "./euro";
 import { makeManager } from "./manager";
 import { allPoolManagers } from "./managerPool";
@@ -144,7 +145,36 @@ function claimAnonSave(scope: string): void {
  * they can be regenerated on load and are the same offers. A retired career is
  * handled separately, by the flag on the career itself.
  */
-const RESUMABLE: StarPhase[] = ["ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer"];
+const RESUMABLE: StarPhase[] = [
+  "ballon-dor", "contract-renewal", "dilemma", "retirement", "season-transfer",
+  // Relegated out of the Championship: the club you were at has dropped into
+  // a pool with no fixtures and no table, so a new one has to be chosen
+  // before the season can roll over at all — `advanceSeason` needs to know
+  // which real division to build next season in. That makes this the one
+  // transfer screen with no "stay put" button, and refreshing on it dropped
+  // you on a dashboard with every fixture played and no way forward: the
+  // exact soft-lock this list exists for. Its offers are regenerable on the
+  // same terms `season-transfer`'s are — seeded off the season and your
+  // fame, neither of which moves while the screen is open.
+  "relegation-move",
+  // LEGACY. The one-penalty opening, whose screen is deleted. Kept resumable
+  // purely so a save still carrying it is picked up by the resume path and
+  // moved to "trial-stages" rather than falling through to a dashboard it has
+  // no club for. Nothing writes this phase any more.
+  "trial",
+  // The multi-stage trial. Every stage's result is written to the career the
+  // instant it is decided, so resuming costs nothing — and the trial itself
+  // quietly gets harder each time it is re-opened rather than being blocked.
+  "trial-stages",
+  // Life with no club. Resumable for the same reason as everything else in
+  // this list: it is a screen you cannot navigate back to from the ordinary
+  // dashboard, because the ordinary dashboard is about a club you do not have.
+  "free-agent",
+  // The clubs that came in. Regenerable from the trial's own seed and score,
+  // so a reload shows the same clubs rather than re-rolling them — which
+  // would be the single most farmable screen in the game otherwise.
+  "scout-offers",
+];
 
 export interface SavedPhase {
   phase: StarPhase;
@@ -397,6 +427,17 @@ export interface SaveSlotSummary {
   season?: number;
   starRating?: number;
   retired?: boolean;
+  /**
+   * Whether anybody has signed this save yet — see `hasClub` (calendar.ts).
+   *
+   * A career now genuinely exists before it has a club: the trial runs on a
+   * real, saved CareerState with no league and no fixtures. That save is NOT
+   * empty — overwriting it loses the trial — but `club` is legitimately
+   * blank, so a summary that only reported a name and a club would render a
+   * dangling separator and invite the player to start over on top of the
+   * career they are in the middle of.
+   */
+  signed?: boolean;
 }
 
 export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
@@ -407,10 +448,14 @@ export function listSaveSlots(accountScope: string): SaveSlotSummary[] {
     // has; slots 2+ never had anything to claim — see loadCareerRaw's note.
     const career = slot === 1 ? loadCareer(scope) : loadCareerRaw(scope);
     if (!career) { out.push({ slot, empty: true }); continue; }
+    const signed = hasClub(career);
     out.push({
       slot,
       empty: false,
-      club: career.player.club,
+      signed,
+      // Blank for a trial rather than "" — the panel says what is happening
+      // instead of printing an empty club name.
+      club: signed ? career.player.club : undefined,
       playerName: `${career.player.firstName} ${career.player.lastName}`,
       season: career.season,
       starRating: career.starRating,

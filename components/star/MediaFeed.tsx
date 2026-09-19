@@ -91,12 +91,18 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
     return posts.filter(p => p.scope === f.scope);
   }, [posts, filter]);
 
-  // The status bar's own clock, reading real — "22/08/26", not a fixed
-  // "9:41" — the Saturday of whatever week the career is on, its own week
-  // granularity being the finest date this game tracks.
+  // The status bar's own clock, reading real — the Saturday of whatever week
+  // the career is on, its own week granularity being the finest date this
+  // game tracks, rather than a fixed "9:41".
+  //
+  // The YEAR is dropped on purpose. There is only so much room to the left of
+  // the notch, and the full "22/08/26" was measured running under it with the
+  // year swallowed — a phone's status bar does not show a year anyway.
+  // PhoneFrame now caps the label's width too, so this is belt and braces:
+  // this one makes it read well, that one makes it impossible to break.
   const dateLabel = formatDateNumeric(
     fixtureDate(career.player.startYear, career.season, career.week, "saturday", divisionOf(career)),
-  );
+  ).replace(/\/\d{2}$/, "");
 
   const phone = (
     <PhoneFrame statusLabel={dateLabel}>

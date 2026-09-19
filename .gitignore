@@ -29,3 +29,15 @@ __pycache__/
 
 # claude code agent scratch worktrees
 .claude/worktrees/
+
+# Playtest driver scratch files. The sandbox harness (and the star-playtest
+# agent) writes throwaway Playwright drivers next to the real scripts; they are
+# never part of the repo. Any leading underscore, not just _tmp_ — an agent
+# writing _repl_tmp.mjs slipped straight past the narrower rule.
+scripts/star-sandbox/_*
+
+# Throwaway Next routes an agent spins up to render a canvas in isolation so it
+# can SEE a figure at several sizes and poses. Every real graphics bug in this
+# project has been found by looking at a rendered frame, so these get written
+# often — and they are never part of the app.
+app/gfx-harness-tmp/

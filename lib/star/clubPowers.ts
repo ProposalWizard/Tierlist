@@ -9,6 +9,7 @@ import { FORMATIONS, DEFAULT_FORMATION, formationOf, autoPick, bestFitness } fro
 import { getTuning } from "./tuningStore";
 import type { ClubKits } from "./kits";
 import type { SavedLineup } from "./lineupStore";
+import { MONEY_SCALE } from "./money";
 
 /**
  * PHASE 3 OF STAR_POWER_POLITICS.MD — DEEPENING CLUB OWNERSHIP.
@@ -354,7 +355,10 @@ export interface SonState {
   playerId: string | null;
 }
 
-const HAVE_A_SON_COST = 500;
+/** Scaled by `MONEY_SCALE` — the bare 500 predates the 14 Sep 2026 rescale
+ *  and was missed by it, leaving a quarter of one week's starting wage as the
+ *  price of having a child. Found in review. */
+const HAVE_A_SON_COST = 500 * MONEY_SCALE;
 const SON_START_AGE = 0;
 const SON_START_OVERALL = 35;
 /** However many times you use the potion, he never plays before this age —
@@ -383,7 +387,8 @@ export function haveASon(career: CareerState): CareerState | { ok: false; reason
  */
 export function ageUpSonWithPotion(career: CareerState, rng: () => number): CareerState | { ok: false; reason: string } {
   if (!career.son) return { ok: false, reason: "You don't have a son yet" };
-  const cost = 200 + career.son.age * 40;
+  // Scaled by MONEY_SCALE, same missed-rescale as HAVE_A_SON_COST above.
+  const cost = (200 + career.son.age * 40) * MONEY_SCALE;
   if (career.money < cost) return { ok: false, reason: "Not enough money for the potion" };
   const ageGain = 3 + Math.floor(rng() * 6); // 3-8
   const overallGain = 2 + Math.floor(rng() * 7); // 2-8

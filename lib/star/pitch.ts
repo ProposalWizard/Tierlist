@@ -65,14 +65,23 @@ export const CORNER_R = 1;
 /** Radius of the ball, used for goal-line and post collision tests. */
 export const BALL_R = 0.11;
 
-/** True when a crossing point is between the posts (goal mouth, ignoring height). */
-export function insideGoalMouth(x: number): boolean {
-  return x >= POST_L && x <= POST_R;
+/**
+ * True when a crossing point is between the posts (goal mouth, ignoring height).
+ *
+ * The posts default to a real eleven-a-side goal, which is what every caller
+ * wanted until small-sided football existed. `l`/`r` let a caller name its own
+ * goal instead — a five-a-side goal is about half the width, and a goal you
+ * cannot miss is not a goal. Every existing call site passes neither and is
+ * byte-identical.
+ */
+export function insideGoalMouth(x: number, l: number = POST_L, r: number = POST_R): boolean {
+  return x >= l && x <= r;
 }
 
-/** True when a crossing point clips a post rather than passing cleanly by. */
-export function hitsPost(x: number): boolean {
-  return (x >= POST_L - BALL_R * 2 && x < POST_L) || (x > POST_R && x <= POST_R + BALL_R * 2);
+/** True when a crossing point clips a post rather than passing cleanly by.
+ *  Same optional posts, same default, same reason. */
+export function hitsPost(x: number, l: number = POST_L, r: number = POST_R): boolean {
+  return (x >= l - BALL_R * 2 && x < l) || (x > r && x <= r + BALL_R * 2);
 }
 
 /** True when a point is inside the penalty area. */

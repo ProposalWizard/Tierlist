@@ -8,8 +8,12 @@ import {
   clearCareerFromCloud, loadCareerSavedAt, ANON_SCOPE, slotScope, listSaveSlots, loadActiveSlot, saveActiveSlot,
 } from "@/lib/star/storage";
 import { createClient } from "@/lib/supabase/client";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
-import { makeInitialCareer, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
+import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
+import { generateScoutOffers, clubsForDivision } from "@/lib/star/scoutOffers";
+import ScoutOffers from "@/components/star/ScoutOffers";
+import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
@@ -46,7 +50,8 @@ import { checkNewAchievements } from "@/lib/star/achievements";
 import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
 import { getTuning } from "@/lib/star/tuningStore";
 import ProfileSetup from "@/components/star/ProfileSetup";
-import TrialPenalty from "@/components/star/TrialPenalty";
+import TrialSequence from "@/components/star/TrialSequence";
+import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
@@ -238,9 +243,28 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // No account, no career — not even a local one. See the note on
-        // `signedIn` above for why this is deliberate rather than falling
-        // back to ANON_SCOPE the way it used to.
+        // No account. In production that is the end of it — see the note on
+        // `signedIn` above for why requiring an account is deliberate.
+        //
+        // In DEVELOPMENT ONLY, fall back to the local-only ANON_SCOPE career
+        // that storage.ts still supports, so the game can actually be played
+        // (and therefore SEEN) without completing Google OAuth — impossible in
+        // a sandbox, a headless browser or CI. See lib/star/devMode.ts for the
+        // full reasoning and for why this cannot reach production.
+        //
+        // A career started this way lives in this browser's localStorage and
+        // never syncs to the cloud: the cloud step inside loadCareerIntoState
+        // is a no-op without a user id, which is correct — there is no account
+        // to sync it to.
+        if (offlineDevPlayEnabled()) {
+          setSignedIn(true);
+          scopeRef.current = ANON_SCOPE;
+          const anonSlot = loadActiveSlot(ANON_SCOPE);
+          activeSlotRef.current = anonSlot;
+          setActiveSlotState(anonSlot);
+          await loadCareerIntoState(anonSlot);
+          return;
+        }
         setSignedIn(false);
         setCloudLoading(false);
         return;
@@ -272,6 +296,40 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const slotAtSaveTime = activeSlotRef.current;
     cloudSaveTimer.current = setTimeout(() => { saveCareerToCloud(career, slotAtSaveTime); }, 3000);
   }, [career]);
+
+  /**
+   * EVERY NEW SCREEN STARTS AT THE TOP OF ITSELF.
+   *
+   * Found by playtest, reproduced seven times across unrelated screens, and it
+   * is worst in exactly the place it can least afford to be.
+   *
+   * On a phone, almost every "next" button in this game is below the fold —
+   * "Start Career", "Continue →", "Team sheets →", "KICK OFF". So the player
+   * scrolls down to press it. Changing phase swaps what is rendered but does
+   * not touch the scroll position, so the NEXT screen opens already scrolled
+   * down by however far the last one needed.
+   *
+   * Measured: after scrolling to find KICK OFF, the live match opened at
+   * `scrollY: 333` with the canvas at `y: -128` — the pitch, the ball and both
+   * teams genuinely above the top of the screen, leaving a black area and a
+   * stats strip. The player's own match, invisible, until they think to scroll
+   * up. The same thing put the opening trial's ball off-screen, and both face
+   * editors.
+   *
+   * It is also the reason an automated driver reported "22 of 22 attempts made
+   * no contact with the ball" — it was dragging at a pitch that was not on the
+   * screen.
+   *
+   * Deliberately keyed on `phase` alone: this is about arriving somewhere new,
+   * not about re-rendering. Scrolling within a screen is untouched.
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo(0, 0);
+    // The phone frame and several screens scroll in their own element rather
+    // than the window, so the window alone is not always the thing that moved.
+    document.querySelectorAll<HTMLElement>("[data-scroll-root]").forEach(el => { el.scrollTop = 0; });
+  }, [phase]);
 
   // Only the phases a refresh must return you to are written; everything else
   // clears the record — see RESUMABLE in storage.ts.
@@ -337,30 +395,40 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * squad.
    */
   const handleProfileComplete = useCallback((player: StarPlayer, clubs: string[], division: CareerDivision) => {
-    const created = makeInitialCareer(player, clubs, division);
-    setCareer(created);
     // ── Into the trial, not the dashboard ──
     //
-    // A career now opens on one penalty you cannot fail, only not have passed
-    // yet, and the contract it earns. The career itself is fully built before
-    // any of that — the trial is a scene played over a career that already
-    // exists, so nothing about it can leave a half-made save behind if the tab
-    // closes halfway through. Both squad fetches below still run during it,
-    // which is time the trial is spending anyway.
-    setPhase("trial");
-    fetchSharedLineups();
-    fetchRealSquad(player.club).then((squad) => {
-      setCareer(c => (c && c.player.club === player.club ? { ...c, squad } : c));
-    });
-    // ── And the other nineteen dressing rooms ──
+    // A career opens on a trial: five stages on the live match engine, seeded
+    // once so it is the same afternoon however many times the app is closed
+    // and re-opened. The career itself is fully built before any of it — the
+    // trial is a scene played over a career that already exists, so nothing
+    // about it can leave a half-made save behind if the tab closes halfway
+    // through. Both squad fetches below still run during it, which is time the
+    // trial is spending anyway.
     //
-    // One request for the whole division, not nineteen. See
-    // app/api/star/league-squads — the Draft's roster endpoint reads a JSONB
-    // blob per player, which is right for the Draft and far too heavy to ask
-    // twenty times for six fields.
-    fetchLeagueSquads(clubs).then((leagueSquads) => {
-      setCareer(c => (c ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
-    });
+    // ── You arrive with NO CLUB ──
+    //
+    // This is what the whole `makeIdentity`/`attachClub` split was for. A
+    // trialist is a real, complete, saveable career that nobody has signed:
+    // real skills, real money, real relationships, and no league, no fixtures
+    // and no squad, because he does not have a club to have them at.
+    //
+    // The club you picked on the setup screen is where the trial IS, not where
+    // you play — `attachClub` runs later, once somebody actually offers.
+    const created = { ...makeIdentity(player, division), trial: startTrial() };
+    setCareer(created);
+    setPhase("trial-stages");
+    // ── The squad fetches have MOVED to the signing ──
+    //
+    // They used to fire here, on the reasoning that the trial was time they
+    // could spend anyway. That was right when the club was already known; it
+    // is wrong now, because at this moment there is no club — which club's
+    // dressing room to fetch is the question the trial is about to answer.
+    // They fire the instant an offer is accepted instead (see the scout-offers
+    // screen), which is still before the first screen that needs them.
+    //
+    // The shared team sheets are not club-specific and still fire now.
+    fetchSharedLineups();
+    void clubs;
     // Whoever the database currently has out of contract — signable by any
     // club, yours included, the moment a transfer window opens. See
     // lib/star/leagueSquads.ts's fetchFreeAgents.
@@ -415,6 +483,30 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setActiveNav("home");
     setPhase("dashboard");
   }, []);
+
+  /**
+   * ── Back out of Settings, to wherever this career actually lives ──
+   *
+   * Settings is the one screen a career with no club can legitimately be on,
+   * and its back button was `handleBackToDashboard` because that handler
+   * already existed. So a free agent — or a player mid-trial — who opened
+   * Settings and tapped Back landed on the CLUB dashboard: the shop, the
+   * casino, every club button, and, because the "is the season over" check
+   * passes trivially on an empty fixture list, an "End of Season 🏆" button
+   * that would run the awards and season-advance flow on a career with no
+   * league at all.
+   *
+   * `hasClub` (calendar.ts) is the question, and it is exactly the question
+   * the load path already asks to decide which shell to resume onto.
+   */
+  const handleBackFromSettings = useCallback(() => {
+    if (career && !hasClub(career)) {
+      setPhase(career.trial && !trialComplete(career.trial) ? "trial-stages" : "free-agent");
+      return;
+    }
+    setActiveNav("home");
+    setPhase("dashboard");
+  }, [career]);
 
   // Reputation, the Rule Book, and Investments (see the "ownership" phase
   // below) are only ever reached FROM the Ownership hub now — Reputation/
@@ -1206,6 +1298,51 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // are invented, and the club they play for is a real club whose real squad
     // is one request away. See shouldUpgradeSquad for what the rule is and what
     // it used to be.
+    // ── A career with no club yet has no club data to fetch ──
+    //
+    // `makeIdentity` (careerFlow.ts) gives a real, saveable career to
+    // somebody nobody has signed: no league, no fixtures, an empty squad.
+    // Every fetch below keys off a club name or a division's team list, so
+    // for that career they would ask the server for the squad of "" and the
+    // division made of no clubs — three pointless round trips whose empty
+    // answers then look exactly like a failed fetch. It gets its phase
+    // resumed like any other career; it just has nothing to load.
+    if (!hasClub(saved)) {
+      // ── Count the resume FIRST ──
+      //
+      // This is the anti-cheat three separate comments promised and nothing
+      // delivered. `noteReload` had no caller anywhere outside its own tests,
+      // so `reloads` was zero for every career that has ever existed.
+      //
+      // The first attempt at wiring it up put the call AFTER the resumable-
+      // phase check below — and a playtest caught that it still never fired,
+      // because "trial-stages" is itself resumable, so every ordinary reload
+      // mid-trial took the early return and walked straight past it. A fix
+      // that reads correctly and never executes is worse than no fix; this
+      // now happens before anything can return.
+      //
+      // Re-opening is still never blocked. It just quietly costs.
+      // `noteReload` returns the SAME trial object when the load interrupted
+      // nothing and so was not charged for. Building `{ ...saved, ... }`
+      // unconditionally threw that away — the object identity differed every
+      // time, so `resumed !== saved` was always true and the career was
+      // re-saved on every load, including the ones that cost nothing. Compare
+      // the trial, which is the thing that can actually have changed.
+      const nextTrial = saved.trial && !trialComplete(saved.trial)
+        ? noteReload(saved.trial)
+        : saved.trial;
+      const resumed = nextTrial === saved.trial ? saved : { ...saved, trial: nextTrial };
+      if (resumed !== saved) setCareer(resumed);
+
+      const pendingNoClub = loadStarPhase(scope);
+      if (pendingNoClub) { setPhase(pendingNoClub.phase); return; }
+      // A real, saved career that nobody has signed — mid-trial, or a free
+      // agent. It belongs on its own shell, never on the club dashboard and
+      // never back at Profile Setup, which would look like losing the save.
+      setPhase(resumed.trial && !trialComplete(resumed.trial) ? "trial-stages" : "free-agent");
+      return;
+    }
+
     if (shouldUpgradeSquad(saved.squad ?? [])) {
       fetchRealSquad(saved.player.club).then((real) => {
         setCareer(c => (c && c.player.club === saved.player.club && shouldUpgradeSquad(c.squad ?? [])
@@ -1275,6 +1412,28 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setWonBallonDor(!!pending.wonBallonDor);
       setPhase("retirement");
       return;
+    }
+    // A save from before the five-stage trial existed, caught mid-penalty.
+    // "trial" was one penalty taken until it went in, on a screen that is
+    // gone; the opening is TrialSequence now. Nothing is lost by moving them
+    // across — that screen held no state of its own, which is exactly why it
+    // was safe to resume into in the first place.
+    if (pending?.phase === "trial" && !saved.clubAppearances) {
+      setPhase("trial-stages");
+      return;
+    }
+    if (pending?.phase === "relegation-move") {
+      // The one transfer screen you cannot walk away from — see RESUMABLE in
+      // storage.ts. Regenerated on the same terms as the window below it:
+      // the seed is the season and your fame, neither of which has moved, so
+      // these are the same clubs that were on screen when the page reloaded.
+      const offers = generateRelegationOffers(saved, mulberry32(saved.season * 8831 + saved.fame));
+      if (offers.length > 0) {
+        setWonBallonDor(!!pending.wonBallonDor);
+        setTransferOffers(offers);
+        setPhase("relegation-move");
+        return;
+      }
     }
     if (pending?.phase === "season-transfer") {
       // Regenerated rather than stored: the seed is the season and the player's
@@ -1913,8 +2072,136 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
-  if (phase === "trial" && career) {
-    return <TrialPenalty club={career.player.club} onScored={() => setPhase("trial-reward")} />;
+  /**
+   * The full multi-stage trial.
+   *
+   * Deliberately routed ABOVE the `profile-setup || !career` fall-through
+   * further down, and deliberately not gated on the career having a club: a
+   * trial is what a career has INSTEAD of a club, and the whole point of
+   * splitting career creation in two was that this state can exist at all.
+   *
+   * Nothing is held in React here. Every stage result goes straight onto the
+   * career, so closing the app between stages costs nothing — see
+   * TrialSequence's own note.
+   */
+  /**
+   * The clubs that came in.
+   *
+   * Offers are REGENERATED from the trial's own seed and its final score
+   * rather than stored, exactly as the end-of-season transfer window already
+   * does: neither of those numbers can move once the trial is over, so these
+   * are the same clubs every time the screen is opened. Storing them would be
+   * equivalent; re-rolling them would make this the most farmable screen in
+   * the game.
+   */
+  if (phase === "scout-offers" && career?.trial) {
+    const offers = generateScoutOffers(
+      trialScore(career.trial),
+      mulberry32(career.trial.seed ^ 0x5c0a7),
+      // A second look is judged against a lower bar and a ladder shifted a
+      // rung down — see ScoutContext (scoutOffers.ts) and `grantTrial`
+      // (freeAgent.ts). `trialsTaken` is absent on a career that has only ever
+      // had the trial it opened with, which reads as 1.
+      { retrial: (career.trialsTaken ?? 1) > 1 },
+    );
+    return (
+      <ScoutOffers
+        trial={career.trial}
+        offers={offers}
+        playerName={career.player.firstName}
+        onNoOffers={() => setPhase("free-agent")}
+        onAccept={offer => {
+          // THE SIGNING. Everything a club brings — the league, the fixture
+          // list, the squad, the manager, your number, the cups — arrives now,
+          // in one call, onto the person the trial just built.
+          const clubs = clubsForDivision(offer.division);
+          const signed = attachClub(career, offer.club, clubs, offer.division);
+          const withDeal: CareerState = {
+            ...signed,
+            contract: {
+              club: offer.club,
+              wage: offer.wage,
+              goalBonus: offer.goalBonus,
+              assistBonus: offer.assistBonus,
+              seasonsRemaining: offer.seasons,
+            },
+          };
+          setCareer(withDeal);
+          setActiveNav("home");
+          setPhase("trial-reward");
+          // The real dressing room, now that there is one to fetch.
+          fetchRealSquad(offer.club).then(squad => {
+            setCareer(c => (c && c.player.club === offer.club ? { ...c, squad } : c));
+          });
+          fetchLeagueSquads(clubs).then(leagueSquads => {
+            setCareer(c => (c ? {
+              ...c, leagueSquads,
+              league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+            } : c));
+          });
+        }}
+      />
+    );
+  }
+
+  /**
+   * Life with no club. Routed above the `profile-setup || !career`
+   * fall-through for the same reason the trial is: a clubless career is a real
+   * career, and the ordinary dashboard has nothing to show it.
+   */
+  if (phase === "free-agent" && career) {
+    return (
+      // Only offer the trial when there is one left to play. This guard used
+      // to live in the child as a presentational check, which meant any
+      // reordering of its JSX re-opened the blank-screen bug above.
+      <FreeAgentShell
+        career={career}
+        onCareer={next => setCareer(next)}
+        onTrial={career.trial && !trialComplete(career.trial)
+          ? () => setPhase("trial-stages")
+          : undefined}
+        onSettings={() => setPhase("settings")}
+      />
+    );
+  }
+
+  /**
+   * A FINISHED trial goes straight to the offers, never back to the
+   * sequencer.
+   *
+   * The sequencer renders `null` once there are no stages left, and it only
+   * ever leaves that state through a 1.4-second timer. But the career is
+   * written to disk the instant the last stage ends, while the phase pointer
+   * still says "trial-stages" — so closing the tab, refreshing, or simply
+   * letting a phone lock the screen inside that window brought you back to a
+   * blank page with no navigation and no other route to the offers. A
+   * permanently stranded career. Found by an independent check of the review,
+   * not by playing it.
+   */
+  if (phase === "trial-stages" && career?.trial && trialComplete(career.trial)) {
+    setPhase("scout-offers");
+    return null;
+  }
+
+  if (phase === "trial-stages" && career?.trial) {
+    return (
+      <TrialSequence
+        trial={career.trial}
+        playerName={career.player.firstName}
+        skills={{
+          power: career.skills.power,
+          technique: career.skills.technique,
+          // The dribbling stage runs on this and nothing else.
+          pace: career.skills.pace,
+        }}
+        onTrial={t => setCareer(c => (c ? { ...c, trial: t } : c))}
+        onComplete={(score, t) => {
+          setCareer(c => (c ? { ...c, trial: { ...t } } : c));
+          void score;   // read back off the trial by the offers screen
+          setPhase("scout-offers");
+        }}
+      />
+    );
   }
 
   if (phase === "trial-reward" && career) {
@@ -2255,7 +2542,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <SettingsScreen
         career={career}
-        onBack={handleBackToDashboard}
+        onBack={handleBackFromSettings}
         onSkip={handleDevSkip}
         onAddMoney={handleAddMoney}
         onSetPortrait={handleSetPortrait}
@@ -2519,6 +2806,31 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </div>
         </div>
       </div>
+    );
+  }
+
+  // ── A career with no club can never reach the club dashboard ──
+  //
+  // The belt to `handleBackFromSettings`'s braces, and the reason it is here
+  // rather than only there: everything below this line is a club — a league
+  // table, a fixture list, a squad, a shop, a manager — and the "season over"
+  // check passes trivially on an empty fixture list, so a clubless career that
+  // arrives here by ANY route (a stale saved phase pointer, a future screen
+  // wired to `handleBackToDashboard` without thinking about it) is offered
+  // "End of Season 🏆" and can run the awards and season-advance flow on a
+  // career with no league. The trial and free-agent phases are handled well
+  // above this; anything else that gets here is a routing bug, and this is
+  // where it stops being a corrupted save.
+  if (!hasClub(career)) {
+    return (
+      <FreeAgentShell
+        career={career}
+        onCareer={next => setCareer(next)}
+        onTrial={career.trial && !trialComplete(career.trial)
+          ? () => setPhase("trial-stages")
+          : undefined}
+        onSettings={() => setPhase("settings")}
+      />
     );
   }
 
