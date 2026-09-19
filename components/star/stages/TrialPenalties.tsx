@@ -378,7 +378,7 @@ export interface StrikeStageProps {
    * that use it pass one, because a first rep with nothing on it is the case
    * this exists to remove.
    */
-  teach?: { headline: string; lines: string[] };
+  teach?: { headline: string; lines: string[]; short?: string };
   /** Which drill this is, for remembering that its teaching has been
    *  dismissed. See `teachSeen` in trialStages.ts. */
   drill: TeachableDrill;
@@ -496,8 +496,19 @@ function TeachGlyph({ gesture, compact }: { gesture: TeachGesture; compact: bool
 }
 
 export function TeachCard(
-  { headline, lines, onDismiss, compact = false, inline = false, gesture = "drag" }: {
+  { headline, lines, short, onDismiss, compact = false, inline = false, gesture = "drag" }: {
     headline: string; lines: string[]; onDismiss: () => void;
+    /**
+     * The headline again, short enough for the one-row compact card.
+     *
+     * Not optional out of politeness — measured. The compact row leaves about
+     * 215 px for text on a 390 px phone, which is around 30 characters at
+     * this weight. "There is no through the wall." (30) fit to the pixel;
+     * "Drag back from the ball, then let go." (38) rendered as "Drag back
+     * from the ball, then l…" and lost the instruction's verb. A drill whose
+     * headline is already short can leave this out.
+     */
+    short?: string;
     /** Headline only, no paragraph — see `TEACH_COMPACT_AFTER_REP`. */
     compact?: boolean;
     /** Render the panel alone, with no positioning of its own, for a caller
@@ -533,7 +544,7 @@ export function TeachCard(
           // "how to play" is a second line to say what the first line says.
           ? (
             <span className="min-w-0 flex-1 truncate text-[11.5px] font-black leading-tight text-white">
-              {headline}
+              {short ?? headline}
             </span>
           )
           : (
@@ -1067,6 +1078,7 @@ export function StrikeStage({
               <TeachCard
                 headline={teach.headline}
                 lines={teach.lines}
+                short={teach.short}
                 compact={rep >= TEACH_COMPACT_AFTER_REP}
                 onDismiss={dismissTeach}
               />
@@ -1276,6 +1288,7 @@ export default function TrialPenalties({
       hint="Drag back from the ball to aim, and pull further for more power."
       teach={{
         headline: "Drag back from the ball, then let go.",
+        short: "Drag back, then let go.",
         lines: [
           "Pull further for more power. The arrow is where it is going.",
           "Watch the keeper before you strike it — he has already guessed.",

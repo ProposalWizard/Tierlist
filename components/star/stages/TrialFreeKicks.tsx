@@ -159,6 +159,10 @@ export default function TrialFreeKicks({
       hint="Bend it round the wall or lift it over — sides of the ball curl it, the bottom lifts it."
       teach={{
         headline: "There is no through the wall.",
+        // Measured at exactly the row width with nothing to spare, so it is
+        // given a shorter form rather than left one font-render away from
+        // clipping.
+        short: "Round the wall, or over it.",
         lines: [
           "Drag back to aim, pull further for power — same as the penalties.",
           "Then strike the SIDE of the ball to bend it round them, or the bottom to lift it over.",

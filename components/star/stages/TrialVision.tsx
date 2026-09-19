@@ -513,6 +513,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                   gesture="tap"
                   compact={rep >= TEACH_COMPACT_AFTER_REP}
                   headline="Tap the team-mate in the most space."
+                  short="Tap the man in most space."
                   lines={[
                     "The blue shirts are marking.",
                     "The clock starts on zero and does not wait — never picking scores nothing.",
