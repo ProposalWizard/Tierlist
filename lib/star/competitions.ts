@@ -2,7 +2,7 @@ import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad
 import type { NamedOppGoal } from "./leagueSquads";
 import {
   openCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
-  roundNamesFor, type CupState, type CupId,
+  roundNamesFor, stillIn, type CupState, type CupId,
 } from "./cups";
 import { mulberry32, sortLeague } from "./season";
 import {
@@ -703,13 +703,24 @@ export function settleCupTie(
   const opponent = tie ? (tie.home === club ? tie.away : tie.home) : fixture.opponent;
 
   if (!won) {
-    // You are out, but the country's cup is not finished with you gone — the
-    // rest of the draw plays out to an actual winner, the same afternoon,
-    // rather than freezing the competition at the round you left it. See
-    // finishCupToWinner.
-    const finished = finishCupToWinner(after, career.league, club, rng);
+    // You are out, but the country's cup is not finished with you gone.
+    // This used to call finishCupToWinner right here — resolving every
+    // remaining round of the competition instantly, "the same afternoon" —
+    // which is what produced a full winner (every later round, including
+    // ones that would not really happen for weeks) the moment the player
+    // was eliminated. Reported directly: knocked out in the Round of 64 and
+    // the FA Cup screen already showed a finished competition, Final and
+    // all. `after` already has the next round genuinely drawn (playCupRound
+    // draws it) and genuinely UNPLAYED — that is the honestly-unfinished
+    // state now returned. See advanceEliminatedCups below for how it
+    // actually progresses from here: one real round at a time, on the same
+    // real calendar weeks it would run on if you were still in it. The only
+    // place that still resolves everything in one go is the season-end
+    // backstop (resolveSeasonWinners, careerFlow.ts's advanceSeason),
+    // because at that point the season really is ending and needs a real
+    // recorded winner.
     return {
-      states: states.map((st, i) => (i === idx ? finished : st)),
+      states: states.map((st, i) => (i === idx ? after : st)),
       nextFixture: null,
       trophy: null,
       message: onPens
@@ -734,6 +745,77 @@ export function settleCupTie(
     trophy: null,
     message: `Through to the ${currentRound(after)?.name}${onPens ? ", on penalties" : ""}.`,
   };
+}
+
+/**
+ * Move every cup the player is no longer part of forward by however many
+ * real rounds have now genuinely come round on the calendar — never all the
+ * way to a winner in one go.
+ *
+ * `settleCupTie` only ever touches the ONE competition the fixture just
+ * played belongs to. Nothing used to ask the others "has your next round's
+ * real week arrived yet" at all — a cup you were knocked out of in week 2
+ * just sat frozen on that round forever, until the old `finishCupToWinner`
+ * call (removed above) resolved the whole rest of it in one instant burst
+ * the moment you lost. This is the real replacement: called once every time
+ * ANY fixture resolves (see careerFlow.ts's creditMatchResult and
+ * simulateMissedFixture — the only two places the career's clock actually
+ * ticks), it advances a still-open, player-less cup by one round at a time
+ * for every one of its rounds whose real calendar week is now at or before
+ * `uptoTimestamp` — the moment the fixture that was just resolved is played.
+ * A round whose week has not arrived yet is left exactly as it is, so the
+ * competition reads as genuinely in progress rather than either frozen or
+ * finished.
+ *
+ * `uptoTimestamp` is a real millisecond timestamp (see `fixtureTimestamp`)
+ * rather than a raw week number on purpose — a raw `Fixture.week` means a
+ * ROUND NUMBER for a non-Premier-League league fixture but a plain weekend
+ * offset for a European one (see calendar.ts's own note on `fixtureDate`'s
+ * `kind` parameter), so two fixtures' `week` fields are not always
+ * comparable to each other. Real dates always are.
+ *
+ * A cup you are still in (`stillIn`) is left alone — that one is still
+ * yours to settle by actually playing it, via `settleCupTie`.
+ */
+export function advanceEliminatedCups(
+  career: CareerState,
+  uptoTimestamp: number,
+  rng: () => number,
+): CupState[] {
+  const states = career.cupState ?? [];
+  if (states.length === 0) return states;
+  const division = divisionOf(career);
+  const club = career.player.club;
+  let changed = false;
+
+  const next = states.map((state) => {
+    if (state.winner) return state;
+    if (stillIn(state, club)) return state;
+
+    let s = state;
+    // Bounded the same way finishCupToWinner always was — one more than the
+    // competition's own round count is more passes than a real hat could
+    // ever need to reach a winner, so this can never spin forever even if
+    // `uptoTimestamp` is far in the future (a big dev-skip jump).
+    const guardLimit = roundNamesFor(s.competition).length + 1;
+    for (let guard = 0; guard < guardLimit && !s.winner; guard++) {
+      const roundIndex = s.rounds.length - 1;
+      // The raw, un-shifted slot week — advanceEliminatedCups is asking when
+      // the COUNTRY plays this round, not when the fixture list would have
+      // scheduled it around the player's own midweek European commitments
+      // (that `inEurope` nudge only ever applied to the player's OWN tie).
+      const roundWeek = cupRoundWeek(s.competition, roundIndex, career.league.length, division, false);
+      const roundTs = fixtureTimestamp(career.player.startYear, career.season, roundWeek, "cup", division);
+      if (roundTs > uptoTimestamp) break;
+      const played = playCupRound(s, career.league, club, null, rng);
+      if (played === s) break; // nothing left to play — already resolved
+      s = played;
+      changed = true;
+    }
+    return s;
+  });
+
+  return changed ? next : states;
 }
 
 // ── Playing in Europe ───────────────────────────────────────────────────────

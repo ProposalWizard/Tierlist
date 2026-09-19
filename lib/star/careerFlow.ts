@@ -23,7 +23,7 @@ import { progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
-  qualificationFor, leaguePosition, seasonQualifiers,
+  qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups,
 } from "./competitions";
 import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner } from "./cups";
@@ -40,7 +40,7 @@ import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./fa
 import { ruleBookFor } from "./ruleBook";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { transferWindowFor, divisionOf, leagueNameFor, type CareerDivision } from "./calendar";
+import { transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { resolveLadder, membershipOf } from "./promotion";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
@@ -697,6 +697,18 @@ export function creditMatchResult(
         knockoutMessage = out.message;
       }
     }
+  }
+
+  // Every OTHER cup the player is no longer part of — the ones settleCupTie
+  // above never touches, because it only ever settles the ONE competition
+  // this fixture belongs to — gets a chance to move forward here too,
+  // exactly as far as this fixture's own real calendar date allows. See
+  // advanceEliminatedCups's own doc for why this replaced an instant
+  // resolve-to-a-winner the moment the player was eliminated.
+  if (!alreadyPlayed) {
+    const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
+    const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
+    cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
   }
 
   // International football is its own record. Caps and international goals do
@@ -1522,6 +1534,18 @@ export function simulateMissedFixture(
       if (settled.trophy) cupTrophy = settled.trophy;
       if (settled.message) knockoutMessage = settled.message;
     }
+  }
+
+  // Same real-time cup advancement as creditMatchResult's own — a fixture
+  // watched from the stands (or fast-forwarded through by a dev-skip; see
+  // devSkip.ts's skipTo, which calls this function for every fixture in
+  // between) is exactly as much a tick of the career's clock as one you
+  // actually played, so every cup you are no longer part of gets the same
+  // chance to move forward here too.
+  {
+    const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
+    const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
+    cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
   }
 
   const fixtures = career.fixtures.map((f) =>
