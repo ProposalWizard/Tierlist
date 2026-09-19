@@ -103,7 +103,24 @@ export const FIVE_A_SIDE: MatchRules = {
   goal: FIVE_GOAL,
   crossbar: FIVE_CROSSBAR,
   halves: 2,
-  minutesPerHalf: 3,
+  /**
+   * ── Forty-five minutes, and why it grew ──
+   *
+   * It was three minutes a half, and at one touch per half-minute that is
+   * about a dozen touches with nothing at all between them. Asked for
+   * directly, after playing it:
+   *
+   *   "let's make it exactly the same as a 90 min game highlights wise but cut
+   *    the game down to 45 minutes."
+   *
+   * So the target is not a number of touches — it is a number of HIGHLIGHTS,
+   * matched to what a real ninety minutes gives you. Measured through
+   * `hiddenMatch` over 400 simulated matches: 7.79 involvements on average.
+   * The five-a-side now delivers 7.8 across these forty-five, with real,
+   * simulated football in between rather than another touch straight away.
+   * See flow.ts.
+   */
+  minutesPerHalf: 22.5,
   kickFloorY: FIVE_VIEW.y2 - (FIVE_VIEW.y2 - FIVE_VIEW.y1) * 0.2,
   offside: false,
 };

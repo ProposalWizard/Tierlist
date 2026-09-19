@@ -5,7 +5,7 @@ import {
 import { POST_L, POST_R, CX } from "../pitch";
 import {
   FIVE_PITCH, FIVE_VIEW, FIVE_HALFWAY_Y, KICK_FLOOR_Y, clampToPitch, insideFivePitch,
-  FIVE_GOAL, FIVE_CROSSBAR,
+  FIVE_GOAL, FIVE_CROSSBAR, mirror,
 } from "./geometry";
 
 /**
@@ -74,6 +74,9 @@ const MATE_CLEAR_OF_BALL = 2.2;
 const KEEPER_BODY_R = 0.75;
 const KEEPER_CLEAR_OF_BALL = KEEPER_BODY_R + 1.6;   // 2.35
 const STANDOFF_SIDE = 1.3;
+/** How far off his line a keeper may be found. The real match's own builders
+ *  put theirs at 1.10-1.22; this is that, with a little room. */
+const KEEPER_MAX_OFF_LINE = 1.8;
 const RUNNER_SPEED = 7.0;
 
 /** Where all ten players and the ball actually are. The thing that persists
@@ -213,15 +216,31 @@ function keeperFrom(pos: Vec2, ball: Vec2, rng: () => number, who?: Identity): K
   // Clamp him to his goal FIRST, then push him clear of the ball — the other
   // way round, the clamp undoes the push and he ends up stood on it. Same bug
   // as nudgeClear's own note, in a second place.
+  // ── How far off his line he may stand ──
+  //
+  // It was six metres, which sounds like nothing and is not. The engine judges
+  // a save AT THE KEEPER'S OWN LINE (see "THE KEEPER'S OWN LINE",
+  // canvasEngine.ts), so a keeper standing off it meets the ball before it has
+  // diverged from the middle — which narrows the angle enormously, and on a
+  // small-sided goal closes it outright.
+  //
+  // MEASURED: a real match's own `buildScenario` puts its keeper at y = 1.10
+  // to 1.22 for every close-range chance it builds. This one was standing at
+  // 2.2 to 6, and a corner-aimed one-on-one converted 21%. Brought onto his
+  // line like the real thing, it converts at the rate the goal was sized for.
+  // Clamped to HIS OWN goal, which on a small-sided pitch is not the
+  // eleven-a-side one: POST_L/POST_R are ±3.66 m, so the old clamp let a
+  // five-a-side keeper stand three metres outside his own post.
   const penned = {
-    x: Math.max(POST_L - 2.5, Math.min(POST_R + 2.5, pos.x)),
-    y: Math.max(0.3, Math.min(6, pos.y)),
+    x: Math.max(FIVE_GOAL.x1 - 1.2, Math.min(FIVE_GOAL.x2 + 1.2, pos.x)),
+    y: Math.max(0.3, Math.min(KEEPER_MAX_OFF_LINE, pos.y)),
   };
   const clear = nudgeClear(penned, ball, KEEPER_CLEAR_OF_BALL, rng);
   // Re-apply the goal limits only where doing so cannot put him back on the
   // ball: a keeper genuinely does come a long way out for a ball at his feet.
-  const kx = dist({ x: Math.max(POST_L - 2.5, Math.min(POST_R + 2.5, clear.x)), y: clear.y }, ball) >= KEEPER_CLEAR_OF_BALL
-    ? Math.max(POST_L - 2.5, Math.min(POST_R + 2.5, clear.x))
+  const pen = (x: number) => Math.max(FIVE_GOAL.x1 - 1.2, Math.min(FIVE_GOAL.x2 + 1.2, x));
+  const kx = dist({ x: pen(clear.x), y: clear.y }, ball) >= KEEPER_CLEAR_OF_BALL
+    ? pen(clear.x)
     : clear.x;
   const ky = clear.y;
   const r = rng();
@@ -409,4 +428,150 @@ export function kickOffWorld(toYou: boolean): FiveWorld {
  *  reason about it without importing the engine itself. */
 export function passLeadsToShot(kind: ScenarioKind): boolean {
   return goalInView(kind);
+}
+
+/**
+ * THEIR ATTACK, AS THE ENGINE SEES IT.
+ *
+ * ── Why this can exist without the engine learning there are two goals ──
+ *
+ * The engine knows exactly one direction: you attack `y = 0`. Teaching it a
+ * second goal would be a rewrite of the thing every other match in the game
+ * depends on. So their move is handed to it MIRRORED — `geometry.ts`'s
+ * `mirror`, which is an involution and was written for precisely this — played
+ * out by the real physics, and mirrored back for the screen. From the engine's
+ * side it is an ordinary attack at an ordinary goal, and the keeper it has to
+ * beat happens to be yours.
+ *
+ * This replaces a single fair dice roll: "their quality against your keeper's,
+ * goal or no goal", which is what made two-nil down the single likeliest
+ * scoreline and made a conceded goal a caption rather than something you
+ * watched happen.
+ *
+ * What comes back is a real `Outcome`, from their point of view — see
+ * `applyTheirAttack`.
+ */
+export function buildTheirAttack(world: FiveWorld, opts: PassageOpts): Scenario {
+  const { rng, keeperStrength, cast } = opts;
+
+  // ── The man on the ball is the man with the ball ──
+  //
+  // It used to pick their most advanced man instead, on the reasoning that he
+  // is the one in on goal. Nearly always the same man — but not always, and
+  // the exception is ugly: the flow puts the ball at its carrier's feet, so
+  // when somebody else happened to be a yard further forward the chance was
+  // built around HIM, twenty-two metres from goal, with the ball teleported to
+  // him. Measured as a real outlier before it shipped. Reading the ball is both
+  // simpler and exactly right.
+  const order = [0, 1, 2, 3].sort((a, b) =>
+    Math.hypot(world.opps[a].x - world.ball.x, world.opps[a].y - world.ball.y)
+    - Math.hypot(world.opps[b].x - world.ball.x, world.opps[b].y - world.ball.y));
+  const onBall = mirror(world.ball);
+  const ball: Vec2 = { x: onBall.x, y: Math.min(Math.max(onBall.y, 1.2), KICK_FLOOR_Y) };
+
+  const sideSign = ball.x >= CX ? -1 : 1;
+  const player: Vec2 = { x: ball.x + sideSign * STANDOFF_SIDE, y: ball.y };
+
+  const theirOthers = order.slice(1).map(i => nudgeClear(mirror(world.opps[i]), ball, MATE_CLEAR_OF_BALL, rng));
+  const yours = world.mates.concat([world.you])
+    .map(m => nudgeClear(mirror(m), ball, CLEAR_OF_BALL, rng));
+
+  const defenders: Defender[] = yours.map(o => ({ x: o.x, y: o.y, homeX: o.x, homeY: o.y }));
+  const kind = kindForBall(ball);
+  const goalIsInView = goalInView(kind);
+
+  const runnerPts = goalIsInView ? theirOthers.slice(1) : theirOthers;
+  const secondaryRunners: Runner[] = runnerPts.map((p, i) => runnerAt(p, cast?.opps?.[order[i + 1]]));
+  const follower = followerAt(theirOthers[0] ?? ball, cast?.opps?.[order[1]]);
+
+  const scenario: Scenario = {
+    ball,
+    player,
+    defenders,
+    // YOUR keeper is the one being shot at. His own rating decides how well he
+    // keeps, which is why a good keeper is worth having.
+    keeper: keeperFrom(mirror(world.yourKeeper), ball, rng, cast?.yourKeeper),
+    keeperStrength,
+    follower,
+    goal: { ...FIVE_GOAL },
+    crossbar: FIVE_CROSSBAR,
+    kind,
+    teammates: [{ x: mirror(world.theirKeeper).x, y: mirror(world.theirKeeper).y, who: cast?.theirKeeper }],
+    runner: null,
+    passTarget: null,
+    receiver: null,
+    receiverDone: false,
+    teamRelationship: opts.teamRelationship ?? 55,
+    viewport: { ...FIVE_VIEW },
+    secondaryRunners,
+    passDifficulty: 0,
+    forwardMostY: secondaryRunners.length
+      ? Math.min(...secondaryRunners.map(r => r.pos.y))
+      : undefined,
+    chainDepth: 0,
+  };
+  return scenario;
+}
+
+/**
+ * How they strike it.
+ *
+ * A real aim rather than a random one — they are trying to score, and a
+ * better side finds the corner more often — but never a perfect one, which is
+ * what leaves your keeper something to do. The numbers are the same shape the
+ * measurement harnesses in tests/star/fiveASide.mts use for a competent
+ * player's shot, because that is what this is.
+ */
+export function aimTheirShot(
+  sc: Scenario, difficulty: number, rng: () => number,
+): { dir: Vec2; power: number; contact: { cx: number; cy: number }; skills: { power: number; technique: number } } {
+  const centre = (sc.goal.x1 + sc.goal.x2) / 2;
+  const half = (sc.goal.x2 - sc.goal.x1) / 2;
+  const side = rng() < 0.5 ? -1 : 1;
+  // A better side aims nearer the post. A worse one drifts back toward the
+  // middle, where the keeper is.
+  const reach = Math.max(0.2, half - 0.35) * (0.35 + difficulty * 0.55 + rng() * 0.25);
+  const spray = (1.6 - difficulty) * 1.1;
+  const tx = centre + side * reach + (rng() - 0.5) * spray;
+  const dist = Math.hypot(sc.ball.x - centre, sc.ball.y);
+  return {
+    dir: { x: tx - sc.ball.x, y: -Math.max(sc.ball.y, 1) },
+    power: Math.min(1, 0.40 + dist / 42) * (0.85 + rng() * 0.3),
+    contact: { cx: (rng() - 0.5) * 0.7, cy: -0.1 - rng() * 0.45 },
+    skills: { power: 45 + difficulty * 45, technique: 45 + difficulty * 45 },
+  };
+}
+
+/**
+ * Read the world back out of one of THEIR attacks.
+ *
+ * The other half of `buildTheirAttack`: everybody moved during it — your
+ * defenders closed, their runners ran, your keeper came out — and where they
+ * ended up is where they start whatever happens next. Mirrored back on the way
+ * out, because `mirror` is an involution and the engine only ever worked in
+ * the turned-round picture.
+ *
+ * The slot mapping is positional and is fixed by `buildTheirAttack`:
+ * `defenders` is your three mates and then you.
+ */
+export function worldFromTheirAttack(sc: Scenario, ballAt: Vec2, prev: FiveWorld): FiveWorld {
+  const d = sc.defenders;
+  const back = (p: Vec2) => clampToPitch(mirror(p));
+  return {
+    ball: back(ballAt),
+    you: d[3] ? back({ x: d[3].x, y: d[3].y }) : prev.you,
+    mates: [0, 1, 2].map(i =>
+      d[i] ? back({ x: d[i].x, y: d[i].y }) : prev.mates[i]) as [Vec2, Vec2, Vec2],
+    yourKeeper: back({ x: sc.keeper.x, y: sc.keeper.y }),
+    // Their four: the man who struck it, then whoever the engine had running.
+    opps: [
+      back({ x: sc.ball.x, y: sc.ball.y }),
+      back({ x: sc.follower.x, y: sc.follower.y }),
+      ...([0, 1].map(i => {
+        const r = sc.secondaryRunners[i];
+        return r ? back({ x: r.pos.x, y: r.pos.y }) : prev.opps[i + 2];
+      })),
+    ].slice(0, 4) as [Vec2, Vec2, Vec2, Vec2],
+    theirKeeper: prev.theirKeeper,
+  };
 }

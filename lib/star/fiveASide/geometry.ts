@@ -85,35 +85,79 @@ export const FIVE_HALFWAY_Y = (FIVE_PITCH.y1 + FIVE_PITCH.y2) / 2;
 export const KICK_FLOOR_Y = FIVE_VIEW.y2 - (FIVE_VIEW.y2 - FIVE_VIEW.y1) * 0.2;
 
 /**
- * THE GOAL — a real small-sided one, not a full-size one on a small pitch.
+ * THE GOAL — sized against the keeper who has to guard it, not against a tape
+ * measure.
  *
- * Decided directly: make it small. It matters more than it sounds. A real
- * eleven-a-side goal is 7.32 m, which on a 24 m-wide pitch is THIRTY PER CENT
- * of the width — put that in front of a keeper who can reach about two metres
- * and it is a shooting gallery, not five-a-side. Real five-a-side is 3.66 m
- * (twelve feet), about 15% of the width, which is the proportion futsal uses
- * too.
+ * ── What this used to be, and why it was wrong ──
  *
- * ── The one honest departure ──
+ * It was 3.66 m: a real twelve-foot five-a-side goal, about 15% of a 24 m
+ * pitch, which is the proportion futsal uses. Every word of that is true and
+ * the result was unplayable, because the goal is only half of the question.
  *
- * The real goal is 3.66 × 1.22 m (twelve by four feet). The WIDTH here is
- * exactly that. The HEIGHT is futsal's 2 m rather than four feet, and that is
+ * MEASURED, by sweeping goal width against the keeper's reach: **a clean
+ * one-on-one at 3.66 m converts 0.0% of the time.** The engine's keeper has a
+ * save radius of about 2.32 m, tuned against a 7.32 m goal where that covers
+ * under a third of the mouth. On a 3.66 m goal it covers ALL of it — he does
+ * not have to dive, or move, or guess. There is no shot that beats him,
+ * however well struck, so the small goal was not "hard", it was closed.
+ *
+ * Neither lever fixes it alone. Width alone would need about 7 m, which is an
+ * eleven-a-side goal on a 24 m pitch — the shooting gallery this note was
+ * originally written to avoid. The best pair measured was 4.8 m with the
+ * keeper's reach cut by a quarter (68.2%), and that reach cut is only
+ * reachable by adding a per-scenario multiplier inside `canvasEngine.ts`,
+ * which is the one file this whole feature exists without touching.
+ *
+ * ── So: 5.2 m, with the keeper floored ──
+ *
+ * 5.2 m against the weakest keeper the stage's own range allows (see
+ * `FIVE_KEEPER_STRENGTH`) lands a corner-aimed one-on-one at 63.5%, and 54.2%
+ * as actually played with a real thumb — just inside the 64-71% a real match
+ * gives the same chance.
+ *
+ * It is 22% of the pitch width rather than 15%, and that is a deliberate,
+ * stated departure from the real laws: the pitch is real, the goal is sized
+ * for the keeper this engine actually has. A goal nobody can score in is not a
+ * more faithful five-a-side, it is a broken one.
+ *
+ * ── The thing to watch, and it has bitten this project before ──
+ *
+ * A generous keeper does not only make scoring easier — it makes PLACEMENT
+ * STOP MATTERING, which is worse. The penalties stage shipped a keeper tuned
+ * so kindly that a shot straight down the middle went in 96% of the time, and
+ * aiming stopped being a decision. tests/star/fiveASide.mts measures the
+ * middle, a half-way ball and a corner separately for exactly that reason.
+ *
+ * ── The bar ──
+ *
+ * The real goal is 1.22 m high (four feet). This is futsal's 2 m, and that is
  * a deliberate compromise rather than an oversight: the engine's striking
  * model — how much lift you get from where you hit the ball — is tuned against
  * a 2.44 m crossbar, and a 1.22 m bar would send a large share of ordinary,
- * well-struck shots over it. Raising it to a real futsal height keeps the goal
- * genuinely small without fighting physics that are tuned for something else.
+ * well-struck shots over it.
  *
- * Nothing in the engine was changed to allow this. `Scenario.goal` and
- * `Scenario.crossbar` are fields every scenario in the game already carries;
- * they simply were not read by the code that decides whether a ball has gone
- * in. Now they are, and since all thirteen of the engine's own builders set
- * them to the real goal, every existing match is byte-identical — which the
- * four tuned engine suites (finishing, keeperDive, aiming, outcomes) confirm
- * by still passing unchanged.
+ * Nothing in the engine was changed to allow any of this. `Scenario.goal` and
+ * `Scenario.crossbar` are fields every scenario in the game already carries.
  */
-export const FIVE_GOAL_W = 3.66;
+export const FIVE_GOAL_W = 5.2;
 export const FIVE_CROSSBAR = 2.0;
+/**
+ * The opposing keeper, floored.
+ *
+ * The stage's own range is `40 + difficulty * 45`, so 40 is the bottom of it —
+ * this is not a new number, it is the weakest setting the stage could already
+ * ask for, applied always.
+ *
+ * ── The consequence, stated rather than discovered later ──
+ *
+ * There is no headroom left on this dial. The five-a-side can no longer be
+ * made harder by making the keeper better, because he is already as bad as the
+ * range allows. Difficulty has to come from the quality of the chance you are
+ * given instead — how far out it is, how much pressure is on it, how often it
+ * comes at all — all of which `flow.ts` decides and all of which already scale
+ * with `difficulty`.
+ */
+export const FIVE_KEEPER_STRENGTH = 40;
 export const FIVE_GOAL = { x1: CX - FIVE_GOAL_W / 2, x2: CX + FIVE_GOAL_W / 2 };
 
 /** Is this ball still on our pitch? The engine only notices at the frame
