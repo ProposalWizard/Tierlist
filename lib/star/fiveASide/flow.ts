@@ -1,6 +1,7 @@
 import type { Vec2 } from "../canvasEngine";
 import type { MatchRules } from "./rules";
 import { clampToPitch } from "./geometry";
+import { clearOfBall, defensiveShape, type DefendRole } from "./shape";
 import type { FiveWorld } from "./passage";
 
 /**
@@ -66,6 +67,26 @@ export interface FiveFlowState {
   momentum: number;
   /** Beats since you last had a touch — stops long dead spells. */
   sinceInvolved: number;
+  /**
+   * WHICH JOB EACH OF THE DEFENDING FOUR IS DOING — see shape.ts.
+   *
+   * In the defending side's own index order: their four when you have it,
+   * `[you, mate0, mate1, mate2]` when they have it. Optional, because a match
+   * saved before this existed has none, and a beat played without it just
+   * assigns jobs from scratch exactly as it used to.
+   *
+   * It is the shape's OWN answer rather than a second opinion:
+   * `defensiveShape` returns its four spots in role order, and a man's job is
+   * whichever of them he took — so the position and the role cannot disagree.
+   * Recorded so that what a man is doing is inspectable rather than implied by
+   * where he is standing; nothing in the match reads it back yet.
+   *
+   * Cleared whenever the ball changes hands, because the four men with jobs
+   * are then the other four and nobody inherits anybody's position. See the
+   * note on `assignRoles` for the stickier version of this that was built,
+   * measured, and rejected.
+   */
+  defendRoles?: DefendRole[];
 }
 
 export interface FlowInputs {
@@ -286,14 +307,18 @@ const SPACE_ENOUGH = 5.5;
 interface Slots {
   /** Attacking side, carrier first — the man the ball is with. */
   attack: Vec2[];
-  /** Defending side, presser first. */
-  defend: Vec2[];
 }
 
 /**
- * The attacking side's four, and the defending side's four, for a ball in this
- * band. Everything is in "attacking toward y1" terms and mirrored by the
- * caller when it is the other side's ball, so there is one shape and not two.
+ * The attacking side's four, for a ball in this band. Written in "attacking
+ * toward y1" terms and turned round by the caller when it is the other side's
+ * ball, so there is one shape and not two.
+ *
+ * The DEFENDING four used to be built here too, as fixed offsets from these
+ * ones. They are now `defensiveShape` (shape.ts), which derives each man's
+ * spot from the ball, the goal he is defending and who he is picking up —
+ * see that file's header for the measurements that made the old version
+ * untenable.
  */
 function slotsFor(rules: MatchRules, ay: number, ballX: number, jitter: () => number): Slots {
   const { x1, x2, y1, y2 } = rules.pitch;
@@ -318,18 +343,7 @@ function slotsFor(rules: MatchRules, ay: number, ballX: number, jitter: () => nu
     at(cx + j(W * 0.20), ay + L * 0.20 + j(L * 0.04)),
   ];
 
-  const defend: Vec2[] = [
-    // Pressing the carrier, goal-side.
-    at(attack[0].x + j(W * 0.08), attack[0].y - L * 0.055),
-    // Covering the runner.
-    at(attack[1].x + j(W * 0.10), attack[1].y - L * 0.05),
-    // The second cover, holding the other side.
-    at(cx - lean * W * 0.26 + j(W * 0.12), ay - L * 0.13 + j(L * 0.03)),
-    // Last man.
-    at(cx + j(W * 0.14), ay - L * 0.22 + j(L * 0.03)),
-  ];
-
-  return { attack, defend };
+  return { attack };
 }
 
 /** Turn a point round so "attacking y1" becomes "attacking y2". Not
@@ -339,12 +353,13 @@ function flip(rules: MatchRules, p: Vec2): Vec2 {
   return { x: p.x, y: rules.pitch.y1 + rules.pitch.y2 - p.y };
 }
 
-/** Move a man toward a target, never further than one beat's worth. */
-function ease(from: Vec2, to: Vec2): Vec2 {
+/** Move a man toward a target, never further than one beat's worth — or than
+ *  `cap`, for a shift that happens INSIDE a beat rather than being one. */
+function ease(from: Vec2, to: Vec2, cap = MAX_BEAT_MOVE): Vec2 {
   const dx = to.x - from.x, dy = to.y - from.y;
   const d = Math.hypot(dx, dy);
   if (d <= 1e-6) return { x: from.x, y: from.y };
-  const step = Math.min(d, MAX_BEAT_MOVE);
+  const step = Math.min(d, cap);
   return { x: from.x + (dx / d) * step, y: from.y + (dy / d) * step };
 }
 
@@ -353,11 +368,11 @@ function ease(from: Vec2, to: Vec2): Vec2 {
  * rather than swapping two players over every beat. Greedy, which on four men
  * is both optimal enough and obviously right to read.
  */
-function assign(men: Vec2[], slots: Vec2[]): Vec2[] {
+function assign(men: Vec2[], slots: Vec2[], cap = MAX_BEAT_MOVE): Vec2[] {
   const out: Vec2[] = men.map(m => ({ ...m }));
   const free = slots.map((s, i) => ({ s, i }));
   const order = men
-    .map((m, i) => ({ i, d: Math.min(...slots.map(s => Math.hypot(s.x - m.x, s.y - m.y))) }))
+    .map((m, i) => ({ i, d: Math.min(...free.map(f => Math.hypot(f.s.x - m.x, f.s.y - m.y))) }))
     .sort((a, b) => a.d - b.d);
   for (const { i } of order) {
     let bestK = 0, bestD = Infinity;
@@ -366,11 +381,109 @@ function assign(men: Vec2[], slots: Vec2[]): Vec2[] {
       if (d < bestD) { bestD = d; bestK = k; }
     }
     if (!free.length) break;
-    out[i] = ease(men[i], free[bestK].s);
+    out[i] = ease(men[i], free[bestK].s, cap);
     free.splice(bestK, 1);
   }
   return out;
 }
+
+/**
+ * The same thing, but reporting which job each man ended up with.
+ *
+ * `slots` comes back from `defensiveShape` in role order, so the slot a man is
+ * matched to IS his job — the position and the role are one answer rather than
+ * two that can disagree.
+ */
+function assignRoles(
+  men: Vec2[], slots: Vec2[], roles: DefendRole[], cap = MAX_BEAT_MOVE,
+): { men: Vec2[]; roles: DefendRole[] } {
+  const out: Vec2[] = men.map(m => ({ ...m }));
+  const got: DefendRole[] = men.map(() => "last");
+  const free = slots.map((s, i) => ({ s, i }));
+
+  // ── TRIED, MEASURED, AND NOT SHIPPED: the nearest man presses ──
+  //
+  // Everything here is nearest-SLOT matching, which keeps the side's shape and
+  // keeps every man's run short. It has one result that looks wrong written
+  // down: the press slot sits a few metres GOAL-SIDE of the ball, so the man
+  // nearest that spot is often somebody already back, and the man actually
+  // standing next to the carrier can be given a marking job instead. Measured
+  // over 400 real chances, the man doing the pressing was the one nearest the
+  // ball only 169 times.
+  //
+  // Giving the press to the nearest man instead genuinely improves the
+  // picture — the back four's spread goes 1.68 m to 2.01 m, how well it tracks
+  // the ball goes r=0.62 to r=0.74, and the nearest man to the ball goes 4.31
+  // m to 3.55 m. It also shuts the stage down, because he then ARRIVES: a
+  // short run puts a body in the shooting lane on every single chance, where
+  // a longer one leaves him closing but not yet there, which is what a chance
+  // worked in behind a defence actually looks like. Over 250 matches:
+  //
+  //                          blocked   open post   goals   stage
+  //   nearest slot presses    30.3%      54.6%     1.620    73.1
+  //   nearest man presses     37.0%      40.2%     1.308    65.2
+  //
+  // Pushing the press slot further out (to 4.2 m and 5.0 m) and shading him
+  // harder across (to 2.4 m) were both tried on top and neither recovers it —
+  // the best of six combinations was 36.1% blocked and 1.288 goals. A defence
+  // that is merely better at blocking is the regression this whole round was
+  // told not to ship, so it is not shipped, and it is written down instead of
+  // being quietly dropped.
+  const order = men
+    .map((m, i) => ({ i, d: Math.min(...free.map(f => Math.hypot(f.s.x - m.x, f.s.y - m.y))) }))
+    .sort((a, b) => a.d - b.d);
+  for (const { i } of order) {
+    if (!free.length) break;
+    let bestK = 0, bestD = Infinity;
+    for (let k = 0; k < free.length; k++) {
+      const d = Math.hypot(free[k].s.x - men[i].x, free[k].s.y - men[i].y);
+      if (d < bestD) { bestD = d; bestK = k; }
+    }
+    out[i] = ease(men[i], free[bestK].s, cap);
+    got[i] = roles[free[bestK].i] ?? "last";
+    free.splice(bestK, 1);
+  }
+  return { men: out, roles: got };
+}
+
+// ── TRIED, MEASURED, AND NOT SHIPPED: making a man keep his job ─────────────
+//
+// Nearest-slot matching means a man can swap jobs from one beat to the next,
+// and MEASURED over 36,292 man-beats with the same side defending throughout,
+// he keeps the one he had only 44.1% of the time against 25% for picking at
+// random. That reads like the other half of "each cpu should have an
+// understanding of his position", so it was built: a per-man head start on the
+// job he already had, so he only gives it up when somebody else is genuinely
+// much better placed.
+//
+// It makes the football worse, and not marginally. A man sticking to a job he
+// is no longer nearest to spends the beat running across the picture instead
+// of standing in it. Over 250 matches each:
+//
+//   head start   your touches blocked   goals a match   stage score
+//     none               30.3%              1.620          73.1
+//     2 m                35.9%              1.552          70.2
+//     4 m                34.6%              1.620          71.0
+//
+// So the continuity that actually matters is the one already there for free:
+// the SHAPE moves smoothly, a man is matched to the slot he is nearest, and
+// the job follows the spot rather than the other way round. What is kept from
+// the attempt is `flow.defendRoles` — the record of which job each man has —
+// because that is the shape's own answer and there is no second one to
+// disagree with it.
+
+/**
+ * HOW FAR A DEFENCE SHIFTS WHILE THE BALL IS BEING PLAYED TO SOMEBODY.
+ *
+ * Not a beat — a beat is `MAX_BEAT_MOVE` and is half a minute of football.
+ * This is the second or two a pass is in the air, and the reason it exists at
+ * all is a real gap: `receiveInSpace` moves the receiver and the ball up to
+ * `RECEIVE_RUN` metres into the emptiest spot it can find, and before this the
+ * defending side did not so much as turn its head. The shape handed to the
+ * picture-builder was therefore arranged around where the ball USED to be,
+ * which is most of why it read as four men standing nowhere in particular.
+ */
+export const REACT_SHIFT = 3.2;
 
 /**
  * One beat of football nobody is playing.
@@ -401,14 +514,23 @@ function moveWorld(
   // long way through your defence. They scored 0.00 goals a match across 250.
   const depth = yours ? BAND_DEPTH[flow.band] : 1 - BAND_DEPTH[flow.band];
   const L0 = rules.pitch.y2 - rules.pitch.y1;
-  const { attack, defend } = slotsFor(
+  const { attack } = slotsFor(
     rules, rules.pitch.y1 + L0 * depth, world.ball.x, rng,
   );
+
+  // ── The defence is built from the situation, not from the attack ──
+  //
+  // `defensiveShape` wants the same canonical frame `slotsFor` writes in:
+  // attacking toward y1, so the goal being defended is the one at y1. `flip`
+  // only turns y round, which is exactly what "how far from the goal I am
+  // defending" means, so the ball goes through it too when it is their ball.
+  const canonBall = yours ? world.ball : flip(rules, world.ball);
+  const shape = defensiveShape(rules, canonBall, attack, rng);
 
   // The attacking shape is written attacking y1, which is YOUR direction. When
   // it is their ball the whole picture turns round.
   const attackSlots = yours ? attack : attack.map(p => flip(rules, p));
-  const defendSlots = yours ? defend : defend.map(p => flip(rules, p));
+  const defendSlots = yours ? shape.slots : shape.slots.map(p => flip(rules, p));
 
   // ── You get your slot first, and it is the striker's ──
   //
@@ -421,10 +543,39 @@ function moveWorld(
   // the highest presser (defend slot 0).
   const mySlots = yours ? attackSlots : defendSlots;
   const myIdx = yours ? 1 : 0;
-  const you = ease(world.you, mySlots[myIdx]);
-  const mates = assign([...world.mates], mySlots.filter((_, i) => i !== myIdx));
-  const movedYours = [you, ...mates];
-  const movedTheirs = assign([...world.opps], yours ? defendSlots : attackSlots);
+
+  // ── Who is doing which job, and why it is remembered ──
+  //
+  // The defending four are matched to `defensiveShape`'s slots, which come
+  // back in role order — so the slot a man takes IS his job, and there is no
+  // second answer to disagree with the first. `flow.defendRoles` carries last
+  // beat's answer in so he keeps it unless somebody is genuinely better placed
+  // (see ROLE_STICK), and carries this beat's answer back out.
+  let movedYours: Vec2[];
+  let movedTheirs: Vec2[];
+  if (yours) {
+    const you = ease(world.you, mySlots[myIdx]);
+    movedYours = [you, ...assign([...world.mates], mySlots.filter((_, i) => i !== myIdx))];
+    const d = assignRoles([...world.opps], defendSlots, shape.roles);
+    movedTheirs = d.men;
+    flow.defendRoles = d.roles;
+  } else {
+    // Defending, and YOUR job is the press — you go and close the ball down.
+    //
+    // Kept as a fixed job rather than handed to `assignRoles` with the others,
+    // and it was MEASURED rather than assumed: letting the shape decide which
+    // of the four jobs is yours reads better on paper and costs real football.
+    // You are the one man who leaves the defending picture the instant your
+    // side wins it back, so parking you at the back changes where the ball
+    // goes next — over 250 matches it took 1.600 goals a match down to 1.388
+    // and the stage score from 72.3 to 65.2. The other three take the other
+    // three jobs.
+    const you = ease(world.you, defendSlots[0]);
+    const d = assignRoles([...world.mates], defendSlots.slice(1), shape.roles.slice(1));
+    movedYours = [you, ...d.men];
+    flow.defendRoles = [shape.roles[0], ...d.roles];
+    movedTheirs = assign([...world.opps], attackSlots);
+  }
 
   // The ball is with whoever has it: the attacking carrier.
   const carrier = yours
@@ -609,6 +760,9 @@ export function playOn(
       const next: FlowSide = youWin ? "you" : "them";
       if (next !== flow.possession) {
         flow.possession = next;
+        // The four men with jobs are now the other four. Nobody inherits
+        // anybody's position.
+        flow.defendRoles = undefined;
         // Half of turnovers are a clearance or a counter, which moves the
         // ball; the rest are won on the spot.
         if (rng() < 0.5) flow.band = shiftBand(flow.band, next === "you" ? 1 : -1);
@@ -712,6 +866,8 @@ export function playOn(
 /** A move has finished: the defending side has it, where it was. */
 function endOfMove(flow: FiveFlowState, attacker: FlowSide) {
   flow.possession = attacker === "you" ? "them" : "you";
+  // The jobs belong to whoever is defending, and that is now the other four.
+  flow.defendRoles = undefined;
 }
 
 /** A goal. Back to the middle, and the other side kick off. */
@@ -719,6 +875,61 @@ function kickOffBand(flow: FiveFlowState, to: FlowSide) {
   flow.possession = to;
   flow.band = "middle";
   flow.momentum = 0;
+  flow.defendRoles = undefined;
+}
+
+/**
+ * THE DEFENCE REACTS TO WHERE THE BALL HAS ACTUALLY GONE.
+ *
+ * A chance is made by moving the receiver and the ball into space — up to
+ * `RECEIVE_RUN` metres of it, deliberately the emptiest spot available. Before
+ * this, nothing on the defending side knew that had happened: the shape they
+ * were standing in had been arranged around the ball's PREVIOUS position, one
+ * beat earlier, and the picture handed to the engine was a stale one.
+ *
+ * So the defending four are re-shaped for the ball's real position, capped at
+ * `REACT_SHIFT` — a shift, not a beat. Nobody sprints across; each man takes a
+ * step or two toward the job the new situation gives him.
+ *
+ * `attacking` is which side has the ball. Returns a new world; the ball, the
+ * keepers and the attacking side are untouched.
+ */
+function reactToBall(
+  rules: MatchRules, world: FiveWorld, attacking: FlowSide,
+  flow: FiveFlowState, rng: () => number,
+): FiveWorld {
+  const yours = attacking === "you";
+  const canonBall = yours ? world.ball : flip(rules, world.ball);
+  const attackers = (yours ? [world.you, ...world.mates] : [...world.opps])
+    .map(p => (yours ? p : flip(rules, p)));
+  const shape = defensiveShape(rules, canonBall, attackers, rng);
+  const slots = yours ? shape.slots : shape.slots.map(p => flip(rules, p));
+
+  // A man is only moved PART of the way to his slot, so "the slot is clear of
+  // the ball" does not by itself mean HE is: somebody who was already on top
+  // of it, whose slot is further than `REACT_SHIFT` away, is still on top of
+  // it after his step. One chance in two thousand, measured, and the engine
+  // resolves it as a tackle before the kick has travelled — so the same guard
+  // the slots get is applied to the men.
+  const clear = (men: Vec2[]) => men.map(m => clearOfBall(m, world.ball, rules));
+
+  if (yours) {
+    const d = assignRoles([...world.opps], slots, shape.roles, REACT_SHIFT);
+    flow.defendRoles = d.roles;
+    const moved = clear(d.men);
+    return { ...world, opps: [moved[0], moved[1], moved[2], moved[3]] as [Vec2, Vec2, Vec2, Vec2] };
+  }
+  // Same split as `moveWorld`: the press is yours, the other three are theirs
+  // to sort out between them.
+  const you = clearOfBall(ease(world.you, slots[0], REACT_SHIFT), world.ball, rules);
+  const d = assignRoles([...world.mates], slots.slice(1), shape.roles.slice(1), REACT_SHIFT);
+  flow.defendRoles = [shape.roles[0], ...d.roles];
+  const moved = clear(d.men);
+  return {
+    ...world,
+    you,
+    mates: [moved[0], moved[1], moved[2]] as [Vec2, Vec2, Vec2],
+  };
 }
 
 /**
@@ -744,7 +955,10 @@ function receiveInSpace(
   const spot = intoSpace(
     rules, world.you, world.opps, bandY(rules, flow.band), rules.pitch.y1, rng, rules.kickFloorY,
   );
-  return { ...world, you: { ...spot }, ball: { ...spot } };
+  // And they react to it — see `reactToBall`. Without this the four men you
+  // are about to play against are arranged around where the ball was a beat
+  // ago, which is where the "four men in a heap in the middle" came from.
+  return reactToBall(rules, { ...world, you: { ...spot }, ball: { ...spot } }, "you", flow, rng);
 }
 
 /**
@@ -769,7 +983,9 @@ function theirChanceInSpace(
   world.opps.forEach((o, i) => { if (o.y > world.opps[best].y) best = i; });
   const spot = intoSpace(rules, world.opps[best], yours, bandY(rules, flow.band), rules.pitch.y2, rng);
   const opps = world.opps.map((o, i) => (i === best ? { ...spot } : o)) as [Vec2, Vec2, Vec2, Vec2];
-  return { ...world, opps, ball: { ...spot } };
+  // Your side reacts to it too. The symmetry note above applies here as well:
+  // the pitch has to be the same shape at both ends.
+  return reactToBall(rules, { ...world, opps, ball: { ...spot } }, "them", flow, rng);
 }
 
 /**

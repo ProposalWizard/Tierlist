@@ -102,8 +102,47 @@ export const TAP_LATENCY_MS = 350;
  * all land within a standard error of each other), but 6 m/s is a man
  * sprinting and 3.2 is a man jogging, and one of those looks like throwing a
  * body at a shot.
+ *
+ * ── RE-MEASURED, September 2026, against a defence that stands somewhere ──
+ *
+ * Everything above was tuned against a back four that stood in a one-metre
+ * heap in the middle of the pitch whatever the ball was doing (see shape.ts's
+ * header for the numbers). Three of your four men were therefore nowhere near
+ * the lane a shot was coming down, so three taps in four were wasted and the
+ * mechanic's whole balance rested on that.
+ *
+ * With the men in real positions, ANY of them is now within a short run of the
+ * block point — so a tap thrown at nobody in particular started paying. That
+ * is the one thing this mechanic must not do, and it is the ONLY thing that
+ * needed re-tuning. Measured over 300 matches a setting, goals conceded:
+ *
+ *   how far he can get   no input   perfect   at random   flailing   its bar
+ *     4.2 m (6.0 x 0.7)    1.023     0.443      0.750       0.273     0.232
+ *     3.15 m (4.5 x 0.7)   1.023     0.443      0.830       0.193     0.232
+ *     2.45 m (3.5 x 0.7)   1.023     0.510      0.867       0.157     0.205
+ *     1.75 m (2.5 x 0.7)   1.023     0.577      0.883       0.140     0.179
+ *
+ * The bar flailing has to stay under is 40% of what playing it properly is
+ * worth. At the old 4.2 m it is 0.273 against a bar of 0.232 — it FAILS, and
+ * tapping at random has become a strategy. At 3.15 m it is 0.193 against
+ * 0.232, a real margin again.
+ *
+ * The SECONDS are left alone and the SPEED carries the cut, deliberately: the
+ * run has to still read as a man throwing himself at it, and 4.5 m/s over the
+ * same 0.7 s is a committed sprint where the same distance squeezed into a
+ * shorter window would be a twitch. (It also has to stay a whole number of
+ * frames — `stepBlockRun` counts its own clock up in 1/60ths and 0.45 s is not
+ * one, which lands him a frame and 0.1 m past his own advertised limit.)
+ *
+ * What this re-tune could NOT fix, and it is reported rather than buried: a
+ * player who knows where the shot is going now concedes 0.44 a match against
+ * 1.02 doing nothing, where he used to concede 0.79 against 1.06. Shrinking
+ * the run does not touch that — even at 1.75 m it is 0.58 — because it is not
+ * about the run at all: it is that there is now usually SOMEBODY in a sensible
+ * place to commit. See tests/star/fiveASideDefend.mts for what the floor on
+ * that is now asserted to be, and why.
  */
-export const BLOCK_SPRINT_SPEED = 6.0;
+export const BLOCK_SPRINT_SPEED = 4.5;
 export const BLOCK_RUN_SECONDS = 0.7;
 
 /**
