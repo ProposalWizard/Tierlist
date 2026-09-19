@@ -122,6 +122,15 @@ export interface PenaltySetup {
    *  what makes a penalty a decision rather than a formality; zero means he
    *  has not committed and you are simply picking a corner. */
   keeperLean: number;
+  /**
+   * How far he sets off along his line the moment the ball is struck, in
+   * metres — 0 meaning he holds his ground and backs himself to react.
+   *
+   * The direction is `keeperLean`'s own sign; this is only the distance. See
+   * `penaltyCommit` for why this exists at all, and `commitKeeperGuess` in
+   * TrialPenalties.tsx for what does it.
+   */
+  keeperCommit: number;
 }
 
 /**
@@ -283,8 +292,75 @@ export function penaltyTell(trial: TrialProgress, rep: number): number {
 export const COLD_KEEPER_TELL = 0.35;
 
 /**
+ * ── WHETHER HE ACTUALLY GOES, AND HOW FAR ──
+ *
+ * The trial penalty was very nearly unmissable, and measuring it found
+ * something more useful than "make the keeper better".
+ *
+ * Conversion of a real trial penalty through the real engine, by how far off
+ * centre it was aimed (n = 300 a point): 2.7 % down the middle, 52.3 % at
+ * 2 m, and **88.0 % in the corner**. With the stage's own tell in play:
+ * read the lean and shoot the other way, 99.8 % — and with the lean deleted
+ * entirely, 99.5 %. **The tell was worth three tenths of a point.** So the
+ * ramp was never the lever, and shrinking it would have fixed nothing.
+ *
+ * The cause is geometry, not strength. `keeperAttempt` only fires when the
+ * ball reaches the keeper's OWN line, and nothing moves him before then, so
+ * the save collapses to a static test of `|xCross − keeper.x|` against a save
+ * radius that measures 2.37 m on a real trial penalty — against a goal half
+ * width of 3.66 m. **A band roughly 1.0-1.3 m inside each post cannot be
+ * saved at any keeper strength**; even a 99-rated keeper reaches 2.65 m, a
+ * metre short of the post. `keeperStrength` genuinely cannot reach this.
+ *
+ * What a penalty actually is, is a guess made before the ball is struck. So
+ * he makes one: `commitKeeperGuess` (TrialPenalties.tsx) sets him travelling
+ * the instant it is hit, and this decides whether and how far.
+ *
+ * ── Both numbers are measured, and the first one that was tried was wrong ──
+ *
+ * The obvious version — he always goes, as far as the engine lets him
+ * (3.2 m) — was built first and measured, and it replaced "too easy" with
+ * "no football in it at all": a corner converted 0 % when he guessed right
+ * and 100 % when he guessed wrong, so placement stopped mattering entirely
+ * and the stage became a coin flip. Worse, he vacated the middle every time,
+ * which turned a 2.7 % shot into a 96.8 % one.
+ *
+ * A grid over (how far, how often), n = 250 a cell, against two targets: a
+ * corner should convert about what the same shot converts in a real match's
+ * `one_on_one` (64-71 %), and the middle should stay clearly the worst
+ * option so that placement still means something.
+ *
+ *   how far   how often   corner   2 m out   middle
+ *     1.4 m      65 %      74.0 %   46.0 %    9.6 %
+ *     1.4 m      80 %      67.2 %   47.6 %   12.8 %   ← the shape wanted
+ *     1.9 m      80 %      59.2 %   47.6 %   46.8 %
+ *     3.2 m     100 %      50.0 %   50.0 %   96.0 %   ← the first attempt
+ *
+ * 1.4 m is the whole point: it is far enough that a correct guess puts the
+ * corner right at the edge of his reach — a marginal save rather than a
+ * certainty — and short enough that he never abandons the middle. How OFTEN
+ * he commits is then the difficulty dial, which is the honest place for it.
+ */
+export const PENALTY_COMMIT_M = 1.4;
+export const PENALTY_COMMIT_CHANCE_EASY = 0.65;
+export const PENALTY_COMMIT_CHANCE_HARD = 0.95;
+
+/** Metres he sets off to travel on this rep, or 0 if he holds his ground. */
+export function penaltyCommit(trial: TrialProgress, rep: number): number {
+  const d = difficultyFor(trial, "penalties");
+  const chance = PENALTY_COMMIT_CHANCE_EASY
+    + (PENALTY_COMMIT_CHANCE_HARD - PENALTY_COMMIT_CHANCE_EASY) * d;
+  // The same seeded-wobble idiom `penaltySetup` already uses for the side, on
+  // its own multipliers so the two draws can never move together — a rep where
+  // he leans left must not also be the rep where he always commits.
+  const wobble = Math.sin((attemptSeed(trial) % 1013) * 3.77 + rep * 57.31) * 12911.7;
+  return (wobble - Math.floor(wobble)) < chance ? PENALTY_COMMIT_M : 0;
+}
+
+/**
  * A penalty is the same kick every time, so difficulty lives entirely in the
- * keeper: how good he is, and how much of his guess he lets you see.
+ * keeper: how good he is, how much of his guess he lets you see, and whether
+ * he backs that guess by actually going.
  */
 export function penaltySetup(trial: TrialProgress, rep: number): PenaltySetup {
   const d = difficultyFor(trial, "penalties");
@@ -301,6 +377,7 @@ export function penaltySetup(trial: TrialProgress, rep: number): PenaltySetup {
     ball: { x: CX, y: PEN_SPOT_Y },
     keeperStrength: Math.min(99, 45 + d * 45 + bonus),
     keeperLean: side * penaltyTell(trial, rep),
+    keeperCommit: penaltyCommit(trial, rep),
   };
 }
 

@@ -115,7 +115,7 @@ const FLIGHT_TIMEOUT = 9;
  * crosses, now that he is stepped through it at all). A quarter of a second
  * covers that and cuts three quarters of the delay.
  */
-const SETTLE_BEFORE_BANNER = 0.25;
+export const SETTLE_BEFORE_BANNER = 0.25;
 
 /**
  * HOW LONG THE AIM ARROW IS DRAWN, as a fraction of the metres filling the
@@ -413,14 +413,30 @@ export interface StrikeStageProps {
  * They asked for "a proper graphic", so: a real card, the drag drawn rather
  * than described, and the stage's own instruction underneath it.
  *
+ * ── IT MUST NOT COVER THE BALL IT IS TALKING ABOUT ──
+ *
+ * Reported as "boxing on the penalties", and measured: the card was an
+ * `absolute inset-0` overlay whose panel covered roughly the bottom 45 % of
+ * the play area, with its top edge at about 50 % of the canvas and the
+ * penalty spot at 59 % — so it sat directly on top of the ball you are being
+ * told to drag back from, on the first ball anybody in this game ever kicks.
+ *
+ * It is now pinned to the bottom strip and kept short: the drawn gesture is a
+ * 24 px glyph on the badge row rather than a 56 px block beside the text, the
+ * copy is tightened, and the wrapper only spans the bottom edge instead of
+ * the whole canvas. That is the same strip the ordinary hint already lives in
+ * and is documented as safe — full power only ever needs `dragForFullPower`
+ * (about 14 %) of the canvas height behind the ball.
+ *
  * Pointer-transparent throughout, EXCEPT the one button on it. It sits over
  * the canvas and the canvas owns every pointer event on this screen; a card
  * that swallowed the first drag would teach the gesture and then refuse it.
  * The dismiss button re-enables pointers on itself alone (`pointer-events-auto`
- * on a child of a `pointer-events-none` parent), so the 44 px it occupies is
- * the only part of the canvas a drag cannot start in — and it sits in the top
- * corner, which is goal, not the strip behind the ball that a drag pulls back
- * into.
+ * on a child of a `pointer-events-none` parent), so the small area it occupies
+ * is the only part of the canvas a drag cannot BEGIN in. That is safe here
+ * because a drag begins at the ball, which is well above this card, and a
+ * pointer already captured by the canvas keeps moving over the button without
+ * it ever seeing the gesture — the button can only ever take a fresh press.
  *
  * ── Dismissing it is teaching only ──
  *
@@ -438,29 +454,15 @@ export function TeachCard(
   },
 ) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex items-end justify-center p-3">
-      <div className="w-full rounded-xl border border-amber-300/30 bg-black/80 px-3.5 py-3 shadow-lg">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-2">
+      <div className="w-full rounded-xl border border-amber-300/30 bg-black/85 px-3 py-2 shadow-lg">
         <div className="flex items-center gap-1.5">
-          <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
-            First one
-          </span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
-            It still counts
-          </span>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="pointer-events-auto -my-1.5 -mr-1.5 ml-auto rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white/60 transition hover:bg-white/10 hover:text-white"
-          >
-            Got it ✕
-          </button>
-        </div>
-
-        <div className="mt-2 flex items-center gap-3">
-          {/* The gesture, drawn. A ball, the thumb pulled back off it, and the
-              arrow showing where it goes — the one thing a sentence is worst
-              at describing and a picture is best at. */}
-          <svg viewBox="0 0 64 48" className="h-14 w-[4.6rem] shrink-0" aria-hidden="true">
+          {/* The gesture, drawn, inline on the badge row — a ball, the thumb
+              pulled back off it, the arrow showing where it goes. The one
+              thing a sentence is worst at describing. It used to be a 56 px
+              block beside the text, which is most of what made this card tall
+              enough to cover the ball. */}
+          <svg viewBox="0 0 64 48" className="h-6 w-8 shrink-0" aria-hidden="true">
             <line x1="46" y1="30" x2="12" y2="42" stroke="#fbbf24" strokeWidth="2.5"
               strokeLinecap="round" strokeDasharray="4 3" />
             <circle cx="12" cy="42" r="4.5" fill="none" stroke="#fbbf24" strokeWidth="2" />
@@ -468,14 +470,25 @@ export function TeachCard(
             <path d="M46 5 L51 14 L41 14 Z" fill="#f97316" />
             <circle cx="46" cy="30" r="6" fill="#f8fafc" stroke="#0f172a" strokeWidth="1.5" />
           </svg>
-
-          <div>
-            <div className="text-[13px] font-black leading-tight text-white">{headline}</div>
-            {lines.map(l => (
-              <p key={l} className="mt-1 text-[11px] font-bold leading-snug text-white/80">{l}</p>
-            ))}
-          </div>
+          <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
+            First one
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+            It counts
+          </span>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="pointer-events-auto -my-1 -mr-1 ml-auto rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white/60 transition hover:bg-white/10 hover:text-white"
+          >
+            Got it ✕
+          </button>
         </div>
+
+        <div className="mt-1.5 text-[12px] font-black leading-tight text-white">{headline}</div>
+        {lines.map(l => (
+          <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white/80">{l}</p>
+        ))}
       </div>
     </div>
   );
@@ -850,10 +863,24 @@ export function StrikeStage({
           same fix the five-a-side already made: keep the box a comfortable
           shape, cap it against the viewport, and let the camera decide what
           of the pitch is in it. `strikeCamera` shows whatever shape this
-          ends up being, so the cap can bite without cropping anything. */}
+          ends up being, so the cap can bite without cropping anything.
+
+          ── The cap overshot, and the declared aspect was dead ──
+          Reported as the gameplay screen being far smaller than the real
+          match's, and measured: `max-h-[52vh]` (345 px on an iPhone 13's
+          664 px viewport) ALWAYS bit before `aspect-[4/5]` (which wants
+          447 px), so the declared 0.800 box was really a 1.037 one — wider
+          than tall — against the real match's 0.625. The zoom was never
+          different (both draw at 13.56 px/m and the goal is 99 px wide on
+          both); what differed is how much pitch got screen, 25 m against
+          42 m.
+          So: the declared shape is now the match's own 5:8, and the cap is
+          62vh — the same cap the five-a-side next door already uses, which
+          is the precedent for how much of one of these screens a phone can
+          actually give. On an iPhone 13 that is 412 px rather than 345. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto aspect-[4/5] max-h-[52vh] w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto aspect-[5/8] max-h-[62vh] w-full overflow-hidden rounded-xl border border-white/15"
       >
         <canvas
           ref={canvasRef}
@@ -970,11 +997,98 @@ export function buildPenaltyScenario(
   return sc;
 }
 
+/**
+ * ── HE GUESSES, AND HE ACTUALLY GOES ──
+ *
+ * The trial penalty was very nearly unmissable, and measuring it turned up
+ * something more interesting than "the keeper needs to be better".
+ *
+ * Conversion of a real trial penalty through the real engine, by how far off
+ * centre the ball was aimed (n = 300 a point):
+ *
+ *   0.0 m  2.7 %      2.0 m  52.3 %      3.0 m  85.7 %
+ *   1.0 m 13.0 %      2.5 m  75.0 %      3.3 m  88.0 %   ← the corner
+ *
+ * And with the stage's own tell in play (n = 400 each): read the lean and
+ * shoot the other corner, 99.8 %. Remove the lean entirely, 99.5 %. **The
+ * tell was worth 0.3 points.** So the lean ramp was not the lever, and
+ * shrinking it would have fixed nothing — worth knowing before touching it.
+ *
+ * The real cause is geometry. `keeperAttempt` only fires when the ball reaches
+ * the keeper's OWN line, which on a penalty is about one substep before the
+ * goal line, and until then nothing moves him. So the save collapses into a
+ * static test of `|xCross − keeper.x|` against a save radius that measures
+ * 2.37 m on a real trial penalty, against a goal half-width of 3.66 m. **A
+ * band roughly 1.0-1.3 m inside each post cannot be saved at any keeper
+ * strength** — even a 99-rated keeper's radius is 2.65 m, still a metre short
+ * of the post. Raising `keeperStrength` genuinely cannot reach it; the same
+ * aimed corner converts 64-71 % in a real match's `one_on_one`, against 92 %
+ * here.
+ *
+ * ── The fix, and why it needs nothing from the engine ──
+ *
+ * A penalty is a guess made before the ball is struck, and the engine already
+ * has the machinery for a keeper travelling along his line: `stepKeeper`'s
+ * `scrambling` branch moves him toward `targetX` at KEEPER_DIVE_SPEED, bounded
+ * to KEEPER_LATERAL_MAX either side of `startX`. Nothing was reaching for it.
+ * `scrambling` / `targetX` / `saveDir` / `saveLunge` are all plain public
+ * fields on `Scenario.keeper`, and this screen already writes three of them
+ * for the lean, so committing him at the moment of the strike is a screen
+ * change and nothing else. `pendingDone` stays false, so `stepKeeper` never
+ * marks him `done` early and he keeps going for the whole flight.
+ *
+ * ── Which way he goes is not a new dice roll ──
+ *
+ * It is `keeperLean`'s own sign, which is already exactly that: `penaltySetup`
+ * draws a side, and `penaltyTell` decides how much of it you can SEE. The
+ * magnitude was always the ramp (rep 1 committed, rep 2 shading, rep 3+
+ * nothing) and the side was always the random part. Reusing the sign as his
+ * real guess makes the tell mean what the subtitle has always claimed it
+ * means — "he has already guessed" — instead of being decoration. On rep 1
+ * you can read him and go the other way; by rep 3 you cannot see it.
+ *
+ * HOW FAR he goes, and whether he goes at all, is `penaltyCommit`
+ * (trialStages.ts) — both numbers measured, including one first attempt that
+ * was measurably worse than the bug. Read that note before changing either.
+ *
+ * ── What this deliberately does NOT do ──
+ *
+ * Free kicks. `TrialFreeKicks` passes no `onStrike`, because a keeper setting
+ * himself against a wall is not guessing a corner blind, and nothing about
+ * that case was measured. Penalties only.
+ */
+export function commitKeeperGuess(sc: Scenario, lean: number, metres: number) {
+  const k = sc.keeper;
+  // Never override a keeper the engine has already finished with, and never
+  // start a scramble for a rep where he is backing himself to react instead.
+  if (k.done || !(metres > 0)) return;
+  const side = lean >= 0 ? 1 : -1;
+  // `stepKeeper` clamps this to its own KEEPER_LATERAL_MAX either side of
+  // `startX`, so a distance longer than he can cover is capped by the engine
+  // rather than by a copy of its constant living here that could drift.
+  k.targetX = k.startX + side * metres;
+  k.scrambling = true;
+  k.saveDir = side;
+  // Anything above 0 starts the dive animation and `stepKeeper` carries it to
+  // 1. This is what makes him go WITH the strike rather than 7 ms before the
+  // ball crosses the line — the other half of the "he dives late" report, and
+  // measured: the dive is 98 % played as the ball crosses, against 12 % before.
+  if (k.saveLunge <= 0) k.saveLunge = 0.001;
+}
+
 export default function TrialPenalties({
   trial, onDone, skills = { power: 55, technique: 55 },
 }: TrialPenaltiesProps) {
   const build = useCallback(
     (rep: number, rng: () => number) => buildPenaltyScenario(trial, rep, rng),
+    [trial],
+  );
+  // He commits the instant it is struck, to the side he was already leaning.
+  const onStrike = useCallback(
+    (sc: Scenario, rep: number) => {
+      const s = penaltySetup(trial, rep);
+      commitKeeperGuess(sc, s.keeperLean, s.keeperCommit);
+    },
     [trial],
   );
 
@@ -985,6 +1099,7 @@ export default function TrialPenalties({
       skills={skills}
       seed={trial.seed}
       drill="penalties"
+      onStrike={onStrike}
       title="Penalties"
       hint="Drag back from the ball to aim, and pull further for more power."
       teach={{

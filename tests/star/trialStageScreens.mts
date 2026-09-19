@@ -8,9 +8,11 @@ import { POST_L, POST_R, NET_DEPTH, CX, PEN_SPOT_Y } from "../../lib/star/pitch"
 import { startTrial, type TrialProgress } from "../../lib/star/trial";
 import {
   REPS, freeKickSetup, visionSetup, penaltySetup, attemptSeed, penaltyTell,
+  PENALTY_COMMIT_M,
 } from "../../lib/star/trialStages";
 import {
-  buildPenaltyScenario, strikeCamera, AIM_ARROW_LENGTH,
+  buildPenaltyScenario, strikeCamera, AIM_ARROW_LENGTH, commitKeeperGuess,
+  SETTLE_BEFORE_BANNER,
 } from "../../components/star/stages/TrialPenalties";
 import {
   buildFreeKickScenario, freeKickView, freeKickWall,
@@ -457,9 +459,14 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   const resolveAt = (
     sc: Scenario, rng: () => number, targetX: number, power: number,
     skills: { power: number; technique: number },
+    commit: { lean: number; metres: number } | null,
   ): Outcome | null => {
     const dir = { x: targetX - sc.ball.x, y: -sc.ball.y };
     const ball: Ball = launch(sc, dir, power, { cx: 0, cy: -0.15 }, skills, rng);
+    // The screen's own `onStrike`, which is the whole difference between a
+    // keeper who is a static reach test and one who has actually guessed.
+    // Leaving it out here would measure a penalty nobody plays any more.
+    if (commit) commitKeeperGuess(sc, commit.lean, commit.metres);
     const dt = 1 / 60;
     for (let f = 0; f < 600; f++) {
       for (let i = 0; i < 3; i++) {
@@ -494,7 +501,9 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
       const side = tell > 0.2 ? -Math.sign(penaltySetup(t, rep).keeperLean) : (rng() < 0.5 ? -1 : 1);
       const post = side < 0 ? POST_L : POST_R;
       const targetX = post - side * (0.55 + rng() * 0.5) + (rng() - 0.5) * 1.5;
-      const res = resolveAt(sc, rng, targetX, 0.72 + rng() * 0.18, skills);
+      const setup = penaltySetup(t, rep);
+      const res = resolveAt(sc, rng, targetX, 0.72 + rng() * 0.18, skills,
+        { lean: setup.keeperLean, metres: setup.keeperCommit });
       if (res === "goal" || res === "rebound") goals++;
     }
     return goals / n;
@@ -530,19 +539,136 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
     `a keeper on fire must actually be harder to beat `
     + `(${(goodLastSharp * 100).toFixed(1)}% vs ${(goodLastClean * 100).toFixed(1)}%)`);
 
-  // ── …and stacking it on the no-tell rep is not a lockout ──
+  // ── The stage is not a free pass any more either ──
   //
-  // This is the assertion the whole section exists for. The measured figure
-  // is around 51 %; the bar is set at 35 % so it is a real regression check
-  // on the stacking rather than a pin on one run's noise. If a future change
-  // to the keeper, the ramp or the bonus drops the worst cell under this,
-  // the mitigation that was ruled out here (a tell floor, or the event
-  // picking a different stage) becomes necessary after all.
+  // It used to be. Measured on the real engine, the no-tell rep converted a
+  // corner 88-99.8 % of the time — because the keeper was pinned to his line
+  // and the save collapsed into a static reach test that a corner beats by a
+  // metre at any keeper strength. Now that he commits at the strike
+  // (`commitKeeperGuess`, and `penaltyCommit` for whether and how far), the
+  // kick you cannot read is a real one. A ceiling as well as a floor, so a
+  // future change cannot quietly put the old free goal back.
+  check(goodLastClean < 0.75,
+    `the rep that tells you nothing must not be a formality, got `
+    + `${(goodLastClean * 100).toFixed(1)}%`);
+
+  // ── …and stacking the sharp keeper on that rep is not a lockout ──
+  //
+  // This is the assertion the whole section exists for. Measured figures with
+  // the keeper committing: rep 1 (readable) 95.0 %, the last rep clean
+  // 50.8 %, the last rep with a keeper on fire 49.2 %, and the genuinely
+  // worst cell in the game — a poor taker, the hardest afternoon, a sharp
+  // keeper, and the rep that shows him nothing — 46.0 %. The bar is set at
+  // 35 % so this is a real regression check on the stacking rather than a pin
+  // on one run's noise. If a future change to the keeper, the ramp, the
+  // commit or the bonus drops the worst cell under this, the mitigation that
+  // was ruled out here (a tell floor, or the event picking a different stage)
+  // becomes necessary after all.
   check(worstCell > 0.35,
     `the worst cell in the stage must still be winnable, got ${(worstCell * 100).toFixed(1)}%`);
   check(worstCell > worstClean * 0.6,
     `…and the bonus must not turn that rep into a different game entirely `
     + `(${(worstCell * 100).toFixed(1)}% against a clean ${(worstClean * 100).toFixed(1)}%)`);
+}
+
+// ── THE KEEPER ACTUALLY GOES, AND KEEPS DIVING AFTERWARDS ──────────────────
+//
+// Two reported bugs, one mechanism between them, and both measured rather than
+// argued. See `commitKeeperGuess` (TrialPenalties.tsx) and `penaltyCommit`
+// (trialStages.ts) for the full numbers; this pins the properties they rest on.
+{
+  const trial = startTrial(90210);
+
+  // (1) He does not always go. A keeper who commits every single time turns
+  //     the stage into a coin flip and hands you the middle of the goal —
+  //     measured, that version took a 2.7 % shot to 96.8 %.
+  let goes = 0, holds = 0;
+  for (let seed = 0; seed < 300; seed++) {
+    const t = startTrial(seed * 7919 + 3);
+    for (let rep = 0; rep < REPS.penalties; rep++) {
+      if (penaltySetup(t, rep).keeperCommit > 0) goes++; else holds++;
+    }
+  }
+  const goRate = goes / (goes + holds);
+  check(goRate > 0.55 && goRate < 0.92,
+    `he should usually commit but genuinely sometimes hold, got ${(goRate * 100).toFixed(1)}%`);
+
+  // (2) Which way he goes is the lean's own sign, never a second dice roll.
+  //     That is what makes the stage's whole tell ramp mean something: the
+  //     subtitle has always claimed "he has already guessed", and now he has.
+  for (let seed = 0; seed < 60; seed++) {
+    const t = startTrial(seed * 104729 + 11);
+    for (let rep = 0; rep < REPS.penalties; rep++) {
+      const setup = penaltySetup(t, rep);
+      if (setup.keeperCommit <= 0) continue;
+      const sc = buildPenaltyScenario(t, rep, mulberry32(seed + rep));
+      const before = sc.keeper.startX;
+      commitKeeperGuess(sc, setup.keeperLean, setup.keeperCommit);
+      const wentRight = sc.keeper.targetX > before;
+      check(wentRight === (setup.keeperLean >= 0),
+        `he must commit to the side he is already leaning (rep ${rep}, seed ${seed})`);
+      check(sc.keeper.scrambling === true, "committing must actually set him scrambling");
+      check(sc.keeper.saveLunge > 0, "…and start the dive at the strike, not after it");
+    }
+  }
+
+  // (3) A rep where he holds must be left completely alone — not a scramble
+  //     with a zero-length target, which would still start the dive animation.
+  {
+    const sc = buildPenaltyScenario(trial, 0, mulberry32(5));
+    const was = { x: sc.keeper.x, t: sc.keeper.targetX, s: sc.keeper.scrambling, l: sc.keeper.saveLunge };
+    commitKeeperGuess(sc, 1, 0);
+    check(sc.keeper.scrambling === was.s && sc.keeper.targetX === was.t
+      && sc.keeper.saveLunge === was.l && sc.keeper.x === was.x,
+      "a keeper who is holding his ground must be left untouched");
+  }
+
+  // (4) He genuinely travels during the flight — the point of the whole
+  //     change. `stepKeeper` clamps to its own KEEPER_LATERAL_MAX, so asking
+  //     for more than he can cover is capped by the engine rather than by a
+  //     copy of its constant living in the screen.
+  {
+    const sc = buildPenaltyScenario(trial, 3, mulberry32(77));
+    const x0 = sc.keeper.x;
+    commitKeeperGuess(sc, 1, 999);
+    for (let i = 0; i < 60; i++) stepKeeper(sc, 1 / 60);
+    const moved = sc.keeper.x - x0;
+    check(moved > 1, `he must actually travel when committed, moved ${moved.toFixed(2)} m`);
+    check(moved < 4, `…and never further than the engine's own limit, moved ${moved.toFixed(2)} m`);
+  }
+
+  // (5) THE FROZEN DIVE. Reported as "he dives after the ball goes in the
+  //     net", and measured: the screen holds the flight phase open after the
+  //     outcome, and neither post-outcome branch used to call `stepKeeper`, so
+  //     the dive stopped dead at 13 % and finished a second later as the
+  //     banner appeared. Over 200 real penalties that was 498 ms of visibly
+  //     frozen keeper within the old 1.0 s window, against 0 ms now, and the
+  //     dive completes 149 ms after the outcome — the real match measures
+  //     ~150 ms.
+  //
+  //     Checked here the only way a test can: that a keeper part-way through a
+  //     dive DOES advance when stepped, which is exactly the call the two
+  //     branches were missing. Whether the branches call it is the screen's
+  //     own wiring and is verified by reading it, same standing limitation as
+  //     every other CanvasMatch-shaped check in this file.
+  {
+    const sc = buildPenaltyScenario(trial, 3, mulberry32(11));
+    commitKeeperGuess(sc, 1, PENALTY_COMMIT_M);
+    sc.keeper.saveLunge = 0.13;   // where the old loop left him, measured
+    const before = sc.keeper.saveLunge;
+    let frames = 0;
+    while (sc.keeper.saveLunge < 1 && frames < 120) { stepKeeper(sc, 1 / 60); frames++; }
+    check(sc.keeper.saveLunge > before, "stepping a mid-dive keeper must advance the dive");
+    check(sc.keeper.saveLunge >= 1 && frames < 30,
+      `…and finish it promptly once stepped, took ${(frames * 1000 / 60).toFixed(0)} ms`);
+  }
+
+  // (6) The banner gate. The real match has none at all; this screen keeps a
+  //     short beat so a goal is seen crossing and the dive is seen finishing,
+  //     and nothing like the full second that put the worst measured attempt
+  //     at 8.52 s.
+  check(SETTLE_BEFORE_BANNER > 0 && SETTLE_BEFORE_BANNER <= 0.35,
+    `the settle beat must be short but not nothing, got ${SETTLE_BEFORE_BANNER}s`);
 }
 
 // ── THE AIM ARROW IS THE MATCH'S ARROW ─────────────────────────────────────
