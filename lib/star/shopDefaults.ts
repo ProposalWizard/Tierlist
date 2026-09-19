@@ -1,5 +1,10 @@
 import type { Boot, OwnedItem } from "./types";
 import type { KibCan, StatKibCan } from "./shopData";
+import type { ShopTierId, PriceBandId } from "./economy";
+import {
+  bandPrice, tierPrice, bootMatchesFor,
+  RATING_CONVERTER_WEEKS, RATING_CONVERTER_TIERS,
+} from "./economy";
 
 /**
  * THE RAW SHOP CATALOGUES — before any /star-tuning-dev price override.
@@ -9,99 +14,277 @@ import type { KibCan, StatKibCan } from "./shopData";
  * button and its diff display) without duplicating the same literal array
  * a second time. shopData.ts imports these and wraps them in
  * applyPriceOverrides; nothing else should import from here directly.
+ *
+ * ── NOT ONE PRICE IN THIS FILE IS TYPED IN ANY MORE ──
+ *
+ * It used to be forty-odd hand-written absolute figures, and the complaint
+ * that killed them was exact: "there's stuff in the store from all the way
+ * up to 5K and nothing has changed in the store. There's no tiered items,
+ * there's no change to the boots, nothing." Both halves were true. The
+ * catalogue was a flat list with no grouping in the data and none in the UI,
+ * and because every figure was independent of every income in the game,
+ * "how many weeks of my money is this" was a question nobody could answer
+ * anywhere — including the people setting the prices.
+ *
+ * Every entry below now names three things instead of a price:
+ *
+ *     tier   whose money it is priced against (economy.ts's SHOP_TIERS)
+ *     band   how big a purchase it is         (economy.ts's PRICE_BANDS)
+ *     at     where in that band it sits, 0-1
+ *
+ * and `bandPrice` turns those into a round number that is provably inside
+ * the band it claims. Retuning the game's money is now editing economy.ts
+ * and nothing else: every figure here moves with it, and the RATIOS — which
+ * are the actual design — cannot drift, because they are the only thing
+ * written down.
+ *
+ * `tests/star/economy.mts` walks every entry in this file and checks it.
  */
 
-// Prices below are in real money, on the same personal-spending scale as
-// careerFlow.ts's starting money/wage (rescaled 14 Sep 2026) — every price
-// here is its pre-rescale value × 2000, the same multiplier that took the
-// starting wage from ★1 to ★2000/week. That keeps how many weeks' wage each
-// item costs completely unchanged (a can is still a small weekly buy, a
-// private island is still a career-defining splurge), just expressed in
-// real money instead of small placeholder numbers. Personal spending uses a
-// much smaller multiplier than club-level money (transfer fees, club
-// valuations) because a real footballer's own wallet — even a legend's — is
-// nowhere near a club's finances.
+/** What an entry says about itself instead of naming a price. */
+export interface PriceSpec {
+  tier: ShopTierId;
+  band: PriceBandId;
+  /** 0 = the cheap end of that band at that tier, 1 = the dear end. */
+  at: number;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  KIB CANS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * The cans are the one thing in the shop that does NOT get cheaper as you
+ * climb, so they are priced off `RATING_CONVERTER_WEEKS` rather than off a
+ * band. See economy.ts: a consumable that converts money into rating has to
+ * cost a rich player MORE of his week than it cost a poor one, or the late
+ * game simply buys past the growth curve.
+ *
+ * Energy cans convert money into availability, which is the softer version
+ * of the same thing, so they climb too — just more gently.
+ */
+export const KIB_CAN_TIERS = RATING_CONVERTER_TIERS.energy;
+export const STAT_CAN_TIERS = RATING_CONVERTER_TIERS.stats;
+
+const canPrice = (which: "energy" | "stats", i: number) =>
+  tierPrice(RATING_CONVERTER_TIERS[which][i], RATING_CONVERTER_WEEKS[which][i]);
+
 export const KIB_CANS_DEFAULT: KibCan[] = [
-  { id: "basic", name: "Basic KIB Can", price: 6000, restore: 25, color: "bg-orange-400", image: "/star/kib-basic.png" },
-  { id: "premium", name: "Premium KIB Can", price: 12000, restore: 50, color: "bg-blue-400", image: "/star/kib-premium.png" },
-  { id: "elite", name: "Elite KIB Can", price: 24000, restore: 100, color: "bg-purple-400", image: "/star/kib-elite.png" },
+  { id: "basic", name: "Basic KIB Can", price: canPrice("energy", 0), restore: 25, color: "bg-orange-400", image: "/star/kib-basic.png" },
+  { id: "premium", name: "Premium KIB Can", price: canPrice("energy", 1), restore: 50, color: "bg-blue-400", image: "/star/kib-premium.png" },
+  { id: "elite", name: "Elite KIB Can", price: canPrice("energy", 2), restore: 100, color: "bg-purple-400", image: "/star/kib-elite.png" },
 ];
 
 // Far steeper than the energy cans above — "costing WAYYY more," requested
-// directly — sitting alongside the top of the boots/lifestyle catalogues
-// rather than the bottom of them, since a temporary boost that STACKS on
-// top of whatever boots you're already wearing is a real late-game luxury,
-// not a routine top-up. `boost` adds to power AND technique alike (the two
-// player skills a boot already applies via the same additive pattern — see
-// page.tsx's effectivePower/effectiveTechnique) for `matches` games, then
-// clears — never stacks with a second can, the later one just replaces it.
+// directly. `boost` adds to power AND technique alike (the two player skills
+// a boot already applies via the same additive pattern — see page.tsx's
+// effectivePower/effectiveTechnique) for `matches` games, then clears —
+// never stacks with a second can, the later one just replaces it.
 export const STAT_KIB_CANS_DEFAULT: StatKibCan[] = [
-  { id: "basic", name: "Basic KIB Stat Can", price: 80000, boost: 3, matches: 2, color: "bg-amber-500", image: "/star/kib-basic.png" },
-  { id: "premium", name: "Premium KIB Stat Can", price: 180000, boost: 5, matches: 3, color: "bg-rose-500", image: "/star/kib-premium.png" },
-  { id: "elite", name: "Elite KIB Stat Can", price: 400000, boost: 8, matches: 4, color: "bg-fuchsia-500", image: "/star/kib-elite.png" },
+  { id: "basic", name: "Basic KIB Stat Can", price: canPrice("stats", 0), boost: 3, matches: 2, color: "bg-amber-500", image: "/star/kib-basic.png" },
+  { id: "premium", name: "Premium KIB Stat Can", price: canPrice("stats", 1), boost: 5, matches: 3, color: "bg-rose-500", image: "/star/kib-premium.png" },
+  { id: "elite", name: "Elite KIB Stat Can", price: canPrice("stats", 2), boost: 8, matches: 4, color: "bg-fuchsia-500", image: "/star/kib-elite.png" },
 ];
 
-export const BOOTS_CATALOGUE_DEFAULT: Boot[] = [
-  { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, matches: 3, price: 6000 },
-  { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, matches: 5, price: 10000 },
-  { id: "control", name: "NS-Control", pace: 5, power: 5, technique: 10, matches: 5, price: 10000 },
-  { id: "speed", name: "NS-Flash", pace: 10, power: 5, technique: 10, matches: 5, price: 20000 },
-  { id: "power", name: "NS-Thunder", pace: 5, power: 10, technique: 10, matches: 5, price: 20000 },
-  // Not a stat boost — a whole extra ability. Priced against NS-Elite/NS-Pro
-  // (similar matches, similar power/technique) rather than against the pure
-  // stat-per-star curve the rest of the catalogue follows.
-  { id: "curl", name: "NS-Swerve", pace: 5, power: 5, technique: 10, matches: 6, price: 40000, curve: true },
-  { id: "elite", name: "NS-Elite", pace: 10, power: 10, technique: 10, matches: 7, price: 30000 },
-  { id: "pro", name: "NS-Pro", pace: 15, power: 15, technique: 10, matches: 7, price: 30000 },
-  { id: "legend", name: "NS-Legend", pace: 15, power: 15, technique: 15, matches: 7, price: 50000 },
-  { id: "meteor", name: "NS-Meteor", pace: 20, power: 15, technique: 15, matches: 8, price: 70000 },
-  { id: "vapor", name: "NS-Vapor", pace: 15, power: 20, technique: 20, matches: 8, price: 80000 },
-  { id: "phantom", name: "NS-Phantom", pace: 20, power: 20, technique: 20, matches: 10, price: 120000 },
-  { id: "galaxy", name: "NS-Galaxy", pace: 25, power: 25, technique: 25, matches: 10, price: 200000 },
-  // Another whole extra ability, not a stat boost — same idiom as NS-Swerve
-  // above, just for a genuinely new mechanic (Touch Mode — see Boot.extraTouch
-  // and CanvasMatch.tsx). Requested directly, priced as the single most
-  // expensive item in the boots catalogue ("these boots should cost LOADS
-  // obvs") — 2.5x NS-Galaxy, its own top-tier stats plus a technique lean
-  // (the extra touch is a technique idea) rather than Swerve's own
-  // stats-are-an-afterthought pricing, since this is meant to read as the
-  // best boot in the game outright, not just the ability bolted onto a
-  // middling pair.
-  { id: "maestro", name: "NS-Maestro", pace: 20, power: 20, technique: 30, matches: 10, price: 500000, extraTouch: true },
+// ═══════════════════════════════════════════════════════════════════════
+//  BOOTS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * THE BOOT LADDER — three-ish pairs per rung, weakest at the bottom.
+ *
+ * Every boot sits in the `upgrade` band of its own tier, which is what
+ * makes the sentence "a pair of boots is the thing you save for" true at
+ * every point in the career rather than only at one of them: roughly
+ * twenty weeks of non-league income at the bottom, and a few weeks of
+ * top-flight income at the top, for the boot that belongs to you at the
+ * time.
+ *
+ * ── Why the `at` values climb within each tier and never overlap ──
+ *
+ * Each rung deliberately occupies a slice of its own band ABOVE the slice
+ * the rung below it reached, so the catalogue reads as one strictly
+ * ascending price list even though the five tiers' bands overlap in
+ * absolute stars. Without that, NS-Flash (a better boot, a rung up) would
+ * have undercut NS-Blast, which is the kind of thing a player notices
+ * immediately and reads as a bug rather than as a band.
+ *
+ * ── `matches` is NOT typed in ──
+ *
+ * It is derived from the price by `bootMatchesFor` (economy.ts), which is
+ * what keeps a boot's cost PER MATCH a fixed small fraction of a week at
+ * every tier. The old catalogue had price spanning 80× against durability
+ * spanning 3×, which made the cheapest boots in the game cost about three
+ * weeks' wages per match — unaffordable exactly where affordability was the
+ * whole point. See BOOT_WEEKS_PER_MATCH for the full account, including why
+ * cheap boots now last far longer than dear ones.
+ */
+interface BootSpec {
+  id: string;
+  name: string;
+  pace: number;
+  power: number;
+  technique: number;
+  tier: ShopTierId;
+  /** Where in this tier's `upgrade` band it sits, 0-1. */
+  at: number;
+  curve?: boolean;
+  extraTouch?: boolean;
+}
+
+const BOOT_SPECS: BootSpec[] = [
+  // ── Starter: non-league money. One pair, saved for, worn for two seasons.
+  { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, tier: "starter", at: 0.15 },
+  { id: "control", name: "NS-Control", pace: 5, power: 5, technique: 10, tier: "starter", at: 0.55 },
+  { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, tier: "starter", at: 1 },
+
+  // ── Semi-Pro: League Two money.
+  { id: "speed", name: "NS-Flash", pace: 10, power: 5, technique: 10, tier: "semi_pro", at: 0.45 },
+  { id: "power", name: "NS-Thunder", pace: 5, power: 10, technique: 10, tier: "semi_pro", at: 0.7 },
+  // Not a stat boost — a whole extra ability, so it sits at the top of its
+  // own rung's band rather than on the stat-per-star curve the rest follow.
+  { id: "curl", name: "NS-Swerve", pace: 5, power: 5, technique: 10, tier: "semi_pro", at: 1, curve: true },
+
+  // ── Pro: League One money.
+  { id: "elite", name: "NS-Elite", pace: 10, power: 10, technique: 10, tier: "pro", at: 0.45 },
+  { id: "pro", name: "NS-Pro", pace: 15, power: 15, technique: 10, tier: "pro", at: 0.7 },
+  { id: "legend", name: "NS-Legend", pace: 15, power: 15, technique: 15, tier: "pro", at: 1 },
+
+  // ── Elite: Championship money.
+  { id: "meteor", name: "NS-Meteor", pace: 20, power: 15, technique: 15, tier: "elite", at: 0.55 },
+  { id: "vapor", name: "NS-Vapor", pace: 15, power: 20, technique: 20, tier: "elite", at: 1 },
+
+  // ── World Class: top-flight money.
+  { id: "phantom", name: "NS-Phantom", pace: 20, power: 20, technique: 20, tier: "world_class", at: 0.55 },
+  { id: "galaxy", name: "NS-Galaxy", pace: 25, power: 25, technique: 25, tier: "world_class", at: 0.8 },
+  // Another whole extra ability (Touch Mode — see Boot.extraTouch and
+  // CanvasMatch.tsx), requested as the single most expensive item in the
+  // catalogue ("these boots should cost LOADS obvs"). It is exactly that:
+  // the dear end of the dearest tier's band, which is the most any boot in
+  // this game can cost without leaving the band boots live in.
+  { id: "maestro", name: "NS-Maestro", pace: 20, power: 20, technique: 30, tier: "world_class", at: 1, extraTouch: true },
 ];
 
-export const LIFESTYLE_ITEMS_DEFAULT: OwnedItem[] = [
-  { id: "phone", name: "Phone", category: "item", price: 10000, lifestyleValue: 3 },
-  { id: "console", name: "Games Console", category: "item", price: 20000, lifestyleValue: 5 },
-  { id: "headphones", name: "Headphones", category: "item", price: 24000, lifestyleValue: 5 },
-  { id: "music", name: "Music Player", category: "item", price: 30000, lifestyleValue: 6 },
-  { id: "tablet", name: "Tablet", category: "item", price: 40000, lifestyleValue: 8 },
-  { id: "smartwatch", name: "Smartwatch", category: "item", price: 44000, lifestyleValue: 9 },
-  { id: "tv", name: "TV", category: "item", price: 50000, lifestyleValue: 10 },
-  { id: "gaming-pc", name: "Gaming PC", category: "item", price: 56000, lifestyleValue: 11 },
-  { id: "suit", name: "Designer Suit", category: "item", price: 60000, lifestyleValue: 12 },
-  { id: "silver", name: "Silver Chain", category: "item", price: 70000, lifestyleValue: 14 },
-  { id: "art", name: "Art Piece", category: "item", price: 90000, lifestyleValue: 18 },
-  { id: "gold", name: "Gold Watch", category: "item", price: 100000, lifestyleValue: 20 },
-  { id: "diamond", name: "Diamond Necklace", category: "item", price: 200000, lifestyleValue: 40 },
-  { id: "rolex", name: "Diamond Rolex", category: "item", price: 320000, lifestyleValue: 62 },
+export const BOOTS_CATALOGUE_DEFAULT: Boot[] = BOOT_SPECS.map((spec) => {
+  const price = bandPrice(spec.tier, "upgrade", spec.at);
+  return {
+    id: spec.id,
+    name: spec.name,
+    pace: spec.pace,
+    power: spec.power,
+    technique: spec.technique,
+    matches: bootMatchesFor(price, spec.tier),
+    price,
+    ...(spec.curve ? { curve: true } : {}),
+    ...(spec.extraTouch ? { extraTouch: true } : {}),
+  };
+});
 
-  { id: "bike", name: "Motorbike", category: "vehicle", price: 20000, lifestyleValue: 4 },
-  { id: "car-1", name: "Family Car", category: "vehicle", price: 30000, lifestyleValue: 5 },
-  { id: "car-2", name: "Hatchback", category: "vehicle", price: 80000, lifestyleValue: 12 },
-  { id: "suv", name: "Luxury SUV", category: "vehicle", price: 140000, lifestyleValue: 22 },
-  { id: "car-3", name: "Sports Car", category: "vehicle", price: 200000, lifestyleValue: 30 },
-  { id: "classic", name: "Classic Car", category: "vehicle", price: 300000, lifestyleValue: 42 },
-  { id: "car-4", name: "Supercar", category: "vehicle", price: 500000, lifestyleValue: 60 },
-  { id: "jet", name: "Private Jet", category: "vehicle", price: 1200000, lifestyleValue: 120 },
+// ═══════════════════════════════════════════════════════════════════════
+//  LIFESTYLE
+// ═══════════════════════════════════════════════════════════════════════
 
-  { id: "flat-1", name: "Studio Flat", category: "property", price: 60000, lifestyleValue: 10 },
-  { id: "flat-2", name: "City Apartment", category: "property", price: 160000, lifestyleValue: 25 },
-  { id: "penthouse", name: "Penthouse", category: "property", price: 280000, lifestyleValue: 40 },
-  { id: "stable", name: "Horse Stable", category: "property", price: 300000, lifestyleValue: 45 },
-  { id: "house-1", name: "Suburban House", category: "property", price: 400000, lifestyleValue: 55 },
-  { id: "villa", name: "Beach Villa", category: "property", price: 640000, lifestyleValue: 75 },
-  { id: "house-2", name: "Mansion", category: "property", price: 1000000, lifestyleValue: 100 },
-  { id: "estate", name: "Country Estate", category: "property", price: 1500000, lifestyleValue: 140 },
-  { id: "island", name: "Private Island", category: "property", price: 3000000, lifestyleValue: 250 },
+/**
+ * A PHONE AND A PRIVATE ISLAND ON ONE LADDER.
+ *
+ * Lifestyle is the widest catalogue in the game — a factor of ten thousand
+ * from the first item to the last — and it is the one place the four bands
+ * alone are not a dense enough ladder, because the gap between the top of
+ * `consumable` and the bottom of `upgrade` is a twentyfold jump with
+ * nothing in it.
+ *
+ * What fills it is the OTHER axis. A band at a different tier is a
+ * different price: the `consumable` band runs ★16-30 at starter money and
+ * ★60-125 at top-flight money, so walking up the tiers inside one band
+ * gives a smooth ramp without inventing a fifth band for it. That is why an
+ * early item can be anchored at `world_class` — it is not a claim about who
+ * buys a Tablet, it is which slice of the ladder its price belongs in.
+ *
+ * Within each of the three categories the prices ascend strictly with
+ * `lifestyleValue`, which `tests/star/economy.mts` checks — a list where a
+ * better item is cheaper reads as a bug however defensible the band was.
+ */
+interface LifestyleSpec {
+  id: string;
+  name: string;
+  category: OwnedItem["category"];
+  lifestyleValue: number;
+  tier: ShopTierId;
+  band: PriceBandId;
+  at: number;
+}
+
+const LIFESTYLE_SPECS: LifestyleSpec[] = [
+  // ── Items ────────────────────────────────────────────────────────────
+  { id: "phone", name: "Phone", category: "item", lifestyleValue: 3, tier: "starter", band: "consumable", at: 0.5 },
+  { id: "console", name: "Games Console", category: "item", lifestyleValue: 5, tier: "pro", band: "consumable", at: 0.3 },
+  // Priced identically to the Games Console above, on purpose: the two are
+  // worth exactly the same `lifestyleValue`, and charging more for one of
+  // them would make it strictly dominated — a worse buy in every respect,
+  // which is the one thing a catalogue must never contain. Same money, same
+  // bump, pick whichever you like the look of.
+  { id: "headphones", name: "Headphones", category: "item", lifestyleValue: 5, tier: "pro", band: "consumable", at: 0.3 },
+  { id: "music", name: "Music Player", category: "item", lifestyleValue: 6, tier: "world_class", band: "consumable", at: 0.35 },
+  { id: "tablet", name: "Tablet", category: "item", lifestyleValue: 8, tier: "world_class", band: "consumable", at: 0.85 },
+  { id: "smartwatch", name: "Smartwatch", category: "item", lifestyleValue: 9, tier: "starter", band: "upgrade", at: 0 },
+  { id: "tv", name: "TV", category: "item", lifestyleValue: 10, tier: "starter", band: "upgrade", at: 0.3 },
+  { id: "gaming-pc", name: "Gaming PC", category: "item", lifestyleValue: 11, tier: "starter", band: "upgrade", at: 0.6 },
+  { id: "suit", name: "Designer Suit", category: "item", lifestyleValue: 12, tier: "starter", band: "upgrade", at: 0.95 },
+  { id: "silver", name: "Silver Chain", category: "item", lifestyleValue: 14, tier: "semi_pro", band: "upgrade", at: 0.5 },
+  { id: "art", name: "Art Piece", category: "item", lifestyleValue: 18, tier: "pro", band: "upgrade", at: 0.35 },
+  { id: "gold", name: "Gold Watch", category: "item", lifestyleValue: 20, tier: "pro", band: "upgrade", at: 0.9 },
+  { id: "diamond", name: "Diamond Necklace", category: "item", lifestyleValue: 40, tier: "semi_pro", band: "aspirational", at: 0 },
+  { id: "rolex", name: "Diamond Rolex", category: "item", lifestyleValue: 62, tier: "pro", band: "aspirational", at: 0.1 },
+
+  // ── Vehicles ─────────────────────────────────────────────────────────
+  { id: "bike", name: "Motorbike", category: "vehicle", lifestyleValue: 4, tier: "starter", band: "upgrade", at: 0.15 },
+  { id: "car-1", name: "Family Car", category: "vehicle", lifestyleValue: 5, tier: "semi_pro", band: "upgrade", at: 0.15 },
+  { id: "car-2", name: "Hatchback", category: "vehicle", lifestyleValue: 12, tier: "pro", band: "upgrade", at: 0.5 },
+  { id: "suv", name: "Luxury SUV", category: "vehicle", lifestyleValue: 22, tier: "elite", band: "aspirational", at: 0 },
+  { id: "car-3", name: "Sports Car", category: "vehicle", lifestyleValue: 30, tier: "world_class", band: "aspirational", at: 0.2 },
+  { id: "classic", name: "Classic Car", category: "vehicle", lifestyleValue: 42, tier: "pro", band: "endgame", at: 0.05 },
+  { id: "car-4", name: "Supercar", category: "vehicle", lifestyleValue: 60, tier: "elite", band: "endgame", at: 0.1 },
+  { id: "jet", name: "Private Jet", category: "vehicle", lifestyleValue: 120, tier: "world_class", band: "endgame", at: 0.6 },
+
+  // ── Property ─────────────────────────────────────────────────────────
+  { id: "flat-1", name: "Studio Flat", category: "property", lifestyleValue: 10, tier: "pro", band: "upgrade", at: 1 },
+  { id: "flat-2", name: "City Apartment", category: "property", lifestyleValue: 25, tier: "semi_pro", band: "aspirational", at: 0.1 },
+  { id: "penthouse", name: "Penthouse", category: "property", lifestyleValue: 40, tier: "pro", band: "aspirational", at: 0.5 },
+  { id: "stable", name: "Horse Stable", category: "property", lifestyleValue: 45, tier: "elite", band: "aspirational", at: 0.5 },
+  { id: "house-1", name: "Suburban House", category: "property", lifestyleValue: 55, tier: "world_class", band: "aspirational", at: 0.6 },
+  { id: "villa", name: "Beach Villa", category: "property", lifestyleValue: 75, tier: "world_class", band: "aspirational", at: 1 },
+  { id: "house-2", name: "Mansion", category: "property", lifestyleValue: 100, tier: "pro", band: "endgame", at: 0 },
+  { id: "estate", name: "Country Estate", category: "property", lifestyleValue: 140, tier: "elite", band: "endgame", at: 0.5 },
+  { id: "island", name: "Private Island", category: "property", lifestyleValue: 250, tier: "world_class", band: "endgame", at: 1 },
 ];
+
+export const LIFESTYLE_ITEMS_DEFAULT: OwnedItem[] = LIFESTYLE_SPECS.map((spec) => {
+  return {
+    id: spec.id,
+    name: spec.name,
+    category: spec.category,
+    price: bandPrice(spec.tier, spec.band, spec.at),
+    lifestyleValue: spec.lifestyleValue,
+  };
+});
+
+/** Every catalogue's specs, by item id — the tiering the shop UI groups on
+ *  and the thing `tests/star/economy.mts` holds every price to. Built from
+ *  the same spec arrays the prices themselves come from, so the two can
+ *  never disagree about which band an entry was priced in. */
+export const PRICE_SPECS: Record<string, Record<string, PriceSpec>> = {
+  boots: Object.fromEntries(
+    BOOT_SPECS.map((s) => [s.id, { tier: s.tier, band: "upgrade" as PriceBandId, at: s.at }]),
+  ),
+  lifestyle: Object.fromEntries(
+    LIFESTYLE_SPECS.map((s) => [s.id, { tier: s.tier, band: s.band, at: s.at }]),
+  ),
+};
+
+/** Which tier an item belongs to, for the shop's own grouping. Falls back
+ *  to the cheapest tier for an id the catalogue no longer has — a saved
+ *  career can be carrying an item that has since been renamed away. */
+export function shopTierOf(catalogue: "boots" | "lifestyle", id: string): ShopTierId {
+  return PRICE_SPECS[catalogue]?.[id]?.tier ?? "starter";
+}

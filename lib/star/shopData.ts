@@ -2,7 +2,21 @@ import type { Boot, OwnedItem } from "./types";
 import { applyPriceOverrides } from "./tuningStore";
 import {
   KIB_CANS_DEFAULT, STAT_KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT,
+  PRICE_SPECS, shopTierOf, KIB_CAN_TIERS, STAT_CAN_TIERS,
 } from "./shopDefaults";
+
+/**
+ * WHERE EACH ITEM SITS ON THE ONE CURVE.
+ *
+ * Re-exported through here rather than reached for in shopDefaults.ts
+ * directly, for the same reason the catalogues themselves are: this file is
+ * the shop's public face, and shopDefaults.ts is the un-overridden raw data
+ * behind it. The shop UI groups the boots by `shopTierOf` and reads a
+ * price back in weeks of the player's OWN income — which is the whole point
+ * of pricing everything in weeks in the first place, and was previously a
+ * number no screen could show because no screen had it.
+ */
+export { PRICE_SPECS, shopTierOf, KIB_CAN_TIERS, STAT_CAN_TIERS };
 
 /**
  * KIB CANS.
@@ -61,8 +75,21 @@ export interface StatKibCan {
 
 export const STAT_KIB_CANS: StatKibCan[] = applyPriceOverrides("statKibCans", STAT_KIB_CANS_DEFAULT);
 
-/** Only `price` is editable at /star-tuning-dev — the stat boosts and
- *  durability are the boot's own identity, not a balance lever. */
+/**
+ * Only `price` is editable at /star-tuning-dev — the stat boosts are the
+ * boot's own identity, not a balance lever.
+ *
+ * `matches` is no longer typed in at all: it is DERIVED from the shipped
+ * price (shopDefaults.ts, via economy.ts's `bootMatchesFor`), which is what
+ * holds a boot's cost per match to a fixed small fraction of a week at
+ * every tier. A price override here deliberately does NOT re-derive it —
+ * the editor is for trying a price on for size, and silently changing how
+ * long the boot lasts underneath the person doing that would make the
+ * experiment unreadable. It does mean an overridden price is the one way
+ * the cost-per-match invariant can be broken; that is a local, deliberate
+ * act in a dev tool, and `tests/star/economy.mts` holds the shipped
+ * catalogue to it.
+ */
 export const BOOTS_CATALOGUE: Boot[] = applyPriceOverrides("boots", BOOTS_CATALOGUE_DEFAULT);
 
 /** Only `price` is editable at /star-tuning-dev, same reasoning as boots

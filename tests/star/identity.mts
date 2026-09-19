@@ -1,5 +1,6 @@
 import {
   makeIdentity, attachClub, makeInitialCareer, FIRST_CONTRACT_SIGNING_FEE, STARTER_CONTRACT,
+  STARTER_BOOT_MATCHES,
 } from "../../lib/star/careerFlow";
 // Deliberately imported from where it actually lives, not through careerFlow's
 // re-export: `hasClub` sits in calendar.ts precisely BECAUSE that file imports
@@ -353,13 +354,18 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
   //    club") because a windfall the moment you sign undoes the early slog.
   //  - `contract`: the starter deal was rescaled when the economy was put on
   //    one curve; a National League wage is no longer a Premier League one.
+  //  - `currentBoot`: the free pair you open with is a copy of the cheapest
+  //    catalogue entry, and that entry's PRICE is now derived from the one
+  //    curve rather than typed in (shopDefaults.ts), so it came down with
+  //    everything else. Its matches are pinned separately and deliberately —
+  //    see STARTER_BOOT_MATCHES (careerFlow.ts) and the assertion below.
   //
   // They are excluded from the whole-object comparison and asserted below on
   // their own terms. Everything ELSE must still match byte for byte, because
   // that is the claim this fixture exists to make: splitting one function
   // into two changed nothing it was not meant to change. Deleting the
   // comparison instead would have thrown that away to make a red test green.
-  const EXPECTED_DIFFS = ["money", "contract"] as const;
+  const EXPECTED_DIFFS = ["money", "contract", "currentBoot"] as const;
   const withoutChanged = (c: CareerState) => {
     const rest: Record<string, unknown> = { ...c };
     for (const k of EXPECTED_DIFFS) delete rest[k];
@@ -399,6 +405,29 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
       now.contract.wage < g.career.contract.wage,
       `${g.player.club}: the starter wage came down with the rescale `
       + `(now ${now.contract.wage}, was ${g.career.contract.wage})`,
+    );
+
+    // The free pair, on the same terms: what it IS has not changed at all
+    // (same boot, same stats, same three matches somebody handed you), only
+    // what it would cost to buy. Asserted as the intent rather than as a
+    // figure, for the same reason as the wage above.
+    const boot = now.currentBoot;
+    const was = g.career.currentBoot;
+    check(boot.id === was.id && boot.name === was.name,
+      `${g.player.club}: still opens on the same boot (${boot.name} vs ${was.name})`);
+    check(
+      boot.power === was.power && boot.technique === was.technique && boot.pace === was.pace,
+      `${g.player.club}: the starter boot's stats are untouched`,
+    );
+    check(
+      boot.matches === STARTER_BOOT_MATCHES && boot.matches === was.matches,
+      `${g.player.club}: the free pair is still worth ${was.matches} matches, not a brand-new boot off `
+      + `the shelf (got ${boot.matches})`,
+    );
+    check(
+      boot.price < was.price,
+      `${g.player.club}: the starter boot's price came down with the rescale `
+      + `(now ${boot.price}, was ${was.price})`,
     );
   }
 

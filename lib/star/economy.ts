@@ -83,6 +83,19 @@ import { clubStanding, clubReputation } from "./clubReputation";
  * arithmetic, without a single `if (locked)` anywhere. You cannot afford
  * tier-3 money until you earn tier-3 money.
  *
+ * ── The second number a price implies: how long the thing lasts ──
+ *
+ * A price on its own is only half of what a boot costs. The catalogue this
+ * replaces let price span EIGHTY-fold while durability spanned three, so
+ * the cheapest boots in the game worked out at about three weeks' wages per
+ * match — the one item the early game is built around saving for was also
+ * the worst value on the shelf. Durability is therefore no longer typed in
+ * beside a price; it is derived FROM it, which makes "cost per match is a
+ * small fraction of a week" true at every tier by construction rather than
+ * by choosing fourteen pairs of numbers carefully. See
+ * `BOOT_WEEKS_PER_MATCH` in PART 4, including why the consequence is that
+ * cheap boots last far longer than dear ones.
+ *
  * ── The one thing that survives the rewrite unchanged ──
  *
  * A consumable that converts money into RATING — the stat cans, and more
@@ -445,24 +458,72 @@ export function tierAnchorWage(tier: ShopTierId): number {
 }
 
 /**
+ * How coarse a price is allowed to be at this size — coarse steps that
+ * widen as the numbers grow, the same instinct `niceMoneyStep` (money.ts)
+ * already applies to a stepper. Exported so `bandPrice` below can round
+ * BACK INTO a band in the same units it rounded out of.
+ */
+export function priceStep(raw: number): number {
+  return raw < 20 ? 1
+    : raw < 100 ? 5
+      : raw < 1_000 ? 25
+        : raw < 10_000 ? 100
+          : raw < 100_000 ? 500
+            : 1_000;
+}
+
+/**
  * A price, from a tier and how many weeks of that tier's income it costs.
  *
  * Rounded to something a player reads as a price rather than as a
- * calculation — coarse steps that widen as the numbers grow, the same
- * instinct `niceMoneyStep` (money.ts) already applies to a stepper. The
- * rounding is small relative to every band's own width, so a price never
- * rounds out of the band it was written in.
+ * calculation. The rounding is small relative to every band's own width,
+ * but at a band's exact EDGE it can still land a star or two outside it —
+ * `tierPrice("starter", 18)` is ★630 raw and rounds to ★625, which is
+ * 17.86 weeks and therefore no longer inside an 18-36 week band. That is
+ * why a catalogue entry should be priced with `bandPrice` below rather than
+ * with this directly: it does the same rounding and then guarantees the
+ * result is still in the band it claims.
  */
 export function tierPrice(tier: ShopTierId, weeks: number): number {
   const raw = tierWeeklyIncome(tier) * weeks;
-  const step =
-    raw < 20 ? 1
-      : raw < 100 ? 5
-        : raw < 1_000 ? 25
-          : raw < 10_000 ? 100
-            : raw < 100_000 ? 500
-              : 1_000;
+  const step = priceStep(raw);
   return Math.max(step, Math.round(raw / step) * step);
+}
+
+/**
+ * THE FUNCTION EVERY CATALOGUE ENTRY IS PRICED WITH.
+ *
+ * "Put this item in the `upgrade` band of the `starter` tier, `at` 15% of
+ * the way up that band" — and get back a round number that is provably
+ * inside it. `at` is 0-1 across the band's own width, so an entry never
+ * names a number of weeks (which would have to be re-derived by hand every
+ * time `SQUEEZE_STEP` or `WAGE_FLOOR` moves) and never names an absolute
+ * price (which is what the shop used to be, and why nothing was tied to
+ * anything).
+ *
+ * The clamp matters and is not defensive decoration: `priceStep` is coarse
+ * — ★100 at four figures — so a request at `at: 0` or `at: 1` rounds off
+ * the edge about half the time. When that happens the price moves to the
+ * nearest whole step INSIDE the band rather than outside it. Only if the
+ * band is narrower than one step (which no band in this file is) does it
+ * fall back to the middle of the band, un-stepped.
+ */
+export function bandPrice(tier: ShopTierId, band: PriceBandId, at = 0.5): number {
+  const { min, max } = bandWeeks(band, tier);
+  const income = tierWeeklyIncome(tier);
+  const lo = min * income;
+  const hi = max * income;
+
+  const t = Math.max(0, Math.min(1, Number.isFinite(at) ? at : 0.5));
+  const raw = lo + (hi - lo) * t;
+  const step = priceStep(raw);
+
+  let price = Math.max(step, Math.round(raw / step) * step);
+  if (price < lo) price = Math.ceil(lo / step) * step;
+  if (price > hi) price = Math.floor(hi / step) * step;
+  if (price < lo || price > hi) price = Math.round((lo + hi) / 2);
+
+  return Math.max(1, Math.round(price));
 }
 
 /** The reverse, and the number every test and every tooltip actually wants:
@@ -525,3 +586,101 @@ export const RATING_CONVERTER_TIERS = {
   energy: ["starter", "pro", "world_class"] as ShopTierId[],
   stats: ["pro", "elite", "world_class"] as ShopTierId[],
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PART 4 — DURABILITY, WHICH IS THE OTHER HALF OF A BOOT'S PRICE
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * TWO THINGS HAVE TO BE TRUE OF A BOOT AT ONCE, AND ONLY ONE OF THEM WAS.
+ *
+ * The catalogue this replaces ran from ★6,000 to ★500,000 — a factor of
+ * EIGHTY — while durability ran from 3 matches to 10, a factor of three.
+ * Nothing reconciled the two, so at the bottom of the shop a pair of boots
+ * worked out at roughly three weeks' wages PER MATCH: a player who bought
+ * the cheapest boots in the game could not afford to keep wearing them, and
+ * the item that was supposed to be his first real purchase was in fact the
+ * worst-value thing on the shelf.
+ *
+ * So durability is no longer typed in next to a price. It IS the price:
+ *
+ *     matches  =  weeks of income up front  ÷  BOOT_WEEKS_PER_MATCH
+ *
+ * which makes both invariants hold by construction rather than by careful
+ * choice of fourteen pairs of numbers:
+ *
+ *   1. COST PER MATCH is `BOOT_WEEKS_PER_MATCH` of a week at EVERY tier —
+ *      identical for the ★725 starter boot and the ★4,600 world-class one,
+ *      because both are derived from the same ratio.
+ *   2. THE UP-FRONT PRICE is still a real goal at its own tier, because it
+ *      is still whatever the `upgrade` band says it is. Durability moved;
+ *      the price did not.
+ *
+ * ── Which way round, and why ──
+ *
+ * The brief allowed either: make cheap boots last far longer, or make
+ * expensive ones last a whole season. This file does the FIRST, and the
+ * second falls out of it as a consequence rather than being chosen
+ * separately. A starter boot at ~20 weeks of non-league income lasts around
+ * 65 matches — the better part of two seasons — and the best boot in the
+ * game lasts about a dozen.
+ *
+ * That inversion is deliberate, and it is also how boots actually work: a
+ * hard-wearing budget boot survives seasons of it, and an elite lightweight
+ * boot is a race-day item that gets replaced constantly. It gives the
+ * catalogue a real trade-off it never had — stats against durability —
+ * instead of a single dominant column where the dearest boot won on both.
+ *
+ * It also fixes the specific absurdity above: a non-league player saving 20
+ * weeks for boots now gets two seasons out of them rather than three
+ * matches.
+ */
+export const BOOT_WEEKS_PER_MATCH = 0.30;
+
+/** Hard ends, so a rounding change can never produce a boot that is used up
+ *  in a single match or one that outlasts an entire career. */
+export const BOOT_MATCHES_MIN = 4;
+export const BOOT_MATCHES_MAX = 120;
+
+/**
+ * How many matches a boot at this price, at this tier, is good for.
+ *
+ * Rounded coarsely on the same instinct as `priceStep` — nobody reads "67
+ * matches" as more precise than "65", and a round number survives a
+ * retune of the curve looking deliberate rather than computed.
+ */
+export function bootMatchesFor(price: number, tier: ShopTierId): number {
+  const weeks = weeksOfIncome(price, tier);
+  const raw = weeks / BOOT_WEEKS_PER_MATCH;
+  const rounded =
+    raw < 20 ? Math.round(raw)
+      : raw < 60 ? Math.round(raw / 2) * 2
+        : Math.round(raw / 5) * 5;
+  return Math.max(BOOT_MATCHES_MIN, Math.min(BOOT_MATCHES_MAX, rounded));
+}
+
+/** What a boot actually works out at per match, in weeks of the income of
+ *  the tier it belongs to — the number invariant (1) above is checked on. */
+export function bootWeeksPerMatch(price: number, matches: number, tier: ShopTierId): number {
+  return weeksOfIncome(price, tier) / Math.max(1, matches);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PART 5 — READING A PRICE FROM A REAL WALLET
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * "How many weeks of MY money is this?" — for a specific career rather than
+ * for a tier's notional first-teamer.
+ *
+ * Every price in this game is a number of weeks that has been multiplied
+ * out into stars, and the shop is the one place a player should be able to
+ * read it back the other way. Takes the wage off the actual contract and
+ * grosses it up by `TOTAL_INCOME_MULTIPLE`, so it answers with total income
+ * rather than wage alone — the same denominator every band is written
+ * against, which is what makes the answer comparable to `bandWeeks`.
+ */
+export function weeksOfWallet(price: number, weeklyWage: number): number {
+  const income = Math.max(1, weeklyWage) * TOTAL_INCOME_MULTIPLE;
+  return price / income;
+}
