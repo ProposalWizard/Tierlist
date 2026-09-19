@@ -17,6 +17,10 @@ import {
 import { leftPitch, mirror, FIVE_KEEPER_STRENGTH } from "@/lib/star/fiveASide/geometry";
 import { type FlowBeat } from "@/lib/star/fiveASide/flow";
 import {
+  BRACE_MS, commitAt, commitKeeper, beginBlockRun, stepBlockRun,
+  type BlockRun, type FiveCommit,
+} from "@/lib/star/fiveASide/defend";
+import {
   newFiveMatch, applyOutcome, advanceFlow, applyTheirAttack, resumeAction,
   type FiveMatchState,
 } from "@/lib/star/fiveASide/match";
@@ -123,7 +127,7 @@ function countingRng(seed: number, wound: number): { next: () => number; drawn: 
   return { next: () => { n++; return base(); }, drawn: () => n };
 }
 
-type Phase = "flow" | "aim" | "contact" | "flight" | "result" | "watch" | "done";
+type Phase = "flow" | "aim" | "brace" | "contact" | "flight" | "result" | "watch" | "done";
 
 export interface FiveASideProps {
   /** 0-1. Sets how good the opposition are — see rules/score. */
@@ -181,8 +185,20 @@ export default function FiveASide({
   const doneRef = useRef(false);
 
   /** THEIR move, while it is being watched: the mirrored picture the engine is
-   *  playing, plus the world it started from so it can be read back. */
-  const theirRef = useRef<{ sc: Scenario; from: FiveWorld } | null>(null);
+   *  playing, plus the world it started from so it can be read back, and the
+   *  shot they are about to take — struck once the brace window runs out. */
+  const theirRef = useRef<{
+    sc: Scenario; from: FiveWorld;
+    shot: ReturnType<typeof aimTheirShot>;
+  } | null>(null);
+  /** The brace window: milliseconds left. A ref, not state — the ring is
+   *  drawn on the canvas every frame anyway, and re-rendering React sixty
+   *  times a second to move an arc would be sixty renders for nothing. */
+  const braceRef = useRef(0);
+  const committedRef = useRef<FiveCommit | null>(null);
+  const [committed, setCommitted] = useState<FiveCommit | null>(null);
+  /** The man you sent, while he is running. */
+  const blockRef = useRef<BlockRun | null>(null);
   /** The simulation being animated: the beats, where we are in them, and the
    *  world to draw right now. */
   const flowRef = useRef<{ beats: FlowBeat[]; at: number; t: number; perBeat: number } | null>(null);
@@ -248,6 +264,8 @@ export default function FiveASide({
     ballRef.current = null;
     aimRef.current = null;
     theirRef.current = null;
+    blockRef.current = null;
+    committedRef.current = null;
     shownRef.current = matchRef.current.world;
     setBanner(null);
     setPhase("aim");
@@ -272,14 +290,31 @@ export default function FiveASide({
     sc.crossbar = rules.crossbar;
     sc.viewport = { ...rules.view };
     initDefenders(sc, rng.next);
+    // Rolled NOW, before the window, so nothing about the window can change
+    // what they were always going to do with it. You are reading the picture,
+    // not the dice.
     const shot = aimTheirShot(sc, difficulty, rng.next);
     scRef.current = sc;
-    theirRef.current = { sc, from };
-    ballRef.current = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng.next);
+    theirRef.current = { sc, from, shot };
+    ballRef.current = null;
     aimRef.current = null;
+    blockRef.current = null;
+    committedRef.current = null;
+    setCommitted(null);
+    braceRef.current = BRACE_MS;
     setBanner("They break…");
-    setPhase("watch");
+    setPhase("brace");
   }, [cast, difficulty, keeperStrength, rng, rules]);
+
+  /** The window has run out — they hit it. */
+  const strikeTheirs = useCallback(() => {
+    const their = theirRef.current;
+    if (!their) return;
+    const { sc, shot } = their;
+    ballRef.current = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng.next);
+    setBanner(null);
+    setPhase("watch");
+  }, [rng]);
 
   /**
    * PLAY ON — the simulation between your touches, animated.
@@ -406,7 +441,35 @@ export default function FiveASide({
     return best;
   };
 
+  /**
+   * THROW A BODY AT IT — the one tap you get while they are lining it up.
+   *
+   * Handled on pointer DOWN rather than up: this is a tap, not a drag, and
+   * every millisecond of the window left is real ground the man covers.
+   *
+   * The tap arrives in OUR coordinates, and their move is played mirrored, so
+   * it is turned round before it is hit-tested — see geometry.ts's `mirror`.
+   */
+  const braceTap = (e: React.PointerEvent) => {
+    const sc = scRef.current, their = theirRef.current;
+    if (!sc || !their || committedRef.current) return;   // one tap, and one only
+    const p = pitchAt(e);
+    if (!p) return;
+    const vp = camRef.current ?? sc.viewport;
+    const grab = Math.max(2.2, (vp.y2 - vp.y1) * 0.09);
+    const c = commitAt(sc, mirror(p), grab);
+    if (!c) return;                                       // a mis-tap costs nothing
+    committedRef.current = c;
+    setCommitted(c);
+    if (c.kind === "keeper") commitKeeper(sc, c.side);
+    else {
+      const d = sc.defenders[c.defender];
+      if (d) blockRef.current = beginBlockRun(sc, sc.ball, d);
+    }
+  };
+
   const pointerDown = (e: React.PointerEvent) => {
+    if (phaseRef.current === "brace") { braceTap(e); return; }
     if (phaseRef.current !== "aim") return;
     const wrap = wrapRef.current;
     if (!wrap) return;
@@ -556,6 +619,17 @@ export default function FiveASide({
             obey();
           }
         }
+      } else if (ph === "brace") {
+        // The window. Nobody moves but the man you sent and the keeper you
+        // committed — everyone else is waiting for the ball to be struck,
+        // exactly as they are in an ordinary aim phase.
+        const sc = scRef.current;
+        if (sc) {
+          stepKeeper(sc, dt);
+          if (blockRef.current) stepBlockRun(sc, blockRef.current, dt);
+        }
+        braceRef.current -= dt * 1000;
+        if (braceRef.current <= 0) strikeTheirs();
       } else if (ph === "flight" || ph === "watch") {
         const sc = scRef.current, ball = ballRef.current;
         if (sc && ball && !pendingRef.current) {
@@ -567,6 +641,9 @@ export default function FiveASide({
             const h = dt / 3;
             stepKeeper(sc, h);
             stepReactions(sc, ball, h, rng.next);
+            // After the reactions and before the ball, the same slot
+            // `stepTouchChase` occupies in a real match.
+            if (blockRef.current) stepBlockRun(sc, blockRef.current, h);
             res = stepBall(ball, sc, rng.next, h);
           }
           // Our own touchline, which is inside the engine's frame — the engine
@@ -608,7 +685,7 @@ export default function FiveASide({
     rafRef.current = requestAnimationFrame(frame);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolveMine, resolveTheirs, obey]);
+  }, [resolveMine, resolveTheirs, obey, strikeTheirs]);
 
   // ── The picture ────────────────────────────────────────────────────────
   const draw = () => {
@@ -626,7 +703,7 @@ export default function FiveASide({
 
     const sc = scRef.current;
     const ball = ballRef.current;
-    const watching = phaseRef.current === "watch"
+    const watching = phaseRef.current === "watch" || phaseRef.current === "brace"
       || (phaseRef.current === "result" && !!theirRef.current);
 
     // ── Everything in OUR coordinates, whoever is attacking ──
@@ -713,6 +790,39 @@ export default function FiveASide({
 
     drawBall(ctx, p, ballAt, ball ? ball.z : 0);
 
+    // ── The window, drawn where the eye already is ──
+    //
+    // Around the ball at their man's feet, because that is the thing you are
+    // looking at and a timer anywhere else is a timer you find out about
+    // afterwards. It empties anticlockwise from the top, and the man you have
+    // already sent gets a ring of his own so a tap is never silent.
+    if (phaseRef.current === "brace") {
+      const left = Math.max(0, Math.min(1, braceRef.current / BRACE_MS));
+      const r = p.unit * 1.7;
+      ctx.save();
+      ctx.lineWidth = Math.max(2.5, p.unit * 0.16);
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.beginPath();
+      ctx.arc(p.px(ballAt.x), p.py(ballAt.y), r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = left > 0.35 ? "#fbbf24" : "#f87171";
+      ctx.beginPath();
+      ctx.arc(p.px(ballAt.x), p.py(ballAt.y), r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left);
+      ctx.stroke();
+      const c = committedRef.current;
+      if (c) {
+        const at = c.kind === "keeper"
+          ? un({ x: sc.keeper.x, y: sc.keeper.y })
+          : un({ x: sc.defenders[c.defender].x, y: sc.defenders[c.defender].y });
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = Math.max(2, p.unit * 0.13);
+        ctx.beginPath();
+        ctx.arc(p.px(at.x), p.py(at.y), p.unit * 1.0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     if (phaseRef.current === "aim" && aimRef.current) {
       drawAim(ctx, p, sc.ball, aimRef.current.dir, aimRef.current.power);
     }
@@ -753,6 +863,15 @@ export default function FiveASide({
           <div className="pointer-events-none absolute inset-x-0 top-1/3 text-center">
             <span className="rounded-full bg-black/70 px-4 py-2 text-sm font-black text-white">
               {banner}
+            </span>
+          </div>
+        )}
+        {phase === "brace" && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 text-center">
+            <span className="rounded-full bg-black/55 px-3 py-1 text-[11px] font-bold text-white/85">
+              {committed
+                ? committed.kind === "keeper" ? "Keeper committed" : "Body on the line"
+                : "Tap a man to throw a body at it · tap the goal to send your keeper"}
             </span>
           </div>
         )}
