@@ -679,13 +679,13 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "marketValue.ratingExponent", category: "Market Value", label: "Rating — value curve steepness",
-    description: "How much faster value climbs near the very top of the rating scale than in the middle — a real transfer fee blows up disproportionately for the truly elite. Steepened 14 Sep 2026 from 2.2 to 4.0 during the real-money rescale, fit against five real anchor points (60 near the floor, 70 ~£2.5m, 85 ~£57m, 90 ~£100m, 95 ~£180m). Eased back to 3.8 afterward, reported directly from a real save: a batch of genuinely 96-97 rated players (an extraordinary, once-in-a-generation tier) had come out at £478m-£631m, described directly as \"slightly too high.\" A lower exponent cuts proportionally MORE at the very top of the scale than in the middle (a power curve's high end is the most sensitive to its own exponent), which is exactly the shape asked for — mid-80s/low-90s largely untouched, the mid-90s-and-up tier brought back down toward earth.",
-    default: 3.8, min: 1, max: 6, step: 0.1,
+    description: "How much faster value climbs near the very top of the rating scale than in the middle. History: 4.0 (14 Sep, real-money rescale) -> 3.8 (eased, a batch of 96-97s had come out £478-631m) -> 3.95 (this pass). Reported directly, with real named examples, that the 3.8 pass had overcorrected the OTHER way: a 91-rated Kylian Mbappe (prime age, proven best player in the world) was worth LESS (£74m) than an 88-rated João Neves (£92m) purely because Neves carried the stronger potential tag — \"he is not the best player in the world yet,\" so a proven three-point rating edge should outweigh unrealized potential. Re-fit by grid search against four real named anchors at once (Mbappe ~£177m, Neves ~£150m and genuinely below Mbappe, Haaland ~£100m, a 32-year-old Bruno Fernandes ~£72m) while keeping an ordinary 85-rated player under £100m and a 95-97 rated one under roughly £260-320m — the exact target figures aren't all jointly reachable without inflating ordinary players too, so this is the closest fit that keeps every one of those the right side of its bound, not a perfect hit on each number.",
+    default: 3.95, min: 1, max: 6, step: 0.05,
   },
   {
     key: "marketValue.scale", category: "Market Value", label: "Overall value scale",
-    description: "The single dial that sets how much money a market value actually comes out to. Rescaled 14 Sep 2026 to land on real transfer-fee territory (an 85-rated 25-year-old at an average club near £57m, a truly elite 95-rated near £180m). Nudged up slightly (70→74) alongside `ratingExponent`'s own reduction, to keep those same mid-to-high-80s anchor points from drifting down too along with the deliberate top-end cut.",
-    default: 74, min: 0.5, max: 60000, step: 5,
+    description: "The single dial that sets how much money a market value actually comes out to. History: 70 -> 74 -> 90 (this pass, grid-searched alongside ratingExponent/highPotentialPeak/worldClassPeak against the same four real named anchors — see ratingExponent's own note).",
+    default: 90, min: 0.5, max: 60000, step: 5,
   },
   {
     key: "marketValue.floor", category: "Market Value", label: "Minimum market value",
@@ -709,13 +709,13 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "marketValue.highPotentialPeak", category: "Market Value", label: "High Potential — peak value multiplier",
-    description: "How much more a High Potential player is worth than an identical player with no tag, at its strongest (the youngest a potential tag can matter). Eased slightly (1.5→1.4) alongside worldClassPeak's own reduction — same real report, same reasoning.",
-    default: 1.4, min: 1, max: 3, step: 0.1,
+    description: "How much more a High Potential player is worth than an identical player with no tag, at its strongest (the youngest a potential tag can matter). History: 1.5 -> 1.4 -> 1.2 (this pass). Eased further so a proven, higher-rated CURRENT star (Mbappe) reliably outvalues a lower-rated but potential-tagged prospect (Neves) — see ratingExponent's own note for the full worked example this was grid-searched against.",
+    default: 1.2, min: 1, max: 3, step: 0.05,
   },
   {
     key: "marketValue.worldClassPeak", category: "Market Value", label: "World Class Potential — peak value multiplier",
-    description: "The same premium as High Potential, but stronger — World Class Potential is meant to be the stronger tier directly above it. Eased from 2.2 to 1.85, reported directly: two real 21-year-old World Class Potential players (already five real seasons in, not brand-new prospects) were valued at £200-231m against an 88-rated 29-year-old established star at only £91m — \"don't undervalue some of the older players sometimes... just a very small [change].\" This alone doesn't close that whole gap (see ageFactor's own extended prime plateau for the other half of it) but meaningfully narrows the young-potential premium.",
-    default: 1.85, min: 1, max: 4, step: 0.1,
+    description: "The same premium as High Potential, but stronger — World Class Potential is meant to be the stronger tier directly above it. History: 2.2 -> 1.85 -> 1.35 (this pass). Eased further for the same real reason as highPotentialPeak — reported directly that an 88-rated World Class prospect (João Neves) still outvalued a 91-rated proven best-in-world player (Mbappe) even after the previous round's cut, which is backwards: \"he is not the best player in the world yet.\" See ratingExponent's own note for the full grid-search this and every other Market Value constant here were re-fit against together.",
+    default: 1.35, min: 1, max: 4, step: 0.05,
   },
   {
     key: "marketValue.potentialYouthWindow", category: "Market Value", label: "Potential tag — years before it stops mattering",
