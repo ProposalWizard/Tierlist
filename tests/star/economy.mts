@@ -9,7 +9,8 @@ const store = new Map<string, string>();
 };
 
 import {
-  WAGE_FLOOR, DIVISION_STEP, REPUTATION_PREMIUM_MAX, SQUEEZE_STEP,
+  WAGE_FLOOR, DIVISION_STEP, divisionStepInto, MIN_DIVISION_STEP,
+  REPUTATION_PREMIUM_MAX, SQUEEZE_STEP,
   STANDING_BENCH, STANDING_STARTER, STANDING_STAR, STARTER_STANDING,
   TOTAL_INCOME_SHARES, TOTAL_INCOME_MULTIPLE,
   PRICE_BANDS, SHOP_TIERS, SHOP_TIER_ORDER,
@@ -493,14 +494,40 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   // different constant, which a static import cannot do: if any figure had
   // a constant baked into it that did NOT come from WAGE_FLOOR, these
   // ratios would not be the clean multiples of DIVISION_STEP they are.
+  //
+  // The ladder is no longer ONE ratio — the Championship and Premier League
+  // rungs are deliberately steeper (`DIVISION_STEP_INTO`, which closed the
+  // personal-to-club gap). So each rung is checked against its OWN declared
+  // step rather than against a single constant. The guarantee is unchanged
+  // and just as strong: every rung must be exactly the step it declares, to
+  // within floating point, which it could not be if any figure anywhere had
+  // a constant in it that did not come from WAGE_FLOOR.
   const wages = DIVISION_ORDER.map(d => typicalWeeklyWage(d));
   for (let i = 1; i < wages.length; i++) {
+    // DIVISION_ORDER runs top-first, so [i - 1] is the division ABOVE [i],
+    // and the step that made it is the one declared for the higher rung.
+    const above = DIVISION_ORDER[i - 1];
+    const want = divisionStepInto(above);
     check(
-      Math.abs(wages[i - 1] / wages[i] - DIVISION_STEP) < 1e-9,
-      `${DIVISION_ORDER[i - 1]}/${DIVISION_ORDER[i]} must be exactly DIVISION_STEP — `
+      Math.abs(wages[i - 1] / wages[i] - want) < 1e-9,
+      `${above}/${DIVISION_ORDER[i]} must be exactly its own step (${want}) — `
       + `got ${(wages[i - 1] / wages[i]).toFixed(6)}, which means a figure somewhere is not derived from WAGE_FLOOR`,
     );
   }
+  // The steep rungs must genuinely BE steeper, or `DIVISION_STEP_INTO` is
+  // declaring something it is not doing.
+  check(
+    divisionStepInto("premier") > DIVISION_STEP
+    && divisionStepInto("championship") > DIVISION_STEP,
+    "the top two rungs are the steep ones",
+  );
+  // …and the no-overlap guarantee has to hold on the SHALLOWEST rung, not
+  // just on the nominal step — that is what makes it structural.
+  check(
+    1 + REPUTATION_PREMIUM_MAX < MIN_DIVISION_STEP,
+    `a division's best club must never out-pay the one above's worst `
+    + `(premium ${1 + REPUTATION_PREMIUM_MAX} vs shallowest rung ${MIN_DIVISION_STEP})`,
+  );
   check(
     Math.abs(typicalWeeklyWage("national_league") / WAGE_FLOOR - 1.25) < 1e-9,
     "the bottom of the ladder is a pure multiple of the one dial",

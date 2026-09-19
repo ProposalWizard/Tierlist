@@ -153,17 +153,22 @@ import { clubStanding, clubReputation } from "./clubReputation";
  * ── THE PERSONAL-TO-CLUB GAP, MEASURED AND LEFT ALONE ──
  *
  * The cheapest club in the game is valued at ★5,000,000 (a hard floor in
- * `investments.ts`). Twenty Premier League seasons of personal income is
- * ★2,789,212, and a whole five-rung climb is ★202,247. So buying the
- * smallest club outright is still about 1.8 SEASONS-OF-CAREERS out of
- * reach — down from 5.7 before the 19 Sep sharpening, which closed most but
- * not all of it as a side effect.
+ * `investments.ts`). Twenty Premier League seasons of personal income was
+ * ★2,789,212 — so buying the smallest club outright was 1.79x out of reach
+ * of a career that could not be bettered, down from 5.7x before the 19 Sep
+ * sharpening but still short.
  *
- * Deliberately NOT resolved here. It is a design decision (should a player
- * ever buy a club outright with football earnings, or only ever a stake?)
- * rather than a number to tune, and the two candidate fixes — sharpening
- * further, or putting club valuations on their own explicit
- * weeks-of-top-flight-income footing — move different things.
+ * RESOLVED, and by the shape that was asked for rather than the one this
+ * note predicted. Four were on the table: drop the club floor, raise
+ * late-career earnings, add a non-wage income route, or make part-ownership
+ * the entry point. The answer was the second — "I think we just scale
+ * championship and premier league wages late game sharper" — which is why
+ * the fix is `DIVISION_STEP_INTO` and not a second money scale.
+ *
+ * Twenty Premier League seasons is now ★6,741,504, and the floor is 1.35x
+ * COVERED rather than 1.79x away. See `DIVISION_STEP_INTO` for what the two
+ * numbers buy at ten, fifteen and twenty seasons, and for why the bottom of
+ * the ladder is untouched by it.
  *
  * ── What used to be outside this file, and is not any more ──
  *
@@ -327,16 +332,105 @@ export const TOTAL_INCOME_MULTIPLE =
 const LADDER_UP: CareerDivision[] = [...DIVISION_ORDER].reverse();
 
 /**
+ * THE TWO RUNGS THAT ARE STEEPER THAN THE REST, and the one thing they fix.
+ *
+ * Every rung used to be the same `DIVISION_STEP`. These two are not, and it
+ * was a deliberate answer to a specific problem rather than a feel-tune:
+ *
+ *   "I think we just scale championship and premier league wages late game
+ *    sharper."
+ *
+ * ── The problem ──
+ *
+ * The cheapest club in the game is ★5,000,000 (a hard floor in
+ * `investments.ts`), and club money is deliberately on its own much larger
+ * scale — a footballer's wallet is nowhere near a club's finances. Twenty
+ * Premier League seasons of personal income came to ★2,789,212, so buying
+ * the smallest club outright was 1.79x out of reach of a career that could
+ * not actually be bettered. The end-game goal was unreachable by design
+ * rather than by difficulty, which is the worst version of a goal.
+ *
+ * ── Why the top rungs specifically, and not the whole dial ──
+ *
+ * Turning `DIVISION_STEP` up moves every rung, which drags the bottom of
+ * the ladder with it — and the bottom is the one part already confirmed to
+ * read right (★25 a week, a ★650 first pair of boots, NSS numbers). The
+ * gap is at the top, so the change belongs at the top.
+ *
+ * It also matches how football actually pays. The step from League Two to
+ * League One is a pay rise; the step into the Premier League is a different
+ * order of money entirely. A flat multiple between every division was the
+ * simplification, not this.
+ *
+ * ── What these two numbers buy, measured ──
+ *
+ * A season is `matchweeksFor("premier")` = 38 weeks of
+ * `typicalWeeklyIncome`. Against the ★5,000,000 floor:
+ *
+ *                       10 seasons   15 seasons   20 seasons
+ *   flat 3.2 (before)      0.28x        0.42x        0.56x
+ *   4.5 / 5.5 (now)        0.67x        1.01x        1.35x
+ *
+ * So a strong fifteen-season top-flight career buys the smallest club, and
+ * a full twenty leaves real change — rather than a perfect career falling
+ * short. Chosen over 4.0/5.0 (1.09x at twenty, 0.82x at fifteen) precisely
+ * because that one needed a career with nothing spent along the way, and
+ * boots and the shop are the whole point of earning it.
+ *
+ * Weekly wages: the Championship goes ★819 -> ★1,152, the Premier League
+ * ★2,621 -> ★6,336. End to end the ladder is 253x rather than 105x.
+ *
+ * ── What it does NOT change ──
+ *
+ * `WAGE_FLOOR` and the two bottom rungs are untouched, so the National
+ * League, League Two and every `starter`-tier price are byte-identical.
+ * Shop prices at the top tiers climb with the wages that anchor them, which
+ * is right and is not a side effect: those prices are written in WEEKS of
+ * that tier's income, and a top-flight player pays the same number of weeks
+ * as before. The only thing that genuinely got closer is the club, because
+ * `clubValuation` is on its own scale and did not move with any of this.
+ *
+ * ── The invariant still holds, on every rung ──
+ *
+ * "A division's best club never out-pays the division above's worst" needs
+ * `1 + REPUTATION_PREMIUM_MAX` to be under EVERY step, not just the uniform
+ * one. 1.5 against a minimum step of 3.2 — see `MIN_DIVISION_STEP` and the
+ * test over it.
+ */
+export const DIVISION_STEP_INTO: Partial<Record<CareerDivision, number>> = {
+  championship: 4.5,
+  premier: 5.5,
+};
+
+/** The multiple this division's floor is above the floor of the one below.
+ *  `DIVISION_STEP` unless this rung is one of the steep ones. */
+export function divisionStepInto(division: CareerDivision): number {
+  return DIVISION_STEP_INTO[division] ?? DIVISION_STEP;
+}
+
+/** The shallowest rung on the ladder — what `REPUTATION_PREMIUM_MAX` has to
+ *  stay under for the no-overlap guarantee to hold everywhere. */
+export const MIN_DIVISION_STEP = Math.min(
+  DIVISION_STEP,
+  ...Object.values(DIVISION_STEP_INTO).filter((v): v is number => typeof v === "number"),
+);
+
+/**
  * The wage the smallest club in this division pays a bench player: the
- * whole geometric ladder, and the only thing a division contributes.
+ * whole ladder, and the only thing a division contributes.
+ *
+ * Geometric, but no longer at one uniform ratio — the top two rungs are
+ * steeper. See `DIVISION_STEP_INTO`.
  */
 export const DIVISION_BASE_WAGE: Record<CareerDivision, number> = (() => {
   const out = {} as Record<CareerDivision, number>;
   let base = WAGE_FLOOR;
-  for (const division of LADDER_UP) {
+  LADDER_UP.forEach((division, i) => {
+    // The bottom rung IS the floor; every rung above it is the one below
+    // multiplied by its own step.
+    if (i > 0) base *= divisionStepInto(division);
     out[division] = base;
-    base *= DIVISION_STEP;
-  }
+  });
   return out;
 })();
 

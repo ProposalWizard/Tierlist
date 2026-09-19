@@ -215,6 +215,36 @@ interface LifestyleSpec {
   at: number;
 }
 
+/**
+ * ── FOUR ENTRIES RE-TIERED, 19 Sep 2026: a latent bug the sharper top rungs
+ *    exposed rather than caused ──
+ *
+ * `tests/star/economy.mts` holds one rule over every catalogue: within a
+ * category, a thing worth more must not cost less. Four entries were
+ * breaking it and had been for as long as they have existed — they only
+ * passed while the wage ladder was a single flat multiple, where the
+ * numbers happened to land the right way round.
+ *
+ * `DIVISION_STEP_INTO` then made the Championship and Premier League rungs
+ * steeper, which lifted every `elite` and `world_class` price with them and
+ * left `starter`/`semi_pro`/`pro` exactly where they were. The four
+ * inversions fell out immediately:
+ *
+ *   Mansion       LV100, priced at `pro` — the best house in the game on
+ *                 League One money, ★108,000 against a ★221,000 Beach Villa
+ *                 worth a quarter as much. Now `elite`, ★280,000, which
+ *                 sits properly between the villa and the Country Estate.
+ *   Classic Car   LV42 at ★110,000 against a ★151,000 LV30 Sports Car.
+ *                 Same band and tier, moved to the top of its band.
+ *   Tablet        LV8, and Music Player LV6, were both anchored to
+ *                 top-flight money — ★825 and ★600, above a ★650 LV9
+ *                 Smartwatch. A tablet and a music player are not
+ *                 Premier-League-money objects; both moved to `elite`.
+ *
+ * None of this is a tuning preference. Each one was a thing that cost more
+ * and did less, which is a strictly dominated choice and the one shape a
+ * shop must never contain.
+ */
 const LIFESTYLE_SPECS: LifestyleSpec[] = [
   // ── Items ────────────────────────────────────────────────────────────
   { id: "phone", name: "Phone", category: "item", lifestyleValue: 3, tier: "starter", band: "consumable", at: 0.5 },
@@ -225,8 +255,8 @@ const LIFESTYLE_SPECS: LifestyleSpec[] = [
   // which is the one thing a catalogue must never contain. Same money, same
   // bump, pick whichever you like the look of.
   { id: "headphones", name: "Headphones", category: "item", lifestyleValue: 5, tier: "pro", band: "consumable", at: 0.3 },
-  { id: "music", name: "Music Player", category: "item", lifestyleValue: 6, tier: "world_class", band: "consumable", at: 0.35 },
-  { id: "tablet", name: "Tablet", category: "item", lifestyleValue: 8, tier: "world_class", band: "consumable", at: 0.85 },
+  { id: "music", name: "Music Player", category: "item", lifestyleValue: 6, tier: "elite", band: "consumable", at: 0.5 },
+  { id: "tablet", name: "Tablet", category: "item", lifestyleValue: 8, tier: "elite", band: "consumable", at: 1 },
   { id: "smartwatch", name: "Smartwatch", category: "item", lifestyleValue: 9, tier: "starter", band: "upgrade", at: 0 },
   { id: "tv", name: "TV", category: "item", lifestyleValue: 10, tier: "starter", band: "upgrade", at: 0.3 },
   { id: "gaming-pc", name: "Gaming PC", category: "item", lifestyleValue: 11, tier: "starter", band: "upgrade", at: 0.6 },
@@ -243,7 +273,7 @@ const LIFESTYLE_SPECS: LifestyleSpec[] = [
   { id: "car-2", name: "Hatchback", category: "vehicle", lifestyleValue: 12, tier: "pro", band: "upgrade", at: 0.5 },
   { id: "suv", name: "Luxury SUV", category: "vehicle", lifestyleValue: 22, tier: "elite", band: "aspirational", at: 0 },
   { id: "car-3", name: "Sports Car", category: "vehicle", lifestyleValue: 30, tier: "world_class", band: "aspirational", at: 0.2 },
-  { id: "classic", name: "Classic Car", category: "vehicle", lifestyleValue: 42, tier: "pro", band: "endgame", at: 0.05 },
+  { id: "classic", name: "Classic Car", category: "vehicle", lifestyleValue: 42, tier: "pro", band: "endgame", at: 1 },
   { id: "car-4", name: "Supercar", category: "vehicle", lifestyleValue: 60, tier: "elite", band: "endgame", at: 0.1 },
   { id: "jet", name: "Private Jet", category: "vehicle", lifestyleValue: 120, tier: "world_class", band: "endgame", at: 0.6 },
 
@@ -254,7 +284,7 @@ const LIFESTYLE_SPECS: LifestyleSpec[] = [
   { id: "stable", name: "Horse Stable", category: "property", lifestyleValue: 45, tier: "elite", band: "aspirational", at: 0.5 },
   { id: "house-1", name: "Suburban House", category: "property", lifestyleValue: 55, tier: "world_class", band: "aspirational", at: 0.6 },
   { id: "villa", name: "Beach Villa", category: "property", lifestyleValue: 75, tier: "world_class", band: "aspirational", at: 1 },
-  { id: "house-2", name: "Mansion", category: "property", lifestyleValue: 100, tier: "pro", band: "endgame", at: 0 },
+  { id: "house-2", name: "Mansion", category: "property", lifestyleValue: 100, tier: "elite", band: "endgame", at: 0 },
   { id: "estate", name: "Country Estate", category: "property", lifestyleValue: 140, tier: "elite", band: "endgame", at: 0.5 },
   { id: "island", name: "Private Island", category: "property", lifestyleValue: 250, tier: "world_class", band: "endgame", at: 1 },
 ];
