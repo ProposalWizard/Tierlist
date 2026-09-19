@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
@@ -11,8 +11,22 @@ import { createClient } from "@/lib/supabase/client";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32 } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
-import { generateScoutOffers, clubsForDivision } from "@/lib/star/scoutOffers";
+import { generateScoutOffers, clubsForDivision, type ScoutOffer } from "@/lib/star/scoutOffers";
 import ScoutOffers from "@/components/star/ScoutOffers";
+// ── The youth team, the reserves and the loan wildcard (lib/star/youth.ts) ──
+// Added as new phases beside the existing ones; nothing in the phase machine
+// below was reshaped for them.
+import {
+  youthTakerFor, youthWage, startYouthSpell, startLoanSpell, rollLoanWildcard,
+  playYouthMatch, applyYouthWeek, readyForPromotion, promoteFromYouth,
+  formHasCollapsed, dropToYouth, loanRecallOffer, endLoan,
+} from "@/lib/star/youth";
+import { managerTalkFor, agreedWeeklyWage, weeklyToSeason } from "@/lib/star/signingTalk";
+import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
+import NegotiationScreen from "@/components/star/NegotiationScreen";
+import ManagerTalk from "@/components/star/ManagerTalk";
+import YouthTeam from "@/components/star/YouthTeam";
+import LoanBrief from "@/components/star/LoanBrief";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
@@ -28,7 +42,7 @@ import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup, saveLineup, fetchSharedLineups } from "@/lib/star/lineupStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
-import { spendAction, rest, canAct, projectedEnergy } from "@/lib/star/week";
+import { spendAction, rest, canAct, projectedEnergy, startNewWeek } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
@@ -134,6 +148,94 @@ import GardenScreen from "@/components/star/GardenScreen";
 import RelationshipMinigame, { type RelationshipKind } from "@/components/star/RelationshipMinigame";
 import { useImmersiveMode } from "@/components/star/ImmersiveToggle";
 
+/**
+ * THE CLUBS THAT CAME IN, from the trial's own seed and final score.
+ *
+ * Lifted out of the scout-offers block so the manager conversation that now
+ * comes BEFORE that screen can read exactly the same list — the two must
+ * never disagree about who is interested. Regenerated rather than stored,
+ * exactly as it was before: neither the seed nor the score can move once the
+ * trial is over, so this is the same clubs every time it is called, and
+ * storing them would be equivalent while re-rolling them would make this the
+ * most farmable screen in the game.
+ */
+function offersForTrial(career: CareerState): ScoutOffer[] {
+  if (!career.trial) return [];
+  return generateScoutOffers(
+    trialScore(career.trial),
+    mulberry32(career.trial.seed ^ 0x5c0a7),
+    // A second look is judged against a lower bar and a ladder shifted a
+    // rung down — see ScoutContext (scoutOffers.ts) and `grantTrial`
+    // (freeAgent.ts). `trialsTaken` is absent on a career that has only ever
+    // had the trial it opened with, which reads as 1.
+    { retrial: (career.trialsTaken ?? 1) > 1 },
+  );
+}
+
+/**
+ * Which club's manager sits you down.
+ *
+ * The man who watched you play. If the club you took the trial AT came in
+ * for you, it is literally him — you were on his pitch. Otherwise it is
+ * whoever made the strongest offer, whose scouts were there all afternoon.
+ */
+function talkingClubFor(career: CareerState, offers: ScoutOffer[]): ScoutOffer | null {
+  if (!offers.length) return null;
+  return offers.find(o => o.club === career.player.club) ?? offers[0];
+}
+
+/**
+ * Where a finished trial goes.
+ *
+ * The manager's verdict first, whenever somebody actually came in and the
+ * money has not already been settled; the newspaper otherwise. Written as
+ * one function because three separate places route out of a finished trial
+ * (the sequencer finishing, a reload landing on a finished trial, and the
+ * talk itself falling through with nobody left to talk to) and they must
+ * agree with each other.
+ */
+function afterTrialPhase(career: CareerState): StarPhase {
+  if (career.agreedTerms) return "scout-offers";
+  return offersForTrial(career).length ? "manager-talk" : "scout-offers";
+}
+
+/**
+ * Which shell a career with NO CLUB belongs on, after a reload or on the way
+ * back out of Settings.
+ *
+ * This used to be a straight "mid-trial or free agent". There are now two
+ * real states in between those: the manager's verdict and the wage
+ * negotiation, both of which happen while nobody has signed you yet.
+ * Neither is in `RESUMABLE` (storage.ts), so a reload lands here — and
+ * landing a player who was mid-conversation in the free-agent garden would
+ * silently throw away every offer he had just earned. Both screens rebuild
+ * themselves from the trial's own seed, so returning to them is exact
+ * rather than a re-roll.
+ */
+function clublessPhaseFor(career: CareerState): StarPhase {
+  if (career.trial && !trialComplete(career.trial)) return "trial-stages";
+  if (!career.trial) return "free-agent";
+  if (career.agreedTerms) return "scout-offers";
+  return offersForTrial(career).length ? "manager-talk" : "free-agent";
+}
+
+/**
+ * The offers as the newspaper should print them — with the wage you actually
+ * shook hands on written over the one that club opened with.
+ *
+ * A wage of 0 is how a WALKOUT is recorded. Pushing a manager who has
+ * already had enough is a real way to lose a contract, and the honest way to
+ * show that is the club simply not being on the page any more.
+ */
+function offersWithAgreedTerms(career: CareerState, offers: ScoutOffer[]): ScoutOffer[] {
+  const agreed = career.agreedTerms;
+  if (!agreed) return offers;
+  if (agreed.wage <= 0) return offers.filter(o => o.club !== agreed.club);
+  return offers.map(o => (o.club === agreed.club
+    ? { ...o, wage: agreed.wage, goalBonus: goalBonusFor(agreed.wage), assistBonus: assistBonusFor(agreed.wage) }
+    : o));
+}
+
 /** The full-screen toggle used to be a fixed floating button, rendered here
  *  above every one of StarDevInner's phase-routed early returns. Reported
  *  directly as blocking the real Settings button on most phone screens —
@@ -181,6 +283,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     | null
   >(null);
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
+  /** The week the loan brief was last read. A loan target shown before
+   *  every single fixture would be a toll gate; shown once a week it is a
+   *  reminder. See the LoanBrief block further down. */
+  const [loanBriefWeek, setLoanBriefWeek] = useState<number | null>(null);
   const [pressQuestion, setPressQuestion] = useState<PressQuestion | null>(null);
   /** Whether they won it is only known at the ceremony, so it is carried here. */
   const [wonBallonDor, setWonBallonDor] = useState(false);
@@ -501,7 +607,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   const handleBackFromSettings = useCallback(() => {
     if (career && !hasClub(career)) {
-      setPhase(career.trial && !trialComplete(career.trial) ? "trial-stages" : "free-agent");
+      setPhase(clublessPhaseFor(career));
       return;
     }
     setActiveNav("home");
@@ -597,7 +703,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     toastRatingChange(career.starRating, updated.starRating);
     setCareer(spendAction(updated));
     setTrainingSkill(null);
-    setPhase("skills");
+    // A youth-team player's week is lived on his own screen, so training
+    // from it comes back to it rather than dropping him on the first team's
+    // skills page with no obvious way back.
+    setPhase(career.placement?.kind === "youth" ? "youth" : "skills");
   }, [career, trainingSkill]);
 
   // Committing to play is what actually banks whatever's left of the week —
@@ -624,6 +733,146 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setActiveNav("home");
     setPhase("dashboard");
   }, [career, nextFixture]);
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  THE YOUTH TEAM (lib/star/youth.ts)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * A WEEK IN THE YOUTH TEAM.
+   *
+   * Two real things, in this order, and nothing invented in between:
+   *
+   *  1. The first team play their fixture without you. That is exactly
+   *     `simulateMissedFixture` — the same call "Watch from the stands"
+   *     makes — because being in the youth team IS being left out of the
+   *     squad. The table moves, the cups move, the wage is paid, the week
+   *     rolls over.
+   *  2. You play yours. `playYouthMatch` produces a real scoreline, your
+   *     own goals and assists against the level you are actually at, a
+   *     rating and the coach's verdict; `applyYouthWeek` writes them onto
+   *     the spell and moves the promotion meter.
+   *
+   * The youth goals stay on the SPELL and never touch `seasonStats` — a
+   * youth goal is not a first-team goal and must never reach the Golden
+   * Boot, Player of the Month or your career record.
+   */
+  const handleYouthWeek = useCallback(() => {
+    if (!career || career.placement?.kind !== "youth") return;
+    // ── The club's season has finished ──
+    //
+    // There is no fixture left to be left out of, and rolling the week on
+    // regardless would leave a youth player playing youth matches into an
+    // empty August forever while the season never turned over. The dashboard
+    // is where the End of Season prompt lives, so that is where he goes —
+    // the season ends for a youth-team player exactly when it ends for
+    // everybody else.
+    if (!nextFixture && career.fixtures.length > 0) {
+      setActiveNav("home");
+      setPhase("dashboard");
+      return;
+    }
+    let base = career;
+    if (nextFixture) {
+      const { career: next, newlyUnlocked } = simulateMissedFixture(career, nextFixture);
+      toastAchievements(newlyUnlocked);
+      base = next;
+    } else {
+      // A career with no fixture list at all — not reachable through the
+      // game, since a placement always follows `attachClub`. The week still
+      // has to end rather than the screen doing nothing.
+      base = { ...career, week: career.week + 1, ...startNewWeek() };
+    }
+    const match = playYouthMatch(base, mulberry32(base.season * 10007 + base.week * 131 + 4409));
+    setCareer(applyYouthWeek(base, match));
+  }, [career, nextFixture]);
+
+  /**
+   * ENTRY POINT 1 — nobody offered terms.
+   *
+   * Signs you into a real club's youth team on a real youth wage — which is
+   * `weeklyWageFor(club, division, 0)`, the bottom of that club's own band
+   * on the one wage curve the whole game uses, not a new figure (see
+   * `YOUTH_STANDING`, youth.ts). Returns the phase to go to, so the caller
+   * stays a one-liner; the free-agent life is still where you land when even
+   * a youth team says no.
+   */
+  /**
+   * WHO, IF ANYBODY, WOULD TAKE YOU INTO THEIR YOUTH TEAM.
+   *
+   * Computed here rather than only inside `youthOrFreeAgent` so the offers
+   * screen can SAY it before you press the button. `youthTakerFor` is a pure
+   * function of the trial's score and its seed, so this is exactly the club
+   * that will sign you — not a second guess at it — and the one seed
+   * expression lives in one place so the two can never drift apart.
+   *
+   * Null means the genuine bottom of the game: a trial nobody wanted at all,
+   * and the free-agent life is still what happens there.
+   */
+  const youthTaker = useMemo(
+    () => (career?.trial
+      ? youthTakerFor(trialScore(career.trial), mulberry32(career.trial.seed ^ 0x9e11))
+      : null),
+    [career?.trial],
+  );
+
+  const youthOrFreeAgent = useCallback((): StarPhase => {
+    if (!career?.trial) return "free-agent";
+    const taker = youthTaker;
+    if (!taker) return "free-agent";
+    const wage = youthWage(taker.club, taker.division);
+    const signed = attachClub(career, taker.club, taker.clubs, taker.division, wage);
+    setCareer({
+      ...signed,
+      contract: {
+        club: taker.club,
+        wage,
+        goalBonus: goalBonusFor(wage),
+        assistBonus: assistBonusFor(wage),
+        // A scholarship, not a professional deal. Two seasons rather than
+        // one deliberately: a fresh trialist takes a measured 27-51 weeks to
+        // force his way up (tests/star/youth.mts), and a one-season deal
+        // would drop a player who is halfway up the meter straight onto the
+        // contract-renewal screen mid-climb.
+        seasonsRemaining: 2,
+      },
+      agreedTerms: undefined,
+      placement: startYouthSpell(taker.club, taker.division, "trial"),
+    });
+    setActiveNav("home");
+    fetchRealSquad(taker.club).then(squad => {
+      setCareer(c => (c && c.player.club === taker.club ? { ...c, squad } : c));
+    });
+    fetchLeagueSquads(taker.clubs).then(leagueSquads => {
+      setCareer(c => (c ? {
+        ...c, leagueSquads,
+        league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+      } : c));
+    });
+    return "youth";
+  }, [career, youthTaker]);
+
+  /** The way out. A real contract on the real wage curve — see
+   *  `promoteFromYouth`. */
+  const handleYouthPromotion = useCallback(() => {
+    if (!career || !readyForPromotion(career)) return;
+    setCareer(promoteFromYouth(career));
+    setActiveNav("home");
+    setPhase("dashboard");
+  }, [career]);
+
+  /**
+   * ENTRY POINT 2 — dropping a first-teamer whose form has gone.
+   *
+   * Called on the career AFTER a match has been credited, which is the only
+   * moment `career.form` can have changed. Returns the career untouched in
+   * every case but a genuine collapse (see `formHasCollapsed`), so this is
+   * a no-op for the overwhelming majority of weeks.
+   */
+  const applyFormCollapse = useCallback((next: CareerState): CareerState => {
+    if (!formHasCollapsed(next)) return next;
+    return dropToYouth(next);
+  }, []);
 
   // Pop the achievement toast for ids the reducers already appended to state.
   const toastAchievements = (ids: string[]) => {
@@ -695,9 +944,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       );
     }
     if (potmAwarded?.isYou) setPotmWin(potmAwarded);
-    setCareer(next);
+    // A run of bad enough games, and the manager stops picking you at all —
+    // which now means the youth team rather than the door. A no-op in every
+    // week but a genuine collapse; see `formHasCollapsed` (youth.ts).
+    setCareer(applyFormCollapse(next));
     setPhase("post-match");
-  }, [career, nextFixture]);
+  }, [career, nextFixture, applyFormCollapse]);
 
   // The end of a season, reachable from the post-match screen and — after a
   // refresh dropped you on the dashboard — from the dashboard prompt too.
@@ -996,7 +1248,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // though it never touches the relegation-move screen. See advanceSeason's
   // own doc on why this has to reach it.
   const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false, justTransferred = false) => {
-    const { career: next, newlyUnlocked } = advanceSeason(from, userWon, justTransferred);
+    const { career: rolled, newlyUnlocked } = advanceSeason(from, userWon, justTransferred);
+    // A loan runs for a season and then it is over, whichever way the target
+    // went. `endLoan` leaves a youth spell alone — a youth-team player is
+    // still a youth-team player in August — and only rewrites the contract
+    // for somebody who is genuinely still at the club he was loaned to.
+    const next = endLoan(rolled);
     toastAchievements(newlyUnlocked);
     toastRatingChange(from.starRating, next.starRating);
     // ── A club you just SIGNED for is not "promoted" ──
@@ -1079,7 +1336,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         return;
       }
     }
-    const offers = generateOffers(from, mulberry32(from.season * 7717 + from.fame));
+    // ── A loan that hit its number ──
+    //
+    // The parent club's interest is a real `TransferOffer` in the ordinary
+    // summer window rather than a scripted teleport home: the existing
+    // window and `acceptOffer` handle it with no change at all, and you can
+    // still turn it down and stay where you are playing every week. Miss
+    // the number and nothing arrives — see `loanRecallOffer` (youth.ts).
+    const recall = loanRecallOffer(from);
+    const offers = [
+      ...(recall ? [recall] : []),
+      ...generateOffers(from, mulberry32(from.season * 7717 + from.fame)),
+    ];
     if (offers.length > 0) {
       setTransferOffers(offers);
       setPhase("season-transfer");
@@ -1339,7 +1607,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // A real, saved career that nobody has signed — mid-trial, or a free
       // agent. It belongs on its own shell, never on the club dashboard and
       // never back at Profile Setup, which would look like losing the save.
-      setPhase(resumed.trial && !trialComplete(resumed.trial) ? "trial-stages" : "free-agent");
+      setPhase(clublessPhaseFor(resumed));
       return;
     }
 
@@ -2087,47 +2355,148 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * equivalent; re-rolling them would make this the most farmable screen in
    * the game.
    */
-  if (phase === "scout-offers" && career?.trial) {
-    const offers = generateScoutOffers(
-      trialScore(career.trial),
-      mulberry32(career.trial.seed ^ 0x5c0a7),
-      // A second look is judged against a lower bar and a ladder shifted a
-      // rung down — see ScoutContext (scoutOffers.ts) and `grantTrial`
-      // (freeAgent.ts). `trialsTaken` is absent on a career that has only ever
-      // had the trial it opened with, which reads as 1.
-      { retrial: (career.trialsTaken ?? 1) > 1 },
+  /**
+   * THE MANAGER'S VERDICT — before the newspaper, never instead of it.
+   *
+   * The man whose pitch you were on (or, if he did not come in for you, the
+   * club that made the strongest offer) says what he thought and puts a
+   * number on the table. See lib/star/signingTalk.ts for where that number
+   * comes from — `offerWageFor`/`offerStanding`, the same curve as every
+   * other wage in the game, with the trial score driving both halves of it.
+   */
+  if (phase === "manager-talk" && career?.trial) {
+    const offers = offersForTrial(career);
+    const talking = talkingClubFor(career, offers);
+    if (!talking) { setPhase("scout-offers"); return null; }
+    const talk = managerTalkFor({
+      trial: career.trial,
+      club: talking.club,
+      division: talking.division,
+      clubStrength: talking.strength,
+      playerFirstName: career.player.firstName,
+      // Seeded off the trial, so re-opening this screen cannot re-roll a
+      // better opening offer — the same anti-farming rule the offers
+      // themselves are under.
+      rng: mulberry32(career.trial.seed ^ 0x1a9b3),
+    });
+    return (
+      <ManagerTalk
+        talk={talk}
+        managerName={loadLineup(talking.club)?.manager || "The manager"}
+        onNegotiate={() => setPhase("wage-talk")}
+        onAccept={() => {
+          setCareer({ ...career, agreedTerms: { club: talking.club, wage: talk.openingWeekly } });
+          setPhase("scout-offers");
+        }}
+      />
     );
+  }
+
+  /**
+   * …AND HAGGLING OVER IT.
+   *
+   * The existing negotiation, unchanged: `negotiation.ts`'s round-based
+   * haggle drawn by `NegotiationScreen` — two desks, the counterpart's mood
+   * on an actual face, a real walkout if you push a mood that has gone. It
+   * opens on the exact state the conversation just showed you
+   * (`talk.negotiation`), so what he said he would pay and what he opens
+   * with cannot disagree.
+   *
+   * Conducted in a SEASON'S wages rather than a weekly one — see the note in
+   * signingTalk.ts. The engine's own rounding steps in ★100s, which is
+   * granularity on a season's money and a tenfold distortion on a ★10-a-week
+   * National League wage.
+   */
+  if (phase === "wage-talk" && career?.trial) {
+    const offers = offersForTrial(career);
+    const talking = talkingClubFor(career, offers);
+    if (!talking) { setPhase("scout-offers"); return null; }
+    const talk = managerTalkFor({
+      trial: career.trial,
+      club: talking.club,
+      division: talking.division,
+      clubStrength: talking.strength,
+      playerFirstName: career.player.firstName,
+      rng: mulberry32(career.trial.seed ^ 0x1a9b3),
+    });
+    return (
+      <NegotiationScreen
+        mode="selling"
+        playerName={`${career.player.firstName} ${career.player.lastName} — wages for the season`}
+        marketValue={weeklyToSeason(talk.fairWeekly, talk.division)}
+        counterpartLabel={talking.club}
+        initialState={talk.negotiation}
+        onDone={(finalSeasonPrice) => {
+          const weekly = agreedWeeklyWage(finalSeasonPrice, talk.club, talk.division);
+          // A walkout is recorded as a wage of 0, which takes that club off
+          // the newspaper entirely — see `offersWithAgreedTerms`. Pushing a
+          // manager too far genuinely costs you the contract.
+          setCareer({ ...career, agreedTerms: { club: talk.club, wage: weekly ?? 0 } });
+          setPhase("scout-offers");
+        }}
+      />
+    );
+  }
+
+  if (phase === "scout-offers" && career?.trial) {
+    const offers = offersWithAgreedTerms(career, offersForTrial(career));
     return (
       <ScoutOffers
         trial={career.trial}
         offers={offers}
         playerName={career.player.firstName}
-        onNoOffers={() => setPhase("free-agent")}
+        // ── Nobody offered terms. That is no longer "nowhere" ──
+        //
+        // A club down the leagues will take you into its youth team for a
+        // season and have a look at you, which is what real football does
+        // with a sixteen-year-old nobody will sign. Below
+        // `YOUTH_INTEREST_BELOW` (youth.ts) even that does not happen, and
+        // the free-agent life — ★10 a week and a garden gym — is exactly
+        // where you go, unchanged.
+        youthClub={youthTaker?.club ?? null}
+        onNoOffers={() => setPhase(youthOrFreeAgent())}
         onAccept={offer => {
+          // ── The wildcard: they sign you and send you out to play ──
+          //
+          // Occasionally a big club's interest is real but its first team is
+          // not somewhere you are getting into, so it signs you and loans
+          // you two rungs down with a number on it. See `rollLoanWildcard`.
+          const loan = rollLoanWildcard(
+            offer.club, offer.division, offer.seasons,
+            mulberry32((career.trial?.seed ?? 1) ^ 0x70a2 ^ offer.club.length),
+          );
           // THE SIGNING. Everything a club brings — the league, the fixture
           // list, the squad, the manager, your number, the cups — arrives now,
-          // in one call, onto the person the trial just built.
-          const clubs = clubsForDivision(offer.division);
+          // in one call, onto the person the trial just built. On a loan that
+          // is the club you are going TO play for, not the one that owns you.
+          const homeClub = loan ? loan.hostClub : offer.club;
+          const homeDivision = loan ? loan.hostDivision : offer.division;
+          const wage = loan ? loan.wage : offer.wage;
+          const clubs = loan ? loan.hostClubs : clubsForDivision(offer.division);
           // The agreed wage is passed through so the signing-on fee is a
           // multiple of the deal actually being signed rather than of the
           // fallback starter terms — see `signingOnFee` (economy.ts).
-          const signed = attachClub(career, offer.club, clubs, offer.division, offer.wage);
+          const signed = attachClub(career, homeClub, clubs, homeDivision, wage);
           const withDeal: CareerState = {
             ...signed,
             contract: {
-              club: offer.club,
-              wage: offer.wage,
-              goalBonus: offer.goalBonus,
-              assistBonus: offer.assistBonus,
+              club: loan ? loan.parentClub : offer.club,
+              wage,
+              goalBonus: loan ? goalBonusFor(wage) : offer.goalBonus,
+              assistBonus: loan ? assistBonusFor(wage) : offer.assistBonus,
               seasonsRemaining: offer.seasons,
             },
+            // The handshake is spent — it belongs to this signing and must
+            // never follow the career into a later negotiation.
+            agreedTerms: undefined,
+            ...(loan ? { placement: startLoanSpell(loan, signed.seasonStats.goals) } : null),
           };
           setCareer(withDeal);
           setActiveNav("home");
           setPhase("trial-reward");
           // The real dressing room, now that there is one to fetch.
-          fetchRealSquad(offer.club).then(squad => {
-            setCareer(c => (c && c.player.club === offer.club ? { ...c, squad } : c));
+          fetchRealSquad(homeClub).then(squad => {
+            setCareer(c => (c && c.player.club === homeClub ? { ...c, squad } : c));
           });
           fetchLeagueSquads(clubs).then(leagueSquads => {
             setCareer(c => (c ? {
@@ -2162,6 +2531,59 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   /**
+   * THE YOUTH TEAM / THE RESERVES.
+   *
+   * Routed above the ordinary dashboard for the same reason the free-agent
+   * shell is: the club dashboard is about being in a team, and a player who
+   * is not in it has nothing to put on most of it. Unlike a free agent he
+   * does have a club, so the league, the table and the settings screen are
+   * all still real and still reachable from here.
+   */
+  if (phase === "youth" && career?.placement?.kind === "youth") {
+    return (
+      <YouthTeam
+        career={career}
+        seasonOver={seasonOver}
+        onPlayWeek={handleYouthWeek}
+        onTrain={handleTrain}
+        onRest={handleRest}
+        onPromote={handleYouthPromotion}
+        onLeague={() => { setActiveNav(null); setPhase("league"); }}
+        onSettings={() => setPhase("settings")}
+      />
+    );
+  }
+
+  /**
+   * A youth-team player has no first-team match to walk out for, so the
+   * pre-match screen is his youth week instead.
+   *
+   * Deliberately an interception at the routing level rather than a change
+   * to the dashboard or to the pre-match screen: both of those belong to
+   * everybody, and neither should grow an "unless he is in the youth team"
+   * branch for this.
+   */
+  if (phase === "pre-match" && career?.placement?.kind === "youth") {
+    setPhase("youth");
+    return null;
+  }
+
+  /**
+   * A loan with a number on it is set dressing unless the number is in
+   * front of you — so once a week, on the way to the match, it is.
+   * `loanBriefWeek` makes it once a week rather than once a fixture: a
+   * reminder, not a toll gate.
+   */
+  if (phase === "pre-match" && career?.placement?.kind === "loan" && loanBriefWeek !== career.week) {
+    return (
+      <LoanBrief
+        career={career}
+        onContinue={() => setLoanBriefWeek(career.week)}
+      />
+    );
+  }
+
+  /**
    * A FINISHED trial goes straight to the offers, never back to the
    * sequencer.
    *
@@ -2175,7 +2597,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * not by playing it.
    */
   if (phase === "trial-stages" && career?.trial && trialComplete(career.trial)) {
-    setPhase("scout-offers");
+    setPhase(afterTrialPhase(career));
     return null;
   }
 
@@ -2192,9 +2614,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         }}
         onTrial={t => setCareer(c => (c ? { ...c, trial: t } : c))}
         onComplete={(score, t) => {
-          setCareer(c => (c ? { ...c, trial: { ...t } } : c));
+          const finished = { ...career, trial: { ...t } };
+          setCareer(finished);
           void score;   // read back off the trial by the offers screen
-          setPhase("scout-offers");
+          // The manager who watched you speaks first now, and only when
+          // there is somebody to speak — a trial nobody came in for goes
+          // straight to the page that says so.
+          setPhase(afterTrialPhase(finished));
         }}
       />
     );
