@@ -512,7 +512,8 @@ export function TeachCard(
   const panel = (
     <div
       className={
-        "teach-card w-full rounded-xl border border-amber-300/40 bg-black/85 px-3 py-2 shadow-lg"
+        "teach-card w-full rounded-xl border border-amber-300/40 bg-black/85 shadow-lg "
+        + (compact ? "px-2 py-1" : "px-3 py-2")
       }
     >
       {/* Self-contained so the shared tailwind config stays untouched; a
@@ -525,29 +526,43 @@ export function TeachCard(
             beside the text, which is most of what made this card tall enough
             to cover the ball. See `TeachGlyph`. */}
         <TeachGlyph gesture={gesture} compact={compact} />
-        <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
-          How to play
-        </span>
-        {!compact && (
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
-            It counts
-          </span>
-        )}
+        {compact
+          // One row, headline and all — see `TEACH_COMPACT_AFTER_REP`. The
+          // badge goes too: the headline is already the shortest possible
+          // statement of what the drill wants, and a label above it saying
+          // "how to play" is a second line to say what the first line says.
+          ? (
+            <span className="min-w-0 flex-1 truncate text-[11.5px] font-black leading-tight text-white">
+              {headline}
+            </span>
+          )
+          : (
+            <>
+              <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
+                How to play
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                It counts
+              </span>
+            </>
+          )}
         <button
           type="button"
           onClick={onDismiss}
-          className="teach-dismiss pointer-events-auto -my-1 -mr-1 ml-auto rounded-lg border border-amber-300/50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200 transition hover:bg-white/10 hover:text-white"
+          className="teach-dismiss pointer-events-auto -my-1 -mr-1 ml-auto shrink-0 rounded-lg border border-amber-300/50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200 transition hover:bg-white/10 hover:text-white"
         >
           Got it ✕
         </button>
       </div>
 
-      <div className={compact
-        ? "mt-1 text-[11.5px] font-black leading-tight text-white"
-        : "mt-1.5 text-[12px] font-black leading-tight text-white"}>{headline}</div>
-      {!compact && lines.map(l => (
-        <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white/80">{l}</p>
-      ))}
+      {!compact && (
+        <>
+          <div className="mt-1.5 text-[12px] font-black leading-tight text-white">{headline}</div>
+          {lines.map(l => (
+            <p key={l} className="mt-0.5 text-[10.5px] font-bold leading-snug text-white/80">{l}</p>
+          ))}
+        </>
+      )}
     </div>
   );
 
@@ -602,19 +617,36 @@ const TEACH_CARD_CSS = `
  * tapped, which means it has to fit above the LAST one — and on the striking
  * stages the ball moves down the screen as the stage gets harder.
  *
- * Measured against the real view maths (`freeKickView`, `BEHIND_BALL = 7`):
- * a first free kick at 16 m leaves 51 % of the canvas below the ball, and the
- * hardest rep of the hardest trial — 30 m of ladder, +0.9 m a rep, plus the
- * long-range adversity event — leaves about 16 %, which on a phone is roughly
- * 80 px. The full card is about 100. So a card that persisted at full height
- * would sit on the ball at exactly the moment the kick is hardest, which is
- * the "boxing on the penalties" complaint all over again one stage later.
+ * Read off the real view maths (`freeKickView`, `BEHIND_BALL = 7`): a first
+ * free kick at 16 m leaves 51 % of the canvas below the ball, and the hardest
+ * rep of the hardest trial — 30 m of ladder, +0.9 m a rep, plus the
+ * long-range adversity event — leaves about 16 %. So a card that persisted at
+ * full height would sit on the ball at exactly the moment the kick is
+ * hardest, which is the "boxing on the penalties" complaint all over again
+ * one stage later.
  *
- * The headline row alone is about 45 px and clears it with room. The
- * paragraph is first-attempt teaching anyway — by the second kick of a stage
- * you have done the gesture once, and what is still worth carrying is the one
- * line naming what you are being asked to do, plus the button that makes it
- * go away.
+ * ── The first compact card was still too tall, and only a screenshot said so
+ *
+ * That 16 % was then called "roughly 80 px" here, against a compact card
+ * "about 45 px", and both halves of that arithmetic were wrong. Driven in a
+ * real browser on an iPhone 13 viewport, the last free kick of an ordinary
+ * run (23 m) cleared the card by 17.8 px, and the genuine worst case — 33 m,
+ * reached by the reload difficulty escalation, which is a real mechanic
+ * rather than a contrived state — measured **-2.2 px**: the ball sitting on
+ * the card's top border.
+ *
+ * So compact is now ONE ROW — glyph, headline, button — rather than a badge
+ * row with the headline under it, and it loses the outer padding a step as
+ * well. That is about 29 px back, which turns the worst case from a graze
+ * into real clearance. The headline is truncated rather than wrapped,
+ * because a card that grows a second line under pressure is the same bug
+ * returning by another route.
+ *
+ * Worth keeping in mind for anything else that ever gets pinned to this
+ * strip: the ball is not in a fixed place on the striking stages. It moves
+ * down the screen as the stage gets harder, and the only reliable way to
+ * know whether something clears it is to look at the hardest rep, not the
+ * first one.
  */
 export const TEACH_COMPACT_AFTER_REP = 1;
 
