@@ -516,9 +516,31 @@ function drive(
   const on = advanceFlow(saved, { difficulty: 0.5, playerSkill: 65 });
   check(on.state.minute > saved.minute, "…and that football costs the clock");
   check(on.state.draws > saved.draws, "…having actually been rolled for");
+  // ── The property, restated so it measures the tap-in rather than a y ──
+  //
+  // This used to read `ball.y > 6`, a proxy for "the ball is nowhere near
+  // their goal". It was a fair proxy while the simulation could only give the
+  // ball back to you in the middle of the pitch, and it stopped being one once
+  // the defence started positioning itself properly (shape.ts): the flow now
+  // legitimately runs six beats of football in which they lose it and you win
+  // a real chance in the corner of their box, which lands the ball at y=1.5
+  // and x=26.6 — a tight angle from wide, not a tap-in, and exactly the kind
+  // of football this guard is supposed to let happen.
+  //
+  // What the guard is actually for is the PAYLOAD: after a save the ball sat
+  // at (34, 0.4), dead centre, a metre off the line, and a resume handed it
+  // straight back to you. So measure that — how far the ball is from the
+  // middle of their goal — rather than a single coordinate of it. The bug
+  // scored 0.4 m on this; anything past a few metres is a chance somebody had
+  // to work for.
+  const toGoal = Math.hypot(
+    on.state.world.ball.x - (FIVE_A_SIDE.goal.x1 + FIVE_A_SIDE.goal.x2) / 2,
+    on.state.world.ball.y - FIVE_A_SIDE.pitch.y1,
+  );
   check(
-    on.state.world.ball.y > 6,
-    `…and the ball is not left sitting on their goal line (y=${on.state.world.ball.y.toFixed(1)})`,
+    toGoal > 5,
+    `…and the ball is not left in their goal mouth where the save put it `
+    + `(${toGoal.toFixed(1)} m from the middle of their goal; the bug was 0.4)`,
   );
 
   // Even a save file that LIES about what it is waiting for cannot get a
