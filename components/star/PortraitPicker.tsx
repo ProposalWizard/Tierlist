@@ -14,14 +14,41 @@ import { FAKE_FACES } from "@/lib/star/fakeFaces";
  * placeholder waiting to be filled, and most people will never open this. So the
  * control opens showing what the cards will use if you walk away from it.
  *
- * No `capture` attribute on the input, deliberately — that attribute doesn't
- * just ADD a camera option, it makes most mobile browsers skip the native
- * chooser entirely and jump straight into the camera app, with no way to
- * reach the photo library at all. Reported directly: on a phone this let
- * you take a new photo but never pick one you already had. A bare
- * `type="file" accept="image/*"` is what makes a phone show its normal
- * chooser (camera OR library) — the same one a desktop's file picker is a
- * different flavour of.
+ * ── TWO BUTTONS, BECAUSE `capture` IS A REPLACEMENT AND NOT AN ADDITION ──
+ *
+ * This has now been reported from both directions, and the two reports are
+ * both correct — they are about different buttons:
+ *
+ *   "on a phone this let you take a new photo but never pick one you
+ *    already had"
+ *   "'Add a photo' still doesn't work in terms of using your camera, so
+ *    maybe it should say 'Take a photo' — 'Add a photo' and 'Take a photo',
+ *    and 'Take a photo' would use the camera"
+ *
+ * The mechanism behind both: `capture` does not ADD a camera option to the
+ * native chooser, it REPLACES the chooser — a mobile browser that honours it
+ * opens the camera app directly, with no way through to the library. So one
+ * input cannot be both, and the fix is the one the report describes: two
+ * inputs, each honest about which it is.
+ *
+ *   ADD A PHOTO   — bare `accept="image/*"`, no `capture`. The phone's own
+ *                   chooser, which on iOS and Android already offers Camera
+ *                   alongside Photo Library. Unchanged from before.
+ *   TAKE A PHOTO  — the same input plus `capture="user"`, which asks for the
+ *                   FRONT camera (`"environment"` would be the rear one, and
+ *                   this is a portrait of your own face).
+ *
+ * ── What this does on a desktop, stated plainly ──
+ *
+ * Nothing. `capture` is specified as a hint, and every desktop browser
+ * ignores it: Chrome, Safari and Firefox on a laptop all open the ordinary
+ * file picker for BOTH buttons, so on a MacBook the two are indistinguishable
+ * and that is not a bug. Reaching a laptop webcam at all means
+ * `getUserMedia` — a live `<video>` preview, a shutter button, a permission
+ * prompt, and a `<canvas>` grab — which is a real component rather than an
+ * attribute, and is deliberately not built here: the game is mobile-first and
+ * portrait-phone-first, and on the device this is actually used on, `capture`
+ * is the correct and complete answer.
  *
  * Nothing here uploads. See lib/star/portrait.ts.
  */
@@ -167,6 +194,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             </p>
           </div>
 
+          {/* Picking and taking are a pair and sit on one row; the shirt is
+              the third, different answer and gets its own — see below. */}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <label className="cursor-pointer rounded-lg bg-emerald-600 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-500">
               {value ? "Change photo" : "Add a photo"}
@@ -177,15 +206,46 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
               />
             </label>
-            <button
-              onClick={() => onChange(undefined)}
-              disabled={!value}
-              className={`rounded-lg py-2 text-[12px] font-black transition ${
-                value ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-800 text-white/45"}`}
-            >
-              Use my shirt
-            </button>
+            <label className="cursor-pointer rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600">
+              Take a photo
+              <input
+                type="file"
+                accept="image/*"
+                // The whole difference between this button and the one beside
+                // it. "user" is the front camera — this is a portrait of your
+                // own face, not a picture of something in front of you. See
+                // the note at the top of this file for what it does on a
+                // desktop, which is nothing.
+                capture="user"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
+              />
+            </label>
           </div>
+
+          {/* ── THE SHIRT IS AN ANSWER, NOT A GREYED-OUT ACTION ──
+              Reported as "doesn't even pop up anymore". It was never removed
+              — it has always rendered right here — but it is only ever an
+              ACTION when there is a photo to clear, so on a fresh career it
+              was a dark grey slab with dimmed text sitting in the corner of a
+              two-button row, which is exactly what a missing button looks
+              like.
+              It now says what it means. With no photo set the shirt is
+              already what you will be shown as, so this reads as the SELECTED
+              state (ringed, ticked, "Using your shirt") rather than as a
+              button somebody has switched off; with a photo set it is a live
+              button that clears it. Same single call to `onChange(undefined)`
+              either way. */}
+          <button
+            onClick={() => onChange(undefined)}
+            disabled={!value}
+            className={`mt-2 w-full rounded-lg py-2 text-[12px] font-black transition ${
+              value
+                ? "bg-gray-700 text-white hover:bg-gray-600"
+                : "border border-emerald-400/70 bg-emerald-500/15 text-emerald-200"}`}
+          >
+            {value ? "Use my shirt" : "✓ Using your shirt"}
+          </button>
           {value && !FAKE_FACES.includes(value) && (
             <p className="mt-1.5 text-center text-[10px] font-bold text-white/60">
               Stored on this device only — about {Math.round(portraitBytes(value) / 1024)} KB.

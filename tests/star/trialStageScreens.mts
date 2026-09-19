@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepDefenders,
   VIEW_ASPECT, type Ball, type Outcome, type Scenario,
@@ -9,7 +10,7 @@ import {
   REPS, freeKickSetup, visionSetup, penaltySetup, attemptSeed, penaltyTell,
 } from "../../lib/star/trialStages";
 import {
-  buildPenaltyScenario, strikeCamera,
+  buildPenaltyScenario, strikeCamera, AIM_ARROW_LENGTH,
 } from "../../components/star/stages/TrialPenalties";
 import {
   buildFreeKickScenario, freeKickView, freeKickWall,
@@ -542,6 +543,61 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   check(worstCell > worstClean * 0.6,
     `…and the bonus must not turn that rep into a different game entirely `
     + `(${(worstCell * 100).toFixed(1)}% against a clean ${(worstClean * 100).toFixed(1)}%)`);
+}
+
+// ── THE AIM ARROW IS THE MATCH'S ARROW ─────────────────────────────────────
+//
+// Reported twice, in the same words both times: "the drag arrow still doesn't
+// look like the original football engine." The reason it matters is already
+// written down beside `MIN_PULL` in TrialPenalties.tsx — a trial that teaches
+// a different gesture from the game it is the opening of is worse than no
+// trial — and it is a pair that has drifted before.
+//
+// Measured, before anything was changed, on the real camera a real penalty is
+// framed by (iPhone 13, a 358 × 439 canvas, a 32.4 m tall camera at 13.6 px/m):
+//
+//   power   trial (0.11)   match (0.132)
+//   0.25      12.1 px        14.5 px
+//   0.50      24.1 px        29.0 px
+//   1.00      48.3 px        57.9 px     — 16.7 % short at every power
+//
+// Everything else about the two arrows — the #fb923c → #ea580c gradient
+// shaft, the round cap, the solid #f97316 head, its rgba(124,45,18,0.6) edge,
+// and all four size formulas off W and `unit` — was already identical and was
+// left alone. So the only thing to hold still is the length coefficient, and
+// the only honest way to check it is against the match's own source: there is
+// no exported constant on that side to import, and re-typing the number here
+// would just be a third copy that could drift with the other two.
+{
+  const match = readFileSync("components/star/CanvasMatch.tsx", "utf8");
+
+  // The one line in CanvasMatch that sets the drawn arrow length.
+  const found = match.match(/lineLen\s*=\s*power\s*\*\s*heightSpan\s*\*\s*([0-9.]+)/);
+  check(found !== null,
+    "CanvasMatch still computes its aim arrow as power × heightSpan × <k> — "
+    + "if this has been restructured, re-derive the trial's arrow against it by hand");
+
+  if (found) {
+    const theirs = Number(found[1]);
+    check(Math.abs(theirs - AIM_ARROW_LENGTH) < 1e-9,
+      `the trial's aim arrow must be the match's aim arrow: the trial draws `
+      + `${AIM_ARROW_LENGTH} and the match now draws ${theirs}. Follow it.`);
+  }
+
+  // The power meter. CanvasMatch removed its own ("redundant with the arrow's
+  // own length, which already is the power readout") and this screen was the
+  // last thing still drawing one — a vertical bar down the left edge with a
+  // green/amber/red fill and an "NN%" label, on the first ball anybody in this
+  // game ever kicks, showing a number the real game never shows. Reported
+  // directly. Checked by its most distinctive marks rather than by the word
+  // "meter", which appears in prose either way.
+  const trialSrc = readFileSync("components/star/stages/TrialPenalties.tsx", "utf8");
+  const drawsAMeter = /ctx\.fillText\(`\$\{Math\.round\(power \* 100\)\}%`/.test(trialSrc)
+    || /createLinearGradient[^;]*\n?[^;]*addColorStop\(0, "#22c55e"\)/.test(trialSrc);
+  check(!drawsAMeter,
+    "the trial must not draw a power percentage the real match does not draw");
+  check(!/#22c55e|#eab308|#ef4444/.test(trialSrc),
+    "the meter's green/amber/red fill is gone from the striking stages");
 }
 
 if (problems.length) {

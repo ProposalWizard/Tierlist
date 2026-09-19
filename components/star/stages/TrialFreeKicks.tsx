@@ -154,6 +154,7 @@ export default function TrialFreeKicks({
       build={build}
       skills={skills}
       seed={(trial.seed ^ 0x5f5e) >>> 0}
+      drill="freeKicks"
       title="Free kicks"
       hint="Bend it round the wall or lift it over — sides of the ball curl it, the bottom lifts it."
       teach={{

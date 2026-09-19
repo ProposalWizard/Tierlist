@@ -4,7 +4,8 @@ import { mulberry32 } from "@/lib/star/season";
 import { CX, NET_DEPTH } from "@/lib/star/pitch";
 import type { Viewport } from "@/lib/star/canvasEngine";
 import {
-  REPS, visionSetup, visionQuality, weightedQuality, attemptSeed, type VisionSetup,
+  REPS, visionSetup, visionQuality, weightedQuality, attemptSeed,
+  teachSeen, markTeachSeen, type VisionSetup,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
@@ -225,6 +226,36 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   /** The big numeral on the first rep, counting down to the clock starting.
    *  Null on every other rep — see the effect below. */
   const [count, setCount] = useState<number | null>(null);
+
+  /**
+   * ── DISMISSING THE TEACHING HERE DOES NOT DISMISS THE COUNTDOWN ──
+   *
+   * "You should be able to get rid of the little tutorial" — and on this
+   * stage, more carefully than on the striking ones, because the first rep's
+   * overlay is two different things stacked in one box.
+   *
+   * The INSTRUCTION ("tap the team-mate in the most space, blue shirts are
+   * marking, it does not wait") is teaching, and a returning player has read
+   * it. The 3 · 2 · 1 is not teaching at all — it is live state, and the only
+   * thing telling you when a clock that can be under a second long actually
+   * starts. Hiding that with the paragraph would make the dismiss button the
+   * single most expensive tap in the trial.
+   *
+   * So dismissing drops the badge, the headline and the paragraph, and the
+   * countdown keeps running underneath in the same place it was. A player who
+   * has dismissed it before gets the countdown on rep 1 and no words, which is
+   * exactly what reps 2-6 already look like plus the clock he still needs.
+   *
+   * Read from storage on mount rather than in the initialiser: `window` does
+   * not exist during Next's server render of this client component, and a
+   * first client render that disagreed with the server's HTML is its own bug.
+   */
+  const [teachDone, setTeachDone] = useState(false);
+  useEffect(() => { if (teachSeen("vision")) setTeachDone(true); }, []);
+  const dismissTeach = useCallback(() => {
+    markTeachSeen("vision");
+    setTeachDone(true);
+  }, []);
 
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
@@ -469,23 +500,37 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                  A stage that starts on its own needs to say so BEFORE it
                  starts. Scored exactly like every other rep regardless — the
                  badge says as much, so nobody plays the first one as a
-                 throwaway and then finds out it counted. */
+                 throwaway and then finds out it counted.
+
+                 The words can be dismissed and the numeral cannot. See
+                 `teachDone`. */
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
-                    First one
-                  </span>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
-                    It still counts
-                  </span>
-                </div>
-                <div className="mt-3 text-xl font-black leading-tight text-white">
-                  Tap the team-mate in the most space.
-                </div>
-                <p className="mt-1.5 text-[11px] font-bold leading-snug text-white/75">
-                  The blue shirts are marking. The clock starts on zero and it
-                  does not wait — if you never pick, it scores nothing.
-                </p>
+                {!teachDone && (
+                  <>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-black">
+                        First one
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                        It still counts
+                      </span>
+                      <button
+                        type="button"
+                        onClick={dismissTeach}
+                        className="-my-1 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white/60 transition hover:bg-white/10 hover:text-white"
+                      >
+                        Got it ✕
+                      </button>
+                    </div>
+                    <div className="mt-3 text-xl font-black leading-tight text-white">
+                      Tap the team-mate in the most space.
+                    </div>
+                    <p className="mt-1.5 text-[11px] font-bold leading-snug text-white/75">
+                      The blue shirts are marking. The clock starts on zero and it
+                      does not wait — if you never pick, it scores nothing.
+                    </p>
+                  </>
+                )}
                 <div
                   key={count}
                   className="mt-3 text-7xl font-black tabular-nums text-amber-300"

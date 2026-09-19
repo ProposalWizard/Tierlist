@@ -557,3 +557,75 @@ export function weightedQuality(reps: number[]): number {
 export function strikeQuality(outcome: string, crossX: number | null): number {
   return shotQuality(outcome, crossX);
 }
+
+// ── Having already been taught ──────────────────────────────────────────
+
+/**
+ * WHETHER THE PLAYER HAS BEEN SHOWN A DRILL'S INSTRUCTION BEFORE.
+ *
+ * Reported directly: "you should be able to get rid of the little tutorial."
+ * Two halves to that, and only one of them is a close button.
+ *
+ * The teaching is genuinely good the first time — it is the whole reason the
+ * first rep of every drill carries a card instead of an 11 px grey hint. It
+ * is not good the fourth time. A trial can be re-taken, a stage can be
+ * resumed (`reloads`), and a second career starts the whole thing again from
+ * penalty one, so somebody who already knows the game can meet the same
+ * paragraph a dozen times over. So dismissing it has to STICK.
+ *
+ * ── Why localStorage, and why per device ──
+ *
+ * "Has this person been told how to drag a ball" is a display preference, not
+ * a fact about a career: it belongs to whoever is holding the phone, not to
+ * the save. Putting it on `TrialProgress` would reset it with every new
+ * career, sync a returning player's knowledge onto a friend's borrowed
+ * account, and grow the cloud save for nothing. The same reasoning
+ * `star-match-muted` and the Face Editor's own keys already follow.
+ *
+ * Every read and write is wrapped: a private window, blocked site data, or a
+ * server render all throw on `localStorage` (a bare reference, the same way
+ * `faceStyle.ts` reaches it, so a test can inject one), and the honest
+ * failure here is "show the tutorial" — never a stage that will not open.
+ */
+export type TeachableDrill = Exclude<TrialStage, "fiveASide">;
+
+export const TEACH_SEEN_KEY = "star-trial-taught";
+
+/** Every drill that teaches. The five-a-side is not one: it has no single
+ *  first rep to hang an instruction on. */
+export const TEACHABLE_DRILLS: TeachableDrill[] = [
+  "penalties", "freeKicks", "dribbling", "vision",
+];
+
+function teachKeyFor(drill: TeachableDrill): string {
+  return `${TEACH_SEEN_KEY}-${drill}`;
+}
+
+/** Has this drill's instruction been dismissed before, on this device? */
+export function teachSeen(drill: TeachableDrill): boolean {
+  try {
+    return localStorage.getItem(teachKeyFor(drill)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Remember that it has. Never throws — a device that cannot store this just
+ *  teaches the drill again next time, which is the harmless failure. */
+export function markTeachSeen(drill: TeachableDrill): void {
+  try {
+    localStorage.setItem(teachKeyFor(drill), "1");
+  } catch {
+    /* A tutorial nobody can dismiss permanently is a nuisance, not a bug. */
+  }
+}
+
+/** Teach every drill again — exported for a settings/dev control and for the
+ *  tests, which must be able to put a device back to never-taught. */
+export function clearTeachSeen(): void {
+  try {
+    for (const d of TEACHABLE_DRILLS) localStorage.removeItem(teachKeyFor(d));
+  } catch {
+    /* Nothing stored, nothing to clear. */
+  }
+}

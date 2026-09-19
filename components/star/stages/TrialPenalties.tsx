@@ -7,7 +7,10 @@ import {
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y } from "@/lib/star/pitch";
-import { REPS, penaltySetup, strikeQuality, weightedQuality } from "@/lib/star/trialStages";
+import {
+  REPS, penaltySetup, strikeQuality, weightedQuality,
+  teachSeen, markTeachSeen, type TeachableDrill,
+} from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import ContactBall from "@/components/star/ContactBall";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
@@ -92,6 +95,45 @@ const PENALTY_LEAN_M = 1.5;
  *  nothing is known to trip it. */
 const FLIGHT_TIMEOUT = 9;
 
+/**
+ * How long the ball is watched after the outcome is decided, before the
+ * result banner goes up.
+ *
+ * This used to be a full second, and the real match has no such gate at all —
+ * `CanvasMatch` shows its banner the instant `stepBall` returns. Measured, the
+ * trial's banner landed +983 ms after the outcome on every single attempt, on
+ * top of the engine's own multi-second loose-ball resolution: a saved penalty
+ * averaged 4.30 s to decide and 5.28 s to say so, and the worst case measured
+ * was 8.52 s. Reported directly as the drills taking "ten seconds to say off
+ * the post".
+ *
+ * Not taken all the way to zero, deliberately. Unlike the match, this screen
+ * has no `stepReactions` — nobody chases a loose ball here, by design, so that
+ * a drill judging YOUR strike is never decided by somebody following it in —
+ * and a short beat is what lets a goal actually be SEEN crossing the line and
+ * the keeper's dive be seen finishing (it completes ~150 ms after the ball
+ * crosses, now that he is stepped through it at all). A quarter of a second
+ * covers that and cuts three quarters of the delay.
+ */
+const SETTLE_BEFORE_BANNER = 0.25;
+
+/**
+ * HOW LONG THE AIM ARROW IS DRAWN, as a fraction of the metres filling the
+ * canvas's height, at full power.
+ *
+ * Not a number this screen gets to choose. It is CanvasMatch.tsx's own
+ * constant, copied, because the arrow has to be the match's arrow — reported
+ * twice as "the drag arrow still doesn't look like the original football
+ * engine", and measured at 0.11 here against 0.132 there, which is 16.7 %
+ * short at every power (48.3 px vs 57.9 px at full power on an iPhone 13).
+ *
+ * A named export rather than a literal buried in the paint function purely so
+ * `tests/star/trialStageScreens.mts` can hold it against the real value in
+ * CanvasMatch.tsx and fail the day the match's arrow is re-tuned and this one
+ * is not. That drift is the whole bug; this is the tripwire for it.
+ */
+export const AIM_ARROW_LENGTH = 0.132;
+
 type Phase = "aim" | "contact" | "flight" | "result";
 
 // ── The picture ────────────────────────────────────────────────────────────
@@ -137,12 +179,12 @@ export function strikeCamera(
 
 /**
  * Draw one striking scene: the pitch, the goal, the wall (if there is one),
- * the keeper, the ball and — while a drag is live — the aim arrow and power
- * meter. Exported because the free-kick stage draws the identical scene.
+ * the keeper, the ball and — while a drag is live — the aim arrow. Exported
+ * because the free-kick stage draws the identical scene.
  *
  * Every mark on the grass and every figure on it now comes from
- * `fiveASide/render.ts`. What is left here is the two things that belong to
- * this screen rather than to football: the aim arrow and the power meter.
+ * `fiveASide/render.ts`. What is left here is the one thing that belongs to
+ * this screen rather than to football: the aim arrow.
  */
 export function paintTrialScene(
   ctx: CanvasRenderingContext2D,
@@ -203,16 +245,38 @@ export function paintTrialScene(
   // ── The ball ──
   drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0);
 
-  // ── The aim arrow and power meter ──
+  // ── The aim arrow ──
   //
-  // The two things on this canvas that are not football. Kept here rather than
+  // The one thing on this canvas that is not football. Kept here rather than
   // pushed into the shared renderer: a five-a-side aims with `drawAim`, and
-  // this stage's arrow is a fatter, gradient-filled one built to be readable
-  // under a thumb on a dead ball.
+  // this is the MATCH's arrow, which is a different drawing again.
+  //
+  // ── It is the match's arrow to the pixel, and that is the point ──
+  //
+  // Reported twice: "the drag arrow still doesn't look like the original
+  // football engine." Measured against CanvasMatch.tsx's own aim block rather
+  // than eyeballed, and two real differences came out of it:
+  //
+  //  1. LENGTH. This drew `power × heightSpan × 0.11`; the match draws
+  //     `× 0.132` (its own comment records why — half the old length, then
+  //     20 % back on top once the meter went and the arrow became the only
+  //     power readout). On an iPhone 13's 358×439 canvas that is 48.3 px
+  //     against 57.9 px at full power — 16.7 % short at every power, which is
+  //     exactly the kind of difference that reads as "not the same arrow"
+  //     without being nameable.
+  //  2. THE METER. See below.
+  //
+  // Everything else — the gradient shaft (#fb923c → #ea580c), the round cap,
+  // the solid #f97316 head, its dark edge, and all four size formulas off W
+  // and `unit` — was already identical, and is left alone.
+  //
+  // `camera.y2 - camera.y1` is the right span to multiply: the match reads
+  // whichever axis fills the canvas HEIGHT, and these two stages never turn
+  // the frame, so pitch Y always is it.
   if (drag) {
     const dx = sc.ball.x - drag.x, dy = sc.ball.y - drag.y;
     const len = Math.hypot(dx, dy) || 1;
-    const shown = power * (camera.y2 - camera.y1) * 0.11;
+    const shown = power * (camera.y2 - camera.y1) * AIM_ARROW_LENGTH;
     const ax = px(sc.ball.x), ay = py(sc.ball.y);
     const bx2 = px(sc.ball.x + (dx / len) * shown);
     const by2 = py(sc.ball.y + (dy / len) * shown);
@@ -250,22 +314,20 @@ export function paintTrialScene(
     ctx.strokeStyle = "rgba(124,45,18,0.6)";
     ctx.stroke();
 
-    const meterX = W * 0.045, meterTop = H * 0.15, meterH = H * 0.7, meterW = W * 0.055;
-    ctx.fillStyle = "rgba(2,6,23,0.55)";
-    ctx.fillRect(meterX, meterTop, meterW, meterH);
-    const fillH = meterH * power;
-    const grad = ctx.createLinearGradient(0, meterTop + meterH, 0, meterTop);
-    grad.addColorStop(0, "#22c55e"); grad.addColorStop(0.6, "#eab308"); grad.addColorStop(1, "#ef4444");
-    ctx.fillStyle = grad;
-    ctx.fillRect(meterX, meterTop + meterH - fillH, meterW, fillH);
-    ctx.strokeStyle = "rgba(251,191,36,0.5)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(meterX, meterTop, meterW, meterH);
-    ctx.fillStyle = "#fde68a";
-    ctx.font = `bold ${Math.round(W * 0.05)}px sans-serif`;
-    ctx.textAlign = "center";
-    ctx.fillText(`${Math.round(power * 100)}%`, meterX + meterW / 2, meterTop - W * 0.022);
-    ctx.textAlign = "start";
+    // ── The power meter is gone, because the match has not had one for a
+    //    while and this was the only screen still drawing it ──
+    //
+    // A 19.7 × 307 px bar down the left edge with a green/amber/red fill and
+    // an 18 px "NN%" label over it — 3.9 % of an iPhone 13's canvas, on the
+    // first ball anybody in this game ever kicks, showing a number the real
+    // game never shows. CanvasMatch removed its own copy of exactly this
+    // ("reported as redundant with the arrow's own length, which already is
+    // the power readout") and this one simply never followed. Reported
+    // directly as a thing the trial has and the game does not.
+    //
+    // Nothing is lost with it: `power` still drives the arrow's length, which
+    // is the same readout the match trusts, and the teach card already says
+    // "pull further for more power" in words.
   }
 }
 
@@ -317,6 +379,19 @@ export interface StrikeStageProps {
    * this exists to remove.
    */
   teach?: { headline: string; lines: string[] };
+  /** Which drill this is, for remembering that its teaching has been
+   *  dismissed. See `teachSeen` in trialStages.ts. */
+  drill: TeachableDrill;
+  /**
+   * Called the instant the ball is actually struck, with the live scenario.
+   *
+   * The one hook a stage gets into the flight it is about to watch. Penalties
+   * uses it to make the keeper commit to a side and genuinely travel — see
+   * `commitKeeperGuess`. Free kicks does not pass one: a keeper setting
+   * himself against a wall is not guessing a corner blind, and nothing was
+   * measured about that case.
+   */
+  onStrike?: (sc: Scenario, rep: number) => void;
   onDone: (quality: number) => void;
 }
 
@@ -338,11 +413,30 @@ export interface StrikeStageProps {
  * They asked for "a proper graphic", so: a real card, the drag drawn rather
  * than described, and the stage's own instruction underneath it.
  *
- * Pointer-transparent throughout. It sits over the canvas and the canvas owns
- * every pointer event on this screen; a card that swallowed the first drag
- * would teach the gesture and then refuse it.
+ * Pointer-transparent throughout, EXCEPT the one button on it. It sits over
+ * the canvas and the canvas owns every pointer event on this screen; a card
+ * that swallowed the first drag would teach the gesture and then refuse it.
+ * The dismiss button re-enables pointers on itself alone (`pointer-events-auto`
+ * on a child of a `pointer-events-none` parent), so the 44 px it occupies is
+ * the only part of the canvas a drag cannot start in — and it sits in the top
+ * corner, which is goal, not the strip behind the ball that a drag pulls back
+ * into.
+ *
+ * ── Dismissing it is teaching only ──
+ *
+ * "You should be able to get rid of the little tutorial." What goes is the
+ * card: the headline, the drawn gesture, the instruction. What does NOT go is
+ * anything live — the rep counter, the subtitle telling you how much of the
+ * keeper's guess there is to read, the hint line, the score pips. The card is
+ * replaced by the ordinary hint the other reps already show, so dismissing it
+ * leaves the screen in the state rep 2 is in rather than in a state nothing
+ * else in the game produces.
  */
-export function TeachCard({ headline, lines }: { headline: string; lines: string[] }) {
+export function TeachCard(
+  { headline, lines, onDismiss }: {
+    headline: string; lines: string[]; onDismiss: () => void;
+  },
+) {
   return (
     <div className="pointer-events-none absolute inset-0 z-20 flex items-end justify-center p-3">
       <div className="w-full rounded-xl border border-amber-300/30 bg-black/80 px-3.5 py-3 shadow-lg">
@@ -353,6 +447,13 @@ export function TeachCard({ headline, lines }: { headline: string; lines: string
           <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
             It still counts
           </span>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="pointer-events-auto -my-1.5 -mr-1.5 ml-auto rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white/60 transition hover:bg-white/10 hover:text-white"
+          >
+            Got it ✕
+          </button>
         </div>
 
         <div className="mt-2 flex items-center gap-3">
@@ -381,7 +482,7 @@ export function TeachCard({ headline, lines }: { headline: string; lines: string
 }
 
 export function StrikeStage({
-  reps, build, skills, seed, title, hint, subtitle, teach, onDone,
+  reps, build, skills, seed, title, hint, subtitle, teach, drill, onStrike, onDone,
 }: StrikeStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -405,6 +506,25 @@ export function StrikeStage({
   const fakeFaceStyleRef = useRef<FakeFaceStyle>(loadFakeFaceStyle());
 
   const [rep, setRep] = useState(0);
+  /**
+   * Whether the teaching is still being shown.
+   *
+   * Seeded from `localStorage` in an effect rather than in the initialiser:
+   * this is a client component but Next still renders it once on the server,
+   * where `window` does not exist — reading storage in `useState`'s
+   * initialiser would throw there, and `useState(() => teachSeen(...))` would
+   * also hand the first client render a value the server's HTML disagrees
+   * with. Starting "not yet dismissed" and correcting on mount means the
+   * server and the first client render always agree, and a returning player
+   * loses the card a frame later rather than never.
+   */
+  const [teachDone, setTeachDone] = useState(false);
+  useEffect(() => { if (teachSeen(drill)) setTeachDone(true); }, [drill]);
+  const dismissTeach = useCallback(() => {
+    markTeachSeen(drill);
+    setTeachDone(true);
+  }, [drill]);
+
   const [phase, setPhaseState] = useState<Phase>("aim");
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
   const [resultText, setResultText] = useState("");
@@ -499,6 +619,9 @@ export function StrikeStage({
     const sc = scRef.current;
     if (!sc || !aim) return;
     ballRef.current = launch(sc, aim.dir, aim.power, contact, skills, rngRef.current);
+    // The stage's one chance to react to the ball actually being hit, before
+    // a single frame of flight is simulated — see `onStrike`.
+    onStrike?.(sc, repRef.current);
     setAim(null);
     flightTRef.current = 0;
     setPhase("flight");
@@ -577,6 +700,31 @@ export function StrikeStage({
         flightTRef.current += dt;
         if (ball.inNet) {
           stepBallInNet(ball, dt);
+          // ── HE MUST KEEP DIVING AFTER THE BALL IS IN ──
+          //
+          // Reported directly: "he dives after the ball goes in the net."
+          // Measured over 200 penalties, the same scenarios and the same
+          // strikes through both screens' loops, and the split is clean:
+          //
+          //                                        trial     real match
+          //   dive STARTS, vs the ball crossing     −7 ms       −7 ms
+          //   dive at FULL STRETCH                +1117 ms     +150 ms
+          //
+          // The start is identical, and is the engine's own rule (the save is
+          // judged at the keeper's own line, which on a penalty is one substep
+          // before the goal line) — not a trial bug. The stretch is, and it is
+          // this: once `stepBall` returns an outcome the loop stays in the
+          // `flight` phase for the settle beat below, and NEITHER of the two
+          // branches it can now take used to call `stepKeeper`. He stopped
+          // dead at 13 % of the dive, held there for 967 ms, and then finished
+          // it as the banner appeared.
+          //
+          // `CanvasMatch.tsx` fixed exactly this for the real match, and its
+          // own comment quotes the same complaint almost word for word ("so a
+          // goal is SEEN going in and a keeper is not frozen mid-dive"). This
+          // screen simply never inherited it. `pendingDone` is what stops him
+          // arriving early, so gating on `done` is all that is needed here.
+          if (!sc.keeper.done) stepKeeper(sc, dt);
         } else if (!outcomeRef.current) {
           // Three substeps per frame, the same split every other screen on
           // this engine uses. One coarse step per frame is measurably worse
@@ -618,10 +766,13 @@ export function StrikeStage({
         } else {
           if (ball.settling) settleBall(ball, dt, sc);
           if (ball.overBar) stepBallPastBar(ball, dt);
+          // The other post-outcome branch, and the same fix — see above. A
+          // save, a post and a ball flying over all leave him mid-dive too.
+          if (!sc.keeper.done) stepKeeper(sc, dt);
         }
         if (outcomeRef.current) {
           settle += dt;
-          if (settle > 1.0 && !resolvedRef.current) {
+          if (settle > SETTLE_BEFORE_BANNER && !resolvedRef.current) {
             resolvedRef.current = true;
             finishAttempt(outcomeRef.current);
           }
@@ -717,8 +868,14 @@ export function StrikeStage({
             ever needs `dragForFullPower` (about 14 %) of the canvas height,
             and it is pointer-transparent besides. */}
         {phase === "aim" && (
-          rep === 0 && teach
-            ? <TeachCard headline={teach.headline} lines={teach.lines} />
+          rep === 0 && teach && !teachDone
+            ? (
+              <TeachCard
+                headline={teach.headline}
+                lines={teach.lines}
+                onDismiss={dismissTeach}
+              />
+            )
             : (
               <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-4">
                 <p className="rounded-lg bg-black/55 px-3 py-1.5 text-center text-[11px] font-bold text-white/85">
@@ -733,8 +890,14 @@ export function StrikeStage({
           // screen's own tutorial copy, which has a prop for exactly this
           // and — checked at every call site — has never once been passed
           // by anybody. First rep of the stage only; by the second you have
-          // done it once.
-          <ContactBall power={aim.power} onContact={handleContact} tutorial={rep === 0} />
+          // done it once — and not at all for somebody who has already
+          // dismissed this drill's teaching, since the contact badges are the
+          // same lesson one screen later.
+          <ContactBall
+            power={aim.power}
+            onContact={handleContact}
+            tutorial={rep === 0 && !teachDone}
+          />
         )}
 
         {phase === "result" && resultText && (
@@ -821,6 +984,7 @@ export default function TrialPenalties({
       build={build}
       skills={skills}
       seed={trial.seed}
+      drill="penalties"
       title="Penalties"
       hint="Drag back from the ball to aim, and pull further for more power."
       teach={{

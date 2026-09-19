@@ -1,7 +1,8 @@
 import {
   ladderLevel, REPS, penaltySetup, freeKickSetup, dribbleSetup, dribbleQuality,
   visionSetup, visionQuality, meanQuality, weightedQuality, strikeQuality,
-  attemptSeed, penaltyTell,
+  attemptSeed, penaltyTell, teachSeen, markTeachSeen, clearTeachSeen,
+  TEACHABLE_DRILLS,
   PENALTY_TELL_EASY, PENALTY_TELL_HARD, PENALTY_TELL_RAMP, REP_WEIGHT_RAMP,
   COLD_KEEPER_TELL, BIG_WALL_MEN, LONG_RANGE_M, QUICK_FEET_BONUS, EXTRA_MAN,
   SNAP_DECISION_FLOOR, CROWDED_PICTURE_MAX, TIGHT_MARGINS_FLOOR,
@@ -594,6 +595,88 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
         `${e.id} must not touch the vision setup`);
     }
   }
+}
+
+// ── The tutorial you have already read ─────────────────────────────────────
+//
+// Reported directly: "you should be able to get rid of the little tutorial",
+// with the explicit follow-on that dismissing it should be REMEMBERED, so a
+// returning player is not re-taught every trial and every retrial.
+//
+// The card itself is React over a canvas and is not reachable from here. The
+// thing underneath it — whether this device has been taught a given drill —
+// is a plain function pair, and it is the half that has to survive a reload,
+// so it is the half worth pinning down.
+{
+  // Every read and write goes through a bare `localStorage`, the same way
+  // faceStyle.ts reaches it, so a fake one can be handed to it here.
+  const store = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, String(v)); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+  };
+
+  clearTeachSeen();
+  check(TEACHABLE_DRILLS.every(d => !teachSeen(d)),
+    "a device nobody has taught anything to reports every drill as untaught");
+
+  // The whole point: it sticks. Nothing here reloads a module, but nothing in
+  // `teachSeen` caches either — it reads storage every time, which IS what
+  // surviving a reload means for a function with no state of its own.
+  markTeachSeen("penalties");
+  check(teachSeen("penalties"), "a dismissed drill stays dismissed");
+
+  // Per drill, not one flag for the lot. Penalties teach the drag; free kicks
+  // teach striking the side of the ball to bend it; the vision stage teaches a
+  // clock that starts on its own. Dismissing one must not silently skip the
+  // other two, which are genuinely different lessons.
+  check(!teachSeen("freeKicks") && !teachSeen("vision") && !teachSeen("dribbling"),
+    "dismissing one drill's teaching does not dismiss the others");
+
+  for (const d of TEACHABLE_DRILLS) markTeachSeen(d);
+  check(TEACHABLE_DRILLS.every(d => teachSeen(d)), "every drill can be dismissed");
+  clearTeachSeen();
+  check(TEACHABLE_DRILLS.every(d => !teachSeen(d)), "clearing puts every drill back to untaught");
+
+  // Distinct keys, so this can never collide with another per-device
+  // preference (`star-match-muted`, the face-style keys) sharing the store.
+  markTeachSeen("vision");
+  const keys = [...store.keys()];
+  check(keys.length === 1 && keys[0].includes("vision") && keys[0].startsWith("star-"),
+    `one namespaced key per drill (${JSON.stringify(keys)})`);
+  clearTeachSeen();
+
+  // ── Storage that throws must not take a stage down with it ──
+  //
+  // A private window, blocked site data, or the server render of a client
+  // component all throw on `localStorage`. The honest failure is "teach the
+  // drill again", never an exception on the way into a trial stage.
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: () => { throw new Error("blocked"); },
+    setItem: () => { throw new Error("blocked"); },
+    removeItem: () => { throw new Error("blocked"); },
+  };
+  let threw = false;
+  try {
+    markTeachSeen("penalties");
+    clearTeachSeen();
+    check(teachSeen("penalties") === false, "unreadable storage reports untaught rather than throwing");
+  } catch {
+    threw = true;
+  }
+  check(!threw, "storage that throws is swallowed, not propagated into the stage");
+
+  delete (globalThis as { localStorage?: unknown }).localStorage;
+  let threwMissing = false;
+  try {
+    check(teachSeen("vision") === false, "no storage at all reports untaught");
+    markTeachSeen("vision");
+  } catch {
+    threwMissing = true;
+  }
+  check(!threwMissing, "a missing localStorage is survived too (server render)");
 }
 
 if (problems.length) {
