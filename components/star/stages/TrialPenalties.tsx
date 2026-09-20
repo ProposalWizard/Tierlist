@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepDefenders,
   stepBallInNet, settleBall, stepBallPastBar, dragForFullPower, clamp,
-  type Ball, type Outcome, type Scenario, type Viewport,
+  type Ball, type Keeper, type Outcome, type Scenario, type Viewport,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, POST_L, POST_R, NET_DEPTH, PEN_SPOT_Y } from "@/lib/star/pitch";
@@ -136,6 +136,72 @@ export function strikeCamera(
 }
 
 /**
+ * ── HOW THE KEEPER IS DRAWN, AND WHY A PENALTY KEEPER MUST NOT FLIP ──
+ *
+ * Reported directly: "the goalie is diving one way before diving towards the
+ * ball… it's still broken." He was leaning/standing to one side (his guess),
+ * and then, once the ball was struck, diving the OTHER way — onto the ball —
+ * even on a kick he had no chance of reaching. That self-contradicting flip is
+ * the bug this function exists to remove.
+ *
+ * The cause is upstream, in the engine's own save test (`stepBall`, "THE
+ * KEEPER'S OWN LINE"): the instant the ball reaches his line it points `x`,
+ * `saveDir` and `dive` STRAIGHT AT the ball's crossing point. For a ball he
+ * actually reaches that is correct — a save IS a dive toward the ball — but for
+ * one he never gets near it drags him across his goal after a ball that is
+ * already past him, which is exactly the flip.
+ *
+ * A real penalty keeper cannot read a struck penalty in flight: he commits to
+ * a side BEFORE it is hit and throws himself THAT way, right sometimes and
+ * wrong sometimes. His commitment is the side he set himself on — `startX`, the
+ * one keeper field the save test never rewrites toward the ball. So:
+ *
+ *   • Not a penalty (a free kick): the keeper genuinely reacts to the ball off
+ *     the boot, so the engine's reactive dive toward it is right — left alone.
+ *   • A penalty he got a touch on (`saves > 0`, a fumble counts — he still got
+ *     there): keep the dive toward the ball; a save always reads right going to
+ *     the ball.
+ *   • A penalty he was BEATEN on (his lunge fired but `saves` is still 0 — he
+ *     went and never reached it): dive the way he actually COMMITTED, by the
+ *     same distance the engine would have carried him, only with the direction
+ *     forced back onto his guess. This is the whole fix, and it fires only on a
+ *     kick to the opposite side from his guess — a save, or a kick to his own
+ *     side, is byte-identical to before.
+ *
+ * Exported and pure so a test can assert the animated direction never
+ * contradicts the committed guess across many seeds, without a canvas.
+ */
+export function keeperDrawPose(
+  kk: Pick<Keeper, "x" | "startX" | "dive" | "saveDir" | "saveLunge" | "saves">,
+  isPenalty: boolean,
+  goalCentreX: number,
+): { dive: number; lunge: number; x: number } {
+  const lunge = kk.saveLunge > 0 ? Math.min(1, kk.saveLunge) : 0;
+  const reach = clamp(Math.abs(kk.dive) / 1.6, 0, 1);
+
+  // Beaten on a penalty ⟺ he has thrown himself (lunge fired) but never made
+  // contact (no save recorded). That, and only that, is the flip case.
+  const beatenPenalty = isPenalty && kk.saveLunge > 0 && kk.saves === 0;
+
+  if (beatenPenalty) {
+    // The side he set himself on. `startX` is never nudged toward the ball, so
+    // its sign relative to goal centre is his real, committed guess.
+    const committed = Math.sign(kk.startX - goalCentreX) || (kk.saveDir || 1);
+    // He throws his body the committed way by exactly the distance the engine
+    // was carrying him (only the direction is his guess, not the ball's).
+    const x = kk.startX + committed * Math.abs(kk.x - kk.startX);
+    return { dive: committed * Math.max(reach, lunge), lunge, x };
+  }
+
+  // Everything else — a save (dive toward the ball is correct), a free kick, or
+  // the pre-strike set position — is exactly what it was before.
+  const sign = kk.saveLunge > 0
+    ? (kk.saveDir || 1)
+    : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
+  return { dive: sign * Math.max(reach, lunge), lunge, x: kk.x };
+}
+
+/**
  * Draw one striking scene: the pitch, the goal, the wall (if there is one),
  * the keeper, the ball and — while a drag is live — the aim arrow and power
  * meter. Exported because the free-kick stage draws the identical scene.
@@ -186,16 +252,16 @@ export function paintTrialScene(
   // The same man as everybody else on the pitch, in a keeper's pose — see
   // `drawKeeper`. He used to be drawn here, by hand, with his own head size
   // and his own arms, which is most of why he read as not quite right.
+  //
+  // Which way he dives — and, when beaten on a penalty, that he dives the way
+  // he COMMITTED rather than flipping onto the ball — is `keeperDrawPose`.
   {
     const kk = sc.keeper;
-    const lunge = kk.saveLunge > 0 ? Math.min(1, kk.saveLunge) : 0;
-    const sign = kk.saveLunge > 0
-      ? (kk.saveDir || 1)
-      : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-    const reach = clamp(Math.abs(kk.dive) / 1.6, 0, 1);
+    const goalCentreX = (sc.goal.x1 + sc.goal.x2) / 2;
+    const pose = keeperDrawPose(kk, sc.kind === "penalty", goalCentreX);
     drawKeeper(
-      ctx, p, { x: kk.x, y: kk.y }, KEEPER_KIT,
-      { dive: sign * Math.max(reach, lunge), lunge },
+      ctx, p, { x: pose.x, y: kk.y }, KEEPER_KIT,
+      { dive: pose.dive, lunge: pose.lunge },
       faceStyle, fakeFaceStyle,
     );
   }
