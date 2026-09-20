@@ -36,7 +36,11 @@ const nextConfig = {
       { key: "X-Frame-Options", value: "DENY" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+      // camera=(self): the star career photo picker's "Take a photo" needs the
+      // camera on this origin (webcam via getUserMedia, phone camera via a
+      // capture input). `camera=()` blocked both outright, on every page —
+      // still denied to any embedded third-party frame.
+      { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
     ];
 
     return [

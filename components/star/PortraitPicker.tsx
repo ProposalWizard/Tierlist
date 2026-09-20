@@ -34,21 +34,22 @@ import { FAKE_FACES } from "@/lib/star/fakeFaces";
  *   ADD A PHOTO   — bare `accept="image/*"`, no `capture`. The phone's own
  *                   chooser, which on iOS and Android already offers Camera
  *                   alongside Photo Library. Unchanged from before.
- *   TAKE A PHOTO  — the same input plus `capture="user"`, which asks for the
- *                   FRONT camera (`"environment"` would be the rear one, and
- *                   this is a portrait of your own face).
+ *   TAKE A PHOTO  — see startTakePhoto. On a touch device it clicks a second
+ *                   input carrying `capture="user"`, which asks for the FRONT
+ *                   camera (`"environment"` would be the rear one, and this
+ *                   is a portrait of your own face).
  *
- * ── What this does on a desktop, stated plainly ──
+ * ── And on a desktop ──
  *
- * Nothing. `capture` is specified as a hint, and every desktop browser
- * ignores it: Chrome, Safari and Firefox on a laptop all open the ordinary
- * file picker for BOTH buttons, so on a MacBook the two are indistinguishable
- * and that is not a bug. Reaching a laptop webcam at all means
- * `getUserMedia` — a live `<video>` preview, a shutter button, a permission
- * prompt, and a `<canvas>` grab — which is a real component rather than an
- * attribute, and is deliberately not built here: the game is mobile-first and
- * portrait-phone-first, and on the device this is actually used on, `capture`
- * is the correct and complete answer.
+ * `capture` is only a hint, and every desktop browser ignores it — so on a
+ * laptop that input alone would just open the ordinary file picker, making
+ * "Take a photo" indistinguishable from "Add a photo". A computer therefore
+ * takes the other path: `getUserMedia`, a live mirrored `<video>` preview with
+ * Cancel/Capture, and a `<canvas>` grab that flows into the same crop stage as
+ * an uploaded file. (An earlier version of this note said that was
+ * deliberately not built; it has since been asked for directly and built.)
+ * Both paths depend on the site's Permissions-Policy allowing the camera —
+ * see next.config.mjs.
  *
  * Nothing here uploads. See lib/star/portrait.ts.
  */
@@ -73,25 +74,92 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
 
   const kit = kitsOf(club).home;
 
-  // Load the chosen file and open the crop centred on it.
+  // Open the crop centred on a loaded picture — shared by every way of
+  // getting one in (a chosen file, the phone's camera app, the webcam).
+  const takeSrc = useCallback((src: string) => {
+    setError(null);
+    const img = new Image();
+    img.onerror = () => setError("That does not look like a picture.");
+    img.onload = () => {
+      imgRef.current = img;
+      setSize({ w: img.naturalWidth, h: img.naturalHeight });
+      setView(initialView(img.naturalWidth, img.naturalHeight, VIEWPORT));
+      setRaw(src);
+    };
+    img.src = src;
+  }, []);
+
   const take = useCallback((file: File) => {
     setError(null);
     const reader = new FileReader();
     reader.onerror = () => setError("That file could not be read. Try another one.");
-    reader.onload = () => {
-      const src = String(reader.result);
-      const img = new Image();
-      img.onerror = () => setError("That does not look like a picture.");
-      img.onload = () => {
-        imgRef.current = img;
-        setSize({ w: img.naturalWidth, h: img.naturalHeight });
-        setView(initialView(img.naturalWidth, img.naturalHeight, VIEWPORT));
-        setRaw(src);
-      };
-      img.src = src;
-    };
+    reader.onload = () => takeSrc(String(reader.result));
     reader.readAsDataURL(file);
+  }, [takeSrc]);
+
+  // ── Take a photo ──
+  //
+  // Two genuinely different things behind one button, because a phone and a
+  // computer do this completely differently. A phone (coarse pointer) hands
+  // off to its own camera app via a SEPARATE input carrying `capture="user"`
+  // (the front camera) — kept off the "Add a photo" input on purpose, see the
+  // header note, since `capture` on that one would lock the library out. A
+  // computer has no camera app to hand off to, so it gets a live webcam
+  // preview (getUserMedia) with a Capture button instead; the captured frame
+  // then flows into the exact same crop stage as an uploaded file.
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cam, setCam] = useState(false);
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setCam(false);
   }, []);
+
+  const startTakePhoto = async () => {
+    setError(null);
+    const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+    if (coarse) { cameraInputRef.current?.click(); return; }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("This browser can't open a camera here. Use Add a photo instead.");
+      return;
+    }
+    try {
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+      setCam(true);
+    } catch {
+      setError("Couldn't open the camera — check the browser's camera permission, or use Add a photo instead.");
+    }
+  };
+
+  // Attach the stream once the <video> actually exists in the DOM.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (cam && v && streamRef.current) {
+      v.srcObject = streamRef.current;
+      void v.play().catch(() => { /* autoplay refusal — the user can still hit Capture */ });
+    }
+  }, [cam]);
+
+  // Never leave the camera light on behind a closed panel.
+  useEffect(() => () => { streamRef.current?.getTracks().forEach(t => t.stop()); }, []);
+
+  const snap = () => {
+    const v = videoRef.current;
+    if (!v || !v.videoWidth) return;
+    const c = document.createElement("canvas");
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    const ctx = c.getContext("2d");
+    if (!ctx) { setError("This browser could not process that picture."); return; }
+    // Mirrored, to match the mirrored preview — what you saw is what you get.
+    ctx.translate(c.width, 0); ctx.scale(-1, 1);
+    ctx.drawImage(v, 0, 0);
+    const src = c.toDataURL("image/jpeg", 0.92);
+    stopCamera();
+    takeSrc(src);
+  };
 
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
@@ -142,7 +210,33 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
         <span className="text-[10px] font-bold text-white/70">Optional</span>
       </div>
 
-      {raw ? (
+      {cam ? (
+        <>
+          <div className="relative mx-auto mt-3 overflow-hidden rounded-lg border border-white/20 bg-black" style={{ width: VIEWPORT, height: VIEWPORT }}>
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              className="h-full w-full -scale-x-100 object-cover"
+            />
+          </div>
+          <p className="mt-2 text-center text-[10px] font-bold text-white/70">Line yourself up, then take it</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              onClick={stopCamera}
+              className="rounded-lg bg-gray-700 py-2 text-[12px] font-black text-white transition hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={snap}
+              className="rounded-lg bg-emerald-600 py-2 text-[12px] font-black text-white transition hover:bg-emerald-500"
+            >
+              Capture
+            </button>
+          </div>
+        </>
+      ) : raw ? (
         <>
           <div
             className="relative mx-auto mt-3 cursor-grab touch-none overflow-hidden rounded-lg border border-white/20 active:cursor-grabbing"
@@ -206,21 +300,25 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
               />
             </label>
-            <label className="cursor-pointer rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600">
+            <button
+              onClick={startTakePhoto}
+              className="rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600"
+            >
               Take a photo
-              <input
-                type="file"
-                accept="image/*"
-                // The whole difference between this button and the one beside
-                // it. "user" is the front camera — this is a portrait of your
-                // own face, not a picture of something in front of you. See
-                // the note at the top of this file for what it does on a
-                // desktop, which is nothing.
-                capture="user"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
-              />
-            </label>
+            </button>
+            {/* Phone path for Take a photo: the FRONT camera via the device's
+                own camera app — "user" because this is a portrait of your own
+                face. A separate input from Add a photo's on purpose (see the
+                header note on `capture`); on a desktop startTakePhoto skips
+                it and opens the webcam instead. */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="user"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
+            />
           </div>
 
           {/* ── THE SHIRT IS AN ANSWER, NOT A GREYED-OUT ACTION ──
