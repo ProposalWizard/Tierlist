@@ -159,7 +159,12 @@ export const COUPLING: Record<string, {
   long_range:   { distance: ["edge", "range"],          lateral: ["centre", "half_space", "wide"], keeper: ["set", "stepped"], pattern: ["settled", "transition"] },
   volley:       { distance: ["golden", "spot"],         lateral: ["centre", "half_space"], keeper: ["set"],                   pattern: ["settled"] },
   header:       { distance: ["six", "golden"],          lateral: ["centre", "half_space"], keeper: ["set"],                   pattern: ["settled"] },
-  cutback:      { distance: ["six"],                    lateral: ["wide", "touchline"],    keeper: ["set"],                   pattern: ["settled", "transition"] },
+  // A cutback is pulled back from around the corner of the six-yard box out
+  // to the corner of the penalty area — NOT from the touchline. Measured with
+  // touchline included, the ball averaged 20.2 m off centre against the base's
+  // 11.5 m, and shooting at goal from there is close to impossible: conversion
+  // 41.0% → 9.8%. Half-space + wide puts it back on the real 9-20 m range.
+  cutback:      { distance: ["six"],                    lateral: ["half_space", "wide"],   keeper: ["set"],                   pattern: ["settled", "transition"] },
   byline_cross: { distance: ["six", "golden"],          lateral: ["wide", "touchline"],    keeper: ["set"],                   pattern: ["settled"] },
   through_ball: { distance: ["range", "deep"],          lateral: ["centre", "half_space", "wide"], keeper: ["stepped", "out"], pattern: ["settled", "transition"] },
 };
@@ -395,7 +400,23 @@ export function generateChance(
   // then up to 4 redraws before accepting whatever comes up.
   const banned = new Set(recent.slice(0, 3));
   const fresh = pool.filter(p => !banned.has(p.signature));
-  const from = fresh.length > 0 ? fresh : pool;
+  // When the last three have used up a narrow pool, relax to forbidding only
+  // the one you were JUST shown — never fall all the way back to the whole
+  // pool, which re-admits it. Measured with the full fallback: 2 immediate
+  // repeats in 428 consecutive box chances, and redrawing 4 times cannot help
+  // when the pool it is drawing from has one member.
+  let from = fresh;
+  if (from.length === 0) {
+    const prev = recent[0];
+    from = pool.filter(p => p.signature !== prev);
+    // Some kinds have exactly ONE cell in a given zone and lane — a cutback in
+    // the centre lane is only ever `cutback|six|half_space|settled` — so when
+    // that one cell is also the one you were just shown, there is no variant
+    // left to offer. Returning null hands the chance to the untouched path
+    // rather than serving the same picture twice running, which is the thing
+    // this whole mechanism exists to prevent.
+    if (from.length === 0) return null;
+  }
   let best = pick(rng, from);
   for (let i = 0; i < 4; i++) {
     if (!recent.slice(0, 1).includes(best.signature)) break;
@@ -642,12 +663,31 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
   }
 
   // ── 3. The keeper [M Table 5] ──
-  if (!turned) {
+  //
+  // §2.4, honoured: a one-on-one and a tight angle KEEP the engine's own
+  // stance logic, because in those two the keeper's position IS the chance —
+  // the engine's tuned 24/16/60 rush/stay/shade roll, not a uniform draw.
+  //
+  // Measured, overwriting it: one-on-one conversion 26.4% → 9.8% with the
+  // blocked rate still at 0.0%, i.e. nothing was in the way and the keeper was
+  // simply always perfectly positioned. That single line was most of this
+  // layer's headline "it halves conversion".
+  const KEEPER_IS_THE_CHANCE = sc.kind === "one_on_one" || sc.kind === "tight_angle";
+  if (!turned && !KEEPER_IS_THE_CHANCE) {
     const kY = U(rng, KEEPER_M[p.keeper][0], KEEPER_M[p.keeper][1]);
     sc.keeper.y = clamp(kY, 0.5, Math.max(0.6, ballY - 1.5));
-    const kx = clamp(CX + clamp((ballX - CX) * 0.28, -2.6, 2.6), POST_L - 1.5, POST_R + 1.5);
-    sc.keeper.x = kx;
-    sc.keeper.startX = kx;
+    // ONLY HIS DEPTH. How far off his line he has set himself is the
+    // interesting, measured variety [M Table 5] and it is what this layer is
+    // for. His SIDEWAYS position is left exactly as the engine placed it.
+    //
+    // Measured, taking that over too with the spec's own shade
+    // (x = CX + 0.28 × ball lateral, itself a real measurement): a keeper
+    // that well centred on every single chance sent headers from 16.3% to
+    // 6.4% and cutbacks from 41.0% to 9.8% with almost none of it blocked —
+    // he was simply always in the right place. The engine's finishing model
+    // is tuned against the engine's OWN keeper placement, so replacing it
+    // with a different-but-also-real one re-tunes the game by the back door.
+    // That is the "only ever ADD to gameplay, never change it" rule.
   }
 
   // ── 3b. Nobody piled on the ball or on you, and the middle is covered ──
@@ -716,6 +756,14 @@ function closeTheLine(sc: Scenario): void {
   }
 }
 
+/**
+ * How close to the line of the shot a defender has to be before he counts as
+ * standing in it. THE difficulty dial of this whole layer: every metre of it
+ * is a defender who either blocks the shot or steps aside for it. 1.8 m is
+ * about a body's width either side of the ball's path.
+ */
+const SHOT_LANE_R = 1.8;
+
 function tidyBlock(sc: Scenario, p: ChanceParams): void {
   const CLEAR_BALL = 2.0, CLEAR_YOU = 1.8;
   closeTheLine(sc);
@@ -743,18 +791,104 @@ function tidyBlock(sc: Scenario, p: ChanceParams): void {
   // difficulty change by the back door. A defender showing you a side stands
   // BESIDE the lane, not in it; anyone the placement left inside the cone and
   // close to the ball steps out of it.
-  for (const d of sc.defenders) {
-    if (Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y) > 6.5) continue;
-    let guard = 0;
-    while (inShotCone(sc, d) && guard++ < 8) {
-      d.x = clamp(d.x + (d.x >= sc.ball.x ? 1 : -1) * 1.1, 1.5, PITCH_W - 1.5);
-    }
-  }
-
+  // H2 FIRST, THEN THE LANE. Filling the central channel moves a man to the
+  // middle, and from a cutback or a tight angle the middle IS the shot — so
+  // doing it after the lane clearing quietly undid the clearing. Measured
+  // that way round: capping the lane moved a cutback's blocked rate by 0.0 pp.
+  //
   // A one-on-one and a through ball are DEFINED by the middle being open —
   // baseScenario.ts exempts them, and so does this.
-  if (sc.kind === "one_on_one" || sc.kind === "through_ball") return;
-  if (sc.ball.y > 24 || sc.defenders.length === 0) return;
+  const skipChannel = sc.kind === "one_on_one" || sc.kind === "through_ball";
+  if (!skipChannel && sc.ball.y <= 24 && sc.defenders.length > 0) coverCentre(sc);
+
+  //
+  // H5, and the single most expensive thing this layer can get wrong.
+  //
+  // Measured before this existed: putting the engagement man on the ball→goal
+  // line sent the blocked rate from 11.0% to 73.7% on a tight angle and 5.2%
+  // to 56.6% on a cutback — the "volley into the shins" the spec names, and a
+  // difficulty change by the back door. A defender showing you a side stands
+  // BESIDE the lane, not in it.
+  //
+  // Two corrections on the first version of this, both measured:
+  //
+  //  - THE RADIUS WAS TOO SMALL. It only cleared men within 6.5 m of the ball.
+  //    A tight angle's cone is long and thin down the byline and a through
+  //    ball's is 30 m deep, so a defender well outside that circle was still
+  //    standing squarely in the shot. Blocked rose on exactly those kinds
+  //    (through_ball 8.9% → 21.0%, tight_angle 11.0% → 25.7%).
+  //
+  //  - A RADIUS IS THE WRONG RULE ANYWAY. H5's own rule is a COUNT — at most
+  //    three opponents in the lane [M Table 3, p75 = 2] — so that is what is
+  //    enforced, with the men nearest the shot moving out first so the picture
+  //    keeps its depth rather than being swept clean.
+  //  - AND THE CONE ITSELF IS THE WRONG TEST FOR A SHALLOW SHOT. The triangle
+  //    from ball to posts is a SLIVER near its own apex, so a man level with
+  //    the ball and 2.4 m to the side reads as "not in the way" — while a
+  //    cutback struck from the byline travels sideways across the box and
+  //    flies straight past him. Measured: of 300 cutbacks, `inShotCone` found
+  //    0 defenders in the way; 223 of them had a man within 1.5 m of the line
+  //    the ball actually travels, and 156 of 157 real blocks were one of those
+  //    men. So the test is distance to the SHOT LINE, which is right for a
+  //    shallow shot and a straight one alike.
+  const origin = sc.ball;
+  const GOAL_MOUTH: Vec2 = { x: CX, y: 0 };
+  /** How far this man is from the line the ball will actually travel. */
+  const offLine = (d: Vec2): number => {
+    const vx = GOAL_MOUTH.x - origin.x, vy = GOAL_MOUTH.y - origin.y;
+    const len2 = vx * vx + vy * vy || 1;
+    let t = ((d.x - origin.x) * vx + (d.y - origin.y) * vy) / len2;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    return Math.hypot(d.x - (origin.x + vx * t), d.y - (origin.y + vy * t));
+  };
+  /** In the way of the shot: on its line, or inside the cone to the posts. */
+  const inTheWay = (d: Vec2) => offLine(d) < SHOT_LANE_R || inShotCone(sc, d);
+  const stepOut = (d: Vec2) => {
+    // Perpendicular to the shot, on the side he is already on — a defender
+    // showing you a side stands BESIDE the lane, he does not back away down it.
+    const vx = GOAL_MOUTH.x - origin.x, vy = GOAL_MOUTH.y - origin.y;
+    const nlen = Math.hypot(-vy, vx) || 1;
+    const nx = -vy / nlen, ny = vx / nlen;
+    let guard = 0;
+    while (inTheWay(d) && guard++ < 12) {
+      let t = ((d.x - origin.x) * vx + (d.y - origin.y) * vy) / ((vx * vx + vy * vy) || 1);
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const sign = ((d.x - (origin.x + vx * t)) * nx + (d.y - (origin.y + vy * t)) * ny) >= 0 ? 1 : -1;
+      d.x = clamp(d.x + sign * nx * 0.9, 1.5, PITCH_W - 1.5);
+      d.y = Math.max(d.y + sign * ny * 0.9, sc.keeper.y + 2.0);
+    }
+  };
+  // H5, LITERALLY: nobody is standing ON you as you strike it. Only the men
+  // within 3.5 m of the ball — the "volley into the shins" the spec names.
+  //
+  // Measured sweeping the whole lane clean instead: blocked fell to 0.3% on a
+  // volley and 0.4% on a cutback, against a base of 17.8% and 5.2%. A shot
+  // that can never be blocked is as wrong as one that always is, and it is a
+  // difficulty change by the back door in the other direction.
+  for (const d of sc.defenders) {
+    if (Math.hypot(d.x - origin.x, d.y - origin.y) > 3.5) continue;
+    stepOut(d);
+  }
+  // Beyond that the lane simply has a ceiling [M Table 3: p75 = 2 opponents in
+  // the lane, 98% ≤ 3]. The men nearest the shot move out first, so what is
+  // left is depth rather than a wall on the ball.
+  const laneCap = sc.ball.y <= 16.5 ? 2 : 3;
+  const laneMen = sc.defenders.filter(inTheWay);
+  if (laneMen.length > laneCap) {
+    laneMen
+      .sort((a, b) => Math.hypot(a.x - origin.x, a.y - origin.y) - Math.hypot(b.x - origin.x, b.y - origin.y))
+      .slice(0, laneMen.length - laneCap)
+      .forEach(stepOut);
+  }
+}
+
+/**
+ * H2: with the ball in or near the box, the central channel is never empty —
+ * the "far too open in the box" screenshot as one rule. Same shape the block
+ * layer enforces, kept local because that layer is deliberately skipped
+ * whenever a chance plan has placed the picture itself.
+ */
+function coverCentre(sc: Scenario): void {
   if (sc.defenders.some(d => Math.abs(d.x - CX) <= 6.4)) return;
   let best = sc.defenders[0];
   for (const d of sc.defenders) if (Math.abs(d.x - CX) < Math.abs(best.x - CX)) best = d;
