@@ -16,7 +16,8 @@ import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
-import { applyChanceShape } from "@/lib/star/chanceFormula";
+import { applyChancePlan } from "@/lib/star/chanceFormula";
+import { fixBaseScenario } from "@/lib/star/baseScenario";
 import { selectChance, newSelectionMemory } from "@/lib/star/scenarioSelect";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
@@ -3709,6 +3710,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // completely different path from an ordinary completed pass's chain,
     // not just a different position fed into the same rebuild.
     const isTouchContinuation = chain !== null && chain.touchTouches !== undefined;
+    /** True once the chance formula has placed this scenario itself. */
+    let appliedPlan = false;
 
     if (chain) {
       if (isTouchContinuation) {
@@ -3738,12 +3741,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // for anything the formula has no variant of (a dead ball, a build-up,
       // a dribble), and that falls straight through to exactly today's
       // behaviour.
-      const spec = selectChance({
+      const plan = selectChance({
         request, position: positionRef.current, rng, memory: chanceMemoryRef.current,
+        shape: formationShapeFor(),
       });
-      if (spec) {
-        scenarioRef.current = buildScenario(spec.kind, rng, strengthRef.current, teamRef.current, visionRef.current);
-        applyChanceShape(scenarioRef.current, spec, rng);
+      if (plan) {
+        scenarioRef.current = buildScenario(plan.kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+        // The base first (its own defining property, repaired), then the
+        // formula expands it. applyChancePlan re-runs fixBaseScenario at the
+        // end, so the base always has the last word.
+        fixBaseScenario(scenarioRef.current);
+        applyChancePlan(scenarioRef.current, plan, rng);
+        appliedPlan = true;
       } else {
         const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
         scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
@@ -3780,7 +3789,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // centre-back's face). A strict no-op in the sandbox / any match with no
     // real opponent (formationShapeFor is null), and for every kind the layer
     // doesn't touch, so nothing else regresses.
-    applyFormationShape(scenarioRef.current, formationShapeFor());
+    // Skipped when the chance formula already placed this shape — it reads the
+    // SAME targetBlock equations and then frames a deliberate slice of the
+    // world shape, and re-running the block layer would drag every man back
+    // toward the middle of the camera (the exact "forced into the viewport"
+    // the owner ruled out).
+    if (!appliedPlan) applyFormationShape(scenarioRef.current, formationShapeFor());
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);

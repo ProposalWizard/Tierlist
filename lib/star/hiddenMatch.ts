@@ -524,7 +524,12 @@ function endOfMove(state: HiddenMatchState, scored: boolean, attacker: Side) {
   if (scored) state.zone = "middle";
 }
 
-function buildRequest(state: HiddenMatchState, rng: () => number, inputs: HiddenMatchInputs): ScenarioRequest {
+/**
+ * What chance the match is handing you — or null when the moment happened but
+ * it wasn't yours (a corner you don't take; see the participation gate). The
+ * caller resolves a null through the ordinary team-mate path.
+ */
+function buildRequest(state: HiddenMatchState, rng: () => number, inputs: HiddenMatchInputs): ScenarioRequest | null {
   // Sometimes the ball simply arrives at your feet with grass in front of you.
   // Only from the middle and the final third, because a run at goal has to have
   // somewhere to run TO, and likelier for a quick player — the space is the
