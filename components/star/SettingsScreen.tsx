@@ -74,17 +74,23 @@ export default function SettingsScreen({
         <h1 className="text-lg font-black">Settings</h1>
 
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Photo</div>
-          <p className="mt-1 text-[11px] text-gray-300">
-            Change the photograph on your graphics, or take it back off.
-          </p>
-          <div className="mt-2">
-            <PortraitPicker
-              value={career.player.portrait}
-              onChange={onSetPortrait}
-              club={career.player.club}
-              number={career.squadNumber}
-            />
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-white">Full Screen</div>
+              <p className="mt-1 text-[11px] text-white">
+                Hide the site's top bar and footer, and go full screen where your browser supports it.
+              </p>
+            </div>
+            <button
+              onClick={onToggleImmersive}
+              role="switch"
+              aria-checked={immersiveActive}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${immersiveActive ? "bg-emerald-500" : "bg-gray-600"}`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${immersiveActive ? "translate-x-5" : "translate-x-0.5"}`}
+              />
+            </button>
           </div>
         </div>
 
@@ -110,25 +116,38 @@ export default function SettingsScreen({
         </div>
 
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-white">Full Screen</div>
-              <p className="mt-1 text-[11px] text-white">
-                Hide the site's top bar and footer, and go full screen where your browser supports it.
-              </p>
-            </div>
-            <button
-              onClick={onToggleImmersive}
-              role="switch"
-              aria-checked={immersiveActive}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${immersiveActive ? "bg-emerald-500" : "bg-gray-600"}`}
-            >
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${immersiveActive ? "translate-x-5" : "translate-x-0.5"}`}
-              />
-            </button>
+          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Photo</div>
+          <p className="mt-1 text-[11px] text-gray-300">
+            Change the photograph on your graphics, or take it back off.
+          </p>
+          <div className="mt-2">
+            <PortraitPicker
+              value={career.player.portrait}
+              onChange={onSetPortrait}
+              club={career.player.club}
+              number={career.squadNumber}
+            />
           </div>
         </div>
+
+        <SaveSlotsPanel
+          saves={saves}
+          activeSlot={activeSlot}
+          onSwitch={onSwitchSave}
+          onStartNew={onStartNewInSlot}
+          onDelete={onDeleteSave}
+        />
+
+        <div className="mt-6 mb-1 border-t border-gray-700 pt-3">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300/90">Developer tools</div>
+          <p className="text-[10px] font-semibold text-white/50">Testing and tuning options — not needed for normal play.</p>
+        </div>
+
+        <DevSkipPanel career={career} onSkip={onSkip} />
+
+        <DevMoneyPanel career={career} onAddMoney={onAddMoney} />
+
+        <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
 
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Player Graphics</div>
@@ -174,25 +193,11 @@ export default function SettingsScreen({
           </p>
         </div>
 
-        <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
-
-        <DevSkipPanel career={career} onSkip={onSkip} />
-
-        <DevMoneyPanel career={career} onAddMoney={onAddMoney} />
-
         <GoalReplaysPanel
           career={career}
           onWatchReplay={onWatchReplay}
           onSaveReplay={onSaveReplay}
           onDeleteSavedReplay={onDeleteSavedReplay}
-        />
-
-        <SaveSlotsPanel
-          saves={saves}
-          activeSlot={activeSlot}
-          onSwitch={onSwitchSave}
-          onStartNew={onStartNewInSlot}
-          onDelete={onDeleteSave}
         />
       </div>
     </div>
