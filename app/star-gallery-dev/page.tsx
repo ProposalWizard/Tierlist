@@ -73,6 +73,7 @@ import {
   FIVE_KEEPER_STRENGTH,
   FIVE_HALFWAY_Y,
 } from "@/lib/star/fiveASide/geometry";
+import { fixBaseScenario, scenarioFaults } from "@/lib/star/baseScenario";
 import { castDefence, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { FORMATIONS, formationOf, type Formation } from "@/lib/star/formations";
 import { applyFormationShape, defensiveLineOf } from "@/lib/star/formationShape";
@@ -357,7 +358,80 @@ interface Cell {
   kind: string;
   seed: number | null;
   game: "eleven" | "five";
+  /** What `fixBaseScenario` actually corrected on the way in — shown on the
+   *  card, so a repair is visible rather than a silent change. */
+  repairs?: string[];
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  WHAT'S STILL WRONG WITH A BASE SCENARIO — and what only LOOKS wrong
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * One fault `scenarioFaults` reports is not a fault at all.
+ *
+ * A through ball's whole chance IS a runner going a yard early — real
+ * receivers are beyond the line about half the time, and `fixBaseScenario`
+ * deliberately exempts through_ball from its own onside repair for exactly
+ * that reason (see its comment). Reporting that as "broken" would be the
+ * rule contradicting the chance, so it is shown as what it is: intended.
+ *
+ * Everything else stays a fault, deliberately unrepaired — a shape judgement
+ * for the owner to make (the 11m hole in a long_range back line, the
+ * tight_angle defender behind his own keeper), not something to quietly
+ * "correct" into a picture nobody chose.
+ */
+function splitFaults(kind: string, faults: string[]): { faults: string[]; intended: string[] } {
+  const out: string[] = [];
+  const intended: string[] = [];
+  for (const f of faults) {
+    if (kind === "through_ball" && f === "attacker offside") intended.push(f);
+    else out.push(f);
+  }
+  return { faults: out, intended };
+}
+
+/**
+ * HOW OFTEN THIS FAULT SHOWS UP AT ALL — measured, not assumed.
+ *
+ * A card shows ONE fixed seed, and a fault that hits one build in seven is
+ * very likely to miss it. Measured across 400 real builds of every kind
+ * (after `fixBaseScenario`), the three that survive are:
+ *
+ *   long_range    11m+ hole in the line     14.5%
+ *   through_ball  attacker offside          18.8%   (intended — see splitFaults)
+ *   tight_angle   empty central channel      6.3%
+ *
+ * Showing the RATE on the card is the difference between "this kind is fine"
+ * and "this seed is fine" — the first would be a lie the gallery's own fixed
+ * seeds quietly tell. Memoised at module scope: it is a constant of the
+ * builders, so it is measured once, never per render.
+ */
+const RATE_SEEDS = 400;
+let RATE_CACHE: Record<string, { fault: string; pct: number }[]> | null = null;
+function faultRates(): Record<string, { fault: string; pct: number }[]> {
+  if (RATE_CACHE) return RATE_CACHE;
+  const out: Record<string, { fault: string; pct: number }[]> = {};
+  for (const kind of SCENARIO_KINDS) {
+    const counts: Record<string, number> = {};
+    for (let s = 0; s < RATE_SEEDS; s++) {
+      const sc = buildScenario(kind, mulberry32(5000 + s));
+      fixBaseScenario(sc);
+      for (const f of scenarioFaults(sc)) counts[f] = (counts[f] ?? 0) + 1;
+    }
+    out[kind] = Object.entries(counts)
+      .map(([fault, n]) => ({ fault, pct: (100 * n) / RATE_SEEDS }))
+      .sort((a, b) => b.pct - a.pct);
+  }
+  RATE_CACHE = out;
+  return out;
+}
+
+/** The through-ball exemption, said in English on the card rather than as a
+ *  bare fault string. */
+const INTENDED_TEXT: Record<string, string> = {
+  "attacker offside": "a runner a yard early — that IS the through ball, not a fault",
+};
 
 /** Build a minimal opponent XI from a formation — enough for `castDefence` to
  *  assign identities (it reads position + depth `y` + isGK). Positions are NOT
@@ -393,16 +467,44 @@ function oppXIFromFormationId(id: string): OpponentSheetPlayer[] {
 function baseCells(): Cell[] {
   return SCENARIO_KINDS.map((kind, i) => {
     const seed = 1000 + i;
+    // CORRECTED, not raw. Reported directly \u2014 "it's more important we get the
+    // base outcomes correct" \u2014 so what the gallery shows is what a chance is
+    // SUPPOSED to be: `fixBaseScenario` repairs the defining property of the
+    // kinds whose shape is actually agreed (a one-on-one with nobody but the
+    // keeper in front of you; nobody stood in an illegal position), and hands
+    // back the list of what it changed so the repair is visible instead of
+    // silent. Anything it is not sure about it leaves alone and
+    // `scenarioFaults` flags on the card.
+    const sc = buildScenario(kind, mulberry32(seed));
+    const repairs = fixBaseScenario(sc);
     return {
       key: `main-${kind}`,
       title: kind,
       subtitle: `base \u00b7 seed ${seed}`,
-      frame: frameFromScenario(buildScenario(kind, mulberry32(seed))),
+      frame: frameFromScenario(sc),
       kind,
       seed,
       game: "eleven" as const,
+      repairs,
     };
   });
+}
+
+/**
+ * The faults of a cell AS IT CURRENTLY STANDS \u2014 builder output, corrected,
+ * with whatever has been saved or dragged on top.
+ *
+ * Re-derived rather than captured once, because the point of being able to
+ * drag a figure is to FIX a flagged shape and watch the flag clear. It
+ * rebuilds the scenario from its own seed and replays the same overrides the
+ * canvas is painting, so the red border and the picture can never disagree.
+ */
+function liveFaults(cell: Cell, overrides: (PosOverride | undefined)[]): string[] | null {
+  if (cell.game !== "eleven" || cell.seed === null) return null;
+  const sc = buildScenario(cell.kind as (typeof SCENARIO_KINDS)[number], mulberry32(cell.seed));
+  fixBaseScenario(sc);
+  for (const ov of overrides) applyOverrideToScenario(sc, ov);
+  return scenarioFaults(sc);
 }
 
 /** The three defensive shapes worth comparing a base scenario across: a
@@ -464,7 +566,11 @@ function shapedFrame(
   attackerStrength: number,
   defenderStrength: number,
 ): Frame {
+  // The SAME corrected base the card itself shows — a comparison built off
+  // the raw builder output would be showing the formation transform applied
+  // to a scenario nobody is looking at.
   const sc = buildScenario(cell.kind as (typeof SCENARIO_KINDS)[number], mulberry32(cell.seed ?? 0));
+  fixBaseScenario(sc);
   applyOverrideToScenario(sc, override);
   castDefence(sc, oppXIFromFormationId(formationId));
   applyFormationShape(sc, {
@@ -698,7 +804,13 @@ interface SaveProps {
   saved: Record<string, MatchScenario>;
   saveCell: (cell: Cell, frame: Frame) => Promise<boolean>;
   revertCell: (cell: Cell) => Promise<boolean>;
-  busy: Record<string, "saving" | "reverting" | undefined>;
+  /** The second, stronger path: write this geometry into the repository
+   *  itself (lib/star/authoredScenarios.json) as a real commit. */
+  commitCell: (cell: Cell, frame: Frame) => Promise<boolean>;
+  /** Cell keys this session has confirmed a commit for — the SERVER said so,
+   *  never a hopeful tick. */
+  committed: Record<string, string | undefined>;
+  busy: Record<string, "saving" | "reverting" | "committing" | undefined>;
   flash: Record<string, { ok: boolean; text: string } | undefined>;
   /** True once the server has said star_scenarios.sql hasn't been run. */
   migrationMissing: boolean;
@@ -808,6 +920,18 @@ const SMALL_BTN: React.CSSProperties = {
   fontSize: 12,
   cursor: "pointer",
 };
+
+/** The small explanatory panels on a card (repairs / faults / intended). */
+const NOTE_BOX: React.CSSProperties = {
+  border: "1px solid",
+  borderRadius: 8,
+  padding: "6px 8px",
+  fontSize: 11,
+  lineHeight: 1.5,
+  fontWeight: 700,
+  maxWidth: 460,
+};
+const NOTE_LIST: React.CSSProperties = { margin: "4px 0 0", paddingLeft: 16 };
 
 /**
  * An EDITABLE gallery cell. Drag any figure or the ball to a new position; the
@@ -957,13 +1081,36 @@ function GalleryCell({
 
   const busy = save?.busy[cell.key];
   const flash = save?.flash[cell.key];
+  const committedSha = save?.committed[cell.key];
+
+  // Judged on the picture as it currently stands, corrected and edited — see
+  // `liveFaults`. A fault gets the loudest border on the card, over "edited"
+  // and over "saved": a scenario that isn't the chance it claims to be is the
+  // one thing worth noticing across a wall of thirteen.
+  const all = liveFaults(cell, [
+    savedScenario ? overrideFromMatchScenario(savedScenario) : undefined,
+    override,
+  ]);
+  const split = all ? splitFaults(cell.kind, all) : null;
+  const faults = split?.faults ?? [];
+  const intended = split?.intended ?? [];
+  const repairs = cell.repairs ?? [];
+  // Faults this KIND really has, that this particular seed happens not to
+  // show. Without this, thirteen clean-looking cards would read as "the base
+  // scenarios are all correct", which the measured rates say they are not.
+  const shown = new Set([...faults, ...intended]);
+  const missedRates = split
+    ? (faultRates()[cell.kind] ?? []).filter((r) => !shown.has(r.fault))
+    : [];
 
   return (
     <div
       data-cell={cell.key}
       style={{
         background: "#0b1220",
-        border: edited ? "1px solid #38bdf8" : savedScenario ? "1px solid #22c55e" : "1px solid #1e293b",
+        border: faults.length
+          ? "1px solid #ef4444"
+          : edited ? "1px solid #38bdf8" : savedScenario ? "1px solid #22c55e" : "1px solid #1e293b",
         borderRadius: 10,
         padding: 8,
       }}
@@ -984,10 +1131,56 @@ function GalleryCell({
             unsaved edits
           </span>
         )}
+        {faults.length > 0 && (
+          <span style={{ fontSize: 10, fontWeight: 800, color: "#fecaca", background: "#7f1d1d", borderRadius: 4, padding: "1px 6px" }}>
+            {faults.length} fault{faults.length === 1 ? "" : "s"}
+          </span>
+        )}
+        {committedSha && (
+          <span style={{ fontSize: 10, fontWeight: 800, color: "#e9d5ff", background: "#581c87", borderRadius: 4, padding: "1px 6px" }}>
+            in the code
+          </span>
+        )}
       </div>
       <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8, fontFamily: "monospace" }}>
         {cell.subtitle}
       </div>
+
+      {repairs.length > 0 && (
+        <div style={{ ...NOTE_BOX, background: "#083344", borderColor: "#0e7490", color: "#a5f3fc", marginBottom: 8 }}>
+          <b>Corrected on the way in</b> — this card shows the repaired shape, not the raw builder output:
+          <ul style={NOTE_LIST}>
+            {repairs.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        </div>
+      )}
+      {faults.length > 0 && (
+        <div style={{ ...NOTE_BOX, background: "#450a0a", borderColor: "#ef4444", color: "#fecaca", marginBottom: 8 }}>
+          <b>Still wrong</b> — left exactly as built, because the right shape is a call for you, not a
+          guess for the code:
+          <ul style={NOTE_LIST}>
+            {faults.map((f, i) => <li key={i}>{f}</li>)}
+          </ul>
+        </div>
+      )}
+      {intended.length > 0 && (
+        <div style={{ ...NOTE_BOX, background: "#1c1917", borderColor: "#a16207", color: "#fde68a", marginBottom: 8 }}>
+          <b>Intended, not a fault</b>:
+          <ul style={NOTE_LIST}>
+            {intended.map((f, i) => <li key={i}>{INTENDED_TEXT[f] ?? f}</li>)}
+          </ul>
+        </div>
+      )}
+      {missedRates.length > 0 && (
+        <div style={{ ...NOTE_BOX, background: "#0f172a", borderColor: "#475569", color: "#cbd5e1", marginBottom: 8 }}>
+          <b>This seed is clean, the kind isn&rsquo;t</b> &mdash; measured over {RATE_SEEDS} real builds:
+          <ul style={NOTE_LIST}>
+            {missedRates.map((r, i) => (
+              <li key={i}>{r.fault} &mdash; {r.pct.toFixed(1)}% of builds</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <canvas
         ref={ref}
         onPointerDown={onPointerDown}
@@ -1025,6 +1218,21 @@ function GalleryCell({
             >
               {busy === "reverting" ? "Reverting\u2026" : "Revert to built-in"}
             </button>
+            <button
+              style={{
+                ...SMALL_BTN,
+                background: "#3b0764",
+                borderColor: "#a855f7",
+                color: "#f3e8ff",
+                opacity: busy ? 0.6 : 1,
+                cursor: busy ? "default" : "pointer",
+              }}
+              disabled={!!busy}
+              onClick={() => { void save.commitCell(cell, liveFrame); }}
+              title="Write this geometry into the repository itself \u2014 a real commit to lib/star/authoredScenarios.json"
+            >
+              {busy === "committing" ? "Committing\u2026" : "Commit to repo"}
+            </button>
           </>
         )}
         <button style={SMALL_BTN} onClick={() => { copyText(json); setShowJson((s) => !s); }}>
@@ -1044,7 +1252,9 @@ function GalleryCell({
         </div>
       )}
       <div style={{ fontSize: 10, color: "#475569", marginTop: 6 }}>
-        drag figures/ball \u00b7 Reset drops unsaved edits
+        {save
+          ? "Save = live now, on every device. Commit = permanently in the code. Drag figures/ball \u00b7 Reset drops unsaved edits"
+          : "drag figures/ball \u00b7 Reset drops unsaved edits"}
       </div>
       {children}
       {showJson && (
@@ -1257,12 +1467,26 @@ function ElevenView({ edits, setOverride, clearOverride, save }: EditProps & { s
         the thing you look at, edit and save. Blue = your side (star = you), red = opponents, green =
         keeper, yellow dashes = the offside line the engine would judge against.
       </p>
+      <p style={{ margin: "0 0 10px", color: "#fca5a5", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
+        <b>Every card is CORRECTED before you see it.</b> <code>fixBaseScenario</code> repairs the things
+        a chance can&rsquo;t be without (a one-on-one with somebody in front of you isn&rsquo;t a
+        one-on-one) and each card lists what it changed, so nothing is silently fixed. A{" "}
+        <b style={{ color: "#ef4444" }}>red border</b> means something is still wrong and was deliberately
+        left alone &mdash; those are shape calls for you to make, not guesses for the code. Drag it right,
+        then Save.
+      </p>
       <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
         <b>Formation is a transform on top, per scenario.</b> Open <b>Across formations</b> on any card to
         see that same situation against a back-three, a back-four and a back-five side by side (playstyle
-        and the strength matchup live in there too). <b>Save</b> writes the geometry to the shared
-        database, so it is the real scenario on every device; <b>Revert to built-in</b> deletes that saved
-        version again. Drag anything, then Save.
+        and the strength matchup live in there too). Formation, playstyle and matchup are OFF by default
+        and never touch a base card &mdash; base first.
+      </p>
+      <p style={{ margin: "0 0 16px", color: "#d8b4fe", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
+        <b>Two ways to keep a scenario. Save = live now, everywhere. Commit = permanently in the code.</b>{" "}
+        Save writes the shared database, so it is the real scenario on every device a second later (and{" "}
+        <b>Revert to built-in</b> deletes it again). <b>Commit to repo</b> writes the same geometry into{" "}
+        <code>lib/star/authoredScenarios.json</code> as a real git commit, so it survives anything that
+        happens to the database. Both need an admin sign-in.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
         {cells.map((c) => (
@@ -1407,7 +1631,8 @@ export default function StarGalleryDevPage() {
   const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
   const [migrationMissing, setMigrationMissing] = useState(false);
   const [loadNote, setLoadNote] = useState<string | null>(null);
-  const [busy, setBusy] = useState<Record<string, "saving" | "reverting" | undefined>>({});
+  const [busy, setBusy] = useState<Record<string, "saving" | "reverting" | "committing" | undefined>>({});
+  const [committed, setCommitted] = useState<Record<string, string | undefined>>({});
   const [flash, setFlash] = useState<Record<string, { ok: boolean; text: string } | undefined>>({});
 
   /** The shared pool holds the Scenario Builder's own hand-placed scenarios
@@ -1474,7 +1699,49 @@ export default function StarGalleryDevPage() {
     return true;
   };
 
-  const saveProps: SaveProps = { saved, saveCell, revertCell, busy, flash, migrationMissing };
+  /**
+   * THE SECOND PATH: into the code itself.
+   *
+   * Nothing here is optimistic. "Committed" is only ever said once the route
+   * has come back with `ok` — a missing GITHUB_TOKEN, a refused token, or two
+   * lost races in a row all land in the same red line as any other failure,
+   * quoting the server's own sentence, and the card keeps its unsaved-edits
+   * badge exactly where it was.
+   */
+  const commitCell = async (cell: Cell, frame: Frame): Promise<boolean> => {
+    setBusy((b) => ({ ...b, [cell.key]: "committing" }));
+    const scenario = frameToMatchScenario(cell, frame);
+    let res: Response;
+    try {
+      res = await fetch("/api/star/scenarios/commit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario }),
+      });
+    } catch {
+      setBusy((b) => ({ ...b, [cell.key]: undefined }));
+      flashFor(cell.key, false, "Not committed — couldn't reach the server. Your edits are still here.");
+      return false;
+    }
+    const body = await res.json().catch(() => ({})) as
+      { ok?: boolean; error?: string; message?: string; commitSha?: string };
+    setBusy((b) => ({ ...b, [cell.key]: undefined }));
+    if (!res.ok || body.ok !== true) {
+      flashFor(cell.key, false, `Not committed — ${body.error ?? `the server refused it (${res.status}).`}`);
+      return false;
+    }
+    setCommitted((c) => ({ ...c, [cell.key]: body.commitSha ?? "committed" }));
+    flashFor(
+      cell.key,
+      true,
+      body.message ?? "Committed — this scenario is part of the code now.",
+    );
+    return true;
+  };
+
+  const saveProps: SaveProps = {
+    saved, saveCell, revertCell, commitCell, committed, busy, flash, migrationMissing,
+  };
   const savedCount = Object.keys(saved).length;
 
   return (
@@ -1527,7 +1794,7 @@ export default function StarGalleryDevPage() {
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
         <button style={TAB_BTN(view === "eleven")} onClick={() => setView("eleven")}>
-          Real game (11-a-side)
+          11-a-side
         </button>
         <button style={TAB_BTN(view === "five")} onClick={() => setView("five")}>
           Five-a-side
