@@ -1,4 +1,5 @@
 import type { Scenario, ScenarioKind, Defender } from "./canvasEngine";
+import { goalInView } from "./canvasEngine";
 import { CX, PITCH_W, POST_L, POST_R } from "./pitch";
 import { formationForClub } from "./clubFormation";
 import type { Formation } from "./formations";
@@ -67,7 +68,24 @@ const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi 
  *  - penalty / free_kick: dead balls, fixed by the laws.
  *  - midfield_pass / buildup: no goal in the frame to defend.
  */
-const APPLY_KINDS = new Set<ScenarioKind>(["long_range", "tight_angle"]);
+/**
+ * Every situation where a real defence is on screen defending its own goal.
+ *
+ * Was long_range + tight_angle only — deliberately conservative while the layer
+ * was new. Two real in-game screenshots settled it: "the defending team is far
+ * too open and would never leave a gap like that in the box" and "they have 6
+ * defenders and non in formation". Both were BOX situations, i.e. the 11 kinds
+ * this set used to exclude, which still got the engine's old ad-hoc placement
+ * with no formation shaping at all.
+ *
+ * Still excluded, on purpose: penalty / free_kick / corner (dead balls with
+ * their own bespoke wall-and-box setups), and midfield_pass / buildup (no goal
+ * in frame, so there is no defensive block to shape).
+ */
+const APPLY_KINDS = new Set<ScenarioKind>([
+  "long_range", "tight_angle", "one_on_one", "cutback",
+  "volley", "header", "byline_cross", "through_ball",
+]);
 
 export interface DefensiveLine {
   /** How many men make the defensive back line when this side defends. */
@@ -295,6 +313,10 @@ export function applyFormationShape(sc: Scenario, input: ShapeInput | null | und
 
   positionKeeper(sc, input, t);
   enforce(sc, ballDist);
+  coverCentre(sc, ballDist);
+  // LAST, always: the line has just finished moving, so anyone it has left
+  // beyond it is offside. See enforceOnside.
+  enforceOnside(sc);
 }
 
 function positionKeeper(sc: Scenario, input: ShapeInput, t?: BlockTarget): void {
@@ -312,6 +334,50 @@ function positionKeeper(sc: Scenario, input: ShapeInput, t?: BlockTarget): void 
  * — the same thing the five-a-side layer does. Never behind the keeper, never on
  * top of the ball or the shooter, at least ~3 m apart, and inside the frame.
  */
+/**
+ * A defending side never leaves the middle of its own box empty.
+ *
+ * Reported from a real screenshot: "the defending team is far too open and
+ * would never leave a gap like that in the box." With the ball in or near the
+ * box, at least one defender has to be in the central channel in front of goal
+ * — no real side leaves the space in front of its own keeper unoccupied.
+ */
+function coverCentre(sc: Scenario, ballDist: number): void {
+  if (ballDist > 24 || sc.defenders.length === 0) return;
+  const CENTRE_HALF = 6.5;
+  if (sc.defenders.some(d => Math.abs(d.x - CX) <= CENTRE_HALF)) return;
+  // Nobody home: pull the nearest man into the channel rather than inventing a
+  // body (the engine owns how many defenders there are).
+  let best = sc.defenders[0];
+  for (const d of sc.defenders) {
+    if (Math.abs(d.x - CX) < Math.abs(best.x - CX)) best = d;
+  }
+  best.x = CX + (best.x >= CX ? 1 : -1) * CENTRE_HALF * 0.55;
+}
+
+/**
+ * Nobody attacking is left standing offside once the line has finished moving.
+ *
+ * Reported from a real screenshot: "my attackers are ALL offside." Attackers
+ * are placed by the scenario builder BEFORE this layer repositions the
+ * defensive line, so pushing a line up (a high press, or a stronger side) can
+ * leave every one of them beyond it — a chance that can never legally be
+ * played. Same rule the engine judges by: the second-last opponent, keeper
+ * included. Runs last, after every defender move above.
+ */
+function enforceOnside(sc: Scenario): void {
+  if (!goalInView(sc.kind) || sc.kind === "corner") return;
+  const ys = sc.defenders.map(d => d.y);
+  ys.push(sc.keeper.y);
+  if (ys.length < 2) return;
+  ys.sort((a, b) => a - b);
+  const line = ys[1];
+  const onside = (p: { y: number }) => { if (p.y < line + 0.3) p.y = line + 0.3; };
+  if (sc.runner) onside(sc.runner.pos);
+  for (const r of sc.secondaryRunners) onside(r.pos);
+  onside(sc.follower);
+}
+
 function enforce(sc: Scenario, ballDist: number): void {
   const vp = sc.viewport;
   const inset = 1.4;

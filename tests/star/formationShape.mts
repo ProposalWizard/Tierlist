@@ -69,7 +69,13 @@ const backLineSpan = (sc: Scenario, backN: number) => {
     check(JSON.stringify(sc) === before, `null input is a strict no-op (seed ${seed})`);
   }
   // A kind the layer doesn't touch → byte-identical even WITH a real input.
-  for (const kind of ["one_on_one", "corner", "through_ball", "penalty", "midfield_pass"] as const) {
+  // Only the genuinely-excluded kinds: dead balls with their own bespoke
+  // setups, and the two with no goal in frame. one_on_one / through_ball used
+  // to be listed here, back when the layer covered just long_range +
+  // tight_angle — two real in-game screenshots ("6 defenders and non in
+  // formation", "far too open... in the box") proved that scope wrong, so the
+  // box kinds are now SHAPED and are asserted separately below.
+  for (const kind of ["corner", "penalty", "free_kick", "midfield_pass", "buildup"] as const) {
     const sc = buildScenario(kind, mulberry32(50), 62, 60, 55);
     const before = JSON.stringify(sc);
     applyFormationShape(sc, input("442", "mid-block", 65, 65));
@@ -196,6 +202,45 @@ const backLineSpan = (sc: Scenario, backN: number) => {
   const order = ["very deep", "deep", "medium", "high", "very high"];
   check(order.indexOf(asFav.lineHeight) <= order.indexOf(asDog.lineHeight),
     `${club} sits no higher when you're favourite than when they are (fav ${asFav.lineHeight} vs dog ${asDog.lineHeight})`);
+}
+
+// ── The two invariants the owner's in-game screenshots demanded ─────────────
+// "my attackers are ALL offside" and "the defending team is far too open and
+// would never leave a gap like that in the box". Both measured across every
+// shaped kind × several formations × several playstyles, worst-case matchup.
+{
+  const SHAPED = ["long_range", "tight_angle", "one_on_one", "cutback",
+    "volley", "header", "byline_cross", "through_ball"] as const;
+  let offside = 0, judged = 0, emptyChannel = 0, boxScenes = 0;
+  for (const kind of SHAPED) {
+    for (const f of ["433", "532", "352", "4231"]) {
+      for (const s of ["high-press", "low-block", "mid-block"] as const) {
+        for (let i = 0; i < 20; i++) {
+          const sc = buildScenario(kind, mulberry32(7700 + i), 62, 60, 55);
+          applyFormationShape(sc, input(f, s, 90, 55)); // biggest gap = worst case
+          const ys = sc.defenders.map(d => d.y);
+          ys.push(sc.keeper.y);
+          if (ys.length < 2) continue;
+          ys.sort((a, b) => a - b);
+          const line = ys[1];
+          judged++;
+          const atts: { y: number }[] = [];
+          if (sc.runner) atts.push(sc.runner.pos);
+          for (const r of sc.secondaryRunners) atts.push(r.pos);
+          atts.push(sc.follower);
+          if (atts.some(a => a.y < line - 0.01)) offside++;
+          if (sc.ball.y <= 24) {
+            boxScenes++;
+            if (!sc.defenders.some(d => Math.abs(d.x - 34) <= 6.5)) emptyChannel++;
+          }
+        }
+      }
+    }
+  }
+  check(offside === 0, `no attacker is ever left offside by the layer (${offside}/${judged})`);
+  check(emptyChannel === 0,
+    `a box defence never leaves the central channel empty (${emptyChannel}/${boxScenes})`);
+  note.push(`invariants: offside ${offside}/${judged}, empty central channel ${emptyChannel}/${boxScenes}`);
 }
 
 console.log(note.map(n => "  · " + n).join("\n"));
