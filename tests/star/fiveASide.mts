@@ -9,10 +9,11 @@ import {
 } from "../../lib/star/canvasEngine";
 import {
   buildPassage, worldFromScenario, kickOffWorld, kindForBall, passLeadsToShot,
-  buildTheirAttack, aimTheirShot, worldFromTheirAttack, type FiveWorld,
+  buildTheirAttack, aimTheirShot, worldFromTheirAttack,
+  buildMateAttack, worldFromMateAttack, type FiveWorld,
 } from "../../lib/star/fiveASide/passage";
 import {
-  newFiveMatch, applyOutcome, applyTheirAttack, advanceFlow, resumeAction,
+  newFiveMatch, applyOutcome, applyTheirAttack, applyMateAttack, advanceFlow, resumeAction,
   type FiveMatchState,
 } from "../../lib/star/fiveASide/match";
 import { passageQuality, fiveASideScore } from "../../lib/star/fiveASide/score";
@@ -799,6 +800,22 @@ function randomWorld(rng: () => number): FiveWorld {
         const ball = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng);
         const o = run(sc, ball, true);
         m = applyTheirAttack(m, o, worldFromTheirAttack(sc, ball.pos, from));
+        ballYs.push(m.world.ball.y);
+        continue;
+      }
+      if (act === "mate") {
+        // A team-mate's chance, played out and watched — your side attacking
+        // their goal, native (not mirrored). A goal here is yours (score[0]).
+        const from = m.world;
+        const sc = buildMateAttack(from, { keeperStrength: 40 + DIFF * 45, teamRelationship: 55, rng });
+        sc.goal = { ...FIVE_A_SIDE.goal };
+        sc.crossbar = FIVE_A_SIDE.crossbar;
+        sc.viewport = { ...FIVE_A_SIDE.view };
+        initDefenders(sc, rng);
+        const shot = aimTheirShot(sc, DIFF, rng);
+        const ball = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng);
+        const o = run(sc, ball, false);
+        m = applyMateAttack(m, o, worldFromMateAttack(sc, ball.pos, from));
         ballYs.push(m.world.ball.y);
         continue;
       }

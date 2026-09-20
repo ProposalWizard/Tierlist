@@ -156,7 +156,7 @@ const COVER_FRAC = 0.45;
 const LAST_FRAC = 0.45;
 
 /** ...and never nearer his own goal than this, nor further out than this. */
-const LAST_MIN = 2.2;
+const LAST_MIN = 3.4;
 const LAST_MAX = 6.0;
 
 /** The nearest anybody but the presser is allowed to the ball. Above the
@@ -169,7 +169,7 @@ const MIN_SEP = 3.0;
 
 /** How near his own goal line the deepest man may get. Any closer and he is
  *  standing on his keeper. */
-const MIN_GOAL_GAP = 2.2;
+const MIN_GOAL_GAP = 2.6;
 
 const dist = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -366,7 +366,14 @@ export function defensiveShape(
         x: slots[i].x,
         // Never behind his own goal line, and never on his keeper.
         y: Math.max(y1 + MIN_GOAL_GAP, Math.min(y1 + L * 0.96, slots[i].y)),
-      }, 0.6), ball, rules, (i * Math.PI) / 2);
+        // ── …and clearing the ball must not undo the goal-gap floor ──
+        //
+        // Without the `minY` below, a deep central ball sitting on a defender's
+        // slot let `clearOfBall` sweep him to the nearest legal spot — which,
+        // straight toward his own goal, put him back on the line. That was the
+        // "one defender on the line" of the playtest, surviving the floor
+        // above. Passing the floor into the sweep keeps him off it.
+      }, 0.6), ball, rules, (i * Math.PI) / 2, y1 + MIN_GOAL_GAP);
     }
   }
 
@@ -378,9 +385,11 @@ export function defensiveShape(
  *  almost always. Exported because the same guarantee has to survive a man
  *  being MOVED toward one of these slots as well as the slot being built —
  *  see `reactToBall` (flow.ts). */
-export function clearOfBall(p: Vec2, ball: Vec2, rules: MatchRules, bias = Math.PI / 2): Vec2 {
+export function clearOfBall(
+  p: Vec2, ball: Vec2, rules: MatchRules, bias = Math.PI / 2, minY?: number,
+): Vec2 {
   const d = dist(p, ball);
-  if (d >= MIN_BALL_GAP) return p;
+  if (d >= MIN_BALL_GAP && (minY === undefined || p.y >= minY)) return p;
   // His own bearing from the ball, so he ends up at the smallest possible turn
   // from where he really was. A man standing EXACTLY on it has no bearing to
   // keep, and two of them would otherwise be swept to the same arc point —
@@ -389,6 +398,19 @@ export function clearOfBall(p: Vec2, ball: Vec2, rules: MatchRules, bias = Math.
   const { x1, x2, y1, y2 } = rules.pitch;
   const on = (q: Vec2) => q.x >= x1 && q.x <= x2 && q.y >= y1 && q.y <= y2;
   const STEPS = 24;
+  // First pass: a spot that clears the ball AND stays off the goal line
+  // (`minY`). A deep central ball would otherwise let the nearest legal spot be
+  // straight toward goal — on the line — which is the bug this guards.
+  if (minY !== undefined) {
+    for (let i = 0; i <= STEPS; i++) {
+      const off = Math.ceil(i / 2) * ((Math.PI * 2) / STEPS) * (i % 2 === 0 ? 1 : -1);
+      const cand = {
+        x: ball.x + Math.cos(own + off) * MIN_BALL_GAP,
+        y: ball.y + Math.sin(own + off) * MIN_BALL_GAP,
+      };
+      if (on(cand) && cand.y >= minY) return cand;
+    }
+  }
   for (let i = 0; i <= STEPS; i++) {
     const off = Math.ceil(i / 2) * ((Math.PI * 2) / STEPS) * (i % 2 === 0 ? 1 : -1);
     const cand = {

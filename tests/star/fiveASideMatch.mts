@@ -1,5 +1,5 @@
 import {
-  newFiveMatch, applyOutcome, applyTheirAttack, advanceFlow, isFullTime, resultOf,
+  newFiveMatch, applyOutcome, applyTheirAttack, applyMateAttack, advanceFlow, isFullTime, resultOf,
   zoneOf, halfAt, resumeAction, isGoalOutcome, flowOf, awaitingOf,
   MINUTES_PER_PASSAGE, MINUTES_PER_OPP_ATTACK, type FiveMatchState,
 } from "../../lib/star/fiveASide/match";
@@ -121,6 +121,11 @@ function drive(
     if (act === "opp") {
       chances++;
       s = applyTheirAttack(s, theirs(rng), s.world);
+      continue;
+    }
+    if (act === "mate") {
+      // A team-mate's watched chance advances the match like an opponent's does.
+      s = applyMateAttack(s, theirs(rng), s.world);
       continue;
     }
     touches++;
@@ -567,6 +572,7 @@ function drive(
     const act = resumeAction(loop);
     if (act === "flow") loop = advanceFlow(loop, { difficulty: 0.5, playerSkill: 65 }).state;
     else if (act === "opp") loop = applyTheirAttack(loop, "saved", loop.world);
+    else if (act === "mate") loop = applyMateAttack(loop, "saved", loop.world);
     else loop = applyOutcome(loop, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34);
   }
   check(loop.over, "closing and re-opening forever is still a whole match, not a free loop");
