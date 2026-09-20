@@ -1,4 +1,4 @@
-import type { ScenarioKind } from "@/lib/star/canvasEngine";
+import { pickScenarioKindFrom, type ScenarioKind } from "@/lib/star/canvasEngine";
 
 /**
  * HIDDEN MATCH SIMULATION
@@ -48,7 +48,26 @@ export interface HiddenMatchState {
   oppScore: number;
   /** Minutes since the player last had a scenario — stops long dead spells. */
   sinceInvolved: number;
+  /**
+   * Which channel the ball is being worked down — the lateral half of "where
+   * is the ball", which this simulation never had. A random walk per tick
+   * (stay 0.6, step either way 0.2), reset to the middle when play restarts
+   * from the centre. It is why a byline cross stops being a 1% accident: a
+   * wide lane in the final third IS that chance, rather than a kind drawn at
+   * random from a zone's list. Optional on an old in-flight state; absent
+   * reads as "centre".
+   */
+  lane?: Lane;
+  /** Ticks since possession last flipped to you — feeds the transition read. */
+  sinceTurnover?: number;
+  /** The zone when possession last flipped to you. */
+  turnoverZone?: Zone;
 }
+
+/** The channel the ball is in. See HiddenMatchState.lane. */
+export type Lane = "left" | "centre" | "right";
+/** How this chance came about. See buildRequest. */
+export type ChancePattern = "settled" | "transition" | "set_piece";
 
 export interface HiddenMatchInputs {
   /** 0-100. Your team versus theirs decides who tends to control play. */
@@ -58,6 +77,13 @@ export interface HiddenMatchInputs {
   playerSkill: number;
   /** 0-100. A quicker player is handed the ball to run at them more often. */
   pace?: number;
+  /**
+   * The position you are playing, e.g. "ST"/"CM" — the same string
+   * `pickScenarioKindFrom` weights by. Used ONLY to stop set pieces
+   * bypassing position weighting (see buildRequest's dead-ball block).
+   * Optional: absent, every set-piece rate is exactly what it always was.
+   */
+  position?: string;
   /**
    * 0-100, the live in-match energy value (see CanvasMatch's liveEnergyRef).
    * Effort buys involvement, not better football — a tired player gets
@@ -119,6 +145,10 @@ export interface ScenarioRequest {
    * union would mean every one of them had to pretend it could.
    */
   dribble?: boolean;
+  /** Which channel the ball was worked down. Absent reads as "centre". */
+  lane?: Lane;
+  /** How the chance came about. Absent reads as "settled". */
+  pattern?: ChancePattern;
 }
 
 /**
@@ -263,7 +293,20 @@ export function newMatch(rng: () => number = Math.random): HiddenMatchState {
     // routinely twenty minutes old — and sometimes two goals down — before you
     // had touched the ball once.
     sinceInvolved: 14,
+    lane: "centre",
+    sinceTurnover: 99,
+    turnoverZone: "middle",
   };
+}
+
+/** The lane's random walk: mostly holds, sometimes shifts a channel. */
+export function stepLane(lane: Lane, rng: () => number): Lane {
+  const r = rng();
+  if (r < 0.6) return lane;
+  const order: Lane[] = ["left", "centre", "right"];
+  const i = order.indexOf(lane);
+  const to = r < 0.8 ? i - 1 : i + 1;
+  return order[Math.max(0, Math.min(2, to))];
 }
 
 /**
@@ -273,12 +316,21 @@ export function newMatch(rng: () => number = Math.random): HiddenMatchState {
  * from your own half, and a midfield pass in the six-yard box would be absurd —
  * so the zone the move reached decides what you are asked to solve.
  */
-export function kindsForZone(zone: Zone): ScenarioKind[] {
+export function kindsForZone(zone: Zone, lane: Lane = "centre"): ScenarioKind[] {
+  const wide = lane !== "centre";
   switch (zone) {
     case "box":
-      return ["one_on_one", "tight_angle", "volley", "header", "cutback"];
+      // A wide lane in the box is a byline, a cutback and a tight angle; the
+      // middle of it is a one-on-one and a finish. Splitting these was the
+      // fix for byline_cross being a 1% accident despite being one of the
+      // most common real chances a wide player gets.
+      return wide
+        ? ["cutback", "byline_cross", "tight_angle", "header", "volley"]
+        : ["one_on_one", "volley", "header", "tight_angle"];
     case "attacking":
-      return ["cutback", "byline_cross", "through_ball", "long_range", "tight_angle"];
+      return wide
+        ? ["byline_cross", "cutback", "through_ball", "long_range"]
+        : ["through_ball", "long_range", "one_on_one", "cutback"];
     case "middle":
       return ["through_ball", "midfield_pass", "buildup", "long_range"];
     case "defensive":
@@ -309,6 +361,10 @@ export function tick(
   const events: HiddenMatchEvent[] = [];
   state.minute += 1;
   state.sinceInvolved += 1;
+  // The lane walks every tick; the transition read needs to know how long ago
+  // the ball changed hands and how far it has travelled since.
+  state.lane = stepLane(state.lane ?? "centre", rng);
+  state.sinceTurnover = (state.sinceTurnover ?? 99) + 1;
 
   // Relative quality, -1..1. Drives who tends to hold the ball and move it
   // forward WITHOUT deciding anything outright — upsets stay possible.
@@ -331,6 +387,7 @@ export function tick(
     const next: Side = userWins ? "user" : "opponent";
     if (next !== state.possession) {
       state.possession = next;
+      if (next === "user") { state.sinceTurnover = 0; state.turnoverZone = state.zone; }
       // Half of turnovers are a clearance or a counter, which moves the ball;
       // the rest are won on the spot and leave it where it was.
       if (rng() < 0.5) state.zone = shift(state.zone, next === "user" ? 1 : -1);
@@ -391,8 +448,16 @@ export function tick(
         const involvement = inputs.impactSub ? Math.min(0.92, baseInvolvement * 1.5) : baseInvolvement;
 
         if (rng() < involvement) {
-          state.sinceInvolved = 0;
-          return { events, request: buildRequest(state, rng, inputs) };
+          const req = buildRequest(state, rng, inputs);
+          if (req) {
+            state.sinceInvolved = 0;
+            return { events, request: req };
+          }
+          // A set piece you don't take. buildRequest returned nothing, so it
+          // falls to a team-mate exactly like any other chance that isn't
+          // yours — see the participation gate. Deliberately NOT re-rolled
+          // into a different kind of chance for you: a corner is a corner
+          // whether or not you're the one on it.
         }
 
         // It fell to someone else. Reported either way, so the match reads as a
@@ -497,20 +562,78 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   // Corners are also no longer allowed to arrive from your own defensive third,
   // which the old unzoned `dead < 0.18` permitted: the ball was in your own box
   // and the game gave you a corner to attack.
+  //
+  // ── …and why the three of them used to swamp the highlight mix ──
+  //
+  // Each branch returned a SINGLE-kind request, which `pickScenarioKindFrom`
+  // can only ever resolve one way — so a set piece was the one chance in the
+  // game that bypassed position weighting entirely. Measured over 400
+  // simulated matches for a striker, corners were 15.2% of every highlight he
+  // saw: the single most common thing in the game, for a man whose own corner
+  // weight is 2 against a box's 69.
+  //
+  // THE PARTICIPATION GATE (spec §4.1). Winning a corner is not the same
+  // question as being the one who takes it. The rate at which a dead ball is
+  // WON drops only slightly (corner 0.24 → 0.16); on top of it, whether it
+  // becomes YOUR chance is a separate roll against the position's own duty
+  // share. A failed gate does NOT fall through to a different kind of chance:
+  // the corner still happens, it is just taken by somebody else, and resolves
+  // through tick()'s ordinary team-mate path.
+  //
+  // SET_PIECE_DUTY mirrors POSITION_WEIGHTS' penalty/free_kick/corner columns
+  // (canvasEngine.ts). It is duplicated rather than imported because that
+  // table is not exported and canvasEngine.ts is not to be modified; if one
+  // ever changes, change both.
+  const SET_PIECE_DUTY: Record<string, { penalty: number; free_kick: number; corner: number }> = {
+    ST: { penalty: 5, free_kick: 3, corner: 2 }, CAM: { penalty: 3, free_kick: 5, corner: 2 },
+    LW: { penalty: 2, free_kick: 3, corner: 6 }, RW: { penalty: 2, free_kick: 3, corner: 6 },
+    CM: { penalty: 2, free_kick: 6, corner: 4 }, LM: { penalty: 2, free_kick: 4, corner: 6 },
+    RM: { penalty: 2, free_kick: 4, corner: 6 }, CDM: { penalty: 2, free_kick: 6, corner: 3 },
+    CB: { penalty: 1, free_kick: 3, corner: 8 }, LB: { penalty: 1, free_kick: 3, corner: 8 },
+    RB: { penalty: 1, free_kick: 3, corner: 8 }, GK: { penalty: 0, free_kick: 0, corner: 1 },
+  };
+  const DEFAULT_DUTY = { penalty: 3, free_kick: 5, corner: 6 };
+  const takesIt = (kind: "penalty" | "free_kick" | "corner"): boolean => {
+    if (!inputs.position) return true;   // an old caller is byte-identical
+    const w = (SET_PIECE_DUTY[inputs.position] ?? DEFAULT_DUTY)[kind];
+    return rng() < Math.max(0.15, Math.min(0.9, w / 8));
+  };
+  const lane = state.lane ?? "centre";
+  // A penalty keeps its own rate and its own gate (the duty is the taker's).
   if (state.zone === "box" && rng() < 0.085) {
-    return { zone: state.zone, kinds: ["penalty"], reason: "You are brought down in the box — penalty" };
+    return takesIt("penalty")
+      ? { zone: state.zone, kinds: ["penalty"], lane: "centre", pattern: "set_piece", reason: "You are brought down in the box — penalty" }
+      : null;
   }
   if (state.zone === "attacking" && rng() < 0.215) {
-    return { zone: state.zone, kinds: ["free_kick"], reason: "Fouled on the edge of the area" };
+    return takesIt("free_kick")
+      ? { zone: state.zone, kinds: ["free_kick"], lane, pattern: "set_piece", reason: "Fouled on the edge of the area" }
+      : null;
   }
-  if ((state.zone === "attacking" || state.zone === "box") && rng() < 0.24) {
-    return { zone: state.zone, kinds: ["corner"], reason: "The cross is turned behind — corner" };
+  if ((state.zone === "attacking" || state.zone === "box") && rng() < 0.16) {
+    return takesIt("corner")
+      ? { zone: state.zone, kinds: ["corner"], lane, pattern: "set_piece", reason: "The cross is turned behind — corner" }
+      : null;
   }
+
+  // ── Settled, or a break? ──
+  //
+  // A transition is the ball having just changed hands and the move having
+  // genuinely travelled since — never a roll inside the formula (spec H11).
+  // Capped so it stays the ~10% of shots Opta measures rather than becoming
+  // the default state of the match.
+  const advanced = ZONE_ORDER.indexOf(state.zone) - ZONE_ORDER.indexOf(state.turnoverZone ?? state.zone);
+  const pattern: ChancePattern =
+    (state.sinceTurnover ?? 99) <= 2 && advanced >= 1 && rng() < 0.55 ? "transition" : "settled";
 
   return {
     zone: state.zone,
-    kinds: kindsForZone(state.zone),
-    reason: state.momentum > 0.35
+    kinds: kindsForZone(state.zone, lane),
+    lane,
+    pattern,
+    reason: pattern === "transition"
+      ? "They lose it — you break on them"
+      : state.momentum > 0.35
       ? "Sustained pressure — you find space"
       : state.zone === "box"
         ? "The ball breaks to you in the area"

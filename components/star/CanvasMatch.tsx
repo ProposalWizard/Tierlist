@@ -16,6 +16,8 @@ import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
+import { applyChanceShape } from "@/lib/star/chanceFormula";
+import { selectChance, newSelectionMemory } from "@/lib/star/scenarioSelect";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
@@ -701,6 +703,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // The situation the simulation has just produced, consumed by the next
   // loadScenario() so the scenario matches the football that led to it.
   const pendingRequestRef = useRef<ScenarioRequest | null>(null);
+  /** The last few situations you were shown — the chance formula's anti-repeat. */
+  const chanceMemoryRef = useRef(newSelectionMemory());
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -742,6 +746,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
+      // So a corner/free kick/penalty is weighted by the position you play
+      // like every other chance is, instead of bypassing it — see
+      // buildRequest's dead-ball block in hiddenMatch.ts.
+      position: positionRef.current,
       energy: liveEnergyAt(matchMinuteRef.current),
       impactSub: startMinuteRef.current > 0,
     };
@@ -3720,8 +3728,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else if (attacking) {
       scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current, visionRef.current);
     } else if (request) {
-      const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
-      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+      // ── The chance formula (lib/star/chanceFormula.ts) ──
+      //
+      // Pick one of the generated situations for this request: the same
+      // position weighting decides the KIND, and the formula decides which of
+      // its many real variants of that kind you actually get, with a short
+      // anti-repeat memory so the same situation is never served twice
+      // running. Additive and fully reversible: `selectChance` returns null
+      // for anything the formula has no variant of (a dead ball, a build-up,
+      // a dribble), and that falls straight through to exactly today's
+      // behaviour.
+      const spec = selectChance({
+        request, position: positionRef.current, rng, memory: chanceMemoryRef.current,
+      });
+      if (spec) {
+        scenarioRef.current = buildScenario(spec.kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+        applyChanceShape(scenarioRef.current, spec, rng);
+      } else {
+        const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
+        scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+      }
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current, visionRef.current);
     }
