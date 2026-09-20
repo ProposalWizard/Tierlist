@@ -1,0 +1,4 @@
+{
+  "_readme": "AUTHORED SCENARIOS — scenario geometry that lives IN THE CODE. Written by the Scenario Gallery's 'Commit to repo' button (app/api/star/scenarios/commit/route.ts), which edits this exact file through the GitHub Contents API and commits it. Everything under 'scenarios' is a MatchScenario (lib/star/scenarios.ts) in real pitch metres, keyed by its own id. Read it through lib/star/authoredScenarios.ts, never by importing this file directly. Safe to hand-edit; the commit route merges rather than replaces, so a hand-edited entry is only ever overwritten by a commit of that same id.",
+  "scenarios": {}
+}
