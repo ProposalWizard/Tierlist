@@ -75,11 +75,18 @@ import {
 } from "@/lib/star/fiveASide/geometry";
 import { castDefence, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { FORMATIONS, formationOf, type Formation } from "@/lib/star/formations";
-import { applyFormationShape } from "@/lib/star/formationShape";
+import { applyFormationShape, defensiveLineOf } from "@/lib/star/formationShape";
 import { PLAYSTYLES, type Playstyle } from "@/lib/star/playstyle";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import ScenarioEditor from "@/components/star/ScenarioEditor";
+import type { MatchScenario, ScenarioSide, ScenarioMomentKind } from "@/lib/star/scenarios";
+import {
+  listScenarios,
+  fetchSharedScenarios,
+  saveScenarioShared,
+  deleteScenarioShared,
+} from "@/lib/star/scenarioStore";
 
 // ── Kit looks. Not real club kits — just enough colour to tell the three
 //    groups apart on a diagram: your side blue, theirs red, a keeper green. ──
@@ -96,6 +103,10 @@ interface Item {
   at: Vec2;
   look: FigureLook;
   keeper?: boolean;
+  /** Which side he is on. Carried so a frame can be written out as a real
+   *  `MatchScenario` (lib/star/scenarios.ts) — its players are sided, and the
+   *  kit colour alone is not something to reverse-engineer a side from. */
+  side: ScenarioSide;
 }
 
 interface Frame {
@@ -134,34 +145,36 @@ function frameFromScenario(sc: Scenario): Frame {
 
   // Their back line + keeper.
   sc.defenders.forEach((d, i) => {
-    items.push({ at: { x: d.x, y: d.y }, look: { ...OPP, label: idLabel(d.who, `D${i + 1}`) } });
+    items.push({ at: { x: d.x, y: d.y }, look: { ...OPP, label: idLabel(d.who, `D${i + 1}`) }, side: "opponent" });
   });
   items.push({
     at: { x: sc.keeper.x, y: sc.keeper.y },
     look: { ...KEEP, label: idLabel(sc.keeper.who, "GK") },
     keeper: true,
+    side: "opponent",
   });
 
   // Your options: the target runner, support runners, the poacher.
   if (sc.runner) {
-    items.push({ at: { ...sc.runner.pos }, look: { ...MATE, label: idLabel(sc.runner.who, "TARGET") } });
+    items.push({ at: { ...sc.runner.pos }, look: { ...MATE, label: idLabel(sc.runner.who, "TARGET") }, side: "teammate" });
   }
   sc.secondaryRunners.forEach((r, i) => {
     items.push({
       at: { ...r.pos },
       look: { ...MATE, label: idLabel(r.who, r.role === "support" ? "SUP" : `R${i + 1}`) },
+      side: "teammate",
     });
   });
   if (goalInView(sc.kind)) {
-    items.push({ at: { x: sc.follower.x, y: sc.follower.y }, look: { ...MATE, label: idLabel(sc.follower.who, "POACH") } });
+    items.push({ at: { x: sc.follower.x, y: sc.follower.y }, look: { ...MATE, label: idLabel(sc.follower.who, "POACH") }, side: "teammate" });
   }
   // Decorative team-mates (crossers etc.).
   sc.teammates.forEach((t, i) => {
-    items.push({ at: { x: t.x, y: t.y }, look: { ...MATE, label: idLabel(t.who, `T${i + 1}`) } });
+    items.push({ at: { x: t.x, y: t.y }, look: { ...MATE, label: idLabel(t.who, `T${i + 1}`) }, side: "teammate" });
   });
 
   // You, with a star so you are always findable.
-  items.push({ at: { ...sc.player }, look: { ...YOU, label: "YOU", star: true } });
+  items.push({ at: { ...sc.player }, look: { ...YOU, label: "YOU", star: true }, side: "you" });
 
   // The defenders were pushed first (indices 0..nDef-1), the keeper straight
   // after them — so the offside line can be re-derived from those items alone.
@@ -366,31 +379,161 @@ function oppXIFromFormationId(id: string): OpponentSheetPlayer[] {
  *  playstyle × strength gap). applyFormationShape self-gates to the kinds it
  *  owns (long_range, tight_angle), so calling it on every cell moves the
  *  defenders only where the layer is meant to act and no-ops the rest. */
-function mainCells(
-  formationId: string,
-  playstyleId: Playstyle,
-  attackerStrength: number,
-  defenderStrength: number,
-): Cell[] {
-  const opp = oppXIFromFormationId(formationId);
-  const formation = formationOf(formationId);
-  const playstyle = PLAYSTYLES[playstyleId];
+/**
+ * A BASE SCENARIO: the canonical situation itself, straight from the real
+ * builder at a fixed seed, with NO formation layer on top.
+ *
+ * Reported directly — "the formation stuff is too complicated rn on the
+ * gallery, we need BASE scenarios to then change across formations" — and
+ * this is what that means structurally. The thing you look at, edit and save
+ * is the situation; a formation is a TRANSFORM applied to it, shown per
+ * scenario in its own comparison strip (`FormationStrip`), never a dropdown
+ * sitting over the whole gallery.
+ */
+function baseCells(): Cell[] {
   return SCENARIO_KINDS.map((kind, i) => {
     const seed = 1000 + i;
-    const sc = buildScenario(kind, mulberry32(seed));
-    castDefence(sc, opp);
-    applyFormationShape(sc, { formation, playstyle, attackerStrength, defenderStrength });
-    const moved = kind === "long_range" || kind === "tight_angle";
     return {
       key: `main-${kind}`,
-      title: moved ? `${kind}  ▸ layer active` : kind,
-      subtitle: `seed ${seed} · vs ${formationId} · ${playstyle.name}${moved ? " · reshaped" : ""}`,
-      frame: frameFromScenario(sc),
+      title: kind,
+      subtitle: `base \u00b7 seed ${seed}`,
+      frame: frameFromScenario(buildScenario(kind, mulberry32(seed))),
       kind,
       seed,
       game: "eleven" as const,
     };
   });
+}
+
+/** The three defensive shapes worth comparing a base scenario across: a
+ *  back-three system (which defends as a five), a back four, and a genuine
+ *  back five. Picked so the strip always shows the real spread rather than
+ *  three formations that happen to defend identically. */
+const COMPARE_FORMATIONS = ["352", "433", "523"];
+
+/**
+ * The scenario kinds `applyFormationShape` actually owns, mirrored here so
+ * the comparison strip can SAY when it is showing you three identical
+ * shapes rather than letting that read as a broken transform.
+ *
+ * Deliberately a local copy rather than an import: `APPLY_KINDS` is private
+ * to formationShape.ts, that file is another lane's, and a dev tool reaching
+ * into it would make a private detail public for a label. If the two ever
+ * drift the only cost is this caption, never a wrong render — the strip
+ * always calls the real `applyFormationShape`, whatever this says.
+ */
+const APPLY_SHAPE_KINDS = new Set<string>([
+  "long_range", "tight_angle", "one_on_one", "cutback",
+  "volley", "header", "byline_cross", "through_ball",
+]);
+
+/**
+ * Push a frame's edited positions BACK onto a real `Scenario`, in the exact
+ * order `frameFromScenario` pushed them out.
+ *
+ * This is what makes the across-formations strip honest: the positional
+ * layer (`applyFormationShape`) reads the scenario's own defenders and
+ * keeper, so a comparison built from the UNEDITED builder output would be
+ * showing the formation transform applied to a scenario you no longer have.
+ * The two orderings are kept in step by construction — both walk defenders,
+ * keeper, runner, secondary runners, follower, teammates, you.
+ */
+function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefined): void {
+  if (!hasEdits(ov)) return;
+  const at = (i: number) => ov!.items[i];
+  let i = 0;
+  for (const d of sc.defenders) { const p = at(i++); if (p) { d.x = p.x; d.y = p.y; } }
+  { const p = at(i++); if (p) { sc.keeper.x = p.x; sc.keeper.y = p.y; } }
+  if (sc.runner) { const p = at(i++); if (p) { sc.runner.pos.x = p.x; sc.runner.pos.y = p.y; } }
+  for (const r of sc.secondaryRunners) { const p = at(i++); if (p) { r.pos.x = p.x; r.pos.y = p.y; } }
+  if (goalInView(sc.kind)) { const p = at(i++); if (p) { sc.follower.x = p.x; sc.follower.y = p.y; } }
+  for (const t of sc.teammates) { const p = at(i++); if (p) { t.x = p.x; t.y = p.y; } }
+  { const p = at(i++); if (p) { sc.player.x = p.x; sc.player.y = p.y; } }
+  if (ov!.ball) { sc.ball.x = ov!.ball.x; sc.ball.y = ov!.ball.y; }
+}
+
+/** The SAME base scenario (edits and all), re-cast and reshaped against one
+ *  opponent formation. `applyFormationShape` self-gates to the eight kinds
+ *  it owns, so a kind it does not shape comes back as the base with real
+ *  identities cast onto it — which is itself the honest answer. */
+function shapedFrame(
+  cell: Cell,
+  override: PosOverride | undefined,
+  formationId: string,
+  playstyleId: Playstyle,
+  attackerStrength: number,
+  defenderStrength: number,
+): Frame {
+  const sc = buildScenario(cell.kind as (typeof SCENARIO_KINDS)[number], mulberry32(cell.seed ?? 0));
+  applyOverrideToScenario(sc, override);
+  castDefence(sc, oppXIFromFormationId(formationId));
+  applyFormationShape(sc, {
+    formation: formationOf(formationId),
+    playstyle: PLAYSTYLES[playstyleId],
+    attackerStrength,
+    defenderStrength,
+  });
+  return frameFromScenario(sc);
+}
+
+// ───────────────────────────────────────────────────────
+//  SAVING A BASE SCENARIO — into the SAME pool the Scenario Builder writes
+// ───────────────────────────────────────────────────────
+
+/** One shared pool, not two. A base scenario saved here is a real
+ *  `MatchScenario` in `star_scenarios`, the same table and the same shape
+ *  Mikey's builder writes — both tools use the same real pitch metres, so
+ *  there is nothing to translate. `source` (scenarios.ts) carries the chance
+ *  kind and seed, which `MatchScenario.kind` deliberately cannot. */
+const gallerySlug = (cellKey: string) => `gallery-${cellKey}`;
+
+/** MatchScenario.kind names dead-ball/kickoff MOMENTS — a different list
+ *  from the engine's chance kinds on purpose. Only three of them line up;
+ *  everything else is genuinely open play, and `source.kind` keeps the real
+ *  answer either way. */
+function momentKindFor(chanceKind: string): ScenarioMomentKind {
+  if (chanceKind === "corner") return "corner";
+  if (chanceKind === "free_kick" || chanceKind === "penalty") return "free_kick";
+  return "open_play";
+}
+
+function frameToMatchScenario(cell: Cell, frame: Frame): MatchScenario {
+  const vp = frame.camera;
+  return {
+    id: gallerySlug(cell.key),
+    name: cell.title,
+    kind: momentKindFor(cell.kind),
+    camera: {
+      centerX: round2((vp.x1 + vp.x2) / 2),
+      centerY: round2((vp.y1 + vp.y2) / 2),
+      viewHeight: round2(vp.y2 - vp.y1),
+      // The gallery always draws un-rotated; the game rotates the camera for
+      // a crossing situation, the shared primitives here do not.
+      facing: "up",
+    },
+    ball: roundVec(frame.ball),
+    players: frame.items.map((it, i) => ({
+      id: `i${i}`,
+      side: it.side,
+      x: round2(it.at.x),
+      y: round2(it.at.y),
+      label: it.look.label,
+    })),
+    updatedAt: Date.now(),
+    source: { tool: "gallery", kind: cell.kind, seed: cell.seed },
+  };
+}
+
+/** The saved positions, back as the gallery's own index-keyed override — so
+ *  a saved scenario is applied through the exact same path a live drag is,
+ *  never a second way of placing the same figures. */
+function overrideFromMatchScenario(ms: MatchScenario): PosOverride {
+  const items: Record<number, Vec2> = {};
+  ms.players.forEach((p, i) => {
+    const idx = p.id.startsWith("i") ? Number(p.id.slice(1)) : i;
+    items[Number.isFinite(idx) ? idx : i] = { x: p.x, y: p.y };
+  });
+  return { items, ball: { x: ms.ball.x, y: ms.ball.y } };
 }
 
 // ── Five-a-side ──
@@ -432,10 +575,10 @@ function fiveDefensiveFrame(): Frame {
   const shape = defensiveShape(FIVE_A_SIDE, ball, attackers);
   const items: Item[] = [];
   attackers.forEach((a, i) => {
-    items.push({ at: { ...a }, look: { ...MATE, label: i === 0 ? "BALL-CARRIER" : `A${i}`, star: i === 0 } });
+    items.push({ at: { ...a }, look: { ...MATE, label: i === 0 ? "BALL-CARRIER" : `A${i}`, star: i === 0 }, side: i === 0 ? "you" : "teammate" });
   });
   shape.slots.forEach((s, i) => {
-    items.push({ at: { ...s }, look: { ...OPP, label: DEFEND_ROLES[i] } });
+    items.push({ at: { ...s }, look: { ...OPP, label: DEFEND_ROLES[i] }, side: "opponent" });
   });
   return {
     rules: FIVE_A_SIDE,
@@ -462,12 +605,13 @@ function fiveAttackingFrame(): Frame {
   const shape = attackingShape(FIVE_A_SIDE, ay, ball, defenders);
   const items: Item[] = [];
   defenders.forEach((d, i) => {
-    items.push({ at: { ...d }, look: { ...OPP, label: `D${i + 1}` } });
+    items.push({ at: { ...d }, look: { ...OPP, label: `D${i + 1}` }, side: "opponent" });
   });
   shape.slots.forEach((s, i) => {
     items.push({
       at: { ...s },
       look: { ...MATE, label: ATTACK_ROLES[i], star: i === shape.yours },
+      side: i === shape.yours ? "you" : "teammate",
     });
   });
   return {
@@ -540,6 +684,24 @@ interface EditProps {
   edits: EditStore;
   setOverride: (key: string, ov: PosOverride) => void;
   clearOverride: (key: string) => void;
+}
+
+/**
+ * The saved-scenario layer, threaded down to each base-scenario card.
+ *
+ * A card never talks to the API itself — it hands its finished
+ * `MatchScenario` up, so exactly one place decides what "saved" means, and
+ * that place only ever says it once the SERVER has confirmed the write.
+ */
+interface SaveProps {
+  /** Every scenario this gallery has saved, by cell key. */
+  saved: Record<string, MatchScenario>;
+  saveCell: (cell: Cell, frame: Frame) => Promise<boolean>;
+  revertCell: (cell: Cell) => Promise<boolean>;
+  busy: Record<string, "saving" | "reverting" | undefined>;
+  flash: Record<string, { ok: boolean; text: string } | undefined>;
+  /** True once the server has said star_scenarios.sql hasn't been run. */
+  migrationMissing: boolean;
 }
 
 const EDIT_KEY = "star-gallery-edits-v1";
@@ -660,12 +822,18 @@ function GalleryCell({
   onCommit,
   onReset,
   formationId,
+  save,
+  children,
 }: {
   cell: Cell;
   override: PosOverride | undefined;
   onCommit: (key: string, ov: PosOverride) => void;
   onReset: (key: string) => void;
   formationId: string;
+  /** Absent for the five-a-side cards, which are not saved anywhere. */
+  save?: SaveProps;
+  /** The across-formations strip, rendered under this card when open. */
+  children?: React.ReactNode;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   // Live override during a drag: a pointer-move mutates this and repaints this
@@ -677,16 +845,29 @@ function GalleryCell({
   const { cssW, cssH } = frameCssSize(cell.frame);
   const vp = cell.frame.camera;
 
+  // A SAVED scenario IS this cell's starting point, not an edit sitting on
+  // top of one — that is what "permanently changes that scenario" means. It
+  // is applied through the exact same `applyOverride` path a live drag uses,
+  // so there is never a second way of placing the same figures; an unsaved
+  // drag then layers on top, Reset drops the unsaved part, and Revert (the
+  // button below) is what goes back to the builder's own output.
+  const savedScenario = save?.saved[cell.key];
+  const baseFrame: Frame = applyOverride(
+    cell.frame,
+    savedScenario ? overrideFromMatchScenario(savedScenario) : undefined,
+  );
+
   const effectiveOverride = (): PosOverride | undefined => workingRef.current ?? override;
-  const currentFrame = (): Frame => applyOverride(cell.frame, effectiveOverride());
+  const currentFrame = (): Frame => applyOverride(baseFrame, effectiveOverride());
   const repaint = (): void => { if (ref.current) paint(ref.current, currentFrame()); };
 
-  // Repaint when the base frame (a fresh cell object each render) or the
-  // committed override changes. A drag repaints directly, so it is not here.
+  // Repaint when the base frame (a fresh cell object each render), the saved
+  // scenario, or the committed override changes. A drag repaints directly,
+  // so it is not here.
   useEffect(() => {
     repaint();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, override]);
+  }, [cell, override, savedScenario]);
 
   // ── The INVERSE of projectionFor's px/py, using paint's exact cssW/cssH ──
   //   px(x) = (x - vp.x1) * (cssW / (vp.x2 - vp.x1))  ⇒  x = cx * (vp.x2-vp.x1)/cssW + vp.x1
@@ -771,27 +952,36 @@ function GalleryCell({
   }
 
   const edited = hasEdits(override);
-  const json = JSON.stringify(
-    exportRecord(cell, applyOverride(cell.frame, override), formationId),
-    null,
-    2,
-  );
+  const liveFrame = applyOverride(baseFrame, override);
+  const json = JSON.stringify(exportRecord(cell, liveFrame, formationId), null, 2);
+
+  const busy = save?.busy[cell.key];
+  const flash = save?.flash[cell.key];
 
   return (
     <div
       data-cell={cell.key}
       style={{
         background: "#0b1220",
-        border: edited ? "1px solid #38bdf8" : "1px solid #1e293b",
+        border: edited ? "1px solid #38bdf8" : savedScenario ? "1px solid #22c55e" : "1px solid #1e293b",
         borderRadius: 10,
         padding: 8,
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>
         <div style={{ fontWeight: 800, fontSize: 14 }}>{cell.title}</div>
+        {save && (savedScenario ? (
+          <span style={{ fontSize: 10, fontWeight: 800, color: "#bbf7d0", background: "#14532d", borderRadius: 4, padding: "1px 6px" }}>
+            saved \u00b7 overriding
+          </span>
+        ) : (
+          <span style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", background: "#1e293b", borderRadius: 4, padding: "1px 6px" }}>
+            built-in
+          </span>
+        ))}
         {edited && (
           <span style={{ fontSize: 10, fontWeight: 800, color: "#38bdf8", background: "#0c4a6e", borderRadius: 4, padding: "1px 6px" }}>
-            edited
+            unsaved edits
           </span>
         )}
       </div>
@@ -807,6 +997,36 @@ function GalleryCell({
         style={{ display: "block", borderRadius: 6, background: "#14532d", cursor: "grab", touchAction: "none" }}
       />
       <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+        {save && (
+          <>
+            <button
+              style={{
+                ...SMALL_BTN,
+                background: edited ? "#166534" : "#0f172a",
+                borderColor: edited ? "#22c55e" : "#334155",
+                opacity: busy ? 0.6 : 1,
+                cursor: busy ? "default" : "pointer",
+              }}
+              disabled={!!busy}
+              onClick={() => { void save.saveCell(cell, liveFrame); }}
+              title="Save this geometry to the database \u2014 it becomes the real scenario, on every device"
+            >
+              {busy === "saving" ? "Saving\u2026" : edited ? "Save \u2713" : "Save"}
+            </button>
+            <button
+              style={{
+                ...SMALL_BTN,
+                opacity: savedScenario && !busy ? 1 : 0.4,
+                cursor: savedScenario && !busy ? "pointer" : "default",
+              }}
+              disabled={!savedScenario || !!busy}
+              onClick={() => { void save.revertCell(cell); }}
+              title="Delete the saved version \u2014 this scenario goes back to the built-in one everywhere"
+            >
+              {busy === "reverting" ? "Reverting\u2026" : "Revert to built-in"}
+            </button>
+          </>
+        )}
         <button style={SMALL_BTN} onClick={() => { copyText(json); setShowJson((s) => !s); }}>
           Export{showJson ? " ▲" : " ▼"}
         </button>
@@ -817,8 +1037,16 @@ function GalleryCell({
         >
           Reset
         </button>
-        <span style={{ fontSize: 10, color: "#475569" }}>drag figures/ball · Export copies JSON</span>
       </div>
+      {flash && (
+        <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, lineHeight: 1.4, color: flash.ok ? "#4ade80" : "#fca5a5" }}>
+          {flash.text}
+        </div>
+      )}
+      <div style={{ fontSize: 10, color: "#475569", marginTop: 6 }}>
+        drag figures/ball \u00b7 Reset drops unsaved edits
+      </div>
+      {children}
       {showJson && (
         <pre
           style={{
@@ -939,73 +1167,136 @@ const SELECT_STYLE: React.CSSProperties = {
   fontWeight: 700,
 };
 
-function ElevenView({ edits, setOverride, clearOverride }: EditProps) {
-  const [formationId, setFormationId] = useState("433");
+/** One read-only canvas. Used by the across-formations strip, which is a
+ *  comparison, not another place to drag things. */
+function MiniFrame({ frame, label, note }: { frame: Frame; label: string; note: string }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => { if (ref.current) paint(ref.current, frame); }, [frame]);
+  return (
+    <div style={{ background: "#0b1220", border: "1px solid #334155", borderRadius: 8, padding: 6 }}>
+      <div style={{ fontWeight: 800, fontSize: 12, marginBottom: 1 }}>{label}</div>
+      <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 6, fontFamily: "monospace" }}>{note}</div>
+      <canvas ref={ref} style={{ display: "block", borderRadius: 6, background: "#14532d" }} />
+    </div>
+  );
+}
+
+/**
+ * THE FORMATION TRANSFORM, viewed per scenario.
+ *
+ * The same base scenario — including whatever has been dragged or saved on
+ * it — rendered against a back-three, a back-four and a back-five, side by
+ * side, so what changes is the ONE situation across shapes rather than the
+ * whole gallery flipping to a different formation at once. Playstyle and the
+ * strength matchup live here too, for the same reason: they are properties
+ * of the comparison, not of the scenario.
+ */
+function FormationStrip({ cell, override }: { cell: Cell; override: PosOverride | undefined }) {
   const [playstyleId, setPlaystyleId] = useState<Playstyle>("mid-block");
   const [matchupId, setMatchupId] = useState("even");
-  const formation = formationOf(formationId);
   const matchup = MATCHUPS.find((m) => m.id === matchupId) ?? MATCHUPS[0];
-  const cells = mainCells(formationId, playstyleId, matchup.atk, matchup.def);
+  const shapes = APPLY_SHAPE_KINDS.has(cell.kind);
+
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-        <label style={{ fontWeight: 700, fontSize: 14 }}>Opponent formation:</label>
-        <select value={formationId} onChange={(e) => setFormationId(e.target.value)} style={SELECT_STYLE}>
-          {FORMATIONS.map((f) => (
-            <option key={f.id} value={f.id}>{f.name}</option>
+    <div style={{ marginTop: 10, borderTop: "1px solid #1e293b", paddingTop: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+        <span style={{ fontWeight: 800, fontSize: 12, color: "#fb923c" }}>Across formations</span>
+        <select
+          value={playstyleId}
+          onChange={(e) => setPlaystyleId(e.target.value as Playstyle)}
+          style={{ ...SELECT_STYLE, fontSize: 12, padding: "4px 8px" }}
+        >
+          {Object.values(PLAYSTYLES).map((ps) => (
+            <option key={ps.id} value={ps.id}>{ps.name}</option>
           ))}
         </select>
-        <label style={{ fontWeight: 700, fontSize: 14 }}>Playstyle:</label>
-        <select value={playstyleId} onChange={(e) => setPlaystyleId(e.target.value as Playstyle)} style={SELECT_STYLE}>
-          {Object.values(PLAYSTYLES).map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        <label style={{ fontWeight: 700, fontSize: 14 }}>Matchup:</label>
-        <select value={matchupId} onChange={(e) => setMatchupId(e.target.value)} style={SELECT_STYLE}>
+        <select
+          value={matchupId}
+          onChange={(e) => setMatchupId(e.target.value)}
+          style={{ ...SELECT_STYLE, fontSize: 12, padding: "4px 8px" }}
+        >
           {MATCHUPS.map((m) => (
             <option key={m.id} value={m.id}>{m.label}</option>
           ))}
         </select>
       </div>
-
-      <p style={{ margin: "0 0 16px", color: "#4ade80", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
-        <b>The positional layer is live here.</b> Formation, playstyle and the strength matchup reshape the
-        opponent&rsquo;s real defensive block — the cells tagged <b>▸ layer active</b> (long-range &amp;
-        tight-angle, the kinds the layer owns) move their defenders + keeper accordingly: a low block sits
-        deeper, a back-five is wider, a weaker side drops off. The other cells re-cast identities only
-        (their shapes are owned by the scenario builder). The reference card below shows the formation&rsquo;s
-        own slot layout. There are <b>22 formations</b> in the game — the dropdown lists them all.
-      </p>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 28 }}>
-        <FormationRefCell formation={formation} />
+      {!shapes && (
+        <div style={{ color: "#fbbf24", fontSize: 11, fontWeight: 700, marginBottom: 8, maxWidth: 700, lineHeight: 1.5 }}>
+          The positional layer doesn&rsquo;t own this kind (dead balls have their own wall-and-box setups;
+          a midfield situation has no defensive block in frame), so these three differ only in WHO is cast
+          into each shirt, not where anyone stands. That gap is real, and stating it is the point.
+        </div>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        {COMPARE_FORMATIONS.map((fid) => {
+          const f = formationOf(fid);
+          const line = defensiveLineOf(f);
+          return (
+            <MiniFrame
+              key={fid}
+              frame={shapedFrame(cell, override, fid, playstyleId, matchup.atk, matchup.def)}
+              label={f.name}
+              note={`defends as a back ${line.count}${line.isBack5 ? " (wing-backs drop)" : ""}`}
+            />
+          );
+        })}
       </div>
+    </div>
+  );
+}
 
-      <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 12px" }}>Every scenario kind</h3>
-      <p style={{ margin: "0 0 16px", color: "#94a3b8", fontSize: 13, maxWidth: 760 }}>
-        The 13 kinds from <code>buildScenario</code>, one seed each. Blue = your side (star = you), red =
-        opponents, green = keeper. Yellow dashes = the offside line the engine would judge against.
-        Corner/byline are drawn un-rotated (the game rotates the camera for facing; the shared primitives
-        do not).
+function ElevenView({ edits, setOverride, clearOverride, save }: EditProps & { save: SaveProps }) {
+  const cells = baseCells();
+  const [open, setOpen] = useState<string | null>(null);
+
+  return (
+    <div>
+      <p style={{ margin: "0 0 10px", color: "#4ade80", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
+        <b>These are the BASE scenarios</b> &mdash; the thirteen canonical situations
+        <code> buildScenario</code> produces, one fixed seed each, with no formation layer on top. This is
+        the thing you look at, edit and save. Blue = your side (star = you), red = opponents, green =
+        keeper, yellow dashes = the offside line the engine would judge against.
       </p>
-      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 760, lineHeight: 1.5 }}>
-        <b>Editable.</b> Drag any figure or the ball to the position the scenario SHOULD have; the offside
-        line follows the back line as you move it. <code>Export</code> per cell copies a ground-truth JSON
-        record (kind, seed, every role + {"{x,y}"}) and shows it below; <code>Reset</code> snaps a cell
-        back to the builder&rsquo;s output. Edits persist across reloads (localStorage).
+      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
+        <b>Formation is a transform on top, per scenario.</b> Open <b>Across formations</b> on any card to
+        see that same situation against a back-three, a back-four and a back-five side by side (playstyle
+        and the strength matchup live in there too). <b>Save</b> writes the geometry to the shared
+        database, so it is the real scenario on every device; <b>Revert to built-in</b> deletes that saved
+        version again. Drag anything, then Save.
       </p>
-      <EditToolbar cells={cells} edits={edits} clearOverride={clearOverride} formationId={formationId} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
         {cells.map((c) => (
-          <GalleryCell
-            key={c.key}
-            cell={c}
-            override={edits[c.key]}
-            onCommit={setOverride}
-            onReset={clearOverride}
-            formationId={formationId}
-          />
+          <div key={c.key} style={{ display: "flex", flexDirection: "column" }}>
+            <GalleryCell
+              cell={c}
+              override={edits[c.key]}
+              onCommit={setOverride}
+              onReset={clearOverride}
+              formationId=""
+              save={save}
+            >
+              <div style={{ marginTop: 8 }}>
+                <button
+                  style={{ ...SMALL_BTN, borderColor: "#7c2d12", color: "#fdba74" }}
+                  onClick={() => setOpen((k) => (k === c.key ? null : c.key))}
+                >
+                  {open === c.key ? "Hide across formations \u25b2" : "Across formations \u25bc"}
+                </button>
+              </div>
+              {open === c.key && <FormationStrip cell={c} override={edits[c.key]} />}
+            </GalleryCell>
+          </div>
+        ))}
+      </div>
+
+      <h3 style={{ fontSize: 16, fontWeight: 800, margin: "28px 0 8px" }}>Formation reference shapes</h3>
+      <p style={{ margin: "0 0 12px", color: "#94a3b8", fontSize: 13, maxWidth: 760 }}>
+        The three formations the comparison strip uses, as their own slot layouts &mdash; the shape the
+        opponent is MEANT to hold (attack toward the top).
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
+        {COMPARE_FORMATIONS.map((fid) => (
+          <FormationRefCell key={fid} formation={formationOf(fid)} />
         ))}
       </div>
     </div>
@@ -1109,6 +1400,83 @@ export default function StarGalleryDevPage() {
 
   const editProps: EditProps = { edits, setOverride, clearOverride };
 
+  // ── Saved base scenarios ────────────────────────────────────────────────
+  // Read synchronously from the local cache on mount (so the gallery opens
+  // on the saved geometry rather than flashing the builder's output first),
+  // then refreshed from the server, which is the real source of truth.
+  const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
+  const [migrationMissing, setMigrationMissing] = useState(false);
+  const [loadNote, setLoadNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState<Record<string, "saving" | "reverting" | undefined>>({});
+  const [flash, setFlash] = useState<Record<string, { ok: boolean; text: string } | undefined>>({});
+
+  /** The shared pool holds the Scenario Builder's own hand-placed scenarios
+   *  too; only the ones this gallery saved map back onto a cell. */
+  const indexGallery = (all: MatchScenario[]): Record<string, MatchScenario> => {
+    const out: Record<string, MatchScenario> = {};
+    for (const sc of all) {
+      if (sc.source?.tool === "gallery" && sc.id.startsWith("gallery-")) {
+        out[sc.id.slice("gallery-".length)] = sc;
+      }
+    }
+    return out;
+  };
+
+  useEffect(() => {
+    setSaved(indexGallery(listScenarios()));
+    void fetchSharedScenarios().then((r) => {
+      setSaved(indexGallery(listScenarios()));
+      if (r.migrationMissing) setMigrationMissing(true);
+      else if (!r.ok && r.message) setLoadNote(r.message);
+    });
+  }, []);
+
+  const flashFor = (key: string, ok: boolean, text: string) => {
+    setFlash((f) => ({ ...f, [key]: { ok, text } }));
+    window.setTimeout(() => setFlash((f) => ({ ...f, [key]: undefined })), 7000);
+  };
+
+  /**
+   * "Saved" only ever means the SERVER said so. A refused write leaves the
+   * card's unsaved-edits badge exactly where it was and says why — never a
+   * green tick over something that reached no other device.
+   */
+  const saveCell = async (cell: Cell, frame: Frame): Promise<boolean> => {
+    setBusy((b) => ({ ...b, [cell.key]: "saving" }));
+    const scenario = frameToMatchScenario(cell, frame);
+    const res = await saveScenarioShared(scenario);
+    setBusy((b) => ({ ...b, [cell.key]: undefined }));
+    if (res.migrationMissing) setMigrationMissing(true);
+    if (!res.ok) {
+      flashFor(cell.key, false, `Not saved to the database — ${res.message} Your edits are still here.`);
+      return false;
+    }
+    setSaved((m) => ({ ...m, [cell.key]: scenario }));
+    // The geometry now lives in the saved scenario, so leaving the local
+    // override in place would count it twice (as "unsaved edits" on itself).
+    clearOverride(cell.key);
+    flashFor(cell.key, true, "Saved — this is the scenario now, on every device.");
+    return true;
+  };
+
+  const revertCell = async (cell: Cell): Promise<boolean> => {
+    setBusy((b) => ({ ...b, [cell.key]: "reverting" }));
+    const res = await deleteScenarioShared(gallerySlug(cell.key));
+    setBusy((b) => ({ ...b, [cell.key]: undefined }));
+    if (res.migrationMissing) setMigrationMissing(true);
+    if (!res.ok) {
+      flashFor(cell.key, false, `Not reverted — ${res.message}`);
+      return false;
+    }
+    setSaved((m) => { const next = { ...m }; delete next[cell.key]; return next; });
+    clearOverride(cell.key);
+    flashFor(cell.key, true, "Reverted — back to the built-in scenario everywhere.");
+    return true;
+  };
+
+  const saveProps: SaveProps = { saved, saveCell, revertCell, busy, flash, migrationMissing };
+  const savedCount = Object.keys(saved).length;
+
   return (
     <main style={{ minHeight: "100vh", background: "#020617", color: "#e2e8f0", padding: "24px 16px 80px" }}>
       <h1 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 6px" }}>Scenario Gallery</h1>
@@ -1117,11 +1485,44 @@ export default function StarGalleryDevPage() {
         fixed seed, so a screenshot before and after a builder change is a true like-for-like comparison.
         This page changes no game behaviour.
       </p>
-      <p style={{ margin: "0 0 20px", color: "#7dd3fc", fontSize: 14, maxWidth: 820, lineHeight: 1.5 }}>
+      <p style={{ margin: "0 0 12px", color: "#7dd3fc", fontSize: 14, maxWidth: 820, lineHeight: 1.5 }}>
         It is now also a <b>scenario editor</b>: drag players and the ball into the positions a scenario
-        SHOULD have and Export them as ground-truth JSON to tune the builders against. The third tab hosts
-        the full <b>Scenario Builder</b> — hand-place a scenario from scratch and save it to the shared
-        database, where every device reads it.
+        SHOULD have, then <b>Save</b> — the geometry goes to the shared database, so it is the real
+        scenario on every device, not just in this browser. The third tab hosts the full{" "}
+        <b>Scenario Builder</b>, for hand-placing a scenario from scratch.
+      </p>
+
+      {migrationMissing && (
+        <div
+          style={{
+            margin: "0 0 16px",
+            maxWidth: 840,
+            background: "#450a0a",
+            border: "1px solid #ef4444",
+            borderRadius: 10,
+            padding: 12,
+            fontSize: 13,
+            lineHeight: 1.55,
+            color: "#fecaca",
+            fontWeight: 700,
+          }}
+        >
+          <b>Saving is off — the database table doesn&rsquo;t exist yet.</b> Run{" "}
+          <code>supabase/migrations/star_scenarios.sql</code> in the Supabase SQL Editor. Until then you
+          can still drag and Export, but a Save will fail and say so — nothing is silently lost, and
+          nothing you drag reaches any other device.
+        </div>
+      )}
+      {!migrationMissing && loadNote && (
+        <div style={{ margin: "0 0 16px", maxWidth: 840, fontSize: 13, fontWeight: 700, color: "#fca5a5" }}>
+          {loadNote}
+        </div>
+      )}
+      <p style={{ margin: "0 0 20px", color: "#94a3b8", fontSize: 12 }}>
+        {savedCount === 0
+          ? "No saved scenarios yet — every base scenario below is the built-in one."
+          : `${savedCount} saved scenario${savedCount === 1 ? "" : "s"} currently overriding the built-in geometry.`}
+        {" "}Saving needs an admin sign-in (same gate as the Lineups page).
       </p>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
@@ -1136,7 +1537,7 @@ export default function StarGalleryDevPage() {
         </button>
       </div>
 
-      {view === "eleven" && <ElevenView {...editProps} />}
+      {view === "eleven" && <ElevenView {...editProps} save={saveProps} />}
       {view === "five" && <FiveView {...editProps} />}
       {view === "builder" && <BuilderView />}
     </main>

@@ -92,6 +92,25 @@ export interface MatchScenario {
   players: ScenarioPlayer[];
   /** When this scenario was last saved — for sorting the list, nothing more. */
   updatedAt: number;
+  /**
+   * Where this shape was authored, when it was NOT hand-placed in the
+   * Scenario Builder. Optional and purely informational — nothing reads it
+   * to decide how to draw or play a scenario.
+   *
+   * The one real user today is the Scenario Gallery's base-scenario cards
+   * (app/star-gallery-dev/page.tsx): those start from a REAL `buildScenario`
+   * output at a fixed seed, so saving one has to remember which chance kind
+   * and which seed it came from — `kind` above names dead-ball/kickoff
+   * MOMENTS, a deliberately different list (see SCENARIO_KINDS' own note),
+   * and cannot carry "this is the cutback at seed 1003". Keeping it here
+   * rather than in a second table is what lets both tools share one pool.
+   */
+  source?: {
+    tool: "gallery";
+    /** The canvasEngine chance kind this was built from. */
+    kind: string;
+    seed: number | null;
+  };
 }
 
 export function newScenarioId(): string {
