@@ -70,6 +70,40 @@ import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle"
  *  not the opposition you can name — just bodies in the way. */
 const WALL_KIT = { shirt: "#374151", shorts: "#1f2937", trim: "#e5e7eb" };
 const KEEPER_KIT = { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" };
+/**
+ * ── THE PEOPLE WHO WERE THERE ALL ALONG AND WERE NEVER DRAWN ──
+ *
+ * Reported from a real playthrough of the free kicks: *"there are invisible
+ * people there… it's probably just taking a regular free kick where you have
+ * players around you, and it's just made them invisible."* That is exactly
+ * what it was, and the bodies were real rather than a draw call going wrong.
+ *
+ * Every scenario the engine builds carries more than a wall and a keeper. A
+ * free kick also has `player` (you, standing over it) and `follower` — the
+ * one interactive rebound-chaser every scenario gets, placed 9-18 m from
+ * goal, roughly central, i.e. straight down the flight path. A penalty has
+ * `player`, `follower` AND `teammates[0]`, the pair on the edge of the D that
+ * `buildPenalty`'s own comment says are "drawn but cannot poach". This screen
+ * drew the defenders and the keeper and nothing else, so on a free kick the
+ * ball sat alone on the grass with a man in front of goal nobody could see.
+ *
+ * He is not decoration: `stepBall` has the poacher on its reception candidate
+ * list for any scenario with the goal in view. Measured over 1,080 real
+ * strikes through the real engine, moving him off the pitch took "a team-mate
+ * struck it" from **7.3 % to 0.0 %**, "saved" from 2.6 % to 0.0 % and
+ * "Flag up" (offside, on a free-kick drill) from 0.8 % to 0.0 %. So about one
+ * free kick in ten was being decided by somebody who was not on screen, and
+ * the banner then said "A team-mate gets on the end of it" with nobody there.
+ *
+ * Drawing them is a picture change and nothing else — no position, camera or
+ * outcome moves. Checked rather than assumed: across 900 real scenarios every
+ * one of these bodies already falls inside `strikeCamera`'s frame, so the
+ * camera does NOT have to grow to hold them. That matters more than it looks:
+ * the frame is what `powerFrom` normalises the drag against, so a wider one
+ * would quietly have retuned the power of every kick in the trial.
+ */
+const YOU_KIT = { shirt: "#f8fafc", shorts: "#0f172a", trim: "#0f172a" };
+const MATE_KIT = { shirt: "#e2e8f0", shorts: "#1e293b", trim: "#1e293b" };
 
 /**
  * The same aim feel as a real match, and for the same reason TrialPenalty has
@@ -178,6 +212,118 @@ export function strikeCamera(
 }
 
 /**
+ * EVERY BODY ON YOUR OWN SIDE THAT THE SCENARIO ACTUALLY HAS, in draw order —
+ * furthest from the camera first, the same y-sort the rest of the game uses.
+ *
+ * Exported so `tests/star/trialStageScreens.mts` can hold it against real
+ * scenarios rather than re-deriving "who should be on screen" locally. That
+ * matters here more than usual: the bug this exists to fix was a body the
+ * screen simply never listed, and a test with its own copy of the list would
+ * have agreed with the bug. The taker is NOT in it — he is drawn last and
+ * separately, in his own kit, at `takerSpot`.
+ */
+export function ownSideBodies(sc: Scenario): { x: number; y: number }[] {
+  return [
+    { x: sc.follower.x, y: sc.follower.y },
+    ...sc.teammates.map(t => ({ x: t.x, y: t.y })),
+    ...(sc.runner ? [{ x: sc.runner.pos.x, y: sc.runner.pos.y }] : []),
+    ...(sc.secondaryRunners ?? []).map(r => ({ x: r.pos.x, y: r.pos.y })),
+  ].sort((a, b) => a.y - b.y);
+}
+
+/**
+ * WHERE THE TAKER IS DRAWN, which is not quite where he is.
+ *
+ * Both drills stand him a stride DIRECTLY behind the ball — `buildPenalty`
+ * puts him at `PEN_SPOT_Y + 1.6`, `buildFreeKickScenario` at `ball.y + 2`.
+ * A figure is drawn UP the screen from its boots, so at this camera (about
+ * 13.5 px to the metre, a figure a hundred-odd px tall) a man 2 m behind the
+ * ball has his head exactly on it: the first version of this drew the ball
+ * sitting on top of his face, and the ball is the thing you have to find and
+ * drag back from. Same class of problem as the teach card that used to sit on
+ * it — a screenshot is the only thing that says so.
+ *
+ * So he is drawn a couple of metres to one side, the way the engine's own
+ * `standOff` puts a carrier beside the ball in every other situation in the
+ * game. `scenario.player` itself is NOT moved: it is real state the engine
+ * reads (`stepDefenders`, the loose-ball 50-50), and a drawing routine has no
+ * business writing to it. Which side: away from the middle of the goal, so he
+ * never stands in the line you are about to aim down.
+ */
+const TAKER_DRAW_OFFSET = 2.3;
+
+export function takerSpot(sc: Scenario): { x: number; y: number } {
+  const dx = sc.player.x - sc.ball.x;
+  // Already standing off to one side (an ordinary scenario would be) — leave
+  // him exactly where he is.
+  if (Math.abs(dx) >= TAKER_DRAW_OFFSET) return { x: sc.player.x, y: sc.player.y };
+  const side = sc.ball.x >= CX ? 1 : -1;
+  return { x: sc.ball.x + side * TAKER_DRAW_OFFSET, y: sc.player.y };
+}
+
+/**
+ * ── THE DIVE, LATCHED, BECAUSE THE ENGINE RESTARTS IT HALFWAY THROUGH ──
+ *
+ * Reported from a real playthrough of the penalties: *"he's just not even
+ * diving the right way. It's a little bit buggy. That didn't make sense."*
+ * Traced by stepping a real trial penalty frame by frame, and it is a real
+ * collision rather than a keeper who guessed wrong.
+ *
+ * `commitKeeperGuess` (below) makes him pick a side the instant the ball is
+ * struck: `saveDir` is the side, `saveLunge` starts the dive, and he travels.
+ * Measured on rep 2 of trial seed 77, where he did commit:
+ *
+ *   t=0.10  x=33.41  lunge=0.63  dir=-1      ← fully committed, going left
+ *   t=0.20  x=32.87  lunge=1.00  dir=-1      ← at full stretch
+ *   t=0.50  x=32.64  lunge=0.07  dir=+1      ← the ball reaches his line
+ *
+ * At that last line the engine's own save test runs, and it unconditionally
+ * writes `k.saveDir = Math.sign(xAt − k.x)` and `k.saveLunge = 0.001`
+ * (canvasEngine.ts, "He throws himself at it"). That is right for a match,
+ * where nobody has committed beforehand and this IS the start of his dive.
+ * Here it lands on a dive already fully played: on screen he snaps bolt
+ * upright out of a full-stretch dive to his left and starts a fresh one to
+ * his right, in one frame, as the ball goes past. Measured across the three
+ * reps of that trial: 1 lunge reset and 1 direction flip, both on the one rep
+ * where he had actually committed.
+ *
+ * So the drawing latches. Once a dive has started, its DIRECTION is whatever
+ * it started as and its extension never goes backwards, for the rest of that
+ * attempt. Nothing about the save, his travel or the outcome is touched —
+ * `k.x`, `k.targetX` and `keeperAttempt` are all exactly as they were, and
+ * the engine is not modified. This is the picture of the dive, and only that.
+ *
+ * Latched per keeper OBJECT rather than per component: `build(rep)` makes a
+ * whole new scenario (and so a new keeper) for every attempt, so the latch
+ * cannot leak from one kick into the next, and a `WeakMap` means nothing to
+ * clear.
+ */
+const DIVE_LATCH = new WeakMap<object, { dir: number; lunge: number }>();
+
+export function keeperDive(kk: Scenario["keeper"]): { dive: number; lunge: number } {
+  const raw = kk.saveLunge > 0 ? Math.min(1, kk.saveLunge) : 0;
+  const rawSign = kk.saveLunge > 0
+    ? (kk.saveDir || 1)
+    : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
+
+  const held = DIVE_LATCH.get(kk);
+  // Before he has committed to anything there is nothing to hold: he is
+  // stood up, leaning with whatever `stepKeeper` has left in `dive`.
+  if (raw <= 0 && !held) {
+    const reach = clamp(Math.abs(kk.dive) / 1.6, 0, 1);
+    return { dive: rawSign * reach, lunge: 0 };
+  }
+  const dir = held ? held.dir : (rawSign || 1);
+  const lunge = held ? Math.max(held.lunge, raw) : raw;
+  DIVE_LATCH.set(kk, { dir, lunge });
+  // `lunge` alone once he is diving, deliberately: the other term is derived
+  // from `k.x − k.startX`, and a keeper dragged back across his own starting
+  // point by the engine's final stretch would read as a BIGGER dive the way
+  // he came from. Where his body actually is, is drawn by his position.
+  return { dive: dir * lunge, lunge };
+}
+
+/**
  * Draw one striking scene: the pitch, the goal, the wall (if there is one),
  * the keeper, the ball and — while a drag is live — the aim arrow. Exported
  * because the free-kick stage draws the identical scene.
@@ -230,17 +376,29 @@ export function paintTrialScene(
   // and his own arms, which is most of why he read as not quite right.
   {
     const kk = sc.keeper;
-    const lunge = kk.saveLunge > 0 ? Math.min(1, kk.saveLunge) : 0;
-    const sign = kk.saveLunge > 0
-      ? (kk.saveDir || 1)
-      : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-    const reach = clamp(Math.abs(kk.dive) / 1.6, 0, 1);
+    const d = keeperDive(kk);
     drawKeeper(
       ctx, p, { x: kk.x, y: kk.y }, KEEPER_KIT,
-      { dive: sign * Math.max(reach, lunge), lunge },
+      { dive: d.dive, lunge: d.lunge },
       faceStyle, fakeFaceStyle,
     );
   }
+
+  // ── …and the men in your own shirt ──
+  //
+  // See YOU_KIT above for what these are and why they were missing. Drawn
+  // after the keeper, because every one of them stands nearer the camera than
+  // he does, and among themselves furthest-from-camera first — the same
+  // y-sort the rest of this game draws figures by.
+  for (const m of ownSideBodies(sc)) {
+    drawFigure(ctx, p, m, MATE_KIT, faceStyle, fakeFaceStyle);
+  }
+  // You, standing over it. Last of your own side, because you are the
+  // nearest body to the camera on every one of these screens — and with the
+  // same star the real match puts over your own figure, because your kit and
+  // a team-mate's kit are the same kit and a first screenshot of this had two
+  // identical white men on it with no way to tell which one was you.
+  drawFigure(ctx, p, takerSpot(sc), { ...YOU_KIT, star: true }, faceStyle, fakeFaceStyle);
 
   // ── The ball ──
   drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0);
@@ -1389,8 +1547,24 @@ export default function TrialPenalties({
         // now shrinks as the trial hardens (PENALTY_TELL_EASY/HARD,
         // trialStages.ts), so at the top of the ladder there genuinely is
         // almost nothing to read and this line says so.
+        // ── …and it no longer claims something it cannot know ──
+        //
+        // It used to read "He's committed early." That is a promise about
+        // what he is ABOUT to do, and the line had no access to it: whether
+        // he actually sets off is `penaltyCommit`, a completely separate
+        // seeded draw from the lean, which comes back 0 — he holds his
+        // ground and does not move a millimetre — on 35 % of reps at the
+        // easy end of the ladder and 5 % at the hard end. So roughly one
+        // opening penalty in three told you he had committed and then showed
+        // you a statue, which is a large part of "the keeper is a bit buggy".
+        //
+        // What this line CAN see is where he is standing, which is real
+        // information a taker has and is all the lean ever was. It now says
+        // that and nothing more. Deliberately not fixed by leaking
+        // `keeperCommit` into the wording — that would hand over the one
+        // thing the stage is asking you to risk being wrong about.
         const tell = Math.abs(s.keeperLean);
-        return tell > 0.55 ? "He's committed early. Read him."
+        return tell > 0.55 ? "He's set himself well to one side."
           : tell > 0.22 ? "He's shading one way. Look hard."
           : "He hasn't shown you a thing.";
       }}

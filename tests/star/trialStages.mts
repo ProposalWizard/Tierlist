@@ -1,6 +1,6 @@
 import {
   ladderLevel, REPS, penaltySetup, freeKickSetup, dribbleSetup, dribbleQuality,
-  visionSetup, visionQuality, meanQuality, weightedQuality, strikeQuality,
+  visionSetup, visionQuality, visionFreeSeconds, VISION_REACTION_S, meanQuality, weightedQuality, strikeQuality,
   attemptSeed, penaltyTell, teachSeen, markTeachSeen, clearTeachSeen,
   TEACHABLE_DRILLS,
   PENALTY_TELL_EASY, PENALTY_TELL_HARD, PENALTY_TELL_RAMP, REP_WEIGHT_RAMP,
@@ -276,6 +276,35 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
   // Taking longer than the window cannot go negative.
   check(visionQuality(v.correct, v, 999) >= 0, "a very late correct pass is still not negative");
 
+  // ── THE TOP OF THIS STAGE HAS TO BE REACHABLE BY A PERSON ──
+  //
+  // Reported directly: "78 when you've got every single one — there's
+  // definitely some scaling that's wrong." There was. Full speed credit used
+  // to need `took === 0`, an answer given in no time at all, so a six-rep
+  // stage answered CORRECTLY six times could not reach the ceiling the score
+  // is measured against. Every other stage in the trial has a ceiling good
+  // play actually reaches. See `visionQuality`'s own note for the numbers.
+  check(visionQuality(v.correct, v, 0) === 1, "an instant right pass is not a perfect one");
+  check(visionQuality(v.correct, v, visionFreeSeconds(v.window)) === 1,
+    "a right pass inside the reaction allowance is not a perfect one");
+  check(visionQuality(v.correct, v, visionFreeSeconds(v.window) + 0.01) < 1,
+    "…and past it, speed starts costing you again");
+  check(visionQuality(v.correct, v, v.window) >= 0.649,
+    "the right man, however late, is still worth the base");
+
+  for (const w of [0.2, 0.5, 0.85, 0.95, 1.5, 2.6, 6]) {
+    const free = visionFreeSeconds(w);
+    check(free > 0 && free <= w * 0.6 + 1e-9,
+      `a window of ${w}s gave away ${free.toFixed(2)}s — there has to be a real speed test left`);
+    check(free >= Math.min(w * 0.6, VISION_REACTION_S) - 1e-9,
+      `a window of ${w}s left no room to see it and tap it (${free.toFixed(2)}s)`);
+    // Strictly increasing in the window, so a longer look is never worth less.
+    check(visionFreeSeconds(w) >= visionFreeSeconds(w - 0.05) - 1e-9,
+      `the allowance shrank as the window grew, at ${w}s`);
+  }
+  check(Number.isFinite(visionFreeSeconds(NaN)) && visionFreeSeconds(NaN) > 0,
+    "a nonsense window still gave a real allowance");
+
   // Struck shots reuse the drills' own judgement, which is already tuned.
   check(strikeQuality("goal", CX) > strikeQuality("saved", null), "scoring beats being saved");
   check(strikeQuality("saved", null) > strikeQuality("blocked", null), "being saved beats being blocked");
@@ -304,8 +333,11 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 // The stage is one decision taken four times, and the ramp is what makes the
 // four of them genuinely different: read him, look hard, then nothing. That
 // is only true if each step actually lands in the band the screen's own
-// subtitle reads it against — `> 0.55` is "he's committed", `> 0.22` is "he's
-// shading one way", and anything under that is "he hasn't shown you a thing".
+// subtitle reads it against — `> 0.55` is "he's set himself well to one side",
+// `> 0.22` is "he's shading one way", and anything under that is "he hasn't
+// shown you a thing". (The top band used to say "he's committed early", which
+// was a claim about whether he would SET OFF — a separate draw this screen
+// cannot see, and 0 on a third of easy reps. See the subtitle's own note.)
 //
 // Checked at BOTH ends of the difficulty range, because the ramp multiplies a
 // ceiling that difficulty itself shrinks, and the first version of this

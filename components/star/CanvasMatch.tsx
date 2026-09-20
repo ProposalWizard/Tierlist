@@ -41,6 +41,7 @@ import { finaliseMatch, liveRating, regressForMinutes } from "@/lib/star/matchSt
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
+import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
@@ -369,6 +370,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     ? orderDefensively(oppXIForCast.filter(p => !p.isGK))
         .map(p => ({ id: p.id, name: p.name, shortName: p.shortName, face: p.face, defending: p.defending, overall: p.overall }))
     : undefined;
+
+  /**
+   * The opponent's defensive block shape for this fixture — their formation,
+   * their playstyle, and the strength gap to your side — fed to
+   * applyFormationShape (lib/star/formationShape.ts) so the defence sets up
+   * the way that specific side actually would. Null in the sandbox / any match
+   * with no real opponent to scout, which makes the whole layer a no-op there,
+   * leaving existing behaviour untouched.
+   */
+  const formationShapeFor = (): ShapeInput | null => {
+    if (!career || !fixture) return null;
+    const myStrength = career.league.find(t => t.name === career.player.club)?.strength ?? 65;
+    return formationShapeInput(fixture.opponent, myStrength, oppStrengthRef.current);
+  };
 
   /**
    * Put a name to every goal in a run of hidden-match events, and record it.
@@ -3728,6 +3743,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!isTouchContinuation) {
       castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     }
+
+    // ── Give the block its FORMATION shape ──
+    //
+    // Reposition the defenders + keeper into the opponent's real defensive
+    // block — driven by their formation, their playstyle, and the strength gap
+    // between the two sides (lib/star/formationShape.ts). Runs BEFORE
+    // initDefenders (so press/cover roles and each man's home spot are read off
+    // the new shape) and BEFORE castDefence (so the deepest man gets the
+    // centre-back's face). A strict no-op in the sandbox / any match with no
+    // real opponent (formationShapeFor is null), and for every kind the layer
+    // doesn't touch, so nothing else regresses.
+    applyFormationShape(scenarioRef.current, formationShapeFor());
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);

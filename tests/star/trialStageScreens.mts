@@ -12,7 +12,7 @@ import {
 } from "../../lib/star/trialStages";
 import {
   buildPenaltyScenario, strikeCamera, AIM_ARROW_LENGTH, commitKeeperGuess,
-  SETTLE_BEFORE_BANNER,
+  SETTLE_BEFORE_BANNER, ownSideBodies, takerSpot, keeperDive,
 } from "../../components/star/stages/TrialPenalties";
 import {
   buildFreeKickScenario, freeKickView, freeKickWall,
@@ -728,6 +728,197 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
     "the trial must not draw a power percentage the real match does not draw");
   check(!/#22c55e|#eab308|#ef4444/.test(trialSrc),
     "the meter's green/amber/red fill is gone from the striking stages");
+}
+
+
+// ── 9. NOBODY IS ON THE PITCH WITHOUT BEING DRAWN ──────────────────────────
+//
+// Reported from a real playthrough of the free kicks: "there are invisible
+// people there… it's probably just taking a regular free kick where you have
+// players around you, and it's just made them invisible."
+//
+// It was. Every scenario the engine builds carries a `follower` — the one
+// interactive rebound-chaser, and on a free kick he stands 9-18 m from goal,
+// roughly central, i.e. straight down the flight path — plus `teammates`, and
+// the taker himself. The screen drew the defenders and the keeper and nothing
+// else, and `stepBall` has the follower on its reception candidate list for
+// any scenario with the goal in view, so a man nobody could see was genuinely
+// deciding free kicks.
+//
+// This holds the SCREEN's own list against the SCENARIO, rather than checking
+// a re-derived list of who ought to be there — a local copy of "who should be
+// drawn" would have agreed with the bug. Same trap as the castDefence fixture
+// in lineup.mts.
+{
+  const near = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+    Math.hypot(a.x - b.x, a.y - b.y) < 1e-6;
+
+  let checkedFK = 0, checkedPen = 0;
+  for (let s = 0; s < 120; s++) {
+    const trial = startTrial(880_000 + s * 7919);
+    for (let rep = 0; rep < REPS.freeKicks; rep++) {
+      for (const [what, sc] of [
+        ["free kick", buildFreeKickScenario(
+          trial, rep, mulberry32(((trial.seed ^ 0x5f5e) ^ ((rep + 1) * 0x9e3779b1)) >>> 0))] as const,
+        ["penalty", buildPenaltyScenario(
+          trial, rep, mulberry32((trial.seed ^ ((rep + 1) * 0x9e3779b1)) >>> 0))] as const,
+      ]) {
+        const drawn = ownSideBodies(sc);
+        if (what === "free kick") checkedFK++; else checkedPen++;
+
+        // The poacher is the man the whole report was about.
+        check(drawn.some(d => near(d, { x: sc.follower.x, y: sc.follower.y })),
+          `${what}: the follower/poacher exists in the scenario and is not drawn`);
+        for (const t of sc.teammates) {
+          check(drawn.some(d => near(d, t)), `${what}: a team-mate is not drawn`);
+        }
+        if (sc.runner) {
+          check(drawn.some(d => near(d, sc.runner!.pos)), `${what}: the runner is not drawn`);
+        }
+        for (const r of sc.secondaryRunners ?? []) {
+          check(drawn.some(d => near(d, r.pos)), `${what}: a secondary runner is not drawn`);
+        }
+        // Count, so nothing invented is drawn either.
+        const want = 1 + sc.teammates.length + (sc.runner ? 1 : 0)
+          + (sc.secondaryRunners ?? []).length;
+        check(drawn.length === want,
+          `${what}: drew ${drawn.length} of your own side, the scenario has ${want}`);
+        // Furthest from the camera first — the game's own y-sort, so a man
+        // nearer the goal is never painted over one nearer you.
+        for (let i = 1; i < drawn.length; i++) {
+          check(drawn[i].y >= drawn[i - 1].y, `${what}: own side drawn out of depth order`);
+        }
+
+        // …and every one of them, plus the taker, is inside the frame the
+        // screen actually films. Worth pinning rather than assuming: the
+        // camera is what `powerFrom` normalises the drag against, so if a new
+        // body ever forced `strikeCamera` to grow, the power of every kick in
+        // the trial would quietly change with it.
+        const cam = strikeCamera(sc, sc.ball, 358, 573);
+        for (const b of [...drawn, takerSpot(sc)]) {
+          check(b.x >= cam.x1 && b.x <= cam.x2 && b.y >= cam.y1 && b.y <= cam.y2,
+            `${what}: a drawn body (${b.x.toFixed(1)}, ${b.y.toFixed(1)}) falls outside the camera`);
+        }
+
+        // The taker is not drawn standing on the ball he is about to drag
+        // back from. Both drills put `scenario.player` directly behind it,
+        // and a figure drawn up-screen from its boots puts its head exactly
+        // there — the first version of this fix drew the ball on his face.
+        const t = takerSpot(sc);
+        check(Math.abs(t.x - sc.ball.x) >= 2.0,
+          `${what}: the taker is drawn on top of the ball (${Math.abs(t.x - sc.ball.x).toFixed(2)} m across)`);
+        // …and he is only ever moved ACROSS, never up or down the pitch.
+        check(Math.abs(t.y - sc.player.y) < 1e-9, `${what}: the taker's depth was moved, not just his side`);
+        // Never nudged into the line you are aiming down.
+        const side = Math.sign(t.x - sc.ball.x);
+        check(side === (sc.ball.x >= CX ? 1 : -1) || Math.abs(sc.player.x - sc.ball.x) >= 2.3,
+          `${what}: the taker is drawn on the goal side of the ball`);
+      }
+    }
+  }
+  check(checkedFK > 300 && checkedPen > 300, "not enough scenarios checked");
+
+  // A taker who is ALREADY standing off to one side (every ordinary scenario,
+  // via the engine's own standOff) is left exactly where he is.
+  {
+    const sc = buildFreeKickScenario(startTrial(4321), 0, mulberry32(7));
+    sc.player = { x: sc.ball.x + 4, y: sc.ball.y + 1 };
+    const t = takerSpot(sc);
+    check(t.x === sc.player.x && t.y === sc.player.y,
+      "a taker already standing off to one side was moved anyway");
+  }
+}
+
+// ── 10. THE KEEPER'S DIVE DOES NOT RESTART HALFWAY THROUGH ─────────────────
+//
+// Reported from a real playthrough of the penalties: "he's just not even
+// diving the right way. It's a little bit buggy. That didn't make sense."
+//
+// `commitKeeperGuess` makes him pick a side and go the instant the ball is
+// struck. When the ball then reaches his line, the engine's own save test
+// unconditionally writes `k.saveDir = sign(xAt − k.x)` and `k.saveLunge =
+// 0.001` — right for a match, where that IS the start of his dive, and wrong
+// here, where it lands on a dive already fully played. On screen he snaps
+// upright out of full stretch and starts a fresh dive the other way as the
+// ball goes past.
+//
+// The bug is REPRODUCED first, off the raw engine fields, so a reader can see
+// what "before" looked like instead of taking it on faith — and then the same
+// run is replayed through `keeperDive` and must be clean.
+{
+  const runPenalty = (seed: number, rep: number, aimSide: number) => {
+    const trial = startTrial(seed);
+    const setup = penaltySetup(trial, rep);
+    const rng = mulberry32((trial.seed ^ ((rep + 1) * 0x9e3779b1)) >>> 0);
+    const sc = buildPenaltyScenario(trial, rep, rng);
+    const dir = { x: aimSide * 3.2, y: -PEN_SPOT_Y };
+    const ball = launch(sc, dir, 0.9, { cx: 0, cy: -0.1 }, { power: 60, technique: 60 }, rng);
+    commitKeeperGuess(sc, setup.keeperLean, setup.keeperCommit);
+
+    const raw: { dir: number; lunge: number }[] = [];
+    const shown: { dive: number; lunge: number }[] = [];
+    const dt = 1 / 60;
+    // Past the outcome, because the reset happens exactly AT it — the screen
+    // keeps stepping him through the settle beat and the result banner.
+    for (let f = 0; f < 240; f++) {
+      for (let i = 0; i < 3; i++) {
+        const h = dt / 3;
+        stepDefenders(sc, h, sc.player, false, ball);
+        stepKeeper(sc, h);
+        stepBall(ball, sc, rng, h);
+        raw.push({ dir: sc.keeper.saveDir, lunge: sc.keeper.saveLunge });
+        shown.push(keeperDive(sc.keeper));
+      }
+    }
+    return { raw, shown, committed: setup.keeperCommit > 0 };
+  };
+
+  const flips = (xs: { dir: number }[]) => {
+    let n = 0, last = 0;
+    for (const x of xs) {
+      if (x.dir !== 0 && last !== 0 && Math.sign(x.dir) !== Math.sign(last)) n++;
+      if (x.dir !== 0) last = x.dir;
+    }
+    return n;
+  };
+  const resets = (xs: { lunge: number }[]) => {
+    let n = 0;
+    for (let i = 1; i < xs.length; i++) if (xs[i].lunge < xs[i - 1].lunge - 1e-9) n++;
+    return n;
+  };
+
+  let reproduced = 0, committedRuns = 0;
+  for (let s = 0; s < 60; s++) {
+    for (let rep = 0; rep < 3; rep++) {
+      for (const aim of [-1, 1]) {
+        const r = runPenalty(700_000 + s * 7919, rep, aim);
+        if (!r.committed) continue;
+        committedRuns++;
+        if (flips(r.raw) > 0 || resets(r.raw) > 0) reproduced++;
+
+        // The fix, on the same run: what is DRAWN never flips direction once
+        // he has started going, and never un-dives.
+        check(flips(r.shown.map(x => ({ dir: Math.sign(x.dive) }))) === 0,
+          "the drawn dive flipped direction mid-attempt");
+        check(resets(r.shown) === 0, "the drawn dive collapsed and restarted mid-attempt");
+      }
+    }
+  }
+  check(committedRuns > 40, `not enough committed penalties to test (${committedRuns})`);
+  // If this ever stops reproducing, the engine has changed underneath and the
+  // latch may no longer be needed — which is worth being told about.
+  check(reproduced > committedRuns * 0.5,
+    `the raw engine fields no longer flip/reset (${reproduced}/${committedRuns}) — re-read `
+    + `keeperDive's note before trusting it`);
+
+  // A keeper who has not committed to anything is drawn standing, not diving.
+  {
+    const sc = buildPenaltyScenario(startTrial(99), 0, mulberry32(3));
+    sc.keeper.saveLunge = 0;
+    sc.keeper.dive = 0;
+    const d = keeperDive(sc.keeper);
+    check(d.lunge === 0 && d.dive === 0, "an uncommitted keeper is drawn mid-dive");
+  }
 }
 
 if (problems.length) {
