@@ -75,6 +75,8 @@ import {
 } from "@/lib/star/fiveASide/geometry";
 import { castDefence, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { FORMATIONS, formationOf, type Formation } from "@/lib/star/formations";
+import { applyFormationShape } from "@/lib/star/formationShape";
+import { PLAYSTYLES, type Playstyle } from "@/lib/star/playstyle";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 
@@ -359,17 +361,29 @@ function oppXIFromFormationId(id: string): OpponentSheetPlayer[] {
 }
 
 /** One scenario of every kind, at a fixed seed each, cast against the chosen
- *  opponent formation. */
-function mainCells(formationId: string): Cell[] {
+ *  opponent formation AND reshaped by the real positional layer (formation ×
+ *  playstyle × strength gap). applyFormationShape self-gates to the kinds it
+ *  owns (long_range, tight_angle), so calling it on every cell moves the
+ *  defenders only where the layer is meant to act and no-ops the rest. */
+function mainCells(
+  formationId: string,
+  playstyleId: Playstyle,
+  attackerStrength: number,
+  defenderStrength: number,
+): Cell[] {
   const opp = oppXIFromFormationId(formationId);
+  const formation = formationOf(formationId);
+  const playstyle = PLAYSTYLES[playstyleId];
   return SCENARIO_KINDS.map((kind, i) => {
     const seed = 1000 + i;
     const sc = buildScenario(kind, mulberry32(seed));
     castDefence(sc, opp);
+    applyFormationShape(sc, { formation, playstyle, attackerStrength, defenderStrength });
+    const moved = kind === "long_range" || kind === "tight_angle";
     return {
       key: `main-${kind}`,
-      title: kind,
-      subtitle: `buildScenario · seed ${seed} · vs ${formationId}`,
+      title: moved ? `${kind}  ▸ layer active` : kind,
+      subtitle: `seed ${seed} · vs ${formationId} · ${playstyle.name}${moved ? " · reshaped" : ""}`,
       frame: frameFromScenario(sc),
       kind,
       seed,
@@ -907,41 +921,60 @@ function EditToolbar({
   );
 }
 
+// Strength matchup presets → (yourStrength, oppStrength) for the positional layer.
+const MATCHUPS: { id: string; label: string; atk: number; def: number }[] = [
+  { id: "even", label: "Even (70 v 70)", atk: 70, def: 70 },
+  { id: "you-strong", label: "You stronger — e.g. Prem v National League (90 v 55)", atk: 90, def: 55 },
+  { id: "you-weak", label: "You weaker (55 v 90)", atk: 55, def: 90 },
+];
+
+const SELECT_STYLE: React.CSSProperties = {
+  background: "#0b1220",
+  color: "#e2e8f0",
+  border: "1px solid #334155",
+  borderRadius: 8,
+  padding: "6px 10px",
+  fontSize: 14,
+  fontWeight: 700,
+};
+
 function ElevenView({ edits, setOverride, clearOverride }: EditProps) {
   const [formationId, setFormationId] = useState("433");
+  const [playstyleId, setPlaystyleId] = useState<Playstyle>("mid-block");
+  const [matchupId, setMatchupId] = useState("even");
   const formation = formationOf(formationId);
-  const cells = mainCells(formationId);
+  const matchup = MATCHUPS.find((m) => m.id === matchupId) ?? MATCHUPS[0];
+  const cells = mainCells(formationId, playstyleId, matchup.atk, matchup.def);
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
         <label style={{ fontWeight: 700, fontSize: 14 }}>Opponent formation:</label>
-        <select
-          value={formationId}
-          onChange={(e) => setFormationId(e.target.value)}
-          style={{
-            background: "#0b1220",
-            color: "#e2e8f0",
-            border: "1px solid #334155",
-            borderRadius: 8,
-            padding: "6px 10px",
-            fontSize: 14,
-            fontWeight: 700,
-          }}
-        >
+        <select value={formationId} onChange={(e) => setFormationId(e.target.value)} style={SELECT_STYLE}>
           {FORMATIONS.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
+            <option key={f.id} value={f.id}>{f.name}</option>
+          ))}
+        </select>
+        <label style={{ fontWeight: 700, fontSize: 14 }}>Playstyle:</label>
+        <select value={playstyleId} onChange={(e) => setPlaystyleId(e.target.value as Playstyle)} style={SELECT_STYLE}>
+          {Object.values(PLAYSTYLES).map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+        <label style={{ fontWeight: 700, fontSize: 14 }}>Matchup:</label>
+        <select value={matchupId} onChange={(e) => setMatchupId(e.target.value)} style={SELECT_STYLE}>
+          {MATCHUPS.map((m) => (
+            <option key={m.id} value={m.id}>{m.label}</option>
           ))}
         </select>
       </div>
 
-      <p style={{ margin: "0 0 16px", color: "#fb923c", fontSize: 13, maxWidth: 760, lineHeight: 1.5 }}>
-        Changing the formation re-casts every scenario below against it (via the real{" "}
-        <code>castDefence</code>) AND redraws the reference shape. <b>Today the scenario shapes do not
-        move</b> — <code>castDefence</code> only assigns WHO each defender is, not WHERE — so only the
-        assigned names change. The reference card shows what the shape should become once the 11-a-side
-        positional layer lands. That gap is the finding, not a page bug.
+      <p style={{ margin: "0 0 16px", color: "#4ade80", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
+        <b>The positional layer is live here.</b> Formation, playstyle and the strength matchup reshape the
+        opponent&rsquo;s real defensive block — the cells tagged <b>▸ layer active</b> (long-range &amp;
+        tight-angle, the kinds the layer owns) move their defenders + keeper accordingly: a low block sits
+        deeper, a back-five is wider, a weaker side drops off. The other cells re-cast identities only
+        (their shapes are owned by the scenario builder). The reference card below shows the formation&rsquo;s
+        own slot layout. There are <b>22 formations</b> in the game — the dropdown lists them all.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 28 }}>

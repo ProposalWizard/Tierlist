@@ -151,7 +151,17 @@ export function targetBlock(input: ShapeInput, ballX: number, ballY: number): Bl
   const formOffset = line.isBack5 ? -2 : 0; // SB360 Q6: back three ~2 m deeper
   const shift = clamp(playstyle.lineBias + formOffset + strengthSlide, -12, 10);
 
-  let lineY = clamp(ballDist * 0.66 + shift, 4.5, ballDist - 2.2);
+  // Floor the line at a RATIO of the ball's distance, not a flat metre value:
+  // SB360 Table 1 puts even the deepest 25% of real defensive lines at ~0.55 ×
+  // the ball's distance from goal. A flat 4.5 m floor let playstyle + back-five +
+  // a big strength gap stack down to ~5-9 m for a 20-30 m ball — the exact
+  // "defenders next to their own keeper" collapse this layer exists to prevent,
+  // and it hit precisely the weak, deep sides a strong player faces most. Tying
+  // the floor to ballDist caps how shallow the block can get at every distance
+  // while still letting a low block / weaker side sit meaningfully deeper than a
+  // high line. (Fable design review, 20 Sep 2026.)
+  const lineFloor = Math.max(4.5, ballDist * 0.55);
+  let lineY = clamp(ballDist * 0.66 + shift, lineFloor, ballDist - 2.2);
   const kSweep = clamp(lineY - 8, 0, 16) * 0.09 * (0.4 + playstyle.keeperSweep);
   const keeperY = clamp(1.6 + kSweep, 1.2, 6.5);
   lineY = clamp(Math.max(lineY, keeperY + 3), keeperY + 3, Math.max(keeperY + 3, ballDist - 2.2));
