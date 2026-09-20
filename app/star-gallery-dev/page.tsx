@@ -102,6 +102,10 @@ interface Frame {
   goalAtY: number | null;
   /** null = no offside line. */
   offsideY: number | null;
+  /** Which item indices form the opponent back line + keeper, so the offside
+   *  line can be RE-derived live as those figures are dragged in the editor.
+   *  null when the situation has no offside line at all. */
+  offsideFrom: { defenderIdx: number[]; keeperIdx: number } | null;
   items: Item[];
   ball: Vec2;
 }
@@ -156,30 +160,63 @@ function frameFromScenario(sc: Scenario): Frame {
   // You, with a star so you are always findable.
   items.push({ at: { ...sc.player }, look: { ...YOU, label: "YOU", star: true } });
 
+  // The defenders were pushed first (indices 0..nDef-1), the keeper straight
+  // after them — so the offside line can be re-derived from those items alone.
+  const nDef = sc.defenders.length;
+  const offside = offsideLineFor(sc);
+
   return {
     rules: ELEVEN_A_SIDE_ATTACK,
     camera: sc.viewport,
     goalAtY: goalInView(sc.kind) ? 0 : null,
-    offsideY: offsideLineFor(sc),
+    offsideY: offside,
+    offsideFrom:
+      offside !== null
+        ? { defenderIdx: sc.defenders.map((_, i) => i), keeperIdx: nDef }
+        : null,
     items,
     ball: { ...sc.ball },
   };
 }
 
-/** Paint a frame onto a canvas, sized to the camera's own aspect so nothing
- *  is stretched (px/py must share a scale). */
-function paint(canvas: HTMLCanvasElement, frame: Frame): void {
+/** The offside line RE-DERIVED from a frame's CURRENT item positions — so a
+ *  dragged defender moves the line with it. Same rule as `offsideLineFor`
+ *  (second-last of the back line + keeper), just read off the live items. */
+function computeOffside(frame: Frame): number | null {
+  const meta = frame.offsideFrom;
+  if (!meta) return null;
+  const ys = meta.defenderIdx
+    .map((i) => frame.items[i]?.at.y)
+    .filter((y): y is number => typeof y === "number");
+  const kY = frame.items[meta.keeperIdx]?.at.y;
+  if (typeof kY === "number") ys.push(kY);
+  if (ys.length < 2) return null;
+  ys.sort((a, b) => a - b);
+  return ys[1];
+}
+
+/** The CSS pixel size a frame paints at — the same computation `paint` uses,
+ *  factored out so the pointer-to-metre inverse can share the exact numbers.
+ *  The camera never changes while editing, so this is stable per cell. */
+function frameCssSize(frame: Frame): { cssW: number; cssH: number } {
   const vpW = frame.camera.x2 - frame.camera.x1;
   const vpH = frame.camera.y2 - frame.camera.y1;
   const CSS_W = 340;
   let cssW = CSS_W;
   let cssH = Math.round((CSS_W * vpH) / vpW);
-  // Keep a cell from becoming a skyscraper (a long-range viewport is very
-  // tall); shrink width to hold the true aspect if we cap the height.
   const MAX_H = 560;
   if (cssH > MAX_H) { cssH = MAX_H; cssW = Math.round((MAX_H * vpW) / vpH); }
   const MAX_W = 460;
   if (cssW > MAX_W) { cssW = MAX_W; cssH = Math.round((MAX_W * vpH) / vpW); }
+  return { cssW, cssH };
+}
+
+/** Paint a frame onto a canvas, sized to the camera's own aspect so nothing
+ *  is stretched (px/py must share a scale). */
+function paint(canvas: HTMLCanvasElement, frame: Frame): void {
+  // Keep a cell from becoming a skyscraper (a long-range viewport is very
+  // tall); `frameCssSize` holds the true aspect while capping both axes.
+  const { cssW, cssH } = frameCssSize(frame);
 
   const dpr = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
   canvas.width = Math.round(cssW * dpr);
@@ -195,7 +232,10 @@ function paint(canvas: HTMLCanvasElement, frame: Frame): void {
   drawPitch(ctx, frame.rules, p);
   if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, p, frame.goalAtY);
 
-  if (frame.offsideY !== null) drawOffsideLine(ctx, p, cssW, frame.offsideY);
+  // Re-derived from the CURRENT positions, so a dragged defender drags the
+  // line with it rather than leaving a stale one behind.
+  const offY = computeOffside(frame);
+  if (offY !== null) drawOffsideLine(ctx, p, cssW, offY);
 
   for (const it of frame.items) {
     if (it.keeper) drawKeeper(ctx, p, it.at, it.look, { dive: 0, lunge: 0 }, FACE, FAKE);
@@ -297,6 +337,10 @@ interface Cell {
   title: string;
   subtitle: string;
   frame: Frame;
+  /** For the exported ground-truth record. */
+  kind: string;
+  seed: number | null;
+  game: "eleven" | "five";
 }
 
 /** Build a minimal opponent XI from a formation — enough for `castDefence` to
@@ -327,6 +371,9 @@ function mainCells(formationId: string): Cell[] {
       title: kind,
       subtitle: `buildScenario · seed ${seed} · vs ${formationId}`,
       frame: frameFromScenario(sc),
+      kind,
+      seed,
+      game: "eleven" as const,
     };
   });
 }
@@ -380,6 +427,7 @@ function fiveDefensiveFrame(): Frame {
     camera: FIVE_A_SIDE.view,
     goalAtY: 0,
     offsideY: null,
+    offsideFrom: null,
     items,
     ball,
   };
@@ -412,6 +460,7 @@ function fiveAttackingFrame(): Frame {
     camera: FIVE_A_SIDE.view,
     goalAtY: 0,
     offsideY: null,
+    offsideFrom: null,
     items,
     ball,
   };
@@ -424,12 +473,18 @@ function fiveCells(): Cell[] {
     title: "5-a-side defensive shape",
     subtitle: "defensiveShape() · fixed spread",
     frame: fiveDefensiveFrame(),
+    kind: "five-defensive",
+    seed: null,
+    game: "five",
   });
   cells.push({
     key: "five-attacking",
     title: "5-a-side attacking shape",
     subtitle: `attackingShape() · band y18 (${FIVE_HALFWAY_Y.toFixed(0)}=halfway)`,
     frame: fiveAttackingFrame(),
+    kind: "five-attacking",
+    seed: null,
+    game: "five",
   });
   const seed = 3000;
   const chance = buildPassage(fiveChanceWorld(), {
@@ -441,27 +496,334 @@ function fiveCells(): Cell[] {
     title: "5-a-side chance",
     subtitle: `buildPassage · seed ${seed} · kind ${chance.kind}`,
     frame: frameFromScenario(chance),
+    kind: chance.kind,
+    seed,
+    game: "five",
   });
   return cells;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+//  EDITING — drag figures/ball to their target positions, capture as JSON
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A per-cell set of position overrides ON TOP of the builder's own output.
+ * Keyed by item INDEX — stable per cell, because the builders never add or
+ * remove items at a fixed seed, and `castDefence` only re-labels the existing
+ * defenders, never reshuffles them. Stored positionally rather than as a whole
+ * frame so an edit survives a formation change (which re-labels but never
+ * re-positions) and stays independent of the drawn kit/label.
+ */
+interface PosOverride {
+  items: Record<number, Vec2>;
+  ball?: Vec2;
+}
+type EditStore = Record<string, PosOverride>;
+
+interface EditProps {
+  edits: EditStore;
+  setOverride: (key: string, ov: PosOverride) => void;
+  clearOverride: (key: string) => void;
+}
+
+const EDIT_KEY = "star-gallery-edits-v1";
+
+function loadEdits(): EditStore {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(EDIT_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as EditStore) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveEdits(store: EditStore): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(EDIT_KEY, JSON.stringify(store));
+  } catch {
+    /* a dev tool is not worth crashing over a full quota */
+  }
+}
+
+/** Does this override actually move anything? An empty one is "untouched". */
+function hasEdits(ov: PosOverride | undefined): boolean {
+  return !!ov && (Object.keys(ov.items).length > 0 || !!ov.ball);
+}
+
+function cloneOverride(ov: PosOverride | undefined): PosOverride {
+  const items: Record<number, Vec2> = {};
+  if (ov) for (const k of Object.keys(ov.items)) items[Number(k)] = { ...ov.items[Number(k)] };
+  return { items, ball: ov?.ball ? { ...ov.ball } : undefined };
+}
+
+/** A paint-ready frame with any overridden positions applied over the builder's. */
+function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame {
+  if (!hasEdits(ov)) return frame;
+  const items = frame.items.map((it, i) =>
+    ov!.items[i] ? { ...it, at: { ...ov!.items[i] } } : it,
+  );
+  const ball = ov!.ball ? { ...ov!.ball } : frame.ball;
+  return { ...frame, items, ball };
+}
+
+// +0 turns a rounded -0 back into 0 so the JSON never reads "-0".
+const round2 = (v: number) => Math.round(v * 100) / 100 + 0;
+const roundVec = (v: Vec2) => ({ x: round2(v.x), y: round2(v.y) });
+
+/** The clean ground-truth record for one edited cell. */
+function exportRecord(cell: Cell, edited: Frame, formationId: string) {
+  return {
+    cell: cell.key,
+    game: cell.game,
+    kind: cell.kind,
+    seed: cell.seed,
+    ...(cell.game === "eleven" ? { formation: formationId } : {}),
+    ball: roundVec(edited.ball),
+    items: edited.items.map((it, i) => ({
+      index: i,
+      role: it.look.label ?? `#${i}`,
+      keeper: !!it.keeper,
+      at: roundVec(it.at),
+    })),
+  };
+}
+
+async function copyText(text: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch {
+    /* fall through to the legacy path */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  } catch {
+    /* give up quietly — this is a dev tool */
+  }
+}
+
+// The anatomy render.ts uses, replicated for hit-testing only (do NOT edit
+// render.ts). A figure's feet sit at py(at.y); its body rises above that.
+const HIT_FIGURE_R = 1.05; // render.ts FIGURE_R
+const HIT_BODY_UP = 0.67; // ~mid-torso, in units of r, above the feet anchor
+
 // ── UI ─────────────────────────────────────────────────────────────────────
 
-function GalleryCell({ cell }: { cell: Cell }) {
+const SMALL_BTN: React.CSSProperties = {
+  padding: "4px 10px",
+  borderRadius: 6,
+  border: "1px solid #334155",
+  background: "#0f172a",
+  color: "#e2e8f0",
+  fontWeight: 700,
+  fontSize: 12,
+  cursor: "pointer",
+};
+
+/**
+ * An EDITABLE gallery cell. Drag any figure or the ball to a new position; the
+ * grabbed point stays under the pointer (a rigid translate, not a snap), so the
+ * inverse of `projectionFor` has to be exact — see `pointerToWorld`. Live drag
+ * repaints THIS canvas directly (no parent re-render), committing to the shared
+ * edit store on release.
+ */
+function GalleryCell({
+  cell,
+  override,
+  onCommit,
+  onReset,
+  formationId,
+}: {
+  cell: Cell;
+  override: PosOverride | undefined;
+  onCommit: (key: string, ov: PosOverride) => void;
+  onReset: (key: string) => void;
+  formationId: string;
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  // Live override during a drag: a pointer-move mutates this and repaints this
+  // one canvas, without a setState that would rebuild every cell mid-drag.
+  const workingRef = useRef<PosOverride | null>(null);
+  const dragRef = useRef<{ target: "ball" | number; offX: number; offY: number } | null>(null);
+  const [showJson, setShowJson] = useState(false);
+
+  const { cssW, cssH } = frameCssSize(cell.frame);
+  const vp = cell.frame.camera;
+
+  const effectiveOverride = (): PosOverride | undefined => workingRef.current ?? override;
+  const currentFrame = (): Frame => applyOverride(cell.frame, effectiveOverride());
+  const repaint = (): void => { if (ref.current) paint(ref.current, currentFrame()); };
+
+  // Repaint when the base frame (a fresh cell object each render) or the
+  // committed override changes. A drag repaints directly, so it is not here.
   useEffect(() => {
-    if (ref.current) paint(ref.current, cell.frame);
-  }, [cell]);
+    repaint();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cell, override]);
+
+  // ── The INVERSE of projectionFor's px/py, using paint's exact cssW/cssH ──
+  //   px(x) = (x - vp.x1) * (cssW / (vp.x2 - vp.x1))  ⇒  x = cx * (vp.x2-vp.x1)/cssW + vp.x1
+  function pointerToWorld(e: React.PointerEvent<HTMLCanvasElement>): Vec2 {
+    const rect = ref.current!.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (cssW / (rect.width || cssW));
+    const cy = (e.clientY - rect.top) * (cssH / (rect.height || cssH));
+    return {
+      x: cx * ((vp.x2 - vp.x1) / cssW) + vp.x1,
+      y: cy * ((vp.y2 - vp.y1) / cssH) + vp.y1,
+    };
+  }
+
+  /** Nearest grabbable to a world point, or null. Figures are grabbed by their
+   *  mid-body (drawn above the feet anchor); the ball by its centre. */
+  function grabTargetAt(world: Vec2): "ball" | number | null {
+    const frame = currentFrame();
+    const p = projectionFor(frame.rules, cssW, cssH, frame.camera);
+    const r = Math.max(7, p.unit * HIT_FIGURE_R);
+    const wx = p.px(world.x), wy = p.py(world.y);
+    let best: "ball" | number | null = null;
+    let bestD = Infinity;
+    frame.items.forEach((it, i) => {
+      const sx = p.px(it.at.x);
+      const sy = p.py(it.at.y) - r * HIT_BODY_UP;
+      const d = Math.hypot(sx - wx, sy - wy);
+      if (d < r * 1.15 && d < bestD) { bestD = d; best = i; }
+    });
+    const bd = Math.hypot(p.px(frame.ball.x) - wx, p.py(frame.ball.y) - wy);
+    if (bd < Math.max(14, r * 0.6) && bd < bestD) { best = "ball"; }
+    return best;
+  }
+
+  const clampToView = (v: Vec2): Vec2 => ({
+    x: Math.max(vp.x1, Math.min(vp.x2, v.x)),
+    y: Math.max(vp.y1, Math.min(vp.y2, v.y)),
+  });
+
+  function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (e.button !== 0) return;
+    const world = pointerToWorld(e);
+    const target = grabTargetAt(world);
+    if (target === null) return;
+    e.preventDefault();
+    const frame = currentFrame();
+    const at = target === "ball" ? frame.ball : frame.items[target].at;
+    // Record the grabbed point's offset from the anchor, so the SAME point
+    // stays under the cursor as we drag (the figure translates rigidly).
+    dragRef.current = { target, offX: at.x - world.x, offY: at.y - world.y };
+    workingRef.current = cloneOverride(effectiveOverride());
+    ref.current?.setPointerCapture(e.pointerId);
+    if (ref.current) ref.current.style.cursor = "grabbing";
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    const drag = dragRef.current;
+    if (!drag) {
+      if (ref.current) {
+        const t = grabTargetAt(pointerToWorld(e));
+        ref.current.style.cursor = t === null ? "default" : "grab";
+      }
+      return;
+    }
+    const world = pointerToWorld(e);
+    const next = clampToView({ x: world.x + drag.offX, y: world.y + drag.offY });
+    const wk = workingRef.current ?? { items: {} };
+    if (drag.target === "ball") wk.ball = next;
+    else wk.items[drag.target] = next;
+    workingRef.current = wk;
+    repaint();
+  }
+
+  function endDrag(e: React.PointerEvent<HTMLCanvasElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    const wk = workingRef.current;
+    workingRef.current = null;
+    try { ref.current?.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+    if (ref.current) ref.current.style.cursor = "grab";
+    if (wk) onCommit(cell.key, wk);
+  }
+
+  const edited = hasEdits(override);
+  const json = JSON.stringify(
+    exportRecord(cell, applyOverride(cell.frame, override), formationId),
+    null,
+    2,
+  );
+
   return (
     <div
       data-cell={cell.key}
-      style={{ background: "#0b1220", border: "1px solid #1e293b", borderRadius: 10, padding: 8 }}
+      style={{
+        background: "#0b1220",
+        border: edited ? "1px solid #38bdf8" : "1px solid #1e293b",
+        borderRadius: 10,
+        padding: 8,
+      }}
     >
-      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{cell.title}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
+        <div style={{ fontWeight: 800, fontSize: 14 }}>{cell.title}</div>
+        {edited && (
+          <span style={{ fontSize: 10, fontWeight: 800, color: "#38bdf8", background: "#0c4a6e", borderRadius: 4, padding: "1px 6px" }}>
+            edited
+          </span>
+        )}
+      </div>
       <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8, fontFamily: "monospace" }}>
         {cell.subtitle}
       </div>
-      <canvas ref={ref} style={{ display: "block", borderRadius: 6, background: "#14532d" }} />
+      <canvas
+        ref={ref}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        style={{ display: "block", borderRadius: 6, background: "#14532d", cursor: "grab", touchAction: "none" }}
+      />
+      <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <button style={SMALL_BTN} onClick={() => { copyText(json); setShowJson((s) => !s); }}>
+          Export{showJson ? " ▲" : " ▼"}
+        </button>
+        <button
+          style={{ ...SMALL_BTN, opacity: edited ? 1 : 0.4, cursor: edited ? "pointer" : "default" }}
+          disabled={!edited}
+          onClick={() => onReset(cell.key)}
+        >
+          Reset
+        </button>
+        <span style={{ fontSize: 10, color: "#475569" }}>drag figures/ball · Export copies JSON</span>
+      </div>
+      {showJson && (
+        <pre
+          style={{
+            marginTop: 8,
+            background: "#020617",
+            border: "1px solid #1e293b",
+            borderRadius: 6,
+            padding: 8,
+            fontSize: 10,
+            lineHeight: 1.4,
+            maxHeight: 220,
+            overflow: "auto",
+            color: "#cbd5e1",
+            whiteSpace: "pre",
+            userSelect: "text",
+          }}
+        >
+          {json}
+        </pre>
+      )}
     </div>
   );
 }
@@ -498,7 +860,54 @@ const TAB_BTN = (active: boolean): React.CSSProperties => ({
   cursor: "pointer",
 });
 
-function ElevenView() {
+/** Copy-all / reset-all across every cell the user has actually touched. */
+function EditToolbar({
+  cells,
+  edits,
+  clearOverride,
+  formationId,
+}: {
+  cells: Cell[];
+  edits: EditStore;
+  clearOverride: (key: string) => void;
+  formationId: string;
+}) {
+  const touched = cells.filter((c) => hasEdits(edits[c.key]));
+  const active = touched.length > 0;
+  const copyAll = () => {
+    const payload = touched.map((c) =>
+      exportRecord(c, applyOverride(c.frame, edits[c.key]), formationId),
+    );
+    copyText(JSON.stringify(payload, null, 2));
+  };
+  const resetAll = () => { for (const c of touched) clearOverride(c.key); };
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+      <button
+        style={{
+          ...SMALL_BTN,
+          background: active ? "#0c4a6e" : "#0f172a",
+          borderColor: active ? "#38bdf8" : "#334155",
+          opacity: active ? 1 : 0.5,
+          cursor: active ? "pointer" : "default",
+        }}
+        disabled={!active}
+        onClick={copyAll}
+      >
+        Copy all edited ({touched.length})
+      </button>
+      <button
+        style={{ ...SMALL_BTN, opacity: active ? 1 : 0.5, cursor: active ? "pointer" : "default" }}
+        disabled={!active}
+        onClick={resetAll}
+      >
+        Reset all edited
+      </button>
+    </div>
+  );
+}
+
+function ElevenView({ edits, setOverride, clearOverride }: EditProps) {
   const [formationId, setFormationId] = useState("433");
   const formation = formationOf(formationId);
   const cells = mainCells(formationId);
@@ -546,16 +955,30 @@ function ElevenView() {
         Corner/byline are drawn un-rotated (the game rotates the camera for facing; the shared primitives
         do not).
       </p>
+      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 760, lineHeight: 1.5 }}>
+        <b>Editable.</b> Drag any figure or the ball to the position the scenario SHOULD have; the offside
+        line follows the back line as you move it. <code>Export</code> per cell copies a ground-truth JSON
+        record (kind, seed, every role + {"{x,y}"}) and shows it below; <code>Reset</code> snaps a cell
+        back to the builder&rsquo;s output. Edits persist across reloads (localStorage).
+      </p>
+      <EditToolbar cells={cells} edits={edits} clearOverride={clearOverride} formationId={formationId} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
         {cells.map((c) => (
-          <GalleryCell key={c.key} cell={c} />
+          <GalleryCell
+            key={c.key}
+            cell={c}
+            override={edits[c.key]}
+            onCommit={setOverride}
+            onReset={clearOverride}
+            formationId={formationId}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function FiveView() {
+function FiveView({ edits, setOverride, clearOverride }: EditProps) {
   const cells = fiveCells();
   return (
     <div>
@@ -565,9 +988,21 @@ function FiveView() {
         structure), and a full chance from <code>buildPassage</code>. This is a separate game from the
         11-a-side view — its own pitch, its own rules.
       </p>
+      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 760, lineHeight: 1.5 }}>
+        <b>Editable.</b> Drag figures/ball to the target shape, then <code>Export</code> (per cell or all
+        edited) for a ground-truth JSON record. Edits persist across reloads.
+      </p>
+      <EditToolbar cells={cells} edits={edits} clearOverride={clearOverride} formationId="" />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
         {cells.map((c) => (
-          <GalleryCell key={c.key} cell={c} />
+          <GalleryCell
+            key={c.key}
+            cell={c}
+            override={edits[c.key]}
+            onCommit={setOverride}
+            onReset={clearOverride}
+            formationId=""
+          />
         ))}
       </div>
     </div>
@@ -576,13 +1011,47 @@ function FiveView() {
 
 export default function StarGalleryDevPage() {
   const [view, setView] = useState<"eleven" | "five">("eleven");
+
+  // The shared edit store, lifted here so edits survive tab switches and both
+  // views' "copy all edited" can see them. Persisted straight through the
+  // setters (not a save-effect) to sidestep an initial "{} overwrites the
+  // saved store" race; loaded once on mount after the {} first render, so
+  // server and client agree on the first paint.
+  const [edits, setEdits] = useState<EditStore>({});
+  useEffect(() => {
+    const loaded = loadEdits();
+    if (Object.keys(loaded).length) setEdits(loaded);
+  }, []);
+
+  const setOverride = (key: string, ov: PosOverride) =>
+    setEdits((prev) => {
+      let next: EditStore;
+      if (hasEdits(ov)) next = { ...prev, [key]: ov };
+      else { next = { ...prev }; delete next[key]; }
+      saveEdits(next);
+      return next;
+    });
+  const clearOverride = (key: string) =>
+    setEdits((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      saveEdits(next);
+      return next;
+    });
+
+  const editProps: EditProps = { edits, setOverride, clearOverride };
+
   return (
     <main style={{ minHeight: "100vh", background: "#020617", color: "#e2e8f0", padding: "24px 16px 80px" }}>
       <h1 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 6px" }}>Scenario Gallery</h1>
-      <p style={{ margin: "0 0 20px", color: "#94a3b8", fontSize: 14, maxWidth: 760 }}>
+      <p style={{ margin: "0 0 12px", color: "#94a3b8", fontSize: 14, maxWidth: 760 }}>
         Deterministic dev scaffolding. Every cell is built from the real scenario/shape builders at a
         fixed seed, so a screenshot before and after a builder change is a true like-for-like comparison.
         This page changes no game behaviour.
+      </p>
+      <p style={{ margin: "0 0 20px", color: "#7dd3fc", fontSize: 14, maxWidth: 760 }}>
+        It is now also a <b>scenario editor</b>: drag players and the ball into the positions a scenario
+        SHOULD have and Export them as ground-truth JSON to tune the builders against.
       </p>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
@@ -594,7 +1063,7 @@ export default function StarGalleryDevPage() {
         </button>
       </div>
 
-      {view === "eleven" ? <ElevenView /> : <FiveView />}
+      {view === "eleven" ? <ElevenView {...editProps} /> : <FiveView {...editProps} />}
     </main>
   );
 }
