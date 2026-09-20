@@ -26,6 +26,8 @@ import { MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, MISSED_WEEK } from "../../lib/s
 import { ENERGY_MATCH_COST } from "../../lib/star/careerFlow";
 import { displayOverall, growthMultiplier, attributeOverall } from "../../lib/star/rating";
 import { KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS } from "../../lib/star/shopData";
+import { KIB_CANS_DEFAULT, PRICE_SPECS } from "../../lib/star/shopDefaults";
+import { bandPrice, bootMatchesFor } from "../../lib/star/economy";
 
 /**
  * THE TUNING SYSTEM — REGISTRY SHAPE, OVERRIDE ROUND-TRIPS, AND A DEFAULTS
@@ -131,15 +133,52 @@ function def(key: string): number {
   const maxed = attributeOverall({ pace: 100, power: 100, technique: 100, vision: 100, freeKick: 100 });
   check(Math.abs(maxed - 100) < 1e-9, `attributeOverall at maxed skills still reads 100 (got ${maxed})`);
 
-  // Prices rescaled to real money 14 Sep 2026 (×2000, same multiplier as
-  // starting wage) — these three now check the real shipped defaults, not
-  // the pre-rescale placeholders.
+  // ── The three shop prices, checked as DERIVED rather than as figures ──
+  //
+  // These used to pin ★6,000 / ★200,000 / ★3,000,000 — the hand-typed
+  // catalogue that has since been replaced. Not one price in the shop is
+  // typed in any more: every entry names a tier, a band and where in that
+  // band it sits, and economy.ts turns those into a number (see
+  // shopDefaults.ts). Re-pinning today's figures here would defeat the
+  // point of that and would break this suite every time the one dial the
+  // whole economy hangs off is turned, which is exactly what it is for.
+  //
+  // What this guard is actually for is unchanged, though: catching a
+  // catalogue that has silently stopped matching its own source with
+  // nothing overridden. So it checks the shipped price IS the derived
+  // price, which is a strictly stronger statement than any literal —
+  // a transcription slip, a stray override leaking in, or a catalogue
+  // entry quietly regaining a hardcoded figure all fail it.
   const kib = KIB_CANS.find((c) => c.id === "basic");
-  check(kib?.price === 6000 && kib?.restore === 25, `KIB_CANS basic still ships at price 6000 / restore 25 (got ${kib?.price}/${kib?.restore})`);
+  const kibDefault = KIB_CANS_DEFAULT.find((c) => c.id === "basic");
+  check(
+    kib?.price === kibDefault?.price && kib?.restore === 25,
+    `KIB_CANS basic ships at its derived price with nothing overridden `
+    + `(got ★${kib?.price}/${kib?.restore}, expected ★${kibDefault?.price}/25)`,
+  );
   const boot = BOOTS_CATALOGUE.find((b) => b.id === "galaxy");
-  check(boot?.price === 200000, `BOOTS_CATALOGUE galaxy still ships at price 200000 (got ${boot?.price})`);
+  const bootSpec = PRICE_SPECS.boots.galaxy;
+  check(
+    !!boot && !!bootSpec && boot.price === bandPrice(bootSpec.tier, bootSpec.band, bootSpec.at),
+    `BOOTS_CATALOGUE galaxy ships at the ${bootSpec?.band} band of the ${bootSpec?.tier} tier `
+    + `(got ★${boot?.price}, expected ★${bootSpec && bandPrice(bootSpec.tier, bootSpec.band, bootSpec.at)})`,
+  );
+  // …and its durability comes off that price rather than sitting beside it.
+  check(
+    !!boot && !!bootSpec && boot.matches === bootMatchesFor(boot.price, bootSpec.tier),
+    `BOOTS_CATALOGUE galaxy's ${boot?.matches} matches are derived from its price, not typed in`,
+  );
   const item = LIFESTYLE_ITEMS.find((i) => i.id === "island");
-  check(item?.price === 3000000, `LIFESTYLE_ITEMS island still ships at price 3000000 (got ${item?.price})`);
+  const itemSpec = PRICE_SPECS.lifestyle.island;
+  check(
+    !!item && !!itemSpec && item.price === bandPrice(itemSpec.tier, itemSpec.band, itemSpec.at),
+    `LIFESTYLE_ITEMS island ships at the ${itemSpec?.band} band of the ${itemSpec?.tier} tier `
+    + `(got ★${item?.price}, expected ★${itemSpec && bandPrice(itemSpec.tier, itemSpec.band, itemSpec.at)})`,
+  );
+  check(
+    !!item && itemSpec?.band === "endgame",
+    "the private island is still the top of the catalogue, whatever the numbers are today",
+  );
 }
 
 if (problems.length) {

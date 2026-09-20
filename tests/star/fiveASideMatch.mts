@@ -1,6 +1,7 @@
 import {
-  newFiveMatch, applyOutcome, oppAttack, isFullTime, resultOf, zoneOf, halfAt,
-  resumeAction, MINUTES_PER_PASSAGE, MINUTES_PER_OPP_ATTACK, type FiveMatchState,
+  newFiveMatch, applyOutcome, applyTheirAttack, advanceFlow, isFullTime, resultOf,
+  zoneOf, halfAt, resumeAction, isGoalOutcome, flowOf, awaitingOf,
+  MINUTES_PER_PASSAGE, MINUTES_PER_OPP_ATTACK, type FiveMatchState,
 } from "../../lib/star/fiveASide/match";
 import {
   FIVE_A_SIDE, ELEVEN_A_SIDE, rulesAreSane, fullTimeMinutes, centreSpot, goalCentreX,
@@ -70,7 +71,7 @@ const fakeScenario = () =>
     FIVE_A_SIDE.goal.x2 - FIVE_A_SIDE.goal.x1 < ELEVEN_A_SIDE.goal.x2 - ELEVEN_A_SIDE.goal.x1,
     "the five-a-side goal is genuinely smaller than the eleven-a-side one",
   );
-  check(fullTimeMinutes(FIVE_A_SIDE) === 6, `a five-a-side is six minutes, got ${fullTimeMinutes(FIVE_A_SIDE)}`);
+  check(fullTimeMinutes(FIVE_A_SIDE) === 45, `a five-a-side is forty-five minutes, got ${fullTimeMinutes(FIVE_A_SIDE)}`);
   check(fullTimeMinutes(ELEVEN_A_SIDE) === 90, "an eleven-a-side is ninety");
 }
 
@@ -86,7 +87,8 @@ const fakeScenario = () =>
     centreSpot(eleven.rules).y !== centreSpot(five.rules).y,
     "…and have their kick-offs in different places",
   );
-  // An eleven-a-side match runs to full time through this same layer.
+  // An eleven-a-side match runs to full time through this same layer — flow,
+  // clock and all. The shape is data, and this is what makes that checkable.
   let s = eleven;
   let steps = 0;
   while (!s.over && steps < 5000) {
@@ -97,31 +99,53 @@ const fakeScenario = () =>
   check(steps < 5000, "…without running forever");
 }
 
+// ── Driving the whole state machine ─────────────────────────────────────
+//
+// Every test below this point plays a match the way the screen does: ask
+// `resumeAction` what the match is waiting for, and do that. Anything else
+// tests a path the game never takes — and the ONE exploit this stage has ever
+// had was a screen that did not ask.
+function drive(
+  seed: number,
+  pick: (rng: () => number) => Outcome | "out",
+  theirs: (rng: () => number) => Outcome | "out" = () => "saved",
+  rules = FIVE_A_SIDE,
+): { state: FiveMatchState; touches: number; chances: number; flows: number } {
+  const rng = mulberry32(seed * 7919);
+  let s = newFiveMatch(seed, rules);
+  let touches = 0, chances = 0, flows = 0;
+  for (let guard = 0; guard < 2000; guard++) {
+    const act = resumeAction(s);
+    if (act === "done") break;
+    if (act === "flow") { s = advanceFlow(s, { difficulty: 0.5, playerSkill: 65 }).state; flows++; continue; }
+    if (act === "opp") {
+      chances++;
+      s = applyTheirAttack(s, theirs(rng), s.world);
+      continue;
+    }
+    touches++;
+    const out = pick(rng);
+    s = applyOutcome(s, out, fakeScenario(), fakeBall({ x: 20 + rng() * 28, y: rng() * 35 }), rng());
+  }
+  return { state: s, touches, chances, flows };
+}
+
 // ── The same seed is the same match ─────────────────────────────────────
 {
-  // Driven BY the seed, not just seeded — the first version of this picked its
-  // outcomes with `i % 5`, so every match played out identically and only the
-  // opposition's rolls varied. It passed while proving almost nothing.
-  const run = (seed: number) => {
-    const rng = mulberry32(seed * 7919);
-    let s = newFiveMatch(seed);
-    for (let i = 0; i < 40 && !s.over; i++) {
-      s = rng() < 0.35
-        ? oppAttack(s, 0.5, 60)
-        : applyOutcome(s, rng() < 0.25 ? "goal" : "delivered", fakeScenario(),
-          fakeBall({ x: 34, y: 8 }), rng());
-    }
-    return s;
-  };
+  const run = (seed: number) => drive(seed, rng => (rng() < 0.25 ? "goal" : "delivered")).state;
   for (const seed of [1, 42, 999]) {
     const a = run(seed), b = run(seed);
     check(
       JSON.stringify(a.score) === JSON.stringify(b.score) && a.minute === b.minute,
       `seed ${seed}: the same match plays out the same way`,
     );
+    check(
+      JSON.stringify(a.world) === JSON.stringify(b.world),
+      `seed ${seed}: …down to where every player is standing`,
+    );
   }
   // Different seeds are genuinely different matches, or the roll is decorative.
-  const seen = new Set(Array.from({ length: 60 }, (_, i) => run(i).score.join("-")));
+  const seen = new Set(Array.from({ length: 60 }, (_, i) => run(i + 1).score.join("-")));
   check(seen.size > 3, `different seeds should give different matches, saw ${seen.size} distinct scores`);
 }
 
@@ -131,44 +155,82 @@ const fakeScenario = () =>
     "goal", "rebound", "delivered", "saved", "caught", "post", "wide", "over",
     "blocked", "tackled", "short", "out", "touchOn",
   ];
-  for (let seed = 1; seed <= 300; seed++) {
-    const rng = mulberry32(seed * 31);
-    let s = newFiveMatch(seed);
-    let steps = 0;
-    while (!s.over && steps < 1000) {
-      if (rng() < 0.3) {
-        s = oppAttack(s, rng(), 40 + rng() * 50);
-      } else {
-        const out = OUTCOMES[Math.floor(rng() * OUTCOMES.length)];
-        s = applyOutcome(s, out, fakeScenario(), fakeBall({ x: 20 + rng() * 28, y: rng() * 40 }), rng());
-      }
-      steps++;
-    }
+  const THEIRS: (Outcome | "out")[] = [
+    "goal", "rebound", "saved", "caught", "post", "wide", "over", "blocked", "tackled", "out", "short",
+  ];
+  for (let seed = 1; seed <= 200; seed++) {
+    const r = drive(
+      seed,
+      rng => OUTCOMES[Math.floor(rng() * OUTCOMES.length)],
+      rng => THEIRS[Math.floor(rng() * THEIRS.length)],
+    );
+    const s = r.state;
     check(s.over, `seed ${seed}: the match must reach full time (stuck at ${s.minute}')`);
     check(s.minute <= fullTimeMinutes(s.rules), `seed ${seed}: the clock must not run past full time`);
-    check(steps < 1000, `seed ${seed}: it should not take a thousand touches`);
     // Whatever happened, the ball is still somewhere legal and the score is real.
     check(insideFivePitch(s.world.ball), `seed ${seed}: the ball ends up on the pitch`);
     check(
       Number.isInteger(s.score[0]) && Number.isInteger(s.score[1]) && s.score[0] >= 0 && s.score[1] >= 0,
       `seed ${seed}: the score stays a real score`,
     );
+    // And every man is still on it, which the flow is the only thing that can
+    // now break — it is what moves them.
+    const bodies = [s.world.you, ...s.world.mates, ...s.world.opps, s.world.yourKeeper, s.world.theirKeeper];
+    check(bodies.every(b => insideFivePitch(b)), `seed ${seed}: everybody is still on the pitch`);
+    check(
+      bodies.every(b => Number.isFinite(b.x) && Number.isFinite(b.y)),
+      `seed ${seed}: nobody has drifted to NaN`,
+    );
   }
 }
 
 // ── A touch takes a believable amount of the clock ──────────────────────
+//
+// This used to check that a match gave you "roughly a dozen" touches, which
+// was true and was the problem: a dozen touches back to back with nothing
+// between them, which is the stage that was reported as useless. How many
+// touches a match gives you is now a property of the SIMULATION, not of the
+// clock — see tests/star/fiveASideFlow.mts, which pins it to what a real
+// ninety minutes gives you. All that is left to check here is the arithmetic.
 {
   let s = newFiveMatch(5);
-  const touches: number[] = [];
-  while (!s.over && touches.length < 100) {
-    s = applyOutcome(s, "delivered", fakeScenario(), fakeBall({ x: 34, y: 18 }), 0.5);
-    touches.push(s.minute);
-  }
+  const first = applyOutcome(s, "delivered", fakeScenario(), fakeBall({ x: 34, y: 18 }), 0.5);
   check(
-    touches.length >= 10 && touches.length <= 16,
-    `a five-a-side should give you roughly a dozen touches, got ${touches.length}`,
+    Math.abs(first.minute - MINUTES_PER_PASSAGE) < 1e-9,
+    "the clock moves by one passage per touch",
   );
-  check(Math.abs(touches[0] - MINUTES_PER_PASSAGE) < 1e-9, "the clock moves by one passage per touch");
+  // Touch after touch with no football in between still has to run out, or a
+  // bug in the flow could leave somebody in a five-a-side forever.
+  let n = 0;
+  while (!s.over && n < 500) {
+    s = applyOutcome(s, "delivered", fakeScenario(), fakeBall({ x: 34, y: 18 }), 0.5);
+    n++;
+  }
+  check(s.over, `the clock runs out even with nothing but touches, stuck at ${s.minute}'`);
+  check(
+    Math.abs(n * MINUTES_PER_PASSAGE - 45) < 1e-6,
+    `forty-five minutes at one beat a touch is ninety touches, got ${n}`,
+  );
+}
+
+// ── A rebound is a goal ─────────────────────────────────────────────────
+//
+// The engine returns "rebound" for a finish from a second phase and sets
+// `ball.inNet` when it does; its own OUTCOME_TEXT calls it "GOAL — rebound!".
+// This layer filed it with "delivered" as open play and only ever read
+// `outcome === "goal"` for the scoreboard, so a deflected shot was drawn going
+// into the net and then not counted — "oh, that actually wasn't a goal".
+{
+  check(isGoalOutcome("goal") && isGoalOutcome("rebound"), "both ways of scoring are goals");
+  check(
+    !isGoalOutcome("delivered") && !isGoalOutcome("saved") && !isGoalOutcome("touchOn"),
+    "…and nothing else is",
+  );
+  const r = applyOutcome(newFiveMatch(1), "rebound", fakeScenario(), fakeBall({ x: 34, y: 0.2 }), 0.8);
+  check(r.score[0] === 1, `a rebound goes on the board, score ${r.score.join("-")}`);
+  check(r.restart === "kick-off", "…and they kick off");
+  check(r.possession === "them", "…which is theirs");
+  check(r.events[0]?.goal === true, "…and it is recorded as a goal for the scoring");
 }
 
 // ── Whose ball is it now ────────────────────────────────────────────────
@@ -204,30 +266,45 @@ const fakeScenario = () =>
   );
 }
 
-// ── Their attacks are fair, and respond to both sides' quality ──────────
+// ── Their chance, folded back in from a real engine outcome ─────────────
+//
+// It used to be a single fair roll here — their quality against your keeper's,
+// goal or no goal, at the same rate wherever the ball had been lost. That is
+// what made two-nil down the single likeliest scoreline in the stage. The roll
+// is gone: their chance is played out by the engine (mirrored — see
+// `buildTheirAttack`) and this layer only has to say what each outcome MEANS.
+//
+// Whether they score often enough, and whether territory decides it, are
+// questions about the simulation and the engine rather than about this
+// reducer, and are measured in tests/star/fiveASide.mts.
 {
-  const rate = (difficulty: number, keeper: number) => {
-    let conceded = 0;
-    const N = 400;
-    for (let seed = 1; seed <= N; seed++) {
-      const s = oppAttack(newFiveMatch(seed), difficulty, keeper);
-      if (s.score[1] > 0) conceded++;
-    }
-    return conceded / N;
-  };
+  const w = kickOffWorld(false);
+  const after = (o: Outcome | "out") => applyTheirAttack(newFiveMatch(1), o, w);
 
-  const weakVsGood = rate(0.1, 85);
-  const strongVsPoor = rate(0.95, 25);
-  const middling = rate(0.5, 55);
-
-  check(strongVsPoor > middling, "a better side should score more often");
-  check(middling > weakVsGood, "…and a better keeper should concede less");
-  check(weakVsGood > 0, "even a poor side scores sometimes — nothing is a certainty");
-  check(strongVsPoor < 1, "…and even a good one does not score every time");
+  for (const o of ["goal", "rebound"] as const) {
+    const s = after(o);
+    check(s.score[1] === 1, `${o} against you goes on the board`);
+    check(s.possession === "you", "…and you kick off");
+    check(s.restart === "kick-off", "…from the middle");
+  }
+  for (const o of ["saved", "caught", "tipped"] as const) {
+    const s = after(o);
+    check(s.score[1] === 0, `${o} is not a goal`);
+    check(s.possession === "you", "…and your keeper has it");
+    check(s.restart === "goal-kick", "…to play out from");
+    check(s.world.ball.y > 30, `…from his own end, got y=${s.world.ball.y.toFixed(1)}`);
+  }
+  for (const o of ["blocked", "tackled"] as const) {
+    const s = after(o);
+    check(s.score[1] === 0, `${o} is not a goal`);
+    check(s.possession === "you", "…and you have won it back where it happened");
+  }
+  const cost = after("saved");
   check(
-    middling > 0.1 && middling < 0.5,
-    `a middling attack against a middling keeper should be occasional, got ${(middling * 100).toFixed(0)}%`,
+    Math.abs(cost.minute - MINUTES_PER_OPP_ATTACK) < 1e-9,
+    `their chance costs the clock (${cost.minute})`,
   );
+  check(awaitingOf(cost) === "flow", "…and then the match plays on rather than handing you the ball");
 }
 
 // ── Placement is judged against the goal that is actually there ─────────
@@ -238,16 +315,18 @@ const fakeScenario = () =>
     shotPlacementQuality("goal", corner, FIVE_A_SIDE) > shotPlacementQuality("goal", centre, FIVE_A_SIDE),
     "a finish into the corner beats one down the middle",
   );
-  // …and on the small goal, "the corner" is much closer to the middle than it
-  // would be on a full-size one. Judging against a full goal would rate every
-  // five-a-side finish as central.
-  const twoMetresOff = centre + 1.6;
+  // …and "the corner" means the corner of THIS goal. Derived from the goal's
+  // own width rather than written as a number of metres, because the goal has
+  // already changed size once (3.66 m -> 5.2 m, see FIVE_GOAL_W) and a literal
+  // silently starts measuring something else when it does.
+  const nearPost = centre + (FIVE_GOAL.x2 - centre) * 0.88;
   check(
-    shotPlacementQuality("goal", twoMetresOff, FIVE_A_SIDE) > 0.9,
-    "on a small goal, a finish near the post is rated as one",
+    shotPlacementQuality("goal", nearPost, FIVE_A_SIDE) > 0.9,
+    `on a small goal, a finish near the post is rated as one `
+    + `(${shotPlacementQuality("goal", nearPost, FIVE_A_SIDE).toFixed(2)})`,
   );
   check(
-    shotPlacementQuality("goal", twoMetresOff, ELEVEN_A_SIDE) < shotPlacementQuality("goal", twoMetresOff, FIVE_A_SIDE),
+    shotPlacementQuality("goal", nearPost, ELEVEN_A_SIDE) < shotPlacementQuality("goal", nearPost, FIVE_A_SIDE),
     "the same placement is less impressive on a big goal, which is the point of judging against the real one",
   );
   check(shotPlacementQuality("saved", null, FIVE_A_SIDE) > shotPlacementQuality("blocked", null, FIVE_A_SIDE),
@@ -375,7 +454,7 @@ const fakeScenario = () =>
   };
   const kickOff = newFiveMatch(31).world;
   let crossed: FiveMatchState | null = null;
-  for (let i = 0; i < 40 && !s.over; i++) {
+  for (let i = 0; i < 200 && !s.over; i++) {
     const before = s.half;
     s = applyOutcome(s, "delivered", fakeScenario(), fakeBall({ x: 30, y: 3 }), 0.5);
     if (s.half !== before) { crossed = s; break; }
@@ -391,6 +470,12 @@ const fakeScenario = () =>
     );
     check(crossed.log.includes("Half time."), "…and it says so");
     check(!crossed.over, "half time is not full time");
+    // The simulation restarts from the middle too, or the second half opens
+    // with the ball nominally at kick-off and the flow still convinced play is
+    // camped in somebody's box.
+    check(crossed.flow?.band === "middle", `…and the simulation is back in the middle, got ${crossed.flow?.band}`);
+    check(crossed.flow?.momentum === 0, "…with nobody on top");
+    check(crossed.awaiting === "flow", "…and the second half kicks off into the simulation");
   }
   // The interval must not fire twice, or the second half is a series of resets.
   if (crossed) {
@@ -400,13 +485,16 @@ const fakeScenario = () =>
   }
 }
 
-// ── Resuming their ball plays THEIR attack first ────────────────────────
+// ── THE RESUME EXPLOIT, AND WHY IT IS DEAD TWICE OVER ───────────────────
 //
-// The exploit this closes, in full: every touch of yours that hands the ball
-// over saves the match with `possession: "them"` and the screen waits a beat
-// before rolling their attack. Closing the app in that beat and re-opening it
-// used to skip the attack entirely and hand you the ball wherever the restart
-// had left it — after a save, two metres from their goal line, dead centre.
+// The exploit in full: every touch of yours that hands the ball over saved the
+// match with `possession: "them"`, and the screen waited a beat before rolling
+// their attack. Closing the app in that beat and re-opening it used to skip the
+// attack entirely and hand you the ball wherever the restart had left it —
+// after a save, two metres from their goal line, dead centre. Tap in, repeat.
+//
+// Two independent guards now, and this checks both, because either alone would
+// be enough to let it back in if the other were removed by accident.
 {
   // A real saved shot, folded in by the real reducer, so the position under
   // test is the one the game actually writes.
@@ -414,42 +502,104 @@ const fakeScenario = () =>
   s = applyOutcome(s, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34);
   check(s.possession === "them", "a save hands the ball over");
   check(s.restart === "goal-kick", "…for a goal kick");
-  // The tap-in that made it worth doing: the restart really is on their line.
-  check(s.world.ball.y < 3, `the restart sits on their goal line (y=${s.world.ball.y})`);
 
   const saved = JSON.parse(JSON.stringify(s)) as FiveMatchState;
-  check(resumeAction(saved) === "opp", "a resumed match with their ball plays their attack first");
 
-  // Follow the rule through and prove the attack genuinely happened.
-  const after = oppAttack(saved, 0.5, 60);
-  check(
-    Math.abs(after.minute - (saved.minute + MINUTES_PER_OPP_ATTACK)) < 1e-9,
-    `their attack costs the clock (${saved.minute} -> ${after.minute})`,
+  // GUARD ONE: the rule refuses to build you a passage. It hands the match to
+  // the simulation, which is the only thing that can decide who plays next.
+  check(resumeAction(saved) !== "passage", "a resumed match never simply hands you the ball");
+  check(resumeAction(saved) === "flow", "…it plays the football that happens next");
+
+  // GUARD TWO, the structural one: the payload is gone. Play the simulation on
+  // and the ball is nowhere near a tap-in — their keeper has it and their side
+  // is playing out from the back.
+  const on = advanceFlow(saved, { difficulty: 0.5, playerSkill: 65 });
+  check(on.state.minute > saved.minute, "…and that football costs the clock");
+  check(on.state.draws > saved.draws, "…having actually been rolled for");
+  // ── The property, restated so it measures the tap-in rather than a y ──
+  //
+  // This used to read `ball.y > 6`, a proxy for "the ball is nowhere near
+  // their goal". It was a fair proxy while the simulation could only give the
+  // ball back to you in the middle of the pitch, and it stopped being one once
+  // the defence started positioning itself properly (shape.ts): the flow now
+  // legitimately runs six beats of football in which they lose it and you win
+  // a real chance in the corner of their box, which lands the ball at y=1.5
+  // and x=26.6 — a tight angle from wide, not a tap-in, and exactly the kind
+  // of football this guard is supposed to let happen.
+  //
+  // What the guard is actually for is the PAYLOAD: after a save the ball sat
+  // at (34, 0.4), dead centre, a metre off the line, and a resume handed it
+  // straight back to you. So measure that — how far the ball is from the
+  // middle of their goal — rather than a single coordinate of it. The bug
+  // scored 0.4 m on this; anything past a few metres is a chance somebody had
+  // to work for.
+  const toGoal = Math.hypot(
+    on.state.world.ball.x - (FIVE_A_SIDE.goal.x1 + FIVE_A_SIDE.goal.x2) / 2,
+    on.state.world.ball.y - FIVE_A_SIDE.pitch.y1,
   );
-  check(after.possession === "you", "…and hands the ball back afterwards");
-  check(after.draws > saved.draws, "…having actually rolled for it");
   check(
-    after.world.ball.y > saved.world.ball.y,
-    "…and you do not simply get the ball back where the save left it",
+    toGoal > 5,
+    `…and the ball is not left in their goal mouth where the save put it `
+    + `(${toGoal.toFixed(1)} m from the middle of their goal; the bug was 0.4)`,
   );
 
-  // The other two branches of the rule.
-  check(resumeAction(after) === "passage", "with your own ball, a resume just builds the passage");
+  // Even a save file that LIES about what it is waiting for cannot get a
+  // passage out of the layer while the ball is theirs.
+  const liar = { ...saved, awaiting: "passage" as const, possession: "them" as const };
+  check(resumeAction(liar) === "opp", "a save that claims it is your ball when it is theirs is not believed");
+
+  // The other branches of the rule.
+  check(resumeAction({ ...saved, awaiting: "passage", possession: "you" }) === "passage",
+    "with your own ball and a picture waiting, a resume builds the passage");
   check(resumeAction({ ...saved, over: true }) === "done", "a finished match is finished");
   check(
     resumeAction({ ...saved, over: false, minute: 999 }) === "done",
     "…and so is one whose clock has run out, however it was saved",
   );
 
-  // Repeating the exploit must not pay: doing it ten times in a row costs the
-  // clock ten times, rather than being free.
-  let loop = saved;
-  for (let i = 0; i < 10 && !loop.over; i++) {
-    check(resumeAction(loop) !== "passage", "a re-opened app never skips their attack");
-    loop = oppAttack(loop, 0.5, 60);
-    if (!loop.over) loop = applyOutcome(loop, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34);
+  // Repeating the exploit must not pay: doing it over and over costs the clock
+  // every time, rather than being free.
+  let loop: FiveMatchState = saved;
+  let rounds = 0;
+  for (; rounds < 400 && !loop.over; rounds++) {
+    check(resumeAction(loop) !== "passage" || loop.possession === "you",
+      "a re-opened app never skips ahead to a free chance");
+    const act = resumeAction(loop);
+    if (act === "flow") loop = advanceFlow(loop, { difficulty: 0.5, playerSkill: 65 }).state;
+    else if (act === "opp") loop = applyTheirAttack(loop, "saved", loop.world);
+    else loop = applyOutcome(loop, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34);
   }
-  check(loop.over, "ten shots and ten attacks is a whole match, not a free loop");
+  check(loop.over, "closing and re-opening forever is still a whole match, not a free loop");
+}
+
+// ── A save from before the flow existed still plays ─────────────────────
+//
+// Additive, and it has to be: a career written before `flow`/`awaiting` were
+// fields has neither, and a save that cannot be loaded is worse than one that
+// plays a passage the old way.
+{
+  const legacy = JSON.parse(JSON.stringify(newFiveMatch(9))) as Record<string, unknown>;
+  delete legacy.flow;
+  delete legacy.awaiting;
+  const old = legacy as unknown as FiveMatchState;
+  check(old.flow === undefined && old.awaiting === undefined, "the fixture really is a save from before the fields existed");
+
+  check(awaitingOf(old) === "passage", "an old save with your own ball reads as a passage, which is what it was");
+  check(
+    awaitingOf({ ...old, possession: "them" }) === "opp",
+    "…and an old save with their ball reads as their attack, which is the exploit guard it always had",
+  );
+  const f = flowOf(old);
+  check(["own_box", "defensive", "middle", "attacking", "box"].includes(f.band),
+    `…and a flow is derived from where its ball actually is, got ${f.band}`);
+  check(f.possession === "you", "…believing the save about whose ball it is");
+
+  // And it genuinely plays on rather than throwing.
+  const played = applyOutcome(old, "delivered", fakeScenario(), fakeBall({ x: 34, y: 18 }), 0.5);
+  check(played.events.length === 1, "an old save still plays");
+  check(played.flow !== undefined, "…and has a flow from then on");
+  const on = advanceFlow(played, { difficulty: 0.5, playerSkill: 65 });
+  check(on.state.minute >= played.minute, "…and the simulation runs on it");
 }
 
 // ── The screen's own stream survives a resume too ───────────────────────
@@ -469,10 +619,13 @@ const fakeScenario = () =>
   let s = newFiveMatch(9);
   s = applyOutcome(s, "saved", fakeScenario(), fakeBall({ x: 34, y: 0.4 }), 0.34, { passageDraws: 512 });
   check(s.passageDraws === 512, `the stream position is recorded, got ${s.passageDraws}`);
-  const kept = oppAttack(s, 0.5, 60);
-  check(kept.passageDraws === 512, "…and survives their attack when the caller does not update it");
-  const moved = oppAttack(s, 0.5, 60, { passageDraws: 900 });
-  check(moved.passageDraws === 900, "…or moves on when it does, because their attack is a save point too");
+  const kept = applyTheirAttack(s, "saved", s.world);
+  check(kept.passageDraws === 512, "…and survives their chance when the caller does not update it");
+  const moved = applyTheirAttack(s, "saved", s.world, { passageDraws: 900 });
+  check(moved.passageDraws === 900, "…or moves on when it does, because their chance is a save point too");
+  const flowed = advanceFlow(s, { difficulty: 0.5, playerSkill: 65 }, { passageDraws: 1200 });
+  check(flowed.state.passageDraws === 1200,
+    "…and so is the simulation between touches, which is also somewhere you can close the app");
   check(
     JSON.stringify(JSON.parse(JSON.stringify(s)).passageDraws) === "512",
     "…and it round-trips through JSON, which is how it reaches the next session",
@@ -565,13 +718,22 @@ const fakeScenario = () =>
   check(JSON.stringify(saved) === JSON.stringify(s), "a match in progress round-trips through JSON unchanged");
 
   // Carrying on from the save gives the same match as never having stopped.
-  const carriedOn = oppAttack(saved, 0.5, 60);
-  const neverStopped = oppAttack(s, 0.5, 60);
+  const carriedOn = advanceFlow(saved, { difficulty: 0.5, playerSkill: 65 });
+  const neverStopped = advanceFlow(s, { difficulty: 0.5, playerSkill: 65 });
   check(
-    JSON.stringify(carriedOn.score) === JSON.stringify(neverStopped.score),
+    JSON.stringify(carriedOn.state.score) === JSON.stringify(neverStopped.state.score)
+    && JSON.stringify(carriedOn.state.world) === JSON.stringify(neverStopped.state.world),
     "carrying on from a save plays out the same as never having closed the app",
   );
-  check(carriedOn.draws > saved.draws, "…and the random stream moves on rather than repeating itself");
+  check(carriedOn.state.draws > saved.draws, "…and the random stream moves on rather than repeating itself");
+  // Re-opening the app twice in a row must not be a way to re-roll the
+  // simulation: the stream is wound forward from the save, so it is the same
+  // football both times.
+  const again = advanceFlow(saved, { difficulty: 0.5, playerSkill: 65 });
+  check(
+    JSON.stringify(again.state.world) === JSON.stringify(carriedOn.state.world),
+    "…and re-opening the same save twice plays the same football, so it cannot be re-rolled",
+  );
 }
 
 // ── Small helpers say true things ───────────────────────────────────────
@@ -580,7 +742,8 @@ const fakeScenario = () =>
   check(zoneOf({ ...s, world: { ...s.world, ball: { x: 34, y: 5 } } }) === "final-third", "near their goal is the last third");
   check(zoneOf({ ...s, world: { ...s.world, ball: { x: 34, y: 30 } } }) === "own-half", "deep is your own half");
   check(halfAt(s) === 1, "a match starts in the first half");
-  check(halfAt({ ...s, minute: 4 }) === 2, "past three minutes is the second half");
+  check(halfAt({ ...s, minute: 30 }) === 2, "past the interval is the second half");
+  check(halfAt({ ...s, minute: 22 }) === 1, "…and before it is not");
   check(resultOf({ ...s, score: [2, 1] }) === "win", "two-one is a win");
   check(resultOf({ ...s, score: [1, 1] }) === "draw", "one-one is a draw");
   check(resultOf({ ...s, score: [0, 1] }) === "loss", "nil-one is a loss");

@@ -4,7 +4,8 @@ import { mulberry32 } from "@/lib/star/season";
 import { CX, NET_DEPTH } from "@/lib/star/pitch";
 import type { Viewport } from "@/lib/star/canvasEngine";
 import {
-  REPS, visionSetup, visionQuality, meanQuality, attemptSeed, type VisionSetup,
+  REPS, visionSetup, visionQuality, weightedQuality, attemptSeed,
+  teachSeen, markTeachSeen, type VisionSetup,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
+import { TeachCard, TEACH_COMPACT_AFTER_REP, TEACH_PERSISTS } from "./TrialPenalties";
 
 /**
  * FINDING THE PASS.
@@ -197,6 +199,10 @@ type Phase = "ready" | "live" | "reveal";
 const KIT = { shirt: "#f8fafc", shorts: "#0f172a", trim: "#0f172a" };
 const OPP = { shirt: "#1e3a8a", shorts: "#0b1f4d", trim: "#e2e8f0" };
 
+/** The first rep's countdown: three numerals, a second apart. */
+const TEACH_COUNT_FROM = 3;
+const TEACH_COUNT_MS = 1000;
+
 export interface TrialVisionProps {
   trial: TrialProgress;
   onDone: (quality: number) => void;
@@ -218,6 +224,39 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   const [rep, setRep] = useState(0);
   const [phase, setPhaseState] = useState<Phase>("ready");
   const [verdict, setVerdict] = useState("");
+  /** The big numeral on the first rep, counting down to the clock starting.
+   *  Null on every other rep — see the effect below. */
+  const [count, setCount] = useState<number | null>(null);
+
+  /**
+   * ── DISMISSING THE TEACHING HERE DOES NOT DISMISS THE COUNTDOWN ──
+   *
+   * "You should be able to get rid of the little tutorial" — and on this
+   * stage, more carefully than on the striking ones, because the first rep's
+   * overlay is two different things stacked in one box.
+   *
+   * The INSTRUCTION ("tap the team-mate in the most space, blue shirts are
+   * marking, it does not wait") is teaching, and a returning player has read
+   * it. The 3 · 2 · 1 is not teaching at all — it is live state, and the only
+   * thing telling you when a clock that can be under a second long actually
+   * starts. Hiding that with the paragraph would make the dismiss button the
+   * single most expensive tap in the trial.
+   *
+   * So dismissing drops the badge, the headline and the paragraph, and the
+   * countdown keeps running underneath in the same place it was. A player who
+   * has dismissed it before gets the countdown on rep 1 and no words, which is
+   * exactly what reps 2-6 already look like plus the clock he still needs.
+   *
+   * Read from storage on mount rather than in the initialiser: `window` does
+   * not exist during Next's server render of this client component, and a
+   * first client render that disagreed with the server's HTML is its own bug.
+   */
+  const [teachDone, setTeachDone] = useState(false);
+  useEffect(() => { if (teachSeen("vision")) setTeachDone(true); }, []);
+  const dismissTeach = useCallback(() => {
+    markTeachSeen("vision");
+    setTeachDone(true);
+  }, []);
 
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
@@ -256,25 +295,59 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
       if (rep + 1 >= REPS.vision) {
         if (doneRef.current) return;
         doneRef.current = true;
-        onDone(meanQuality(scoresRef.current));
+        // Weighted, not flat: `visionDrill` shaves the window every rep and
+        // adds a man from the fourth on, so the later pictures are genuinely
+        // the harder ones and count for more. See `weightedQuality`.
+        onDone(weightedQuality(scoresRef.current));
       } else {
         setRep(r => r + 1);
       }
     }, 1200);
   }, [onDone, rep]);
 
-  // A fresh rep: a beat to get your eyes on the screen, then the clock starts.
-  // Without it the window — which can be under a second at the top of the
-  // ladder — would be partly spent on the transition rather than on looking.
+  /**
+   * ── THE FIRST REP GETS A REAL COUNTDOWN, AND IT STILL COUNTS ──
+   *
+   * Asked for by name for this stage specifically, and it is the stage that
+   * most needs it: every other drill in the trial starts when YOU move, and
+   * this one starts on its own. A window that can be under a second at the
+   * top of the ladder, opening 650 ms after a screen you have never seen
+   * before appeared, is a rep you lose to not knowing it had begun rather
+   * than to not seeing the pass.
+   *
+   * So rep 1 gets three seconds of "3 · 2 · 1", with the instruction on
+   * screen the whole way down, and the clock starts on zero. It is still
+   * scored exactly like every other rep — the tutorial is the warning, not a
+   * free go.
+   *
+   * Every rep after it keeps the original 650 ms beat: by then you know what
+   * the screen does, and a full countdown five more times is padding.
+   */
   useEffect(() => {
     pickedRef.current = null;
     setVerdict("");
     setPhase("ready");
-    const t = window.setTimeout(() => {
-      startedRef.current = performance.now();
-      setPhase("live");
-    }, 650);
-    return () => window.clearTimeout(t);
+    const timers: number[] = [];
+    if (rep === 0) {
+      setCount(TEACH_COUNT_FROM);
+      for (let n = TEACH_COUNT_FROM - 1; n >= 1; n--) {
+        timers.push(window.setTimeout(
+          () => setCount(n), (TEACH_COUNT_FROM - n) * TEACH_COUNT_MS,
+        ));
+      }
+      timers.push(window.setTimeout(() => {
+        setCount(null);
+        startedRef.current = performance.now();
+        setPhase("live");
+      }, TEACH_COUNT_FROM * TEACH_COUNT_MS));
+    } else {
+      setCount(null);
+      timers.push(window.setTimeout(() => {
+        startedRef.current = performance.now();
+        setPhase("live");
+      }, 650));
+    }
+    return () => { for (const t of timers) window.clearTimeout(t); };
   }, [rep]);
 
   const tap = (e: React.PointerEvent) => {
@@ -395,25 +468,40 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
 
   return (
     <div className="w-full">
-      <div className="mb-1.5 flex items-baseline justify-between">
+      <div className="mb-1 flex items-baseline justify-between">
         <span className="text-[11px] font-black uppercase tracking-widest text-white/80">Find the pass</span>
         <span className="text-[11px] font-black tabular-nums text-white/60">
           {Math.min(rep + 1, REPS.vision)} / {REPS.vision}
         </span>
       </div>
-      <div className="mb-1.5 text-[11px] font-bold text-white/55">
+      <div className="mb-1 text-[11px] font-bold text-white/55">
         {setup.options} options · {setup.window.toFixed(1)}s
       </div>
 
       {/* ── A phone-shaped box, not a picture-shaped one ──
           3:4 with no height cap put you, and the ball at your feet, off the
           bottom of an iPhone 13 — on the one stage that is entirely about
-          reading the whole picture. The box is now capped against the
-          viewport and `cameraContaining` shows all of MUST_SEE inside
-          whatever shape that leaves, so the cap never crops the question. */}
+          reading the whole picture. The box is capped against the viewport
+          and `cameraContaining` shows all of MUST_SEE inside whatever shape
+          that leaves, so the cap never crops the question.
+
+          ── Cap raised alongside the striking stages' ──
+          52vh was measured against the same oversized header (see the note
+          in TrialPenalties.tsx's own wrapper) this screen used to carry —
+          title row, subtitle row, the old two-line progress block, the
+          uncompacted dev-panel button. Once those were trimmed the same way,
+          this screen's own header-to-canvas and canvas-to-bottom footprint
+          measured byte-for-byte the same as the striking stages' (both build
+          the identical title/rep/subtitle rows and the identical pip-row
+          footer, and both sit under the same sticky global nav, whose
+          102 px is real, permanent budget lost — see TrialPenalties.tsx's
+          own note), so the height budget is the same 438 px ceiling and the
+          same 64vh applies here too — `max-h` caps a PIXEL height, so the box's own aspect ratio
+          (4:5 here, 5:8 there) has no bearing on what a given vh number
+          means; only the chrome around the box does. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto aspect-[4/5] max-h-[52vh] w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto aspect-[4/5] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15"
       >
         <canvas
           ref={canvasRef}
@@ -422,10 +510,53 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
         />
 
         {phase === "ready" && (
-          <div className="absolute inset-0 z-30 grid place-items-center bg-black/70">
-            <div className="text-center">
-              <div className="text-sm font-black uppercase tracking-widest text-white/70">Heads up</div>
-              <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
+          <div className="absolute inset-0 z-30 grid place-items-center bg-black/70 px-5">
+            {/* ── One card, the same card every other drill uses ──
+                This stage used to hand-roll its own badge/headline/paragraph,
+                which drifted: a different badge ("First one" vs "How to
+                play"), a different dismiss button, no drawn gesture at all,
+                and a drag glyph would have been wrong here anyway — this is
+                the one stage you TAP. It is now `TeachCard` with the tap
+                glyph, so all four drills teach in the same box.
+
+                And, as asked, it stays until it is tapped rather than until
+                the rep counter moves: `rep === 0` no longer gates it. */}
+            <div className="w-full max-w-xs text-center">
+              {(TEACH_PERSISTS || rep === 0) && !teachDone && (
+                <TeachCard
+                  inline
+                  gesture="tap"
+                  compact={rep >= TEACH_COMPACT_AFTER_REP}
+                  headline="Tap the team-mate in the most space."
+                  short="Tap the man in most space."
+                  lines={[
+                    "The blue shirts are marking.",
+                    "The clock starts on zero and does not wait — never picking scores nothing.",
+                  ]}
+                  onDismiss={dismissTeach}
+                />
+              )}
+
+              {rep === 0 && count !== null ? (
+                /* ── The numeral cannot be dismissed, and never could ──
+                   A stage that starts on its own needs to say so BEFORE it
+                   starts, and this is the only thing telling you when a clock
+                   that can be under a second long actually begins. Dismissing
+                   drops the words above it and leaves this exactly where it
+                   was. */
+                <div
+                  key={count}
+                  className="mt-3 text-7xl font-black tabular-nums text-amber-300"
+                  style={{ textShadow: "0 4px 12px rgba(0,0,0,0.8)" }}
+                >
+                  {count}
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <div className="text-sm font-black uppercase tracking-widest text-white/70">Heads up</div>
+                  <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -439,7 +570,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
         )}
       </div>
 
-      <div className="mt-2 flex items-center gap-1">
+      <div className="mt-1 flex items-center gap-1">
         {Array.from({ length: REPS.vision }, (_, i) => {
           const q = scoresRef.current[i];
           return (

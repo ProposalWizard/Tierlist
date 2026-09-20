@@ -4,7 +4,11 @@ import {
   type MatchRules, FIVE_A_SIDE, centreSpot, fullTimeMinutes, halfwayY, goalCentreX,
 } from "./rules";
 import { type FiveWorld, kickOffWorld, worldFromScenario } from "./passage";
-import { leftPitch, clampToPitch, insideFivePitch } from "./geometry";
+import { leftPitch, clampToPitch } from "./geometry";
+import {
+  type FiveFlowState, type FlowBeat, type FlowEvent, type FlowStop, type FlowInputs,
+  newFlow, playOn, flowAfterTouch, bandOf, MINUTES_PER_BEAT,
+} from "./flow";
 
 /**
  * THE GAME AROUND THE KICKS.
@@ -50,6 +54,20 @@ export interface PassageEvent {
  *  what the screen says. */
 export type Restart = "kick-off" | "open-play" | "kick-in" | "goal-kick" | "corner" | "none";
 
+/**
+ * What the match is waiting for.
+ *
+ * OPTIONAL, and it has to stay optional: a career saved before the flow
+ * existed has no such field, and a save that cannot be loaded is worse than a
+ * save that plays one passage the old way. Absent reads as "whatever
+ * `possession` says", which is exactly the old behaviour.
+ *
+ *   "flow"    — nobody needs you. The CPUs play on until somebody does.
+ *   "passage" — the move has found you. Build the picture and let them aim.
+ *   "opp"     — they have worked a chance. Play it out and watch it.
+ */
+export type Awaiting = "flow" | "passage" | "opp";
+
 export interface FiveMatchState {
   rules: MatchRules;
   seed: number;
@@ -85,6 +103,10 @@ export interface FiveMatchState {
   possession: Possession;
   restart: Restart;
   world: FiveWorld;
+  /** The small-sided hidden match — see flow.ts. Optional for the same
+   *  reason `awaiting` is: an older save has never heard of it. */
+  flow?: FiveFlowState;
+  awaiting?: Awaiting;
   events: PassageEvent[];
   /** Newest last. Short on purpose — this is a caption, not a commentary
    *  feed; the five-a-side is three minutes a half, not ninety. */
@@ -93,18 +115,20 @@ export interface FiveMatchState {
 }
 
 /**
- * How much of the clock one touch of yours costs.
+ * How much of the clock one touch of yours costs — and one of their chances.
  *
- * A dozen touches if you keep the ball; nearer five if you shoot every time
- * you see the goal, because every shot outcome — scored, saved, wide, off the
- * post — hands possession over, and their attack costs the clock too. That is
- * the honest number, and it is worth knowing: the comment here used to claim
- * "roughly a dozen" flatly, which is only true of a player who never shoots.
+ * Both are one beat's worth, because that is what they are: a moment of
+ * football, exactly like the ones the simulation plays between them. Keeping
+ * them equal to `MINUTES_PER_BEAT` is also what makes the involvement rate
+ * measurable — the flow's own tuning was measured against a budget of beats,
+ * and a touch that cost a different amount would quietly move it.
+ *
+ * They are still separate constants rather than one, because they are
+ * separate facts about the game and one of them may want to change.
  */
-export const MINUTES_PER_PASSAGE = 0.5;
-/** …and what one of their attacks costs. Slightly more, because it covers
- *  them building it as well as finishing it. */
-export const MINUTES_PER_OPP_ATTACK = 0.7;
+export const MINUTES_PER_PASSAGE = MINUTES_PER_BEAT;
+/** …and what one of their chances costs. */
+export const MINUTES_PER_OPP_ATTACK = MINUTES_PER_BEAT;
 
 /**
  * The match's own random stream, wound forward to where it left off.
@@ -140,10 +164,25 @@ export function newFiveMatch(seed: number, rules: MatchRules = FIVE_A_SIDE): Fiv
     possession: "you",
     restart: "kick-off",
     world: kickOffWorld(true),
+    flow: newFlow(true),
+    awaiting: "flow",
     events: [],
     log: ["Kick-off."],
     over: false,
   };
+}
+
+/** The flow as it stands, built for a save that predates it. */
+export function flowOf(state: FiveMatchState): FiveFlowState {
+  return state.flow ?? {
+    ...newFlow(state.possession === "you"),
+    band: bandOf(state.rules, state.world.ball.y),
+  };
+}
+
+/** What the match is waiting for, for a save that predates the field. */
+export function awaitingOf(state: FiveMatchState): Awaiting {
+  return state.awaiting ?? (state.possession === "them" ? "opp" : "passage");
 }
 
 export function isFullTime(state: FiveMatchState): boolean {
@@ -156,6 +195,16 @@ export function halfAt(state: FiveMatchState): number {
 }
 
 const push = (log: string[], line: string) => [...log, line].slice(-6);
+
+/**
+ * Which engine outcomes actually put the ball in the net.
+ *
+ * Both of them. See `afterOutcome`'s "rebound" branch for the bug this exists
+ * to make impossible to write again.
+ */
+export function isGoalOutcome(outcome: Outcome | "out"): boolean {
+  return outcome === "goal" || outcome === "rebound";
+}
 
 /**
  * Where the ball goes once your touch has resolved, and whose it is.
@@ -171,7 +220,22 @@ function afterOutcome(
   switch (outcome) {
     case "goal":
       return { possession: "them", restart: "kick-off", ball: centre, note: "GOAL!" };
+    /**
+     * ── A rebound IS a goal ──
+     *
+     * The engine returns "rebound" for a finish from a second phase — a
+     * deflected shot, a follow-up off the keeper — and it sets `ball.inNet`
+     * when it does. Its own `OUTCOME_TEXT` calls it "GOAL — rebound!" and
+     * files it under `kind: "goal"`.
+     *
+     * This layer filed it with "delivered" and "touchOn" as open play, and
+     * `applyOutcome` read only `outcome === "goal"` for the scoreboard. So a
+     * deflected shot that crossed the line was drawn going into the net,
+     * announced as a goal by the engine's own caption, and then not counted —
+     * reported directly as "oh, that actually wasn't a goal".
+     */
     case "rebound":
+      return { possession: "them", restart: "kick-off", ball: centre, note: "GOAL — off the deflection!" };
     case "delivered":
     case "touchOn":
       // Still yours — the move goes on from wherever it got to.
@@ -266,7 +330,7 @@ export function applyOutcome(
   // (A previous version read `insideFivePitch(ball.pos) ? ball.pos : ball.pos`
   // — a condition whose two branches were identical. Caught in review.)
   const next = afterOutcome(outcome, ball.pos, state.rules);
-  const scored = outcome === "goal";
+  const scored = isGoalOutcome(outcome);
   const minute = Math.min(fullTimeMinutes(state.rules), state.minute + MINUTES_PER_PASSAGE);
 
   const world = worldFromScenario(scenario, next.ball, state.world);
@@ -278,6 +342,10 @@ export function applyOutcome(
     ...(opts.assist ? { assist: true } : {}),
   };
 
+  const nextWorld = next.restart === "kick-off"
+    ? kickOffWorld(next.possession === "you")
+    : { ...world, ball: next.ball };
+
   const s: FiveMatchState = {
     ...state,
     minute,
@@ -287,9 +355,21 @@ export function applyOutcome(
     restart: next.restart,
     // A goal or a restart puts everybody back in a sensible shape rather than
     // leaving them where the last passage happened to end.
-    world: next.restart === "kick-off"
-      ? kickOffWorld(next.possession === "you")
-      : { ...world, ball: next.ball },
+    world: nextWorld,
+    // ── And then the football carries on without you ──
+    //
+    // The single most important line in this file. Your touch is not the end
+    // of anything: the side that has it plays on, and you rejoin when the move
+    // finds you again. Territory comes from where the ball ACTUALLY finished,
+    // so a ball you won ground with is ground your side keeps and a ball you
+    // lost deep is lost deep.
+    flow: flowAfterTouch(
+      state.rules,
+      flowOf(state),
+      next.possession === "you" ? "you" : "them",
+      nextWorld.ball.y,
+    ),
+    awaiting: "flow",
     events: [...state.events, event],
     log: next.note ? push(state.log, `${Math.floor(minute)}' ${next.note}`) : state.log,
   };
@@ -297,61 +377,150 @@ export function applyOutcome(
 }
 
 /**
- * The other side's turn.
+ * PLAY ON.
  *
- * ── The honest version of this, stated rather than buried ──
+ * Runs the simulation forward from wherever the last touch left it until
+ * somebody needs you — which is either you (build a passage) or them (a chance
+ * to be played out and watched) — or until the whistle.
  *
- * Right now their attack is a single fair roll, not the real physics: their
- * quality against your keeper's, goal or no goal. That is exactly the same
- * abstraction the big match already uses for the eighty-nine minutes you are
- * not on the ball, so it is not a new compromise — it is the existing one,
- * applied to a shorter game.
+ * Returns the beats it played as well as the new state, because the beats are
+ * what the screen ANIMATES and none of them belong in a save: a snapshot of
+ * ten players, ninety times a match, written into a career for no reason.
  *
- * The real version (their attack decided by the live engine, mirrored, and
- * replayed back so your keeper genuinely dives) is a later step and is
- * designed for in geometry.ts's `mirror`. This is what ships first, and the
- * difference is one function.
+ * The stream is the match's own, wound forward past `draws`, so a match picked
+ * up from a save plays the football it was always going to play rather than
+ * re-rolling it.
  */
-export function oppAttack(
+export function advanceFlow(
   state: FiveMatchState,
-  /** 0-1, how good they are this match. */
-  difficulty: number,
-  /** 0-100, your keeper. */
-  keeper: number,
-  /** The screen's own stream position, if the caller is tracking one — an
-   *  opposition attack is a save point too, and leaving it stale here would
-   *  put back a slice of the very re-roll `passageDraws` exists to stop. */
+  inputs: FlowInputs,
+  opts: { passageDraws?: number } = {},
+): { state: FiveMatchState; beats: FlowBeat[]; events: FlowEvent[]; stop: FlowStop } {
+  if (state.over) return { state, beats: [], events: [], stop: "full-time" };
+  const stream = rngAt(state);
+
+  const left = fullTimeMinutes(state.rules) - state.minute;
+  // Every beat there is clock for, and no reserve. A reserve sounds prudent —
+  // leave room for whatever the flow stops FOR — but it is charged on EVERY
+  // call, and the flow is called a dozen times a match: MEASURED, holding one
+  // beat back cost about a minute of football a call and dropped the stage
+  // from 7.7 involvements to 6.7, which is the one number the whole rebuild
+  // was tuned to. A chance worked on the final beat of the match is a chance
+  // the whistle went on, which is a thing that happens in football.
+  const budget = Math.max(0, Math.floor(left / MINUTES_PER_BEAT));
+  if (budget <= 0) {
+    // Not enough clock left to play anything. Run it out rather than handing
+    // back a state the caller would ask the same question of forever — a
+    // match that cannot end is worse than one that ends a beat early.
+    const done = closeOutIfDone({ ...state, minute: fullTimeMinutes(state.rules) });
+    return { state: done, beats: [], events: [], stop: "full-time" };
+  }
+
+  const r = playOn(state.rules, state.world, flowOf(state), inputs, stream.rng, budget);
+
+  const minute = Math.min(
+    fullTimeMinutes(state.rules),
+    state.minute + r.beatsPlayed * MINUTES_PER_BEAT,
+  );
+  const score: [number, number] = [state.score[0] + r.scored[0], state.score[1] + r.scored[1]];
+  let log = state.log;
+  for (const e of r.events) log = push(log, `${Math.floor(minute)}' ${e.text}`);
+
+  const possession: Possession = r.flow.possession === "you" ? "you" : "them";
+  const s: FiveMatchState = {
+    ...state,
+    minute,
+    score,
+    passageDraws: opts.passageDraws ?? state.passageDraws,
+    draws: state.draws + stream.used(),
+    possession,
+    restart: "open-play",
+    world: r.world,
+    flow: r.flow,
+    log,
+    awaiting: r.stop === "you" ? "passage" : r.stop === "them" ? "opp" : "flow",
+  };
+  return { state: closeOutIfDone(s), beats: r.beats, events: r.events, stop: r.stop };
+}
+
+/**
+ * THE OTHER SIDE'S TURN, AS IT ACTUALLY HAPPENED.
+ *
+ * This used to be a single fair roll — their quality against your keeper's,
+ * goal or no goal — and the honest version of that was stated rather than
+ * buried: "the real version (their attack decided by the live engine,
+ * mirrored, and replayed back so your keeper genuinely dives) is a later step
+ * and is designed for in geometry.ts's `mirror`."
+ *
+ * This is that step. The caller builds their move with `buildTheirAttack`,
+ * plays it out through the same `launch`/`stepBall`/`stepKeeper` every other
+ * kick in the game goes through, and hands the real `Outcome` back here. So a
+ * conceded goal is one you watched go in past a keeper who genuinely dived,
+ * and a save is one he genuinely made.
+ *
+ * Two consequences worth stating, because they are the point rather than side
+ * effects:
+ *
+ *  1. **Territory matters.** Their chance is only ever built once the
+ *     simulation has worked them into your half, so a ball lost on the edge of
+ *     their box is not a chance at all — it is a long way back to your goal
+ *     with your four men in front of it. The old roll was the same 33% wherever
+ *     the ball had been lost, which is what made two-nil down the single
+ *     likeliest scoreline in the stage.
+ *  2. **Your keeper is worth having.** His rating is the engine's
+ *     `keeperStrength` on the scenario, which is the same number that decides
+ *     every save in the game, rather than a flat 30% subtraction.
+ *
+ * `ballAt` is in the MIRRORED picture the engine played — `mirror` is an
+ * involution, so handing it straight back is exactly right, and
+ * `worldFromTheirAttack` has already turned the players round.
+ */
+export function applyTheirAttack(
+  state: FiveMatchState,
+  /** What the engine said, from THEIR point of view. */
+  outcome: Outcome | "out",
+  /** The world read back out of their move — see `worldFromTheirAttack`. */
+  world: FiveWorld,
   opts: { passageDraws?: number } = {},
 ): FiveMatchState {
   if (state.over) return state;
-  const stream = rngAt(state);
-  const rng = stream.rng;
 
-  // A bounded edge, the same shape the rule book's own penalty resolver uses:
-  // a better side scores more often, a better keeper saves more, and neither
-  // is ever a certainty.
-  const attack = 0.35 + difficulty * 0.30;
-  const save = (keeper / 100) * 0.30;
-  const chance = Math.max(0.08, Math.min(0.6, attack - save));
-  const scored = rng() < chance;
-
+  const scored = isGoalOutcome(outcome);
   const minute = Math.min(fullTimeMinutes(state.rules), state.minute + MINUTES_PER_OPP_ATTACK);
   const score: [number, number] = scored ? [state.score[0], state.score[1] + 1] : [...state.score];
 
+  // What it leaves behind. Every branch is a real football answer to "and so
+  // whose ball is it now", the same way `afterOutcome` is for your own touch.
+  const note = scored ? "They score."
+    : outcome === "saved" || outcome === "caught" || outcome === "tipped" ? "Your keeper holds it."
+    : outcome === "post" ? "Off your post!"
+    : outcome === "wide" || outcome === "over" ? "They drag it wide."
+    : outcome === "blocked" || outcome === "tackled" ? "Blocked — you win it back."
+    : "The move breaks down.";
+
+  const keeperHasIt = outcome === "saved" || outcome === "caught" || outcome === "tipped"
+    || outcome === "post" || outcome === "wide" || outcome === "over";
+
+  const nextWorld: FiveWorld = scored
+    ? kickOffWorld(true)
+    : keeperHasIt
+      // Your keeper plays it out from his own line.
+      ? { ...world, ball: clampToPitch({ x: goalCentreX(state.rules), y: state.rules.pitch.y2 - 3 }) }
+      : world;
+
   const s: FiveMatchState = {
     ...state,
-    draws: state.draws + stream.used(),
     passageDraws: opts.passageDraws ?? state.passageDraws,
     minute,
     score,
     possession: "you",
-    restart: scored ? "kick-off" : "open-play",
-    world: scored
-      ? kickOffWorld(true)
-      : { ...state.world, ball: clampToPitch({ x: goalCentreX(state.rules), y: state.rules.pitch.y2 - 6 }) },
-    log: push(state.log, scored
-      ? `${Math.floor(minute)}' They score.`
-      : `${Math.floor(minute)}' Your keeper holds it.`),
+    restart: scored ? "kick-off" : keeperHasIt ? "goal-kick" : "open-play",
+    world: nextWorld,
+    // Back to the simulation either way: the ball is yours and your side plays
+    // out from wherever it ended up.
+    flow: flowAfterTouch(state.rules, flowOf(state), "you", nextWorld.ball.y),
+    awaiting: "flow",
+    log: push(state.log, `${Math.floor(minute)}' ${note}`),
   };
   return closeOutIfDone(s);
 }
@@ -385,6 +554,11 @@ function closeOutIfDone(state: FiveMatchState): FiveMatchState {
         possession: "you",
         restart: "kick-off",
         world: kickOffWorld(true),
+        // The simulation restarts from the middle too, or the second half
+        // opens with the ball nominally at kick-off and the flow still
+        // convinced play is camped in somebody's box.
+        flow: newFlow(true),
+        awaiting: "flow",
       };
     }
   }
@@ -404,25 +578,37 @@ function closeOutIfDone(state: FiveMatchState): FiveMatchState {
  * Pure, and exported, so the rule can be tested — the screen that obeys it is
  * a React mount effect and cannot be. It exists because that effect used to
  * build the next passage flatly, without ever asking whose ball it was, and
- * that single missing question is a complete exploit:
+ * that single missing question was a complete exploit:
  *
  * every touch of yours that hands the ball over — a save, a miss, a tackle, a
- * goal — writes the match away with `possession: "them"`, and the screen then
- * waits a beat before rolling their attack. Close the app in that beat and
+ * goal — wrote the match away with `possession: "them"`, and the screen then
+ * waited a beat before rolling their attack. Close the app in that beat and
  * re-open it, and their attack was skipped entirely: you got the ball back
- * wherever `afterOutcome` had left it, which after a save is two metres from
- * their goal line, dead centre. Tap in. Repeat. You could never concede, every
- * failed shot became a tap-in, and each skipped attack skipped its 0.7 of a
- * minute too, so you got more touches into the bargain.
+ * wherever `afterOutcome` had left it, which after a save was two metres from
+ * their goal line, dead centre. Tap in. Repeat.
  *
- *   "opp"     — it is their ball. Their attack runs FIRST.
- *   "passage" — it is yours. Build the picture and let them aim.
+ * ── Why the flow does not put it back ──
+ *
+ * Two independent guards now, rather than one. The rule below still refuses to
+ * hand you a passage when the match is waiting on anything else. AND the
+ * payload is gone structurally: after a save, the ball no longer sits on their
+ * goal line waiting for you — the simulation runs, their keeper plays it out,
+ * and by the time anybody asks you to do anything the ball is at the other end
+ * of the pitch. There is nothing left to skip TO.
+ *
+ *   "flow"    — nobody needs you yet. Play the simulation forward.
+ *   "opp"     — they have a chance. It gets played out, and you watch it.
+ *   "passage" — it is genuinely yours. Build the picture and let them aim.
  *   "done"    — the match is already over; finish the stage rather than
  *               sitting on it with no way forward.
  */
-export function resumeAction(state: FiveMatchState): "opp" | "passage" | "done" {
+export function resumeAction(state: FiveMatchState): "flow" | "opp" | "passage" | "done" {
   if (state.over || isFullTime(state)) return "done";
-  return state.possession === "them" ? "opp" : "passage";
+  const awaiting = awaitingOf(state);
+  // Belt and braces: whatever a save claims it is waiting for, it can never be
+  // waiting for YOUR touch while the ball is theirs.
+  if (awaiting === "passage" && state.possession === "them") return "opp";
+  return awaiting;
 }
 
 /** Who won, from your side of it. */

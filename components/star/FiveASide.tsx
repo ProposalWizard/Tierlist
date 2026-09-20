@@ -2,19 +2,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   initDefenders, launch, stepBall, stepKeeper, stepReactions, settleBall,
-  stepBallInNet, stepBallPastBar, dragForFullPower, setOffsideRuleEnabled,
-  type Ball, type Outcome, type Scenario, type Viewport,
+  stepBallInNet, stepBallPastBar, dragForFullPower, setOffsideRuleEnabled, goalInView,
+  type Ball, type Outcome, type Scenario, type Viewport, type Vec2,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
-import { kitsOf } from "@/lib/star/kits";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { FIVE_A_SIDE, type MatchRules } from "@/lib/star/fiveASide/rules";
-import { buildPassage, passLeadsToShot, type FiveCast } from "@/lib/star/fiveASide/passage";
-import { leftPitch } from "@/lib/star/fiveASide/geometry";
 import {
-  newFiveMatch, applyOutcome, oppAttack, resumeAction, type FiveMatchState,
+  buildPassage, buildTheirAttack, aimTheirShot, worldFromTheirAttack,
+  type FiveCast, type FiveWorld,
+} from "@/lib/star/fiveASide/passage";
+import { leftPitch, mirror, FIVE_KEEPER_STRENGTH } from "@/lib/star/fiveASide/geometry";
+import { type FlowBeat } from "@/lib/star/fiveASide/flow";
+import {
+  BRACE_MS, commitAt, commitKeeper, beginBlockRun, stepBlockRun,
+  type BlockRun, type FiveCommit,
+} from "@/lib/star/fiveASide/defend";
+import {
+  newFiveMatch, applyOutcome, advanceFlow, applyTheirAttack, resumeAction,
+  type FiveMatchState,
 } from "@/lib/star/fiveASide/match";
 import { passageQuality, summarise, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import {
@@ -28,25 +36,73 @@ import ContactBall from "./ContactBall";
  * You and three team-mates plus a keeper, against four and a keeper, on a
  * pitch that fits entirely inside one camera frame. Every kick you take goes
  * through the same `launch` / `stepBall` / `stepKeeper` the Saturday match
- * uses, with the same drag-to-aim.
+ * uses, with the same drag-to-aim — AND SO DOES EVERY KICK THEY TAKE.
+ *
+ * ── What changed, and why ──
+ *
+ * The verdict on the first version was "useless", with the diagnosis attached:
+ *
+ *   "The big issue is that the highlights are essentially you passing and then
+ *    respawning wherever the ball ends up. The CPUs have to be able to play
+ *    without your input."
+ *
+ * So there are now three things on this screen instead of one:
+ *
+ *   1. **The simulation, watched.** Between your touches, `flow.ts` plays the
+ *      football you are not in — team-mates move, the ball travels, territory
+ *      changes — and this screen animates it beat by beat. You rejoin play
+ *      somewhere play took you, with the ball played TO you.
+ *   2. **Your touch**, exactly as before: drag to aim, contact screen, engine.
+ *      Plus a tap on a team-mate for a simple pass, which should never have
+ *      cost the full ceremony.
+ *   3. **Their chance, watched.** Handed to the engine mirrored (see
+ *      `buildTheirAttack`) and drawn mirrored back, so a goal against you is
+ *      one you saw go in past a keeper who genuinely dived.
  *
  * ── What is this component's, and what is not ──
  *
  * Almost nothing here is a decision. The shape of the game is `rules.ts`, the
- * picture the engine plays is `passage.ts`, the score and the clock are
- * `match.ts`, and what a touch was worth is `score.ts` — all pure, all tested
- * without a browser. This file is the loop, the thumb, and the paint.
- *
- * That split is deliberate and is what makes the piece reusable: the opening
- * trial, a free agent's replayed trial, and eventually a training drill all
- * want this match, and none of them want a different one.
+ * football nobody is playing is `flow.ts`, the picture the engine plays is
+ * `passage.ts`, the score and the clock are `match.ts`, and what a touch was
+ * worth is `score.ts` — all pure, all tested without a browser. This file is
+ * the loop, the thumb, and the paint.
  */
 
 /** Matches the live match's own aim feel exactly. A dead-zone so a tap is not
  *  a shot, and a full-power drag computed from the striker's own power the
- *  same way `CanvasMatch` computes it — `TrialPenalty` once had stale copies
- *  of both and quietly felt different from the game it was the opening of. */
+ *  same way `CanvasMatch` computes it. */
 const MIN_PULL = 0.008;
+
+/**
+ * ── The weird loading time ──
+ *
+ * There used to be 1.8 seconds of hard-coded `setTimeout` per touch: 900 ms
+ * staring at a resolved outcome, then another 900 ms of "They break…" over a
+ * dice roll. Nothing else blocked; that was the whole of it.
+ *
+ * A beat to read what happened is worth having. Nearly two seconds of it,
+ * twelve times a match, is not — and the second of the two is gone entirely,
+ * because their attack is now something you watch rather than something you
+ * wait for.
+ */
+const READ_OUTCOME_MS = 420;
+/** …except a goal, which is worth looking at. */
+const READ_GOAL_MS = 900;
+
+/**
+ * How long the simulation between touches takes to watch, in total.
+ *
+ * Long enough to see play move, short enough never to be a wait — and a real
+ * CAP, not a target: a long spell can be forty beats of football, and forty
+ * beats at even the shortest readable frame is nearly four seconds of watching
+ * between two of your own touches. Past `FLOW_MAX_BEATS` the spell is sampled
+ * rather than slowed down, which reads as play moving quickly rather than as
+ * the game pausing.
+ */
+const FLOW_PLAYBACK_MS = 1600;
+const FLOW_BEAT_MIN_MS = 90;
+const FLOW_BEAT_MAX_MS = 260;
+const FLOW_MAX_BEATS = Math.floor(FLOW_PLAYBACK_MS / FLOW_BEAT_MIN_MS);   // 17
 
 /**
  * The SCREEN's own random stream, wound forward to where it left off.
@@ -59,9 +115,7 @@ const MIN_PULL = 0.008;
  * of the passage you did not like.
  *
  * `drawn()` is the ABSOLUTE position in the stream (it starts at `wound`, not
- * at zero), because that is what gets written into the save. Returning the
- * count since mount instead would restart the match's own record of where it
- * was every time the app was opened, which is the same bug with extra steps.
+ * at zero), because that is what gets written into the save.
  */
 function countingRng(seed: number, wound: number): { next: () => number; drawn: () => number } {
   // A save could carry anything; a number that is not a sane count must not be
@@ -73,7 +127,7 @@ function countingRng(seed: number, wound: number): { next: () => number; drawn: 
   return { next: () => { n++; return base(); }, drawn: () => n };
 }
 
-type Phase = "ready" | "aim" | "contact" | "flight" | "result" | "opp" | "done";
+type Phase = "flow" | "aim" | "brace" | "contact" | "flight" | "result" | "watch" | "done";
 
 export interface FiveASideProps {
   /** 0-1. Sets how good the opposition are — see rules/score. */
@@ -124,19 +178,41 @@ export default function FiveASide({
   // thousands of wasted draws a frame.
   const [rng] = useState(() => countingRng(seed, resumeFrom?.passageDraws ?? 0));
   const dragRef = useRef<{ x: number; y: number } | null>(null);
-  const aimRef = useRef<{ dir: { x: number; y: number }; power: number } | null>(null);
-  const phaseRef = useRef<Phase>("ready");
+  const aimRef = useRef<{ dir: Vec2; power: number } | null>(null);
+  const phaseRef = useRef<Phase>("flow");
   const rafRef = useRef<number | null>(null);
   const camRef = useRef<Viewport | null>(null);
-  const settleRef = useRef(0);
   const doneRef = useRef(false);
+
+  /** THEIR move, while it is being watched: the mirrored picture the engine is
+   *  playing, plus the world it started from so it can be read back, and the
+   *  shot they are about to take — struck once the brace window runs out. */
+  const theirRef = useRef<{
+    sc: Scenario; from: FiveWorld;
+    shot: ReturnType<typeof aimTheirShot>;
+  } | null>(null);
+  /** The brace window: milliseconds left. A ref, not state — the ring is
+   *  drawn on the canvas every frame anyway, and re-rendering React sixty
+   *  times a second to move an arc would be sixty renders for nothing. */
+  const braceRef = useRef(0);
+  const committedRef = useRef<FiveCommit | null>(null);
+  const [committed, setCommitted] = useState<FiveCommit | null>(null);
+  /** The man you sent, while he is running. */
+  const blockRef = useRef<BlockRun | null>(null);
+  /** The simulation being animated: the beats, where we are in them, and the
+   *  world to draw right now. */
+  const flowRef = useRef<{ beats: FlowBeat[]; at: number; t: number; perBeat: number } | null>(null);
+  const shownRef = useRef<FiveWorld>(matchRef.current.world);
+  const [banner, setBanner] = useState<string | null>(null);
+  /** See `obey`. Assigned below, once it exists. */
+  const obeyRef = useRef<() => void>(() => {});
 
   const faces = useRef(createFaceImageCache());
   const faceStyle = useRef(loadFaceStyle());
   const fakeFaceStyle = useRef(loadFakeFaceStyle());
 
   const [, forceRender] = useState(0);
-  const [phase, setPhaseState] = useState<Phase>("ready");
+  const [phase, setPhaseState] = useState<Phase>("flow");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   // A kit is a shirt and a trim; the shorts take the trim, which is what
@@ -157,87 +233,243 @@ export default function FiveASide({
     return () => { setOffsideRuleEnabled(true); };
   }, [rules.offside]);
 
-  /** The engine's picture of the world as it stands, from a given stream. */
-  const buildCurrent = useCallback((rand: () => number) => {
+  const finish = useCallback((m: FiveMatchState) => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    setPhase("done");
+    onComplete(summarise(m, difficulty), m);
+  }, [difficulty, onComplete]);
+
+  /** The engine's picture of YOUR touch, as the world stands. */
+  const loadPassage = useCallback(() => {
     const sc = buildPassage(matchRef.current.world, {
       cast,
-      keeperStrength: Math.min(99, oppKeeperStrength ?? (40 + difficulty * 45)),
+      // ── Floored, whatever the caller asked for ──
+      //
+      // The trial hands this stage a keeper scaled by difficulty and by its
+      // own "sharp keeper" event, which is right for a full-size goal and
+      // impossible on this one: the engine's save radius was tuned against a
+      // 7.32 m mouth and on a small-sided goal it covers the lot. A clean
+      // one-on-one measured 0.0% before this. See FIVE_KEEPER_STRENGTH — and
+      // its note on where difficulty has to come from instead.
+      keeperStrength: Math.min(FIVE_KEEPER_STRENGTH, oppKeeperStrength ?? FIVE_KEEPER_STRENGTH),
       teamRelationship: 55,
-      rng: rand,
+      rng: rng.next,
     });
     sc.goal = { ...rules.goal };
     sc.crossbar = rules.crossbar;
     sc.viewport = { ...rules.view };
-    initDefenders(sc, rand);
-    return sc;
-  }, [cast, difficulty, oppKeeperStrength, rules]);
-
-  /**
-   * Build the picture for the touch that is about to happen.
-   *
-   * The draws this costs are NOT written to the save here, and that is right
-   * rather than an omission: they are recorded at the end of the passage, so a
-   * resume winds the stream back to just before this build and puts the SAME
-   * picture back up. Closing the app while looking at a chance you did not
-   * fancy therefore gets you that same chance again, not a new one.
-   */
-  const loadPassage = useCallback(() => {
-    scRef.current = buildCurrent(rng.next);
+    initDefenders(sc, rng.next);
+    scRef.current = sc;
     ballRef.current = null;
     aimRef.current = null;
+    theirRef.current = null;
+    blockRef.current = null;
+    committedRef.current = null;
+    shownRef.current = matchRef.current.world;
+    setBanner(null);
     setPhase("aim");
-  }, [buildCurrent, rng]);
+  }, [cast, difficulty, oppKeeperStrength, rng, rules]);
 
   /**
-   * ── WHOSE BALL IS IT, ON THE WAY IN ──
+   * THEIR CHANCE, PLAYED OUT.
    *
-   * This used to call `loadPassage()` flatly, without ever asking. It is the
-   * whole of a real and cheap exploit, and it is worth writing down because
-   * nothing on screen shows it:
-   *
-   * every touch of yours that hands the ball over — a save, a miss, a tackle,
-   * a goal — saves the match with `possession: "them"` and then waits 900 ms
-   * before rolling their attack. Close the app while "They break…" is up and
-   * re-open it, and the old mount skipped their attack entirely and handed you
-   * the ball wherever `afterOutcome` had left it. After a save that is two
-   * metres from their goal line, dead centre. Tap in, repeat: you can never
-   * concede, every failed shot becomes a tap-in, and each skipped attack skips
-   * its 0.7 of a minute too, so you get more touches as well.
-   *
-   * So the first thing a resumed match does is find out whose ball it is.
+   * Built mirrored, struck by them, stepped by the real physics. Everything
+   * about it is the engine's, including your keeper's dive — the only thing
+   * this screen does is turn the picture back round before it draws it.
    */
-  useEffect(() => {
+  const startTheirAttack = useCallback(() => {
+    const from = matchRef.current.world;
+    const sc = buildTheirAttack(from, {
+      cast,
+      keeperStrength: Math.max(1, Math.min(99, keeperStrength)),
+      teamRelationship: 55,
+      rng: rng.next,
+    });
+    sc.goal = { ...rules.goal };
+    sc.crossbar = rules.crossbar;
+    sc.viewport = { ...rules.view };
+    initDefenders(sc, rng.next);
+    // Rolled NOW, before the window, so nothing about the window can change
+    // what they were always going to do with it. You are reading the picture,
+    // not the dice.
+    const shot = aimTheirShot(sc, difficulty, rng.next);
+    scRef.current = sc;
+    theirRef.current = { sc, from, shot };
+    ballRef.current = null;
+    aimRef.current = null;
+    blockRef.current = null;
+    committedRef.current = null;
+    setCommitted(null);
+    braceRef.current = BRACE_MS;
+    setBanner("They break…");
+    setPhase("brace");
+  }, [cast, difficulty, keeperStrength, rng, rules]);
+
+  /** The window has run out — they hit it. */
+  const strikeTheirs = useCallback(() => {
+    const their = theirRef.current;
+    if (!their) return;
+    const { sc, shot } = their;
+    ballRef.current = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng.next);
+    setBanner(null);
+    setPhase("watch");
+  }, [rng]);
+
+  /**
+   * PLAY ON — the simulation between your touches, animated.
+   *
+   * The beats are never stored: they come back from `advanceFlow`, get played
+   * through here, and are thrown away. What IS stored is the state at the end
+   * of them, which is what a resume picks up.
+   */
+  const runFlow = useCallback(() => {
+    const r = advanceFlow(matchRef.current, {
+      difficulty,
+      playerSkill: (skills.power + skills.technique) / 2,
+    }, { passageDraws: rng.drawn() });
+    matchRef.current = r.state;
+    onProgress?.(r.state);
+
+    scRef.current = null;
+    ballRef.current = null;
+    theirRef.current = null;
+
+    // ── Nothing to watch ──
+    //
+    // `advanceFlow` returns no beats when there is no clock left to play them
+    // in, and it runs the match out when that happens. Without this the screen
+    // sat in the flow phase forever with nothing animating and nothing to
+    // finish it: the loop only calls `obey` again when a playback ENDS, and a
+    // playback that never started never ends.
+    if (r.state.over) { finish(r.state); return; }
+    if (!r.beats.length) {
+      shownRef.current = r.state.world;
+      flowRef.current = null;
+      // Handed back on the next tick rather than called straight through:
+      // `obey` can call `runFlow` again, and a mutual recursion inside one
+      // frame is a stack overflow where a deferred one is at worst a busy
+      // frame. (It should not be reachable at all — `advanceFlow` only returns
+      // no beats when it has also run the clock out, which the line above
+      // catches — so this is the belt to that braces.)
+      window.setTimeout(() => obeyRef.current(), 0);
+      return;
+    }
+    {
+      // Sampled evenly, ALWAYS keeping the last one — that is the beat the
+      // next thing happens from, and arriving anywhere else would put the
+      // players somewhere the match state does not agree with.
+      const beats = r.beats.length <= FLOW_MAX_BEATS
+        ? r.beats
+        : Array.from({ length: FLOW_MAX_BEATS }, (_, i) =>
+          r.beats[Math.round((i * (r.beats.length - 1)) / (FLOW_MAX_BEATS - 1))]);
+      const per = Math.max(FLOW_BEAT_MIN_MS,
+        Math.min(FLOW_BEAT_MAX_MS, FLOW_PLAYBACK_MS / beats.length));
+      flowRef.current = { beats, at: 0, t: 0, perBeat: per };
+      shownRef.current = beats[0].world;
+    }
+    setBanner(r.state.possession === "you" ? "Your side have it" : "They have it");
+    setPhase("flow");
+  }, [difficulty, finish, onProgress, rng, skills.power, skills.technique]);
+
+  /**
+   * What the match is waiting for, obeyed. The one entry point that decides
+   * what happens next, so a resume and an ordinary continuation cannot
+   * disagree — see `resumeAction`'s own note on the exploit that caused.
+   *
+   * Held in a ref as well, because `runFlow` needs to hand straight back to it
+   * when there is nothing to animate and the two are mutually recursive.
+   */
+  const obey = useCallback(() => {
     const m = matchRef.current;
     const action = resumeAction(m);
-    if (action === "done") {
-      // Only reachable from a save written between the last passage and the
-      // stage being recorded. Finishing it is the recovery; sitting on a
-      // finished match with no way forward is not.
-      if (!doneRef.current) {
-        doneRef.current = true;
-        setPhase("done");
-        onComplete(summarise(m, difficulty), m);
-      }
-      return;
-    }
-    if (action === "opp") {
-      // Something to look at while they break — the pitch as it stands, built
-      // off a THROWAWAY stream so the match's own numbers are untouched. Using
-      // the real one would make a resumed match diverge from an uninterrupted
-      // one by however many draws the picture cost, which is exactly the
-      // property `passageDraws` was added to protect.
-      scRef.current = buildCurrent(mulberry32(seed ^ 0x5eed));
-      ballRef.current = null;
-      aimRef.current = null;
-      setPhase("opp");
-      return;
-    }
-    loadPassage();
+    if (action === "done") { finish(m); return; }
+    if (action === "opp") { startTheirAttack(); return; }
+    if (action === "passage") { loadPassage(); return; }
+    runFlow();
+  }, [finish, loadPassage, runFlow, startTheirAttack]);
+  obeyRef.current = obey;
+
+  useEffect(() => {
+    obey();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── The thumb ──────────────────────────────────────────────────────────
+
+  /** Where on the pitch, in metres, a pointer event landed. */
+  const pitchAt = (e: React.PointerEvent): Vec2 | null => {
+    const wrap = wrapRef.current, cam = camRef.current;
+    if (!wrap || !cam) return null;
+    const r = wrap.getBoundingClientRect();
+    const fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    return { x: cam.x1 + fx * (cam.x2 - cam.x1), y: cam.y1 + fy * (cam.y2 - cam.y1) };
+  };
+
+  /**
+   * TAP TO PASS.
+   *
+   * Asked for directly: "let's try tap to pass for a new sequence section."
+   * A simple ball to a man in space should not cost a drag, a power gauge and
+   * a contact screen — that ceremony is for a shot, or for a pass you want to
+   * weight yourself, and both are still there.
+   *
+   * The hit-testing is `CanvasMatch`'s own captain's-orders mechanism rather
+   * than a second opinion: nearest man inside a generous radius, so two
+   * players close together resolve to one of them rather than to neither. Its
+   * own note explains the generosity — "a footballer is a centimetre wide on a
+   * phone and the whole ability is worthless if picking him out is fiddly".
+   */
+  const passTargetAt = (p: Vec2): Vec2 | null => {
+    const sc = scRef.current;
+    if (!sc) return null;
+    const vp = camRef.current ?? sc.viewport;
+    const grab = Math.max(2.2, (vp.y2 - vp.y1) * 0.09);
+    let best: Vec2 | null = null;
+    let bestD = grab;
+    for (const r of sc.secondaryRunners) {
+      const d = Math.hypot(p.x - r.pos.x, p.y - r.pos.y);
+      if (d < bestD) { bestD = d; best = { x: r.pos.x, y: r.pos.y }; }
+    }
+    // The poacher is only a real man when the goal is in view — see
+    // passage.ts. Offering him as a pass target otherwise would be offering a
+    // ball to somebody the engine is going to ignore.
+    if (goalInView(sc.kind)) {
+      const d = Math.hypot(p.x - sc.follower.x, p.y - sc.follower.y);
+      if (d < bestD) { bestD = d; best = { x: sc.follower.x, y: sc.follower.y }; }
+    }
+    return best;
+  };
+
+  /**
+   * THROW A BODY AT IT — the one tap you get while they are lining it up.
+   *
+   * Handled on pointer DOWN rather than up: this is a tap, not a drag, and
+   * every millisecond of the window left is real ground the man covers.
+   *
+   * The tap arrives in OUR coordinates, and their move is played mirrored, so
+   * it is turned round before it is hit-tested — see geometry.ts's `mirror`.
+   */
+  const braceTap = (e: React.PointerEvent) => {
+    const sc = scRef.current, their = theirRef.current;
+    if (!sc || !their || committedRef.current) return;   // one tap, and one only
+    const p = pitchAt(e);
+    if (!p) return;
+    const vp = camRef.current ?? sc.viewport;
+    const grab = Math.max(2.2, (vp.y2 - vp.y1) * 0.09);
+    const c = commitAt(sc, mirror(p), grab);
+    if (!c) return;                                       // a mis-tap costs nothing
+    committedRef.current = c;
+    setCommitted(c);
+    if (c.kind === "keeper") commitKeeper(sc, c.side);
+    else {
+      const d = sc.defenders[c.defender];
+      if (d) blockRef.current = beginBlockRun(sc, sc.ball, d);
+    }
+  };
+
   const pointerDown = (e: React.PointerEvent) => {
+    if (phaseRef.current === "brace") { braceTap(e); return; }
     if (phaseRef.current !== "aim") return;
     const wrap = wrapRef.current;
     if (!wrap) return;
@@ -260,11 +492,49 @@ export default function FiveASide({
     forceRender(n => n + 1);
   };
 
-  const pointerUp = () => {
+  /** Strike it, and start the flight. Shared by the contact screen and by a
+   *  tap-to-pass, which skips the contact screen on purpose. */
+  const fire = useCallback((dir: Vec2, power: number, contact: { cx: number; cy: number }) => {
+    const sc = scRef.current;
+    if (!sc) return;
+    ballRef.current = launch(sc, dir, power, contact, skills, rng.next);
+    setBanner(null);
+    setPhase("flight");
+  }, [rng, skills]);
+
+  /** A pointer that went away rather than being lifted — a notification, a
+   *  palm on the screen. It must not fire a pass: a tap is a decision and a
+   *  cancel is not one. */
+  const pointerCancel = () => {
+    dragRef.current = null;
+    aimRef.current = null;
+    forceRender(n => n + 1);
+  };
+
+  const pointerUp = (e: React.PointerEvent) => {
     if (phaseRef.current !== "aim") return;
     const aim = aimRef.current;
+    const had = dragRef.current;
     dragRef.current = null;
-    if (!aim) { forceRender(n => n + 1); return; }
+
+    if (!aim) {
+      // No real drag — so it was a tap. If it landed on a team-mate, play him
+      // the ball; otherwise it was a mis-tap and nothing happens, which is
+      // better than a badly-aimed shot going off.
+      const sc = scRef.current;
+      const p = had ? pitchAt(e) : null;
+      const t = p ? passTargetAt(p) : null;
+      if (sc && t) {
+        const dir = { x: t.x - sc.ball.x, y: t.y - sc.ball.y };
+        // Weighted for the distance, the way the measurement harnesses weight
+        // an ordinary pass — a tap should not be a hospital ball.
+        const power = Math.min(0.95, 0.2 + Math.hypot(dir.x, dir.y) / 32);
+        fire(dir, power, { cx: 0, cy: -0.2 });
+        return;
+      }
+      forceRender(n => n + 1);
+      return;
+    }
     // You have chosen a direction and a weight; the contact screen decides
     // WHERE on the ball you hit it, exactly as a real match does.
     setPhase("contact");
@@ -274,22 +544,16 @@ export default function FiveASide({
   const strike = useCallback((contact: { cx: number; cy: number }) => {
     const sc = scRef.current, aim = aimRef.current;
     if (!sc || !aim) { setPhase("aim"); return; }
-    // The drag is in screen fractions; the engine wants pitch metres, and the
-    // frame is the same shape on both axes, so one scale does both.
-    // The CAMERA's metres, not the engine frame's — the drag is a fraction of
-    // what is on screen, and once the camera crops the frame those are two
-    // different rectangles. Using the frame here would stretch every aim
-    // lengthwise by however much the camera had cropped.
+    // The drag is in screen fractions; the engine wants pitch metres. The
+    // CAMERA's metres, not the engine frame's — the drag is a fraction of what
+    // is on screen, and once the camera crops the frame those are two
+    // different rectangles.
     const vp = camRef.current ?? sc.viewport;
-    const w = vp.x2 - vp.x1, h = vp.y2 - vp.y1;
-    const dir = { x: aim.dir.x * w, y: aim.dir.y * h };
-    ballRef.current = launch(sc, dir, aim.power, contact, skills, rng.next);
-    settleRef.current = 0;
-    setPhase("flight");
-  }, [skills]);
+    fire({ x: aim.dir.x * (vp.x2 - vp.x1), y: aim.dir.y * (vp.y2 - vp.y1) }, aim.power, contact);
+  }, [fire]);
 
-  /** Fold a finished touch into the match, then decide what happens next. */
-  const resolve = useCallback((outcome: Outcome | "out") => {
+  /** Fold YOUR finished touch into the match, then play on. */
+  const resolveMine = useCallback((outcome: Outcome | "out") => {
     const sc = scRef.current, ball = ballRef.current;
     if (!sc || !ball) return;
 
@@ -299,7 +563,7 @@ export default function FiveASide({
     // A goal a team-mate scored off your pass is an assist, and the engine's
     // own `receiverShot` is the only reliable signal for "somebody else put
     // this away" — a clean team-mate finish reports as "goal" just like yours.
-    const assist = outcome === "goal" && !!sc.receiverShot;
+    const assist = (outcome === "goal" || outcome === "rebound") && !!sc.receiverShot;
 
     const next = applyOutcome(matchRef.current, outcome, sc, ball, quality, {
       assist, passageDraws: rng.drawn(),
@@ -307,97 +571,126 @@ export default function FiveASide({
     matchRef.current = next;
     // Saved at every passage end, which is what makes closing the app safe.
     onProgress?.(next);
+    if (next.over) { finish(next); return; }
+    obey();
+  }, [finish, obey, onProgress, rng, rules]);
 
-    if (next.over) {
-      if (!doneRef.current) {
-        doneRef.current = true;
-        setPhase("done");
-        onComplete(summarise(next, difficulty), next);
-      }
-      return;
-    }
-    if (next.possession === "them") { setPhase("opp"); return; }
-    loadPassage();
-  }, [difficulty, loadPassage, onComplete, onProgress, rng, rules]);
-
-  /** Their turn. A beat, then the ball is yours again. */
-  useEffect(() => {
-    if (phase !== "opp") return;
-    const t = window.setTimeout(() => {
-      const next = oppAttack(matchRef.current, difficulty, keeperStrength, {
-        passageDraws: rng.drawn(),
-      });
-      matchRef.current = next;
-      onProgress?.(next);
-      if (next.over) {
-        if (!doneRef.current) {
-          doneRef.current = true;
-          setPhase("done");
-          onComplete(summarise(next, difficulty), next);
-        }
-        return;
-      }
-      loadPassage();
-    }, 900);
-    return () => window.clearTimeout(t);
-  }, [phase, difficulty, keeperStrength, loadPassage, onComplete, onProgress, rng]);
+  /** Fold THEIR finished chance into the match, then play on. */
+  const resolveTheirs = useCallback((outcome: Outcome | "out") => {
+    const their = theirRef.current, ball = ballRef.current;
+    if (!their || !ball) return;
+    const world = worldFromTheirAttack(their.sc, ball.pos, their.from);
+    const next = applyTheirAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
+    matchRef.current = next;
+    onProgress?.(next);
+    if (next.over) { finish(next); return; }
+    obey();
+  }, [finish, obey, onProgress, rng]);
 
   // ── The loop ───────────────────────────────────────────────────────────
+  //
+  // One place decides when a struck ball has finished, whoever struck it: the
+  // physics are identical, and the only difference is which reducer the
+  // outcome goes to.
+  const settleAtRef = useRef(0);
+  const pendingRef = useRef<{ outcome: Outcome | "out"; mine: boolean; until: number } | null>(null);
+
   useEffect(() => {
     let last = performance.now();
     const frame = (now: number) => {
       rafRef.current = requestAnimationFrame(frame);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      const sc = scRef.current;
-      if (!sc) return;
 
-      if (phaseRef.current === "aim") {
-        stepKeeper(sc, dt);
-      } else if (phaseRef.current === "flight") {
-        const ball = ballRef.current;
-        if (ball) {
-          // Three substeps, the same split a real match uses — one coarse
-          // step per frame is measurably worse right at the boundary checks
-          // (over the bar, in the net, off the post) that decide outcomes.
+      const ph = phaseRef.current;
+
+      if (ph === "flow") {
+        const f = flowRef.current;
+        if (f) {
+          f.t += dt * 1000;
+          while (f.t >= f.perBeat && f.at < f.beats.length - 1) { f.t -= f.perBeat; f.at += 1; }
+          const a = f.beats[f.at].world;
+          const b = f.beats[Math.min(f.beats.length - 1, f.at + 1)].world;
+          const k = f.at >= f.beats.length - 1 ? 1 : Math.min(1, f.t / f.perBeat);
+          shownRef.current = lerpWorld(a, b, k);
+          if (f.at >= f.beats.length - 1 && f.t >= f.perBeat) {
+            flowRef.current = null;
+            shownRef.current = matchRef.current.world;
+            obey();
+          }
+        }
+      } else if (ph === "brace") {
+        // The window. Nobody moves but the man you sent and the keeper you
+        // committed — everyone else is waiting for the ball to be struck,
+        // exactly as they are in an ordinary aim phase.
+        const sc = scRef.current;
+        if (sc) {
+          stepKeeper(sc, dt);
+          if (blockRef.current) stepBlockRun(sc, blockRef.current, dt);
+        }
+        braceRef.current -= dt * 1000;
+        if (braceRef.current <= 0) strikeTheirs();
+      } else if (ph === "flight" || ph === "watch") {
+        const sc = scRef.current, ball = ballRef.current;
+        if (sc && ball && !pendingRef.current) {
+          // Three substeps, the same split a real match uses — one coarse step
+          // per frame is measurably worse right at the boundary checks (over
+          // the bar, in the net, off the post) that decide outcomes.
           let res: Outcome | null = null;
           for (let i = 0; i < 3 && !res; i++) {
             const h = dt / 3;
             stepKeeper(sc, h);
             stepReactions(sc, ball, h, rng.next);
+            // After the reactions and before the ball, the same slot
+            // `stepTouchChase` occupies in a real match.
+            if (blockRef.current) stepBlockRun(sc, blockRef.current, h);
             res = stepBall(ball, sc, rng.next, h);
           }
-          // Our own touchline, which is inside the engine's frame — the
-          // engine only calls "out" at the frame edge, a metre further on.
-          if (!res && leftPitch(ball.pos)) res = "out" as Outcome;
+          // Our own touchline, which is inside the engine's frame — the engine
+          // only calls "out" at the frame edge, a metre further on.
+          if (!res && leftPitch(ph === "watch" ? mirror(ball.pos) : ball.pos)) res = "out" as Outcome;
           if (res) {
+            const isGoal = res === "goal" || res === "rebound";
+            pendingRef.current = {
+              outcome: res, mine: ph === "flight",
+              until: now + (isGoal ? READ_GOAL_MS : READ_OUTCOME_MS),
+            };
+            settleAtRef.current = 0;
+            setBanner(captionFor(res, ph === "flight"));
             setPhase("result");
-            settleRef.current = 0;
-            window.setTimeout(() => resolve(res as Outcome | "out"), 900);
           }
         }
-      } else if (phaseRef.current === "result") {
+      } else if (ph === "result") {
         // Keep the ball moving after the outcome is decided, so a goal is SEEN
         // going in rather than announced and frozen.
-        const ball = ballRef.current;
-        if (ball) {
+        const sc = scRef.current, ball = ballRef.current;
+        if (sc && ball) {
           if (ball.inNet) stepBallInNet(ball, dt);
           else if (ball.overBar) stepBallPastBar(ball, dt);
           else settleBall(ball, dt);
           if (!sc.keeper.done) stepKeeper(sc, dt);
         }
+        const p = pendingRef.current;
+        if (p && now >= p.until) {
+          pendingRef.current = null;
+          if (p.mine) resolveMine(p.outcome);
+          else resolveTheirs(p.outcome);
+        }
+      } else if (ph === "aim") {
+        const sc = scRef.current;
+        if (sc) stepKeeper(sc, dt);
       }
       draw();
     };
     rafRef.current = requestAnimationFrame(frame);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolve]);
+  }, [resolveMine, resolveTheirs, obey, strikeTheirs]);
 
   // ── The picture ────────────────────────────────────────────────────────
   const draw = () => {
-    const c = canvasRef.current, wrap = wrapRef.current, sc = scRef.current;
-    if (!c || !wrap || !sc) return;
+    const c = canvasRef.current, wrap = wrapRef.current;
+    if (!c || !wrap) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const cssW = wrap.clientWidth, cssH = wrap.clientHeight;
     if (c.width !== Math.round(cssW * dpr) || c.height !== Math.round(cssH * dpr)) {
@@ -408,62 +701,127 @@ export default function FiveASide({
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    const sc = scRef.current;
+    const ball = ballRef.current;
+    const watching = phaseRef.current === "watch" || phaseRef.current === "brace"
+      || (phaseRef.current === "result" && !!theirRef.current);
+
+    // ── Everything in OUR coordinates, whoever is attacking ──
+    //
+    // Their move is played in the mirrored picture (see `buildTheirAttack`),
+    // so it is turned back round here — once, at the point of drawing, which
+    // is the only place that has ever needed to know.
+    const un = (p: Vec2) => (watching ? mirror(p) : p);
+    const ballAt = ball ? un(ball.pos) : sc ? un(sc.ball) : shownRef.current.ball;
+
     // ── The camera follows the ball ──
     //
     // The frame is taller than a phone, so something has to give: either the
     // pitch shrinks until the whole thing fits (and everyone on it is a
     // thumbnail), or the screen scrolls. Decided directly — it scrolls.
-    //
-    // What it follows is the ball while one is live, and otherwise wherever
-    // the next touch is going to happen, so the camera has already arrived by
-    // the time you are asked to aim.
-    const follow = ballRef.current?.pos ?? sc.ball;
-    camRef.current = cameraFor(rules, follow, cssW, cssH, camRef.current ?? undefined);
+    camRef.current = cameraFor(rules, ballAt, cssW, cssH, camRef.current ?? undefined);
     const p = projectionFor(rules, cssW, cssH, camRef.current);
     drawPitch(ctx, rules, p);
     drawGoal(ctx, rules, p, rules.pitch.y1);
     drawGoal(ctx, rules, p, rules.pitch.y2);
 
-    const m = matchRef.current;
     const face = (id?: string) => (id ? faces.current.get(id) : undefined);
+    const fig = (at: Vec2, look: Parameters<typeof drawFigure>[3]) =>
+      drawFigure(ctx, p, at, look, faceStyle.current, fakeFaceStyle.current);
+    const keeperLook = (theirs_: boolean) => theirs_
+      ? { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" }
+      : { shirt: "#34d399", shorts: "#065f46", trim: "#065f46" };
+
+    if (!sc) {
+      // Between touches: no engine picture at all, just the world as the
+      // simulation has it. This is the half the stage never had.
+      //
+      // Cast by index, which is safe because the simulation only ever MOVES
+      // men — `assign` eases man i toward a slot, it never swaps two of them —
+      // so the fourth man in blue is the same fourth man he was last touch.
+      const w = shownRef.current;
+      w.opps.forEach((o, i) => fig(o, {
+        ...theirs, label: cast?.opps?.[i]?.shortName, face: face(cast?.opps?.[i]?.face),
+      }));
+      fig(w.theirKeeper, { ...keeperLook(true), label: cast?.theirKeeper?.shortName, face: face(cast?.theirKeeper?.face) });
+      fig(w.yourKeeper, { ...keeperLook(false), label: cast?.yourKeeper?.shortName, face: face(cast?.yourKeeper?.face) });
+      w.mates.forEach((m, i) => fig(m, {
+        ...mine, label: cast?.mates?.[i]?.shortName, face: face(cast?.mates?.[i]?.face),
+      }));
+      fig(w.you, { ...mine, star: true, face: face(cast?.you?.face) });
+      drawBall(ctx, p, w.ball, 0);
+      return;
+    }
 
     // Them first, then you — so your own figures draw over theirs where they
     // overlap, and you can always see yourself.
-    for (const d of sc.defenders) {
-      drawFigure(ctx, p, d, {
-        ...theirs, label: d.who?.shortName, face: face(d.who?.face),
-      }, faceStyle.current, fakeFaceStyle.current);
+    if (watching) {
+      // In their move the engine's `defenders` are YOUR men and its runners
+      // are theirs; `sc.player` is the man on the ball, in their shirt.
+      for (const r of sc.secondaryRunners) fig(un(r.pos), { ...theirs, label: r.who?.shortName, face: face(r.who?.face) });
+      if (goalInView(sc.kind)) fig(un({ x: sc.follower.x, y: sc.follower.y }), { ...theirs });
+      fig(un(sc.player), { ...theirs });
+      fig(un({ x: sc.keeper.x, y: sc.keeper.y }), keeperLook(false));
+      fig(shownRef.current.theirKeeper, keeperLook(true));
+      for (const d of sc.defenders) fig(un({ x: d.x, y: d.y }), { ...mine });
+    } else {
+      for (const d of sc.defenders) {
+        fig({ x: d.x, y: d.y }, { ...theirs, label: d.who?.shortName, face: face(d.who?.face) });
+      }
+      fig({ x: sc.keeper.x, y: sc.keeper.y }, {
+        ...keeperLook(true), label: sc.keeper.who?.shortName, face: face(sc.keeper.who?.face),
+      });
+      fig(matchRef.current.world.yourKeeper, keeperLook(false));
+      for (const r of sc.secondaryRunners) {
+        fig(r.pos, { ...mine, label: r.who?.shortName, face: face(r.who?.face) });
+      }
+      // ── Only where he is a real man ──
+      //
+      // In a midfield passage the engine ignores the follower entirely and all
+      // three of your outfielders are runners instead (see passage.ts).
+      // Drawing him anyway put a STATIC DUPLICATE on the pitch.
+      if (goalInView(sc.kind)) {
+        fig({ x: sc.follower.x, y: sc.follower.y }, {
+          ...mine, label: sc.follower.who?.shortName, face: face(sc.follower.who?.face),
+        });
+      }
+      fig(sc.player, { ...mine, star: true });
     }
-    drawFigure(ctx, p, { x: sc.keeper.x, y: sc.keeper.y }, {
-      shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e",
-      label: sc.keeper.who?.shortName, face: face(sc.keeper.who?.face),
-    }, faceStyle.current, fakeFaceStyle.current);
 
-    drawFigure(ctx, p, m.world.yourKeeper, {
-      shirt: "#34d399", shorts: "#065f46", trim: "#065f46",
-    }, faceStyle.current, fakeFaceStyle.current);
-    for (const r of sc.secondaryRunners) {
-      drawFigure(ctx, p, r.pos, {
-        ...mine, label: r.who?.shortName, face: face(r.who?.face),
-      }, faceStyle.current, fakeFaceStyle.current);
-    }
-    // ── Only where he is a real man ──
+    drawBall(ctx, p, ballAt, ball ? ball.z : 0);
+
+    // ── The window, drawn where the eye already is ──
     //
-    // In a midfield passage the engine ignores the follower entirely and all
-    // three of your outfielders are runners instead (see passage.ts). Drawing
-    // him anyway put a STATIC DUPLICATE on the pitch — a second white shirt
-    // standing where a team-mate had been while the real one ran off — in
-    // roughly half of all play, on a pitch small enough that it would be the
-    // first thing anybody noticed. Caught in review.
-    if (passLeadsToShot(sc.kind)) {
-      drawFigure(ctx, p, { x: sc.follower.x, y: sc.follower.y }, {
-        ...mine, label: sc.follower.who?.shortName, face: face(sc.follower.who?.face),
-      }, faceStyle.current, fakeFaceStyle.current);
+    // Around the ball at their man's feet, because that is the thing you are
+    // looking at and a timer anywhere else is a timer you find out about
+    // afterwards. It empties anticlockwise from the top, and the man you have
+    // already sent gets a ring of his own so a tap is never silent.
+    if (phaseRef.current === "brace") {
+      const left = Math.max(0, Math.min(1, braceRef.current / BRACE_MS));
+      const r = p.unit * 1.7;
+      ctx.save();
+      ctx.lineWidth = Math.max(2.5, p.unit * 0.16);
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.beginPath();
+      ctx.arc(p.px(ballAt.x), p.py(ballAt.y), r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = left > 0.35 ? "#fbbf24" : "#f87171";
+      ctx.beginPath();
+      ctx.arc(p.px(ballAt.x), p.py(ballAt.y), r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left);
+      ctx.stroke();
+      const c = committedRef.current;
+      if (c) {
+        const at = c.kind === "keeper"
+          ? un({ x: sc.keeper.x, y: sc.keeper.y })
+          : un({ x: sc.defenders[c.defender].x, y: sc.defenders[c.defender].y });
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = Math.max(2, p.unit * 0.13);
+        ctx.beginPath();
+        ctx.arc(p.px(at.x), p.py(at.y), p.unit * 1.0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
-    drawFigure(ctx, p, sc.player, { ...mine, star: true }, faceStyle.current, fakeFaceStyle.current);
-
-    const ball = ballRef.current;
-    drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? ball.z : 0);
 
     if (phaseRef.current === "aim" && aimRef.current) {
       drawAim(ctx, p, sc.ball, aimRef.current.dir, aimRef.current.power);
@@ -488,7 +846,7 @@ export default function FiveASide({
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
-        onPointerCancel={pointerUp}
+        onPointerCancel={pointerCancel}
         /* ── A phone-shaped box, not a frame-shaped one ──
            The engine's frame is 5:8, which at full phone width is ~600px tall,
            and with the site nav, the stage bar and the scoreboard above it my
@@ -501,24 +859,32 @@ export default function FiveASide({
       >
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
-        {phase === "opp" && (
+        {banner && phase !== "aim" && (
           <div className="pointer-events-none absolute inset-x-0 top-1/3 text-center">
             <span className="rounded-full bg-black/70 px-4 py-2 text-sm font-black text-white">
-              They break…
+              {banner}
+            </span>
+          </div>
+        )}
+        {phase === "brace" && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 text-center">
+            <span className="rounded-full bg-black/55 px-3 py-1 text-[11px] font-bold text-white/85">
+              {committed
+                ? committed.kind === "keeper" ? "Keeper committed" : "Body on the line"
+                : "Tap a man to throw a body at it · tap the goal to send your keeper"}
             </span>
           </div>
         )}
         {phase === "aim" && !aimRef.current && (
           <div className="pointer-events-none absolute inset-x-0 bottom-3 text-center">
             <span className="rounded-full bg-black/55 px-3 py-1 text-[11px] font-bold text-white/85">
-              Drag back from the ball to aim
+              Tap a team-mate to pass · drag back from the ball to shoot
             </span>
           </div>
         )}
       </div>
 
-      {/* The last few things that happened. Short on purpose — three minutes
-          a half is a caption, not a commentary feed. */}
+      {/* The last few things that happened. */}
       <div className="mt-1 min-h-[2.2rem] rounded-lg bg-black/40 px-3 py-1 text-[11px] font-bold text-white/85">
         {m.log.slice(-2).map((l, i) => <div key={i}>{l}</div>)}
       </div>
@@ -538,4 +904,29 @@ export default function FiveASide({
       {shell}
     </div>
   );
+}
+
+/** What to say about an outcome, from the side that produced it. */
+function captionFor(res: Outcome, mine: boolean): string {
+  if (res === "goal" || res === "rebound") return mine ? "GOAL!" : "They score.";
+  if (res === "saved" || res === "caught" || res === "tipped") return mine ? "Saved." : "Your keeper!";
+  if (res === "post") return "Off the woodwork!";
+  if (res === "over" || res === "wide") return mine ? "Off target." : "They miss.";
+  if (res === "delivered") return mine ? "Found him." : "They keep it.";
+  if (res === "blocked" || res === "tackled") return mine ? "Lost it." : "Blocked!";
+  return "";
+}
+
+/** One position between two beats, so the simulation slides rather than
+ *  flickering between arrangements. */
+function lerpWorld(a: FiveWorld, b: FiveWorld, k: number): FiveWorld {
+  const L = (p: Vec2, q: Vec2): Vec2 => ({ x: p.x + (q.x - p.x) * k, y: p.y + (q.y - p.y) * k });
+  return {
+    ball: L(a.ball, b.ball),
+    you: L(a.you, b.you),
+    mates: [L(a.mates[0], b.mates[0]), L(a.mates[1], b.mates[1]), L(a.mates[2], b.mates[2])],
+    yourKeeper: L(a.yourKeeper, b.yourKeeper),
+    opps: [L(a.opps[0], b.opps[0]), L(a.opps[1], b.opps[1]), L(a.opps[2], b.opps[2]), L(a.opps[3], b.opps[3])],
+    theirKeeper: L(a.theirKeeper, b.theirKeeper),
+  };
 }

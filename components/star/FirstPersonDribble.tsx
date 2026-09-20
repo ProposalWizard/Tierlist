@@ -241,10 +241,19 @@ export interface FirstPersonDribbleProps {
    *  this inside a real match's own overlay rather than as its own page.
    *  The dev sandbox never sets this. */
   embedded?: boolean;
+  /**
+   * Hide the standing one-line hint along the bottom.
+   *
+   * For a caller that is already showing the real teaching card in that same
+   * strip — the trial's dribbling stage does, until it is dismissed — where
+   * the two would sit on top of each other and say the same thing twice.
+   */
+  hideHint?: boolean;
 }
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
+  hideHint = false,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -574,7 +583,7 @@ export default function FirstPersonDribble({
         onPointerCancel={onPointerUp}
       />
 
-      {phase === "run" && (
+      {phase === "run" && !hideHint && (
         <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 flex flex-col items-center gap-1 px-4">
           <p className="rounded-lg bg-black/55 px-3 py-1 text-center text-[10px] font-bold text-white/80">
             Tap left or right to touch the ball that way. Flick to burst past him.

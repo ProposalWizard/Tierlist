@@ -1,26 +1,47 @@
 import type { CareerState } from "./types";
-import { MONEY_SCALE, formatMoney } from "./money";
+import { formatMoney } from "./money";
+import { tierWeeklyIncome } from "./economy";
 
 /**
- * A dilemma's money, on the scale the rest of the game actually uses.
+ * A dilemma's money, on the income ladder the rest of the game is priced
+ * against.
  *
- * Every figure in this file was written before the 14 Sep 2026 rescale that
- * multiplied every money value in the game by `MONEY_SCALE`, and this file was
- * missed. It has been quietly meaningless ever since: a starting wage is
- * ★2,000 a week, so a "±3" was a rounding error and the match-fixing bribe at
- * line ~97 paid ★40 — two per cent of one week's wage — in exchange for
- * wrecking your relationship with the manager, the dressing room and the fans.
+ * Every figure in this file was written before the 14 Sep 2026 rescale and
+ * was missed by it, which made a "±3" a rounding error against a real wage.
+ * The rescale that followed multiplied them by `MONEY_SCALE` — which fixed
+ * that and left them derived from nothing, so they drifted straight back out
+ * of proportion the moment economy.ts gave the game a real curve.
  *
- * Found in review. Dormant rather than live (dilemmas are currently switched
- * off — see app/star-dev/page.tsx) but it is the largest surviving pocket of
- * the old scale in the game, and it would have come back on with the numbers
- * still wrong.
+ * They are now WEEKS OF INCOME: one unit is a tenth of a week, so the
+ * match-fixing bribe (40) is four weeks' income and a signed shirt (3) is
+ * about a third of one. Written as `cash(n)` exactly as before so the
+ * original, hand-balanced RELATIVE values stay legible — a ±3 gesture is
+ * still a small one next to a ±40 payday, which is the part that was
+ * designed.
  *
- * Written as `cash(n)` rather than as scaled literals so the original,
- * hand-balanced RELATIVE values stay legible: a ±3 gesture is still a small
- * one next to a ±40 payday, which is the part that was designed.
+ * ── THE ANCHOR, AND THE HONEST LIMITATION IN IT ──
+ *
+ * `DilemmaEffect.money` is static data — it is written into the catalogue
+ * below and displayed by `DilemmaModal.tsx` without a career in hand — so it
+ * has to be a real number of stars at the moment it is authored, which means
+ * committing to ONE rung of a ladder that now runs 105x from bottom to top.
+ * These are anchored at `elite` (Championship income), the point at which a
+ * career is established enough for a billboard campaign or a casino night
+ * with the squad to be plausible at all.
+ *
+ * The consequence, stated rather than hidden: a match-fixing offer reads as
+ * genuinely life-changing to a lower-league player and merely useful to a
+ * Premier League one. That is arguably right for a bribe and arguably wrong
+ * for everything else, and the real fix is not a different anchor — it is to
+ * make `money` a number of WEEKS, scale it in `applyEffects` (which does have
+ * the career) and hand `DilemmaModal.tsx` the career so it can show a true
+ * figure. That component is not this workstream's file, and dilemmas are
+ * currently switched off (see app/star-dev/page.tsx), so this pass brings
+ * them onto the curve and leaves that one step flagged.
  */
-const cash = (n: number) => n * MONEY_SCALE;
+const DILEMMA_WEEKS_PER_UNIT = 0.1;
+const cash = (n: number) =>
+  Math.round(n * DILEMMA_WEEKS_PER_UNIT * tierWeeklyIncome("elite"));
 
 export interface DilemmaEffect {
   money?: number;

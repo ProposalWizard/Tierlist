@@ -1,5 +1,6 @@
 import type { CareerState, MatchStats, GoalEvent, OppGoalEvent, Fixture } from "./types";
 import { wageForFixture } from "./wages";
+import { sponsorPayPerMatch } from "./economy";
 import { getTuning } from "./tuningStore";
 
 // Canonical end-of-match scoring for career mode: turns a match tally
@@ -98,14 +99,15 @@ export function finaliseMatch(
   const assistBonusPay = assists * career.contract.assistBonus;
   // Image-rights money from how well your sponsors are being served.
   //
-  // This was `sponsors / 20` — a maximum of ★5 a match, left behind by the
-  // 14 Sep 2026 rescale that multiplied every other money value by 2000. It
-  // has been effectively zero ever since: ★5 against a ★2,000 wage.
-  //
-  // Scaled by `sponsors.feeScale` — the SAME constant `sponsorFee` already
-  // uses (sponsors.ts) — rather than a second hardcoded 2000, so every piece
-  // of sponsor money moves together if that scale is ever retuned.
-  const sponsorPay = Math.floor((career.relationships.sponsors / 20) * getTuning("sponsors.feeScale"));
+  // WAGE-RELATIVE, not a flat figure — see `sponsorPayPerMatch` (economy.ts)
+  // for the full account of what this used to be. The short version: the 14
+  // Sep 2026 rescale multiplied this like a one-off fee, but it fires about
+  // forty times a season, and the result paid ★10,000 a match at full
+  // standing — eight and a half times the entire intended income of a
+  // Premier League season, out of one line. It is now exactly the share
+  // `TOTAL_INCOME_SHARES.sponsorPerMatch` always claimed it was, scaled by
+  // how well the sponsors are actually being served.
+  const sponsorPay = sponsorPayPerMatch(wage, career.relationships.sponsors);
   const totalCash = wage + goalBonus + assistBonusPay + sponsorPay;
 
   let boss = 0, team = 0, fans = 0;

@@ -633,6 +633,34 @@ export interface CareerState {
    * which reads as exactly that.
    */
   trialsTaken?: number;
+  /**
+   * Where you are when you are at a club but not in its first team — the
+   * youth team, the reserves, or out on loan.
+   *
+   * Absent for every career that already exists and for every player who is
+   * simply in the side, which is the overwhelming majority: absent means
+   * "you are a first-team player of the club whose badge you are wearing",
+   * and that is exactly what every save written before this field existed
+   * meant. No backfill is needed.
+   *
+   * Typed as `Placement` from lib/star/youth.ts, declared rather than
+   * imported for the same reason `trial` above is.
+   */
+  placement?: import("./youth").Placement;
+  /**
+   * The wage actually agreed face to face with a manager, and who it was
+   * agreed with.
+   *
+   * Written the moment a wage negotiation closes (see lib/star/signingTalk.ts)
+   * and read by the offers screen, so the number on that club's card is the
+   * one you haggled for rather than the one they opened at. Lives on the
+   * career rather than in React state so that closing the app between the
+   * handshake and the signature does not quietly undo the negotiation.
+   *
+   * Cleared the moment a club is actually signed for. Absent on every career
+   * that has not just negotiated one.
+   */
+  agreedTerms?: { club: string; wage: number };
   skills: Skills;
   /**
    * The last career week each skill was actually TRAINED (the deliberate
@@ -1235,6 +1263,17 @@ export type StarPhase =
    *  cut-down dashboard a trialist and a free agent live on, deliberately
    *  without fixtures, a table, a squad or a contract. See FreeAgentShell. */
   | "free-agent"
+  /** The man who watched you play, saying what he thought and what he is
+   *  prepared to pay — before the newspaper, not instead of it. See
+   *  ManagerTalk.tsx, lib/star/signingTalk.ts. */
+  | "manager-talk"
+  /** …and haggling over it, on the same two-desks negotiation every transfer
+   *  in the game already uses. See NegotiationScreen, lib/star/negotiation.ts. */
+  | "wage-talk"
+  /** At a club, not in its first team: the youth team, the reserves, or the
+   *  week-by-week grind back into the side. See YouthTeam.tsx,
+   *  lib/star/youth.ts. */
+  | "youth"
   /** …and what it earns you — the card, then the contract. See TrialReward. */
   | "trial-reward"
   /** Watching a saved goal happen again — see GoalReplay, goalReplays.ts. */

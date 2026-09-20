@@ -14,17 +14,42 @@ import { FAKE_FACES } from "@/lib/star/fakeFaces";
  * placeholder waiting to be filled, and most people will never open this. So the
  * control opens showing what the cards will use if you walk away from it.
  *
- * "Take a photo" is its own button with its own path (see startTakePhoto): the
- * phone's front camera on touch devices, a live webcam preview on a computer.
+ * ── TWO BUTTONS, BECAUSE `capture` IS A REPLACEMENT AND NOT AN ADDITION ──
  *
- * No `capture` attribute on the "Add a photo" input, deliberately — that attribute doesn't
- * just ADD a camera option, it makes most mobile browsers skip the native
- * chooser entirely and jump straight into the camera app, with no way to
- * reach the photo library at all. Reported directly: on a phone this let
- * you take a new photo but never pick one you already had. A bare
- * `type="file" accept="image/*"` is what makes a phone show its normal
- * chooser (camera OR library) — the same one a desktop's file picker is a
- * different flavour of.
+ * This has now been reported from both directions, and the two reports are
+ * both correct — they are about different buttons:
+ *
+ *   "on a phone this let you take a new photo but never pick one you
+ *    already had"
+ *   "'Add a photo' still doesn't work in terms of using your camera, so
+ *    maybe it should say 'Take a photo' — 'Add a photo' and 'Take a photo',
+ *    and 'Take a photo' would use the camera"
+ *
+ * The mechanism behind both: `capture` does not ADD a camera option to the
+ * native chooser, it REPLACES the chooser — a mobile browser that honours it
+ * opens the camera app directly, with no way through to the library. So one
+ * input cannot be both, and the fix is the one the report describes: two
+ * inputs, each honest about which it is.
+ *
+ *   ADD A PHOTO   — bare `accept="image/*"`, no `capture`. The phone's own
+ *                   chooser, which on iOS and Android already offers Camera
+ *                   alongside Photo Library. Unchanged from before.
+ *   TAKE A PHOTO  — see startTakePhoto. On a touch device it clicks a second
+ *                   input carrying `capture="user"`, which asks for the FRONT
+ *                   camera (`"environment"` would be the rear one, and this
+ *                   is a portrait of your own face).
+ *
+ * ── And on a desktop ──
+ *
+ * `capture` is only a hint, and every desktop browser ignores it — so on a
+ * laptop that input alone would just open the ordinary file picker, making
+ * "Take a photo" indistinguishable from "Add a photo". A computer therefore
+ * takes the other path: `getUserMedia`, a live mirrored `<video>` preview with
+ * Cancel/Capture, and a `<canvas>` grab that flows into the same crop stage as
+ * an uploaded file. (An earlier version of this note said that was
+ * deliberately not built; it has since been asked for directly and built.)
+ * Both paths depend on the site's Permissions-Policy allowing the camera —
+ * see next.config.mjs.
  *
  * Nothing here uploads. See lib/star/portrait.ts.
  */
@@ -263,6 +288,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             </p>
           </div>
 
+          {/* Picking and taking are a pair and sit on one row; the shirt is
+              the third, different answer and gets its own — see below. */}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <label className="cursor-pointer rounded-lg bg-emerald-600 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-500">
               {value ? "Change photo" : "Add a photo"}
@@ -275,13 +302,15 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             </label>
             <button
               onClick={startTakePhoto}
-              className="rounded-lg bg-sky-600 py-2 text-[12px] font-black text-white transition hover:bg-sky-500"
+              className="rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600"
             >
               Take a photo
             </button>
-            {/* Phone-only path for Take a photo: the front camera via the
-                device's own camera app. A separate input from Add a photo's
-                on purpose — see the header note on `capture`. */}
+            {/* Phone path for Take a photo: the FRONT camera via the device's
+                own camera app — "user" because this is a portrait of your own
+                face. A separate input from Add a photo's on purpose (see the
+                header note on `capture`); on a desktop startTakePhoto skips
+                it and opens the webcam instead. */}
             <input
               ref={cameraInputRef}
               type="file"
@@ -290,15 +319,31 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
             />
-            <button
-              onClick={() => onChange(undefined)}
-              disabled={!value}
-              className={`col-span-2 rounded-lg py-2 text-[12px] font-black transition ${
-                value ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-800 text-white/45"}`}
-            >
-              Use my shirt
-            </button>
           </div>
+
+          {/* ── THE SHIRT IS AN ANSWER, NOT A GREYED-OUT ACTION ──
+              Reported as "doesn't even pop up anymore". It was never removed
+              — it has always rendered right here — but it is only ever an
+              ACTION when there is a photo to clear, so on a fresh career it
+              was a dark grey slab with dimmed text sitting in the corner of a
+              two-button row, which is exactly what a missing button looks
+              like.
+              It now says what it means. With no photo set the shirt is
+              already what you will be shown as, so this reads as the SELECTED
+              state (ringed, ticked, "Using your shirt") rather than as a
+              button somebody has switched off; with a photo set it is a live
+              button that clears it. Same single call to `onChange(undefined)`
+              either way. */}
+          <button
+            onClick={() => onChange(undefined)}
+            disabled={!value}
+            className={`mt-2 w-full rounded-lg py-2 text-[12px] font-black transition ${
+              value
+                ? "bg-gray-700 text-white hover:bg-gray-600"
+                : "border border-emerald-400/70 bg-emerald-500/15 text-emerald-200"}`}
+          >
+            {value ? "Use my shirt" : "✓ Using your shirt"}
+          </button>
           {value && !FAKE_FACES.includes(value) && (
             <p className="mt-1.5 text-center text-[10px] font-bold text-white/60">
               Stored on this device only — about {Math.round(portraitBytes(value) / 1024)} KB.

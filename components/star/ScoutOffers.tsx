@@ -5,7 +5,7 @@ import { offerLeagueName } from "@/lib/star/scoutOffers";
 import { formatMoney } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import type { TrialProgress } from "@/lib/star/trial";
-import { TRIAL_STAGES, STAGE_LABEL, trialScore } from "@/lib/star/trial";
+import { TRIAL_STAGES, STAGE_LABEL, trialScore, adversityFor } from "@/lib/star/trial";
 
 /**
  * WHAT THE TRIAL WAS FOR.
@@ -28,15 +28,32 @@ export interface ScoutOffersProps {
   offers: ScoutOffer[];
   playerName: string;
   onAccept: (offer: ScoutOffer) => void;
-  /** Nobody came in. The only way on is the free-agent life.
-   *  REQUIRED, not optional: the "Go home" button is the only way off this
-   *  screen for a player nobody signed, and an optional handler behind an
-   *  unconditional button is a dead end waiting to happen. */
+  /**
+   * The club whose youth team will take you if nobody offers terms, or null
+   * if even that is not on the table.
+   *
+   * This screen used to tell every unsigned player the same thing — "no club,
+   * no contract, nothing in the bank, just you and a garden" — and that
+   * stopped being true when the youth team landed: a trial that falls short
+   * now usually means somebody's academy, and only a trial nobody wanted at
+   * all means the garden. The same screen saying otherwise would be a lie on
+   * the one screen a player reads most carefully.
+   *
+   * Passed in rather than worked out here: `youthTakerFor` is a pure function
+   * of the trial, and page.tsx computes it once so what this screen promises
+   * and what the button actually does cannot drift apart.
+   */
+  youthClub: string | null;
+  /** Nobody offered terms. Goes to the youth team, or to the free-agent life
+   *  when `youthClub` is null.
+   *  REQUIRED, not optional: this button is the only way off this screen for
+   *  a player nobody signed, and an optional handler behind an unconditional
+   *  button is a dead end waiting to happen. */
   onNoOffers: () => void;
 }
 
 export default function ScoutOffers({
-  trial, offers, playerName, onAccept, onNoOffers,
+  trial, offers, playerName, youthClub, onAccept, onNoOffers,
 }: ScoutOffersProps) {
   const [open, setOpen] = useState(false);
   const score = trialScore(trial);
@@ -62,11 +79,33 @@ export default function ScoutOffers({
           </div>
         );
       })}
-      {trial.adversity === "sharp-keeper" && trial.adversityStage && (
-        <div className="mt-2 inline-block rounded-full bg-amber-500/20 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200">
-          Keeper was on fire · {STAGE_LABEL[trial.adversityStage]}
-        </div>
-      )}
+      {/* ── Whatever went on that day, not just the one event ──
+          This used to read `trial.adversity === "sharp-keeper"` with the
+          label hardcoded beside it, which was fine while a sharp keeper was
+          the only event there was. There are eleven now, so a hardcoded
+          check would have silently hidden ten of them — the whole catalogue
+          drawn, rolled onto a stage, genuinely changing the football, and
+          never once mentioned. The event carries its own label; the pill
+          just prints it.
+
+          The two flavour events show here too, on purpose. Somebody famous
+          on the touchline changed no football at all and is worth exactly
+          nothing (`weight: 0`, so `scoringDifficultyFor` ignores it) — but it
+          is still a true thing about the afternoon, and this pill is a
+          description of the day rather than a claim about the score. */}
+      {(() => {
+        const ev = adversityFor(trial);
+        if (!ev || !trial.adversityStage) return null;
+        return (
+          <div
+            className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
+              ev.flavour ? "bg-white/10 text-white/70" : "bg-amber-500/20 text-amber-200"
+            }`}
+          >
+            {ev.label}{ev.flavour ? "" : ` · ${STAGE_LABEL[trial.adversityStage]}`}
+          </div>
+        );
+      })()}
     </div>
   );
 
@@ -83,19 +122,28 @@ export default function ScoutOffers({
         {breakdown}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="text-sm font-black uppercase tracking-widest text-amber-300">
-            Nobody came in
+            No contract
           </div>
-          <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/70">
-            They thanked you and said they&apos;d be in touch. They won&apos;t be.
-            No club, no contract, nothing in the bank — just you, a garden and
-            whatever you can make of the next few months, {playerName}.
-          </p>
+          {youthClub ? (
+            <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/70">
+              Nobody put professional terms in front of you, {playerName}. But
+              somebody watched: {youthClub} will take you into their youth
+              team. Scholarship money, and a coach who will look at you every
+              week. Play well enough and you go up.
+            </p>
+          ) : (
+            <p className="mt-2 text-[12px] font-bold leading-relaxed text-white/70">
+              They thanked you and said they&apos;d be in touch. They won&apos;t be.
+              No club, no contract, not even an academy — just you, a garden and
+              whatever you can make of the next few months, {playerName}.
+            </p>
+          )}
         </div>
         <button
           onClick={onNoOffers}
           className="mt-5 w-full rounded-xl bg-white/10 py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-white/20"
         >
-          Go home →
+          {youthClub ? `Report to ${youthClub} →` : "Go home →"}
         </button>
       </div>
     );

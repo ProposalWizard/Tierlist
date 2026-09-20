@@ -1,5 +1,5 @@
 import type { CareerState } from "./types";
-import { MONEY_SCALE } from "./money";
+import { tierWeeklyIncome } from "./economy";
 
 /**
  * RETIREMENT
@@ -115,17 +115,28 @@ export function careerVerdict(career: CareerState): CareerVerdict {
  */
 export const TESTIMONIAL_APPEARANCES = 120;
 
+/** Weeks of top-flight income per point of the testimonial score below. */
+export const TESTIMONIAL_WEEKS_PER_POINT = 0.06;
+
 export function testimonialFor(career: CareerState): { club: string; season: number; payout: number } | null {
   const apps = career.clubAppearances ?? 0;
   if (apps < TESTIMONIAL_APPEARANCES) return null;
   // A bigger name fills a bigger ground, but the appearances are what earn it.
   //
-  // Scaled by MONEY_SCALE: this formula was left behind by the 14 Sep 2026
-  // rescale that multiplied every other money value by 2000, so a 300-
-  // appearance, 5★ career was being sent off with about ★500 — a rounding
-  // error rather than a send-off. The shape of the formula is unchanged;
-  // only the scale it lands on is.
-  const payout = Math.round((apps * 0.9 + career.fame * 1.6 + career.starRating * 22) * MONEY_SCALE);
+  // ON THE CURVE, 19 Sep 2026. The flat ×2000 rescale of 14 Sep fixed a
+  // real bug (a 300-appearance, 5★ career was being sent off with ★500) by
+  // replacing it with a different one: ★1,440,000, which against the income
+  // ladder economy.ts builds is roughly ten whole top-flight seasons of pay
+  // for one evening's football.
+  //
+  // The SHAPE of the formula is still untouched — appearances are what earn
+  // it, a bigger name fills a bigger ground. What changed is the unit: the
+  // score it produces (roughly 300 for a modest one-club career, 800 for a
+  // great one) is now read as weeks of top-flight income, at a rate that
+  // puts a great career's send-off at about fifty weeks of it and a modest
+  // one at eighteen. A real windfall to retire on; not a second career.
+  const score = apps * 0.9 + career.fame * 1.6 + career.starRating * 22;
+  const payout = Math.round(score * TESTIMONIAL_WEEKS_PER_POINT * tierWeeklyIncome("world_class"));
   return { club: career.player.club, season: career.season, payout };
 }
 

@@ -1,6 +1,7 @@
 import type { CareerState } from "./types";
 import type { VoteTally } from "./voting";
 import { clampReputation } from "./reputation";
+import { tierPrice } from "./economy";
 
 /**
  * CORRUPTION — PHASE 5 OF STAR_POWER_POLITICS.MD.
@@ -36,14 +37,23 @@ export const BASE_EXPOSURE_RISK: Record<CorruptAct, number> = {
  *  rather than sitting as three separate systems. */
 const LAWYERS_RISK_MULTIPLIER = 0.35;
 
-/** A flat, real cost for "high-level lawyers" — every time they're hired
- *  alongside a corrupt act, not scaled to that act's own size, since a
- *  lawyer's fee is its own real thing, not a percentage of the bribe.
- *  Rescaled 14 Sep 2026, same ×2000 personal-money multiplier as every
- *  other personal-spending number this session (shop catalogue, sponsor
- *  fees) — this is money straight out of the player's own wallet, not a
- *  club's. */
-export const LAWYER_FEE = 10_000_000;
+/**
+ * A flat, real cost for "high-level lawyers" — every time they're hired
+ * alongside a corrupt act, not scaled to that act's own size, since a
+ * lawyer's fee is its own real thing, not a percentage of the bribe.
+ *
+ * ── ON THE CURVE, 19 Sep 2026 ──
+ *
+ * It was ★10,000,000, from the flat 14 Sep 2026 ×2000 rescale — which
+ * against the income ladder economy.ts actually builds is 8,600 weeks of
+ * Premier League income. Nobody was ever going to hire a lawyer. A figure
+ * that was never derived cannot be repaired by multiplying it; it has to be
+ * derived, so it is now EIGHT WEEKS of top-flight income — roughly twice
+ * the best pair of boots in the game, payable several times over a rich
+ * career, and genuinely out of reach of anybody who has not got there.
+ */
+export const LAWYER_FEE_WEEKS = 8;
+export const LAWYER_FEE = tierPrice("world_class", LAWYER_FEE_WEEKS);
 
 export function exposureRisk(act: CorruptAct, useLawyers: boolean): number {
   const base = BASE_EXPOSURE_RISK[act];
@@ -58,10 +68,12 @@ export function rollCaught(act: CorruptAct, useLawyers: boolean, rng: () => numb
 
 /** How much money moves one real vote — bribing the whole electorate of a
  *  governing-body-scale vote outright would need to be effectively
- *  impossible, so this is deliberately steep. Rescaled 14 Sep 2026, same
- *  ×2000 personal-money multiplier as LAWYER_FEE above — this also comes
- *  straight out of the player's own wallet. */
-const MONEY_PER_BRIBED_VOTE = 800_000;
+ *  impossible, so this is deliberately steep: TWO WEEKS of top-flight
+ *  income per vote, which puts a maxed-out bribe (see
+ *  `MAX_BRIBED_VOTES_SHARE`) at the better part of a whole Premier League
+ *  season's income. Derived rather than rescaled, same as LAWYER_FEE. */
+const BRIBE_WEEKS_PER_VOTE = 2;
+const MONEY_PER_BRIBED_VOTE = tierPrice("world_class", BRIBE_WEEKS_PER_VOTE);
 
 /** The most votes a single bribe can move, regardless of money spent — a
  *  cap so a big enough bribe can't simply buy a landslide outright; it can
@@ -106,10 +118,12 @@ export interface CaughtConsequence {
 }
 
 function consequenceFor(act: CorruptAct, amountInvolved: number): CaughtConsequence {
-  // Fine cap rescaled 14 Sep 2026, same ×2000 personal-money multiplier as
-  // the rest of this file — amountInvolved (a bribe or a black-market buy)
-  // is already real-money scale, so the cap needed to move with it.
-  const fine = Math.round(Math.min(amountInvolved * 0.5, 100_000_000));
+  // The cap is a whole top-flight SEASON'S income (38 weeks) — the most
+  // money the game can take off you in one go without simply ending the
+  // career, and derived off the ladder rather than left as the ★100,000,000
+  // the flat 14 Sep 2026 rescale produced, which was about seventy years of
+  // top-flight pay and therefore never once binding.
+  const fine = Math.round(Math.min(amountInvolved * 0.5, tierPrice("world_class", 38)));
   const worldReputationHit = act === "bribery" ? 10 : act === "blackMarket" ? 6 : 4;
   const suspensionWeeks = act === "blackMarket" ? 2 : act === "bribery" ? 3 : 1;
   return { fine, worldReputationHit, suspensionWeeks };
