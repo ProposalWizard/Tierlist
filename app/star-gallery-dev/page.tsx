@@ -15,26 +15,38 @@
  * builders, so a `star-playtest` screenshot of it before and after a builder
  * change is a true like-for-like comparison.
  *
+ * ── The two games are completely split ──
+ *
+ * The top tabs switch between the real (11-a-side) game and five-a-side — you
+ * only ever look at one game's scenarios at a time, so there is no chance of
+ * mistaking one for the other. Each game keeps its own controls.
+ *
+ * ── Formation toggle ──
+ *
+ * The real-game view has a formation dropdown. It does two things: it re-casts
+ * every scenario against the chosen opponent formation (via the real
+ * `castDefence`), and it draws that formation's own slot layout as a reference
+ * diagram — the shape the opponent is MEANT to hold. Today `castDefence` only
+ * assigns WHO each defender is, not WHERE (defender positions are owned by the
+ * scenario builder), so the scenario shapes do not yet change with the
+ * formation — the reference diagram is what they should grow toward once the
+ * 11-a-side positional layer lands. That gap is the finding this page exists to
+ * make visible.
+ *
  * ── What it deliberately does not do ──
  *
  * It changes no game behaviour. It only READS `buildScenario`,
- * `defensiveShape`, `attackingShape`, `buildPassage`, `castDefence` and the
- * shared `render.ts` draw primitives — the same functions a real match calls —
- * and paints their output onto small labelled canvases. When those builders
- * change, this page reflects the new behaviour automatically, which is the
- * whole point.
- *
- * Every cell's seed is fixed in `MAIN_CELLS` / `FORMATION_CELLS` /
- * `FIVE_CELLS` below, so the page is byte-identical every load.
+ * `defensiveShape`, `attackingShape`, `buildPassage`, `castDefence`,
+ * `formationOf` and the shared `render.ts` draw primitives — the same functions
+ * a real match calls — and paints their output onto small labelled canvases.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   SCENARIO_KINDS,
   buildScenario,
   goalInView,
   type Scenario,
-  type ScenarioKind,
   type Vec2,
   type Identity,
 } from "@/lib/star/canvasEngine";
@@ -62,7 +74,7 @@ import {
   FIVE_HALFWAY_Y,
 } from "@/lib/star/fiveASide/geometry";
 import { castDefence, type OpponentSheetPlayer } from "@/lib/star/lineup";
-import { formationForClub } from "@/lib/star/clubFormation";
+import { FORMATIONS, formationOf, type Formation } from "@/lib/star/formations";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 
@@ -209,8 +221,75 @@ function drawOffsideLine(ctx: CanvasRenderingContext2D, p: Projection, w: number
   ctx.restore();
 }
 
+// ── The formation reference diagram ────────────────────────────────────────
+// A self-contained painter (does not go through projectionFor) that draws a
+// formation's own slot layout on a portrait pitch, oriented so the opponent's
+// goal (the one you attack) is at the TOP — matching the scenario frames'
+// attack-toward-the-top convention. This is the shape the opponent is MEANT to
+// hold; it is not what the scenario builder currently produces.
+function paintFormationRef(canvas: HTMLCanvasElement, f: Formation): void {
+  const cssW = 300;
+  const cssH = 420;
+  const dpr = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  canvas.style.width = `${cssW}px`;
+  canvas.style.height = `${cssH}px`;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Pitch.
+  ctx.fillStyle = "#14532d";
+  ctx.fillRect(0, 0, cssW, cssH);
+  const M = 22;
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(M, M, cssW - 2 * M, cssH - 2 * M);
+  // Halfway line + centre circle.
+  ctx.beginPath();
+  ctx.moveTo(M, cssH / 2);
+  ctx.lineTo(cssW - M, cssH / 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cssW / 2, cssH / 2, 34, 0, Math.PI * 2);
+  ctx.stroke();
+  // The goal you attack, at the top.
+  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cssW / 2 - 34, M);
+  ctx.lineTo(cssW / 2 + 34, M);
+  ctx.stroke();
+
+  const px = (fx: number) => M + fx * (cssW - 2 * M);
+  // fy: GK ~0.94 sits near their own goal; that goal is at the TOP here, so a
+  // higher fy maps nearer the top.
+  const py = (fy: number) => M + (1 - fy) * (cssH - 2 * M);
+
+  for (const s of f.slots) {
+    const x = px(s.x);
+    const y = py(s.y);
+    const isGK = s.role === "GK";
+    ctx.beginPath();
+    ctx.arc(x, y, 11, 0, Math.PI * 2);
+    ctx.fillStyle = isGK ? "#16a34a" : "#dc2626";
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "700 9px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(s.label ?? s.role, x, y);
+  }
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
 // ─────────────────────────────────────────────────────────────────────────
-//  CELL DEFINITIONS — every seed hard-coded so the page never changes.
+//  CELL DEFINITIONS
 // ─────────────────────────────────────────────────────────────────────────
 
 interface Cell {
@@ -220,28 +299,13 @@ interface Cell {
   frame: Frame;
 }
 
-/** One scenario of every kind, at a fixed seed each. */
-function mainCells(): Cell[] {
-  return SCENARIO_KINDS.map((kind, i) => {
-    const seed = 1000 + i;
-    const sc = buildScenario(kind, mulberry32(seed));
-    return {
-      key: `main-${kind}`,
-      title: kind,
-      subtitle: `buildScenario · seed ${seed}`,
-      frame: frameFromScenario(sc),
-    };
-  });
-}
-
-/** Build a minimal opponent XI from a club's real formation — enough for
- *  `castDefence` to assign identities (it reads position + depth `y` + isGK).
- *  Positions are NOT taken from the formation: castDefence only sets `who`.
- *  See the finding in the page footer. */
-function oppXIFromFormation(club: string): OpponentSheetPlayer[] {
-  const f = formationForClub(club);
+/** Build a minimal opponent XI from a formation — enough for `castDefence` to
+ *  assign identities (it reads position + depth `y` + isGK). Positions are NOT
+ *  taken from the formation: castDefence only sets `who`. */
+function oppXIFromFormationId(id: string): OpponentSheetPlayer[] {
+  const f = formationOf(id);
   return f.slots.map((s, i) => ({
-    id: `${club}-${i}`,
+    id: `f-${id}-${i}`,
     name: `${s.label ?? s.role} ${i + 1}`,
     shortName: s.label ?? s.role,
     position: s.role,
@@ -250,20 +314,18 @@ function oppXIFromFormation(club: string): OpponentSheetPlayer[] {
   }));
 }
 
-/** The same scenario kind + seed, cast against three real clubs whose
- *  formations differ, so a shape difference (or its absence) is comparable. */
-function formationCells(): Cell[] {
-  const kind: ScenarioKind = "cutback";
-  const seed = 2000;
-  const clubs = ["Arsenal", "Manchester City", "Everton"];
-  return clubs.map((club) => {
+/** One scenario of every kind, at a fixed seed each, cast against the chosen
+ *  opponent formation. */
+function mainCells(formationId: string): Cell[] {
+  const opp = oppXIFromFormationId(formationId);
+  return SCENARIO_KINDS.map((kind, i) => {
+    const seed = 1000 + i;
     const sc = buildScenario(kind, mulberry32(seed));
-    castDefence(sc, oppXIFromFormation(club));
-    const f = formationForClub(club);
+    castDefence(sc, opp);
     return {
-      key: `formation-${club}`,
-      title: `${kind} vs ${club}`,
-      subtitle: `${f.name} · castDefence · seed ${seed}`,
+      key: `main-${kind}`,
+      title: kind,
+      subtitle: `buildScenario · seed ${seed} · vs ${formationId}`,
       frame: frameFromScenario(sc),
     };
   });
@@ -383,19 +445,7 @@ function fiveCells(): Cell[] {
   return cells;
 }
 
-function Section({ heading, note, cells }: { heading: string; note?: string; cells: Cell[] }) {
-  return (
-    <section style={{ marginBottom: 40 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 4px" }}>{heading}</h2>
-      {note && <p style={{ margin: "0 0 16px", color: "#94a3b8", fontSize: 13, maxWidth: 720 }}>{note}</p>}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-        {cells.map((c) => (
-          <GalleryCell key={c.key} cell={c} />
-        ))}
-      </div>
-    </section>
-  );
-}
+// ── UI ─────────────────────────────────────────────────────────────────────
 
 function GalleryCell({ cell }: { cell: Cell }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
@@ -405,12 +455,7 @@ function GalleryCell({ cell }: { cell: Cell }) {
   return (
     <div
       data-cell={cell.key}
-      style={{
-        background: "#0b1220",
-        border: "1px solid #1e293b",
-        borderRadius: 10,
-        padding: 8,
-      }}
+      style={{ background: "#0b1220", border: "1px solid #1e293b", borderRadius: 10, padding: 8 }}
     >
       <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{cell.title}</div>
       <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8, fontFamily: "monospace" }}>
@@ -421,34 +466,135 @@ function GalleryCell({ cell }: { cell: Cell }) {
   );
 }
 
+function FormationRefCell({ formation }: { formation: Formation }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    if (ref.current) paintFormationRef(ref.current, formation);
+  }, [formation]);
+  return (
+    <div
+      data-cell={`formation-ref-${formation.id}`}
+      style={{ background: "#0b1220", border: "1px solid #7c2d12", borderRadius: 10, padding: 8 }}
+    >
+      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>
+        Formation reference — {formation.name}
+      </div>
+      <div style={{ color: "#fb923c", fontSize: 11, marginBottom: 8, fontFamily: "monospace" }}>
+        the shape the opponent SHOULD hold (attack toward the top)
+      </div>
+      <canvas ref={ref} style={{ display: "block", borderRadius: 6, background: "#14532d" }} />
+    </div>
+  );
+}
+
+const TAB_BTN = (active: boolean): React.CSSProperties => ({
+  padding: "8px 18px",
+  borderRadius: 8,
+  border: active ? "1px solid #38bdf8" : "1px solid #1e293b",
+  background: active ? "#0c4a6e" : "#0b1220",
+  color: active ? "#e0f2fe" : "#94a3b8",
+  fontWeight: 800,
+  fontSize: 14,
+  cursor: "pointer",
+});
+
+function ElevenView() {
+  const [formationId, setFormationId] = useState("433");
+  const formation = formationOf(formationId);
+  const cells = mainCells(formationId);
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
+        <label style={{ fontWeight: 700, fontSize: 14 }}>Opponent formation:</label>
+        <select
+          value={formationId}
+          onChange={(e) => setFormationId(e.target.value)}
+          style={{
+            background: "#0b1220",
+            color: "#e2e8f0",
+            border: "1px solid #334155",
+            borderRadius: 8,
+            padding: "6px 10px",
+            fontSize: 14,
+            fontWeight: 700,
+          }}
+        >
+          {FORMATIONS.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <p style={{ margin: "0 0 16px", color: "#fb923c", fontSize: 13, maxWidth: 760, lineHeight: 1.5 }}>
+        Changing the formation re-casts every scenario below against it (via the real{" "}
+        <code>castDefence</code>) AND redraws the reference shape. <b>Today the scenario shapes do not
+        move</b> — <code>castDefence</code> only assigns WHO each defender is, not WHERE — so only the
+        assigned names change. The reference card shows what the shape should become once the 11-a-side
+        positional layer lands. That gap is the finding, not a page bug.
+      </p>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 28 }}>
+        <FormationRefCell formation={formation} />
+      </div>
+
+      <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 12px" }}>Every scenario kind</h3>
+      <p style={{ margin: "0 0 16px", color: "#94a3b8", fontSize: 13, maxWidth: 760 }}>
+        The 13 kinds from <code>buildScenario</code>, one seed each. Blue = your side (star = you), red =
+        opponents, green = keeper. Yellow dashes = the offside line the engine would judge against.
+        Corner/byline are drawn un-rotated (the game rotates the camera for facing; the shared primitives
+        do not).
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
+        {cells.map((c) => (
+          <GalleryCell key={c.key} cell={c} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FiveView() {
+  const cells = fiveCells();
+  return (
+    <div>
+      <p style={{ margin: "0 0 16px", color: "#94a3b8", fontSize: 13, maxWidth: 760 }}>
+        Real <code>fiveASide/</code> shapes at fixed seeds. <code>defensiveShape</code> (where &ldquo;four
+        on the goal line&rdquo; vs a diamond shows), <code>attackingShape</code> (the 1-2-1 / 2-2
+        structure), and a full chance from <code>buildPassage</code>. This is a separate game from the
+        11-a-side view — its own pitch, its own rules.
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
+        {cells.map((c) => (
+          <GalleryCell key={c.key} cell={c} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function StarGalleryDevPage() {
+  const [view, setView] = useState<"eleven" | "five">("eleven");
   return (
     <main style={{ minHeight: "100vh", background: "#020617", color: "#e2e8f0", padding: "24px 16px 80px" }}>
       <h1 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 6px" }}>Scenario Gallery</h1>
-      <p style={{ margin: "0 0 28px", color: "#94a3b8", fontSize: 14, maxWidth: 760 }}>
+      <p style={{ margin: "0 0 20px", color: "#94a3b8", fontSize: 14, maxWidth: 760 }}>
         Deterministic dev scaffolding. Every cell is built from the real scenario/shape builders at a
-        fixed seed, so a screenshot of this page before and after a formation or five-a-side change is a
-        true like-for-like comparison. Yellow dashes = the offside line the engine would judge against.
+        fixed seed, so a screenshot before and after a builder change is a true like-for-like comparison.
         This page changes no game behaviour.
       </p>
 
-      <Section
-        heading="Main game — every scenario kind"
-        note="The 13 kinds from buildScenario, one seed each. Blue = your side (star = you), red = opponents, green = keeper. Shows the defensive line, ball position and player shape for each type. Corner/byline are drawn un-rotated (the game rotates the camera for facing; the shared primitives do not)."
-        cells={mainCells()}
-      />
+      <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
+        <button style={TAB_BTN(view === "eleven")} onClick={() => setView("eleven")}>
+          Real game (11-a-side)
+        </button>
+        <button style={TAB_BTN(view === "five")} onClick={() => setView("five")}>
+          Five-a-side
+        </button>
+      </div>
 
-      <Section
-        heading="Main game — formation vs formation"
-        note="Same scenario kind + seed, cast against three clubs whose clubFormation.ts shapes differ (Arsenal 4-3-3, Man City 3-4-2-1, Everton 3-5-2). NOTE: castDefence only assigns WHO each defender is (name/face), it does NOT reposition them — defender positions are owned by the scenario builder — so the shapes are identical and only the assigned identities differ. That is a real finding this page surfaces, not a bug in the page."
-        cells={formationCells()}
-      />
-
-      <Section
-        heading="Five-a-side"
-        note="Real fiveASide/ shapes at fixed seeds. defensiveShape (where 'four on the goal line' vs a diamond shows), attackingShape (the 1-2-1 / 2-2 structure), and a full chance from buildPassage."
-        cells={fiveCells()}
-      />
+      {view === "eleven" ? <ElevenView /> : <FiveView />}
     </main>
   );
 }
