@@ -923,9 +923,9 @@ function EditToolbar({
 
 // Strength matchup presets → (yourStrength, oppStrength) for the positional layer.
 const MATCHUPS: { id: string; label: string; atk: number; def: number }[] = [
-  { id: "even", label: "Even (70 v 70)", atk: 70, def: 70 },
-  { id: "you-strong", label: "You stronger — e.g. Prem v National League (90 v 55)", atk: 90, def: 55 },
-  { id: "you-weak", label: "You weaker (55 v 90)", atk: 55, def: 90 },
+  { id: "even", label: "Even (70v70)", atk: 70, def: 70 },
+  { id: "you-strong", label: "You stronger (90v55)", atk: 90, def: 55 },
+  { id: "you-weak", label: "You weaker (55v90)", atk: 55, def: 90 },
 ];
 
 const SELECT_STYLE: React.CSSProperties = {
