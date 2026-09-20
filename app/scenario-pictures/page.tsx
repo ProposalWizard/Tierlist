@@ -65,9 +65,23 @@ function offsideLineFor(sc: Scenario): number | null {
   return ys[1];
 }
 
-/** Anything obviously wrong with this picture, named in plain English so a
- *  non-coder can scan for it rather than squint. Deliberately conservative —
- *  it only flags what is genuinely illegal or unfootballing. */
+/**
+ * A back line only exists in some situations. The SB360 adjacent-gap figure
+ * (Table 2b) describes men in a SETTLED BACK LINE — it is meaningless for a
+ * dead ball, where defenders legitimately ring the D, and for a box scene,
+ * where the handful of men drawn are markers in different zones rather than a
+ * flat line. Scoping it wrong is not academic: applied to every kind it flags
+ * 32.2% of all pictures as broken (penalties 100%, headers 84%) when the real
+ * figure is 0.64%. A grader that cries wolf is worse than no grader, because
+ * an auto-repair loop would then "fix" thousands of scenarios that were right.
+ */
+const LINE_KINDS = new Set<ScenarioKind>(["long_range", "tight_angle", "through_ball"]);
+const DEAD_BALL = new Set<ScenarioKind>(["penalty", "free_kick", "corner"]);
+
+/** Anything genuinely wrong with this picture, named in plain English so it can
+ *  be scanned for rather than squinted at. Deliberately conservative — it only
+ *  flags what is actually illegal or unfootballing, in the situations where the
+ *  rule means something. */
 function faultsOf(sc: Scenario): string[] {
   const out: string[] = [];
   const line = offsideLineFor(sc);
@@ -79,14 +93,17 @@ function faultsOf(sc: Scenario): string[] {
     if (atts.some(a => a.y < line - 0.01)) out.push("attacker offside");
   }
   const ballDist = sc.ball.y;
-  if (goalInView(sc.kind) && ballDist <= 24 && sc.defenders.length > 0) {
+  // A dead ball has no obligation to hold the channel — everyone is ringing
+  // the box waiting for the kick.
+  if (goalInView(sc.kind) && !DEAD_BALL.has(sc.kind) && ballDist <= 24 && sc.defenders.length > 0) {
     if (!sc.defenders.some(d => Math.abs(d.x - 34) <= 6.5)) out.push("empty central channel");
   }
-  // Adjacent back-line gap, the "gap like that in the box" measure.
-  if (goalInView(sc.kind) && sc.defenders.length >= 2 && ballDist <= 25) {
-    const xs = sc.defenders.map(d => d.x).sort((a, b) => a - b);
-    for (let i = 1; i < xs.length; i++) {
-      if (xs[i] - xs[i - 1] > 11) { out.push("11m+ hole in the line"); break; }
+  // Only among men actually forming a line: within 4m of each other in depth.
+  if (LINE_KINDS.has(sc.kind) && ballDist <= 25 && sc.defenders.length >= 2) {
+    const deepest = Math.min(...sc.defenders.map(d => d.y));
+    const lineMen = sc.defenders.filter(d => d.y - deepest <= 4).map(d => d.x).sort((a, b) => a - b);
+    for (let i = 1; i < lineMen.length; i++) {
+      if (lineMen[i] - lineMen[i - 1] > 11) { out.push("11m+ hole in the line"); break; }
     }
   }
   if (sc.defenders.some(d => d.y < sc.keeper.y)) out.push("defender behind his keeper");
