@@ -79,6 +79,7 @@ import { applyFormationShape } from "@/lib/star/formationShape";
 import { PLAYSTYLES, type Playstyle } from "@/lib/star/playstyle";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
+import ScenarioEditor from "@/components/star/ScenarioEditor";
 
 // ── Kit looks. Not real club kits — just enough colour to tell the three
 //    groups apart on a diagram: your side blue, theirs red, a keeper green. ──
@@ -1042,8 +1043,42 @@ function FiveView({ edits, setOverride, clearOverride }: EditProps) {
   );
 }
 
+/**
+ * MIKEY'S SCENARIO BUILDER, hosted here.
+ *
+ * The same component the standalone /star-scenario-dev sandbox renders —
+ * imported, not forked or rewritten, so there is exactly one builder and a
+ * change to it shows up in both places. The two other tabs READ the real
+ * builders at fixed seeds; this one WRITES hand-placed scenarios
+ * (lib/star/scenarios.ts's MatchScenario, in real pitch metres) into the
+ * shared star_scenarios table. Its own Save/Delete, its own "migration not
+ * run" banner, and its own honest "saved on this device ONLY" wording all
+ * live inside the component — nothing is duplicated out here.
+ */
+function BuilderView() {
+  return (
+    <div>
+      <p style={{ margin: "0 0 8px", color: "#94a3b8", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
+        Hand-build a scenario: place teammates and opponents, set the ball (it follows the You marker), and
+        frame the camera — straight, or the quarter-turn left/right the real match actually shoots a cross
+        from. Coordinates are <b>real pitch metres</b> (<code>lib/star/pitch.ts</code>), the one shape that
+        could be handed straight to the real renderer with no translation.
+      </p>
+      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
+        <b>Saving is shared.</b> Every scenario goes to the <code>star_scenarios</code> table, so it is
+        there on every device, not just in this browser — and deleting one removes it everywhere. Writing
+        needs an admin sign-in (same gate as the Lineups page); if it fails, the save says so rather than
+        showing a tick.
+      </p>
+      <div style={{ background: "#030712", borderRadius: 12, padding: 12 }}>
+        <ScenarioEditor />
+      </div>
+    </div>
+  );
+}
+
 export default function StarGalleryDevPage() {
-  const [view, setView] = useState<"eleven" | "five">("eleven");
+  const [view, setView] = useState<"eleven" | "five" | "builder">("eleven");
 
   // The shared edit store, lifted here so edits survive tab switches and both
   // views' "copy all edited" can see them. Persisted straight through the
@@ -1082,9 +1117,11 @@ export default function StarGalleryDevPage() {
         fixed seed, so a screenshot before and after a builder change is a true like-for-like comparison.
         This page changes no game behaviour.
       </p>
-      <p style={{ margin: "0 0 20px", color: "#7dd3fc", fontSize: 14, maxWidth: 760 }}>
+      <p style={{ margin: "0 0 20px", color: "#7dd3fc", fontSize: 14, maxWidth: 820, lineHeight: 1.5 }}>
         It is now also a <b>scenario editor</b>: drag players and the ball into the positions a scenario
-        SHOULD have and Export them as ground-truth JSON to tune the builders against.
+        SHOULD have and Export them as ground-truth JSON to tune the builders against. The third tab hosts
+        the full <b>Scenario Builder</b> — hand-place a scenario from scratch and save it to the shared
+        database, where every device reads it.
       </p>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
@@ -1094,9 +1131,14 @@ export default function StarGalleryDevPage() {
         <button style={TAB_BTN(view === "five")} onClick={() => setView("five")}>
           Five-a-side
         </button>
+        <button style={TAB_BTN(view === "builder")} onClick={() => setView("builder")}>
+          Scenario Builder
+        </button>
       </div>
 
-      {view === "eleven" ? <ElevenView {...editProps} /> : <FiveView {...editProps} />}
+      {view === "eleven" && <ElevenView {...editProps} />}
+      {view === "five" && <FiveView {...editProps} />}
+      {view === "builder" && <BuilderView />}
     </main>
   );
 }
