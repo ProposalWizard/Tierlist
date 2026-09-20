@@ -3,6 +3,7 @@ import { sortLeague } from "./season";
 import { sortEuro } from "./euro";
 import { groundFor, crowdFor } from "./stadiums";
 import { tieWinner } from "./cups";
+import { scoutTacticsFor, type ScoutTactics } from "./formationShape";
 
 /**
  * THE SCOUT REPORT.
@@ -121,6 +122,25 @@ export interface ScoutReport {
    *  they're not in it (see `table`). */
   tableSnippet: TableRow[];
   headToHead: { wins: number; draws: number; losses: number } | null;
+  /**
+   * How they'll set up — formation, playstyle and where their line will sit
+   * given the strength gap to you (see scoutTacticsFor, formationShape.ts).
+   * The same three inputs the in-match block layer reads, so the report
+   * matches what you actually face.
+   */
+  tactics: ScoutTactics;
+}
+
+/** The strength gap fed to the tactical read — mirrors page.tsx's own
+ *  oppStrength calc (fixture override + home/away nudge) so the scout report
+ *  describes the same block the match will build. */
+function tacticsFrom(career: CareerState, opponent: string, fixture?: Fixture): ScoutTactics {
+  const myStrength = career.league.find(t => t.name === career.player.club)?.strength ?? 65;
+  const base = fixture?.opponentStrength
+    ?? career.league.find(t => t.name === opponent)?.strength
+    ?? 65;
+  const oppStrength = Math.max(20, Math.min(99, base + (fixture ? (fixture.home ? -3 : 4) : 0)));
+  return scoutTacticsFor(opponent, myStrength, oppStrength);
 }
 
 function squadFor(career: CareerState, club: string): LeagueSquad | undefined {
@@ -291,6 +311,7 @@ export function scoutReportFor(career: CareerState, opponent: string, week: numb
       recentResults: recentResultsFor(opponent, career.results ?? []),
       tableSnippet: [],
       headToHead: career.headToHead?.[opponent] ?? null,
+      tactics: tacticsFrom(career, opponent, fixture),
     };
   }
 
@@ -316,6 +337,7 @@ export function scoutReportFor(career: CareerState, opponent: string, week: numb
       recentResults: recentResultsFor(opponent, results),
       tableSnippet: tableSnippetFor(euroTable, idx),
       headToHead: career.headToHead?.[opponent] ?? null,
+      tactics: tacticsFrom(career, opponent, fixture),
     };
   }
 
@@ -333,5 +355,6 @@ export function scoutReportFor(career: CareerState, opponent: string, week: numb
     recentResults: recentResultsFor(opponent, results),
     tableSnippet: tableSnippetFor(table, idx),
     headToHead: career.headToHead?.[opponent] ?? null,
+    tactics: tacticsFrom(career, opponent, fixture),
   };
 }
