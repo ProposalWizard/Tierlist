@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   clampOffset, encodePortrait, initialView, portraitBytes, sourceRect, type CropView,
 } from "@/lib/star/portrait";
@@ -31,12 +31,36 @@ import { FAKE_FACES } from "@/lib/star/fakeFaces";
  * input cannot be both, and the fix is the one the report describes: two
  * inputs, each honest about which it is.
  *
- *   ADD A PHOTO   — bare `accept="image/*"`, no `capture`. The phone's own
- *                   chooser, which on iOS and Android already offers Camera
- *                   alongside Photo Library. Unchanged from before.
+ *   CHOOSE FROM GALLERY — bare `accept="image/*"`, no `capture`. The phone's
+ *                   own chooser, which on iOS and Android already offers
+ *                   Camera alongside Photo Library. (It reads "Change photo"
+ *                   once there is a photo to change.)
  *   TAKE A PHOTO  — the same input plus `capture="user"`, which asks for the
  *                   FRONT camera (`"environment"` would be the rear one, and
  *                   this is a portrait of your own face).
+ *
+ * ── …AND WHY IT WAS REPORTED AS STILL BROKEN AFTER IT WAS BUILT ──
+ *
+ * Reported a third time — "the 'Take a photo' still doesn't work again, I
+ * already asked for that section yesterday" — and the cause was not in this
+ * file at all: the two-button version above has only ever existed on the
+ * `Harry` branch. `main` (which is what deploys) still carries the ONE-button
+ * picker, with a comment saying `capture` was deliberately removed. Anybody
+ * playing the deployed build has no camera control to press, which is exactly
+ * what "it doesn't work" looks like. **This needs merging to `main` before it
+ * can be true for anybody.**
+ *
+ * ── The one thing that WAS worth hardening here, for iOS Safari ──
+ *
+ * Both inputs used to be `class="hidden"` — `display: none` — inside an
+ * implicit `<label>`. That works in every desktop browser and in most mobile
+ * ones, and it is the single most commonly reported cause of a file input
+ * that silently does nothing when tapped on iOS Safari (and in a home-screen
+ * web app, which is how this game is played). A file input has to be RENDERED
+ * to be reliably clickable there, so both are now visually hidden instead —
+ * one pixel, fully transparent, out of the layout — and each label points at
+ * its input by `id` rather than relying on nesting alone. No visual change of
+ * any kind; it only removes the two ways the tap could be swallowed.
  *
  * ── What this does on a desktop, stated plainly ──
  *
@@ -55,6 +79,14 @@ import { FAKE_FACES } from "@/lib/star/fakeFaces";
 
 const VIEWPORT = 224;
 
+/**
+ * Hidden from the eye, NOT from the layout engine — see the note above.
+ * `display: none` is what iOS Safari can refuse to open a file picker for;
+ * this is the standard visually-hidden recipe instead.
+ */
+const HIDDEN_INPUT =
+  "absolute h-px w-px overflow-hidden opacity-0 [clip:rect(0,0,0,0)]";
+
 interface Props {
   value?: string;
   onChange: (portrait: string | undefined) => void;
@@ -72,6 +104,11 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
 
   const kit = kitsOf(club).home;
+  // Unique per instance: the label/input pairing is by `id` now, and this
+  // component renders on more than one screen. `useId` rather than a literal
+  // so two of them on a page could never point a label at the other one's
+  // input, and so the server and the first client render agree.
+  const uid = useId();
 
   // Load the chosen file and open the crop centred on it.
   const take = useCallback((file: File) => {
@@ -196,31 +233,40 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
 
           {/* Picking and taking are a pair and sit on one row; the shirt is
               the third, different answer and gets its own — see below. */}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <label className="cursor-pointer rounded-lg bg-emerald-600 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-500">
-              {value ? "Change photo" : "Add a photo"}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
-              />
+          <div className="relative mt-3 grid grid-cols-2 gap-2">
+            <label
+              htmlFor={`${uid}-library`}
+              className="cursor-pointer rounded-lg bg-emerald-600 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-500"
+            >
+              {value ? "Change photo" : "Choose from gallery"}
             </label>
-            <label className="cursor-pointer rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600">
-              Take a photo
-              <input
-                type="file"
-                accept="image/*"
-                // The whole difference between this button and the one beside
-                // it. "user" is the front camera — this is a portrait of your
-                // own face, not a picture of something in front of you. See
-                // the note at the top of this file for what it does on a
-                // desktop, which is nothing.
-                capture="user"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
-              />
+            <input
+              id={`${uid}-library`}
+              type="file"
+              accept="image/*"
+              className={HIDDEN_INPUT}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
+            />
+
+            <label
+              htmlFor={`${uid}-camera`}
+              className="cursor-pointer rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600"
+            >
+              📷 Take a photo
             </label>
+            <input
+              id={`${uid}-camera`}
+              type="file"
+              accept="image/*"
+              // The whole difference between this button and the one beside
+              // it. "user" is the front camera — this is a portrait of your
+              // own face, not a picture of something in front of you. See
+              // the note at the top of this file for what it does on a
+              // desktop, which is nothing.
+              capture="user"
+              className={HIDDEN_INPUT}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
+            />
           </div>
 
           {/* ── THE SHIRT IS AN ANSWER, NOT A GREYED-OUT ACTION ──
@@ -290,6 +336,11 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
  */
 function TilePreview({ portrait, club, number }: { portrait?: string; club: string; number?: number }) {
   const kit = kitsOf(club).home;
+  // Unique per instance: the label/input pairing is by `id` now, and this
+  // component renders on more than one screen. `useId` rather than a literal
+  // so two of them on a page could never point a label at the other one's
+  // input, and so the server and the first client render agree.
+  const uid = useId();
   const c = paletteFor(kit.shirt, kit.trim);
   return (
     <div className="relative h-16 w-16 shrink-0 isolate overflow-hidden rounded-lg" style={{ backgroundColor: kit.shirt }}>

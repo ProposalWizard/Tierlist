@@ -2429,7 +2429,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <NegotiationScreen
         mode="selling"
-        playerName={`${career.player.firstName} ${career.player.lastName} — wages for the season`}
+        // ── It says WHO and WHY, because this screen can be arrived at with
+        //    no memory of the conversation that led to it ──
+        //
+        // Reported as landing on a negotiation with no idea which club was
+        // interested. The conversation before it does say (and its own note
+        // records the real layout bug that hid it), but this screen is also
+        // where a reload or a distracted tap can put you, and it used to name
+        // only the player. The club and the reason are in the title now.
+        playerName={`${career.player.firstName} ${career.player.lastName} — terms with ${talking.club}`}
         marketValue={weeklyToSeason(talk.fairWeekly, talk.division)}
         counterpartLabel={talking.club}
         initialState={talk.negotiation}
@@ -2633,16 +2641,56 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  /**
+   * ── YOU GOT LOANED OUT AND NOBODY SAID SO ──
+   *
+   * Reported directly: *"you got loaned out. You got loaned out. It just
+   * didn't tell you anything."* Two separate things were wrong and both are
+   * here, because both are one value at this call site:
+   *
+   *  1. `club` was `career.player.club`, which on a loan is the club you are
+   *     being SENT TO. So the back page and the signature both named a club
+   *     you had never heard of and the club that had actually signed you was
+   *     never mentioned. It is `contract.club` now — the club whose contract
+   *     you are signing, which is the same value on every non-loan signing
+   *     and the parent club on a loan.
+   *  2. `LoanBrief` existed and explained the whole thing, and only ever
+   *     rendered at `phase === "pre-match"` — several taps and one dashboard
+   *     later. It now runs straight off the back of the signing.
+   */
   if (phase === "trial-reward" && career) {
+    const onLoan = career.placement?.kind === "loan";
     return (
       <TrialReward
         playerName={`${career.player.firstName} ${career.player.lastName}`}
         surname={career.player.lastName}
-        club={career.player.club}
-        onDone={() => { setActiveNav("home"); setPhase("dashboard"); }}
+        club={career.contract?.club ?? career.player.club}
+        onDone={() => {
+          setActiveNav("home");
+          setPhase(onLoan ? "loan-brief" : "dashboard");
+        }}
       />
     );
   }
+
+  /** The loan, explained the moment it happens — see the note above. */
+  if (phase === "loan-brief" && career?.placement?.kind === "loan") {
+    return (
+      <LoanBrief
+        career={career}
+        intro
+        onContinue={() => {
+          // The weekly reminder is a reminder, and this week has just had
+          // the full version — so it is marked seen rather than shown twice
+          // in a row on the way to the very first match.
+          setLoanBriefWeek(career.week);
+          setActiveNav("home");
+          setPhase("dashboard");
+        }}
+      />
+    );
+  }
+  if (phase === "loan-brief") { setPhase("dashboard"); return null; }
 
   if (phase === "profile-setup" || !career) {
     return <ProfileSetup onComplete={handleProfileComplete} />;

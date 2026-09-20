@@ -1276,6 +1276,12 @@ export type StarPhase =
   | "youth"
   /** …and what it earns you — the card, then the contract. See TrialReward. */
   | "trial-reward"
+  /** You signed for one club and they are sending you to another one. Shown
+   *  ONCE, straight after the signing, because until it existed a loan
+   *  wildcard simply deposited you at a club nobody had mentioned — reported
+   *  directly: "you got loaned out, it just didn't tell you anything". The
+   *  same LoanBrief.tsx the weekly reminder uses, in its `intro` form. */
+  | "loan-brief"
   /** Watching a saved goal happen again — see GoalReplay, goalReplays.ts. */
   | "goal-replay"
   /** Signing for a new club at the end of a season — the same contract

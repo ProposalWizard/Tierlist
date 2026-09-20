@@ -4,7 +4,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { CX, NET_DEPTH } from "@/lib/star/pitch";
 import type { Viewport } from "@/lib/star/canvasEngine";
 import {
-  REPS, visionSetup, visionQuality, weightedQuality, attemptSeed,
+  REPS, visionSetup, visionQuality, visionFreeSeconds, weightedQuality, attemptSeed,
   teachSeen, markTeachSeen, type VisionSetup,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
@@ -285,10 +285,23 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
     const q = visionQuality(picked, s, tookSeconds);
     scoresRef.current = [...scoresRef.current, q];
     pickedRef.current = picked;
+    // ── The right man, AND whether being right was all of it ──
+    //
+    // This used to say "Right man." for any correct pick that was not inside
+    // 45 % of the window, and say nothing at all about speed. Half of what
+    // this stage scores is how quickly you saw it (`visionQuality`), so a
+    // player who picked correctly six times out of six and was told "Right
+    // man." six times had no way to know why the stage did not come out near
+    // the top — which is exactly what was reported. The bands are the real
+    // ones now: inside the free window is full marks, and everything after it
+    // says so rather than reading as a clean pass.
+    const free = visionFreeSeconds(s.window);
     setVerdict(
       picked === null ? "Head never came up."
-        : picked === s.correct ? (tookSeconds < s.window * 0.45 ? "Seen it early!" : "Right man.")
-        : "He was covered.",
+        : picked !== s.correct ? "He was covered."
+        : tookSeconds <= free ? "Seen it early!"
+        : tookSeconds < free + (s.window - free) * 0.5 ? "Right man — a beat late."
+        : "Right man, eventually.",
     );
     setPhase("reveal");
     window.setTimeout(() => {
