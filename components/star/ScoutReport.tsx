@@ -205,6 +205,23 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
         )}
       </div>
 
+      {/* How they'll set up — formation, playstyle and where their line will
+          sit, framed by the strength gap to you. See scoutTacticsFor
+          (lib/star/formationShape.ts); the same three inputs the in-match
+          defensive block layer reads, so this describes what you'll face. */}
+      <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2">
+        <div className="mb-1.5 flex flex-wrap items-center gap-1">
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-white">{report.tactics.formationName}</span>
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-white/90">{report.tactics.backLine}</span>
+          <span className="rounded px-1.5 py-0.5 text-[9px] font-bold text-emerald-200" style={{ background: "rgba(16,185,129,0.18)" }}>{report.tactics.playstyleName}</span>
+          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-white/80">{report.tactics.lineHeight} line</span>
+          {report.tactics.counters && (
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-bold text-amber-200" style={{ background: "rgba(185,138,31,0.22)" }}>counter threat</span>
+          )}
+        </div>
+        <p className="text-[10px] font-medium leading-snug text-white">{report.tactics.summary}</p>
+      </div>
+
       {noPlayerData ? (
         <div className="mt-2 text-[10px] text-white/60 text-center py-1">
           Not enough scouted on {report.club} yet.
