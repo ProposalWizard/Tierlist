@@ -1071,8 +1071,11 @@ function clearShotLane(sc: Scenario, m: Vec2, onsideY: number): void {
   const nx = -vy / nlen, ny = vx / nlen;
   const sign = ((m.x - px) * nx + (m.y - py) * ny) >= 0 ? 1 : -1;
   const push = TEAMMATE_LANE_R - off + 0.6;
+  const moved = m.y + sign * ny * push;
   m.x = clamp(m.x + sign * nx * push, 2, PITCH_W - 2);
-  m.y = Math.max(Math.max(0.8, onsideY), m.y + sign * ny * push);
+  // Only clamp to the offside line if the push would leave him ahead of the
+  // ball — behind it he cannot be offside. See `legalY`.
+  m.y = moved >= sc.ball.y ? Math.max(0.8, moved) : Math.max(Math.max(0.8, onsideY), moved);
 }
 
 function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void {
@@ -1107,6 +1110,20 @@ function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void 
   // ordering IS the offside fix (spec §2.5), not a repair afterwards.
   const line = offsideLineOf(sc);
   const onsideY = line === null ? 0 : line + 0.3;
+  /**
+   * Keep a man legal — and ONLY a man who could be illegal.
+   *
+   * Law 11 needs a player to be beyond the second-last opponent AND ahead of
+   * the ball. This block used to apply `Math.max(y, onsideY)` to everyone, so
+   * a team-mate standing BEHIND the ball — who cannot be offside under any
+   * reading of the law — was dragged back to the offside line for no reason.
+   *
+   * Reported directly: "an attacker on your own team is not offside if they
+   * are behind the ball… they can be in front of the defenders, and we
+   * shouldn't be against that." Same omission as baseScenario.ts's fault
+   * rule, in the placement half rather than the judging half.
+   */
+  const legalY = (y: number): number => (y >= sc.ball.y ? y : Math.max(y, onsideY));
   for (let i = 0; i < runners.length; i++) {
     const at = spots[i % spots.length];
     const to = { x: clamp(at.x, 2, PITCH_W - 2), y: Math.max(0.8, at.y) };
@@ -1130,9 +1147,9 @@ function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void 
     // Scoped to the kinds where YOU strike at goal. A cutback, a cross and a
     // through ball are played TO a team-mate — moving him out of the lane
     // there would be moving the target of the pass.
-    to.y = Math.max(to.y, onsideY);
+    to.y = legalY(to.y);
     runners[i].to = { x: to.x, y: to.y };
-    runners[i].pos = { x: to.x, y: Math.max(to.y + 1.4, onsideY) };
+    runners[i].pos = { x: to.x, y: legalY(to.y + 1.4) };
     // Applied to where he STANDS as well as where he runs to, and applied
     // last. A first attempt moved only `to` and measured as barely working —
     // a volley still had a team-mate in the lane 56.3% of the time — because
@@ -1147,7 +1164,7 @@ function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void 
 
   // The poacher lurks for a spill, always onside of the line as it now stands.
   sc.follower.x = clamp(CX + side * U(rng, 1.5, 5), POST_L - 3, POST_R + 3);
-  sc.follower.y = Math.max(U(rng, SIX_DEPTH, 12), onsideY);
+  sc.follower.y = legalY(U(rng, SIX_DEPTH, 12));
   // …and he is a team-mate in front of the goal like any other, so he gets out
   // of the way of a shot too.
   if (YOU_SHOOT_KINDS.has(p.kind)) clearShotLane(sc, sc.follower, onsideY);

@@ -17,6 +17,7 @@ import {
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { applyChancePlan } from "@/lib/star/chanceFormula";
+import { applyAuthoredShape, nextAuthoredShape } from "@/lib/star/authoredChance";
 import { fixBaseScenario } from "@/lib/star/baseScenario";
 import { selectChance, newSelectionMemory } from "@/lib/star/scenarioSelect";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
@@ -706,6 +707,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const pendingRequestRef = useRef<ScenarioRequest | null>(null);
   /** The last few situations you were shown — the chance formula's anti-repeat. */
   const chanceMemoryRef = useRef(newSelectionMemory());
+  /** The last few hand-authored scenarios served, so the same drawing is
+   *  never two chances running. See lib/star/authoredChance.ts. */
+  const authoredMemoryRef = useRef<string[]>([]);
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -3779,6 +3783,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current, visionRef.current);
     }
 
+    // ── Play the pictures that were actually DRAWN ──
+    //
+    // Where a chance kind has hand-authored scenarios
+    // (lib/star/authoredScenarios.json, written by the Scenario Gallery),
+    // one of them is chosen and laid over the built scenario with a small
+    // random nudge on every figure. The nudge is checked against the rule
+    // set those same scenarios produce, so a variant that breaks the
+    // situation's own definition is thrown away and redrawn — see
+    // lib/star/authoredChance.ts for the measured numbers.
+    //
+    // Additive and fully reversible: a kind with nothing authored for it
+    // gets `null` here and falls straight through to exactly today's
+    // behaviour. Runs BEFORE castScenario so the real faces are assigned to
+    // where the men END UP, not to the procedural positions they no longer
+    // occupy.
+    let appliedAuthored = false;
+    if (!isTouchContinuation) {
+      const shape = nextAuthoredShape(scenarioRef.current.kind, rng, authoredMemoryRef.current);
+      if (shape) {
+        applyAuthoredShape(scenarioRef.current, shape);
+        authoredMemoryRef.current.push(shape.sourceId);
+        if (authoredMemoryRef.current.length > 3) authoredMemoryRef.current.shift();
+        appliedAuthored = true;
+      }
+    }
+
     scenarioRef.current.conditions = conditionsRef.current;
 
     // ── Put your actual team-mates in the shirts ──
@@ -3812,7 +3842,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // world shape, and re-running the block layer would drag every man back
     // toward the middle of the camera (the exact "forced into the viewport"
     // the owner ruled out).
-    if (!appliedPlan) applyFormationShape(scenarioRef.current, formationShapeFor());
+    // Also skipped when a hand-authored shape was placed: the block in that
+    // picture is where somebody deliberately put it, and re-running the
+    // formation layer would drag those men somewhere else. Making a
+    // formation MODULATE an authored shape rather than replace it is the
+    // next piece of this, and is deliberately not guessed at here.
+    if (!appliedPlan && !appliedAuthored) applyFormationShape(scenarioRef.current, formationShapeFor());
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
