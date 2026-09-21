@@ -54,6 +54,7 @@ const GROUPS: AdminGroup[] = [
     links: [
       { name: "Homepage", href: "/" },
       { name: "Profile", href: "/profile" },
+      { name: "Patch Notes", href: "/admin/patch-notes" },
     ],
   },
   {
