@@ -51,6 +51,28 @@ Newest first. Each is something that was actually said.
   immersive ones that hide the normal nav. Getting out has to be as easy as
   getting in.
 
+### 21 Sep 2026 — the gallery, second pass
+- **"Across formations… is kind of irrelevant."** Verbatim: *"it should be a
+  toggle to even show it right now because it's taking up 60% of the screen
+  and it doesn't actually even work. You can only see 3 formations. It doesn't
+  change anything… for now it would make more sense to have that space be the
+  simulate random option or just nothing there."* Measured: on a 1280-wide
+  screen the strip owned the whole right column — 60% of the width — by
+  default. It is now behind a toggle, OFF, and the space is the Simulate
+  button. NOT deleted: he wants it back later.
+- **"I should be able to add more than 10."** A fixed grid size is a cage. Any
+  grid of seeded versions gets a "+ Add version" tile and remembers the count.
+- **A dev tool that only lets you MOVE things is half a tool.** Verbatim:
+  *"you can't add teammates, you can't remove opposition, add opposition.
+  There are a few bits of the editing tool missing."* If a screen lets you drag
+  a thing, it should also let you add one and take one away.
+- **"I just need an output."** On Simulate, verbatim: *"all the simulate should
+  do is simulate one screenshot or one scenario, as if a player was playing the
+  game… Right now, unless that is what you're saying, which doesn't sound like
+  it is, I don't need a bunch of data. I just need an output."* A run counter,
+  a fault tally, a hit rate — none of it goes on screen. Measurements belong in
+  the hand-back report. The screen shows the picture.
+
 ### 21 Sep 2026 — the gallery rebuild
 - **"It's literally just a scenario gallery."** The front page is three things and
   nothing else: 11-a-side, 5-a-side, Scenario Builder. No preamble, no
