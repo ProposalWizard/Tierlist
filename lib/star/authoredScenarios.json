@@ -6,14 +6,14 @@
       "name": "one_on_one",
       "kind": "open_play",
       "camera": {
-        "centerX": 32.43,
+        "centerX": 33.52,
         "centerY": 17.3,
         "viewHeight": 42,
         "facing": "up"
       },
       "ball": {
-        "x": 35.9,
-        "y": 15.69
+        "x": 36.84,
+        "y": 11.63
       },
       "players": [
         {
@@ -62,22 +62,23 @@
           "id": "i6",
           "side": "teammate",
           "x": 29.62,
-          "y": 17.13,
+          "y": 17.48,
           "label": "POACH"
         },
         {
           "id": "i7",
           "side": "you",
-          "x": 36.86,
-          "y": 16.23,
+          "x": 37.3,
+          "y": 13.08,
           "label": "YOU"
         }
       ],
-      "updatedAt": 1789984201753,
+      "updatedAt": 1789999134629,
       "source": {
         "tool": "gallery",
         "kind": "one_on_one",
-        "seed": 1000
+        "seed": 1000,
+        "planId": null
       }
     },
     "gallery-v-one_on_one-7001": {
