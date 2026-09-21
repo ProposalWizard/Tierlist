@@ -1,3 +1,4 @@
+import { normaliseScenarioCamera } from "./scenarios";
 import type { MatchScenario } from "./scenarios";
 
 /**
@@ -68,7 +69,7 @@ function read(): Store {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
     const out: Store = {};
     for (const [id, s] of Object.entries(parsed)) {
-      if (isMatchScenario(s)) out[id] = s;
+      if (isMatchScenario(s)) out[id] = normaliseScenarioCamera(s);
     }
     return out;
   } catch {
@@ -159,7 +160,7 @@ export async function fetchSharedScenarios(): Promise<SyncResult & { scenarios?:
   const incoming: Store = {};
   if (data.scenarios && typeof data.scenarios === "object" && !Array.isArray(data.scenarios)) {
     for (const [id, s] of Object.entries(data.scenarios as Record<string, unknown>)) {
-      if (isMatchScenario(s)) incoming[id] = s;
+      if (isMatchScenario(s)) incoming[id] = normaliseScenarioCamera(s);
     }
   }
   write({ ...read(), ...incoming });
