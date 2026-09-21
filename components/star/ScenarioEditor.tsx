@@ -443,8 +443,10 @@ export default function ScenarioEditor() {
             onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, centerX: v } }))} />
           <SliderRow label="Centre Y" value={cam.centerY} min={0} max={PITCH_LEN} step={0.5}
             onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, centerY: v } }))} />
-          <SliderRow label="Zoom (view height, m)" value={cam.viewHeight} min={10} max={PITCH_LEN} step={1}
-            onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, viewHeight: v } }))} />
+          {/* The Zoom slider is gone on purpose. It ran from 10 m to 52.5 m,
+              so every scenario anyone built got its own goal size — half of
+              the reported "you move and the goal can be different sizes or
+              different zoom". The camera slides; it never zooms. */}
 
           <label className="mt-3 block text-[10px] font-black uppercase tracking-wide text-white/60">Angle</label>
           <div className="mt-1 grid grid-cols-3 gap-1">

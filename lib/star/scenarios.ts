@@ -120,6 +120,31 @@ export function newScenarioId(): string {
 /** A goal-line-facing scenario's usual working area: the attacking third,
  *  centred on goal. A sensible starting camera and a sensible starting
  *  spot for the ball and the You marker — all freely moved from there. */
+/**
+ * The one view height every scenario is framed at, hand-built or generated.
+ *
+ * Reported directly: "the goal and camera angle of the goal always need to be
+ * the same... it should move up, down, left, right, but it should never really
+ * change how it looks." 42 m is the engine's own frame (`VIEW_MIN_H` equals
+ * `VIEW_MAX_H` there) and the chance formula's `FIXED_VIEW_H`, so all three now
+ * agree. The camera still moves anywhere; it just never zooms.
+ */
+export const SCENARIO_VIEW_H = 42;
+
+/**
+ * Force a stored scenario back onto the one view height.
+ *
+ * A row saved before the camera was locked carries whatever zoom it was
+ * authored at — anywhere from 10 m to 52.5 m — and would otherwise keep
+ * drawing its goal at its own size forever. Applied on the way IN, at every
+ * load, so there is nothing to migrate and a hand-edited JSON file cannot
+ * reintroduce the bug either.
+ */
+export function normaliseScenarioCamera<T extends MatchScenario>(sc: T): T {
+  if (sc.camera.viewHeight === SCENARIO_VIEW_H) return sc;
+  return { ...sc, camera: { ...sc.camera, viewHeight: SCENARIO_VIEW_H } };
+}
+
 export function blankScenario(kind: ScenarioMomentKind = "corner"): MatchScenario {
   const nearGoal = kind === "corner" || kind === "free_kick" || kind === "throw_in";
   const ballY = kind === "kickoff" ? HALF_LEN : nearGoal ? 8 : HALF_LEN - 15;
@@ -130,7 +155,10 @@ export function blankScenario(kind: ScenarioMomentKind = "corner"): MatchScenari
     camera: {
       centerX: PITCH_W / 2,
       centerY: nearGoal ? 16 : ballY,
-      viewHeight: nearGoal ? 40 : 55,
+      // ONE VIEW HEIGHT, ALWAYS — see SCENARIO_VIEW_H. It used to be 40 near
+      // goal and 55 elsewhere, and the Builder then let it be dragged anywhere
+      // from 10 to 52.5, so every hand-built scenario had its own goal size.
+      viewHeight: SCENARIO_VIEW_H,
       facing: "up",
     },
     ball: { x: kind === "corner" ? 2 : PITCH_W / 2, y: ballY },

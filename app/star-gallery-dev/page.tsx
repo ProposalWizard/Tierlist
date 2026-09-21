@@ -1,55 +1,37 @@
 "use client";
 
 /**
- * SCENARIO GALLERY — deterministic dev scaffolding for the Road to Ballon d'Or
- * match layer. NOT a game feature and NOT reachable from nav.
+ * SCENARIO GALLERY — a gallery, not a document.
  *
- * ── Why this exists ──
+ * Every picture on this page is built from the REAL builders at a HARD-CODED
+ * seed, so a screenshot before and after a builder change is a true
+ * like-for-like comparison. Nothing here changes game behaviour: it only READS
+ * `buildScenario`, `fixBaseScenario`, `scenarioFaults`, `defensiveShape`,
+ * `attackingShape`, `buildPassage`, `castDefence`, `applyFormationShape` and the
+ * shared `render.ts` primitives.
  *
- * The formation and five-a-side shape builders are the hardest thing in this
- * game to eyeball, and the only honest way to judge a change to them (does the
- * back four still hold its line, did the diamond actually appear) is a
- * seed-matched before/after screenshot. Playing a match to reach one specific
- * scenario is expensive and non-deterministic; this page renders every
- * scenario kind, at a HARD-CODED seed per cell, straight from the REAL
- * builders, so a `star-playtest` screenshot of it before and after a builder
- * change is a true like-for-like comparison.
+ * ── The shell ──
  *
- * ── The two games are completely split ──
- *
- * The top tabs switch between the real (11-a-side) game and five-a-side — you
- * only ever look at one game's scenarios at a time, so there is no chance of
- * mistaking one for the other. Each game keeps its own controls.
- *
- * ── Formation toggle ──
- *
- * The real-game view has a formation dropdown. It does two things: it re-casts
- * every scenario against the chosen opponent formation (via the real
- * `castDefence`), and it draws that formation's own slot layout as a reference
- * diagram — the shape the opponent is MEANT to hold. Today `castDefence` only
- * assigns WHO each defender is, not WHERE (defender positions are owned by the
- * scenario builder), so the scenario shapes do not yet change with the
- * formation — the reference diagram is what they should grow toward once the
- * 11-a-side positional layer lands. That gap is the finding this page exists to
- * make visible.
- *
- * ── What it deliberately does not do ──
- *
- * It changes no game behaviour. It only READS `buildScenario`,
- * `defensiveShape`, `attackingShape`, `buildPassage`, `castDefence`,
- * `formationOf` and the shared `render.ts` draw primitives — the same functions
- * a real match calls — and paints their output onto small labelled canvases.
+ * Reported directly: "instead of all this yap on this front page, it's
+ * literally just a scenario gallery." So the prose is gone and the picture is
+ * the truth. Home is three full-bleed tiles; a game opens on a chip row of its
+ * kinds and a grid of version thumbnails; a thumbnail opens on one big frame
+ * you can drag, approve or reject. A fault is a RED RING on the figure (or the
+ * ball) that is wrong, plus at most one red line of English — never a panel.
+ * A through ball's deliberate early runner rings AMBER, uncaptioned.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SCENARIO_KINDS,
   buildScenario,
   goalInView,
   type Scenario,
+  type ScenarioKind,
   type Vec2,
   type Identity,
 } from "@/lib/star/canvasEngine";
+import { CX } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
 import {
   ELEVEN_A_SIDE_ATTACK,
@@ -69,13 +51,10 @@ import {
 import { defensiveShape, DEFEND_ROLES } from "@/lib/star/fiveASide/shape";
 import { attackingShape, ATTACK_ROLES } from "@/lib/star/fiveASide/attack";
 import { buildPassage, type FiveWorld } from "@/lib/star/fiveASide/passage";
-import {
-  FIVE_KEEPER_STRENGTH,
-  FIVE_HALFWAY_Y,
-} from "@/lib/star/fiveASide/geometry";
-import { fixBaseScenario, scenarioFaults } from "@/lib/star/baseScenario";
+import { FIVE_KEEPER_STRENGTH } from "@/lib/star/fiveASide/geometry";
+import { fixBaseScenario, scenarioFaults, offsideLineOf } from "@/lib/star/baseScenario";
 import { castDefence, type OpponentSheetPlayer } from "@/lib/star/lineup";
-import { FORMATIONS, formationOf, type Formation } from "@/lib/star/formations";
+import { formationOf } from "@/lib/star/formations";
 import { applyFormationShape, defensiveLineOf } from "@/lib/star/formationShape";
 import { PLAYSTYLES, type Playstyle } from "@/lib/star/playstyle";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
@@ -88,6 +67,13 @@ import {
   saveScenarioShared,
   deleteScenarioShared,
 } from "@/lib/star/scenarioStore";
+import {
+  loadReviews,
+  saveReviews,
+  reviewedCount,
+  type ReviewStore,
+  type ReviewVerdict,
+} from "@/lib/star/scenarioReview";
 
 // ── Kit looks. Not real club kits — just enough colour to tell the three
 //    groups apart on a diagram: your side blue, theirs red, a keeper green. ──
@@ -99,14 +85,18 @@ const MATE: Omit<FigureLook, "label" | "star"> = { shirt: "#3b82f6", shorts: "#1
 const FACE = DEFAULT_FACE_STYLE;
 const FAKE = DEFAULT_FAKE_FACE_STYLE;
 
+// ─────────────────────────────────────────────────────────────────────────
+//  FRAMES — unchanged from the original gallery. A Frame is the flat list of
+//  things to paint; `paint` puts it on a canvas.
+// ─────────────────────────────────────────────────────────────────────────
+
 /** One thing to draw. A figure, a keeper, or (via `keeper`) a keeper pose. */
 interface Item {
   at: Vec2;
   look: FigureLook;
   keeper?: boolean;
-  /** Which side he is on. Carried so a frame can be written out as a real
-   *  `MatchScenario` (lib/star/scenarios.ts) — its players are sided, and the
-   *  kit colour alone is not something to reverse-engineer a side from. */
+  /** Which side he is on — carried so a frame can be written out as a real
+   *  `MatchScenario` (lib/star/scenarios.ts), whose players are sided. */
   side: ScenarioSide;
 }
 
@@ -115,36 +105,23 @@ interface Frame {
   camera: MatchRules["view"];
   /** null = no goal drawn (a midfield situation with none in view). */
   goalAtY: number | null;
-  /** null = no offside line. */
   offsideY: number | null;
   /** Which item indices form the opponent back line + keeper, so the offside
-   *  line can be RE-derived live as those figures are dragged in the editor.
-   *  null when the situation has no offside line at all. */
+   *  line can be RE-derived live as those figures are dragged. */
   offsideFrom: { defenderIdx: number[]; keeperIdx: number } | null;
   items: Item[];
   ball: Vec2;
 }
 
-/** The offside line the engine would judge against: the second-last opponent.
- *  Replicated from `opponentLine` (canvasEngine.ts, not exported) — keeper
- *  counts only when the goal is in view, exactly as there. */
-function offsideLineFor(sc: Scenario): number | null {
-  if (!goalInView(sc.kind) || sc.kind === "corner") return null;
-  const ys = sc.defenders.map((d) => d.y);
-  ys.push(sc.keeper.y);
-  if (ys.length < 2) return null;
-  ys.sort((a, b) => a - b);
-  return ys[1];
-}
-
 const idLabel = (who: Identity | undefined, fallback: string): string =>
   who?.shortName ?? who?.name ?? fallback;
 
-/** Turn a built Scenario into a flat list of things to paint. */
+/** Turn a built Scenario into a flat list of things to paint.
+ *  ORDER MATTERS: defenders, keeper, runner, secondary runners, follower,
+ *  teammates, you — `applyOverrideToScenario` and `markIndices` both walk it. */
 function frameFromScenario(sc: Scenario): Frame {
   const items: Item[] = [];
 
-  // Their back line + keeper.
   sc.defenders.forEach((d, i) => {
     items.push({ at: { x: d.x, y: d.y }, look: { ...OPP, label: idLabel(d.who, `D${i + 1}`) }, side: "opponent" });
   });
@@ -155,7 +132,6 @@ function frameFromScenario(sc: Scenario): Frame {
     side: "opponent",
   });
 
-  // Your options: the target runner, support runners, the poacher.
   if (sc.runner) {
     items.push({ at: { ...sc.runner.pos }, look: { ...MATE, label: idLabel(sc.runner.who, "TARGET") }, side: "teammate" });
   }
@@ -169,18 +145,14 @@ function frameFromScenario(sc: Scenario): Frame {
   if (goalInView(sc.kind)) {
     items.push({ at: { x: sc.follower.x, y: sc.follower.y }, look: { ...MATE, label: idLabel(sc.follower.who, "POACH") }, side: "teammate" });
   }
-  // Decorative team-mates (crossers etc.).
   sc.teammates.forEach((t, i) => {
     items.push({ at: { x: t.x, y: t.y }, look: { ...MATE, label: idLabel(t.who, `T${i + 1}`) }, side: "teammate" });
   });
 
-  // You, with a star so you are always findable.
   items.push({ at: { ...sc.player }, look: { ...YOU, label: "YOU", star: true }, side: "you" });
 
-  // The defenders were pushed first (indices 0..nDef-1), the keeper straight
-  // after them — so the offside line can be re-derived from those items alone.
   const nDef = sc.defenders.length;
-  const offside = offsideLineFor(sc);
+  const offside = offsideLineOf(sc);
 
   return {
     rules: ELEVEN_A_SIDE_ATTACK,
@@ -196,9 +168,8 @@ function frameFromScenario(sc: Scenario): Frame {
   };
 }
 
-/** The offside line RE-DERIVED from a frame's CURRENT item positions — so a
- *  dragged defender moves the line with it. Same rule as `offsideLineFor`
- *  (second-last of the back line + keeper), just read off the live items. */
+/** The offside line RE-DERIVED from a frame's CURRENT item positions, so a
+ *  dragged defender moves the line with it. */
 function computeOffside(frame: Frame): number | null {
   const meta = frame.offsideFrom;
   if (!meta) return null;
@@ -212,9 +183,8 @@ function computeOffside(frame: Frame): number | null {
   return ys[1];
 }
 
-/** The CSS pixel size a frame paints at — the same computation `paint` uses,
- *  factored out so the pointer-to-metre inverse can share the exact numbers.
- *  The camera never changes while editing, so this is stable per cell. */
+/** The CSS pixel size a frame paints at — shared with the pointer-to-metre
+ *  inverse so the two can never disagree. */
 function frameCssSize(frame: Frame): { cssW: number; cssH: number } {
   const vpW = frame.camera.x2 - frame.camera.x1;
   const vpH = frame.camera.y2 - frame.camera.y1;
@@ -228,11 +198,8 @@ function frameCssSize(frame: Frame): { cssW: number; cssH: number } {
   return { cssW, cssH };
 }
 
-/** Paint a frame onto a canvas, sized to the camera's own aspect so nothing
- *  is stretched (px/py must share a scale). */
+/** Paint a frame onto a canvas, sized to the camera's own aspect. */
 function paint(canvas: HTMLCanvasElement, frame: Frame): void {
-  // Keep a cell from becoming a skyscraper (a long-range viewport is very
-  // tall); `frameCssSize` holds the true aspect while capping both axes.
   const { cssW, cssH } = frameCssSize(frame);
 
   const dpr = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
@@ -249,8 +216,6 @@ function paint(canvas: HTMLCanvasElement, frame: Frame): void {
   drawPitch(ctx, frame.rules, p);
   if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, p, frame.goalAtY);
 
-  // Re-derived from the CURRENT positions, so a dragged defender drags the
-  // line with it rather than leaving a stale one behind.
   const offY = computeOffside(frame);
   if (offY !== null) drawOffsideLine(ctx, p, cssW, offY);
 
@@ -272,100 +237,107 @@ function drawOffsideLine(ctx: CanvasRenderingContext2D, p: Projection, w: number
   ctx.lineTo(w, yy);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(250, 204, 21, 0.95)";
-  ctx.font = "700 10px system-ui, sans-serif";
-  ctx.fillText("offside line", 4, yy - 3);
   ctx.restore();
 }
 
-// ── The formation reference diagram ────────────────────────────────────────
-// A self-contained painter (does not go through projectionFor) that draws a
-// formation's own slot layout on a portrait pitch, oriented so the opponent's
-// goal (the one you attack) is at the TOP — matching the scenario frames'
-// attack-toward-the-top convention. This is the shape the opponent is MEANT to
-// hold; it is not what the scenario builder currently produces.
-function paintFormationRef(canvas: HTMLCanvasElement, f: Formation): void {
-  const cssW = 300;
-  const cssH = 420;
-  const dpr = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
-  canvas.width = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
-  canvas.style.width = `${cssW}px`;
-  canvas.style.height = `${cssH}px`;
+// ─────────────────────────────────────────────────────────────────────────
+//  FAULT RINGS — the picture says what is wrong, not a paragraph
+// ─────────────────────────────────────────────────────────────────────────
+
+// render.ts's own anatomy, replicated for hit-testing and ring placement only
+// (do NOT edit render.ts). A figure's feet sit at py(at.y); its body rises.
+const HIT_FIGURE_R = 1.05; // render.ts FIGURE_R
+const HIT_BODY_UP = 0.67; // ~mid-torso, in units of r, above the feet anchor
+
+interface Mark { at: Vec2; ball?: boolean; tone: "red" | "amber" }
+
+/** Paint a frame, then ring whatever is wrong with it. */
+function paintMarked(canvas: HTMLCanvasElement, frame: Frame, marks: Mark[]): void {
+  paint(canvas, frame);
+  if (!marks.length) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // Pitch.
-  ctx.fillStyle = "#14532d";
-  ctx.fillRect(0, 0, cssW, cssH);
-  const M = 22;
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(M, M, cssW - 2 * M, cssH - 2 * M);
-  // Halfway line + centre circle.
-  ctx.beginPath();
-  ctx.moveTo(M, cssH / 2);
-  ctx.lineTo(cssW - M, cssH / 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(cssW / 2, cssH / 2, 34, 0, Math.PI * 2);
-  ctx.stroke();
-  // The goal you attack, at the top.
-  ctx.strokeStyle = "rgba(255,255,255,0.7)";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(cssW / 2 - 34, M);
-  ctx.lineTo(cssW / 2 + 34, M);
-  ctx.stroke();
-
-  const px = (fx: number) => M + fx * (cssW - 2 * M);
-  // fy: GK ~0.94 sits near their own goal; that goal is at the TOP here, so a
-  // higher fy maps nearer the top.
-  const py = (fy: number) => M + (1 - fy) * (cssH - 2 * M);
-
-  for (const s of f.slots) {
-    const x = px(s.x);
-    const y = py(s.y);
-    const isGK = s.role === "GK";
+  const { cssW, cssH } = frameCssSize(frame);
+  const p = projectionFor(frame.rules, cssW, cssH, frame.camera);
+  const r = Math.max(7, p.unit * HIT_FIGURE_R);
+  ctx.save();
+  for (const m of marks) {
+    const x = p.px(m.at.x);
+    const y = m.ball ? p.py(m.at.y) : p.py(m.at.y) - r * HIT_BODY_UP;
+    const rad = m.ball ? Math.max(11, r * 0.75) : r * 1.35;
     ctx.beginPath();
-    ctx.arc(x, y, 11, 0, Math.PI * 2);
-    ctx.fillStyle = isGK ? "#16a34a" : "#dc2626";
-    ctx.fill();
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 1.5;
+    ctx.arc(x, y, rad, 0, Math.PI * 2);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = m.tone === "red" ? "rgba(239,68,68,0.95)" : "rgba(245,158,11,0.95)";
     ctx.stroke();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "700 9px system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(s.label ?? s.role, x, y);
+    ctx.beginPath();
+    ctx.arc(x, y, rad + 2.5, 0, Math.PI * 2);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(0,0,0,0.55)";
+    ctx.stroke();
   }
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
+  ctx.restore();
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  CELL DEFINITIONS
-// ─────────────────────────────────────────────────────────────────────────
-
-interface Cell {
-  key: string;
-  title: string;
-  subtitle: string;
-  frame: Frame;
-  /** For the exported ground-truth record. */
-  kind: string;
-  seed: number | null;
-  game: "eleven" | "five";
-  /** What `fixBaseScenario` actually corrected on the way in — shown on the
-   *  card, so a repair is visible rather than a silent change. */
-  repairs?: string[];
+/** Everyone on your side trying to score — the same list `baseScenario.ts`
+ *  judges offside against, in the same order. */
+function attackersOf(sc: Scenario): Vec2[] {
+  const out: Vec2[] = [];
+  if (sc.runner) out.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners) out.push(r.pos);
+  if (goalInView(sc.kind)) out.push({ x: sc.follower.x, y: sc.follower.y });
+  return out;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  WHAT'S STILL WRONG WITH A BASE SCENARIO — and what only LOOKS wrong
-// ─────────────────────────────────────────────────────────────────────────
+/**
+ * Which FIGURE (or the ball) each fault is actually about.
+ *
+ * Every string here is one `scenarioFaults` can genuinely return — matched
+ * against, never re-derived, so the ring and the English can't disagree. A
+ * fault about where the BALL is rings the ball; a fault about a person rings
+ * that person; anything with no single culprit falls back to the ball, which
+ * is where the situation is judged from.
+ */
+function marksForFaults(sc: Scenario, faults: string[], tone: "red" | "amber"): Mark[] {
+  const out: Mark[] = [];
+  const ballMark = (): Mark => ({ at: { ...sc.ball }, ball: true, tone });
+
+  for (const f of faults) {
+    if (f === "attacker offside") {
+      const line = offsideLineOf(sc);
+      if (line !== null) {
+        for (const a of attackersOf(sc)) if (a.y < line - 0.01) out.push({ at: { x: a.x, y: a.y }, tone });
+      }
+      continue;
+    }
+    if (f === "defender behind his own keeper") {
+      for (const d of sc.defenders) if (d.y < sc.keeper.y) out.push({ at: { x: d.x, y: d.y }, tone });
+      continue;
+    }
+    if (f === "11m+ hole in the line") {
+      const deepest = Math.min(...sc.defenders.map((d) => d.y));
+      const line = sc.defenders.filter((d) => d.y - deepest <= 4).sort((a, b) => a.x - b.x);
+      for (let i = 1; i < line.length; i++) {
+        if (line[i].x - line[i - 1].x > 11) {
+          out.push({ at: { x: line[i - 1].x, y: line[i - 1].y }, tone });
+          out.push({ at: { x: line[i].x, y: line[i].y }, tone });
+          break;
+        }
+      }
+      continue;
+    }
+    if (f.startsWith("not a one-on-one")) {
+      for (const d of sc.defenders) {
+        if (d.y < sc.ball.y - 0.5 && Math.abs(d.x - CX) <= 14) out.push({ at: { x: d.x, y: d.y }, tone });
+      }
+      continue;
+    }
+    // Everything left is about where the ball is (too central, too far out,
+    // not near the byline) or about an area in front of it (empty channel).
+    out.push(ballMark());
+  }
+  return out;
+}
 
 /**
  * One fault `scenarioFaults` reports is not a fault at all.
@@ -373,13 +345,7 @@ interface Cell {
  * A through ball's whole chance IS a runner going a yard early — real
  * receivers are beyond the line about half the time, and `fixBaseScenario`
  * deliberately exempts through_ball from its own onside repair for exactly
- * that reason (see its comment). Reporting that as "broken" would be the
- * rule contradicting the chance, so it is shown as what it is: intended.
- *
- * Everything else stays a fault, deliberately unrepaired — a shape judgement
- * for the owner to make (the 11m hole in a long_range back line, the
- * tight_angle defender behind his own keeper), not something to quietly
- * "correct" into a picture nobody chose.
+ * that reason. It rings AMBER and says nothing.
  */
 function splitFaults(kind: string, faults: string[]): { faults: string[]; intended: string[] } {
   const out: string[] = [];
@@ -391,51 +357,103 @@ function splitFaults(kind: string, faults: string[]): { faults: string[]; intend
   return { faults: out, intended };
 }
 
-/**
- * HOW OFTEN THIS FAULT SHOWS UP AT ALL — measured, not assumed.
- *
- * A card shows ONE fixed seed, and a fault that hits one build in seven is
- * very likely to miss it. Measured across 400 real builds of every kind
- * (after `fixBaseScenario`), the three that survive are:
- *
- *   long_range    11m+ hole in the line     14.5%
- *   through_ball  attacker offside          18.8%   (intended — see splitFaults)
- *   tight_angle   empty central channel      6.3%
- *
- * Showing the RATE on the card is the difference between "this kind is fine"
- * and "this seed is fine" — the first would be a lie the gallery's own fixed
- * seeds quietly tell. Memoised at module scope: it is a constant of the
- * builders, so it is measured once, never per render.
- */
-const RATE_SEEDS = 400;
-let RATE_CACHE: Record<string, { fault: string; pct: number }[]> | null = null;
-function faultRates(): Record<string, { fault: string; pct: number }[]> {
-  if (RATE_CACHE) return RATE_CACHE;
-  const out: Record<string, { fault: string; pct: number }[]> = {};
-  for (const kind of SCENARIO_KINDS) {
-    const counts: Record<string, number> = {};
-    for (let s = 0; s < RATE_SEEDS; s++) {
-      const sc = buildScenario(kind, mulberry32(5000 + s));
-      fixBaseScenario(sc);
-      for (const f of scenarioFaults(sc)) counts[f] = (counts[f] ?? 0) + 1;
-    }
-    out[kind] = Object.entries(counts)
-      .map(([fault, n]) => ({ fault, pct: (100 * n) / RATE_SEEDS }))
-      .sort((a, b) => b.pct - a.pct);
-  }
-  RATE_CACHE = out;
-  return out;
+// ─────────────────────────────────────────────────────────────────────────
+//  CELLS — a "version" is one kind at one fixed seed
+// ─────────────────────────────────────────────────────────────────────────
+
+interface Cell {
+  key: string;
+  /** The chance kind (11-a-side) or shape group id (5-a-side). */
+  kind: string;
+  seed: number | null;
+  game: "eleven" | "five";
+  frame: Frame;
+  /** A human label for the export record only. */
+  title: string;
 }
 
-/** The through-ball exemption, said in English on the card rather than as a
- *  bare fault string. */
-const INTENDED_TEXT: Record<string, string> = {
-  "attacker offside": "a runner a yard early — that IS the through ball, not a fault",
-};
+/** Ten fixed seeds per kind, so a picture is identical on every refresh.
+ *  The FIRST is the gallery's original seed for that kind (1000 + its index),
+ *  which keeps every already-saved scenario and already-dragged edit pointing
+ *  at the same version it always did. */
+const VERSIONS_PER_KIND = 10;
+function seedsForKind(kind: ScenarioKind): number[] {
+  const i = SCENARIO_KINDS.indexOf(kind);
+  const base = 1000 + i;
+  const rest: number[] = [];
+  for (let k = 1; k < VERSIONS_PER_KIND; k++) rest.push(7000 + i * 100 + k);
+  return [base, ...rest];
+}
+function cellKeyFor(kind: ScenarioKind, seed: number): string {
+  const base = 1000 + SCENARIO_KINDS.indexOf(kind);
+  return seed === base ? `main-${kind}` : `v-${kind}-${seed}`;
+}
+
+/** A BASE SCENARIO: the canonical situation straight from the real builder at
+ *  a fixed seed, CORRECTED by `fixBaseScenario`, with no formation layer. */
+function buildCell(kind: ScenarioKind, seed: number): Cell {
+  const sc = buildScenario(kind, mulberry32(seed));
+  fixBaseScenario(sc);
+  return {
+    key: cellKeyFor(kind, seed),
+    kind,
+    seed,
+    game: "eleven",
+    frame: frameFromScenario(sc),
+    title: kind,
+  };
+}
+
+// Built once per kind and kept — the builders are pure at a fixed seed, so
+// rebuilding them on every render would be work for an identical picture.
+const ELEVEN_CACHE = new Map<string, Cell[]>();
+function elevenVersions(kind: ScenarioKind): Cell[] {
+  const hit = ELEVEN_CACHE.get(kind);
+  if (hit) return hit;
+  const cells = seedsForKind(kind).map((s) => buildCell(kind, s));
+  ELEVEN_CACHE.set(kind, cells);
+  return cells;
+}
+
+/** The faults of a cell AS IT CURRENTLY STANDS — builder output, corrected,
+ *  with whatever has been saved or dragged on top. Re-derived rather than
+ *  captured once, so the ring and the picture can never disagree. */
+function liveAnalysis(
+  cell: Cell,
+  overrides: (PosOverride | undefined)[],
+): { faults: string[]; intended: string[]; marks: Mark[] } {
+  if (cell.game !== "eleven" || cell.seed === null) return { faults: [], intended: [], marks: [] };
+  const sc = buildScenario(cell.kind as ScenarioKind, mulberry32(cell.seed));
+  fixBaseScenario(sc);
+  for (const ov of overrides) applyOverrideToScenario(sc, ov);
+  const split = splitFaults(cell.kind, scenarioFaults(sc));
+  return {
+    faults: split.faults,
+    intended: split.intended,
+    marks: [
+      ...marksForFaults(sc, split.faults, "red"),
+      ...marksForFaults(sc, split.intended, "amber"),
+    ],
+  };
+}
+
+// ── The across-formations comparison (desktop only) ──
+
+const COMPARE_FORMATIONS = ["352", "433", "523"];
+
+/**
+ * The scenario kinds `applyFormationShape` actually owns, mirrored here so the
+ * comparison can SAY when it is showing three identical shapes rather than
+ * letting that read as a broken transform. Deliberately a local copy:
+ * APPLY_KINDS is private to formationShape.ts and that file is another lane's.
+ */
+const APPLY_SHAPE_KINDS = new Set<string>([
+  "long_range", "tight_angle", "one_on_one", "cutback",
+  "volley", "header", "byline_cross", "through_ball",
+]);
 
 /** Build a minimal opponent XI from a formation — enough for `castDefence` to
- *  assign identities (it reads position + depth `y` + isGK). Positions are NOT
- *  taken from the formation: castDefence only sets `who`. */
+ *  assign identities (it reads position + depth `y` + isGK). */
 function oppXIFromFormationId(id: string): OpponentSheetPlayer[] {
   const f = formationOf(id);
   return f.slots.map((s, i) => ({
@@ -448,97 +466,10 @@ function oppXIFromFormationId(id: string): OpponentSheetPlayer[] {
   }));
 }
 
-/** One scenario of every kind, at a fixed seed each, cast against the chosen
- *  opponent formation AND reshaped by the real positional layer (formation ×
- *  playstyle × strength gap). applyFormationShape self-gates to the kinds it
- *  owns (long_range, tight_angle), so calling it on every cell moves the
- *  defenders only where the layer is meant to act and no-ops the rest. */
-/**
- * A BASE SCENARIO: the canonical situation itself, straight from the real
- * builder at a fixed seed, with NO formation layer on top.
- *
- * Reported directly — "the formation stuff is too complicated rn on the
- * gallery, we need BASE scenarios to then change across formations" — and
- * this is what that means structurally. The thing you look at, edit and save
- * is the situation; a formation is a TRANSFORM applied to it, shown per
- * scenario in its own comparison strip (`FormationStrip`), never a dropdown
- * sitting over the whole gallery.
- */
-function baseCells(): Cell[] {
-  return SCENARIO_KINDS.map((kind, i) => {
-    const seed = 1000 + i;
-    // CORRECTED, not raw. Reported directly \u2014 "it's more important we get the
-    // base outcomes correct" \u2014 so what the gallery shows is what a chance is
-    // SUPPOSED to be: `fixBaseScenario` repairs the defining property of the
-    // kinds whose shape is actually agreed (a one-on-one with nobody but the
-    // keeper in front of you; nobody stood in an illegal position), and hands
-    // back the list of what it changed so the repair is visible instead of
-    // silent. Anything it is not sure about it leaves alone and
-    // `scenarioFaults` flags on the card.
-    const sc = buildScenario(kind, mulberry32(seed));
-    const repairs = fixBaseScenario(sc);
-    return {
-      key: `main-${kind}`,
-      title: kind,
-      subtitle: `base \u00b7 seed ${seed}`,
-      frame: frameFromScenario(sc),
-      kind,
-      seed,
-      game: "eleven" as const,
-      repairs,
-    };
-  });
-}
-
-/**
- * The faults of a cell AS IT CURRENTLY STANDS \u2014 builder output, corrected,
- * with whatever has been saved or dragged on top.
- *
- * Re-derived rather than captured once, because the point of being able to
- * drag a figure is to FIX a flagged shape and watch the flag clear. It
- * rebuilds the scenario from its own seed and replays the same overrides the
- * canvas is painting, so the red border and the picture can never disagree.
- */
-function liveFaults(cell: Cell, overrides: (PosOverride | undefined)[]): string[] | null {
-  if (cell.game !== "eleven" || cell.seed === null) return null;
-  const sc = buildScenario(cell.kind as (typeof SCENARIO_KINDS)[number], mulberry32(cell.seed));
-  fixBaseScenario(sc);
-  for (const ov of overrides) applyOverrideToScenario(sc, ov);
-  return scenarioFaults(sc);
-}
-
-/** The three defensive shapes worth comparing a base scenario across: a
- *  back-three system (which defends as a five), a back four, and a genuine
- *  back five. Picked so the strip always shows the real spread rather than
- *  three formations that happen to defend identically. */
-const COMPARE_FORMATIONS = ["352", "433", "523"];
-
-/**
- * The scenario kinds `applyFormationShape` actually owns, mirrored here so
- * the comparison strip can SAY when it is showing you three identical
- * shapes rather than letting that read as a broken transform.
- *
- * Deliberately a local copy rather than an import: `APPLY_KINDS` is private
- * to formationShape.ts, that file is another lane's, and a dev tool reaching
- * into it would make a private detail public for a label. If the two ever
- * drift the only cost is this caption, never a wrong render — the strip
- * always calls the real `applyFormationShape`, whatever this says.
- */
-const APPLY_SHAPE_KINDS = new Set<string>([
-  "long_range", "tight_angle", "one_on_one", "cutback",
-  "volley", "header", "byline_cross", "through_ball",
-]);
-
 /**
  * Push a frame's edited positions BACK onto a real `Scenario`, in the exact
- * order `frameFromScenario` pushed them out.
- *
- * This is what makes the across-formations strip honest: the positional
- * layer (`applyFormationShape`) reads the scenario's own defenders and
- * keeper, so a comparison built from the UNEDITED builder output would be
- * showing the formation transform applied to a scenario you no longer have.
- * The two orderings are kept in step by construction — both walk defenders,
- * keeper, runner, secondary runners, follower, teammates, you.
+ * order `frameFromScenario` pushed them out — so the formation transform is
+ * applied to the scenario you are actually looking at, not the raw build.
  */
 function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefined): void {
   if (!hasEdits(ov)) return;
@@ -555,9 +486,7 @@ function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefined): voi
 }
 
 /** The SAME base scenario (edits and all), re-cast and reshaped against one
- *  opponent formation. `applyFormationShape` self-gates to the eight kinds
- *  it owns, so a kind it does not shape comes back as the base with real
- *  identities cast onto it — which is itself the honest answer. */
+ *  opponent formation. */
 function shapedFrame(
   cell: Cell,
   override: PosOverride | undefined,
@@ -566,10 +495,7 @@ function shapedFrame(
   attackerStrength: number,
   defenderStrength: number,
 ): Frame {
-  // The SAME corrected base the card itself shows — a comparison built off
-  // the raw builder output would be showing the formation transform applied
-  // to a scenario nobody is looking at.
-  const sc = buildScenario(cell.kind as (typeof SCENARIO_KINDS)[number], mulberry32(cell.seed ?? 0));
+  const sc = buildScenario(cell.kind as ScenarioKind, mulberry32(cell.seed ?? 0));
   fixBaseScenario(sc);
   applyOverrideToScenario(sc, override);
   castDefence(sc, oppXIFromFormationId(formationId));
@@ -582,26 +508,23 @@ function shapedFrame(
   return frameFromScenario(sc);
 }
 
-// ───────────────────────────────────────────────────────
-//  SAVING A BASE SCENARIO — into the SAME pool the Scenario Builder writes
-// ───────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────
+//  SAVING — into the SAME pool the Scenario Builder writes
+// ─────────────────────────────────────────────────────────────────────────
 
-/** One shared pool, not two. A base scenario saved here is a real
- *  `MatchScenario` in `star_scenarios`, the same table and the same shape
- *  Mikey's builder writes — both tools use the same real pitch metres, so
- *  there is nothing to translate. `source` (scenarios.ts) carries the chance
- *  kind and seed, which `MatchScenario.kind` deliberately cannot. */
 const gallerySlug = (cellKey: string) => `gallery-${cellKey}`;
 
-/** MatchScenario.kind names dead-ball/kickoff MOMENTS — a different list
- *  from the engine's chance kinds on purpose. Only three of them line up;
- *  everything else is genuinely open play, and `source.kind` keeps the real
- *  answer either way. */
+/** MatchScenario.kind names dead-ball/kickoff MOMENTS — a different list from
+ *  the engine's chance kinds on purpose. Only three of them line up. */
 function momentKindFor(chanceKind: string): ScenarioMomentKind {
   if (chanceKind === "corner") return "corner";
   if (chanceKind === "free_kick" || chanceKind === "penalty") return "free_kick";
   return "open_play";
 }
+
+// +0 turns a rounded -0 back into 0 so the JSON never reads "-0".
+const round2 = (v: number) => Math.round(v * 100) / 100 + 0;
+const roundVec = (v: Vec2) => ({ x: round2(v.x), y: round2(v.y) });
 
 function frameToMatchScenario(cell: Cell, frame: Frame): MatchScenario {
   const vp = frame.camera;
@@ -613,8 +536,6 @@ function frameToMatchScenario(cell: Cell, frame: Frame): MatchScenario {
       centerX: round2((vp.x1 + vp.x2) / 2),
       centerY: round2((vp.y1 + vp.y2) / 2),
       viewHeight: round2(vp.y2 - vp.y1),
-      // The gallery always draws un-rotated; the game rotates the camera for
-      // a crossing situation, the shared primitives here do not.
       facing: "up",
     },
     ball: roundVec(frame.ball),
@@ -630,9 +551,8 @@ function frameToMatchScenario(cell: Cell, frame: Frame): MatchScenario {
   };
 }
 
-/** The saved positions, back as the gallery's own index-keyed override — so
- *  a saved scenario is applied through the exact same path a live drag is,
- *  never a second way of placing the same figures. */
+/** The saved positions, back as the gallery's own index-keyed override — so a
+ *  saved scenario is applied through the exact same path a live drag is. */
 function overrideFromMatchScenario(ms: MatchScenario): PosOverride {
   const items: Record<number, Vec2> = {};
   ms.players.forEach((p, i) => {
@@ -642,71 +562,89 @@ function overrideFromMatchScenario(ms: MatchScenario): PosOverride {
   return { items, ball: { x: ms.ball.x, y: ms.ball.y } };
 }
 
-// ── Five-a-side ──
-
-/** A fixed 5-a-side world with the ball in the last third, for a chance. */
-function fiveChanceWorld(): FiveWorld {
-  // FIVE_PITCH is x 22..46, y 0..36, goal defended/attacked at y = 0.
+/** The clean ground-truth record for one edited cell. */
+function exportRecord(cell: Cell, edited: Frame) {
   return {
-    ball: { x: 30, y: 9 },
-    you: { x: 32, y: 9.5 },
-    mates: [
-      { x: 26, y: 6 },
-      { x: 38, y: 7 },
-      { x: 34, y: 3.5 },
-    ],
-    yourKeeper: { x: 34, y: 33 },
-    opps: [
-      { x: 31, y: 4.5 },
-      { x: 37, y: 5.5 },
-      { x: 27, y: 8 },
-      { x: 34, y: 2.5 },
-    ],
-    theirKeeper: { x: 34, y: 1.2 },
+    cell: cell.key,
+    game: cell.game,
+    kind: cell.kind,
+    seed: cell.seed,
+    ball: roundVec(edited.ball),
+    items: edited.items.map((it, i) => ({
+      index: i,
+      role: it.look.label ?? `#${i}`,
+      keeper: !!it.keeper,
+      at: roundVec(it.at),
+    })),
   };
 }
 
-/** A defensive-shape frame: the real `defensiveShape` slots against a fixed
- *  attacking spread. This is where "four on the goal line" vs "a diamond"
- *  shows up before/after a shape change. */
-function fiveDefensiveFrame(): Frame {
-  // Canonical frame: attackers go toward y1 (goal defended at y = 0).
-  const ball: Vec2 = { x: 30, y: 10 };
+async function copyText(text: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch {
+    /* fall through to the legacy path */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  } catch {
+    /* give up quietly — this is a dev tool */
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  FIVE-A-SIDE — same shell, three shape groups, versions by seed
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Seed 0 is the gallery's original fixed spread, byte-for-byte; every other
+ *  seed jitters the INPUT positions deterministically so a group has real
+ *  versions to review rather than one picture. */
+const FIVE_SEEDS = [0, 4001, 4002, 4003, 4004, 4005, 4006, 4007, 4008, 4009];
+const J = (rng: () => number, v: number, a: number) => v + (rng() * 2 - 1) * a;
+
+function fiveDefensiveFrame(seed: number): Frame {
+  const on = seed === 0 ? 0 : 1;
+  const rng = mulberry32(seed + 1);
+  const ball: Vec2 = { x: J(rng, 30, 3 * on), y: J(rng, 10, 2.5 * on) };
   const attackers: Vec2[] = [
-    { x: 30, y: 10 }, // carrier
-    { x: 24, y: 7 },
-    { x: 40, y: 8 },
-    { x: 34, y: 5 },
+    { ...ball },
+    { x: J(rng, 24, 3 * on), y: J(rng, 7, 2 * on) },
+    { x: J(rng, 40, 3 * on), y: J(rng, 8, 2 * on) },
+    { x: J(rng, 34, 3 * on), y: J(rng, 5, 1.5 * on) },
   ];
   const shape = defensiveShape(FIVE_A_SIDE, ball, attackers);
   const items: Item[] = [];
   attackers.forEach((a, i) => {
-    items.push({ at: { ...a }, look: { ...MATE, label: i === 0 ? "BALL-CARRIER" : `A${i}`, star: i === 0 }, side: i === 0 ? "you" : "teammate" });
+    items.push({
+      at: { ...a },
+      look: { ...MATE, label: i === 0 ? "BALL-CARRIER" : `A${i}`, star: i === 0 },
+      side: i === 0 ? "you" : "teammate",
+    });
   });
   shape.slots.forEach((s, i) => {
     items.push({ at: { ...s }, look: { ...OPP, label: DEFEND_ROLES[i] }, side: "opponent" });
   });
-  return {
-    rules: FIVE_A_SIDE,
-    camera: FIVE_A_SIDE.view,
-    goalAtY: 0,
-    offsideY: null,
-    offsideFrom: null,
-    items,
-    ball,
-  };
+  return { rules: FIVE_A_SIDE, camera: FIVE_A_SIDE.view, goalAtY: 0, offsideY: null, offsideFrom: null, items, ball };
 }
 
-/** An attacking-shape frame: the real `attackingShape` slots against a fixed
- *  defensive block. This is where the 1-2-1 / 2-2 structure shows. */
-function fiveAttackingFrame(): Frame {
-  const ball: Vec2 = { x: 31, y: 20 };
-  const ay = 18; // the move's band depth
+function fiveAttackingFrame(seed: number): Frame {
+  const on = seed === 0 ? 0 : 1;
+  const rng = mulberry32(seed + 2);
+  const ball: Vec2 = { x: J(rng, 31, 3 * on), y: J(rng, 20, 2 * on) };
+  const ay = 18;
   const defenders: Vec2[] = [
-    { x: 30, y: 8 },
-    { x: 38, y: 9 },
-    { x: 26, y: 11 },
-    { x: 34, y: 6 },
+    { x: J(rng, 30, 3 * on), y: J(rng, 8, 2 * on) },
+    { x: J(rng, 38, 3 * on), y: J(rng, 9, 2 * on) },
+    { x: J(rng, 26, 3 * on), y: J(rng, 11, 2 * on) },
+    { x: J(rng, 34, 3 * on), y: J(rng, 6, 1.5 * on) },
   ];
   const shape = attackingShape(FIVE_A_SIDE, ay, ball, defenders);
   const items: Item[] = [];
@@ -720,101 +658,78 @@ function fiveAttackingFrame(): Frame {
       side: i === shape.yours ? "you" : "teammate",
     });
   });
+  return { rules: FIVE_A_SIDE, camera: FIVE_A_SIDE.view, goalAtY: 0, offsideY: null, offsideFrom: null, items, ball };
+}
+
+/** A fixed 5-a-side world with the ball in the last third, for a chance. */
+function fiveChanceWorld(seed: number): FiveWorld {
+  const on = seed === 3000 ? 0 : 1;
+  const rng = mulberry32(seed + 3);
   return {
-    rules: FIVE_A_SIDE,
-    camera: FIVE_A_SIDE.view,
-    goalAtY: 0,
-    offsideY: null,
-    offsideFrom: null,
-    items,
-    ball,
+    ball: { x: J(rng, 30, 3 * on), y: J(rng, 9, 2 * on) },
+    you: { x: J(rng, 32, 3 * on), y: J(rng, 9.5, 2 * on) },
+    mates: [
+      { x: J(rng, 26, 3 * on), y: J(rng, 6, 2 * on) },
+      { x: J(rng, 38, 3 * on), y: J(rng, 7, 2 * on) },
+      { x: J(rng, 34, 3 * on), y: J(rng, 3.5, 1.5 * on) },
+    ],
+    yourKeeper: { x: 34, y: 33 },
+    opps: [
+      { x: J(rng, 31, 3 * on), y: J(rng, 4.5, 1.5 * on) },
+      { x: J(rng, 37, 3 * on), y: J(rng, 5.5, 1.5 * on) },
+      { x: J(rng, 27, 3 * on), y: J(rng, 8, 2 * on) },
+      { x: J(rng, 34, 3 * on), y: J(rng, 2.5, 1 * on) },
+    ],
+    theirKeeper: { x: 34, y: 1.2 },
   };
 }
 
-function fiveCells(): Cell[] {
-  const cells: Cell[] = [];
-  cells.push({
-    key: "five-defensive",
-    title: "5-a-side defensive shape",
-    subtitle: "defensiveShape() · fixed spread",
-    frame: fiveDefensiveFrame(),
-    kind: "five-defensive",
-    seed: null,
-    game: "five",
-  });
-  cells.push({
-    key: "five-attacking",
-    title: "5-a-side attacking shape",
-    subtitle: `attackingShape() · band y18 (${FIVE_HALFWAY_Y.toFixed(0)}=halfway)`,
-    frame: fiveAttackingFrame(),
-    kind: "five-attacking",
-    seed: null,
-    game: "five",
-  });
-  const seed = 3000;
-  const chance = buildPassage(fiveChanceWorld(), {
-    keeperStrength: FIVE_KEEPER_STRENGTH,
-    rng: mulberry32(seed),
-  });
-  cells.push({
-    key: "five-chance",
-    title: "5-a-side chance",
-    subtitle: `buildPassage · seed ${seed} · kind ${chance.kind}`,
-    frame: frameFromScenario(chance),
-    kind: chance.kind,
-    seed,
-    game: "five",
-  });
+const FIVE_CACHE = new Map<string, Cell[]>();
+function fiveVersions(group: string): Cell[] {
+  const hit = FIVE_CACHE.get(group);
+  if (hit) return hit;
+  let cells: Cell[];
+  if (group === "defensive") {
+    cells = FIVE_SEEDS.map((s) => ({
+      key: s === 0 ? "five-defensive" : `five-defensive-${s}`,
+      kind: "five-defensive", seed: s, game: "five" as const,
+      frame: fiveDefensiveFrame(s), title: "5-a-side defensive shape",
+    }));
+  } else if (group === "attacking") {
+    cells = FIVE_SEEDS.map((s) => ({
+      key: s === 0 ? "five-attacking" : `five-attacking-${s}`,
+      kind: "five-attacking", seed: s, game: "five" as const,
+      frame: fiveAttackingFrame(s), title: "5-a-side attacking shape",
+    }));
+  } else {
+    cells = FIVE_SEEDS.map((_, i) => {
+      const seed = 3000 + i;
+      const chance = buildPassage(fiveChanceWorld(seed), {
+        keeperStrength: FIVE_KEEPER_STRENGTH,
+        rng: mulberry32(seed),
+      });
+      return {
+        key: seed === 3000 ? "five-chance" : `five-chance-${seed}`,
+        kind: "five-chance", seed, game: "five" as const,
+        frame: frameFromScenario(chance), title: "5-a-side chance",
+      };
+    });
+  }
+  FIVE_CACHE.set(group, cells);
   return cells;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-//  EDITING — drag figures/ball to their target positions, capture as JSON
+//  EDITS — drag overrides on top of the builder's own output
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * A per-cell set of position overrides ON TOP of the builder's own output.
- * Keyed by item INDEX — stable per cell, because the builders never add or
- * remove items at a fixed seed, and `castDefence` only re-labels the existing
- * defenders, never reshuffles them. Stored positionally rather than as a whole
- * frame so an edit survives a formation change (which re-labels but never
- * re-positions) and stays independent of the drawn kit/label.
- */
+/** A per-cell set of position overrides, keyed by item INDEX — stable per
+ *  cell, because the builders never add or remove items at a fixed seed. */
 interface PosOverride {
   items: Record<number, Vec2>;
   ball?: Vec2;
 }
 type EditStore = Record<string, PosOverride>;
-
-interface EditProps {
-  edits: EditStore;
-  setOverride: (key: string, ov: PosOverride) => void;
-  clearOverride: (key: string) => void;
-}
-
-/**
- * The saved-scenario layer, threaded down to each base-scenario card.
- *
- * A card never talks to the API itself — it hands its finished
- * `MatchScenario` up, so exactly one place decides what "saved" means, and
- * that place only ever says it once the SERVER has confirmed the write.
- */
-interface SaveProps {
-  /** Every scenario this gallery has saved, by cell key. */
-  saved: Record<string, MatchScenario>;
-  saveCell: (cell: Cell, frame: Frame) => Promise<boolean>;
-  revertCell: (cell: Cell) => Promise<boolean>;
-  /** The second, stronger path: write this geometry into the repository
-   *  itself (lib/star/authoredScenarios.json) as a real commit. */
-  commitCell: (cell: Cell, frame: Frame) => Promise<boolean>;
-  /** Cell keys this session has confirmed a commit for — the SERVER said so,
-   *  never a hopeful tick. */
-  committed: Record<string, string | undefined>;
-  busy: Record<string, "saving" | "reverting" | "committing" | undefined>;
-  flash: Record<string, { ok: boolean; text: string } | undefined>;
-  /** True once the server has said star_scenarios.sql hasn't been run. */
-  migrationMissing: boolean;
-}
 
 const EDIT_KEY = "star-gallery-edits-v1";
 
@@ -860,141 +775,313 @@ function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame {
   return { ...frame, items, ball };
 }
 
-// +0 turns a rounded -0 back into 0 so the JSON never reads "-0".
-const round2 = (v: number) => Math.round(v * 100) / 100 + 0;
-const roundVec = (v: Vec2) => ({ x: round2(v.x), y: round2(v.y) });
+// ─────────────────────────────────────────────────────────────────────────
+//  LOOK
+// ─────────────────────────────────────────────────────────────────────────
 
-/** The clean ground-truth record for one edited cell. */
-function exportRecord(cell: Cell, edited: Frame, formationId: string) {
-  return {
-    cell: cell.key,
-    game: cell.game,
-    kind: cell.kind,
-    seed: cell.seed,
-    ...(cell.game === "eleven" ? { formation: formationId } : {}),
-    ball: roundVec(edited.ball),
-    items: edited.items.map((it, i) => ({
-      index: i,
-      role: it.look.label ?? `#${i}`,
-      keeper: !!it.keeper,
-      at: roundVec(it.at),
-    })),
-  };
+const BG = "#05070d";
+const CARD = "#111823";
+const INK = "#f2f5f9";
+const MUTED = "#8a97aa";
+
+const KIND_ORDER: ScenarioKind[] = [
+  "one_on_one", "tight_angle", "long_range", "volley", "cutback", "header",
+  "through_ball", "byline_cross", "midfield_pass", "buildup", "penalty",
+  "free_kick", "corner",
+];
+const kindLabel = (k: string) => k.replace(/_/g, " ");
+
+const FIVE_GROUPS: { id: string; label: string }[] = [
+  { id: "defensive", label: "Defensive shape" },
+  { id: "attacking", label: "Attacking shape" },
+  { id: "chance", label: "Chance" },
+];
+
+/** Paint into a canvas that then FILLS its box — the picture is the card, so
+ *  it is never letterboxed inside one. */
+function fillCanvas(c: HTMLCanvasElement): void {
+  c.style.width = "100%";
+  c.style.height = "100%";
+  c.style.objectFit = "cover";
+  c.style.display = "block";
 }
 
-async function copyText(text: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return;
-  } catch {
-    /* fall through to the legacy path */
-  }
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-  } catch {
-    /* give up quietly — this is a dev tool */
-  }
-}
-
-// The anatomy render.ts uses, replicated for hit-testing only (do NOT edit
-// render.ts). A figure's feet sit at py(at.y); its body rises above that.
-const HIT_FIGURE_R = 1.05; // render.ts FIGURE_R
-const HIT_BODY_UP = 0.67; // ~mid-torso, in units of r, above the feet anchor
-
-// ── UI ─────────────────────────────────────────────────────────────────────
-
-const SMALL_BTN: React.CSSProperties = {
-  padding: "4px 10px",
-  borderRadius: 6,
-  border: "1px solid #334155",
-  background: "#0f172a",
-  color: "#e2e8f0",
-  fontWeight: 700,
-  fontSize: 12,
-  cursor: "pointer",
-};
-
-/** The small explanatory panels on a card (repairs / faults / intended). */
-const NOTE_BOX: React.CSSProperties = {
-  border: "1px solid",
-  borderRadius: 8,
-  padding: "6px 8px",
-  fontSize: 11,
-  lineHeight: 1.5,
-  fontWeight: 700,
-  maxWidth: 460,
-};
-const NOTE_LIST: React.CSSProperties = { margin: "4px 0 0", paddingLeft: 16 };
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
- * An EDITABLE gallery cell. Drag any figure or the ball to a new position; the
- * grabbed point stays under the pointer (a rigid translate, not a snap), so the
- * inverse of `projectionFor` has to be exact — see `pointerToWorld`. Live drag
- * repaints THIS canvas directly (no parent re-render), committing to the shared
- * edit store on release.
+ * Point a `cover` crop at where the football actually is.
+ *
+ * A home tile is a wide letterbox cut out of a tall portrait frame, and each
+ * kind frames its camera differently — a fixed crop would show midfield grass
+ * for one kind and cut the box off for another. So the crop is aimed at the
+ * frame's own centre of action (every figure, plus the ball), solved through
+ * object-position's real geometry rather than guessed.
  */
-function GalleryCell({
-  cell,
-  override,
-  onCommit,
-  onReset,
-  formationId,
-  save,
-  children,
+function focusCanvas(c: HTMLCanvasElement, frame: Frame): void {
+  const box = c.parentElement;
+  const boxW = box?.clientWidth ?? 0;
+  const boxH = box?.clientHeight ?? 0;
+  if (!boxW || !boxH) { c.style.objectPosition = "center"; return; }
+  const { cssW, cssH } = frameCssSize(frame);
+  const scale = Math.max(boxW / cssW, boxH / cssH);
+  const sW = cssW * scale, sH = cssH * scale;
+
+  let tx = frame.ball.x, ty = frame.ball.y, n = 1;
+  for (const it of frame.items) { tx += it.at.x; ty += it.at.y; n++; }
+  tx /= n; ty /= n;
+
+  const fx = (tx - frame.camera.x1) / (frame.camera.x2 - frame.camera.x1);
+  const fy = (ty - frame.camera.y1) / (frame.camera.y2 - frame.camera.y1);
+  const px = sW > boxW + 0.5 ? clamp01((fx * sW - boxW / 2) / (sW - boxW)) : 0.5;
+  const py = sH > boxH + 0.5 ? clamp01((fy * sH - boxH / 2) / (sH - boxH)) : 0.5;
+  c.style.objectPosition = `${(px * 100).toFixed(1)}% ${(py * 100).toFixed(1)}%`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  SCREEN 1 — HOME
+// ─────────────────────────────────────────────────────────────────────────
+
+function HomeTile({
+  frame, word, onOpen,
+}: { frame: Frame; word: string; onOpen: () => void }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    paint(ref.current, frame);
+    fillCanvas(ref.current);
+    focusCanvas(ref.current, frame);
+  }, [frame]);
+  return (
+    <button
+      onClick={onOpen}
+      style={{
+        position: "relative", flex: 1, minHeight: 0, width: "100%",
+        borderRadius: 26, overflow: "hidden", border: "none", padding: 0,
+        background: "#0a2a17", cursor: "pointer", display: "block",
+        boxShadow: "0 12px 34px rgba(0,0,0,0.55)",
+      }}
+    >
+      <canvas ref={ref} style={{ position: "absolute", inset: 0 }} />
+      <div
+        style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(180deg, rgba(3,6,14,0.30) 0%, rgba(3,6,14,0.05) 38%, rgba(3,6,14,0.72) 78%, rgba(3,6,14,0.95) 100%)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute", left: 20, right: 20, bottom: 18,
+          textAlign: "left", color: INK, fontSize: 30, fontWeight: 800,
+          letterSpacing: "-0.02em", lineHeight: 1.05,
+          textShadow: "0 2px 14px rgba(0,0,0,0.7)",
+        }}
+      >
+        {word}
+      </div>
+    </button>
+  );
+}
+
+function HomeScreen({
+  onOpen, warning, wide,
+}: { onOpen: (s: "eleven" | "five" | "builder") => void; warning: string | null; wide: boolean }) {
+  const [noteOpen, setNoteOpen] = useState(false);
+  const tiles = useMemo(
+    () => [
+      { word: "11-a-side", frame: elevenVersions("one_on_one")[0].frame, go: "eleven" as const },
+      { word: "5-a-side", frame: fiveVersions("defensive")[0].frame, go: "five" as const },
+      { word: "Scenario Builder", frame: elevenVersions("free_kick")[0].frame, go: "builder" as const },
+    ],
+    [],
+  );
+  return (
+    <div
+      style={{
+        position: "relative", height: "100%", display: "flex",
+        flexDirection: wide ? "row" : "column", gap: wide ? 18 : 12, padding: wide ? 24 : 14,
+      }}
+    >
+      {warning && (
+        <button
+          onClick={() => setNoteOpen((v) => !v)}
+          aria-label="Something is unavailable"
+          style={{
+            position: "absolute", top: 20, right: 22, zIndex: 5,
+            width: 14, height: 14, borderRadius: 999, border: "2px solid rgba(3,6,14,0.7)",
+            background: "#ef4444", padding: 0, cursor: "pointer",
+            boxShadow: "0 0 0 4px rgba(239,68,68,0.18)",
+          }}
+        />
+      )}
+      {warning && noteOpen && (
+        <div
+          style={{
+            position: "absolute", top: 44, right: 16, left: 16, zIndex: 6,
+            background: "#2a0d0d", border: "1px solid #ef4444", borderRadius: 14,
+            padding: "10px 12px", color: "#fecaca", fontSize: 13, fontWeight: 600, lineHeight: 1.45,
+          }}
+        >
+          {warning}
+        </div>
+      )}
+      {tiles.map((t) => (
+        <HomeTile key={t.word} frame={t.frame} word={t.word} onOpen={() => onOpen(t.go)} />
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  SCREEN 2/4 — CHIP ROW + THUMBNAIL GRID
+// ─────────────────────────────────────────────────────────────────────────
+
+function Thumb({
+  cell, override, saved, verdict, onOpen,
 }: {
   cell: Cell;
   override: PosOverride | undefined;
-  onCommit: (key: string, ov: PosOverride) => void;
-  onReset: (key: string) => void;
-  formationId: string;
-  /** Absent for the five-a-side cards, which are not saved anywhere. */
-  save?: SaveProps;
-  /** The across-formations strip, rendered under this card when open. */
-  children?: React.ReactNode;
+  saved: MatchScenario | undefined;
+  verdict: ReviewVerdict | undefined;
+  onOpen: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  // Live override during a drag: a pointer-move mutates this and repaints this
-  // one canvas, without a setState that would rebuild every cell mid-drag.
+  const savedOv = saved ? overrideFromMatchScenario(saved) : undefined;
+  const frame = applyOverride(applyOverride(cell.frame, savedOv), override);
+  const analysis = useMemo(
+    () => liveAnalysis(cell, [savedOv, override]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cell, saved, override],
+  );
+
+  useEffect(() => {
+    if (!ref.current) return;
+    paintMarked(ref.current, frame, analysis.marks);
+    fillCanvas(ref.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cell, saved, override]);
+
+  return (
+    <button
+      onClick={onOpen}
+      style={{
+        position: "relative", width: "100%", aspectRatio: "5 / 8",
+        borderRadius: 18, overflow: "hidden", padding: 0, cursor: "pointer",
+        border: hasEdits(override) ? "2px solid #38bdf8" : "1px solid rgba(255,255,255,0.07)",
+        background: "#0a2a17", display: "block",
+      }}
+    >
+      <canvas ref={ref} style={{ position: "absolute", inset: 0 }} />
+      {verdict && (
+        <span
+          style={{
+            position: "absolute", top: 8, left: 8, width: 24, height: 24, borderRadius: 999,
+            display: "grid", placeItems: "center", fontSize: 14, fontWeight: 900, color: "#fff",
+            background: verdict === "approved" ? "#16a34a" : "#dc2626",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+          }}
+        >
+          {verdict === "approved" ? "✓" : "✕"}
+        </span>
+      )}
+      {analysis.faults.length > 0 && (
+        <span
+          style={{
+            position: "absolute", top: 10, right: 10, width: 11, height: 11, borderRadius: 999,
+            background: "#ef4444", boxShadow: "0 0 0 3px rgba(0,0,0,0.35)",
+          }}
+        />
+      )}
+    </button>
+  );
+}
+
+function ChipRow({
+  chips, activeId, onPick, wide,
+}: {
+  chips: { id: string; label: string; done: number; total: number }[];
+  activeId: string;
+  onPick: (id: string) => void;
+  wide: boolean;
+}) {
+  const style = (active: boolean): React.CSSProperties => ({
+    flex: "none",
+    padding: wide ? "10px 14px" : "9px 14px",
+    borderRadius: 999,
+    border: "1px solid " + (active ? "rgba(56,189,248,0.75)" : "rgba(255,255,255,0.08)"),
+    background: active ? "rgba(14,116,144,0.4)" : "rgba(255,255,255,0.045)",
+    color: active ? "#e0f2fe" : MUTED,
+    fontWeight: 700,
+    fontSize: 13.5,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    textAlign: "left",
+    width: wide ? "100%" : undefined,
+  });
+  return (
+    <div
+      style={
+        wide
+          ? { display: "flex", flexDirection: "column", gap: 6 }
+          : {
+              display: "flex", gap: 8, overflowX: "auto", padding: "10px 14px",
+              position: "sticky", top: 0, zIndex: 4,
+              background: "rgba(5,7,13,0.92)", backdropFilter: "blur(10px)",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              scrollbarWidth: "none",
+            }
+      }
+    >
+      {chips.map((c) => (
+        <button key={c.id} style={style(c.id === activeId)} onClick={() => onPick(c.id)}>
+          {c.label} <span style={{ opacity: 0.6 }}>&middot; {c.done}/{c.total}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  SCREEN 3 — ONE VERSION, big, draggable
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The editable frame. Drag any figure or the ball; the grabbed point stays
+ * under the pointer (a rigid translate, not a snap), so the inverse of
+ * `projectionFor` has to be exact. A live drag repaints THIS canvas directly,
+ * committing to the shared edit store on release.
+ */
+function EditableFrame({
+  cell, baseFrame, override, marks, onCommit, edited,
+}: {
+  cell: Cell;
+  baseFrame: Frame;
+  override: PosOverride | undefined;
+  marks: Mark[];
+  onCommit: (key: string, ov: PosOverride) => void;
+  edited: boolean;
+}) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
   const workingRef = useRef<PosOverride | null>(null);
   const dragRef = useRef<{ target: "ball" | number; offX: number; offY: number } | null>(null);
-  const [showJson, setShowJson] = useState(false);
 
-  const { cssW, cssH } = frameCssSize(cell.frame);
-  const vp = cell.frame.camera;
-
-  // A SAVED scenario IS this cell's starting point, not an edit sitting on
-  // top of one — that is what "permanently changes that scenario" means. It
-  // is applied through the exact same `applyOverride` path a live drag uses,
-  // so there is never a second way of placing the same figures; an unsaved
-  // drag then layers on top, Reset drops the unsaved part, and Revert (the
-  // button below) is what goes back to the builder's own output.
-  const savedScenario = save?.saved[cell.key];
-  const baseFrame: Frame = applyOverride(
-    cell.frame,
-    savedScenario ? overrideFromMatchScenario(savedScenario) : undefined,
-  );
+  const { cssW, cssH } = frameCssSize(baseFrame);
+  const vp = baseFrame.camera;
 
   const effectiveOverride = (): PosOverride | undefined => workingRef.current ?? override;
   const currentFrame = (): Frame => applyOverride(baseFrame, effectiveOverride());
-  const repaint = (): void => { if (ref.current) paint(ref.current, currentFrame()); };
+  const repaint = (live: boolean): void => {
+    if (!ref.current) return;
+    // Mid-drag the rings would be stale (they are derived from a rebuilt
+    // scenario, not the canvas), so the picture drops them and gets them back
+    // the instant the drag commits.
+    paintMarked(ref.current, currentFrame(), live ? [] : marks);
+  };
 
-  // Repaint when the base frame (a fresh cell object each render), the saved
-  // scenario, or the committed override changes. A drag repaints directly,
-  // so it is not here.
   useEffect(() => {
-    repaint();
+    repaint(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, override, savedScenario]);
+  }, [cell, baseFrame, override, marks]);
 
-  // ── The INVERSE of projectionFor's px/py, using paint's exact cssW/cssH ──
-  //   px(x) = (x - vp.x1) * (cssW / (vp.x2 - vp.x1))  ⇒  x = cx * (vp.x2-vp.x1)/cssW + vp.x1
   function pointerToWorld(e: React.PointerEvent<HTMLCanvasElement>): Vec2 {
     const rect = ref.current!.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * (cssW / (rect.width || cssW));
@@ -1038,8 +1125,6 @@ function GalleryCell({
     e.preventDefault();
     const frame = currentFrame();
     const at = target === "ball" ? frame.ball : frame.items[target].at;
-    // Record the grabbed point's offset from the anchor, so the SAME point
-    // stays under the cursor as we drag (the figure translates rigidly).
     dragRef.current = { target, offX: at.x - world.x, offY: at.y - world.y };
     workingRef.current = cloneOverride(effectiveOverride());
     ref.current?.setPointerCapture(e.pointerId);
@@ -1061,7 +1146,7 @@ function GalleryCell({
     if (drag.target === "ball") wk.ball = next;
     else wk.items[drag.target] = next;
     workingRef.current = wk;
-    repaint();
+    repaint(true);
   }
 
   function endDrag(e: React.PointerEvent<HTMLCanvasElement>) {
@@ -1075,332 +1160,49 @@ function GalleryCell({
     if (wk) onCommit(cell.key, wk);
   }
 
-  const edited = hasEdits(override);
-  const liveFrame = applyOverride(baseFrame, override);
-  const json = JSON.stringify(exportRecord(cell, liveFrame, formationId), null, 2);
-
-  const busy = save?.busy[cell.key];
-  const flash = save?.flash[cell.key];
-  const committedSha = save?.committed[cell.key];
-
-  // Judged on the picture as it currently stands, corrected and edited — see
-  // `liveFaults`. A fault gets the loudest border on the card, over "edited"
-  // and over "saved": a scenario that isn't the chance it claims to be is the
-  // one thing worth noticing across a wall of thirteen.
-  const all = liveFaults(cell, [
-    savedScenario ? overrideFromMatchScenario(savedScenario) : undefined,
-    override,
-  ]);
-  const split = all ? splitFaults(cell.kind, all) : null;
-  const faults = split?.faults ?? [];
-  const intended = split?.intended ?? [];
-  const repairs = cell.repairs ?? [];
-  // Faults this KIND really has, that this particular seed happens not to
-  // show. Without this, thirteen clean-looking cards would read as "the base
-  // scenarios are all correct", which the measured rates say they are not.
-  const shown = new Set([...faults, ...intended]);
-  const missedRates = split
-    ? (faultRates()[cell.kind] ?? []).filter((r) => !shown.has(r.fault))
-    : [];
-
   return (
-    <div
-      data-cell={cell.key}
+    <canvas
+      ref={ref}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
       style={{
-        background: "#0b1220",
-        border: faults.length
-          ? "1px solid #ef4444"
-          : edited ? "1px solid #38bdf8" : savedScenario ? "1px solid #22c55e" : "1px solid #1e293b",
-        borderRadius: 10,
-        padding: 8,
+        display: "block",
+        margin: "0 auto",
+        borderRadius: 20,
+        background: "#14532d",
+        cursor: "grab",
+        touchAction: "none",
+        border: edited ? "2px solid #38bdf8" : "2px solid rgba(255,255,255,0.06)",
       }}
-    >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>
-        <div style={{ fontWeight: 800, fontSize: 14 }}>{cell.title}</div>
-        {save && (savedScenario ? (
-          <span style={{ fontSize: 10, fontWeight: 800, color: "#bbf7d0", background: "#14532d", borderRadius: 4, padding: "1px 6px" }}>
-            saved \u00b7 overriding
-          </span>
-        ) : (
-          <span style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", background: "#1e293b", borderRadius: 4, padding: "1px 6px" }}>
-            built-in
-          </span>
-        ))}
-        {edited && (
-          <span style={{ fontSize: 10, fontWeight: 800, color: "#38bdf8", background: "#0c4a6e", borderRadius: 4, padding: "1px 6px" }}>
-            unsaved edits
-          </span>
-        )}
-        {faults.length > 0 && (
-          <span style={{ fontSize: 10, fontWeight: 800, color: "#fecaca", background: "#7f1d1d", borderRadius: 4, padding: "1px 6px" }}>
-            {faults.length} fault{faults.length === 1 ? "" : "s"}
-          </span>
-        )}
-        {committedSha && (
-          <span style={{ fontSize: 10, fontWeight: 800, color: "#e9d5ff", background: "#581c87", borderRadius: 4, padding: "1px 6px" }}>
-            in the code
-          </span>
-        )}
-      </div>
-      <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8, fontFamily: "monospace" }}>
-        {cell.subtitle}
-      </div>
-
-      {repairs.length > 0 && (
-        <div style={{ ...NOTE_BOX, background: "#083344", borderColor: "#0e7490", color: "#a5f3fc", marginBottom: 8 }}>
-          <b>Corrected on the way in</b> — this card shows the repaired shape, not the raw builder output:
-          <ul style={NOTE_LIST}>
-            {repairs.map((r, i) => <li key={i}>{r}</li>)}
-          </ul>
-        </div>
-      )}
-      {faults.length > 0 && (
-        <div style={{ ...NOTE_BOX, background: "#450a0a", borderColor: "#ef4444", color: "#fecaca", marginBottom: 8 }}>
-          <b>Still wrong</b> — left exactly as built, because the right shape is a call for you, not a
-          guess for the code:
-          <ul style={NOTE_LIST}>
-            {faults.map((f, i) => <li key={i}>{f}</li>)}
-          </ul>
-        </div>
-      )}
-      {intended.length > 0 && (
-        <div style={{ ...NOTE_BOX, background: "#1c1917", borderColor: "#a16207", color: "#fde68a", marginBottom: 8 }}>
-          <b>Intended, not a fault</b>:
-          <ul style={NOTE_LIST}>
-            {intended.map((f, i) => <li key={i}>{INTENDED_TEXT[f] ?? f}</li>)}
-          </ul>
-        </div>
-      )}
-      {missedRates.length > 0 && (
-        <div style={{ ...NOTE_BOX, background: "#0f172a", borderColor: "#475569", color: "#cbd5e1", marginBottom: 8 }}>
-          <b>This seed is clean, the kind isn&rsquo;t</b> &mdash; measured over {RATE_SEEDS} real builds:
-          <ul style={NOTE_LIST}>
-            {missedRates.map((r, i) => (
-              <li key={i}>{r.fault} &mdash; {r.pct.toFixed(1)}% of builds</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <canvas
-        ref={ref}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        style={{ display: "block", borderRadius: 6, background: "#14532d", cursor: "grab", touchAction: "none" }}
-      />
-      <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
-        {save && (
-          <>
-            <button
-              style={{
-                ...SMALL_BTN,
-                background: edited ? "#166534" : "#0f172a",
-                borderColor: edited ? "#22c55e" : "#334155",
-                opacity: busy ? 0.6 : 1,
-                cursor: busy ? "default" : "pointer",
-              }}
-              disabled={!!busy}
-              onClick={() => { void save.saveCell(cell, liveFrame); }}
-              title="Save this geometry to the database \u2014 it becomes the real scenario, on every device"
-            >
-              {busy === "saving" ? "Saving\u2026" : edited ? "Save \u2713" : "Save"}
-            </button>
-            <button
-              style={{
-                ...SMALL_BTN,
-                opacity: savedScenario && !busy ? 1 : 0.4,
-                cursor: savedScenario && !busy ? "pointer" : "default",
-              }}
-              disabled={!savedScenario || !!busy}
-              onClick={() => { void save.revertCell(cell); }}
-              title="Delete the saved version \u2014 this scenario goes back to the built-in one everywhere"
-            >
-              {busy === "reverting" ? "Reverting\u2026" : "Revert to built-in"}
-            </button>
-            <button
-              style={{
-                ...SMALL_BTN,
-                background: "#3b0764",
-                borderColor: "#a855f7",
-                color: "#f3e8ff",
-                opacity: busy ? 0.6 : 1,
-                cursor: busy ? "default" : "pointer",
-              }}
-              disabled={!!busy}
-              onClick={() => { void save.commitCell(cell, liveFrame); }}
-              title="Write this geometry into the repository itself \u2014 a real commit to lib/star/authoredScenarios.json"
-            >
-              {busy === "committing" ? "Committing\u2026" : "Commit to repo"}
-            </button>
-          </>
-        )}
-        <button style={SMALL_BTN} onClick={() => { copyText(json); setShowJson((s) => !s); }}>
-          Export{showJson ? " ▲" : " ▼"}
-        </button>
-        <button
-          style={{ ...SMALL_BTN, opacity: edited ? 1 : 0.4, cursor: edited ? "pointer" : "default" }}
-          disabled={!edited}
-          onClick={() => onReset(cell.key)}
-        >
-          Reset
-        </button>
-      </div>
-      {flash && (
-        <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, lineHeight: 1.4, color: flash.ok ? "#4ade80" : "#fca5a5" }}>
-          {flash.text}
-        </div>
-      )}
-      <div style={{ fontSize: 10, color: "#475569", marginTop: 6 }}>
-        {save
-          ? "Save = live now, on every device. Commit = permanently in the code. Drag figures/ball \u00b7 Reset drops unsaved edits"
-          : "drag figures/ball \u00b7 Reset drops unsaved edits"}
-      </div>
-      {children}
-      {showJson && (
-        <pre
-          style={{
-            marginTop: 8,
-            background: "#020617",
-            border: "1px solid #1e293b",
-            borderRadius: 6,
-            padding: 8,
-            fontSize: 10,
-            lineHeight: 1.4,
-            maxHeight: 220,
-            overflow: "auto",
-            color: "#cbd5e1",
-            whiteSpace: "pre",
-            userSelect: "text",
-          }}
-        >
-          {json}
-        </pre>
-      )}
-    </div>
+    />
   );
 }
 
-function FormationRefCell({ formation }: { formation: Formation }) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => {
-    if (ref.current) paintFormationRef(ref.current, formation);
-  }, [formation]);
-  return (
-    <div
-      data-cell={`formation-ref-${formation.id}`}
-      style={{ background: "#0b1220", border: "1px solid #7c2d12", borderRadius: 10, padding: 8 }}
-    >
-      <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>
-        Formation reference — {formation.name}
-      </div>
-      <div style={{ color: "#fb923c", fontSize: 11, marginBottom: 8, fontFamily: "monospace" }}>
-        the shape the opponent SHOULD hold (attack toward the top)
-      </div>
-      <canvas ref={ref} style={{ display: "block", borderRadius: 6, background: "#14532d" }} />
-    </div>
-  );
-}
-
-const TAB_BTN = (active: boolean): React.CSSProperties => ({
-  padding: "8px 18px",
-  borderRadius: 8,
-  border: active ? "1px solid #38bdf8" : "1px solid #1e293b",
-  background: active ? "#0c4a6e" : "#0b1220",
-  color: active ? "#e0f2fe" : "#94a3b8",
-  fontWeight: 800,
-  fontSize: 14,
-  cursor: "pointer",
-});
-
-/** Copy-all / reset-all across every cell the user has actually touched. */
-function EditToolbar({
-  cells,
-  edits,
-  clearOverride,
-  formationId,
-}: {
-  cells: Cell[];
-  edits: EditStore;
-  clearOverride: (key: string) => void;
-  formationId: string;
-}) {
-  const touched = cells.filter((c) => hasEdits(edits[c.key]));
-  const active = touched.length > 0;
-  const copyAll = () => {
-    const payload = touched.map((c) =>
-      exportRecord(c, applyOverride(c.frame, edits[c.key]), formationId),
-    );
-    copyText(JSON.stringify(payload, null, 2));
-  };
-  const resetAll = () => { for (const c of touched) clearOverride(c.key); };
-  return (
-    <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-      <button
-        style={{
-          ...SMALL_BTN,
-          background: active ? "#0c4a6e" : "#0f172a",
-          borderColor: active ? "#38bdf8" : "#334155",
-          opacity: active ? 1 : 0.5,
-          cursor: active ? "pointer" : "default",
-        }}
-        disabled={!active}
-        onClick={copyAll}
-      >
-        Copy all edited ({touched.length})
-      </button>
-      <button
-        style={{ ...SMALL_BTN, opacity: active ? 1 : 0.5, cursor: active ? "pointer" : "default" }}
-        disabled={!active}
-        onClick={resetAll}
-      >
-        Reset all edited
-      </button>
-    </div>
-  );
-}
-
-// Strength matchup presets → (yourStrength, oppStrength) for the positional layer.
-const MATCHUPS: { id: string; label: string; atk: number; def: number }[] = [
-  { id: "even", label: "Even (70v70)", atk: 70, def: 70 },
-  { id: "you-strong", label: "You stronger (90v55)", atk: 90, def: 55 },
-  { id: "you-weak", label: "You weaker (55v90)", atk: 55, def: 90 },
-];
-
-const SELECT_STYLE: React.CSSProperties = {
-  background: "#0b1220",
-  color: "#e2e8f0",
-  border: "1px solid #334155",
-  borderRadius: 8,
-  padding: "6px 10px",
-  fontSize: 14,
-  fontWeight: 700,
-};
-
-/** One read-only canvas. Used by the across-formations strip, which is a
- *  comparison, not another place to drag things. */
+/** One read-only canvas, for the across-formations comparison. */
 function MiniFrame({ frame, label, note }: { frame: Frame; label: string; note: string }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => { if (ref.current) paint(ref.current, frame); }, [frame]);
+  useEffect(() => {
+    if (!ref.current) return;
+    paint(ref.current, frame);
+    // `paint` sizes the canvas in real pixels; a comparison tile is whatever
+    // width the column gives it, so the px size is traded for a fluid one
+    // afterwards (the drawing itself is unaffected — only how it is scaled).
+    ref.current.style.width = "100%";
+    ref.current.style.height = "auto";
+  }, [frame]);
   return (
-    <div style={{ background: "#0b1220", border: "1px solid #334155", borderRadius: 8, padding: 6 }}>
-      <div style={{ fontWeight: 800, fontSize: 12, marginBottom: 1 }}>{label}</div>
-      <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 6, fontFamily: "monospace" }}>{note}</div>
-      <canvas ref={ref} style={{ display: "block", borderRadius: 6, background: "#14532d" }} />
+    <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 8, minWidth: 0 }}>
+      <div style={{ fontWeight: 800, fontSize: 12, color: INK }}>{label}</div>
+      <div style={{ color: MUTED, fontSize: 10.5, marginBottom: 6 }}>{note}</div>
+      <canvas ref={ref} style={{ display: "block", borderRadius: 10, background: "#14532d" }} />
     </div>
   );
 }
 
-/**
- * THE FORMATION TRANSFORM, viewed per scenario.
- *
- * The same base scenario — including whatever has been dragged or saved on
- * it — rendered against a back-three, a back-four and a back-five, side by
- * side, so what changes is the ONE situation across shapes rather than the
- * whole gallery flipping to a different formation at once. Playstyle and the
- * strength matchup live here too, for the same reason: they are properties
- * of the comparison, not of the scenario.
- */
+/** THE FORMATION TRANSFORM, per scenario — desktop only. The same base
+ *  scenario, edits and all, against a back-three, a back-four and a back-five. */
 function FormationStrip({ cell, override }: { cell: Cell; override: PosOverride | undefined }) {
   const [playstyleId, setPlaystyleId] = useState<Playstyle>("mid-block");
   const [matchupId, setMatchupId] = useState("even");
@@ -1408,36 +1210,29 @@ function FormationStrip({ cell, override }: { cell: Cell; override: PosOverride 
   const shapes = APPLY_SHAPE_KINDS.has(cell.kind);
 
   return (
-    <div style={{ marginTop: 10, borderTop: "1px solid #1e293b", paddingTop: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
         <span style={{ fontWeight: 800, fontSize: 12, color: "#fb923c" }}>Across formations</span>
         <select
           value={playstyleId}
           onChange={(e) => setPlaystyleId(e.target.value as Playstyle)}
-          style={{ ...SELECT_STYLE, fontSize: 12, padding: "4px 8px" }}
+          style={SELECT_STYLE}
         >
           {Object.values(PLAYSTYLES).map((ps) => (
             <option key={ps.id} value={ps.id}>{ps.name}</option>
           ))}
         </select>
-        <select
-          value={matchupId}
-          onChange={(e) => setMatchupId(e.target.value)}
-          style={{ ...SELECT_STYLE, fontSize: 12, padding: "4px 8px" }}
-        >
-          {MATCHUPS.map((m) => (
-            <option key={m.id} value={m.id}>{m.label}</option>
-          ))}
+        <select value={matchupId} onChange={(e) => setMatchupId(e.target.value)} style={SELECT_STYLE}>
+          {MATCHUPS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
       </div>
       {!shapes && (
-        <div style={{ color: "#fbbf24", fontSize: 11, fontWeight: 700, marginBottom: 8, maxWidth: 700, lineHeight: 1.5 }}>
-          The positional layer doesn&rsquo;t own this kind (dead balls have their own wall-and-box setups;
-          a midfield situation has no defensive block in frame), so these three differ only in WHO is cast
-          into each shirt, not where anyone stands. That gap is real, and stating it is the point.
+        <div style={{ color: "#fbbf24", fontSize: 11.5, fontWeight: 700, marginBottom: 10, lineHeight: 1.45 }}>
+          The positional layer doesn&rsquo;t own this kind — these three differ only in WHO is cast into
+          each shirt, not where anyone stands.
         </div>
       )}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
         {COMPARE_FORMATIONS.map((fid) => {
           const f = formationOf(fid);
           const line = defensiveLineOf(f);
@@ -1455,158 +1250,60 @@ function FormationStrip({ cell, override }: { cell: Cell; override: PosOverride 
   );
 }
 
-function ElevenView({ edits, setOverride, clearOverride, save }: EditProps & { save: SaveProps }) {
-  const cells = baseCells();
-  const [open, setOpen] = useState<string | null>(null);
+// Strength matchup presets → (yourStrength, oppStrength) for the positional layer.
+const MATCHUPS: { id: string; label: string; atk: number; def: number }[] = [
+  { id: "even", label: "Even (70v70)", atk: 70, def: 70 },
+  { id: "you-strong", label: "You stronger (90v55)", atk: 90, def: 55 },
+  { id: "you-weak", label: "You weaker (55v90)", atk: 55, def: 90 },
+];
 
-  return (
-    <div>
-      <p style={{ margin: "0 0 10px", color: "#4ade80", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
-        <b>These are the BASE scenarios</b> &mdash; the thirteen canonical situations
-        <code> buildScenario</code> produces, one fixed seed each, with no formation layer on top. This is
-        the thing you look at, edit and save. Blue = your side (star = you), red = opponents, green =
-        keeper, yellow dashes = the offside line the engine would judge against.
-      </p>
-      <p style={{ margin: "0 0 10px", color: "#fca5a5", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
-        <b>Every card is CORRECTED before you see it.</b> <code>fixBaseScenario</code> repairs the things
-        a chance can&rsquo;t be without (a one-on-one with somebody in front of you isn&rsquo;t a
-        one-on-one) and each card lists what it changed, so nothing is silently fixed. A{" "}
-        <b style={{ color: "#ef4444" }}>red border</b> means something is still wrong and was deliberately
-        left alone &mdash; those are shape calls for you to make, not guesses for the code. Drag it right,
-        then Save.
-      </p>
-      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
-        <b>Formation is a transform on top, per scenario.</b> Open <b>Across formations</b> on any card to
-        see that same situation against a back-three, a back-four and a back-five side by side (playstyle
-        and the strength matchup live in there too). Formation, playstyle and matchup are OFF by default
-        and never touch a base card &mdash; base first.
-      </p>
-      <p style={{ margin: "0 0 16px", color: "#d8b4fe", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
-        <b>Two ways to keep a scenario. Save = live now, everywhere. Commit = permanently in the code.</b>{" "}
-        Save writes the shared database, so it is the real scenario on every device a second later (and{" "}
-        <b>Revert to built-in</b> deletes it again). <b>Commit to repo</b> writes the same geometry into{" "}
-        <code>lib/star/authoredScenarios.json</code> as a real git commit, so it survives anything that
-        happens to the database. Both need an admin sign-in.
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-        {cells.map((c) => (
-          <div key={c.key} style={{ display: "flex", flexDirection: "column" }}>
-            <GalleryCell
-              cell={c}
-              override={edits[c.key]}
-              onCommit={setOverride}
-              onReset={clearOverride}
-              formationId=""
-              save={save}
-            >
-              <div style={{ marginTop: 8 }}>
-                <button
-                  style={{ ...SMALL_BTN, borderColor: "#7c2d12", color: "#fdba74" }}
-                  onClick={() => setOpen((k) => (k === c.key ? null : c.key))}
-                >
-                  {open === c.key ? "Hide across formations \u25b2" : "Across formations \u25bc"}
-                </button>
-              </div>
-              {open === c.key && <FormationStrip cell={c} override={edits[c.key]} />}
-            </GalleryCell>
-          </div>
-        ))}
-      </div>
+const SELECT_STYLE: React.CSSProperties = {
+  background: "#0b1220",
+  color: INK,
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 10,
+  padding: "5px 9px",
+  fontSize: 12,
+  fontWeight: 700,
+};
 
-      <h3 style={{ fontSize: 16, fontWeight: 800, margin: "28px 0 8px" }}>Formation reference shapes</h3>
-      <p style={{ margin: "0 0 12px", color: "#94a3b8", fontSize: 13, maxWidth: 760 }}>
-        The three formations the comparison strip uses, as their own slot layouts &mdash; the shape the
-        opponent is MEANT to hold (attack toward the top).
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-        {COMPARE_FORMATIONS.map((fid) => (
-          <FormationRefCell key={fid} formation={formationOf(fid)} />
-        ))}
-      </div>
-    </div>
-  );
-}
+// ─────────────────────────────────────────────────────────────────────────
+//  PAGE
+// ─────────────────────────────────────────────────────────────────────────
 
-function FiveView({ edits, setOverride, clearOverride }: EditProps) {
-  const cells = fiveCells();
-  return (
-    <div>
-      <p style={{ margin: "0 0 16px", color: "#94a3b8", fontSize: 13, maxWidth: 760 }}>
-        Real <code>fiveASide/</code> shapes at fixed seeds. <code>defensiveShape</code> (where &ldquo;four
-        on the goal line&rdquo; vs a diamond shows), <code>attackingShape</code> (the 1-2-1 / 2-2
-        structure), and a full chance from <code>buildPassage</code>. This is a separate game from the
-        11-a-side view — its own pitch, its own rules.
-      </p>
-      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 760, lineHeight: 1.5 }}>
-        <b>Editable.</b> Drag figures/ball to the target shape, then <code>Export</code> (per cell or all
-        edited) for a ground-truth JSON record. Edits persist across reloads.
-      </p>
-      <EditToolbar cells={cells} edits={edits} clearOverride={clearOverride} formationId="" />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-        {cells.map((c) => (
-          <GalleryCell
-            key={c.key}
-            cell={c}
-            override={edits[c.key]}
-            onCommit={setOverride}
-            onReset={clearOverride}
-            formationId=""
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * MIKEY'S SCENARIO BUILDER, hosted here.
- *
- * The same component the standalone /star-scenario-dev sandbox renders —
- * imported, not forked or rewritten, so there is exactly one builder and a
- * change to it shows up in both places. The two other tabs READ the real
- * builders at fixed seeds; this one WRITES hand-placed scenarios
- * (lib/star/scenarios.ts's MatchScenario, in real pitch metres) into the
- * shared star_scenarios table. Its own Save/Delete, its own "migration not
- * run" banner, and its own honest "saved on this device ONLY" wording all
- * live inside the component — nothing is duplicated out here.
- */
-function BuilderView() {
-  return (
-    <div>
-      <p style={{ margin: "0 0 8px", color: "#94a3b8", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
-        Hand-build a scenario: place teammates and opponents, set the ball (it follows the You marker), and
-        frame the camera — straight, or the quarter-turn left/right the real match actually shoots a cross
-        from. Coordinates are <b>real pitch metres</b> (<code>lib/star/pitch.ts</code>), the one shape that
-        could be handed straight to the real renderer with no translation.
-      </p>
-      <p style={{ margin: "0 0 16px", color: "#7dd3fc", fontSize: 13, maxWidth: 820, lineHeight: 1.5 }}>
-        <b>Saving is shared.</b> Every scenario goes to the <code>star_scenarios</code> table, so it is
-        there on every device, not just in this browser — and deleting one removes it everywhere. Writing
-        needs an admin sign-in (same gate as the Lineups page); if it fails, the save says so rather than
-        showing a tick.
-      </p>
-      <div style={{ background: "#030712", borderRadius: 12, padding: 12 }}>
-        <ScenarioEditor />
-      </div>
-    </div>
-  );
-}
+type Screen = "home" | "eleven" | "five" | "builder" | "version";
 
 export default function StarGalleryDevPage() {
-  const [view, setView] = useState<"eleven" | "five" | "builder">("eleven");
+  const [screen, setScreen] = useState<Screen>("home");
+  const [game, setGame] = useState<"eleven" | "five">("eleven");
+  const [kindId, setKindId] = useState<string>("one_on_one");
+  const [fiveId, setFiveId] = useState<string>("defensive");
+  const [versionIdx, setVersionIdx] = useState(0);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [wide, setWide] = useState(false);
 
-  // The shared edit store, lifted here so edits survive tab switches and both
-  // views' "copy all edited" can see them. Persisted straight through the
-  // setters (not a save-effect) to sidestep an initial "{} overwrites the
-  // saved store" race; loaded once on mount after the {} first render, so
-  // server and client agree on the first paint.
+  // This is a full-screen dev tool, so the site's own nav/footer are hidden
+  // the same way /star-dev already hides them (globals.css's immersive class).
+  useEffect(() => {
+    document.body.classList.add("knowitball-immersive");
+    return () => document.body.classList.remove("knowitball-immersive");
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setWide(window.innerWidth >= 1024);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // ── Edits ──
   const [edits, setEdits] = useState<EditStore>({});
   useEffect(() => {
     const loaded = loadEdits();
     if (Object.keys(loaded).length) setEdits(loaded);
   }, []);
 
-  const setOverride = (key: string, ov: PosOverride) =>
+  const setOverride = useCallback((key: string, ov: PosOverride) => {
     setEdits((prev) => {
       let next: EditStore;
       if (hasEdits(ov)) next = { ...prev, [key]: ov };
@@ -1614,29 +1311,39 @@ export default function StarGalleryDevPage() {
       saveEdits(next);
       return next;
     });
-  const clearOverride = (key: string) =>
+  }, []);
+  const clearOverride = useCallback((key: string) => {
     setEdits((prev) => {
       const next = { ...prev };
       delete next[key];
       saveEdits(next);
       return next;
     });
+  }, []);
 
-  const editProps: EditProps = { edits, setOverride, clearOverride };
+  // ── Reviews (local for now; see lib/star/scenarioReview.ts) ──
+  const [reviews, setReviews] = useState<ReviewStore>({});
+  useEffect(() => {
+    const loaded = loadReviews();
+    if (Object.keys(loaded).length) setReviews(loaded);
+  }, []);
+  const setVerdict = useCallback((cell: Cell, verdict: ReviewVerdict | null) => {
+    setReviews((prev) => {
+      const next = { ...prev };
+      if (verdict === null) delete next[cell.key];
+      else next[cell.key] = { key: cell.key, game: cell.game, kind: cell.kind, seed: cell.seed, verdict, at: Date.now() };
+      saveReviews(next);
+      return next;
+    });
+  }, []);
 
-  // ── Saved base scenarios ────────────────────────────────────────────────
-  // Read synchronously from the local cache on mount (so the gallery opens
-  // on the saved geometry rather than flashing the builder's output first),
-  // then refreshed from the server, which is the real source of truth.
+  // ── Saved base scenarios ──
   const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
   const [migrationMissing, setMigrationMissing] = useState(false);
-  const [loadNote, setLoadNote] = useState<string | null>(null);
-  const [busy, setBusy] = useState<Record<string, "saving" | "reverting" | "committing" | undefined>>({});
-  const [committed, setCommitted] = useState<Record<string, string | undefined>>({});
-  const [flash, setFlash] = useState<Record<string, { ok: boolean; text: string } | undefined>>({});
+  const [commitBlocked, setCommitBlocked] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"saving" | "reverting" | "committing" | null>(null);
+  const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
 
-  /** The shared pool holds the Scenario Builder's own hand-placed scenarios
-   *  too; only the ones this gallery saved map back onto a cell. */
   const indexGallery = (all: MatchScenario[]): Record<string, MatchScenario> => {
     const out: Record<string, MatchScenario> = {};
     for (const sc of all) {
@@ -1652,64 +1359,42 @@ export default function StarGalleryDevPage() {
     void fetchSharedScenarios().then((r) => {
       setSaved(indexGallery(listScenarios()));
       if (r.migrationMissing) setMigrationMissing(true);
-      else if (!r.ok && r.message) setLoadNote(r.message);
     });
   }, []);
 
-  const flashFor = (key: string, ok: boolean, text: string) => {
-    setFlash((f) => ({ ...f, [key]: { ok, text } }));
-    window.setTimeout(() => setFlash((f) => ({ ...f, [key]: undefined })), 7000);
+  const flashFor = (ok: boolean, text: string) => {
+    setFlash({ ok, text });
+    window.setTimeout(() => setFlash(null), 6000);
   };
 
-  /**
-   * "Saved" only ever means the SERVER said so. A refused write leaves the
-   * card's unsaved-edits badge exactly where it was and says why — never a
-   * green tick over something that reached no other device.
-   */
-  const saveCell = async (cell: Cell, frame: Frame): Promise<boolean> => {
-    setBusy((b) => ({ ...b, [cell.key]: "saving" }));
+  /** "Saved" only ever means the SERVER said so. */
+  const saveCell = async (cell: Cell, frame: Frame): Promise<void> => {
+    setBusy("saving");
     const scenario = frameToMatchScenario(cell, frame);
     const res = await saveScenarioShared(scenario);
-    setBusy((b) => ({ ...b, [cell.key]: undefined }));
+    setBusy(null);
     if (res.migrationMissing) setMigrationMissing(true);
-    if (!res.ok) {
-      flashFor(cell.key, false, `Not saved to the database — ${res.message} Your edits are still here.`);
-      return false;
-    }
+    if (!res.ok) { flashFor(false, `Not saved — ${res.message}`); return; }
     setSaved((m) => ({ ...m, [cell.key]: scenario }));
-    // The geometry now lives in the saved scenario, so leaving the local
-    // override in place would count it twice (as "unsaved edits" on itself).
     clearOverride(cell.key);
-    flashFor(cell.key, true, "Saved — this is the scenario now, on every device.");
-    return true;
+    flashFor(true, "Saved — on every device.");
   };
 
-  const revertCell = async (cell: Cell): Promise<boolean> => {
-    setBusy((b) => ({ ...b, [cell.key]: "reverting" }));
+  const revertCell = async (cell: Cell): Promise<void> => {
+    setBusy("reverting");
     const res = await deleteScenarioShared(gallerySlug(cell.key));
-    setBusy((b) => ({ ...b, [cell.key]: undefined }));
+    setBusy(null);
     if (res.migrationMissing) setMigrationMissing(true);
-    if (!res.ok) {
-      flashFor(cell.key, false, `Not reverted — ${res.message}`);
-      return false;
-    }
+    if (!res.ok) { flashFor(false, `Not reverted — ${res.message}`); return; }
     setSaved((m) => { const next = { ...m }; delete next[cell.key]; return next; });
     clearOverride(cell.key);
-    flashFor(cell.key, true, "Reverted — back to the built-in scenario everywhere.");
-    return true;
+    flashFor(true, "Back to the built-in scenario.");
   };
 
-  /**
-   * THE SECOND PATH: into the code itself.
-   *
-   * Nothing here is optimistic. "Committed" is only ever said once the route
-   * has come back with `ok` — a missing GITHUB_TOKEN, a refused token, or two
-   * lost races in a row all land in the same red line as any other failure,
-   * quoting the server's own sentence, and the card keeps its unsaved-edits
-   * badge exactly where it was.
-   */
-  const commitCell = async (cell: Cell, frame: Frame): Promise<boolean> => {
-    setBusy((b) => ({ ...b, [cell.key]: "committing" }));
+  /** Nothing here is optimistic — a missing GITHUB_TOKEN, a refused token or
+   *  two lost races all land in the same red line, quoting the server. */
+  const commitCell = async (cell: Cell, frame: Frame): Promise<void> => {
+    setBusy("committing");
     const scenario = frameToMatchScenario(cell, frame);
     let res: Response;
     try {
@@ -1719,94 +1404,362 @@ export default function StarGalleryDevPage() {
         body: JSON.stringify({ scenario }),
       });
     } catch {
-      setBusy((b) => ({ ...b, [cell.key]: undefined }));
-      flashFor(cell.key, false, "Not committed — couldn't reach the server. Your edits are still here.");
-      return false;
+      setBusy(null);
+      flashFor(false, "Not committed — couldn't reach the server.");
+      return;
     }
     const body = await res.json().catch(() => ({})) as
       { ok?: boolean; error?: string; message?: string; commitSha?: string };
-    setBusy((b) => ({ ...b, [cell.key]: undefined }));
+    setBusy(null);
     if (!res.ok || body.ok !== true) {
-      flashFor(cell.key, false, `Not committed — ${body.error ?? `the server refused it (${res.status}).`}`);
-      return false;
+      const why = body.error ?? `the server refused it (${res.status}).`;
+      if (res.status === 503) setCommitBlocked(why);
+      flashFor(false, `Not committed — ${why}`);
+      return;
     }
-    setCommitted((c) => ({ ...c, [cell.key]: body.commitSha ?? "committed" }));
-    flashFor(
-      cell.key,
+    flashFor(true, body.message ?? "Committed.");
+  };
+
+  // ── What the home-screen dot is about ──
+  const warning = migrationMissing
+    ? "Saving is off — run supabase/migrations/star_scenarios.sql in the Supabase SQL Editor. You can still drag and export."
+    : commitBlocked
+      ? `Commit to repo is off — ${commitBlocked}`
+      : null;
+
+  // ── The versions currently in view ──
+  const versions: Cell[] = useMemo(
+    () => (game === "eleven" ? elevenVersions(kindId as ScenarioKind) : fiveVersions(fiveId)),
+    [game, kindId, fiveId],
+  );
+  const activeGroupId = game === "eleven" ? kindId : fiveId;
+
+  const chips = useMemo(() => {
+    if (game === "eleven") {
+      return KIND_ORDER.map((k) => {
+        const keys = seedsForKind(k).map((s) => cellKeyFor(k, s));
+        return { id: k, label: kindLabel(k), done: reviewedCount(reviews, keys), total: keys.length };
+      });
+    }
+    return FIVE_GROUPS.map((g) => {
+      const keys = fiveVersions(g.id).map((c) => c.key);
+      return { id: g.id, label: g.label, done: reviewedCount(reviews, keys), total: keys.length };
+    });
+  }, [game, reviews]);
+
+  const openGroup = (g: "eleven" | "five") => { setGame(g); setScreen(g); };
+  const openVersion = (i: number) => { setVersionIdx(i); setScreen("version"); };
+
+  const cell = versions[Math.min(versionIdx, versions.length - 1)];
+
+  // ── Chrome ──
+  const header = (title: string, back: () => void, right?: React.ReactNode) => (
+    <div
+      style={{
+        display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        position: "sticky", top: 0, zIndex: 6,
+        background: "rgba(5,7,13,0.94)", backdropFilter: "blur(10px)",
+      }}
+    >
+      <button
+        onClick={back}
+        style={{
+          width: 34, height: 34, borderRadius: 999, flex: "none",
+          border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)",
+          color: INK, fontSize: 17, fontWeight: 800, cursor: "pointer", lineHeight: 1,
+        }}
+      >
+        &#8249;
+      </button>
+      <div style={{ fontSize: 19, fontWeight: 800, color: INK, letterSpacing: "-0.01em", flex: 1, minWidth: 0 }}>
+        {title}
+      </div>
+      {right}
+    </div>
+  );
+
+  const shell = (children: React.ReactNode, lock: boolean) => (
+    <main
+      style={{
+        background: BG, color: INK, minHeight: "100dvh",
+        ...(lock ? { height: "100dvh", overflow: "hidden" } : {}),
+        fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif",
+      }}
+    >
+      {children}
+    </main>
+  );
+
+  // ── HOME ──
+  if (screen === "home") {
+    return shell(
+      <HomeScreen
+        onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))}
+        warning={warning}
+        wide={wide}
+      />,
       true,
-      body.message ?? "Committed — this scenario is part of the code now.",
     );
-    return true;
+  }
+
+  // ── BUILDER ──
+  if (screen === "builder") {
+    return shell(
+      <>
+        {header("Scenario Builder", () => setScreen("home"))}
+        <div style={{ padding: 10 }}>
+          <ScenarioEditor />
+        </div>
+      </>,
+      false,
+    );
+  }
+
+  // ── GRID ──
+  if (screen === "eleven" || screen === "five") {
+    const grid = (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: wide ? "repeat(auto-fill, minmax(230px, 1fr))" : "1fr 1fr",
+          gap: 12,
+          padding: 14,
+        }}
+      >
+        {versions.map((c, i) => (
+          <Thumb
+            key={c.key}
+            cell={c}
+            override={edits[c.key]}
+            saved={saved[c.key]}
+            verdict={reviews[c.key]?.verdict}
+            onOpen={() => openVersion(i)}
+          />
+        ))}
+      </div>
+    );
+    return shell(
+      <>
+        {header(game === "eleven" ? "11-a-side" : "5-a-side", () => setScreen("home"))}
+        {wide ? (
+          <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "start" }}>
+            <div style={{ padding: 14, position: "sticky", top: 58 }}>
+              <ChipRow chips={chips} activeId={activeGroupId} onPick={game === "eleven" ? setKindId : setFiveId} wide />
+            </div>
+            {grid}
+          </div>
+        ) : (
+          <>
+            <ChipRow chips={chips} activeId={activeGroupId} onPick={game === "eleven" ? setKindId : setFiveId} wide={false} />
+            {grid}
+          </>
+        )}
+      </>,
+      false,
+    );
+  }
+
+  // ── VERSION ──
+  if (!cell) return shell(<div style={{ padding: 20 }}>No versions.</div>, false);
+
+  const savedScenario = saved[cell.key];
+  const savedOv = savedScenario ? overrideFromMatchScenario(savedScenario) : undefined;
+  const override = edits[cell.key];
+  const edited = hasEdits(override);
+  const baseFrame = applyOverride(cell.frame, savedOv);
+  const liveFrame = applyOverride(baseFrame, override);
+  const analysis = liveAnalysis(cell, [savedOv, override]);
+  const verdict = reviews[cell.key]?.verdict;
+  const canSave = cell.game === "eleven";
+
+  const go = (d: number) => {
+    setVersionIdx((i) => (i + d + versions.length) % versions.length);
+    setSheetOpen(false);
   };
 
-  const saveProps: SaveProps = {
-    saved, saveCell, revertCell, commitCell, committed, busy, flash, migrationMissing,
+  const bigBtn = (bg: string, border: string, color: string): React.CSSProperties => ({
+    flex: 1, height: 54, borderRadius: 16, border: `1px solid ${border}`,
+    background: bg, color, fontSize: 19, fontWeight: 800, cursor: "pointer",
+    display: "grid", placeItems: "center",
+  });
+  const sheetBtn: React.CSSProperties = {
+    width: "100%", padding: "14px 16px", borderRadius: 14, textAlign: "left",
+    border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)",
+    color: INK, fontSize: 15, fontWeight: 700, cursor: "pointer",
   };
-  const savedCount = Object.keys(saved).length;
 
-  return (
-    <main style={{ minHeight: "100vh", background: "#020617", color: "#e2e8f0", padding: "24px 16px 80px" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 6px" }}>Scenario Gallery</h1>
-      <p style={{ margin: "0 0 12px", color: "#94a3b8", fontSize: 14, maxWidth: 760 }}>
-        Deterministic dev scaffolding. Every cell is built from the real scenario/shape builders at a
-        fixed seed, so a screenshot before and after a builder change is a true like-for-like comparison.
-        This page changes no game behaviour.
-      </p>
-      <p style={{ margin: "0 0 12px", color: "#7dd3fc", fontSize: 14, maxWidth: 820, lineHeight: 1.5 }}>
-        It is now also a <b>scenario editor</b>: drag players and the ball into the positions a scenario
-        SHOULD have, then <b>Save</b> — the geometry goes to the shared database, so it is the real
-        scenario on every device, not just in this browser. The third tab hosts the full{" "}
-        <b>Scenario Builder</b>, for hand-placing a scenario from scratch.
-      </p>
+  const pane = (
+    <div style={{ padding: "12px 14px 24px" }}>
+      <div style={{ position: "relative" }}>
+        <EditableFrame
+          cell={cell}
+          baseFrame={baseFrame}
+          override={override}
+          marks={analysis.marks}
+          onCommit={setOverride}
+          edited={edited}
+        />
+        {versions.length > 1 && (
+          <>
+            <button onClick={() => go(-1)} style={arrowStyle("left")}>&#8249;</button>
+            <button onClick={() => go(1)} style={arrowStyle("right")}>&#8250;</button>
+          </>
+        )}
+      </div>
 
-      {migrationMissing && (
-        <div
+      {analysis.faults.length > 0 && (
+        <div style={{ color: "#f87171", fontSize: 13.5, fontWeight: 700, marginTop: 10, textAlign: "center", lineHeight: 1.4 }}>
+          {analysis.faults[0]}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", margin: "14px 0 12px" }}>
+        {versions.map((v, i) => (
+          <button
+            key={v.key}
+            onClick={() => setVersionIdx(i)}
+            aria-label={`version ${i + 1}`}
+            style={{
+              width: i === versionIdx ? 20 : 7, height: 7, borderRadius: 999, padding: 0,
+              border: "none", cursor: "pointer",
+              background: i === versionIdx ? "#38bdf8" : "rgba(255,255,255,0.22)",
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button
+          onClick={() => setVerdict(cell, verdict === "rejected" ? null : "rejected")}
+          style={bigBtn(verdict === "rejected" ? "#7f1d1d" : "rgba(255,255,255,0.05)", verdict === "rejected" ? "#ef4444" : "rgba(255,255,255,0.09)", verdict === "rejected" ? "#fecaca" : MUTED)}
+        >
+          &#10005;
+        </button>
+        <button
+          onClick={() => {
+            if (edited && canSave) void saveCell(cell, liveFrame);
+            setVerdict(cell, "approved");
+          }}
           style={{
-            margin: "0 0 16px",
-            maxWidth: 840,
-            background: "#450a0a",
-            border: "1px solid #ef4444",
-            borderRadius: 10,
-            padding: 12,
-            fontSize: 13,
-            lineHeight: 1.55,
-            color: "#fecaca",
-            fontWeight: 700,
+            ...bigBtn(
+              verdict === "approved" ? "#14532d" : "rgba(255,255,255,0.05)",
+              verdict === "approved" ? "#22c55e" : "rgba(255,255,255,0.09)",
+              verdict === "approved" ? "#bbf7d0" : MUTED,
+            ),
+            flex: edited && canSave ? 2.2 : 1,
+            fontSize: edited && canSave ? 15 : 19,
           }}
         >
-          <b>Saving is off — the database table doesn&rsquo;t exist yet.</b> Run{" "}
-          <code>supabase/migrations/star_scenarios.sql</code> in the Supabase SQL Editor. Until then you
-          can still drag and Export, but a Save will fail and say so — nothing is silently lost, and
-          nothing you drag reaches any other device.
-        </div>
-      )}
-      {!migrationMissing && loadNote && (
-        <div style={{ margin: "0 0 16px", maxWidth: 840, fontSize: 13, fontWeight: 700, color: "#fca5a5" }}>
-          {loadNote}
-        </div>
-      )}
-      <p style={{ margin: "0 0 20px", color: "#94a3b8", fontSize: 12 }}>
-        {savedCount === 0
-          ? "No saved scenarios yet — every base scenario below is the built-in one."
-          : `${savedCount} saved scenario${savedCount === 1 ? "" : "s"} currently overriding the built-in geometry.`}
-        {" "}Saving needs an admin sign-in (same gate as the Lineups page).
-      </p>
-
-      <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
-        <button style={TAB_BTN(view === "eleven")} onClick={() => setView("eleven")}>
-          11-a-side
+          {edited && canSave ? (busy === "saving" ? "Saving…" : "Save & Approve") : "✓"}
         </button>
-        <button style={TAB_BTN(view === "five")} onClick={() => setView("five")}>
-          Five-a-side
-        </button>
-        <button style={TAB_BTN(view === "builder")} onClick={() => setView("builder")}>
-          Scenario Builder
+        <button
+          onClick={() => setSheetOpen(true)}
+          style={bigBtn("rgba(255,255,255,0.05)", "rgba(255,255,255,0.09)", MUTED)}
+        >
+          &#8943;
         </button>
       </div>
 
-      {view === "eleven" && <ElevenView {...editProps} save={saveProps} />}
-      {view === "five" && <FiveView {...editProps} />}
-      {view === "builder" && <BuilderView />}
-    </main>
+      {flash && (
+        <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, textAlign: "center", color: flash.ok ? "#4ade80" : "#fca5a5" }}>
+          {flash.text}
+        </div>
+      )}
+    </div>
   );
+
+  return shell(
+    <>
+      {header(
+        `${game === "eleven" ? kindLabel(cell.kind) : (FIVE_GROUPS.find((g) => g.id === fiveId)?.label ?? "")}`,
+        () => setScreen(game),
+        <span style={{ color: MUTED, fontSize: 13, fontWeight: 700, flex: "none" }}>
+          {versionIdx + 1} / {versions.length}
+        </span>,
+      )}
+      {wide ? (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 520px) minmax(0, 1fr)", gap: 16, padding: "0 14px 24px", alignItems: "start" }}>
+          {pane}
+          <div style={{ padding: "12px 0 24px" }}>
+            {cell.game === "eleven" && <FormationStrip cell={cell} override={override} />}
+          </div>
+        </div>
+      ) : pane}
+
+      {sheetOpen && (
+        <div
+          onClick={() => setSheetOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(2,4,10,0.65)", zIndex: 20, display: "flex", alignItems: "flex-end" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", background: "#0c1220", borderTopLeftRadius: 24, borderTopRightRadius: 24,
+              padding: 14, display: "grid", gap: 8,
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <div style={{ width: 40, height: 4, borderRadius: 999, background: "rgba(255,255,255,0.2)", margin: "2px auto 8px" }} />
+            {canSave && (
+              <>
+                <button style={sheetBtn} disabled={!!busy} onClick={() => { setSheetOpen(false); void saveCell(cell, liveFrame); }}>
+                  {busy === "saving" ? "Saving…" : "Save"}
+                </button>
+                <button
+                  style={{ ...sheetBtn, opacity: savedScenario ? 1 : 0.4 }}
+                  disabled={!savedScenario || !!busy}
+                  onClick={() => { setSheetOpen(false); void revertCell(cell); }}
+                >
+                  {busy === "reverting" ? "Reverting…" : "Revert to built-in"}
+                </button>
+                <button style={sheetBtn} disabled={!!busy} onClick={() => { setSheetOpen(false); void commitCell(cell, liveFrame); }}>
+                  {busy === "committing" ? "Committing…" : "Commit to repo"}
+                </button>
+              </>
+            )}
+            <button
+              style={sheetBtn}
+              onClick={() => {
+                void copyText(JSON.stringify(exportRecord(cell, liveFrame), null, 2));
+                setSheetOpen(false);
+                flashFor(true, "JSON copied.");
+              }}
+            >
+              Export JSON
+            </button>
+            {edited && (
+              <button style={sheetBtn} onClick={() => { clearOverride(cell.key); setSheetOpen(false); }}>
+                Discard unsaved edits
+              </button>
+            )}
+            <button style={{ ...sheetBtn, textAlign: "center", color: MUTED }} onClick={() => setSheetOpen(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </>,
+    false,
+  );
+}
+
+function arrowStyle(side: "left" | "right"): React.CSSProperties {
+  return {
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    [side]: 16,
+    width: 38,
+    height: 56,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.1)",
+    background: "rgba(2,4,10,0.78)",
+    color: "#e6edf7",
+    fontSize: 22,
+    fontWeight: 800,
+    cursor: "pointer",
+    lineHeight: 1,
+    zIndex: 3,
+  } as React.CSSProperties;
 }

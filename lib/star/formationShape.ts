@@ -1,6 +1,6 @@
 import type { Scenario, ScenarioKind, Defender } from "./canvasEngine";
 import { goalInView } from "./canvasEngine";
-import { CX, PITCH_W, POST_L, POST_R } from "./pitch";
+import { CX, PITCH_W, POST_L, POST_R, BOX_DEPTH } from "./pitch";
 import { formationForClub } from "./clubFormation";
 import type { Formation } from "./formations";
 import { playstyleForClub, type PlaystyleProfile } from "./playstyle";
@@ -156,6 +156,35 @@ export interface BlockTarget {
  * The measured target block for a ball position — pure, so it can be tested and
  * read by the scout report without touching a scenario.
  */
+/**
+ * A SHOT FROM OUTSIDE THE BOX IS DEFENDED ON THE EDGE OF THE BOX.
+ *
+ * Reported directly, on long shots: "the back line is sitting way too high.
+ * They should be on the edge of the box, and a lot of the times it's a super
+ * high line, which isn't really that fun for the game." He was right, and it
+ * reads backwards from the screen: the goal is at the TOP of the picture, so a
+ * line that is too DEEP (too near its own goal) looks too "high". Measured on
+ * long-range chances — ball at a median 19.3 m, back line at 10.4-13.6 m,
+ * which is 3 to 6 m nearer their own goal than the edge of the box, on 100%
+ * of them.
+ *
+ * `0.66 x ballDist` is a real measurement [SB360 Table 1] and stays the rule
+ * everywhere else. It just keeps dropping as the ball goes further out, and
+ * past the box that stops being what a defence does: it steps out to the edge
+ * and blocks rather than retreating to the spot and watching. Never pushed
+ * past the ball's own 2.2 m standoff, so a shot from 18 m cannot end up with
+ * the line in front of the shooter.
+ *
+ * Exported because the chance formula places its own line when no formation is
+ * supplied (the gallery, and every test) — that path bypassed `targetBlock`
+ * entirely, which is why a first attempt at this fix measured as changing
+ * nothing at all.
+ */
+export function onTheBoxEdge(lineY: number, ballDist: number, floor: number): number {
+  if (ballDist <= BOX_DEPTH) return lineY;
+  return clamp(Math.max(lineY, BOX_DEPTH), floor, Math.max(floor, ballDist - 2.2));
+}
+
 export function targetBlock(input: ShapeInput, ballX: number, ballY: number): BlockTarget {
   const { formation, playstyle, attackerStrength, defenderStrength } = input;
   const line = defensiveLineOf(formation);
@@ -180,6 +209,25 @@ export function targetBlock(input: ShapeInput, ballX: number, ballY: number): Bl
   // high line. (Fable design review, 20 Sep 2026.)
   const lineFloor = Math.max(4.5, ballDist * 0.55);
   let lineY = clamp(ballDist * 0.66 + shift, lineFloor, ballDist - 2.2);
+
+  // A SHOT FROM OUTSIDE THE BOX IS DEFENDED ON THE EDGE OF THE BOX.
+  //
+  // Reported directly, on long shots: "the back line is sitting way too high.
+  // They should be on the edge of the box, and a lot of the times it's a super
+  // high line, which isn't really that fun for the game." He was right, and it
+  // reads backwards from the screen: near the goal is HIGH UP the picture, so
+  // a line that is too DEEP looks too "high". Measured on long-range chances —
+  // ball at a median 19.3 m, back line at 10.4-13.6 m, i.e. 3 to 6 m nearer
+  // their own goal than the edge of the box, 100% of the time.
+  //
+  // `0.66 x ballDist` is a real measurement [SB360 Table 1] and stays the rule
+  // everywhere else. It simply keeps dropping as the ball goes further out,
+  // and past the box that stops being what a defence does: it steps out to the
+  // edge and blocks rather than retreating to the penalty spot and watching.
+  // So the line is floored at the box edge whenever the ball is outside it —
+  // never pushed past the ball's own 2.2 m standoff, so a shot from 18 m does
+  // not end up with the line in front of the shooter.
+  lineY = onTheBoxEdge(lineY, ballDist, lineFloor);
   const kSweep = clamp(lineY - 8, 0, 16) * 0.09 * (0.4 + playstyle.keeperSweep);
   const keeperY = clamp(1.6 + kSweep, 1.2, 6.5);
   lineY = clamp(Math.max(lineY, keeperY + 3), keeperY + 3, Math.max(keeperY + 3, ballDist - 2.2));

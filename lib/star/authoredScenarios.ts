@@ -1,3 +1,4 @@
+import { normaliseScenarioCamera } from "./scenarios";
 import type { MatchScenario } from "./scenarios";
 import raw from "./authoredScenarios.json";
 
@@ -68,7 +69,7 @@ export const AUTHORED_SCENARIOS: Record<string, MatchScenario> = (() => {
   const src = (raw as RawFile).scenarios;
   if (!src || typeof src !== "object") return out;
   for (const [id, value] of Object.entries(src)) {
-    if (isMatchScenario(value)) out[id] = value;
+    if (isMatchScenario(value)) out[id] = normaliseScenarioCamera(value);
     else if (typeof console !== "undefined") {
       console.warn(`authoredScenarios.json: dropping "${id}" — not a MatchScenario`);
     }
