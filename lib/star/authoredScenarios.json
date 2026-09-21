@@ -207,8 +207,8 @@
         {
           "id": "i4",
           "side": "opponent",
-          "x": 32.87,
-          "y": 2.2,
+          "x": 35.3,
+          "y": 2.09,
           "label": "GK"
         },
         {
@@ -240,7 +240,7 @@
           "label": "YOU"
         }
       ],
-      "updatedAt": 1789999198751,
+      "updatedAt": 1789999230933,
       "source": {
         "tool": "gallery",
         "kind": "one_on_one",
