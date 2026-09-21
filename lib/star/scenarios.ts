@@ -106,7 +106,10 @@ export interface MatchScenario {
    * rather than in a second table is what lets both tools share one pool.
    */
   source?: {
-    tool: "gallery";
+    /** "gallery" — the Scenario Gallery's version screen; "highlights" —
+     *  Infinite Highlights' own editor. Each indexes only its OWN rows (by
+     *  tool AND by id prefix), so the two pools never read each other's. */
+    tool: "gallery" | "highlights";
     /** The canvasEngine chance kind this was built from. */
     kind: string;
     seed: number | null;

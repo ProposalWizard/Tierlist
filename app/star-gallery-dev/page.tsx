@@ -25,14 +25,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SCENARIO_KINDS,
   buildScenario,
-  goalInView,
   type Scenario,
   type ScenarioKind,
   type Vec2,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { FIVE_A_SIDE, type MatchRules } from "@/lib/star/fiveASide/rules";
-import { projectionFor, type FigureLook } from "@/lib/star/fiveASide/render";
 import { defensiveShape, DEFEND_ROLES } from "@/lib/star/fiveASide/shape";
 import { attackingShape, ATTACK_ROLES } from "@/lib/star/fiveASide/attack";
 import { buildPassage, type FiveWorld } from "@/lib/star/fiveASide/passage";
@@ -51,7 +49,7 @@ import {
   type SimSpec,
 } from "@/lib/star/gallerySim";
 import ScenarioEditor from "@/components/star/ScenarioEditor";
-import type { MatchScenario, ScenarioSide, ScenarioMomentKind } from "@/lib/star/scenarios";
+import type { MatchScenario, ScenarioSide } from "@/lib/star/scenarios";
 import {
   listScenarios,
   fetchSharedScenarios,
@@ -67,22 +65,32 @@ import {
 } from "@/lib/star/scenarioReview";
 
 import {
-  YOU, OPP, KEEP, MATE, FACE, FAKE,
-  idLabel,
+  OPP, MATE,
   frameFromScenario,
-  computeOffside,
   frameCssSize,
   paint,
   paintMarked,
-  marksForFaults,
-  splitFaults,
-  attackersOf,
-  HIT_FIGURE_R,
-  HIT_BODY_UP,
   type Item,
   type Frame,
   type Mark,
 } from "@/lib/star/scenarioFrame";
+import EditableFrame from "@/components/star/EditableFrame";
+import {
+  applyOverride,
+  applyOverrideToScenario,
+  addFigureTo,
+  removeFigureFrom,
+  analyseEdited,
+  hasEdits,
+  frameToMatchScenario,
+  loadEditStore,
+  mergeOverrides,
+  overrideFromMatchScenario,
+  roundVec,
+  saveEditStore,
+  type EditStore,
+  type PosOverride,
+} from "@/lib/star/scenarioEdit";
 
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -201,22 +209,16 @@ function liveAnalysis(
   overrides: (PosOverride | undefined)[],
 ): { faults: string[]; intended: string[]; marks: Mark[] } {
   if (cell.game !== "eleven" || cell.seed === null) return { faults: [], intended: [], marks: [] };
-  const sc = rebuildScenario(cell);
-  applyOverrideToScenario(sc, mergeOverrides(overrides));
   // A simulated picture is judged by `planFaults` (chanceFormula.ts), which is
   // `scenarioFaults` plus the camera's own rules — the same judgement the
   // formula's own harness makes. A base version has no plan and is judged by
   // `scenarioFaults` alone, exactly as before.
-  const raw = cell.sim ? simFaults(sc, cell.sim.planId) : scenarioFaults(sc);
-  const split = splitFaults(cell.kind, raw);
-  return {
-    faults: split.faults,
-    intended: split.intended,
-    marks: [
-      ...marksForFaults(sc, split.faults, "red"),
-      ...marksForFaults(sc, split.intended, "amber"),
-    ],
-  };
+  return analyseEdited(
+    cell.kind,
+    () => rebuildScenario(cell),
+    (sc) => (cell.sim ? simFaults(sc, cell.sim.planId) : scenarioFaults(sc)),
+    overrides,
+  );
 }
 
 // ── The across-formations comparison (desktop only) ──
@@ -248,58 +250,6 @@ function oppXIFromFormationId(id: string): OpponentSheetPlayer[] {
   }));
 }
 
-/**
- * Push a frame's edited positions BACK onto a real `Scenario`, in the exact
- * order `frameFromScenario` pushed them out — so the formation transform is
- * applied to the scenario you are actually looking at, not the raw build.
- */
-function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefined): void {
-  if (!hasEdits(ov)) return;
-  const at = (i: number) => ov!.items[String(i)];
-  const gone = new Set(ov!.removed ?? []);
-  const isGone = (i: number) => gone.has(String(i));
-
-  // Which base index each part of the scenario occupies — the same walk
-  // `frameFromScenario` does, recorded as it goes so a removal knows which
-  // array to splice.
-  const defIdx: number[] = [];
-  const secIdx: number[] = [];
-  const mateIdx: number[] = [];
-  let runnerIdx = -1;
-
-  let i = 0;
-  for (const d of sc.defenders) { defIdx.push(i); const p = at(i++); if (p) { d.x = p.x; d.y = p.y; } }
-  { const p = at(i++); if (p) { sc.keeper.x = p.x; sc.keeper.y = p.y; } }
-  if (sc.runner) { runnerIdx = i; const p = at(i++); if (p) { sc.runner.pos.x = p.x; sc.runner.pos.y = p.y; } }
-  for (const r of sc.secondaryRunners) { secIdx.push(i); const p = at(i++); if (p) { r.pos.x = p.x; r.pos.y = p.y; } }
-  if (goalInView(sc.kind)) { const p = at(i++); if (p) { sc.follower.x = p.x; sc.follower.y = p.y; } }
-  for (const t of sc.teammates) { mateIdx.push(i); const p = at(i++); if (p) { t.x = p.x; t.y = p.y; } }
-  { const p = at(i++); if (p) { sc.player.x = p.x; sc.player.y = p.y; } }
-  if (ov!.ball) { sc.ball.x = ov!.ball.x; sc.ball.y = ov!.ball.y; }
-
-  // ── Figures taken OUT ──
-  // Descending, so an earlier splice never shifts a later one. Only the
-  // arrays a body can honestly be removed from: the keeper, the poacher and
-  // you are not offered as removable in the editor, so they are never here.
-  for (let k = mateIdx.length - 1; k >= 0; k--) if (isGone(mateIdx[k])) sc.teammates.splice(k, 1);
-  for (let k = secIdx.length - 1; k >= 0; k--) if (isGone(secIdx[k])) sc.secondaryRunners.splice(k, 1);
-  if (runnerIdx >= 0 && isGone(runnerIdx)) { sc.runner = null; sc.passTarget = null; }
-  for (let k = defIdx.length - 1; k >= 0; k--) if (isGone(defIdx[k])) sc.defenders.splice(k, 1);
-
-  // ── Figures put IN ──
-  // An opponent becomes a real defender, so the offside line and every fault
-  // rule genuinely count him. A team-mate becomes one of `sc.teammates` — the
-  // decorative bodies a crosser or a box-filler already is — deliberately NOT
-  // a runner, because a runner is a PASS TARGET and adding one would change
-  // what the chance is, not just who is standing in it.
-  for (const a of ov!.added ?? []) {
-    const p = ov!.items[a.id];
-    if (!p || gone.has(a.id)) continue;
-    if (a.side === "opponent") sc.defenders.push({ x: p.x, y: p.y, role: "hold", baseRole: "hold" });
-    else if (a.side === "teammate") sc.teammates.push({ x: p.x, y: p.y });
-  }
-}
-
 /** The SAME base scenario (edits and all), re-cast and reshaped against one
  *  opponent formation. */
 function shapedFrame(
@@ -328,71 +278,20 @@ function shapedFrame(
 
 const gallerySlug = (cellKey: string) => `gallery-${cellKey}`;
 
-/** MatchScenario.kind names dead-ball/kickoff MOMENTS — a different list from
- *  the engine's chance kinds on purpose. Only three of them line up. */
-function momentKindFor(chanceKind: string): ScenarioMomentKind {
-  if (chanceKind === "corner") return "corner";
-  if (chanceKind === "free_kick" || chanceKind === "penalty") return "free_kick";
-  return "open_play";
-}
+/** Unsaved drags, this screen's own bucket — the exact key every edit already
+ *  on disk was written under. */
+const EDIT_KEY = "star-gallery-edits-v1";
 
-// +0 turns a rounded -0 back into 0 so the JSON never reads "-0".
-const round2 = (v: number) => Math.round(v * 100) / 100 + 0;
-const roundVec = (v: Vec2) => ({ x: round2(v.x), y: round2(v.y) });
-
-function frameToMatchScenario(cell: Cell, frame: Frame): MatchScenario {
-  const vp = frame.camera;
-  return {
-    id: gallerySlug(cell.key),
-    name: cell.title,
-    kind: momentKindFor(cell.kind),
-    camera: {
-      centerX: round2((vp.x1 + vp.x2) / 2),
-      centerY: round2((vp.y1 + vp.y2) / 2),
-      viewHeight: round2(vp.y2 - vp.y1),
-      facing: "up",
-    },
-    ball: roundVec(frame.ball),
-    // `i0`, `i1`, … for the builder's own figures (the exact ids this has
-    // always written, so a scenario saved before the editor could add or
-    // remove anyone still loads), `iadd1`, `iadd2`, … for added ones. A
-    // builder figure that was REMOVED is simply not in the list, which is how
-    // a removal survives a save.
-    players: frame.items.map((it) => ({
-      id: `i${it.id}`,
-      side: it.side,
-      x: round2(it.at.x),
-      y: round2(it.at.y),
-      label: it.look.label,
-    })),
-    updatedAt: Date.now(),
-    source: { tool: "gallery", kind: cell.kind, seed: cell.seed, planId: cell.sim?.planId ?? null },
-  };
-}
-
-/** The saved positions, back as the gallery's own index-keyed override — so a
- *  saved scenario is applied through the exact same path a live drag is. */
-function overrideFromMatchScenario(ms: MatchScenario, baseCount: number): PosOverride {
-  const items: Record<string, Vec2> = {};
-  const added: { id: string; side: ScenarioSide }[] = [];
-  const seenBase = new Set<string>();
-  ms.players.forEach((p, i) => {
-    const id = p.id.startsWith("i") ? p.id.slice(1) : String(i);
-    items[id] = { x: p.x, y: p.y };
-    if (/^\d+$/.test(id)) seenBase.add(id);
-    else added.push({ id, side: p.side });
-  });
-  // Any builder figure the saved picture does not contain was taken out in
-  // the editor — the absence IS the removal.
-  const removed: string[] = [];
-  for (let i = 0; i < baseCount; i++) if (!seenBase.has(String(i))) removed.push(String(i));
-  return {
-    items,
-    ball: { x: ms.ball.x, y: ms.ball.y },
-    removed: removed.length ? removed : undefined,
-    added: added.length ? added : undefined,
-  };
-}
+/** This screen's half of `frameToMatchScenario`'s target: who is saving, and
+ *  under what id. Byte-identical to what this page has always written. */
+const saveTargetFor = (cell: Cell) => ({
+  id: gallerySlug(cell.key),
+  name: cell.title,
+  kind: cell.kind,
+  seed: cell.seed,
+  planId: cell.sim?.planId ?? null,
+  tool: "gallery" as const,
+});
 
 /** The clean ground-truth record for one edited cell. */
 function exportRecord(cell: Cell, edited: Frame) {
@@ -555,192 +454,6 @@ function fiveVersions(group: string): Cell[] {
 // ─────────────────────────────────────────────────────────────────────────
 //  EDITS — drag overrides on top of the builder's own output
 // ─────────────────────────────────────────────────────────────────────────
-
-/**
- * A per-cell set of editor changes.
- *
- * `items` is keyed by `Item.id` — `"0"`, `"1"`, … for a figure the builder
- * made (the same numbers this store has always used, so every edit already on
- * disk still reads), `"add1"`, `"add2"`, … for one added here. Keying by
- * identity rather than array position is what lets a figure be removed without
- * shifting every later figure's edit onto the wrong man.
- */
-interface PosOverride {
-  items: Record<string, Vec2>;
-  ball?: Vec2;
-  /** Item ids hidden — a defender taken out of the picture. */
-  removed?: string[];
-  /** Figures put INTO the picture. Their position lives in `items`, same as
-   *  everyone else's, so a new figure is dragged and saved by exactly the
-   *  same path a built-in one is. */
-  added?: { id: string; side: ScenarioSide }[];
-}
-type EditStore = Record<string, PosOverride>;
-
-const EDIT_KEY = "star-gallery-edits-v1";
-
-function loadEdits(): EditStore {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(EDIT_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as EditStore) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveEdits(store: EditStore): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(EDIT_KEY, JSON.stringify(store));
-  } catch {
-    /* a dev tool is not worth crashing over a full quota */
-  }
-}
-
-/** Does this override actually move anything? An empty one is "untouched". */
-function hasEdits(ov: PosOverride | undefined): boolean {
-  return !!ov && (
-    Object.keys(ov.items).length > 0
-    || !!ov.ball
-    || !!ov.removed?.length
-    || !!ov.added?.length
-  );
-}
-
-function cloneOverride(ov: PosOverride | undefined): PosOverride {
-  const items: Record<string, Vec2> = {};
-  if (ov) for (const k of Object.keys(ov.items)) items[k] = { ...ov.items[k] };
-  return {
-    items,
-    ball: ov?.ball ? { ...ov.ball } : undefined,
-    removed: ov?.removed ? [...ov.removed] : undefined,
-    added: ov?.added ? ov.added.map((a) => ({ ...a })) : undefined,
-  };
-}
-
-const lookFor = (side: ScenarioSide): Omit<FigureLook, "label" | "star"> =>
-  side === "opponent" ? OPP : side === "you" ? YOU : MATE;
-
-/**
- * A paint-ready frame with the editor's changes applied over the builder's.
- *
- * Applied in one pass, by id: a removed figure drops out, a moved one moves,
- * and an added one is appended. Composes — the saved scenario is applied
- * first and a live drag on top of it, and because everything is keyed by id
- * the second pass can move or remove a figure the first pass added.
- */
-function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame {
-  if (!hasEdits(ov)) return frame;
-  const gone = new Set(ov!.removed ?? []);
-  const items: Item[] = [];
-  for (const it of frame.items) {
-    if (gone.has(it.id)) continue;
-    items.push(ov!.items[it.id] ? { ...it, at: { ...ov!.items[it.id] } } : it);
-  }
-  const present = new Set(items.map((it) => it.id));
-  for (const a of ov!.added ?? []) {
-    if (gone.has(a.id) || present.has(a.id)) continue;
-    const at = ov!.items[a.id];
-    if (!at) continue;
-    items.push({
-      id: a.id,
-      at: { ...at },
-      look: { ...lookFor(a.side), label: a.side === "opponent" ? "OPP" : "MATE" },
-      side: a.side,
-      removable: true,
-    });
-  }
-  const ball = ov!.ball ? { ...ov!.ball } : frame.ball;
-  return { ...frame, items, ball };
-}
-
-/**
- * Where a newly added figure goes: the emptiest sensible spot inside the frame.
- *
- * Candidates are a fixed grid inset from the camera's own edges (so nobody is
- * ever dropped half off screen), scored on how far they are from everyone
- * already standing there, with a pull toward the part of the pitch that side
- * belongs in — an opponent between the ball and the goal he is defending, a
- * team-mate alongside the ball. Deterministic: the same picture and the same
- * side always put him in the same place.
- */
-function freeSpotFor(frame: Frame, side: ScenarioSide): Vec2 {
-  const vp = frame.camera;
-  // Enough room that his NAME, drawn above his head, is inside the frame too.
-  const inset = 3.2;
-  const x1 = vp.x1 + inset, x2 = vp.x2 - inset;
-  const y1 = vp.y1 + inset, y2 = vp.y2 - inset;
-  const goalY = frame.goalAtY ?? y1;
-  const wantY = side === "opponent"
-    ? (frame.ball.y + goalY) / 2
-    : frame.ball.y - (frame.ball.y - goalY) * 0.25;
-
-  let best: Vec2 = { x: (x1 + x2) / 2, y: wantY };
-  let bestScore = -Infinity;
-  const COLS = 7, ROWS = 9;
-  for (let c = 0; c < COLS; c++) {
-    for (let r = 0; r < ROWS; r++) {
-      const at = {
-        x: x1 + ((x2 - x1) * (c + 0.5)) / COLS,
-        y: y1 + ((y2 - y1) * (r + 0.5)) / ROWS,
-      };
-      let near = Math.hypot(at.x - frame.ball.x, at.y - frame.ball.y);
-      for (const it of frame.items) {
-        near = Math.min(near, Math.hypot(at.x - it.at.x, at.y - it.at.y));
-      }
-      // Room first, then the right part of the pitch for his own shirt.
-      const score = Math.min(near, 6) * 2 - Math.abs(at.y - wantY) * 0.35;
-      if (score > bestScore) { bestScore = score; best = at; }
-    }
-  }
-  return best;
-}
-
-/**
- * Two sets of changes as one.
- *
- * The saved scenario and a live drag on top of it are separate overrides, and
- * `applyOverrideToScenario` walks the scenario's own arrays as it goes — so
- * applying them one after another would have the SECOND walk counting a back
- * line the FIRST had already added to or spliced, and putting every edit after
- * that on the wrong man. Merged first, there is only ever one walk.
- */
-function mergeOverrides(ovs: (PosOverride | undefined)[]): PosOverride | undefined {
-  const real = ovs.filter((o): o is PosOverride => hasEdits(o));
-  if (real.length === 0) return undefined;
-  if (real.length === 1) return real[0];
-  const items: Record<string, Vec2> = {};
-  const removed = new Set<string>();
-  const added: { id: string; side: ScenarioSide }[] = [];
-  let ball: Vec2 | undefined;
-  for (const ov of real) {
-    for (const k of Object.keys(ov.items)) items[k] = { ...ov.items[k] };
-    for (const r of ov.removed ?? []) removed.add(r);
-    for (const a of ov.added ?? []) if (!added.some((x) => x.id === a.id)) added.push({ ...a });
-    if (ov.ball) ball = { ...ov.ball };
-  }
-  return {
-    items,
-    ball,
-    removed: removed.size ? Array.from(removed) : undefined,
-    added: added.length ? added : undefined,
-  };
-}
-
-/** The next free `add…` id for a cell, given everything already on it. */
-function nextAddedId(ovs: (PosOverride | undefined)[]): string {
-  let max = 0;
-  for (const ov of ovs) {
-    for (const a of ov?.added ?? []) {
-      const n = Number(a.id.replace(/^add/, ""));
-      if (Number.isFinite(n) && n > max) max = n;
-    }
-  }
-  return `add${max + 1}`;
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 //  LOOK
@@ -1011,168 +724,6 @@ function ChipRow({
 //  SCREEN 3 — ONE VERSION, big, draggable
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * The editable frame. Drag any figure or the ball; the grabbed point stays
- * under the pointer (a rigid translate, not a snap), so the inverse of
- * `projectionFor` has to be exact. A live drag repaints THIS canvas directly,
- * committing to the shared edit store on release.
- */
-function EditableFrame({
-  cell, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe,
-}: {
-  cell: Cell;
-  baseFrame: Frame;
-  override: PosOverride | undefined;
-  marks: Mark[];
-  onCommit: (key: string, ov: PosOverride) => void;
-  edited: boolean;
-  /** Which figure is tapped, for the add/remove controls under the picture. */
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  /** A flick across empty grass — never across a figure, which is a drag. */
-  onSwipe?: (dir: 1 | -1) => void;
-}) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
-  const workingRef = useRef<PosOverride | null>(null);
-  const dragRef = useRef<{ target: "ball" | string; offX: number; offY: number } | null>(null);
-  /** Where a press that grabbed NOTHING started, so it can become a swipe. */
-  const swipeRef = useRef<{ x: number; y: number } | null>(null);
-
-  const { cssW, cssH } = frameCssSize(baseFrame);
-  const vp = baseFrame.camera;
-
-  const effectiveOverride = (): PosOverride | undefined => workingRef.current ?? override;
-  const currentFrame = (): Frame => applyOverride(baseFrame, effectiveOverride());
-  const repaint = (live: boolean): void => {
-    if (!ref.current) return;
-    const frame = currentFrame();
-    const sel = frame.items.find((it) => it.id === selectedId);
-    const ring: Mark[] = sel ? [{ at: { ...sel.at }, tone: "select" }] : [];
-    // Mid-drag the fault rings would be stale (they are derived from a rebuilt
-    // scenario, not the canvas), so the picture drops them and gets them back
-    // the instant the drag commits. The selection ring stays — it is the thing
-    // under your finger.
-    paintMarked(ref.current, frame, live ? ring : [...marks, ...ring]);
-  };
-
-  useEffect(() => {
-    repaint(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, baseFrame, override, marks, selectedId]);
-
-  function pointerToWorld(e: React.PointerEvent<HTMLCanvasElement>): Vec2 {
-    const rect = ref.current!.getBoundingClientRect();
-    const cx = (e.clientX - rect.left) * (cssW / (rect.width || cssW));
-    const cy = (e.clientY - rect.top) * (cssH / (rect.height || cssH));
-    return {
-      x: cx * ((vp.x2 - vp.x1) / cssW) + vp.x1,
-      y: cy * ((vp.y2 - vp.y1) / cssH) + vp.y1,
-    };
-  }
-
-  /** Nearest grabbable to a world point, or null. Figures are grabbed by their
-   *  mid-body (drawn above the feet anchor); the ball by its centre. */
-  function grabTargetAt(world: Vec2): "ball" | string | null {
-    const frame = currentFrame();
-    const p = projectionFor(frame.rules, cssW, cssH, frame.camera);
-    const r = Math.max(7, p.unit * HIT_FIGURE_R);
-    const wx = p.px(world.x), wy = p.py(world.y);
-    let best: "ball" | string | null = null;
-    let bestD = Infinity;
-    frame.items.forEach((it) => {
-      const sx = p.px(it.at.x);
-      const sy = p.py(it.at.y) - r * HIT_BODY_UP;
-      const d = Math.hypot(sx - wx, sy - wy);
-      if (d < r * 1.15 && d < bestD) { bestD = d; best = it.id; }
-    });
-    const bd = Math.hypot(p.px(frame.ball.x) - wx, p.py(frame.ball.y) - wy);
-    if (bd < Math.max(14, r * 0.6) && bd < bestD) { best = "ball"; }
-    return best;
-  }
-
-  const clampToView = (v: Vec2): Vec2 => ({
-    x: Math.max(vp.x1, Math.min(vp.x2, v.x)),
-    y: Math.max(vp.y1, Math.min(vp.y2, v.y)),
-  });
-
-  function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (e.button !== 0) return;
-    const world = pointerToWorld(e);
-    const target = grabTargetAt(world);
-    if (target === null) {
-      onSelect(null);
-      swipeRef.current = { x: e.clientX, y: e.clientY };
-      return;
-    }
-    swipeRef.current = null;
-    e.preventDefault();
-    onSelect(target === "ball" ? null : target);
-    const frame = currentFrame();
-    const at = target === "ball" ? frame.ball : frame.items.find((it) => it.id === target)!.at;
-    dragRef.current = { target, offX: at.x - world.x, offY: at.y - world.y };
-    workingRef.current = cloneOverride(effectiveOverride());
-    ref.current?.setPointerCapture(e.pointerId);
-    if (ref.current) ref.current.style.cursor = "grabbing";
-  }
-
-  function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    const drag = dragRef.current;
-    if (!drag) {
-      if (ref.current) {
-        const t = grabTargetAt(pointerToWorld(e));
-        ref.current.style.cursor = t === null ? "default" : "grab";
-      }
-      return;
-    }
-    const world = pointerToWorld(e);
-    const next = clampToView({ x: world.x + drag.offX, y: world.y + drag.offY });
-    const wk = workingRef.current ?? { items: {} };
-    if (drag.target === "ball") wk.ball = next;
-    else wk.items[drag.target] = next;
-    workingRef.current = wk;
-    repaint(true);
-  }
-
-  function endDrag(e: React.PointerEvent<HTMLCanvasElement>) {
-    const drag = dragRef.current;
-    if (!drag) {
-      const sw = swipeRef.current;
-      swipeRef.current = null;
-      if (sw && onSwipe) {
-        const dx = e.clientX - sw.x;
-        const dy = e.clientY - sw.y;
-        if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.4) onSwipe(dx < 0 ? 1 : -1);
-      }
-      return;
-    }
-    dragRef.current = null;
-    const wk = workingRef.current;
-    workingRef.current = null;
-    try { ref.current?.releasePointerCapture(e.pointerId); } catch { /* already released */ }
-    if (ref.current) ref.current.style.cursor = "grab";
-    if (wk) onCommit(cell.key, wk);
-  }
-
-  return (
-    <canvas
-      ref={ref}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-      style={{
-        display: "block",
-        margin: "0 auto",
-        borderRadius: 20,
-        background: "#14532d",
-        cursor: "grab",
-        touchAction: "none",
-        border: edited ? "2px solid #38bdf8" : "2px solid rgba(255,255,255,0.06)",
-      }}
-    />
-  );
-}
-
 /** One read-only canvas, for the across-formations comparison. */
 function MiniFrame({ frame, label, note }: { frame: Frame; label: string; note: string }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
@@ -1305,7 +856,7 @@ export default function StarGalleryDevPage() {
   // ── Edits ──
   const [edits, setEdits] = useState<EditStore>({});
   useEffect(() => {
-    const loaded = loadEdits();
+    const loaded = loadEditStore(EDIT_KEY);
     if (Object.keys(loaded).length) setEdits(loaded);
   }, []);
 
@@ -1314,7 +865,7 @@ export default function StarGalleryDevPage() {
       let next: EditStore;
       if (hasEdits(ov)) next = { ...prev, [key]: ov };
       else { next = { ...prev }; delete next[key]; }
-      saveEdits(next);
+      saveEditStore(EDIT_KEY, next);
       return next;
     });
   }, []);
@@ -1322,7 +873,7 @@ export default function StarGalleryDevPage() {
     setEdits((prev) => {
       const next = { ...prev };
       delete next[key];
-      saveEdits(next);
+      saveEditStore(EDIT_KEY, next);
       return next;
     });
   }, []);
@@ -1423,7 +974,7 @@ export default function StarGalleryDevPage() {
   /** "Saved" only ever means the SERVER said so. */
   const saveCell = async (cell: Cell, frame: Frame): Promise<void> => {
     setBusy("saving");
-    const scenario = frameToMatchScenario(cell, frame);
+    const scenario = frameToMatchScenario(saveTargetFor(cell), frame);
     const res = await saveScenarioShared(scenario);
     setBusy(null);
     if (res.migrationMissing) setMigrationMissing(true);
@@ -1448,7 +999,7 @@ export default function StarGalleryDevPage() {
    *  two lost races all land in the same red line, quoting the server. */
   const commitCell = async (cell: Cell, frame: Frame): Promise<void> => {
     setBusy("committing");
-    const scenario = frameToMatchScenario(cell, frame);
+    const scenario = frameToMatchScenario(saveTargetFor(cell), frame);
     let res: Response;
     try {
       res = await fetch("/api/star/scenarios/commit", {
@@ -1705,25 +1256,13 @@ export default function StarGalleryDevPage() {
   const canRemove = !!selectedItem?.removable;
 
   const addFigure = (side: ScenarioSide) => {
-    const id = nextAddedId([savedOv, override]);
-    const ov = cloneOverride(override);
-    ov.items[id] = freeSpotFor(liveFrame, side);
-    ov.added = [...(ov.added ?? []), { id, side }];
+    const { override: ov, id } = addFigureTo(liveFrame, side, override, [savedOv]);
     setOverride(cell.key, ov);
     setSelectedId(id);
   };
 
   const removeFigure = (id: string) => {
-    const ov = cloneOverride(override);
-    if ((ov.added ?? []).some((a) => a.id === id)) {
-      // Added and removed in the same sitting — drop him outright rather than
-      // leaving a figure on the books that is also on the hidden list.
-      ov.added = (ov.added ?? []).filter((a) => a.id !== id);
-      delete ov.items[id];
-    } else {
-      ov.removed = [...(ov.removed ?? []), id];
-    }
-    setOverride(cell.key, ov);
+    setOverride(cell.key, removeFigureFrom(id, override));
     setSelectedId(null);
   };
 
@@ -1782,7 +1321,7 @@ export default function StarGalleryDevPage() {
     <div style={{ padding: "12px 14px 24px" }}>
       <div style={{ position: "relative" }}>
         <EditableFrame
-          cell={cell}
+          editKey={cell.key}
           baseFrame={baseFrame}
           override={override}
           marks={analysis.marks}

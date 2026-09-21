@@ -1,29 +1,35 @@
 "use client";
 
 /**
- * INFINITE HIGHLIGHTS — a hundred real chances, as fast as you can press Next.
+ * INFINITE HIGHLIGHTS — a hundred real chances, as fast as you can press Next,
+ * and the tools to fix one without leaving the screen.
  *
  * Asked for directly: "infinite highlight mode, where I can toggle out of all
  * the highlights in the game. I can toggle which ones I want on — one-on-ones,
- * long shots, free kicks — and then it will choose between just those."
+ * long shots, free kicks — and then it will choose between just those." Then,
+ * once it existed: "the actual infinite highlights page should also have the
+ * editor tools in there." Flagging a bad chance and then having to go and hunt
+ * for it in the gallery to move one defender is two screens for one job.
  *
  * WHY IT EXISTS. A camera change shipped broken because it was signed off on a
  * measurement of the wrong code path. A test that measures the wrong path
  * passes; a person flicking through a hundred real chances catches it in a
  * minute. So the only thing this screen optimises for is how fast somebody can
- * SEE chances and flag the bad ones — one big Next, arrow keys, swipe, one tap
- * to flag.
+ * SEE chances, flag the bad ones and correct one on the spot.
  *
- * NOTHING HERE GENERATES A CHANCE. Every picture comes off the match's own path
- * — `selectChance` → `buildScenario` → `fixBaseScenario` → `applyChancePlan` —
- * through `nextHighlight` (lib/star/gallerySim.ts), and is drawn by the same
- * `paintMarked` the gallery draws with (lib/star/scenarioFrame.ts). A second
- * generator or a second renderer would quietly disagree with the game, and the
- * disagreement would be invisible, which is the exact failure this tool exists
- * to catch.
+ * NOTHING HERE GENERATES A CHANCE, DRAWS ONE, OR EDITS ONE ON ITS OWN. Every
+ * picture comes off the match's own path — `selectChance` → `buildScenario` →
+ * `fixBaseScenario` → `applyChancePlan` — through `nextHighlight`
+ * (lib/star/gallerySim.ts); it is drawn by the same `paintMarked` the gallery
+ * draws with (lib/star/scenarioFrame.ts); and it is dragged, added to, emptied
+ * and saved through the same `EditableFrame` + `scenarioEdit.ts` the gallery's
+ * version screen uses. A second generator, renderer or editor would quietly
+ * disagree with the game and with the gallery, and the disagreement would be
+ * invisible — which is the exact failure this tool exists to catch.
  *
  * Everything is SEEDED. A chance is `{ kind, seed, planId }`, so a flagged one
- * rebuilds to the identical picture on any device, any day.
+ * — and every edit made to it — rebuilds to the identical picture on any
+ * device, any day.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -41,11 +47,32 @@ import {
 import {
   frameFromScenario,
   paintMarked,
-  marksForFaults,
-  splitFaults,
   type Frame,
   type Mark,
 } from "@/lib/star/scenarioFrame";
+import EditableFrame from "@/components/star/EditableFrame";
+import {
+  addFigureTo,
+  analyseEdited,
+  applyOverride,
+  frameToMatchScenario,
+  hasEdits,
+  loadEditStore,
+  overrideFromMatchScenario,
+  removeFigureFrom,
+  saveEditStore,
+  NO_FAULTS,
+  type Analysis,
+  type EditStore,
+  type PosOverride,
+} from "@/lib/star/scenarioEdit";
+import type { MatchScenario, ScenarioSide } from "@/lib/star/scenarios";
+import {
+  listScenarios,
+  fetchSharedScenarios,
+  saveScenarioShared,
+  deleteScenarioShared,
+} from "@/lib/star/scenarioStore";
 import {
   loadKinds, saveKinds, allKinds,
   loadFlags, saveFlags, flagId, specOf,
@@ -70,83 +97,147 @@ const KIND_ORDER: ScenarioKind[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
-//  ONE CHANCE — built, judged and framed. Exactly the gallery's own path.
+//  HOW AN EDIT MADE HERE IS ADDRESSED
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * A chance on this screen has no "cell" to be the fifth version of — it is a
+ * chance the generator rolled, and the only thing that names it is the thing
+ * that rebuilds it: kind + seed + plan id, which is exactly `flagId`. So an
+ * edit is keyed by that, and a SAVED one lands at `highlight-<that>`.
+ *
+ * Deliberately a different namespace from the gallery's `gallery-<cellKey>`:
+ * the gallery addresses a fixed version of a kind, this addresses one rolled
+ * chance, and the same seed can mean different pictures under different plans
+ * (a gallery sim key drops the plan id; this one keeps it). Each screen reads
+ * back only its own rows — by tool AND by id prefix — so neither can pick up
+ * or overwrite the other's work.
+ */
+const EDIT_KEY = "star-highlights-edits-v1";
+const highlightSlug = (spec: SimSpec) => `highlight-${flagId(spec)}`;
+
+const saveTargetFor = (spec: SimSpec) => ({
+  id: highlightSlug(spec),
+  name: `${kindLabel(spec.kind)} #${spec.seed}`,
+  kind: spec.kind as string,
+  seed: spec.seed,
+  planId: spec.planId,
+  tool: "highlights" as const,
+});
+
+function indexHighlights(all: MatchScenario[]): Record<string, MatchScenario> {
+  const out: Record<string, MatchScenario> = {};
+  for (const sc of all) {
+    if (sc.source?.tool === "highlights" && sc.id.startsWith("highlight-")) out[sc.id] = sc;
+  }
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  ONE CHANCE — built and framed. Exactly the gallery's own path.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A chance as it came out of the generator.
+ *
+ * Deliberately holds NO faults and NO rings. Those are re-derived from the
+ * current edits every render (`analysisFor`), because the whole point of the
+ * editor is that dragging a defender changes what is wrong with the picture —
+ * a fault captured once at build time would be a stale answer to a question
+ * that has moved.
+ */
 interface Shot {
   spec: SimSpec;
-  frame: Frame;
-  marks: Mark[];
-  /** What is genuinely wrong, in plain English. Red. */
-  faults: string[];
-  /** A through ball's early runner — the chance, not a fault. Amber. */
-  intended: string[];
+  /** The builder's own frame, before any edit. */
+  base: Frame;
   /** Every body on the pitch to the metre, for the repeat check. */
   picture: string;
 }
 
 function buildShot(spec: SimSpec): Shot {
   const sc = buildSimScenario(spec);
-  const split = splitFaults(spec.kind, simFaults(sc, spec.planId));
-  return {
-    spec,
-    frame: frameFromScenario(sc),
-    marks: [
-      ...marksForFaults(sc, split.faults, "red"),
-      ...marksForFaults(sc, split.intended, "amber"),
-    ],
-    faults: split.faults,
-    intended: split.intended,
-    picture: pictureKey(sc),
-  };
+  return { spec, base: frameFromScenario(sc), picture: pictureKey(sc) };
 }
 
-/** A canvas is painted at a fixed CSS width; on a narrow phone it has to come
- *  down to fit, keeping its own aspect (the attributes carry it). */
-function fitCanvas(c: HTMLCanvasElement): void {
-  c.style.maxWidth = "100%";
-  c.style.height = "auto";
-  c.style.display = "block";
-}
-
-function ShotCanvas({ shot, onSwipe }: { shot: Shot; onSwipe?: (dir: 1 | -1) => void }) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
-  const down = useRef<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    paintMarked(ref.current, shot.frame, shot.marks);
-    fitCanvas(ref.current);
-  }, [shot]);
-
-  return (
-    <canvas
-      ref={ref}
-      style={{ borderRadius: 16, touchAction: "pan-y" }}
-      onPointerDown={(e) => { down.current = { x: e.clientX, y: e.clientY }; }}
-      onPointerUp={(e) => {
-        const d = down.current;
-        down.current = null;
-        if (!d || !onSwipe) return;
-        const dx = e.clientX - d.x;
-        const dy = e.clientY - d.y;
-        if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.4) onSwipe(dx < 0 ? 1 : -1);
-      }}
-    />
+/** What is wrong with this chance AS IT NOW STANDS — the saved correction and
+ *  the unsaved drag both counted. One call, the gallery's own. */
+function analysisFor(spec: SimSpec, overrides: (PosOverride | undefined)[]): Analysis {
+  return analyseEdited(
+    spec.kind,
+    () => buildSimScenario(spec),
+    (sc) => simFaults(sc, spec.planId),
+    overrides,
   );
 }
 
 /** The flagged list's small picture. Same paint, scaled down by the browser. */
-function FlagThumb({ shot }: { shot: Shot }) {
+function FlagThumb({ frame, marks }: { frame: Frame; marks: Mark[] }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     if (!ref.current) return;
-    paintMarked(ref.current, shot.frame, shot.marks);
+    paintMarked(ref.current, frame, marks);
     ref.current.style.width = "72px";
     ref.current.style.height = "auto";
     ref.current.style.display = "block";
-  }, [shot]);
+  }, [frame, marks]);
   return <canvas ref={ref} style={{ borderRadius: 10, flex: "none" }} />;
+}
+
+/** One row of the flagged list — its own component so each rebuilds and
+ *  re-judges its own chance, edits and all, rather than the list doing it. */
+function FlagRow({
+  flag, saved, override, onShow,
+}: {
+  flag: FlaggedChance;
+  saved: MatchScenario | undefined;
+  override: PosOverride | undefined;
+  onShow: (shot: Shot) => void;
+}) {
+  const spec = specOf(flag);
+  const shot = useMemo(() => buildShot(spec), [flag.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items.length) : undefined;
+  const frame = applyOverride(applyOverride(shot.base, savedOv), override);
+  const analysis = useMemo(
+    () => analysisFor(spec, [savedOv, override]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [flag.id, saved, override],
+  );
+  return (
+    <div
+      style={{
+        display: "flex", gap: 12, alignItems: "center", padding: 10,
+        borderRadius: 16, background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
+      }}
+    >
+      <FlagThumb frame={frame} marks={analysis.marks} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15.5, fontWeight: 800, textTransform: "capitalize" }}>
+          {kindLabel(flag.kind)}
+        </div>
+        <div
+          style={{
+            fontFamily: "ui-monospace, monospace", fontSize: 11, color: MUTED, marginTop: 2,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}
+          title={flag.planId ?? "base"}
+        >
+          #{flag.seed} · {flag.planId ?? "base"}
+        </div>
+        {analysis.faults.length > 0 && (
+          <div style={{ color: "#f87171", fontSize: 12.5, fontWeight: 700, marginTop: 3 }}>
+            {analysis.faults[0]}
+          </div>
+        )}
+        {saved && (
+          <div style={{ color: "#4ade80", fontSize: 12, fontWeight: 800, marginTop: 3 }}>Saved</div>
+        )}
+      </div>
+      <button style={{ ...roundBtn, flex: "none" }} aria-label="Show this one" onClick={() => onShow(shot)}>
+        &#8250;
+      </button>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -163,6 +254,8 @@ export default function HighlightsPage() {
   const [hist, setHist] = useState<Shot[]>([]);
   const [idx, setIdx] = useState(-1);
   const [ready, setReady] = useState(false);
+  /** Which figure is tapped, for the add/remove controls. */
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // A full-screen dev tool: the site's own nav and footer get out of the way,
   // exactly as /star-gallery-dev does it (globals.css's immersive class).
@@ -184,6 +277,49 @@ export default function HighlightsPage() {
 
   const selected = useMemo(() => new Set(kinds), [kinds]);
 
+  // ── Edits, exactly the gallery's store shape under this screen's own key ──
+  const [edits, setEdits] = useState<EditStore>({});
+  useEffect(() => {
+    const loaded = loadEditStore(EDIT_KEY);
+    if (Object.keys(loaded).length) setEdits(loaded);
+  }, []);
+  const setOverride = useCallback((key: string, ov: PosOverride) => {
+    setEdits((prev) => {
+      let next: EditStore;
+      if (hasEdits(ov)) next = { ...prev, [key]: ov };
+      else { next = { ...prev }; delete next[key]; }
+      saveEditStore(EDIT_KEY, next);
+      return next;
+    });
+  }, []);
+  const clearOverride = useCallback((key: string) => {
+    setEdits((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      saveEditStore(EDIT_KEY, next);
+      return next;
+    });
+  }, []);
+
+  // ── Saved corrections (the same pool the gallery and the Builder write) ──
+  const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
+  const [migrationMissing, setMigrationMissing] = useState(false);
+  const [busy, setBusy] = useState<"saving" | "reverting" | null>(null);
+  const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    setSaved(indexHighlights(listScenarios()));
+    void fetchSharedScenarios().then((r) => {
+      setSaved(indexHighlights(listScenarios()));
+      if (r.migrationMissing) setMigrationMissing(true);
+    });
+  }, []);
+
+  const flashFor = (ok: boolean, text: string) => {
+    setFlash({ ok, text });
+    window.setTimeout(() => setFlash(null), 6000);
+  };
+
   const draw = useCallback((): Shot | null => {
     const st = stream.current;
     if (!st || kinds.length === 0) return null;
@@ -202,6 +338,7 @@ export default function HighlightsPage() {
    * off the seeded stream for one press and quietly drop one of them.
    */
   const next = useCallback(() => {
+    setSelectedId(null);
     if (idx < hist.length - 1) { setIdx(idx + 1); return; }
     const shot = draw();
     if (!shot) return;
@@ -209,7 +346,10 @@ export default function HighlightsPage() {
     setIdx(hist.length);
   }, [idx, hist.length, draw]);
 
-  const prev = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
+  const prev = useCallback(() => {
+    setSelectedId(null);
+    setIdx((i) => Math.max(0, i - 1));
+  }, []);
 
   // First chance as soon as there is a stream to draw it from. Guarded by a
   // ref for the same strict-mode reason: the effect runs twice on mount.
@@ -222,6 +362,66 @@ export default function HighlightsPage() {
   }, [ready, kinds.length]);
 
   const shot = idx >= 0 ? hist[idx] : null;
+
+  // ── What is on screen right now: the builder's picture, the saved
+  //    correction on top of it, and whatever is being dragged on top of that ──
+  const editKey = shot ? flagId(shot.spec) : "";
+  const savedScenario = shot ? saved[highlightSlug(shot.spec)] : undefined;
+  const savedOv = shot && savedScenario
+    ? overrideFromMatchScenario(savedScenario, shot.base.items.length)
+    : undefined;
+  const override = shot ? edits[editKey] : undefined;
+  const edited = hasEdits(override);
+  const baseFrame = shot ? applyOverride(shot.base, savedOv) : null;
+  const liveFrame = baseFrame ? applyOverride(baseFrame, override) : null;
+  const analysis: Analysis = useMemo(
+    () => (shot ? analysisFor(shot.spec, [savedOv, override]) : NO_FAULTS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shot, savedScenario, override],
+  );
+
+  // ── Adding and removing figures. Identical rules to the gallery's: the
+  //    keeper, the poacher and YOU are not removable. ──
+  const selectedItem = liveFrame?.items.find((it) => it.id === selectedId);
+  const canRemove = !!selectedItem?.removable;
+
+  const addFigure = (side: ScenarioSide) => {
+    if (!liveFrame || !shot) return;
+    const { override: ov, id } = addFigureTo(liveFrame, side, override, [savedOv]);
+    setOverride(editKey, ov);
+    setSelectedId(id);
+  };
+  const removeFigure = (id: string) => {
+    setOverride(editKey, removeFigureFrom(id, override));
+    setSelectedId(null);
+  };
+
+  // ── Saving. "Saved" only ever means the SERVER said so. ──
+  const saveShot = async (): Promise<void> => {
+    if (!shot || !liveFrame) return;
+    setBusy("saving");
+    const scenario = frameToMatchScenario(saveTargetFor(shot.spec), liveFrame);
+    const res = await saveScenarioShared(scenario);
+    setBusy(null);
+    if (res.migrationMissing) setMigrationMissing(true);
+    if (!res.ok) { flashFor(false, `Not saved — ${res.message}`); return; }
+    setSaved((m) => ({ ...m, [scenario.id]: scenario }));
+    clearOverride(editKey);
+    flashFor(true, "Saved — on every device.");
+  };
+
+  const revertShot = async (): Promise<void> => {
+    if (!shot) return;
+    setBusy("reverting");
+    const id = highlightSlug(shot.spec);
+    const res = await deleteScenarioShared(id);
+    setBusy(null);
+    if (res.migrationMissing) setMigrationMissing(true);
+    if (!res.ok) { flashFor(false, `Not reverted — ${res.message}`); return; }
+    setSaved((m) => { const n = { ...m }; delete n[id]; return n; });
+    clearOverride(editKey);
+    flashFor(true, "Back to the generated chance.");
+  };
 
   // ── Flagging ──
   const flaggedNow = shot ? flags.some((f) => f.id === flagId(shot.spec)) : false;
@@ -255,6 +455,7 @@ export default function HighlightsPage() {
     // The pool changed, so what is queued ahead of you no longer belongs to it.
     setHist(shot ? [shot] : []);
     setIdx(shot ? 0 : -1);
+    setSelectedId(null);
   };
   const toggleKind = (k: ScenarioKind) =>
     setKindsAnd(selected.has(k) ? kinds.filter((x) => x !== k) : [...kinds, k]);
@@ -269,8 +470,12 @@ export default function HighlightsPage() {
       data-hl-seed={shot?.spec.seed ?? ""}
       data-hl-plan={shot?.spec.planId ?? ""}
       data-hl-picture={shot?.picture ?? ""}
-      data-hl-faults={shot ? shot.faults.length : ""}
+      data-hl-faults={shot ? analysis.faults.length : ""}
+      data-hl-fault={analysis.faults[0] ?? ""}
       data-hl-count={hist.length}
+      data-hl-selected={selectedId ?? ""}
+      data-hl-edited={edited ? "1" : ""}
+      data-hl-figures={liveFrame ? liveFrame.items.length : ""}
     >
       {children}
     </main>
@@ -365,51 +570,20 @@ export default function HighlightsPage() {
           </p>
         ) : (
           <div style={{ display: "grid", gap: 10, padding: "12px 14px 24px" }}>
-            {flags.map((f) => {
-              const s = buildShot(specOf(f));
-              return (
-                <div
-                  key={f.id}
-                  style={{
-                    display: "flex", gap: 12, alignItems: "center", padding: 10,
-                    borderRadius: 16, background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
-                  }}
-                >
-                  <FlagThumb shot={s} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15.5, fontWeight: 800, textTransform: "capitalize" }}>
-                      {kindLabel(f.kind)}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "ui-monospace, monospace", fontSize: 11, color: MUTED, marginTop: 2,
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                      }}
-                      title={f.planId ?? "base"}
-                    >
-                      #{f.seed} · {f.planId ?? "base"}
-                    </div>
-                    {s.faults.length > 0 && (
-                      <div style={{ color: "#f87171", fontSize: 12.5, fontWeight: 700, marginTop: 3 }}>
-                        {s.faults[0]}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    style={{ ...roundBtn, flex: "none" }}
-                    aria-label="Show this one"
-                    onClick={() => {
-                      setHist((h) => [...h, s]);
-                      setIdx(hist.length);
-                      setScreen("run");
-                    }}
-                  >
-                    &#8250;
-                  </button>
-                </div>
-              );
-            })}
+            {flags.map((f) => (
+              <FlagRow
+                key={f.id}
+                flag={f}
+                saved={saved[highlightSlug(specOf(f))]}
+                override={edits[f.id]}
+                onShow={(s) => {
+                  setHist((h) => [...h, s]);
+                  setIdx(hist.length);
+                  setSelectedId(null);
+                  setScreen("run");
+                }}
+              />
+            ))}
           </div>
         )}
       </>,
@@ -446,23 +620,51 @@ export default function HighlightsPage() {
           </button>
         </div>
       ) : (
-        <div style={{ padding: "10px 12px 12px", display: "grid", justifyItems: "center", gap: 8 }}>
-          {shot && <ShotCanvas shot={shot} onSwipe={(d) => (d === 1 ? next() : prev())} />}
+        <div style={{ padding: "10px 12px 14px", display: "grid", justifyItems: "center", gap: 8 }}>
+          {shot && baseFrame && (
+            <EditableFrame
+              editKey={editKey}
+              baseFrame={baseFrame}
+              override={override}
+              marks={analysis.marks}
+              onCommit={setOverride}
+              edited={edited}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onSwipe={(d) => (d === 1 ? next() : prev())}
+              fit
+            />
+          )}
 
           <div style={{ textAlign: "center", minHeight: 42 }}>
             <div style={{ fontSize: 17, fontWeight: 800, textTransform: "capitalize", letterSpacing: "-0.01em" }}>
               {shot ? kindLabel(shot.spec.kind) : "…"}
             </div>
-            {shot && shot.faults.length > 0 && (
+            {shot && analysis.faults.length > 0 && (
               <div style={{ color: "#f87171", fontSize: 13.5, fontWeight: 800, marginTop: 2, lineHeight: 1.35 }}>
-                {shot.faults[0]}
+                {analysis.faults[0]}
               </div>
             )}
-            {shot && shot.faults.length === 0 && (
+            {shot && analysis.faults.length === 0 && (
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: MUTED, marginTop: 3 }}>
                 #{shot.spec.seed}
               </div>
             )}
+          </div>
+
+          {/* The editor tools. Same three the gallery's version screen has, in
+              the same order, doing the same thing — tap a figure on the
+              picture, then take him out; or put a new one in. */}
+          <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+            <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Team-mate</button>
+            <button style={editBtn(false)} onClick={() => addFigure("opponent")}>+ Opponent</button>
+            <button
+              style={editBtn(!canRemove)}
+              disabled={!canRemove}
+              onClick={() => selectedId && removeFigure(selectedId)}
+            >
+              Remove
+            </button>
           </div>
 
           <div style={{ display: "flex", gap: 10, width: "100%", maxWidth: 460 }}>
@@ -495,6 +697,38 @@ export default function HighlightsPage() {
               Next &#8594;
             </button>
           </div>
+
+          {/* Only on screen when there is something to do with it. */}
+          {edited ? (
+            <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+              <button
+                style={{ ...editBtn(false), flex: 2.4, height: 48, background: "rgba(22,163,74,0.24)", border: "1px solid rgba(34,197,94,0.55)", color: "#bbf7d0", fontSize: 15 }}
+                disabled={!!busy}
+                onClick={() => void saveShot()}
+              >
+                {busy === "saving" ? "Saving…" : "Save this fix"}
+              </button>
+              <button style={{ ...editBtn(false), height: 48 }} onClick={() => { clearOverride(editKey); setSelectedId(null); }}>
+                Discard
+              </button>
+            </div>
+          ) : savedScenario ? (
+            <button
+              style={{ ...editBtn(false), width: "100%", maxWidth: 460, color: MUTED }}
+              disabled={!!busy}
+              onClick={() => void revertShot()}
+            >
+              {busy === "reverting" ? "Reverting…" : "Saved — revert to the generated chance"}
+            </button>
+          ) : null}
+
+          {(flash || migrationMissing) && (
+            <div style={{ fontSize: 12.5, fontWeight: 700, textAlign: "center", maxWidth: 460, lineHeight: 1.4, color: flash ? (flash.ok ? "#4ade80" : "#fca5a5") : "#fca5a5" }}>
+              {flash
+                ? flash.text
+                : "Saving is off — run supabase/migrations/star_scenarios.sql in the Supabase SQL Editor."}
+            </div>
+          )}
         </div>
       )}
     </>,
@@ -519,3 +753,10 @@ const bigBtn: React.CSSProperties = {
   color: "#e0f2fe", fontSize: 17, fontWeight: 800,
   display: "grid", placeItems: "center",
 };
+
+/** The gallery's own edit-row button, same size and same disabled look. */
+const editBtn = (off: boolean): React.CSSProperties => ({
+  flex: 1, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
+  border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
+  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 13.5, fontWeight: 700,
+});
