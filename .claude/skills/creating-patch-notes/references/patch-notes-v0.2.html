@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowitball Patch Notes — Leo v0.2</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,7vw,36px);line-height:1.08;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,120px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.2</span>
+  <h1>Knowitball Patch Notes — Leo</h1>
+  <p class="sub">Goalie Mode · PRs #550, #554, #555 · 151 tests green · every number measured, not guessed</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>90–100%</b><span>save rate committing right at the strike</span></div>
+  <div class="s"><b>100%</b><span>full-reach dive now on-screen — was 0%</span></div>
+  <div class="s"><b>12×</b><span>streak multiplier cap</span></div>
+  <div class="s"><b>151</b><span>tests green</span></div>
+</div>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The keeper's own camera showed a giant head, not a goal</div>
+    <div class="dt">Caught live, on the first ship: posts projected thousands of px off both edges, the grass vanished, the keeper was reduced to one giant head.</div>
+    <details><summary>What the real fix was</summary>
+      <ul>
+        <li>Computed the camera's real pixel output across a sweep of candidate distances, instead of more hand algebra.</li>
+        <li><code>CAM_Y=7m</code> puts both posts in frame with real margin.</li>
+        <li>The ball itself was drawn at literal physical scale — a few px, invisible. Fixed the same way tiny sprites already are elsewhere: draw it oversized on purpose.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">On phone, touching the screen instantly dove — no way to aim first</div>
+    <div class="dt">Desktop could hover the mouse to preview a save; touch had no equivalent, so every tap was a blind commit.</div>
+    <details><summary>The fix, to your own spec</summary>
+      <ul>
+        <li>Press and hold now only starts tracking — nothing commits yet.</li>
+        <li>Dragging updates a live reticle the same way for mouse-hover and touch-drag.</li>
+        <li>Releasing commits the dive at wherever you let go.</li>
+        <li>A plain click with no drag still commits immediately — desktop unchanged.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Goalie Mode — a new keeper reflex minigame, in the Casino</div>
+    <div class="dt">Camera facing the shot, drag-to-aim (see Fixed), a bet that stacks per consecutive save, and a dive that physically takes time — so diving right as the strike happens has to be the winning play, not holding your gloves somewhere and hoping.</div>
+    <details><summary>How the timing was tuned</summary>
+      <p>The core tension is measured, not assumed: committing right at the strike saves <b>90–100%</b> on both difficulties. Committing early — before the shot even starts — saves only <b>~28%</b>, barely above the <b>12%</b> floor of never diving at all. The same early timing that's still fine at streak 0 becomes a guaranteed miss by streak 20, as the window tightens with the multiplier.</p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A real stadium behind the goal</div>
+    <div class="dt">Curved roof, two floodlight towers, a speckled crowd, hoarding, a running-track stripe — replacing the flat sky.</div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The camera now pushes in, then pulls back — like the reference you sent</div>
+    <div class="dt">Three eased stages: a wide establishing shot, a tight personal push-in right up to the strike, then a hard pull back to wide for the save itself.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Full dive, on-screen</span><div class="track"><div class="fill was" style="width:0%"></div><div class="fill now" style="width:100%"></div></div><span class="vv">100% <s>0%</s></span></div>
+      <div class="bar"><span class="lb">Goal width, wide shot</span><div class="track"><div class="fill was" style="width:90%"></div><div class="fill now" style="width:93%"></div></div><span class="vv">93% <s>90%</s></span></div>
+    </div>
+    <details><summary>A real bug caught by computing it, not by shipping and finding out</summary>
+      <p>The tight push-in that matches the reference would, on its own, have put a full-width dive almost two screens off to the side — checked directly against the keeper's own real max reach through the actual projection math, before it ever shipped. Fixed by pulling back to a wide shot in time for the dive to land fully in frame, reusing the exact projection constants already proven in the first camera fix.</p>
+      <p>Extracted real frames from your three videos to build this (PyAV — no <code>ffmpeg</code>/<code>cv2</code> in the sandbox) and read them with a precise 10% grid overlay, not by eye alone.</p>
+    </details>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+
+<div class="alert">
+  <div class="t">Carried forward from v0.1 — still open</div>
+  <p>Six security holes anyone with the public key can still reach: writing their own XP/rewards, deleting every user's progression, wiping community votes. Two SQL files, both written, both still unrun.</p>
+</div>
+
+<ul class="n">
+  <li>
+    <div class="hd">Not confirmed live this round <span class="pill p-amb">unverified</span></div>
+    <div class="dt">Confidence here is measured reference frames, computed projection math, and code review — not a fresh screen recording or a live playtest this time.</div>
+    <details><summary>Worth checking directly</summary>
+      <ul>
+        <li>Does the push-in / pull-back read as smooth, not jarring.</li>
+        <li>Does the drag-to-aim gesture feel right on an actual phone.</li>
+        <li>No screenshots on this page for the same reason — the new camera hasn't been captured yet.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Your call on the feel</div>
+    <div class="dt">Try it, then say if the timing needs a nudge either way — that's what the next version is for.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.1 — 21 Sep 2026 — the chance-formula camera and gallery rebuild</summary>
+  <p><b>Fixed:</b> Scoring was halved, now isn't · The goal stopped changing size · The camera stopped moving the players · Chances now match their own name · Defenders stopped hiding near their own keeper on long shots.</p>
+  <p><b>Added:</b> Simulate · Add/remove players in the editor · Up to 60 versions per chance type · Admin panel on every page · Saving a scenario into the code works for real.</p>
+  <p><b>Changed:</b> Gallery rebuilt (12,921px → 1,596px of scrolling) · Across formations hidden behind a toggle · Chance mix retuned, half done.</p>
+  <p><b>Numbers:</b> 14→64 different chance situations · 0% same chance twice running · 8× less scrolling in the gallery · −15pp empty grass on screen.</p>
+  <p>Still open from this version: the six security holes, above · <code>star_scenarios.sql</code> may still be unrun · everything else from its own Known Issues not independently reverified since.</p>
+</details>
+
+<footer>Branch <code>Leo</code> · <code>b06a37f</code> → <code>94f3c7a</code> · PRs #550, #554, #555. Anything unverified says so.</footer>
+
+</div>
+</body>
+</html>
