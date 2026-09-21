@@ -393,6 +393,79 @@
         "seed": 7004,
         "planId": null
       }
+    },
+    "gallery-v-one_on_one-7005": {
+      "id": "gallery-v-one_on_one-7005",
+      "name": "one_on_one",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 34.46,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 36.62,
+        "y": 16.67
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 37.68,
+          "y": 23.81,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 32.82,
+          "y": 18.91,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 38.26,
+          "y": 17.95,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 35.18,
+          "y": 2.2,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 36.14,
+          "y": 24.25,
+          "label": "SUP"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 31.71,
+          "y": 19.65,
+          "label": "POACH"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 37.18,
+          "y": 17.69,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1789999267691,
+      "source": {
+        "tool": "gallery",
+        "kind": "one_on_one",
+        "seed": 7005,
+        "planId": null
+      }
     }
   }
 }
