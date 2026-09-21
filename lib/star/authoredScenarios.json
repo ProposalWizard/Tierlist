@@ -1158,6 +1158,72 @@
         "seed": 1012665398,
         "planId": "one_on_one|golden|centre|R|closing|set|settled|normal|goal|weak|b5"
       }
+    },
+    "gallery-v-one_on_one-7012": {
+      "id": "gallery-v-one_on_one-7012",
+      "name": "one_on_one",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 33.4,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 36.57,
+        "y": 7.17
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 28.61,
+          "y": 11.62,
+          "label": "D1"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 41.62,
+          "y": 13.05,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34.21,
+          "y": 2.2,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 26.27,
+          "y": 13.03,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 39.97,
+          "y": 12.42,
+          "label": "POACH"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 37.47,
+          "y": 8.83,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790013274827,
+      "source": {
+        "tool": "gallery",
+        "kind": "one_on_one",
+        "seed": 7012,
+        "planId": null
+      }
     }
   }
 }
