@@ -1005,6 +1005,86 @@
         "seed": 452939548,
         "planId": "one_on_one|golden|centre|L|closing|out|settled|normal|between|weak|b5"
       }
+    },
+    "gallery-v-one_on_one-7013": {
+      "id": "gallery-v-one_on_one-7013",
+      "name": "one_on_one",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 42.4,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 45.15,
+        "y": 9.77
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 35.45,
+          "y": 14.94,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 49,
+          "y": 18.18,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 37.31,
+          "y": 2.2,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 34.53,
+          "y": 16.06,
+          "label": "SUP"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 50.75,
+          "y": 17.2,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 46.29,
+          "y": 11.21,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "teammate",
+          "x": 41.67,
+          "y": 15.41,
+          "label": "MATE"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 42.69,
+          "y": 13.66,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790012134458,
+      "source": {
+        "tool": "gallery",
+        "kind": "one_on_one",
+        "seed": 7013,
+        "planId": null
+      }
     }
   }
 }
