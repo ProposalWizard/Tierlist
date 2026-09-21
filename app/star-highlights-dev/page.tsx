@@ -373,7 +373,7 @@ export default function HighlightsPage() {
                   style={{
                     display: "flex", gap: 12, alignItems: "center", padding: 10,
                     borderRadius: 16, background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
                   }}
                 >
                   <FlagThumb shot={s} />
@@ -381,7 +381,13 @@ export default function HighlightsPage() {
                     <div style={{ fontSize: 15.5, fontWeight: 800, textTransform: "capitalize" }}>
                       {kindLabel(f.kind)}
                     </div>
-                    <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: MUTED, marginTop: 2 }}>
+                    <div
+                      style={{
+                        fontFamily: "ui-monospace, monospace", fontSize: 11, color: MUTED, marginTop: 2,
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                      }}
+                      title={f.planId ?? "base"}
+                    >
                       #{f.seed} · {f.planId ?? "base"}
                     </div>
                     {s.faults.length > 0 && (

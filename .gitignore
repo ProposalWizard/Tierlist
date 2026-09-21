@@ -47,3 +47,8 @@ app/gfx-harness-tmp/
 # goes) before deciding anything. This project settles arguments by measuring,
 # so these get written often — a keeper becomes a real test with a real name.
 tests/star/_*
+
+# Throwaway Playwright/driver scripts from dev sessions — never committed.
+# Added after 'git add -A' swept five of them into a pushed commit.
+.tmpshots/
+scripts/tmp/

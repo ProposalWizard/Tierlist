@@ -39,6 +39,26 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 21 Sep 2026 — Infinite Highlights
+- **"A test that measures the wrong path passes; a person flicking through a
+  hundred real chances catches it in a minute."** Said after a camera change
+  shipped broken, signed off on a measurement of the wrong code path and only
+  caught when he played it. The ruling this sets for any review tool: optimise
+  for how fast someone can SEE a hundred of the thing, not for features. One
+  big Next, arrow keys, swipe, one tap to flag.
+- **A review screen must run the real generator, not a copy of it.** Extended
+  from "render the real thing, never a mock-up" (20 Sep) to cover how the
+  thing is MADE, not only how it is drawn. Infinite Highlights and the
+  gallery's Simulate both go through `nextHighlight`/`nextSim`
+  (lib/star/gallerySim.ts) and both draw through `paintMarked`
+  (lib/star/scenarioFrame.ts) — one generator, one renderer, or the tool can
+  agree with itself while disagreeing with the game.
+- **A ring goes on the body the fault names.** Measured: 4 of the fault
+  strings ("defender standing on you", "defender piled on the ball", "you are
+  off screen", "the pass target is off screen") were falling through to a ring
+  on the BALL, which points at the wrong thing on screen. Each rings its own
+  culprit now.
+
 ### 21 Sep 2026 — the admin nav panel
 - **"Have that somewhere on the screen on PC, more so than mobile."** The one
   stated exception to phone-first below. Admin/dev tooling is judged on a
