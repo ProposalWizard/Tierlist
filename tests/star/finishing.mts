@@ -252,9 +252,22 @@ for (const kind of KINDS) {
   // other kind tested here, corner picks up more second-chance goals than
   // the others do — measured directly at 44.2%, not the 6-28% a dead-ball
   // save era ever produced.
+  //
+  // byline_cross moved a lot too, for a real reason rather than drift: it's
+  // one of the two kinds a first-time header/volley can now fire on at all
+  // (see strikeModeForHeight's own CROSS_DELIVERY_KINDS gate) — a clean
+  // delivery that used to always cost a 0.45s controlling touch before an
+  // ordinary grounded shot can now be met right out of the air, catching
+  // the keeper before he's had any time to shade across. That was the
+  // entire point ("watch him take a touch... SHOOT RIGHT INTO THE GOALIES
+  // HANDS... a first time header... would make corners rewarding") — not a
+  // regression to paper over. Measured directly at 48.5%, squarely in the
+  // same range the other three now occupy (40.2-44.4%), not an outlier;
+  // its own old 8-32% band just reflected how toothless the old
+  // always-a-touch-first cross genuinely was.
   const bounds: [ScenarioKind, number, number][] = [
     ["cutback", 0.22, 0.48],
-    ["byline_cross", 0.08, 0.32],
+    ["byline_cross", 0.28, 0.62],
     ["through_ball", 0.22, 0.48],
     ["corner", 0.28, 0.58],
   ];
