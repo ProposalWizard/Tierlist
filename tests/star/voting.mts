@@ -3,7 +3,6 @@ import {
   OVERRULE_OWNERSHIP_THRESHOLD, OVERRULE_REPUTATION_COST, VOTE_HELD_REPUTATION_GAIN,
   type VoteOption,
 } from "../../lib/star/voting";
-import type { Reputation } from "../../lib/star/types";
 
 /**
  * THE VOTING/CEREMONY ENGINE — PHASE 2 OF STAR_POWER_POLITICS.MD.
@@ -94,20 +93,15 @@ const YES_NO: VoteOption[] = [{ id: "yes", label: "Yes" }, { id: "no", label: "N
 }
 
 // ── Reputation hooks: holding a vote helps, overruling costs, both clamp ───
+// Reputation is ONE number since 21 Sep 2026 (reputation.ts).
 {
-  const rep: Reputation = { world: 50, club: 50, government: 50, shareholders: 95 };
-  const held = applyVoteHeldReputation(rep);
-  check(held.shareholders === 95 + VOTE_HELD_REPUTATION_GAIN || held.shareholders === 100,
-    `holding a vote raises shareholder reputation by its named amount, clamped at 100 (saw ${held.shareholders})`);
-  check(held.world === 50 && held.club === 50 && held.government === 50, "holding a vote only ever touches shareholder reputation");
-
-  const low: Reputation = { world: 50, club: 50, government: 50, shareholders: 5 };
-  const overruled = applyOverruleReputationCost(low);
-  check(overruled.shareholders === 0, `overruling costs shareholder reputation and floors at 0 rather than going negative (saw ${overruled.shareholders})`);
-
-  const mid: Reputation = { world: 50, club: 50, government: 50, shareholders: 50 };
-  check(applyOverruleReputationCost(mid).shareholders === 50 - OVERRULE_REPUTATION_COST,
+  const held = applyVoteHeldReputation(99);
+  check(held === 100, `holding a vote raises reputation by its named amount, clamped at 100 (saw ${held})`);
+  check(applyVoteHeldReputation(50) === 50 + VOTE_HELD_REPUTATION_GAIN, "holding a vote adds exactly the named gain");
+  check(applyOverruleReputationCost(2) === 0, "overruling floors at 0 rather than going negative");
+  check(applyOverruleReputationCost(50) === 50 - OVERRULE_REPUTATION_COST,
     "the overrule cost is exactly the named constant when there's room to pay it");
+  check(OVERRULE_REPUTATION_COST === 5, "overruling costs 5, as agreed");
 }
 
 // ── The overrule threshold is genuinely above bare majority ────────────────

@@ -100,7 +100,8 @@ const YES_NO: VoteOption[] = [{ id: "yes", label: "Yes" }, { id: "no", label: "N
   const caught = applyGettingCaught(career, "bribery", 40_000_000, "Caught bribing officials");
   check(caught.money < career.money, "getting caught genuinely costs real money");
   check(career.money - caught.money <= 100_000_000, "…but the fine is capped, not unbounded");
-  check(caught.reputation.world < career.reputation.world, "…and genuinely costs world reputation");
+  check(caught.reputation < career.reputation, "…and genuinely costs reputation"),
+  check(caught.fame > career.fame, "…but getting caught is a news story, so fame goes UP (owners, 21 Sep 2026)");
   check(caught.relationships.boss < career.relationships.boss, "…and damages your standing with the boss");
   check(caught.relationships.fans < career.relationships.fans, "…and damages your standing with fans");
   check(!!caught.injury && caught.injury.weeksRemaining > 0, "…and genuinely forces you out of the team for real weeks — a suspension");

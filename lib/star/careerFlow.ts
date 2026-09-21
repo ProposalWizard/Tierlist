@@ -33,8 +33,10 @@ import { BOOTS_CATALOGUE } from "./shopData";
 import { settleBets, betNewsLines } from "./competitionBetting";
 import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
-import { computeStarRating, growthMultiplier, TROPHY_FAME } from "./rating";
-import { nudgeReputation, worldReputationFromSeason, clubReputationFromSeason } from "./reputation";
+import { computeStarRating, growthMultiplier } from "./rating";
+import { REPUTATION_START } from "./reputation";
+import { addFame, FAME_EVENTS, wearItems } from "./fame";
+import { seasonStanding } from "./seasonStanding";
 import { considerRecommendations, payPresidentWages } from "./clubPowers";
 import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./facilities";
 import { ruleBookFor } from "./ruleBook";
@@ -165,7 +167,7 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // or shareholder — low but not zero, the same "unproven, not disliked"
     // starting point `fans: 40` already sets. Club reputation starts higher,
     // matching the fresh-signing optimism `boss`/`team` already open with.
-    reputation: { world: 15, club: 50, government: 5, shareholders: 5 },
+    reputation: REPUTATION_START,
     // ── Nobody has signed you, so there are no terms ──
     //
     // This used to open at ★2,000 a week on a three-year deal at the club
@@ -202,7 +204,7 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // computeStarRating's own note. A placeholder here only so every
     // required CareerState field is present in this one literal.
     starRating: 2.5,
-    fame: 5,
+    fame: 0,
     seasonStats: { ...EMPTY_SEASON_STATS },
     careerStats: { ...EMPTY_SEASON_STATS },
     // Club-derived, all four. Empty rather than invented — see attachClub.
@@ -214,8 +216,6 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     status: "1st Team",
     currentBoot: starterBoot,
     kibCans: { basic: 2, premium: 0, elite: 0 },
-    statCans: { basic: 0, premium: 0, elite: 0 },
-    statBoost: null,
     ownedItems: [],
     girlfriend: null,
     sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, active: false })),
@@ -404,11 +404,10 @@ export function attachClub(
     skills: { ...identity.skills },
     lastTrainedWeek: { ...identity.lastTrainedWeek },
     relationships: { ...identity.relationships },
-    reputation: { ...identity.reputation },
+    reputation: identity.reputation,
     seasonStats: { ...identity.seasonStats },
     careerStats: { ...identity.careerStats },
     kibCans: { ...identity.kibCans },
-    statCans: { ...identity.statCans },
     currentBoot: { ...identity.currentBoot },
     sponsors: identity.sponsors.map(sp => ({ ...sp })),
     trophies: [...identity.trophies],
@@ -804,14 +803,6 @@ export function creditMatchResult(
   const currentBoot = alreadyPlayed ? career.currentBoot
     : { ...career.currentBoot, matches: Math.max(0, career.currentBoot.matches - 1) };
 
-  // A KIB Stat Can's boost wears off the same way a boot wears down — one
-  // match closer every time you actually play, never on a replay. Cleared
-  // to `null` once it hits zero rather than left sitting at 0 matches left,
-  // so `!!career.statBoost` alone is enough to know whether one is active.
-  const nextStatBoost = alreadyPlayed || !career.statBoost ? career.statBoost
-    : career.statBoost.matchesLeft <= 1 ? null
-      : { ...career.statBoost, matchesLeft: career.statBoost.matchesLeft - 1 };
-
   // A rested week for the stable: the horse regains some energy between matches.
   const horse = alreadyPlayed || !career.horse ? career.horse
     : { ...career.horse, energy: Math.min(100, career.horse.energy + 20) };
@@ -1113,14 +1104,15 @@ export function creditMatchResult(
     // Recomputed below, once this result's achievements (which can
     // themselves move it — a fresh "trophy-cabinet" unlock, say) are final.
     starRating: career.starRating,
-    fame: alreadyPlayed ? career.fame : career.fame + Math.max(0, Math.floor(stats.fansChange / 2)),
+    // Owners, 21 Sep 2026: playing well earns NO fame on its own — only big
+    // moments do (see fame.ts). Player of the Month is one of them.
+    fame: !alreadyPlayed && potmJustAwarded?.isYou ? addFame(career.fame, FAME_EVENTS.playerOfMonth) : career.fame,
     // The single most important guard in this function — see `alreadyPlayed`'s
     // own doc at the top. A replay must not advance the calendar; it already
     // did that the first time this match was credited, and a second advance
     // permanently skips a real week for the rest of the career.
     week: alreadyPlayed ? career.week : career.week + 1,
     currentBoot,
-    statBoost: nextStatBoost,
     horse,
     squad: updatedSquad,
     form: alreadyPlayed ? career.form : [stats.rating, ...career.form].slice(0, 5),
@@ -1463,8 +1455,6 @@ export function advanceSeason(
   // nothing. `honours` (above) is already filtered to awards that are
   // YOURS — seasonAwards only ever returns your own Player/Young Player of
   // the Season, Golden Boot etc., never a team-mate's or a rival's.
-  const trophyFame = thisSeason.reduce((sum, t) => sum + (TROPHY_FAME[t.competition] ?? 6), 0);
-  const honourFame = honours.length * 4;
   const wonFaCup = thisSeason.some(t => t.competition === "FA Cup");
   const wonLeagueCup = thisSeason.some(t => t.competition === "League Cup");
   const wonEuroComp = thisSeason.some(t => t.competition === "Champions League" || t.competition === "Europa League");
@@ -1485,6 +1475,14 @@ export function advanceSeason(
   // season's bets settle (see settleBets' own comment); anything else is
   // carried forward untouched.
   const betResult = settleBets(career.competitionBets ?? [], lastSeasonWinners, career.season);
+
+  // Fame and reputation for the season just finished — big moments only.
+  // See seasonStanding.ts for every line of it.
+  const standing = seasonStanding(
+    // Europe is a moment the FIRST time you get there, not every season you
+    // stay: `career.europeanQualification` is the place you already hold.
+    career, ladder, nextDivision, userWonBallonDor, !!qualification && !career.europeanQualification, lastSeasonWinners,
+  );
 
   const next: CareerState = {
     ...career,
@@ -1574,10 +1572,10 @@ export function advanceSeason(
     // silverware nudges world standing, and the board's own verdict on the
     // season — the same judgement that just moved `boss` above — nudges
     // club standing, at its own smaller scale.
-    reputation: nudgeReputation(career.reputation, {
-      world: worldReputationFromSeason(trophyFame, honourFame),
-      club: clubReputationFromSeason(judgement.score),
-    }),
+    reputation: standing.reputation,
+    fameNews: standing.news,
+    // Everything you own wears down a season (fame.ts).
+    ownedItems: wearItems(career.ownedItems),
     lastSeasonJudgement: judgement,
     awards: honours.length > 0 ? [...(career.awards ?? []), ...honours] : career.awards,
     sponsors: sponsorRoll.sponsors,
@@ -1590,7 +1588,7 @@ export function advanceSeason(
     ],
     // Silverware and individual recognition feed the same reputation
     // sponsors actually check — see trophyFame/honourFame above.
-    fame: career.fame + trophyFame + honourFame,
+    fame: standing.fame,
     money: career.money + loyalty + seasonFeeTotal + betResult.totalPayout,
     competitionBets: betResult.stillPending,
     betNews: betNewsLines(betResult.settled),

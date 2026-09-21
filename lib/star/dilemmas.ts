@@ -52,6 +52,11 @@ export interface DilemmaEffect {
   fans?: number;
   sponsors?: number;
   fame?: number;
+  /** Trust among the people who run football — see reputation.ts. */
+  reputation?: number;
+  /** A scandal: marks this season as not clean (costs the season-end
+   *  reputation bonus). Scandals ADD fame — owners, 21 Sep 2026. */
+  scandal?: boolean;
   pace?: number;
   power?: number;
   technique?: number;
@@ -103,7 +108,7 @@ export const DILEMMAS: Dilemma[] = [
     title: "Charity Appearance",
     text: "A youth football charity has invited you to run a coaching session.",
     choices: [
-      { label: "Attend", effects: { fans: 10, fame: 4, sponsors: 3 }, narrative: "Coverage everywhere. Kids loved it." },
+      { label: "Attend", effects: { fans: 10, fame: 1, sponsors: 3, reputation: 2 }, narrative: "Coverage everywhere. Kids loved it." },
       { label: "Send a signed shirt", effects: { money: cash(-3), fans: 3 }, narrative: "Nice gesture — modest coverage." },
       { label: "Politely decline", effects: { fans: -3, sponsors: -2 } },
     ],
@@ -125,7 +130,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Your boot sponsor wants you for a half-day shoot mid-week.",
     when: (c) => c.relationships.sponsors > 20,
     choices: [
-      { label: "Do the shoot", effects: { money: cash(5), sponsors: 6, fame: 3 }, narrative: "Long day but the paycheque's decent." },
+      { label: "Do the shoot", effects: { money: cash(5), sponsors: 6, fame: 1 }, narrative: "Long day but the paycheque's decent." },
       { label: "Cancel", effects: { sponsors: -10, money: cash(-2) }, narrative: "The sponsor is not pleased." },
     ],
   },
@@ -135,9 +140,9 @@ export const DILEMMAS: Dilemma[] = [
     title: "Suspicious Offer",
     text: "A shady contact offers you money to underperform in next week's match.",
     choices: [
-      { label: "Refuse and report it", effects: { boss: 8, fans: 6, fame: 3 }, narrative: "The club appreciates the honesty. Word gets out." },
+      { label: "Refuse and report it", effects: { boss: 8, fans: 6, fame: 1, reputation: 2 }, narrative: "The club appreciates the honesty. Word gets out." },
       { label: "Ignore it", effects: {} },
-      { label: "Take the money", effects: { money: cash(40), boss: -20, team: -15, fans: -25, fame: -10 }, narrative: "You take it. If this ever comes out..." },
+      { label: "Take the money", effects: { money: cash(40), boss: -20, team: -15, fans: -25, fame: 3, reputation: -8, scandal: true }, narrative: "You take it. If this ever comes out..." },
     ],
   },
   {
@@ -167,7 +172,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Your agent has a rival club sniffing around. Want him to open talks?",
     when: (c) => c.starRating >= 3,
     choices: [
-      { label: "Yes — see what they offer", effects: { boss: -5, fame: 3 }, narrative: "The gaffer heard about it. Not happy." },
+      { label: "Yes — see what they offer", effects: { boss: -5, fame: 1, reputation: -2 }, narrative: "The gaffer heard about it. Not happy." },
       { label: "Not now, I'm settled", effects: { boss: 4, team: 2 } },
     ],
   },
@@ -189,7 +194,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "A trusted advisor suggests putting some money aside for a long-term investment.",
     when: (c) => c.money >= 30,
     choices: [
-      { label: `Invest ${formatMoney(cash(20))}`, effects: { money: cash(-20), happiness: 3, fame: 2 }, narrative: "You'll thank yourself later." },
+      { label: `Invest ${formatMoney(cash(20))}`, effects: { money: cash(-20), happiness: 3 }, narrative: "You'll thank yourself later." },
       { label: "Keep it liquid", effects: {} },
     ],
   },
@@ -199,7 +204,7 @@ export const DILEMMAS: Dilemma[] = [
     title: "Hospital Visit Request",
     text: "A young fan in hospital wants to meet their idol — you.",
     choices: [
-      { label: "Visit them", effects: { fans: 15, fame: 6, happiness: 8 }, narrative: "Beautiful moment. Cameras were there too." },
+      { label: "Visit them", effects: { fans: 15, fame: 2, happiness: 8, reputation: 2 }, narrative: "Beautiful moment. Cameras were there too." },
       { label: "Send a signed jersey", effects: { money: cash(-2), fans: 5 } },
     ],
   },
@@ -241,7 +246,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "Your sponsor is launching a new boot and wants you as the face.",
     when: (c) => c.relationships.sponsors > 40,
     choices: [
-      { label: "Do the campaign", effects: { money: cash(20), sponsors: 10, fame: 8 }, narrative: "Big paycheque and coverage." },
+      { label: "Do the campaign", effects: { money: cash(20), sponsors: 10, fame: 2 }, narrative: "Big paycheque and coverage." },
       { label: "Decline this one", effects: { sponsors: -8 } },
     ],
   },
@@ -260,9 +265,9 @@ export const DILEMMAS: Dilemma[] = [
     title: "Comment Taken Out of Context",
     text: "A tabloid runs a story claiming you criticised a teammate. You never said it.",
     choices: [
-      { label: "Address it publicly", effects: { fame: 4, team: 3, sponsors: -2 }, narrative: "Clean-cut clarification." },
+      { label: "Address it publicly", effects: { fame: 1, team: 3, sponsors: -2 }, narrative: "Clean-cut clarification." },
       { label: "Ignore it — it'll blow over", effects: { team: -6, fans: -3 } },
-      { label: "Sue the paper", effects: { money: cash(-8), fame: 6, sponsors: -4 } },
+      { label: "Sue the paper", effects: { money: cash(-8), fame: 2, sponsors: -4 } },
     ],
   },
   {
@@ -271,8 +276,8 @@ export const DILEMMAS: Dilemma[] = [
     title: "Abusive Fan",
     text: "A supporter shouted abuse at you in the tunnel. Cameras caught your reaction.",
     choices: [
-      { label: "Ignore and walk on", effects: { fame: 2, fans: 3 } },
-      { label: "React angrily", effects: { boss: -6, fans: -8, fame: 3, sponsors: -3 } },
+      { label: "Ignore and walk on", effects: { fans: 3 } },
+      { label: "React angrily", effects: { boss: -6, fans: -8, fame: 2, sponsors: -3, reputation: -3, scandal: true } },
     ],
   },
   {
@@ -282,7 +287,7 @@ export const DILEMMAS: Dilemma[] = [
     text: "A football game wants your face on the cover for a regional edition.",
     when: (c) => c.starRating >= 3.5,
     choices: [
-      { label: "Accept", effects: { money: cash(25), fame: 15, sponsors: 8 }, narrative: "You're on billboards now." },
+      { label: "Accept", effects: { money: cash(25), fame: 3, sponsors: 8 }, narrative: "You're on billboards now." },
       { label: "Turn it down", effects: {} },
     ],
   },
@@ -324,7 +329,9 @@ export function applyEffects(career: CareerState, effects: DilemmaEffect): Caree
   if (effects.money !== undefined) next.money = Math.max(0, next.money + effects.money);
   if (effects.happiness !== undefined) next.happiness = clamp(next.happiness + effects.happiness);
   if (effects.matchFitness !== undefined) next.matchFitness = clamp(next.matchFitness + effects.matchFitness);
-  if (effects.fame !== undefined) next.fame = Math.max(0, next.fame + effects.fame);
+  if (effects.fame !== undefined) next.fame = Math.max(0, Math.min(100, next.fame + effects.fame));
+  if (effects.reputation !== undefined) next.reputation = Math.max(0, Math.min(100, next.reputation + effects.reputation));
+  if (effects.scandal) next.lastScandalSeason = next.season;
   next.relationships = { ...next.relationships };
   if (effects.boss !== undefined) next.relationships.boss = clamp(next.relationships.boss + effects.boss);
   if (effects.team !== undefined) next.relationships.team = clamp(next.relationships.team + effects.team);

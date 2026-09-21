@@ -1,3 +1,4 @@
+import { reputationVoteBias } from "./reputation";
 import type { CareerState, LeagueSquad, LeaguePlayer } from "./types";
 import {
   divisionOf, PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
@@ -592,7 +593,7 @@ export function proposeSellPlayerVote(
   // them — a popular chairman with a great record still occasionally loses
   // a vote, which is the entire point of it being a real roll (see
   // voting.ts's MAX_SWING).
-  const biasStrength = (career.reputation.shareholders - 50) / 50;
+  const biasStrength = reputationVoteBias(career.reputation);
   const tally = castVote(
     `Sell ${player.name} for £${formatMoney(fee)}?`,
     [{ id: "yes", label: "Sell" }, { id: "no", label: "Keep" }],

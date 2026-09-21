@@ -123,6 +123,8 @@ function freshCareer(): CareerState {
   check(changeMagnitude(current, { customClubEntries: [entry] }) > 0, "proposing a custom club registers as a real, non-zero rule change");
   check(fanCostOf(current, { customClubEntries: [entry] }) > 0, "…with a real fan-reputation cost attached, same as any other real rule change");
 
+  // Proposing a rule also needs 60+ reputation since 21 Sep 2026.
+  career = { ...career, reputation: 60 };
   const proposed = proposeRuleChangeVote(career, "UEFA", { customClubEntries: [...current.customClubEntries, entry] }, mulberry32Local(5));
   check(proposed.ok, `a real proposal can be put to a vote (${!proposed.ok ? proposed.reason : ""})`);
   if (proposed.ok) {

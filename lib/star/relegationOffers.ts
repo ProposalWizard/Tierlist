@@ -54,7 +54,7 @@ function buildOffer(
   // division THIS club is actually in, which matters more here than
   // anywhere else: half the point of a relegation offer is that it may come
   // from the division you have just dropped out of.
-  const wage = offerWageFor(club, tier, rep, step, career.contract.wage);
+  const wage = offerWageFor(club, tier, rep, step, career.contract.wage, career);
   const seasons = 2 + Math.floor(rng() * 3);
   return {
     club,

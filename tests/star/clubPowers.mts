@@ -85,8 +85,8 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
     "a majority owner acts directly, not by recommendation — filing one against your own majority club fails");
 
   // The board considers it — biased by shareholder reputation, but never certain.
-  let goodRepCareer = { ...filed, reputation: { ...filed.reputation, shareholders: 95 } };
-  let poorRepCareer = { ...filed, reputation: { ...filed.reputation, shareholders: 5 } };
+  let goodRepCareer = { ...filed, reputation: 95 };
+  let poorRepCareer = { ...filed, reputation: 5 };
   let goodAdopted = 0, poorAdopted = 0;
   const trials = 200;
   for (let seed = 1; seed <= trials; seed++) {

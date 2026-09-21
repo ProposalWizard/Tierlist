@@ -55,7 +55,7 @@ export function isBodyPresident(career: CareerState, body: GoverningBody): boole
 
 export function canStandForBodyPresidency(career: CareerState, body: GoverningBody): boolean {
   return !isBodyPresident(career, body)
-    && career.reputation.world >= PRESIDENCY_REPUTATION_THRESHOLD
+    && career.reputation >= PRESIDENCY_REPUTATION_THRESHOLD
     && influenceIn(career, body) >= PRESIDENCY_INFLUENCE_THRESHOLD;
 }
 
@@ -72,10 +72,10 @@ export function proposeBodyPresidencyVote(
       ok: false,
       reason: isBodyPresident(career, body)
         ? "Already president of this body"
-        : `Needs ${PRESIDENCY_REPUTATION_THRESHOLD}+ world reputation and ${PRESIDENCY_INFLUENCE_THRESHOLD}+ influence in this body`,
+        : `Needs ${PRESIDENCY_REPUTATION_THRESHOLD}+ reputation and ${PRESIDENCY_INFLUENCE_THRESHOLD}+ influence in this body`,
     };
   }
-  const biasStrength = (career.reputation.world - 50) / 50;
+  const biasStrength = (career.reputation - 50) / 50;
   const tally = castVote(
     `Elect you president of ${body}?`,
     [{ id: "yes", label: "Elect" }, { id: "no", label: "Reject" }],
@@ -94,11 +94,11 @@ const PRESIDENCY_VOTE_HELD_GAIN = 3;
 const PRESIDENCY_OVERRULE_COST = 20;
 
 export function canOverrulePresidencyVote(career: CareerState, body: GoverningBody): boolean {
-  return career.reputation.world >= PRESIDENCY_OVERRULE_REPUTATION && influenceIn(career, body) >= PRESIDENCY_OVERRULE_INFLUENCE;
+  return career.reputation >= PRESIDENCY_OVERRULE_REPUTATION && influenceIn(career, body) >= PRESIDENCY_OVERRULE_INFLUENCE;
 }
 
 function nudgeWorld(reputation: Reputation, delta: number): Reputation {
-  return { ...reputation, world: clampReputation(reputation.world + delta) };
+  return clampReputation(reputation + delta);
 }
 
 export function resolveBodyPresidencyVote(

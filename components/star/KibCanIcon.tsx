@@ -21,7 +21,7 @@ import type { KibCan } from "@/lib/star/shopData";
  * the surrounding pixels are transparent rather than a visible bar.
  */
 /** Only `color`/`image` are actually read below — narrowed to just those so
- *  a KIB Stat Can (shopData.ts's StatKibCan, a different shape entirely
+ *  a can of any tier (a different shape entirely
  *  beyond those two fields) can share this same icon without either type
  *  needing to match the other's full interface. */
 type CanLike = Pick<KibCan, "color" | "image">;

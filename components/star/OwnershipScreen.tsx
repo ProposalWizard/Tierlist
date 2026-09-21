@@ -1,4 +1,6 @@
 "use client";
+import { reputationLabel } from "@/lib/star/reputation";
+import { fameOf, fameLevel } from "@/lib/star/fame";
 import type { CareerState } from "@/lib/star/types";
 import { MAJORITY_THRESHOLD, clubValuation } from "@/lib/star/investments";
 import { GOVERNING_BODIES, influenceIn, canProposeRuleChange } from "@/lib/star/governingBodies";
@@ -72,9 +74,8 @@ export default function OwnershipScreen({
             <div className="text-[10px] font-black text-emerald-300">Details →</div>
           </div>
           <div className="flex gap-2">
-            <RepBar label="World" value={rep.world} />
-            <RepBar label="Club" value={rep.club} />
-            <RepBar label="Fans" value={career.relationships.fans} />
+            <RepBar label={`Reputation · ${reputationLabel(rep)}`} value={rep} />
+            <RepBar label={`Fame · ${fameLevel(fameOf(career)).name}`} value={fameOf(career)} />
           </div>
         </button>
 

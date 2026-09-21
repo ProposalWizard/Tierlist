@@ -1,9 +1,10 @@
 import type { Boot, OwnedItem } from "./types";
 import { applyPriceOverrides } from "./tuningStore";
 import {
-  KIB_CANS_DEFAULT, STAT_KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT,
-  PRICE_SPECS, shopTierOf, KIB_CAN_TIERS, STAT_CAN_TIERS,
+  KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT,
+  PRICE_SPECS, shopTierOf, KIB_CAN_TIERS,
 } from "./shopDefaults";
+import { KIB_CAN_WAGE_WEEKS, WAGE_FLOOR } from "./economy";
 
 /**
  * WHERE EACH ITEM SITS ON THE ONE CURVE.
@@ -16,7 +17,7 @@ import {
  * of pricing everything in weeks in the first place, and was previously a
  * number no screen could show because no screen had it.
  */
-export { PRICE_SPECS, shopTierOf, KIB_CAN_TIERS, STAT_CAN_TIERS };
+export { PRICE_SPECS, shopTierOf, KIB_CAN_TIERS };
 
 /**
  * KIB CANS.
@@ -48,32 +49,6 @@ export interface KibCan {
  *  can (name, colour, art) stays fixed; those aren't game-balance numbers. */
 export const KIB_CANS: KibCan[] = applyPriceOverrides("kibCans", KIB_CANS_DEFAULT);
 
-/**
- * KIB STAT CANS — the same idea, a much bigger spend.
- *
- * Requested directly, alongside the energy cans above: "maybe even just
- * have 2 sets of cans, the normal ones going up in energy addition, and
- * then another set of those cans but costing WAYYY more and giving stat
- * boosts." A temporary boost to power AND technique — the two player
- * skills a boot already applies additively (see page.tsx's
- * effectivePower/effectiveTechnique) — for a handful of matches, then it
- * wears off. Deliberately a flat preset per tier rather than a user-picked
- * stat or a random one: the simplest version that still scales with can
- * quality the way asked ("+3, +5, etc").
- */
-export interface StatKibCan {
-  id: "basic" | "premium" | "elite";
-  name: string;
-  price: number;
-  /** Added to BOTH power and technique while active. */
-  boost: number;
-  /** How many matches the boost lasts before it wears off. */
-  matches: number;
-  color: string;
-  image: string;
-}
-
-export const STAT_KIB_CANS: StatKibCan[] = applyPriceOverrides("statKibCans", STAT_KIB_CANS_DEFAULT);
 
 /**
  * Only `price` is editable at /star-tuning-dev — the stat boosts are the
@@ -95,3 +70,15 @@ export const BOOTS_CATALOGUE: Boot[] = applyPriceOverrides("boots", BOOTS_CATALO
 /** Only `price` is editable at /star-tuning-dev, same reasoning as boots
  *  above — `lifestyleValue` is what an item IS, not a price to tune. */
 export const LIFESTYLE_ITEMS: OwnedItem[] = applyPriceOverrides("lifestyle", LIFESTYLE_ITEMS_DEFAULT);
+
+/**
+ * WHAT A CAN COSTS YOU — a slice of your OWN weekly wage (owners, 21 Sep
+ * 2026: "the more your wage increases, the more the cans are priced at, so
+ * they're always worth something"). A National League player on ★25 a week
+ * pays about ★12 for a Basic; a Premier League star pays thousands. The
+ * catalogue's own `price` is only the fallback before a contract exists.
+ */
+export function kibCanPrice(can: KibCan, weeklyWage: number): number {
+  const wage = Math.max(WAGE_FLOOR, weeklyWage || 0);
+  return Math.max(1, Math.round(wage * KIB_CAN_WAGE_WEEKS[can.id]));
+}

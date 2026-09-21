@@ -1,3 +1,4 @@
+import { fameOf } from "./fame";
 import type { CareerState, Contract } from "./types";
 import { kitsOf } from "./kits";
 import { sortLeague } from "./season";
@@ -81,7 +82,7 @@ export function reputation(career: CareerState): number {
     (career.starRating / 5) * 100 * 0.45
     + Math.min(1, career.seasonStats.goals / 22) * 100 * 0.22
     + ((form - 5) / 4) * 100 * 0.18
-    + Math.min(1, career.fame / 80) * 100 * 0.15,
+    + Math.min(1, fameOf(career) / 100) * 100 * 0.15,
   ));
 }
 
@@ -151,7 +152,7 @@ export function generateOffers(career: CareerState, rng: () => number): Transfer
     // `weeklyWageFor` every other contract in the game uses, with your
     // current wage as a floor and nothing more. See `offerStanding`
     // (economy.ts) for the whole account.
-    const wage = offerWageFor(team.name, divisionOf(career), rep, step, career.contract.wage);
+    const wage = offerWageFor(team.name, divisionOf(career), rep, step, career.contract.wage, career);
     const seasons = 2 + Math.floor(rng() * 3);
     return {
       club: team.name,

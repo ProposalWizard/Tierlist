@@ -1,3 +1,4 @@
+import { REPUTATION_RECOMMEND_MIN, REPUTATION_EVENTS, reputationVoteBias } from "./reputation";
 import type { CareerState, LeaguePlayer } from "./types";
 import {
   isMajorityOwner, stakeIn, ownedClubState, findSquadEntry, setSquad,
@@ -87,14 +88,17 @@ export function submitRecommendation(
 export function considerRecommendations(career: CareerState, rng: () => number): CareerState {
   const pending = (career.recommendations ?? []).filter(r => r.status === "pending");
   if (pending.length === 0) return career;
-  const swing = (career.reputation.shareholders - 50) / 100; // -0.5..0.5
-  const chance = Math.max(0.1, Math.min(0.8, 0.35 + swing * 0.6));
+  // Below REPUTATION_RECOMMEND_MIN a board barely listens (owners, 21 Sep
+  // 2026: "30+ — your recommendations get taken seriously").
+  const swing = (career.reputation - 50) / 100; // -0.5..0.5
+  const base = career.reputation >= REPUTATION_RECOMMEND_MIN ? 0.35 : 0.08;
+  const chance = Math.max(0.05, Math.min(0.8, base + swing * 0.6));
   let reputation = career.reputation;
   const byId = new Map(pending.map(r => [r.id, r]));
   for (const r of pending) {
     const adopted = rng() < chance;
     byId.set(r.id, { ...r, status: adopted ? "adopted" : "dismissed" });
-    if (adopted) reputation = { ...reputation, shareholders: clampReputation(reputation.shareholders + 1) };
+    if (adopted) reputation = clampReputation(reputation + REPUTATION_EVENTS.recommendationAdopted);
   }
   const recommendations = (career.recommendations ?? []).map(r => byId.get(r.id) ?? r);
   return { ...career, recommendations, reputation };
@@ -270,7 +274,7 @@ export function proposePresidentVote(
 ): { ok: true; proposal: PresidentVoteProposal } | { ok: false; reason: string } {
   if (!isMajorityOwner(career, club)) return { ok: false, reason: "Not the majority shareholder" };
   if (ownedClubState(career, club).isPresident) return { ok: false, reason: "Already president" };
-  const biasStrength = (career.reputation.shareholders - 50) / 50;
+  const biasStrength = reputationVoteBias(career.reputation);
   const tally = castVote(
     "Elect you as club president?",
     [{ id: "yes", label: "Elect" }, { id: "no", label: "Reject" }],
@@ -528,6 +532,8 @@ export function mergeClubs(career: CareerState, primaryClub: string, absorbedClu
       [absorbedClub]: { ...ownedClubState(next, absorbedClub), budget: 0, dissolvedInto: primaryClub },
     },
     relationships: { ...next.relationships, fans: clampReputation(next.relationships.fans - MERGER_FAN_COST) },
+    // Owners, 21 Sep 2026: merging two clubs is "such a big issue" it costs 20.
+    reputation: clampReputation(next.reputation + REPUTATION_EVENTS.mergedClubs),
   };
   return { career: next, ok: true };
 }

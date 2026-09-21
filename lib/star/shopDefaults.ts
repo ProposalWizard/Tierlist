@@ -1,5 +1,5 @@
 import type { Boot, OwnedItem } from "./types";
-import type { KibCan, StatKibCan } from "./shopData";
+import type { KibCan } from "./shopData";
 import type { ShopTierId, PriceBandId } from "./economy";
 import {
   bandPrice, tierPrice, bootMatchesFor,
@@ -65,9 +65,8 @@ export interface PriceSpec {
  * of the same thing, so they climb too — just more gently.
  */
 export const KIB_CAN_TIERS = RATING_CONVERTER_TIERS.energy;
-export const STAT_CAN_TIERS = RATING_CONVERTER_TIERS.stats;
 
-const canPrice = (which: "energy" | "stats", i: number) =>
+const canPrice = (which: "energy", i: number) =>
   tierPrice(RATING_CONVERTER_TIERS[which][i], RATING_CONVERTER_WEEKS[which][i]);
 
 export const KIB_CANS_DEFAULT: KibCan[] = [
@@ -76,16 +75,6 @@ export const KIB_CANS_DEFAULT: KibCan[] = [
   { id: "elite", name: "Elite KIB Can", price: canPrice("energy", 2), restore: 100, color: "bg-purple-400", image: "/star/kib-elite.png" },
 ];
 
-// Far steeper than the energy cans above — "costing WAYYY more," requested
-// directly. `boost` adds to power AND technique alike (the two player skills
-// a boot already applies via the same additive pattern — see page.tsx's
-// effectivePower/effectiveTechnique) for `matches` games, then clears —
-// never stacks with a second can, the later one just replaces it.
-export const STAT_KIB_CANS_DEFAULT: StatKibCan[] = [
-  { id: "basic", name: "Basic KIB Stat Can", price: canPrice("stats", 0), boost: 3, matches: 2, color: "bg-amber-500", image: "/star/kib-basic.png" },
-  { id: "premium", name: "Premium KIB Stat Can", price: canPrice("stats", 1), boost: 5, matches: 3, color: "bg-rose-500", image: "/star/kib-premium.png" },
-  { id: "elite", name: "Elite KIB Stat Can", price: canPrice("stats", 2), boost: 8, matches: 4, color: "bg-fuchsia-500", image: "/star/kib-elite.png" },
-];
 
 // ═══════════════════════════════════════════════════════════════════════
 //  BOOTS
@@ -131,25 +120,31 @@ interface BootSpec {
   at: number;
   curve?: boolean;
   extraTouch?: boolean;
+  /** Hand-set durability, overriding the price-derived one. Set directly by
+   *  the owners (21 Sep 2026): the lower three tiers lasted far too long. */
+  matches?: number;
+  /** Multiplies the band price — used once, to make NS-Pure a genuinely
+   *  affordable first pair ("one of the boots should cost about half"). */
+  priceFactor?: number;
 }
 
 const BOOT_SPECS: BootSpec[] = [
   // ── Starter: non-league money. One pair, saved for, worn for two seasons.
-  { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, tier: "starter", at: 0.15 },
-  { id: "control", name: "NS-Control", pace: 5, power: 5, technique: 10, tier: "starter", at: 0.55 },
-  { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, tier: "starter", at: 1 },
+  { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, tier: "starter", at: 0.15, priceFactor: 0.5, matches: 35 },
+  { id: "control", name: "NS-Control", pace: 5, power: 5, technique: 10, tier: "starter", at: 0.55, matches: 30 },
+  { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, tier: "starter", at: 1, matches: 30 },
 
   // ── Semi-Pro: League Two money.
-  { id: "speed", name: "NS-Flash", pace: 10, power: 5, technique: 10, tier: "semi_pro", at: 0.45 },
-  { id: "power", name: "NS-Thunder", pace: 5, power: 10, technique: 10, tier: "semi_pro", at: 0.7 },
+  { id: "speed", name: "NS-Flash", pace: 10, power: 5, technique: 10, tier: "semi_pro", at: 0.45, matches: 25 },
+  { id: "power", name: "NS-Thunder", pace: 5, power: 10, technique: 10, tier: "semi_pro", at: 0.7, matches: 30 },
   // Not a stat boost — a whole extra ability, so it sits at the top of its
   // own rung's band rather than on the stat-per-star curve the rest follow.
-  { id: "curl", name: "NS-Swerve", pace: 5, power: 5, technique: 10, tier: "semi_pro", at: 1, curve: true },
+  { id: "curl", name: "NS-Swerve", pace: 5, power: 5, technique: 10, tier: "semi_pro", at: 1, curve: true, matches: 15 },
 
   // ── Pro: League One money.
-  { id: "elite", name: "NS-Elite", pace: 10, power: 10, technique: 10, tier: "pro", at: 0.45 },
-  { id: "pro", name: "NS-Pro", pace: 15, power: 15, technique: 10, tier: "pro", at: 0.7 },
-  { id: "legend", name: "NS-Legend", pace: 15, power: 15, technique: 15, tier: "pro", at: 1 },
+  { id: "elite", name: "NS-Elite", pace: 10, power: 10, technique: 10, tier: "pro", at: 0.45, matches: 14 },
+  { id: "pro", name: "NS-Pro", pace: 15, power: 15, technique: 10, tier: "pro", at: 0.7, matches: 17 },
+  { id: "legend", name: "NS-Legend", pace: 15, power: 15, technique: 15, tier: "pro", at: 1, matches: 20 },
 
   // ── Elite: Championship money.
   { id: "meteor", name: "NS-Meteor", pace: 20, power: 15, technique: 15, tier: "elite", at: 0.55 },
@@ -167,14 +162,15 @@ const BOOT_SPECS: BootSpec[] = [
 ];
 
 export const BOOTS_CATALOGUE_DEFAULT: Boot[] = BOOT_SPECS.map((spec) => {
-  const price = bandPrice(spec.tier, "upgrade", spec.at);
+  const band = bandPrice(spec.tier, "upgrade", spec.at);
+  const price = spec.priceFactor ? Math.round((band * spec.priceFactor) / 5) * 5 : band;
   return {
     id: spec.id,
     name: spec.name,
     pace: spec.pace,
     power: spec.power,
     technique: spec.technique,
-    matches: bootMatchesFor(price, spec.tier),
+    matches: spec.matches ?? bootMatchesFor(price, spec.tier),
     price,
     ...(spec.curve ? { curve: true } : {}),
     ...(spec.extraTouch ? { extraTouch: true } : {}),

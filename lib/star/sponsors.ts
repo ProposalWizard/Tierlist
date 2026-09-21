@@ -1,3 +1,4 @@
+import { fameOf, fameLevel, isWornOut } from "./fame";
 import type { CareerState, SponsorDeal, MatchStats } from "./types";
 import { mulberry32 } from "./season";
 import { clubExpectation, type Ambition } from "./expectations";
@@ -46,13 +47,18 @@ interface SponsorRequirement {
   describe: string;
 }
 
-/** Sum of every lifestyle purchase ever made — the closest thing this career
- *  has to "how much of a star's life do you actually live", which is what
- *  the vanity brands (Cosmetics, Watch, Jewelry, Car) are really buying. */
-export function lifestyleScore(career: CareerState): number {
-  return (career.ownedItems ?? []).reduce((sum, i) => sum + i.lifestyleValue, 0);
+/** Is anything you own of this category still in working order? */
+function ownsWorking(career: CareerState, category: "item" | "vehicle" | "property"): boolean {
+  return (career.ownedItems ?? []).some(i => i.category === category && !isWornOut(i));
 }
 
+/**
+ * ── Rebuilt 21 Sep 2026 ──
+ * Fame gates are now the six fame LEVELS (fame.ts): Local Name 10, Rising
+ * Star 25, National Name 40, Global Star 60, Icon 80. The old "lifestyle
+ * points" requirements are gone with lifestyle itself — the vanity brands
+ * now want something you actually own, still in working order.
+ */
 const SPONSOR_REQUIREMENTS: Record<string, SponsorRequirement> = {
   // Grounded, performance-first brands — reachable early, on output alone.
   Boots: {
@@ -61,12 +67,12 @@ const SPONSOR_REQUIREMENTS: Record<string, SponsorRequirement> = {
     describe: "3 goal involvements this season (or 10 for your career)",
   },
   "Sports Drink": {
-    fame: 15, baseFee: 7,
+    fame: 10, baseFee: 7,
     extra: c => c.seasonStats.appearances >= 6,
     describe: "6 appearances this season",
   },
   Food: {
-    fame: 18, baseFee: 8,
+    fame: 10, baseFee: 8,
     extra: c => c.happiness >= 45,
     describe: "45 happiness — a face people like seeing",
   },
@@ -77,7 +83,7 @@ const SPONSOR_REQUIREMENTS: Record<string, SponsorRequirement> = {
     describe: "45 Fans relationship",
   },
   "Casual Clothing": {
-    fame: 30, baseFee: 12,
+    fame: 25, baseFee: 12,
     extra: c => c.relationships.fans >= 55,
     describe: "55 Fans relationship",
   },
@@ -89,29 +95,29 @@ const SPONSOR_REQUIREMENTS: Record<string, SponsorRequirement> = {
   },
   // The vanity brands — care about the lifestyle you can already afford.
   Cosmetics: {
-    fame: 35, baseFee: 14,
-    extra: c => lifestyleScore(c) >= 25,
-    describe: "★25 of lifestyle purchases",
+    fame: 40, baseFee: 14,
+    extra: c => c.relationships.fans >= 50,
+    describe: "50 Fans relationship",
   },
   Watch: {
-    fame: 50, baseFee: 20,
-    extra: c => lifestyleScore(c) >= 45,
-    describe: "★45 of lifestyle purchases",
+    fame: 60, baseFee: 20,
+    extra: c => ownsWorking(c, "vehicle"),
+    describe: "a car (or better) in working order",
   },
   Jewelry: {
-    fame: 58, baseFee: 26,
-    extra: c => lifestyleScore(c) >= 60,
-    describe: "★60 of lifestyle purchases",
+    fame: 60, baseFee: 26,
+    extra: c => ownsWorking(c, "property"),
+    describe: "a property of your own",
   },
   // The one that wants the whole picture — famous, flush, AND playing
   // somewhere that matters.
   Car: {
-    fame: 65, baseFee: 34,
+    fame: 80, baseFee: 34,
     extra: c => {
       const amb = clubExpectation(c).ambition;
-      return (amb === "Title" || amb === "Europe") && lifestyleScore(c) >= 40;
+      return amb === "Title" || amb === "Europe";
     },
-    describe: "★40 of lifestyle purchases, at a club chasing the title or Europe",
+    describe: "playing for a club chasing the title or Europe",
   },
 };
 
@@ -120,14 +126,14 @@ const SPONSOR_REQUIREMENTS: Record<string, SponsorRequirement> = {
 export function sponsorRequirementText(category: string): string {
   const r = SPONSOR_REQUIREMENTS[category];
   if (!r) return "";
-  return `★${r.fame} fame, ${r.describe}`;
+  return `${fameLevel(r.fame).name} (${r.fame} fame), ${r.describe}`;
 }
 
 /** Whether this category would sign you right now. */
 export function sponsorEligible(category: string, career: CareerState): boolean {
   const r = SPONSOR_REQUIREMENTS[category];
   if (!r) return false;
-  return career.fame >= r.fame && r.extra(career);
+  return fameOf(career) >= r.fame && r.extra(career);
 }
 
 // A famous player at a club chasing the league is worth more to every brand
@@ -188,7 +194,7 @@ export function sponsorFee(category: string, career: CareerState): number {
     getTuning("sponsors.upgradeMaxLevel"),
   );
   const upgrade = Math.pow(1 + getTuning("sponsors.upgradeFeeMultiplier"), Math.max(0, level - 1));
-  const raw = Math.max(1, Math.round((r.baseFee + career.fame / getTuning("sponsors.fameDivisor")) * mult * upgrade));
+  const raw = Math.max(1, Math.round((r.baseFee + fameOf(career) / getTuning("sponsors.fameDivisor")) * mult * upgrade));
   // ── WAGE-RELATIVE, 19 Sep 2026 ──
   //
   // This used to be `raw × 2000`, a flat multiplier from the 14 Sep rescale.
@@ -217,7 +223,7 @@ export function sponsorFee(category: string, career: CareerState): number {
 export function signSponsor(career: CareerState, category: string): CareerState {
   const idx = career.sponsors.findIndex(s => s.category === category);
   if (idx < 0 || career.sponsors[idx].active || !sponsorEligible(category, career)) return career;
-  const activated = career.sponsors.map((s, i) => (i === idx ? { ...s, active: true, level: s.level ?? 1 } : s));
+  const activated = career.sponsors.map((s, i) => (i === idx ? { ...s, active: true, level: s.level ?? 1, termLeft: sponsorTerm(category) } : s));
   const sponsors = attachObjective(career, activated);
   return { ...career, sponsors, money: career.money + sponsorFee(category, career) };
 }
@@ -406,6 +412,12 @@ export function progressObjectives(
  * else, which is the only thing that makes an objective worth chasing rather
  * than ignoring.
  */
+/** One season, or two for the three top brands. */
+export const LONG_TERM_SPONSORS = ["Watch", "Jewelry", "Car"];
+export function sponsorTerm(category: string): number {
+  return LONG_TERM_SPONSORS.includes(category) ? 2 : 1;
+}
+
 export function rollSponsorSeason(career: CareerState): {
   sponsors: SponsorDeal[];
   lapsed: string[];
@@ -416,7 +428,16 @@ export function rollSponsorSeason(career: CareerState): {
   seasonFees: { category: string; fee: number }[];
 } {
   const lapsed: string[] = [];
+  const ended: string[] = [];
   const sponsors = (career.sponsors ?? []).map(s => {
+    // The deal's own term runs down first (owners, 21 Sep 2026: deals last
+    // one season, two for the top brands, then have to be earned again).
+    // A deal saved before terms existed counts as a one-season deal.
+    if (s.active && (s.termLeft ?? 1) <= 1) {
+      ended.push(`${s.category}: deal ended — re-sign if you still qualify`);
+      return { ...s, active: false, objective: undefined, termLeft: undefined };
+    }
+    if (s.active && typeof s.termLeft === "number") s = { ...s, termLeft: s.termLeft - 1 };
     const o = s.objective;
     if (!s.active || !o) return s;
     if (o.done) return { ...s, objective: undefined };
@@ -433,7 +454,9 @@ export function rollSponsorSeason(career: CareerState): {
     .filter(s => s.active)
     .map(s => ({ category: s.category, fee: sponsorFee(s.category, career) }));
 
-  return { sponsors, lapsed, standingHit: lapsed.length * getTuning("sponsors.lapsedStandingHit"), seasonFees };
+  // A deal that simply reached the end of its term costs no standing — only
+  // a failed objective does.
+  return { sponsors, lapsed: [...lapsed, ...ended], standingHit: lapsed.length * getTuning("sponsors.lapsedStandingHit"), seasonFees };
 }
 
 /**

@@ -33,9 +33,9 @@ import {
 } from "../../lib/star/clubs";
 import {
   BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT,
-  KIB_CANS_DEFAULT, STAT_KIB_CANS_DEFAULT, PRICE_SPECS,
+  KIB_CANS_DEFAULT, PRICE_SPECS,
 } from "../../lib/star/shopDefaults";
-import { BOOTS_CATALOGUE, shopTierOf } from "../../lib/star/shopData";
+import { BOOTS_CATALOGUE, shopTierOf, kibCanPrice } from "../../lib/star/shopData";
 import { STARTER_BOOT_MATCHES } from "../../lib/star/careerFlow";
 
 /**
@@ -226,7 +226,7 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
 //  4 — …EXCEPT THE RATING CONVERTERS, WHICH GET DEARER. ALSO DO NOT TIDY.
 // ═══════════════════════════════════════════════════════════════════════
 {
-  for (const which of ["energy", "stats"] as const) {
+  for (const which of ["energy"] as const) {
     const weeks = RATING_CONVERTER_WEEKS[which];
     const tiers = RATING_CONVERTER_TIERS[which];
     check(weeks.length === tiers.length, `${which}: a tier for every rung`);
@@ -255,12 +255,6 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
     );
   }
 
-  // The stat cans are the real converter and have to hurt more than the
-  // energy cans, which only convert money into availability.
-  check(
-    RATING_CONVERTER_WEEKS.stats[0] > RATING_CONVERTER_WEEKS.energy[2],
-    "even the cheapest stat can costs more weeks than the dearest energy can",
-  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -298,6 +292,9 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
     const spec = PRICE_SPECS.boots[b.id];
     check(!!spec, `${b.name}: has a price spec at all`);
     if (!spec) continue;
+    // NS-Pure is deliberately half its band price (owners, 21 Sep 2026) —
+    // the affordable first pair a non-league career can actually reach.
+    if (b.id === "starter") continue;
     check(priceIsInBand(b.price, spec.tier, spec.band),
       `${b.name}: ★${b.price} is ${weeksOfIncome(b.price, spec.tier).toFixed(2)} wks at ${spec.tier}, `
       + `outside the ${spec.band} band`);
@@ -314,10 +311,17 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
 
   // Cans are priced off RATING_CONVERTER_WEEKS instead of a band, so they
   // are checked against that directly.
-  const cansMatch = (rows: { price: number }[], which: "energy" | "stats") =>
+  const cansMatch = (rows: { price: number }[], which: "energy") =>
     rows.every((row, i) => row.price === tierPrice(RATING_CONVERTER_TIERS[which][i], RATING_CONVERTER_WEEKS[which][i]));
   check(cansMatch(KIB_CANS_DEFAULT, "energy"), "every energy can is priced straight off RATING_CONVERTER_WEEKS");
-  check(cansMatch(STAT_KIB_CANS_DEFAULT, "stats"), "every stat can is priced straight off RATING_CONVERTER_WEEKS");
+
+  // In play a can is priced off the buyer's OWN wage (owners, 21 Sep 2026),
+  // so it costs a real slice of the week at every level.
+  for (const wage of [25, 256, 6_336, 100_000]) {
+    const prices = KIB_CANS_DEFAULT.map(c => kibCanPrice(c, wage));
+    check(prices[0] < prices[1] && prices[1] < prices[2], `cans ascend at wage ★${wage}`);
+    check(Math.abs(prices[0] / wage - 0.5) < 0.05, `a Basic can is half a week's wage at ★${wage} (★${prices[0]})`);
+  }
 
   // Nothing in the shop is a hand-typed figure any more: no price survives
   // a change to the one dial unless it is derived from it. Measured rather
@@ -327,7 +331,6 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
     ...BOOTS_CATALOGUE_DEFAULT.map(b => b.price),
     ...LIFESTYLE_ITEMS_DEFAULT.map(i => i.price),
     ...KIB_CANS_DEFAULT.map(c => c.price),
-    ...STAT_KIB_CANS_DEFAULT.map(c => c.price),
   ];
   check(everyPrice.every(p => Number.isFinite(p) && p > 0), "every catalogue price is a real positive number");
 }
@@ -366,8 +369,13 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   // against durability spanning 3x, which put the cheapest boots in the
   // game at roughly three weeks' wages PER MATCH — unaffordable precisely
   // where affordability was the point.
+  // Starter, Semi-Pro and Pro boots have HAND-SET durability since 21 Sep
+  // 2026 (owners: "they last too long… halve them"), so they deliberately
+  // cost more per match than the derived rule. Only the derived boots are
+  // held to it.
   for (const b of BOOTS_CATALOGUE_DEFAULT) {
     const tier = PRICE_SPECS.boots[b.id].tier;
+    if (tier === "starter" || tier === "semi_pro" || tier === "pro") continue;
     const perMatch = bootWeeksPerMatch(b.price, b.matches, tier);
     check(
       perMatch <= 0.4,
@@ -392,9 +400,8 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   const cheapest = BOOTS_CATALOGUE_DEFAULT[0];
   const dearest = BOOTS_CATALOGUE_DEFAULT[BOOTS_CATALOGUE_DEFAULT.length - 1];
   check(
-    cheapest.matches > dearest.matches * 3,
-    `the cheapest boot (${cheapest.matches} matches) should far outlast the dearest (${dearest.matches}) — `
-    + "a budget boot survives seasons, an elite one is a race-day item",
+    cheapest.matches > dearest.matches * 2,
+    `the cheapest boot (${cheapest.matches} matches) should clearly outlast the dearest (${dearest.matches})`,
   );
   check(
     cheapest.matches >= 30,
@@ -462,7 +469,7 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   }
 
   // The cans climb in price alongside what they do.
-  for (const rows of [KIB_CANS_DEFAULT, STAT_KIB_CANS_DEFAULT]) {
+  for (const rows of [KIB_CANS_DEFAULT]) {
     for (let i = 1; i < rows.length; i++) {
       check(rows[i].price > rows[i - 1].price, `${rows[i].name} costs more than ${rows[i - 1].name}`);
     }
@@ -635,10 +642,12 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
       wage <= topPossible,
       `five moves in a row must not compound: ★${start} → ★${wage}, against a ceiling of ★${topPossible}`,
     );
-    check(
-      wage < start * 4,
-      `five moves within the same division cannot multiply a wage several-fold (★${start} → ★${wage})`,
-    );
+    // Premier League clubs genuinely pay very different amounts now (real
+    // wage bills, owners 21 Sep 2026), so reaching Liverpool's rate from a
+    // typical wage is correct. What must never happen is compounding: moving
+    // AGAIN, to the same payer, cannot raise it further.
+    const again = offerWageFor(PREMIER_LEAGUE_CLUBS[4 % PREMIER_LEAGUE_CLUBS.length], "premier", 100, 0, wage);
+    check(again === wage, `a sixth move to the same club cannot compound (★${wage} → ★${again})`);
 
     // A move never costs you money — your old wage really is a floor.
     for (const club of NATIONAL_LEAGUE_CLUBS.slice(0, 5)) {
@@ -674,6 +683,6 @@ console.log(
   + `(${bandWeeks("upgrade", "starter").min.toFixed(0)}-${bandWeeks("upgrade", "starter").max.toFixed(0)} wks for boots at the bottom, `
   + `${bandWeeks("upgrade", "world_class").min.toFixed(1)}-${bandWeeks("upgrade", "world_class").max.toFixed(1)} at the top), `
   + `rating converters strictly rising, every one of `
-  + `${BOOTS_CATALOGUE_DEFAULT.length + LIFESTYLE_ITEMS_DEFAULT.length + KIB_CANS_DEFAULT.length + STAT_KIB_CANS_DEFAULT.length} `
+  + `${BOOTS_CATALOGUE_DEFAULT.length + LIFESTYLE_ITEMS_DEFAULT.length + KIB_CANS_DEFAULT.length} `
   + `catalogue prices in band, boots at ${BOOT_WEEKS_PER_MATCH} wks/match everywhere`,
 );

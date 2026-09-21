@@ -138,12 +138,10 @@ export interface Relationships {
  * brief's §5). All four fields are 0-100, same convention as
  * `Relationships`. See lib/star/reputation.ts for how these move.
  */
-export interface Reputation {
-  world: number;
-  club: number;
-  government: number;
-  shareholders: number;
-}
+/** One number, 0-100 — do the people who run football trust you. See
+ *  reputation.ts. Was a four-bar object before 21 Sep 2026; storage.ts
+ *  migrates old saves to the average of the four. */
+export type Reputation = number;
 
 export interface Contract {
   club: string;
@@ -538,7 +536,12 @@ export interface OwnedItem {
   name: string;
   category: "item" | "vehicle" | "property";
   price: number;
+  /** Status — how much owning this adds to your fame (fame.ts). */
   lifestyleValue: number;
+  /** Seasons left before it wears out. 0 = worn out (no fame until
+   *  replaced). Absent = never wears (property, jewellery, or an item
+   *  bought before wear existed). */
+  seasonsLeft?: number;
 }
 
 export interface Girlfriend {
@@ -565,6 +568,10 @@ export interface SponsorDeal {
    *  each completed objective bumps it, permanently raising every future
    *  season's fee for this one deal. */
   level?: number;
+  /** Seasons left on the deal itself. At 0 it ends and has to be re-earned
+   *  (fame level + the brand's own requirement). One season, two for the
+   *  top three brands. Absent on a deal signed before terms existed. */
+  termLeft?: number;
 }
 
 export interface Trophy {
@@ -675,6 +682,12 @@ export interface CareerState {
   lastTrainedWeek?: Partial<Record<keyof Skills, number>>;
   relationships: Relationships;
   reputation: Reputation;
+  /** The last season you were caught up in a scandal (a scandal dilemma
+   *  choice, or getting caught cheating). A season without one earns a
+   *  little reputation — see seasonStanding.ts. */
+  lastScandalSeason?: number;
+  /** Why fame and reputation moved at the last season rollover. */
+  fameNews?: string[];
   contract: Contract;
   season: number;
   /**
@@ -778,18 +791,6 @@ export interface CareerState {
    *  dashboard's own KIB Cans card — a second lever on top of Rest/Skip to
    *  Match Day, not a replacement for either. */
   kibCans: { basic: number; premium: number; elite: number };
-  /** Owned KIB STAT Cans — see shopData.ts's STAT_KIB_CANS. Far pricier
-   *  than a plain KIB Can; using one sets `statBoost` instead of topping up
-   *  energy. */
-  statCans: { basic: number; premium: number; elite: number };
-  /** The currently active stat boost, if any — set by using a KIB Stat
-   *  Can, counted down one per match played in creditMatchResult (the same
-   *  shape currentBoot's own `matches` countdown already uses), cleared at
-   *  zero. Adds to `skills.power`/`skills.technique` on top of any worn
-   *  boot — see page.tsx's effectivePower/effectiveTechnique. Using a new
-   *  can while one is already active replaces it outright; boosts never
-   *  stack. */
-  statBoost: { power: number; technique: number; matchesLeft: number } | null;
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];

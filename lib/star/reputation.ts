@@ -1,62 +1,88 @@
-import type { Reputation } from "./types";
+import type { CareerState } from "./types";
 
 /**
- * REPUTATION — PHASE 1 OF STAR_POWER_POLITICS.MD.
+ * REPUTATION — ONE NUMBER, 0-100.
  *
- * Five separate standings were asked for (world, club, fan, government,
- * shareholder), explicitly not one number — modelled on the Life tab's
- * existing relationship bars. Fan reputation is `relationships.fans`
- * itself, extended rather than duplicated (see the brief's own §5), so this
- * file only owns the four that had nowhere else to live: world, club,
- * government, shareholders.
+ * Rebuilt 21 Sep 2026. It used to be four separate bars (world, club,
+ * government, shareholders), and two of them — club and government — were
+ * read by nothing at all. The owners: "it's a lot easier for the user if
+ * reputation is just one number that goes up and down."
  *
- * This phase ships the stat and two modest real hooks into things that
- * already happen every season — winning silverware, and the board's own
- * verdict on how the season went. Nothing here feeds a vote yet: there is
- * no voting engine (that's Phase 2), no governing-body investment (Phase
- * 4), and no boardroom-specific track record beyond the season judgement
- * already computed for the boss relationship (that's Phase 3). Government
- * and shareholder reputation are real fields from day one, but nothing
- * moves them yet — there is nothing in the game for them to be a
- * relationship WITH until later phases exist.
+ * It answers one question: DO THE PEOPLE WHO RUN FOOTBALL TRUST YOU? That
+ * is a different thing from fame (fame.ts — how many people know your
+ * name). A scandal makes you MORE famous and LESS trusted; a quiet,
+ * dependable club captain is trusted without being famous.
+ *
+ * It matters on the ownership/politics side of the game:
+ *
+ *   any   buy shares; the higher it is, the more votes lean your way
+ *   30+   club boards take your recommendations seriously
+ *   60+   you may propose Rule Book changes (influence still required)
+ *   90+   you may stand for president of the FA / UEFA / FIFA / CONMEBOL
  */
+
+export const REPUTATION_START = 20;
+export const REPUTATION_RECOMMEND_MIN = 30;
+export const REPUTATION_PROPOSE_RULES_MIN = 60;
+export const REPUTATION_PRESIDENCY_MIN = 90;
+
+/** Every event that moves it, in one table so the numbers can be read and
+ *  argued with in one place. Signed: positive raises, negative lowers. */
+export const REPUTATION_EVENTS = {
+  voteHeld: 2,
+  overruledVote: -5,
+  recommendationAdopted: 1,
+  ownedClubBeatExpectations: 3,
+  ownedClubTrophyOrPromotion: 5,
+  ownedClubRelegated: -4,
+  personalTrophy: 2,
+  cleanSeason: 1,
+  goodCause: 2,
+  caughtCheating: -15,
+  mergedClubs: -20,
+  transferRequest: -2,
+} as const;
 
 export function clampReputation(n: number): number {
-  return Math.max(0, Math.min(100, Math.round(n)));
+  return Math.max(0, Math.min(100, Math.round(Number.isFinite(n) ? n : 0)));
 }
 
-export function nudgeReputation(rep: Reputation, changes: Partial<Record<keyof Reputation, number>>): Reputation {
-  const next = { ...rep };
-  for (const key of Object.keys(changes) as (keyof Reputation)[]) {
-    const delta = changes[key];
-    if (delta) next[key] = clampReputation(next[key] + delta);
+/** Move reputation by `delta`, clamped. */
+export function changeReputation(rep: number, delta: number): number {
+  return clampReputation(rep + delta);
+}
+
+/** Same, on a whole career. */
+export function withReputation(career: CareerState, delta: number): CareerState {
+  return { ...career, reputation: changeReputation(career.reputation, delta) };
+}
+
+/** How strongly a vote leans your way: -1 at 0 reputation, +1 at 100. */
+export function reputationVoteBias(rep: number): number {
+  return (clampReputation(rep) - 50) / 50;
+}
+
+/**
+ * A save from before 21 Sep 2026 stores the old four-bar object. The owners
+ * agreed the new single number starts as the AVERAGE of the four.
+ */
+export function migrateReputation(old: unknown): number {
+  if (typeof old === "number") return clampReputation(old);
+  if (old && typeof old === "object") {
+    const vals = ["world", "club", "government", "shareholders"]
+      .map(k => (old as Record<string, unknown>)[k])
+      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    if (vals.length > 0) return clampReputation(vals.reduce((a, b) => a + b, 0) / vals.length);
   }
-  return next;
+  return REPUTATION_START;
 }
 
-/**
- * How much a season's silverware nudges world reputation.
- *
- * Reuses the exact `trophyFame`/`honourFame` figures `advanceSeason` already
- * computes for `career.fame` — that number is deliberately unbounded (fame
- * keeps climbing for as long as a career runs), where reputation is a
- * bounded 0-100 bar, so this scales it down hard rather than reusing it
- * directly. A Premier League title (trophyFame 25) is worth 5 points of
- * world reputation; an individual honour (honourFame 4 each) is worth 1.
- */
-export function worldReputationFromSeason(trophyFame: number, honourFame: number): number {
-  return Math.round(trophyFame / 5 + honourFame / 4);
-}
-
-/**
- * How much the board's own verdict on the season (see `judgeSeason` in
- * expectations.ts) nudges CLUB reputation — the "strong boardroom track
- * record" hook named directly in the brief. Deliberately its own scale, not
- * a reuse of `bossChange`: the boss bar is a fast-moving personal
- * relationship, club reputation should be the slower-moving, more
- * institutional cousin of it, so the same season swings it by less
- * (bossChange tops out at ±18; this tops out at ±8).
- */
-export function clubReputationFromSeason(judgementScore: number): number {
-  return Math.round(judgementScore * 8);
+/** A plain-English label for the one bar. */
+export function reputationLabel(rep: number): string {
+  const r = clampReputation(rep);
+  if (r >= REPUTATION_PRESIDENCY_MIN) return "Establishment";
+  if (r >= REPUTATION_PROPOSE_RULES_MIN) return "Respected";
+  if (r >= REPUTATION_RECOMMEND_MIN) return "Trusted";
+  if (r >= 15) return "Unproven";
+  return "Distrusted";
 }
