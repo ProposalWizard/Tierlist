@@ -5,8 +5,8 @@ import {
   MAX_REACH_X, MAX_REACH_Z, KEEPER_SET_X, KEEPER_SET_Z,
   type GoalieShot, type DiveResult,
 } from "@/lib/star/goalieMode";
-import { GOAL_W, GOAL_H, NET_DEPTH } from "@/lib/star/pitch";
 import { cameraFor, project, type FpCamera } from "@/lib/star/firstPersonView";
+import { GOAL_W, GOAL_H, NET_DEPTH } from "@/lib/star/pitch";
 import { drawFigureAt, drawKeeperAt, BALL_MIN_R, type FigureLook, type BodyPose } from "@/lib/star/fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
@@ -21,24 +21,48 @@ import { mulberry32 } from "@/lib/star/season";
  * The interactive/physics layer (`lib/star/goalieMode.ts`) is the part that
  * must be exactly right and is measured, tested and locked in separately —
  * see that file's own header. Everything in THIS file is presentation and
- * input: a real perspective camera (`firstPersonView.ts`, the same math the
- * open-run first-person mode already uses) sat just behind the goal line,
- * looking out at the shot; the shared figure renderer (`fiveASide/render.ts`)
- * for the keeper (you) and the striker, so both get real photo/outline
- * support "for free" and the same house look as every other screen; and a
- * push-your-luck stake that stacks with `streakMultiplier`, matching the
- * bet/onSetBank idiom every other Casino game here already uses.
+ * input.
+ *
+ * ── Rebuilt against a real reference, not a guess ──
+ *
+ * Handed three real screen recordings of "Mini Soccer Star"'s own goalie
+ * mode, named directly as "almost the perfect template". Measured off real
+ * extracted frames rather than eyeballed: the live camera sits close and
+ * LOW, right behind the keeper — his own figure is a genuinely dominant
+ * ~35% of frame width even in the idle "get ready" shot, growing further as
+ * a real push-in happens right as the striker connects — and the near goal
+ * frame (the one THIS keeper defends) is never shown at all during live
+ * play, in any of the three clips. That settles the tension with this
+ * file's own earlier, text-only brief ("the goal, the goal posts... all in
+ * view") in the reference's favour: a first version fitted the whole goal
+ * into a wide, distant shot, which is a real, different design this
+ * reference doesn't use live — dropped in favour of what was actually shown.
  *
  * ── World coordinates, local to this file only ──
  *
- * y = 0 is the goal line. Positive y is BEHIND it (where the camera and net
- * sit); negative y is OUT on the pitch (where the striker stands, at
- * `y = -shot.startY`). x/z match `goalieMode.ts`'s own goal-local convention
- * exactly (x = 0 centre, negative = keeper's left; z = height). The camera
- * uses `firstPersonView.ts`'s DEFAULT forward ({0,-1}) specifically so that
- * maps to the intuitive "positive world x = screen right" without any extra
- * sign-flipping — see `diveSideFor` below for the one place that still
- * needed working out by hand.
+ * y = 0 is the goal line, where the keeper stands set. Positive y is BEHIND
+ * it (where the camera sits); negative y is OUT on the pitch (the striker,
+ * at `y = -shot.startY`). x/z match `goalieMode.ts`'s own goal-local
+ * convention (x = 0 centre, negative = keeper's left; z = height). The
+ * camera uses `firstPersonView.ts`'s DEFAULT forward ({0,-1}), which maps
+ * to the intuitive "positive world x = screen right" with no sign-flipping
+ * — see `diveSideFor` below for the one place that still needed working out
+ * by hand.
+ *
+ * ── Input: drag to aim, release commits — not tap-to-commit ──
+ *
+ * Reported directly, a real bug not a preference: on phone, touching the
+ * screen locked in the dive instantly, because the first version committed
+ * on pointerDOWN — the mouse-only idiom of "hover to preview, click to
+ * commit" simply has no touch equivalent (there is no touch gesture that
+ * previews without also touching). Rebuilt on the same suggestion given
+ * directly: track the live pointer position from pointerDOWN through every
+ * pointerMOVE (a swipe, on touch; a hover, on a mouse — both feed the same
+ * live reticle), and commit only on pointerUP, at wherever the pointer
+ * ends up. A plain, no-drag click still commits exactly where clicked
+ * (down and up land at the same point), so desktop feels identical to
+ * before; a swipe on phone now previews before it commits, matching the
+ * suggestion exactly.
  *
  * ── One honestly-scoped simplification ──
  *
@@ -63,40 +87,67 @@ interface GoalieModeProps {
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
+function easeInOutCubic(t: number): number {
+  const c = clamp(t, 0, 1);
+  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+}
 
-// ── Camera ──────────────────────────────────────────────────────────────
+// ── Camera: three real stages, not one fixed shot ──────────────────────
 //
-// A real, measured fix for a real bug, not a tuning pass. The first version
-// put the camera 0.75m behind the goal line — reasoned (wrongly) from
-// NET_DEPTH (1.2m), on the assumption the camera had to physically fit
-// inside the net's own shallow depth. That was never a real constraint —
-// viewing DISTANCE and net depth are unrelated — and `star-playtest`
-// confirmed the actual result live: the goalposts projected to px values
-// like -3161 and +6185 against a ~1170px canvas (thousands of pixels off
-// both edges), the whole grass fill silently vanished (its near corner fell
-// inside `project()`'s own NEAR=0.35 clip guard once the camera's downward
-// pitch was applied), and the keeper — projected at that same near-zero
-// depth — became a single ~1000px-radius head. Not a framing nitpick: a
-// basic distance/focal-length mismatch (at under a metre from a 7.32m-wide
-// goal, FOCAL_K=0.90's normal-ish lens needs to be several metres back
-// before the goal fits in frame at all).
+// CAM_IDLE_Y is the establishing "get ready" framing — measured directly
+// off a reference frame: the keeper's shoulders span ~35% of a 580px-wide
+// capture, his crown-to-feet ~35% of height, and CAM_IDLE_Y=4.5 reproduces
+// that against this file's own camera math. CAM_CLOSE_Y is the tight
+// push-in the same reference cuts to right as the striker connects (his
+// figure crops against the frame edges in that clip — genuinely closer
+// than the idle shot). The ease from IDLE to CLOSE runs over PUSH_IN_T
+// seconds, ending exactly AT the strike.
 //
-// Re-derived by actually computing `project()`'s real output (not more
-// hand algebra) across a sweep of candidate distances: at CAM_Y=7 the goal
-// spans 90% of a 390px-wide canvas with ~19px of real margin either side
-// (never clips, even mid-dive at MAX_REACH_X), the keeper stands at ~19% of
-// frame height, and a full vertical stretch toward a top corner brings his
-// reach right up near the crossbar, which is what "full reach" should look
-// like. `CAM_EYE`/`CAM_PITCH` chosen alongside it so the crossbar sits
-// about a third of the way down the frame — headroom above for sky/stand,
-// the goal and keeper occupying the rest.
-const CAM_Y = 7;
-const CAM_EYE = 2.5;
-const CAM_PITCH = 0.14;
+// CAM_CLOSE_Y is real, but too tight to show what it needs to at the one
+// moment that matters most: measured directly, a save toward the actual
+// edge of reach (MAX_REACH_X) projects to roughly px=774 on a 390px-wide
+// canvas at CLOSE — nearly a full canvas-width off-screen, an invisible
+// save. The reference solves this with its own third cut — a dramatic
+// pull-back/inside-the-net shot the instant the ball actually arrives.
+// CAM_REVEAL_Y=7 is exactly the wide framing this file already had and had
+// already measured before the reference arrived (the goal spans 90% of
+// frame width there, real margin either side, never clips even at
+// full-stretch reach) — not a coincidence: MAX_REACH_X and half the real
+// goal width are close to the same number, so "fit the full reach
+// envelope" and "fit the goal" are close to the same problem. The pull
+// FROM close TO reveal runs over REVEAL_PULL_T seconds, ending exactly at
+// the ball's own arrival — the dive is fully, visibly resolved at the
+// exact instant the result is decided, not a beat late.
+const CAM_IDLE_Y = 4.5;
+const CAM_CLOSE_Y = 1.9;
+const CAM_REVEAL_Y = 7.0;
+const PUSH_IN_T = 0.5;
+const REVEAL_PULL_T = 0.28;
+const CAM_EYE = 1.85;
+const CAM_PITCH = 0.06;
 
 const FIGURE_R_M = 1.05; // metres — matches fiveASide/render.ts's own FIGURE_R
 const KEEPER_KIT: FigureLook = { shirt: "#eab308", shorts: "#111827", trim: "#111827", skin: "#c68642" };
 const STRIKER_KIT: FigureLook = { shirt: "#dc2626", shorts: "#ffffff", trim: "#ffffff", skin: "#c68642" };
+
+function camYAt(t: number, strikeAtT: number, arriveAtT: number): number {
+  const pushStart = Math.max(0, strikeAtT - PUSH_IN_T);
+  const pullStart = Math.max(strikeAtT, arriveAtT - REVEAL_PULL_T);
+  if (t <= pushStart) return CAM_IDLE_Y;
+  if (t < strikeAtT) {
+    const f = easeInOutCubic((t - pushStart) / Math.max(0.001, strikeAtT - pushStart));
+    return CAM_IDLE_Y + (CAM_CLOSE_Y - CAM_IDLE_Y) * f;
+  }
+  if (t <= pullStart) return CAM_CLOSE_Y;
+  if (t < arriveAtT) {
+    const f = easeInOutCubic((t - pullStart) / Math.max(0.001, arriveAtT - pullStart));
+    return CAM_CLOSE_Y + (CAM_REVEAL_Y - CAM_CLOSE_Y) * f;
+  }
+  return CAM_REVEAL_Y;
+}
+function buildCamera(camY: number, w: number, h: number): FpCamera {
+  return cameraFor({ x: 0, y: camY }, w, h, { eye: CAM_EYE, pitch: CAM_PITCH });
+}
 
 /**
  * `KeeperPose.dive` is documented (fiveASide/render.ts) as "his right, your
@@ -185,8 +236,8 @@ function ballWorldAt(anim: ShotAnim, t: number): { x: number; y: number; z: numb
         z: Math.max(0, shot.targetZ + (anim.result.reachZ - shot.targetZ) * settleF),
       };
     }
-    // Continues on into the net rather than stopping dead at the line.
-    return { x: shot.targetX, y: settleF * NET_DEPTH * 0.6, z: Math.max(0, shot.targetZ - settleF * 1.4) };
+    // Continues on past the line rather than stopping dead.
+    return { x: shot.targetX, y: settleF * 0.7, z: Math.max(0, shot.targetZ - settleF * 1.4) };
   }
 
   const f = clamp((t - shot.strikeAtT) / Math.max(0.001, shot.flightT), 0, 1);
@@ -213,6 +264,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
   const rngRef = useRef<(() => number) | null>(null);
   const animRef = useRef<ShotAnim | null>(null);
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const draggingRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const stakedRef = useRef(0);
 
@@ -247,10 +299,16 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     return () => ro.disconnect();
   }, []);
 
-  const camera = useCallback((): FpCamera => {
-    const { w, h } = sizeRef.current;
-    const dpr = Math.min(2, typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
-    return cameraFor({ x: 0, y: CAM_Y }, w * dpr, h * dpr, { eye: CAM_EYE, pitch: CAM_PITCH });
+  /** The camera's current distance right now, live — CAM_IDLE_Y before any
+   *  shot exists, eased per `camYAt` once one does. The one source both the
+   *  draw loop and the pointer handlers read, so a click while the camera
+   *  is still mid-push-in aims at exactly what's on screen at that instant,
+   *  never a stale, already-superseded position. */
+  const currentCamY = useCallback((): number => {
+    const anim = animRef.current;
+    if (!anim) return CAM_IDLE_Y;
+    const t = performance.now() / 1000 - anim.seqStart;
+    return camYAt(t, anim.shot.strikeAtT, anim.shot.arriveAtT);
   }, []);
 
   /** Start a brand-new shot sequence — the striker steps up, the timeline
@@ -311,7 +369,8 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streak]);
 
-  // ── Input: a live reticle while aiming, a single tap/click to commit ──
+  // ── Input: a live reticle from the moment you touch/hover, commit only
+  // on release — see the file header for the touch bug this replaced. ──
   const pointerToWorld = useCallback((clientX: number, clientY: number): { x: number; z: number } | null => {
     const c = canvasRef.current;
     if (!c) return null;
@@ -319,15 +378,25 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const px = (clientX - rect.left) * dpr;
     const py = (clientY - rect.top) * dpr;
-    const cam = camera();
-    // The goal-line plane (y=0) sits at a constant depth (CAM_Y) from this
+    const camY = currentCamY();
+    const cam = buildCamera(camY, sizeRef.current.w * dpr, sizeRef.current.h * dpr);
+    // The goal-line plane (y=0) sits at a constant depth (camY) from this
     // camera regardless of px/py, since forward is purely along y — see the
-    // file header. unprojectAtDepth is the exact inverse of project() for a
-    // camera with no yaw, which this one has.
-    const u = (px - cam.W / 2) * CAM_Y / cam.focal;
-    const z = cam.eye - (py - cam.horizon) * CAM_Y / cam.focal;
+    // file header. This is the exact inverse of project() for a camera with
+    // no yaw, which this one has.
+    const u = (px - cam.W / 2) * camY / cam.focal;
+    const z = cam.eye - (py - cam.horizon) * camY / cam.focal;
     return { x: clamp(u, -MAX_REACH_X, MAX_REACH_X), z: clamp(z, 0, MAX_REACH_Z) };
-  }, [camera]);
+  }, [currentCamY]);
+
+  const commitAt = useCallback((clientX: number, clientY: number) => {
+    const anim = animRef.current;
+    if (!anim || anim.commit || anim.result) return;
+    const w = pointerToWorld(clientX, clientY);
+    if (!w) return;
+    const t = performance.now() / 1000 - anim.seqStart;
+    anim.commit = { commitT: t, targetX: w.x, targetZ: w.z };
+  }, [pointerToWorld]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     pointerRef.current = { x: e.clientX, y: e.clientY };
@@ -335,13 +404,25 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
 
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     pointerRef.current = { x: e.clientX, y: e.clientY };
+    if (phase !== "facing") return;
     const anim = animRef.current;
-    if (phase !== "facing" || !anim || anim.commit || anim.result) return;
-    const w = pointerToWorld(e.clientX, e.clientY);
-    if (!w) return;
-    const t = performance.now() / 1000 - anim.seqStart;
-    anim.commit = { commitT: t, targetX: w.x, targetZ: w.z };
-  }, [phase, pointerToWorld]);
+    if (!anim || anim.commit || anim.result) return;
+    draggingRef.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, [phase]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    pointerRef.current = { x: e.clientX, y: e.clientY };
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    if (phase === "facing") commitAt(e.clientX, e.clientY);
+  }, [phase, commitAt]);
+
+  const handlePointerCancel = useCallback(() => {
+    // The OS interrupted the touch (a call, a system gesture) — release
+    // without committing, never fire a dive at wherever it happened to be.
+    draggingRef.current = false;
+  }, []);
 
   // ── Draw loop ──
   useEffect(() => {
@@ -351,17 +432,18 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
       const ctx = c?.getContext("2d");
       if (!c || !ctx) return;
       const { width: W, height: H } = c;
-      const cam = camera();
       const anim = animRef.current;
       const t = anim ? performance.now() / 1000 - anim.seqStart : 0;
+      const camY = anim ? camYAt(t, anim.shot.strikeAtT, anim.shot.arriveAtT) : CAM_IDLE_Y;
+      const cam = buildCamera(camY, W, H);
       if (anim && phase === "facing") resolveIfDue(t);
 
-      renderScene(ctx, cam, W, H, anim, t, phase, pointerRef.current, canvasRef.current, pointerToWorld);
+      renderScene(ctx, cam, W, H, anim, t, phase, pointerRef.current, pointerToWorld);
     };
     rafRef.current = requestAnimationFrame(draw);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, camera, resolveIfDue, pointerToWorld]);
+  }, [phase, resolveIfDue, pointerToWorld]);
 
   const potentialPayout = Math.round(stakedRef.current * streakMultiplier(streak));
   const nextPayout = Math.round(stakedRef.current * streakMultiplier(streak + 1));
@@ -393,10 +475,12 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
             className="absolute inset-0 w-full h-full touch-none"
             onPointerMove={handlePointerMove}
             onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
           />
           {phase === "facing" && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 rounded-full px-3 py-1 text-[10px] font-black text-white/90">
-              TAP TO DIVE
+              DRAG TO AIM · RELEASE TO DIVE
             </div>
           )}
         </div>
@@ -479,38 +563,119 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
 
 // ── Rendering ───────────────────────────────────────────────────────────
 
-function renderScene(
-  ctx: CanvasRenderingContext2D, cam: FpCamera, W: number, H: number,
-  anim: ShotAnim | null, t: number, phase: Phase,
-  pointer: { x: number; y: number } | null,
-  canvasEl: HTMLCanvasElement | null,
-  pointerToWorld: (clientX: number, clientY: number) => { x: number; z: number } | null,
-): void {
+/** A fixed, deterministic crowd speckle pattern — generated once at module
+ *  load (a plain LCG, not Math.random) rather than every frame, so the
+ *  stands read as a real packed crowd instead of flat silhouette blocks,
+ *  and never flicker/reshuffle between frames. */
+const CROWD_SEATS: { fx: number; fy: number; c: string }[] = (() => {
+  const colors = ["#e2e8f0", "#dc2626", "#2563eb", "#f59e0b", "#e2e8f0", "#e2e8f0", "#16a34a", "#e2e8f0"];
+  let s = 987654321;
+  const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  const seats: { fx: number; fy: number; c: string }[] = [];
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 40; col++) {
+      seats.push({
+        fx: col / 40 + (rnd() - 0.5) * 0.018,
+        fy: row / 6 + (rnd() - 0.5) * 0.15,
+        c: colors[Math.floor(rnd() * colors.length)],
+      });
+    }
+  }
+  return seats;
+})();
+
+function drawStadium(ctx: CanvasRenderingContext2D, cam: FpCamera, W: number, H: number): void {
   // Sky.
   const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, "#0c1a3a");
-  sky.addColorStop(1, "#2a4a6b");
+  sky.addColorStop(0, "#2c4258");
+  sky.addColorStop(1, "#7d97a5");
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H);
 
   const horizonPx = cam.horizon - Math.tan(cam.pitch ?? 0) * cam.focal;
-  // A simple stand silhouette along the horizon.
-  ctx.fillStyle = "rgba(8,14,28,0.55)";
-  const blockW = W / 14;
-  for (let i = 0; i < 14; i++) {
-    const bh = 10 + (i % 3) * 6;
-    ctx.fillRect(i * blockW, Math.max(0, horizonPx - bh), blockW - 2, bh);
+  const roofTop = Math.max(0, horizonPx - H * 0.30);
+  const roofBottom = Math.max(0, horizonPx - H * 0.10);
+  const crowdTop = Math.max(0, horizonPx - H * 0.09);
+
+  // A curved stand roof, the reference's own single most distinctive shape
+  // — a shallow blue arc, not a flat rectangle.
+  ctx.fillStyle = "#1b4a6b";
+  ctx.beginPath();
+  ctx.moveTo(0, roofBottom);
+  ctx.quadraticCurveTo(W / 2, roofTop, W, roofBottom);
+  ctx.lineTo(W, roofBottom + H * 0.02);
+  ctx.quadraticCurveTo(W / 2, roofTop + H * 0.02, 0, roofBottom + H * 0.02);
+  ctx.closePath();
+  ctx.fill();
+
+  // Floodlight towers either side, rising off the roofline.
+  const drawFloodlight = (fx: number) => {
+    const x = W * fx;
+    const baseY = roofTop + H * 0.01;
+    const topY = roofTop - H * 0.09;
+    ctx.strokeStyle = "rgba(30,35,45,0.85)";
+    ctx.lineWidth = Math.max(2, W * 0.012);
+    ctx.beginPath();
+    ctx.moveTo(x, baseY);
+    ctx.lineTo(x, topY);
+    ctx.stroke();
+    const gridW = W * 0.09, gridH = H * 0.045;
+    ctx.fillStyle = "rgba(20,24,32,0.9)";
+    ctx.fillRect(x - gridW / 2, topY - gridH, gridW, gridH);
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const gx = x - gridW / 2 + (gridW * i) / 4;
+      ctx.beginPath(); ctx.moveTo(gx, topY - gridH); ctx.lineTo(gx, topY); ctx.stroke();
+    }
+  };
+  drawFloodlight(0.12);
+  drawFloodlight(0.88);
+
+  // Crowd — real speckled seats, not a flat silhouette.
+  const crowdH = crowdTop - roofBottom - H * 0.01;
+  if (crowdH > 2) {
+    ctx.fillStyle = "#1a3324";
+    ctx.fillRect(0, roofBottom + H * 0.01, W, crowdH + H * 0.01);
+    const seatSize = Math.max(2, W * 0.011);
+    for (const seat of CROWD_SEATS) {
+      ctx.fillStyle = seat.c;
+      ctx.fillRect(seat.fx * W, roofBottom + H * 0.01 + seat.fy * crowdH, seatSize, seatSize * 1.3);
+    }
   }
+
+  // A bright hoarding strip right at pitch-side — the reference's own
+  // sponsor-board band, alternating colour blocks rather than plain text.
+  const hoardH = Math.max(6, H * 0.022);
+  const hoardColors = ["#dc2626", "#2563eb", "#f59e0b", "#16a34a", "#7c3aed"];
+  const hoardW = W / hoardColors.length;
+  for (let i = 0; i < hoardColors.length; i++) {
+    ctx.fillStyle = hoardColors[i];
+    ctx.fillRect(i * hoardW, crowdTop, hoardW, hoardH);
+  }
+
+  // Stripe of light grey "running track" between the hoarding and the grass.
+  ctx.fillStyle = "#b8b09a";
+  ctx.fillRect(0, crowdTop + hoardH, W, Math.max(2, H * 0.006));
+}
+
+function renderScene(
+  ctx: CanvasRenderingContext2D, cam: FpCamera, W: number, H: number,
+  anim: ShotAnim | null, t: number, phase: Phase,
+  pointer: { x: number; y: number } | null,
+  pointerToWorld: (clientX: number, clientY: number) => { x: number; z: number } | null,
+): void {
+  drawStadium(ctx, cam, W, H);
 
   // Ground — an exact perspective quad (a flat rectangle projects to an
   // exact quadrilateral under a pinhole camera), shaded in mown stripes.
-  const FAR = -26, NEAR = CAM_Y - 0.05, HALF = 11;
+  const FAR = -26, NEAR = cam.y - 0.05, HALF = 11;
   const corners = [
     project(cam, -HALF, NEAR, 0), project(cam, HALF, NEAR, 0),
     project(cam, HALF, FAR, 0), project(cam, -HALF, FAR, 0),
   ];
   if (corners.every((p) => p)) {
-    ctx.fillStyle = "#1f7a1f";
+    ctx.fillStyle = "#2c8a1f";
     ctx.beginPath();
     ctx.moveTo(corners[0]!.px, corners[0]!.py);
     for (let i = 1; i < 4; i++) ctx.lineTo(corners[i]!.px, corners[i]!.py);
@@ -525,11 +690,24 @@ function renderScene(
       const a = project(cam, x0, NEAR, 0), b = project(cam, x1, NEAR, 0);
       const cc = project(cam, x1, FAR, 0), d = project(cam, x0, FAR, 0);
       if (!a || !b || !cc || !d) continue;
-      ctx.fillStyle = "rgba(0,0,0,0.06)";
+      ctx.fillStyle = "rgba(0,0,0,0.07)";
       ctx.beginPath();
       ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.lineTo(cc.px, cc.py); ctx.lineTo(d.px, d.py);
       ctx.closePath();
       ctx.fill();
+    }
+
+    // The goal LINE itself, painted on the grass at the keeper's feet — at
+    // CAM_IDLE_Y/CAM_CLOSE_Y this reads as a simple marking near his boots;
+    // the full 3D frame (drawn next) only becomes visible once the camera
+    // has pulled back toward CAM_REVEAL_Y.
+    const gl = project(cam, -5, 0, 0), gr = project(cam, 5, 0, 0);
+    if (gl && gr) {
+      ctx.strokeStyle = "rgba(255,255,255,0.8)";
+      ctx.lineWidth = Math.max(1.5, gl.scale * 0.045);
+      ctx.beginPath();
+      ctx.moveTo(gl.px, gl.py); ctx.lineTo(gr.px, gr.py);
+      ctx.stroke();
     }
   }
 
@@ -571,18 +749,20 @@ function renderScene(
     });
   }
 
-  // Reticle — only while still aimable (facing phase, not yet committed).
-  if (phase === "facing" && !anim.commit && pointer && canvasEl) {
+  // Reticle — a live "gloves" target while still aimable, whether from a
+  // mouse hover or a finger actually down on the glass. Hidden the instant
+  // a dive is committed (reachX/Z above take over the story from there).
+  if (phase === "facing" && !anim.commit && pointer) {
     const w = pointerToWorld(pointer.x, pointer.y);
     if (w) {
       const rp = project(cam, w.x, 0, w.z);
       if (rp) {
-        ctx.strokeStyle = "rgba(255,255,255,0.85)";
-        ctx.lineWidth = Math.max(1.5, rp.scale * 0.03);
+        ctx.strokeStyle = "rgba(56,224,255,0.95)";
+        ctx.lineWidth = Math.max(2, rp.scale * 0.035);
         ctx.beginPath();
-        ctx.arc(rp.px, rp.py, Math.max(10, rp.scale * 0.32), 0, Math.PI * 2);
+        ctx.arc(rp.px, rp.py, Math.max(11, rp.scale * 0.3), 0, Math.PI * 2);
         ctx.stroke();
-        const cs = Math.max(6, rp.scale * 0.16);
+        const cs = Math.max(6, rp.scale * 0.14);
         ctx.beginPath();
         ctx.moveTo(rp.px - cs, rp.py); ctx.lineTo(rp.px + cs, rp.py);
         ctx.moveTo(rp.px, rp.py - cs); ctx.lineTo(rp.px, rp.py + cs);
@@ -617,36 +797,13 @@ function drawFigure(
   drawFigureAt(ctx, p.px, p.py, r, look, FACE_STYLE, FAKE_FACE_STYLE, { pose });
 }
 
-function drawBallAt(ctx: CanvasRenderingContext2D, cam: FpCamera, x: number, y: number, z: number): void {
-  const ground = project(cam, x, y, 0);
-  const ball = project(cam, x, y, z);
-  if (!ground || !ball) return;
-  // Drawn at 2.6x true size with a real floor, not literal scale — the
-  // exact same "findable, not to-scale" convention fiveASide/render.ts's
-  // own drawBall uses (see that file's header: a to-scale ball at any real
-  // camera distance is a smudge, and the one thing the whole screen is
-  // about can't be one).
-  const r = Math.max(BALL_MIN_R, ball.scale * 0.11 * 2.6);
-
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath();
-  ctx.ellipse(ground.px, ground.py, r * 1.1, r * 0.45, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(10,12,10,0.9)";
-  ctx.beginPath();
-  ctx.arc(ball.px, ball.py, r * 1.15, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.arc(ball.px, ball.py, r, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "rgba(20,20,20,0.55)";
-  ctx.beginPath();
-  ctx.arc(ball.px, ball.py, r * 0.36, 0, Math.PI * 2);
-  ctx.fill();
-}
-
+/**
+ * The full 3D goal — posts, bar, net. Only ever actually visible once the
+ * camera has pulled back toward CAM_REVEAL_Y (see the file header): at
+ * CAM_IDLE_Y/CAM_CLOSE_Y the posts project far outside the canvas and this
+ * draws harmlessly off-screen, exactly like the ground quad's own off-screen
+ * corners already do — no gating needed, the geometry does it on its own.
+ */
 function drawGoalFrame(ctx: CanvasRenderingContext2D, cam: FpCamera): void {
   const hw = GOAL_W / 2;
   const bl = project(cam, -hw, 0, 0), br = project(cam, hw, 0, 0);
@@ -694,21 +851,44 @@ function drawGoalFrame(ctx: CanvasRenderingContext2D, cam: FpCamera): void {
   // Posts and bar, on top of the net.
   ctx.strokeStyle = "#f8fafc";
   ctx.lineCap = "round";
-  ctx.lineWidth = Math.max(3, (tl.scale ?? 12) * 0.1);
+  ctx.lineWidth = Math.max(3, tl.scale * 0.1);
   ctx.beginPath();
   ctx.moveTo(bl.px, bl.py); ctx.lineTo(tl.px, tl.py);
   ctx.moveTo(br.px, br.py); ctx.lineTo(tr.px, tr.py);
   ctx.stroke();
-  ctx.lineWidth = Math.max(3.5, (tl.scale ?? 12) * 0.12);
+  ctx.lineWidth = Math.max(3.5, tl.scale * 0.12);
   ctx.beginPath();
   ctx.moveTo(tl.px, tl.py); ctx.lineTo(tr.px, tr.py);
   ctx.stroke();
   ctx.lineCap = "butt";
+}
 
-  // Goal line itself, on the grass.
-  ctx.strokeStyle = "rgba(255,255,255,0.85)";
-  ctx.lineWidth = Math.max(2, (bl.scale ?? 12) * 0.06);
+function drawBallAt(ctx: CanvasRenderingContext2D, cam: FpCamera, x: number, y: number, z: number): void {
+  const ground = project(cam, x, y, 0);
+  const ball = project(cam, x, y, z);
+  if (!ground || !ball) return;
+  // Drawn at 2.6x true size with a real floor, not literal scale — the
+  // exact same "findable, not to-scale" convention fiveASide/render.ts's
+  // own drawBall uses (see that file's header: a to-scale ball at any real
+  // camera distance is a smudge, and the one thing the whole screen is
+  // about can't be one).
+  const r = Math.max(BALL_MIN_R, ball.scale * 0.11 * 2.6);
+
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.beginPath();
-  ctx.moveTo(bl.px, bl.py); ctx.lineTo(br.px, br.py);
-  ctx.stroke();
+  ctx.ellipse(ground.px, ground.py, r * 1.1, r * 0.45, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(10,12,10,0.9)";
+  ctx.beginPath();
+  ctx.arc(ball.px, ball.py, r * 1.15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(ball.px, ball.py, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(20,20,20,0.55)";
+  ctx.beginPath();
+  ctx.arc(ball.px, ball.py, r * 0.36, 0, Math.PI * 2);
+  ctx.fill();
 }
