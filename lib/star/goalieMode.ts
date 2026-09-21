@@ -92,7 +92,7 @@ import { GOAL_W, GOAL_H } from "./pitch";
  * preserves fairness as it climbs").
  */
 
-export type ShotKind = "drive" | "curl" | "header" | "volley";
+export type ShotKind = "drive" | "curl" | "header" | "volley" | "first_time";
 
 export interface GoalieShot {
   kind: ShotKind;
@@ -123,6 +123,14 @@ export interface GoalieShot {
    *  targetX, so reading it correctly and diving that way is always the
    *  right call, never a decoy. */
   tellSide: -1 | 1;
+  /** Which side the STRIKER himself runs up from/stands on — purely
+   *  cosmetic (the renderer's own run-up/shooting-spot position), rolled
+   *  independently of `tellSide`. Roughly half the time he shoots back
+   *  toward his own side (a tucked-in near-post finish); the rest he's
+   *  shooting across his own body to the far corner — a real, distinct
+   *  picture, not just a mirrored one. Never leaks target information
+   *  beyond what the tell itself already gives away — see `tellSide`. */
+  strikerSide: -1 | 1;
   /** 0-1, purely cosmetic flight-path bend for the renderer — the save/goal
    *  resolution below only ever reads targetX/targetZ, so a curled shot is
    *  exactly as save-able as a straight one struck at the same target; the
@@ -216,6 +224,7 @@ interface KindProfile {
 }
 const KIND_PROFILES: Record<ShotKind, KindProfile> = {
   drive: { startY: [14, 21], speed: [21, 30], buildup: [1.0, 1.7], curl: [0, 0.15], unlocksAt: 0 },
+  first_time: { startY: [7, 11], speed: [18, 27], buildup: [0.5, 0.8], curl: [0, 0.15], unlocksAt: 1 },
   curl: { startY: [12, 18], speed: [17, 24], buildup: [1.0, 1.6], curl: [0.45, 0.85], unlocksAt: 2 },
   header: { startY: [6, 10], speed: [12, 18], buildup: [0.7, 1.1], curl: [0, 0.1], unlocksAt: 3 },
   volley: { startY: [9, 14], speed: [19, 29], buildup: [0.6, 1.0], curl: [0.1, 0.4], unlocksAt: 4 },
@@ -274,6 +283,11 @@ export function pickShot(streak: number, rng: () => number): GoalieShot {
   const heightF = clamp(rng() * (0.35 + diff * 0.5), 0, 1);
   const targetZ = heightF * MAX_REACH_Z;
 
+  // Independent of the tell — see the field's own doc. A near-post finish
+  // (same side) a little more often than a far-post, cross-body one, which
+  // is the rarer, more dramatic picture.
+  const strikerSide: -1 | 1 = rng() < 0.55 ? side : (side === 1 ? -1 : 1);
+
   // Tell narrows with difficulty but never below a real, readable floor —
   // see difficulty()'s own doc and firstPersonDribble.ts's identical
   // reasoning for tellT.
@@ -285,8 +299,26 @@ export function pickShot(streak: number, rng: () => number): GoalieShot {
   return {
     kind, startY, strikeAtT: buildupT, tellT, flightT,
     arriveAtT: buildupT + flightT,
-    targetX, targetZ, offTarget, tellSide: side, curl,
+    targetX, targetZ, offTarget, tellSide: side, strikerSide, curl,
   };
+}
+
+/** A short, human name for the shot, for a real on-screen tag ("HEADER FROM
+ *  A CROSS", "FAR POST") — asked for directly, so the variety in `pickShot`
+ *  is something a player consciously notices shot to shot, not something
+ *  only the physics knows about. Pure and derived entirely from the shot
+ *  itself, so it can never say something the actual shot isn't doing. */
+export function shotLabel(shot: GoalieShot): string {
+  switch (shot.kind) {
+    case "header": return "HEADER FROM A CROSS";
+    case "volley": return "VOLLEY";
+    case "first_time": return "FIRST-TIME STRIKE";
+    case "curl": return "CURLING EFFORT";
+    case "drive":
+      if (shot.startY >= 17) return "LONG RANGE";
+      return shot.strikerSide === shot.tellSide ? "NEAR POST" : "FAR POST";
+    default: return "SHOT";
+  }
 }
 
 export interface DiveInput {

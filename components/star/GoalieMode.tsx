@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  pickShot, resolveDive, liveDiveState, streakMultiplier,
+  pickShot, resolveDive, liveDiveState, streakMultiplier, shotLabel,
   MAX_REACH_X, MAX_REACH_Z, KEEPER_SET_X, KEEPER_SET_Z,
   type GoalieShot, type DiveResult,
 } from "@/lib/star/goalieMode";
@@ -23,20 +23,44 @@ import { mulberry32 } from "@/lib/star/season";
  * see that file's own header. Everything in THIS file is presentation and
  * input.
  *
- * ── Rebuilt against a real reference, not a guess ──
+ * ── Round 3: real play feedback, not a guess — a real bug, a reversed
+ * design call, and real shot variety ──
  *
- * Handed three real screen recordings of "Mini Soccer Star"'s own goalie
- * mode, named directly as "almost the perfect template". Measured off real
- * extracted frames rather than eyeballed: the live camera sits close and
- * LOW, right behind the keeper — his own figure is a genuinely dominant
- * ~35% of frame width even in the idle "get ready" shot, growing further as
- * a real push-in happens right as the striker connects — and the near goal
- * frame (the one THIS keeper defends) is never shown at all during live
- * play, in any of the three clips. That settles the tension with this
- * file's own earlier, text-only brief ("the goal, the goal posts... all in
- * view") in the reference's favour: a first version fitted the whole goal
- * into a wide, distant shot, which is a real, different design this
- * reference doesn't use live — dropped in favour of what was actually shown.
+ * The previous round's three-stage push-in/reveal camera (built against a
+ * reference video) was reported back plainly as bad, not a taste call:
+ * "the weird zooming in thing sucks". Separately, a real, reproducible bug
+ * on PC: "the aim/cursor thing is very offset and not at all on my
+ * cursor". Both trace to the same root cause and share the same fix.
+ *
+ * `pointerToWorld`'s inversion of `project()` is only the exact algebraic
+ * inverse when the camera is dead level (`pitch = 0`) — the previous
+ * camera used `pitch = 0.06`. With a real pitch, `project()`'s depth term
+ * mixes in the TARGET'S OWN HEIGHT (`relZ`), which the inversion never
+ * accounted for. Worked through by hand and checked numerically at the old
+ * constants: aiming at a genuine low corner (z = 0.3m) inverted back to
+ * roughly z = 0.73m — a ~0.43m miss, about a fifth of the goal's own
+ * playable height, on every single aim. That is exactly "very offset".
+ *
+ * Fixed by dropping the pitch to exactly 0, which makes the SAME inversion
+ * formula provably exact again (at pitch = 0, `project()`'s depth term is
+ * just the camera's own distance, no `z` involved at all — precisely what
+ * the inversion already assumed). And by dropping the push-in/reveal
+ * transition entirely: one fixed, wide shot for the whole sequence, so the
+ * goal, both posts and the keeper's own full reach are always on screen to
+ * judge a shot against — never something that only resolves once a camera
+ * move has finished. See `CAM_Y`'s own comment for the framing math.
+ *
+ * Also requested directly, a real batch of new shot variety: "long shot,
+ * near post shot, far post shot, header from a cross, volley, first time
+ * shot... curve, varying power/speed, placement". `goalieMode.ts` already
+ * had curl/header/volley and varying pace/placement; this round adds a new
+ * `first_time` kind (a firm, rushed strike off an already-moving ball,
+ * distinct from a controlled drive), a `strikerSide` roll independent of
+ * the tell (so a shot is sometimes a tucked-in near-post finish and
+ * sometimes a genuine cross-body far-post one, not always the same shape),
+ * and `shotLabel()` — a real on-screen tag ("HEADER FROM A CROSS", "FAR
+ * POST", "LONG RANGE") so the variety is something you consciously notice
+ * shot to shot, not just something the physics knows about.
  *
  * ── World coordinates, local to this file only ──
  *
@@ -51,29 +75,21 @@ import { mulberry32 } from "@/lib/star/season";
  *
  * ── Input: drag to aim, release commits — not tap-to-commit ──
  *
- * Reported directly, a real bug not a preference: on phone, touching the
- * screen locked in the dive instantly, because the first version committed
- * on pointerDOWN — the mouse-only idiom of "hover to preview, click to
- * commit" simply has no touch equivalent (there is no touch gesture that
- * previews without also touching). Rebuilt on the same suggestion given
- * directly: track the live pointer position from pointerDOWN through every
+ * Unchanged this round, and not the cause of the offset — see above for
+ * that. Track the live pointer position from pointerDOWN through every
  * pointerMOVE (a swipe, on touch; a hover, on a mouse — both feed the same
  * live reticle), and commit only on pointerUP, at wherever the pointer
- * ends up. A plain, no-drag click still commits exactly where clicked
- * (down and up land at the same point), so desktop feels identical to
- * before; a swipe on phone now previews before it commits, matching the
- * suggestion exactly.
+ * ends up. A plain, no-drag click still commits exactly where clicked.
  *
- * ── One honestly-scoped simplification ──
+ * ── One honestly-scoped simplification, unchanged ──
  *
  * "Crossed into and headering, passed into and first-time shooting" is
  * covered by a delivery ball arriving to the striker before he strikes
- * (header/volley kinds only) rather than a full second, animated crosser —
- * a second full figure with its own run and its own real position would be
- * a real, separate build; the delivery ball alone still reads the moment
- * clearly (a ball arrives to him, THEN he strikes) without doubling the
- * scope of a first pass. Worth a second pass if it reads as thin once it's
- * actually been played.
+ * (header/volley/first_time kinds only) rather than a full second,
+ * animated crosser — a second full figure with its own run and its own
+ * real position would be a real, separate build; the delivery ball alone
+ * still reads the moment clearly (a ball arrives to him, THEN he strikes)
+ * without doubling the scope of this pass.
  */
 
 interface GoalieModeProps {
@@ -87,66 +103,30 @@ interface GoalieModeProps {
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
-function easeInOutCubic(t: number): number {
-  const c = clamp(t, 0, 1);
-  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
-}
 
-// ── Camera: three real stages, not one fixed shot ──────────────────────
+// ── Camera: one fixed shot ───────────────────────────────────────────────
 //
-// CAM_IDLE_Y is the establishing "get ready" framing — measured directly
-// off a reference frame: the keeper's shoulders span ~35% of a 580px-wide
-// capture, his crown-to-feet ~35% of height, and CAM_IDLE_Y=4.5 reproduces
-// that against this file's own camera math. CAM_CLOSE_Y is the tight
-// push-in the same reference cuts to right as the striker connects (his
-// figure crops against the frame edges in that clip — genuinely closer
-// than the idle shot). The ease from IDLE to CLOSE runs over PUSH_IN_T
-// seconds, ending exactly AT the strike.
-//
-// CAM_CLOSE_Y is real, but too tight to show what it needs to at the one
-// moment that matters most: measured directly, a save toward the actual
-// edge of reach (MAX_REACH_X) projects to roughly px=774 on a 390px-wide
-// canvas at CLOSE — nearly a full canvas-width off-screen, an invisible
-// save. The reference solves this with its own third cut — a dramatic
-// pull-back/inside-the-net shot the instant the ball actually arrives.
-// CAM_REVEAL_Y=7 is exactly the wide framing this file already had and had
-// already measured before the reference arrived (the goal spans 90% of
-// frame width there, real margin either side, never clips even at
-// full-stretch reach) — not a coincidence: MAX_REACH_X and half the real
-// goal width are close to the same number, so "fit the full reach
-// envelope" and "fit the goal" are close to the same problem. The pull
-// FROM close TO reveal runs over REVEAL_PULL_T seconds, ending exactly at
-// the ball's own arrival — the dive is fully, visibly resolved at the
-// exact instant the result is decided, not a beat late.
-const CAM_IDLE_Y = 4.5;
-const CAM_CLOSE_Y = 1.9;
-const CAM_REVEAL_Y = 7.0;
-const PUSH_IN_T = 0.5;
-const REVEAL_PULL_T = 0.28;
+// Dead level (`pitch` left at its default 0 — see the file header for why
+// that's not just simpler but the actual bug fix) and as close as the goal
+// posts themselves allow without clipping. Worked out directly from
+// `project()`'s own formula, not guessed: at y=0, pitch=0, a post at
+// x=±GOAL_W/2 projects to `px = W/2 ± (GOAL_W/2)·FOCAL_K·W/CAM_Y`; solving
+// for the largest CAM_Y that still clips would leave zero safety margin, so
+// CAM_Y=6.8 was chosen to leave a real ~1.5% margin either side (up from
+// the old wide shot's ~2.9% at CAM_Y=7 — genuinely tighter, not just
+// differently framed) while never risking a post running off-screen on a
+// slow phone's rounding. The canvas itself is also less tall than before
+// (aspect ratio below) — the same goal, at the same pixel width, reads
+// bigger in a shorter frame with less empty sky above it.
+const CAM_Y = 6.8;
 const CAM_EYE = 1.85;
-const CAM_PITCH = 0.06;
 
 const FIGURE_R_M = 1.05; // metres — matches fiveASide/render.ts's own FIGURE_R
 const KEEPER_KIT: FigureLook = { shirt: "#eab308", shorts: "#111827", trim: "#111827", skin: "#c68642" };
 const STRIKER_KIT: FigureLook = { shirt: "#dc2626", shorts: "#ffffff", trim: "#ffffff", skin: "#c68642" };
 
-function camYAt(t: number, strikeAtT: number, arriveAtT: number): number {
-  const pushStart = Math.max(0, strikeAtT - PUSH_IN_T);
-  const pullStart = Math.max(strikeAtT, arriveAtT - REVEAL_PULL_T);
-  if (t <= pushStart) return CAM_IDLE_Y;
-  if (t < strikeAtT) {
-    const f = easeInOutCubic((t - pushStart) / Math.max(0.001, strikeAtT - pushStart));
-    return CAM_IDLE_Y + (CAM_CLOSE_Y - CAM_IDLE_Y) * f;
-  }
-  if (t <= pullStart) return CAM_CLOSE_Y;
-  if (t < arriveAtT) {
-    const f = easeInOutCubic((t - pullStart) / Math.max(0.001, arriveAtT - pullStart));
-    return CAM_CLOSE_Y + (CAM_REVEAL_Y - CAM_CLOSE_Y) * f;
-  }
-  return CAM_REVEAL_Y;
-}
-function buildCamera(camY: number, w: number, h: number): FpCamera {
-  return cameraFor({ x: 0, y: camY }, w, h, { eye: CAM_EYE, pitch: CAM_PITCH });
+function buildCamera(w: number, h: number): FpCamera {
+  return cameraFor({ x: 0, y: CAM_Y }, w, h, { eye: CAM_EYE });
 }
 
 /**
@@ -187,11 +167,13 @@ function archHeightFor(kind: GoalieShot["kind"]): number {
   if (kind === "curl") return 0.65;
   if (kind === "volley") return 0.5;
   if (kind === "header") return 0.25; // struck downward off the head, not looped
+  if (kind === "first_time") return 0.3; // rushed, flatter than a shaped drive
   return 0.4; // drive
 }
 function originZFor(kind: GoalieShot["kind"]): number {
   if (kind === "header") return 2.0;
   if (kind === "volley") return 1.05;
+  if (kind === "first_time") return 0.5; // met early, mid-shin to knee height
   return 0.28;
 }
 
@@ -202,7 +184,7 @@ function originZFor(kind: GoalieShot["kind"]): number {
 function ballWorldAt(anim: ShotAnim, t: number): { x: number; y: number; z: number } {
   const { shot } = anim;
   if (t < shot.strikeAtT) {
-    if (shot.kind === "header" || shot.kind === "volley") {
+    if (shot.kind === "header" || shot.kind === "volley" || shot.kind === "first_time") {
       // A delivery arriving from a wide flank, landing exactly at the
       // strike — purely cosmetic, see the file header's own scope note.
       const deliveryStart = Math.max(0, shot.strikeAtT - 0.9);
@@ -274,7 +256,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     if (!el) return;
     const applySize = (boxWidth: number) => {
       const w = Math.max(240, boxWidth);
-      const h = Math.max(320, w * 1.3);
+      const h = Math.max(320, w * 1.15);
       sizeRef.current = { w, h };
       const c = canvasRef.current;
       if (c) {
@@ -299,29 +281,17 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     return () => ro.disconnect();
   }, []);
 
-  /** The camera's current distance right now, live — CAM_IDLE_Y before any
-   *  shot exists, eased per `camYAt` once one does. The one source both the
-   *  draw loop and the pointer handlers read, so a click while the camera
-   *  is still mid-push-in aims at exactly what's on screen at that instant,
-   *  never a stale, already-superseded position. */
-  const currentCamY = useCallback((): number => {
-    const anim = animRef.current;
-    if (!anim) return CAM_IDLE_Y;
-    const t = performance.now() / 1000 - anim.seqStart;
-    return camYAt(t, anim.shot.strikeAtT, anim.shot.arriveAtT);
-  }, []);
-
   /** Start a brand-new shot sequence — the striker steps up, the timeline
    *  resets to t=0, no commit yet. */
   const beginShot = useCallback((s: number) => {
     if (!rngRef.current) rngRef.current = mulberry32((Date.now() ^ 0x9e3779b9) >>> 0);
     const shot = pickShot(s, rngRef.current);
-    const shootX = clamp(shot.tellSide * (1.1 + Math.min(1.6, Math.abs(shot.targetX) * 0.32)), -3.2, 3.2);
+    const shootX = clamp(shot.strikerSide * (1.1 + Math.min(1.6, Math.abs(shot.targetX) * 0.32)), -3.2, 3.2);
     animRef.current = {
       shot,
       seqStart: performance.now() / 1000,
       shootX,
-      runFromX: shootX - shot.tellSide * 2.2,
+      runFromX: shootX - shot.strikerSide * 2.2,
       runFromY: -(shot.startY + 3.5),
       commit: null,
       resolvedAt: null,
@@ -370,7 +340,8 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
   }, [streak]);
 
   // ── Input: a live reticle from the moment you touch/hover, commit only
-  // on release — see the file header for the touch bug this replaced. ──
+  // on release. Correct because the camera is dead level (pitch=0) — see
+  // the file header for the bug a nonzero pitch caused here before. ──
   const pointerToWorld = useCallback((clientX: number, clientY: number): { x: number; z: number } | null => {
     const c = canvasRef.current;
     if (!c) return null;
@@ -378,16 +349,15 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const px = (clientX - rect.left) * dpr;
     const py = (clientY - rect.top) * dpr;
-    const camY = currentCamY();
-    const cam = buildCamera(camY, sizeRef.current.w * dpr, sizeRef.current.h * dpr);
-    // The goal-line plane (y=0) sits at a constant depth (camY) from this
-    // camera regardless of px/py, since forward is purely along y — see the
-    // file header. This is the exact inverse of project() for a camera with
-    // no yaw, which this one has.
-    const u = (px - cam.W / 2) * camY / cam.focal;
-    const z = cam.eye - (py - cam.horizon) * camY / cam.focal;
+    const cam = buildCamera(sizeRef.current.w * dpr, sizeRef.current.h * dpr);
+    // The goal-line plane (y=0) sits at a constant depth (CAM_Y) from this
+    // camera regardless of px/py, since forward is purely along y and pitch
+    // is 0 — see the file header. This is the exact inverse of project()
+    // for a camera with no yaw and no pitch, which this one now always is.
+    const u = (px - cam.W / 2) * CAM_Y / cam.focal;
+    const z = cam.eye - (py - cam.horizon) * CAM_Y / cam.focal;
     return { x: clamp(u, -MAX_REACH_X, MAX_REACH_X), z: clamp(z, 0, MAX_REACH_Z) };
-  }, [currentCamY]);
+  }, []);
 
   const commitAt = useCallback((clientX: number, clientY: number) => {
     const anim = animRef.current;
@@ -434,8 +404,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
       const { width: W, height: H } = c;
       const anim = animRef.current;
       const t = anim ? performance.now() / 1000 - anim.seqStart : 0;
-      const camY = anim ? camYAt(t, anim.shot.strikeAtT, anim.shot.arriveAtT) : CAM_IDLE_Y;
-      const cam = buildCamera(camY, W, H);
+      const cam = buildCamera(W, H);
       if (anim && phase === "facing") resolveIfDue(t);
 
       renderScene(ctx, cam, W, H, anim, t, phase, pointerRef.current, pointerToWorld);
@@ -469,7 +438,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
           </div>
         </div>
 
-        <div ref={wrapRef} className="relative w-full rounded-2xl overflow-hidden border-2 border-gray-700" style={{ aspectRatio: "360/480" }}>
+        <div ref={wrapRef} className="relative w-full rounded-2xl overflow-hidden border-2 border-gray-700" style={{ aspectRatio: "1 / 1.15" }}>
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full touch-none"
@@ -478,9 +447,14 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerCancel}
           />
-          {phase === "facing" && (
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/50 rounded-full px-3 py-1 text-[10px] font-black text-white/90">
-              DRAG TO AIM · RELEASE TO DIVE
+          {phase === "facing" && animRef.current && (
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+              <div className="bg-black/60 rounded-full px-3 py-0.5 text-[9px] font-black text-cyan-300 tracking-wide">
+                {shotLabel(animRef.current.shot)}
+              </div>
+              <div className="bg-black/50 rounded-full px-3 py-1 text-[10px] font-black text-white/90">
+                DRAG TO AIM · RELEASE TO DIVE
+              </div>
             </div>
           )}
         </div>
@@ -697,10 +671,7 @@ function renderScene(
       ctx.fill();
     }
 
-    // The goal LINE itself, painted on the grass at the keeper's feet — at
-    // CAM_IDLE_Y/CAM_CLOSE_Y this reads as a simple marking near his boots;
-    // the full 3D frame (drawn next) only becomes visible once the camera
-    // has pulled back toward CAM_REVEAL_Y.
+    // The goal LINE itself, painted on the grass at the keeper's feet.
     const gl = project(cam, -5, 0, 0), gr = project(cam, 5, 0, 0);
     if (gl && gr) {
       ctx.strokeStyle = "rgba(255,255,255,0.8)";
@@ -797,13 +768,8 @@ function drawFigure(
   drawFigureAt(ctx, p.px, p.py, r, look, FACE_STYLE, FAKE_FACE_STYLE, { pose });
 }
 
-/**
- * The full 3D goal — posts, bar, net. Only ever actually visible once the
- * camera has pulled back toward CAM_REVEAL_Y (see the file header): at
- * CAM_IDLE_Y/CAM_CLOSE_Y the posts project far outside the canvas and this
- * draws harmlessly off-screen, exactly like the ground quad's own off-screen
- * corners already do — no gating needed, the geometry does it on its own.
- */
+/** The full 3D goal — posts, bar, net. Always in frame now — see CAM_Y's
+ *  own comment for how the distance was chosen. */
 function drawGoalFrame(ctx: CanvasRenderingContext2D, cam: FpCamera): void {
   const hw = GOAL_W / 2;
   const bl = project(cam, -hw, 0, 0), br = project(cam, hw, 0, 0);

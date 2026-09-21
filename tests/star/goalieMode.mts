@@ -1,5 +1,5 @@
 import {
-  pickShot, resolveDive, streakMultiplier,
+  pickShot, resolveDive, streakMultiplier, shotLabel,
   MAX_REACH_X, MAX_REACH_Z, KEEPER_SET_X, KEEPER_SET_Z,
   type GoalieShot, type ShotKind,
 } from "../../lib/star/goalieMode";
@@ -126,7 +126,7 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
   const central: GoalieShot = {
     kind: "drive", startY: 16, strikeAtT: 1.0, tellT: 0.3, flightT: 0.5,
     arriveAtT: 1.5, targetX: KEEPER_SET_X, targetZ: KEEPER_SET_Z,
-    offTarget: false, tellSide: 1, curl: 0,
+    offTarget: false, tellSide: 1, strikerSide: 1, curl: 0,
   };
   const noDiveCentral = resolveDive(central, null);
   check(noDiveCentral.saved, "a shot dead at the keeper's set position is saved even with no dive at all");
@@ -137,7 +137,7 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
   const corner: GoalieShot = {
     kind: "drive", startY: 18, strikeAtT: 2.0, tellT: 0.3, flightT: 1.0,
     arriveAtT: 3.0, targetX: MAX_REACH_X, targetZ: MAX_REACH_Z,
-    offTarget: false, tellSide: 1, curl: 0,
+    offTarget: false, tellSide: 1, strikerSide: 1, curl: 0,
   };
   const staleDive = resolveDive(corner, { commitT: 0, targetX: MAX_REACH_X, targetZ: MAX_REACH_Z });
   check(staleDive.reachFrac < 0.25, `a dive committed 2s before the strike caps out at a heavily reduced reach (got reachFrac=${staleDive.reachFrac.toFixed(2)})`);
@@ -160,7 +160,7 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
   // claims a real save distance.
   const wide: GoalieShot = {
     kind: "curl", startY: 15, strikeAtT: 1.0, tellT: 0.3, flightT: 0.6,
-    arriveAtT: 1.6, targetX: 6, targetZ: 4, offTarget: true, tellSide: -1, curl: 0.6,
+    arriveAtT: 1.6, targetX: 6, targetZ: 4, offTarget: true, tellSide: -1, strikerSide: -1, curl: 0.6,
   };
   const wideNoDive = resolveDive(wide, null);
   const wideWithDive = resolveDive(wide, { commitT: 0.9, targetX: 0, targetZ: 0 });
@@ -173,6 +173,7 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
 {
   const rng = mulberry32(9);
   let sawUnlocked: Partial<Record<ShotKind, boolean>> = {};
+  let nearPost = 0, farPost = 0, labelledDrives = 0;
   for (let i = 0; i < 4000; i++) {
     const streak = i % 30;
     const shot = pickShot(streak, rng);
@@ -184,16 +185,48 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
     check(shot.strikeAtT > 0 && Number.isFinite(shot.strikeAtT), "strikeAtT is a real positive number");
     check(Math.abs(shot.arriveAtT - (shot.strikeAtT + shot.flightT)) < 1e-9, "arriveAtT is exactly strikeAtT + flightT");
     check(shot.tellSide === Math.sign(shot.targetX) || shot.targetX === 0, "tellSide always matches the true direction of the shot, never a decoy");
+    check(shot.strikerSide === 1 || shot.strikerSide === -1, `strikerSide is always a real side, never anything else (got ${shot.strikerSide})`);
 
     if (streak === 0) check(shot.kind === "drive", `only 'drive' is available at streak 0 (got ${shot.kind})`);
+    if (streak < 1) check(shot.kind !== "first_time", `first_time shouldn't unlock before streak 1 (got it at streak ${streak})`);
     if (streak < 2) check(shot.kind !== "curl", `curl shouldn't unlock before streak 2 (got it at streak ${streak})`);
     if (streak < 3) check(shot.kind !== "header", `header shouldn't unlock before streak 3 (got it at streak ${streak})`);
     if (streak < 4) check(shot.kind !== "volley", `volley shouldn't unlock before streak 4 (got it at streak ${streak})`);
+
+    // Every shot gets a real, non-empty label, and it never claims something
+    // the shot itself isn't doing.
+    const label = shotLabel(shot);
+    check(typeof label === "string" && label.length > 0, "shotLabel always returns a real, non-empty string");
+    if (shot.kind === "header") check(label === "HEADER FROM A CROSS", `a header is always labelled as one (got "${label}")`);
+    if (shot.kind === "volley") check(label === "VOLLEY", `a volley is always labelled as one (got "${label}")`);
+    if (shot.kind === "first_time") check(label === "FIRST-TIME STRIKE", `a first-time strike is always labelled as one (got "${label}")`);
+    if (shot.kind === "curl") check(label === "CURLING EFFORT", `a curler is always labelled as one (got "${label}")`);
+    if (shot.kind === "drive") {
+      labelledDrives++;
+      if (shot.startY >= 17) {
+        check(label === "LONG RANGE", `a drive from ${shot.startY.toFixed(1)}m is labelled long range (got "${label}")`);
+      } else if (shot.strikerSide === shot.tellSide) {
+        nearPost++;
+        check(label === "NEAR POST", `a same-side drive under 17m is labelled near post (got "${label}")`);
+      } else {
+        farPost++;
+        check(label === "FAR POST", `a cross-body drive under 17m is labelled far post (got "${label}")`);
+      }
+    }
   }
   check(sawUnlocked.drive === true, "drive shows up across a real batch of shots");
+  check(sawUnlocked.first_time === true, "first_time shows up once streak reaches its unlock");
   check(sawUnlocked.curl === true, "curl shows up once streak reaches its unlock");
   check(sawUnlocked.header === true, "header shows up once streak reaches its unlock");
   check(sawUnlocked.volley === true, "volley shows up once streak reaches its unlock");
+  // strikerSide is a real, independent roll — both a near-post and a
+  // far-post finish actually occur, in real numbers, not one dominating.
+  // Denominator is the near/far-eligible subset (drives under 17m), not
+  // every drive — a long-range one never gets either label at all.
+  const postEligible = nearPost + farPost;
+  check(postEligible > 200, "enough near/far-post-eligible drives in this batch to judge the split");
+  check(nearPost > postEligible * 0.3 && farPost > postEligible * 0.3,
+    `both near-post and far-post finishes occur in real numbers, not one crowding the other out (${nearPost} near vs ${farPost} far of ${postEligible})`);
 }
 
 // ── Reach bounds are real geometry, not arbitrary numbers ──
