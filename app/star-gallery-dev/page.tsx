@@ -799,12 +799,42 @@ const FIVE_GROUPS: { id: string; label: string }[] = [
 
 /** Paint into a canvas that then FILLS its box — the picture is the card, so
  *  it is never letterboxed inside one. */
-function fillCanvas(c: HTMLCanvasElement, focus = "center"): void {
+function fillCanvas(c: HTMLCanvasElement): void {
   c.style.width = "100%";
   c.style.height = "100%";
   c.style.objectFit = "cover";
-  c.style.objectPosition = focus;
   c.style.display = "block";
+}
+
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/**
+ * Point a `cover` crop at where the football actually is.
+ *
+ * A home tile is a wide letterbox cut out of a tall portrait frame, and each
+ * kind frames its camera differently — a fixed crop would show midfield grass
+ * for one kind and cut the box off for another. So the crop is aimed at the
+ * frame's own centre of action (every figure, plus the ball), solved through
+ * object-position's real geometry rather than guessed.
+ */
+function focusCanvas(c: HTMLCanvasElement, frame: Frame): void {
+  const box = c.parentElement;
+  const boxW = box?.clientWidth ?? 0;
+  const boxH = box?.clientHeight ?? 0;
+  if (!boxW || !boxH) { c.style.objectPosition = "center"; return; }
+  const { cssW, cssH } = frameCssSize(frame);
+  const scale = Math.max(boxW / cssW, boxH / cssH);
+  const sW = cssW * scale, sH = cssH * scale;
+
+  let tx = frame.ball.x, ty = frame.ball.y, n = 1;
+  for (const it of frame.items) { tx += it.at.x; ty += it.at.y; n++; }
+  tx /= n; ty /= n;
+
+  const fx = (tx - frame.camera.x1) / (frame.camera.x2 - frame.camera.x1);
+  const fy = (ty - frame.camera.y1) / (frame.camera.y2 - frame.camera.y1);
+  const px = sW > boxW + 0.5 ? clamp01((fx * sW - boxW / 2) / (sW - boxW)) : 0.5;
+  const py = sH > boxH + 0.5 ? clamp01((fy * sH - boxH / 2) / (sH - boxH)) : 0.5;
+  c.style.objectPosition = `${(px * 100).toFixed(1)}% ${(py * 100).toFixed(1)}%`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -818,9 +848,8 @@ function HomeTile({
   useEffect(() => {
     if (!ref.current) return;
     paint(ref.current, frame);
-    // A tile is a wide letterbox out of a tall portrait frame, so centring it
-    // would show midfield grass. Bias to the goal end, where the picture is.
-    fillCanvas(ref.current, "center 22%");
+    fillCanvas(ref.current);
+    focusCanvas(ref.current, frame);
   }, [frame]);
   return (
     <button
@@ -836,7 +865,7 @@ function HomeTile({
       <div
         style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, rgba(3,6,14,0.35) 0%, rgba(3,6,14,0.15) 42%, rgba(3,6,14,0.88) 100%)",
+          background: "linear-gradient(180deg, rgba(3,6,14,0.30) 0%, rgba(3,6,14,0.05) 38%, rgba(3,6,14,0.72) 78%, rgba(3,6,14,0.95) 100%)",
         }}
       />
       <div
@@ -854,19 +883,24 @@ function HomeTile({
 }
 
 function HomeScreen({
-  onOpen, warning,
-}: { onOpen: (s: "eleven" | "five" | "builder") => void; warning: string | null }) {
+  onOpen, warning, wide,
+}: { onOpen: (s: "eleven" | "five" | "builder") => void; warning: string | null; wide: boolean }) {
   const [noteOpen, setNoteOpen] = useState(false);
   const tiles = useMemo(
     () => [
       { word: "11-a-side", frame: elevenVersions("one_on_one")[0].frame, go: "eleven" as const },
-      { word: "5-a-side", frame: fiveVersions("attacking")[0].frame, go: "five" as const },
-      { word: "Scenario Builder", frame: elevenVersions("corner")[0].frame, go: "builder" as const },
+      { word: "5-a-side", frame: fiveVersions("defensive")[0].frame, go: "five" as const },
+      { word: "Scenario Builder", frame: elevenVersions("free_kick")[0].frame, go: "builder" as const },
     ],
     [],
   );
   return (
-    <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", gap: 12, padding: 14 }}>
+    <div
+      style={{
+        position: "relative", height: "100%", display: "flex",
+        flexDirection: wide ? "row" : "column", gap: wide ? 18 : 12, padding: wide ? 24 : 14,
+      }}
+    >
       {warning && (
         <button
           onClick={() => setNoteOpen((v) => !v)}
@@ -1149,12 +1183,20 @@ function EditableFrame({
 /** One read-only canvas, for the across-formations comparison. */
 function MiniFrame({ frame, label, note }: { frame: Frame; label: string; note: string }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => { if (ref.current) paint(ref.current, frame); }, [frame]);
+  useEffect(() => {
+    if (!ref.current) return;
+    paint(ref.current, frame);
+    // `paint` sizes the canvas in real pixels; a comparison tile is whatever
+    // width the column gives it, so the px size is traded for a fluid one
+    // afterwards (the drawing itself is unaffected — only how it is scaled).
+    ref.current.style.width = "100%";
+    ref.current.style.height = "auto";
+  }, [frame]);
   return (
-    <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 8 }}>
+    <div style={{ background: CARD, border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 8, minWidth: 0 }}>
       <div style={{ fontWeight: 800, fontSize: 12, color: INK }}>{label}</div>
       <div style={{ color: MUTED, fontSize: 10.5, marginBottom: 6 }}>{note}</div>
-      <canvas ref={ref} style={{ display: "block", borderRadius: 10, background: "#14532d", width: "100%", height: "auto" }} />
+      <canvas ref={ref} style={{ display: "block", borderRadius: 10, background: "#14532d" }} />
     </div>
   );
 }
@@ -1190,7 +1232,7 @@ function FormationStrip({ cell, override }: { cell: Cell; override: PosOverride 
           each shirt, not where anyone stands.
         </div>
       )}
-      <div style={{ display: "grid", gap: 10 }}>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
         {COMPARE_FORMATIONS.map((fid) => {
           const f = formationOf(fid);
           const line = defensiveLineOf(f);
@@ -1451,7 +1493,14 @@ export default function StarGalleryDevPage() {
 
   // ── HOME ──
   if (screen === "home") {
-    return shell(<HomeScreen onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))} warning={warning} />, true);
+    return shell(
+      <HomeScreen
+        onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))}
+        warning={warning}
+        wide={wide}
+      />,
+      true,
+    );
   }
 
   // ── BUILDER ──
@@ -1473,7 +1522,7 @@ export default function StarGalleryDevPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: wide ? "repeat(auto-fill, minmax(170px, 1fr))" : "1fr 1fr",
+          gridTemplateColumns: wide ? "repeat(auto-fill, minmax(230px, 1fr))" : "1fr 1fr",
           gap: 12,
           padding: 14,
         }}

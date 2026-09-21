@@ -6,7 +6,7 @@ import {
   CX, PITCH_W, POST_L, POST_R, HALF_LEN, NET_DEPTH, BOX_DEPTH, SIX_DEPTH,
 } from "./pitch";
 import { scenarioFaults, fixBaseScenario, offsideLineOf, inShotCone } from "./baseScenario";
-import { targetBlock, defensiveLineOf, type ShapeInput } from "./formationShape";
+import { targetBlock, defensiveLineOf, onTheBoxEdge, type ShapeInput } from "./formationShape";
 import type { Lane, ChancePattern, ScenarioRequest } from "./hiddenMatch";
 
 /**
@@ -622,7 +622,13 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
   // run off the plan's own back-line count. Either way the block is placed
   // across the real pitch, and the camera decides how much of it is seen.
   const shaped = plan.ctxShape ? targetBlock(plan.ctxShape, ballX, ballY) : null;
-  const lineY = clamp(shaped ? shaped.lineY : ballDist * 0.66, 3.2, Math.max(4, ballDist - 2.0));
+  // `onTheBoxEdge` applies to BOTH paths: targetBlock has already applied it
+  // when a formation was supplied, and it is idempotent, so calling it again
+  // here costs nothing and means the no-formation path cannot drift from the
+  // shaped one. That drift is exactly what made the first version of this fix
+  // measure as a no-op — the gallery never passes a formation.
+  const rawLineY = clamp(shaped ? shaped.lineY : ballDist * 0.66, 3.2, Math.max(4, ballDist - 2.0));
+  const lineY = onTheBoxEdge(rawLineY, ballDist, 3.2);
   const span = shaped ? shaped.span : clamp(16 + ballDist * 0.22, 16, 25) * (p.backLine === 5 ? 1.28 : 1);
   const shift = shaped ? shaped.blockShift : clamp((ballX - CX) * 0.4, -8, 8);
 
