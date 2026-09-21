@@ -19,11 +19,11 @@
  * you back on the same scenario instead of a random one.
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CanvasMatch from "./CanvasMatch";
 import type { Scenario } from "@/lib/star/canvasEngine";
 
-export default function ScenarioPlay({ title, build, onClose }: {
+export default function ScenarioPlay({ title, build, onClose, onNext, onBin }: {
   /** What is being played, shown in the bar so it is never ambiguous which
    *  picture you are looking at once the figures start moving. */
   title: string;
@@ -32,8 +32,25 @@ export default function ScenarioPlay({ title, build, onClose }: {
    *  mutate the gallery's own picture as you play it. */
   build: () => Scenario;
   onClose: () => void;
+  /** Move to the next chance WITHOUT leaving. Absent, the button is not
+   *  shown — the gallery has no "next" to go to in the same sense that
+   *  Infinite Highlights does. */
+  onNext?: () => void;
+  /** Throw this one away as not worth fixing. Same action as the Bin button
+   *  on the page behind, offered here because this is where you find out. */
+  onBin?: () => void;
 }) {
   const openOn = useCallback(() => build(), [build]);
+
+  /**
+   * CanvasMatch takes its FIRST scenario at ref creation, so handing it a new
+   * `openOn` does not move the picture already on screen — it would only
+   * take effect on the chance after this one. Remounting is what makes Next
+   * land on the next chance immediately, and it also clears whatever the
+   * last one left on the canvas.
+   */
+  const [nonce, setNonce] = useState(0);
+  useEffect(() => { setNonce((n) => n + 1); }, [build]);
 
   return (
     <div
@@ -57,13 +74,40 @@ export default function ScenarioPlay({ title, build, onClose }: {
           ← Back
         </button>
         <div style={{ fontWeight: 800, color: "#fff" }}>{title}</div>
-        <div style={{ marginLeft: "auto", fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
-          Practice — nothing here is saved or counted
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+            Practice — nothing saved or counted
+          </span>
+          {onBin && (
+            <button
+              onClick={onBin}
+              title="Not worth fixing — never show this again, and record it in the repo"
+              style={{
+                background: "rgba(239,68,68,0.16)", color: "#fca5a5", fontWeight: 700,
+                border: "1px solid rgba(239,68,68,0.45)", borderRadius: 10,
+                padding: "8px 14px", cursor: "pointer",
+              }}
+            >
+              No-go
+            </button>
+          )}
+          {onNext && (
+            <button
+              onClick={onNext}
+              style={{
+                background: "rgba(56,189,248,0.18)", color: "#e0f2fe", fontWeight: 800,
+                border: "1px solid rgba(56,189,248,0.5)", borderRadius: 10,
+                padding: "8px 18px", cursor: "pointer",
+              }}
+            >
+              Next →
+            </button>
+          )}
         </div>
       </div>
 
       <div style={{ flex: 1, width: "100%", overflow: "auto", display: "flex", justifyContent: "center" }}>
-        <CanvasMatch openOn={openOn} />
+        <CanvasMatch key={nonce} openOn={openOn} />
       </div>
     </div>
   );

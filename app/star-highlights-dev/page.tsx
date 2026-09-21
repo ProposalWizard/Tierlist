@@ -40,6 +40,7 @@ import {
   nextHighlight,
   newSimMemory,
   buildSimScenario,
+  authoredShapeFor,
   simFaults,
   pictureKey,
   type SimSpec,
@@ -51,6 +52,9 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
+import { outliersOf } from "@/lib/star/scenarioRules";
+import { binChance, binnedCount } from "@/lib/star/scenarioReject";
+import { ruleSetFor } from "@/lib/star/authoredChance";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
 import {
   addFigureTo,
@@ -261,6 +265,8 @@ export default function HighlightsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
+  /** Bumped when something is binned, so the count on screen refreshes. */
+  const [binTick, setBinTick] = useState(0);
 
   // A full-screen dev tool: the site's own nav and footer get out of the way,
   // exactly as /star-gallery-dev does it (globals.css's immersive class).
@@ -378,7 +384,74 @@ export default function HighlightsPage() {
   const override = shot ? edits[editKey] : undefined;
   const edited = hasEdits(override);
   const baseFrame = shot ? applyOverride(shot.base, savedOv) : null;
+  /** Drawings of this kind that disagree with one of its own laws. The rule
+   *  set survives a slip (see INVARIANT_AGREEMENT) but the slip is shown. */
+  /**
+   * Throw this chance away as not worth fixing.
+   *
+   * Different from the flag (⚑), which means "look at this". A bin means
+   * "this should never exist" — it is never served again, and it remembers
+   * which authored drawing built it, so a drawing that keeps producing bad
+   * chances shows up in `binsByBase` rather than having to be guessed at.
+   */
+
+  const ruleOutliers = useMemo(
+    () => (shot ? outliersOf(ruleSetFor(shot.spec.kind) ?? { kind: "", n: 0, rules: [] }) : []),
+    [shot, saved],
+  );
+  const binnedForKind = useMemo(
+    () => (shot ? binnedCount(shot.spec.kind) : 0),
+    [shot, binTick],
+  );
   const liveFrame = baseFrame ? applyOverride(baseFrame, override) : null;
+
+  const binThis = useCallback(() => {
+    if (!shot) return;
+    const base = authoredShapeFor(shot.spec)?.sourceId ?? null;
+    binChance(shot.spec.kind, shot.spec.seed, shot.spec.planId, base);
+    setBinTick((t) => t + 1);
+    setPlaying(false);
+    // Commit it to the no-go pool in the REPO as well, so the rejection
+    // survives a cleared browser and can be reviewed by somebody who was not
+    // here. Local skipping has already happened, so a 403 (not signed in as
+    // an admin) or a 503 (no GITHUB_TOKEN) costs nothing but is still SAID —
+    // never a silent half-success.
+    const ms = frameToMatchScenario(
+      { ...saveTargetFor(shot.spec), id: `nogo-${highlightSlug(shot.spec)}`,
+        name: `${kindLabel(shot.spec.kind)} — no-go` },
+      liveFrame ?? shot.base,
+    );
+    void fetch("/api/star/scenarios/commit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pool: "nogo", scenario: ms }),
+    })
+      .then(async (r) => {
+        const d = await r.json().catch(() => null);
+        flashFor(r.ok, r.ok
+          ? "Binned, and added to the repo's no-go list."
+          : `Binned here only — ${d?.error ?? `the repo said ${r.status}`}`);
+      })
+      .catch(() => flashFor(false, "Binned here only — couldn't reach the server."));
+    next();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shot, liveFrame]);
+
+  /** A PNG of exactly what is on screen, for sharing a bad picture without
+   *  needing anybody to reproduce it. */
+  const downloadShot = useCallback(() => {
+    if (!shot || !baseFrame) return;
+    const c = document.createElement("canvas");
+    // No fault rings: this is a picture of the SCENARIO, and a ring is a
+    // note about it. Anyone the PNG is sent to wants the chance, not the
+    // annotation.
+    paintMarked(c, applyOverride(baseFrame, override), []);
+    const a = document.createElement("a");
+    a.href = c.toDataURL("image/png");
+    a.download = `${shot.spec.kind}-${shot.spec.seed}.png`;
+    a.click();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shot, baseFrame, override]);
   const analysis: Analysis = useMemo(
     () => (shot ? analysisFor(shot.spec, [savedOv, override]) : NO_FAULTS),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -674,7 +747,43 @@ export default function HighlightsPage() {
             <button style={{ ...editBtn(false), color: "#4ade80" }} onClick={() => setPlaying(true)}>
               &#9654; Play
             </button>
+            {/* Not worth fixing. See lib/star/scenarioReject.ts. */}
+            <button
+              style={{ ...editBtn(false), color: "#fca5a5" }}
+              title="Never show this again, and add it to the repo's no-go list"
+              onClick={binThis}
+            >
+              No-go
+            </button>
+            <button
+              style={{ ...editBtn(false), color: MUTED }}
+              title="Save this picture as a PNG"
+              onClick={downloadShot}
+            >
+              PNG
+            </button>
           </div>
+
+          {/* A drawing that disagrees with one of its own kind's laws. Named
+              rather than silently absorbed — the rules survive one slip, but
+              nobody should have to guess that a slip happened. */}
+          {binnedForKind > 0 && (
+            <div style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>
+              {binnedForKind} marked no-go and never shown again
+            </div>
+          )}
+
+          {ruleOutliers.length > 0 && (
+            <div style={{
+              width: "100%", maxWidth: 460, borderRadius: 12, padding: "9px 12px",
+              background: "rgba(245,158,11,0.13)", border: "1px solid rgba(245,158,11,0.4)",
+              color: "#fcd34d", fontSize: 12.5, fontWeight: 700, lineHeight: 1.4,
+            }}>
+              {ruleOutliers.length} saved {ruleOutliers.length === 1 ? "scenario breaks" : "scenarios break"} a rule
+              of {shot ? kindLabel(shot.spec.kind) : "this kind"} and {ruleOutliers.length === 1 ? "is" : "are"} not
+              being used: {ruleOutliers.slice(0, 3).map((o) => o.breaks.toLowerCase()).join("; ")}
+            </div>
+          )}
 
           {playing && shot && (
             <ScenarioPlay
@@ -685,6 +794,8 @@ export default function HighlightsPage() {
                 return sc;
               }}
               onClose={() => setPlaying(false)}
+              onNext={() => next()}
+              onBin={binThis}
             />
           )}
 

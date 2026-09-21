@@ -196,8 +196,16 @@ export interface Rule {
   min: number;
   max: number;
   median: number;
-  /** Never varied across the samples, so the randomiser may never break it. */
+  /** A law the randomiser may never break. See `deriveRuleSet`. */
   invariant: boolean;
+  /** For an invariant: how many samples obey it, out of how many. 11 of 12
+   *  means one drawing disagrees — the law still holds, and that drawing is
+   *  named in `outliers` so it can be looked at. */
+  agree: number;
+  of: number;
+  /** The ids of the samples that disagree with an invariant. Empty for a
+   *  clean rule set; anything in here is a drawing worth opening. */
+  outliers: string[];
 }
 
 export interface RuleSet {
@@ -214,29 +222,91 @@ export interface RuleSet {
 export const MIN_SAMPLES_FOR_INVARIANT = 5;
 
 /**
+ * How much of the pool has to obey something before it counts as a law.
+ *
+ * It used to be all of it, and that made one mistake catastrophic. Measured:
+ * adding a SINGLE drawing with a defender left goal-side of the ball, to a
+ * pool of eleven clean ones, destroyed 2 of the 3 hard rules and 15.0% of
+ * every chance the game served then broke its own definition. One drawing
+ * outvoted eleven.
+ *
+ * At nine in ten, a slip is absorbed: the law holds, the drawing that
+ * disagrees is named as an outlier, and the randomiser simply never uses it
+ * as a base. Someone can go and fix it, or delete it, and nothing in the
+ * meantime is broken.
+ */
+export const INVARIANT_AGREEMENT = 0.9;
+
+/**
+ * A law is always "none of this happens".
+ *
+ * Agreement alone is not enough to make something a law, and getting this
+ * wrong would be worse than the bug it fixes. "Defenders in the picture: 3"
+ * could easily hit nine in ten and become an ALWAYS — and then the one
+ * drawing with four defenders is an outlier, and the randomiser can never
+ * serve a four-defender one-on-one again. That is a typical count, not a
+ * rule.
+ *
+ * Every real law found so far is a ZERO: no defender between the ball and
+ * the goal, no defender nearer the goal than the ball, no team-mate in your
+ * shot. "None of X" is a statement about what a situation IS; "three of X"
+ * is a statement about what it usually looks like. Only the first is
+ * enforced.
+ */
+const isLaw = (m: Measure, modal: number): boolean => !!m.count && modal === 0;
+
+/**
  * Scan a set of authored scenarios into a rule set.
  *
  * This is the auto-scan. It holds no state and caches nothing: hand it the
  * pool as it stands and it describes the pool as it stands.
  */
-export function deriveRuleSet(kind: string, samples: ShapeSample[]): RuleSet {
+export function deriveRuleSet(
+  kind: string, samples: ShapeSample[], ids: string[] = [],
+): RuleSet {
   const rules: Rule[] = [];
   for (const m of MEASURES) {
-    const vs = samples.map((s) => m.of(s)).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+    const raw = samples.map((s) => m.of(s));
+    const vs = raw.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
     if (!vs.length) continue;
-    const min = vs[0], max = vs[vs.length - 1];
+
+    // A law is judged at zero — how many obey "none of this", and who does
+    // not. Only ever consulted for a counting measure (see `isLaw`).
+    const obey = raw.filter((v) => v === 0).length;
+    const of = raw.filter((v) => Number.isFinite(v)).length;
+    const modal = obey === of ? vs[0] : (obey / of >= INVARIANT_AGREEMENT ? 0 : NaN);
+    const invariant = of >= MIN_SAMPLES_FOR_INVARIANT
+      && isLaw(m, modal)
+      && obey / of >= INVARIANT_AGREEMENT;
+
     rules.push({
       id: m.id,
       label: m.label,
       count: !!m.count,
       ratio: !!m.ratio,
-      min,
-      max,
+      min: vs[0],
+      max: vs[vs.length - 1],
       median: vs[Math.floor(vs.length / 2)],
-      invariant: min === max && samples.length >= MIN_SAMPLES_FOR_INVARIANT,
+      invariant,
+      agree: invariant ? obey : of,
+      of,
+      outliers: invariant
+        ? raw.map((v, i) => (v !== 0 && Number.isFinite(v) ? (ids[i] ?? `#${i}`) : null))
+            .filter((x): x is string => x !== null)
+        : [],
     });
   }
   return { kind, n: samples.length, rules };
+}
+
+/** Every drawing that disagrees with a law, and which law. What a screen
+ *  shows so a slip is visible rather than silently absorbed. */
+export function outliersOf(set: RuleSet): { id: string; breaks: string }[] {
+  const out: { id: string; breaks: string }[] = [];
+  for (const r of set.rules) {
+    for (const id of r.outliers) out.push({ id, breaks: r.label });
+  }
+  return out;
 }
 
 /**
@@ -254,9 +324,9 @@ export function violations(sample: ShapeSample, set: RuleSet): string[] {
     const m = MEASURES.find((x) => x.id === r.id);
     if (!m) continue;
     const v = m.of(sample);
-    if (v !== r.min) {
+    if (v !== 0) {
       out.push(r.count
-        ? `${r.label.toLowerCase()}: ${v}, should be ${r.min}`
+        ? `${r.label.toLowerCase()}: ${v}, should be 0`
         : r.ratio
           ? `${r.label.toLowerCase()}: ${v.toFixed(2)}, should be ${r.min.toFixed(2)}`
           : `${r.label.toLowerCase()}: ${v.toFixed(1)}m, should be ${r.min.toFixed(1)}m`);
@@ -286,7 +356,8 @@ export function describeRuleSet(set: RuleSet): string[] {
   const n = (r: Rule, v: number) =>
     r.count ? String(v) : r.ratio ? v.toFixed(2) : `${v.toFixed(1)}m`;
   const hard = set.rules.filter((r) => r.invariant)
-    .map((r) => `ALWAYS — ${r.label}: ${n(r, r.min)}`);
+    .map((r) => `ALWAYS — ${r.label}: 0`
+      + (r.agree < r.of ? `  (${r.agree} of ${r.of} — see outliers)` : ""));
   const soft = set.rules.filter((r) => !r.invariant)
     .map((r) => `${r.label}: ${n(r, r.min)} to ${n(r, r.max)} (usually ${n(r, r.median)})`);
   return [...hard, ...soft];
