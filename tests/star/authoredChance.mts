@@ -202,6 +202,41 @@ ok(placedM / trials >= 1.5, `team-mates actually get placed (${(placedM / trials
   ok(clean2 === N2, `every procedural one-on-one obeys the drawn rules (${clean2}/${N2})`);
 }
 
+// ── A gallery cell keeps its base as the pool grows ───────────────────────
+//
+// A cell is a fixed seed and a person edits the picture under it. Picking the
+// base by index into the pool meant adding ONE drawing renumbered everything:
+// measured, 199 of 400 cells (50%) repainted onto a different base, with
+// whatever had been dragged still applied on top of an arrangement it was
+// never made for.
+//
+// Rendezvous hashing instead. The first attempt at it combined id and seed
+// with plain djb2 and measured 31% with one drawing winning 189 of 400 cells;
+// with a proper avalanche it is 9%, against a theoretical floor of 1/12 = 8%.
+
+{
+  const seeds = Array.from({ length: 400 }, (_, i) => 7000 + i * 7);
+  const idsNow = () => seeds.map(sd =>
+    nextAuthoredShape("one_on_one", mulberry32(sd ^ 0x5bf03635), [], sd)!.sourceId);
+  const b = idsNow();
+  setLiveScenarioPool([{ ...pool[3], id: "zz-added", updatedAt: Date.now() }]);
+  const a = idsNow();
+  setLiveScenarioPool(null);
+  const moved = b.filter((v, i) => v !== a[i]).length;
+  ok(moved / seeds.length < 0.15,
+    `adding one drawing moves few cells (${moved}/${seeds.length}, floor is 1/12)`);
+
+  // Even spread, or one drawing would be most of what anybody ever sees.
+  const counts = pool.map(x => b.filter(v => v === x.id).length);
+  ok(Math.min(...counts) > 0, "every drawing is the base for some cell");
+  ok(Math.max(...counts) / Math.min(...counts) < 4,
+    `no drawing dominates (${Math.min(...counts)}-${Math.max(...counts)} cells each)`);
+
+  // And the same cell asked twice is the same base, always.
+  const twice = idsNow();
+  ok(twice.every((v, i) => v === b[i]), "a cell's base is stable across calls");
+}
+
 // ── Offside: both halves of Law 11 ────────────────────────────────────────
 //
 // A team-mate BEHIND the ball cannot be offside however deep the back line

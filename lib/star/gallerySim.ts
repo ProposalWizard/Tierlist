@@ -209,7 +209,10 @@ export function buildSimScenario(spec: SimSpec): Scenario {
   // Its own stream off the same seed, so a spec still rebuilds to the exact
   // same picture every time — which the gallery relies on to repaint without
   // the scenario shifting under it.
-  const shape = nextAuthoredShape(spec.kind, mulberry32(spec.seed ^ 0x5bf03635));
+  // The seed is passed as the STABLE KEY: this cell keeps the same base
+  // drawing as the pool grows, so an edit made on it stays on the picture it
+  // was made for. See stableBase().
+  const shape = nextAuthoredShape(spec.kind, mulberry32(spec.seed ^ 0x5bf03635), [], spec.seed);
   if (shape) applyAuthoredShape(sc, shape);
   return sc;
 }

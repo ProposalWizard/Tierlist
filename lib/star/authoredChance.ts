@@ -319,15 +319,70 @@ export function randomiseAuthored(
  * formula already uses, for the same reason.
  */
 export function nextAuthoredShape(
-  kind: string, rng: () => number, recent: string[] = [],
+  kind: string, rng: () => number, recent: string[] = [], stableKey?: number,
 ): AuthoredShape | null {
   const set = ruleSetFor(kind);
   const pool = authoredPool(kind);
   if (!set || !pool.length) return null;
   const fresh = pool.filter((s) => !recent.includes(s.id));
   const from = fresh.length ? fresh : pool;
-  return randomiseAuthored(from[Math.floor(rng() * from.length) % from.length], set, rng);
+  const base = stableKey === undefined
+    ? from[Math.floor(rng() * from.length) % from.length]
+    : stableBase(from, stableKey);
+  return randomiseAuthored(base, set, rng);
 }
+
+/**
+ * PICK A BASE THAT DOES NOT MOVE WHEN THE POOL GROWS.
+ *
+ * A gallery cell is a fixed seed, and a person edits the picture under it.
+ * Choosing the base by `index = seed % poolLength` means adding ONE scenario
+ * renumbers everything: measured, saving a single new drawing repainted
+ * 102 of 200 existing sim cells onto a DIFFERENT base — with whatever had
+ * been dragged on that cell still applied on top, now over a different
+ * arrangement. An edit silently landing on a picture it was not made for is
+ * worse than no edit.
+ *
+ * Rendezvous hashing (highest random weight) instead: every drawing is scored
+ * against the cell's own seed and the best score wins. Adding one drawing to a
+ * pool of n moves only about 1/(n+1) of the assignments — the minimum any
+ * scheme can manage — and removing one only moves the cells that were on it.
+ *
+ * The match does NOT pass a stable key: it wants a different picture every
+ * time and has nothing to keep still.
+ */
+function stableBase(pool: MatchScenario[], key: number): MatchScenario {
+  let best = pool[0];
+  let bestScore = -1;
+  for (const s of pool) {
+    const h = mix32(djb2(s.id) ^ (key >>> 0));
+    if (h > bestScore) { bestScore = h; best = s; }
+  }
+  return best;
+}
+
+const djb2 = (str: string): number => {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
+  return h >>> 0;
+};
+
+/**
+ * A proper avalanche (murmur3's finaliser).
+ *
+ * A first attempt combined the id and the seed with plain djb2 and measured
+ * badly: the id dominated, so one drawing won for 189 of 400 cells while
+ * another won 3, and adding one scenario still repainted 31%. Mixing so that
+ * every input bit affects every output bit is what makes the scores
+ * independent per (drawing, cell) — which is the whole premise of rendezvous
+ * hashing.
+ */
+const mix32 = (n: number): number => {
+  let h = n >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 //  PUTTING IT ON A LIVE SCENARIO

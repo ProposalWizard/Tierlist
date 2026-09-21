@@ -75,6 +75,7 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
+import ScenarioPlay from "@/components/star/ScenarioPlay";
 import {
   applyOverride,
   applyOverrideToScenario,
@@ -836,6 +837,8 @@ export default function StarGalleryDevPage() {
    * Kept behind a toggle rather than deleted — he wants it back later.
    */
   const [showFormations, setShowFormations] = useState(false);
+  /** The Play overlay is open on this card — see ScenarioPlay. */
+  const [playing, setPlaying] = useState(false);
   /** The simulated chance currently on screen, if Simulate has been pressed. */
   const [sim, setSim] = useState<Cell | null>(null);
 
@@ -1353,7 +1356,25 @@ export default function StarGalleryDevPage() {
           >
             Remove
           </button>
+          {/* Play THIS picture, edits and all — see ScenarioPlay. Works the
+              same on a base version and on a simulated one, because both are
+              rebuilt through `rebuildScenario`. */}
+          <button style={{ ...editBtn(false), color: "#4ade80" }} onClick={() => setPlaying(true)}>
+            ▶ Play
+          </button>
         </div>
+      )}
+
+      {playing && (
+        <ScenarioPlay
+          title={`${cell.title}${hasEdits(override) ? " (edited)" : ""}`}
+          build={() => {
+            const sc = rebuildScenario(cell);
+            applyOverrideToScenario(sc, override);
+            return sc;
+          }}
+          onClose={() => setPlaying(false)}
+        />
       )}
 
       {analysis.faults.length > 0 && (
