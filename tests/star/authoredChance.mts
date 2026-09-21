@@ -10,11 +10,12 @@
 import { AUTHORED_SCENARIOS } from "@/lib/star/authoredScenarios";
 import {
   deriveRuleSet, sampleFromAuthored, violations, describeRuleSet,
-  MIN_SAMPLES_FOR_INVARIANT, type ShapeSample,
+  MIN_SAMPLES_FOR_INVARIANT, MEASURES, type ShapeSample,
 } from "@/lib/star/scenarioRules";
 import {
   authoredPool, ruleSetFor, nextAuthoredShape, randomiseAuthored,
   setLiveScenarioPool, applyAuthoredShape, sampleFromScenario, JITTER_M,
+  KEEPER_TUNING,
 } from "@/lib/star/authoredChance";
 import { buildScenario } from "@/lib/star/canvasEngine";
 import { fixBaseScenario, offsideLineOf } from "@/lib/star/baseScenario";
@@ -139,6 +140,67 @@ for (let i = 0; i < 200; i++) {
 }
 ok(placedD / trials >= 2.5, `defenders actually get placed (${(placedD / trials).toFixed(1)} per chance)`);
 ok(placedM / trials >= 1.5, `team-mates actually get placed (${(placedM / trials).toFixed(1)} per chance)`);
+
+// ── The keeper follows the ball ───────────────────────────────────────────
+//
+// He is DERIVED from the nudged ball (his drawing's own near-post share and
+// advance re-applied), never copied and nudged separately. Copying measured
+// 32.8% of nudges making his near-post cover WORSE, with the share running
+// from -0.68 (shading the FAR post — the opposite of what every drawing
+// does) to 1.34. Deriving him: 0.0%.
+
+{
+  const gkNP = MEASURES.find(m => m.id === "gkNearPost")!;
+  const r = mulberry32(5150);
+  let worse = 0, tot = 0, lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < 1500; i++) {
+    const sh = nextAuthoredShape("one_on_one", r);
+    if (!sh) continue;
+    const b = sampleFromAuthored(pool.find(p => p.id === sh.sourceId)!)!;
+    const v0 = gkNP.of(b), v1 = gkNP.of(sh);
+    if (!Number.isFinite(v0) || !Number.isFinite(v1)) continue;
+    tot++;
+    if (v1 < v0 - 0.05) worse++;
+    lo = Math.min(lo, v1); hi = Math.max(hi, v1);
+  }
+  ok(tot > 300, `enough wide-ball variants to judge the keeper on (${tot})`);
+  ok(worse === 0, `a nudge never makes his near-post cover worse (${worse}/${tot})`);
+  ok(lo > -0.2, `he never drifts round to the FAR post (worst ${lo.toFixed(2)})`);
+  ok(hi < 1.0, `and never past square with the ball (worst ${hi.toFixed(2)})`);
+}
+
+// Tuning overrides every drawing's own share, for when a number is chosen by
+// looking rather than by scanning.
+{
+  const wide = pool.find(x => Math.abs(sampleFromAuthored(x)!.ball.x - 34) > 3)!;
+  const gkNP = MEASURES.find(m => m.id === "gkNearPost")!;
+  KEEPER_TUNING.nearPost = 0.5;
+  const tuned = randomiseAuthored(wide, set, mulberry32(11))!;
+  ok(Math.abs(gkNP.of(tuned) - 0.5) < 0.02, "a tuned near-post share is what actually gets used");
+  KEEPER_TUNING.nearPost = null;
+  const untuned = randomiseAuthored(wide, set, mulberry32(11))!;
+  ok(Math.abs(gkNP.of(untuned) - gkNP.of(tuned)) > 0.05,
+    "...and clearing it goes back to the drawing's own");
+}
+
+// ── The PROCEDURAL base obeys the drawn rules too ─────────────────────────
+//
+// Not just the authored layer. A kind with drawings should have its plain
+// engine build repaired to the same standard, or the two disagree about what
+// the situation is. Measured 85.6% before the repair was widened (a defender
+// goal-side but WIDE was exempt, and nothing cleared a team-mate out of the
+// shooting lane in a base build), 100.0% after.
+
+{
+  let clean2 = 0;
+  const N2 = 600;
+  for (let i = 0; i < N2; i++) {
+    const sc = buildScenario("one_on_one", mulberry32(i * 7717 + 3));
+    fixBaseScenario(sc);
+    if (violations(sampleFromScenario(sc), set).length === 0) clean2++;
+  }
+  ok(clean2 === N2, `every procedural one-on-one obeys the drawn rules (${clean2}/${N2})`);
+}
 
 // ── Offside: both halves of Law 11 ────────────────────────────────────────
 //
