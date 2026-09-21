@@ -39,6 +39,18 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 21 Sep 2026 — the admin nav panel
+- **"Have that somewhere on the screen on PC, more so than mobile."** The one
+  stated exception to phone-first below. Admin/dev tooling is judged on a
+  desktop, so the edge tab is desktop-only and absent on a phone rather than
+  shrunk — a floating element on a phone collides with the games' own corner
+  buttons. This does NOT loosen phone-first for anything players see.
+- **"If I'm on the scenario page, I can easily get back to the homepage, and if
+  I'm on the homepage, then I can easily get back to the scenario page."** Every
+  admin/dev destination in one list, reachable from every page including the
+  immersive ones that hide the normal nav. Getting out has to be as easy as
+  getting in.
+
 ### 21 Sep 2026 — the gallery rebuild
 - **"It's literally just a scenario gallery."** The front page is three things and
   nothing else: 11-a-side, 5-a-side, Scenario Builder. No preamble, no
