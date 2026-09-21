@@ -46,10 +46,28 @@ export function rememberChance(mem: SelectionMemory, plan: ChancePlan): void {
  * pitch just because his own table happens to rate it.
  */
 export const FREQ: Record<string, Partial<Record<ScenarioKind, number>>> = {
-  "box|centre": { one_on_one: 1.0, volley: 0.8, header: 0.9, tight_angle: 0.6 },
-  "box|wide": { cutback: 1.0, tight_angle: 0.8, byline_cross: 0.7, header: 0.6, volley: 0.5 },
-  "attacking|centre": { through_ball: 1.0, long_range: 0.9, one_on_one: 0.5, cutback: 0.3 },
-  "attacking|wide": { byline_cross: 1.0, cutback: 0.9, through_ball: 0.6, long_range: 0.4 },
+  // RETUNED 21 Sep 2026 against the measured mix, after a real report from
+  // playing: "I'm getting a lot of long shots. I'm getting a lot of buildup...
+  // I'm not getting many one-on-ones, if any. I'm not getting any headers.
+  // I'm not getting any by the way [byline crosses]."
+  //
+  // He was right, and it was this table. Measured for a striker over 400
+  // matches, share of highlights against target:
+  //   long_range   13.1% (target 7)    through_ball 13.0% (8)
+  //   byline_cross  1.5% (target 5)    cutback       6.4% (8)
+  //   tight_angle   6.8% (target 9)
+  // and the top-3 share had gone the WRONG WAY, 28.2% -> 38.0% against a 32%
+  // bar: the formula bought variety WITHIN a kind (14 -> 64 situations) while
+  // making the spread BETWEEN kinds worse.
+  //
+  // These numbers were always the spec's own "realism prior" — reasoned, never
+  // measured, and explicitly flagged as such. So they are the right thing to
+  // move, rather than reaching for the position weights, which are a different
+  // and genuinely tuned table.
+  "box|centre": { one_on_one: 1.0, volley: 0.8, header: 0.9, tight_angle: 0.8 },
+  "box|wide": { cutback: 1.0, tight_angle: 0.9, byline_cross: 0.9, header: 0.6, volley: 0.5 },
+  "attacking|centre": { through_ball: 0.6, long_range: 0.5, one_on_one: 0.5, cutback: 0.4 },
+  "attacking|wide": { byline_cross: 1.0, cutback: 0.9, through_ball: 0.4, long_range: 0.3 },
   // The middle third is where most of a match actually happens, so its own row
   // matters more than any other. Without it every middle-zone kind scored the
   // same default and the two the formula has cells for (through_ball,

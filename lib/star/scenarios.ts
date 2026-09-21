@@ -110,6 +110,13 @@ export interface MatchScenario {
     /** The canvasEngine chance kind this was built from. */
     kind: string;
     seed: number | null;
+    /**
+     * For a SIMULATED scenario (the gallery's Simulate button), the
+     * `ChancePlan.id` the chance formula rolled — the other half of what it
+     * takes to rebuild that exact picture from `{ kind, seed }` alone.
+     * Absent on a hand-picked base version, which has no plan.
+     */
+    planId?: string | null;
   };
 }
 
