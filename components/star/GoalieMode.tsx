@@ -7,7 +7,7 @@ import {
 } from "@/lib/star/goalieMode";
 import { GOAL_W, GOAL_H, NET_DEPTH } from "@/lib/star/pitch";
 import { cameraFor, project, type FpCamera } from "@/lib/star/firstPersonView";
-import { drawFigureAt, drawKeeperAt, type FigureLook, type BodyPose } from "@/lib/star/fiveASide/render";
+import { drawFigureAt, drawKeeperAt, BALL_MIN_R, type FigureLook, type BodyPose } from "@/lib/star/fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { formatMoney } from "@/lib/star/money";
@@ -66,18 +66,32 @@ function clamp(v: number, lo: number, hi: number): number {
 
 // ── Camera ──────────────────────────────────────────────────────────────
 //
-// Behind the goal line, inside the net envelope (NET_DEPTH = 1.2 m), so the
-// net's own side panels and roof frame the shot without the camera looking
-// out through them — the "in the goal, just behind and above the keeper"
-// angle both reference screenshots use. A real eye-level camera (EYE=1.55m,
-// firstPersonView.ts's own default) read as too low to see over the
-// keeper's own figure in a first pass — this is a mounted, slightly
-// elevated angle, not literally his eyeline, same honest distinction
-// firstPersonView.ts's own header draws between "genuine perspective" and
-// "where exactly the eye sits". Exact numbers here are a real candidate for
-// a show-options pass once the whole scene is on screen to look at.
-const CAM_Y = 0.75;
-const CAM_EYE = 2.05;
+// A real, measured fix for a real bug, not a tuning pass. The first version
+// put the camera 0.75m behind the goal line — reasoned (wrongly) from
+// NET_DEPTH (1.2m), on the assumption the camera had to physically fit
+// inside the net's own shallow depth. That was never a real constraint —
+// viewing DISTANCE and net depth are unrelated — and `star-playtest`
+// confirmed the actual result live: the goalposts projected to px values
+// like -3161 and +6185 against a ~1170px canvas (thousands of pixels off
+// both edges), the whole grass fill silently vanished (its near corner fell
+// inside `project()`'s own NEAR=0.35 clip guard once the camera's downward
+// pitch was applied), and the keeper — projected at that same near-zero
+// depth — became a single ~1000px-radius head. Not a framing nitpick: a
+// basic distance/focal-length mismatch (at under a metre from a 7.32m-wide
+// goal, FOCAL_K=0.90's normal-ish lens needs to be several metres back
+// before the goal fits in frame at all).
+//
+// Re-derived by actually computing `project()`'s real output (not more
+// hand algebra) across a sweep of candidate distances: at CAM_Y=7 the goal
+// spans 90% of a 390px-wide canvas with ~19px of real margin either side
+// (never clips, even mid-dive at MAX_REACH_X), the keeper stands at ~19% of
+// frame height, and a full vertical stretch toward a top corner brings his
+// reach right up near the crossbar, which is what "full reach" should look
+// like. `CAM_EYE`/`CAM_PITCH` chosen alongside it so the crossbar sits
+// about a third of the way down the frame — headroom above for sky/stand,
+// the goal and keeper occupying the rest.
+const CAM_Y = 7;
+const CAM_EYE = 2.5;
 const CAM_PITCH = 0.14;
 
 const FIGURE_R_M = 1.05; // metres — matches fiveASide/render.ts's own FIGURE_R
@@ -607,7 +621,12 @@ function drawBallAt(ctx: CanvasRenderingContext2D, cam: FpCamera, x: number, y: 
   const ground = project(cam, x, y, 0);
   const ball = project(cam, x, y, z);
   if (!ground || !ball) return;
-  const r = Math.max(4, ball.scale * 0.11);
+  // Drawn at 2.6x true size with a real floor, not literal scale — the
+  // exact same "findable, not to-scale" convention fiveASide/render.ts's
+  // own drawBall uses (see that file's header: a to-scale ball at any real
+  // camera distance is a smudge, and the one thing the whole screen is
+  // about can't be one).
+  const r = Math.max(BALL_MIN_R, ball.scale * 0.11 * 2.6);
 
   ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.beginPath();
