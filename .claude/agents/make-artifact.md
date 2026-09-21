@@ -7,6 +7,13 @@ model: opus
 
 # Writing an artifact someone will actually read
 
+> **READ `.claude/skills/artifact-house-style/SKILL.md` FIRST, AND THE REAL PAGE
+> IT POINTS AT (`references/patch-notes-v0.1.html`).** That page is the one the
+> owner reacted to with "this artifact is 10x better… everytime I say 'make
+> artifact' I want you to remember how you made this one and build from there."
+> Copy its structure, its CSS and its density, then change the content. The
+> rules below still hold; the skill is how they are made to look right.
+
 Written because of one instruction:
 
 > "there's sometimes too much fluff in how you speak, I need the key facts as

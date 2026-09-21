@@ -1,0 +1,95 @@
+---
+name: artifact-house-style
+description: How Knowitball artifacts are built — the recipe from the v0.1 patch notes, which the owner called "10x better" and asked to be the starting point every time. Load BEFORE writing ANY artifact for this project: patch notes, a build write-up, a review, a decision page, a handover. Triggers on "make artifact", "make an artifact", "patch notes", "write this up", "give me a page", "something I can send the team".
+---
+
+# The Knowitball artifact recipe
+
+Two people read these and neither writes code. They judge by scanning, on a
+phone, in about thirty seconds — then open the one or two things they care
+about. Build for that.
+
+**The instruction this exists because of**, said after a first attempt that was
+a wall of prose: *"the artifact is way too yappy and still looks a bit hard to
+read — use visuals, toggles and speak in the plainest quickest english — it
+should read like a game dev patch updates."* And then, of the rewrite:
+*"this artifact is 10x better… everytime I say 'make artifact' I want you to
+remember how you made this one and build from there."*
+
+**Start from `references/patch-notes-v0.1.html`.** It is the real page that got
+that reaction. Read it before writing anything — copy its structure, its CSS and
+its density, then change the content.
+
+## The five rules that made it work
+
+### 1. Game patch notes, not a report
+Sections are **FIXED / ADDED / CHANGED / KNOWN ISSUES / NEXT**, each with a
+coloured dot. Not "Overview", not "Background", not "Summary". Somebody should
+be able to tell what kind of thing every item is from its section alone.
+
+### 2. One bold line, one thin line
+Every item is a **bold headline you could read out loud** plus at most one line
+of detail underneath. If it needs more, it goes in a toggle. No paragraphs
+anywhere in the main flow.
+
+Good: **"Scoring was halved. Now it isn't."**
+Bad: "This section describes changes to the conversion pipeline…"
+
+### 3. Numbers become bars
+A before/after number is a **bar**, not a table row: grey fill for the old
+value, coloured for the new, the figures on the right with the old one struck
+through. Green = fixed. Amber = half fixed. Red = still wrong, and say so.
+A number with no visual is a number nobody reads.
+
+### 4. Screenshots carry the weight
+**Embed real screenshots.** This is the single biggest difference between the
+version that landed and the one that didn't. A picture of the thing removes
+three sentences describing it. Ship them as artifact `files` (an `img/` folder
+alongside the page) and reference them relatively.
+
+Every screenshot gets a one-line caption saying what to look at — not what it
+is.
+
+### 5. Everything long is behind a toggle
+`<details>` / `<summary>`, closed by default, labelled with what is inside
+("What the four bugs were", "Where it still misses", "The two options"). The
+page must be skimmable end to end without opening a single one, and reward
+opening any of them.
+
+## What always goes in
+
+- **A stat strip at the top** — four big numbers, the ones that would make
+  someone say "oh, good". Not four numbers you happen to have.
+- **Known issues, honestly.** Including things nobody asked about, and
+  including things you broke. A red bar saying "untouched" is worth more than
+  silence. If something is half fixed, the bar is amber and the item says so.
+- **What is blocked on whom.** Use a pill: `blocked on Harry`, `half fixed`.
+- **Anything unverified says it is.** "Not seen in a live match" belongs on the
+  page, not in your head.
+
+## What never goes in
+
+- A tour of the codebase, or file paths in the main flow. A filename belongs in
+  a toggle, if at all.
+- "We", "I", or any narration of the process. The reader wants the outcome.
+- A conclusion built up to. Lead with it.
+- Emoji as section markers — coloured dots, not decorations.
+
+## Mechanics
+
+- Author as `.html`, phone-first, 16px side gutter, no horizontal scroll.
+- Colour tokens on `:root`, redefined for dark mode under
+  `@media (prefers-color-scheme: dark)` guarded by `:root:not([data-theme="light"])`
+  and again under `:root[data-theme="dark"]`. Explicit `background` on `body`.
+- Title is two to four words, a name not a sentence ("Knowitball v0.1").
+- Screenshots go in `files` as `img/<name>.png`, referenced as `img/<name>.png`.
+- **Artifacts are private.** Say so when handing over the link, and say who
+  cannot open it yet.
+- **You cannot change sharing.** That is the Share menu on the page, by hand.
+  Don't offer to do it.
+
+## Before you hand it over
+
+Ask yourself, honestly: **could someone scroll this in thirty seconds and know
+what changed, what is broken, and what happens next?** If not, it is still too
+long — cut prose, add a bar, or push it into a toggle.

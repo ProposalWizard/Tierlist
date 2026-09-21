@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowitball v0.1</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.1</span>
+  <h1>Knowitball patch notes</h1>
+  <p class="sub">Star Career · branch <code>Harry</code> · 8 commits · 147 tests green · every number measured, not guessed</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>14→64</b><span>different chance situations</span></div>
+  <div class="s"><b>0%</b><span>same chance twice running</span></div>
+  <div class="s"><b>8×</b><span>less scrolling in the gallery</span></div>
+  <div class="s"><b>−15pp</b><span>empty grass on screen</span></div>
+</div>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Scoring was halved. Now it isn't.</div>
+    <div class="dt">Four separate bugs, each found by measuring.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Cutback</span><div class="track"><div class="fill was" style="width:41%"></div><div class="fill now" style="width:41.3%"></div></div><span class="vv">41.3% <s>9.8</s></span></div>
+      <div class="bar"><span class="lb">One-on-one</span><div class="track"><div class="fill was" style="width:26.4%"></div><div class="fill now" style="width:47.6%"></div></div><span class="vv">47.6% <s>9.8</s></span></div>
+      <div class="bar"><span class="lb">Tight angle</span><div class="track"><div class="fill was" style="width:25%"></div><div class="fill now" style="width:39.7%"></div></div><span class="vv">39.7% <s>13.3</s></span></div>
+      <div class="bar"><span class="lb">Header</span><div class="track"><div class="fill was" style="width:16.3%"></div><div class="fill now" style="width:26.8%"></div></div><span class="vv">26.8% <s>6.6</s></span></div>
+      <div class="bar"><span class="lb">Through ball</span><div class="track"><div class="fill was" style="width:24.4%"></div><div class="fill now warn" style="width:18.7%"></div></div><span class="vv">18.7% <s>11.2</s></span></div>
+    </div>
+    <details><summary>What the four bugs were</summary>
+      <ul>
+        <li><b>The keeper was never beaten.</b> A one-on-one is a chance <i>about</i> the keeper, and his tuned positioning had been overwritten. 9.8% conversion with <b>0% blocked</b> — nothing in the way, he just always saved it.</li>
+        <li><b>Cutbacks came from the touchline</b> — 20.2m off centre, where the real game puts them at 11.5m.</li>
+        <li><b>The "is he blocking?" test was blind.</b> Of 300 cutbacks it found <b>0</b> blockers. <b>223</b> had a man within 1.5m of the ball's real path.</li>
+        <li><b>Two rules cancelled each other</b> — one filled the middle, one cleared the shooting lane, in the wrong order.</li>
+      </ul>
+      <p>One-on-one is above its old number on purpose: the old one had a defender in the way 99.8% of the time, so it was never really a one-on-one.</p>
+    </details>
+  </li>
+
+  <li>
+    <div class="hd">The goal stopped changing size</div>
+    <div class="dt">One zoom band, goal in the same spot every chance. <b>69%</b> of chances used to be framed wrong.</div>
+<figure><img src="img/camera-options.png" alt="Five camera options rendered at phone size — the same one-on-one through each. Harry picked the one that tightens." loading="lazy"><figcaption>Five camera options rendered at phone size — the same one-on-one through each. Harry picked the one that tightens.</figcaption></figure>
+    <details><summary>Three causes</summary>
+      <ul>
+        <li>The builder had a free zoom slider with a <b>5× range</b>.</li>
+        <li>The generator used three different heights — <b>69.2%</b> weren't the standard one.</li>
+        <li>The frame secretly grew to keep the keeper in shot — another <b>10%</b>.</li>
+      </ul>
+      <p>Zooming out doesn't help: a long shot framed wider is <b>emptier</b>, 75% grass vs 60.9%.</p>
+    </details>
+  </li>
+
+  <li>
+    <div class="hd">The camera stopped moving the players</div>
+    <div class="dt">It was physically dragging defenders into frame, so zooming in squashed the defence and changed the football.</div>
+<figure><img src="img/camera-after.png" alt="One-on-ones after: goal bigger, action fills the frame, defenders allowed off the edge." loading="lazy"><figcaption>One-on-ones after: goal bigger, action fills the frame, defenders allowed off the edge.</figcaption></figure>
+    <details><summary>What it was breaking</summary>
+      <ul>
+        <li>Passes found a man <b>97 times in 220</b>.</li>
+        <li>A defender a test deliberately <i>planted</i> in the shooting path was being moved by the camera instead.</li>
+      </ul>
+      <p>Both normal again, nothing re-tuned. Now: ball, you, keeper and every runner in frame <b>100%</b>. Only defenders drift off — <b>1.44</b> per chance. Corners and crosses exempt, because you're delivering into that box.</p>
+      <p><b>To revert:</b> <code>CAMERA_MOVES_PLAYERS = true</code> and <code>VIEW_MIN_H = 42</code> at the top of <code>canvasEngine.ts</code>. Tests pass either way.</p>
+    </details>
+  </li>
+
+  <li>
+    <div class="hd">Chances now match their own name</div>
+    <div class="dt">One-on-ones broken <b>99.7% → 0%</b>. Corners 19.7% → 0%. Byline crosses 8.7% → 0%.</div>
+  </li>
+
+  <li>
+    <div class="hd">Defenders stopped hiding near their own keeper on long shots</div>
+    <div class="dt">The back line now holds the edge of the box. Was 10.4–13.6m out, now 13.8–16.1m.</div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Simulate</div>
+    <div class="dt">Press it, get one chance exactly as the match would give it you. <b>1,300 presses: 1,221 different pictures, 0 repeats in a row, 0 faults.</b></div>
+    <details><summary>The one honest exception</summary>
+      <p>Penalties: 23 different pictures in 100. It's the ball on the spot, you behind it, keeper on his line — there's almost nothing to vary, and faking variety there would be inventing it.</p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Add and remove players in the editor</div>
+    <div class="dt">Tap a figure → + Team-mate, + Opponent, Remove. Real, not cosmetic — adding an opponent to a one-on-one moves the offside line and flips the fault to "not a one-on-one".</div>
+    <figure><img src="img/editor.png" alt="Added opponent selected. The fault line underneath has changed by itself." loading="lazy"><figcaption>Added opponent selected. The fault line underneath has changed by itself.</figcaption></figure>
+  </li>
+  <li>
+    <div class="hd">More than 10 versions per chance type</div>
+    <div class="dt">Up to 60, and it remembers.</div>
+  </li>
+  <li>
+    <div class="hd">Admin panel on every page</div>
+    <div class="dt">25 admin and dev pages, one tab, works on the immersive screens where the normal nav is hidden. Invisible to everyone else. Desktop only.</div>
+    <figure><img src="img/admin.png" alt="Open over the gallery, where the normal nav is hidden — the case that was hardest to get out of." loading="lazy"><figcaption>Open over the gallery, where the normal nav is hidden — the case that was hardest to get out of.</figcaption></figure>
+  </li>
+  <li>
+    <div class="hd">Saving a scenario into the code works for real</div>
+    <div class="dt">Mikey's first genuine commit through that button landed this run. It had only ever been tested against a fake.</div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Gallery rebuilt</div>
+    <div class="dt"><b>12,921px → 1,596px</b> of scrolling. Front page is one screen, not fifteen. All the explaining is gone — a problem is a red ring on the thing that's wrong.</div>
+    <div class="shots"><figure><img src="img/gallery-home.png" alt="Version screen. Formations collapsed, Simulate in the space they took." loading="lazy"><figcaption>Version screen. Formations collapsed, Simulate in the space they took.</figcaption></figure><figure><img src="img/sim.png" alt="A simulated chance — one press, one output." loading="lazy"><figcaption>A simulated chance — one press, one output.</figcaption></figure></div>
+  </li>
+  <li>
+    <div class="hd">Across formations hidden behind a toggle</div>
+    <div class="dt">It owned <b>60%</b> of the screen for something that doesn't work yet. Not deleted — one tap brings it back.</div>
+  </li>
+  <li>
+    <div class="hd">Chance mix retuned</div>
+    <div class="dt">Half done. Below.</div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+
+<div class="alert">
+  <div class="t">Not a feature — do this first</div>
+  <p>Six security holes anyone with the public key can reach: writing their own XP and rewards, deleting every user's progression, wiping community votes. Two SQL files, both written, both unrun.</p>
+</div>
+
+<ul class="n">
+  <li>
+    <div class="hd">Too much build-up, too many long shots <span class="pill p-amb">half fixed</span></div>
+    <div class="dt">What a striker actually gets:</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Long range</span><div class="track"><div class="fill was" style="width:95%"></div><div class="fill now warn" style="width:71%"></div></div><span class="vv">10.6% <s>13.1</s></span></div>
+      <div class="bar"><span class="lb">Through ball</span><div class="track"><div class="fill was" style="width:94%"></div><div class="fill now bad" style="width:91%"></div></div><span class="vv">12.6% <s>13.0</s></span></div>
+      <div class="bar"><span class="lb">Build-up</span><div class="track"><div class="fill was" style="width:69%"></div><div class="fill now bad" style="width:69%"></div></div><span class="vv">9.5% <s>9.5</s></span></div>
+      <div class="bar"><span class="lb">One-on-one</span><div class="track"><div class="fill was" style="width:86%"></div><div class="fill now" style="width:100%"></div></div><span class="vv">14.3% <s>11.9</s></span></div>
+      <div class="bar"><span class="lb">Headers</span><div class="track"><div class="fill was" style="width:70%"></div><div class="fill now" style="width:64%"></div></div><span class="vv">8.9% <s>9.7</s></span></div>
+    </div>
+    <details><summary>Where it still misses</summary>
+      <ul>
+        <li><b>Build-up: untouched.</b> With midfield passes and dribbles it's <b>23%</b> of what you see, and none of it has a goal in the picture.</li>
+        <li><b>Through balls got worse</b> and didn't respond to the weighting — something else is driving them.</li>
+        <li><b>Top-3 share 37.5%</b>, target under 32%, and worse than the 28.2% it started at.</li>
+        <li><b>Byline crosses 1.7% vs 5% target</b> — possibly not a bug. A striker <i>receives</i> crosses; a left winger measures 9.2%.</li>
+      </ul>
+    </details>
+  </li>
+
+  <li>
+    <div class="hd">A rebound scored by someone else counts as your goal</div>
+    <div class="dt">Reported, not yet investigated.</div>
+  </li>
+  <li>
+    <div class="hd">Your own teammates block your shot</div>
+    <div class="dt">There's a rule keeping opponents out of the shooting lane. There's none for your own side.</div>
+  </li>
+  <li>
+    <div class="hd">"The goal wasn't on screen" — not the camera</div>
+    <div class="dt">Goal on screen <b>100%</b> of the time on all 11 shooting types. It's 0% on build-up and midfield passes, by design. Same bug as too much build-up.</div>
+  </li>
+  <li>
+    <div class="hd">Three pictures need a human call</div>
+    <details><summary>See them</summary>
+      <ul>
+        <li><b>Long range:</b> 14.5% have an 11m+ hole in the line. Wrong, or what a distance shot looks like?</li>
+        <li><b>Tight angle:</b> 6.3% have nobody in the middle.</li>
+        <li><b>Byline cross:</b> always 9.7m from centre. A real one comes from 16–20m.</li>
+      </ul>
+      <p>Not auto-fixed on purpose — a wrong repair rule is worse than none. We proved that when a bad rule flagged 32.2% of pictures as broken and the real figure was 0.64%.</p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Small stuff</div>
+    <details><summary>Four things</summary>
+      <ul>
+        <li><code>star_scenarios.sql</code> may still be unrun — saving to the database couldn't be tested end to end.</li>
+        <li>The production build needs <code>NODE_OPTIONS=--max-old-space-size=4096</code> or it dies looking like broken code. Cost an hour.</li>
+        <li>None of the camera work has been seen in a live match — only through the gallery's renderer.</li>
+        <li>5 chances in 6,612 still build with an attacker offside (0.076%). Flagged, not hidden.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next — live scenarios</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Movement arrows</div>
+    <div class="dt">Drag a line from your player, a teammate or an opponent to set what happens when the chance starts.</div>
+  </li>
+  <li>
+    <div class="hd">When you release the ball</div>
+    <div class="dt">A real fork — pick one deliberately.</div>
+    <details><summary>The two options</summary>
+      <ul>
+        <li><b>Manual:</b> drag your run, choose the moment to play it. More control, more skill, more to learn.</li>
+        <li><b>Auto-dribble:</b> your player carries it in a direction, you only pick the shot or pass. Simpler, closer to now.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Keeper rushes out</div>
+    <div class="dt">On a one-on-one. Already exists in the engine — this makes it visible and something you can time a chip against.</div>
+  </li>
+  <li>
+    <div class="hd">Opposition quality drives all of it</div>
+    <div class="dt">How fast they close, how likely they block, how early the keeper commits. This is where formations finally matter — which is why that toggle is hidden, not deleted.</div>
+  </li>
+  <li>
+    <div class="hd">Play button on everything</div>
+    <div class="dt">Play a live scenario out, and play any gallery scenario on demand.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next — everything else</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Rule sets per chance type <span class="pill p-amb">blocked on Harry</span></div>
+    <div class="dt">You build the perfect bases, the rules get read off them, the game generates inside those rules.</div>
+    <details><summary>Why it's the key to formations</summary>
+      <p>A draft read off the current one-on-ones already found something: only <b>96.2%</b> have the ball ahead of every defender. Should be 100% — that's the definition.</p>
+      <p>"Ball 8–16m out" is a fixed box and breaks when a formation moves the defence. "Ball ahead of every defender" stays true wherever they stand. That's why a 3-5-2 must not put three defenders in front of a one-on-one: <b>the chance's own rules outrank the formation.</b></p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Talk to Claude from inside a scenario</div>
+    <div class="dt">A comment box on the exact picture that reaches me as a real instruction.</div>
+    <details><summary>Why this one matters</summary>
+      <p>An automatic checker only catches rules somebody already wrote down. <b>Every real bug on this project so far has been a rule nobody had written yet.</b> A box where you type "the defender shouldn't be there" on the picture is how that gap closes.</p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Dribbling and heading scenarios in the gallery</div>
+  </li>
+  <li>
+    <div class="hd">Matchup simulation</div>
+    <div class="dt">Pick two teams, see what chances that fixture produces.</div>
+  </li>
+  <li>
+    <div class="hd">Formation and playstyle toggles</div>
+    <div class="dt">Last — depends on the rule sets.</div>
+  </li>
+</ul>
+
+<footer>Branch <code>Harry</code> · <code>b5f3698</code> → <code>11a9b17</code>. Anything unverified says so.</footer>
+
+</div>
+</body>
+</html>
