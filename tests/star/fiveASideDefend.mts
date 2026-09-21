@@ -27,9 +27,10 @@ import {
 import type { Ball, Outcome, Scenario, Vec2 } from "../../lib/star/canvasEngine";
 import {
   buildPassage, buildTheirAttack, aimTheirShot, worldFromTheirAttack, passLeadsToShot,
+  buildMateAttack, worldFromMateAttack,
 } from "../../lib/star/fiveASide/passage";
 import {
-  newFiveMatch, applyOutcome, applyTheirAttack, advanceFlow, resumeAction,
+  newFiveMatch, applyOutcome, applyTheirAttack, applyMateAttack, advanceFlow, resumeAction,
   type FiveMatchState,
 } from "../../lib/star/fiveASide/match";
 import { passageQuality } from "../../lib/star/fiveASide/score";
@@ -62,6 +63,7 @@ function theirChance(seed: number): { sc: Scenario; rng: () => number } {
     const act = resumeAction(m);
     if (act === "done") break;
     if (act === "flow") { m = advanceFlow(m, { difficulty: DIFF, playerSkill: 70 }).state; continue; }
+    if (act === "mate") { m = applyMateAttack(m, "saved", m.world); continue; }
     // A touch of yours that gives it straight back, so we reach one of theirs.
     const sc = buildPassage(m.world, { keeperStrength: 60, rng });
     initDefenders(sc, rng);
@@ -339,6 +341,25 @@ function playMatch(seed: number, mode: Mode): Played {
     const act = resumeAction(m);
     if (act === "done") break;
     if (act === "flow") { m = advanceFlow(m, { difficulty: DIFF, playerSkill: 70 }).state; continue; }
+    if (act === "mate") {
+      // A team-mate's chance, played out through the engine (no defensive tap —
+      // that is theirs only). A goal is yours; it never touches conceding.
+      const from = m.world;
+      const sc = buildMateAttack(from, { keeperStrength: 40 + DIFF * 45, teamRelationship: 55, rng });
+      sc.goal = { ...FIVE_A_SIDE.goal };
+      sc.crossbar = FIVE_A_SIDE.crossbar;
+      sc.viewport = { ...FIVE_A_SIDE.view };
+      initDefenders(sc, rng);
+      const shot = aimTheirShot(sc, DIFF, rng);
+      const ball = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng);
+      let out: Outcome | null = null;
+      for (let i = 0; i < 3000 && !out; i++) {
+        stepKeeper(sc, DT); stepReactions(sc, ball, DT, rng); out = stepBall(ball, sc, rng, DT);
+        if (!out && leftPitch(ball.pos)) out = "out" as Outcome;
+      }
+      m = applyMateAttack(m, (out ?? "short") as Outcome | "out", worldFromMateAttack(sc, ball.pos, from));
+      continue;
+    }
 
     if (act === "opp") {
       chances++;

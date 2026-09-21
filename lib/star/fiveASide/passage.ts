@@ -412,6 +412,147 @@ export function worldFromScenario(sc: Scenario, ballAt: Vec2, prev: FiveWorld): 
   };
 }
 
+/**
+ * A TEAM-MATE'S CHANCE, AS THE ENGINE SEES IT.
+ *
+ * The other half of "the CPUs play without your input": when the move finds a
+ * team-mate near their goal rather than you (see `flow.ts`'s `stop: "mate"`),
+ * this builds the picture of HIM taking it, played through the real engine so
+ * you watch the shot rather than reading a caption.
+ *
+ * Unlike `buildTheirAttack` this needs no mirror: your side attacks `y = 0`,
+ * which is the engine's own direction. The only real difference from
+ * `buildPassage` is that the man on the ball is a TEAM-MATE (`sc.player`),
+ * struck by the engine's own aim (`aimTheirShot`, which is generic — it aims at
+ * `sc.goal` from `sc.ball`), and YOU are one of the supporting runners.
+ */
+interface MateSlots {
+  /** Which of `world.mates` is on the ball (drawn as `sc.player`). */
+  shooter: number;
+  /** For each `secondaryRunners` entry: the support man's world slot — `-1` for
+   *  you, else an index into `world.mates`. */
+  runners: number[];
+  /** The support man in the follower slot, same encoding, or null when the
+   *  follower is a shadow the engine ignores (goal not in view). */
+  poacher: number | null;
+}
+const MATE_SLOTS = new WeakMap<Scenario, MateSlots>();
+
+export function buildMateAttack(world: FiveWorld, opts: PassageOpts): Scenario {
+  const { rng, keeperStrength, cast } = opts;
+
+  // The team-mate on the ball is the one nearest it — the flow has already
+  // moved whoever the chance fell to onto the ball (see `yourMateChanceInSpace`).
+  let shooter = 0;
+  world.mates.forEach((m, i) => {
+    if (Math.hypot(m.x - world.ball.x, m.y - world.ball.y)
+      < Math.hypot(world.mates[shooter].x - world.ball.x, world.mates[shooter].y - world.ball.y)) shooter = i;
+  });
+
+  const ball: Vec2 = { x: world.ball.x, y: Math.min(world.ball.y, KICK_FLOOR_Y) };
+  const kind = opts.kind ?? kindForBall(ball);
+
+  // He stands beside the ball, toward the middle if he is wide, so his figure is
+  // never drawn off the edge of the frame.
+  const towardMiddle = ball.x > CX ? -1 : 1;
+  const sideSign = world.mates[shooter].x >= ball.x ? 1 : -1;
+  const sx = ball.x + (Math.abs(ball.x - CX) > 9 ? towardMiddle : sideSign) * STANDOFF_SIDE;
+  const player: Vec2 = { x: sx, y: ball.y };
+
+  // The three supporting men — YOU and the other two mates — with their world
+  // slots recorded so `worldFromMateAttack` can read them back to the right
+  // person. `-1` is you.
+  const support: { slot: number; pos: Vec2 }[] = [
+    { slot: -1, pos: world.you },
+    ...world.mates.flatMap((m, i) => (i === shooter ? [] : [{ slot: i, pos: m }])),
+  ];
+  const supportPts = support.map(s => nudgeClear(s.pos, ball, MATE_CLEAR_OF_BALL, rng));
+  const opps = world.opps.map(o => nudgeClear(o, ball, CLEAR_OF_BALL, rng)) as [Vec2, Vec2, Vec2, Vec2];
+
+  const defenders: Defender[] = opps.map((o, i) => ({
+    x: o.x, y: o.y, homeX: o.x, homeY: o.y, who: cast?.opps?.[i],
+  }));
+
+  // The follower is only a real man when the goal is in view — same gate as
+  // `buildPassage`. In the last third he is the furthest-forward support man.
+  const order = support.map((_, i) => i).sort((a, b) => supportPts[a].y - supportPts[b].y);
+  const poacherOrderIdx = order[0];
+  const goalIsInView = goalInView(kind);
+  const runnerOrderIdxs = goalIsInView ? order.slice(1) : order;
+
+  const idFor = (s: number) => (s === -1 ? cast?.you : cast?.mates?.[s]);
+  const secondaryRunners: Runner[] = runnerOrderIdxs.map(oi => runnerAt(supportPts[oi], idFor(support[oi].slot)));
+  const follower = followerAt(supportPts[poacherOrderIdx], idFor(support[poacherOrderIdx].slot));
+  const slots: MateSlots = {
+    shooter,
+    runners: runnerOrderIdxs.map(oi => support[oi].slot),
+    poacher: goalIsInView ? support[poacherOrderIdx].slot : null,
+  };
+
+  const scenario: Scenario = {
+    ball,
+    player,
+    defenders,
+    keeper: keeperFrom(world.theirKeeper, ball, rng, cast?.theirKeeper),
+    keeperStrength,
+    keeperReach: FIVE_KEEPER_REACH,
+    follower,
+    goal: { ...FIVE_GOAL },
+    crossbar: FIVE_CROSSBAR,
+    kind,
+    // Your own keeper is decorative here, exactly as in `buildPassage`.
+    teammates: [{ x: world.yourKeeper.x, y: world.yourKeeper.y, who: cast?.yourKeeper }],
+    runner: null,
+    passTarget: null,
+    receiver: null,
+    receiverDone: false,
+    teamRelationship: opts.teamRelationship ?? 55,
+    viewport: { ...FIVE_VIEW },
+    secondaryRunners,
+    passDifficulty: 0,
+    forwardMostY: secondaryRunners.length
+      ? Math.min(...secondaryRunners.map(r => r.pos.y))
+      : undefined,
+    chainDepth: 0,
+  };
+  MATE_SLOTS.set(scenario, slots);
+  return scenario;
+}
+
+/**
+ * Read the world back out of a team-mate's finished chance.
+ *
+ * The shooter goes back to his own slot in `world.mates`; the supporting men —
+ * you and the other two mates — go back to whoever the slot map says they were.
+ */
+export function worldFromMateAttack(sc: Scenario, ballAt: Vec2, prev: FiveWorld): FiveWorld {
+  const mates = [...prev.mates] as [Vec2, Vec2, Vec2];
+  // Default everybody to where they were — the safe answer if the slot map is
+  // ever missing, the same fallback `worldFromScenario` uses.
+  let you = { ...prev.you };
+  const slots = MATE_SLOTS.get(sc);
+  if (slots) {
+    mates[slots.shooter] = { x: sc.player.x, y: sc.player.y };
+    const place = (slot: number, pos: Vec2) => {
+      if (slot === -1) you = { x: pos.x, y: pos.y };
+      else mates[slot] = { x: pos.x, y: pos.y };
+    };
+    slots.runners.forEach((slot, i) => {
+      const r = sc.secondaryRunners[i];
+      if (r) place(slot, r.pos);
+    });
+    if (slots.poacher !== null) place(slots.poacher, { x: sc.follower.x, y: sc.follower.y });
+  }
+  return {
+    ball: clampToPitch(ballAt),
+    you: clampToPitch(you),
+    mates: mates.map(m => clampToPitch(m)) as [Vec2, Vec2, Vec2],
+    yourKeeper: prev.yourKeeper,
+    opps: sc.defenders.slice(0, 4).map(d => clampToPitch({ x: d.x, y: d.y })) as [Vec2, Vec2, Vec2, Vec2],
+    theirKeeper: clampToPitch({ x: sc.keeper.x, y: sc.keeper.y }),
+  };
+}
+
 /** A kick-off shape: your side spread in your own half, theirs in theirs. */
 export function kickOffWorld(toYou: boolean): FiveWorld {
   const L = FIVE_PITCH.x1, W = FIVE_PITCH.x2 - FIVE_PITCH.x1;

@@ -12,6 +12,7 @@ import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { FIVE_A_SIDE, type MatchRules } from "@/lib/star/fiveASide/rules";
 import {
   buildPassage, buildTheirAttack, aimTheirShot, worldFromTheirAttack,
+  buildMateAttack, worldFromMateAttack,
   type FiveCast, type FiveWorld,
 } from "@/lib/star/fiveASide/passage";
 import { leftPitch, mirror, FIVE_KEEPER_STRENGTH } from "@/lib/star/fiveASide/geometry";
@@ -21,7 +22,7 @@ import {
   type BlockRun, type FiveCommit,
 } from "@/lib/star/fiveASide/defend";
 import {
-  newFiveMatch, applyOutcome, advanceFlow, applyTheirAttack, resumeAction,
+  newFiveMatch, applyOutcome, advanceFlow, applyTheirAttack, applyMateAttack, resumeAction,
   type FiveMatchState,
 } from "@/lib/star/fiveASide/match";
 import { passageQuality, summarise, type FiveASideSummary } from "@/lib/star/fiveASide/score";
@@ -191,6 +192,10 @@ export default function FiveASide({
     sc: Scenario; from: FiveWorld;
     shot: ReturnType<typeof aimTheirShot>;
   } | null>(null);
+  /** A TEAM-MATE's move, while it is being watched. Native (not mirrored) —
+   *  your side attacks the engine's own goal — so it needs no `mirror` and no
+   *  brace window: you watch him take it, you do not defend it. */
+  const mateRef = useRef<{ sc: Scenario; from: FiveWorld } | null>(null);
   /** The brace window: milliseconds left. A ref, not state — the ring is
    *  drawn on the canvas every frame anyway, and re-rendering React sixty
    *  times a second to move an arc would be sixty renders for nothing. */
@@ -264,6 +269,7 @@ export default function FiveASide({
     ballRef.current = null;
     aimRef.current = null;
     theirRef.current = null;
+    mateRef.current = null;
     blockRef.current = null;
     committedRef.current = null;
     shownRef.current = matchRef.current.world;
@@ -296,6 +302,7 @@ export default function FiveASide({
     const shot = aimTheirShot(sc, difficulty, rng.next);
     scRef.current = sc;
     theirRef.current = { sc, from, shot };
+    mateRef.current = null;
     ballRef.current = null;
     aimRef.current = null;
     blockRef.current = null;
@@ -317,6 +324,40 @@ export default function FiveASide({
   }, [rng]);
 
   /**
+   * A TEAM-MATE'S CHANCE, PLAYED OUT AND WATCHED.
+   *
+   * Your side attacking their goal, so — unlike their attack — no mirror and no
+   * brace window: the engine strikes it straight away and you watch him take
+   * it. Everything about the shot is the engine's, including their keeper's
+   * dive. This is the other half of "the CPUs play without your input".
+   */
+  const startMateAttack = useCallback(() => {
+    const from = matchRef.current.world;
+    const sc = buildMateAttack(from, {
+      cast,
+      keeperStrength: Math.min(FIVE_KEEPER_STRENGTH, oppKeeperStrength ?? FIVE_KEEPER_STRENGTH),
+      teamRelationship: 55,
+      rng: rng.next,
+    });
+    sc.goal = { ...rules.goal };
+    sc.crossbar = rules.crossbar;
+    sc.viewport = { ...rules.view };
+    initDefenders(sc, rng.next);
+    const shot = aimTheirShot(sc, difficulty, rng.next);
+    scRef.current = sc;
+    mateRef.current = { sc, from };
+    theirRef.current = null;
+    mateRef.current = null;
+    aimRef.current = null;
+    blockRef.current = null;
+    committedRef.current = null;
+    setCommitted(null);
+    ballRef.current = launch(sc, shot.dir, shot.power, shot.contact, shot.skills, rng.next);
+    setBanner("A team-mate's in…");
+    setPhase("watch");
+  }, [cast, difficulty, oppKeeperStrength, rng, rules]);
+
+  /**
    * PLAY ON — the simulation between your touches, animated.
    *
    * The beats are never stored: they come back from `advanceFlow`, get played
@@ -334,6 +375,7 @@ export default function FiveASide({
     scRef.current = null;
     ballRef.current = null;
     theirRef.current = null;
+    mateRef.current = null;
 
     // ── Nothing to watch ──
     //
@@ -385,9 +427,10 @@ export default function FiveASide({
     const action = resumeAction(m);
     if (action === "done") { finish(m); return; }
     if (action === "opp") { startTheirAttack(); return; }
+    if (action === "mate") { startMateAttack(); return; }
     if (action === "passage") { loadPassage(); return; }
     runFlow();
-  }, [finish, loadPassage, runFlow, startTheirAttack]);
+  }, [finish, loadPassage, runFlow, startTheirAttack, startMateAttack]);
   obeyRef.current = obey;
 
   useEffect(() => {
@@ -587,13 +630,26 @@ export default function FiveASide({
     obey();
   }, [finish, obey, onProgress, rng]);
 
+  /** Fold a TEAM-MATE's finished chance into the match, then play on. Native —
+   *  the ball is in ordinary coordinates, so no mirror on the way back. */
+  const resolveMate = useCallback((outcome: Outcome | "out") => {
+    const mate = mateRef.current, ball = ballRef.current;
+    if (!mate || !ball) return;
+    const world = worldFromMateAttack(mate.sc, ball.pos, mate.from);
+    const next = applyMateAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
+    matchRef.current = next;
+    onProgress?.(next);
+    if (next.over) { finish(next); return; }
+    obey();
+  }, [finish, obey, onProgress, rng]);
+
   // ── The loop ───────────────────────────────────────────────────────────
   //
   // One place decides when a struck ball has finished, whoever struck it: the
   // physics are identical, and the only difference is which reducer the
   // outcome goes to.
   const settleAtRef = useRef(0);
-  const pendingRef = useRef<{ outcome: Outcome | "out"; mine: boolean; until: number } | null>(null);
+  const pendingRef = useRef<{ outcome: Outcome | "out"; kind: "mine" | "theirs" | "mate"; until: number } | null>(null);
 
   useEffect(() => {
     let last = performance.now();
@@ -647,16 +703,21 @@ export default function FiveASide({
             res = stepBall(ball, sc, rng.next, h);
           }
           // Our own touchline, which is inside the engine's frame — the engine
-          // only calls "out" at the frame edge, a metre further on.
-          if (!res && leftPitch(ph === "watch" ? mirror(ball.pos) : ball.pos)) res = "out" as Outcome;
+          // only calls "out" at the frame edge, a metre further on. Only THEIR
+          // move is mirrored; your own and a team-mate's are in ordinary coords.
+          const theirs_ = ph === "watch" && !!theirRef.current;
+          if (!res && leftPitch(theirs_ ? mirror(ball.pos) : ball.pos)) res = "out" as Outcome;
           if (res) {
             const isGoal = res === "goal" || res === "rebound";
+            const kind: "mine" | "theirs" | "mate" =
+              ph === "flight" ? "mine" : mateRef.current ? "mate" : "theirs";
             pendingRef.current = {
-              outcome: res, mine: ph === "flight",
+              outcome: res, kind,
               until: now + (isGoal ? READ_GOAL_MS : READ_OUTCOME_MS),
             };
             settleAtRef.current = 0;
-            setBanner(captionFor(res, ph === "flight"));
+            // Your side (your touch OR a team-mate's) gets the friendly caption.
+            setBanner(captionFor(res, kind !== "theirs"));
             setPhase("result");
           }
         }
@@ -673,7 +734,8 @@ export default function FiveASide({
         const p = pendingRef.current;
         if (p && now >= p.until) {
           pendingRef.current = null;
-          if (p.mine) resolveMine(p.outcome);
+          if (p.kind === "mine") resolveMine(p.outcome);
+          else if (p.kind === "mate") resolveMate(p.outcome);
           else resolveTheirs(p.outcome);
         }
       } else if (ph === "aim") {
@@ -685,7 +747,7 @@ export default function FiveASide({
     rafRef.current = requestAnimationFrame(frame);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolveMine, resolveTheirs, obey, strikeTheirs]);
+  }, [resolveMine, resolveTheirs, resolveMate, obey, strikeTheirs]);
 
   // ── The picture ────────────────────────────────────────────────────────
   const draw = () => {
@@ -703,7 +765,12 @@ export default function FiveASide({
 
     const sc = scRef.current;
     const ball = ballRef.current;
-    const watching = phaseRef.current === "watch" || phaseRef.current === "brace"
+    // "watching" here means the MIRRORED picture — their move. A team-mate's
+    // move is watched too, but it is your side attacking the engine's own goal,
+    // so it is drawn natively (the ordinary passage branch below), never
+    // mirrored — gated on `theirRef` rather than the phase for exactly that.
+    const watching = (phaseRef.current === "watch" && !!theirRef.current)
+      || phaseRef.current === "brace"
       || (phaseRef.current === "result" && !!theirRef.current);
 
     // ── Everything in OUR coordinates, whoever is attacking ──
@@ -785,7 +852,9 @@ export default function FiveASide({
           ...mine, label: sc.follower.who?.shortName, face: face(sc.follower.who?.face),
         });
       }
-      fig(sc.player, { ...mine, star: true });
+      // The star marks YOU. On a team-mate's watched chance the man on the ball
+      // is a team-mate, not you, so it is drawn without the star.
+      fig(sc.player, { ...mine, star: !mateRef.current });
     }
 
     drawBall(ctx, p, ballAt, ball ? ball.z : 0);

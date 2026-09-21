@@ -17,9 +17,25 @@ import { loanProgress } from "@/lib/star/youth";
  * it is a completely normal first-team week, because that is the entire
  * point of being loaned out: you play.
  */
-export default function LoanBrief({ career, onContinue }: {
+export default function LoanBrief({ career, onContinue, intro = false }: {
   career: CareerState;
   onContinue: () => void;
+  /**
+   * ── THE FIRST TIME, WHICH USED NEVER TO HAPPEN ──
+   *
+   * Reported from a real playthrough: *"you got loaned out. You got loaned
+   * out. It just didn't tell you anything."* Exactly right, and the reason
+   * was that this screen only ever rendered at `phase === "pre-match"`.
+   * A loan wildcard signs you, sets `placement`, and jumps straight to
+   * `trial-reward` — so the newspaper and the contract both named the club
+   * you were being SENT TO, nobody said the word loan, and the first
+   * explanation arrived several taps later on the way to a match.
+   *
+   * `intro` is that missing first showing: the same numbers, worded as news
+   * rather than as a reminder. Everything after it is the ordinary weekly
+   * version, unchanged.
+   */
+  intro?: boolean;
 }) {
   const p = career.placement;
   const progress = loanProgress(career);
@@ -29,12 +45,20 @@ export default function LoanBrief({ career, onContinue }: {
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center px-4 py-6 text-white">
       <div className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-300">
-        On loan
+        {intro ? `${p.parentClub} are loaning you out` : "On loan"}
       </div>
       <div className="mt-1 text-2xl font-black leading-tight">{p.club}</div>
       <div className="text-[11px] font-black uppercase tracking-widest text-white/50">
         {leagueNameFor(p.division)} · from {p.parentClub}
       </div>
+
+      {intro && (
+        <p className="mt-3 text-[12px] font-bold leading-relaxed text-white/80">
+          You are a {p.parentClub} player — that is who pays you and who holds your
+          contract. You are not getting into that first team yet, so they are sending
+          you to {p.club} for the season to play every week.
+        </p>
+      )}
 
       <div className="mt-5 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-4">
         <div className="text-[10px] font-black uppercase tracking-widest text-sky-300">
@@ -59,7 +83,7 @@ export default function LoanBrief({ career, onContinue }: {
         onClick={onContinue}
         className="mt-5 w-full rounded-xl bg-emerald-500 py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-emerald-400"
       >
-        Get on with it →
+        {intro ? `Report to ${p.club} →` : "Get on with it →"}
       </button>
     </div>
   );

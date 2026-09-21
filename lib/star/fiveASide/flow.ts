@@ -180,9 +180,19 @@ const STARVED = 16;
  * hard argmax makes the stage streaky, because the same man is best placed
  * several beats running, so you get everything or nothing.
  *
- * MEASURED, over 600 matches: a chance your side works finds you 80.1% of the
- * time, against 89.1% for the flat roll this replaces. Pure realism — four
- * men, one ball, nobody favoured — would be 25%.
+ * ── Retuned so team-mates genuinely shoot ──
+ *
+ * It was tuned to find you ~80% of the time, and paired with the fact that a
+ * team-mate's chance was only ever a silent caption, that read exactly as the
+ * bug reported: "teammates never shoot — every chance comes back to your feet."
+ * `PLAYER_EDGE`/`FINDS_YOU_CEILING`/`FINDS_YOU_FLOOR` were brought down so a
+ * team-mate genuinely better placed is now the man the move finds a real share
+ * of the time — MEASURED, ~19-21% of your side's chances fall to a team-mate,
+ * and (with the new `stop: "mate"` path) those near goal are played out and
+ * watched rather than captioned. You are still the pivot the move looks for
+ * most (~80%), and your own involvement count stays a real match's worth (~6.5,
+ * against the ~7.8 a full ninety gives) — pinned by tests/star/fiveASideFlow.mts.
+ * Pure realism — four men, one ball, nobody favoured — would be 25%.
  */
 function chanceFindsYou(
   rules: MatchRules, w: FiveWorld, flow: FiveFlowState, inputs: FlowInputs,
@@ -222,7 +232,7 @@ function chanceFindsYou(
 
 /** What "the tie goes to the player" is worth, in the units the score is
  *  measured in — metres of room. */
-const PLAYER_EDGE = 1.2;
+const PLAYER_EDGE = 0.6;
 /** …and how much of that edge a better player earns for himself. Better
  *  players see more of the ball; the same idea the flat roll already had. */
 const SKILL_EDGE = 1.2;
@@ -231,8 +241,8 @@ const FINDS_YOU_SLOPE = 0.22;
 /** It is never certain either way: a striker who has drifted into a bad spot
  *  still gets the odd one, and one standing in the perfect place still sees a
  *  team-mate take it. */
-const FINDS_YOU_FLOOR = 0.22;
-const FINDS_YOU_CEILING = 0.88;
+const FINDS_YOU_FLOOR = 0.18;
+const FINDS_YOU_CEILING = 0.70;
 /** How much a metre further from the goal costs a man, against a metre of
  *  room. */
 const FORWARD_WEIGHT = 0.20;
@@ -307,12 +317,28 @@ export const RECEIVE_RUN = 9;
  * The furthest a keeper shades off centre to cover his near post.
  *
  * Measured against what it leaves open. On a 5.2 m goal (half-width 2.60 m)
- * with a save radius of 2.04 m, a keeper shading 1.2 m leaves about 1.5 m of
- * far post uncovered — which is the same order as the 1.34 m a central keeper
- * leaves in the eleven-a-side game the engine was tuned for. Less than that and
- * there is nothing to aim at; much more and he is not guarding his goal.
+ * with a save radius of 2.04 m, the keeper still leaves a real far-post gap to
+ * aim at — the open post converts ~55% against the covered one's ~26% (MEASURED
+ * over 500 real chances), so the far corner is very much a target — while
+ * staying central enough to guard the middle himself.
+ *
+ * ── It was 1.2, and this is why it came down ──
+ *
+ * When the back four came off the goal line into a real diamond (see shape.ts),
+ * the deepest man moved to ~4 m out and no longer sat in the deep central lane
+ * — so a shot straight down the middle of a WIDE chance, which travels along
+ * the ball side and only reaches the centre at the goal line, had nobody but
+ * the keeper to beat. At a 1.2 m shade the keeper was too far toward the near
+ * post to be that man, and the middle climbed to ~30% against the corner's
+ * ~55% (ratio 1.8, below the 2× the placement guard demands). Bringing him to
+ * 0.8 keeps him central enough to hold the middle himself — the job the
+ * on-the-line heap used to do with defenders' bodies — and the middle dropped
+ * back to ~24% (ratio ~2.3) with the far corner untouched at ~55%. That is the
+ * lever that let the defence come off the line WITHOUT the middle becoming a
+ * free shot: the keeper guards the centre, the diamond guards the space, and
+ * the far corner stays the thing you aim for.
  */
-const KEEPER_SHADE = 1.2;
+const KEEPER_SHADE = 0.8;
 
 /**
  * How close to your goal their chance has to be before it is worth stopping
@@ -352,6 +378,29 @@ function chance(rules: MatchRules, w: FiveWorld, flow: FiveFlowState, rng: () =>
  */
 function worthWatching(rules: MatchRules, w: FiveWorld): boolean {
   return w.ball.y >= rules.pitch.y2 - WATCHABLE_RANGE;
+}
+
+/** The same question for one of YOUR side's chances, at the other end: is the
+ *  ball genuinely close to THEIR goal? A team-mate's speculative effort from
+ *  distance is rolled, not watched — exactly as a distant chance of theirs is —
+ *  so only a real chance near goal stops the game. */
+function worthWatchingYours(rules: MatchRules, w: FiveWorld): boolean {
+  return w.ball.y <= rules.pitch.y1 + WATCHABLE_RANGE;
+}
+
+/**
+ * A TEAM-MATE's chance, worked into space near THEIR goal — the mirror of
+ * `theirChanceInSpace`, and the thing you watch when the move finds a team-mate
+ * rather than you. Memoised on the world so asking "is it worth watching" and
+ * "put the ball there" are the same chance, not two draws from the stream.
+ */
+const MATE_CHANCE_CACHE = new WeakMap<FiveWorld, FiveWorld>();
+function mateChance(rules: MatchRules, w: FiveWorld, flow: FiveFlowState, rng: () => number): FiveWorld {
+  const had = MATE_CHANCE_CACHE.get(w);
+  if (had) return had;
+  const made = yourMateChanceInSpace(rules, w, flow, rng);
+  MATE_CHANCE_CACHE.set(w, made);
+  return made;
 }
 
 /**
@@ -827,6 +876,12 @@ export interface FlowBeat {
 export type FlowStop =
   /** The move found you — build a passage and let the player aim. */
   | "you"
+  /** A TEAM-MATE has worked a chance — play it out through the engine and
+   *  watch him take it. The other half of "the CPUs play without your input":
+   *  not every chance your side works comes back to your feet, and the ones
+   *  that fall to a team-mate near goal are now something you SEE finished
+   *  rather than a caption you read. See `buildMateAttack` (passage.ts). */
+  | "mate"
   /** They have worked a chance — play it out through the engine and watch. */
   | "them"
   /** Nothing left to play. */
@@ -955,8 +1010,26 @@ export function playOn(
             beats.push(snapshot(w, flow));
             return { flow, world: w, beats, events, stop: "you", beatsPlayed: n + 1, scored };
           }
-          // It fell to somebody else. Reported either way, so the match reads
-          // as a match rather than a highlight reel of your own touches.
+          // ── It fell to a team-mate — and near goal, you WATCH him take it ──
+          //
+          // The mirror of "the ones worth watching" below. A real chance a
+          // team-mate works in their box is not a caption any more: it is handed
+          // back to be played out through the real engine so you see him strike
+          // it and their keeper genuinely dive — the other half of "the CPUs
+          // play without your input", and the fix for a stage that funnelled
+          // every chance back to your own feet.
+          //
+          // Only a real chance near goal (`worthWatchingYours`) — a team-mate's
+          // speculative effort from distance is rolled, exactly as your own is
+          // and as theirs is, rather than stopping the game for every half
+          // chance.
+          if (inBox && worthWatchingYours(rules, mateChance(rules, w, flow, rng))) {
+            w = mateChance(rules, w, flow, rng);
+            beats.push(snapshot(w, flow));
+            return { flow, world: w, beats, events, stop: "mate", beatsPlayed: n + 1, scored };
+          }
+          // Further out, it is a caption either way, so the match still reads as
+          // a match rather than a highlight reel of your own touches.
           const goal = rng() < convertRate(inBox ? MATE_CONVERT_BOX : MATE_CONVERT_DEEP, rng);
           if (goal) {
             scored[0] += 1;
@@ -1138,6 +1211,30 @@ function theirChanceInSpace(
   // Your side reacts to it too. The symmetry note above applies here as well:
   // the pitch has to be the same shape at both ends.
   return reactToBall(rules, { ...world, opps, ball: { ...spot } }, "them", flow, rng);
+}
+
+/**
+ * A TEAM-MATE's chance — the exact mirror of `theirChanceInSpace`, for your own
+ * side attacking their goal.
+ *
+ * The move found a team-mate rather than you: whichever of your three is nearest
+ * THEIR goal is the one it falls to, moved into real space (not left standing on
+ * the ball, which the engine tackles), and the opposition reacts to it. What
+ * comes back is a picture `buildMateAttack` can hand straight to the engine so
+ * the team-mate genuinely takes the shot and your screen watches him.
+ */
+function yourMateChanceInSpace(
+  rules: MatchRules, world: FiveWorld, flow: FiveFlowState, rng: () => number,
+): FiveWorld {
+  // Whoever of your mates is nearest their goal (y1) is the one the chance
+  // falls to.
+  let best = 0;
+  world.mates.forEach((m, i) => { if (m.y < world.mates[best].y) best = i; });
+  const spot = intoSpace(rules, world.mates[best], [...world.opps], bandY(rules, flow.band), rules.pitch.y1, rng);
+  const mates = world.mates.map((m, i) => (i === best ? { ...spot } : m)) as [Vec2, Vec2, Vec2];
+  // The opposition reacts to it — the same symmetry `theirChanceInSpace` relies
+  // on: the pitch has to be the same shape at both ends.
+  return reactToBall(rules, { ...world, mates, ball: { ...spot } }, "you", flow, rng);
 }
 
 /**

@@ -11,6 +11,7 @@ import { isAdmin } from "@/lib/admin";
 import NavMenu from "./NavMenu";
 import GameSidebar from "./GameSidebar";
 import NavGameLinks from "./NavGameLinks";
+import AdminNavPanel from "./AdminNavPanel";
 
 export default async function GlobalNav() {
   const supabase = await createClient();
@@ -37,6 +38,11 @@ export default async function GlobalNav() {
         </div>
       </div>
       <NavGameLinks mobile />
+      {/* Admin-only slide-out for every admin page and dev sandbox. Rendered
+          here because this is where the server-side isAdmin() answer already
+          lives — but it portals everything into <body>, so it stays reachable
+          on immersive pages where this <nav> itself is display:none. */}
+      {userIsAdmin && <AdminNavPanel />}
     </nav>
   );
 }

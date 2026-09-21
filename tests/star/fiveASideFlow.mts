@@ -7,7 +7,7 @@ import { kickOffWorld, buildPassage, buildTheirAttack, type FiveWorld } from "..
 import { FIVE_A_SIDE, fullTimeMinutes } from "../../lib/star/fiveASide/rules";
 import { insideFivePitch } from "../../lib/star/fiveASide/geometry";
 import {
-  newFiveMatch, advanceFlow, applyOutcome, applyTheirAttack, resumeAction,
+  newFiveMatch, advanceFlow, applyOutcome, applyTheirAttack, applyMateAttack, resumeAction,
   type FiveMatchState,
 } from "../../lib/star/fiveASide/match";
 import { newMatch, advanceUntilInvolved, resolveScenario, type ScenarioResult } from "../../lib/star/hiddenMatch";
@@ -101,6 +101,9 @@ const bodies = (w: FiveWorld) => [w.you, ...w.mates, ...w.opps, w.yourKeeper, w.
         if (act === "done") break;
         if (act === "flow") { m = advanceFlow(m, { difficulty: 0.5, playerSkill: 65 }).state; continue; }
         if (act === "opp") { m = applyTheirAttack(m, "saved", m.world); continue; }
+        // A team-mate's chance is watched, not one of yours — it advances the
+        // match without counting as an involvement of yours.
+        if (act === "mate") { m = applyMateAttack(m, "saved", m.world); continue; }
         calls++;
         const r = pick(rng);
         const outcome = r === "goal" ? "goal" : r === "delivered" ? "delivered" : r === "lost" ? "tackled" : "saved";
@@ -343,6 +346,50 @@ const bodies = (w: FiveWorld) => [w.you, ...w.mates, ...w.opps, w.yourKeeper, w.
   check(n > 200, `enough of their chances to measure, got ${n}`);
   check(mean < 12, `their chances must come from somewhere near your goal, got ${mean.toFixed(1)} m`);
   check(worst < 20, `…and none of them from the far side of halfway, worst was ${worst.toFixed(1)} m`);
+}
+
+// ── TEAM-MATES GET A REAL SHARE OF THE CHANCES, AND YOU WATCH THEM ──────
+//
+// The reported bug: "teammates never shoot — every chance comes back to the
+// human player's feet." Before this, a chance that fell to a team-mate was a
+// silent caption resolved inside the flow; you never saw it, so every visible
+// highlight was your own touch. Now a team-mate's chance near goal stops the
+// flow with `stop: "mate"` and is played out through the engine and watched
+// (see `buildMateAttack`). This checks that genuinely happens at a real rate —
+// not "always laid back to you" — while your own involvements stay a real
+// match's worth.
+{
+  let youStops = 0, mateStops = 0, oppStops = 0, matches = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    let m: FiveMatchState = newFiveMatch(seed, FIVE_A_SIDE);
+    for (let guard = 0; guard < 800 && !m.over; guard++) {
+      const act = resumeAction(m);
+      if (act === "done") break;
+      if (act === "flow") { m = advanceFlow(m, { difficulty: 0.5, playerSkill: 65 }).state; continue; }
+      if (act === "opp") { oppStops++; m = applyTheirAttack(m, "saved", m.world); continue; }
+      if (act === "mate") { mateStops++; m = applyMateAttack(m, "saved", m.world); continue; }
+      youStops++;
+      // A touch that gives it straight back, so the match plays on.
+      const sc = buildPassage(m.world, { keeperStrength: 40, rng: mulberry32(seed * 13 + youStops) });
+      m = applyOutcome(m, "saved", sc, { pos: { ...m.world.ball } } as never, 0.34);
+    }
+    matches++;
+  }
+  const yourPer = youStops / matches, matePer = mateStops / matches;
+  const share = mateStops / Math.max(1, youStops + mateStops);
+  console.log(
+    `      chances a match: you ${yourPer.toFixed(2)} | team-mate ${matePer.toFixed(2)} (watched) `
+    + `| opponent ${(oppStops / matches).toFixed(2)}  —  team-mate share ${(share * 100).toFixed(1)}% (was 0% watched)`,
+  );
+  // Team-mates genuinely get watched chances — not zero, and a real share of
+  // your side's, so the stage is no longer a highlight reel of your own feet.
+  check(matePer > 0.6, `team-mates must get real watched chances, got ${matePer.toFixed(2)} a match`);
+  check(share > 0.08, `…and a real share of your side's chances, not everything back to you (${(share * 100).toFixed(1)}%)`);
+  // …but you are still the focal point (the pivot), so most still come to you.
+  check(youStops > mateStops, "…while you, the pivot, are still the man the move looks for most");
+  // And your own involvement count is still a real match's worth (the flow's
+  // whole target) — giving team-mates a share has not starved you.
+  check(yourPer > 4.5, `your own involvements must stay a match's worth, got ${yourPer.toFixed(2)}`);
 }
 
 // ── The same stream is the same football ────────────────────────────────

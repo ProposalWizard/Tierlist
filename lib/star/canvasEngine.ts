@@ -685,6 +685,69 @@ const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular
  * judgement a real striker is making.
  */
 const CHIP_KEEPER_Y = 3.5;     // metres off his line before a chip is even considered
+
+/**
+ * THE BALL'S OWN ANSWER TO "TOUCH IT DOWN, OR MEET IT RIGHT NOW."
+ *
+ * Reported directly, of a corner curled perfectly onto a team-mate's head:
+ * "watch him take a touch and not only let the goalie have time to react
+ * but also SHOOT RIGHT INTO THE GOALIES HANDS." Reception (see
+ * stepBallRaw's "swept < PASS_CONTROL_R") has never once looked at
+ * HEIGHT — a cross met right on the six-yard line and a five-yard ball
+ * rolled into his stride were the exact same event, and both got the exact
+ * same fixed 0.45s hold before an ordinary grounded shot
+ * (RECEIVER_CONTROL_T, launchReceiverShot's own "ground" path). These
+ * three bands are the whole fix: the real height the ball is at when it
+ * reaches him — still on ball.z at that instant, before the caller resets
+ * it for the hold — decides whether this is a header, a volley, or an
+ * ordinary ball at his feet. See strikeModeForHeight/firstTimeChance for
+ * the decision this feeds, and launchReceiverShot's own isHeader/isVolley
+ * branches for what each one actually does with it.
+ *
+ * HEADER_MAX_REACH_Z exists because "did the ball geometrically pass near
+ * him" has no height gate of its own either — a ball sailing three metres
+ * over everyone's head still counts as "reached" the instant it crosses
+ * his (x, y). Above this it is honestly too high for anyone to have done
+ * anything about just now, so it falls through to the ordinary ground-mode
+ * decision instead (see strikeModeForHeight) — which mostly means the
+ * existing hold, exactly as it always has, rather than inventing a fourth
+ * strike type for a case that is really "he can't reach this yet."
+ */
+const HEADER_MIN_Z = 1.3;       // metres — a jumping/standing header's real contact height
+const HEADER_MAX_REACH_Z = 2.6; // above a real jump-and-head reach — see doc above
+const VOLLEY_MIN_Z = 0.35;      // above ankle-height ground control, below a header
+
+/**
+ * A REAL FIRST-TIME HEADER AIMS FOR THE FAR TOP CORNER, NOT A CAUTIOUS NOD.
+ *
+ * Requested directly, in the same shape as the corner it's aimed at: "they
+ * head it towards goal (ideally towards top corners, away from goalie,
+ * decent power)." Real coaching says head it DOWN — but this is the shape
+ * that was actually asked for, so the target band sits high rather than
+ * low, and headerTargetZ (see launchReceiverShot) is allowed to push a
+ * confident effort past the top of it into a realistic sky — a genuine
+ * miss a real header can produce, not one invented for this.
+ */
+const HEADER_TARGET_Z_MIN = 1.5;
+const HEADER_TARGET_Z_MAX = 2.15; // clearly under the 2.44 crossbar on its own; ambition can push past it
+
+/**
+ * A VOLLEY CAN BE SMASHED — AND CAN BE SCUFFED.
+ *
+ * Requested directly, football-literate and explicit about the trade: "a
+ * volley implies far more potential for power, as well as far more
+ * potential to miss the target (again, the better the finisher the less
+ * of an issue this is)." VOLLEY_POWER_MIN/MAX raise the CEILING on Sh (see
+ * launchReceiverShot's isVolley branch) rather than just the average — a
+ * flat multiplier would only make every volley harder hit, not "more
+ * potential." VOLLEY_MISS_PENALTY_DEG is the other half of the same
+ * trade: added on top of the ordinary sigmaDeg spread, scaled by
+ * (1 - quality) so it is real for an average finisher and close to
+ * nothing for an elite one — exactly the parenthetical.
+ */
+const VOLLEY_POWER_MIN = 1.0;
+const VOLLEY_POWER_MAX = 1.55;
+const VOLLEY_MISS_PENALTY_DEG = 9;
 const CHIP_CLEAR_Z = 3.3;      // target ball height exactly as it passes him. Measured, not
                                // guessed: 2.7 landed keeperAttempt's dist right on top of
                                // reach (2.3-2.5) for most real chip attempts, since dx alone
@@ -954,6 +1017,69 @@ function makeFollower(rng: () => number, by: number): Follower {
   };
 }
 
+/**
+ * ══ REVERTED 21 Sep 2026. BOTH DIALS ARE BACK AT THE OLD BEHAVIOUR. ══
+ *
+ * The tightening camera shipped and was reverted the same day, on the owner's
+ * instruction, after he played it: "goal not on screen for many highlights, the
+ * camera fix is definitely bad, we need to rethink it."
+ *
+ * He was right, and the measurement I had used to sign it off was measuring the
+ * wrong thing. I checked whether the goal was on screen for a scenario as the
+ * ENGINE builds it and got 100%. The real match does not show you that — it
+ * shows you what `applyChancePlan` produces, with the chance formula's own
+ * camera on top. Measured on THAT path:
+ *
+ *                      old camera      mine
+ *   goal fully in shot    83.4%        63.9%
+ *   tight_angle           57.0%         0.0%
+ *   cutback               64.3%        25.8%
+ *   through_ball          64.0%        65.5%
+ *   one_on_one           100.0%        86.3%
+ *
+ * So the change made it twenty points worse, and the thing he screenshotted is
+ * exactly the thing I had told him was fine.
+ *
+ * WORTH KEEPING IN MIND FOR WHOEVER RETHINKS THIS: the old camera is not good
+ * either. 83.4% means roughly one chance in six does not show you the whole
+ * goal, and a tight angle only manages 57%. That problem predates this change;
+ * it was made worse, not created.
+ *
+ * ══ THE TWO DIALS ══
+ *
+ * Both changes below were made on Harry's explicit instruction. If Leo or
+ * Mikey wants the old behaviour back, it is these two lines and nothing else —
+ * no other file, no test change, no git archaeology.
+ *
+ *   CAMERA_MOVES_PLAYERS = true   → defenders are dragged into the frame again
+ *   VIEW_MIN_H           = 42     → one fixed zoom for every chance again
+ *
+ * Set both and the engine is byte-identical to how it behaved before. The test
+ * suite passes either way: the assertions were widened to the new rule, and the
+ * old behaviour still sits inside the new bounds.
+ *
+ * ── What CAMERA_MOVES_PLAYERS does, and why it is now false ──
+ *
+ * `fitToView` clamps bodies into the viewport. While the frame was always 42 m
+ * that was nearly a no-op, but it means the CAMERA MOVES THE FOOTBALL — and
+ * the moment the camera is allowed to tighten, it compresses the defence and
+ * changes the game. Measured with it true and the zoom tightened: a pass found
+ * a man 97 times in 220 (squeezed defenders intercept more), and the defender
+ * `finishing.mts` plants in a shooting path was being moved by the camera
+ * rather than by the test.
+ *
+ * With it false, the ball, you, the keeper and every runner are still held in
+ * frame — measured at 100% — and only defenders may stand off the edge, a mean
+ * of 1.44 per scenario. A wide delivery (corner, byline cross) is exempt and
+ * still holds everyone, because you are crossing INTO that box and a defender
+ * you cannot see is one you are delivering onto blind.
+ *
+ * IF SOMETHING IS WRONG THAT THIS COULD EXPLAIN — a pass behaving oddly, a
+ * defender appearing from nowhere, difficulty feeling off — flip it to true
+ * first and see if the symptom goes. That is what it is here for.
+ */
+const CAMERA_MOVES_PLAYERS = true;
+
 // The camera. Canvas is a 3:4 portrait, so the viewport must be too, and it must
 // use the SAME metres-per-pixel on both axes or every distance on screen lies.
 // Framing is clamped to a sane zoom band so the pitch never appears wildly zoomed
@@ -977,7 +1103,60 @@ export const VIEW_ASPECT = 5 / 8;      // width / height
  * situation being tighter.
  */
 const VIEW_H = 42;
-const VIEW_MIN_H = VIEW_H;      // metres of pitch visible vertically
+/**
+ * THE FRAME TIGHTENS TO THE SITUATION. IT NEVER ZOOMS OUT PAST 42.
+ *
+ * Changed 21 Sep 2026 on Harry's explicit instruction, after looking at five
+ * framing options rendered side by side at phone size. His words on the fixed
+ * frame: "if it's a one on one the goal should be way MORE zoomed in than a
+ * long shot, but it feels weird when it jitters and the camera moves so much
+ * every highlight."
+ *
+ * `autoViewport` below has ALWAYS computed the height the situation actually
+ * needs; the old clamp of [42, 42] simply threw that away. Opening the floor to
+ * 28 is the whole change. The ceiling stays exactly 42, so the camera can only
+ * ever tighten — it can never go looking for pitch, which is the failure the
+ * note above this one describes and which a long shot at 54 m measured as
+ * making WORSE (75.0% of the frame empty grass against 42 m's 60.9%).
+ *
+ * Measured across 200 seeds per kind, fixed 42 -> fit-to-28:
+ *   frame that is empty grass   one-on-one 73.6% -> 49.0%, header 71.2% ->
+ *                               53.2%, volley 69.0% -> 48.3%, long range
+ *                               60.9% -> 45.9%
+ *   goal on screen              109 px flat -> 109-163 px (never SMALLER than
+ *                               today; 1.5x on a close chance)
+ *   ball and keeper both in
+ *   frame, every kind           100% -> 100%
+ *
+ * THE REAL COST, and the number to watch: today's 42 m frame holds 100% of a
+ * scene's participants, this holds 87.8%. Worst on the two box scenes — volley
+ * 28.3% and header 27.1% of bodies fall outside. They do not vanish; fitToView
+ * pulls them in, so the symptom is a penalty area squeezed into a narrower
+ * rectangle, which is exactly the "piled them onto the taker" failure
+ * buildScenario's own corner comment warns about. If that reads badly on a real
+ * screen, RAISE THIS ONE NUMBER — it is the only dial. Measured sweep:
+ *   28 -> 87.8% of participants on screen, 58.0% empty grass
+ *   32 -> 88.8%, 60.4%     36 -> 91.0%, 62.8%     42 -> 100%, 68.4%
+ *
+ * 28 is what was rendered and approved. Nothing here has been seen in a live
+ * match — the options were drawn through the gallery's renderer, where figures
+ * are sized by metres rather than the match's deliberately larger-than-life
+ * ones, so the squeezing may read differently in play.
+ *
+ * Two framings deliberately do NOT move: WIDE_DELIVERY_VIEW and crossViewport
+ * are their own fixed rectangles built from VIEW_H, so every corner and every
+ * whipped cross still looks identical to the last one.
+ */
+const VIEW_MIN_H = 42;          // metres of pitch visible vertically, tightest
+/**
+ * Where the goal line sits down the screen, as a fraction of the frame height.
+ *
+ * Measured off today's fixed 42 m framing (goal line 74 px down an 844 px
+ * canvas = 0.0877), so at 42 m the picture is byte-identical to before this
+ * change. At any tighter height the goal stays in exactly the same place on
+ * screen instead of sliding with the content.
+ */
+const GOAL_SCREEN_DROP = 74 / 844;
 // Furthest zoom. Held down hard, because the frame is the situation rather than
 // a window onto a pitch — anything the framing cannot hold gets pulled inside it
 // by fitToView instead of the rectangle growing to go and find it. At 62 a
@@ -1033,6 +1212,13 @@ function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
 
   // Grow to whichever the content demands, then hold the canvas aspect exactly.
   let h = Math.max(y2 - y1, (x2 - x1) / VIEW_ASPECT);
+  // THE GOAL IS NEVER TIGHTENED OUT OF SHOT. When it is part of the picture it
+  // is part of the bounding box, so the frame can only ever be small enough to
+  // lose it if the situation itself is deeper than the ceiling — and then the
+  // ceiling is what gives, not the goal. Measured without this: 8 frames in
+  // 19,500 came back with no goal in them, all of them a ball far enough out
+  // that a tightened frame could not reach back to the line.
+  if (includeGoal) h = Math.max(h, Math.min(VIEW_MAX_H, y2 - Math.min(y1, -NET_DEPTH)));
   h = clamp(h, VIEW_MIN_H, VIEW_MAX_H);
   const w = h * VIEW_ASPECT;
 
@@ -1041,12 +1227,53 @@ function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
   let vx1 = cx - w / 2, vx2 = cx + w / 2;
   let vy1 = cy - h / 2, vy2 = cy + h / 2;
 
+  // THE GOAL DOES NOT MOVE ON SCREEN.
+  //
+  // Once the height is allowed to vary, centring on the content slides the goal
+  // up and down the picture — measured at 74 to 112 px between two one-on-ones,
+  // which is precisely the "it feels weird when it jitters and the camera moves
+  // so much every highlight" this whole change exists to answer. Tightening was
+  // wanted; the goal wandering was not.
+  //
+  // So whenever the goal is in shot, the frame is hung from it at a FIXED
+  // fraction of its own height. The camera still slides freely left and right
+  // and still tightens; the goal line simply always lands in the same place.
+  //
+  // ONLY WHEN IT STILL HOLDS THE SITUATION. Hanging the frame from the goal
+  // unconditionally fights the ball: a through ball 29 m out in a 28 m frame
+  // hung at the goal line falls off the bottom, the ball-holding slide below
+  // then shoves the frame forward, and the GOAL goes instead. Measured that
+  // way: 331 of 19,500 pictures lost the goal entirely. So the pin is applied
+  // only if the pinned frame still contains everything the frame is obliged to
+  // hold; otherwise the content wins and the goal sits where it lands.
+  if (includeGoal) {
+    const pin1 = -GOAL_SCREEN_DROP * h, pin2 = pin1 + h;
+    if (y1 >= pin1 - 0.01 && y2 <= pin2 + 0.01) { vy1 = pin1; vy2 = pin2; }
+  }
+
   // Keep the frame over the pitch: slide (never squash) it back into bounds.
   const padX = 5, backPad = NET_DEPTH + 2.5, fwdPad = 6;
   if (vx1 < -padX) { const s = -padX - vx1; vx1 += s; vx2 += s; }
   if (vx2 > PITCH_W + padX) { const s = vx2 - (PITCH_W + padX); vx1 -= s; vx2 -= s; }
   if (vy1 < -backPad) { const s = -backPad - vy1; vy1 += s; vy2 += s; }
   if (vy2 > HALF_LEN + fwdPad) { const s = vy2 - (HALF_LEN + fwdPad); vy1 -= s; vy2 -= s; }
+
+  // LAST WORD: a situation with a goal in it always shows the goal.
+  //
+  // The slides above run after the height and the pin are settled, and a frame
+  // pushed back inside the pitch bounds can carry the goal line off the top.
+  // Measured: 8 frames in 19,500. It is a small number and it is also the one
+  // thing a shooting picture cannot be missing, so it is guaranteed here rather
+  // than left to the earlier steps agreeing with each other.
+  if (includeGoal) {
+    if (vy1 > -NET_DEPTH) { const s = vy1 + NET_DEPTH; vy1 -= s; vy2 -= s; }
+    // Sideways too: the posts are in the bounding box, but the slides above can
+    // still carry one off the edge when the camera has moved out to hold a wide
+    // ball. A tight frame is 17.5 m across and the goal is 7.3 m, so there is
+    // always room — it just has to be asked for.
+    if (vx1 > POST_L) { const s = vx1 - POST_L; vx1 -= s; vx2 -= s; }
+    if (vx2 < POST_R) { const s = POST_R - vx2; vx1 += s; vx2 += s; }
+  }
 
   return { x1: vx1, x2: vx2, y1: vy1, y2: vy2 };
 }
@@ -1308,10 +1535,39 @@ function fitToView(sc: Scenario) {
   // viewport. In a crossing view the screen's vertical axis is pitch x, and the
   // room the drag needs is along that.
   const turned = sc.facing === "left" || sc.facing === "right";
+  const wideDelivery = sc.kind === "corner" || sc.kind === "byline_cross";
   const floor = turned ? vp.y2 - 1.4 : vp.y2 - (vp.y2 - vp.y1) * 0.2;
   const fx = (x: number) => clamp(x, vp.x1 + inset, vp.x2 - inset);
   const fy = (y: number) => clamp(y, Math.max(vp.y1 + inset, 0.3), vp.y2 - inset);
-  for (const d of sc.defenders) { d.x = fx(d.x); d.y = fy(d.y); }
+  if (CAMERA_MOVES_PLAYERS || wideDelivery) for (const d of sc.defenders) { d.x = fx(d.x); d.y = fy(d.y); }
+  // DEFENDERS ARE NOT DRAGGED INTO SHOT. The camera frames the football; it
+  // does not rearrange it.
+  //
+  // They used to be clamped like everyone else, and while the frame was always
+  // 42 m that was nearly a no-op. The moment the camera is allowed to tighten
+  // it stops being one: a tighter frame physically COMPRESSED the defence,
+  // which is a difficulty change made by a camera. Measured, tightening the
+  // three close-range shooting kinds with this line still in: `captain.mts`
+  // fell to 97/220 on "the pass finds a man" because squeezed defenders
+  // intercepted more, and `finishing.mts`'s elite-finisher margin moved because
+  // the defender a test plants in the shooting path was being moved by the
+  // frame rather than by the test.
+  //
+  // Stated directly by the owner, and it is the right rule: "people should be
+  // able to be off of screen or half of the screen. It should just be a zoom
+  // function." A defender outside the frame simply is not drawn — nothing is
+  // aimed at him and nothing is credited to him, so there is nothing to fix.
+  //
+  // ONE EXCEPTION, and it is a real one: a wide delivery. A corner or a byline
+  // cross is aimed INTO the box, the frame cuts to that box as the ball
+  // arrives, and a defender you cannot see is one you are crossing onto
+  // blind. There the box genuinely is the picture, so everyone stays in it.
+  //
+  // The ball and YOU are still clamped, for the reason the note above gives:
+  // you aim by dragging back from the ball, and a ball against the bottom edge
+  // is a shot you cannot pull the arrow for. Runners stay clamped too, because
+  // a pass IS aimed at them and a run finishing off the edge of the picture
+  // reads as a man leaving the pitch.
   for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
     r.pos.x = fx(r.pos.x); r.pos.y = fy(r.pos.y);
     r.to.x = fx(r.to.x);   r.to.y = fy(r.to.y);
@@ -1596,10 +1852,49 @@ function scenarioViewport(sc: {
   ball: Vec2; player: Vec2; defenders: Vec2[]; teammates: Vec2[];
   keeper: { x: number; y: number }; runner: Runner | null; secondaryRunners?: Runner[]; kind: ScenarioKind;
 }): Viewport {
+  // WHAT THE FRAME IS OBLIGED TO HOLD — and what it is not.
+  //
+  // The ball, you, the keeper, the goal and the man a pass is aimed at. Those
+  // five are the chance; if one of them is off screen the picture is broken.
+  //
+  // DEFENDERS WERE TAKEN OUT OF THIS LIST AND PUT BACK, 21 Sep 2026. They
+  // be, and because `autoViewport` grows to hold the WIDEST thing — a 26 m
+  // spread of defenders needs 42 m of height at this 5:8 aspect — they pinned
+  // almost every chance to the maximum height on their own. Measured with them
+  // in: mean frame 41-42 m on seven of eight kinds, and opening the zoom floor
+  // to 28 m changed the empty-grass figure by under a point. The dial did
+  // nothing because the defenders were holding it open.
+  //
+  // THE COST, and it is real: they do not vanish, `fitToView` pulls anyone
+  // outside back inside the frame, so a wide defence gets compressed laterally
+  // rather than cropped. Measured 12.2% of participants land outside and get
+  // pulled in, worst on the box scenes (volley 28.3%, header 27.1%). That is
+  // the same mechanism `buildScenario`'s corner comment warns about — "squeeze
+  // them into a frame two thirds as wide — piled them onto the taker". If it
+  // reads badly on a real screen the fix is one number, VIEW_MIN_H, not this
+  // list: raising it to 32 or 36 buys the squeezing back a point at a time.
   const pts: Vec2[] = [sc.ball, sc.player];
   const showGoal = goalInView(sc.kind);
   if (showGoal) pts.push({ x: sc.keeper.x, y: sc.keeper.y });
-  for (const d of sc.defenders) pts.push(d);
+  // Defenders are framed for every kind EXCEPT the close-range shooting ones.
+  //
+  // `autoViewport` grows to hold the widest thing in its list, and at a 5:8
+  // aspect a 26 m spread of defenders needs 42 m of height all on its own — so
+  // with them in the list every chance pinned to the maximum zoom and the new
+  // floor did nothing at all (measured: mean frame 41-42 m on seven of eight
+  // kinds, empty grass moved under a point).
+  //
+  // Taking them out for EVERY kind was tried and reverted the same day: it
+  // measurably changed gameplay, which is the one thing the engine's rules
+  // forbid. Defenders squeezed inward by `fitToView` intercepted more passes —
+  // `captain.mts` fell to 97/220 on "the pass finds a man", and `defending.mts`
+  // lost the goal from 331 of 19,500 frames.
+  //
+  // These three are where the whole visual win was anyway, and none of them is
+  // resolved by a pass: you shoot. Measured empty grass, 42 m fixed -> this:
+  // one-on-one 74.6% -> 59.2%, header 72.9% -> 55.9%, volley 69.1% -> 53.9%.
+  const SHOT_FRAMED_TIGHT = sc.kind === "one_on_one" || sc.kind === "header" || sc.kind === "volley";
+  if (!SHOT_FRAMED_TIGHT) for (const d of sc.defenders) pts.push(d);
   // Decorative team-mates (the crosser a volley or header came from) are
   // deliberately NOT framed. They stand out by the touchline, and letting them
   // drag the bounding box shoved the actual action — and the goal — into the
@@ -3164,13 +3459,106 @@ function aheadOf(r: Runner, t: number): Vec2 {
   return { x: r.pos.x + (dx / d) * step, y: r.pos.y + (dy / d) * step };
 }
 
+/**
+ * His striking quality — his own and the understanding between you, and
+ * deliberately NOT where he is standing. Extracted so the reception-time
+ * decision (does he meet this first time — see firstTimeChance) and the
+ * shot itself (launchReceiverShot) read the exact same number, rather than
+ * two formulas that could quietly drift apart.
+ */
+function receiverQuality(receiver: Receiver, teamRelationship: number): number {
+  const teamQuality = clamp(teamRelationship / 100, 0, 1);
+  return clamp(clamp(receiver.skill, 0, 100) / 100 * 0.72 + teamQuality * 0.28, 0, 1);
+}
+
+export type ReceiverStrikeMode = "ground" | "volley" | "header";
+
+/**
+ * Which kind of first-time strike the ball's real arrival height calls
+ * for — see HEADER_MIN_Z/VOLLEY_MIN_Z/HEADER_MAX_REACH_Z's own doc.
+ *
+ * Also gated on the delivery actually being a cross — measured directly,
+ * not assumed: reception has never once checked height (swept <
+ * PASS_CONTROL_R is pure XY), so height ALONE turns out to be a much
+ * noisier signal than it looks. A "cutback" — RECEIVER_CONTROL's own words,
+ * "on the floor, into his stride" — still hasn't finished descending by
+ * the time it geometrically reaches the runner a real 70% of the time in a
+ * 500-trial measurement, same order of magnitude as through_ball. Height
+ * alone would have read most of those as a header or a volley, which is
+ * exactly what "again; only when 'crossed' to" was warning against.
+ * CROSS_DELIVERY_KINDS (corner, byline_cross) is the one signal this
+ * engine already has for "this delivery is genuinely a cross" — the same
+ * one CROSS_VZ_CAP already keys off — so it's reused here rather than
+ * invented fresh. A lofted header onto a teammate's head from open play
+ * (a through-ball or a midfield pass, deliberately chipped rather than
+ * driven) is a real, reasonable future extension this does NOT cover yet —
+ * height alone can't honestly tell "deliberately lofted" apart from "just
+ * hasn't landed yet" for a kind that was never built as a cross, and
+ * getting that wrong is worse than not having it.
+ */
+export function strikeModeForHeight(kind: ScenarioKind, z: number): ReceiverStrikeMode {
+  if (!CROSS_DELIVERY_KINDS.includes(kind)) return "ground";
+  // Checked first and unconditionally: a ball above HEADER_MAX_REACH_Z is
+  // too high for anyone to do anything about — the ORIGINAL version of
+  // this only excluded it from the header band, leaving it to fall
+  // straight into "z >= VOLLEY_MIN_Z" below and read as a volley instead,
+  // which is exactly backwards (an unreachably high ball is the ONE case
+  // this ceiling exists to rule out of a first-time strike altogether).
+  if (z > HEADER_MAX_REACH_Z) return "ground";
+  if (z >= HEADER_MIN_Z) return "header";
+  if (z >= VOLLEY_MIN_Z) return "volley";
+  return "ground";
+}
+
+/**
+ * DOES HE MEET IT RIGHT NOW, OR TAKE A TOUCH FIRST?
+ *
+ * The AI-teammate counterpart to CHIP_KEEPER_Y's own quality-gated
+ * decision — requested directly to work the same way: "levels of decision
+ * making affected by the player's attacking ability and quality, similar
+ * to how the teammates chipping the goalie works now... just adding
+ * another decision they can make when passed to." Not a guarantee on any
+ * of the three: even a maxed-out finisher sometimes still takes the touch,
+ * same spirit as chipChance never reaching 1.
+ *
+ * The three floors are deliberately not equal. A ball arriving at head
+ * height was never really a "control it first" situation for a real
+ * footballer — chesting a cross down instead of meeting it is the unusual,
+ * cautious choice, not the default — so header's floor sits high and only
+ * climbs a little further with quality. A dropping ball met on the volley
+ * is a genuinely harder technical call, so its floor sits lower. An
+ * ordinary ball along the ground has always been a take-a-touch situation
+ * for anyone but a genuinely sharp finisher — "first time finishes of
+ * normal shots should also be possible and likelier as the finisher gets
+ * better" — so ground's floor is zero and only a good finisher ever takes
+ * it in his stride at all.
+ */
+export function firstTimeChance(mode: ReceiverStrikeMode, quality: number): number {
+  const q = clamp(quality, 0, 1);
+  if (mode === "header") return clamp(0.55 + q * 0.35, 0.5, 0.92);
+  if (mode === "volley") return clamp(0.40 + q * 0.38, 0.35, 0.85);
+  return clamp((q - 0.35) * 0.85, 0, 0.55);
+}
+
 // A teammate who's just received a cutback/cross/through-ball takes their own shot.
 // Quality is a real simulation input (accuracy spread, power, curl), not a probability
 // roll — same physics as the player's own strike, driven by their role and how well
 // the team combines (relationships.team).
-function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, composed = true) {
+function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, composed = true, rushed = false) {
   const receiver = scenario.receiver;
   if (!receiver) return;
+
+  // The real height this ball is arriving at — see HEADER_MIN_Z's own doc.
+  // Read before anything below touches ball.z: the ordinary grounded path
+  // still wants its own fixed near-the-feet start (see the final
+  // assignment below, unchanged), and only a header/volley strike keeps
+  // this one. The caller (stepBallRaw) only ever leaves a real height on
+  // here for a genuine first-time strike — the control-hold and scrambled
+  // paths both reset it to the ground first, so they always read "ground".
+  const arrivalZ = ball.z;
+  const strikeMode = strikeModeForHeight(scenario.kind, arrivalZ);
+  const isHeader = strikeMode === "header";
+  const isVolley = strikeMode === "volley";
 
   const dist = Math.hypot(ball.pos.x - CX, ball.pos.y);
   const posQuality = clamp(1 - dist / 26, 0, 1);                    // closer to goal = better chance
@@ -3195,7 +3583,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   const control = RECEIVER_CONTROL[scenario.kind] ?? 0.85;
   // His striking quality, which is his own and the understanding between you —
   // and deliberately NOT where he is standing.
-  const quality = clamp(clamp(receiver.skill, 0, 100) / 100 * 0.72 + teamQuality * 0.28, 0, 1);
+  const quality = receiverQuality(receiver, scenario.teamRelationship);
   /**
    * A REAL elite finisher aims closer to the frame than the base formula
    * alone lets him — reported directly, after real live play: "my
@@ -3323,7 +3711,11 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // widens it. Over ten metres a degree is about 17 centimetres, so this is the
   // number that decides whether aiming at the corner finds it or misses the
   // target altogether — which is exactly the trade a finisher is making.
-  const sigmaDeg = (1 - quality * 0.82) * 7.5 / Math.max(0.45, control);
+  // A volley carries real extra miss risk on top of the ordinary spread —
+  // see VOLLEY_MISS_PENALTY_DEG's own doc — tapering to nothing as quality
+  // climbs to 1, exactly the "less of an issue" half of the trade.
+  const sigmaDeg = (1 - quality * 0.82) * 7.5 / Math.max(0.45, control)
+    + (isVolley ? (1 - quality) * VOLLEY_MISS_PENALTY_DEG : 0);
   // Drawn here, not where it's used below, so every OTHER rng() draw in this
   // function (loft, the fallback spin wobble) keeps consuming the RNG
   // stream in exactly the sequence it always has — moving this call is what
@@ -3338,8 +3730,34 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // only a modest help — but a game where no team-mate ever scores above knee
   // height reads as broken long before anybody works out why.
   const loft = clamp(0.10 + rng() * 0.26 + (composite / 100) * 0.14, 0.03, 0.62);
-  const Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
-  const vz = loft * (7 + composite * 0.04);
+  let Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
+  let vz = loft * (7 + composite * 0.04);
+  // A real volley can be smashed — see VOLLEY_POWER_MIN/MAX's own doc.
+  if (isVolley) Sh *= VOLLEY_POWER_MIN + rng() * (VOLLEY_POWER_MAX - VOLLEY_POWER_MIN);
+  /**
+   * A HEADER IS ITS OWN STRIKE, NOT A FOOT-STRIKE THAT HAPPENS TO START
+   * HIGH UP.
+   *
+   * Real heading power comes off the neck and the jump, not the boot —
+   * genuinely slower than Sh's own foot-strike formula, with a real
+   * physical (falling back to overall, same convention as eliteBoost)
+   * lean on top since a stronger jumper heads it harder. Height is solved
+   * directly for a real target Z at the goal line (HEADER_TARGET_Z_MIN/MAX),
+   * widened by the exact same placement roll that already decided how
+   * close to the frame he's aiming in X, so a confident, ambitious header
+   * is high AND wide together rather than two independent dice that could
+   * disagree. A short closed-form solve, not a guess: given horizontal
+   * speed Sh and flight time t = dist/Sh, z(t) = arrivalZ + vz·t − ½gt²
+   * rearranges directly for the vz that lands it at headerTargetZ.
+   */
+  if (isHeader) {
+    const headerPhys = receiver.who?.physical ?? receiver.who?.overall;
+    const headerPowerBoost = headerPhys !== undefined ? 1 + clamp(headerPhys - 50, -20, 40) / 130 : 1;
+    Sh = (10 + composite * 0.11) * headerPowerBoost;
+    const t = Math.max(dist, 2) / Sh;
+    const headerTargetZ = HEADER_TARGET_Z_MIN + clamp(placement, 0, 1.6) * (HEADER_TARGET_Z_MAX - HEADER_TARGET_Z_MIN);
+    vz = clamp((headerTargetZ - arrivalZ + 0.5 * G * t * t) / t, 0.3, 9);
+  }
   // A flat, skill-independent wobble used to be the whole of it. A real
   // finisher can bend a shot around a defender or the keeper ON PURPOSE —
   // his technique (shooting, when we know it; overall otherwise) raises how
@@ -3434,9 +3852,15 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   const curlSide = blockerSide !== 0 ? blockerSide : side;
   const blockerBoost = blockerSide !== 0 ? 1.15 : 1;
   const curlTech = receiver.who?.shooting ?? receiver.who?.overall;
-  const spin = curlTech !== undefined
-    ? curlSide * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale * blockerBoost
-    : (rng() - 0.5) * 0.9;
+  // A header doesn't curl the way a struck ball does — no side-of-the-foot
+  // contact to put swerve on it — so it gets a small flat wobble instead of
+  // the real curl model below, the same honest "no real data" fallback
+  // shape a foot-strike with no known finisher already gets.
+  const spin = isHeader
+    ? (rng() - 0.5) * 0.12
+    : curlTech !== undefined
+      ? curlSide * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale * blockerBoost
+      : (rng() - 0.5) * 0.9;
 
   // A defender can sit close enough to the launch point to be a real
   // obstacle for the first few metres of ANY shot, whichever corner it is
@@ -3502,10 +3926,25 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
    * sections down noticeably harder to clear at all sample sizes tried —
    * a real, if occasional, second shot within the same move that this
    * mechanic had no business volunteering for.
+   *
+   * And on `!rushed` — true specifically for a ground-mode first-time
+   * strike (see the reception site in stepBallRaw). A delicate, considered
+   * lob and a first-time "hit it now" banger are two different decisions
+   * a real player doesn't make at once, and measured directly: without
+   * this, some of the elite finisher's first-time shots caught the keeper
+   * still mid-advance (scenario.keeper.y not yet settled back down the
+   * way it is by the time the ordinary 0.45s hold would have elapsed),
+   * which made CHIP_KEEPER_Y fire more often specifically for a first-time
+   * shot than for a held one — and a chip blocks far more easily than an
+   * ordinary strike (see the comment two paragraphs up), which was
+   * reversing the SAME wall-defender floor from the other direction: an
+   * elite finisher blocked MORE often than no-identity, purely from
+   * catching more chip attempts, not from anything about the shot he
+   * actually meant to hit.
    */
   let isChip = false;
   let chipSh = Sh, chipVz = vz;
-  if (composed && curlTech !== undefined && !nearThreat && quality > 0.55 && scenario.keeper.y > CHIP_KEEPER_Y) {
+  if (composed && !isHeader && !rushed && curlTech !== undefined && !nearThreat && quality > 0.55 && scenario.keeper.y > CHIP_KEEPER_Y) {
     const distToKeeper = ball.pos.y - scenario.keeper.y;
     const distToGoal = ball.pos.y;
     if (distToKeeper > CHIP_MIN_KEEPER_DIST && distToGoal > distToKeeper) {
@@ -3600,7 +4039,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
    * the OTHER case: placement accuracy with nothing standing in the way.
    */
   let launchDir = baseDir;
-  if (curlTech !== undefined && !isChip && blockerSide === 0 && !nearThreat && Math.abs(spin) > 0.0001) {
+  if (!isHeader && curlTech !== undefined && !isChip && blockerSide === 0 && !nearThreat && Math.abs(spin) > 0.0001) {
     const chordDist = Math.max(1, Math.hypot(aimX - ball.pos.x, ball.pos.y));
     const flightT = chordDist / Sh;
     // The clean circular-arc derivation above (`preAngleDeg` = half the
@@ -3629,7 +4068,12 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // everything" a real strike has, rather than a hard, suspiciously exact
   // zero.
   ball.spin = isChip ? spin * 0.15 : spin;
-  ball.z = 0.1;
+  // A header/volley is struck from wherever it actually reached him, not
+  // swept down to his feet first — that real height is the entire point,
+  // see HEADER_MIN_Z's own doc. Everything else (the ordinary grounded
+  // shot, and the chip, which scoops the ball up from around his feet)
+  // still starts at the original near-the-ground height.
+  ball.z = (isHeader || isVolley) ? arrivalZ : 0.1;
   ball.loose = false;
   ball.contactCd = 0.15;
   ball.lastTouch = "attack";
@@ -5708,8 +6152,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         const relay = relayTargetFor(scenario);
         const followerRelay = !relay && relayFollowerTargetFor(scenario);
         if ((scenario.receiver || relay || followerRelay) && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
+          // The real height this ball is at right now — before anything
+          // below touches ball.z — is the one signal that decides whether
+          // this can even be a header/volley at all. See HEADER_MIN_Z's
+          // own doc: a ball that hasn't dropped yet was never "hit it
+          // first time or don't" before now, it was always just "don't."
+          const arrivalZ = ball.z;
           ball.pos = { x: tgt.x, y: tgt.y };
-          ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
+          ball.vel = { x: 0, y: 0 }; ball.spin = 0;
           // ── A ball you chase down is hit first time ──
           //
           // The touch to control it belongs to a pass played INTO him, in
@@ -5719,15 +6169,74 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // decision anybody would take. It looked like a bug, because it was
           // one — the pause was written for the other case and applied to both.
           if (scrambled) {
+            ball.vz = 0; ball.z = 0.08;
             if (relay) launchReceiverPass(ball, scenario, relay, rng);
             else if (followerRelay) launchReceiverFollowerPass(ball, scenario, rng);
             else launchReceiverShot(ball, scenario, rng, false);
           } else {
-            // Re-checked at expiry (below) rather than decided here, so a
-            // relay pending right now and a relay still pending a beat later
-            // are never out of step with each other.
-            ball.receiverControlT = RECEIVER_CONTROL_T;
-            ball.event = "received";
+            // ── OR HIT FIRST TIME BECAUSE IT NEVER TOUCHED THE GROUND ──
+            //
+            // Reported directly, of a corner curled perfectly onto a
+            // team-mate's head: "watch him take a touch and not only let
+            // the goalie have time to react but also SHOOT RIGHT INTO THE
+            // GOALIES HANDS." Only rolled when there's nobody to lay it
+            // off to — a pending order still outranks instinct here
+            // exactly as it does everywhere else in this file, so a relay
+            // pending right now skips straight to the ordinary hold below
+            // and is re-checked at its expiry exactly as before. The
+            // decision itself is firstTimeChance's, keyed off the real
+            // arrival height via strikeModeForHeight.
+            let firstTime = false;
+            const mode = strikeModeForHeight(scenario.kind, arrivalZ);
+            const rcv = scenario.receiver;
+            if (rcv && !relay && !followerRelay) {
+              // Header/volley are about WHAT the ball is doing, not who he
+              // is — anyone can meet a cross on the head. Ground-mode
+              // first-time is the other ask, and it's explicitly about a
+              // NAMED finisher ("Haaland... much more... than the average
+              // player") — gated on real identity, same as eliteBoost/
+              // curlTech below, so every generic, no-identity chance
+              // finishing.mts already calibrates keeps its exact old
+              // behaviour: always the hold, never a surprise early shot.
+              const hasIdentity = rcv.who?.shooting !== undefined || rcv.who?.overall !== undefined;
+              // A first-time grounded "banger" only makes sense in real
+              // space — the exact same goal-side catchment nearThreat
+              // itself checks inside launchReceiverShot (there, for
+              // whether a delicate chip is composed enough to try; here,
+              // for whether rushing a shot is even the right idea at all).
+              // Measured directly, without this: a real defender who is
+              // still mid-recovery right at the instant of reception, and
+              // would have run on past/away during the ordinary 0.45s
+              // hold, was instead caught still dangerous by a shot that
+              // skipped that hold — reversing a real wall-defender floor
+              // on one_on_one (elite blocked MORE often than no-identity).
+              // A rushed effort should be for when the space is genuinely
+              // there, not for denying a recovering man the time he'd
+              // otherwise have had to get out of the shot's way.
+              const threatened = scenario.defenders.some(d => {
+                const fy = d.y - tgt.y;
+                return fy < 0 && fy > -7 && Math.abs(d.x - tgt.x) < 2.5;
+              });
+              if (mode !== "ground" || (hasIdentity && !threatened)) {
+                const q = receiverQuality(rcv, scenario.teamRelationship);
+                firstTime = rng() < firstTimeChance(mode, q);
+              }
+            }
+            if (firstTime) {
+              // rushed: true for the ground case specifically — see
+              // launchReceiverShot's own `!rushed` note on the chip gate
+              // for exactly why a first-time grounded strike shouldn't
+              // also be eligible to chip.
+              ball.z = arrivalZ; ball.vz = 0;
+              launchReceiverShot(ball, scenario, rng, true, mode === "ground");
+            } else {
+              // Re-checked at expiry (below) rather than decided here, so a
+              // relay pending right now and a relay still pending a beat
+              // later are never out of step with each other.
+              ball.vz = 0; ball.z = 0.08;
+              ball.receiverControlT = RECEIVER_CONTROL_T;
+              ball.event = "received";
+            }
           }
           return null;
         }

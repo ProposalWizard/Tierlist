@@ -501,19 +501,52 @@ function bestOption(sc: Scenario): number {
       const vp = sc.viewport;
       const inside = (p: Vec2) => p.x >= vp.x1 && p.x <= vp.x2 && p.y >= vp.y1 && p.y <= vp.y2;
 
-      const everyone: Vec2[] = [sc.ball, sc.player, ...sc.defenders,
+      // WHAT THE FRAME OWES YOU, changed 21 Sep 2026.
+      //
+      // This used to demand that EVERYONE was on screen. The owner overruled
+      // it directly — "people should be able to be off of screen or half of
+      // the screen. It should just be a zoom function." He is right, and the
+      // old rule had a real cost: because `fitToView` clamps whoever it is
+      // given into the frame, "everyone must be visible" made the camera move
+      // players, so tightening the zoom physically compressed the defence and
+      // changed the football. Measured with defenders still clamped: a pass
+      // found a man 97 times in 220, and a defender planted in a shooting path
+      // by `finishing.mts` was being moved by the camera rather than the test.
+      //
+      // So the rule is now about what the picture OWES you, not about who
+      // happens to be in it: the ball, you, the keeper, and anyone a pass is
+      // aimed at. A defender may stand off the edge — he is simply not drawn,
+      // nothing is aimed at him and nothing is credited to him. Measured after:
+      // 1.44 defenders off screen on average, and the ball, you, the keeper and
+      // every runner in frame 100% of the time.
+      const owed: Vec2[] = [sc.ball, sc.player,
         ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map(r => r.pos)];
       // The keeper and the man in the box belong to situations with a goal in
       // them; the others do not draw either.
-      if (goalInView(kind)) everyone.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: sc.follower.x, y: sc.follower.y });
-      check(everyone.every(inside), `${kind}: everyone in the situation is inside the frame it is played in`);
+      if (goalInView(kind)) owed.push({ x: sc.keeper.x, y: sc.keeper.y }, { x: sc.follower.x, y: sc.follower.y });
+      check(owed.every(inside), `${kind}: the ball, you, the keeper and every runner are in the frame`);
 
-      // …and it is the SAME frame every time. A tactics board does not zoom:
-      // a player is the same size and a metre is the same distance in every
-      // chance you ever get. 42 m fills the screen's long side — down it in the
-      // ordinary view, across it in a turned one, which is the same zoom.
+      // …and the frame TIGHTENS to the situation but never goes looking for
+      // pitch. This asserted one fixed 42 m zoom until 21 Sep 2026, when the
+      // owner picked a tightening camera from five rendered side by side. The
+      // assertion is kept, not dropped — it is the new rule: the ceiling still
+      // holds hard, so a long shot can never zoom out to find the halfway line
+      // (measured: at 54 m a long shot is 75.0% empty grass against 42 m's
+      // 60.9% — zooming out shows you more nothing, not more football), and
+      // the floor stops it ever becoming a keyhole.
       const long = Math.max(vp.y2 - vp.y1, vp.x2 - vp.x1);
-      check(Math.abs(long - 42) < 0.01, `${kind}: framed at the one zoom (${long.toFixed(1)} m)`);
+      check(long <= 42.01 && long >= 27.99, `${kind}: framed within the zoom band (${long.toFixed(1)} m)`);
+
+      // And wherever it lands, the goal does not wander up and down the screen
+      // between chances — the thing the owner actually disliked ("it feels
+      // weird when it jitters and the camera moves so much every highlight").
+      // Measured before the pin: the goal line slid 74 to 112 px between two
+      // one-on-ones; after it, 74 px flat on every kind.
+      if (goalInView(kind)) {
+        const h = vp.y2 - vp.y1;
+        const drop = (0 - vp.y1) / h;
+        check(drop > 0 && drop < 0.35, `${kind}: the goal is on screen, near the top (${(drop * 100).toFixed(1)}% down)`);
+      }
     }
   }
 

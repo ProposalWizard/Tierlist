@@ -64,9 +64,10 @@ export type Restart = "kick-off" | "open-play" | "kick-in" | "goal-kick" | "corn
  *
  *   "flow"    — nobody needs you. The CPUs play on until somebody does.
  *   "passage" — the move has found you. Build the picture and let them aim.
+ *   "mate"    — a team-mate has worked a chance. Play it out and watch him.
  *   "opp"     — they have worked a chance. Play it out and watch it.
  */
-export type Awaiting = "flow" | "passage" | "opp";
+export type Awaiting = "flow" | "passage" | "mate" | "opp";
 
 export interface FiveMatchState {
   rules: MatchRules;
@@ -129,6 +130,8 @@ export interface FiveMatchState {
 export const MINUTES_PER_PASSAGE = MINUTES_PER_BEAT;
 /** …and what one of their chances costs. */
 export const MINUTES_PER_OPP_ATTACK = MINUTES_PER_BEAT;
+/** …and one of a team-mate's, which you watch. One beat, like the rest. */
+export const MINUTES_PER_MATE_ATTACK = MINUTES_PER_BEAT;
 
 /**
  * The match's own random stream, wound forward to where it left off.
@@ -438,7 +441,9 @@ export function advanceFlow(
     world: r.world,
     flow: r.flow,
     log,
-    awaiting: r.stop === "you" ? "passage" : r.stop === "them" ? "opp" : "flow",
+    awaiting: r.stop === "you" ? "passage"
+      : r.stop === "mate" ? "mate"
+      : r.stop === "them" ? "opp" : "flow",
   };
   return { state: closeOutIfDone(s), beats: r.beats, events: r.events, stop: r.stop };
 }
@@ -525,6 +530,69 @@ export function applyTheirAttack(
   return closeOutIfDone(s);
 }
 
+/**
+ * A TEAM-MATE'S CHANCE, FOLDED BACK IN — the mirror of `applyTheirAttack`.
+ *
+ * A team-mate worked a chance near their goal and took it himself while you
+ * watched (see `buildMateAttack`). This is your side attacking their goal, so
+ * the geometry is exactly your own touch's — a goal is YOURS (the scoreboard),
+ * and afterwards the ball is theirs to restart from, whatever became of the
+ * shot.
+ *
+ * Deliberately records NO `PassageEvent`: a chance that bypassed you is not
+ * your goal and not your assist, so it must not move your personal rating — the
+ * same way the flow's own rolled team-mate goals never have. It moves the
+ * SCOREBOARD and nothing else, which is what watching a team-mate score is.
+ */
+export function applyMateAttack(
+  state: FiveMatchState,
+  /** What the engine said, from your side's point of view. */
+  outcome: Outcome | "out",
+  /** The world read back out of the move — see `worldFromMateAttack`. */
+  world: FiveWorld,
+  opts: { passageDraws?: number } = {},
+): FiveMatchState {
+  if (state.over) return state;
+
+  const scored = isGoalOutcome(outcome);
+  const minute = Math.min(fullTimeMinutes(state.rules), state.minute + MINUTES_PER_MATE_ATTACK);
+  const score: [number, number] = scored ? [state.score[0] + 1, state.score[1]] : [...state.score];
+
+  const note = scored ? "Your side score!"
+    : outcome === "saved" || outcome === "caught" || outcome === "tipped" ? "Their keeper holds it."
+    : outcome === "post" ? "Off the woodwork!"
+    : outcome === "wide" || outcome === "over" ? "A team-mate drags it wide."
+    : outcome === "blocked" || outcome === "tackled" ? "Blocked."
+    : "The move breaks down.";
+
+  // Their keeper gathers a shot that did not go in; otherwise their side simply
+  // has it back where the move ended. Either way it is theirs to restart.
+  const keeperHasIt = outcome === "saved" || outcome === "caught" || outcome === "tipped"
+    || outcome === "post" || outcome === "wide" || outcome === "over";
+
+  const nextWorld: FiveWorld = scored
+    ? kickOffWorld(false)
+    : keeperHasIt
+      // Their keeper plays it out from his own line (their goal is at y1).
+      ? { ...world, ball: clampToPitch({ x: goalCentreX(state.rules), y: state.rules.pitch.y1 + 3 }) }
+      : world;
+
+  const s: FiveMatchState = {
+    ...state,
+    passageDraws: opts.passageDraws ?? state.passageDraws,
+    minute,
+    score,
+    possession: "them",
+    restart: scored ? "kick-off" : keeperHasIt ? "goal-kick" : "open-play",
+    world: nextWorld,
+    // The ball is theirs now; the simulation plays on from wherever it ended up.
+    flow: flowAfterTouch(state.rules, flowOf(state), "them", nextWorld.ball.y),
+    awaiting: "flow",
+    log: push(state.log, `${Math.floor(minute)}' ${note}`),
+  };
+  return closeOutIfDone(s);
+}
+
 function closeOutIfDone(state: FiveMatchState): FiveMatchState {
   const half = halfAt(state);
   let withHalf = state;
@@ -598,11 +666,15 @@ function closeOutIfDone(state: FiveMatchState): FiveMatchState {
  *
  *   "flow"    — nobody needs you yet. Play the simulation forward.
  *   "opp"     — they have a chance. It gets played out, and you watch it.
+ *   "mate"    — a team-mate has a chance. It gets played out, and you watch it.
  *   "passage" — it is genuinely yours. Build the picture and let them aim.
  *   "done"    — the match is already over; finish the stage rather than
  *               sitting on it with no way forward.
+ *
+ * "mate" needs no exploit guard the way "passage" does: a team-mate's chance is
+ * played out automatically and watched — there is no free tap-in to skip to.
  */
-export function resumeAction(state: FiveMatchState): "flow" | "opp" | "passage" | "done" {
+export function resumeAction(state: FiveMatchState): "flow" | "opp" | "mate" | "passage" | "done" {
   if (state.over || isFullTime(state)) return "done";
   const awaiting = awaitingOf(state);
   // Belt and braces: whatever a save claims it is waiting for, it can never be

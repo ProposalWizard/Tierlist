@@ -16,6 +16,10 @@ import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
+import { applyChancePlan } from "@/lib/star/chanceFormula";
+import { applyAuthoredShape, nextAuthoredShape } from "@/lib/star/authoredChance";
+import { fixBaseScenario } from "@/lib/star/baseScenario";
+import { selectChance, newSelectionMemory } from "@/lib/star/scenarioSelect";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
@@ -41,6 +45,7 @@ import { finaliseMatch, liveRating, regressForMinutes } from "@/lib/star/matchSt
 import { hookCheck, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
+import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
@@ -143,6 +148,33 @@ interface Props {
    * jumps straight from mount to the saved strike, skipping aim and contact.
    */
   replayOf?: GoalReplay;
+  /**
+   * PLAY ONE PARTICULAR PICTURE (the Scenario Gallery / Infinite Highlights
+   * "Play" button).
+   *
+   * A factory rather than a value: it is called for every chance that is not
+   * a continuation of a move, so striking the ball, seeing it out, and going
+   * again puts you back on the SAME picture rather than a random one — which
+   * is what makes it useful for judging a scenario rather than a match.
+   * Passing it into a move you started (a lay-off, a touch-mode re-touch)
+   * still chains normally, because those are the same move continuing.
+   *
+   * Additive and fully reversible: absent, nothing about this component
+   * changes. Nothing in canvasEngine.ts is touched.
+   */
+  openOn?: () => Scenario;
+  /**
+   * Strip the match furniture — the scoreboard plate, the live commentary
+   * ticker and the situation hint — leaving the pitch and nothing else.
+   *
+   * For the Scenario Gallery / Infinite Highlights, where the canvas sits
+   * INSIDE a card that already has its own controls under it. Reported
+   * directly: "forget the commentator stuff at the bottom, just keep the
+   * original ui". None of it says anything about a scenario you are judging,
+   * and a goals-and-assists tally is actively misleading in a practice
+   * screen that counts nothing.
+   */
+  bare?: boolean;
   /**
    * Fired once, right when a personal goal (not a team-mate's) is confirmed
    * — everything needed to watch this exact goal again, bit-for-bit. Never
@@ -295,7 +327,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, openOn, bare = false }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -369,6 +401,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     ? orderDefensively(oppXIForCast.filter(p => !p.isGK))
         .map(p => ({ id: p.id, name: p.name, shortName: p.shortName, face: p.face, defending: p.defending, overall: p.overall }))
     : undefined;
+
+  /**
+   * The opponent's defensive block shape for this fixture — their formation,
+   * their playstyle, and the strength gap to your side — fed to
+   * applyFormationShape (lib/star/formationShape.ts) so the defence sets up
+   * the way that specific side actually would. Null in the sandbox / any match
+   * with no real opponent to scout, which makes the whole layer a no-op there,
+   * leaving existing behaviour untouched.
+   */
+  const formationShapeFor = (): ShapeInput | null => {
+    if (!career || !fixture) return null;
+    const myStrength = career.league.find(t => t.name === career.player.club)?.strength ?? 65;
+    return formationShapeInput(fixture.opponent, myStrength, oppStrengthRef.current);
+  };
 
   /**
    * Put a name to every goal in a run of hidden-match events, and record it.
@@ -686,6 +732,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // The situation the simulation has just produced, consumed by the next
   // loadScenario() so the scenario matches the football that led to it.
   const pendingRequestRef = useRef<ScenarioRequest | null>(null);
+  /** The last few situations you were shown — the chance formula's anti-repeat. */
+  const chanceMemoryRef = useRef(newSelectionMemory());
+  /** The last few hand-authored scenarios served, so the same drawing is
+   *  never two chances running. See lib/star/authoredChance.ts. */
+  const authoredMemoryRef = useRef<string[]>([]);
+  /** See the `openOn` prop. Held in a ref so the render loop reads the
+   *  current one without re-creating every callback that touches it. */
+  const openOnRef = useRef(openOn);
+  openOnRef.current = openOn;
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -727,6 +782,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
+      // So a corner/free kick/penalty is weighted by the position you play
+      // like every other chance is, instead of bypassing it — see
+      // buildRequest's dead-ball block in hiddenMatch.ts.
+      position: positionRef.current,
       energy: liveEnergyAt(matchMinuteRef.current),
       impactSub: startMinuteRef.current > 0,
     };
@@ -858,7 +917,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // strengthRef.current is already the real keeper's own rating here when
   // there is one — see its own assignment just above — so the very first
   // scenario of the match reads the same number every later one does.
-  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55));
+  // The FIRST chance is built right here, at ref creation — `loadScenario`
+  // only ever runs once one has RESOLVED. So a hand-picked picture has to be
+  // honoured in both places: a first attempt wired only `loadScenario` and
+  // the Play overlay opened on a build-up, because the opening scene had
+  // already been built before that function was ever called. See `openOn`.
+  const scenarioRef = useRef<Scenario>(
+    openOn
+      ? openOn()
+      : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55),
+  );
   const ballRef = useRef<Ball | null>(null);
   /**
    * How many times THIS scenario's rng has been drawn from, since it was
@@ -2828,8 +2896,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // nothing, and the assist you had just played was never recorded. That is
     // the whole of "it counted as a team goal", and of ASSISTS reading 0/0 on a
     // goal the commentary had just described you setting up.
-    const youShot = ballRef.current?.youStruckAtGoal === true;
     const receiverShot = sc.receiverShot === true;
+    // A REBOUND A TEAM-MATE PUTS AWAY IS HIS GOAL, NOT YOURS.
+    //
+    // Reported directly: "when you shoot and then it rebounds or rebounds again
+    // and a player scores, it counts as your goal."
+    //
+    // `ball.youStruckAtGoal` is set once, at your own strike, and the engine
+    // clears it in exactly ONE place — the poacher's six-yard poke-in, where
+    // this same bug was reported and fixed before. The other way a team-mate
+    // finishes a loose ball is `launchReceiverShot`, which sets
+    // `scenario.receiverShot` and never clears the flag. `creditChance` tests
+    // "you shot" BEFORE "he shot", so on that path his goal came to you and
+    // your assist vanished.
+    //
+    // Within one chance you strike at most once, and always first — your shot
+    // comes from the aim gesture before the ball is live. So a team-mate
+    // shooting means he struck it AFTER you, and it stopped being your shot the
+    // moment he did. Fixed here rather than in the engine, which is never
+    // modified; it is a credit rule, not a physics one.
+    const youShot = ballRef.current?.youStruckAtGoal === true && !receiverShot;
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
 
@@ -3611,6 +3697,46 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     rngRef.current = countedRng(seedRef.current, rngCallCountRef);
     const rng = rngRef.current;
 
+    // ── PLAYING ONE PARTICULAR PICTURE (the gallery's Play button) ──
+    //
+    // Ahead of EVERYTHING, including the early returns below for a build-up
+    // and for a dribble request — a first attempt sat after those and the
+    // overlay opened on "building from the back" instead of the chance it
+    // was told to play, because the hidden match had asked for a build-up
+    // and that branch returns before any scenario is built.
+    //
+    // Only when this is not the continuation of a move: a lay-off or a
+    // touch-mode re-touch is the SAME move carrying on and still chains
+    // normally. Everything else puts you back on the chosen picture, which
+    // is what makes it useful for judging a scenario rather than a match.
+    if (openOnRef.current && !chainRef.current) {
+      chainRef.current = null;
+      pendingRequestRef.current = null;
+      scenarioRef.current = openOnRef.current();
+      scenarioRef.current.conditions = conditionsRef.current;
+      castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
+      initDefenders(scenarioRef.current, rng);
+      castDefence(scenarioRef.current, oppXIForCast);
+      facingRef.current = scenarioRef.current.facing ?? "up";
+      viewportRef.current = { ...scenarioRef.current.viewport };
+      baseViewportRef.current = { ...scenarioRef.current.viewport };
+      ballRef.current = null;
+      setAim(null);
+      setOutcome(null);
+      dragRef.current = null;
+      draggingRef.current = false;
+      curveSwipeStartRef.current = null;
+      captainDragRef.current = null;
+      bumpOrders();
+      trailRef.current = [];
+      particlesRef.current = [];
+      shakeRef.current.t = 0;
+      flashRef.current.t = 0;
+      setPhase("aim");
+      playWhistle();
+      return;
+    }
+
     // What the match has just handed you, if anything. Its zone narrows the
     // scenario to what makes football sense from there; your position still
     // decides which of those you are likeliest to be the one taking.
@@ -3686,6 +3812,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // completely different path from an ordinary completed pass's chain,
     // not just a different position fed into the same rebuild.
     const isTouchContinuation = chain !== null && chain.touchTouches !== undefined;
+    /** True once the chance formula has placed this scenario itself. */
+    let appliedPlan = false;
 
     if (chain) {
       if (isTouchContinuation) {
@@ -3705,10 +3833,60 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else if (attacking) {
       scenarioRef.current = buildAttackingScenario(rng, strengthRef.current, teamRef.current, visionRef.current);
     } else if (request) {
-      const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
-      scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+      // ── The chance formula (lib/star/chanceFormula.ts) ──
+      //
+      // Pick one of the generated situations for this request: the same
+      // position weighting decides the KIND, and the formula decides which of
+      // its many real variants of that kind you actually get, with a short
+      // anti-repeat memory so the same situation is never served twice
+      // running. Additive and fully reversible: `selectChance` returns null
+      // for anything the formula has no variant of (a dead ball, a build-up,
+      // a dribble), and that falls straight through to exactly today's
+      // behaviour.
+      const plan = selectChance({
+        request, position: positionRef.current, rng, memory: chanceMemoryRef.current,
+        shape: formationShapeFor(),
+      });
+      if (plan) {
+        scenarioRef.current = buildScenario(plan.kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+        // The base first (its own defining property, repaired), then the
+        // formula expands it. applyChancePlan re-runs fixBaseScenario at the
+        // end, so the base always has the last word.
+        fixBaseScenario(scenarioRef.current);
+        applyChancePlan(scenarioRef.current, plan, rng);
+        appliedPlan = true;
+      } else {
+        const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
+        scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
+      }
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current, visionRef.current);
+    }
+
+    // ── Play the pictures that were actually DRAWN ──
+    //
+    // Where a chance kind has hand-authored scenarios
+    // (lib/star/authoredScenarios.json, written by the Scenario Gallery),
+    // one of them is chosen and laid over the built scenario with a small
+    // random nudge on every figure. The nudge is checked against the rule
+    // set those same scenarios produce, so a variant that breaks the
+    // situation's own definition is thrown away and redrawn — see
+    // lib/star/authoredChance.ts for the measured numbers.
+    //
+    // Additive and fully reversible: a kind with nothing authored for it
+    // gets `null` here and falls straight through to exactly today's
+    // behaviour. Runs BEFORE castScenario so the real faces are assigned to
+    // where the men END UP, not to the procedural positions they no longer
+    // occupy.
+    let appliedAuthored = false;
+    if (!isTouchContinuation) {
+      const shape = nextAuthoredShape(scenarioRef.current.kind, rng, authoredMemoryRef.current);
+      if (shape) {
+        applyAuthoredShape(scenarioRef.current, shape);
+        authoredMemoryRef.current.push(shape.sourceId);
+        if (authoredMemoryRef.current.length > 3) authoredMemoryRef.current.shift();
+        appliedAuthored = true;
+      }
     }
 
     scenarioRef.current.conditions = conditionsRef.current;
@@ -3728,6 +3906,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!isTouchContinuation) {
       castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     }
+
+    // ── Give the block its FORMATION shape ──
+    //
+    // Reposition the defenders + keeper into the opponent's real defensive
+    // block — driven by their formation, their playstyle, and the strength gap
+    // between the two sides (lib/star/formationShape.ts). Runs BEFORE
+    // initDefenders (so press/cover roles and each man's home spot are read off
+    // the new shape) and BEFORE castDefence (so the deepest man gets the
+    // centre-back's face). A strict no-op in the sandbox / any match with no
+    // real opponent (formationShapeFor is null), and for every kind the layer
+    // doesn't touch, so nothing else regresses.
+    // Skipped when the chance formula already placed this shape — it reads the
+    // SAME targetBlock equations and then frames a deliberate slice of the
+    // world shape, and re-running the block layer would drag every man back
+    // toward the middle of the camera (the exact "forced into the viewport"
+    // the owner ruled out).
+    // Also skipped when a hand-authored shape was placed: the block in that
+    // picture is where somebody deliberately put it, and re-running the
+    // formation layer would drag those men somewhere else. Making a
+    // formation MODULATE an authored shape rather than replace it is the
+    // next piece of this, and is deliberately not guessed at here.
+    if (!appliedPlan && !appliedAuthored) applyFormationShape(scenarioRef.current, formationShapeFor());
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
@@ -4149,7 +4349,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         </div>
       )}
 
-      {/* Scoreboard plate */}
+      {/* Scoreboard plate. Hidden in `bare` — see the prop. */}
+      {!bare && (
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
           <div className="px-2.5 flex items-center border-r border-white/5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300/90">
@@ -4189,6 +4390,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </button>
         </div>
       </div>
+      )}
 
       <div
         ref={wrapRef}
@@ -4323,7 +4525,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           returning player does not need re-explained to them every single
           chance. Reported directly: neither is wanted once you are actually
           playing, only while learning the game. */}
-      {!matchMode && (
+      {!matchMode && !bare && (
         <>
           <div className={`mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem] ${phase === "feed" ? "hidden" : ""}`}>
             <div className="flex items-center gap-1.5 mb-1">

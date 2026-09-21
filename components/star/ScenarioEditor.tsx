@@ -5,7 +5,13 @@ import {
   SCENARIO_KINDS, blankScenario, addPlayer,
   type MatchScenario, type ScenarioSide, type ScenarioMomentKind,
 } from "@/lib/star/scenarios";
-import { listScenarios, loadScenario, saveScenario, deleteScenario } from "@/lib/star/scenarioStore";
+import {
+  listScenarios,
+  loadScenario,
+  saveScenarioShared,
+  deleteScenarioShared,
+  fetchSharedScenarios,
+} from "@/lib/star/scenarioStore";
 import {
   renderScenario, viewportFor, pitchFromPx, pxFromPitch, VIEW_ASPECT,
   type Facing, type Viewport,
@@ -73,7 +79,13 @@ export default function ScenarioEditor() {
   const [scenario, setScenario] = useState<MatchScenario>(() => blankScenario("corner"));
   const [saved, setSaved] = useState<MatchScenario[]>(() => listScenarios());
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+  // A save/delete result, and whether it actually reached the server. The
+  // builder must never say a flat "Saved" for something that only landed in
+  // this one browser — see scenarioStore.ts's header.
+  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  // Set when the server says star_scenarios.sql hasn't been run yet.
+  const [migrationMissing, setMigrationMissing] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [pitchPicker, setPitchPicker] = useState(false);
   const dragRef = useRef<{ id: string } | null>(null);
   const pickerDraggingRef = useRef(false);
@@ -81,6 +93,22 @@ export default function ScenarioEditor() {
   const ballImgRef = useRef<HTMLImageElement | null>(null);
 
   const refreshList = () => setSaved(listScenarios());
+
+  // Pull the shared pool down once at load and merge it into the local read
+  // cache, the same way lineupStore.ts's fetchSharedLineups is fired at app
+  // load. The list above rendered synchronously from the cache already, so
+  // this only ever adds to what is on screen.
+  useEffect(() => {
+    let alive = true;
+    void fetchSharedScenarios().then(r => {
+      if (!alive) return;
+      refreshList();
+      if (r.migrationMissing) setMigrationMissing(true);
+      else if (!r.ok && r.message) setStatus({ ok: false, text: r.message });
+    });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // The real ball photo, loaded once — renderScenario falls back to a plain
   // disc for the handful of frames before this resolves.
@@ -260,11 +288,18 @@ export default function ScenarioEditor() {
 
   const setFacing = (f: Facing) => setScenario(s => ({ ...s, camera: { ...s.camera, facing: f } }));
 
-  const save = () => {
-    saveScenario(scenario);
+  const save = async () => {
+    setBusy(true);
+    const r = await saveScenarioShared(scenario);
+    setBusy(false);
     refreshList();
-    setStatus(`Saved "${scenario.name}".`);
-    setTimeout(() => setStatus(null), 2000);
+    if (r.migrationMissing) setMigrationMissing(true);
+    setStatus(
+      r.ok
+        ? { ok: true, text: `Saved "${scenario.name}" — it's on every device now.` }
+        : { ok: false, text: `Saved on this device ONLY — ${r.message}` },
+    );
+    setTimeout(() => setStatus(null), r.ok ? 3000 : 9000);
   };
 
   const load = (id: string) => {
@@ -274,10 +309,24 @@ export default function ScenarioEditor() {
 
   const startNew = () => { setScenario(blankScenario(scenario.kind)); setSelectedId(null); };
 
-  const remove = (id: string) => {
-    deleteScenario(id);
+  // Deleting is deliberately shared-first: a scenario only leaves this
+  // device once the server has actually dropped it, otherwise it vanishes
+  // here while still existing for everyone else (and comes straight back on
+  // the next load, since the fetch merges rather than replaces).
+  const remove = async (id: string) => {
+    setBusy(true);
+    const r = await deleteScenarioShared(id);
+    setBusy(false);
+    if (r.migrationMissing) setMigrationMissing(true);
+    if (!r.ok) {
+      setStatus({ ok: false, text: `Not deleted — ${r.message}` });
+      setTimeout(() => setStatus(null), 9000);
+      return;
+    }
     refreshList();
     if (scenario.id === id) startNew();
+    setStatus({ ok: true, text: "Deleted everywhere." });
+    setTimeout(() => setStatus(null), 3000);
   };
 
   // Where to float the on-canvas delete button — the selected player's own
@@ -394,8 +443,10 @@ export default function ScenarioEditor() {
             onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, centerX: v } }))} />
           <SliderRow label="Centre Y" value={cam.centerY} min={0} max={PITCH_LEN} step={0.5}
             onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, centerY: v } }))} />
-          <SliderRow label="Zoom (view height, m)" value={cam.viewHeight} min={10} max={PITCH_LEN} step={1}
-            onChange={v => setScenario(s => ({ ...s, camera: { ...s.camera, viewHeight: v } }))} />
+          {/* The Zoom slider is gone on purpose. It ran from 10 m to 52.5 m,
+              so every scenario anyone built got its own goal size — half of
+              the reported "you move and the goal can be different sizes or
+              different zoom". The camera slides; it never zooms. */}
 
           <label className="mt-3 block text-[10px] font-black uppercase tracking-wide text-white/60">Angle</label>
           <div className="mt-1 grid grid-cols-3 gap-1">
@@ -415,15 +466,34 @@ export default function ScenarioEditor() {
           </div>
         </div>
 
+        {migrationMissing && (
+          <div className="rounded-xl border border-red-500 bg-red-950/70 p-2.5 text-[10px] font-bold leading-relaxed text-red-200">
+            <div className="text-[11px] font-black">Sharing is off — the database table doesn&rsquo;t exist yet.</div>
+            Run <code className="text-red-100">supabase/migrations/star_scenarios.sql</code> in the Supabase SQL
+            Editor. Until then a scenario saves in THIS browser only and reaches no other device — a save will
+            say so rather than pretending otherwise.
+          </div>
+        )}
+
         <div className="flex gap-1.5">
-          <button onClick={save} className="flex-1 rounded-lg bg-emerald-500 py-2 text-xs font-black text-white hover:bg-emerald-400">Save scenario</button>
+          <button
+            onClick={() => { void save(); }}
+            disabled={busy}
+            className="flex-1 rounded-lg bg-emerald-500 py-2 text-xs font-black text-white hover:bg-emerald-400 disabled:opacity-50"
+          >
+            {busy ? "Saving…" : "Save scenario"}
+          </button>
           <button onClick={startNew} className="rounded-lg bg-gray-700 px-3 py-2 text-xs font-black text-white/80 hover:bg-gray-600">New</button>
         </div>
-        {status && <div className="text-center text-[10px] font-bold text-emerald-300">{status}</div>}
+        {status && (
+          <div className={`text-center text-[10px] font-bold leading-relaxed ${status.ok ? "text-emerald-300" : "text-red-300"}`}>
+            {status.text}
+          </div>
+        )}
 
         <div className="rounded-xl border border-gray-700 bg-gray-800 p-3">
           <div className="text-[10px] font-black uppercase tracking-wide text-white/60">
-            Saved ({saved.length})
+            Saved ({saved.length}) {!migrationMissing && <span className="text-emerald-400">· shared</span>}
           </div>
           <div className="mt-1.5 max-h-56 space-y-1 overflow-y-auto">
             {saved.length === 0 && <div className="text-[10px] text-white/40">Nothing saved yet.</div>}
@@ -436,7 +506,14 @@ export default function ScenarioEditor() {
                 <button onClick={() => load(s.id)} className="min-w-0 flex-1 truncate text-left font-bold text-white">
                   {s.name} <span className="text-white/40">· {KIND_LABEL[s.kind]}</span>
                 </button>
-                <button onClick={() => remove(s.id)} className="shrink-0 rounded bg-red-900/60 px-1.5 py-0.5 font-black text-red-200 hover:bg-red-800">✕</button>
+                <button
+                  onClick={() => { void remove(s.id); }}
+                  disabled={busy}
+                  title="Delete this scenario everywhere, not just on this device"
+                  className="shrink-0 rounded bg-red-900/60 px-1.5 py-0.5 font-black text-red-200 hover:bg-red-800 disabled:opacity-50"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
