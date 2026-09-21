@@ -80,6 +80,31 @@ function attackersOf(sc: Scenario): { x: number; y: number }[] {
 }
 
 /**
+ * Offside, BOTH halves of it.
+ *
+ * Law 11 needs a player to be nearer the goal line than the second-last
+ * opponent AND nearer than the ball. This file only ever tested the first —
+ * so a team-mate standing BEHIND the ball, who cannot be offside under any
+ * reading of the law, was flagged whenever the back line happened to be
+ * deeper than he was.
+ *
+ * Reported directly: "an attacker on your own team is not offside if they are
+ * behind the ball. Those offside calls are actually wrong on every single one
+ * of those." Measured against the eleven authored one-on-ones: 3 of 3 calls
+ * were on a man behind the ball (POACH 4.1m and 2.5m behind, SUP 1.5m
+ * behind) — 100% wrong, exactly as reported. Across raw builds of every kind,
+ * 46 of 153 calls (30.1%) were wrong, all of byline_cross's among them.
+ *
+ * canvasEngine.ts's own `offsideSnapshot` has ALWAYS had this right (it tests
+ * `aheadOfBall`), so match play was never affected — this was the editor's
+ * red text, and the repair below acting on it, moving men who were standing
+ * legally.
+ */
+function isOffside(p: { y: number }, line: number, ballY: number): boolean {
+  return p.y < line - 0.01 && p.y < ballY - 0.01;
+}
+
+/**
  * THE DEFINING PROPERTY OF EACH KIND — the "is this actually that chance"
  * check. Only definitions that are unambiguous football are encoded; a kind we
  * have not agreed the shape of yet returns nothing rather than guessing.
@@ -146,7 +171,7 @@ export function scenarioFaults(sc: Scenario): string[] {
   if (id) out.push(id);
 
   const line = offsideLineOf(sc);
-  if (line !== null && attackersOf(sc).some(a => a.y < line - 0.01)) {
+  if (line !== null && attackersOf(sc).some(a => isOffside(a, line, sc.ball.y))) {
     out.push("attacker offside");
   }
 
@@ -229,7 +254,12 @@ export function fixBaseScenario(sc: Scenario): string[] {
     // measured "broken" rate barely moved (99.7% -> 96.7%).
     const line = offsideLineOf(sc);
     if (line !== null) {
-      const onside = (p: { y: number }) => { if (p.y < line + 0.3) p.y = line + 0.3; };
+      // Only a man who is GENUINELY offside — beyond the line and ahead of
+      // the ball. One behind the ball is standing legally and is left where
+      // he was put; moving him was the bug.
+      const onside = (p: { y: number }) => {
+        if (isOffside(p, line, sc.ball.y)) p.y = line + 0.3;
+      };
       if (sc.runner) onside(sc.runner.pos);
       for (const r of sc.secondaryRunners) onside(r.pos);
       onside(sc.follower);
@@ -246,7 +276,7 @@ export function fixBaseScenario(sc: Scenario): string[] {
     if (line !== null) {
       let moved = false;
       const onside = (p: { y: number }) => {
-        if (p.y < line + 0.3) { p.y = line + 0.3; moved = true; }
+        if (isOffside(p, line, sc.ball.y)) { p.y = line + 0.3; moved = true; }
       };
       if (sc.runner) onside(sc.runner.pos);
       for (const r of sc.secondaryRunners) onside(r.pos);

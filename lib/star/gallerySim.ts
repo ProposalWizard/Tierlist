@@ -5,6 +5,7 @@ import {
 } from "./canvasEngine";
 import { mulberry32 } from "./season";
 import { fixBaseScenario, scenarioFaults } from "./baseScenario";
+import { applyAuthoredShape, nextAuthoredShape } from "./authoredChance";
 import {
   allPlans,
   applyChancePlan,
@@ -193,6 +194,23 @@ export function buildSimScenario(spec: SimSpec): Scenario {
   fixBaseScenario(sc);
   const plan = planById(spec.planId);
   if (plan) applyChancePlan(sc, plan, mulberry32(spec.seed ^ 0x9e3779b9));
+  // ── Then the pictures that were actually DRAWN ──
+  //
+  // "When I press Simulate on one-on-ones, it should be scanning the current
+  // one-on-ones in that section… if I add 5 new ones, it should just
+  // automatically scan, and that should be taken into account while
+  // simulating new randomizers."
+  //
+  // So a Simulate for a kind with authored scenarios serves a nudged variant
+  // of one of them, checked against the rule set those same scenarios
+  // produce. The pool is read live (lib/star/authoredChance.ts), so saving a
+  // scenario changes what the very next press produces.
+  //
+  // Its own stream off the same seed, so a spec still rebuilds to the exact
+  // same picture every time — which the gallery relies on to repaint without
+  // the scenario shifting under it.
+  const shape = nextAuthoredShape(spec.kind, mulberry32(spec.seed ^ 0x5bf03635));
+  if (shape) applyAuthoredShape(sc, shape);
   return sc;
 }
 

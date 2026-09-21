@@ -1,0 +1,195 @@
+/**
+ * THE AUTHORED CHANCE LAYER — the rule set scanned off hand-drawn scenarios,
+ * and the randomiser that varies them without breaking them.
+ *
+ * Every number quoted here was measured by running this file, not reasoned
+ * about. Where a threshold is a floor rather than an exact figure, it is a
+ * floor on purpose: authoring more scenarios must never make the suite red.
+ */
+
+import { AUTHORED_SCENARIOS } from "@/lib/star/authoredScenarios";
+import {
+  deriveRuleSet, sampleFromAuthored, violations, describeRuleSet,
+  MIN_SAMPLES_FOR_INVARIANT, type ShapeSample,
+} from "@/lib/star/scenarioRules";
+import {
+  authoredPool, ruleSetFor, nextAuthoredShape, randomiseAuthored,
+  setLiveScenarioPool, applyAuthoredShape, sampleFromScenario, JITTER_M,
+} from "@/lib/star/authoredChance";
+import { buildScenario } from "@/lib/star/canvasEngine";
+import { fixBaseScenario, offsideLineOf } from "@/lib/star/baseScenario";
+import { mulberry32 } from "@/lib/star/season";
+
+let failed = 0;
+const ok = (cond: boolean, what: string) => {
+  if (!cond) { failed++; console.error(`  FAIL ${what}`); }
+};
+
+// ── The scan itself ────────────────────────────────────────────────────────
+
+const pool = authoredPool("one_on_one");
+ok(pool.length >= 5, `at least 5 authored one-on-ones to scan (have ${pool.length})`);
+
+const set = ruleSetFor("one_on_one")!;
+ok(!!set, "a rule set is produced for a kind that has authored scenarios");
+ok(set.n === pool.length, "the rule set records how many it scanned");
+ok(ruleSetFor("__nothing_authored__") === null, "a kind with nothing authored has no rule set");
+
+// The three that came out of the drawings rather than out of anybody's head.
+const inv = set.rules.filter(r => r.invariant).map(r => r.id);
+ok(inv.includes("defBetween"), "invariant: no defender between the ball and goal");
+ok(inv.includes("defGoalSide"), "invariant: no defender nearer the goal than the ball");
+ok(inv.includes("mateInShot"), "invariant: no team-mate standing in your shot");
+
+// A rule set is only as good as its sample count — three agreeing is chance.
+const tiny = deriveRuleSet("x", pool.slice(0, 3).map(sampleFromAuthored) as ShapeSample[]);
+ok(tiny.rules.every(r => !r.invariant),
+  `under ${MIN_SAMPLES_FOR_INVARIANT} samples nothing is treated as a hard rule`);
+
+// ── Auto-scanning: the pool is read fresh, never cached by value ───────────
+
+const before = ruleSetFor("one_on_one")!.n;
+const extra = { ...pool[0], id: "live-test-extra", updatedAt: Date.now() };
+setLiveScenarioPool([extra]);
+ok(ruleSetFor("one_on_one")!.n === before + 1,
+  "adding a scenario to the live pool is picked up on the very next scan");
+setLiveScenarioPool(null);
+ok(ruleSetFor("one_on_one")!.n === before, "removing it again is picked up too");
+
+// The cache must never be able to hold a stale answer: its key is every id
+// AND every save time, so EDITING a scenario re-scans just like adding one.
+const edited = { ...pool[0], id: "live-test-edited", updatedAt: 1 };
+setLiveScenarioPool([edited]);
+const first = ruleSetFor("one_on_one")!;
+setLiveScenarioPool([{ ...edited, updatedAt: 2, ball: { x: edited.ball.x + 6, y: edited.ball.y } }]);
+const second = ruleSetFor("one_on_one")!;
+ok(first !== second, "editing a scenario invalidates the cached rule set");
+setLiveScenarioPool(null);
+
+// ── The randomiser ────────────────────────────────────────────────────────
+
+const N = 3000;
+const rng = mulberry32(4242);
+const recent: string[] = [];
+let served = 0, exact = 0, repeats = 0, prev = "";
+const used = new Set<string>();
+let moveSum = 0, moveN = 0;
+for (let i = 0; i < N; i++) {
+  const sh = nextAuthoredShape("one_on_one", rng, recent);
+  if (!sh) continue;
+  served++;
+  used.add(sh.sourceId);
+  if (sh.jitter === 0) exact++;
+  if (sh.sourceId === prev) repeats++;
+  prev = sh.sourceId;
+  // THE load-bearing assertion: nothing that breaks the scanned rules is
+  // ever served. The retry loop's last attempt is the drawing itself, so
+  // this can only fail if the rules and the drawings disagree.
+  ok(violations(sh, set).length === 0, `served shape ${i} obeys the rule set`);
+  const base = sampleFromAuthored(pool.find(p => p.id === sh.sourceId)!)!;
+  moveSum += Math.hypot(sh.ball.x - base.ball.x, sh.ball.y - base.ball.y);
+  moveN++;
+  recent.push(sh.sourceId);
+  if (recent.length > 3) recent.shift();
+}
+ok(served === N, `every draw produced a shape (${served}/${N})`);
+ok(repeats === 0, `never the same drawing twice running (${repeats})`);
+ok(used.size === pool.length, `all ${pool.length} drawings get used (${used.size})`);
+ok(exact / served < 0.05,
+  `the fallback to an un-nudged drawing stays rare (${(100 * exact / served).toFixed(2)}%)`);
+ok(moveSum / moveN > 0.4, `the ball genuinely moves (mean ${(moveSum / moveN).toFixed(2)}m)`);
+ok(nextAuthoredShape("__nothing_authored__", rng) === null,
+  "a kind with nothing authored randomises to null, so callers fall through");
+
+// A deliberately hostile rule set — one every nudge must fail — still never
+// serves a broken shape, because the last attempt is the drawing itself.
+const strict = deriveRuleSet("one_on_one", [sampleFromAuthored(pool[0])!]);
+strict.rules.forEach(r => { r.invariant = true; });
+const hard = randomiseAuthored(pool[0], strict, mulberry32(7));
+ok(!!hard && hard.jitter === 0, "an impossible rule set falls back to the exact drawing");
+ok(!!hard && violations(hard, strict).length === 0, "…and that fallback is valid");
+
+// ── Onto a live scenario ──────────────────────────────────────────────────
+
+let placedD = 0, placedM = 0, trials = 0;
+for (let i = 0; i < 200; i++) {
+  const r = mulberry32(i * 31 + 5);
+  const sc = buildScenario("one_on_one", r);
+  fixBaseScenario(sc);
+  const shape = nextAuthoredShape("one_on_one", r)!;
+  const res = applyAuthoredShape(sc, shape);
+  placedD += res.defendersPlaced; placedM += res.matesPlaced; trials++;
+  const s = sampleFromScenario(sc);
+  ok(Math.abs(s.ball.x - shape.ball.x) < 0.001 && Math.abs(s.ball.y - shape.ball.y) < 0.001,
+    "the live ball lands exactly where the shape says");
+  ok(Math.abs(s.you.x - shape.you.x) < 0.001, "and so do you");
+  ok(Math.abs(s.keeper.x - shape.keeper.x) < 0.001, "and so does the keeper");
+  // A runner left pointing at his old target sprints away the moment the
+  // ball is struck, undoing the placement on screen.
+  if (sc.runner) {
+    ok(Math.abs(sc.runner.to.x - sc.runner.pos.x) < 0.001
+      && Math.abs(sc.runner.to.y - sc.runner.pos.y) < 0.001,
+      "a runner's target is re-anchored to where he now stands");
+  }
+  // Every figure inside the frame the picture was drawn in.
+  const vp = sc.viewport;
+  for (const d of sc.defenders) {
+    ok(d.y >= vp.y1 - 2 && d.y <= vp.y2 + 2, "placed defenders are inside the camera");
+  }
+}
+ok(placedD / trials >= 2.5, `defenders actually get placed (${(placedD / trials).toFixed(1)} per chance)`);
+ok(placedM / trials >= 1.5, `team-mates actually get placed (${(placedM / trials).toFixed(1)} per chance)`);
+
+// ── Offside: both halves of Law 11 ────────────────────────────────────────
+//
+// A team-mate BEHIND the ball cannot be offside however deep the back line
+// is. Reported directly, and measured wrong on 3 of 3 calls across the
+// authored one-on-ones before this was fixed.
+
+let wouldHaveFlagged = 0;
+for (const ms of pool) {
+  const s = sampleFromAuthored(ms)!;
+  const ys = [...s.defenders.map(d => d.y), s.keeper.y].sort((a, b) => a - b);
+  if (ys.length < 2) continue;
+  const line = ys[1];
+  for (const m of s.mates) {
+    const beyondLine = m.y < line - 0.01;
+    const aheadOfBall = m.y < s.ball.y - 0.01;
+    if (beyondLine && !aheadOfBall) wouldHaveFlagged++;
+  }
+}
+ok(wouldHaveFlagged > 0,
+  `the authored scenarios still contain men the OLD rule would have wrongly flagged (${wouldHaveFlagged}) — so this stays a real regression test`);
+
+// And the real rule, through the real fault function, agrees with the law.
+{
+  const sc = buildScenario("one_on_one", mulberry32(3));
+  fixBaseScenario(sc);
+  const line = offsideLineOf(sc);
+  if (line !== null && sc.secondaryRunners.length) {
+    const r = sc.secondaryRunners[0];
+    // Put him beyond the line but clearly BEHIND the ball: legal.
+    r.pos.y = Math.max(sc.ball.y + 2, line - 3);
+    const faults = (await import("@/lib/star/baseScenario")).scenarioFaults(sc);
+    ok(!faults.includes("attacker offside"),
+      "a man beyond the back line but behind the ball is NOT offside");
+    // Now put him beyond both: offside.
+    r.pos.y = Math.min(line - 1, sc.ball.y - 1);
+    const faults2 = (await import("@/lib/star/baseScenario")).scenarioFaults(sc);
+    ok(faults2.includes("attacker offside"),
+      "a man beyond the back line AND ahead of the ball IS offside");
+  }
+}
+
+// ── The readout a person actually reads ───────────────────────────────────
+
+const lines = describeRuleSet(set);
+ok(lines.length === set.rules.length, "every rule gets a line");
+ok(lines.slice(0, inv.length).every(l => l.startsWith("ALWAYS")), "invariants are listed first");
+ok(!lines.some(l => /gkNearPost|gkAdvance/.test(l)), "the readout uses plain English, not ids");
+ok(lines.some(l => /near-post cover[^:]*: 0\.\d\d to 0\.\d\d/.test(l)),
+  "a ratio reads as a ratio, not as metres");
+
+console.log(`authoredChance: jitter ${JITTER_M}m, ${pool.length} drawings, ${served} draws`);
+if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }
+console.log("authoredChance: all checks passed");
