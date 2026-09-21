@@ -1,7 +1,8 @@
 /**
  * lib/patchNotes.ts
  *
- * THE SHAPE OF A PATCH NOTE, used on both sides of /api/admin/patch-notes.
+ * THE SHAPE OF A PATCH NOTE. The notes themselves live in
+ * lib/patchNotesData.ts.
  *
  * Patch notes are STORED AS STRUCTURED DATA, never as HTML or markdown.
  * That is a deliberate decision, not a convenience:
@@ -91,18 +92,6 @@ export interface PatchNote {
   sections: PatchSection[];
   artifactUrl: string | null;
   updatedAt: string | null;
-}
-
-/** The database row, before it is turned into a PatchNote. */
-export interface PatchNoteRow {
-  version: string;
-  title: string;
-  published_at: string;
-  summary: string | null;
-  stats: unknown;
-  sections: unknown;
-  artifact_url: string | null;
-  updated_at: string | null;
 }
 
 /* ── Colours ──────────────────────────────────────────────────────────────
@@ -238,18 +227,6 @@ export function parseSections(raw: unknown): PatchSection[] {
   return out;
 }
 
-export function rowToPatchNote(row: PatchNoteRow): PatchNote {
-  return {
-    version: row.version,
-    title: row.title,
-    publishedAt: row.published_at,
-    summary: row.summary,
-    stats: parseStats(row.stats),
-    sections: parseSections(row.sections),
-    artifactUrl: row.artifact_url,
-    updatedAt: row.updated_at,
-  };
-}
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
