@@ -149,6 +149,21 @@ interface Props {
    */
   replayOf?: GoalReplay;
   /**
+   * PLAY ONE PARTICULAR PICTURE (the Scenario Gallery / Infinite Highlights
+   * "Play" button).
+   *
+   * A factory rather than a value: it is called for every chance that is not
+   * a continuation of a move, so striking the ball, seeing it out, and going
+   * again puts you back on the SAME picture rather than a random one — which
+   * is what makes it useful for judging a scenario rather than a match.
+   * Passing it into a move you started (a lay-off, a touch-mode re-touch)
+   * still chains normally, because those are the same move continuing.
+   *
+   * Additive and fully reversible: absent, nothing about this component
+   * changes. Nothing in canvasEngine.ts is touched.
+   */
+  openOn?: () => Scenario;
+  /**
    * Fired once, right when a personal goal (not a team-mate's) is confirmed
    * — everything needed to watch this exact goal again, bit-for-bit. Never
    * fired while replaying one (`replayOf` set): re-watching a replay is not
@@ -300,7 +315,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, openOn }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -710,6 +725,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** The last few hand-authored scenarios served, so the same drawing is
    *  never two chances running. See lib/star/authoredChance.ts. */
   const authoredMemoryRef = useRef<string[]>([]);
+  /** See the `openOn` prop. Held in a ref so the render loop reads the
+   *  current one without re-creating every callback that touches it. */
+  const openOnRef = useRef(openOn);
+  openOnRef.current = openOn;
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -886,7 +905,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // strengthRef.current is already the real keeper's own rating here when
   // there is one — see its own assignment just above — so the very first
   // scenario of the match reads the same number every later one does.
-  const scenarioRef = useRef<Scenario>(buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55));
+  // The FIRST chance is built right here, at ref creation — `loadScenario`
+  // only ever runs once one has RESOLVED. So a hand-picked picture has to be
+  // honoured in both places: a first attempt wired only `loadScenario` and
+  // the Play overlay opened on a build-up, because the opening scene had
+  // already been built before that function was ever called. See `openOn`.
+  const scenarioRef = useRef<Scenario>(
+    openOn
+      ? openOn()
+      : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55),
+  );
   const ballRef = useRef<Ball | null>(null);
   /**
    * How many times THIS scenario's rng has been drawn from, since it was
@@ -3656,6 +3684,46 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     seedRef.current += 1;
     rngRef.current = countedRng(seedRef.current, rngCallCountRef);
     const rng = rngRef.current;
+
+    // ── PLAYING ONE PARTICULAR PICTURE (the gallery's Play button) ──
+    //
+    // Ahead of EVERYTHING, including the early returns below for a build-up
+    // and for a dribble request — a first attempt sat after those and the
+    // overlay opened on "building from the back" instead of the chance it
+    // was told to play, because the hidden match had asked for a build-up
+    // and that branch returns before any scenario is built.
+    //
+    // Only when this is not the continuation of a move: a lay-off or a
+    // touch-mode re-touch is the SAME move carrying on and still chains
+    // normally. Everything else puts you back on the chosen picture, which
+    // is what makes it useful for judging a scenario rather than a match.
+    if (openOnRef.current && !chainRef.current) {
+      chainRef.current = null;
+      pendingRequestRef.current = null;
+      scenarioRef.current = openOnRef.current();
+      scenarioRef.current.conditions = conditionsRef.current;
+      castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
+      initDefenders(scenarioRef.current, rng);
+      castDefence(scenarioRef.current, oppXIForCast);
+      facingRef.current = scenarioRef.current.facing ?? "up";
+      viewportRef.current = { ...scenarioRef.current.viewport };
+      baseViewportRef.current = { ...scenarioRef.current.viewport };
+      ballRef.current = null;
+      setAim(null);
+      setOutcome(null);
+      dragRef.current = null;
+      draggingRef.current = false;
+      curveSwipeStartRef.current = null;
+      captainDragRef.current = null;
+      bumpOrders();
+      trailRef.current = [];
+      particlesRef.current = [];
+      shakeRef.current.t = 0;
+      flashRef.current.t = 0;
+      setPhase("aim");
+      playWhistle();
+      return;
+    }
 
     // What the match has just handed you, if anything. Its zone narrows the
     // scenario to what makes football sense from there; your position still

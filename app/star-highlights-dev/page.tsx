@@ -51,10 +51,13 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
+import ScenarioPlay from "@/components/star/ScenarioPlay";
 import {
   addFigureTo,
   analyseEdited,
   applyOverride,
+  applyOverrideToScenario,
+  mergeOverrides,
   frameToMatchScenario,
   hasEdits,
   loadEditStore,
@@ -256,6 +259,8 @@ export default function HighlightsPage() {
   const [ready, setReady] = useState(false);
   /** Which figure is tapped, for the add/remove controls. */
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** The Play overlay is open — see ScenarioPlay. */
+  const [playing, setPlaying] = useState(false);
 
   // A full-screen dev tool: the site's own nav and footer get out of the way,
   // exactly as /star-gallery-dev does it (globals.css's immersive class).
@@ -665,7 +670,23 @@ export default function HighlightsPage() {
             >
               Remove
             </button>
+            {/* Play this exact chance, edits and all — see ScenarioPlay. */}
+            <button style={{ ...editBtn(false), color: "#4ade80" }} onClick={() => setPlaying(true)}>
+              &#9654; Play
+            </button>
           </div>
+
+          {playing && shot && (
+            <ScenarioPlay
+              title={`${kindLabel(shot.spec.kind)}${edited ? " (edited)" : ""}`}
+              build={() => {
+                const sc = buildSimScenario(shot.spec);
+                applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
+                return sc;
+              }}
+              onClose={() => setPlaying(false)}
+            />
+          )}
 
           <div style={{ display: "flex", gap: 10, width: "100%", maxWidth: 460 }}>
             <button
