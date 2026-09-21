@@ -685,6 +685,69 @@ const CURL_K = 0.48;           // Magnus-ish lateral bend, applied perpendicular
  * judgement a real striker is making.
  */
 const CHIP_KEEPER_Y = 3.5;     // metres off his line before a chip is even considered
+
+/**
+ * THE BALL'S OWN ANSWER TO "TOUCH IT DOWN, OR MEET IT RIGHT NOW."
+ *
+ * Reported directly, of a corner curled perfectly onto a team-mate's head:
+ * "watch him take a touch and not only let the goalie have time to react
+ * but also SHOOT RIGHT INTO THE GOALIES HANDS." Reception (see
+ * stepBallRaw's "swept < PASS_CONTROL_R") has never once looked at
+ * HEIGHT — a cross met right on the six-yard line and a five-yard ball
+ * rolled into his stride were the exact same event, and both got the exact
+ * same fixed 0.45s hold before an ordinary grounded shot
+ * (RECEIVER_CONTROL_T, launchReceiverShot's own "ground" path). These
+ * three bands are the whole fix: the real height the ball is at when it
+ * reaches him — still on ball.z at that instant, before the caller resets
+ * it for the hold — decides whether this is a header, a volley, or an
+ * ordinary ball at his feet. See strikeModeForHeight/firstTimeChance for
+ * the decision this feeds, and launchReceiverShot's own isHeader/isVolley
+ * branches for what each one actually does with it.
+ *
+ * HEADER_MAX_REACH_Z exists because "did the ball geometrically pass near
+ * him" has no height gate of its own either — a ball sailing three metres
+ * over everyone's head still counts as "reached" the instant it crosses
+ * his (x, y). Above this it is honestly too high for anyone to have done
+ * anything about just now, so it falls through to the ordinary ground-mode
+ * decision instead (see strikeModeForHeight) — which mostly means the
+ * existing hold, exactly as it always has, rather than inventing a fourth
+ * strike type for a case that is really "he can't reach this yet."
+ */
+const HEADER_MIN_Z = 1.3;       // metres — a jumping/standing header's real contact height
+const HEADER_MAX_REACH_Z = 2.6; // above a real jump-and-head reach — see doc above
+const VOLLEY_MIN_Z = 0.35;      // above ankle-height ground control, below a header
+
+/**
+ * A REAL FIRST-TIME HEADER AIMS FOR THE FAR TOP CORNER, NOT A CAUTIOUS NOD.
+ *
+ * Requested directly, in the same shape as the corner it's aimed at: "they
+ * head it towards goal (ideally towards top corners, away from goalie,
+ * decent power)." Real coaching says head it DOWN — but this is the shape
+ * that was actually asked for, so the target band sits high rather than
+ * low, and headerTargetZ (see launchReceiverShot) is allowed to push a
+ * confident effort past the top of it into a realistic sky — a genuine
+ * miss a real header can produce, not one invented for this.
+ */
+const HEADER_TARGET_Z_MIN = 1.5;
+const HEADER_TARGET_Z_MAX = 2.15; // clearly under the 2.44 crossbar on its own; ambition can push past it
+
+/**
+ * A VOLLEY CAN BE SMASHED — AND CAN BE SCUFFED.
+ *
+ * Requested directly, football-literate and explicit about the trade: "a
+ * volley implies far more potential for power, as well as far more
+ * potential to miss the target (again, the better the finisher the less
+ * of an issue this is)." VOLLEY_POWER_MIN/MAX raise the CEILING on Sh (see
+ * launchReceiverShot's isVolley branch) rather than just the average — a
+ * flat multiplier would only make every volley harder hit, not "more
+ * potential." VOLLEY_MISS_PENALTY_DEG is the other half of the same
+ * trade: added on top of the ordinary sigmaDeg spread, scaled by
+ * (1 - quality) so it is real for an average finisher and close to
+ * nothing for an elite one — exactly the parenthetical.
+ */
+const VOLLEY_POWER_MIN = 1.0;
+const VOLLEY_POWER_MAX = 1.55;
+const VOLLEY_MISS_PENALTY_DEG = 9;
 const CHIP_CLEAR_Z = 3.3;      // target ball height exactly as it passes him. Measured, not
                                // guessed: 2.7 landed keeperAttempt's dist right on top of
                                // reach (2.3-2.5) for most real chip attempts, since dx alone
@@ -3164,13 +3227,106 @@ function aheadOf(r: Runner, t: number): Vec2 {
   return { x: r.pos.x + (dx / d) * step, y: r.pos.y + (dy / d) * step };
 }
 
+/**
+ * His striking quality — his own and the understanding between you, and
+ * deliberately NOT where he is standing. Extracted so the reception-time
+ * decision (does he meet this first time — see firstTimeChance) and the
+ * shot itself (launchReceiverShot) read the exact same number, rather than
+ * two formulas that could quietly drift apart.
+ */
+function receiverQuality(receiver: Receiver, teamRelationship: number): number {
+  const teamQuality = clamp(teamRelationship / 100, 0, 1);
+  return clamp(clamp(receiver.skill, 0, 100) / 100 * 0.72 + teamQuality * 0.28, 0, 1);
+}
+
+export type ReceiverStrikeMode = "ground" | "volley" | "header";
+
+/**
+ * Which kind of first-time strike the ball's real arrival height calls
+ * for — see HEADER_MIN_Z/VOLLEY_MIN_Z/HEADER_MAX_REACH_Z's own doc.
+ *
+ * Also gated on the delivery actually being a cross — measured directly,
+ * not assumed: reception has never once checked height (swept <
+ * PASS_CONTROL_R is pure XY), so height ALONE turns out to be a much
+ * noisier signal than it looks. A "cutback" — RECEIVER_CONTROL's own words,
+ * "on the floor, into his stride" — still hasn't finished descending by
+ * the time it geometrically reaches the runner a real 70% of the time in a
+ * 500-trial measurement, same order of magnitude as through_ball. Height
+ * alone would have read most of those as a header or a volley, which is
+ * exactly what "again; only when 'crossed' to" was warning against.
+ * CROSS_DELIVERY_KINDS (corner, byline_cross) is the one signal this
+ * engine already has for "this delivery is genuinely a cross" — the same
+ * one CROSS_VZ_CAP already keys off — so it's reused here rather than
+ * invented fresh. A lofted header onto a teammate's head from open play
+ * (a through-ball or a midfield pass, deliberately chipped rather than
+ * driven) is a real, reasonable future extension this does NOT cover yet —
+ * height alone can't honestly tell "deliberately lofted" apart from "just
+ * hasn't landed yet" for a kind that was never built as a cross, and
+ * getting that wrong is worse than not having it.
+ */
+export function strikeModeForHeight(kind: ScenarioKind, z: number): ReceiverStrikeMode {
+  if (!CROSS_DELIVERY_KINDS.includes(kind)) return "ground";
+  // Checked first and unconditionally: a ball above HEADER_MAX_REACH_Z is
+  // too high for anyone to do anything about — the ORIGINAL version of
+  // this only excluded it from the header band, leaving it to fall
+  // straight into "z >= VOLLEY_MIN_Z" below and read as a volley instead,
+  // which is exactly backwards (an unreachably high ball is the ONE case
+  // this ceiling exists to rule out of a first-time strike altogether).
+  if (z > HEADER_MAX_REACH_Z) return "ground";
+  if (z >= HEADER_MIN_Z) return "header";
+  if (z >= VOLLEY_MIN_Z) return "volley";
+  return "ground";
+}
+
+/**
+ * DOES HE MEET IT RIGHT NOW, OR TAKE A TOUCH FIRST?
+ *
+ * The AI-teammate counterpart to CHIP_KEEPER_Y's own quality-gated
+ * decision — requested directly to work the same way: "levels of decision
+ * making affected by the player's attacking ability and quality, similar
+ * to how the teammates chipping the goalie works now... just adding
+ * another decision they can make when passed to." Not a guarantee on any
+ * of the three: even a maxed-out finisher sometimes still takes the touch,
+ * same spirit as chipChance never reaching 1.
+ *
+ * The three floors are deliberately not equal. A ball arriving at head
+ * height was never really a "control it first" situation for a real
+ * footballer — chesting a cross down instead of meeting it is the unusual,
+ * cautious choice, not the default — so header's floor sits high and only
+ * climbs a little further with quality. A dropping ball met on the volley
+ * is a genuinely harder technical call, so its floor sits lower. An
+ * ordinary ball along the ground has always been a take-a-touch situation
+ * for anyone but a genuinely sharp finisher — "first time finishes of
+ * normal shots should also be possible and likelier as the finisher gets
+ * better" — so ground's floor is zero and only a good finisher ever takes
+ * it in his stride at all.
+ */
+export function firstTimeChance(mode: ReceiverStrikeMode, quality: number): number {
+  const q = clamp(quality, 0, 1);
+  if (mode === "header") return clamp(0.55 + q * 0.35, 0.5, 0.92);
+  if (mode === "volley") return clamp(0.40 + q * 0.38, 0.35, 0.85);
+  return clamp((q - 0.35) * 0.85, 0, 0.55);
+}
+
 // A teammate who's just received a cutback/cross/through-ball takes their own shot.
 // Quality is a real simulation input (accuracy spread, power, curl), not a probability
 // roll — same physics as the player's own strike, driven by their role and how well
 // the team combines (relationships.team).
-function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, composed = true) {
+function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, composed = true, rushed = false) {
   const receiver = scenario.receiver;
   if (!receiver) return;
+
+  // The real height this ball is arriving at — see HEADER_MIN_Z's own doc.
+  // Read before anything below touches ball.z: the ordinary grounded path
+  // still wants its own fixed near-the-feet start (see the final
+  // assignment below, unchanged), and only a header/volley strike keeps
+  // this one. The caller (stepBallRaw) only ever leaves a real height on
+  // here for a genuine first-time strike — the control-hold and scrambled
+  // paths both reset it to the ground first, so they always read "ground".
+  const arrivalZ = ball.z;
+  const strikeMode = strikeModeForHeight(scenario.kind, arrivalZ);
+  const isHeader = strikeMode === "header";
+  const isVolley = strikeMode === "volley";
 
   const dist = Math.hypot(ball.pos.x - CX, ball.pos.y);
   const posQuality = clamp(1 - dist / 26, 0, 1);                    // closer to goal = better chance
@@ -3195,7 +3351,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   const control = RECEIVER_CONTROL[scenario.kind] ?? 0.85;
   // His striking quality, which is his own and the understanding between you —
   // and deliberately NOT where he is standing.
-  const quality = clamp(clamp(receiver.skill, 0, 100) / 100 * 0.72 + teamQuality * 0.28, 0, 1);
+  const quality = receiverQuality(receiver, scenario.teamRelationship);
   /**
    * A REAL elite finisher aims closer to the frame than the base formula
    * alone lets him — reported directly, after real live play: "my
@@ -3323,7 +3479,11 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // widens it. Over ten metres a degree is about 17 centimetres, so this is the
   // number that decides whether aiming at the corner finds it or misses the
   // target altogether — which is exactly the trade a finisher is making.
-  const sigmaDeg = (1 - quality * 0.82) * 7.5 / Math.max(0.45, control);
+  // A volley carries real extra miss risk on top of the ordinary spread —
+  // see VOLLEY_MISS_PENALTY_DEG's own doc — tapering to nothing as quality
+  // climbs to 1, exactly the "less of an issue" half of the trade.
+  const sigmaDeg = (1 - quality * 0.82) * 7.5 / Math.max(0.45, control)
+    + (isVolley ? (1 - quality) * VOLLEY_MISS_PENALTY_DEG : 0);
   // Drawn here, not where it's used below, so every OTHER rng() draw in this
   // function (loft, the fallback spin wobble) keeps consuming the RNG
   // stream in exactly the sequence it always has — moving this call is what
@@ -3338,8 +3498,34 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // only a modest help — but a game where no team-mate ever scores above knee
   // height reads as broken long before anybody works out why.
   const loft = clamp(0.10 + rng() * 0.26 + (composite / 100) * 0.14, 0.03, 0.62);
-  const Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
-  const vz = loft * (7 + composite * 0.04);
+  let Sh = (16 + composite * 0.16) * (1 - loft * 0.25);
+  let vz = loft * (7 + composite * 0.04);
+  // A real volley can be smashed — see VOLLEY_POWER_MIN/MAX's own doc.
+  if (isVolley) Sh *= VOLLEY_POWER_MIN + rng() * (VOLLEY_POWER_MAX - VOLLEY_POWER_MIN);
+  /**
+   * A HEADER IS ITS OWN STRIKE, NOT A FOOT-STRIKE THAT HAPPENS TO START
+   * HIGH UP.
+   *
+   * Real heading power comes off the neck and the jump, not the boot —
+   * genuinely slower than Sh's own foot-strike formula, with a real
+   * physical (falling back to overall, same convention as eliteBoost)
+   * lean on top since a stronger jumper heads it harder. Height is solved
+   * directly for a real target Z at the goal line (HEADER_TARGET_Z_MIN/MAX),
+   * widened by the exact same placement roll that already decided how
+   * close to the frame he's aiming in X, so a confident, ambitious header
+   * is high AND wide together rather than two independent dice that could
+   * disagree. A short closed-form solve, not a guess: given horizontal
+   * speed Sh and flight time t = dist/Sh, z(t) = arrivalZ + vz·t − ½gt²
+   * rearranges directly for the vz that lands it at headerTargetZ.
+   */
+  if (isHeader) {
+    const headerPhys = receiver.who?.physical ?? receiver.who?.overall;
+    const headerPowerBoost = headerPhys !== undefined ? 1 + clamp(headerPhys - 50, -20, 40) / 130 : 1;
+    Sh = (10 + composite * 0.11) * headerPowerBoost;
+    const t = Math.max(dist, 2) / Sh;
+    const headerTargetZ = HEADER_TARGET_Z_MIN + clamp(placement, 0, 1.6) * (HEADER_TARGET_Z_MAX - HEADER_TARGET_Z_MIN);
+    vz = clamp((headerTargetZ - arrivalZ + 0.5 * G * t * t) / t, 0.3, 9);
+  }
   // A flat, skill-independent wobble used to be the whole of it. A real
   // finisher can bend a shot around a defender or the keeper ON PURPOSE —
   // his technique (shooting, when we know it; overall otherwise) raises how
@@ -3434,9 +3620,15 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   const curlSide = blockerSide !== 0 ? blockerSide : side;
   const blockerBoost = blockerSide !== 0 ? 1.15 : 1;
   const curlTech = receiver.who?.shooting ?? receiver.who?.overall;
-  const spin = curlTech !== undefined
-    ? curlSide * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale * blockerBoost
-    : (rng() - 0.5) * 0.9;
+  // A header doesn't curl the way a struck ball does — no side-of-the-foot
+  // contact to put swerve on it — so it gets a small flat wobble instead of
+  // the real curl model below, the same honest "no real data" fallback
+  // shape a foot-strike with no known finisher already gets.
+  const spin = isHeader
+    ? (rng() - 0.5) * 0.12
+    : curlTech !== undefined
+      ? curlSide * curlRange(curlTech) * 1.9 * curlDistScale * curlControlScale * blockerBoost
+      : (rng() - 0.5) * 0.9;
 
   // A defender can sit close enough to the launch point to be a real
   // obstacle for the first few metres of ANY shot, whichever corner it is
@@ -3502,10 +3694,25 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
    * sections down noticeably harder to clear at all sample sizes tried —
    * a real, if occasional, second shot within the same move that this
    * mechanic had no business volunteering for.
+   *
+   * And on `!rushed` — true specifically for a ground-mode first-time
+   * strike (see the reception site in stepBallRaw). A delicate, considered
+   * lob and a first-time "hit it now" banger are two different decisions
+   * a real player doesn't make at once, and measured directly: without
+   * this, some of the elite finisher's first-time shots caught the keeper
+   * still mid-advance (scenario.keeper.y not yet settled back down the
+   * way it is by the time the ordinary 0.45s hold would have elapsed),
+   * which made CHIP_KEEPER_Y fire more often specifically for a first-time
+   * shot than for a held one — and a chip blocks far more easily than an
+   * ordinary strike (see the comment two paragraphs up), which was
+   * reversing the SAME wall-defender floor from the other direction: an
+   * elite finisher blocked MORE often than no-identity, purely from
+   * catching more chip attempts, not from anything about the shot he
+   * actually meant to hit.
    */
   let isChip = false;
   let chipSh = Sh, chipVz = vz;
-  if (composed && curlTech !== undefined && !nearThreat && quality > 0.55 && scenario.keeper.y > CHIP_KEEPER_Y) {
+  if (composed && !isHeader && !rushed && curlTech !== undefined && !nearThreat && quality > 0.55 && scenario.keeper.y > CHIP_KEEPER_Y) {
     const distToKeeper = ball.pos.y - scenario.keeper.y;
     const distToGoal = ball.pos.y;
     if (distToKeeper > CHIP_MIN_KEEPER_DIST && distToGoal > distToKeeper) {
@@ -3600,7 +3807,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
    * the OTHER case: placement accuracy with nothing standing in the way.
    */
   let launchDir = baseDir;
-  if (curlTech !== undefined && !isChip && blockerSide === 0 && !nearThreat && Math.abs(spin) > 0.0001) {
+  if (!isHeader && curlTech !== undefined && !isChip && blockerSide === 0 && !nearThreat && Math.abs(spin) > 0.0001) {
     const chordDist = Math.max(1, Math.hypot(aimX - ball.pos.x, ball.pos.y));
     const flightT = chordDist / Sh;
     // The clean circular-arc derivation above (`preAngleDeg` = half the
@@ -3629,7 +3836,12 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // everything" a real strike has, rather than a hard, suspiciously exact
   // zero.
   ball.spin = isChip ? spin * 0.15 : spin;
-  ball.z = 0.1;
+  // A header/volley is struck from wherever it actually reached him, not
+  // swept down to his feet first — that real height is the entire point,
+  // see HEADER_MIN_Z's own doc. Everything else (the ordinary grounded
+  // shot, and the chip, which scoops the ball up from around his feet)
+  // still starts at the original near-the-ground height.
+  ball.z = (isHeader || isVolley) ? arrivalZ : 0.1;
   ball.loose = false;
   ball.contactCd = 0.15;
   ball.lastTouch = "attack";
@@ -5708,8 +5920,14 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         const relay = relayTargetFor(scenario);
         const followerRelay = !relay && relayFollowerTargetFor(scenario);
         if ((scenario.receiver || relay || followerRelay) && (scenario.receiverShots ?? 0) < SCRAMBLE_MAX) {
+          // The real height this ball is at right now — before anything
+          // below touches ball.z — is the one signal that decides whether
+          // this can even be a header/volley at all. See HEADER_MIN_Z's
+          // own doc: a ball that hasn't dropped yet was never "hit it
+          // first time or don't" before now, it was always just "don't."
+          const arrivalZ = ball.z;
           ball.pos = { x: tgt.x, y: tgt.y };
-          ball.vel = { x: 0, y: 0 }; ball.vz = 0; ball.z = 0.08; ball.spin = 0;
+          ball.vel = { x: 0, y: 0 }; ball.spin = 0;
           // ── A ball you chase down is hit first time ──
           //
           // The touch to control it belongs to a pass played INTO him, in
@@ -5719,15 +5937,74 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // decision anybody would take. It looked like a bug, because it was
           // one — the pause was written for the other case and applied to both.
           if (scrambled) {
+            ball.vz = 0; ball.z = 0.08;
             if (relay) launchReceiverPass(ball, scenario, relay, rng);
             else if (followerRelay) launchReceiverFollowerPass(ball, scenario, rng);
             else launchReceiverShot(ball, scenario, rng, false);
           } else {
-            // Re-checked at expiry (below) rather than decided here, so a
-            // relay pending right now and a relay still pending a beat later
-            // are never out of step with each other.
-            ball.receiverControlT = RECEIVER_CONTROL_T;
-            ball.event = "received";
+            // ── OR HIT FIRST TIME BECAUSE IT NEVER TOUCHED THE GROUND ──
+            //
+            // Reported directly, of a corner curled perfectly onto a
+            // team-mate's head: "watch him take a touch and not only let
+            // the goalie have time to react but also SHOOT RIGHT INTO THE
+            // GOALIES HANDS." Only rolled when there's nobody to lay it
+            // off to — a pending order still outranks instinct here
+            // exactly as it does everywhere else in this file, so a relay
+            // pending right now skips straight to the ordinary hold below
+            // and is re-checked at its expiry exactly as before. The
+            // decision itself is firstTimeChance's, keyed off the real
+            // arrival height via strikeModeForHeight.
+            let firstTime = false;
+            const mode = strikeModeForHeight(scenario.kind, arrivalZ);
+            const rcv = scenario.receiver;
+            if (rcv && !relay && !followerRelay) {
+              // Header/volley are about WHAT the ball is doing, not who he
+              // is — anyone can meet a cross on the head. Ground-mode
+              // first-time is the other ask, and it's explicitly about a
+              // NAMED finisher ("Haaland... much more... than the average
+              // player") — gated on real identity, same as eliteBoost/
+              // curlTech below, so every generic, no-identity chance
+              // finishing.mts already calibrates keeps its exact old
+              // behaviour: always the hold, never a surprise early shot.
+              const hasIdentity = rcv.who?.shooting !== undefined || rcv.who?.overall !== undefined;
+              // A first-time grounded "banger" only makes sense in real
+              // space — the exact same goal-side catchment nearThreat
+              // itself checks inside launchReceiverShot (there, for
+              // whether a delicate chip is composed enough to try; here,
+              // for whether rushing a shot is even the right idea at all).
+              // Measured directly, without this: a real defender who is
+              // still mid-recovery right at the instant of reception, and
+              // would have run on past/away during the ordinary 0.45s
+              // hold, was instead caught still dangerous by a shot that
+              // skipped that hold — reversing a real wall-defender floor
+              // on one_on_one (elite blocked MORE often than no-identity).
+              // A rushed effort should be for when the space is genuinely
+              // there, not for denying a recovering man the time he'd
+              // otherwise have had to get out of the shot's way.
+              const threatened = scenario.defenders.some(d => {
+                const fy = d.y - tgt.y;
+                return fy < 0 && fy > -7 && Math.abs(d.x - tgt.x) < 2.5;
+              });
+              if (mode !== "ground" || (hasIdentity && !threatened)) {
+                const q = receiverQuality(rcv, scenario.teamRelationship);
+                firstTime = rng() < firstTimeChance(mode, q);
+              }
+            }
+            if (firstTime) {
+              // rushed: true for the ground case specifically — see
+              // launchReceiverShot's own `!rushed` note on the chip gate
+              // for exactly why a first-time grounded strike shouldn't
+              // also be eligible to chip.
+              ball.z = arrivalZ; ball.vz = 0;
+              launchReceiverShot(ball, scenario, rng, true, mode === "ground");
+            } else {
+              // Re-checked at expiry (below) rather than decided here, so a
+              // relay pending right now and a relay still pending a beat
+              // later are never out of step with each other.
+              ball.vz = 0; ball.z = 0.08;
+              ball.receiverControlT = RECEIVER_CONTROL_T;
+              ball.event = "received";
+            }
           }
           return null;
         }
