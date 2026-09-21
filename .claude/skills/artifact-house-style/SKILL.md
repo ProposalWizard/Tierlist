@@ -75,6 +75,42 @@ opening any of them.
 - A conclusion built up to. Lead with it.
 - Emoji as section markers — coloured dots, not decorations.
 
+## Patch notes carry their own history
+
+Asked for directly: *"specifically for patch notes, if it could toggle to see
+the previous version — i.e. v0.2 has a drop down for 0.1, that would be great."*
+
+So a patch notes page is **one link, forever**. v0.2 contains v0.1, v0.3
+contains both. Nobody hunts for an old link and nobody has a version go missing.
+
+**Where:** a final section, `PREVIOUS VERSIONS`, below NEXT. Same dot-heading
+style, using the muted colour.
+
+**Shape:** one `<details>` per old version, newest first, summary reading
+`v0.1 — 21 Sep 2026` plus a four-or-five word note of what it was
+("the chance formula and the camera").
+
+**What goes inside — condensed, not the whole old page:**
+- The old version's FIXED / ADDED / CHANGED headlines only, as a plain list.
+- Its stat strip numbers, as a single line of text.
+- **No nested toggles**, no bars, no screenshots. A toggle inside a toggle is
+  where a page stops being skimmable, and old screenshots are what make it
+  heavy.
+- One line at the end of each: which known issues from that version are still
+  open, by name. That is the bit people actually go back for.
+
+**What carries forward whole:** a known issue stays in the CURRENT version's
+KNOWN ISSUES until it is fixed — it does not get demoted into history just
+because it is old. History is for what changed, not for what is still wrong.
+
+**Keep every shipped version** as its own file in this skill's `references/`
+folder, named `patch-notes-v0.1.html` and so on. The next version is built by
+copying the newest one and condensing the version it replaces.
+
+**The first version** still gets the section, with the empty state — see
+`references/patch-notes-v0.1.html`. It shows the next build exactly where the
+history goes.
+
 ## Mechanics
 
 - Author as `.html`, phone-first, 16px side gutter, no horizontal scroll.
