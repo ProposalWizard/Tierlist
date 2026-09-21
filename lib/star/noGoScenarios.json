@@ -79,6 +79,65 @@
         "seed": 712623088,
         "planId": "one_on_one|spot|half_space|R|closing|stepped|settled|normal|goal|even|b4"
       }
+    },
+    "nogo-highlight-one_on_one-541215423-one_on_one|golden|half_space|R|free|stepped|transition|normal|ball|weak|b4": {
+      "id": "nogo-highlight-one_on_one-541215423-one_on_one|golden|half_space|R|free|stepped|transition|normal|ball|weak|b4",
+      "name": "one on one — no-go",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 32.54,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 33.74,
+        "y": 10.36
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 33.53,
+          "y": 15.3,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 33.94,
+          "y": 2.32,
+          "label": "GK"
+        },
+        {
+          "id": "i2",
+          "side": "teammate",
+          "x": 33.77,
+          "y": 16.37,
+          "label": "SUP"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 25.17,
+          "y": 11.63,
+          "label": "POACH"
+        },
+        {
+          "id": "i4",
+          "side": "you",
+          "x": 33.45,
+          "y": 11.47,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790011949171,
+      "source": {
+        "tool": "highlights",
+        "kind": "one_on_one",
+        "seed": 541215423,
+        "planId": "one_on_one|golden|half_space|R|free|stepped|transition|normal|ball|weak|b4"
+      }
     }
   }
 }
