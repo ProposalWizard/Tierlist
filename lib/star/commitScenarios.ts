@@ -28,6 +28,17 @@ import { mergeAuthoredFile } from "./authoredScenarios";
  */
 
 export const AUTHORED_PATH = "lib/star/authoredScenarios.json";
+/**
+ * The scenarios somebody looked at and said should never exist.
+ *
+ * Asked for directly: "maybe flagging so I can download the screenshots of
+ * the scenario and/or commit them to a no-go scenario bin for that type in
+ * the repo." Same file format, same commit path, same review — a rejected
+ * picture is as much a record as an accepted one, and keeping it in git
+ * means it survives a cleared browser and can be looked at by somebody who
+ * was not there.
+ */
+export const NO_GO_PATH = "lib/star/noGoScenarios.json";
 const DEFAULT_REPO = "ProposalWizard/Tierlist";
 const DEFAULT_BRANCH = "Harry";
 const API = "https://api.github.com";
@@ -36,6 +47,9 @@ export interface CommitConfig {
   token: string;
   repo: string;
   branch: string;
+  /** Which pool file to write. Defaults to the authored one, so every
+   *  existing caller is unchanged. */
+  path?: string;
 }
 
 export interface CommitEnvResult {
@@ -136,7 +150,8 @@ interface FileState { text: string; sha: string | null }
  *  back as an empty pool with no sha, which is exactly what creating it
  *  needs. */
 async function readFile(cfg: CommitConfig, doFetch: FetchLike): Promise<FileState | CommitResult> {
-  const url = `${API}/repos/${cfg.repo}/contents/${AUTHORED_PATH}?ref=${encodeURIComponent(cfg.branch)}`;
+  const path = cfg.path ?? AUTHORED_PATH;
+  const url = `${API}/repos/${cfg.repo}/contents/${path}?ref=${encodeURIComponent(cfg.branch)}`;
   let res: Awaited<ReturnType<FetchLike>>;
   try {
     res = await doFetch(url, { method: "GET", headers: headersFor(cfg.token), cache: "no-store" });
@@ -153,11 +168,11 @@ async function readFile(cfg: CommitConfig, doFetch: FetchLike): Promise<FileStat
       message:
         res.status === 401 || res.status === 403
           ? `GitHub refused the token (${res.status}). It needs Contents: Read and write on ${cfg.repo}. Nothing was committed.`
-          : `GitHub couldn't read ${AUTHORED_PATH} (${res.status}${body?.message ? `: ${body.message}` : ""}). Nothing was committed.`,
+          : `GitHub couldn't read ${path} (${res.status}${body?.message ? `: ${body.message}` : ""}). Nothing was committed.`,
     };
   }
   if (typeof body?.content !== "string" || typeof body?.sha !== "string") {
-    return { ok: false, status: 502, message: `GitHub returned ${AUTHORED_PATH} in a shape this can't read. Nothing was committed.` };
+    return { ok: false, status: 502, message: `GitHub returned ${path} in a shape this can't read. Nothing was committed.` };
   }
   return { text: b64decode(body.content), sha: body.sha };
 }
@@ -195,7 +210,7 @@ export async function commitScenarios(opts: {
     if ("ok" in file) return file;
 
     const merged = mergeAuthoredFile(file.text, scenarios);
-    const url = `${API}/repos/${cfg.repo}/contents/${AUTHORED_PATH}`;
+    const url = `${API}/repos/${cfg.repo}/contents/${cfg.path ?? AUTHORED_PATH}`;
     const payload: Record<string, unknown> = {
       message: commitMessageFor(scenarios),
       content: b64encode(merged.text),
@@ -220,7 +235,7 @@ export async function commitScenarios(opts: {
         status: 200,
         message:
           `Committed to ${cfg.repo} on ${cfg.branch} — ${ids.length === 1 ? "this scenario is" : `these ${ids.length} scenarios are`} ` +
-          `now part of the code (${AUTHORED_PATH}).`,
+          `now part of the code (${cfg.path ?? AUTHORED_PATH}).`,
         committed: ids,
         commitSha: body?.commit?.sha,
       };

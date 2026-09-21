@@ -121,7 +121,10 @@ export function frameFromScenario(sc: Scenario): Frame {
     });
   });
   if (goalInView(sc.kind)) {
-    items.push({ at: { x: sc.follower.x, y: sc.follower.y }, look: { ...MATE, label: idLabel(sc.follower.who, "POACH") }, side: "teammate" });
+    // Removable, like every other team-mate. He used to be the ONE team-mate
+    // the editor would not take out — and in a one-on-one he is often one of
+    // only two on screen, which is why it read as "I can't remove teammates".
+    items.push({ at: { x: sc.follower.x, y: sc.follower.y }, look: { ...MATE, label: idLabel(sc.follower.who, "POACH") }, side: "teammate", removable: true });
   }
   sc.teammates.forEach((t, i) => {
     items.push({ at: { x: t.x, y: t.y }, look: { ...MATE, label: idLabel(t.who, `T${i + 1}`) }, side: "teammate", removable: true });

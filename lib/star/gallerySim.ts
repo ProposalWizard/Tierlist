@@ -5,6 +5,8 @@ import {
 } from "./canvasEngine";
 import { mulberry32 } from "./season";
 import { fixBaseScenario, scenarioFaults } from "./baseScenario";
+import { applyAuthoredShape, nextAuthoredShape } from "./authoredChance";
+import { isBinned } from "./scenarioReject";
 import {
   allPlans,
   applyChancePlan,
@@ -193,7 +195,34 @@ export function buildSimScenario(spec: SimSpec): Scenario {
   fixBaseScenario(sc);
   const plan = planById(spec.planId);
   if (plan) applyChancePlan(sc, plan, mulberry32(spec.seed ^ 0x9e3779b9));
+  // ── Then the pictures that were actually DRAWN ──
+  //
+  // "When I press Simulate on one-on-ones, it should be scanning the current
+  // one-on-ones in that section… if I add 5 new ones, it should just
+  // automatically scan, and that should be taken into account while
+  // simulating new randomizers."
+  //
+  // So a Simulate for a kind with authored scenarios serves a nudged variant
+  // of one of them, checked against the rule set those same scenarios
+  // produce. The pool is read live (lib/star/authoredChance.ts), so saving a
+  // scenario changes what the very next press produces.
+  //
+  // Its own stream off the same seed, so a spec still rebuilds to the exact
+  // same picture every time — which the gallery relies on to repaint without
+  // the scenario shifting under it.
+  // The seed is passed as the STABLE KEY: this cell keeps the same base
+  // drawing as the pool grows, so an edit made on it stays on the picture it
+  // was made for. See stableBase().
+  const shape = authoredShapeFor(spec);
+  if (shape) applyAuthoredShape(sc, shape);
   return sc;
+}
+
+/** Which authored drawing this spec is built from, if any — so a binned
+ *  chance can record what produced it (lib/star/scenarioReject.ts). Exactly
+ *  the draw `buildSimScenario` makes, so the answer is the real one. */
+export function authoredShapeFor(spec: SimSpec) {
+  return nextAuthoredShape(spec.kind, mulberry32(spec.seed ^ 0x5bf03635), [], spec.seed);
 }
 
 /** What is wrong with a simulated picture, in plain English. */
@@ -230,5 +259,14 @@ export function nextHighlight(
   position = "ST",
 ): SimSpec | null {
   if (!kinds.length) return null;
+  // Binned chances are skipped outright — "this should just never exist".
+  // Bounded: a pool where nearly everything has been binned should still
+  // hand something back rather than spin, so after a fair number of tries
+  // it serves whatever it has and the screen can say so.
+  for (let i = 0; i < 24; i++) {
+    const spec = nextSim(pick(rng, kinds), rng, memory, lastPicture, position);
+    if (!spec) return null;
+    if (!isBinned(spec.kind, spec.seed, spec.planId)) return spec;
+  }
   return nextSim(pick(rng, kinds), rng, memory, lastPicture, position);
 }

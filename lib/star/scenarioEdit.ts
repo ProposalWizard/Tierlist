@@ -159,6 +159,11 @@ export function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame 
  * formation transform) are applied to the scenario you are actually looking
  * at, not the raw build.
  */
+/** Where a figure that cannot be spliced out of the scenario is walked to
+ *  instead — far enough off that nothing measures him. See the removal block
+ *  in `applyOverrideToScenario`. */
+const OFF_PITCH: Vec2 = { x: -400, y: -400 };
+
 export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefined): void {
   if (!hasEdits(ov)) return;
   const at = (i: number) => ov!.items[String(i)];
@@ -172,21 +177,32 @@ export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefine
   const secIdx: number[] = [];
   const mateIdx: number[] = [];
   let runnerIdx = -1;
+  let followerIdx = -1;
 
   let i = 0;
   for (const d of sc.defenders) { defIdx.push(i); const p = at(i++); if (p) { d.x = p.x; d.y = p.y; } }
   { const p = at(i++); if (p) { sc.keeper.x = p.x; sc.keeper.y = p.y; } }
   if (sc.runner) { runnerIdx = i; const p = at(i++); if (p) { sc.runner.pos.x = p.x; sc.runner.pos.y = p.y; } }
   for (const r of sc.secondaryRunners) { secIdx.push(i); const p = at(i++); if (p) { r.pos.x = p.x; r.pos.y = p.y; } }
-  if (goalInView(sc.kind)) { const p = at(i++); if (p) { sc.follower.x = p.x; sc.follower.y = p.y; } }
+  if (goalInView(sc.kind)) { followerIdx = i; const p = at(i++); if (p) { sc.follower.x = p.x; sc.follower.y = p.y; } }
   for (const t of sc.teammates) { mateIdx.push(i); const p = at(i++); if (p) { t.x = p.x; t.y = p.y; } }
   { const p = at(i++); if (p) { sc.player.x = p.x; sc.player.y = p.y; } }
   if (ov!.ball) { sc.ball.x = ov!.ball.x; sc.ball.y = ov!.ball.y; }
 
   // ── Figures taken OUT ──
-  // Descending, so an earlier splice never shifts a later one. Only the
-  // arrays a body can honestly be removed from: the keeper, the poacher and
-  // you are not offered as removable in the editor, so they are never here.
+  // Descending, so an earlier splice never shifts a later one. The keeper and
+  // YOU are the only two the editor never offers, so they are never here.
+  //
+  // The poacher is the odd one out: `Scenario.follower` is a single
+  // non-nullable field, not an array, so there is no slot to splice and no
+  // null to assign — and canvasEngine.ts is never to be edited. Taking him
+  // out therefore means walking him far outside the camera, where no fault
+  // rule, shot lane or offside line can reach him. That is only ever done to
+  // the THROWAWAY scenario this function judges a picture against; the SAVE
+  // drops him outright (`frameToMatchScenario` writes `frame.items`, which
+  // `applyOverride` has already filtered him out of), so a saved scenario
+  // genuinely has no poacher in it rather than one parked in the car park.
+  if (followerIdx >= 0 && isGone(followerIdx)) { sc.follower.x = OFF_PITCH.x; sc.follower.y = OFF_PITCH.y; }
   for (let k = mateIdx.length - 1; k >= 0; k--) if (isGone(mateIdx[k])) sc.teammates.splice(k, 1);
   for (let k = secIdx.length - 1; k >= 0; k--) if (isGone(secIdx[k])) sc.secondaryRunners.splice(k, 1);
   if (runnerIdx >= 0 && isGone(runnerIdx)) { sc.runner = null; sc.passTarget = null; }

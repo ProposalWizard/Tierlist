@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isMatchScenario } from "@/lib/star/authoredScenarios";
-import { commitScenarios, resolveCommitConfig } from "@/lib/star/commitScenarios";
+import { commitScenarios, resolveCommitConfig, NO_GO_PATH } from "@/lib/star/commitScenarios";
 import type { MatchScenario } from "@/lib/star/scenarios";
 
 /**
@@ -43,7 +43,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null) as
-    { scenario?: unknown; scenarios?: unknown } | null;
+    { scenario?: unknown; scenarios?: unknown; pool?: unknown } | null;
+  /**
+   * Which pool to commit into. "nogo" writes lib/star/noGoScenarios.json —
+   * the pictures somebody looked at and said should never exist. Same file
+   * format and same review as the accepted ones; a rejected picture is as
+   * much a record as an accepted one.
+   */
+  const toNoGo = body?.pool === "nogo";
   const raw: unknown[] = Array.isArray(body?.scenarios)
     ? body!.scenarios as unknown[]
     : body?.scenario !== undefined ? [body.scenario] : [];
@@ -70,7 +77,9 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await commitScenarios({
-    config: env.config,
+    // Everything else about the commit is identical — same token, same repo,
+    // same branch, same merge-and-retry. Only the file changes.
+    config: toNoGo ? { ...env.config, path: NO_GO_PATH } : env.config,
     scenarios: raw as MatchScenario[],
   });
 

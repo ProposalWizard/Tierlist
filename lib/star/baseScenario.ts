@@ -48,6 +48,11 @@ const DEAD_BALL = new Set<ScenarioKind>(["penalty", "free_kick", "corner"]);
  *  back-line spacing. A box scene shows markers in different zones instead. */
 const LINE_KINDS = new Set<ScenarioKind>(["long_range", "through_ball"]);
 
+/** How close to the line of your shot a team-mate has to be before he is
+ *  genuinely in the way. The same radius chanceFormula.ts uses for the same
+ *  job, so the base and the formula agree about what "in the way" means. */
+const MATE_LANE_R = 2.2;
+
 /** The offside line the engine judges against: second-last opponent, keeper
  *  counted only when the goal is in view. Mirrors canvasEngine's opponentLine. */
 export function offsideLineOf(sc: Scenario): number | null {
@@ -77,6 +82,31 @@ function attackersOf(sc: Scenario): { x: number; y: number }[] {
   for (const r of sc.secondaryRunners) out.push(r.pos);
   if (goalInView(sc.kind)) out.push({ x: sc.follower.x, y: sc.follower.y });
   return out;
+}
+
+/**
+ * Offside, BOTH halves of it.
+ *
+ * Law 11 needs a player to be nearer the goal line than the second-last
+ * opponent AND nearer than the ball. This file only ever tested the first —
+ * so a team-mate standing BEHIND the ball, who cannot be offside under any
+ * reading of the law, was flagged whenever the back line happened to be
+ * deeper than he was.
+ *
+ * Reported directly: "an attacker on your own team is not offside if they are
+ * behind the ball. Those offside calls are actually wrong on every single one
+ * of those." Measured against the eleven authored one-on-ones: 3 of 3 calls
+ * were on a man behind the ball (POACH 4.1m and 2.5m behind, SUP 1.5m
+ * behind) — 100% wrong, exactly as reported. Across raw builds of every kind,
+ * 46 of 153 calls (30.1%) were wrong, all of byline_cross's among them.
+ *
+ * canvasEngine.ts's own `offsideSnapshot` has ALWAYS had this right (it tests
+ * `aheadOfBall`), so match play was never affected — this was the editor's
+ * red text, and the repair below acting on it, moving men who were standing
+ * legally.
+ */
+function isOffside(p: { y: number }, line: number, ballY: number): boolean {
+  return p.y < line - 0.01 && p.y < ballY - 0.01;
 }
 
 /**
@@ -146,7 +176,7 @@ export function scenarioFaults(sc: Scenario): string[] {
   if (id) out.push(id);
 
   const line = offsideLineOf(sc);
-  if (line !== null && attackersOf(sc).some(a => a.y < line - 0.01)) {
+  if (line !== null && attackersOf(sc).some(a => isOffside(a, line, sc.ball.y))) {
     out.push("attacker offside");
   }
 
@@ -203,8 +233,19 @@ export function fixBaseScenario(sc: Scenario): string[] {
     // recovering defender chasing back, level with or behind the ball, and
     // pushed off the shooting line so the picture reads as "clean through".
     const ballY = sc.ball.y;
+    // EVERY man goal-side, not just a central one. The old rule also
+    // required him to be within 14m of the middle, on the reasoning that a
+    // wide defender is not in the way of the shot. True of the shot, wrong
+    // about the situation: a man ahead of you is ahead of you in the race,
+    // wherever he is standing, and the picture stops reading as "clean
+    // through". Measured against the eleven authored one-on-ones, which
+    // have ZERO defenders goal-side of the ball at any width — 14.4% of
+    // procedural builds broke that rule, all of them on the wide clause.
+    // No half-metre of grace either: "goal-side" means goal-side. The old
+    // 0.5m tolerance let a man a shoulder ahead of the ball through, which
+    // is still ahead, and still not a one-on-one.
     sc.defenders.forEach((d, i) => {
-      if (d.y < ballY - 0.5 && Math.abs(d.x - CX) <= 14) {
+      if (d.y < ballY) {
         // Deterministic spread, derived from the man's own index and starting
         // position — never Math.random(), because the gallery draws these at
         // fixed seeds and a picture must be identical on every refresh.
@@ -217,6 +258,35 @@ export function fixBaseScenario(sc: Scenario): string[] {
         done.push("moved a blocking defender behind the ball (recovering)");
       }
     });
+    // AND YOUR OWN TEAM-MATES ARE NOT IN THE WAY EITHER.
+    //
+    // The third rule the eleven authored one-on-ones are unanimous about:
+    // not one has a team-mate standing in the shot. chanceFormula.ts already
+    // does this (`clearShotLane`) but only for a generated plan — a plain
+    // base build had no such rule, and 4.3% of them put a man in the lane.
+    // Same geometry, applied to the base so it holds however the picture was
+    // made.
+    const clearLane = (m: { x: number; y: number }) => {
+      if (m.y >= ballY) return;                 // behind the ball blocks nothing
+      const vx = CX - sc.ball.x, vy = 0 - ballY;
+      const len2 = vx * vx + vy * vy || 1;
+      let t = ((m.x - sc.ball.x) * vx + (m.y - ballY) * vy) / len2;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const px = sc.ball.x + vx * t, py = ballY + vy * t;
+      const off = Math.hypot(m.x - px, m.y - py);
+      if (off >= MATE_LANE_R) return;
+      const nlen = Math.hypot(-vy, vx) || 1;
+      const nx = -vy / nlen, ny = vx / nlen;
+      const sign = ((m.x - px) * nx + (m.y - py) * ny) >= 0 ? 1 : -1;
+      const push = MATE_LANE_R - off + 0.6;
+      m.x = clamp(m.x + sign * nx * push, 2, 66);
+      m.y = Math.max(0.8, m.y + sign * ny * push);
+      done.push("moved a team-mate out of your shooting lane");
+    };
+    if (sc.runner) clearLane(sc.runner.pos);
+    for (const r of sc.secondaryRunners) clearLane(r.pos);
+    clearLane(sc.follower);
+
     // The keeper is the one who comes to meet you.
     sc.keeper.y = clamp(Math.max(sc.keeper.y, 2.2), 2.2, Math.max(2.2, ballY - 3));
     sc.keeper.startX = sc.keeper.x;
@@ -229,7 +299,12 @@ export function fixBaseScenario(sc: Scenario): string[] {
     // measured "broken" rate barely moved (99.7% -> 96.7%).
     const line = offsideLineOf(sc);
     if (line !== null) {
-      const onside = (p: { y: number }) => { if (p.y < line + 0.3) p.y = line + 0.3; };
+      // Only a man who is GENUINELY offside — beyond the line and ahead of
+      // the ball. One behind the ball is standing legally and is left where
+      // he was put; moving him was the bug.
+      const onside = (p: { y: number }) => {
+        if (isOffside(p, line, sc.ball.y)) p.y = line + 0.3;
+      };
       if (sc.runner) onside(sc.runner.pos);
       for (const r of sc.secondaryRunners) onside(r.pos);
       onside(sc.follower);
@@ -246,7 +321,7 @@ export function fixBaseScenario(sc: Scenario): string[] {
     if (line !== null) {
       let moved = false;
       const onside = (p: { y: number }) => {
-        if (p.y < line + 0.3) { p.y = line + 0.3; moved = true; }
+        if (isOffside(p, line, sc.ball.y)) { p.y = line + 0.3; moved = true; }
       };
       if (sc.runner) onside(sc.runner.pos);
       for (const r of sc.secondaryRunners) onside(r.pos);
