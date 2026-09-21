@@ -71,8 +71,8 @@ Per the house style: republish the SAME artifact in place every time, never
 a fresh URL each round. That means this file has to carry the real URL
 between sessions, or a future round guesses wrong and creates a second page.
 
-**Current link:** https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd (v0.2,
-published 21 Sep 2026)
+**Current link:** https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd (v0.3,
+updated 21 Sep 2026)
 
 When you ship a new version: read the URL above, `Artifact.publish` with
 that exact `url` so it updates in place, then edit this line with the
