@@ -1085,6 +1085,79 @@
         "seed": 7013,
         "planId": null
       }
+    },
+    "gallery-sim-one_on_one-1012665398": {
+      "id": "gallery-sim-one_on_one-1012665398",
+      "name": "one_on_one (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 34.46,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 37.42,
+        "y": 17.23
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 31.1,
+          "y": 18.31,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 38.07,
+          "y": 25.08,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 35.54,
+          "y": 2.27,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 28.28,
+          "y": 14.15,
+          "label": "SUP"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 31.13,
+          "y": 19.18,
+          "label": "SUP"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 34.99,
+          "y": 22.65,
+          "label": "POACH"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 37.98,
+          "y": 18.25,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790012156112,
+      "source": {
+        "tool": "gallery",
+        "kind": "one_on_one",
+        "seed": 1012665398,
+        "planId": "one_on_one|golden|centre|R|closing|set|settled|normal|goal|weak|b5"
+      }
     }
   }
 }
