@@ -955,7 +955,34 @@ function makeFollower(rng: () => number, by: number): Follower {
 }
 
 /**
- * ══ TWO DIALS THAT UNDO EVERYTHING THE CAMERA CHANGED ON 21 Sep 2026 ══
+ * ══ REVERTED 21 Sep 2026. BOTH DIALS ARE BACK AT THE OLD BEHAVIOUR. ══
+ *
+ * The tightening camera shipped and was reverted the same day, on the owner's
+ * instruction, after he played it: "goal not on screen for many highlights, the
+ * camera fix is definitely bad, we need to rethink it."
+ *
+ * He was right, and the measurement I had used to sign it off was measuring the
+ * wrong thing. I checked whether the goal was on screen for a scenario as the
+ * ENGINE builds it and got 100%. The real match does not show you that — it
+ * shows you what `applyChancePlan` produces, with the chance formula's own
+ * camera on top. Measured on THAT path:
+ *
+ *                      old camera      mine
+ *   goal fully in shot    83.4%        63.9%
+ *   tight_angle           57.0%         0.0%
+ *   cutback               64.3%        25.8%
+ *   through_ball          64.0%        65.5%
+ *   one_on_one           100.0%        86.3%
+ *
+ * So the change made it twenty points worse, and the thing he screenshotted is
+ * exactly the thing I had told him was fine.
+ *
+ * WORTH KEEPING IN MIND FOR WHOEVER RETHINKS THIS: the old camera is not good
+ * either. 83.4% means roughly one chance in six does not show you the whole
+ * goal, and a tight angle only manages 57%. That problem predates this change;
+ * it was made worse, not created.
+ *
+ * ══ THE TWO DIALS ══
  *
  * Both changes below were made on Harry's explicit instruction. If Leo or
  * Mikey wants the old behaviour back, it is these two lines and nothing else —
@@ -988,7 +1015,7 @@ function makeFollower(rng: () => number, by: number): Follower {
  * defender appearing from nowhere, difficulty feeling off — flip it to true
  * first and see if the symptom goes. That is what it is here for.
  */
-const CAMERA_MOVES_PLAYERS = false;
+const CAMERA_MOVES_PLAYERS = true;
 
 // The camera. Canvas is a 3:4 portrait, so the viewport must be too, and it must
 // use the SAME metres-per-pixel on both axes or every distance on screen lies.
@@ -1057,7 +1084,7 @@ const VIEW_H = 42;
  * are their own fixed rectangles built from VIEW_H, so every corner and every
  * whipped cross still looks identical to the last one.
  */
-const VIEW_MIN_H = 28;          // metres of pitch visible vertically, tightest
+const VIEW_MIN_H = 42;          // metres of pitch visible vertically, tightest
 /**
  * Where the goal line sits down the screen, as a fraction of the frame height.
  *

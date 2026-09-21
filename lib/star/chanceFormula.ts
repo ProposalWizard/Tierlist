@@ -532,30 +532,11 @@ function isBoxChance(kind: ScenarioKind, band: DistanceBand): boolean {
  * drawn).
  */
 export function frameFor(plan: ChancePlan, ball: Vec2, keeper?: { x: number; y: number } | null): Viewport {
-  // THE FRAME TIGHTENS HERE TOO, or the whole camera change never reaches the
-  // actual game.
-  //
-  // `autoViewport` (canvasEngine.ts) was taught on 21 Sep 2026 to fit the
-  // situation within a 28-42 m band instead of always using 42. This function
-  // OVERWRITES that viewport for every chance the formula places — which is
-  // every open-play chance in a real match — and it was still handing back a
-  // flat 42 every time. Measured: a base one-on-one framed at 32.2 m, and the
-  // same one-on-one after `applyChancePlan` framed at 42.0 m. So the gallery's
-  // cards tightened and the game itself did not.
-  //
-  // Same rule as the engine's: fit what the picture owes you — the goal, the
-  // ball and the keeper when he is in it — then clamp into the band. The
-  // ceiling is still hard, so a long shot can never zoom out to go looking for
-  // pitch.
-  // The height is DERIVED, not guessed: the frame hangs from just behind the
-  // goal line and the ball must stay out of the bottom 22% — that strip is the
-  // room the aim drag needs, and a ball sitting in it is a shot you cannot pull
-  // the arrow for. So the smallest honest frame is (ball distance + net depth)
-  // / 0.78, and anything tighter than that would be cramping the one gesture
-  // the whole match is played with. A first attempt used ball + 7 and came out
-  // half a metre short on a 25 m shot; this is the arithmetic instead.
-  const needed = (Math.abs(ball.y) + NET_DEPTH + 1.4) / 0.78;
-  const h = clamp(needed, FRAME_MIN_H, ZOOM_H[plan.params.zoom]);
+  // REVERTED 21 Sep 2026 — see the CAMERA_MOVES_PLAYERS note in canvasEngine.ts.
+  // This briefly fitted the frame to the situation within a 28-42 m band. On the
+  // path the real match actually uses that dropped "goal fully in shot" from
+  // 83.4% to 63.9%, and a tight angle from 57% to zero.
+  const h = ZOOM_H[plan.params.zoom];
   const w = h * VIEW_ASPECT;
   const anchorY = plan.params.anchor === "ball" ? ball.y
     : plan.params.anchor === "goal" ? 0
