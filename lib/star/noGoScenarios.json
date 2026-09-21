@@ -1,1 +1,84 @@
-{"scenarios":{}}
+{
+  "scenarios": {
+    "nogo-highlight-one_on_one-712623088-one_on_one|spot|half_space|R|closing|stepped|settled|normal|goal|even|b4": {
+      "id": "nogo-highlight-one_on_one-712623088-one_on_one|spot|half_space|R|closing|stepped|settled|normal|goal|even|b4",
+      "name": "one on one — no-go",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 32.97,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 34.94,
+        "y": 16.16
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 38.11,
+          "y": 18.6,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 28.53,
+          "y": 23.31,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 32.09,
+          "y": 16.89,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34.48,
+          "y": 9.27,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 45.33,
+          "y": 20.24,
+          "label": "SUP"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 28.47,
+          "y": 20.62,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 24.8,
+          "y": 18.02,
+          "label": "POACH"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 34.97,
+          "y": 17.32,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790010997545,
+      "source": {
+        "tool": "highlights",
+        "kind": "one_on_one",
+        "seed": 712623088,
+        "planId": "one_on_one|spot|half_space|R|closing|stepped|settled|normal|goal|even|b4"
+      }
+    }
+  }
+}
