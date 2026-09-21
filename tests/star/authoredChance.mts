@@ -10,7 +10,8 @@
 import { AUTHORED_SCENARIOS } from "@/lib/star/authoredScenarios";
 import {
   deriveRuleSet, sampleFromAuthored, violations, describeRuleSet,
-  MIN_SAMPLES_FOR_INVARIANT, MEASURES, type ShapeSample,
+  MIN_SAMPLES_FOR_INVARIANT, MEASURES, outliersOf,
+  type ShapeSample, type RuleSet,
 } from "@/lib/star/scenarioRules";
 import {
   authoredPool, ruleSetFor, nextAuthoredShape, randomiseAuthored,
@@ -102,13 +103,66 @@ ok(moveSum / moveN > 0.4, `the ball genuinely moves (mean ${(moveSum / moveN).to
 ok(nextAuthoredShape("__nothing_authored__", rng) === null,
   "a kind with nothing authored randomises to null, so callers fall through");
 
-// A deliberately hostile rule set — one every nudge must fail — still never
-// serves a broken shape, because the last attempt is the drawing itself.
+// A deliberately hostile rule set — one nothing can satisfy — NEVER yields a
+// broken shape. It yields nothing, and the caller moves on to another
+// drawing. Refusing to serve is the whole safety property.
 const strict = deriveRuleSet("one_on_one", [sampleFromAuthored(pool[0])!]);
 strict.rules.forEach(r => { r.invariant = true; });
-const hard = randomiseAuthored(pool[0], strict, mulberry32(7));
-ok(!!hard && hard.jitter === 0, "an impossible rule set falls back to the exact drawing");
-ok(!!hard && violations(hard, strict).length === 0, "…and that fallback is valid");
+ok(randomiseAuthored(pool[0], strict, mulberry32(7)) === null,
+  "a rule set nothing can satisfy yields nothing, never a broken shape");
+
+// ── ONE BAD DRAWING MUST NOT TAKE THE RULES DOWN WITH IT ──────────────────
+//
+// It used to. Measured: a single drawing with a defender left goal-side of
+// the ball, added to eleven clean ones, destroyed 2 of the 3 laws and 15.0%
+// of every chance served then broke its own definition. One drawing outvoted
+// eleven. A law now holds at nine in ten, the drawing that disagrees is named
+// as an outlier, and the randomiser never uses it as a base.
+
+{
+  const spoil = (src: MatchScenario, id: string): MatchScenario => {
+    const g = JSON.parse(JSON.stringify(src)) as MatchScenario;
+    const d = g.players.find(p => p.side === "opponent" && p.label !== "GK")!;
+    d.y = g.ball.y - 4;            // squarely between you and the goal
+    d.x = g.ball.x;
+    return { ...g, id, updatedAt: Date.now() };
+  };
+  const lawCount = (rs: RuleSet) => rs.rules.filter(r => r.invariant).length;
+  const lawsClean = lawCount(set);
+  ok(lawsClean === 3, `the clean pool has three laws (${lawsClean})`);
+
+  setLiveScenarioPool([spoil(pool[0], "oops-1")]);
+  const dirty = ruleSetFor("one_on_one")!;
+  ok(lawCount(dirty) === lawsClean, "one bad drawing loses no law");
+
+  const named = outliersOf(dirty);
+  ok(named.length > 0 && named.every(o => o.id === "oops-1"),
+    "…and it is NAMED as the outlier, so a slip is visible not silent");
+
+  const r2 = mulberry32(31337);
+  let broke = 0, n3 = 0;
+  for (let i = 0; i < 1200; i++) {
+    const sh = nextAuthoredShape("one_on_one", r2);
+    if (!sh) continue;
+    n3++;
+    ok(sh.sourceId !== "oops-1", "the bad drawing is never used as a base");
+    if (violations(sh, set).length) broke++;   // judged against the TRUE laws
+  }
+  ok(n3 > 1000, `still serves normally (${n3}/1200)`);
+  ok(broke === 0, `nothing broken reaches the game (${broke}/${n3}, was 15.0%)`);
+  setLiveScenarioPool(null);
+}
+
+// A count that legitimately VARIES must never become a law — "three
+// defenders" could hit nine in ten and then a four-defender one-on-one could
+// never be served again. Only a ZERO is a law. See isLaw.
+{
+  const counts = set.rules.filter(r => r.count && r.invariant).map(r => r.id);
+  ok(!counts.includes("defCount"), "defender count is never treated as a law");
+  ok(!counts.includes("inBox"), "inside-the-box is never treated as a law");
+  ok(set.rules.every(r => !r.invariant || r.min === 0),
+    "every law is a zero — 'none of this happens'");
+}
 
 // ── Onto a live scenario ──────────────────────────────────────────────────
 

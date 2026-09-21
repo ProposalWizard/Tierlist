@@ -122,9 +122,12 @@ export function ruleSetFor(kind: string): RuleSet | null {
   const key = pool.map((s) => `${s.id}@${s.updatedAt ?? 0}`).join("|");
   const hit = ruleCache.get(kind);
   if (hit && hit.key === key) return hit.set;
-  const samples = pool.map(sampleFromAuthored).filter((s): s is ShapeSample => !!s);
+  const usable = pool.filter((s) => !!sampleFromAuthored(s));
+  const samples = usable.map(sampleFromAuthored) as ShapeSample[];
   if (!samples.length) return null;
-  const set = deriveRuleSet(kind, samples);
+  // The ids travel with the samples so a rule can name the drawings that
+  // disagree with it — see `outliersOf`.
+  const set = deriveRuleSet(kind, samples, usable.map((s) => s.id));
   ruleCache.set(kind, { key, set });
   return set;
 }
@@ -329,7 +332,27 @@ export function nextAuthoredShape(
   const base = stableKey === undefined
     ? from[Math.floor(rng() * from.length) % from.length]
     : stableBase(from, stableKey);
-  return randomiseAuthored(base, set, rng);
+
+  const shape = randomiseAuthored(base, set, rng);
+  if (shape) return shape;
+
+  // ── The base itself breaks a law ──
+  //
+  // Only reachable for a drawing the rule set has named an OUTLIER: the
+  // retry loop's last attempt is the drawing untouched, so a clean one can
+  // never fail. Rather than serve it — which is exactly the 15% of broken
+  // chances that made one slip so costly — take the next drawing that does
+  // obey. Deterministic for a stable key, so a gallery cell still does not
+  // wander.
+  const rest = from.filter((s) => s.id !== base.id);
+  for (let i = 0; i < rest.length; i++) {
+    const alt = stableKey === undefined
+      ? rest[i]
+      : stableBase(rest, stableKey + i + 1);
+    const ok = randomiseAuthored(alt, set, rng);
+    if (ok) return ok;
+  }
+  return null;
 }
 
 /**

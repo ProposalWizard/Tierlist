@@ -51,6 +51,8 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
+import { outliersOf } from "@/lib/star/scenarioRules";
+import { ruleSetFor } from "@/lib/star/authoredChance";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
 import {
   addFigureTo,
@@ -378,6 +380,12 @@ export default function HighlightsPage() {
   const override = shot ? edits[editKey] : undefined;
   const edited = hasEdits(override);
   const baseFrame = shot ? applyOverride(shot.base, savedOv) : null;
+  /** Drawings of this kind that disagree with one of its own laws. The rule
+   *  set survives a slip (see INVARIANT_AGREEMENT) but the slip is shown. */
+  const ruleOutliers = useMemo(
+    () => (shot ? outliersOf(ruleSetFor(shot.spec.kind) ?? { kind: "", n: 0, rules: [] }) : []),
+    [shot, saved],
+  );
   const liveFrame = baseFrame ? applyOverride(baseFrame, override) : null;
   const analysis: Analysis = useMemo(
     () => (shot ? analysisFor(shot.spec, [savedOv, override]) : NO_FAULTS),
@@ -675,6 +683,21 @@ export default function HighlightsPage() {
               &#9654; Play
             </button>
           </div>
+
+          {/* A drawing that disagrees with one of its own kind's laws. Named
+              rather than silently absorbed — the rules survive one slip, but
+              nobody should have to guess that a slip happened. */}
+          {ruleOutliers.length > 0 && (
+            <div style={{
+              width: "100%", maxWidth: 460, borderRadius: 12, padding: "9px 12px",
+              background: "rgba(245,158,11,0.13)", border: "1px solid rgba(245,158,11,0.4)",
+              color: "#fcd34d", fontSize: 12.5, fontWeight: 700, lineHeight: 1.4,
+            }}>
+              {ruleOutliers.length} saved {ruleOutliers.length === 1 ? "scenario breaks" : "scenarios break"} a rule
+              of {shot ? kindLabel(shot.spec.kind) : "this kind"} and {ruleOutliers.length === 1 ? "is" : "are"} not
+              being used: {ruleOutliers.slice(0, 3).map((o) => o.breaks.toLowerCase()).join("; ")}
+            </div>
+          )}
 
           {playing && shot && (
             <ScenarioPlay
