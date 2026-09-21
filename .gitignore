@@ -52,3 +52,9 @@ tests/star/_*
 # Added after 'git add -A' swept five of them into a pushed commit.
 .tmpshots/
 scripts/tmp/
+
+# star-playtest also writes its throwaway drivers straight at the repo root
+# (_pw_scratch_explore1.mjs, _pw_scratch_explore2.mjs, …) while it's actively
+# poking at a running dev server — same reasoning as every rule above, just
+# a location none of them happened to cover yet.
+/_pw_scratch_*
