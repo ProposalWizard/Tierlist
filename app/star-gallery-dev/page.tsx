@@ -1323,6 +1323,19 @@ export default function StarGalleryDevPage() {
   const pane = (
     <div style={{ padding: "12px 14px 24px" }}>
       <div style={{ position: "relative" }}>
+        {/* Playing swaps the PICTURE for the live match and leaves every
+            control below it in place — play, correct, play again, save,
+            without changing screen. */}
+        {playing ? (
+          <ScenarioPlay
+            build={() => {
+              const sc = rebuildScenario(cell);
+              applyOverrideToScenario(sc, override);
+              return sc;
+            }}
+            onStop={() => setPlaying(false)}
+          />
+        ) : (
         <EditableFrame
           editKey={cell.key}
           baseFrame={baseFrame}
@@ -1337,7 +1350,8 @@ export default function StarGalleryDevPage() {
             else if (versions.length > 1) stepVersion(d);
           }}
         />
-        {!showingSim && versions.length > 1 && (
+        )}
+        {!playing && !showingSim && versions.length > 1 && (
           <>
             <button onClick={() => go(-1)} style={arrowStyle("left")}>&#8249;</button>
             <button onClick={() => go(1)} style={arrowStyle("right")}>&#8250;</button>
@@ -1359,23 +1373,15 @@ export default function StarGalleryDevPage() {
           {/* Play THIS picture, edits and all — see ScenarioPlay. Works the
               same on a base version and on a simulated one, because both are
               rebuilt through `rebuildScenario`. */}
-          <button style={{ ...editBtn(false), color: "#4ade80" }} onClick={() => setPlaying(true)}>
-            ▶ Play
+          <button
+            style={{ ...editBtn(false), color: playing ? "#7dd3fc" : "#4ade80" }}
+            onClick={() => setPlaying((v) => !v)}
+          >
+            {playing ? "◼ Stop" : "▶ Play"}
           </button>
         </div>
       )}
 
-      {playing && (
-        <ScenarioPlay
-          title={`${cell.title}${hasEdits(override) ? " (edited)" : ""}`}
-          build={() => {
-            const sc = rebuildScenario(cell);
-            applyOverrideToScenario(sc, override);
-            return sc;
-          }}
-          onClose={() => setPlaying(false)}
-        />
-      )}
 
       {analysis.faults.length > 0 && (
         <div style={{ color: "#f87171", fontSize: 13.5, fontWeight: 700, marginTop: 10, textAlign: "center", lineHeight: 1.4 }}>

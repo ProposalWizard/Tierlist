@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import {
   SECTION_COLOR,
   barGroupCeiling,
@@ -47,30 +48,21 @@ const BAR_FILL: Record<PatchBar["state"], string> = {
 };
 
 export default function PatchNotesArchive() {
-  const [notes, setNotes] = useState<PatchNote[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [migrationMissing, setMigrationMissing] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/admin/patch-notes");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Failed to load patch notes");
-      const list: PatchNote[] = Array.isArray(data.notes) ? data.notes : [];
-      setNotes(list);
-      setMigrationMissing(data.migrationMissing === true);
-      setSelected((prev) => (prev && list.some((n) => n.version === prev) ? prev : list[0]?.version ?? null));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load patch notes");
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
+  // The notes that ship WITH the build. The page works from these alone —
+  // see lib/patchNotesData.ts for why they are a file rather than a table.
+  // ── WHERE THE NOTES COME FROM ──
+  //
+  // A file, and only a file (lib/patchNotesData.ts). There was a Supabase
+  // table, and a fetch, and a red MIGRATION NOT RUN banner when nobody had
+  // run it. Asked directly: "why is this needed". It was not — nothing
+  // authors a patch note through the web, they are written alongside the
+  // work they describe, so the content was already in the repo and the table
+  // was a second copy somebody had to hand-feed.
+  //
+  // So there is no request here, no loading state and nothing to fail. The
+  // page renders the moment it opens, offline included.
+  const notes = BUILT_IN_PATCH_NOTES;
+  const [selected, setSelected] = useState<string | null>(notes[0]?.version ?? null);
 
   const note = notes.find((n) => n.version === selected) ?? null;
 
@@ -86,40 +78,12 @@ export default function PatchNotesArchive() {
             </span>
           </div>
           <p className={`mt-1 text-[13px] ${INK3}`}>
-            Every shipped version, kept in the database instead of a link that drifts.
+            Every shipped version, kept in the code instead of a link that drifts.
           </p>
         </header>
 
-        {migrationMissing && (
-          <MigrationBanner />
-        )}
 
-        {error && (
-          <div className={`mb-5 rounded-xl border border-[#ff6b6b]/40 ${CARD} p-4`}>
-            <p className="text-sm font-bold text-[#ff6b6b]">{error}</p>
-            <button
-              onClick={load}
-              className={`mt-2 rounded-lg border ${LINE} ${CARD2} px-3 py-1.5 text-xs font-bold ${INK}`}
-            >
-              Try again
-            </button>
-          </div>
-        )}
 
-        {loading && <p className={`text-sm ${INK2}`}>Loading…</p>}
-
-        {!loading && !error && notes.length === 0 && !migrationMissing && (
-          <div className={`rounded-xl border ${LINE} ${CARD} p-5`}>
-            <p className="text-sm font-bold">No versions published yet.</p>
-            <p className={`mt-1 text-[13px] ${INK2}`}>
-              The table is there and readable — it just has no rows. Run{" "}
-              <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px]`}>
-                supabase/migrations/patch_notes_v0_1.sql
-              </code>{" "}
-              to load v0.1.
-            </p>
-          </div>
-        )}
 
         {notes.length > 0 && (
           <div className="lg:flex lg:gap-8">
@@ -133,31 +97,6 @@ export default function PatchNotesArchive() {
     </main>
   );
 }
-
-function MigrationBanner() {
-  return (
-    <div className={`mb-5 rounded-xl border ${LINE} border-l-[3px] border-l-[#ff6b6b] ${CARD} px-4 py-3.5`}>
-      <div className="mb-1 text-[12px] font-extrabold uppercase tracking-wider text-[#ff6b6b]">
-        Migration not run
-      </div>
-      <p className={`text-[14px] ${INK2}`}>
-        The <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px] ${INK}`}>patch_notes</code>{" "}
-        table doesn&apos;t exist yet. Run{" "}
-        <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px] ${INK}`}>
-          supabase/migrations/patch_notes.sql
-        </code>{" "}
-        in the Supabase SQL Editor, then{" "}
-        <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px] ${INK}`}>
-          patch_notes_v0_1.sql
-        </code>. Until then this page has nothing to show — that is an empty archive, not a lost one.
-      </p>
-    </div>
-  );
-}
-
-/* ── Version picker ──────────────────────────────────────────────────────
- * Pills across the top on a phone, a rail down the left from lg up.
- */
 function VersionRail({
   notes, selected, onSelect,
 }: { notes: PatchNote[]; selected: string | null; onSelect: (v: string) => void }) {

@@ -164,6 +164,18 @@ interface Props {
    */
   openOn?: () => Scenario;
   /**
+   * Strip the match furniture — the scoreboard plate, the live commentary
+   * ticker and the situation hint — leaving the pitch and nothing else.
+   *
+   * For the Scenario Gallery / Infinite Highlights, where the canvas sits
+   * INSIDE a card that already has its own controls under it. Reported
+   * directly: "forget the commentator stuff at the bottom, just keep the
+   * original ui". None of it says anything about a scenario you are judging,
+   * and a goals-and-assists tally is actively misleading in a practice
+   * screen that counts nothing.
+   */
+  bare?: boolean;
+  /**
    * Fired once, right when a personal goal (not a team-mate's) is confirmed
    * — everything needed to watch this exact goal again, bit-for-bit. Never
    * fired while replaying one (`replayOf` set): re-watching a replay is not
@@ -315,7 +327,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, openOn }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, openOn, bare = false }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -4337,7 +4349,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         </div>
       )}
 
-      {/* Scoreboard plate */}
+      {/* Scoreboard plate. Hidden in `bare` — see the prop. */}
+      {!bare && (
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
           <div className="px-2.5 flex items-center border-r border-white/5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300/90">
@@ -4377,6 +4390,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </button>
         </div>
       </div>
+      )}
 
       <div
         ref={wrapRef}
@@ -4511,7 +4525,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           returning player does not need re-explained to them every single
           chance. Reported directly: neither is wanted once you are actually
           playing, only while learning the game. */}
-      {!matchMode && (
+      {!matchMode && !bare && (
         <>
           <div className={`mt-2 rounded-lg border border-gray-800 bg-gray-950/85 px-3 py-2 min-h-[3.8rem] ${phase === "feed" ? "hidden" : ""}`}>
             <div className="flex items-center gap-1.5 mb-1">

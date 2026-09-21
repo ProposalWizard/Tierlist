@@ -1,32 +1,55 @@
--- Patch notes v0.1 — the first version, loaded into the archive.
---
--- Content taken verbatim from the artifact that shipped it
--- (.claude/skills/artifact-house-style/references/patch-notes-v0.1.html).
--- Every number here was measured, not estimated, so none of them have been
--- rounded, re-derived or tidied on the way in. Screenshots do not come
--- across — the artifact keeps those, and artifact_url points at it.
---
--- Requires patch_notes.sql to have been run first.
--- ON CONFLICT (version) DO UPDATE, so this is safe to re-run: it overwrites
--- v0.1 with whatever this file currently says rather than erroring or
--- silently doing nothing.
---
--- The JSON below is dollar-quoted rather than single-quoted, so the prose
--- inside keeps its own apostrophes without a wall of escaping.
+/**
+ * lib/patchNotesData.ts — THE PATCH NOTES THEMSELVES.
+ *
+ * ── Why these are a file and not a database table ──
+ *
+ * They were a table first. Asked directly, looking at a page that said
+ * MIGRATION NOT RUN: "why is this needed". It was not.
+ *
+ * Nothing authors a patch note through the web UI — they are written in a
+ * session, alongside the work they describe. So the content was already in
+ * the repo, as a 314-line SQL file, and the table was a middleman you had to
+ * hand-feed: write a migration, paste it into the Supabase SQL Editor, and
+ * until you did, the page showed a red banner instead of the notes. Two
+ * copies of one truth, and the copy that shipped was the one nobody could
+ * read.
+ *
+ * As a file it is in git, reviewable in a diff, revertible, survives
+ * anything that happens to the database, and is live the moment it deploys.
+ * Same argument authoredScenarios.json already makes for scenarios.
+ *
+ * The table, its migration and its API route are gone. Keeping a disabled
+ * half of a system around is how two copies of one truth start again.
+ */
 
-INSERT INTO patch_notes (version, title, published_at, summary, stats, sections, artifact_url, updated_at)
-VALUES (
-  '0.1',
-  'Knowitball patch notes',
-  '2026-09-21T00:00:00Z',
-  'Star Career · branch Harry · 8 commits · 147 tests green · every number measured, not guessed',
-  $json$[
-    { "value": "14→64", "label": "different chance situations" },
-    { "value": "0%",    "label": "same chance twice running" },
-    { "value": "8×",    "label": "less scrolling in the gallery" },
-    { "value": "−15pp", "label": "empty grass on screen" }
-  ]$json$::jsonb,
-  $json$[
+import type { PatchNote } from "./patchNotes";
+
+/** Newest first — the order the archive shows them in. */
+export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
+{
+  "version": "0.1",
+  "title": "Harry's patch notes",
+  "publishedAt": "2026-09-21T00:00:00Z",
+  "summary": "Star Career · branch Harry · 8 commits · 147 tests green · every number measured, not guessed",
+  "stats": [
+    {
+      "value": "14→64",
+      "label": "different chance situations"
+    },
+    {
+      "value": "0%",
+      "label": "same chance twice running"
+    },
+    {
+      "value": "8×",
+      "label": "less scrolling in the gallery"
+    },
+    {
+      "value": "−15pp",
+      "label": "empty grass on screen"
+    }
+  ],
+  "sections": [
     {
       "kind": "fixed",
       "title": "Fixed",
@@ -35,11 +58,41 @@ VALUES (
           "title": "Scoring was halved. Now it isn't.",
           "detail": "Four separate bugs, each found by measuring.",
           "bars": [
-            { "label": "Cutback",      "was": 9.8,  "now": 41.3, "state": "good", "unit": "%" },
-            { "label": "One-on-one",   "was": 9.8,  "now": 47.6, "state": "good", "unit": "%" },
-            { "label": "Tight angle",  "was": 13.3, "now": 39.7, "state": "good", "unit": "%" },
-            { "label": "Header",       "was": 6.6,  "now": 26.8, "state": "good", "unit": "%" },
-            { "label": "Through ball", "was": 11.2, "now": 18.7, "state": "warn", "unit": "%" }
+            {
+              "label": "Cutback",
+              "was": 9.8,
+              "now": 41.3,
+              "state": "good",
+              "unit": "%"
+            },
+            {
+              "label": "One-on-one",
+              "was": 9.8,
+              "now": 47.6,
+              "state": "good",
+              "unit": "%"
+            },
+            {
+              "label": "Tight angle",
+              "was": 13.3,
+              "now": 39.7,
+              "state": "good",
+              "unit": "%"
+            },
+            {
+              "label": "Header",
+              "was": 6.6,
+              "now": 26.8,
+              "state": "good",
+              "unit": "%"
+            },
+            {
+              "label": "Through ball",
+              "was": 11.2,
+              "now": 18.7,
+              "state": "warn",
+              "unit": "%"
+            }
           ],
           "more": {
             "summary": "What the four bugs were",
@@ -150,13 +203,46 @@ VALUES (
         {
           "title": "Too much build-up, too many long shots",
           "detail": "What a striker actually gets:",
-          "pill": { "text": "half fixed", "tone": "amber" },
+          "pill": {
+            "text": "half fixed",
+            "tone": "amber"
+          },
           "bars": [
-            { "label": "Long range",   "was": 13.1, "now": 10.6, "state": "warn", "unit": "%" },
-            { "label": "Through ball", "was": 13.0, "now": 12.6, "state": "bad",  "unit": "%" },
-            { "label": "Build-up",     "was": 9.5,  "now": 9.5,  "state": "bad",  "unit": "%" },
-            { "label": "One-on-one",   "was": 11.9, "now": 14.3, "state": "good", "unit": "%" },
-            { "label": "Headers",      "was": 9.7,  "now": 8.9,  "state": "good", "unit": "%" }
+            {
+              "label": "Long range",
+              "was": 13.1,
+              "now": 10.6,
+              "state": "warn",
+              "unit": "%"
+            },
+            {
+              "label": "Through ball",
+              "was": 13.0,
+              "now": 12.6,
+              "state": "bad",
+              "unit": "%"
+            },
+            {
+              "label": "Build-up",
+              "was": 9.5,
+              "now": 9.5,
+              "state": "bad",
+              "unit": "%"
+            },
+            {
+              "label": "One-on-one",
+              "was": 11.9,
+              "now": 14.3,
+              "state": "good",
+              "unit": "%"
+            },
+            {
+              "label": "Headers",
+              "was": 9.7,
+              "now": 8.9,
+              "state": "good",
+              "unit": "%"
+            }
           ],
           "more": {
             "summary": "Where it still misses",
@@ -246,7 +332,10 @@ VALUES (
         {
           "title": "Rule sets per chance type",
           "detail": "You build the perfect bases, the rules get read off them, the game generates inside those rules.",
-          "pill": { "text": "blocked on Harry", "tone": "amber" },
+          "pill": {
+            "text": "blocked on Harry",
+            "tone": "amber"
+          },
           "more": {
             "summary": "Why it's the key to formations",
             "points": [
@@ -267,7 +356,9 @@ VALUES (
             ]
           }
         },
-        { "title": "Dribbling and heading scenarios in the gallery" },
+        {
+          "title": "Dribbling and heading scenarios in the gallery"
+        },
         {
           "title": "Matchup simulation",
           "detail": "Pick two teams, see what chances that fixture produces."
@@ -295,20 +386,8 @@ VALUES (
         }
       ]
     }
-  ]$json$::jsonb,
-  NULL,
-  now()
-)
-ON CONFLICT (version) DO UPDATE SET
-  title        = EXCLUDED.title,
-  published_at = EXCLUDED.published_at,
-  summary      = EXCLUDED.summary,
-  stats        = EXCLUDED.stats,
-  sections     = EXCLUDED.sections,
-  artifact_url = COALESCE(EXCLUDED.artifact_url, patch_notes.artifact_url),
-  updated_at   = now();
-
--- ── Verify ───────────────────────────────────────────────────────────────
--- select version, title, jsonb_array_length(sections) as sections
--- from patch_notes order by published_at desc;
--- Expect v0.1 with 7 sections.
+  ],
+  "artifactUrl": null,
+  "updatedAt": null
+}
+];

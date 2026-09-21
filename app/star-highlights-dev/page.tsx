@@ -699,7 +699,19 @@ export default function HighlightsPage() {
         </div>
       ) : (
         <div style={{ padding: "10px 12px 14px", display: "grid", justifyItems: "center", gap: 8 }}>
-          {shot && baseFrame && (
+          {/* Playing swaps the PICTURE for the live match and leaves every
+              control below it exactly where it was, so a chance can be
+              played, corrected and saved without changing screen. */}
+          {playing && shot ? (
+            <ScenarioPlay
+              build={() => {
+                const sc = buildSimScenario(shot.spec);
+                applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
+                return sc;
+              }}
+              onStop={() => setPlaying(false)}
+            />
+          ) : shot && baseFrame && (
             <EditableFrame
               editKey={editKey}
               baseFrame={baseFrame}
@@ -744,8 +756,11 @@ export default function HighlightsPage() {
               Remove
             </button>
             {/* Play this exact chance, edits and all — see ScenarioPlay. */}
-            <button style={{ ...editBtn(false), color: "#4ade80" }} onClick={() => setPlaying(true)}>
-              &#9654; Play
+            <button
+              style={{ ...editBtn(false), color: playing ? "#7dd3fc" : "#4ade80" }}
+              onClick={() => setPlaying((v) => !v)}
+            >
+              {playing ? "\u25FC Stop" : "\u25B6 Play"}
             </button>
             {/* Not worth fixing. See lib/star/scenarioReject.ts. */}
             <button
@@ -785,19 +800,6 @@ export default function HighlightsPage() {
             </div>
           )}
 
-          {playing && shot && (
-            <ScenarioPlay
-              title={`${kindLabel(shot.spec.kind)}${edited ? " (edited)" : ""}`}
-              build={() => {
-                const sc = buildSimScenario(shot.spec);
-                applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
-                return sc;
-              }}
-              onClose={() => setPlaying(false)}
-              onNext={() => next()}
-              onBin={binThis}
-            />
-          )}
 
           <div style={{ display: "flex", gap: 10, width: "100%", maxWidth: 460 }}>
             <button
