@@ -1224,6 +1224,79 @@
         "seed": 7012,
         "planId": null
       }
+    },
+    "gallery-sim-one_on_one-1536883055": {
+      "id": "gallery-sim-one_on_one-1536883055",
+      "name": "one_on_one (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 34.46,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 38.49,
+        "y": 14.23
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 36.14,
+          "y": 18.42,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 36.56,
+          "y": 8.2,
+          "label": "GK"
+        },
+        {
+          "id": "i2",
+          "side": "teammate",
+          "x": 43.21,
+          "y": 16.9,
+          "label": "SUP"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 29.45,
+          "y": 18.65,
+          "label": "POACH"
+        },
+        {
+          "id": "i4",
+          "side": "you",
+          "x": 38.66,
+          "y": 15.45,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 28.4,
+          "y": 17.39,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 44.31,
+          "y": 15.94,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790013866897,
+      "source": {
+        "tool": "gallery",
+        "kind": "one_on_one",
+        "seed": 1536883055,
+        "planId": "one_on_one|golden|half_space|R|closing|out|settled|normal|ball|weak|b4"
+      }
     }
   }
 }
