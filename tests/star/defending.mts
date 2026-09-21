@@ -513,7 +513,10 @@ const snapshot = (sc: Scenario) => JSON.stringify({
       if (!inside(sc.ball) || !inside(sc.player)) offFrame++;
       else if (sc.passTarget && !inside(sc.passTarget)) offFrame++;
       else if (sc.runner && !inside(sc.runner.pos)) offFrame++;
-      else if (sc.defenders.some(d => !inside(d, 1.5))) offFrame++;
+      // Defenders may stand off the edge of the frame — see the long note in
+      // support.mts. Demanding they were all visible is what made the camera
+      // move players.
+      else if (false) offFrame++;
       else if (sc.secondaryRunners.some(r => !inside(r.pos, 1.5))) offFrame++;
       if (goalInView(kind) && !inside({ x: sc.goal.x1, y: 0 })) goalHidden++;
 
