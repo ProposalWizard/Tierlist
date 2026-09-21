@@ -1,4 +1,84 @@
 {
   "_readme": "AUTHORED SCENARIOS — scenario geometry that lives IN THE CODE. Written by the Scenario Gallery's 'Commit to repo' button (app/api/star/scenarios/commit/route.ts), which edits this exact file through the GitHub Contents API and commits it. Everything under 'scenarios' is a MatchScenario (lib/star/scenarios.ts) in real pitch metres, keyed by its own id. Read it through lib/star/authoredScenarios.ts, never by importing this file directly. Safe to hand-edit; the commit route merges rather than replaces, so a hand-edited entry is only ever overwritten by a commit of that same id.",
-  "scenarios": {}
+  "scenarios": {
+    "gallery-main-one_on_one": {
+      "id": "gallery-main-one_on_one",
+      "name": "one_on_one",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 32.43,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 35.9,
+        "y": 15.69
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 39.08,
+          "y": 17.23,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 33,
+          "y": 17.41,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 26.03,
+          "y": 19.7,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34.64,
+          "y": 2.2,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 37.7,
+          "y": 24.48,
+          "label": "SUP"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 24.81,
+          "y": 27.81,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 29.62,
+          "y": 17.13,
+          "label": "POACH"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 36.86,
+          "y": 16.23,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1789984201753,
+      "source": {
+        "tool": "gallery",
+        "kind": "one_on_one",
+        "seed": 1000
+      }
+    }
+  }
 }

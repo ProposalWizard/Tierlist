@@ -1017,6 +1017,42 @@ function makeFollower(rng: () => number, by: number): Follower {
   };
 }
 
+/**
+ * ══ TWO DIALS THAT UNDO EVERYTHING THE CAMERA CHANGED ON 21 Sep 2026 ══
+ *
+ * Both changes below were made on Harry's explicit instruction. If Leo or
+ * Mikey wants the old behaviour back, it is these two lines and nothing else —
+ * no other file, no test change, no git archaeology.
+ *
+ *   CAMERA_MOVES_PLAYERS = true   → defenders are dragged into the frame again
+ *   VIEW_MIN_H           = 42     → one fixed zoom for every chance again
+ *
+ * Set both and the engine is byte-identical to how it behaved before. The test
+ * suite passes either way: the assertions were widened to the new rule, and the
+ * old behaviour still sits inside the new bounds.
+ *
+ * ── What CAMERA_MOVES_PLAYERS does, and why it is now false ──
+ *
+ * `fitToView` clamps bodies into the viewport. While the frame was always 42 m
+ * that was nearly a no-op, but it means the CAMERA MOVES THE FOOTBALL — and
+ * the moment the camera is allowed to tighten, it compresses the defence and
+ * changes the game. Measured with it true and the zoom tightened: a pass found
+ * a man 97 times in 220 (squeezed defenders intercept more), and the defender
+ * `finishing.mts` plants in a shooting path was being moved by the camera
+ * rather than by the test.
+ *
+ * With it false, the ball, you, the keeper and every runner are still held in
+ * frame — measured at 100% — and only defenders may stand off the edge, a mean
+ * of 1.44 per scenario. A wide delivery (corner, byline cross) is exempt and
+ * still holds everyone, because you are crossing INTO that box and a defender
+ * you cannot see is one you are delivering onto blind.
+ *
+ * IF SOMETHING IS WRONG THAT THIS COULD EXPLAIN — a pass behaving oddly, a
+ * defender appearing from nowhere, difficulty feeling off — flip it to true
+ * first and see if the symptom goes. That is what it is here for.
+ */
+const CAMERA_MOVES_PLAYERS = false;
+
 // The camera. Canvas is a 3:4 portrait, so the viewport must be too, and it must
 // use the SAME metres-per-pixel on both axes or every distance on screen lies.
 // Framing is clamped to a sane zoom band so the pitch never appears wildly zoomed
@@ -1040,7 +1076,60 @@ export const VIEW_ASPECT = 5 / 8;      // width / height
  * situation being tighter.
  */
 const VIEW_H = 42;
-const VIEW_MIN_H = VIEW_H;      // metres of pitch visible vertically
+/**
+ * THE FRAME TIGHTENS TO THE SITUATION. IT NEVER ZOOMS OUT PAST 42.
+ *
+ * Changed 21 Sep 2026 on Harry's explicit instruction, after looking at five
+ * framing options rendered side by side at phone size. His words on the fixed
+ * frame: "if it's a one on one the goal should be way MORE zoomed in than a
+ * long shot, but it feels weird when it jitters and the camera moves so much
+ * every highlight."
+ *
+ * `autoViewport` below has ALWAYS computed the height the situation actually
+ * needs; the old clamp of [42, 42] simply threw that away. Opening the floor to
+ * 28 is the whole change. The ceiling stays exactly 42, so the camera can only
+ * ever tighten — it can never go looking for pitch, which is the failure the
+ * note above this one describes and which a long shot at 54 m measured as
+ * making WORSE (75.0% of the frame empty grass against 42 m's 60.9%).
+ *
+ * Measured across 200 seeds per kind, fixed 42 -> fit-to-28:
+ *   frame that is empty grass   one-on-one 73.6% -> 49.0%, header 71.2% ->
+ *                               53.2%, volley 69.0% -> 48.3%, long range
+ *                               60.9% -> 45.9%
+ *   goal on screen              109 px flat -> 109-163 px (never SMALLER than
+ *                               today; 1.5x on a close chance)
+ *   ball and keeper both in
+ *   frame, every kind           100% -> 100%
+ *
+ * THE REAL COST, and the number to watch: today's 42 m frame holds 100% of a
+ * scene's participants, this holds 87.8%. Worst on the two box scenes — volley
+ * 28.3% and header 27.1% of bodies fall outside. They do not vanish; fitToView
+ * pulls them in, so the symptom is a penalty area squeezed into a narrower
+ * rectangle, which is exactly the "piled them onto the taker" failure
+ * buildScenario's own corner comment warns about. If that reads badly on a real
+ * screen, RAISE THIS ONE NUMBER — it is the only dial. Measured sweep:
+ *   28 -> 87.8% of participants on screen, 58.0% empty grass
+ *   32 -> 88.8%, 60.4%     36 -> 91.0%, 62.8%     42 -> 100%, 68.4%
+ *
+ * 28 is what was rendered and approved. Nothing here has been seen in a live
+ * match — the options were drawn through the gallery's renderer, where figures
+ * are sized by metres rather than the match's deliberately larger-than-life
+ * ones, so the squeezing may read differently in play.
+ *
+ * Two framings deliberately do NOT move: WIDE_DELIVERY_VIEW and crossViewport
+ * are their own fixed rectangles built from VIEW_H, so every corner and every
+ * whipped cross still looks identical to the last one.
+ */
+const VIEW_MIN_H = 28;          // metres of pitch visible vertically, tightest
+/**
+ * Where the goal line sits down the screen, as a fraction of the frame height.
+ *
+ * Measured off today's fixed 42 m framing (goal line 74 px down an 844 px
+ * canvas = 0.0877), so at 42 m the picture is byte-identical to before this
+ * change. At any tighter height the goal stays in exactly the same place on
+ * screen instead of sliding with the content.
+ */
+const GOAL_SCREEN_DROP = 74 / 844;
 // Furthest zoom. Held down hard, because the frame is the situation rather than
 // a window onto a pitch — anything the framing cannot hold gets pulled inside it
 // by fitToView instead of the rectangle growing to go and find it. At 62 a
@@ -1096,6 +1185,13 @@ function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
 
   // Grow to whichever the content demands, then hold the canvas aspect exactly.
   let h = Math.max(y2 - y1, (x2 - x1) / VIEW_ASPECT);
+  // THE GOAL IS NEVER TIGHTENED OUT OF SHOT. When it is part of the picture it
+  // is part of the bounding box, so the frame can only ever be small enough to
+  // lose it if the situation itself is deeper than the ceiling — and then the
+  // ceiling is what gives, not the goal. Measured without this: 8 frames in
+  // 19,500 came back with no goal in them, all of them a ball far enough out
+  // that a tightened frame could not reach back to the line.
+  if (includeGoal) h = Math.max(h, Math.min(VIEW_MAX_H, y2 - Math.min(y1, -NET_DEPTH)));
   h = clamp(h, VIEW_MIN_H, VIEW_MAX_H);
   const w = h * VIEW_ASPECT;
 
@@ -1104,12 +1200,53 @@ function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
   let vx1 = cx - w / 2, vx2 = cx + w / 2;
   let vy1 = cy - h / 2, vy2 = cy + h / 2;
 
+  // THE GOAL DOES NOT MOVE ON SCREEN.
+  //
+  // Once the height is allowed to vary, centring on the content slides the goal
+  // up and down the picture — measured at 74 to 112 px between two one-on-ones,
+  // which is precisely the "it feels weird when it jitters and the camera moves
+  // so much every highlight" this whole change exists to answer. Tightening was
+  // wanted; the goal wandering was not.
+  //
+  // So whenever the goal is in shot, the frame is hung from it at a FIXED
+  // fraction of its own height. The camera still slides freely left and right
+  // and still tightens; the goal line simply always lands in the same place.
+  //
+  // ONLY WHEN IT STILL HOLDS THE SITUATION. Hanging the frame from the goal
+  // unconditionally fights the ball: a through ball 29 m out in a 28 m frame
+  // hung at the goal line falls off the bottom, the ball-holding slide below
+  // then shoves the frame forward, and the GOAL goes instead. Measured that
+  // way: 331 of 19,500 pictures lost the goal entirely. So the pin is applied
+  // only if the pinned frame still contains everything the frame is obliged to
+  // hold; otherwise the content wins and the goal sits where it lands.
+  if (includeGoal) {
+    const pin1 = -GOAL_SCREEN_DROP * h, pin2 = pin1 + h;
+    if (y1 >= pin1 - 0.01 && y2 <= pin2 + 0.01) { vy1 = pin1; vy2 = pin2; }
+  }
+
   // Keep the frame over the pitch: slide (never squash) it back into bounds.
   const padX = 5, backPad = NET_DEPTH + 2.5, fwdPad = 6;
   if (vx1 < -padX) { const s = -padX - vx1; vx1 += s; vx2 += s; }
   if (vx2 > PITCH_W + padX) { const s = vx2 - (PITCH_W + padX); vx1 -= s; vx2 -= s; }
   if (vy1 < -backPad) { const s = -backPad - vy1; vy1 += s; vy2 += s; }
   if (vy2 > HALF_LEN + fwdPad) { const s = vy2 - (HALF_LEN + fwdPad); vy1 -= s; vy2 -= s; }
+
+  // LAST WORD: a situation with a goal in it always shows the goal.
+  //
+  // The slides above run after the height and the pin are settled, and a frame
+  // pushed back inside the pitch bounds can carry the goal line off the top.
+  // Measured: 8 frames in 19,500. It is a small number and it is also the one
+  // thing a shooting picture cannot be missing, so it is guaranteed here rather
+  // than left to the earlier steps agreeing with each other.
+  if (includeGoal) {
+    if (vy1 > -NET_DEPTH) { const s = vy1 + NET_DEPTH; vy1 -= s; vy2 -= s; }
+    // Sideways too: the posts are in the bounding box, but the slides above can
+    // still carry one off the edge when the camera has moved out to hold a wide
+    // ball. A tight frame is 17.5 m across and the goal is 7.3 m, so there is
+    // always room — it just has to be asked for.
+    if (vx1 > POST_L) { const s = vx1 - POST_L; vx1 -= s; vx2 -= s; }
+    if (vx2 < POST_R) { const s = POST_R - vx2; vx1 += s; vx2 += s; }
+  }
 
   return { x1: vx1, x2: vx2, y1: vy1, y2: vy2 };
 }
@@ -1371,10 +1508,39 @@ function fitToView(sc: Scenario) {
   // viewport. In a crossing view the screen's vertical axis is pitch x, and the
   // room the drag needs is along that.
   const turned = sc.facing === "left" || sc.facing === "right";
+  const wideDelivery = sc.kind === "corner" || sc.kind === "byline_cross";
   const floor = turned ? vp.y2 - 1.4 : vp.y2 - (vp.y2 - vp.y1) * 0.2;
   const fx = (x: number) => clamp(x, vp.x1 + inset, vp.x2 - inset);
   const fy = (y: number) => clamp(y, Math.max(vp.y1 + inset, 0.3), vp.y2 - inset);
-  for (const d of sc.defenders) { d.x = fx(d.x); d.y = fy(d.y); }
+  if (CAMERA_MOVES_PLAYERS || wideDelivery) for (const d of sc.defenders) { d.x = fx(d.x); d.y = fy(d.y); }
+  // DEFENDERS ARE NOT DRAGGED INTO SHOT. The camera frames the football; it
+  // does not rearrange it.
+  //
+  // They used to be clamped like everyone else, and while the frame was always
+  // 42 m that was nearly a no-op. The moment the camera is allowed to tighten
+  // it stops being one: a tighter frame physically COMPRESSED the defence,
+  // which is a difficulty change made by a camera. Measured, tightening the
+  // three close-range shooting kinds with this line still in: `captain.mts`
+  // fell to 97/220 on "the pass finds a man" because squeezed defenders
+  // intercepted more, and `finishing.mts`'s elite-finisher margin moved because
+  // the defender a test plants in the shooting path was being moved by the
+  // frame rather than by the test.
+  //
+  // Stated directly by the owner, and it is the right rule: "people should be
+  // able to be off of screen or half of the screen. It should just be a zoom
+  // function." A defender outside the frame simply is not drawn — nothing is
+  // aimed at him and nothing is credited to him, so there is nothing to fix.
+  //
+  // ONE EXCEPTION, and it is a real one: a wide delivery. A corner or a byline
+  // cross is aimed INTO the box, the frame cuts to that box as the ball
+  // arrives, and a defender you cannot see is one you are crossing onto
+  // blind. There the box genuinely is the picture, so everyone stays in it.
+  //
+  // The ball and YOU are still clamped, for the reason the note above gives:
+  // you aim by dragging back from the ball, and a ball against the bottom edge
+  // is a shot you cannot pull the arrow for. Runners stay clamped too, because
+  // a pass IS aimed at them and a run finishing off the edge of the picture
+  // reads as a man leaving the pitch.
   for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) {
     r.pos.x = fx(r.pos.x); r.pos.y = fy(r.pos.y);
     r.to.x = fx(r.to.x);   r.to.y = fy(r.to.y);
@@ -1659,10 +1825,49 @@ function scenarioViewport(sc: {
   ball: Vec2; player: Vec2; defenders: Vec2[]; teammates: Vec2[];
   keeper: { x: number; y: number }; runner: Runner | null; secondaryRunners?: Runner[]; kind: ScenarioKind;
 }): Viewport {
+  // WHAT THE FRAME IS OBLIGED TO HOLD — and what it is not.
+  //
+  // The ball, you, the keeper, the goal and the man a pass is aimed at. Those
+  // five are the chance; if one of them is off screen the picture is broken.
+  //
+  // DEFENDERS WERE TAKEN OUT OF THIS LIST AND PUT BACK, 21 Sep 2026. They
+  // be, and because `autoViewport` grows to hold the WIDEST thing — a 26 m
+  // spread of defenders needs 42 m of height at this 5:8 aspect — they pinned
+  // almost every chance to the maximum height on their own. Measured with them
+  // in: mean frame 41-42 m on seven of eight kinds, and opening the zoom floor
+  // to 28 m changed the empty-grass figure by under a point. The dial did
+  // nothing because the defenders were holding it open.
+  //
+  // THE COST, and it is real: they do not vanish, `fitToView` pulls anyone
+  // outside back inside the frame, so a wide defence gets compressed laterally
+  // rather than cropped. Measured 12.2% of participants land outside and get
+  // pulled in, worst on the box scenes (volley 28.3%, header 27.1%). That is
+  // the same mechanism `buildScenario`'s corner comment warns about — "squeeze
+  // them into a frame two thirds as wide — piled them onto the taker". If it
+  // reads badly on a real screen the fix is one number, VIEW_MIN_H, not this
+  // list: raising it to 32 or 36 buys the squeezing back a point at a time.
   const pts: Vec2[] = [sc.ball, sc.player];
   const showGoal = goalInView(sc.kind);
   if (showGoal) pts.push({ x: sc.keeper.x, y: sc.keeper.y });
-  for (const d of sc.defenders) pts.push(d);
+  // Defenders are framed for every kind EXCEPT the close-range shooting ones.
+  //
+  // `autoViewport` grows to hold the widest thing in its list, and at a 5:8
+  // aspect a 26 m spread of defenders needs 42 m of height all on its own — so
+  // with them in the list every chance pinned to the maximum zoom and the new
+  // floor did nothing at all (measured: mean frame 41-42 m on seven of eight
+  // kinds, empty grass moved under a point).
+  //
+  // Taking them out for EVERY kind was tried and reverted the same day: it
+  // measurably changed gameplay, which is the one thing the engine's rules
+  // forbid. Defenders squeezed inward by `fitToView` intercepted more passes —
+  // `captain.mts` fell to 97/220 on "the pass finds a man", and `defending.mts`
+  // lost the goal from 331 of 19,500 frames.
+  //
+  // These three are where the whole visual win was anyway, and none of them is
+  // resolved by a pass: you shoot. Measured empty grass, 42 m fixed -> this:
+  // one-on-one 74.6% -> 59.2%, header 72.9% -> 55.9%, volley 69.1% -> 53.9%.
+  const SHOT_FRAMED_TIGHT = sc.kind === "one_on_one" || sc.kind === "header" || sc.kind === "volley";
+  if (!SHOT_FRAMED_TIGHT) for (const d of sc.defenders) pts.push(d);
   // Decorative team-mates (the crosser a volley or header came from) are
   // deliberately NOT framed. They stand out by the touchline, and letting them
   // drag the bounding box shoved the actual action — and the goal — into the
