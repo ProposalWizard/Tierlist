@@ -32,6 +32,7 @@
     npx tsx tests/star/phase6.mts
     npx tsx tests/star/facilities.mts
     npx tsx tests/star/leadership.mts
+    npx tsx tests/star/highlights.mts
 
 **support** — the attack: space evaluation, where your team-mates are standing
 when the scenario opens, receiving a ball played near a man rather than at him,
@@ -1727,3 +1728,27 @@ picking is ONE edit, and that is checked by ratio: every division's
 typical wage divided by the one below it must equal `DIVISION_STEP`
 EXACTLY. If any figure in the ladder had a constant baked into it that
 did not come from `WAGE_FLOOR`, those ratios would not come out clean.
+
+
+## highlights
+
+Infinite Highlights (`/star-highlights-dev`) — the flick-through review tool.
+It exists because a camera change shipped broken after being signed off on a
+measurement of the WRONG code path: a test on the wrong path passes, and a
+person flicking through a hundred real chances catches it in a minute.
+
+So this file measures the hundred presses rather than asserting about them.
+Measured, all thirteen kinds selected, run 1:
+
+    100 presses, 98 distinct pictures, 0 the same twice running,
+    13/13 kinds served, 1/100 came back with a fault.
+
+The same hundred driven through the real page in a browser gave the identical
+numbers, which is the point — the page and this file are walking the same
+generator (`nextHighlight`, lib/star/gallerySim.ts), not two that agree today.
+
+It also pins the three things that would silently waste that minute: a pool
+that leaks a kind nobody selected (0 leaks in 120 presses of a three-kind
+pool), a selected kind that never comes up, and a flagged chance that cannot
+be got back to — a flag stores `{kind, seed, planId}` and is rebuilt through a
+real JSON round trip, because localStorage is what actually holds it.

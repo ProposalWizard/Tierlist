@@ -6,7 +6,7 @@ import {
   CX, PITCH_W, POST_L, POST_R, HALF_LEN, NET_DEPTH, BOX_DEPTH, SIX_DEPTH,
 } from "./pitch";
 import { scenarioFaults, fixBaseScenario, offsideLineOf, inShotCone } from "./baseScenario";
-import { targetBlock, defensiveLineOf, type ShapeInput } from "./formationShape";
+import { targetBlock, defensiveLineOf, onTheBoxEdge, type ShapeInput } from "./formationShape";
 import type { Lane, ChancePattern, ScenarioRequest } from "./hiddenMatch";
 
 /**
@@ -117,8 +117,35 @@ export const KEEPER_M: Record<KeeperSet, [number, number]> = {
   out: [4.0, 7.0],
 };
 
-/** Metres of pitch visible vertically. The engine's own fixed frame is 42. */
-export const ZOOM_H: Record<FrameZoom, number> = { tight: 30, normal: 42, wide: 54 };
+/**
+ * ONE VIEW HEIGHT, FOR EVERY CHANCE. The goal is exactly the same size in
+ * every picture the game ever shows; the camera only ever slides.
+ *
+ * Reported directly: "the goal and camera angle of the goal always need to be
+ * the same... it should move up, down, left, right, but it should never really
+ * change how it looks." He was describing a real bug with two sources — the
+ * Scenario Builder's free 10-52.5 m Zoom slider, and this table, which used to
+ * read { tight: 30, normal: 42, wide: 54 }. Measured across the generated
+ * space, 69.2% of chances were NOT framed at 42 m (30.7% at 30 m, 33.8% at
+ * 54 m) and a further 10.0% grew beyond their own setting to keep the keeper
+ * on screen. Nearly 2x between the smallest and largest goal on screen.
+ *
+ * 42 is not a new number: it is the engine's own `VIEW_MIN_H`/`VIEW_MAX_H`,
+ * already equal to each other there, with the comment "the frame IS the
+ * situation… anything it cannot hold gets pulled inside rather than the
+ * rectangle growing". This brings the layer back in line with the engine.
+ */
+export const FIXED_VIEW_H = 42;
+/** The frame is a 5:8 portrait, so one fixed height is one fixed width too. */
+export const FIXED_VIEW_W = FIXED_VIEW_H * (5 / 8);
+/** The tightest the formula's own camera may go — matches canvasEngine's
+ *  VIEW_MIN_H, so a generated chance and a hand-built one frame the same way. */
+export const FRAME_MIN_H = 28;
+/** The kinds where you are shooting AT the keeper, so he has to be on screen. */
+const KEEPER_MUST_BE_SEEN = new Set<ScenarioKind>([
+  "one_on_one", "tight_angle", "long_range", "volley", "header",
+]);
+export const ZOOM_H: Record<FrameZoom, number> = { tight: 42, normal: 42, wide: 42 };
 
 /** Defenders genuinely inside the box, by ball distance [M Table 1]. Used by
  *  the filter, not to add or remove bodies — the engine owns the count. */
@@ -141,7 +168,11 @@ export const PARAM_SPACE = {
   engagement: ["pressed", "closing", "free"] as Engagement[],
   keeper: ["set", "stepped", "out"] as KeeperSet[],
   pattern: ["settled", "transition"] as ChancePattern[],
-  zoom: ["tight", "normal", "wide"] as FrameZoom[],
+  // `zoom` is no longer a dimension: there is one view height (FIXED_VIEW_H)
+  // and crossing it three ways only ever produced the same picture three
+  // times. Kept as a single-member list rather than deleted so every existing
+  // ChanceParams shape, signature and test still reads.
+  zoom: ["normal"] as FrameZoom[],
   anchor: ["ball", "goal", "between"] as FrameAnchor[],
   strength: ["weak", "even", "strong"] as StrengthBand[],
   backLine: [4, 5],
@@ -155,7 +186,11 @@ export const COUPLING: Record<string, {
   pattern: ChancePattern[];
 }> = {
   one_on_one:   { distance: ["golden", "spot", "edge"], lateral: ["centre", "half_space"], keeper: ["set", "stepped", "out"], pattern: ["settled", "transition"] },
-  tight_angle:  { distance: ["six", "golden", "spot"],  lateral: ["wide", "touchline"],    keeper: ["set"],                   pattern: ["settled"] },
+  // Touchline dropped: at 20-31 m off centre the ball and the keeper cannot
+  // both be inside one fixed 26.25 m-wide frame, and the frame is no longer
+  // allowed to grow to fit them (see FIXED_VIEW_H). Measured cost of the whole
+  // camera lock: 3.4% of cells, of which almost all were these.
+  tight_angle:  { distance: ["six", "golden", "spot"],  lateral: ["wide"],                 keeper: ["set"],                   pattern: ["settled"] },
   long_range:   { distance: ["edge", "range"],          lateral: ["centre", "half_space", "wide"], keeper: ["set", "stepped"], pattern: ["settled", "transition"] },
   volley:       { distance: ["golden", "spot"],         lateral: ["centre", "half_space"], keeper: ["set"],                   pattern: ["settled"] },
   header:       { distance: ["six", "golden"],          lateral: ["centre", "half_space"], keeper: ["set"],                   pattern: ["settled"] },
@@ -251,6 +286,22 @@ export interface FilterRule {
  * automatically instead of contradicted here.
  */
 export const FILTER_RULES: FilterRule[] = [
+  {
+    id: "H12-fits-the-frame",
+    reason:
+      "The camera never zooms, so a chance that cannot show the ball AND the keeper inside one " +
+      "fixed 26.25 m-wide frame is not a picture the game can draw. Only shooting kinds need the " +
+      "keeper on screen — a through ball resolves against the runner, and demanding both would " +
+      "force a 40 m-plus camera on every one of them.",
+    test: p => {
+      if (!KEEPER_MUST_BE_SEEN.has(p.kind)) return true;
+      // The keeper stands within ~2.6 m of centre; the frame is 26.25 m wide
+      // and needs ~1.6 m of margin each side. So the ball can be at most
+      // ~23 m off centre and still share the frame with him. "touchline"
+      // reaches 33 m and cannot.
+      return LATERAL_M[p.lateral][1] <= FIXED_VIEW_W - 3.2;
+    },
+  },
   {
     id: "H6-kind-geometry",
     reason: "No headers from 35 yards, no long-range strikes from six. Each kind only where it happens (spec §1 coupling table).",
@@ -462,6 +513,18 @@ const KIND_MIN_LATERAL: Partial<Record<ScenarioKind, number>> = {
 /** The kinds where YOU are the one shooting at goal — the only ones that
  *  require the keeper to be inside the frame. */
 const SHOOTER_KINDS = new Set<ScenarioKind>(["one_on_one", "tight_angle", "long_range", "volley", "header"]);
+/** The kinds where YOU are the one striking at goal, so a team-mate standing in
+ *  the lane is in your way rather than being the man you are aiming at. */
+// NOT volley or header, deliberately. Those are met in a crowded six-yard box
+// and the bodies around you are the chance — you are heading it over and around
+// people. Measured with them included: moving a team-mate aside shuffled the
+// defence into the lane instead and blocks went UP, volley 17.8% → 38.0% and
+// header 6.1% → 22.4%. The three below are open-play shots where you have a
+// clear sight of goal and a team-mate in front of you is simply in the way.
+const YOU_SHOOT_KINDS = new Set<ScenarioKind>(["one_on_one", "tight_angle", "long_range"]);
+/** How far off the line of your shot a team-mate has to be. A body is about a
+ *  metre wide; 2.2 m clears it with room rather than grazing past. */
+const TEAMMATE_LANE_R = 2.2;
 
 /** A box scene, defended in zones, rather than a block defended in a line. */
 const BOX_KINDS = new Set<ScenarioKind>(["cutback", "byline_cross", "header", "volley", "tight_angle"]);
@@ -481,6 +544,10 @@ function isBoxChance(kind: ScenarioKind, band: DistanceBand): boolean {
  * drawn).
  */
 export function frameFor(plan: ChancePlan, ball: Vec2, keeper?: { x: number; y: number } | null): Viewport {
+  // REVERTED 21 Sep 2026 — see the CAMERA_MOVES_PLAYERS note in canvasEngine.ts.
+  // This briefly fitted the frame to the situation within a 28-42 m band. On the
+  // path the real match actually uses that dropped "goal fully in shot" from
+  // 83.4% to 63.9%, and a tight angle from 57% to zero.
   const h = ZOOM_H[plan.params.zoom];
   const w = h * VIEW_ASPECT;
   const anchorY = plan.params.anchor === "ball" ? ball.y
@@ -508,19 +575,30 @@ export function frameFor(plan: ChancePlan, ball: Vec2, keeper?: { x: number; y: 
   if (ball.y > floor) { const s = ball.y - floor; y1 += s; y2 += s; }
   // You must be able to see the man you are shooting past. Everyone else may
   // legitimately be off screen; the keeper, when the goal is the target, may
-  // not. The frame widens rather than the keeper moving.
+  // not.
+  //
+  // THE CAMERA SLIDES TO HIM — IT NEVER GROWS TO FIT HIM. This block used to
+  // widen the rectangle (and rescale its height to keep the aspect), which is
+  // a zoom by another name and is half of "the goal can be different sizes".
+  // Measured: 10.0% of chances grew this way, on top of the 69.2% that were
+  // already framed at something other than 42 m.
+  //
+  // The ball outranks the keeper, so its own constraints are re-applied after
+  // this — a camera that slid so far to catch a keeper that it lost the ball
+  // would have framed the wrong thing entirely.
   if (keeper) {
-    if (keeper.x < x1 + 1.6) {
-      const grow = (x1 + 1.6 - keeper.x);
-      x1 -= grow; const h2 = (x2 - x1) / VIEW_ASPECT; const cy = (y1 + y2) / 2;
-      y1 = cy - h2 / 2; y2 = cy + h2 / 2;
-    } else if (keeper.x > x2 - 1.6) {
-      const grow = (keeper.x - (x2 - 1.6));
-      x2 += grow; const h2 = (x2 - x1) / VIEW_ASPECT; const cy = (y1 + y2) / 2;
-      y1 = cy - h2 / 2; y2 = cy + h2 / 2;
-    }
+    if (keeper.x < x1 + 1.6) { const s = x1 + 1.6 - keeper.x; x1 -= s; x2 -= s; }
+    else if (keeper.x > x2 - 1.6) { const s = keeper.x - (x2 - 1.6); x1 += s; x2 += s; }
     if (keeper.y < y1 + 1.2) { const s = y1 + 1.2 - keeper.y; y1 -= s; y2 -= s; }
   }
+
+  // The ball has the last word, always.
+  if (ball.x < x1 + need) { const s = x1 + need - ball.x; x1 -= s; x2 -= s; }
+  if (ball.x > x2 - need) { const s = ball.x - (x2 - need); x1 += s; x2 += s; }
+  if (ball.y < y1 + need) { const s = y1 + need - ball.y; y1 -= s; y2 -= s; }
+  const floor2 = y2 - (y2 - y1) * 0.22;
+  if (ball.y > floor2) { const s = ball.y - floor2; y1 += s; y2 += s; }
+
   return { x1, x2, y1, y2 };
 }
 
@@ -563,7 +641,13 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
   // run off the plan's own back-line count. Either way the block is placed
   // across the real pitch, and the camera decides how much of it is seen.
   const shaped = plan.ctxShape ? targetBlock(plan.ctxShape, ballX, ballY) : null;
-  const lineY = clamp(shaped ? shaped.lineY : ballDist * 0.66, 3.2, Math.max(4, ballDist - 2.0));
+  // `onTheBoxEdge` applies to BOTH paths: targetBlock has already applied it
+  // when a formation was supplied, and it is idempotent, so calling it again
+  // here costs nothing and means the no-formation path cannot drift from the
+  // shaped one. That drift is exactly what made the first version of this fix
+  // measure as a no-op — the gallery never passes a formation.
+  const rawLineY = clamp(shaped ? shaped.lineY : ballDist * 0.66, 3.2, Math.max(4, ballDist - 2.0));
+  const lineY = onTheBoxEdge(rawLineY, ballDist, 3.2);
   const span = shaped ? shaped.span : clamp(16 + ballDist * 0.22, 16, 25) * (p.backLine === 5 ? 1.28 : 1);
   const shift = shaped ? shaped.blockShift : clamp((ballX - CX) * 0.4, -8, 8);
 
@@ -731,6 +815,7 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
   // …and its own repairs can put a man back on top of the ball (measured: 155
   // of 19,636 cells), so the anti-pile-up pass runs once more after it.
   if (!turned) { tidyBlock(sc, p); fixBaseScenario(sc); }
+  spaceOut(sc);
 }
 
 /**
@@ -869,16 +954,67 @@ function tidyBlock(sc: Scenario, p: ChanceParams): void {
     if (Math.hypot(d.x - origin.x, d.y - origin.y) > 3.5) continue;
     stepOut(d);
   }
+  // AND NOBODY STANDS LITERALLY ON THE LINE OF THE SHOT, at any distance.
+  //
+  // The cone to the posts is a wide triangle and legitimately holds bodies —
+  // that is depth, and the cap below is what limits it. The LINE is a metre
+  // and a bit either side of where the ball will actually travel, and a man
+  // standing there is not defending, he is a wall. Measured on a through ball
+  // once the camera stopped zooming out: 210 of 212 blocks had a defender on
+  // that line at the moment of the kick, against 50 of 50 in the base — the
+  // count cap alone could not fix it, because a cap of two still leaves two
+  // men standing directly in front of you.
+  // SCOPED to the two kinds that are DEFINED by being through. Applied to
+  // every kind it was far too strong — measured, it sent blocked to 0.3% on a
+  // cutback and 3.1% on a long-range shot against bases of 5.2% and 34.6%. A
+  // shot that can never be blocked is as wrong as one that always is, and
+  // this file has now made that mistake in both directions. A man standing in
+  // the cone is depth and stays; a man standing in the lane of a ball played
+  // THROUGH the line contradicts the chance itself.
+  if (sc.kind === "through_ball" || sc.kind === "one_on_one") {
+    for (const d of sc.defenders) if (offLine(d) < SHOT_LANE_R) stepOut(d);
+  }
   // Beyond that the lane simply has a ceiling [M Table 3: p75 = 2 opponents in
   // the lane, 98% ≤ 3]. The men nearest the shot move out first, so what is
   // left is depth rather than a wall on the ball.
-  const laneCap = sc.ball.y <= 16.5 ? 2 : 3;
+  // TWO inside the box, and two for a through ball as well: being played in
+  // BEHIND the line is the whole chance, so three bodies across the lane
+  // contradicts the situation rather than defending it. Measured with a cap
+  // of 3 there, once the camera stopped zooming out: blocked 23.8% -> 29.1%,
+  // past the +16 pp bar. Everywhere else three stands [M Table 3, 98% <= 3].
+  const laneCap = (sc.ball.y <= 16.5 || sc.kind === "through_ball") ? 2 : 3;
   const laneMen = sc.defenders.filter(inTheWay);
   if (laneMen.length > laneCap) {
     laneMen
       .sort((a, b) => Math.hypot(a.x - origin.x, a.y - origin.y) - Math.hypot(b.x - origin.x, b.y - origin.y))
       .slice(0, laneMen.length - laneCap)
       .forEach(stepOut);
+  }
+
+}
+
+/**
+ * Nobody piled on the ball or standing on you — run as the VERY LAST thing,
+ * after every other repair including fixBaseScenario's own, because those can
+ * legitimately move a man back on top of something. Measured with this inside
+ * tidyBlock instead, where fixBaseScenario still had the last word: 3 cells in
+ * 6,612 still had a defender on the ball or on the player.
+ */
+export function spaceOut(sc: Scenario): void {
+  for (let pass = 0; pass < 3; pass++) {
+    for (const d of sc.defenders) {
+      d.y = Math.max(d.y, sc.keeper.y + 2.0);
+      const push = (to: Vec2, want: number) => {
+        const dx = d.x - to.x, dy = d.y - to.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist >= want) return;
+        const ux = dist > 0.01 ? dx / dist : (d.x >= CX ? 1 : -1), uy = dist > 0.01 ? dy / dist : 1;
+        d.x = clamp(to.x + ux * want, 1.5, PITCH_W - 1.5);
+        d.y = Math.max(to.y + uy * want, sc.keeper.y + 2.0);
+      };
+      push(sc.ball, 2.0);
+      push(sc.player, 1.8);
+    }
   }
 }
 
@@ -899,6 +1035,46 @@ function coverCentre(sc: Scenario): void {
  * Where your team-mates stand. §C3's lane rule, applied literally: for a shot
  * from ≥14 m nobody is parked inside the ball→posts triangle.
  */
+/**
+ * Move one team-mate sideways out of the line your shot will travel.
+ *
+ * Reported directly: "when you shoot and your own teammates are in front of
+ * you, it can be very difficult for them to not get in the way." The rule that
+ * was here only fired from 14 m out — so every close-range chance had no
+ * protection at all — and measured against the middle of the GOAL rather than
+ * the line the ball actually travels, which is the wrong place entirely once
+ * the ball is wide.
+ *
+ * Perpendicular only, on whichever side he is already nearer, and never behind
+ * the offside line. Never backwards down the lane, which would walk him into
+ * the keeper.
+ */
+function clearShotLane(sc: Scenario, m: Vec2, onsideY: number): void {
+  // THE SHOT STARTS WHERE YOU STAND, NOT WHERE THE BALL IS.
+  //
+  // For a one-on-one or a long shot those are the same place. For a VOLLEY or
+  // a HEADER they are not: the ball is at the crosser, out wide, and you meet
+  // it near goal. A first version used the ball, so it was clearing the CROSS
+  // lane — which is not a lane anybody shoots down — and shuffled the geometry
+  // enough to make things worse, measured: volley blocked 17.8% → 39.0%,
+  // header 6.1% → 25.3%.
+  const o = sc.player;
+  if (m.y >= o.y) return;                       // behind you blocks nothing
+  const vx = CX - o.x, vy = 0 - o.y;
+  const len2 = vx * vx + vy * vy || 1;
+  let t = ((m.x - o.x) * vx + (m.y - o.y) * vy) / len2;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const px = o.x + vx * t, py = o.y + vy * t;
+  const off = Math.hypot(m.x - px, m.y - py);
+  if (off >= TEAMMATE_LANE_R) return;
+  const nlen = Math.hypot(-vy, vx) || 1;
+  const nx = -vy / nlen, ny = vx / nlen;
+  const sign = ((m.x - px) * nx + (m.y - py) * ny) >= 0 ? 1 : -1;
+  const push = TEAMMATE_LANE_R - off + 0.6;
+  m.x = clamp(m.x + sign * nx * push, 2, PITCH_W - 2);
+  m.y = Math.max(Math.max(0.8, onsideY), m.y + sign * ny * push);
+}
+
 function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void {
   const runners: Runner[] = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
   if (runners.length === 0) return;
@@ -934,17 +1110,47 @@ function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void 
   for (let i = 0; i < runners.length; i++) {
     const at = spots[i % spots.length];
     const to = { x: clamp(at.x, 2, PITCH_W - 2), y: Math.max(0.8, at.y) };
-    // §C3: never parked in the open lane of a shot from distance.
-    if (bd >= 14 && Math.abs(to.x - CX) < 4 && to.y < bd) to.x = CX + side * -4.4;
+    // YOUR OWN TEAM-MATES DO NOT STAND IN FRONT OF YOUR SHOT.
+    //
+    // Reported directly: "when you shoot and your own teammates are in front of
+    // you, it can be very difficult for them to not get in the way." Two things
+    // were wrong with the old rule, which read
+    //   if (bd >= 14 && Math.abs(to.x - CX) < 4 && to.y < bd) …
+    //
+    //  1. It only fired from 14 m out. Every close-range chance — the
+    //     one-on-one, the volley, the tight angle — had NO protection at all,
+    //     and those are exactly the ones where a body in the way ruins it.
+    //  2. It measured against the middle of the GOAL, not against the line the
+    //     ball will actually travel. With the ball out wide, the lane to goal
+    //     is nowhere near the centre, so the check was looking in the wrong
+    //     place — the same mistake the defender lane rule had, found by
+    //     measuring: of 300 cutbacks, the cone test found 0 men in the way
+    //     while 223 had one within 1.5 m of the real path.
+    //
+    // Scoped to the kinds where YOU strike at goal. A cutback, a cross and a
+    // through ball are played TO a team-mate — moving him out of the lane
+    // there would be moving the target of the pass.
     to.y = Math.max(to.y, onsideY);
     runners[i].to = { x: to.x, y: to.y };
     runners[i].pos = { x: to.x, y: Math.max(to.y + 1.4, onsideY) };
+    // Applied to where he STANDS as well as where he runs to, and applied
+    // last. A first attempt moved only `to` and measured as barely working —
+    // a volley still had a team-mate in the lane 56.3% of the time — because
+    // `pos` is what is on screen when you strike it, and `pos` is derived from
+    // `to` with its own offset. It is the standing position that blocks a shot.
+    if (YOU_SHOOT_KINDS.has(p.kind)) {
+      clearShotLane(sc, runners[i].to, onsideY);
+      clearShotLane(sc, runners[i].pos, onsideY);
+    }
   }
   if (sc.runner) sc.passTarget = { x: sc.runner.to.x, y: sc.runner.to.y };
 
   // The poacher lurks for a spill, always onside of the line as it now stands.
   sc.follower.x = clamp(CX + side * U(rng, 1.5, 5), POST_L - 3, POST_R + 3);
   sc.follower.y = Math.max(U(rng, SIX_DEPTH, 12), onsideY);
+  // …and he is a team-mate in front of the goal like any other, so he gets out
+  // of the way of a shot too.
+  if (YOU_SHOOT_KINDS.has(p.kind)) clearShotLane(sc, sc.follower, onsideY);
 }
 
 // ── THE WHOLE PIPELINE ──────────────────────────────────────────────────────
@@ -970,7 +1176,12 @@ export function buildChance(
  * hold the actors that decide the chance, and nothing may be piled on the ball.
  */
 export function planFaults(sc: Scenario, plan: ChancePlan): string[] {
-  const out = scenarioFaults(sc);
+  // A through ball's runner timing his move a yard early IS the chance —
+  // baseScenario.ts deliberately exempts it from the onside repair for that
+  // reason, and the gallery already draws it amber rather than red. This
+  // function was the one place that still counted it as broken.
+  const out = scenarioFaults(sc).filter(f =>
+    !(sc.kind === "through_ball" && f === "attacker offside"));
   const vp = sc.viewport;
   const inFrame = (q: Vec2) => q.x >= vp.x1 - 0.1 && q.x <= vp.x2 + 0.1 && q.y >= vp.y1 - 0.1 && q.y <= vp.y2 + 0.1;
   if (!inFrame(sc.ball)) out.push("ball off screen");

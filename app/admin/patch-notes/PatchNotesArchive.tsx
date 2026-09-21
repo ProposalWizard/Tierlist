@@ -1,0 +1,375 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import {
+  SECTION_COLOR,
+  barGroupCeiling,
+  barWidths,
+  formatBarValue,
+  formatPatchDate,
+  type PatchBar,
+  type PatchItem,
+  type PatchNote,
+  type PatchSection,
+} from "@/lib/patchNotes";
+
+/**
+ * THE ARCHIVE, RENDERED.
+ *
+ * The visual target is the v0.1 artifact
+ * (.claude/skills/artifact-house-style/references/patch-notes-v0.1.html) —
+ * its colour tokens, its stat strip, its coloured dot headings, one bold
+ * line per item with a thin rule under it, its before/after bars and its
+ * toggles, carried over as Tailwind so the page belongs to the site rather
+ * than carrying a second stylesheet around with it.
+ *
+ * Nothing here renders stored markup. Every field comes out of the
+ * structured shape in lib/patchNotes.ts and lands in a known element.
+ *
+ * Phone first: version pills scroll across the top. From lg up they become
+ * a rail down the left, because admin tooling is judged on a desktop.
+ */
+
+/* The v0.1 artifact's own tokens. Dark only — this page sits inside the
+   app's own dark admin chrome, and a light variant would fight it. */
+const BG = "bg-[#0b100e]";
+const CARD = "bg-[#141d18]";
+const CARD2 = "bg-[#192520]";
+const LINE = "border-[#24332b]";
+const INK = "text-[#f2f7f4]";
+const INK2 = "text-[#9fb6aa]";
+const INK3 = "text-[#6f8679]";
+
+const BAR_FILL: Record<PatchBar["state"], string> = {
+  good: "bg-[#3ddc84]/85",
+  warn: "bg-[#f5b942]/85",
+  bad: "bg-[#ff6b6b]/85",
+};
+
+export default function PatchNotesArchive() {
+  const [notes, setNotes] = useState<PatchNote[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [migrationMissing, setMigrationMissing] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/patch-notes");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Failed to load patch notes");
+      const list: PatchNote[] = Array.isArray(data.notes) ? data.notes : [];
+      setNotes(list);
+      setMigrationMissing(data.migrationMissing === true);
+      setSelected((prev) => (prev && list.some((n) => n.version === prev) ? prev : list[0]?.version ?? null));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load patch notes");
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const note = notes.find((n) => n.version === selected) ?? null;
+
+  return (
+    <main className={`min-h-screen ${BG} ${INK}`}>
+      <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-8 lg:px-8">
+
+        <header className="mb-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-extrabold tracking-tight lg:text-3xl">Patch notes</h1>
+            <span className="rounded-full bg-[#3ddc84] px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-[#06170e]">
+              Archive
+            </span>
+          </div>
+          <p className={`mt-1 text-[13px] ${INK3}`}>
+            Every shipped version, kept in the database instead of a link that drifts.
+          </p>
+        </header>
+
+        {migrationMissing && (
+          <MigrationBanner />
+        )}
+
+        {error && (
+          <div className={`mb-5 rounded-xl border border-[#ff6b6b]/40 ${CARD} p-4`}>
+            <p className="text-sm font-bold text-[#ff6b6b]">{error}</p>
+            <button
+              onClick={load}
+              className={`mt-2 rounded-lg border ${LINE} ${CARD2} px-3 py-1.5 text-xs font-bold ${INK}`}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {loading && <p className={`text-sm ${INK2}`}>Loading…</p>}
+
+        {!loading && !error && notes.length === 0 && !migrationMissing && (
+          <div className={`rounded-xl border ${LINE} ${CARD} p-5`}>
+            <p className="text-sm font-bold">No versions published yet.</p>
+            <p className={`mt-1 text-[13px] ${INK2}`}>
+              The table is there and readable — it just has no rows. Run{" "}
+              <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px]`}>
+                supabase/migrations/patch_notes_v0_1.sql
+              </code>{" "}
+              to load v0.1.
+            </p>
+          </div>
+        )}
+
+        {notes.length > 0 && (
+          <div className="lg:flex lg:gap-8">
+            <VersionRail notes={notes} selected={selected} onSelect={setSelected} />
+            <div className="min-w-0 flex-1">
+              {note && <NoteBody note={note} />}
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+function MigrationBanner() {
+  return (
+    <div className={`mb-5 rounded-xl border ${LINE} border-l-[3px] border-l-[#ff6b6b] ${CARD} px-4 py-3.5`}>
+      <div className="mb-1 text-[12px] font-extrabold uppercase tracking-wider text-[#ff6b6b]">
+        Migration not run
+      </div>
+      <p className={`text-[14px] ${INK2}`}>
+        The <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px] ${INK}`}>patch_notes</code>{" "}
+        table doesn&apos;t exist yet. Run{" "}
+        <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px] ${INK}`}>
+          supabase/migrations/patch_notes.sql
+        </code>{" "}
+        in the Supabase SQL Editor, then{" "}
+        <code className={`rounded border ${LINE} ${CARD2} px-1.5 py-0.5 font-mono text-[12px] ${INK}`}>
+          patch_notes_v0_1.sql
+        </code>. Until then this page has nothing to show — that is an empty archive, not a lost one.
+      </p>
+    </div>
+  );
+}
+
+/* ── Version picker ──────────────────────────────────────────────────────
+ * Pills across the top on a phone, a rail down the left from lg up.
+ */
+function VersionRail({
+  notes, selected, onSelect,
+}: { notes: PatchNote[]; selected: string | null; onSelect: (v: string) => void }) {
+  return (
+    <>
+      {/* Phone: a scrolling row of pills. */}
+      <div className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 lg:hidden">
+        {notes.map((n) => {
+          const on = n.version === selected;
+          return (
+            <button
+              key={n.version}
+              onClick={() => onSelect(n.version)}
+              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-extrabold transition ${
+                on
+                  ? "border-[#3ddc84] bg-[#3ddc84]/15 text-[#3ddc84]"
+                  : `${LINE} ${CARD} ${INK2}`
+              }`}
+            >
+              v{n.version}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Desktop: a rail. */}
+      <nav className="hidden w-56 shrink-0 lg:block">
+        <p className={`mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] ${INK3}`}>
+          Versions
+        </p>
+        <div className="flex flex-col gap-1">
+          {notes.map((n) => {
+            const on = n.version === selected;
+            return (
+              <button
+                key={n.version}
+                onClick={() => onSelect(n.version)}
+                className={`rounded-lg border px-3 py-2 text-left transition ${
+                  on ? `border-[#3ddc84]/50 ${CARD2}` : "border-transparent hover:bg-[#141d18]"
+                }`}
+              >
+                <span className={`block text-sm font-extrabold ${on ? "text-[#3ddc84]" : INK}`}>
+                  v{n.version}
+                </span>
+                <span className={`block text-[11px] ${INK3}`}>{formatPatchDate(n.publishedAt)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </>
+  );
+}
+
+/* ── One version ─────────────────────────────────────────────────────── */
+
+function NoteBody({ note }: { note: PatchNote }) {
+  return (
+    /* Capped at the reference page's own 760px. Wider than that and a
+       before/after bar stretches until the difference stops being visible,
+       which is the one thing the bar exists to show. */
+    <article className="max-w-[760px]">
+      <div className="mb-1 flex flex-wrap items-center gap-2.5">
+        <span className="rounded-full bg-[#3ddc84] px-2.5 py-1 text-[12px] font-black uppercase tracking-[0.12em] text-[#06170e]">
+          v{note.version}
+        </span>
+        <span className={`text-[13px] ${INK3}`}>{formatPatchDate(note.publishedAt)}</span>
+      </div>
+
+      <h2 className="mt-2 text-[clamp(24px,6vw,34px)] font-extrabold leading-[1.08] tracking-[-0.025em]">
+        {note.title}
+      </h2>
+
+      {note.summary && <p className={`mb-6 mt-2 text-[13.5px] ${INK3}`}>{note.summary}</p>}
+
+      {note.stats.length > 0 && (
+        <div className="mb-7 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {note.stats.map((s, i) => (
+            <div key={i} className={`rounded-xl border ${LINE} ${CARD} p-3.5`}>
+              <b className="block text-[clamp(19px,4.6vw,25px)] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#3ddc84]">
+                {s.value}
+              </b>
+              <span className={`mt-1.5 block text-[11.5px] leading-[1.35] ${INK3}`}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {note.sections.map((section, i) => (
+        <Section key={i} section={section} />
+      ))}
+
+      <footer className={`mt-12 border-t ${LINE} pt-4 text-[12.5px] ${INK3}`}>
+        {note.artifactUrl ? (
+          <a
+            href={note.artifactUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-[#6fb8ff] underline underline-offset-2"
+          >
+            Open the original artifact ↗
+          </a>
+        ) : (
+          <span>No artifact link for this version.</span>
+        )}
+      </footer>
+    </article>
+  );
+}
+
+function Section({ section }: { section: PatchSection }) {
+  const c = SECTION_COLOR[section.kind];
+  const alerts = section.items.filter((i) => i.alert);
+  const rows = section.items.filter((i) => !i.alert);
+
+  return (
+    <section>
+      <h3 className={`mb-3 mt-9 flex items-center gap-2.5 text-[13px] font-extrabold uppercase tracking-[0.14em] ${c.text}`}>
+        <i className={`block h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} />
+        {section.title}
+      </h3>
+
+      {alerts.map((item, i) => (
+        <div key={`a${i}`} className={`mb-3 rounded-xl border ${LINE} border-l-[3px] border-l-[#ff6b6b] ${CARD} px-4 py-3.5`}>
+          <div className="mb-1.5 text-[12px] font-extrabold uppercase tracking-wider text-[#ff6b6b]">
+            {item.title}
+          </div>
+          {item.detail && <p className={`text-[14px] ${INK2}`}>{item.detail}</p>}
+          {item.more && <Toggle more={item.more} />}
+        </div>
+      ))}
+
+      {rows.length > 0 && (
+        <ul className="m-0 list-none p-0">
+          {rows.map((item, i) => (
+            <li key={i} className={`border-b ${LINE} py-3 last:border-b-0`}>
+              <Item item={item} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function Item({ item }: { item: PatchItem }) {
+  return (
+    <>
+      <div className={`font-bold ${INK}`}>
+        {item.title}
+        {item.pill && (
+          <span
+            className={`ml-2 inline-block rounded-full px-2 py-0.5 align-[1px] text-[10.5px] font-extrabold uppercase tracking-wider ${
+              item.pill.tone === "red"
+                ? "bg-[#ff6b6b]/15 text-[#ff6b6b]"
+                : "bg-[#f5b942]/15 text-[#f5b942]"
+            }`}
+          >
+            {item.pill.text}
+          </span>
+        )}
+      </div>
+
+      {item.detail && <div className={`mt-1 text-[14px] ${INK2}`}>{item.detail}</div>}
+
+      {item.bars && <BarGroup bars={item.bars} />}
+
+      {item.more && <Toggle more={item.more} />}
+    </>
+  );
+}
+
+function BarGroup({ bars }: { bars: PatchBar[] }) {
+  const ceiling = barGroupCeiling(bars);
+  return (
+    <div className="mb-0.5 mt-2.5">
+      {bars.map((bar, i) => <Bar key={i} bar={bar} ceiling={ceiling} />)}
+    </div>
+  );
+}
+
+function Bar({ bar, ceiling }: { bar: PatchBar; ceiling: number }) {
+  const w = barWidths(bar, ceiling);
+  return (
+    <div className="grid grid-cols-[minmax(70px,92px)_1fr_auto] items-center gap-2.5 py-1 text-[13px]">
+      <span className={`truncate whitespace-nowrap ${INK2}`}>{bar.label}</span>
+      <div className={`relative h-4 overflow-hidden rounded ${CARD2}`}>
+        <div className="absolute inset-y-0 left-0 rounded bg-[#24332b]" style={{ width: `${w.was}%` }} />
+        <div className={`absolute inset-y-0 left-0 rounded ${BAR_FILL[bar.state]}`} style={{ width: `${w.now}%` }} />
+      </div>
+      <span className={`whitespace-nowrap text-[12.5px] font-bold tabular-nums ${INK}`}>
+        {formatBarValue(bar.now, bar.unit)}{" "}
+        <s className={`font-normal no-underline opacity-80 ${INK3}`}>{formatBarValue(bar.was)}</s>
+      </span>
+    </div>
+  );
+}
+
+function Toggle({ more }: { more: { summary: string; points: string[] } }) {
+  return (
+    <details className={`group mt-2.5 rounded-xl border ${LINE} ${CARD} px-3.5 open:pb-3`}>
+      <summary
+        className={`flex cursor-pointer list-none items-center gap-2 py-2.5 text-[13px] font-bold ${INK3} [&::-webkit-details-marker]:hidden`}
+      >
+        <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+        {more.summary}
+      </summary>
+      <ul className={`m-0 list-disc pl-[18px] text-[14px] ${INK2}`}>
+        {more.points.map((p, i) => (
+          <li key={i} className="mb-1.5 last:mb-0">{p}</li>
+        ))}
+      </ul>
+    </details>
+  );
+}
