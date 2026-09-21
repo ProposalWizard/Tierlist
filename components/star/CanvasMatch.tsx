@@ -2852,8 +2852,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // nothing, and the assist you had just played was never recorded. That is
     // the whole of "it counted as a team goal", and of ASSISTS reading 0/0 on a
     // goal the commentary had just described you setting up.
-    const youShot = ballRef.current?.youStruckAtGoal === true;
     const receiverShot = sc.receiverShot === true;
+    // A REBOUND A TEAM-MATE PUTS AWAY IS HIS GOAL, NOT YOURS.
+    //
+    // Reported directly: "when you shoot and then it rebounds or rebounds again
+    // and a player scores, it counts as your goal."
+    //
+    // `ball.youStruckAtGoal` is set once, at your own strike, and the engine
+    // clears it in exactly ONE place — the poacher's six-yard poke-in, where
+    // this same bug was reported and fixed before. The other way a team-mate
+    // finishes a loose ball is `launchReceiverShot`, which sets
+    // `scenario.receiverShot` and never clears the flag. `creditChance` tests
+    // "you shot" BEFORE "he shot", so on that path his goal came to you and
+    // your assist vanished.
+    //
+    // Within one chance you strike at most once, and always first — your shot
+    // comes from the aim gesture before the ball is live. So a team-mate
+    // shooting means he struck it AFTER you, and it stopped being your shot the
+    // moment he did. Fixed here rather than in the engine, which is never
+    // modified; it is a credit rule, not a physics one.
+    const youShot = ballRef.current?.youStruckAtGoal === true && !receiverShot;
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
 

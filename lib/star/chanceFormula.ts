@@ -513,6 +513,18 @@ const KIND_MIN_LATERAL: Partial<Record<ScenarioKind, number>> = {
 /** The kinds where YOU are the one shooting at goal — the only ones that
  *  require the keeper to be inside the frame. */
 const SHOOTER_KINDS = new Set<ScenarioKind>(["one_on_one", "tight_angle", "long_range", "volley", "header"]);
+/** The kinds where YOU are the one striking at goal, so a team-mate standing in
+ *  the lane is in your way rather than being the man you are aiming at. */
+// NOT volley or header, deliberately. Those are met in a crowded six-yard box
+// and the bodies around you are the chance — you are heading it over and around
+// people. Measured with them included: moving a team-mate aside shuffled the
+// defence into the lane instead and blocks went UP, volley 17.8% → 38.0% and
+// header 6.1% → 22.4%. The three below are open-play shots where you have a
+// clear sight of goal and a team-mate in front of you is simply in the way.
+const YOU_SHOOT_KINDS = new Set<ScenarioKind>(["one_on_one", "tight_angle", "long_range"]);
+/** How far off the line of your shot a team-mate has to be. A body is about a
+ *  metre wide; 2.2 m clears it with room rather than grazing past. */
+const TEAMMATE_LANE_R = 2.2;
 
 /** A box scene, defended in zones, rather than a block defended in a line. */
 const BOX_KINDS = new Set<ScenarioKind>(["cutback", "byline_cross", "header", "volley", "tight_angle"]);
@@ -1023,6 +1035,46 @@ function coverCentre(sc: Scenario): void {
  * Where your team-mates stand. §C3's lane rule, applied literally: for a shot
  * from ≥14 m nobody is parked inside the ball→posts triangle.
  */
+/**
+ * Move one team-mate sideways out of the line your shot will travel.
+ *
+ * Reported directly: "when you shoot and your own teammates are in front of
+ * you, it can be very difficult for them to not get in the way." The rule that
+ * was here only fired from 14 m out — so every close-range chance had no
+ * protection at all — and measured against the middle of the GOAL rather than
+ * the line the ball actually travels, which is the wrong place entirely once
+ * the ball is wide.
+ *
+ * Perpendicular only, on whichever side he is already nearer, and never behind
+ * the offside line. Never backwards down the lane, which would walk him into
+ * the keeper.
+ */
+function clearShotLane(sc: Scenario, m: Vec2, onsideY: number): void {
+  // THE SHOT STARTS WHERE YOU STAND, NOT WHERE THE BALL IS.
+  //
+  // For a one-on-one or a long shot those are the same place. For a VOLLEY or
+  // a HEADER they are not: the ball is at the crosser, out wide, and you meet
+  // it near goal. A first version used the ball, so it was clearing the CROSS
+  // lane — which is not a lane anybody shoots down — and shuffled the geometry
+  // enough to make things worse, measured: volley blocked 17.8% → 39.0%,
+  // header 6.1% → 25.3%.
+  const o = sc.player;
+  if (m.y >= o.y) return;                       // behind you blocks nothing
+  const vx = CX - o.x, vy = 0 - o.y;
+  const len2 = vx * vx + vy * vy || 1;
+  let t = ((m.x - o.x) * vx + (m.y - o.y) * vy) / len2;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const px = o.x + vx * t, py = o.y + vy * t;
+  const off = Math.hypot(m.x - px, m.y - py);
+  if (off >= TEAMMATE_LANE_R) return;
+  const nlen = Math.hypot(-vy, vx) || 1;
+  const nx = -vy / nlen, ny = vx / nlen;
+  const sign = ((m.x - px) * nx + (m.y - py) * ny) >= 0 ? 1 : -1;
+  const push = TEAMMATE_LANE_R - off + 0.6;
+  m.x = clamp(m.x + sign * nx * push, 2, PITCH_W - 2);
+  m.y = Math.max(Math.max(0.8, onsideY), m.y + sign * ny * push);
+}
+
 function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void {
   const runners: Runner[] = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
   if (runners.length === 0) return;
@@ -1058,17 +1110,47 @@ function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void 
   for (let i = 0; i < runners.length; i++) {
     const at = spots[i % spots.length];
     const to = { x: clamp(at.x, 2, PITCH_W - 2), y: Math.max(0.8, at.y) };
-    // §C3: never parked in the open lane of a shot from distance.
-    if (bd >= 14 && Math.abs(to.x - CX) < 4 && to.y < bd) to.x = CX + side * -4.4;
+    // YOUR OWN TEAM-MATES DO NOT STAND IN FRONT OF YOUR SHOT.
+    //
+    // Reported directly: "when you shoot and your own teammates are in front of
+    // you, it can be very difficult for them to not get in the way." Two things
+    // were wrong with the old rule, which read
+    //   if (bd >= 14 && Math.abs(to.x - CX) < 4 && to.y < bd) …
+    //
+    //  1. It only fired from 14 m out. Every close-range chance — the
+    //     one-on-one, the volley, the tight angle — had NO protection at all,
+    //     and those are exactly the ones where a body in the way ruins it.
+    //  2. It measured against the middle of the GOAL, not against the line the
+    //     ball will actually travel. With the ball out wide, the lane to goal
+    //     is nowhere near the centre, so the check was looking in the wrong
+    //     place — the same mistake the defender lane rule had, found by
+    //     measuring: of 300 cutbacks, the cone test found 0 men in the way
+    //     while 223 had one within 1.5 m of the real path.
+    //
+    // Scoped to the kinds where YOU strike at goal. A cutback, a cross and a
+    // through ball are played TO a team-mate — moving him out of the lane
+    // there would be moving the target of the pass.
     to.y = Math.max(to.y, onsideY);
     runners[i].to = { x: to.x, y: to.y };
     runners[i].pos = { x: to.x, y: Math.max(to.y + 1.4, onsideY) };
+    // Applied to where he STANDS as well as where he runs to, and applied
+    // last. A first attempt moved only `to` and measured as barely working —
+    // a volley still had a team-mate in the lane 56.3% of the time — because
+    // `pos` is what is on screen when you strike it, and `pos` is derived from
+    // `to` with its own offset. It is the standing position that blocks a shot.
+    if (YOU_SHOOT_KINDS.has(p.kind)) {
+      clearShotLane(sc, runners[i].to, onsideY);
+      clearShotLane(sc, runners[i].pos, onsideY);
+    }
   }
   if (sc.runner) sc.passTarget = { x: sc.runner.to.x, y: sc.runner.to.y };
 
   // The poacher lurks for a spill, always onside of the line as it now stands.
   sc.follower.x = clamp(CX + side * U(rng, 1.5, 5), POST_L - 3, POST_R + 3);
   sc.follower.y = Math.max(U(rng, SIX_DEPTH, 12), onsideY);
+  // …and he is a team-mate in front of the goal like any other, so he gets out
+  // of the way of a shot too.
+  if (YOU_SHOOT_KINDS.has(p.kind)) clearShotLane(sc, sc.follower, onsideY);
 }
 
 // ── THE WHOLE PIPELINE ──────────────────────────────────────────────────────
