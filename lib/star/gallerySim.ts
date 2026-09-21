@@ -207,3 +207,28 @@ export function simSignature(spec: SimSpec): string {
   const plan = planById(spec.planId);
   return plan ? plan.signature : `${spec.kind}|base`;
 }
+
+/**
+ * INFINITE HIGHLIGHTS — one press, one chance, drawn from a POOL of kinds.
+ *
+ * The only thing this adds over `nextSim` is which kind to ask for. Every
+ * chance still comes off the match's own path (`selectChance` → `buildScenario`
+ * → `fixBaseScenario` → `applyChancePlan`) through `nextSim` itself, and still
+ * carries the same `SelectionMemory` between presses, so the anti-repeat spans
+ * the whole stream rather than restarting each time the kind changes.
+ *
+ * The pick is UNIFORM across the selected kinds, deliberately — this is a
+ * review tool, not a match. A kind is toggled on because someone wants to LOOK
+ * at it, so each selected kind should come round about as often as any other,
+ * rather than at the rate the real game serves it (`FREQ`, scenarioSelect.ts).
+ */
+export function nextHighlight(
+  kinds: ScenarioKind[],
+  rng: () => number,
+  memory: SelectionMemory,
+  lastPicture?: string,
+  position = "ST",
+): SimSpec | null {
+  if (!kinds.length) return null;
+  return nextSim(pick(rng, kinds), rng, memory, lastPicture, position);
+}
