@@ -39,6 +39,25 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 21 Sep 2026 — Infinite Highlights, second pass
+- **"The actual infinite highlights page should also have the editor tools in
+  there."** Seeing a broken chance and being able to fix it are one job, not
+  two screens. If a review tool can show you a fault it should let you correct
+  it on the spot — flagging and then hunting for the same chance in another
+  tool is the gap. Drag, + Team-mate, + Opponent, Remove and Save are now on
+  the highlights screen, the SAME code the gallery runs
+  (`components/star/EditableFrame.tsx`, `lib/star/scenarioEdit.ts`).
+- **One editor, not two.** Same ruling as "one generator, one renderer",
+  extended to editing. The drag/hit-test/add/remove/save code was lifted out
+  of the gallery page rather than copied into the second one — a second copy
+  drifts, and this build has been burned by exactly that before. Proved by
+  rendering the pre-refactor gallery beside the new one: the version screen
+  and a real add+drag came out **byte-identical** (same PNG sha256, same
+  localStorage record).
+- **A control only appears when there is something to do with it.** Save and
+  Discard show up the moment a picture is edited and not before; "revert to
+  the generated chance" only on one that has been saved.
+
 ### 21 Sep 2026 — Infinite Highlights
 - **"A test that measures the wrong path passes; a person flicking through a
   hundred real chances catches it in a minute."** Said after a camera change
