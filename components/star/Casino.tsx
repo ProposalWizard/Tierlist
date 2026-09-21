@@ -8,6 +8,7 @@ import {
 import { getTuning } from "@/lib/star/tuningStore";
 import { formatMoney } from "@/lib/star/money";
 import { horseRacePrize, horseUpkeep } from "@/lib/star/horse";
+import GoalieMode from "./GoalieMode";
 
 interface Props {
   bankStart: number;
@@ -77,7 +78,7 @@ function stepAtOrBelow(n: number): number {
 const BET_STORAGE_KEY = "star-casino-bet";
 
 export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onBuyHorse, onRenameHorse, onPlaceBet }: Props) {
-  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets">("menu");
+  const [game, setGame] = useState<"menu" | "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie">("menu");
   const [bank, setBank] = useState(bankStart);
   const [bet, setBet] = useState(BET_STEPS[0]);
 
@@ -145,6 +146,17 @@ export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onB
       />
     );
   }
+  if (game === "goalie") {
+    return (
+      <GoalieMode
+        bank={bank}
+        bet={bet}
+        onSetBank={setBank}
+        onExit={() => setGame("menu")}
+        onChangeBet={changeBet}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
@@ -197,6 +209,14 @@ export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onB
           >
             <div className="text-3xl">🏆</div>
             <div className="text-emerald-400">COMPETITION BETS</div>
+          </button>
+          <button
+            disabled={bank < 1}
+            onClick={() => setGame("goalie")}
+            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
+          >
+            <div className="text-3xl">🧤</div>
+            <div className="text-emerald-400">GOALIE MODE</div>
           </button>
         </div>
       </div>
