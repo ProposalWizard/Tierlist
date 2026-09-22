@@ -184,6 +184,33 @@ interface Props {
    * itself a new goal to capture.
    */
   onGoalScored?: (replay: GoalReplay) => void;
+  /**
+   * Fired once per chance the match hands you, the instant the picture is
+   * settled and before you are asked to aim at it.
+   *
+   * Purely an OBSERVER — nothing here reads it back, and a caller that does
+   * not pass it changes nothing. It exists because there was no way at all
+   * to find out what a real match actually serves: a match's chance kinds
+   * were decided in `loadScenario` and never left it, so "I've played five
+   * games and seen ZERO one-on-ones" could not be checked against anything.
+   * See /star-play-dev's Infinite Match, which is the one caller.
+   *
+   * A dribble has no `ScenarioKind` at all — it is its own phase — so it is
+   * reported as the string "dribble" rather than left out, which would make
+   * the tally silently not add up to the chances played.
+   */
+  onChanceServed?: (info: { kind: ScenarioKind | "dribble"; minute: number; reason?: string }) => void;
+  /**
+   * Never take you off, whatever the match thinks.
+   *
+   * `hookCheck` can end your afternoon from minute 60 on — bad form, tired
+   * legs, or a game already won. That is right for a career and fatal for a
+   * tool whose whole job is to play thousands of minutes and see what comes
+   * up: a 10,000-minute match was measured ending around minute 75.
+   *
+   * Opt-in and off by default, so a real career is untouched.
+   */
+  neverHooked?: boolean;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -329,7 +356,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, openOn, bare = false }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -762,6 +789,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  current one without re-creating every callback that touches it. */
   const openOnRef = useRef(openOn);
   openOnRef.current = openOn;
+  /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
+   *  same reason `openOn` is — the loop reads them outside React's render. */
+  const onChanceServedRef = useRef(onChanceServed);
+  onChanceServedRef.current = onChanceServed;
+  const neverHookedRef = useRef(neverHooked);
+  neverHookedRef.current = neverHooked;
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -3516,7 +3549,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Checked here, between chances, because that is where the clock actually
     // moves. Your afternoon decides it; the game being won decides the
     // flattering version of it.
-    if (!hookedRef.current && !step.fullTime) {
+    if (!hookedRef.current && !step.fullTime && !neverHookedRef.current) {
       const t = tallyRef.current;
       const decision = hookCheck({
         minute: st.minute,
@@ -3876,6 +3909,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         draggingRef.current = false;
         facingRef.current = "up";
         setPhase("fpDribble");
+        // A dribble has no ScenarioKind, so it is reported under its own name
+        // rather than left out — see `onChanceServed`.
+        onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
         logMoment(momentLine(), "you");
         pushLine(request.reason);
         pushLine("Beat your man to win the ball forward.");
@@ -3898,6 +3934,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       setPhase("dribble");
+      onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
       logMoment(momentLine(), "you");
       pushLine(request.reason);
       pushLine("Swipe the way you want to run. Get past them to the line.");
@@ -4064,6 +4101,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
     setPhase("aim");
+    // The kind is final from here: the authored-shape overlay above changes
+    // where the bodies are, never which chance this is.
+    onChanceServedRef.current?.({
+      kind: scenarioRef.current.kind,
+      minute: matchMinuteRef.current,
+      reason: request?.reason,
+    });
     // One line, once per chance — see logMoment. This is the single thing kept
     // from what used to be an unbroken flood of buildup commentary: the moment
     // the ball actually reaches a player of yours to do something with.

@@ -141,6 +141,30 @@ function cellKeyFor(kind: ScenarioKind, seed: number): string {
 /** HOW MANY versions each kind shows. Grows by one per "+ Add version" and is
  *  remembered, so the grid a person builds up is still there next time. */
 const COUNT_KEY = "star-gallery-version-counts-v1";
+
+/**
+ * CARDS THAT HAVE BEEN DELETED.
+ *
+ * Versions are GENERATED from a count, not stored as a list, so there was no
+ * way to get rid of one: "I added one and I can't delete it... I pressed the
+ * X and it didn't." Delete also only ever appeared once a card was saved,
+ * which is why it looked like a one-on-one-only feature — those were the only
+ * saved ones. This remembers which cards are gone so a generated card can be
+ * deleted like any other.
+ */
+const REMOVED_KEY = "star-gallery-removed-v1";
+type RemovedStore = Record<string, true>;
+function loadRemoved(): RemovedStore {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(REMOVED_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? (parsed as RemovedStore) : {};
+  } catch { return {}; }
+}
+function saveRemoved(v: RemovedStore): void {
+  try { window.localStorage.setItem(REMOVED_KEY, JSON.stringify(v)); } catch { /* a dev tool */ }
+}
 type CountStore = Record<string, number>;
 function loadCounts(): CountStore {
   if (typeof window === "undefined") return {};
@@ -932,6 +956,16 @@ export default function StarGalleryDevPage() {
     });
   }, []);
 
+  // ── Cards that have been deleted ──
+  const [removed, setRemoved] = useState<RemovedStore>({});
+  useEffect(() => {
+    const loaded = loadRemoved();
+    if (Object.keys(loaded).length) setRemoved(loaded);
+  }, []);
+  const markRemoved = useCallback((key: string) => {
+    setRemoved((prev) => { const next = { ...prev, [key]: true as const }; saveRemoved(next); return next; });
+  }, []);
+
   // ── How many versions each kind shows ──
   const [counts, setCounts] = useState<CountStore>({});
   useEffect(() => {
@@ -1066,9 +1100,34 @@ export default function StarGalleryDevPage() {
    * the next load. Honest about a partial result — if the code half fails
    * (no token, a race) it says so rather than claiming a clean delete.
    */
+  /**
+   * DELETE THIS CARD — whatever state it is in.
+   *
+   * Reported: "I added one and I can't delete it... I pressed the X and it
+   * didn't", and that Delete looked like it only existed for one-on-ones.
+   * Two separate causes: the button only rendered once a scenario had been
+   * SAVED (and one-on-ones were the only saved ones), and a generated card
+   * had nowhere to be deleted TO, because versions come from a count rather
+   * than a list. The X is the reject mark, not a delete — see its label.
+   */
   const deleteCell = async (cell: Cell): Promise<void> => {
-    if (typeof window !== "undefined" &&
-        !window.confirm(`Delete this ${kindLabel(cell.kind)} scenario everywhere — the database and the code? This cannot be undone here.`)) return;
+    const isSaved = !!saved[cell.key];
+    const question = isSaved
+      ? `Delete this ${kindLabel(cell.kind)} scenario everywhere — the database and the code? This cannot be undone here.`
+      : `Remove this ${kindLabel(cell.kind)} card? It was never saved, so there is nothing to delete from the database or the code.`;
+    if (typeof window !== "undefined" && !window.confirm(question)) return;
+
+    // Never saved: there is nothing on a server to remove, so just take the
+    // card out and stop. Doing the network round trip would report a
+    // confusing failure for a card that only ever existed on this screen.
+    if (!isSaved) {
+      markRemoved(cell.key);
+      clearOverride(cell.key);
+      setVersionIdx((i) => Math.max(0, i - 1));
+      flashFor(true, "Card removed.");
+      return;
+    }
+
     setBusy("deleting");
     const id = gallerySlug(cell.key);
     const shared = await deleteScenarioShared(id);       // Supabase + local cache
@@ -1087,6 +1146,8 @@ export default function StarGalleryDevPage() {
     setBusy(null);
     setSaved((m) => { const next = { ...m }; delete next[cell.key]; return next; });
     clearOverride(cell.key);
+    markRemoved(cell.key);
+    setVersionIdx((i) => Math.max(0, i - 1));
     if (!shared.ok && repoTail) { flashFor(false, `Delete failed — ${shared.message}${repoTail}`); return; }
     flashFor(!repoTail, repoTail ? `Removed here${repoTail}` : "Deleted — from the database and the code.");
   };
@@ -1132,6 +1193,30 @@ export default function StarGalleryDevPage() {
   const pending = useMemo(() => pendingCommit(Object.values(saved)), [saved]);
 
   /**
+   * The PICTURE a saved scenario actually is.
+   *
+   * Rebuilt exactly the way that scenario's own card rebuilds it — its base
+   * from `cellFromSaved` (seed + plan), with its saved positions laid over —
+   * so the last look before a commit and the card itself can never be
+   * showing two different things. A scenario with no recorded source has no
+   * base to rebuild from; that is a real state, so it returns null and the
+   * reviewer says so rather than drawing something invented.
+   */
+  const frameOfSaved = useCallback((sc: MatchScenario): Frame | null => {
+    const cell = cellFromSaved(sc);
+    if (!cell) return null;
+    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items.length));
+  }, []);
+
+  /** Open a saved scenario's own card, for a last edit before committing. */
+  const openSavedScenario = useCallback((sc: MatchScenario) => {
+    const kind = sc.source?.kind;
+    if (!kind) return;
+    setKindId(kind);
+    openGroup("eleven");
+  }, []);
+
+  /**
    * COMMIT EVERYTHING OUTSTANDING, IN ONE COMMIT.
    *
    * Vercel rebuilds production on every commit to main, so committing one
@@ -1144,15 +1229,15 @@ export default function StarGalleryDevPage() {
    * writes the file once — so this is one request, one commit, one deploy,
    * however many scenarios are outstanding.
    */
-  const commitAllPending = async (): Promise<void> => {
-    if (!pending.length) return;
+  const commitAllPending = async (batch: MatchScenario[]): Promise<void> => {
+    if (!batch.length) return;
     setBusy("committing");
     let res: Response;
     try {
       res = await fetch("/api/star/scenarios/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenarios: pending }),
+        body: JSON.stringify({ scenarios: batch }),
       });
     } catch {
       setBusy(null);
@@ -1172,7 +1257,7 @@ export default function StarGalleryDevPage() {
     // re-read it until the deploy lands. Say that rather than flipping the
     // badges to "Committed" and being wrong for the next two minutes.
     flashFor(true,
-      `Committed ${pending.length} ${pending.length === 1 ? "scenario" : "scenarios"} in one commit. `
+      `Committed ${batch.length} ${batch.length === 1 ? "scenario" : "scenarios"} in one commit. `
       + "They show as Committed once the deploy finishes.");
   };
 
@@ -1229,9 +1314,9 @@ export default function StarGalleryDevPage() {
         const c = cellFromSaved(ms);
         if (c) { extra.push(c); have.add(key); }
       }
-      return [...generated, ...extra];
+      return [...generated, ...extra].filter((c) => !removed[c.key]);
     },
-    [game, kindId, fiveId, countFor, saved],
+    [game, kindId, fiveId, countFor, saved, removed],
   );
   const activeGroupId = game === "eleven" ? kindId : fiveId;
 
@@ -1246,15 +1331,15 @@ export default function StarGalleryDevPage() {
         for (const [key, ms] of Object.entries(saved)) {
           if (ms.source?.kind === k) keys.add(key);
         }
-        const arr = Array.from(keys);
+        const arr = Array.from(keys).filter((key) => !removed[key]);
         return { id: k, label: kindLabel(k), done: reviewedCount(reviews, arr), total: arr.length };
       });
     }
     return FIVE_GROUPS.map((g) => {
-      const keys = fiveVersions(g.id).map((c) => c.key);
+      const keys = fiveVersions(g.id).map((c) => c.key).filter((key) => !removed[key]);
       return { id: g.id, label: g.label, done: reviewedCount(reviews, keys), total: keys.length };
     });
-  }, [game, reviews, countFor, saved]);
+  }, [game, reviews, countFor, saved, removed]);
 
   const openGroup = (g: "eleven" | "five") => { setGame(g); setScreen(g); setSim(null); setBuilderTab(false); };
   const openVersion = (i: number) => { setVersionIdx(i); setScreen("version"); setSim(null); setSelectedId(null); };
@@ -1392,10 +1477,12 @@ export default function StarGalleryDevPage() {
           proposals={proposals}
           corrections={corrections}
           pending={pending}
+          frameOf={frameOfSaved}
           busy={busy}
           commitBlocked={commitBlocked}
-          onCommitAll={() => void commitAllPending()}
+          onCommitAll={(batch) => void commitAllPending(batch)}
           onShowKind={(k) => { setKindId(k); openGroup("eleven"); }}
+          onOpenScenario={openSavedScenario}
         />
       </>,
       false,
@@ -1508,9 +1595,14 @@ export default function StarGalleryDevPage() {
     color: INK, fontSize: 15, fontWeight: 700, cursor: "pointer",
   };
   const editBtn = (off: boolean): React.CSSProperties => ({
-    flex: 1, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
+    // `whiteSpace: nowrap` and a smaller font because five of these share one
+    // column now — at 13.5px "+ Team-mate" broke onto two lines and made the
+    // row twice as tall as it needed to be.
+    flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
+    padding: "0 6px", whiteSpace: "nowrap",
+
     border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-    color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 13.5, fontWeight: 700,
+    color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
   });
 
   // ── Adding and removing figures ──
@@ -1529,20 +1621,27 @@ export default function StarGalleryDevPage() {
   };
 
   // ── Simulate, and the formation strip it replaced ──
+  //
+  // Before you are simulating this is a small square, so the picture and the
+  // buttons under it both fit on screen at once — asked for directly after
+  // the desktop picture grew: "we could just make the simulate button a
+  // little square that has a little play button on it". Once you ARE
+  // simulating it becomes the wide NEXT button, because that is then the one
+  // thing you press over and over.
   const simulatePanel = cell.game === "eleven" ? (
-    <div style={{ display: "grid", gap: 8 }}>
-      {/* Once you are simulating, this is the button you press over and over
-          — so it stops being "Simulate again" and becomes NEXT, bigger, with
-          the arrow keys and a swipe across the grass doing the same thing. */}
+    <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
       <button
         onClick={() => simulate(kindId)}
+        title={showingSim ? "Next version" : "Simulate a version of this chance"}
         style={{
-          width: "100%", height: showingSim ? 62 : 54, borderRadius: 16, cursor: "pointer",
+          width: showingSim ? "100%" : 46, height: showingSim ? 62 : 46,
+          borderRadius: showingSim ? 16 : 14, cursor: "pointer",
           border: "1px solid rgba(56,189,248,0.55)", background: "rgba(14,116,144,0.38)",
-          color: "#e0f2fe", fontSize: showingSim ? 21 : 17, fontWeight: 800,
+          color: "#e0f2fe", fontSize: showingSim ? 21 : 16, fontWeight: 800,
+          display: "grid", placeItems: "center", lineHeight: 1,
         }}
       >
-        {showingSim ? "Next \u2192" : "Simulate"}
+        {showingSim ? "Next \u2192" : "\u25B6"}
       </button>
       {showingSim && (
         <button
@@ -1550,7 +1649,7 @@ export default function StarGalleryDevPage() {
           style={{
             width: "100%", height: 40, borderRadius: 13, cursor: "pointer",
             border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-            color: MUTED, fontSize: 13.5, fontWeight: 700,
+            color: MUTED, fontSize: 13.5, fontWeight: 700, justifySelf: "stretch",
           }}
         >
           Back to version {versionIdx + 1}
@@ -1560,11 +1659,11 @@ export default function StarGalleryDevPage() {
   ) : null;
 
   const formationPanel = cell.game === "eleven" ? (
-    <div style={{ marginTop: 16 }}>
+    <div style={{ marginTop: 14, textAlign: "center" }}>
       <button
         onClick={() => setShowFormations((v) => !v)}
         style={{
-          width: "100%", height: 40, borderRadius: 13, cursor: "pointer",
+          width: "100%", maxWidth: 240, height: 36, borderRadius: 13, cursor: "pointer",
           border: "1px solid rgba(255,255,255,0.09)", background: "transparent",
           color: MUTED, fontSize: 13, fontWeight: 700,
         }}
@@ -1589,7 +1688,17 @@ export default function StarGalleryDevPage() {
           <ScenarioPlay
             build={() => {
               const sc = rebuildScenario(cell);
-              applyOverrideToScenario(sc, override);
+              // The SAVED drawing first, then whatever is being dragged on
+              // top of it — the same two layers, in the same order, that the
+              // picture, the fault rings and the formation strip all compose.
+              // Leaving `savedOv` out of this one call meant Play threw the
+              // saved scenario away and played the raw generated base
+              // instead. Reported directly: "the play in the scenario
+              // gallery moves everything around, and the goalie isn't in the
+              // same position that I place him in". Measured on the card it
+              // was reported from: the drawing had the keeper on 4.6m and
+              // the ball on 11.6m, Play put them on 2.2m and 19.2m.
+              applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
               return sc;
             }}
             onStop={() => setPlaying(false)}
@@ -1600,7 +1709,12 @@ export default function StarGalleryDevPage() {
           baseFrame={baseFrame}
           // Phone keeps the phone-sized default. On a desktop the picture you
           // are actually working on gets the room the screen already has.
-          size={wide ? { baseW: 640, maxW: 760, maxH: 800 } : undefined}
+          // Third pass at this. 340 (phone-sized everywhere) was too small on
+          // a desktop, 520 x 800 was "too big", 400 x 640 still pushed the
+          // buttons under it off the bottom of the screen. 350 x 560 leaves
+          // the whole card — picture, edit row, verdict row, Simulate and
+          // Across formations — visible at once on a 900px-tall screen.
+          size={wide ? { baseW: 330, maxW: 360, maxH: 520 } : undefined}
           override={override}
           marks={analysis.marks}
           onCommit={setOverride}
@@ -1622,8 +1736,8 @@ export default function StarGalleryDevPage() {
       </div>
 
       {cell.game === "eleven" && (
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Team-mate</button>
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+          <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
           <button style={editBtn(false)} onClick={() => addFigure("opponent")}>+ Opponent</button>
           <button
             style={editBtn(!canRemove)}
@@ -1641,19 +1755,18 @@ export default function StarGalleryDevPage() {
           >
             {playing ? "◼ Stop" : "▶ Play"}
           </button>
-          {/* Delete only shows when there is a SAVED scenario to delete — a
-              purely generated card has nothing to remove. Removes it from the
-              database and the committed file, so it is gone for everyone. */}
-          {savedScenario && (
-            <button
-              style={{ ...editBtn(false), color: "#f87171" }}
-              disabled={!!busy}
-              title="Delete this saved scenario everywhere"
-              onClick={() => void deleteCell(cell)}
-            >
-              {busy === "deleting" ? "Deleting…" : "Delete"}
-            </button>
-          )}
+          {/* Always here. A saved scenario goes from the database and the
+              committed file too; an unsaved card just goes from the grid. */}
+          <button
+            style={{ ...editBtn(false), color: "#f87171" }}
+            disabled={!!busy}
+            title={savedScenario
+              ? "Delete this scenario everywhere — database and code"
+              : "Remove this card — it was never saved"}
+            onClick={() => void deleteCell(cell)}
+          >
+            {busy === "deleting" ? "Deleting…" : "Delete"}
+          </button>
           {/* Tune: record WHY this generation was bad, without making it one
               of the base scenarios. Only offered when there is a drag to
               learn from. See lib/star/scenarioCorrections.ts. */}
@@ -1712,7 +1825,7 @@ export default function StarGalleryDevPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 6, justifyContent: "center", margin: "14px 0 12px", visibility: showingSim ? "hidden" : "visible" }}>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", margin: "10px 0 9px", visibility: showingSim ? "hidden" : "visible" }}>
         {versions.map((v, i) => (
           <button
             key={v.key}
@@ -1728,11 +1841,18 @@ export default function StarGalleryDevPage() {
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>
+        {/* This is the REJECT mark, not a delete — asked twice what the X
+            meant ("is that delete, or does that mean something else?"). It
+            only records that this picture is no good, so it says so. */}
         <button
           onClick={() => setVerdict(cell, verdict === "rejected" ? null : "rejected")}
-          style={bigBtn(verdict === "rejected" ? "#7f1d1d" : "rgba(255,255,255,0.05)", verdict === "rejected" ? "#ef4444" : "rgba(255,255,255,0.09)", verdict === "rejected" ? "#fecaca" : MUTED)}
+          title="Mark this picture as no good — it stays here"
+          style={{
+            ...bigBtn(verdict === "rejected" ? "#7f1d1d" : "rgba(255,255,255,0.05)", verdict === "rejected" ? "#ef4444" : "rgba(255,255,255,0.09)", verdict === "rejected" ? "#fecaca" : MUTED),
+            fontSize: 13, gap: 6, flexDirection: "row",
+          }}
         >
-          &#10005;
+          &#10005; <span style={{ fontSize: 12.5, fontWeight: 700 }}>No good</span>
         </button>
         <button
           onClick={() => {
@@ -1784,18 +1904,18 @@ export default function StarGalleryDevPage() {
         </span>,
       )}
       {wide ? (
-        <div style={{
-          // "auto" lets the picture column shrink to the picture, so the pair
-          // sits together in the middle instead of the controls being flung to
-          // the far edge with a void between them.
-          display: "grid", gridTemplateColumns: "auto minmax(300px, 400px)",
-          gap: 32, padding: "0 24px 24px", alignItems: "start",
-          justifyContent: "center",
-        }}>
-          {pane}
-          <div style={{ padding: "12px 0 24px", position: "sticky", top: 70 }}>
-            {simulatePanel}
-            {formationPanel}
+        // ONE centred column, not two. The right-hand column put Simulate and
+        // Across formations off to the side of a picture that was already too
+        // tall to see past; asked for directly: "the across formations could
+        // just go underneath and centralise everything". Same order as the
+        // phone now, so there is one layout to reason about instead of two.
+        <div style={{ display: "flex", justifyContent: "center", padding: "0 24px 24px" }}>
+          <div style={{ width: "min(100%, 460px)" }}>
+            {pane}
+            <div style={{ padding: "0 14px 10px" }}>
+              {simulatePanel}
+              {formationPanel}
+            </div>
           </div>
         </div>
       ) : pane}
