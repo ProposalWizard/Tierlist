@@ -21,7 +21,7 @@
  */
 
 import { BUILT_IN_PATCH_NOTES } from "../lib/patchNotesData";
-import { DEMOS, DEMO_CSS } from "./patchNotesDemos";
+import { DEMOS, DEMO_CSS } from "../lib/patchNotesDemos";
 import {
   barGroupCeiling,
   barWidths,

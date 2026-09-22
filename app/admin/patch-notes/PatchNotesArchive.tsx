@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
+import { DEMOS, DEMO_CSS, DEMO_TOKENS } from "@/lib/patchNotesDemos";
 import {
   SECTION_COLOR,
   barGroupCeiling,
@@ -264,8 +265,85 @@ function Item({ item }: { item: PatchItem }) {
 
       {item.bars && <BarGroup bars={item.bars} />}
 
+      {item.demo && <Demo name={item.demo} />}
+
       {item.more && <Toggle more={item.more} />}
     </>
+  );
+}
+
+/**
+ * One of the pressable explainers from lib/patchNotesDemos.ts.
+ *
+ * IN A FRAME, ON PURPOSE. A demo is markup plus its own <script>, and React
+ * will not run a script that arrives as a string — dangerouslySetInnerHTML
+ * puts the tag in the DOM and the browser ignores it, so the thing renders
+ * and does nothing. A frame runs it exactly as the artifact does, off the
+ * same string, so the two can never drift; it also keeps the demos' plain
+ * ids and class names (#d1, .btn, .row) away from the rest of the app.
+ *
+ * Height comes back from inside, because the content is a different height
+ * per demo and grows when a proposal appears. Failing that it just stays at
+ * the starting height, which still shows the demo.
+ */
+function Demo({ name }: { name: string }) {
+  const html = DEMOS[name];
+  // Each frame stamps its own id on the messages it sends. Comparing
+  // event.source against contentWindow looks like the obvious check and does
+  // not work here: the frame is sandboxed without allow-same-origin, so it
+  // has an opaque origin and the two never compare equal — measured, the
+  // messages arrive and every one of them gets dropped.
+  const id = useId();
+  const [height, setHeight] = useState(420);
+
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      const d = e.data as { kind?: string; id?: string; height?: number };
+      if (d?.kind !== "patch-demo-height" || d.id !== id) return;
+      if (typeof d.height !== "number" || !Number.isFinite(d.height)) return;
+      setHeight(Math.min(1400, Math.max(160, Math.ceil(d.height))));
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [id]);
+
+  if (!html) return null;
+
+  const srcDoc = `<!doctype html><meta charset="utf-8">
+<style>${DEMO_TOKENS}${DEMO_CSS}</style>
+${html}
+<script>
+(function(){
+  var ID = ${JSON.stringify(id)}, last = 0;
+  function send(force){
+    var h = document.documentElement.scrollHeight;
+    if (!h) return;
+    if (!force && Math.abs(h - last) <= 2) return;
+    last = h;
+    parent.postMessage({kind:"patch-demo-height",id:ID,height:h}, "*");
+  }
+  // The page is server-rendered, so this frame loads and reports its height
+  // BEFORE React has hydrated and attached its listener — measured: every
+  // first message was sent into a page with nobody listening, and the frame
+  // sat at its fallback height forever. So say it again a few times over the
+  // first few seconds, whether or not anything changed.
+  [0, 120, 350, 800, 1600, 3000].forEach(function(t){ setTimeout(function(){ send(true); }, t); });
+  window.addEventListener("load", function(){ send(true); });
+  // After that, only when it genuinely changes — a proposal appears, a note
+  // wraps onto a second line.
+  if (window.ResizeObserver) new ResizeObserver(function(){ send(false); }).observe(document.body);
+})();
+<\/script>`;
+
+  return (
+    <iframe
+      title="Example"
+      srcDoc={srcDoc}
+      sandbox="allow-scripts"
+      scrolling="no"
+      className="mt-3 w-full border-0"
+      style={{ height, colorScheme: "dark" }}
+    />
   );
 }
 
