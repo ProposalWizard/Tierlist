@@ -1,5 +1,5 @@
 import type { MatchScenario } from "./scenarios";
-import { mergeAuthoredFile } from "./authoredScenarios";
+import { mergeAuthoredFile, removeFromAuthoredFile } from "./authoredScenarios";
 
 /**
  * COMMITTING A SCENARIO INTO THE REPOSITORY.
@@ -28,19 +28,33 @@ import { mergeAuthoredFile } from "./authoredScenarios";
  */
 
 export const AUTHORED_PATH = "lib/star/authoredScenarios.json";
-/**
- * The scenarios somebody looked at and said should never exist.
- *
- * Asked for directly: "maybe flagging so I can download the screenshots of
- * the scenario and/or commit them to a no-go scenario bin for that type in
- * the repo." Same file format, same commit path, same review — a rejected
- * picture is as much a record as an accepted one, and keeping it in git
- * means it survives a cleared browser and can be looked at by somebody who
- * was not there.
- */
-export const NO_GO_PATH = "lib/star/noGoScenarios.json";
 const DEFAULT_REPO = "ProposalWizard/Tierlist";
-const DEFAULT_BRANCH = "Harry";
+/**
+ * WHICH BRANCH A SAVED SCENARIO IS COMMITTED TO.
+ *
+ * `main`, so a scenario reaches EVERYONE rather than sitting on one
+ * person's branch. Asked for directly: "can we get this to just go onto main
+ * for everyone?" A scenario is shared data — the whole point of committing it
+ * is that the game and every gallery pick it up — so a personal branch was
+ * the wrong default for it, whatever the right default is for code.
+ *
+ * Two things that follow from this, worth knowing rather than discovering:
+ *
+ *  1. Vercel auto-deploys from main, so every commit here triggers a
+ *     PRODUCTION rebuild (a couple of minutes). Fine for a handful of
+ *     scenarios; it is not the thing to lean on while iterating quickly.
+ *     The instant path is Save, which writes Supabase and reaches every
+ *     device with no deploy at all. Commit is the durable copy, not the fast
+ *     one.
+ *  2. A feature branch that also commits scenarios will diverge from main on
+ *     this one file and conflict on merge. The conflict is always a union of
+ *     scenarios by id, never a loss — `mergeAuthoredFile` is keyed by id —
+ *     but somebody has to resolve it.
+ *
+ * Overridable per deployment with GITHUB_BRANCH, so a branch that genuinely
+ * wants its own pool can still have one without a code change.
+ */
+const DEFAULT_BRANCH = "main";
 const API = "https://api.github.com";
 
 export interface CommitConfig {
@@ -268,6 +282,80 @@ export async function commitScenarios(opts: {
       status: 502,
       message: `GitHub refused the commit (${res.status}${body?.message ? `: ${body.message}` : ""}). Nothing was committed.`,
     };
+  };
+
+  return attempt(1);
+}
+
+/**
+ * Remove scenarios from the committed file. The delete-side twin of
+ * `commitScenarios`, same read-modify-write with one retry on a moved sha.
+ *
+ * The gallery display reads the committed file now, so deleting a committed
+ * scenario from the database alone would let it reappear on the next load.
+ * This is what makes Delete actually stick.
+ */
+export async function removeScenariosFromRepo(opts: {
+  config: CommitConfig;
+  ids: string[];
+  fetchImpl?: FetchLike;
+}): Promise<CommitResult> {
+  const { config: cfg, ids } = opts;
+  const doFetch = (opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike));
+  if (!ids.length) {
+    return { ok: false, status: 400, message: "No ids were sent, so nothing was deleted." };
+  }
+
+  const attempt = async (retriesLeft: number): Promise<CommitResult> => {
+    const file = await readFile(cfg, doFetch);
+    if ("ok" in file) return file;
+
+    const { text, removed } = removeFromAuthoredFile(file.text, ids);
+    if (!removed.length) {
+      // Nothing in the file matched — not an error. The scenario was only ever
+      // in the database (or already gone), and the caller has cleared that.
+      return {
+        ok: true, status: 200, committed: [],
+        message: "Nothing to delete from the code — it wasn't committed there.",
+      };
+    }
+
+    const url = `${API}/repos/${cfg.repo}/contents/${cfg.path ?? AUTHORED_PATH}`;
+    const message = removed.length === 1
+      ? `Scenario: delete "${removed[0]}" from the code`
+      : `Scenarios: delete ${removed.length} from the code\n\n${removed.map(id => `- ${id}`).join("\n")}`;
+    const payload: Record<string, unknown> = {
+      message,
+      content: b64encode(text),
+      branch: cfg.branch,
+    };
+    if (file.sha) payload.sha = file.sha;
+
+    let res: Awaited<ReturnType<FetchLike>>;
+    try {
+      res = await doFetch(url, { method: "PUT", headers: headersFor(cfg.token), body: JSON.stringify(payload) });
+    } catch {
+      return { ok: false, status: 502, message: "Couldn't reach GitHub to write the delete. Nothing was deleted from the code." };
+    }
+    const body = await res.json().catch(() => null) as
+      { commit?: { sha?: string }; message?: string } | null;
+
+    if (res.ok) {
+      return {
+        ok: true, status: 200, committed: removed,
+        message: `Deleted ${removed.length === 1 ? "this scenario" : `these ${removed.length} scenarios`} from the code (${cfg.repo} on ${cfg.branch}).`,
+        commitSha: body?.commit?.sha,
+      };
+    }
+    const moved = res.status === 409 || res.status === 422;
+    if (moved && retriesLeft > 0) return attempt(retriesLeft - 1);
+    if (moved) {
+      return { ok: false, status: 409, raced: true, message: "The scenarios file moved under this delete twice — nothing was deleted. Try again." };
+    }
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, status: 403, message: `GitHub refused the token (${res.status}). It needs Contents: Read and write on ${cfg.repo}. Nothing was deleted.` };
+    }
+    return { ok: false, status: 502, message: `GitHub refused the delete (${res.status}${body?.message ? `: ${body.message}` : ""}). Nothing was deleted.` };
   };
 
   return attempt(1);

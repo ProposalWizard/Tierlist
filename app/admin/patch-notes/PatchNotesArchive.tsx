@@ -289,7 +289,9 @@ function Bar({ bar, ceiling }: { bar: PatchBar; ceiling: number }) {
       </div>
       <span className={`whitespace-nowrap text-[12.5px] font-bold tabular-nums ${INK}`}>
         {formatBarValue(bar.now, bar.unit)}{" "}
-        <s className={`font-normal no-underline opacity-80 ${INK3}`}>{formatBarValue(bar.was)}</s>
+        {/* The "before" number carries its unit too. Without it a pair reads
+            "3 of 3   1", and the reader has to work out what the 1 is. */}
+        <s className={`font-normal no-underline opacity-80 ${INK3}`}>{formatBarValue(bar.was, bar.unit)}</s>
       </span>
     </div>
   );
