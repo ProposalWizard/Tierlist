@@ -1569,9 +1569,14 @@ export default function StarGalleryDevPage() {
     color: INK, fontSize: 15, fontWeight: 700, cursor: "pointer",
   };
   const editBtn = (off: boolean): React.CSSProperties => ({
-    flex: 1, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
+    // `whiteSpace: nowrap` and a smaller font because five of these share one
+    // column now — at 13.5px "+ Team-mate" broke onto two lines and made the
+    // row twice as tall as it needed to be.
+    flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
+    padding: "0 6px", whiteSpace: "nowrap",
+
     border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-    color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 13.5, fontWeight: 700,
+    color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
   });
 
   // ── Adding and removing figures ──
@@ -1590,20 +1595,27 @@ export default function StarGalleryDevPage() {
   };
 
   // ── Simulate, and the formation strip it replaced ──
+  //
+  // Before you are simulating this is a small square, so the picture and the
+  // buttons under it both fit on screen at once — asked for directly after
+  // the desktop picture grew: "we could just make the simulate button a
+  // little square that has a little play button on it". Once you ARE
+  // simulating it becomes the wide NEXT button, because that is then the one
+  // thing you press over and over.
   const simulatePanel = cell.game === "eleven" ? (
-    <div style={{ display: "grid", gap: 8 }}>
-      {/* Once you are simulating, this is the button you press over and over
-          — so it stops being "Simulate again" and becomes NEXT, bigger, with
-          the arrow keys and a swipe across the grass doing the same thing. */}
+    <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
       <button
         onClick={() => simulate(kindId)}
+        title={showingSim ? "Next version" : "Simulate a version of this chance"}
         style={{
-          width: "100%", height: showingSim ? 62 : 54, borderRadius: 16, cursor: "pointer",
+          width: showingSim ? "100%" : 46, height: showingSim ? 62 : 46,
+          borderRadius: showingSim ? 16 : 14, cursor: "pointer",
           border: "1px solid rgba(56,189,248,0.55)", background: "rgba(14,116,144,0.38)",
-          color: "#e0f2fe", fontSize: showingSim ? 21 : 17, fontWeight: 800,
+          color: "#e0f2fe", fontSize: showingSim ? 21 : 16, fontWeight: 800,
+          display: "grid", placeItems: "center", lineHeight: 1,
         }}
       >
-        {showingSim ? "Next \u2192" : "Simulate"}
+        {showingSim ? "Next \u2192" : "\u25B6"}
       </button>
       {showingSim && (
         <button
@@ -1611,7 +1623,7 @@ export default function StarGalleryDevPage() {
           style={{
             width: "100%", height: 40, borderRadius: 13, cursor: "pointer",
             border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-            color: MUTED, fontSize: 13.5, fontWeight: 700,
+            color: MUTED, fontSize: 13.5, fontWeight: 700, justifySelf: "stretch",
           }}
         >
           Back to version {versionIdx + 1}
@@ -1621,11 +1633,11 @@ export default function StarGalleryDevPage() {
   ) : null;
 
   const formationPanel = cell.game === "eleven" ? (
-    <div style={{ marginTop: 16 }}>
+    <div style={{ marginTop: 14, textAlign: "center" }}>
       <button
         onClick={() => setShowFormations((v) => !v)}
         style={{
-          width: "100%", height: 40, borderRadius: 13, cursor: "pointer",
+          width: "100%", maxWidth: 240, height: 36, borderRadius: 13, cursor: "pointer",
           border: "1px solid rgba(255,255,255,0.09)", background: "transparent",
           color: MUTED, fontSize: 13, fontWeight: 700,
         }}
@@ -1650,7 +1662,17 @@ export default function StarGalleryDevPage() {
           <ScenarioPlay
             build={() => {
               const sc = rebuildScenario(cell);
-              applyOverrideToScenario(sc, override);
+              // The SAVED drawing first, then whatever is being dragged on
+              // top of it — the same two layers, in the same order, that the
+              // picture, the fault rings and the formation strip all compose.
+              // Leaving `savedOv` out of this one call meant Play threw the
+              // saved scenario away and played the raw generated base
+              // instead. Reported directly: "the play in the scenario
+              // gallery moves everything around, and the goalie isn't in the
+              // same position that I place him in". Measured on the card it
+              // was reported from: the drawing had the keeper on 4.6m and
+              // the ball on 11.6m, Play put them on 2.2m and 19.2m.
+              applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
               return sc;
             }}
             onStop={() => setPlaying(false)}
@@ -1661,7 +1683,12 @@ export default function StarGalleryDevPage() {
           baseFrame={baseFrame}
           // Phone keeps the phone-sized default. On a desktop the picture you
           // are actually working on gets the room the screen already has.
-          size={wide ? { baseW: 520, maxW: 560, maxH: 640 } : undefined}
+          // Third pass at this. 340 (phone-sized everywhere) was too small on
+          // a desktop, 520 x 800 was "too big", 400 x 640 still pushed the
+          // buttons under it off the bottom of the screen. 350 x 560 leaves
+          // the whole card — picture, edit row, verdict row, Simulate and
+          // Across formations — visible at once on a 900px-tall screen.
+          size={wide ? { baseW: 330, maxW: 360, maxH: 520 } : undefined}
           override={override}
           marks={analysis.marks}
           onCommit={setOverride}
@@ -1683,8 +1710,8 @@ export default function StarGalleryDevPage() {
       </div>
 
       {cell.game === "eleven" && (
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Team-mate</button>
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+          <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
           <button style={editBtn(false)} onClick={() => addFigure("opponent")}>+ Opponent</button>
           <button
             style={editBtn(!canRemove)}
@@ -1772,7 +1799,7 @@ export default function StarGalleryDevPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 6, justifyContent: "center", margin: "14px 0 12px", visibility: showingSim ? "hidden" : "visible" }}>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", margin: "10px 0 9px", visibility: showingSim ? "hidden" : "visible" }}>
         {versions.map((v, i) => (
           <button
             key={v.key}
@@ -1851,18 +1878,18 @@ export default function StarGalleryDevPage() {
         </span>,
       )}
       {wide ? (
-        <div style={{
-          // "auto" lets the picture column shrink to the picture, so the pair
-          // sits together in the middle instead of the controls being flung to
-          // the far edge with a void between them.
-          display: "grid", gridTemplateColumns: "auto minmax(300px, 400px)",
-          gap: 32, padding: "0 24px 24px", alignItems: "start",
-          justifyContent: "center",
-        }}>
-          {pane}
-          <div style={{ padding: "12px 0 24px", position: "sticky", top: 70 }}>
-            {simulatePanel}
-            {formationPanel}
+        // ONE centred column, not two. The right-hand column put Simulate and
+        // Across formations off to the side of a picture that was already too
+        // tall to see past; asked for directly: "the across formations could
+        // just go underneath and centralise everything". Same order as the
+        // phone now, so there is one layout to reason about instead of two.
+        <div style={{ display: "flex", justifyContent: "center", padding: "0 24px 24px" }}>
+          <div style={{ width: "min(100%, 460px)" }}>
+            {pane}
+            <div style={{ padding: "0 14px 10px" }}>
+              {simulatePanel}
+              {formationPanel}
+            </div>
           </div>
         </div>
       ) : pane}

@@ -210,6 +210,75 @@ const CHANCE_BOX = 0.55;    // in the penalty area
 const STARVED_MIN = 20;
 /** How often a chance in open play is a run rather than a ball to strike. */
 const DRIBBLE_CHANCE = 0.26;
+
+/* ── WHERE EACH POSITION IS USED ──────────────────────────────────────────
+ *
+ * Until this, `position` only decided who took a free kick. Everything else —
+ * which part of the pitch a chance found you in, which lane it came down —
+ * was identical whether you were a striker or a number ten. Measured over 500
+ * matches that put a STRIKER's third most common highlight at build-up play
+ * (10.6%), with build-up + a midfield pass + a long shot together making up a
+ * quarter of everything he did.
+ *
+ * So each position now has its own profile:
+ *
+ *   PULL   how likely a move in that area of the pitch finds YOU. A striker
+ *          in the box, almost always; a striker in his own half, rarely.
+ *   LANE   how likely you are in the middle rather than out wide. A winger
+ *          lives on his touchline; a striker does not.
+ *
+ * These are MULTIPLIERS on the existing rolls, not replacements, so the
+ * momentum, energy, skill and impact-sub terms all still apply on top. A
+ * caller with no position (the star-match-dev fork, older tests) gets 1
+ * everywhere and is byte-identical to before.
+ */
+export const POSITION_PULL: Record<string, Partial<Record<Zone, number>>> = {
+  // A striker is a penalty-box player. He is in the game less often overall,
+  // and far more of what he does is in the last twenty yards.
+  ST:  { own_box: 0.15, defensive: 0.25, middle: 0.45, attacking: 1.05, box: 1.35 },
+  // A ten links it. Involved almost everywhere from the middle forward.
+  CAM: { own_box: 0.35, defensive: 0.6,  middle: 1.0,  attacking: 1.15, box: 1.0 },
+  // A winger gets it early and runs. Strong in the final third, real presence
+  // in midfield, and he tracks back more than a striker does.
+  LW:  { own_box: 0.3,  defensive: 0.55, middle: 0.85, attacking: 1.2,  box: 1.0 },
+  RW:  { own_box: 0.3,  defensive: 0.55, middle: 0.85, attacking: 1.2,  box: 1.0 },
+};
+
+/**
+ * How likely a move down a given lane finds you.
+ *
+ * Also the only thing that has ever told LW and RW apart. Measured before
+ * this, the two positions produced byte-identical spreads — a left winger and
+ * a right winger got the same chances in the same proportions, because
+ * nothing anywhere read which side of the pitch they play on.
+ */
+export const POSITION_LANE: Record<string, Record<Lane, number>> = {
+  ST:  { left: 0.7,  centre: 1.5, right: 0.7 },
+  CAM: { left: 0.8,  centre: 1.4, right: 0.8 },
+  LW:  { left: 1.65, centre: 0.8, right: 0.35 },
+  RW:  { left: 0.35, centre: 0.8, right: 1.65 },
+};
+
+/** The pull for a position in a zone; 1 for anything unlisted. */
+export function positionPull(position: string | undefined, zone: Zone): number {
+  if (!position) return 1;
+  return POSITION_PULL[position]?.[zone] ?? 1;
+}
+
+/**
+ * How much this position runs at people. A winger takes a man on; a striker
+ * mostly does not. This was flat for every position before — measured, all
+ * four dribbled within half a percent of each other.
+ */
+export const POSITION_DRIBBLE: Record<string, number> = {
+  ST: 0.6, CAM: 0.95, LW: 1.5, RW: 1.5,
+};
+
+/** The pull for a position down a lane; 1 for anything unlisted. */
+export function lanePull(position: string | undefined, lane: Lane): number {
+  if (!position) return 1;
+  return POSITION_LANE[position]?.[lane] ?? 1;
+}
 /** How often a chance ends in the net when the player is not the one taking it. */
 const CONVERT_DEEP = 0.09;
 const CONVERT_BOX = 0.16;
@@ -445,7 +514,12 @@ export function tick(
         // he's got, not less. Reported directly — one chance in nineteen
         // minutes on as a substitute read as nothing to show for coming on
         // at all. Capped so it stays a real edge and not a guarantee.
-        const involvement = inputs.impactSub ? Math.min(0.92, baseInvolvement * 1.5) : baseInvolvement;
+        // Two separate multipliers on top of the existing roll: where on the
+        // pitch this position is used, and which lane it lives in.
+        const pulled = baseInvolvement
+          * positionPull(inputs.position, state.zone)
+          * lanePull(inputs.position, state.lane);
+        const involvement = inputs.impactSub ? Math.min(0.92, pulled * 1.5) : Math.min(0.95, pulled);
 
         if (rng() < involvement) {
           const req = buildRequest(state, rng, inputs);
@@ -492,7 +566,14 @@ export function tick(
   // get is whatever the zone justifies, so from your own half this is a
   // build-up pass, not a one-on-one — which is also how a defender or a holding
   // midfielder gets a game at all.
-  if (userHasIt && state.sinceInvolved >= STARVED_MIN && state.zone !== "own_box" && rng() < 0.45) {
+  // Gated by the same position pull as everything else. Without it, making a
+  // striker less involved in midfield made things WORSE, not better: he
+  // starved more often, and every starved minute came back as a build-up pass
+  // from his own half. Measured, that pushed a striker's build-up share UP
+  // from 10.6% to 11.0% while the change was supposed to cut it. A striker
+  // drops in to get the ball in the final third, not on his own 18-yard line.
+  if (userHasIt && state.sinceInvolved >= STARVED_MIN && state.zone !== "own_box"
+      && rng() < 0.45 * positionPull(inputs.position, state.zone)) {
     state.sinceInvolved = 0;
     return {
       events,
@@ -536,7 +617,8 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   // reason the chance exists.
   if (state.zone === "middle" || state.zone === "attacking") {
     const quick = Math.max(0, Math.min(1, (inputs.pace ?? 50) / 100));
-    if (rng() < DRIBBLE_CHANCE * (0.7 + quick * 0.6)) {
+    const dribbleBias = inputs.position ? (POSITION_DRIBBLE[inputs.position] ?? 1) : 1;
+    if (rng() < DRIBBLE_CHANCE * (0.7 + quick * 0.6) * dribbleBias) {
       return {
         zone: state.zone,
         kinds: ["one_on_one"],
