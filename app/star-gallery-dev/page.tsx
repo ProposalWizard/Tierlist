@@ -1598,6 +1598,9 @@ export default function StarGalleryDevPage() {
         <EditableFrame
           editKey={cell.key}
           baseFrame={baseFrame}
+          // Phone keeps the phone-sized default. On a desktop the picture you
+          // are actually working on gets the room the screen already has.
+          size={wide ? { baseW: 640, maxW: 760, maxH: 800 } : undefined}
           override={override}
           marks={analysis.marks}
           onCommit={setOverride}
@@ -1781,9 +1784,16 @@ export default function StarGalleryDevPage() {
         </span>,
       )}
       {wide ? (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 520px) minmax(0, 1fr)", gap: 16, padding: "0 14px 24px", alignItems: "start" }}>
+        <div style={{
+          // "auto" lets the picture column shrink to the picture, so the pair
+          // sits together in the middle instead of the controls being flung to
+          // the far edge with a void between them.
+          display: "grid", gridTemplateColumns: "auto minmax(300px, 400px)",
+          gap: 32, padding: "0 24px 24px", alignItems: "start",
+          justifyContent: "center",
+        }}>
           {pane}
-          <div style={{ padding: "12px 0 24px", maxWidth: 560 }}>
+          <div style={{ padding: "12px 0 24px", position: "sticky", top: 70 }}>
             {simulatePanel}
             {formationPanel}
           </div>

@@ -230,7 +230,16 @@ function RulesSection({ kinds, onShowKind }: { kinds: string[]; onShowKind: (k: 
     const pool = authoredPool(kind);
     const set = ruleSetFor(kind);
     const laws = set ? set.rules.filter((r) => r.invariant) : [];
-    return { kind, drawings: pool.length, set, laws, outliers: set ? outliersOf(set) : [] };
+    // The measured ranges that are NOT laws. Asked directly, looking at three
+    // "no X" lines: "are there values in there?" There are — every measure is
+    // read off the drawings with a min, a median and a max. They are not
+    // enforced, which is why a one-on-one can have a defender 1.9m away and
+    // still pass: the laws only forbid a defender BETWEEN you and the goal.
+    // Showing them is the first step to being able to tighten one.
+    const ranges = set
+      ? set.rules.filter((r) => !r.invariant && !r.count && Number.isFinite(r.median))
+      : [];
+    return { kind, drawings: pool.length, set, laws, ranges, outliers: set ? outliersOf(set) : [] };
   }), [kinds]);
 
   const withDrawings = rows.filter((r) => r.drawings > 0);
@@ -305,6 +314,34 @@ function RulesSection({ kinds, onShowKind }: { kinds: string[]; onShowKind: (k: 
                       </li>
                     ))}
                   </ul>
+                )}
+
+                {r.ranges.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".06em",
+                      textTransform: "uppercase", color: MUTED }}>
+                      Measured, but not enforced
+                    </div>
+                    <p style={{ margin: "3px 0 0", fontSize: 11.5, color: FAINT, lineHeight: 1.5 }}>
+                      What your drawings actually look like. Nothing here is a rule yet — a generated
+                      chance can sit outside any of these and still pass.
+                    </p>
+                    <ul style={{ margin: "7px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 3 }}>
+                      {r.ranges.map((m) => (
+                        <li key={m.id} style={{
+                          display: "flex", gap: 8, fontSize: 11.5, color: MUTED, lineHeight: 1.5,
+                        }}>
+                          <span style={{ flex: 1 }}>{m.label}</span>
+                          <span style={{ fontVariantNumeric: "tabular-nums", color: INK, fontWeight: 700 }}>
+                            {m.median.toFixed(1)}
+                          </span>
+                          <span style={{ fontVariantNumeric: "tabular-nums", color: FAINT, minWidth: 82, textAlign: "right" }}>
+                            {m.min.toFixed(1)}–{m.max.toFixed(1)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
 
                 {r.outliers.length > 0 && (
