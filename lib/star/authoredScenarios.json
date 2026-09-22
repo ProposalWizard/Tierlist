@@ -1224,6 +1224,107 @@
         "seed": 1536883055,
         "planId": "one_on_one|golden|half_space|R|closing|out|settled|normal|ball|weak|b4"
       }
+    },
+    "gallery-main-tight_angle": {
+      "id": "gallery-main-tight_angle",
+      "name": "tight_angle",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 32.6,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 25.92,
+        "y": 6.16
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 32.75,
+          "y": 10.28,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 27.19,
+          "y": 8.45,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 31.31,
+          "y": 6.28,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 37.83,
+          "y": 5.93,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 31.28,
+          "y": 1.62,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 30.18,
+          "y": 7.21,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 29.77,
+          "y": 16.5,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 35.88,
+          "y": 6.47,
+          "label": "POACH"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 24.58,
+          "y": 7.32,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 32.82,
+          "y": 16.85,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd2",
+          "side": "teammate",
+          "x": 35.59,
+          "y": 11.26,
+          "label": "MATE"
+        }
+      ],
+      "updatedAt": 1790081555283,
+      "source": {
+        "tool": "gallery",
+        "kind": "tight_angle",
+        "seed": 1001,
+        "planId": null
+      }
     }
   }
 }
