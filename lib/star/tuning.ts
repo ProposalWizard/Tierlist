@@ -114,38 +114,93 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "energy.restEnergy", category: "Energy", label: "Rest — energy gained",
-    description: "Energy restored by choosing Rest, and the amount auto-credited for every weekly action left unspent when a match kicks off.",
-    default: 20, min: 0, max: 100, step: 1,
+    description: "Energy restored by choosing Rest. (Unused actions are no longer credited automatically — rest days replace that.)",
+    default: 10, min: 0, max: 100, step: 1,
   },
   {
     key: "energy.matchCost", category: "Energy", label: "Energy cost of a full match",
-    description: "Energy spent playing 90 minutes; a substitute appearance costs proportionally less.",
-    default: 32, min: 0, max: 100, step: 1,
+    description: "Legacy fallback only — used for a match with no live energy reading (dev tools). Real matches drain per minute by mode; see the Full match rows below.",
+    default: 60, min: 0, max: 100, step: 1,
   },
   {
     key: "energy.minToStart", category: "Energy", label: "Minimum energy to start",
     description: "Below this, a player who'd otherwise start is demoted to substitute.",
-    default: 35, min: 0, max: 100, step: 1,
+    default: 65, min: 0, max: 100, step: 1,
   },
   {
     key: "energy.minToSub", category: "Energy", label: "Minimum energy to be a substitute",
     description: "Below this, a substitute is left out of the squad entirely.",
-    default: 15, min: 0, max: 100, step: 1,
+    default: 40, min: 0, max: 100, step: 1,
   },
   {
     key: "energy.hookLegsFloor", category: "Energy", label: "Tired-legs risk threshold",
     description: "Live in-match energy below which a tired-legs substitution risk starts rolling.",
-    default: 28, min: 0, max: 100, step: 1,
+    default: 25, min: 0, max: 100, step: 1,
   },
   {
     key: "energy.missedWeekEnergy", category: "Energy", label: "Energy gained sitting a week out",
-    description: "Passive energy recovered from a week you don't play at all.",
+    description: "Legacy fallback only — missed weeks now recover by rest days like any other gap.",
     default: 15, min: 0, max: 100, step: 1,
   },
   {
     key: "energy.trainingCost", category: "Energy", label: "Training minigame — energy cost",
     description: "Energy spent per training session (also gates whether the Train button is enabled).",
-    default: 15, min: 0, max: 100, step: 1,
+    default: 30, min: 0, max: 100, step: 1,
+  },
+  {
+    key: "energy.fullMatchMedium", category: "Energy", label: "Full match on Medium (Premier League)",
+    description: "Energy a full 90 minutes costs on Medium in the Premier League. Other competitions scale from this (National League x0.78 ... Champions League x1.11).",
+    default: 60, min: 0, max: 200, step: 1,
+  },
+  {
+    key: "energy.fullMatchHigh", category: "Energy", label: "Full match on High (Premier League)",
+    description: "Energy a full 90 minutes costs on High in the Premier League.",
+    default: 95, min: 0, max: 200, step: 1,
+  },
+  {
+    key: "energy.fullMatchLow", category: "Energy", label: "Full match on Low (Premier League)",
+    description: "Energy a full 90 minutes costs on Low in the Premier League.",
+    default: 30, min: 0, max: 200, step: 1,
+  },
+  {
+    key: "energy.highModeChances", category: "Energy", label: "High mode — chance multiplier",
+    description: "How much more often the ball comes to you on High (1.35 = about 35% more).",
+    default: 1.35, min: 1, max: 3, step: 0.05,
+  },
+  {
+    key: "energy.lowModeChances", category: "Energy", label: "Low mode — chance multiplier",
+    description: "How often the ball comes to you on Low (0.65 = about 35% fewer).",
+    default: 0.65, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "energy.restDayEnergy", category: "Energy", label: "Energy per rest day",
+    description: "Energy back for every day between matches (Sat to Sat = 6 days, Sat to Wed = 3).",
+    default: 8, min: 0, max: 50, step: 0.5,
+  },
+  {
+    key: "energy.propertyDayEnergy", category: "Energy", label: "Owning a property — per rest day",
+    description: "Extra energy per rest day while you own a working property.",
+    default: 0.5, min: 0, max: 10, step: 0.1,
+  },
+  {
+    key: "energy.trainingGroundTier2Day", category: "Energy", label: "Training ground tier 2 — per rest day",
+    description: "Extra energy per rest day at a club with a tier 2 training ground.",
+    default: 0.3, min: 0, max: 10, step: 0.1,
+  },
+  {
+    key: "energy.trainingGroundTier3Day", category: "Energy", label: "Training ground tier 3 — per rest day",
+    description: "Extra energy per rest day at a club with a tier 3 training ground.",
+    default: 0.6, min: 0, max: 10, step: 0.1,
+  },
+  {
+    key: "energy.tiredSkillCut", category: "Energy", label: "Most power/curve lost when exhausted",
+    description: "At 0 energy your power arrow and curve are this much weaker (0.30 = 30%); scales down with energy.",
+    default: 0.3, min: 0, max: 1, step: 0.05,
+  },
+  {
+    key: "energy.injuryFloor", category: "Energy", label: "Extra injury risk below",
+    description: "End-of-match energy below which injury risk starts rising.",
+    default: 30, min: 0, max: 100, step: 1,
   },
 
   // ── Wonderkids (High Potential) ──────────────────────────────────────

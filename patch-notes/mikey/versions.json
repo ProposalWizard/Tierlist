@@ -3,8 +3,16 @@
     "version": "0.1",
     "date": "2026-09-21",
     "fromCommit": "88c1966",
-    "toCommit": "88c1966+uncommitted",
+    "toCommit": "a406c46",
     "url": "https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6",
     "headline": "Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers"
+  },
+  {
+    "version": "0.2",
+    "date": "2026-09-22",
+    "fromCommit": "a406c46",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu",
+    "headline": "Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules"
   }
 ]

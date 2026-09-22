@@ -73,7 +73,7 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(rested.happiness > c.happiness, "resting does you good");
   check(rested.energy === 50 + REST_ENERGY, `and gives some energy back too (${rested.energy})`);
   check(actionsLeft(rested) === WEEK_ACTIONS - 1, "and costs a day");
-  check(rest({ ...c, energy: 95 }).energy === 100, "energy still caps at 100");
+  check(rest({ ...c, energy: 99 }).energy === 100, "energy still caps at 100");
 
   let none = base();
   for (let i = 0; i < WEEK_ACTIONS; i++) none = spendAction(none);
@@ -81,32 +81,14 @@ const matchResult = (minutes = 90): MatchStats => ({
   check(rest(none).energy === none.energy, "…or gain energy from trying to");
 }
 
-// ── projectedEnergy: what you'll have once you actually go and play ────────
+// ── projectedEnergy: what you have is what you play on (22 Sep 2026) ───────
 //
-// The literal design brief: not having to press Rest three separate times to
-// bank what an otherwise-empty week was going to hand back anyway — every
-// action still unspent counts for exactly what Rest would have given it,
-// computed rather than manually claimed one action at a time.
+// Unused weekly actions used to be worth +20 each when you played. Rest days
+// between fixtures replace that (energy.ts), so this is now just your energy.
 {
   const c: CareerState = { ...base(), energy: 20 };
-  check(projectedEnergy(c) === 20 + WEEK_ACTIONS * REST_ENERGY,
-    `every unspent action counts, worth exactly what Rest gives (${projectedEnergy(c)})`);
-  check(projectedEnergy({ ...c, energy: 90 }) === 100, "energy still caps at 100");
-
-  let partiallySpent = c;
-  partiallySpent = spendAction(partiallySpent);
-  check(projectedEnergy(partiallySpent) === 20 + (WEEK_ACTIONS - 1) * REST_ENERGY,
-    `only the days genuinely still unspent count (${projectedEnergy(partiallySpent)})`);
-
-  let none = { ...base(), energy: 20 };
-  for (let i = 0; i < WEEK_ACTIONS; i++) none = spendAction(none);
-  check(projectedEnergy(none) === none.energy, "nothing left to credit once every action is already spent");
-
-  // Resting one action by hand and leaving the projection to cover the rest
-  // must not double up — an action Rest already spent is not "still unspent".
-  const restedOnce = rest(c);
-  check(projectedEnergy(restedOnce) === restedOnce.energy + (WEEK_ACTIONS - 1) * REST_ENERGY,
-    `an action already spent on Rest is not counted again (${projectedEnergy(restedOnce)})`);
+  check(projectedEnergy(c) === 20, `unspent actions add nothing (${projectedEnergy(c)})`);
+  check(projectedEnergy({ ...c, energy: 140 }) === 100, "energy still caps at 100");
 }
 
 // ── Training is no longer a budget you can run out of ──────────────────────
