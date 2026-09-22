@@ -27,6 +27,254 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
 {
+  "version": "0.4",
+  "title": "Leo's patch notes",
+  "publishedAt": "2026-09-22T00:00:00Z",
+  "summary": "Goalie Mode · round 4 · a real rendering bug fixed, a real defensive presence, two new shot types — 151 star tests green, tsc and a full build both clean",
+  "stats": [
+    { "value": "0→real", "label": "grass — was silently never drawn at all" },
+    { "value": "9", "label": "shot kinds now (was 7)" },
+    { "value": "9.15m", "label": "the free-kick wall's real IFAB distance" },
+    { "value": "151", "label": "star test files, all green" }
+  ],
+  "sections": [
+    {
+      "kind": "fixed",
+      "title": "Fixed",
+      "items": [
+        {
+          "title": "The pitch is grass again, not an ice rink",
+          "detail": "Reported directly: \"i dont even see any green... looks like an ice rink.\" A real bug, not a taste note.",
+          "more": {
+            "summary": "The actual cause",
+            "points": [
+              "The ground quad's near edge was hard-coded to a flat 0.05m in front of the camera, whatever the camera's real distance actually was.",
+              "The projection clips anything nearer than 0.35m — so that edge was ALWAYS inside the clip, every frame, on every device.",
+              "Both near corners of the grass polygon came back null, so the whole fill — stripes, goal line, all of it — silently skipped drawing. Nothing else on screen depended on it, so nothing else looked wrong.",
+              "Fixed by computing the real depth that lands on the canvas's own bottom row, the same formula the game's own ground hit-testing already uses, instead of a guessed offset."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "kind": "added",
+      "title": "Added",
+      "items": [
+        {
+          "title": "Other players are actually on the pitch now",
+          "detail": "Reported directly: \"obvs other attackers and defenders should be in there even if they arent involved.\" Ambient goalmouth figures — real positions, a gentle idle sway and shuffle so they read as alive, not a diagram.",
+          "pill": { "text": "visual only this round", "tone": "amber" },
+          "more": {
+            "summary": "What this is, and isn't, yet",
+            "points": [
+              "They genuinely make the shot harder to read at a glance — that part is real.",
+              "They do NOT yet touch the ball. Blocking or deflecting off them is a real, named next step, not quietly half-built.",
+              "Skipped for a penalty — the real rule is an empty box, not a missing one.",
+              "Skipped for a free kick — the wall (below) already is the other players in that picture."
+            ]
+          }
+        },
+        {
+          "title": "Penalty",
+          "detail": "Struck from the exact real spot, dead in front of goal. The only thing to read is the disguise — no wall, no angle, nothing else."
+        },
+        {
+          "title": "Free kick",
+          "detail": "A real defensive wall, positioned at football's actual minimum distance (9.15m), on the real sightline between the ball and the goal.",
+          "more": {
+            "summary": "How it plays",
+            "points": [
+              "3 to 5 bodies, evenly spaced, standing exactly where a real wall would.",
+              "They jump reactively, right as the ball is struck — never held up early.",
+              "A shot aimed through the wall's own footprint gets bent around its nearest edge or lofted clear over real jump height instead — the two genuine techniques a free-kick taker actually has.",
+              "Doesn't block or deflect the ball yet either — same honest scope as the decorative players above."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "kind": "known",
+      "title": "Known issues",
+      "items": [
+        {
+          "title": "Not re-confirmed with a fresh live look this round",
+          "detail": "Same honest flag as the last two rounds. Confidence here rests on the grass bug's exact root-cause math, deterministic tests for the wall's geometry and the penalty's tighter tell, and a full clean suite + build — not a screenshot.",
+          "more": {
+            "summary": "What's actually been verified",
+            "points": [
+              "The grass fix: the exact same depth formula the game's own ground hit-testing already trusts, not a new guess.",
+              "The penalty's tell: proven exactly 0.6× an ordinary kind's, at the identical difficulty, to floating-point precision — a real test, not an eyeballed claim.",
+              "The wall: always 3-5 bodies, always at the real 9.15m distance, always evenly spaced — checked on every single generated free kick in the test batch, not sampled.",
+              "151 star test files pass on their real exit code, tsc --noEmit is clean, and a full production build succeeds."
+            ]
+          }
+        },
+        {
+          "title": "The wall and the extra players are decorative, not physical",
+          "detail": "Named directly above too — worth repeating here since it's the one thing this round didn't do that it plausibly could look like it does."
+        }
+      ]
+    },
+    {
+      "kind": "next",
+      "title": "Next",
+      "items": [
+        {
+          "title": "Real deflection off a nearby player",
+          "detail": "The ask mentioned it directly as a maybe — genuinely interesting, genuinely a separate build from this round's visual pass."
+        },
+        {
+          "title": "The wall and extras actually touching the ball",
+          "detail": "Once that's real, a shot through the wall should sometimes just get blocked, not always bend around it."
+        }
+      ]
+    },
+    {
+      "kind": "history",
+      "title": "Previous versions",
+      "items": [
+        {
+          "title": "v0.3 — the real cursor bug, one fixed camera, real shot variety",
+          "detail": "A genuine PC bug (aim was visibly off your actual cursor), root-caused to the camera's pitch breaking the aim math's exact-inverse assumption — fixed by dropping the pitch to exactly 0, proven exact to floating-point noise. The 3-stage zoom was removed outright for one fixed wide shot. Added a first-time strike kind, independent near/far-post variety, and an on-screen shot-type tag."
+        },
+        {
+          "title": "v0.2 — Goalie Mode ships, then rebuilt against real reference footage",
+          "detail": "The original keeper-POV reflex minigame: real dive timing (committing at the strike beats guessing early), a push-your-luck streak multiplier. Rebuilt after three reference clips showed the first camera didn't match, and a real mobile bug (a tap instantly committed the dive with no way to preview) was fixed to match desktop's hover-then-release."
+        }
+      ]
+    }
+  ],
+  "artifactUrl": "https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd",
+  "updatedAt": null
+},
+{
+  "version": "0.3",
+  "title": "Leo's patch notes",
+  "publishedAt": "2026-09-21T00:00:00Z",
+  "summary": "Goalie Mode · round 3 · a real cursor bug fixed, the zoom removed, real shot variety",
+  "stats": [
+    { "value": "~1e-16m", "label": "aim error after the fix (was ~0.42m)" },
+    { "value": "1", "label": "fixed camera shot (was 3 stages)" },
+    { "value": "7", "label": "real shot kinds (was 5)" },
+    { "value": "~1.5%", "label": "margin either side of the posts, genuinely tighter framing" }
+  ],
+  "sections": [
+    {
+      "kind": "fixed",
+      "title": "Fixed",
+      "items": [
+        {
+          "title": "Your aim was never actually under your cursor",
+          "detail": "Reported directly, on PC: \"the aim/cursor thing is very offset and not at all on my cursor.\"",
+          "more": {
+            "summary": "The real cause, worked out by hand",
+            "points": [
+              "Reading a screen tap back into a world position is only the exact inverse of the camera's own projection when the camera looks dead level.",
+              "The previous camera was tilted slightly downward for a \"looking down\" feel — which the aim math never accounted for.",
+              "Checked by hand: aiming at a genuine low corner inverted back roughly 0.42m off target — about a fifth of the goal's own playable height, on every single aim.",
+              "Fixed by dropping the tilt to exactly zero, which makes the exact same formula provably exact again — proven with a script: max error over 500 random targets was about 1e-16m, floating-point noise, not an approximation."
+            ]
+          }
+        },
+        {
+          "title": "The zoom that \"sucked\" — removed, not retuned",
+          "detail": "Reported directly: \"the weird zooming in thing sucks.\" Replaced the 3-stage push-in/reveal camera with one fixed, wide shot for the whole sequence — goal, both posts and your full dive reach always on screen, never something that only resolves once a camera move finishes."
+        }
+      ]
+    },
+    {
+      "kind": "added",
+      "title": "Added",
+      "items": [
+        {
+          "title": "A real first-time strike",
+          "detail": "A firm, rushed shot off an already-moving ball — its own distinct timing and arc, not a relabelled drive."
+        },
+        {
+          "title": "Real near-post vs far-post variety",
+          "detail": "Rolled independently of the tell, so a shot is sometimes tucked in near post and sometimes struck across the body to the far corner. Measured: 56.9% near vs 43.1% far of the eligible drives in a real batch — a genuine split, not one dominating."
+        },
+        {
+          "title": "A real on-screen shot tag",
+          "detail": "HEADER FROM A CROSS, VOLLEY, FIRST-TIME STRIKE, CURLING EFFORT, LONG RANGE, NEAR POST, FAR POST — so the variety is something you consciously notice, not just something the physics knows about."
+        }
+      ]
+    },
+    {
+      "kind": "known",
+      "title": "Known issues",
+      "items": [
+        {
+          "title": "Not confirmed with a fresh live look this round",
+          "detail": "A real attempt was made and got stuck on an unrelated harness/timing issue in the trial-penalty skip sequence — cut off rather than keep burning time on it. Confidence rested on the cursor fix's exact computed proof and a full clean test suite, said plainly rather than claimed as seen."
+        }
+      ]
+    }
+  ],
+  "artifactUrl": null,
+  "updatedAt": null
+},
+{
+  "version": "0.2",
+  "title": "Leo's patch notes",
+  "publishedAt": "2026-09-21T00:00:00Z",
+  "summary": "Goalie Mode · round 1-2 · a new keeper-POV minigame ships, then its camera rebuilt against real reference footage",
+  "stats": [
+    { "value": "12x", "label": "streak multiplier cap" },
+    { "value": "3", "label": "reference clips the camera was matched against" },
+    { "value": "3-stage", "label": "camera: establishing → push-in → reveal" },
+    { "value": "0", "label": "taps that instantly commit a dive, after the mobile fix" }
+  ],
+  "sections": [
+    {
+      "kind": "added",
+      "title": "Added",
+      "items": [
+        {
+          "title": "Goalie Mode — a new minigame, in the Casino",
+          "detail": "You're the keeper, facing a shot. A real timing tension: diving too early sags and costs you reach by the time the ball actually arrives, so reading the tell and committing at or right after the strike is the genuinely best play — not holding your gloves in a corner from the start.",
+          "more": {
+            "summary": "How the bet works",
+            "points": [
+              "A real push-your-luck ladder: cash out any time and bank the current multiplier, or push on into a harder shot for a bigger one.",
+              "One goal conceded busts the run and the stake with it — no partial credit.",
+              "The multiplier climbs steeply (nearly 5x by streak 5) but is bounded, capped at 12x."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "kind": "fixed",
+      "title": "Fixed",
+      "items": [
+        {
+          "title": "The camera didn't match what \"goalie mode\" should look like",
+          "detail": "Three real screen recordings of a reference game were sent, called close to the exact template wanted. The camera was rebuilt from measured reference frames — a tight personal push-in right up to the strike, then a hard cut wide for the save itself."
+        },
+        {
+          "title": "A real mobile bug: a tap instantly committed the dive",
+          "detail": "On phone, touching the screen at all locked in the save spot immediately — no way to preview an aim the way a mouse can hover without clicking. Fixed to the same design a mouse already had: touch-down only starts tracking, touch-move live-updates the aim, and release commits."
+        }
+      ]
+    },
+    {
+      "kind": "known",
+      "title": "Known issues",
+      "items": [
+        {
+          "title": "The push-in/reveal camera itself wasn't re-confirmed live after this round's rebuild",
+          "detail": "Confidence rested on the measured reference frames and the re-verified projection math, not a fresh recording — and it went on to be reported back as still not right (see v0.3)."
+        }
+      ]
+    }
+  ],
+  "artifactUrl": null,
+  "updatedAt": null
+},
+{
   "version": "0.1",
   "title": "Harry's patch notes",
   "publishedAt": "2026-09-21T00:00:00Z",

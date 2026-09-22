@@ -3,7 +3,7 @@ import {
   MAX_REACH_X, MAX_REACH_Z, KEEPER_SET_X, KEEPER_SET_Z,
   type GoalieShot, type ShotKind,
 } from "../../lib/star/goalieMode";
-import { GOAL_W, GOAL_H } from "../../lib/star/pitch";
+import { GOAL_W, GOAL_H, ARC_R, PEN_SPOT_Y } from "../../lib/star/pitch";
 import { mulberry32 } from "../../lib/star/season";
 
 /**
@@ -192,6 +192,32 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
     if (streak < 2) check(shot.kind !== "curl", `curl shouldn't unlock before streak 2 (got it at streak ${streak})`);
     if (streak < 3) check(shot.kind !== "header", `header shouldn't unlock before streak 3 (got it at streak ${streak})`);
     if (streak < 4) check(shot.kind !== "volley", `volley shouldn't unlock before streak 4 (got it at streak ${streak})`);
+    if (streak < 5) check(shot.kind !== "penalty", `penalty shouldn't unlock before streak 5 (got it at streak ${streak})`);
+    if (streak < 6) check(shot.kind !== "free_kick", `free_kick shouldn't unlock before streak 6 (got it at streak ${streak})`);
+
+    // A penalty is real, fixed IFAB geometry — never anywhere else.
+    if (shot.kind === "penalty") {
+      check(shot.startY === PEN_SPOT_Y, `a penalty is always struck from exactly the real spot (got ${shot.startY}m)`);
+      check(!shot.wall, "a penalty never carries a wall — nobody else is legally allowed near it");
+    }
+
+    // free_kick alone carries a real wall — every other kind never does, and
+    // the wall itself is real IFAB geometry: standing at the ball's own
+    // real distance out (ARC_R, 9.15m) closer to goal, 3-5 evenly-spaced
+    // bodies, never off the back of the goal line.
+    if (shot.kind === "free_kick") {
+      check(!!shot.wall, "a free_kick always carries a real wall");
+      if (shot.wall) {
+        check(shot.wall.x.length >= 3 && shot.wall.x.length <= 5, `a real wall is 3-5 bodies (got ${shot.wall.x.length})`);
+        check(Math.abs(shot.wall.y - (shot.startY - ARC_R)) < 1e-9, `the wall stands exactly ARC_R closer to goal than the ball itself (got wall.y=${shot.wall.y}, expected ${shot.startY - ARC_R})`);
+        check(shot.wall.y > 0, `the wall is a real, positive distance out from goal (got ${shot.wall.y})`);
+        const spacings = shot.wall.x.slice(1).map((x, i) => x - shot.wall!.x[i]);
+        const evenSpacing = spacings.every((s) => Math.abs(s - spacings[0]) < 1e-9 && s > 0);
+        check(evenSpacing, `the wall's own bodies are evenly, ascendingly spaced (got x=[${shot.wall.x.map((v) => v.toFixed(2)).join(",")}])`);
+      }
+    } else {
+      check(!shot.wall, `only free_kick carries a wall (got one on a ${shot.kind})`);
+    }
 
     // Every shot gets a real, non-empty label, and it never claims something
     // the shot itself isn't doing.
@@ -201,6 +227,8 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
     if (shot.kind === "volley") check(label === "VOLLEY", `a volley is always labelled as one (got "${label}")`);
     if (shot.kind === "first_time") check(label === "FIRST-TIME STRIKE", `a first-time strike is always labelled as one (got "${label}")`);
     if (shot.kind === "curl") check(label === "CURLING EFFORT", `a curler is always labelled as one (got "${label}")`);
+    if (shot.kind === "penalty") check(label === "PENALTY", `a penalty is always labelled as one (got "${label}")`);
+    if (shot.kind === "free_kick") check(label === "FREE KICK", `a free kick is always labelled as one (got "${label}")`);
     if (shot.kind === "drive") {
       labelledDrives++;
       if (shot.startY >= 17) {
@@ -219,6 +247,8 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
   check(sawUnlocked.curl === true, "curl shows up once streak reaches its unlock");
   check(sawUnlocked.header === true, "header shows up once streak reaches its unlock");
   check(sawUnlocked.volley === true, "volley shows up once streak reaches its unlock");
+  check(sawUnlocked.penalty === true, "penalty shows up once streak reaches its unlock");
+  check(sawUnlocked.free_kick === true, "free_kick shows up once streak reaches its unlock");
   // strikerSide is a real, independent roll — both a near-post and a
   // far-post finish actually occur, in real numbers, not one dominating.
   // Denominator is the near/far-eligible subset (drives under 17m), not
@@ -227,6 +257,29 @@ function saveRateAtOffset(streak: number, offset: number, seed: number, n = 2500
   check(postEligible > 200, "enough near/far-post-eligible drives in this batch to judge the split");
   check(nearPost > postEligible * 0.3 && farPost > postEligible * 0.3,
     `both near-post and far-post finishes occur in real numbers, not one crowding the other out (${nearPost} near vs ${farPost} far of ${postEligible})`);
+}
+
+// ── A penalty's tell is genuinely, exactly narrower — not just "usually
+// feels tighter". tellT only ever depends on streak (via difficulty()) and
+// the kind's own tellMult, never on the RNG — so two shots of DIFFERENT
+// kinds at the exact same streak share the exact same pre-multiplier value,
+// and the ratio between them is exactly the kind's own tellMult (0.6 for
+// penalty), to floating-point precision. ──
+
+{
+  const streak = 20; // comfortably past every kind's own unlock
+  const rng = mulberry32(11);
+  let driveTellT: number | null = null, penaltyTellT: number | null = null;
+  for (let i = 0; i < 2000 && (driveTellT === null || penaltyTellT === null); i++) {
+    const shot = pickShot(streak, rng);
+    if (shot.kind === "drive" && driveTellT === null) driveTellT = shot.tellT;
+    if (shot.kind === "penalty" && penaltyTellT === null) penaltyTellT = shot.tellT;
+  }
+  check(driveTellT !== null && penaltyTellT !== null, "saw both a drive and a penalty at the same streak in a real batch");
+  if (driveTellT !== null && penaltyTellT !== null) {
+    const ratio = penaltyTellT / driveTellT;
+    check(Math.abs(ratio - 0.6) < 1e-9, `a penalty's tell is exactly 0.6x an ordinary kind's, at the identical streak (got ratio ${ratio.toFixed(4)}: penalty ${penaltyTellT.toFixed(4)}s vs drive ${driveTellT.toFixed(4)}s)`);
+  }
 }
 
 // ── Reach bounds are real geometry, not arbitrary numbers ──
@@ -261,4 +314,4 @@ if (problems.length) {
   for (const p of problems) console.log(`  ✗ ${p}`);
   process.exit(1);
 }
-console.log("PASS — goalie mode: at-the-strike beats early on both difficulties, holding your gloves from the start is a losing move barely above never diving, and the window measurably tightens as the streak climbs");
+console.log("PASS — goalie mode: at-the-strike beats early on both difficulties, holding your gloves from the start is a losing move barely above never diving, the window measurably tightens as the streak climbs, a penalty is real fixed geometry with a genuinely tighter tell, and a free kick always carries a real, correctly-placed IFAB wall");
