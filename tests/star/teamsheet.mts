@@ -1,7 +1,6 @@
 import {
   matchdayFor, sheetReady, formationForClub, alternatePositions, offeredPositions,
-  startingTeammateRoles, onPitchToday, fillMissingFromFullRoster,
-} from "../../lib/star/teamsheet";
+  startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, seatSlotFor } from "../../lib/star/teamsheet";
 import { formationOf } from "../../lib/star/formations";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { buildLeagueSquad, type RosterRow } from "../../lib/star/leagueSquads";
@@ -214,42 +213,53 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   const asStrikerYou = asStriker.home.xi.find(p => p.isYou);
   check(asStrikerYou?.role === "ST", `by default you take your own slot (${asStrikerYou?.role})`);
 
-  // Only what the club's own shape can actually seat you in — see
-  // offeredPositions. A formation with no wide men (the "Christmas tree",
-  // 4-3-2-1) has nothing to offer for LW, and asking for it anyway used to fall
-  // back to "the weakest outfielder", which was a full-back standing in for a
-  // winger. This is the same list VersusScreen offers as buttons.
+  // THE FOUR POSITIONS ARE THE FOUR POSITIONS, in every shape.
+  //
+  // This used to offer only roles the formation had a slot for, because
+  // asking for one it did not fell back to "the weakest outfielder" — a
+  // full-back standing in for a winger. Sixteen of the thirty-one shapes
+  // have no attacking-mid slot, so in practice the menu collapsed: measured,
+  // only 8 of 31 formations offered all three alternates. Reported directly
+  // off a screenshot: "only seeing striker lm rm in positions".
+  //
+  // SEAT_CHAIN replaced the weakest-outfielder fallback with a real
+  // attacking one, so every shape can seat every role sensibly and the menu
+  // is now the same four everywhere.
   const offered = offeredPositions("ST", shape);
-  check(offered.every(o => shape.slots.some(s => s.role === o.role)),
-    `every offered role is one the shape actually has (${shape.name}: ${offered.map(o => o.role).join(",")})`);
-  // Given directly: only these four are ever worth asking for, regardless of
-  // your real position — not a per-position neighbour table. Central Mid is
-  // the one deliberate exception: requested directly, it unlocks as a real
-  // second option specifically when a shape (4-3-2-1 here — no wide men,
-  // only one of the usual four alternates has a slot at all) would
-  // otherwise leave almost no real choice — see offeredPositions' own note.
-  check(offered.every(o => (["CAM", "LW", "RW", "CM"] as const).includes(o.role as "CAM" | "LW" | "RW" | "CM")),
-    `nothing outside Striker/Attacking Mid/either wing/the one-alternate Central Mid exception is ever offered (${offered.map(o => o.role).join(",")})`);
+  check(offered.length === 3,
+    `all three alternates are offered even in a shape with no wide men (${shape.name}: ${offered.map(o => o.role).join(",")})`);
+  check(offered.every(o => (["CAM", "LW", "RW"] as const).includes(o.role as "CAM" | "LW" | "RW")),
+    `nothing outside Striker/Attacking Mid/either wing is ever offered (${offered.map(o => o.role).join(",")})`);
 
+  // Never a defender and never the goalkeeper — the thing the old refusal
+  // existed to prevent, now enforced where it actually matters.
+  const ATTACKING = ["ST", "CAM", "LW", "RW", "CM"] as const;
   for (const { role } of offered) {
     const md = matchdayFor(c, fx, true, role);
     const you = md.home.xi.find(p => p.isYou);
-    check(you?.role === role, `asking for ${role} seats you at ${role} (got ${you?.role})`);
+    const hasSlot = shape.slots.some(s => s.role === role);
+    check(hasSlot ? you?.role === role : ATTACKING.includes(you?.role as "ST"),
+      hasSlot
+        ? `asking for ${role} seats you at ${role} (got ${you?.role})`
+        : `${shape.name} has no ${role}, so it seats you in the nearest attacking slot (got ${you?.role})`);
     check(md.home.xi.length === 11, `…and ${role} is still an eleven`);
     // The real striker did not stop existing — he plays the shirt you vacated.
     const strikers = md.home.xi.filter(p => p.role === "ST");
-    check(strikers.length === (role === "ST" ? 1 : 1) && !strikers.some(s => s.isYou),
+    check(strikers.length === 1 && !strikers.some(s => s.isYou),
       `your club's actual striker starts at ST instead (${strikers.map(s => s.short).join(",")})`);
   }
 
-  // Across every shape a club can actually play, offeredPositions never lies
-  // about what is there — this is the check that would have caught the bug.
+  // Across every shape a club can actually play: the same three alternates,
+  // every time, and every one of them has a real seat to go to.
   for (const shapeId of ["433", "4231", "442", "352", "4321", "4141", "3421"]) {
     const f = formationOf(shapeId);
-    for (const real of ["ST", "CM", "CB"] as const) {
-      const off = offeredPositions(real, f);
-      check(off.every(o => f.slots.some(s => s.role === o.role)),
-        `${f.name}: nothing is offered for ${real} that the shape does not have (${off.map(o => o.role).join(",")})`);
+    const off = offeredPositions("ST", f);
+    check(off.length === 3, `${f.name}: all three alternates offered (${off.map(o => o.role).join(",")})`);
+    check(off.every(o => seatSlotFor(o.role, f) !== null),
+      `${f.name}: every offered role has a real seat`);
+    for (const real of ["CM", "CB"] as const) {
+      check(offeredPositions(real, f).length === 0,
+        `${f.name}: nothing is offered for ${real} — outside the four, nothing is asked for`);
     }
   }
 
@@ -262,22 +272,23 @@ const fixture = (opponent: string, home: boolean): Fixture => ({
   check(alternatePositions("CM").length === 0, "…nor a deep midfielder — outside the fixed four, nothing is offered");
   check(alternatePositions("ST").length === 3, `a striker is offered the other three (${alternatePositions("ST").join(",")})`);
 
-  // A flat wide midfielder reads as "LM"/"RM" in the picker, not "LW"/"RW" —
-  // the same Role and the same slot underneath (see Slot.label in
-  // formations.ts), but what the picker offers should say what the pitch
-  // will actually print, not the generic role name.
-  const flatFour = formationOf("3142");
-  const flatOffered = offeredPositions("ST", flatFour);
-  const left = flatOffered.find(o => o.role === "LW");
-  const right = flatOffered.find(o => o.role === "RW");
-  check(left?.label === "LM", `a flat wide midfielder on the left reads "LM", not "Left Wing" (got "${left?.label}")`);
-  check(right?.label === "RM", `…and "RM" on the right (got "${right?.label}")`);
-
-  // A real winger formation still reads as a winger.
-  const wingFour = formationOf("433");
-  const wingOffered = offeredPositions("ST", wingFour);
-  const wingLeft = wingOffered.find(o => o.role === "LW");
-  check(wingLeft?.label === "Left Wing", `a real winger still reads "Left Wing" (got "${wingLeft?.label}")`);
+  // THE PICKER SAYS THE ROLE, not the formation's name for the square.
+  //
+  // It used to print `slot.label`, which is "LM"/"RM" in any flat midfield —
+  // so a 4-4-2 offered "Striker, LM, RM" and the four positions this game
+  // actually has were nowhere on screen. Reported directly. The pitch
+  // graphic still prints LM; the picker is asking which of the four you want
+  // to play, which is a different question.
+  for (const shapeId of ["3142", "442", "433"]) {
+    const f = formationOf(shapeId);
+    const off = offeredPositions("ST", f);
+    check(off.find(o => o.role === "LW")?.label === "Left Wing",
+      `${f.name}: the left wing reads "Left Wing" (got "${off.find(o => o.role === "LW")?.label}")`);
+    check(off.find(o => o.role === "RW")?.label === "Right Wing",
+      `${f.name}: …and the right reads "Right Wing" (got "${off.find(o => o.role === "RW")?.label}")`);
+    check(off.find(o => o.role === "CAM")?.label === "Attacking Mid",
+      `${f.name}: …and attacking mid is on the menu (got "${off.find(o => o.role === "CAM")?.label}")`);
+  }
 }
 
 // ── A thin or missing squad does not produce a broken pitch ─────────────────

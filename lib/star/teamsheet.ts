@@ -1,6 +1,6 @@
 import type { CareerState, Fixture, LeagueSquad, SquadPlayer } from "./types";
 import { mulberry32 } from "./season";
-import { FORMATIONS, formationOf, autoPick, type Formation, type Pickable, type Role } from "./formations";
+import { FORMATIONS, formationOf, autoPick, type Formation, type Pickable, type Role, type Slot } from "./formations";
 import { shortNameOf } from "./realSquad";
 import { loadLineup, type SavedLineup } from "./lineupStore";
 import { displayOverall } from "./rating";
@@ -486,9 +486,21 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
   // "never had anyone to fill it" without the SheetPlayer shape needing to
   // carry its own slot index.
   const filled = new Set(sheet.xi.map(p => `${p.x},${p.y}`));
-  const vacantSlot = sheet.formation.slots.find(
-    s => s.role === me.position && !filled.has(`${s.x},${s.y}`),
-  );
+  // Your own role first, then the attacking chain — so a vacancy at
+  // attacking mid in a shape with no CAM is filled at central mid rather
+  // than being missed and falling through to the weakest-outfielder branch.
+  // THE CHAIN'S OWN ORDER, not the slot list's. `find` over the slots with
+  // an `includes` test returns whichever chain role happens to be listed
+  // first in the formation — which put a winger at attacking mid in a shape
+  // that had a perfectly good vacant wing. Caught by the existing test.
+  const chain = SEAT_CHAIN[me.position as Role] ?? [me.position as Role];
+  let vacantSlot: Slot | undefined;
+  for (const r of chain) {
+    vacantSlot = sheet.formation.slots.find(
+      s => s.role === r && !filled.has(`${s.x},${s.y}`),
+    );
+    if (vacantSlot) break;
+  }
   if (vacantSlot) {
     return {
       ...sheet,
@@ -502,11 +514,19 @@ function forceIntoXI(sheet: TeamSheet, me: Candidate): TeamSheet {
   }
 
   // The slot you actually play, or the nearest thing to it that is filled.
-  const target = sheet.xi.findIndex(p => p.role === me.position);
+  // Your own role, then the nearest attacking one this shape does have.
+  // The old fallback was "the weakest outfielder, never the goalkeeper",
+  // which is how asking to play wide could seat you at full-back.
+  let target = -1;
+  for (const r of chain) {
+    target = sheet.xi.findIndex(p => p.role === r);
+    if (target >= 0) break;
+  }
   const at = target >= 0
     ? target
-    // No slot for your position in this shape — take the weakest outfielder,
-    // never the goalkeeper.
+    // Nothing in the chain is on the pitch at all — a shape with no
+    // attacking slots, which none of the real formations are. Weakest
+    // outfielder, never the goalkeeper, exactly as before.
     : sheet.xi.reduce((worst, p, i, all) =>
       (p.role !== "GK" && (p.overall ?? 0) < (all[worst].overall ?? 999) ? i : worst),
     sheet.xi.findIndex(p => p.role !== "GK"));
@@ -747,14 +767,47 @@ export function alternatePositions(realPosition: string): Role[] {
   return OFFERABLE_ROLES.filter(r => r !== realPosition);
 }
 
-/** A role offered by the picker, with what the formation actually calls the
- *  slot it would seat you in. */
+/** A role offered by the picker. */
 export interface OfferedPosition {
   role: Role;
-  /** "LM"/"RM" for a flat wide midfielder — the same `LW`/`RW` Role
-   *  underneath, see `Slot.label` in formations.ts — otherwise the role's
-   *  own name. */
+  /**
+   * The ROLE's own name, always — never the formation's name for the slot.
+   *
+   * It used to be `slot.label`, which is "LM"/"RM" in any flat midfield.
+   * Reported directly off a screenshot: "only seeing striker lm rm in
+   * positions". The four positions this game offers are Striker, Attacking
+   * Mid, Left Wing and Right Wing, and the picker is asking which of those
+   * four you want to play — not what this particular shape happens to call
+   * the square you would stand in. The pitch graphic still says LM.
+   */
   label: string;
+}
+
+/**
+ * Where to seat somebody when the shape has no slot for his role.
+ *
+ * Every chain stays ATTACKING. Without one, `forceIntoXI` fell back to "the
+ * weakest outfielder", so asking to play attacking mid in a 4-4-2 could put
+ * you at left-back — which is why a role the formation could not seat was
+ * never offered at all. Nine of the twenty-odd shapes have no CAM slot and
+ * six have no wingers, so that silently cut the menu down to two or three.
+ */
+const SEAT_CHAIN: Partial<Record<Role, Role[]>> = {
+  ST:  ["ST", "CAM", "CM"],
+  CAM: ["CAM", "CM", "ST", "CDM"],
+  LW:  ["LW", "CAM", "ST", "CM"],
+  RW:  ["RW", "CAM", "ST", "CM"],
+};
+
+/** The slot this shape would actually put you in for a role, or null when
+ *  even the chain finds nothing (a shape with no attacking slots at all,
+ *  which none of the real formations are). */
+export function seatSlotFor(role: Role, formation: Formation): Slot | null {
+  for (const r of SEAT_CHAIN[role] ?? [role]) {
+    const slot = formation.slots.find((s) => s.role === r);
+    if (slot) return slot;
+  }
+  return null;
 }
 
 /**
@@ -768,23 +821,12 @@ export interface OfferedPosition {
  * never offers a role the shape cannot seat you in to begin with.
  */
 export function offeredPositions(realPosition: string, formation: Formation): OfferedPosition[] {
-  const offered = alternatePositions(realPosition).flatMap((role): OfferedPosition[] => {
-    const slot = formation.slots.find(s => s.role === role);
-    return slot ? [{ role, label: slot.label ?? POSITION_NAMES[role] }] : [];
-  });
-  // Requested directly, specific to the one shape where it actually comes
-  // up (5-3-2/"532" — two strikers, no CAM, no wide men at all): with only
-  // ST/CAM/LW/RW ever offered, a shape that seats just ONE of those four
-  // leaves "play somewhere else" as barely a choice at all. Central Mid
-  // unlocks as a genuine second option specifically in that one-alternate
-  // case (never otherwise, and never for a player already playing CM) — a
-  // property of the formation's own slot list, not a hardcoded formation
-  // id, so it applies to any shape shaped the same way, not just 532.
-  if (offered.length === 1 && realPosition !== "CM") {
-    const cmSlot = formation.slots.find(s => s.role === "CM");
-    if (cmSlot) offered.push({ role: "CM", label: cmSlot.label ?? POSITION_NAMES.CM });
-  }
-  return offered;
+  return alternatePositions(realPosition).flatMap((role): OfferedPosition[] => (
+    // Still never offers a role the shape genuinely cannot seat — but with
+    // SEAT_CHAIN that is now almost never true, rather than being true of
+    // attacking mid in nine formations out of twenty-odd.
+    seatSlotFor(role, formation) ? [{ role, label: POSITION_NAMES[role] }] : []
+  ));
 }
 
 /** What to call a role in a picker — not what the pitch calls the SLOT, which
