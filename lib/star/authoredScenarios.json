@@ -1038,8 +1038,8 @@
         {
           "id": "i2",
           "side": "opponent",
-          "x": 37.31,
-          "y": 2.2,
+          "x": 34.94,
+          "y": 1.9,
           "label": "GK"
         },
         {
@@ -1078,7 +1078,7 @@
           "label": "OPP"
         }
       ],
-      "updatedAt": 1790012134458,
+      "updatedAt": 1790102296419,
       "source": {
         "tool": "gallery",
         "kind": "one_on_one",
