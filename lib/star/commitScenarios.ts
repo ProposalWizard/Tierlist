@@ -29,7 +29,32 @@ import { mergeAuthoredFile, removeFromAuthoredFile } from "./authoredScenarios";
 
 export const AUTHORED_PATH = "lib/star/authoredScenarios.json";
 const DEFAULT_REPO = "ProposalWizard/Tierlist";
-const DEFAULT_BRANCH = "Harry";
+/**
+ * WHICH BRANCH A SAVED SCENARIO IS COMMITTED TO.
+ *
+ * `main`, so a scenario reaches EVERYONE rather than sitting on one
+ * person's branch. Asked for directly: "can we get this to just go onto main
+ * for everyone?" A scenario is shared data — the whole point of committing it
+ * is that the game and every gallery pick it up — so a personal branch was
+ * the wrong default for it, whatever the right default is for code.
+ *
+ * Two things that follow from this, worth knowing rather than discovering:
+ *
+ *  1. Vercel auto-deploys from main, so every commit here triggers a
+ *     PRODUCTION rebuild (a couple of minutes). Fine for a handful of
+ *     scenarios; it is not the thing to lean on while iterating quickly.
+ *     The instant path is Save, which writes Supabase and reaches every
+ *     device with no deploy at all. Commit is the durable copy, not the fast
+ *     one.
+ *  2. A feature branch that also commits scenarios will diverge from main on
+ *     this one file and conflict on merge. The conflict is always a union of
+ *     scenarios by id, never a loss — `mergeAuthoredFile` is keyed by id —
+ *     but somebody has to resolve it.
+ *
+ * Overridable per deployment with GITHUB_BRANCH, so a branch that genuinely
+ * wants its own pool can still have one without a code change.
+ */
+const DEFAULT_BRANCH = "main";
 const API = "https://api.github.com";
 
 export interface CommitConfig {

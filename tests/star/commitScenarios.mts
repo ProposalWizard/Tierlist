@@ -104,11 +104,16 @@ const reset = (queue: Reply[]) => { calls = []; replies = queue; };
 
   const dflt = resolveCommitConfig({ GITHUB_TOKEN: "t" });
   check(
-    dflt.config?.repo === "ProposalWizard/Tierlist" && dflt.config?.branch === "Harry",
+    dflt.config?.repo === "ProposalWizard/Tierlist" && dflt.config?.branch === "main",
     `repo and branch have real defaults (${dflt.config?.repo} / ${dflt.config?.branch})`,
   );
-  const custom = resolveCommitConfig({ GITHUB_TOKEN: "t", GITHUB_REPO: "o/r", GITHUB_BRANCH: "main" });
-  check(custom.config?.repo === "o/r" && custom.config?.branch === "main", "…which the env overrides");
+  // The branch matters, not just that a default exists: a scenario committed
+  // to somebody's feature branch reaches nobody else until that branch
+  // merges. "Can we get this to just go onto main for everyone?" — so the
+  // default has to be a shared branch, and this asserts it stays one.
+  check(dflt.config?.branch === "main", "the default branch is shared, not personal");
+  const custom = resolveCommitConfig({ GITHUB_TOKEN: "t", GITHUB_REPO: "o/r", GITHUB_BRANCH: "side" });
+  check(custom.config?.repo === "o/r" && custom.config?.branch === "side", "…which the env overrides");
 }
 
 // ── The happy path, and exactly what goes on the wire ─────────────────────
