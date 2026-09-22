@@ -57,6 +57,7 @@ import {
   deleteScenarioShared,
 } from "@/lib/star/scenarioStore";
 import { authoredScenarioList } from "@/lib/star/authoredScenarios";
+import { statusOf, pendingCommit } from "@/lib/star/scenarioStatus";
 import {
   loadReviews,
   saveReviews,
@@ -1057,6 +1058,58 @@ export default function StarGalleryDevPage() {
     flashFor(!repoTail, repoTail ? `Removed here${repoTail}` : "Deleted — from the database and the code.");
   };
 
+  /**
+   * Everything saved that the code does not have, or has an older copy of.
+   * Recomputed from `saved`, so it is always what is genuinely outstanding
+   * rather than a tally somebody has to keep.
+   */
+  const pending = useMemo(() => pendingCommit(Object.values(saved)), [saved]);
+
+  /**
+   * COMMIT EVERYTHING OUTSTANDING, IN ONE COMMIT.
+   *
+   * Vercel rebuilds production on every commit to main, so committing one
+   * scenario at a time is one deploy each. Asked for directly: "imagine all
+   * three of us are doing a bunch of scenarios… we did 100, we've pressed
+   * Save on all of them… we commit, and it's one production, rather than
+   * every single time we save."
+   *
+   * The API already took an array — `commitScenarios` merges by id and
+   * writes the file once — so this is one request, one commit, one deploy,
+   * however many scenarios are outstanding.
+   */
+  const commitAllPending = async (): Promise<void> => {
+    if (!pending.length) return;
+    setBusy("committing");
+    let res: Response;
+    try {
+      res = await fetch("/api/star/scenarios/commit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenarios: pending }),
+      });
+    } catch {
+      setBusy(null);
+      flashFor(false, "Not committed — couldn't reach the server.");
+      return;
+    }
+    const body = await res.json().catch(() => ({})) as
+      { ok?: boolean; error?: string; message?: string };
+    setBusy(null);
+    if (!res.ok || body.ok !== true) {
+      const why = body.error ?? `the server refused it (${res.status}).`;
+      if (res.status === 503) setCommitBlocked(why);
+      flashFor(false, `Not committed — ${why}`);
+      return;
+    }
+    // The committed file is a build-time import, so what is on screen cannot
+    // re-read it until the deploy lands. Say that rather than flipping the
+    // badges to "Committed" and being wrong for the next two minutes.
+    flashFor(true,
+      `Committed ${pending.length} ${pending.length === 1 ? "scenario" : "scenarios"} in one commit. `
+      + "They show as Committed once the deploy finishes.");
+  };
+
   /** Nothing here is optimistic — a missing GITHUB_TOKEN, a refused token or
    *  two lost races all land in the same red line, quoting the server. */
   const commitCell = async (cell: Cell, frame: Frame): Promise<void> => {
@@ -1219,11 +1272,52 @@ export default function StarGalleryDevPage() {
   // ── HOME ──
   if (screen === "home") {
     return shell(
-      <HomeScreen
-        onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))}
-        warning={warning}
-        wide={wide}
-      />,
+      <>
+        <HomeScreen
+          onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))}
+          warning={warning}
+          wide={wide}
+        />
+        {/* ── WHAT IS SAVED BUT NOT IN THE CODE YET ──
+            One button, one commit, one production deploy, however many are
+            outstanding — instead of a deploy per scenario and somebody
+            keeping track of which ones went. */}
+        {pending.length > 0 && (
+          <div style={{
+            margin: "0 14px 22px", padding: "13px 15px", borderRadius: 14,
+            background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.35)",
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#e0f2fe" }}>
+              {pending.length} {pending.length === 1 ? "scenario is" : "scenarios are"} saved but not in the code
+            </div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(224,242,254,0.75)", marginTop: 3, lineHeight: 1.45 }}>
+              They already work everywhere and already tune the generator. Committing puts them in
+              the code permanently — one commit, one deploy, all {pending.length}.
+            </div>
+            <div style={{ fontSize: 11.5, color: "rgba(224,242,254,0.6)", marginTop: 7, lineHeight: 1.5 }}>
+              {pending.slice(0, 6).map((sc) => sc.name || sc.id).join(" · ")}
+              {pending.length > 6 ? ` · +${pending.length - 6} more` : ""}
+            </div>
+            <button
+              onClick={() => void commitAllPending()}
+              disabled={!!busy || !!commitBlocked}
+              style={{
+                marginTop: 11, width: "100%", height: 44, borderRadius: 12,
+                cursor: busy || commitBlocked ? "default" : "pointer",
+                border: "1px solid rgba(56,189,248,0.55)",
+                background: commitBlocked ? "rgba(255,255,255,0.05)" : "rgba(56,189,248,0.2)",
+                color: commitBlocked ? MUTED : "#e0f2fe", fontSize: 14.5, fontWeight: 800,
+              }}
+            >
+              {busy === "committing"
+                ? "Committing…"
+                : commitBlocked
+                  ? "Commit to repo is off"
+                  : `Commit all ${pending.length} to the repo`}
+            </button>
+          </div>
+        )}
+      </>,
       true,
     );
   }
@@ -1478,6 +1572,42 @@ export default function StarGalleryDevPage() {
         </div>
       )}
 
+
+      {/* ── WHERE THIS ONE ACTUALLY IS ──
+          Draft / Saved / Committed, and whether it is tuning the generator.
+          Three different things were being confused for each other and the
+          screen never said which was which. See lib/star/scenarioStatus.ts. */}
+      {(() => {
+        const st = statusOf(savedScenario ?? null);
+        const unsaved = hasEdits(override);
+        const tone = unsaved || st.state === "draft"
+          ? { fg: "#fcd34d", bg: "rgba(245,158,11,0.15)", br: "rgba(245,158,11,0.45)" }
+          : st.state === "committed"
+            ? { fg: "#86efac", bg: "rgba(34,197,94,0.14)", br: "rgba(34,197,94,0.45)" }
+            : { fg: "#7dd3fc", bg: "rgba(56,189,248,0.14)", br: "rgba(56,189,248,0.45)" };
+        const text = unsaved
+          ? "Unsaved changes — this browser only"
+          : st.label;
+        const tunes = unsaved ? false : st.tuning;
+        return (
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 10 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+              color: tone.fg, background: tone.bg, border: `1px solid ${tone.br}`,
+            }}>
+              {text}
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+              color: tunes ? "#c4b5fd" : MUTED,
+              background: tunes ? "rgba(167,139,250,0.14)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${tunes ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.09)"}`,
+            }}>
+              {tunes ? "Tuning the generator" : "Not tuning"}
+            </span>
+          </div>
+        );
+      })()}
 
       {analysis.faults.length > 0 && (
         <div style={{ color: "#f87171", fontSize: 13.5, fontWeight: 700, marginTop: 10, textAlign: "center", lineHeight: 1.4 }}>
