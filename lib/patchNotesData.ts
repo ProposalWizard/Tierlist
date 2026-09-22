@@ -27,6 +27,163 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.4",
+      "title": "Mikey's patch notes",
+      "publishedAt": "2026-09-22T00:00:00Z",
+      "summary": "Premier League wages tied to real wage-bill spending · fame, reputation and careers rebuilt · buy/sell your stake properly · in-match energy modes with a real ticking clock · 151 test files green",
+      "stats": [
+        {
+          "value": "★100,000",
+          "label": "cap on weekly wage in the Premier League (was uncapped)"
+        },
+        {
+          "value": "0-100",
+          "label": "fame is now one capped number with six real levels"
+        },
+        {
+          "value": "22 → 50",
+          "label": "seasons a career can now run for"
+        },
+        {
+          "value": "95 / 60 / 30",
+          "label": "energy a full match costs on High / Medium / Low"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "The economy — wages, energy cans, boots",
+          "items": [
+            {
+              "title": "Premier League wages now scale off what your club actually spends on wages in real life",
+              "detail": "Liverpool, Man City and Arsenal pay far more than Ipswich or Hull for the same player, plus a boost for recent honours and star rating — capped at ★100,000 a week so it never runs away."
+            },
+            {
+              "title": "KIB Stat Cans removed entirely",
+              "detail": "Only the three energy cans remain. Their price now scales off your own weekly wage instead of being a flat number."
+            },
+            {
+              "title": "Boot prices and lifespans corrected",
+              "detail": "NS-Pure is now half price. Starter, Semi-Pro and Pro boots wear out roughly twice as fast as before, matched per boot."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Fame and Reputation, rebuilt from the ground up",
+          "items": [
+            {
+              "title": "Fame is now one number, 0-100, with six real levels",
+              "detail": "Unknown, Local Name, Rising Star, National Name, Global Star, Icon. Earned only from big moments — promotions, trophies, awards, Ballon d'Or — never just from playing matches."
+            },
+            {
+              "title": "What you own adds fame too, but it wears out",
+              "detail": "A car or a watch adds fame with a diminishing curve, not a flat bonus, and stops counting once it's worn out — items now genuinely wear out over time instead of lasting forever."
+            },
+            {
+              "title": "A scandal now adds fame and costs reputation, instead of just subtracting fame",
+              "detail": "Being infamous is still fame. It costs you somewhere else instead."
+            },
+            {
+              "title": "Reputation is now one number, 0-100, not four separate bars",
+              "detail": "Unlocks real powers at 30, 60 and 90. Merging two clubs now costs 20 reputation, not 5."
+            },
+            {
+              "title": "Sponsors have to be re-earned",
+              "detail": "Every deal now expires after 1 season (2 for Watch, Jewelry and Car brands) instead of lasting forever once signed."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "A career was quietly capped at around 22 seasons",
+              "detail": "Not a hard 5-season limit as first suspected — forced retirement at age 40 was ending an 18-year-old's career far earlier than it should. Careers can now run 50 seasons."
+            },
+            {
+              "title": "Leo's career, stuck since season 5, is fixed",
+              "detail": "His save carried an old-shaped rule book from before a newer field existed, which crashed the Champions League draw every time his season tried to roll over. Rule books now fill in anything missing instead of crashing on it."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Ownership — real buy/sell, not all-or-nothing",
+          "items": [
+            {
+              "title": "Buy more or sell some, with a slider and a confirm step",
+              "detail": "The Portfolio's old \"sell entire stake\" button is now two real buttons — Buy more and Sell some — with a slider for how much and a confirmation screen before anything happens, so a mis-click can't cost you a stake."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Energy master plan — in-match modes, a real clock, rest days",
+          "items": [
+            {
+              "title": "Three switchable energy modes during a match",
+              "detail": "Low, Medium and High sit as buttons on a live energy bar at the bottom of the commentary screen, in place of the old repeated stats row. High burns energy faster for noticeably more chances; Low burns half as much for noticeably fewer. Medium plays exactly like before.",
+              "bars": [
+                { "label": "Low", "was": 30, "now": 30, "target": 95, "state": "good" },
+                { "label": "Medium", "was": 60, "now": 60, "target": 95, "state": "warn" },
+                { "label": "High", "was": 95, "now": 95, "target": 95, "state": "bad" }
+              ]
+            },
+            {
+              "title": "A real, ticking match clock",
+              "detail": "The minute now counts up one at a time — 1, 2, 3 … 45, 46 … 90 — instead of jumping unpredictably between commentary lines, and energy drains with it live."
+            },
+            {
+              "title": "A KIB can button at half time",
+              "detail": "Sits beside the Second Half button, shows how many Basic cans you own, and gives +25 energy per tap."
+            },
+            {
+              "title": "Energy now recovers from real rest days between fixtures",
+              "detail": "Every day you don't play adds energy back — Saturday to Saturday is 6 days' recovery, Saturday to a midweek cup game is 3. A property and a good training ground add a little more."
+            },
+            {
+              "title": "Bigger competitions cost more energy",
+              "detail": "The Premier League costs the most, down to the National League at about three-quarters of that. Domestic cup ties cost whatever the opponent's own league would cost. Europa League, Champions League and the Super Cup cost more again."
+            },
+            {
+              "title": "Being tired matters more than it used to",
+              "detail": "Bench threshold raised to below 65 energy (was 35), left out of the squad below 40 (was 15). Power and curve can now be cut by up to 30% when tired, and tired legs raise substitution and injury risk."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Switching energy mode mid-match changes chances a little late",
+              "detail": "Energy use changes from the very next minute; how many chances you get only changes from the next stretch of play, usually a few match minutes later.",
+              "pill": { "text": "low priority", "tone": "amber" }
+            },
+            {
+              "title": "Production build hasn't been run for this version",
+              "detail": "The machine was out of memory when it was tried. Type-check and every test pass; the build should be re-run once memory is free.",
+              "pill": { "text": "low priority", "tone": "amber" }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Play a full season with the new energy system live",
+              "detail": "Then tune rest-day recovery, training cost and the bench threshold in the tuning editor if any of them feel wrong."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu",
+      "updatedAt": null
+    },
+    {
       "version": "0.3",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-22T00:00:00Z",
