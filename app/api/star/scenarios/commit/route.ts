@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { isMatchScenario } from "@/lib/star/authoredScenarios";
-import { commitScenarios, resolveCommitConfig, NO_GO_PATH } from "@/lib/star/commitScenarios";
+import { commitScenarios, removeScenariosFromRepo, resolveCommitConfig } from "@/lib/star/commitScenarios";
 import type { MatchScenario } from "@/lib/star/scenarios";
 
 /**
@@ -43,14 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null) as
-    { scenario?: unknown; scenarios?: unknown; pool?: unknown } | null;
-  /**
-   * Which pool to commit into. "nogo" writes lib/star/noGoScenarios.json —
-   * the pictures somebody looked at and said should never exist. Same file
-   * format and same review as the accepted ones; a rejected picture is as
-   * much a record as an accepted one.
-   */
-  const toNoGo = body?.pool === "nogo";
+    { scenario?: unknown; scenarios?: unknown } | null;
   const raw: unknown[] = Array.isArray(body?.scenarios)
     ? body!.scenarios as unknown[]
     : body?.scenario !== undefined ? [body.scenario] : [];
@@ -77,9 +70,7 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await commitScenarios({
-    // Everything else about the commit is identical — same token, same repo,
-    // same branch, same merge-and-retry. Only the file changes.
-    config: toNoGo ? { ...env.config, path: NO_GO_PATH } : env.config,
+    config: env.config,
     scenarios: raw as MatchScenario[],
   });
 
@@ -87,6 +78,51 @@ export async function POST(req: NextRequest) {
     result.ok
       ? { ok: true, message: result.message, committed: result.committed, commitSha: result.commitSha }
       : { ok: false, error: result.message, raced: result.raced ?? false, committed: [] },
+    { status: result.ok ? 200 : result.status },
+  );
+}
+
+/**
+ * DELETE a scenario from the committed file.
+ *
+ * The gallery display reads the committed file, so a Delete that only cleared
+ * Supabase would let the scenario reappear on the next load. This removes it
+ * from the code as well. Admin-only, same gate as POST.
+ */
+export async function DELETE(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !(await isAdmin(user.id))) {
+    return NextResponse.json(
+      { ok: false, error: "Forbidden — deleting a scenario from the code needs an admin sign-in." },
+      { status: 403 },
+    );
+  }
+
+  const body = await req.json().catch(() => null) as { id?: unknown; ids?: unknown } | null;
+  const ids: string[] = Array.isArray(body?.ids)
+    ? (body!.ids as unknown[]).filter((x): x is string => typeof x === "string")
+    : typeof body?.id === "string" ? [body.id] : [];
+  if (!ids.length) {
+    return NextResponse.json(
+      { ok: false, error: "Send an `id` or an `ids` array. Nothing was deleted." },
+      { status: 400 },
+    );
+  }
+
+  const env = resolveCommitConfig(process.env as Record<string, string | undefined>);
+  if (!env.config) {
+    return NextResponse.json(
+      { ok: false, error: env.message, missingEnv: env.missing, deleted: [] },
+      { status: 503 },
+    );
+  }
+
+  const result = await removeScenariosFromRepo({ config: env.config, ids });
+  return NextResponse.json(
+    result.ok
+      ? { ok: true, message: result.message, deleted: result.committed }
+      : { ok: false, error: result.message, raced: result.raced ?? false, deleted: [] },
     { status: result.ok ? 200 : result.status },
   );
 }

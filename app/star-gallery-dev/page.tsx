@@ -175,6 +175,22 @@ function buildCell(kind: ScenarioKind, seed: number): Cell {
   return cell;
 }
 
+/** A card for a SAVED scenario that no generated version card covers — a
+ *  sim-saved one, or a version past the current card count. Rebuilt from its
+ *  own source (seed + plan), so the saved override lands on the right base
+ *  exactly as it does for a generated card. This is what lets every saved
+ *  scenario show on every screen, not just the ones whose seed happens to
+ *  fall inside the default grid. */
+function cellFromSaved(ms: MatchScenario): Cell | null {
+  const kind = ms.source?.kind;
+  const seed = ms.source?.seed;
+  if (!kind || seed == null) return null;
+  const key = ms.id.startsWith("gallery-") ? ms.id.slice("gallery-".length) : ms.id;
+  return key.startsWith("sim-")
+    ? simCell({ kind: kind as ScenarioKind, seed, planId: ms.source?.planId ?? null })
+    : buildCell(kind as ScenarioKind, seed);
+}
+
 /** A SIMULATED cell — one press of Simulate, as a cell the rest of the screen
  *  treats exactly like any other: draggable, fault-ringed, savable. */
 function simCell(spec: SimSpec): Cell {
@@ -949,7 +965,7 @@ export default function StarGalleryDevPage() {
   const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
   const [migrationMissing, setMigrationMissing] = useState(false);
   const [commitBlocked, setCommitBlocked] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"saving" | "reverting" | "committing" | null>(null);
+  const [busy, setBusy] = useState<"saving" | "reverting" | "committing" | "deleting" | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
 
   const indexGallery = (all: MatchScenario[]): Record<string, MatchScenario> => {
@@ -1009,6 +1025,38 @@ export default function StarGalleryDevPage() {
     flashFor(true, "Back to the built-in scenario.");
   };
 
+  /**
+   * Delete a scenario for good — from Supabase, from this browser, and from
+   * the committed file. All three matter: the display reads the committed
+   * file now, so removing it only from the database would let it come back on
+   * the next load. Honest about a partial result — if the code half fails
+   * (no token, a race) it says so rather than claiming a clean delete.
+   */
+  const deleteCell = async (cell: Cell): Promise<void> => {
+    if (typeof window !== "undefined" &&
+        !window.confirm(`Delete this ${kindLabel(cell.kind)} scenario everywhere — the database and the code? This cannot be undone here.`)) return;
+    setBusy("deleting");
+    const id = gallerySlug(cell.key);
+    const shared = await deleteScenarioShared(id);       // Supabase + local cache
+    let repoTail = "";
+    try {
+      const r = await fetch("/api/star/scenarios/commit", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok) repoTail = ` — still in the code (${d?.error ?? r.status})`;
+    } catch {
+      repoTail = " — couldn't reach the server to remove it from the code";
+    }
+    setBusy(null);
+    setSaved((m) => { const next = { ...m }; delete next[cell.key]; return next; });
+    clearOverride(cell.key);
+    if (!shared.ok && repoTail) { flashFor(false, `Delete failed — ${shared.message}${repoTail}`); return; }
+    flashFor(!repoTail, repoTail ? `Removed here${repoTail}` : "Deleted — from the database and the code.");
+  };
+
   /** Nothing here is optimistic — a missing GITHUB_TOKEN, a refused token or
    *  two lost races all land in the same red line, quoting the server. */
   const commitCell = async (cell: Cell, frame: Frame): Promise<void> => {
@@ -1047,23 +1095,47 @@ export default function StarGalleryDevPage() {
 
   // ── The versions currently in view ──
   const versions: Cell[] = useMemo(
-    () => (game === "eleven" ? elevenVersions(kindId as ScenarioKind, countFor(kindId)) : fiveVersions(fiveId)),
-    [game, kindId, fiveId, countFor],
+    () => {
+      if (game !== "eleven") return fiveVersions(fiveId);
+      const generated = elevenVersions(kindId as ScenarioKind, countFor(kindId));
+      // Every SAVED scenario of this kind that no generated card already
+      // covers, appended as its own card — so all of them show, including
+      // sim-saved ones and versions beyond the current count. Without this a
+      // scenario could be committed, used by the game, and still invisible
+      // here because its id did not line up with a grid slot.
+      const have = new Set(generated.map((c) => c.key));
+      const extra: Cell[] = [];
+      for (const [key, ms] of Object.entries(saved)) {
+        if (have.has(key) || ms.source?.kind !== kindId) continue;
+        const c = cellFromSaved(ms);
+        if (c) { extra.push(c); have.add(key); }
+      }
+      return [...generated, ...extra];
+    },
+    [game, kindId, fiveId, countFor, saved],
   );
   const activeGroupId = game === "eleven" ? kindId : fiveId;
 
   const chips = useMemo(() => {
     if (game === "eleven") {
       return KIND_ORDER.map((k) => {
-        const keys = seedsForKind(k, countFor(k)).map((s) => cellKeyFor(k, s));
-        return { id: k, label: kindLabel(k), done: reviewedCount(reviews, keys), total: keys.length };
+        // Generated cards PLUS every saved scenario of this kind that isn't
+        // already one of them — the same set the version grid shows, so the
+        // "done / total" a chip reports matches the number of cards behind it
+        // rather than the bare generated count.
+        const keys = new Set(seedsForKind(k, countFor(k)).map((s) => cellKeyFor(k, s)));
+        for (const [key, ms] of Object.entries(saved)) {
+          if (ms.source?.kind === k) keys.add(key);
+        }
+        const arr = Array.from(keys);
+        return { id: k, label: kindLabel(k), done: reviewedCount(reviews, arr), total: arr.length };
       });
     }
     return FIVE_GROUPS.map((g) => {
       const keys = fiveVersions(g.id).map((c) => c.key);
       return { id: g.id, label: g.label, done: reviewedCount(reviews, keys), total: keys.length };
     });
-  }, [game, reviews, countFor]);
+  }, [game, reviews, countFor, saved]);
 
   const openGroup = (g: "eleven" | "five") => { setGame(g); setScreen(g); setSim(null); };
   const openVersion = (i: number) => { setVersionIdx(i); setScreen("version"); setSim(null); setSelectedId(null); };
@@ -1390,6 +1462,19 @@ export default function StarGalleryDevPage() {
           >
             {playing ? "◼ Stop" : "▶ Play"}
           </button>
+          {/* Delete only shows when there is a SAVED scenario to delete — a
+              purely generated card has nothing to remove. Removes it from the
+              database and the committed file, so it is gone for everyone. */}
+          {savedScenario && (
+            <button
+              style={{ ...editBtn(false), color: "#f87171" }}
+              disabled={!!busy}
+              title="Delete this saved scenario everywhere"
+              onClick={() => void deleteCell(cell)}
+            >
+              {busy === "deleting" ? "Deleting…" : "Delete"}
+            </button>
+          )}
         </div>
       )}
 

@@ -129,3 +129,40 @@ export function mergeAuthoredFile(
   const next = { ...parsed, scenarios };
   return { text: `${JSON.stringify(next, null, 2)}\n`, added, replaced };
 }
+
+/**
+ * Remove scenarios from the file's own parsed contents, by id.
+ *
+ * The mirror of `mergeAuthoredFile`, for the gallery's Delete button. Because
+ * the gallery display now reads the committed file (not just Supabase),
+ * deleting a committed scenario ONLY from the database would leave it to
+ * reappear from the file on the next load — so a real delete has to reach
+ * the code too. `removed` names what was actually there to take out, so the
+ * caller can tell "deleted 1" from "there was nothing to delete".
+ */
+export function removeFromAuthoredFile(
+  currentText: string,
+  ids: string[],
+): { text: string; removed: string[] } {
+  let parsed: RawFile & Record<string, unknown>;
+  try {
+    const p = JSON.parse(currentText);
+    parsed = (p && typeof p === "object" && !Array.isArray(p)) ? p : {};
+  } catch {
+    parsed = {};
+  }
+  const scenarios: Record<string, unknown> =
+    (parsed.scenarios && typeof parsed.scenarios === "object" && !Array.isArray(parsed.scenarios))
+      ? { ...(parsed.scenarios as Record<string, unknown>) }
+      : {};
+
+  const removed: string[] = [];
+  for (const id of ids) {
+    if (Object.prototype.hasOwnProperty.call(scenarios, id)) {
+      delete scenarios[id];
+      removed.push(id);
+    }
+  }
+  const next = { ...parsed, scenarios };
+  return { text: `${JSON.stringify(next, null, 2)}\n`, removed };
+}

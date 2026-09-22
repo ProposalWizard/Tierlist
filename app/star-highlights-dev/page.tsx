@@ -40,7 +40,6 @@ import {
   nextHighlight,
   newSimMemory,
   buildSimScenario,
-  authoredShapeFor,
   simFaults,
   pictureKey,
   type SimSpec,
@@ -53,7 +52,6 @@ import {
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
 import { outliersOf } from "@/lib/star/scenarioRules";
-import { binChance, binnedCount } from "@/lib/star/scenarioReject";
 import { ruleSetFor } from "@/lib/star/authoredChance";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
 import {
@@ -265,8 +263,6 @@ export default function HighlightsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
-  /** Bumped when something is binned, so the count on screen refreshes. */
-  const [binTick, setBinTick] = useState(0);
 
   // A full-screen dev tool: the site's own nav and footer get out of the way,
   // exactly as /star-gallery-dev does it (globals.css's immersive class).
@@ -399,43 +395,8 @@ export default function HighlightsPage() {
     () => (shot ? outliersOf(ruleSetFor(shot.spec.kind) ?? { kind: "", n: 0, rules: [] }) : []),
     [shot, saved],
   );
-  const binnedForKind = useMemo(
-    () => (shot ? binnedCount(shot.spec.kind) : 0),
-    [shot, binTick],
-  );
   const liveFrame = baseFrame ? applyOverride(baseFrame, override) : null;
 
-  const binThis = useCallback(() => {
-    if (!shot) return;
-    const base = authoredShapeFor(shot.spec)?.sourceId ?? null;
-    binChance(shot.spec.kind, shot.spec.seed, shot.spec.planId, base);
-    setBinTick((t) => t + 1);
-    setPlaying(false);
-    // Commit it to the no-go pool in the REPO as well, so the rejection
-    // survives a cleared browser and can be reviewed by somebody who was not
-    // here. Local skipping has already happened, so a 403 (not signed in as
-    // an admin) or a 503 (no GITHUB_TOKEN) costs nothing but is still SAID —
-    // never a silent half-success.
-    const ms = frameToMatchScenario(
-      { ...saveTargetFor(shot.spec), id: `nogo-${highlightSlug(shot.spec)}`,
-        name: `${kindLabel(shot.spec.kind)} — no-go` },
-      liveFrame ?? shot.base,
-    );
-    void fetch("/api/star/scenarios/commit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pool: "nogo", scenario: ms }),
-    })
-      .then(async (r) => {
-        const d = await r.json().catch(() => null);
-        flashFor(r.ok, r.ok
-          ? "Binned, and added to the repo's no-go list."
-          : `Binned here only — ${d?.error ?? `the repo said ${r.status}`}`);
-      })
-      .catch(() => flashFor(false, "Binned here only — couldn't reach the server."));
-    next();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shot, liveFrame]);
 
   /** A PNG of exactly what is on screen, for sharing a bad picture without
    *  needing anybody to reproduce it. */
@@ -762,14 +723,6 @@ export default function HighlightsPage() {
             >
               {playing ? "\u25FC Stop" : "\u25B6 Play"}
             </button>
-            {/* Not worth fixing. See lib/star/scenarioReject.ts. */}
-            <button
-              style={{ ...editBtn(false), color: "#fca5a5" }}
-              title="Never show this again, and add it to the repo's no-go list"
-              onClick={binThis}
-            >
-              No-go
-            </button>
             <button
               style={{ ...editBtn(false), color: MUTED }}
               title="Save this picture as a PNG"
@@ -782,11 +735,6 @@ export default function HighlightsPage() {
           {/* A drawing that disagrees with one of its own kind's laws. Named
               rather than silently absorbed — the rules survive one slip, but
               nobody should have to guess that a slip happened. */}
-          {binnedForKind > 0 && (
-            <div style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>
-              {binnedForKind} marked no-go and never shown again
-            </div>
-          )}
 
           {ruleOutliers.length > 0 && (
             <div style={{
