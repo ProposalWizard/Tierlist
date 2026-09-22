@@ -308,6 +308,32 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         "title": "Changed",
         "items": [
           {
+            "title": "The shareable page is now generated from this file, so the two cannot disagree",
+            "detail": "Every version here has an Open-the-artifact link at the bottom. The page behind it is built from the same array this archive reads.",
+            "more": {
+              "summary": "How it works, and the one thing it cannot do",
+              "points": [
+                "npx tsx scripts/patch-notes-artifact.mts 0.3 prints the page. Publish it as an artifact and paste the link into that version's artifactUrl.",
+                "Written by hand, the archive and the artifact drift: one gets a correction, the other keeps the old number, and nobody can tell which is right. There is now one copy of the words.",
+                "It uses Harry's own v0.1 artifact as the visual template, so a generated page looks like the ones already shared.",
+                "What it cannot do is screenshots — there is nowhere in the data to put an image, so a page that needs one gets it added by hand after. That is why v0.1 has no link: its artifact has six screenshots whose files are not in the repo.",
+                "Fixed on the way through: the template's CSS had no rule for an explicit light choice, so a reader on a dark system who picked light still got the dark page. It now has one."
+              ]
+            }
+          },
+          {
+            "title": "Leo's 0.2, 0.3 and 0.4 are one entry now — all three were Goalie Mode",
+            "detail": "Merged into a single v0.2, his wording kept exactly. The full note for him, including which number to use next, is in that entry's Known issues.",
+            "more": {
+              "summary": "Why they were merged, and the one thing it breaks",
+              "points": [
+                "Three separate version numbers for three rounds of the same feature read as three features. One entry with a round-by-round history at the bottom says what actually happened.",
+                "Nothing was dropped: 18 of his 20 items carried over word for word, and the 2 that did not were his own one-line summaries of 0.2 and 0.3, which the new history section replaces.",
+                "What it breaks: this v0.3 is Harry's, and Leo already shipped a v0.3. Any older link or screenshot saying “v0.3” now points at something else."
+              ]
+            }
+          },
+          {
             "title": "Scenarios now commit to main, so they reach everyone",
             "detail": "They were going to a personal branch, where nobody else would see them until it merged.",
             "more": {
@@ -399,7 +425,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         ]
       }
     ],
-    "artifactUrl": null,
+    "artifactUrl": "https://claude.ai/artifact/PhoNj7N3AvoR8keYRMAkZN",
     "updatedAt": null
   },
   {
@@ -539,6 +565,22 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         "title": "Known issues",
         "items": [
           {
+            "title": "Leo — your three versions were renumbered into this one, so the next number is free",
+            "detail": "0.2, 0.3 and 0.4 were all Goalie Mode, so they are one entry now. Nothing was deleted; every item is still here, word for word.",
+            "alert": true,
+            "more": {
+              "summary": "What this means for your next set of notes",
+              "points": [
+                "Your shipped 0.3 and 0.4 no longer exist as their own entries on this page. Their content is in the Fixed/Added lists above, and the round-by-round breakdown is in “What each round did” at the bottom.",
+                "0.3 on this page is now Harry's — the scenario gallery and auto-tuning round. That is the same number your Goalie Mode round 3 used to have, so a link or screenshot pointing at “v0.3” means something different now.",
+                "Your saved artifact HTML in .claude/skills/creating-patch-notes/references/ still has files named v0.2, v0.3 and v0.4. They were left alone — only this page was renumbered.",
+                "The claude.ai artifact you keep republishing is untouched and still one link \u2014 https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd. It covers round 4 only, so this entry links a generated page that matches all four rounds instead.",
+                "Next time you write notes, the number to use on this page is 0.4, not 0.5. Pick it by looking at what is already listed here rather than by adding one to your last artifact.",
+                "There is still no collision guard — version is one shared text field across both tracks, so two people can pick the same number and nothing stops them. Worth a proper fix; say the word and it gets one."
+              ]
+            }
+          },
+          {
             "title": "The push-in/reveal camera itself wasn't re-confirmed live after this round's rebuild",
             "detail": "Confidence rested on the measured reference frames and the re-verified projection math, not a fresh recording — and it went on to be reported back as still not right (see v0.3)."
           },
@@ -598,7 +640,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         ]
       }
     ],
-    "artifactUrl": "https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd",
+    "artifactUrl": "https://claude.ai/artifact/HD5yGHLCNQxHHwGAnrXS7o",
     "updatedAt": null
   },
   {
