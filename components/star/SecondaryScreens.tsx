@@ -1,4 +1,6 @@
 "use client";
+import { fameOf, fameLevel, nextFameLevel, FAME_LEVELS } from "@/lib/star/fame";
+import { reputationLabel, REPUTATION_RECOMMEND_MIN, REPUTATION_PROPOSE_RULES_MIN, REPUTATION_PRESIDENCY_MIN } from "@/lib/star/reputation";
 import { useState } from "react";
 import { objectiveLabel, sponsorEligible, sponsorFee, sponsorRequirementText } from "@/lib/star/sponsors";
 import { clauseSummary, offerClauses } from "@/lib/star/contracts";
@@ -44,7 +46,7 @@ export function SponsorsScreen({ career, onBack, onSign }: {
           <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
           <div className="font-black text-white text-lg">Sponsors</div>
           <div className="flex items-center gap-1 bg-gray-700 rounded-lg px-2.5 py-1.5 border border-gray-600 text-[11px] font-black text-amber-300">
-            ★ {career.fame} fame
+            ★ {fameOf(career)} fame · {fameLevel(fameOf(career)).name}
           </div>
         </div>
 
@@ -83,7 +85,14 @@ export function SponsorsScreen({ career, onBack, onSign }: {
                   )}
                 </div>
                 {!sp.active && (
-                  <div className="mt-1 text-[10px] font-semibold text-white/90">{sponsorRequirementText(sp.category)}</div>
+                  <div className="mt-1 text-[10px] font-semibold text-white">{sponsorRequirementText(sp.category)}</div>
+                )}
+                {sp.active && (
+                  <div className="mt-1 text-[10px] font-bold text-white">
+                    {typeof sp.termLeft === "number"
+                      ? `Deal ends after ${sp.termLeft === 1 ? "this season" : `${sp.termLeft} seasons`} — then re-earn it`
+                      : "Deal ends after this season — then re-earn it"}
+                  </div>
                 )}
                 <ObjectiveRow deal={sp} />
               </div>
@@ -98,13 +107,11 @@ export function SponsorsScreen({ career, onBack, onSign }: {
         </div>
 
         <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-700 text-[10px] text-white/75 text-center leading-tight">
-          Every brand wants fame — plus something that actually fits them: goals for
-          your boot deal, a big fanbase for a clothing line, a trophy for the tech
-          brands, the lifestyle to match for the luxury ones. Sign an eligible deal
-          and the fee lands immediately — then again at the start of every season
-          you keep it. Hit its objective and you don&rsquo;t just get the bonus — the
-          deal itself gets upgraded, permanently paying more from then on. The
-          bigger the deal, the harder it asks.
+          Every brand wants a fame level — plus something that fits them: goals for
+          your boot deal, fans for clothing, a trophy for tech, a car or a home of
+          your own for the luxury brands. Deals last one season (two for Watch,
+          Jewellery and Car), then you have to earn them again. Hit a deal&rsquo;s
+          objective and it upgrades, paying more from then on.
         </div>
       </div>
     </div>
@@ -312,26 +319,63 @@ function ReputationRow({ label, value, icon, blurb }: { label: string; value: nu
 
 export function ReputationScreen({ career, onBack }: { career: CareerState; onBack: () => void }) {
   const rep = career.reputation;
+  const fame = fameOf(career);
+  const level = fameLevel(fame);
+  const next = nextFameLevel(fame);
+  const earned = Math.round(career.fame);
+  const fromOwned = Math.max(0, fame - earned);
+  const repUnlocks: { min: number; text: string }[] = [
+    { min: 0, text: "Buy shares in clubs — votes lean your way more as this rises" },
+    { min: REPUTATION_RECOMMEND_MIN, text: "Club boards take your recommendations seriously" },
+    { min: REPUTATION_PROPOSE_RULES_MIN, text: "Propose Rule Book changes (influence also needed)" },
+    { min: REPUTATION_PRESIDENCY_MIN, text: "Stand for president of the FA, UEFA, FIFA or CONMEBOL" },
+  ];
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col py-3 px-3">
-      <div className="w-full max-w-sm mx-auto flex-1">
-        <div className="flex items-center justify-between mb-3">
+      <div className="w-full max-w-sm mx-auto flex-1 space-y-3">
+        <div className="flex items-center justify-between">
           <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
-          <div className="font-black text-white text-lg">Reputation</div>
+          <div className="font-black text-white text-lg">Fame &amp; Reputation</div>
           <div />
         </div>
 
-        <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
-          <ReputationRow label="World" value={rep.world} icon="🌍" blurb="How well the wider football world knows you — silverware and individual honours build this every season." />
-          <ReputationRow label="Club" value={rep.club} icon="🏟️" blurb="Your standing with your own club's board, beyond just the manager — moves with how the season judged you." />
-          <ReputationRow label="Fans" value={career.relationships.fans} icon="🧣" blurb="Play a minigame from the Life tab to move this one." />
-          <ReputationRow label="Government" value={rep.government} icon="🏛️" blurb="Standing with governing bodies (FA, UEFA, FIFA...) — arrives with governing-body investment, later." />
-          <ReputationRow label="Shareholders" value={rep.shareholders} icon="🤝" blurb="Standing with the shareholders of clubs you own a stake in — moves when you hold a real shareholder vote, and costs you if you overrule one." />
+        <div className="bg-amber-900/30 border border-amber-600 rounded-lg p-3">
+          <ReputationRow label={`Fame · ${level.name}`} value={fame} icon="⭐"
+            blurb="How many people know your name. Earned from big moments — promotions, trophies, awards, the Ballon d'Or — plus what you own. Playing well alone earns none." />
+          <div className="mt-2 text-[11px] font-bold text-white">
+            {earned} earned + {fromOwned} from what you own
+            {next ? ` · ${next.min - fame} to ${next.name}` : " · maxed"}
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-1 text-[9px] font-black text-white">
+            {FAME_LEVELS.map(l => (
+              <div key={l.name} className={`rounded px-1.5 py-1 text-center ${fame >= l.min ? "bg-amber-500 text-gray-950" : "bg-gray-700"}`}>
+                {l.name} {l.min}+
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-3 text-[9px] font-semibold text-center text-white/90">
-          Reputation is still being built out — right now it's a real, moving record of your standing, not yet the input to any vote.
+        <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3">
+          <ReputationRow label={`Reputation · ${reputationLabel(rep)}`} value={rep} icon="🤝"
+            blurb="Whether the people who run football trust you. Up with trophies, clean seasons and good causes; down with scandals, overruling votes and merging clubs." />
+          <div className="mt-2 space-y-1">
+            {repUnlocks.map(u => (
+              <div key={u.min} className="flex items-center gap-2 text-[11px] font-bold text-white">
+                <span className={`w-9 shrink-0 rounded text-center text-[10px] font-black ${rep >= u.min ? "bg-emerald-500 text-gray-950" : "bg-gray-700 text-white"}`}>{u.min}+</span>
+                <span>{u.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {(career.fameNews?.length ?? 0) > 0 && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Last season</div>
+            {career.fameNews!.map((line, i) => (
+              <div key={i} className="text-[11px] font-bold text-white">{line}</div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

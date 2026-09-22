@@ -6,10 +6,10 @@ import {
 import {
   applyResult, resolvePenalties, ruleBookFor, DEFAULT_RULE_BOOK, CLASSIC_POINTS,
   proposeRuleChangeVote, resolveRuleChangeVote, canOverruleRuleVote, fanCostOf,
-  RULE_OVERRULE_INFLUENCE_THRESHOLD, type ResultTotals,
+  RULE_OVERRULE_INFLUENCE_THRESHOLD, type ResultTotals, type RuleBook,
 } from "../../lib/star/ruleBook";
 import { playLeagueWeek, updateLeagueWithUserResult, mulberry32 } from "../../lib/star/season";
-import { makeInitialCareer } from "../../lib/star/careerFlow";
+import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, LeagueTeam, StarPlayer } from "../../lib/star/types";
 
@@ -174,6 +174,8 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   check(canProposeRuleChange(career, "FA"), "fixture assumption: enough influence to propose");
   check(!canOverruleRuleVote(career, "FA"), `not yet enough to overrule (bar is ${RULE_OVERRULE_INFLUENCE_THRESHOLD})`);
 
+  // Proposing a rule also needs 60+ reputation since 21 Sep 2026.
+  career = { ...career, reputation: 60 };
   const proposed = proposeRuleChangeVote(career, "FA", { noDraws: true }, mulberry32Local(2));
   check(proposed.ok, "enough influence really does let you put a rule change to a vote");
   if (proposed.ok) {
@@ -199,6 +201,8 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   career = investInfluence(career, "FA", costOf(RULE_OVERRULE_INFLUENCE_THRESHOLD)) as CareerState;
   check(influenceIn(career, "FA") >= RULE_OVERRULE_INFLUENCE_THRESHOLD, "fixture assumption: enough influence to overrule");
 
+  // Proposing a rule also needs 60+ reputation since 21 Sep 2026.
+  career = { ...career, reputation: 60 };
   const proposed = proposeRuleChangeVote(career, "FA", { matchLengthMinutes: 60 }, mulberry32Local(3));
   if (proposed.ok) {
     const losing = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "no" } };
@@ -217,6 +221,22 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   check(tiny >= 1, "even a no-op change still costs at least the floor");
   check(big > tiny, `a genuinely bigger change reads as a bigger fan cost (tiny ${tiny}, big ${big})`);
   check(big <= 15, "the fan cost never exceeds its own ceiling");
+}
+
+// ── A Rule Book saved before a newer rule existed (Leo's stuck save) ────────
+// Real bug, 21 Sep 2026: a UEFA book stored without `customClubEntries`
+// crashed the European draw at season rollover, so End of Season did nothing.
+{
+  const old = { ...freshCareer() } as CareerState;
+  const legacyUefa = { ...DEFAULT_RULE_BOOK } as Record<string, unknown>;
+  delete legacyUefa.customClubEntries;
+  const withOldBook = { ...old, ruleBook: { UEFA: legacyUefa as unknown as RuleBook } } as CareerState;
+  const read = ruleBookFor(withOldBook, "UEFA");
+  check(Array.isArray(read.customClubEntries), "an old saved Rule Book gets new rules filled in with defaults");
+  let threw = false;
+  try { advanceSeason({ ...withOldBook, europeanQualification: "Champions League" }, false, false); }
+  catch { threw = true; }
+  check(!threw, "a season still rolls over with an old saved Rule Book (the Europe draw no longer crashes)");
 }
 
 if (problems.length) {

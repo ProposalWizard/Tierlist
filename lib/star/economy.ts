@@ -489,11 +489,93 @@ export function standingMultiplier(standing: number): number {
  */
 export function weeklyWageFor(
   club: string, division: CareerDivision, standing = STARTER_STANDING,
+  career?: WageCareer,
 ): number {
+  if (division === "premier") {
+    const wage = divisionBaseWage(division)
+      * premierClubFactor(club)
+      * standingMultiplier(standing)
+      * (career ? premierHonoursFactor(career) * premierStarFactor(career.starRating) : 1);
+    return Math.max(1, Math.min(PREMIER_WAGE_CAP, Math.round(wage)));
+  }
   const wage = divisionBaseWage(division)
     * clubPremium(club, division)
     * standingMultiplier(standing);
   return Math.max(1, Math.round(wage));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PART 1a — THE PREMIER LEAGUE, WHERE THE TOP GETS GENUINELY RICH
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Owners, 21 Sep 2026: "for the Premier League the highest of the highs
+ * could be a lot more… capped at 100,000… for the best of the best. Most
+ * good players might still only earn 10 to 20,000… some of the lower ones
+ * still about 2,500." Three multipliers, Premier League only, on top of the
+ * ordinary division base × standing:
+ *
+ *   club spending power   real weekly wage bills, supplied directly
+ *   recent honours        league / Champions League won last season,
+ *                         a Ballon d'Or ever
+ *   star rating           nothing below 4★, up to ×1.5 at 5★
+ *
+ * Every other division is untouched, and so is every shop price — those are
+ * anchored to `typicalWeeklyWage`, which does not read any of this.
+ */
+
+/** Real 2025-26 weekly wage bills as a multiple of the smallest (Coventry),
+ *  supplied by the owners. A club missing from this list (a promoted side,
+ *  a custom club) pays like the smallest. */
+export const PREMIER_WAGE_SPEND: Record<string, number> = {
+  "Liverpool": 13.53, "Manchester City": 13.52, "Arsenal": 11.75,
+  "Manchester United": 11.60, "Tottenham Hotspur": 10.56, "Aston Villa": 7.45,
+  "Chelsea": 7.41, "Newcastle United": 5.18, "Crystal Palace": 5.01,
+  "Nottingham Forest": 4.87, "AFC Bournemouth": 4.78, "Everton": 4.52,
+  "Fulham FC": 4.35, "Leeds United": 4.08, "Brighton & Hove Albion": 3.86,
+  "Sunderland": 3.82, "Brentford": 3.71, "Ipswich Town": 1.49,
+  "Hull City": 1.19, "Coventry City": 1.00,
+};
+
+/**
+ * Square-rooted, deliberately. A club's WAGE BILL is 13.5x Coventry's, but
+ * most of that is paying MORE players, not paying one player 13.5x — so
+ * applied raw, a Liverpool squad player would out-earn a Coventry star ten
+ * times over. √13.53 = 3.68x keeps the order exactly as supplied while
+ * landing a Liverpool starter around ★18,600 and a star around ★29,800.
+ */
+export function premierClubFactor(club: string): number {
+  return Math.sqrt(Math.max(1, PREMIER_WAGE_SPEND[club] ?? 1));
+}
+
+export const PREMIER_HONOUR_MULT = { league: 1.2, championsLeague: 1.3, ballonDor: 1.5 } as const;
+export const PREMIER_WAGE_CAP = 100_000;
+
+/** Just enough of a career to read its honours — kept narrow so this file
+ *  never has to import the whole CareerState shape. */
+export interface WageCareer {
+  season: number;
+  starRating: number;
+  ballonDorWins: number;
+  trophies: { season: number; competition: string }[];
+}
+
+/** Won last season (or this one) — a champion is paid like one while it's
+ *  fresh. Ballon d'Or wins aren't stored by season, so any win counts. */
+export function premierHonoursFactor(career: WageCareer): number {
+  const recent = (comp: string) =>
+    career.trophies.some(t => t.competition === comp && t.season >= career.season - 1);
+  let f = 1;
+  if (recent("Premier League")) f *= PREMIER_HONOUR_MULT.league;
+  if (recent("Champions League")) f *= PREMIER_HONOUR_MULT.championsLeague;
+  if (career.ballonDorWins > 0) f *= PREMIER_HONOUR_MULT.ballonDor;
+  return f;
+}
+
+/** Nothing below 4★; a straight line up to ×1.5 at a perfect 5★. */
+export function premierStarFactor(starRating: number): number {
+  const s = Number.isFinite(starRating) ? starRating : 0;
+  return 1 + 0.5 * Math.max(0, Math.min(1, s - 4));
 }
 
 /** What an ordinary first-teamer at a middling club in this division earns
@@ -631,9 +713,9 @@ export function offerStanding(reputation: number, strengthStep: number): number 
  */
 export function offerWageFor(
   club: string, division: CareerDivision, reputation: number,
-  strengthStep: number, currentWage: number,
+  strengthStep: number, currentWage: number, career?: WageCareer,
 ): number {
-  const theirs = weeklyWageFor(club, division, offerStanding(reputation, strengthStep));
+  const theirs = weeklyWageFor(club, division, offerStanding(reputation, strengthStep), career);
   return Math.max(1, Math.round(Math.max(theirs, currentWage || 0)));
 }
 
@@ -895,15 +977,11 @@ export function priceIsInBand(price: number, tier: ShopTierId, band: PriceBandId
 export const RATING_CONVERTER_WEEKS = {
   /** Basic / Premium / Elite KIB Can, at starter / pro / world class. */
   energy: [0.45, 0.6, 1.0],
-  /** Basic / Premium / Elite KIB Stat Can, at pro / elite / world class.
-   *  The real rating converter, and the one that has to hurt. */
-  stats: [3, 5, 8],
 } as const;
 
 /** Which tier each rung of the rating-converter ladders is anchored at. */
 export const RATING_CONVERTER_TIERS = {
   energy: ["starter", "pro", "world_class"] as ShopTierId[],
-  stats: ["pro", "elite", "world_class"] as ShopTierId[],
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1003,3 +1081,13 @@ export function weeksOfWallet(price: number, weeklyWage: number): number {
   const income = Math.max(1, weeklyWage) * TOTAL_INCOME_MULTIPLE;
   return price / income;
 }
+
+/**
+ * KIB CANS, PRICED OFF THE PLAYER'S OWN WAGE — in weeks of it.
+ *
+ * The Stat Cans were deleted on 21 Sep 2026 ("only three types of cans,
+ * not six"), leaving these three. Priced as a share of YOUR current weekly
+ * wage rather than a fixed tier price, so they never become pocket change:
+ * the richer you get, the more a can costs.
+ */
+export const KIB_CAN_WAGE_WEEKS = { basic: 0.5, premium: 1, elite: 2 } as const;

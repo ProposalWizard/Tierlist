@@ -86,7 +86,7 @@ export function buildTrends(
       hot: v.importance >= 70,
       // A plausible number: reach, scaled by how well known you are, with a
       // little noise so two trends of equal weight do not read as a tie.
-      volume: Math.round(v.volume * (0.5 + Math.min(1.6, fame / 70)) * (0.8 + rng() * 0.5)),
+      volume: Math.round(v.volume * (0.5 + Math.min(1.6, fame / 60)) * (0.8 + rng() * 0.5)),
     }))
     .sort((a, b) => b.volume - a.volume)
     .slice(0, MIN_TRENDS);
@@ -104,7 +104,7 @@ export function buildTrends(
         label,
         tag: tag as Trend["tag"],
         hot: false,
-        volume: Math.round((300 + rng() * 900) * (0.5 + Math.min(1.6, fame / 70))),
+        volume: Math.round((300 + rng() * 900) * (0.5 + Math.min(1.6, fame / 60))),
       });
       used.add(label);
     }

@@ -1,7 +1,8 @@
 "use client";
+import { fameGainFromBuying, isWornOut, itemLifeSeasons } from "@/lib/star/fame";
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { KIB_CANS, STAT_KIB_CANS, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, shopTierOf, type KibCan, type StatKibCan } from "@/lib/star/shopData";
+import { KIB_CANS, kibCanPrice, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, shopTierOf, type KibCan } from "@/lib/star/shopData";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
@@ -43,7 +44,6 @@ interface Props {
   kind: "kib" | "boots" | "lifestyle";
   onBack: () => void;
   onBuyKib: (can: KibCan) => void;
-  onBuyStatKib: (can: StatKibCan) => void;
   onBuyBoot: (boot: Boot) => void;
   onBuyItem: (item: OwnedItem) => void;
   /** Phase 5 of STAR_POWER_POLITICS.md — buying a boot the FA's Rule Book
@@ -51,14 +51,13 @@ interface Props {
   onBuyFromBlackMarket: (boot: Boot, useLawyers: boolean) => ActionResult;
 }
 
-export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket }: Props) {
+export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket }: Props) {
   const [tab, setTab] = useState<"item" | "vehicle" | "property">("item");
   const [selectedBoot, setSelectedBoot] = useState<Boot | null>(BOOTS_CATALOGUE[0]);
   const [useLawyers, setUseLawyers] = useState(false);
   const [blackMarketMessage, setBlackMarketMessage] = useState<string | null>(null);
   const bannedBoots = new Set(ruleBookFor(career, "FA").bannedItems);
   const [selectedCan, setSelectedCan] = useState<KibCan | null>(KIB_CANS[0]);
-  const [selectedStatCan, setSelectedStatCan] = useState<StatKibCan | null>(null);
   const [selectedItem, setSelectedItem] = useState<OwnedItem | null>(null);
 
   const title = kind === "kib" ? "KIB Cans" : kind === "boots" ? "Boots" : "Lifestyle";
@@ -78,7 +77,9 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
         {kind === "kib" && (
           <div className="space-y-2">
             {KIB_CANS.map((c) => {
-              const canBuy = career.money >= c.price;
+              // Priced off YOUR wage, so a can always costs something real.
+              const price = kibCanPrice(c, career.contract.wage);
+              const canBuy = career.money >= price;
               // The row is a div, not a button, ON PURPOSE. It used to be a
               // <button> with the Buy <button> nested inside it, which is
               // invalid HTML — React warns it "will cause a hydration error",
@@ -106,53 +107,13 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                      <StarIcon /> {formatMoney(c.price)}
+                      <StarIcon /> {formatMoney(price)}
                     </div>
-                    <Weeks price={c.price} wage={career.contract.wage} />
+                    <Weeks price={price} wage={career.contract.wage} />
                     <button
                       disabled={!canBuy}
                       onClick={(e) => { e.stopPropagation(); onBuyKib(c); }}
                       className={`mt-1 px-3 py-1 rounded text-[10px] font-black ${canBuy ? "bg-emerald-500 text-white" : "bg-gray-600 text-white/75"}`}
-                    >
-                      Buy
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            <div className="pt-2 pb-1 text-[10px] font-black uppercase text-white/60 tracking-widest text-center">
-              KIB Stat Cans — a temporary boost, not a top-up
-            </div>
-            {STAT_KIB_CANS.map((c) => {
-              const canBuy = career.money >= c.price;
-              // A div, not a button — see the note on the energy-can row
-              // above. Same nested-button bug, second copy.
-              return (
-                <div
-                  key={c.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedStatCan(c)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedStatCan(c); } }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition cursor-pointer ${
-                    selectedStatCan?.id === c.id ? "border-fuchsia-400 bg-gray-700" : "border-gray-700 bg-gray-800"
-                  }`}
-                >
-                  <KibCanIcon can={c} className="h-20 w-14" />
-                  <div className="flex-1 text-left">
-                    <div className="font-black text-white text-sm">{c.name}</div>
-                    <div className="text-[10px] text-fuchsia-300 font-bold">+{c.boost} Power/Technique — {c.matches} matches</div>
-                    <div className="text-[10px] text-white/75">Owned: {career.statCans[c.id]}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                      <StarIcon /> {formatMoney(c.price)}
-                    </div>
-                    <Weeks price={c.price} wage={career.contract.wage} />
-                    <button
-                      disabled={!canBuy}
-                      onClick={(e) => { e.stopPropagation(); onBuyStatKib(c); }}
-                      className={`mt-1 px-3 py-1 rounded text-[10px] font-black ${canBuy ? "bg-fuchsia-500 text-white" : "bg-gray-600 text-white/75"}`}
                     >
                       Buy
                     </button>
@@ -312,7 +273,11 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
             </div>
             <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 max-h-[350px] overflow-y-auto">
               {LIFESTYLE_ITEMS.filter((i) => i.category === tab).map((i) => {
-                const owned = career.ownedItems.some((o) => o.id === i.id);
+                const mine = career.ownedItems.find((o) => o.id === i.id);
+                const owned = !!mine && !isWornOut(mine);
+                const worn = !!mine && isWornOut(mine);
+                const life = itemLifeSeasons(i);
+                const gain = fameGainFromBuying(career.ownedItems, i);
                 return (
                   <button
                     key={i.id}
@@ -324,20 +289,26 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyStatKib, onB
                     <LifestyleIcon id={i.id} category={i.category} />
                     <div className="flex-1">
                       <div className="font-black text-white text-sm">{i.name}</div>
-                      <div className="text-[10px] text-white/75">Lifestyle +{i.lifestyleValue}</div>
+                      <div className="text-[10px] font-bold text-amber-300">
+                        +{gain < 1 ? gain.toFixed(1) : Math.round(gain)} fame
+                        <span className="text-white"> · {life === null ? "lasts forever" : `lasts ${life} season${life === 1 ? "" : "s"}`}</span>
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
                         <StarIcon /> {formatMoney(i.price)}
                       </div>
                       <Weeks price={i.price} wage={career.contract.wage} />
-                      {owned && <div className="text-[9px] text-emerald-400 font-bold">OWNED</div>}
+                      {owned && <div className="text-[9px] text-emerald-400 font-bold">
+                        OWNED{typeof mine?.seasonsLeft === "number" ? ` · ${mine.seasonsLeft} season${mine.seasonsLeft === 1 ? "" : "s"} left` : ""}
+                      </div>}
+                      {worn && <div className="text-[9px] text-red-400 font-bold">WORN OUT — REPLACE</div>}
                     </div>
                   </button>
                 );
               })}
             </div>
-            {selectedItem && !career.ownedItems.some((o) => o.id === selectedItem.id) && (
+            {selectedItem && !career.ownedItems.some((o) => o.id === selectedItem.id && !isWornOut(o)) && (
               <button
                 disabled={career.money < selectedItem.price}
                 onClick={() => onBuyItem(selectedItem)}

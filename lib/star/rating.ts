@@ -69,7 +69,7 @@ export const TROPHY_FAME: Record<string, number> = {
   "Premier League": 25, "Championship": 20,
   "Champions League": 22, "Europa League": 12, "Conference League": 8,
   "FA Cup": 14, "League Cup": 9,
-  "Community Shield": 4, "Super Cup": 4,
+  "Community Shield": 2.5, "Super Cup": 2.5,
 };
 
 /** Every point of "reputation" the rating can gain beyond raw attributes —

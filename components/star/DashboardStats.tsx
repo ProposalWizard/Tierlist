@@ -1,4 +1,5 @@
 "use client";
+import { fameOf, fameLevel } from "@/lib/star/fame";
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { selectionFor } from "@/lib/star/selection";
@@ -139,7 +140,7 @@ export default function DashboardStats({ career, onRenew }: Props) {
                 (see sponsorEligible in lib/star/sponsors.ts), so this tile
                 sits right where the player would go looking for it. */}
             <div className="col-span-2 py-2 rounded-lg font-black text-sm text-center bg-gray-700 text-white/75">
-              ★ Fame ({career.fame})
+              ★ Fame ({fameOf(career)} · {fameLevel(fameOf(career)).name})
             </div>
           </div>
           <div className="flex items-center gap-2">

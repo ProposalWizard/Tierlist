@@ -1,3 +1,4 @@
+import { REPUTATION_EVENTS, REPUTATION_PROPOSE_RULES_MIN, reputationVoteBias } from "./reputation";
 import type { CareerState, Reputation } from "./types";
 import { castVote, type VoteTally } from "./voting";
 import { clampReputation } from "./reputation";
@@ -127,7 +128,14 @@ export const DEFAULT_RULE_BOOK: RuleBook = {
 };
 
 export function ruleBookFor(career: CareerState, body: GoverningBody): RuleBook {
-  return career.ruleBook?.[body] ?? DEFAULT_RULE_BOOK;
+  // Merged over the defaults, not returned raw. A Rule Book saved before a
+  // newer rule existed is missing that field entirely — found on a real save
+  // (21 Sep 2026): a UEFA book stored before `customClubEntries` existed made
+  // `.customClubEntries.filter` crash while building next season's European
+  // draw, so End of Season silently did nothing and the career was stuck
+  // after season 5. Any rule added later is covered the same way.
+  const saved = career.ruleBook?.[body];
+  return saved ? { ...DEFAULT_RULE_BOOK, ...saved } : DEFAULT_RULE_BOOK;
 }
 
 /**
@@ -199,7 +207,7 @@ export const RULE_OVERRULE_INFLUENCE_THRESHOLD = 80;
 
 /** Overruling a governing body costs WORLD reputation, not shareholder —
  *  this is the world stage, not a boardroom. */
-const RULE_OVERRULE_WORLD_COST = 15;
+const RULE_OVERRULE_WORLD_COST = -REPUTATION_EVENTS.overruledVote;
 const RULE_VOTE_HELD_WORLD_GAIN = 2;
 const GOVERNING_BODY_ELECTORATE = 300; // roughly "however many member associations get a vote"
 
@@ -251,10 +259,14 @@ export function fanCostOf(current: RuleBook, change: Partial<RuleBook>): number 
 export function proposeRuleChangeVote(
   career: CareerState, body: GoverningBody, change: Partial<RuleBook>, rng: () => number,
 ): { ok: true; proposal: RuleChangeProposal } | { ok: false; reason: string } {
-  if (!canProposeRuleChange(career, body) && !isBodyPresident(career, body)) {
+  if (isBodyPresident(career, body)) {
+    // A president may always put a change to the vote.
+  } else if (career.reputation < REPUTATION_PROPOSE_RULES_MIN) {
+    return { ok: false, reason: `Needs ${REPUTATION_PROPOSE_RULES_MIN}+ reputation to propose a rule change` };
+  } else if (!canProposeRuleChange(career, body)) {
     return { ok: false, reason: "Not enough influence in this governing body" };
   }
-  const biasStrength = (career.reputation.world - 50) / 50;
+  const biasStrength = reputationVoteBias(career.reputation);
   const tally = castVote(
     `Should ${body} adopt this rule change?`,
     [{ id: "yes", label: "Adopt" }, { id: "no", label: "Reject" }],
@@ -268,7 +280,7 @@ export function canOverruleRuleVote(career: CareerState, body: GoverningBody): b
 }
 
 function nudgeWorld(reputation: Reputation, delta: number): Reputation {
-  return { ...reputation, world: clampReputation(reputation.world + delta) };
+  return clampReputation(reputation + delta);
 }
 
 export function resolveRuleChangeVote(
