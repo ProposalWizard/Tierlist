@@ -59,6 +59,10 @@ import {
 import { authoredScenarioList } from "@/lib/star/authoredScenarios";
 import { statusOf, pendingCommit } from "@/lib/star/scenarioStatus";
 import {
+  loadCorrections, saveCorrection, makeCorrection, proposalsFrom,
+  FAULT_LABEL, PROPOSAL_THRESHOLD, type Correction,
+} from "@/lib/star/scenarioCorrections";
+import {
   loadReviews,
   saveReviews,
   reviewedCount,
@@ -1059,6 +1063,39 @@ export default function StarGalleryDevPage() {
   };
 
   /**
+   * CORRECTIONS — "that generation was bad, here is it fixed."
+   *
+   * Deliberately NOT a save: a correction never becomes one of the base
+   * scenarios and never tunes anything on its own. It records WHICH
+   * measurable property the drag repaired, and stays silent until enough of
+   * them agree to be worth proposing as a rule. See
+   * lib/star/scenarioCorrections.ts for why that is the only version of this
+   * that is safe.
+   */
+  const [corrections, setCorrections] = useState<Correction[]>([]);
+  useEffect(() => { setCorrections(loadCorrections()); }, []);
+  const proposals = useMemo(() => proposalsFrom(corrections), [corrections]);
+
+  const tuneCell = (cell: Cell, edited: Frame): void => {
+    const target = saveTargetFor(cell);
+    const before = frameToMatchScenario(target, frameFromScenario(rebuildScenario(cell)));
+    const after = frameToMatchScenario(target, edited);
+    const c = makeCorrection(gallerySlug(cell.key), cell.kind, before, after);
+    setCorrections(saveCorrection(c));
+    clearOverride(cell.key);
+    if (!c.moves.length) { flashFor(false, "Nothing moved — no correction recorded."); return; }
+    if (!c.faults.length) {
+      flashFor(true, "Recorded. It repaired nothing measurable, so it is not evidence for a rule.");
+      return;
+    }
+    const near = proposalsFrom([...corrections.filter((x) => x.id !== c.id), c])
+      .find((pr) => pr.kind === cell.kind && c.faults.includes(pr.fault));
+    flashFor(true, near
+      ? `Recorded — ${near.count} now agree. There is a rule to look at on the home screen.`
+      : `Recorded: ${FAULT_LABEL[c.faults[0]]}. It stays quiet until a few more agree.`);
+  };
+
+  /**
    * Everything saved that the code does not have, or has an older copy of.
    * Recomputed from `saved`, so it is always what is genuinely outstanding
    * rather than a tally somebody has to keep.
@@ -1278,6 +1315,58 @@ export default function StarGalleryDevPage() {
           warning={warning}
           wide={wide}
         />
+        {/* ── WHAT THE CORRECTIONS ADD UP TO ──
+            Silent until enough agree. Proposed, never applied — a rule from
+            a handful of examples is how this project twice ended up with a
+            plausible rule that was wrong about thousands of pictures. */}
+        {(proposals.length > 0 || corrections.length > 0) && (
+          <div style={{
+            margin: "0 14px 14px", padding: "13px 15px", borderRadius: 14,
+            background: "rgba(167,139,250,0.10)", border: "1px solid rgba(167,139,250,0.35)",
+          }}>
+            {proposals.length === 0 ? (
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(233,213,255,0.85)", lineHeight: 1.45 }}>
+                {corrections.length} {corrections.length === 1 ? "correction" : "corrections"} recorded.
+                None of them agree {PROPOSAL_THRESHOLD} times yet, so nothing is being proposed —
+                a correction stays quiet until a pattern shows up.
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#e9d5ff" }}>
+                  {proposals.length} {proposals.length === 1 ? "rule" : "rules"} worth a look
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(233,213,255,0.75)", marginTop: 3, lineHeight: 1.45 }}>
+                  From {corrections.length} corrections. Nothing has been applied — these are
+                  what the corrections agree on.
+                </div>
+                {proposals.map((pr) => (
+                  <div key={`${pr.kind}|${pr.fault}`} style={{
+                    marginTop: 9, padding: "9px 11px", borderRadius: 10,
+                    background: "rgba(0,0,0,0.25)", border: "1px solid rgba(167,139,250,0.25)",
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#e9d5ff" }}>
+                      {pr.rule}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "rgba(233,213,255,0.7)", marginTop: 3, lineHeight: 1.45 }}>
+                      {kindLabel(pr.kind)} · {pr.count} corrections fixed {FAULT_LABEL[pr.fault]}
+                    </div>
+                    <button
+                      onClick={() => { setKindId(pr.kind); openGroup("eleven"); }}
+                      style={{
+                        marginTop: 7, height: 32, padding: "0 12px", borderRadius: 9, cursor: "pointer",
+                        border: "1px solid rgba(167,139,250,0.4)", background: "rgba(167,139,250,0.14)",
+                        color: "#e9d5ff", fontSize: 12, fontWeight: 800,
+                      }}
+                    >
+                      Show me {kindLabel(pr.kind)}
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+
         {/* ── WHAT IS SAVED BUT NOT IN THE CODE YET ──
             One button, one commit, one production deploy, however many are
             outstanding — instead of a deploy per scenario and somebody
@@ -1567,6 +1656,18 @@ export default function StarGalleryDevPage() {
               onClick={() => void deleteCell(cell)}
             >
               {busy === "deleting" ? "Deleting…" : "Delete"}
+            </button>
+          )}
+          {/* Tune: record WHY this generation was bad, without making it one
+              of the base scenarios. Only offered when there is a drag to
+              learn from. See lib/star/scenarioCorrections.ts. */}
+          {hasEdits(override) && (
+            <button
+              style={{ ...editBtn(false), color: "#c4b5fd" }}
+              title="Record what was wrong with this generation — not saved as a base scenario"
+              onClick={() => tuneCell(cell, liveFrame)}
+            >
+              Tune
             </button>
           )}
         </div>
