@@ -227,6 +227,41 @@ export interface KeeperTuning {
 
 export const KEEPER_TUNING: KeeperTuning = { nearPost: null, advance: null };
 
+/**
+ * THE SAME TWO DIALS, PER CHANCE KIND.
+ *
+ * `KEEPER_TUNING` above is global — set it and every kind moves. That is the
+ * opposite of the standing rule on this tool: "the tuning from corrections
+ * should propose ONLY for that highlight type and we need to make sure
+ * tuning only affects the highlight type."
+ *
+ * It matters here for a measured reason. A tight angle's keeper is drawn at
+ * a median 0.11 of the way across to his near post, and the generator that
+ * places him cannot exceed 0.30 — `buildTightAngle` clamps his x to inside
+ * the posts (`POST_R - 0.3`), and with the ball 8-16m wide that caps the
+ * share at about a third. So at a tight angle he never covers the near post,
+ * which is the whole defence of that chance. Reported on the call as "the
+ * tight-angle chance is too easy, I could score every time, the keeper is
+ * not on his line where he should be."
+ *
+ * A one-on-one's keeper is a different question with a different answer, so
+ * correcting one must not move the other.
+ *
+ * Empty by default: nothing here changes until a number is chosen by
+ * LOOKING at it, which is what this file's own KeeperTuning note already
+ * says and what the team's standing rule on numbers requires.
+ */
+export const KEEPER_TUNING_BY_KIND: Record<string, Partial<KeeperTuning>> = {};
+
+/** The two dials in force for a kind — its own, falling back to the global. */
+export function keeperTuningFor(kind: string | undefined): KeeperTuning {
+  const own = kind ? KEEPER_TUNING_BY_KIND[kind] : undefined;
+  return {
+    nearPost: own?.nearPost ?? KEEPER_TUNING.nearPost,
+    advance: own?.advance ?? KEEPER_TUNING.advance,
+  };
+}
+
 /** Below this the ball is central and there is no near post to cover, so a
  *  share of its width is meaningless (and dividing by it is noise). */
 const CENTRAL_BALL_M = 1.5;
@@ -247,9 +282,14 @@ export function keeperSharesOf(s: ShapeSample): { nearPost: number | null; advan
 /** Put the keeper where those shares say, for wherever the ball now is. */
 export function placeKeeper(
   ball: Vec2, shares: { nearPost: number | null; advance: number | null }, drawn: Vec2,
+  /** Which chance this is, so a kind's own dials win over the global ones.
+   *  Omitted by any caller that does not know or care, which behaves exactly
+   *  as it did before per-kind tuning existed. */
+  kind?: string,
 ): Vec2 {
-  const nearPost = KEEPER_TUNING.nearPost ?? shares.nearPost;
-  const advance = KEEPER_TUNING.advance ?? shares.advance;
+  const tuning = keeperTuningFor(kind);
+  const nearPost = tuning.nearPost ?? shares.nearPost;
+  const advance = tuning.advance ?? shares.advance;
   const lateral = ball.x - CX;
   const x = nearPost === null || Math.abs(lateral) < CENTRAL_BALL_M
     // A central ball has no near post to shade toward, so his drawn offset
@@ -303,7 +343,7 @@ export function randomiseAuthored(
       defenders: s0.defenders.map((d) => (scale === 0 ? d : nudge(d, JITTER_M * scale, rng))),
       mates: s0.mates.map((m) => (scale === 0 ? m : nudge(m, JITTER_M * scale, rng))),
     };
-    cand.keeper = placeKeeper(cand.ball, shares, s0.keeper);
+    cand.keeper = placeKeeper(cand.ball, shares, s0.keeper, base.source?.kind);
     if (violations(cand, set).length === 0) {
       return {
         sourceId: base.id, ...cand, camera: base.camera, jitter: scale, rejected,

@@ -182,6 +182,26 @@ export const MEASURES: Measure[] = [
   },
 
   { id: "inBox", label: "Ball is inside the box", count: true, of: (s) => (s.ball.y <= BOX_DEPTH ? 1 : 0) },
+
+  {
+    // HOW MUCH GOAL YOU CAN SEE, in degrees.
+    //
+    // The one thing "tight angle" actually names, and nothing here measured
+    // it. Distance from the middle and distance from the goal line were both
+    // being measured separately, but neither says how much goal is on: a ball
+    // 10m wide is a tight angle on the byline and an ordinary chance from 20m
+    // out. It is the two of them together that decides, which is an angle.
+    //
+    // Measured on the real drawings: a tight angle is a median 16.1 degrees
+    // of goal (5.1 to 26.1), a one-on-one 28.6 (19.1 to 49.6). The medians
+    // are most of a factor apart and the ranges barely touch — so this
+    // separates the two kinds on its own, where lateral distance does not
+    // (they overlap from 8.2m to 11.1m).
+    id: "aperture", label: "How much goal you can see, in degrees",
+    of: (s) => Math.abs(
+      Math.atan2(POST_R - s.ball.x, s.ball.y) - Math.atan2(POST_L - s.ball.x, s.ball.y),
+    ) * 180 / Math.PI,
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -198,6 +218,10 @@ export interface Rule {
   median: number;
   /** A law the randomiser may never break. See `deriveRuleSet`. */
   invariant: boolean;
+  /** The value a law holds AT. Zero for every "none of this" law, which is
+   *  most of them; 1 for one like "the ball is inside the box". Meaningless
+   *  when `invariant` is false. */
+  at: number;
   /** For an invariant: how many samples obey it, out of how many. 11 of 12
    *  means one drawing disagrees — the law still holds, and that drawing is
    *  named in `outliers` so it can be looked at. */
@@ -253,7 +277,7 @@ export const INVARIANT_AGREEMENT = 0.9;
  * is a statement about what it usually looks like. Only the first is
  * enforced.
  */
-const isLaw = (m: Measure, modal: number): boolean => !!m.count && modal === 0;
+const isLaw = (m: Measure): boolean => !!m.count;
 
 /**
  * Scan a set of authored scenarios into a rule set.
@@ -270,13 +294,21 @@ export function deriveRuleSet(
     const vs = raw.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
     if (!vs.length) continue;
 
-    // A law is judged at zero — how many obey "none of this", and who does
-    // not. Only ever consulted for a counting measure (see `isLaw`).
-    const obey = raw.filter((v) => v === 0).length;
+    // A LAW HOLDS AT WHATEVER VALUE THE DRAWINGS AGREE ON — not at zero.
+    //
+    // It used to be zero only, which meant a counting measure that was
+    // unanimously anything ELSE could never become a law. Found on the real
+    // tight angles: all 11 have the ball inside the box, "Ball is inside the
+    // box" reads 1 in every single one, and it could not be enforced because
+    // 1 is not 0. Every law that already existed still is one — they are all
+    // "none of this", and none of this is still the value they agree on.
     const of = raw.filter((v) => Number.isFinite(v)).length;
-    const modal = obey === of ? vs[0] : (obey / of >= INVARIANT_AGREEMENT ? 0 : NaN);
+    const counts = new Map<number, number>();
+    for (const v of raw) if (Number.isFinite(v)) counts.set(v, (counts.get(v) ?? 0) + 1);
+    let at = 0, obey = 0;
+    counts.forEach((n, v) => { if (n > obey) { at = v; obey = n; } });
     const invariant = of >= MIN_SAMPLES_FOR_INVARIANT
-      && isLaw(m, modal)
+      && isLaw(m)
       && obey / of >= INVARIANT_AGREEMENT;
 
     rules.push({
@@ -288,10 +320,11 @@ export function deriveRuleSet(
       max: vs[vs.length - 1],
       median: vs[Math.floor(vs.length / 2)],
       invariant,
+      at,
       agree: invariant ? obey : of,
       of,
       outliers: invariant
-        ? raw.map((v, i) => (v !== 0 && Number.isFinite(v) ? (ids[i] ?? `#${i}`) : null))
+        ? raw.map((v, i) => (v !== at && Number.isFinite(v) ? (ids[i] ?? `#${i}`) : null))
             .filter((x): x is string => x !== null)
         : [],
     });
@@ -324,12 +357,12 @@ export function violations(sample: ShapeSample, set: RuleSet): string[] {
     const m = MEASURES.find((x) => x.id === r.id);
     if (!m) continue;
     const v = m.of(sample);
-    if (v !== 0) {
+    if (v !== r.at) {
       out.push(r.count
-        ? `${r.label.toLowerCase()}: ${v}, should be 0`
+        ? `${r.label.toLowerCase()}: ${v}, should be ${r.at}`
         : r.ratio
-          ? `${r.label.toLowerCase()}: ${v.toFixed(2)}, should be ${r.min.toFixed(2)}`
-          : `${r.label.toLowerCase()}: ${v.toFixed(1)}m, should be ${r.min.toFixed(1)}m`);
+          ? `${r.label.toLowerCase()}: ${v.toFixed(2)}, should be ${r.at.toFixed(2)}`
+          : `${r.label.toLowerCase()}: ${v.toFixed(1)}m, should be ${r.at.toFixed(1)}m`);
     }
   }
   return out;
@@ -356,7 +389,7 @@ export function describeRuleSet(set: RuleSet): string[] {
   const n = (r: Rule, v: number) =>
     r.count ? String(v) : r.ratio ? v.toFixed(2) : `${v.toFixed(1)}m`;
   const hard = set.rules.filter((r) => r.invariant)
-    .map((r) => `ALWAYS — ${r.label}: 0`
+    .map((r) => `ALWAYS — ${r.label}: ${r.at}`
       + (r.agree < r.of ? `  (${r.agree} of ${r.of} — see outliers)` : ""));
   const soft = set.rules.filter((r) => !r.invariant)
     .map((r) => `${r.label}: ${n(r, r.min)} to ${n(r, r.max)} (usually ${n(r, r.median)})`);

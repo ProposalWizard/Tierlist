@@ -1190,7 +1190,30 @@ export default function StarGalleryDevPage() {
    * Recomputed from `saved`, so it is always what is genuinely outstanding
    * rather than a tally somebody has to keep.
    */
-  const pending = useMemo(() => pendingCommit(Object.values(saved)), [saved]);
+  /**
+   * WHAT THIS SESSION HAS ALREADY COMMITTED.
+   *
+   * `pendingCommit` compares the database against `AUTHORED_SCENARIOS` — a
+   * BUILD-TIME import. A successful commit writes the file in the repo and
+   * starts a deploy, but the page you are looking at is still running the
+   * old build, so the count cannot go down for another minute or two.
+   *
+   * It read as a failure. Reported directly: "the commit all button isn't
+   * working, it says 16 to commit but I'm not sure if they have" — and the
+   * real cost is that pressing it again makes a SECOND commit of the
+   * identical content. That happened: two commits 28 seconds apart, both
+   * "save 16 scenarios", with an empty diff between them.
+   *
+   * So a commit this session succeeded for is remembered here and taken out
+   * of the count straight away. Deliberately NOT persisted: a reload gets a
+   * fresh build (or the same one), and the honest answer then is whatever
+   * the file actually says.
+   */
+  const [justCommitted, setJustCommitted] = useState<Record<string, true>>({});
+  const pending = useMemo(
+    () => pendingCommit(Object.values(saved)).filter((sc) => !justCommitted[sc.id]),
+    [saved, justCommitted],
+  );
 
   /**
    * The PICTURE a saved scenario actually is.
@@ -1256,9 +1279,15 @@ export default function StarGalleryDevPage() {
     // The committed file is a build-time import, so what is on screen cannot
     // re-read it until the deploy lands. Say that rather than flipping the
     // badges to "Committed" and being wrong for the next two minutes.
+    setJustCommitted((m) => {
+      const next = { ...m };
+      for (const sc of batch) next[sc.id] = true;
+      return next;
+    });
     flashFor(true,
       `Committed ${batch.length} ${batch.length === 1 ? "scenario" : "scenarios"} in one commit. `
-      + "They show as Committed once the deploy finishes.");
+      + "Do not press it again — they are in the repo now, and the badges "
+      + "catch up when the deploy finishes in a minute or two.");
   };
 
   /** Nothing here is optimistic — a missing GITHUB_TOKEN, a refused token or
