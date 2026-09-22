@@ -25,8 +25,9 @@
  * one merged list. A reader can see the separation instead of being told.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { MatchScenario } from "@/lib/star/scenarios";
+import { paint, type Frame } from "@/lib/star/scenarioFrame";
 import { ruleSetFor, authoredPool } from "@/lib/star/authoredChance";
 import { outliersOf, MIN_SAMPLES_FOR_INVARIANT, INVARIANT_AGREEMENT } from "@/lib/star/scenarioRules";
 import {
@@ -62,22 +63,30 @@ export interface Proposal {
 }
 
 export default function TuningPanel({
-  kinds, proposals, corrections, pending, busy, commitBlocked,
-  onCommitAll, onShowKind,
+  kinds, proposals, corrections, pending, frameOf, busy, commitBlocked,
+  onCommitAll, onShowKind, onOpenScenario,
 }: {
   kinds: string[];
   proposals: Proposal[];
   corrections: Correction[];
   pending: MatchScenario[];
+  /** The picture a pending scenario actually is, rebuilt the same way its
+   *  own card rebuilds it. `null` when it cannot be rebuilt (a scenario
+   *  saved by a tool that did not record its source). */
+  frameOf: (sc: MatchScenario) => Frame | null;
   busy: string | null;
   commitBlocked: string | null;
-  onCommitAll: () => void;
+  /** Commits exactly these — the ones still ticked after the review. */
+  onCommitAll: (scenarios: MatchScenario[]) => void;
   onShowKind: (kind: string) => void;
+  /** Open this scenario's own card, for a last edit before committing. */
+  onOpenScenario: (sc: MatchScenario) => void;
 }) {
   return (
     <div style={{ padding: "4px 14px 40px", display: "grid", gap: 16 }}>
       <CommitSection
-        pending={pending} busy={busy} commitBlocked={commitBlocked} onCommitAll={onCommitAll}
+        pending={pending} frameOf={frameOf} busy={busy} commitBlocked={commitBlocked}
+        onCommitAll={onCommitAll} onOpenScenario={onOpenScenario}
       />
       <ProposalsSection
         proposals={proposals} corrections={corrections} onShowKind={onShowKind}
@@ -111,10 +120,27 @@ function Card({
 /* ── 1. Saved but not in the code ─────────────────────────────────────── */
 
 function CommitSection({
-  pending, busy, commitBlocked, onCommitAll,
+  pending, frameOf, busy, commitBlocked, onCommitAll, onOpenScenario,
 }: {
-  pending: MatchScenario[]; busy: string | null; commitBlocked: string | null; onCommitAll: () => void;
+  pending: MatchScenario[];
+  frameOf: (sc: MatchScenario) => Frame | null;
+  busy: string | null;
+  commitBlocked: string | null;
+  onCommitAll: (scenarios: MatchScenario[]) => void;
+  onOpenScenario: (sc: MatchScenario) => void;
 }) {
+  // Which ones have been taken OUT of this batch. Ids, not indices, so it
+  // survives the list changing underneath it while you review.
+  const [left, setLeft] = useState<Record<string, true>>({});
+  const [at, setAt] = useState(0);
+  const [open, setOpen] = useState(false);
+
+  const going = pending.filter((sc) => !left[sc.id]);
+  // The list can shrink under you — a save elsewhere, a commit landing — so
+  // the cursor is clamped on read rather than corrected by an effect.
+  const idx = pending.length === 0 ? 0 : Math.min(at, pending.length - 1);
+  const shown = pending[idx];
+
   if (pending.length === 0) {
     return (
       <Card
@@ -125,30 +151,129 @@ function CommitSection({
     );
   }
   const n = pending.length;
+  const g = going.length;
   return (
     <Card
       tint="56,189,248"
       title={`${n} ${n === 1 ? "scenario is" : "scenarios are"} saved but not in the code`}
-      sub={`They already work everywhere and already tune the generator. Committing puts them in the code permanently — one commit, one deploy, all ${n}.`}
+      sub={`They already work everywhere and already tune the generator. Committing puts them in the code permanently \u2014 one commit, one deploy, all ${g}.`}
     >
-      <div style={{ fontSize: 11.5, color: FAINT, marginTop: 8, lineHeight: 1.55 }}>
-        {pending.slice(0, 8).map((sc) => sc.name || sc.id).join(" · ")}
-        {n > 8 ? ` · +${n - 8} more` : ""}
-      </div>
+      {/* ── THE LAST CHECK ──
+          Asked for directly, twice: "maybe have it as a thing where you can
+          scroll through everything that needs a last check and still do a
+          final edit, but it doesn't mean that you have to resave it", and
+          then "not being able to see them before committing is annoying".
+
+          It was a line of ids. An id is not a picture, so the only way to
+          see what you were about to put in the code permanently was to go
+          and find each card by hand. This shows the actual drawing, one at a
+          time, big enough to judge \u2014 and nothing here writes anything:
+          looking is free, leaving one out only changes THIS batch, and Open
+          goes to the real card if a picture needs a last drag. */}
       <button
-        onClick={onCommitAll}
-        disabled={!!busy || !!commitBlocked}
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          marginTop: 10, width: "100%", height: 38, borderRadius: 11, cursor: "pointer",
+          border: "1px solid rgba(56,189,248,0.3)", background: "transparent",
+          color: "#7dd3fc", fontSize: 13, fontWeight: 800,
+        }}
+      >
+        {open ? "Hide them \u2303" : `Look through all ${n} first \u2304`}
+      </button>
+
+      {open && shown && (
+        <div style={{ marginTop: 12, display: "grid", gap: 8, justifyItems: "center" }}>
+          <PendingPicture frame={frameOf(shown)} dimmed={!!left[shown.id]} />
+
+          <div style={{ textAlign: "center", lineHeight: 1.35 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: INK }}>
+              {shown.name || shown.id}
+            </div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: MUTED, textTransform: "capitalize" }}>
+              {kindLabel(shown.source?.kind ?? shown.kind)}
+              {shown.source?.seed != null ? ` \u00b7 #${shown.source.seed}` : ""}
+            </div>
+            {/* Its own line, outside the capitalised one — inside it this read
+                as "Left Out Of This Commit". */}
+            {left[shown.id] && (
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: "#fcd34d", marginTop: 2 }}>
+                Left out of this commit
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: 8, width: "100%" }}>
+            <button
+              style={stepBtn}
+              disabled={idx === 0}
+              onClick={() => setAt(Math.max(0, idx - 1))}
+              aria-label="Previous"
+            >
+              &#8249;
+            </button>
+            <span style={{
+              flex: "none", minWidth: 62, display: "grid", placeItems: "center",
+              fontSize: 12, fontWeight: 800, color: MUTED,
+            }}>
+              {idx + 1} / {n}
+            </span>
+            <button
+              style={stepBtn}
+              disabled={idx >= n - 1}
+              onClick={() => setAt(Math.min(n - 1, idx + 1))}
+              aria-label="Next"
+            >
+              &#8250;
+            </button>
+            <button
+              style={{ ...rowBtn, flex: 1 }}
+              onClick={() => onOpenScenario(shown)}
+              title="Open this scenario's own card to change it before committing"
+            >
+              Open to edit
+            </button>
+            <button
+              style={{
+                ...rowBtn, flex: 1,
+                color: left[shown.id] ? "#fcd34d" : MUTED,
+                borderColor: left[shown.id] ? "rgba(245,158,11,0.45)" : "rgba(255,255,255,0.09)",
+              }}
+              onClick={() => setLeft((m) => {
+                const next = { ...m };
+                if (next[shown.id]) delete next[shown.id]; else next[shown.id] = true;
+                return next;
+              })}
+            >
+              {left[shown.id] ? "Put back" : "Leave out"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!open && (
+        <div style={{ fontSize: 11.5, color: FAINT, marginTop: 8, lineHeight: 1.55 }}>
+          {pending.slice(0, 8).map((sc) => sc.name || sc.id).join(" \u00b7 ")}
+          {n > 8 ? ` \u00b7 +${n - 8} more` : ""}
+        </div>
+      )}
+
+      <button
+        onClick={() => onCommitAll(going)}
+        disabled={!!busy || !!commitBlocked || g === 0}
         style={{
           marginTop: 12, width: "100%", height: 46, borderRadius: 12,
-          cursor: busy || commitBlocked ? "default" : "pointer",
+          cursor: busy || commitBlocked || g === 0 ? "default" : "pointer",
           border: "1px solid rgba(56,189,248,0.55)",
-          background: commitBlocked ? "rgba(255,255,255,0.05)" : "rgba(56,189,248,0.2)",
-          color: commitBlocked ? MUTED : "#e0f2fe", fontSize: 14.5, fontWeight: 800,
+          background: commitBlocked || g === 0 ? "rgba(255,255,255,0.05)" : "rgba(56,189,248,0.2)",
+          color: commitBlocked || g === 0 ? MUTED : "#e0f2fe", fontSize: 14.5, fontWeight: 800,
         }}
       >
         {busy === "committing"
-          ? "Committing…"
-          : commitBlocked ? "Commit to repo is off" : `Commit all ${n} to the repo`}
+          ? "Committing\u2026"
+          : commitBlocked ? "Commit to repo is off"
+            : g === 0 ? "All of them are left out"
+              : g === n ? `Commit all ${n} to the repo`
+                : `Commit ${g} of ${n} to the repo`}
       </button>
       {commitBlocked && (
         <p style={{ margin: "8px 0 0", fontSize: 11.5, color: MUTED, lineHeight: 1.5 }}>
@@ -156,6 +281,55 @@ function CommitSection({
         </p>
       )}
     </Card>
+  );
+}
+
+const stepBtn: React.CSSProperties = {
+  flex: "none", width: 38, height: 38, borderRadius: 11, cursor: "pointer",
+  border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
+  color: INK, fontSize: 17, fontWeight: 800, lineHeight: 1,
+};
+
+const rowBtn: React.CSSProperties = {
+  height: 38, borderRadius: 11, cursor: "pointer", padding: "0 6px", whiteSpace: "nowrap",
+  border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
+  color: INK, fontSize: 12, fontWeight: 700,
+};
+
+/**
+ * A pending scenario, drawn by the SAME painter its own card draws with.
+ *
+ * Read-only on purpose: this is the last look before something goes into the
+ * code, and a drag here would be an edit nobody asked for on a screen whose
+ * whole promise is that looking costs nothing.
+ */
+function PendingPicture({ frame, dimmed }: { frame: Frame | null; dimmed: boolean }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    if (!ref.current || !frame) return;
+    paint(ref.current, frame, { baseW: 260, maxW: 280, maxH: 420 });
+  }, [frame]);
+  if (!frame) {
+    return (
+      <div style={{
+        width: "100%", padding: "22px 14px", borderRadius: 12, textAlign: "center",
+        background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)",
+        color: MUTED, fontSize: 12.5, fontWeight: 700, lineHeight: 1.5,
+      }}>
+        No picture for this one \u2014 it was saved without recording which chance
+        and seed it came from, so there is nothing to rebuild it from. It still
+        commits fine.
+      </div>
+    );
+  }
+  return (
+    <canvas
+      ref={ref}
+      style={{
+        display: "block", borderRadius: 12, background: "#14532d",
+        opacity: dimmed ? 0.32 : 1,
+      }}
+    />
   );
 }
 

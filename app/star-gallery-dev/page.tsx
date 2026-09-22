@@ -1193,6 +1193,30 @@ export default function StarGalleryDevPage() {
   const pending = useMemo(() => pendingCommit(Object.values(saved)), [saved]);
 
   /**
+   * The PICTURE a saved scenario actually is.
+   *
+   * Rebuilt exactly the way that scenario's own card rebuilds it — its base
+   * from `cellFromSaved` (seed + plan), with its saved positions laid over —
+   * so the last look before a commit and the card itself can never be
+   * showing two different things. A scenario with no recorded source has no
+   * base to rebuild from; that is a real state, so it returns null and the
+   * reviewer says so rather than drawing something invented.
+   */
+  const frameOfSaved = useCallback((sc: MatchScenario): Frame | null => {
+    const cell = cellFromSaved(sc);
+    if (!cell) return null;
+    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items.length));
+  }, []);
+
+  /** Open a saved scenario's own card, for a last edit before committing. */
+  const openSavedScenario = useCallback((sc: MatchScenario) => {
+    const kind = sc.source?.kind;
+    if (!kind) return;
+    setKindId(kind);
+    openGroup("eleven");
+  }, []);
+
+  /**
    * COMMIT EVERYTHING OUTSTANDING, IN ONE COMMIT.
    *
    * Vercel rebuilds production on every commit to main, so committing one
@@ -1205,15 +1229,15 @@ export default function StarGalleryDevPage() {
    * writes the file once — so this is one request, one commit, one deploy,
    * however many scenarios are outstanding.
    */
-  const commitAllPending = async (): Promise<void> => {
-    if (!pending.length) return;
+  const commitAllPending = async (batch: MatchScenario[]): Promise<void> => {
+    if (!batch.length) return;
     setBusy("committing");
     let res: Response;
     try {
       res = await fetch("/api/star/scenarios/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenarios: pending }),
+        body: JSON.stringify({ scenarios: batch }),
       });
     } catch {
       setBusy(null);
@@ -1233,7 +1257,7 @@ export default function StarGalleryDevPage() {
     // re-read it until the deploy lands. Say that rather than flipping the
     // badges to "Committed" and being wrong for the next two minutes.
     flashFor(true,
-      `Committed ${pending.length} ${pending.length === 1 ? "scenario" : "scenarios"} in one commit. `
+      `Committed ${batch.length} ${batch.length === 1 ? "scenario" : "scenarios"} in one commit. `
       + "They show as Committed once the deploy finishes.");
   };
 
@@ -1453,10 +1477,12 @@ export default function StarGalleryDevPage() {
           proposals={proposals}
           corrections={corrections}
           pending={pending}
+          frameOf={frameOfSaved}
           busy={busy}
           commitBlocked={commitBlocked}
-          onCommitAll={() => void commitAllPending()}
+          onCommitAll={(batch) => void commitAllPending(batch)}
           onShowKind={(k) => { setKindId(k); openGroup("eleven"); }}
+          onOpenScenario={openSavedScenario}
         />
       </>,
       false,
