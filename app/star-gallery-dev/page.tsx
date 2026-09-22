@@ -56,6 +56,7 @@ import {
   saveScenarioShared,
   deleteScenarioShared,
 } from "@/lib/star/scenarioStore";
+import { authoredScenarioList } from "@/lib/star/authoredScenarios";
 import {
   loadReviews,
   saveReviews,
@@ -961,10 +962,20 @@ export default function StarGalleryDevPage() {
     return out;
   };
 
+  // The committed file is the durable source of truth — it is in every
+  // build, on every device, and the FORMULA already reads it (authoredPool,
+  // lib/star/authoredChance.ts). The gallery display used to read ONLY
+  // Supabase, so a scenario committed to the repo drove the game for
+  // everyone but was invisible on any screen whose browser had not synced
+  // from Supabase — which is exactly why Leo could not see the one-on-ones
+  // the game was already using. Read both, file first so a Supabase edit of
+  // the same id still wins, same precedence the formula uses.
+  const galleryPool = () => [...authoredScenarioList(), ...listScenarios()];
+
   useEffect(() => {
-    setSaved(indexGallery(listScenarios()));
+    setSaved(indexGallery(galleryPool()));
     void fetchSharedScenarios().then((r) => {
-      setSaved(indexGallery(listScenarios()));
+      setSaved(indexGallery(galleryPool()));
       if (r.migrationMissing) setMigrationMissing(true);
     });
   }, []);

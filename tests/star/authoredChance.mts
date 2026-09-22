@@ -226,8 +226,15 @@ ok(placedM / trials >= 1.5, `team-mates actually get placed (${(placedM / trials
 // Tuning overrides every drawing's own share, for when a number is chosen by
 // looking rather than by scanning.
 {
-  const wide = pool.find(x => Math.abs(sampleFromAuthored(x)!.ball.x - 34) > 3)!;
   const gkNP = MEASURES.find(m => m.id === "gkNearPost")!;
+  // A wide-ball drawing whose OWN near-post share is genuinely far from the
+  // tuned value, so "tuned differs from the drawing's own" is a real test and
+  // not a coincidence of whichever drawing `find` happens to return first —
+  // which broke the moment the pool grew from 11 to 17.
+  const wide = pool
+    .filter(x => Math.abs(sampleFromAuthored(x)!.ball.x - 34) > 3)
+    .find(x => Math.abs(gkNP.of(randomiseAuthored(x, set, mulberry32(11))!) - 0.5) > 0.15)!;
+  ok(!!wide, "a wide drawing whose own keeper is not already at 0.5 exists to test with");
   KEEPER_TUNING.nearPost = 0.5;
   const tuned = randomiseAuthored(wide, set, mulberry32(11))!;
   ok(Math.abs(gkNP.of(tuned) - 0.5) < 0.02, "a tuned near-post share is what actually gets used");
