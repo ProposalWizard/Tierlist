@@ -1,4 +1,4 @@
-import { GOAL_W, GOAL_H } from "./pitch";
+import { GOAL_W, GOAL_H, ARC_R, PEN_SPOT_Y } from "./pitch";
 
 /**
  * GOALIE MODE — you are the keeper, facing a shot.
@@ -92,7 +92,7 @@ import { GOAL_W, GOAL_H } from "./pitch";
  * preserves fairness as it climbs").
  */
 
-export type ShotKind = "drive" | "curl" | "header" | "volley" | "first_time";
+export type ShotKind = "drive" | "curl" | "header" | "volley" | "first_time" | "penalty" | "free_kick";
 
 export interface GoalieShot {
   kind: ShotKind;
@@ -137,6 +137,13 @@ export interface GoalieShot {
    *  curve is what makes TRACKING it with your eyes harder, not a second
    *  hidden target. */
   curl: number;
+  /** A real defensive wall, `free_kick` only — see `buildWall`. Goal-local x
+   *  positions, one per player, all standing at the same real IFAB distance
+   *  (`ARC_R`, 9.15m) back from the ball toward goal. Purely a visual/aim
+   *  bias this round: it shapes where a free kick is placed (over or around
+   *  it) and genuinely stands between camera and striker, but does not yet
+   *  block or deflect the ball — a real, honestly-scoped next step. */
+  wall?: { x: number[]; y: number };
 }
 
 /** Real reach — a professional keeper's lateral dive plus arm span covers
@@ -221,6 +228,12 @@ interface KindProfile {
   curl: [number, number];
   /** Streak at which this kind first becomes possible. drive is always on. */
   unlocksAt: number;
+  /** Multiplies the shared tellT curve below — every ordinary kind reads it
+   *  off the same body-shape/run-up cue, so 1 (the default, unset) is
+   *  correct for all five of them. A penalty is a real, deliberate
+   *  disguise contest between two people with nothing else to read at all
+   *  (no defenders, no angle, no service) — see the `penalty` entry. */
+  tellMult?: number;
 }
 const KIND_PROFILES: Record<ShotKind, KindProfile> = {
   drive: { startY: [14, 21], speed: [21, 30], buildup: [1.0, 1.7], curl: [0, 0.15], unlocksAt: 0 },
@@ -228,6 +241,17 @@ const KIND_PROFILES: Record<ShotKind, KindProfile> = {
   curl: { startY: [12, 18], speed: [17, 24], buildup: [1.0, 1.6], curl: [0.45, 0.85], unlocksAt: 2 },
   header: { startY: [6, 10], speed: [12, 18], buildup: [0.7, 1.1], curl: [0, 0.1], unlocksAt: 3 },
   volley: { startY: [9, 14], speed: [19, 29], buildup: [0.6, 1.0], curl: [0.1, 0.4], unlocksAt: 4 },
+  // Real spot, always — a penalty is never taken from anywhere else, so
+  // both ends of the range are literally PEN_SPOT_Y (lerp just returns it).
+  // Pace matches a real, well-struck penalty (≈70-115 km/h); the long
+  // buildup is the real send-off/setup pause, not a run at the ball —
+  // and the whole shot is disguise, not power or angle, which is exactly
+  // what tellMult exists to model.
+  penalty: { startY: [PEN_SPOT_Y, PEN_SPOT_Y], speed: [19, 30], buildup: [1.3, 2.2], curl: [0, 0.2], unlocksAt: 5, tellMult: 0.6 },
+  // Further out again, real dead-ball distance, with the highest curl of
+  // any kind — a direct free kick is THE curling shot. See buildWall for
+  // the real IFAB wall this kind alone gets.
+  free_kick: { startY: [17, 25], speed: [20, 30], buildup: [1.4, 2.2], curl: [0.5, 0.95], unlocksAt: 6 },
 };
 
 /** 0-1, how hard the difficulty curve is leaning at this streak — climbs
@@ -258,6 +282,36 @@ function offTargetChance(diff: number): number {
   return 0.16 - diff * 0.12; // 16% at streak 0 → 4% floor at high difficulty
 }
 
+/** How high a real defensive wall jumps at the strike — a shot has to
+ *  genuinely clear this, not just this file's usual MAX_REACH_Z, to count
+ *  as "over the wall" below. */
+const WALL_JUMP_Z = 2.05;
+/** Real shoulder width, metres — how far apart the bodies in `buildWall`
+ *  actually stand. */
+const WALL_SPACING = 0.55;
+
+/**
+ * A real defensive wall, free_kick only. `originX` is where the ball itself
+ * actually sits on the pitch, goal-local metres either side of centre —
+ * NOT where the shot ends up, which is `targetX` below and is often
+ * deliberately bent well away from this. IFAB's own real minimum defending
+ * distance (ARC_R, 9.15m) puts the wall between the ball and goal, and —
+ * similar triangles, the wall's own lateral offset closes toward 0 in
+ * exactly the proportion its depth has closed toward the goal line — it
+ * sits on the dead-straight sightline from the ball to the goal's own
+ * centre, the real, standard place a defending side actually lines one up,
+ * regardless of which corner the shot is eventually curled toward.
+ */
+function buildWall(originX: number, startY: number, rng: () => number): { x: number[]; y: number } {
+  const wallY = startY - ARC_R;
+  const wallCenterX = originX * (wallY / startY);
+  const n = 3 + Math.floor(rng() * 3); // 3-5 real bodies
+  const start = wallCenterX - ((n - 1) / 2) * WALL_SPACING;
+  const x: number[] = [];
+  for (let i = 0; i < n; i++) x.push(start + i * WALL_SPACING);
+  return { x, y: wallY };
+}
+
 export function pickShot(streak: number, rng: () => number): GoalieShot {
   const diff = difficulty(streak);
   const kind = pickKind(streak, rng);
@@ -279,9 +333,9 @@ export function pickShot(streak: number, rng: () => number): GoalieShot {
   // low near-post drive is just as real a hard shot to read in time).
   const side: -1 | 1 = rng() < 0.5 ? -1 : 1;
   const placementF = clamp(0.25 + diff * 0.65 + rng() * 0.25, 0, 1);
-  const targetX = side * MAX_REACH_X * placementF;
+  let targetX = side * MAX_REACH_X * placementF;
   const heightF = clamp(rng() * (0.35 + diff * 0.5), 0, 1);
-  const targetZ = heightF * MAX_REACH_Z;
+  let targetZ = heightF * MAX_REACH_Z;
 
   // Independent of the tell — see the field's own doc. A near-post finish
   // (same side) a little more often than a far-post, cross-body one, which
@@ -290,16 +344,41 @@ export function pickShot(streak: number, rng: () => number): GoalieShot {
 
   // Tell narrows with difficulty but never below a real, readable floor —
   // see difficulty()'s own doc and firstPersonDribble.ts's identical
-  // reasoning for tellT.
-  const tellT = 0.42 - diff * 0.22; // 0.42s at streak 0 → 0.20s floor
+  // reasoning for tellT. tellMult (penalty only) narrows it further still —
+  // see KindProfile's own doc for why that kind alone earns it.
+  const tellT = (0.42 - diff * 0.22) * (profile.tellMult ?? 1); // 0.42s at streak 0 → 0.20s floor, before tellMult
 
   const curl = lerp(profile.curl, rng());
   const offTarget = rng() < offTargetChance(diff);
 
+  // free_kick alone: a real wall, standing on the ball's own real sightline
+  // to goal — see buildWall. Genuinely nudges the target so the shot is a
+  // real response to the wall rather than blind to it: bend it past
+  // whichever edge is closer, or loft it clean over real jump height —
+  // the two techniques an actual free-kick taker has. Never touches
+  // offTarget/tellSide/strikerSide/curl — those are already decided above.
+  let wall: { x: number[]; y: number } | undefined;
+  if (kind === "free_kick") {
+    const originSide: -1 | 1 = rng() < 0.5 ? -1 : 1;
+    const originX = originSide * lerp([3, 10], rng());
+    wall = buildWall(originX, startY, rng);
+    const margin = 0.4;
+    const wallMinX = Math.min(...wall.x) - margin;
+    const wallMaxX = Math.max(...wall.x) + margin;
+    if (targetX > wallMinX && targetX < wallMaxX) {
+      if (rng() < 0.5) {
+        const wallCenterX = (wallMinX + wallMaxX) / 2;
+        targetX = clamp(targetX < wallCenterX ? wallMinX : wallMaxX, -MAX_REACH_X, MAX_REACH_X);
+      } else {
+        targetZ = clamp(Math.max(targetZ, WALL_JUMP_Z + rng() * 0.2), 0, MAX_REACH_Z);
+      }
+    }
+  }
+
   return {
     kind, startY, strikeAtT: buildupT, tellT, flightT,
     arriveAtT: buildupT + flightT,
-    targetX, targetZ, offTarget, tellSide: side, strikerSide, curl,
+    targetX, targetZ, offTarget, tellSide: side, strikerSide, curl, wall,
   };
 }
 
@@ -314,6 +393,8 @@ export function shotLabel(shot: GoalieShot): string {
     case "volley": return "VOLLEY";
     case "first_time": return "FIRST-TIME STRIKE";
     case "curl": return "CURLING EFFORT";
+    case "penalty": return "PENALTY";
+    case "free_kick": return "FREE KICK";
     case "drive":
       if (shot.startY >= 17) return "LONG RANGE";
       return shot.strikerSide === shot.tellSide ? "NEAR POST" : "FAR POST";

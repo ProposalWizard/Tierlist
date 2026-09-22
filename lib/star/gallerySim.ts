@@ -6,7 +6,6 @@ import {
 import { mulberry32 } from "./season";
 import { fixBaseScenario, scenarioFaults } from "./baseScenario";
 import { applyAuthoredShape, nextAuthoredShape } from "./authoredChance";
-import { isBinned } from "./scenarioReject";
 import {
   allPlans,
   applyChancePlan,
@@ -219,7 +218,6 @@ export function buildSimScenario(spec: SimSpec): Scenario {
 }
 
 /** Which authored drawing this spec is built from, if any — so a binned
- *  chance can record what produced it (lib/star/scenarioReject.ts). Exactly
  *  the draw `buildSimScenario` makes, so the answer is the real one. */
 export function authoredShapeFor(spec: SimSpec) {
   return nextAuthoredShape(spec.kind, mulberry32(spec.seed ^ 0x5bf03635), [], spec.seed);
@@ -259,14 +257,5 @@ export function nextHighlight(
   position = "ST",
 ): SimSpec | null {
   if (!kinds.length) return null;
-  // Binned chances are skipped outright — "this should just never exist".
-  // Bounded: a pool where nearly everything has been binned should still
-  // hand something back rather than spin, so after a fair number of tries
-  // it serves whatever it has and the screen can say so.
-  for (let i = 0; i < 24; i++) {
-    const spec = nextSim(pick(rng, kinds), rng, memory, lastPicture, position);
-    if (!spec) return null;
-    if (!isBinned(spec.kind, spec.seed, spec.planId)) return spec;
-  }
   return nextSim(pick(rng, kinds), rng, memory, lastPicture, position);
 }

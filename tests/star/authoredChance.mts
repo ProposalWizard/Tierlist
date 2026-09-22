@@ -19,7 +19,7 @@ import {
   KEEPER_TUNING,
 } from "@/lib/star/authoredChance";
 import { buildScenario } from "@/lib/star/canvasEngine";
-import { fixBaseScenario, offsideLineOf } from "@/lib/star/baseScenario";
+import { fixBaseScenario, offsideLineOf, scenarioFaults } from "@/lib/star/baseScenario";
 import { mulberry32 } from "@/lib/star/season";
 
 let failed = 0;
@@ -226,8 +226,15 @@ ok(placedM / trials >= 1.5, `team-mates actually get placed (${(placedM / trials
 // Tuning overrides every drawing's own share, for when a number is chosen by
 // looking rather than by scanning.
 {
-  const wide = pool.find(x => Math.abs(sampleFromAuthored(x)!.ball.x - 34) > 3)!;
   const gkNP = MEASURES.find(m => m.id === "gkNearPost")!;
+  // A wide-ball drawing whose OWN near-post share is genuinely far from the
+  // tuned value, so "tuned differs from the drawing's own" is a real test and
+  // not a coincidence of whichever drawing `find` happens to return first —
+  // which broke the moment the pool grew from 11 to 17.
+  const wide = pool
+    .filter(x => Math.abs(sampleFromAuthored(x)!.ball.x - 34) > 3)
+    .find(x => Math.abs(gkNP.of(randomiseAuthored(x, set, mulberry32(11))!) - 0.5) > 0.15)!;
+  ok(!!wide, "a wide drawing whose own keeper is not already at 0.5 exists to test with");
   KEEPER_TUNING.nearPost = 0.5;
   const tuned = randomiseAuthored(wide, set, mulberry32(11))!;
   ok(Math.abs(gkNP.of(tuned) - 0.5) < 0.02, "a tuned near-post share is what actually gets used");
@@ -289,6 +296,59 @@ ok(placedM / trials >= 1.5, `team-mates actually get placed (${(placedM / trials
   // And the same cell asked twice is the same base, always.
   const twice = idsNow();
   ok(twice.every((v, i) => v === b[i]), "a cell's base is stable across calls");
+}
+
+// ── Your own team-mates are not in front of your shot, in EVERY kind you
+//    shoot from ────────────────────────────────────────────────────────────
+//
+// The third law scanned off the authored one-on-ones belongs to every kind
+// where YOU strike at goal, not just that one. Measured before this was
+// extended: one_on_one 0.0% but tight_angle 11.2% and long_range 34.4% of
+// base builds had a team-mate in the lane.
+//
+// NOT applied to a cutback, a cross or a through ball: those are played TO a
+// team-mate, so moving him out of the lane moves the target of the pass. Not
+// to a volley or a header either — measured, that made blocks WORSE (volley
+// 17.8% -> 38.0%, header 6.1% -> 22.4%).
+
+{
+  const LANE = 2.2;
+  const offLine = (p: { x: number; y: number }, ball: { x: number; y: number }) => {
+    const vx = 34 - ball.x, vy = -ball.y, L = Math.hypot(vx, vy) || 1;
+    return Math.abs(((p.x - ball.x) * vy - (p.y - ball.y) * vx) / L);
+  };
+  const laneRate = (kind: string) => {
+    let hit = 0, n = 0;
+    for (let i = 0; i < 400; i++) {
+      const sc = buildScenario(kind as never, mulberry32(i * 6151 + 11));
+      fixBaseScenario(sc);
+      const sm = sampleFromScenario(sc);
+      n++;
+      if (sm.mates.some(m => m.y < sm.ball.y && offLine(m, sm.ball) < LANE)) hit++;
+    }
+    return hit / n;
+  };
+  ok(laneRate("one_on_one") === 0, "one-on-one: nobody in your lane");
+  ok(laneRate("long_range") === 0, "long range: nobody in your lane (was 34.4%)");
+  // Not zero, and honestly so: keeping a man ONSIDE can pull him back into
+  // the lane. 11.2% -> ~1.2% is the trade, and chasing the last of it is the
+  // kind of over-fitting this project has been burnt by twice.
+  ok(laneRate("tight_angle") < 0.04, "tight angle: near zero (was 11.2%)");
+  // A pass target is left alone — moving him moves the chance.
+  ok(laneRate("through_ball") > 0.2, "a through ball's receiver is NOT moved");
+
+  // And the sideways shove must never leave somebody illegal. A first
+  // version ran after the onside repair and put men offside (tight_angle
+  // picked up 1.3% "attacker offside" that was not there before).
+  for (const kind of ["one_on_one", "tight_angle", "long_range"]) {
+    let offside = 0;
+    for (let i = 0; i < 400; i++) {
+      const sc = buildScenario(kind as never, mulberry32(i * 6151 + 11));
+      fixBaseScenario(sc);
+      if (scenarioFaults(sc).includes("attacker offside")) offside++;
+    }
+    ok(offside === 0, `${kind}: clearing the lane never leaves a man offside`);
+  }
 }
 
 // ── Offside: both halves of Law 11 ────────────────────────────────────────

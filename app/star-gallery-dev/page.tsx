@@ -56,6 +56,12 @@ import {
   saveScenarioShared,
   deleteScenarioShared,
 } from "@/lib/star/scenarioStore";
+import { authoredScenarioList } from "@/lib/star/authoredScenarios";
+import { statusOf, pendingCommit } from "@/lib/star/scenarioStatus";
+import {
+  loadCorrections, saveCorrection, makeCorrection, proposalsFrom,
+  FAULT_LABEL, PROPOSAL_THRESHOLD, type Correction,
+} from "@/lib/star/scenarioCorrections";
 import {
   loadReviews,
   saveReviews,
@@ -172,6 +178,22 @@ function buildCell(kind: ScenarioKind, seed: number): Cell {
   };
   cell.frame = frameFromScenario(rebuildScenario(cell));
   return cell;
+}
+
+/** A card for a SAVED scenario that no generated version card covers — a
+ *  sim-saved one, or a version past the current card count. Rebuilt from its
+ *  own source (seed + plan), so the saved override lands on the right base
+ *  exactly as it does for a generated card. This is what lets every saved
+ *  scenario show on every screen, not just the ones whose seed happens to
+ *  fall inside the default grid. */
+function cellFromSaved(ms: MatchScenario): Cell | null {
+  const kind = ms.source?.kind;
+  const seed = ms.source?.seed;
+  if (!kind || seed == null) return null;
+  const key = ms.id.startsWith("gallery-") ? ms.id.slice("gallery-".length) : ms.id;
+  return key.startsWith("sim-")
+    ? simCell({ kind: kind as ScenarioKind, seed, planId: ms.source?.planId ?? null })
+    : buildCell(kind as ScenarioKind, seed);
 }
 
 /** A SIMULATED cell — one press of Simulate, as a cell the rest of the screen
@@ -948,7 +970,7 @@ export default function StarGalleryDevPage() {
   const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
   const [migrationMissing, setMigrationMissing] = useState(false);
   const [commitBlocked, setCommitBlocked] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"saving" | "reverting" | "committing" | null>(null);
+  const [busy, setBusy] = useState<"saving" | "reverting" | "committing" | "deleting" | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
 
   const indexGallery = (all: MatchScenario[]): Record<string, MatchScenario> => {
@@ -961,10 +983,20 @@ export default function StarGalleryDevPage() {
     return out;
   };
 
+  // The committed file is the durable source of truth — it is in every
+  // build, on every device, and the FORMULA already reads it (authoredPool,
+  // lib/star/authoredChance.ts). The gallery display used to read ONLY
+  // Supabase, so a scenario committed to the repo drove the game for
+  // everyone but was invisible on any screen whose browser had not synced
+  // from Supabase — which is exactly why Leo could not see the one-on-ones
+  // the game was already using. Read both, file first so a Supabase edit of
+  // the same id still wins, same precedence the formula uses.
+  const galleryPool = () => [...authoredScenarioList(), ...listScenarios()];
+
   useEffect(() => {
-    setSaved(indexGallery(listScenarios()));
+    setSaved(indexGallery(galleryPool()));
     void fetchSharedScenarios().then((r) => {
-      setSaved(indexGallery(listScenarios()));
+      setSaved(indexGallery(galleryPool()));
       if (r.migrationMissing) setMigrationMissing(true);
     });
   }, []);
@@ -996,6 +1028,123 @@ export default function StarGalleryDevPage() {
     setSaved((m) => { const next = { ...m }; delete next[cell.key]; return next; });
     clearOverride(cell.key);
     flashFor(true, "Back to the built-in scenario.");
+  };
+
+  /**
+   * Delete a scenario for good — from Supabase, from this browser, and from
+   * the committed file. All three matter: the display reads the committed
+   * file now, so removing it only from the database would let it come back on
+   * the next load. Honest about a partial result — if the code half fails
+   * (no token, a race) it says so rather than claiming a clean delete.
+   */
+  const deleteCell = async (cell: Cell): Promise<void> => {
+    if (typeof window !== "undefined" &&
+        !window.confirm(`Delete this ${kindLabel(cell.kind)} scenario everywhere — the database and the code? This cannot be undone here.`)) return;
+    setBusy("deleting");
+    const id = gallerySlug(cell.key);
+    const shared = await deleteScenarioShared(id);       // Supabase + local cache
+    let repoTail = "";
+    try {
+      const r = await fetch("/api/star/scenarios/commit", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok) repoTail = ` — still in the code (${d?.error ?? r.status})`;
+    } catch {
+      repoTail = " — couldn't reach the server to remove it from the code";
+    }
+    setBusy(null);
+    setSaved((m) => { const next = { ...m }; delete next[cell.key]; return next; });
+    clearOverride(cell.key);
+    if (!shared.ok && repoTail) { flashFor(false, `Delete failed — ${shared.message}${repoTail}`); return; }
+    flashFor(!repoTail, repoTail ? `Removed here${repoTail}` : "Deleted — from the database and the code.");
+  };
+
+  /**
+   * CORRECTIONS — "that generation was bad, here is it fixed."
+   *
+   * Deliberately NOT a save: a correction never becomes one of the base
+   * scenarios and never tunes anything on its own. It records WHICH
+   * measurable property the drag repaired, and stays silent until enough of
+   * them agree to be worth proposing as a rule. See
+   * lib/star/scenarioCorrections.ts for why that is the only version of this
+   * that is safe.
+   */
+  const [corrections, setCorrections] = useState<Correction[]>([]);
+  useEffect(() => { setCorrections(loadCorrections()); }, []);
+  const proposals = useMemo(() => proposalsFrom(corrections), [corrections]);
+
+  const tuneCell = (cell: Cell, edited: Frame): void => {
+    const target = saveTargetFor(cell);
+    const before = frameToMatchScenario(target, frameFromScenario(rebuildScenario(cell)));
+    const after = frameToMatchScenario(target, edited);
+    const c = makeCorrection(gallerySlug(cell.key), cell.kind, before, after);
+    setCorrections(saveCorrection(c));
+    clearOverride(cell.key);
+    if (!c.moves.length) { flashFor(false, "Nothing moved — no correction recorded."); return; }
+    if (!c.faults.length) {
+      flashFor(true, "Recorded. It repaired nothing measurable, so it is not evidence for a rule.");
+      return;
+    }
+    const near = proposalsFrom([...corrections.filter((x) => x.id !== c.id), c])
+      .find((pr) => pr.kind === cell.kind && c.faults.includes(pr.fault));
+    flashFor(true, near
+      ? `Recorded — ${near.count} now agree. There is a rule to look at on the home screen.`
+      : `Recorded: ${FAULT_LABEL[c.faults[0]]}. It stays quiet until a few more agree.`);
+  };
+
+  /**
+   * Everything saved that the code does not have, or has an older copy of.
+   * Recomputed from `saved`, so it is always what is genuinely outstanding
+   * rather than a tally somebody has to keep.
+   */
+  const pending = useMemo(() => pendingCommit(Object.values(saved)), [saved]);
+
+  /**
+   * COMMIT EVERYTHING OUTSTANDING, IN ONE COMMIT.
+   *
+   * Vercel rebuilds production on every commit to main, so committing one
+   * scenario at a time is one deploy each. Asked for directly: "imagine all
+   * three of us are doing a bunch of scenarios… we did 100, we've pressed
+   * Save on all of them… we commit, and it's one production, rather than
+   * every single time we save."
+   *
+   * The API already took an array — `commitScenarios` merges by id and
+   * writes the file once — so this is one request, one commit, one deploy,
+   * however many scenarios are outstanding.
+   */
+  const commitAllPending = async (): Promise<void> => {
+    if (!pending.length) return;
+    setBusy("committing");
+    let res: Response;
+    try {
+      res = await fetch("/api/star/scenarios/commit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenarios: pending }),
+      });
+    } catch {
+      setBusy(null);
+      flashFor(false, "Not committed — couldn't reach the server.");
+      return;
+    }
+    const body = await res.json().catch(() => ({})) as
+      { ok?: boolean; error?: string; message?: string };
+    setBusy(null);
+    if (!res.ok || body.ok !== true) {
+      const why = body.error ?? `the server refused it (${res.status}).`;
+      if (res.status === 503) setCommitBlocked(why);
+      flashFor(false, `Not committed — ${why}`);
+      return;
+    }
+    // The committed file is a build-time import, so what is on screen cannot
+    // re-read it until the deploy lands. Say that rather than flipping the
+    // badges to "Committed" and being wrong for the next two minutes.
+    flashFor(true,
+      `Committed ${pending.length} ${pending.length === 1 ? "scenario" : "scenarios"} in one commit. `
+      + "They show as Committed once the deploy finishes.");
   };
 
   /** Nothing here is optimistic — a missing GITHUB_TOKEN, a refused token or
@@ -1036,23 +1185,47 @@ export default function StarGalleryDevPage() {
 
   // ── The versions currently in view ──
   const versions: Cell[] = useMemo(
-    () => (game === "eleven" ? elevenVersions(kindId as ScenarioKind, countFor(kindId)) : fiveVersions(fiveId)),
-    [game, kindId, fiveId, countFor],
+    () => {
+      if (game !== "eleven") return fiveVersions(fiveId);
+      const generated = elevenVersions(kindId as ScenarioKind, countFor(kindId));
+      // Every SAVED scenario of this kind that no generated card already
+      // covers, appended as its own card — so all of them show, including
+      // sim-saved ones and versions beyond the current count. Without this a
+      // scenario could be committed, used by the game, and still invisible
+      // here because its id did not line up with a grid slot.
+      const have = new Set(generated.map((c) => c.key));
+      const extra: Cell[] = [];
+      for (const [key, ms] of Object.entries(saved)) {
+        if (have.has(key) || ms.source?.kind !== kindId) continue;
+        const c = cellFromSaved(ms);
+        if (c) { extra.push(c); have.add(key); }
+      }
+      return [...generated, ...extra];
+    },
+    [game, kindId, fiveId, countFor, saved],
   );
   const activeGroupId = game === "eleven" ? kindId : fiveId;
 
   const chips = useMemo(() => {
     if (game === "eleven") {
       return KIND_ORDER.map((k) => {
-        const keys = seedsForKind(k, countFor(k)).map((s) => cellKeyFor(k, s));
-        return { id: k, label: kindLabel(k), done: reviewedCount(reviews, keys), total: keys.length };
+        // Generated cards PLUS every saved scenario of this kind that isn't
+        // already one of them — the same set the version grid shows, so the
+        // "done / total" a chip reports matches the number of cards behind it
+        // rather than the bare generated count.
+        const keys = new Set(seedsForKind(k, countFor(k)).map((s) => cellKeyFor(k, s)));
+        for (const [key, ms] of Object.entries(saved)) {
+          if (ms.source?.kind === k) keys.add(key);
+        }
+        const arr = Array.from(keys);
+        return { id: k, label: kindLabel(k), done: reviewedCount(reviews, arr), total: arr.length };
       });
     }
     return FIVE_GROUPS.map((g) => {
       const keys = fiveVersions(g.id).map((c) => c.key);
       return { id: g.id, label: g.label, done: reviewedCount(reviews, keys), total: keys.length };
     });
-  }, [game, reviews, countFor]);
+  }, [game, reviews, countFor, saved]);
 
   const openGroup = (g: "eleven" | "five") => { setGame(g); setScreen(g); setSim(null); };
   const openVersion = (i: number) => { setVersionIdx(i); setScreen("version"); setSim(null); setSelectedId(null); };
@@ -1136,11 +1309,104 @@ export default function StarGalleryDevPage() {
   // ── HOME ──
   if (screen === "home") {
     return shell(
-      <HomeScreen
-        onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))}
-        warning={warning}
-        wide={wide}
-      />,
+      <>
+        <HomeScreen
+          onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))}
+          warning={warning}
+          wide={wide}
+        />
+        {/* ── WHAT THE CORRECTIONS ADD UP TO ──
+            Silent until enough agree. Proposed, never applied — a rule from
+            a handful of examples is how this project twice ended up with a
+            plausible rule that was wrong about thousands of pictures. */}
+        {(proposals.length > 0 || corrections.length > 0) && (
+          <div style={{
+            margin: "0 14px 14px", padding: "13px 15px", borderRadius: 14,
+            background: "rgba(167,139,250,0.10)", border: "1px solid rgba(167,139,250,0.35)",
+          }}>
+            {proposals.length === 0 ? (
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(233,213,255,0.85)", lineHeight: 1.45 }}>
+                {corrections.length} {corrections.length === 1 ? "correction" : "corrections"} recorded.
+                None of them agree {PROPOSAL_THRESHOLD} times yet, so nothing is being proposed —
+                a correction stays quiet until a pattern shows up.
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#e9d5ff" }}>
+                  {proposals.length} {proposals.length === 1 ? "rule" : "rules"} worth a look
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(233,213,255,0.75)", marginTop: 3, lineHeight: 1.45 }}>
+                  From {corrections.length} corrections. Nothing has been applied — these are
+                  what the corrections agree on.
+                </div>
+                {proposals.map((pr) => (
+                  <div key={`${pr.kind}|${pr.fault}`} style={{
+                    marginTop: 9, padding: "9px 11px", borderRadius: 10,
+                    background: "rgba(0,0,0,0.25)", border: "1px solid rgba(167,139,250,0.25)",
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#e9d5ff" }}>
+                      {pr.rule}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "rgba(233,213,255,0.7)", marginTop: 3, lineHeight: 1.45 }}>
+                      {kindLabel(pr.kind)} · {pr.count} corrections fixed {FAULT_LABEL[pr.fault]}
+                    </div>
+                    <button
+                      onClick={() => { setKindId(pr.kind); openGroup("eleven"); }}
+                      style={{
+                        marginTop: 7, height: 32, padding: "0 12px", borderRadius: 9, cursor: "pointer",
+                        border: "1px solid rgba(167,139,250,0.4)", background: "rgba(167,139,250,0.14)",
+                        color: "#e9d5ff", fontSize: 12, fontWeight: 800,
+                      }}
+                    >
+                      Show me {kindLabel(pr.kind)}
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── WHAT IS SAVED BUT NOT IN THE CODE YET ──
+            One button, one commit, one production deploy, however many are
+            outstanding — instead of a deploy per scenario and somebody
+            keeping track of which ones went. */}
+        {pending.length > 0 && (
+          <div style={{
+            margin: "0 14px 22px", padding: "13px 15px", borderRadius: 14,
+            background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.35)",
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#e0f2fe" }}>
+              {pending.length} {pending.length === 1 ? "scenario is" : "scenarios are"} saved but not in the code
+            </div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(224,242,254,0.75)", marginTop: 3, lineHeight: 1.45 }}>
+              They already work everywhere and already tune the generator. Committing puts them in
+              the code permanently — one commit, one deploy, all {pending.length}.
+            </div>
+            <div style={{ fontSize: 11.5, color: "rgba(224,242,254,0.6)", marginTop: 7, lineHeight: 1.5 }}>
+              {pending.slice(0, 6).map((sc) => sc.name || sc.id).join(" · ")}
+              {pending.length > 6 ? ` · +${pending.length - 6} more` : ""}
+            </div>
+            <button
+              onClick={() => void commitAllPending()}
+              disabled={!!busy || !!commitBlocked}
+              style={{
+                marginTop: 11, width: "100%", height: 44, borderRadius: 12,
+                cursor: busy || commitBlocked ? "default" : "pointer",
+                border: "1px solid rgba(56,189,248,0.55)",
+                background: commitBlocked ? "rgba(255,255,255,0.05)" : "rgba(56,189,248,0.2)",
+                color: commitBlocked ? MUTED : "#e0f2fe", fontSize: 14.5, fontWeight: 800,
+              }}
+            >
+              {busy === "committing"
+                ? "Committing…"
+                : commitBlocked
+                  ? "Commit to repo is off"
+                  : `Commit all ${pending.length} to the repo`}
+            </button>
+          </div>
+        )}
+      </>,
       true,
     );
   }
@@ -1379,9 +1645,70 @@ export default function StarGalleryDevPage() {
           >
             {playing ? "◼ Stop" : "▶ Play"}
           </button>
+          {/* Delete only shows when there is a SAVED scenario to delete — a
+              purely generated card has nothing to remove. Removes it from the
+              database and the committed file, so it is gone for everyone. */}
+          {savedScenario && (
+            <button
+              style={{ ...editBtn(false), color: "#f87171" }}
+              disabled={!!busy}
+              title="Delete this saved scenario everywhere"
+              onClick={() => void deleteCell(cell)}
+            >
+              {busy === "deleting" ? "Deleting…" : "Delete"}
+            </button>
+          )}
+          {/* Tune: record WHY this generation was bad, without making it one
+              of the base scenarios. Only offered when there is a drag to
+              learn from. See lib/star/scenarioCorrections.ts. */}
+          {hasEdits(override) && (
+            <button
+              style={{ ...editBtn(false), color: "#c4b5fd" }}
+              title="Record what was wrong with this generation — not saved as a base scenario"
+              onClick={() => tuneCell(cell, liveFrame)}
+            >
+              Tune
+            </button>
+          )}
         </div>
       )}
 
+
+      {/* ── WHERE THIS ONE ACTUALLY IS ──
+          Draft / Saved / Committed, and whether it is tuning the generator.
+          Three different things were being confused for each other and the
+          screen never said which was which. See lib/star/scenarioStatus.ts. */}
+      {(() => {
+        const st = statusOf(savedScenario ?? null);
+        const unsaved = hasEdits(override);
+        const tone = unsaved || st.state === "draft"
+          ? { fg: "#fcd34d", bg: "rgba(245,158,11,0.15)", br: "rgba(245,158,11,0.45)" }
+          : st.state === "committed"
+            ? { fg: "#86efac", bg: "rgba(34,197,94,0.14)", br: "rgba(34,197,94,0.45)" }
+            : { fg: "#7dd3fc", bg: "rgba(56,189,248,0.14)", br: "rgba(56,189,248,0.45)" };
+        const text = unsaved
+          ? "Unsaved changes — this browser only"
+          : st.label;
+        const tunes = unsaved ? false : st.tuning;
+        return (
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 10 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+              color: tone.fg, background: tone.bg, border: `1px solid ${tone.br}`,
+            }}>
+              {text}
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+              color: tunes ? "#c4b5fd" : MUTED,
+              background: tunes ? "rgba(167,139,250,0.14)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${tunes ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.09)"}`,
+            }}>
+              {tunes ? "Tuning the generator" : "Not tuning"}
+            </span>
+          </div>
+        );
+      })()}
 
       {analysis.faults.length > 0 && (
         <div style={{ color: "#f87171", fontSize: 13.5, fontWeight: 700, marginTop: 10, textAlign: "center", lineHeight: 1.4 }}>

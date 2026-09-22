@@ -75,6 +75,18 @@ export interface PatchItem {
   more?: PatchMore;
   /** Renders as the red left-bordered callout instead of a list row. */
   alert?: boolean;
+  /**
+   * Names a hand-built visual that belongs with this item — a diagram, or a
+   * small thing you can press. The shareable artifact looks the name up in
+   * scripts/patchNotesDemos.ts and drops it in under the item; the archive
+   * here ignores it.
+   *
+   * Why they live outside this file: an interactive demo is markup and
+   * script, and everything else here is plain data that can be read, queried
+   * and diffed. Mixing a page's worth of HTML into it would end that. The
+   * words stay the single copy; the demo is an extra the artifact can show.
+   */
+  demo?: string;
 }
 
 export interface PatchSection {
@@ -205,6 +217,8 @@ function parseItems(raw: unknown): PatchItem[] {
     }
 
     if (o.alert === true) item.alert = true;
+    const demo = str(o.demo);
+    if (demo) item.demo = demo;
     out.push(item);
   }
   return out;

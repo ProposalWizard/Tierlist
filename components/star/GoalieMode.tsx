@@ -62,6 +62,40 @@ import { mulberry32 } from "@/lib/star/season";
  * POST", "LONG RANGE") so the variety is something you consciously notice
  * shot to shot, not just something the physics knows about.
  *
+ * ── Round 4: it didn't look like the game, a real defensive presence, and
+ * two more shot types ──
+ *
+ * Reported directly, after round 3 shipped: "make it obvs fit the game and
+ * look like its in game... for some reason i dont even see any green lol
+ * wheres the pitch it looks like im on an ice rink... obvs other attackers
+ * and defenders should be in there even if they arent involved... also two
+ * more to add to the potential shot types... penalty and free kick."
+ *
+ * The grass bug was real, not a taste note. The ground quad's near edge was
+ * `cam.y - 0.05` — a near-edge DEPTH of a flat 0.05m regardless of what
+ * CAM_Y actually is, permanently inside `project()`'s own NEAR=0.35 clip.
+ * Both near corners always came back null, so `corners.every((p) => p)`
+ * was always false and the ENTIRE grass fill — stripes, goal line, all of
+ * it — silently never drew. Fixed by computing the real depth that
+ * projects to the canvas's own bottom row, the same way
+ * `firstPersonView.ts`'s own `groundAt()` does, instead of a guessed
+ * offset — see the fix's own comment for the exact derivation.
+ *
+ * Decorative attackers and defenders (`buildExtras`/`drawExtras`) are
+ * genuinely new this round — real goalmouth positions, a gentle idle sway
+ * and leg-shuffle so they read as alive, deliberately visual-only: they
+ * make the picture harder to read without yet touching the ball, an
+ * honest, named next step (see `ExtraPlayer`'s own doc for why, and why a
+ * penalty and a free kick each skip them for their own real reasons).
+ *
+ * `penalty` and `free_kick` are new `ShotKind`s in `goalieMode.ts` — a
+ * penalty struck from dead in front of goal with a real, disguise-only
+ * tell (no defenders, no angle, nothing else to read), and a free kick
+ * with a real IFAB-distance defensive wall (`shot.wall`) that a shot
+ * genuinely has to go around or over, rendered here with its own reactive
+ * jump timed off the strike (`wallLiftAt`) and drawn in real depth order
+ * against the ball rather than a fixed layer.
+ *
  * ── World coordinates, local to this file only ──
  *
  * y = 0 is the goal line, where the keeper stands set. Positive y is BEHIND
@@ -124,6 +158,13 @@ const CAM_EYE = 1.85;
 const FIGURE_R_M = 1.05; // metres — matches fiveASide/render.ts's own FIGURE_R
 const KEEPER_KIT: FigureLook = { shirt: "#eab308", shorts: "#111827", trim: "#111827", skin: "#c68642" };
 const STRIKER_KIT: FigureLook = { shirt: "#dc2626", shorts: "#ffffff", trim: "#ffffff", skin: "#c68642" };
+/** Your own outfield teammates — decorative defenders AND the free-kick
+ *  wall (see buildExtras/wallLiftAt) are both your own side, so both reuse
+ *  this one kit. Deliberately a third colour from both KEEPER_KIT (a
+ *  goalkeeper's real kit is always distinct from his own outfielders') and
+ *  STRIKER_KIT (the opposing side), so a glance at the shirt colour alone
+ *  always says whose man that is. */
+const DEFENDER_KIT: FigureLook = { shirt: "#1d4ed8", shorts: "#111827", trim: "#ffffff", skin: "#c68642" };
 
 function buildCamera(w: number, h: number): FpCamera {
   return cameraFor({ x: 0, y: CAM_Y }, w, h, { eye: CAM_EYE });
@@ -150,6 +191,56 @@ function diveSideFor(reachX: number): number {
 const FACE_STYLE = DEFAULT_FACE_STYLE;
 const FAKE_FACE_STYLE = DEFAULT_FAKE_FACE_STYLE;
 
+/**
+ * Decorative attackers and defenders — reported directly: "obvs other
+ * attackers and defenders should be in there even if they arent involved,
+ * maybe even just to move around and make it difficult to see or predict
+ * shots." A real goalmouth is never just the two of you.
+ *
+ * Deliberately visual only this round, same honest scope as `shot.wall`
+ * (see its own doc in goalieMode.ts): they stand around real goalmouth
+ * positions, sway and shuffle so the picture reads as alive rather than a
+ * frozen diagram, and genuinely add clutter around the striker's own run-up
+ * and tell — but they do not yet touch the ball (block, deflect, or
+ * otherwise react to it), which the same doc names as a real, honest next
+ * step rather than something quietly half-built here.
+ *
+ * Skipped entirely for a penalty (IFAB actually requires everyone but the
+ * keeper and striker to stand outside the box, 9.15m back — an EMPTY box is
+ * the real picture, not a missing one) and for a free kick (the wall
+ * already IS the other players standing in this one; stacking generic
+ * extras on top of it risks burying the aim target in clutter, which is a
+ * fairness problem, not a difficulty one).
+ */
+interface ExtraPlayer {
+  baseX: number; baseY: number; team: "def" | "att";
+  driftAmp: number; driftFreq: number; phase: number;
+}
+const EXTRA_SPOTS: { x: number; y: number; team: "def" | "att" }[] = [
+  { x: -3.2, y: -1.5, team: "def" }, { x: 3.1, y: -1.8, team: "def" },
+  { x: -5.6, y: -3.3, team: "att" }, { x: 5.3, y: -2.7, team: "att" },
+  { x: -1.2, y: -4.7, team: "def" }, { x: 1.7, y: -5.5, team: "att" },
+];
+function buildExtras(kind: GoalieShot["kind"], rng: () => number): ExtraPlayer[] {
+  if (kind === "penalty" || kind === "free_kick") return [];
+  return EXTRA_SPOTS.map((s) => ({
+    baseX: s.x, baseY: s.y, team: s.team,
+    driftAmp: 0.3 + rng() * 0.35,
+    driftFreq: 0.2 + rng() * 0.18,
+    phase: rng() * Math.PI * 2,
+  }));
+}
+
+/** A real wall jumps reactively, right as the ball is struck — never held
+ *  up in advance. One shared eased arc, metres, consumed as `FigureLook`'s
+ *  own documented free-kick-wall `lift`. */
+const WALL_JUMP_WINDOW = 0.5;
+function wallLiftAt(t: number, strikeAtT: number): number {
+  const dt = t - strikeAtT;
+  if (dt < 0 || dt > WALL_JUMP_WINDOW) return 0;
+  return Math.sin((dt / WALL_JUMP_WINDOW) * Math.PI) * 0.45;
+}
+
 type Phase = "stake" | "facing" | "resolved" | "conceded" | "cashout";
 
 interface ShotAnim {
@@ -158,23 +249,26 @@ interface ShotAnim {
   shootX: number;   // striker's final shooting spot, world x
   runFromX: number;
   runFromY: number;
+  extras: ExtraPlayer[];
   commit: { commitT: number; targetX: number; targetZ: number } | null;
   resolvedAt: number | null; // seconds (seqStart-relative) once the outcome is known
   result: DiveResult | null;
 }
 
 function archHeightFor(kind: GoalieShot["kind"]): number {
-  if (kind === "curl") return 0.65;
+  // free_kick shares curl's own higher loop — it's the same curled, lifted
+  // technique, just from further out and with a wall to clear on top of it.
+  if (kind === "curl" || kind === "free_kick") return 0.65;
   if (kind === "volley") return 0.5;
   if (kind === "header") return 0.25; // struck downward off the head, not looped
   if (kind === "first_time") return 0.3; // rushed, flatter than a shaped drive
-  return 0.4; // drive
+  return 0.4; // drive, penalty — a driven, fairly direct strike either way
 }
 function originZFor(kind: GoalieShot["kind"]): number {
   if (kind === "header") return 2.0;
   if (kind === "volley") return 1.05;
   if (kind === "first_time") return 0.5; // met early, mid-shin to knee height
-  return 0.28;
+  return 0.28; // drive, curl, penalty, free_kick — struck clean off the deck
 }
 
 /** Ball position at any instant of the sequence — during the striker's own
@@ -286,13 +380,18 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet }
   const beginShot = useCallback((s: number) => {
     if (!rngRef.current) rngRef.current = mulberry32((Date.now() ^ 0x9e3779b9) >>> 0);
     const shot = pickShot(s, rngRef.current);
-    const shootX = clamp(shot.strikerSide * (1.1 + Math.min(1.6, Math.abs(shot.targetX) * 0.32)), -3.2, 3.2);
+    // A real penalty is struck from dead in front of goal — never offset to
+    // one side the way an open-play strike naturally is.
+    const shootX = shot.kind === "penalty"
+      ? 0
+      : clamp(shot.strikerSide * (1.1 + Math.min(1.6, Math.abs(shot.targetX) * 0.32)), -3.2, 3.2);
     animRef.current = {
       shot,
       seqStart: performance.now() / 1000,
       shootX,
       runFromX: shootX - shot.strikerSide * 2.2,
       runFromY: -(shot.startY + 3.5),
+      extras: buildExtras(shot.kind, rngRef.current),
       commit: null,
       resolvedAt: null,
       result: null,
@@ -643,9 +742,20 @@ function renderScene(
 
   // Ground — an exact perspective quad (a flat rectangle projects to an
   // exact quadrilateral under a pinhole camera), shaded in mown stripes.
-  const FAR = -26, NEAR = cam.y - 0.05, HALF = 11;
+  //
+  // The near edge is the real depth that projects to the canvas's own
+  // bottom row, computed the same way firstPersonView.ts's groundAt() does
+  // — not a guessed offset. The PREVIOUS version used a flat `cam.y - 0.05`
+  // (a near-edge DEPTH of exactly 0.05m regardless of CAM_Y), permanently
+  // inside project()'s own NEAR=0.35 clip — both near corners always came
+  // back null, so the whole grass fill (and everything conditioned on it
+  // below: the mown stripes, the goal line painted on the turf) silently
+  // never drew at all. Reported directly: "i dont even see any green...
+  // wheres the pitch it looks like im on an ice rink".
+  const nearDepth = Math.max(0.5, (cam.focal * cam.eye) / (H - cam.horizon));
+  const FAR = -26, NEAR_Y = cam.y - nearDepth, HALF = 11;
   const corners = [
-    project(cam, -HALF, NEAR, 0), project(cam, HALF, NEAR, 0),
+    project(cam, -HALF, NEAR_Y, 0), project(cam, HALF, NEAR_Y, 0),
     project(cam, HALF, FAR, 0), project(cam, -HALF, FAR, 0),
   ];
   if (corners.every((p) => p)) {
@@ -661,7 +771,7 @@ function renderScene(
     for (let i = 0; i < stripes; i++) {
       if (i % 2 === 0) continue;
       const x0 = -HALF + (HALF * 2 * i) / stripes, x1 = -HALF + (HALF * 2 * (i + 1)) / stripes;
-      const a = project(cam, x0, NEAR, 0), b = project(cam, x1, NEAR, 0);
+      const a = project(cam, x0, NEAR_Y, 0), b = project(cam, x1, NEAR_Y, 0);
       const cc = project(cam, x1, FAR, 0), d = project(cam, x0, FAR, 0);
       if (!a || !b || !cc || !d) continue;
       ctx.fillStyle = "rgba(0,0,0,0.07)";
@@ -700,9 +810,34 @@ function renderScene(
     armSpread: 0.2 + kickF * 0.3,
   });
 
-  // The ball.
+  // Decorative extras — see their own doc for what this is (and
+  // deliberately isn't) this round.
+  if (anim.extras.length) drawExtras(ctx, cam, anim.extras, t);
+
+  // The ball, and — free_kick only — the real wall standing between striker
+  // and goal (see GoalieShot.wall's own doc). Whichever is genuinely
+  // FARTHER from the camera this frame draws first: a real depth test, not
+  // a fixed order, since the ball's own depth changes every frame (it
+  // starts well past the wall and crosses its line partway through flight)
+  // while the wall's never does.
   const ball = ballWorldAt(anim, t);
-  drawBallAt(ctx, cam, ball.x, ball.y, ball.z);
+  if (shot.wall) {
+    const wallWorldY = -shot.wall.y;
+    const wallDepth = cam.y - wallWorldY;
+    const ballDepth = cam.y - ball.y;
+    const lift = wallLiftAt(t, shot.strikeAtT);
+    const drawWall = () => {
+      for (const wx of shot.wall!.x) {
+        drawFigure(ctx, cam, wx, wallWorldY, 0, DEFENDER_KIT, {
+          armSpread: 0.15, armLift: lift > 0.05 ? 1 : -0.6,
+        }, lift);
+      }
+    };
+    if (wallDepth > ballDepth) { drawWall(); drawBallAt(ctx, cam, ball.x, ball.y, ball.z); }
+    else { drawBallAt(ctx, cam, ball.x, ball.y, ball.z); drawWall(); }
+  } else {
+    drawBallAt(ctx, cam, ball.x, ball.y, ball.z);
+  }
 
   // The keeper (you).
   let reachX = KEEPER_SET_X, reachZ = KEEPER_SET_Z, lunge = 0, recovering = false;
@@ -760,12 +895,32 @@ function renderScene(
 
 function drawFigure(
   ctx: CanvasRenderingContext2D, cam: FpCamera, x: number, y: number, z: number,
-  look: FigureLook, pose: BodyPose,
+  look: FigureLook, pose: BodyPose, liftM = 0,
 ): void {
   const p = project(cam, x, y, z);
   if (!p) return;
   const r = Math.max(9, p.scale * FIGURE_R_M);
-  drawFigureAt(ctx, p.px, p.py, r, look, FACE_STYLE, FAKE_FACE_STYLE, { pose });
+  drawFigureAt(ctx, p.px, p.py, r, look, FACE_STYLE, FAKE_FACE_STYLE, {
+    pose,
+    // liftM (a free-kick wall's jump — see wallLiftAt) raises the body in
+    // SCREEN pixels while the shadow stays on the grass; 0 (every existing
+    // caller) is byte-identical to before this param existed.
+    liftPx: liftM * p.scale * 0.55,
+    shadowR: liftM > 0 ? r * 0.34 * (1 - Math.min(0.35, liftM * 0.12)) : undefined,
+  });
+}
+
+/** The decorative extras — see their own doc above for what this is (and
+ *  isn't). Far-to-near so a nearer man correctly overlaps a farther one. */
+function drawExtras(ctx: CanvasRenderingContext2D, cam: FpCamera, extras: ExtraPlayer[], t: number): void {
+  const ordered = [...extras].sort((a, b) => a.baseY - b.baseY);
+  for (const e of ordered) {
+    const x = e.baseX + Math.sin(t * e.driftFreq * Math.PI * 2 + e.phase) * e.driftAmp;
+    drawFigure(ctx, cam, x, e.baseY, 0, e.team === "def" ? DEFENDER_KIT : STRIKER_KIT, {
+      legSwing: Math.sin(t * 1.6 + e.phase) * 0.18,
+      armSpread: 0.15,
+    });
+  }
 }
 
 /** The full 3D goal — posts, bar, net. Always in frame now — see CAM_Y's
