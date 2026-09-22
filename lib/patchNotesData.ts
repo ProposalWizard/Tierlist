@@ -27,6 +27,282 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.4",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-22T12:00:00Z",
+      "summary": "The Play button was throwing your drawing away · a new Play Area with an Infinite Match that counts what it actually serves you · and you can finally look at scenarios before committing them",
+      "stats": [
+        {
+          "value": "2.4m",
+          "label": "the goalie was out by every time you pressed Play"
+        },
+        {
+          "value": "138′",
+          "label": "minutes played in one go, where a match used to stop at 90"
+        },
+        {
+          "value": "0 of 11",
+          "label": "saved scenarios that are actually in the code"
+        },
+        {
+          "value": "155",
+          "label": "test files green"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Play in the scenario gallery was throwing your saved drawing away",
+              "detail": "It played the raw generated chance instead. Reported directly: “the play in the scenario gallery moves everything around, and the goalie isn't in the same position that I place him in.”",
+              "bars": [
+                {
+                  "label": "Goalie off line",
+                  "was": 2.2,
+                  "now": 4.6,
+                  "state": "good",
+                  "unit": "m"
+                },
+                {
+                  "label": "Ball from goal",
+                  "was": 19.2,
+                  "now": 11.6,
+                  "state": "good",
+                  "unit": "m"
+                }
+              ],
+              "more": {
+                "summary": "What it was doing, and the answer to “is the game wrong too?”",
+                "points": [
+                  "Every other part of a card stacks TWO layers: the drawing you saved, then whatever you are dragging right now. The picture does it, the fault rings do it, the formation strip does it. Play was the one thing that only applied the second one — so it quietly ignored the whole scenario you had saved.",
+                  "The numbers above are the real card it was reported from: your drawing had the goalie 4.6m off his line and the ball 11.6m out; Play put them on 2.2m and 19.2m. That is the goalie 2.4m out of place and the ball 7.6m too deep, on every single press.",
+                  "THE GAME WAS NEVER WRONG. In a real match it picks one of your saved scenarios and uses it. The goalie specifically is rebuilt from two things your drawing holds — how far he shades the near post, and how far off his line he comes — both measured against where the ball is. Drawn exactly as you left him when nothing moves, and he follows the ball when the variant nudges it. So a goalie you draw rushing out still rushes out.",
+                  "SO: place him where he should be in the drawing. That is what the game uses."
+                ]
+              }
+            },
+            {
+              "title": "The desktop picture was too big to see the buttons under it",
+              "detail": "Third pass at this size. 340 was too small, 520×800 was “too big”, 400×640 still pushed the buttons off the bottom. It is 325×520 now.",
+              "more": {
+                "summary": "What fits now",
+                "points": [
+                  "On a 900-pixel-tall window the whole card is on screen at once — picture, edit row, the Saved/Committed pills, the verdict row, Simulate and Across formations.",
+                  "On an 800-pixel window the last strip is still about 80 pixels below the fold. Say the word and it goes smaller again — but any smaller and the picture starts being hard to judge, which is the thing it is for."
+                ]
+              }
+            },
+            {
+              "title": "A chance nobody had touched was labelled “Draft — this browser only”",
+              "detail": "In Infinite Highlights. A chance the generator just rolled is not a draft of anything; it now reads “Straight from the generator”."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A Play Area — both play tools behind one door, with the dials on top",
+              "detail": "Power, technique, curving boots, extra-touch boots, opposition, goalie, position, division and match length. One set, shared by both modes.",
+              "more": {
+                "summary": "Why the dials are shared rather than one set per screen",
+                "points": [
+                  "A number set here means the same thing in whichever mode you open next. Two copies would mean turning the power up in the match and wondering why a highlight still felt identical.",
+                  "None of these are new mechanics. Every one of them was already a real setting the game runs on — they were just fixed at whatever a dev page happened to have typed into it, and could not be changed without a code change.",
+                  "Saved on your own device. Nothing here is part of a career and nothing here reaches the live game."
+                ]
+              }
+            },
+            {
+              "title": "The Infinite Match — a real match that does not stop, counting what it serves you",
+              "detail": "Asked for twice, and the reason was “I've played like 5 games and seen ZERO of these one on ones.” That sentence could not be checked against anything until now.",
+              "bars": [
+                {
+                  "label": "Match minutes",
+                  "was": 75,
+                  "now": 138,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "What it measured, live, in a real browser",
+                "points": [
+                  "9 chances over 138 minutes — 5.9 per 90 — across six different kinds: one-on-one 3, header 2, then a free kick, a long range, a midfield pass and a through ball.",
+                  "It is the REAL match, not a copy of one. The same match a career plays, against a real career, so anything it shows you is genuinely what the game does.",
+                  "It needed two things the game did not have. One: a way to be told which chance was served — there was none, the match decided it internally and never said, which is exactly why “zero one-on-ones in five games” had nothing to check against. Two: a way to stop the manager taking you off, which can happen from minute 60. Measured: a 10,000-minute match was ending around minute 75.",
+                  "Both are off unless this tool asks for them, so a real career behaves exactly as it did.",
+                  "Infinite Highlights answers a DIFFERENT question, and both are worth having: it shows what the generator can produce, this shows what a match actually hands you. A match picks an area of the pitch first and the chance second, so the two are not the same list."
+                ]
+              }
+            },
+            {
+              "title": "You can look through scenarios before committing them",
+              "detail": "Reported directly: “not being able to see them before committing is annoying.” It was a line of ids, and an id is not a picture.",
+              "more": {
+                "summary": "How the last check works",
+                "points": [
+                  "“Look through all 11 first” in Tuning & Commit: one scenario at a time, the real drawing, drawn by the same thing its own card draws with.",
+                  "Back and forward through the whole batch, “Open to edit” if one needs a last drag, and “Leave out” to drop one from this commit without deleting it.",
+                  "The button then reads “Commit 10 of 11 to the repo”, so what you are about to do is never a guess.",
+                  "Looking writes nothing. Leaving one out changes only this batch."
+                ]
+              }
+            },
+            {
+              "title": "Infinite Highlights got Tune, Delete and the Saved/Committed pills",
+              "detail": "The screen you actually flick through chances on was the one screen that could not record a correction from one.",
+              "more": {
+                "summary": "The three that were missing",
+                "points": [
+                  "TUNE — drag a player where he should have been and record what was wrong, without saving it as a drawing. Same store, same threshold as everywhere else, so a correction made here counts exactly as much as one made in the gallery.",
+                  "DELETE — database AND code, with the “Are you sure?” asked for on the call. It only had Revert before, which clears the database and leaves a committed copy still being served.",
+                  "THE PILLS — whether this one is saved, committed, or only in your browser, and whether it is feeding the auto-tuner. You could save a fix here and have no idea which."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Every position now pulls chances toward itself",
+              "detail": "A striker lives in the box, the ten finds the through ball and the shot from range, the wingers get the byline and the dribble.",
+              "bars": [
+                {
+                  "label": "ST one-on-ones",
+                  "was": 13.4,
+                  "now": 21.7,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "LW byline cross",
+                  "was": 2.2,
+                  "now": 9.7,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "ST build-ups",
+                  "was": 10.6,
+                  "now": 5.8,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "The whole table, and the thing that nearly went unnoticed",
+                "points": [
+                  "Striker: one-on-one 21.7%, through ball 15.6%, header 10.9%.",
+                  "Attacking mid: through ball 19.7%, one-on-one 13.4%, long range 11.6%.",
+                  "Wingers: dribble 13.3%, one-on-one 12.1%, byline cross 9.7%.",
+                  "Chances per match stay level across all four — 6.1 to 6.6 — so no position is starved of the ball to give another one more.",
+                  "One thing only showed up by measuring: adding the pull first made striker build-ups go UP, not down. Fewer involvements meant more time starved of the ball, and the rule that rescues a starved player was dragging him back into his own half to find it. Gating that rule by the same pull fixed it."
+                ]
+              }
+            },
+            {
+              "title": "Simulate is a small square with a play triangle, and Across formations moved underneath",
+              "detail": "Asked for directly. The desktop right-hand column is gone — one centred column now, same order as the phone, so there is one layout rather than two."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The five-a-side froze mid-game",
+              "detail": "Reported on WhatsApp while starting a new save. Not reproduced yet and not on any idea list — this is a live bug, not a polish item, and it needs chasing on its own.",
+              "alert": true,
+              "pill": {
+                "text": "not chased yet",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Nothing is actually in the code yet — 11 saved, 0 committed",
+              "detail": "Every scenario made so far lives in the database only. They work everywhere and they do tune the generator, but nothing survives the database. The new review screen exists to make that one press.",
+              "pill": {
+                "text": "one press away",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The Infinite Match showed 1-7 at half time",
+              "detail": "With a test driver that missed 36 of its 45 attempts, so it may be nothing. Worth a real look when someone plays it properly — surfacing exactly this is what the tool is for.",
+              "pill": {
+                "text": "unconfirmed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Half time still happens at minute 45 in a 10,000-minute match",
+              "detail": "The banner and the “Second Half” button fire once and then the match carries on. Cosmetic, left alone."
+            },
+            {
+              "title": "One number was changed in the file Mikey said never to touch",
+              "detail": "A striker's long-range weighting, 6 to 3, in the match engine's chance table. It is a single row of data and reversible in one character — flagged rather than done quietly.",
+              "pill": {
+                "text": "Mikey's call",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Mikey's branch will clash with this one in a single place",
+              "detail": "His energy work multiplies the same line the position pull was added to. They compose fine; the two edits just sit on top of each other and will need merging by hand once."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next — the trial, after scenarios",
+          "items": [
+            {
+              "title": "Stop calling it a trial. It is the game, and you are a free agent.",
+              "detail": "“If I visited the game and started a save I don't think I would complete the trial.” Agreed on WhatsApp, not started.",
+              "more": {
+                "summary": "The shape agreed",
+                "points": [
+                  "Open in a Sunday league match. A short tutorial of a few highlights, PLAYED, not explained.",
+                  "A scout spots you. You have a conversation with him. Skip a few days in the menu, then go to the scouting session.",
+                  "The session is scenarios — and it should use the live attacks already built for some of them: volleys off a cross, headers, one-twos.",
+                  "NO score per drill and no screens in between. One scouting assessment at the end, the way a real trial ends.",
+                  "The feel: Alex Hunter. Your guy walks in, talks to the scout, an animation to start, the scout egging you on, in a real non-league stadium.",
+                  "“It needs to feel quick and still entertaining while giving you a feel of the real game.” Higgsfield for the cutscenes and animations."
+                ]
+              }
+            },
+            {
+              "title": "A random crazy injury animation",
+              "detail": "Your guy gets clattered in 3D, out for six months, loses stats. From the same conversation."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.3.5 — from the 40-minute call",
+              "detail": "Delete made to work on any scenario rather than looking one-on-one-only, the X relabelled “No good”, and everything decided or raised on the call written down: the sprint to something releasable, ownership staying while the son mechanic goes elsewhere, and fourteen parked ideas."
+            },
+            {
+              "title": "v0.3 — the scenario gallery, Save vs Commit, and the auto-tuner",
+              "detail": "Commits go to main and batch into one deploy, every card says whether it is saved or committed, Tune records a correction without saving it as a base scenario, and the rule set is read off your own drawings."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/XcQqdgi1WDVUcPBwKf8vbC",
+      "updatedAt": null
+    },
+    {
       "version": "0.3.5",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-22T00:00:00Z",
