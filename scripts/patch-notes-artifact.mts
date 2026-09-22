@@ -21,6 +21,7 @@
  */
 
 import { BUILT_IN_PATCH_NOTES } from "../lib/patchNotesData";
+import { DEMOS, DEMO_CSS } from "./patchNotesDemos";
 import {
   barGroupCeiling,
   barWidths,
@@ -91,11 +92,20 @@ function item(it: PatchItem): string {
     ? [`    <div class="bars">`, ...it.bars.map((b) => bar(b, barGroupCeiling(it.bars!))), `    </div>`].join("\n")
     : null;
 
+  // A named demo that isn't in DEMOS is a typo in the data, and silently
+  // dropping it would hide it — so it fails the build instead.
+  let demo: string | null = null;
+  if (it.demo) {
+    if (!DEMOS[it.demo]) throw new Error(`item "${it.title}" names demo "${it.demo}", which does not exist`);
+    demo = DEMOS[it.demo];
+  }
+
   return [
     `  <li>`,
     `    <div class="hd">${esc(it.title)}${pill}</div>`,
     it.detail ? `    <div class="dt">${esc(it.detail)}</div>` : null,
     bars,
+    demo,
     it.more ? more(it.more) : null,
     `  </li>`,
   ]
@@ -137,9 +147,11 @@ function page(note: PatchNote): string {
     .map((s) => `  <div class="s"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`)
     .join("\n");
 
+  const usesDemos = note.sections.some((s) => s.items.some((i) => i.demo));
+
   return `<title>Knowitball v${esc(note.version)}</title>
 <style>
-${STYLE}
+${STYLE}${usesDemos ? "\n" + DEMO_CSS : ""}
 </style>
 
 <div class="wrap">
