@@ -40,6 +40,20 @@ const FAINT = "rgba(232,238,245,0.42)";
 
 const kindLabel = (k: string) => k.replace(/_/g, " ");
 
+/**
+ * A law reads as its OPPOSITE without this.
+ *
+ * Every hard rule here is a zero: the measure is "Defenders between the ball
+ * and the goal" and the law is that the count is none. Printing the measure's
+ * own name put "Defenders between the ball and the goal — 22 of 22 drawings
+ * agree" on screen, which says the exact opposite of what is enforced. Seen
+ * on a screenshot, not reasoned about.
+ */
+function lawText(label: string): string {
+  const l = label.trim();
+  return "No " + l.charAt(0).toLowerCase() + l.slice(1);
+}
+
 export interface Proposal {
   kind: string;
   fault: string;
@@ -283,7 +297,7 @@ function RulesSection({ kinds, onShowKind }: { kinds: string[]; onShowKind: (k: 
                       <li key={law.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                         <span style={{ color: "#4ade80", fontWeight: 800 }}>✓</span>
                         <span style={{ flex: 1, fontSize: 12.5, color: INK, lineHeight: 1.45 }}>
-                          {law.label}
+                          {law.count ? lawText(law.label) : law.label}
                           <span style={{ color: FAINT, fontWeight: 600 }}>
                             {" "}— {law.agree} of {law.of} drawings agree
                           </span>

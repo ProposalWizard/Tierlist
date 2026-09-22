@@ -49,6 +49,7 @@ import {
   type SimSpec,
 } from "@/lib/star/gallerySim";
 import TuningPanel from "@/components/star/TuningPanel";
+import ScenarioEditor from "@/components/star/ScenarioEditor";
 import type { MatchScenario, ScenarioSide } from "@/lib/star/scenarios";
 import {
   listScenarios,
@@ -699,12 +700,19 @@ function Thumb({
 }
 
 function ChipRow({
-  chips, activeId, onPick, wide,
+  chips, activeId, onPick, wide, builderOn, onBuilder,
 }: {
   chips: { id: string; label: string; done: number; total: number }[];
   activeId: string;
   onPick: (id: string) => void;
   wide: boolean;
+  /** The Scenario Builder sits at the END of the list, in both games —
+   *  asked for directly: "add the scenario builder to the scenario gallery
+   *  page inside both 11 aside and 5 aside below all of the highlight types
+   *  as a side tab". It is a different KIND of thing from a highlight type,
+   *  so it gets a rule above it rather than blending into the chips. */
+  builderOn?: boolean;
+  onBuilder?: () => void;
 }) {
   const style = (active: boolean): React.CSSProperties => ({
     flex: "none",
@@ -735,10 +743,28 @@ function ChipRow({
       }
     >
       {chips.map((c) => (
-        <button key={c.id} style={style(c.id === activeId)} onClick={() => onPick(c.id)}>
+        <button key={c.id} style={style(c.id === activeId && !builderOn)} onClick={() => onPick(c.id)}>
           {c.label} <span style={{ opacity: 0.6 }}>&middot; {c.done}/{c.total}</span>
         </button>
       ))}
+      {onBuilder && (
+        <>
+          {wide && (
+            <div style={{ height: 1, background: "rgba(255,255,255,0.09)", margin: "6px 0" }} />
+          )}
+          <button
+            style={{
+              ...style(!!builderOn),
+              ...(builderOn
+                ? { border: "1px solid rgba(167,139,250,0.75)", background: "rgba(109,40,217,0.38)", color: "#ede9fe" }
+                : {}),
+            }}
+            onClick={onBuilder}
+          >
+            Scenario Builder
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -841,6 +867,9 @@ type Screen = "home" | "eleven" | "five" | "tuning" | "version";
 
 export default function StarGalleryDevPage() {
   const [screen, setScreen] = useState<Screen>("home");
+  // The Scenario Builder tab inside the 11-a-side / 5-a-side grid. Reset
+  // whenever a highlight type is picked, so the chips stay in charge.
+  const [builderTab, setBuilderTab] = useState(false);
   const [game, setGame] = useState<"eleven" | "five">("eleven");
   const [kindId, setKindId] = useState<string>("one_on_one");
   const [fiveId, setFiveId] = useState<string>("defensive");
@@ -1227,7 +1256,7 @@ export default function StarGalleryDevPage() {
     });
   }, [game, reviews, countFor, saved]);
 
-  const openGroup = (g: "eleven" | "five") => { setGame(g); setScreen(g); setSim(null); };
+  const openGroup = (g: "eleven" | "five") => { setGame(g); setScreen(g); setSim(null); setBuilderTab(false); };
   const openVersion = (i: number) => { setVersionIdx(i); setScreen("version"); setSim(null); setSelectedId(null); };
 
   const baseCell = versions[Math.min(versionIdx, versions.length - 1)];
@@ -1415,19 +1444,34 @@ export default function StarGalleryDevPage() {
     return shell(
       <>
         {header(game === "eleven" ? "11-a-side" : "5-a-side", () => setScreen("home"))}
-        {wide ? (
-          <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "start" }}>
-            <div style={{ padding: 14, position: "sticky", top: 58 }}>
-              <ChipRow chips={chips} activeId={activeGroupId} onPick={game === "eleven" ? setKindId : setFiveId} wide />
+        {(() => {
+          const pick = (id: string) => {
+            setBuilderTab(false);
+            (game === "eleven" ? setKindId : setFiveId)(id);
+          };
+          const body = builderTab
+            ? <div style={{ padding: 10 }}><ScenarioEditor /></div>
+            : grid;
+          return wide ? (
+            <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", alignItems: "start" }}>
+              <div style={{ padding: 14, position: "sticky", top: 58 }}>
+                <ChipRow
+                  chips={chips} activeId={activeGroupId} onPick={pick} wide
+                  builderOn={builderTab} onBuilder={() => setBuilderTab(true)}
+                />
+              </div>
+              {body}
             </div>
-            {grid}
-          </div>
-        ) : (
-          <>
-            <ChipRow chips={chips} activeId={activeGroupId} onPick={game === "eleven" ? setKindId : setFiveId} wide={false} />
-            {grid}
-          </>
-        )}
+          ) : (
+            <>
+              <ChipRow
+                chips={chips} activeId={activeGroupId} onPick={pick} wide={false}
+                builderOn={builderTab} onBuilder={() => setBuilderTab(true)}
+              />
+              {body}
+            </>
+          );
+        })()}
       </>,
       false,
     );
