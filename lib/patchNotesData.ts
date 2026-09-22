@@ -27,6 +27,253 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.3.5",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-22T00:00:00Z",
+      "summary": "From the 40-minute call with Leo and Mikey · what got fixed off the back of it, what was decided, and every idea that came up · nothing here is built unless it says it is",
+      "stats": [
+        {
+          "value": "3",
+          "label": "things fixed straight off the call"
+        },
+        {
+          "value": "6",
+          "label": "decisions made, written down so they stay made"
+        },
+        {
+          "value": "14",
+          "label": "ideas parked, none of them started"
+        },
+        {
+          "value": "0",
+          "label": "of those ideas built — this is a list, not a changelog"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed off the back of the call",
+          "items": [
+            {
+              "title": "Delete works on any scenario now, not just one-on-ones",
+              "detail": "Leo was blocked: “I added one and I can't delete it”, and Delete looked like a one-on-one-only feature.",
+              "bars": [
+                {
+                  "label": "Volley cards",
+                  "was": 10,
+                  "now": 9,
+                  "state": "good"
+                }
+              ],
+              "more": {
+                "summary": "Two causes, neither about one-on-ones",
+                "points": [
+                  "The Delete button only appeared once a scenario had been SAVED. The only saved scenarios were one-on-ones, so it looked kind-specific. It is always there now.",
+                  "A generated card had nowhere to be deleted TO — versions come from a count, not a list, so there was no way to say “not this one”. There is now, and it is remembered after a reload.",
+                  "On a saved scenario Delete still clears the database and the code. On a card that was never saved it just takes the card out, and says so, instead of reporting a server error for something that never reached a server."
+                ]
+              }
+            },
+            {
+              "title": "The X is the reject mark, not a delete — it says so now",
+              "detail": "Asked twice on the call what it meant: “is that delete, or does that mean something else?” It reads “No good”."
+            },
+            {
+              "title": "The scenario picture on desktop — too small, then too big, now 400×640",
+              "detail": "It was hard-coded to phone size on any screen. First pass overshot to 500×800. Phone is unchanged throughout."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Decided on the call",
+          "items": [
+            {
+              "title": "Sprint to something releasable, then tune it",
+              "detail": "“This could release today, I'm not even joking” — if the scenarios were done, the trial was done, and the engine worked everywhere.",
+              "more": {
+                "summary": "What that means in practice",
+                "points": [
+                  "The three things between here and a release: every chance kind has drawings, the trial works, and the same match engine runs in the trial and in training rather than only in a match.",
+                  "Everything else on this page waits behind those three. The reason is that tuning a chance is guesswork until the chances themselves exist — “it's hard to make the scenario stuff good when it's not done”."
+                ]
+              }
+            },
+            {
+              "title": "A stronger opponent means FEWER chances, not different ones",
+              "detail": "Non-league against another non-league side might be ten chances. Against Liverpool it might be two or three. A one-on-one is still one of the things those two can be.",
+              "more": {
+                "summary": "Where it was left",
+                "points": [
+                  "Agreed: the opponent's strength changes how many chances you get.",
+                  "Open: whether two one-on-ones against Liverpool as a non-league side is wrong. Harry's read is that it does not strictly need to make sense, so long as chances are rarer.",
+                  "Also agreed: your position should tilt which chances you get, not decide it. A striker getting only striker chances was called out as wrong — whatever position you play should get you into the game a lot."
+                ]
+              }
+            },
+            {
+              "title": "Extra modes arrive through the game, never through a settings switch",
+              "detail": "The home screen already has casino, sponsors, awards, trophies. Adding ownership and garden to that list was called overwhelming.",
+              "more": {
+                "summary": "The shape agreed, and the one that was rejected",
+                "points": [
+                  "Rejected: a Settings toggle that says “turn on funky features”. Called silly, and for a good reason — nobody finds it, so nobody uses it, so why build it.",
+                  "Agreed instead: it arrives as an event. Around £1m, an investor approaches you with a chance to buy into some clubs, and ownership unlocks from that moment.",
+                  "Mikey's version was a profile tab you scroll down to. Same instinct, and worth keeping in mind — the difference is whether it is discovered or given to you."
+                ]
+              }
+            },
+            {
+              "title": "Ownership stays. The son mechanic and the agent game go somewhere else.",
+              "detail": "Investing and eventually owning a club is wanted. Spawning a son, ageing him up, running an agency is a different game wearing this one's clothes.",
+              "more": {
+                "summary": "Why the line is drawn there",
+                "points": [
+                  "The test used on the call: would somebody see this and think “what the hell is this?” Investing survives it. A potion that ages up your son does not.",
+                  "The concern is not that the ideas are bad — they were both wanted originally. It is that a game with all of them in reads as a gimmick rather than as a football career.",
+                  "Manager after you retire is fine, and is mostly built already. Agent and the chaotic simulation stuff become their own game, using this as the base."
+                ]
+              }
+            },
+            {
+              "title": "This engine is a base for more than one game",
+              "detail": "“We could make the best possible NSS, then the best possible other game.” Anything cut from here is not thrown away, it is the start of the next one."
+            },
+            {
+              "title": "Scenario work is split by chance kind, and everyone saves into the same place",
+              "detail": "Pick a kind, make ten to fifteen varied ones, save each as you go, then commit the whole lot at once from Tuning & Commit.",
+              "more": {
+                "summary": "The bit that was unclear on the call",
+                "points": [
+                  "Do NOT press commit per scenario. Save them, then commit once — that is the whole reason the Tuning & Commit page exists.",
+                  "A kind with no drawings has no rule set, so the first ten for a new kind are what teach it what that chance IS. Range matters more than polish.",
+                  "Tune is not the same as Save. Tune records a correction and changes nothing on its own; it waits until several corrections agree before proposing anything."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Ideas from the call — none of these are started",
+          "items": [
+            {
+              "title": "Chances should come out of the passage of play",
+              "detail": "You held it up, played it wide, the cross comes in, you head it. Right now a chance is picked from your position and where the ball is, with no memory of what just happened."
+            },
+            {
+              "title": "Difficulty settings, with a mode you have to earn",
+              "detail": "Easy is roughly original NSS — five goals a game from day one. Hard makes training brutal (five drills for +1) and the opposition far stronger. Win the Ballon d'Or on Hard and something harder again unlocks.",
+              "more": {
+                "summary": "Why this came up",
+                "points": [
+                  "It answers the split in the room: one of us finds easy scoring boring, and a casual player bounces off a game that is hard from minute one.",
+                  "Named as being like FM's challenge modes rather than a difficulty slider."
+                ]
+              }
+            },
+            {
+              "title": "Keepers that get better as you climb",
+              "detail": "From playing real NSS for research: early keepers only go to ground, and a bouncing ball straight at them can go over. Higher up they start reaching top corners.",
+              "more": {
+                "summary": "What it buys",
+                "points": [
+                  "Scoring is easy at the start because the keeper is bad, not because the game is generous — and you can feel the difference when you move up.",
+                  "Same idea for everything around you: your energy drink does 10% in the bottom division and a lot more once you have a real gym behind you."
+                ]
+              }
+            },
+            {
+              "title": "Unlocks tied to star rating and to reaching a new league",
+              "detail": "New mechanics arrive as you climb, so a promotion changes what the game is, not just the badge next to your name. Compared to Spore and Blue Lock on the call."
+            },
+            {
+              "title": "Achievements paying out coins",
+              "detail": "Something to spend progress on beyond the shop."
+            },
+            {
+              "title": "Tap a team-mate to pass, and play carries on",
+              "detail": "From the five-a-side build. Tap him, he goes, he can lay it back to you — the move does not cut away the moment you release."
+            },
+            {
+              "title": "A ball that is already moving when it reaches you",
+              "detail": "A cross should arrive travelling. Right now the ball you strike is sitting still even when it was just played into you."
+            },
+            {
+              "title": "Take a touch round the keeper",
+              "detail": "Rather than only shooting from where the chance starts."
+            },
+            {
+              "title": "Left and right mid should probably be wingers",
+              "detail": "Raised as a real doubt about the position list rather than a decision."
+            },
+            {
+              "title": "The goal and the six-yard box might be the wrong size",
+              "detail": "Mikey: the goal and six-yard box look too small, and a tight angle does not look like a tight angle. Harry: the pitch is deliberately bigger than life because it is cartoony. Unresolved — worth measuring rather than arguing.",
+              "pill": {
+                "text": "disagreed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The tight-angle chance is too easy",
+              "detail": "“I could score every time.” The keeper is not on his line where he should be, and a tight angle in real football is a hard chance, not an easy one."
+            },
+            {
+              "title": "Goalie mode needs a reason to be in a player's career",
+              "detail": "“What is goalie mode doing in my career as a player?” Liked as a thing to play, questioned as a thing that belongs here.",
+              "pill": {
+                "text": "question",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The engine should run in the trial and in training too",
+              "detail": "Mikey's view is that the opening is the hook and matters as much as anything. Harry's is that scenarios come first. Both agreed it is near the top either way.",
+              "pill": {
+                "text": "disagreed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Scale the whole game to the player, because we actually can",
+              "detail": "NSS did not scale its world because it could not. Playing Liverpool could mean genuinely worse team-mates around you, not just a higher number on the opposition."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Still open from before the call",
+          "items": [
+            {
+              "title": "The infinite match is not built yet",
+              "detail": "The tool for seeing what a real match actually serves you, over thousands of minutes. Looked for on the call and not there."
+            },
+            {
+              "title": "One-on-ones are showing up in game again",
+              "detail": "Confirmed live on the call — “finally”. Worth saying plainly that this was confirmed by playing, not by a test."
+            },
+            {
+              "title": "Only one-on-one has drawings",
+              "detail": "Tight angle and free kick have one each, which is below the five needed for a rule. Eleven kinds have none and run on the generator's built-in shapes."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.3 — the scenario gallery, Save vs Commit, and the auto-tuner",
+              "detail": "Commits go to main and batch into one deploy, every card says whether it is saved or committed, Tune records a correction without saving it as a base scenario, and the rule set is read off your own drawings."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/L4zdK7X44YctKBvHsPTZhB",
+      "updatedAt": null
+    },
+    {
       "version": "0.3",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-22T00:00:00Z",
