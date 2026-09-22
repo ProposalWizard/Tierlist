@@ -48,7 +48,7 @@ import {
   pictureKey,
   type SimSpec,
 } from "@/lib/star/gallerySim";
-import ScenarioEditor from "@/components/star/ScenarioEditor";
+import TuningPanel from "@/components/star/TuningPanel";
 import type { MatchScenario, ScenarioSide } from "@/lib/star/scenarios";
 import {
   listScenarios,
@@ -587,13 +587,13 @@ function HomeTile({
 
 function HomeScreen({
   onOpen, warning, wide,
-}: { onOpen: (s: "eleven" | "five" | "builder") => void; warning: string | null; wide: boolean }) {
+}: { onOpen: (s: "eleven" | "five" | "tuning") => void; warning: string | null; wide: boolean }) {
   const [noteOpen, setNoteOpen] = useState(false);
   const tiles = useMemo(
     () => [
       { word: "11-a-side", frame: elevenVersions("one_on_one")[0].frame, go: "eleven" as const },
       { word: "5-a-side", frame: fiveVersions("defensive")[0].frame, go: "five" as const },
-      { word: "Scenario Builder", frame: elevenVersions("free_kick")[0].frame, go: "builder" as const },
+      { word: "Tuning & Commit", frame: elevenVersions("free_kick")[0].frame, go: "tuning" as const },
     ],
     [],
   );
@@ -837,7 +837,7 @@ const SELECT_STYLE: React.CSSProperties = {
 //  PAGE
 // ─────────────────────────────────────────────────────────────────────────
 
-type Screen = "home" | "eleven" | "five" | "builder" | "version";
+type Screen = "home" | "eleven" | "five" | "tuning" | "version";
 
 export default function StarGalleryDevPage() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -1311,114 +1311,63 @@ export default function StarGalleryDevPage() {
     return shell(
       <>
         <HomeScreen
-          onOpen={(s) => (s === "builder" ? setScreen("builder") : openGroup(s))}
+          onOpen={(s) => (s === "tuning" ? setScreen("tuning") : openGroup(s))}
           warning={warning}
           wide={wide}
         />
-        {/* ── WHAT THE CORRECTIONS ADD UP TO ──
-            Silent until enough agree. Proposed, never applied — a rule from
-            a handful of examples is how this project twice ended up with a
-            plausible rule that was wrong about thousands of pictures. */}
-        {(proposals.length > 0 || corrections.length > 0) && (
-          <div style={{
-            margin: "0 14px 14px", padding: "13px 15px", borderRadius: 14,
-            background: "rgba(167,139,250,0.10)", border: "1px solid rgba(167,139,250,0.35)",
-          }}>
-            {proposals.length === 0 ? (
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(233,213,255,0.85)", lineHeight: 1.45 }}>
-                {corrections.length} {corrections.length === 1 ? "correction" : "corrections"} recorded.
-                None of them agree {PROPOSAL_THRESHOLD} times yet, so nothing is being proposed —
-                a correction stays quiet until a pattern shows up.
-              </div>
-            ) : (
-              <>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#e9d5ff" }}>
-                  {proposals.length} {proposals.length === 1 ? "rule" : "rules"} worth a look
-                </div>
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(233,213,255,0.75)", marginTop: 3, lineHeight: 1.45 }}>
-                  From {corrections.length} corrections. Nothing has been applied — these are
-                  what the corrections agree on.
-                </div>
-                {proposals.map((pr) => (
-                  <div key={`${pr.kind}|${pr.fault}`} style={{
-                    marginTop: 9, padding: "9px 11px", borderRadius: 10,
-                    background: "rgba(0,0,0,0.25)", border: "1px solid rgba(167,139,250,0.25)",
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#e9d5ff" }}>
-                      {pr.rule}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: "rgba(233,213,255,0.7)", marginTop: 3, lineHeight: 1.45 }}>
-                      {kindLabel(pr.kind)} · {pr.count} corrections fixed {FAULT_LABEL[pr.fault]}
-                    </div>
-                    <button
-                      onClick={() => { setKindId(pr.kind); openGroup("eleven"); }}
-                      style={{
-                        marginTop: 7, height: 32, padding: "0 12px", borderRadius: 9, cursor: "pointer",
-                        border: "1px solid rgba(167,139,250,0.4)", background: "rgba(167,139,250,0.14)",
-                        color: "#e9d5ff", fontSize: 12, fontWeight: 800,
-                      }}
-                    >
-                      Show me {kindLabel(pr.kind)}
-                    </button>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── WHAT IS SAVED BUT NOT IN THE CODE YET ──
-            One button, one commit, one production deploy, however many are
-            outstanding — instead of a deploy per scenario and somebody
-            keeping track of which ones went. */}
-        {pending.length > 0 && (
-          <div style={{
-            margin: "0 14px 22px", padding: "13px 15px", borderRadius: 14,
-            background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.35)",
-          }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#e0f2fe" }}>
-              {pending.length} {pending.length === 1 ? "scenario is" : "scenarios are"} saved but not in the code
-            </div>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(224,242,254,0.75)", marginTop: 3, lineHeight: 1.45 }}>
-              They already work everywhere and already tune the generator. Committing puts them in
-              the code permanently — one commit, one deploy, all {pending.length}.
-            </div>
-            <div style={{ fontSize: 11.5, color: "rgba(224,242,254,0.6)", marginTop: 7, lineHeight: 1.5 }}>
-              {pending.slice(0, 6).map((sc) => sc.name || sc.id).join(" · ")}
-              {pending.length > 6 ? ` · +${pending.length - 6} more` : ""}
-            </div>
-            <button
-              onClick={() => void commitAllPending()}
-              disabled={!!busy || !!commitBlocked}
-              style={{
-                marginTop: 11, width: "100%", height: 44, borderRadius: 12,
-                cursor: busy || commitBlocked ? "default" : "pointer",
-                border: "1px solid rgba(56,189,248,0.55)",
-                background: commitBlocked ? "rgba(255,255,255,0.05)" : "rgba(56,189,248,0.2)",
-                color: commitBlocked ? MUTED : "#e0f2fe", fontSize: 14.5, fontWeight: 800,
-              }}
-            >
-              {busy === "committing"
-                ? "Committing…"
-                : commitBlocked
-                  ? "Commit to repo is off"
-                  : `Commit all ${pending.length} to the repo`}
-            </button>
-          </div>
+        {/* ── ONE POINTER, NOT TWO PANELS ──
+            The proposals list and the commit box both used to sit on this
+            screen, and the commit box again at the bottom of the gallery.
+            Reported as not being findable. They have their own page now;
+            this is a one-line nudge so nobody has to remember to look. */}
+        {(pending.length > 0 || corrections.length > 0) && (
+          <button
+            onClick={() => setScreen("tuning")}
+            style={{
+              margin: "0 14px 14px", padding: "11px 14px", borderRadius: 14, width: "calc(100% - 28px)",
+              textAlign: "left", cursor: "pointer",
+              background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.35)",
+              color: "#e0f2fe", fontSize: 13, fontWeight: 800,
+            }}
+          >
+            {[
+              pending.length > 0
+                ? `${pending.length} saved, not committed`
+                : null,
+              proposals.length > 0
+                ? `${proposals.length} ${proposals.length === 1 ? "proposal" : "proposals"}`
+                : corrections.length > 0
+                  ? `${corrections.length} ${corrections.length === 1 ? "correction" : "corrections"}`
+                  : null,
+            ].filter(Boolean).join(" · ")}
+            <span style={{ fontWeight: 600, opacity: 0.75 }}> — open Tuning &amp; Commit ›</span>
+          </button>
         )}
       </>,
       true,
     );
   }
 
-  // ── BUILDER ──
-  if (screen === "builder") {
+  // ── TUNING & COMMIT ──
+  //
+  // This tile used to open Mikey's Scenario Builder. It was moved out rather
+  // than deleted — it still has its own page at /star-scenario-dev — because
+  // the two things nobody could find, the commit box and the proposals, had
+  // nowhere of their own and were buried at the bottom of a long gallery.
+  if (screen === "tuning") {
     return shell(
       <>
-        {header("Scenario Builder", () => setScreen("home"))}
-        <div style={{ padding: 10 }}>
-          <ScenarioEditor />
-        </div>
+        {header("Tuning & Commit", () => setScreen("home"))}
+        <TuningPanel
+          kinds={KIND_ORDER as unknown as string[]}
+          proposals={proposals}
+          corrections={corrections}
+          pending={pending}
+          busy={busy}
+          commitBlocked={commitBlocked}
+          onCommitAll={() => void commitAllPending()}
+          onShowKind={(k) => { setKindId(k); openGroup("eleven"); }}
+        />
       </>,
       false,
     );
