@@ -189,21 +189,24 @@ const weak = run(WEAK);
   check(great > poor, `better players are found more often (${poor.toFixed(1)} vs ${great.toFixed(1)})`);
 }
 
-// ── So does energy — effort buys involvement, not better football either ────
+// ── Energy MODE decides how often you're found — not tiredness (22 Sep 2026) ─
 //
-// Reinstated: a tired player gets fewer CHANCES, not worse ones — this is
-// the involvement rate only, never shot quality. Omitting `energy` entirely
-// must read exactly as fully fresh (100), which is what makes it safe for
-// every OTHER caller in this file (all of which omit it) to be unaffected
-// by this reintroduction — see hiddenMatch.ts's own comment on the formula.
+// Owners: "it should not affect the chances coming to you". How tired you are
+// changes nothing here any more; the mode you pick in the match does.
+// Medium (or no mode at all) plays exactly like the old game.
 {
   const fresh = mean(run({ ...EVEN, energy: 100 }, 800).map(s => s.requests));
   const gassed = mean(run({ ...EVEN, energy: 5 }, 800).map(s => s.requests));
-  check(fresh > gassed, `a fresh player is found more often than a gassed one (${gassed.toFixed(1)} vs ${fresh.toFixed(1)})`);
+  check(Math.abs(fresh - gassed) < 0.3, `tiredness alone no longer changes your chances (${gassed.toFixed(1)} vs ${fresh.toFixed(1)})`);
 
+  const low = mean(run({ ...EVEN, energyMode: "low" }, 800).map(s => s.requests));
+  const medium = mean(run({ ...EVEN, energyMode: "medium" }, 800).map(s => s.requests));
+  const high = mean(run({ ...EVEN, energyMode: "high" }, 800).map(s => s.requests));
   const omitted = mean(run({ ...EVEN }, 800).map(s => s.requests));
-  check(Math.abs(omitted - fresh) < 0.5,
-    `omitting energy entirely reads as fully fresh, same as every other test in this file (${omitted.toFixed(2)} vs ${fresh.toFixed(2)})`);
+  check(high > medium && medium > low, `High finds you most, Low least (${low.toFixed(1)} / ${medium.toFixed(1)} / ${high.toFixed(1)})`);
+  check(Math.abs(omitted - medium) < 0.3, `no mode reads as Medium (${omitted.toFixed(2)} vs ${medium.toFixed(2)})`);
+  check(high > medium * 1.15, `High is a real boost, not a token one (${medium.toFixed(1)} -> ${high.toFixed(1)})`);
+  check(low < medium * 0.85, `Low is a real cut (${medium.toFixed(1)} -> ${low.toFixed(1)})`);
 }
 
 // ── Coming off the bench is a real edge, not just fewer minutes ─────────────

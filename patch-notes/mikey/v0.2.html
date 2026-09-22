@@ -1,0 +1,179 @@
+<title>Knowitball Patch Notes Mikey v0.2</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.2</span>
+  <h1>Knowitball Patch Notes Mikey v0.2</h1>
+  <p class="sub">22 September 2026 · branch Mikey · Energy master plan · tests: all passing</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>3 modes</b><span>Low / Medium / High, switchable any time in a match</span></div>
+  <div class="s"><b>95 / 60 / 30</b><span>Energy a full Premier League match costs on High / Medium / Low</span></div>
+  <div class="s"><b>+8</b><span>Energy back for every day you don't play</span></div>
+  <div class="s"><b>65</b><span>Below this you start on the bench (was 35)</span></div>
+</div>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Energy modes during a match</div>
+    <div class="dt">An energy bar with <b>Low / Medium / High</b> buttons now sits at the bottom of the commentary screen, where the repeated stats row used to be. High uses energy faster and gets you about 35% more chances; Low uses half as much and gets you about 35% fewer. Medium plays exactly like before. <span class="tag seen">seen</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Low</span><span class="track"><span class="fill now" style="width:32%"></span></span><span class="vv">30</span></div>
+      <div class="bar"><span class="lb">Medium</span><span class="track"><span class="fill now warn" style="width:63%"></span></span><span class="vv">60</span></div>
+      <div class="bar"><span class="lb">High</span><span class="track"><span class="fill now bad" style="width:100%"></span></span><span class="vv">95</span></div>
+    </div>
+    <details><summary>Measured in a real match</summary>
+      <p>Premier League: Medium drained 0.667 a minute (100 → 64 by minute 54), High 1.075 a minute. Both match the plan.</p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A real match clock</div>
+    <div class="dt">The minute now ticks up one at a time (1, 2, 3 …) instead of jumping between commentary lines, and your energy falls with it. About 0.7 seconds per minute at normal speed. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">KIB can at half time</div>
+    <div class="dt">A <b>Use KIB can</b> button sits beside Second Half, showing how many Basic cans you have. Each tap gives <b>+25 energy</b>. Cans come off your stock once the match is saved. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Rest days</div>
+    <div class="dt">Every day between matches gives <b>+8 energy</b> (Saturday to Saturday is 6 days, Saturday to Wednesday is 3). Owning a property adds a little, and so does your club's training ground. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Unused weekly actions no longer give energy</div>
+    <div class="dt">Each one used to be worth <b>+20</b> when you played, so a week of doing nothing gained you 28. That's gone; rest days replace it. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Bigger games cost more energy</div>
+    <div class="dt">From the Premier League down to the National League (78% of the cost). FA Cup, League Cup and Community Shield cost the <b>opponent's</b> league. Europa League is 6% more, Champions League and Super Cup 11% more. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Being tired matters more</div>
+    <div class="dt">Bench below <b>65</b> (was 35), out of the squad below <b>40</b> (was 15). Power and curve up to <b>30%</b> weaker when tired (was 15%). Tired-legs subs below 25, extra injury risk below 30. Tiredness no longer changes how many chances you get; the mode does. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Training and Rest</div>
+    <div class="dt">Training costs <b>30</b> energy (was 15). Rest gives <b>+10</b> (was +20). All of these values can be changed in the tuning editor. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Switching mode changes chances a little late <span class="pill p-amb">Low</span></div>
+    <div class="dt">Energy use changes from the very next minute, but chances only change from the next stretch of play, usually a few match minutes later. Making it instant means rebuilding how the hidden match runs.</div>
+  </li>
+  <li>
+    <div class="hd">Production build not run for this version <span class="pill p-amb">Low</span></div>
+    <div class="dt">The PC was out of memory. Type-check and every test pass; the build should be run once memory is free.</div>
+  </li>
+  <li>
+    <div class="hd">Low mode's exact drain not measured on screen <span class="pill p-amb">Low</span></div>
+    <div class="dt">It was seen draining slower than Medium, but not timed precisely. Tests confirm the rate.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Play a full season with the new energy</div><div class="dt">Then tune rest days, training cost and the bench line in the tuning editor.</div></li>
+  <li><div class="hd">Instant chance change on mode switch</div><div class="dt">Only if the delay feels wrong in play.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>

@@ -2,8 +2,6 @@ import {
   makeInitialCareer, creditMatchResult, simulateMissedFixture, advanceSeason,
   ENERGY_MATCH_COST, INJURY_RISK_BASE, INJURY_FATIGUE_FLOOR, INJURY_RISK_FATIGUE_EXTRA,
 } from "../../lib/star/careerFlow";
-import { MISSED_WEEK } from "../../lib/star/selection";
-import { WEEK_ACTIONS, REST_ENERGY } from "../../lib/star/week";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, Fixture, MatchStats, StarPlayer } from "../../lib/star/types";
 
@@ -75,19 +73,15 @@ function firstFixture(c: CareerState): Fixture {
   check(c.energy === 0, `it floors at zero rather than going negative (${c.energy})`);
 }
 
-// ── Unspent actions credit the same energy Rest would have given ───────────
+// ── Unspent actions no longer credit energy (22 Sep 2026) ────────────────
+// Rest days between fixtures replace that. Two careers identical except for
+// how many weekly actions they left unspent end the match on the same energy.
 {
-  const untouched: CareerState = { ...base(), energy: 5 };
-  const credited = creditMatchResult(untouched, firstFixture(untouched), stats({ minutes: 90 })).career;
-  const expected = Math.min(100, 5 + WEEK_ACTIONS * REST_ENERGY) - ENERGY_MATCH_COST;
-  check(credited.energy === expected,
-    `three unspent actions are worth three Rests before the match's own cost (${credited.energy}, expected ${expected})`);
-
-  const partial: CareerState = { ...base(), energy: 5, weekActions: 1 };
-  const partialCredited = creditMatchResult(partial, firstFixture(partial), stats({ minutes: 90 })).career;
-  const partialExpected = Math.max(0, Math.min(100, 5 + 1 * REST_ENERGY) - ENERGY_MATCH_COST);
-  check(partialCredited.energy === partialExpected,
-    `only the actions actually left unspent are credited (${partialCredited.energy}, expected ${partialExpected})`);
+  const untouched: CareerState = { ...base(), energy: 50, weekActions: 3 };
+  const spent: CareerState = { ...base(), energy: 50, weekActions: 0 };
+  const a = creditMatchResult(untouched, firstFixture(untouched), stats({ minutes: 90 })).career;
+  const b = creditMatchResult(spent, firstFixture(spent), stats({ minutes: 90 })).career;
+  check(a.energy === b.energy, `unspent actions are worth nothing extra (${a.energy} vs ${b.energy})`);
 }
 
 // ── A replayed fixture does not spend the budget twice ──────────────────────
@@ -104,7 +98,7 @@ function firstFixture(c: CareerState): Fixture {
 {
   const c: CareerState = { ...base(), energy: 40 };
   const missed = simulateMissedFixture(c, firstFixture(c)).career;
-  check(missed.energy === 40 + MISSED_WEEK.energy, `sitting a week out is worth something (${missed.energy})`);
+  check(missed.energy >= 40, `sitting a week out never costs energy (${missed.energy})`);
   check(missed.energy <= 100, "…but still respects the cap");
 
   const tired: CareerState = { ...base(), energy: 12, matchFitness: 40 };

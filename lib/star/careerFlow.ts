@@ -23,7 +23,7 @@ import { progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney } from "./contracts";
 import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
-  qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups,
+  qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups, nextFixtureFor,
 } from "./competitions";
 import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner } from "./cups";
@@ -35,7 +35,8 @@ import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier } from "./rating";
 import { REPUTATION_START } from "./reputation";
-import { addFame, FAME_EVENTS, wearItems } from "./fame";
+import { addFame, FAME_EVENTS, wearItems, isWornOut } from "./fame";
+import { restDaysBetween, dailyRecovery, energyFactorFor, clampEnergy, ENERGY_FULL_MATCH_MEDIUM } from "./energy";
 import { seasonStanding } from "./seasonStanding";
 import { considerRecommendations, payPresidentWages } from "./clubPowers";
 import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./facilities";
@@ -77,7 +78,7 @@ export const ENERGY_MATCH_COST = getTuning("energy.matchCost");
 // INJURY_RISK_FATIGUE_EXTRA is the most fatigue alone can add on top, phased
 // in as end-of-match energy falls through INJURY_FATIGUE_FLOOR.
 export const INJURY_RISK_BASE = 0.015;
-export const INJURY_FATIGUE_FLOOR = 20;
+export const INJURY_FATIGUE_FLOOR = getTuning("energy.injuryFloor");
 export const INJURY_RISK_FATIGUE_EXTRA = 0.085;
 
 /**
@@ -611,6 +612,27 @@ export function decaySkills(career: CareerState, rng: () => number): CareerState
 // league result + the rest of the division's week, fixture marking, pay, energy,
 // relationships, sponsor unlocks, star rating, fame, form, boot wear. Returns the
 // next state plus any achievements this pushed over the line (the page toasts them).
+/**
+ * ENERGY BACK FOR THE REST DAYS UNTIL THE NEXT FIXTURE.
+ *
+ * Owners, 22 Sep 2026: every day you don't play is a rest day. Applied the
+ * moment a fixture is settled, for the days between it and the next
+ * fixture, so what you see on the dashboard all week is what you'll have on
+ * match day unless you spend some on training. No next fixture (season
+ * over) means nothing here — a new season resets energy to 100 anyway.
+ */
+export function restRecoveryAfter(career: CareerState, settled: Fixture, fixtures: Fixture[]): number {
+  const division = divisionOf(career);
+  const next = nextFixtureFor({ ...career, fixtures });
+  if (!next) return 0;
+  const from = fixtureTimestamp(career.player.startYear, career.season, settled.week, settled.kind, division);
+  const to = fixtureTimestamp(career.player.startYear, career.season, next.week, next.kind, division);
+  const days = restDaysBetween(from, to);
+  const ownsProperty = (career.ownedItems ?? []).some(i => i.category === "property" && !isWornOut(i));
+  const tier = career.player.club ? facilitiesFor(career, career.player.club).trainingGroundTier : 1;
+  return days * dailyRecovery(ownsProperty, tier);
+}
+
 export function creditMatchResult(
   career: CareerState,
   fixture: Fixture,
@@ -737,27 +759,20 @@ export function creditMatchResult(
 
   const minuteShare = Math.max(0.25, Math.min(1, (stats.minutes ?? 90) / 90));
 
-  // ── Energy: spent by playing, given back for whichever of the week's
-  //    actions you did NOT spend training or working on a relationship —
-  //    see the field's own doc comment on CareerState. Reported directly:
-  //    a week where nothing was trained still cost energy exactly as if it
-  //    had been, and the only way to get anything back was to press Rest
-  //    yourself, action by action — "if you choose not to train or work on
-  //    your relationships, you should get the same energy [Rest] would
-  //    have given". An action already spent on Rest already added
-  //    REST_ENERGY the moment it was pressed (week.ts) and reduced
-  //    weekActions doing it, so `actionsLeft` here only ever counts the
-  //    ones genuinely left untouched — training an action, or spending it
-  //    on a relationship, is a real choice against this, not something
-  //    this quietly refunds. A full ninety costs ENERGY_MATCH_COST; twenty
-  //    minutes off the bench costs a quarter of that, same minuteShare a
-  //    cameo already uses for matchFitness above it. Guarded on
-  //    `alreadyPlayed` the same way `accrue` above is — a replayed fixture
-  //    must not spend the budget, or earn the refund, twice.
-  const restEquivalent = alreadyPlayed ? 0 : actionsLeft(career) * REST_ENERGY;
+  // ── Energy (rebuilt 22 Sep 2026 — see energy.ts) ──
+  //
+  // The match itself drained energy minute by minute, at whatever mode you
+  // played (CanvasMatch reports where the bar ended as `endEnergy`). A caller
+  // with no live reading (dev tools, the sandbox) pays a Medium match for the
+  // minutes played instead. Then the rest days until the next fixture give
+  // energy back. The old "+20 for every unused weekly action" is gone.
+  // Guarded on `alreadyPlayed` so a replayed fixture changes nothing twice.
+  const afterMatch = stats.endEnergy !== undefined
+    ? stats.endEnergy
+    : career.energy - ENERGY_FULL_MATCH_MEDIUM * energyFactorFor(career, fixture) * minuteShare;
   const nextEnergy = alreadyPlayed
     ? career.energy
-    : Math.max(0, Math.min(100, career.energy + restEquivalent) - Math.round(ENERGY_MATCH_COST * minuteShare));
+    : Math.round(clampEnergy(clampEnergy(afterMatch) + restRecoveryAfter(career, fixture, fixtures)));
 
   // ── Injuries: a real risk on every single appearance, not just a tired
   //    one — real footballers pick up freak knocks on a fresh pair of legs
@@ -1087,6 +1102,9 @@ export function creditMatchResult(
     // and a replay does not sharpen you again.
     matchFitness: alreadyPlayed ? career.matchFitness : Math.min(100, career.matchFitness + 3 * minuteShare),
     energy: nextEnergy,
+    // Basic KIB cans drunk at half time come off your stock now the match is saved.
+    kibCans: alreadyPlayed || !stats.kibCansUsed ? career.kibCans
+      : { ...career.kibCans, basic: Math.max(0, (career.kibCans?.basic ?? 0) - stats.kibCansUsed) },
     injury: nextInjury,
     headToHead: nextHeadToHead,
     // Guarded on `alreadyPlayed`: a replay must not move the relationships a
@@ -1853,9 +1871,9 @@ export function simulateMissedFixture(
     money: career.money + wageForFixture(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
-    // Not playing does not cost you energy — it is the one thing every week
-    // off is actually good for.
-    energy: Math.min(100, career.energy + MISSED_WEEK.energy),
+    // Not playing costs nothing, and the rest days until the next fixture
+    // give energy back like any other gap (energy.ts).
+    energy: Math.round(clampEnergy(career.energy + restRecoveryAfter(career, fixture, fixtures))),
     injury: career.injury
       ? (career.injury.weeksRemaining - 1 <= 0 ? null : { ...career.injury, weeksRemaining: career.injury.weeksRemaining - 1 })
       : null,

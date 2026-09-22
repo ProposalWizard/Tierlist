@@ -1,4 +1,8 @@
 import { pickScenarioKindFrom, type ScenarioKind } from "@/lib/star/canvasEngine";
+import { getTuning } from "@/lib/star/tuningStore";
+
+const HIGH_MODE_CHANCES = getTuning("energy.highModeChances");
+const LOW_MODE_CHANCES = getTuning("energy.lowModeChances");
 
 /**
  * HIDDEN MATCH SIMULATION
@@ -85,11 +89,9 @@ export interface HiddenMatchInputs {
    */
   position?: string;
   /**
-   * 0-100, the live in-match energy value (see CanvasMatch's liveEnergyRef).
-   * Effort buys involvement, not better football — a tired player gets
-   * fewer chances, not worse ones. Optional; a caller that omits it (the
-   * star-match-dev fork, older tests) gets the same involvement rate this
-   * had before energy was reintroduced. See the `involvement` calc below.
+   * 0-100, the live in-match energy value. No longer read by the chance
+   * formula (22 Sep 2026) — the energy MODE is, see `energyMode`. Kept so
+   * existing callers still type-check.
    */
   energy?: number;
   /**
@@ -100,6 +102,13 @@ export interface HiddenMatchInputs {
    * actually subbed on) behaves exactly as it always has.
    */
   impactSub?: boolean;
+  /**
+   * The energy mode you are playing on (energy.ts). High gets the ball to you
+   * more often, Low less often; Medium, or absent, is exactly the old game.
+   * Owners, 22 Sep 2026: this — not how tired you are — is what changes how
+   * many chances come to you.
+   */
+  energyMode?: "low" | "medium" | "high";
   /**
    * MATCH CONTEXT (specification §2.9).
    *
@@ -425,21 +434,19 @@ export function tick(
     if (rng() < rate) {
       if (userHasIt) {
         // Your team has worked one. Are you the one on the end of it?
-        // Skill raises how often the move finds you; so, again, does energy —
-        // effort buys involvement, not better football, so a tired player
-        // gets fewer chances, not worse ones. A caller that does not track
-        // energy (`inputs.energy` absent — the star-match-dev fork, older
-        // tests) is treated as permanently fresh, which reconstructs exactly
-        // the flat 0.44 this was before energy came back: 0.36 base +
-        // (100/100)*0.08. A real match starts there too and eases down as
-        // the player tires, rather than jumping — see CanvasMatch's
-        // liveEnergyRef, seeded from the same 100.
-        const baseInvolvement = 0.36
+        // Skill raises how often the move finds you.
+        // Energy no longer changes this (22 Sep 2026: "it should not affect
+        // the chances coming to you"). The +0.08 is the fixed amount a fresh
+        // player always had, so Medium plays exactly as before; the energy
+        // MODE scales the whole thing below.
+        const modeScale = inputs.energyMode === "high" ? HIGH_MODE_CHANCES
+          : inputs.energyMode === "low" ? LOW_MODE_CHANCES : 1;
+        const baseInvolvement = (0.36
           + (inputs.playerSkill / 100) * 0.26
-          + ((inputs.energy ?? 100) / 100) * 0.08
+          + 0.08
           // A long spell without the ball nudges it up, so you are never
           // stranded watching for a quarter of an hour.
-          + Math.min(0.3, Math.max(0, state.sinceInvolved - 10) * 0.025);
+          + Math.min(0.3, Math.max(0, state.sinceInvolved - 10) * 0.025)) * modeScale;
         // Coming off the bench: fresh legs against tired opponents, and a
         // real impact sub gets on the ball MORE than his share in the time
         // he's got, not less. Reported directly — one chance in nineteen
