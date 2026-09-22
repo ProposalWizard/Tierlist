@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepDefenders,
   stepBallInNet, settleBall, stepBallPastBar, dragForFullPower, clamp,
@@ -16,7 +16,7 @@ import ContactBall from "@/components/star/ContactBall";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
 import {
   cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawKeeper,
-  drawBall, ROLE_KIT, bodyPoseFor,
+  drawBall, ROLE_KIT, bodyPoseFor, MATCH_SCALE,
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
@@ -415,7 +415,7 @@ export function paintTrialScene(
   for (const d of sc.defenders) {
     drawFigure(
       ctx, p, d, { ...WALL_KIT, lift: Math.max(0, d.z ?? 0) },
-      faceStyle, fakeFaceStyle,
+      faceStyle, fakeFaceStyle, { scale: MATCH_SCALE },
     );
   }
 
@@ -430,7 +430,7 @@ export function paintTrialScene(
     drawKeeper(
       ctx, p, { x: kk.x, y: kk.y }, KEEPER_KIT,
       { dive: d.dive, lunge: d.lunge },
-      faceStyle, fakeFaceStyle,
+      faceStyle, fakeFaceStyle, { scale: MATCH_SCALE },
     );
   }
 
@@ -441,7 +441,7 @@ export function paintTrialScene(
   // he does, and among themselves furthest-from-camera first — the same
   // y-sort the rest of this game draws figures by.
   for (const m of ownSideBodies(sc)) {
-    drawFigure(ctx, p, m, MATE_KIT, faceStyle, fakeFaceStyle);
+    drawFigure(ctx, p, m, MATE_KIT, faceStyle, fakeFaceStyle, { scale: MATCH_SCALE });
   }
   // You, standing over it. Last of your own side, because you are the
   // nearest body to the camera on every one of these screens — and with the
@@ -450,7 +450,7 @@ export function paintTrialScene(
   // identical white men on it with no way to tell which one was you.
   drawFigure(
     ctx, p, takerSpot(sc), { ...YOU_KIT, star: true }, faceStyle, fakeFaceStyle,
-    isTakerKicking(flightT) ? { pose: bodyPoseFor("kick", 0) } : undefined,
+    { scale: MATCH_SCALE, pose: isTakerKicking(flightT) ? bodyPoseFor("kick", 0) : undefined },
   );
 
   // ── The ball ──
@@ -946,6 +946,39 @@ export function StrikeStage({
   const faceStyleRef = useRef<FaceStyle>(loadFaceStyle());
   const fakeFaceStyleRef = useRef<FakeFaceStyle>(loadFakeFaceStyle());
 
+  /**
+   * THE BOX'S HEIGHT, MEASURED IN JS — NOT `aspect-[5/8] max-h-[64vh]`.
+   *
+   * Measured in a real browser: that Tailwind pair does not just cap the
+   * box's HEIGHT once it bites — it shrinks its WIDTH too, down to 266px on
+   * an iPhone 13 against the 366px `w-full` gives every other screen in this
+   * game (match, training). That is most of a real, measured ~2x gap in how
+   * tall a figure draws here versus everywhere else — the aim arrow's own
+   * `unit` (px per metre) comes out 10.0 here against the match's 13.9 for
+   * framing within 1.2% of the same real metres, purely because this box is
+   * narrower, not because the camera is doing anything different.
+   *
+   * The fix: `w-full` alone decides width, same as everywhere else; height
+   * is computed HERE, in JS, from that real measured width — capped at the
+   * same 64vh this box has always used (see the "phone-shaped box" comment
+   * below for the full, measured derivation of that number) — so the cap
+   * can still stop the canvas running off a short phone without also
+   * squeezing width down to get there.
+   */
+  const [boxH, setBoxH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const resize = () => {
+      const w = wrap.clientWidth;
+      if (w <= 0) return;
+      setBoxH(Math.min(w * (8 / 5), window.innerHeight * 0.64));
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+
   const [rep, setRep] = useState(0);
   /**
    * Whether the teaching is still being shown.
@@ -1339,10 +1372,22 @@ export function StrikeStage({
           rather than trusting the arithmetic, which is the whole reason this
           file insists on measuring rather than assuming. Re-measure the
           header/footer figures above before raising this further; either
-          one growing again eats straight into the 13 px that is left. */}
+          one growing again eats straight into the 13 px that is left.
+
+          ── The 64vh itself was always right; how it was applied was not ──
+          All of the above is still the real derivation of 64vh — that
+          number is unchanged. What changed is HOW it caps the box: applying
+          it as CSS `max-h-[64vh]` alongside `aspect-[5/8]` measurably shrunk
+          the box's WIDTH too, the moment the cap bit — 266px on an iPhone
+          13, not the 366px `w-full` gives every other screen in this game.
+          See `boxH` above: height is now computed in JS from the box's own
+          real measured width, capped at the same `window.innerHeight*0.64`,
+          and applied as an explicit style — width stays `w-full`, full
+          stop, exactly like the match and training screens. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto w-full overflow-hidden rounded-xl border border-white/15"
+        style={{ height: boxH ?? "auto", aspectRatio: boxH == null ? "5 / 8" : undefined }}
       >
         <canvas
           ref={canvasRef}

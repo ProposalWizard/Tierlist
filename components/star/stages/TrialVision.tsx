@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { mulberry32 } from "@/lib/star/season";
 import { CX, NET_DEPTH } from "@/lib/star/pitch";
 import type { Viewport } from "@/lib/star/canvasEngine";
@@ -11,6 +11,7 @@ import type { TrialProgress } from "@/lib/star/trial";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
 import {
   cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawBall, ROLE_KIT,
+  MATCH_SCALE,
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
@@ -225,6 +226,25 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   const scoresRef = useRef<number[]>([]);
   const pickedRef = useRef<number | null>(null);
   const doneRef = useRef(false);
+
+  // Same fix as TrialPenalties.tsx's own `boxH` — `aspect-[4/5] max-h-[64vh]`
+  // together shrink WIDTH once the cap bites, not just height, which is most
+  // of a real measured gap against the match/training screens' plain
+  // `w-full`. Height computed here from the real measured width instead, so
+  // width stays full and the cap only ever does what it always meant to.
+  const [boxH, setBoxH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const resize = () => {
+      const w = wrap.clientWidth;
+      if (w <= 0) return;
+      setBoxH(Math.min(w * (5 / 4), window.innerHeight * 0.64));
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
 
   const [rep, setRep] = useState(0);
   const [phase, setPhaseState] = useState<Phase>("ready");
@@ -459,18 +479,23 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
     };
 
     // Markers first, so a team-mate is never hidden behind the man on him.
-    for (const m of l.men) drawFigure(ctx, p, m.marker, OPP, faceStyleRef.current, fakeFaceStyleRef.current);
+    for (const m of l.men) {
+      drawFigure(ctx, p, m.marker, OPP, faceStyleRef.current, fakeFaceStyleRef.current, { scale: MATCH_SCALE });
+    }
     l.men.forEach((m, i) => {
       const colour = reveal
         ? (i === st.correct ? "#34d399" : i === pickedRef.current ? "#f43f5e" : null)
         : null;
       if (colour) ring(m.x, m.y, colour);
-      drawFigure(ctx, p, m, KIT, faceStyleRef.current, fakeFaceStyleRef.current);
+      drawFigure(ctx, p, m, KIT, faceStyleRef.current, fakeFaceStyleRef.current, { scale: MATCH_SCALE });
     });
 
     // You, with the ball at your feet.
     ring(l.you.x, l.you.y, "#fbbf24");
-    drawFigure(ctx, p, l.you, { ...KIT, star: true }, faceStyleRef.current, fakeFaceStyleRef.current);
+    drawFigure(
+      ctx, p, l.you, { ...KIT, star: true }, faceStyleRef.current, fakeFaceStyleRef.current,
+      { scale: MATCH_SCALE },
+    );
     drawBall(ctx, p, { x: l.you.x + 0.9, y: l.you.y + 0.7 }, 0);
 
     // The clock, as a bar across the top. A number counting down in tenths is
@@ -519,7 +544,8 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
           means; only the chrome around the box does. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto aspect-[4/5] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto w-full overflow-hidden rounded-xl border border-white/15"
+        style={{ height: boxH ?? "auto", aspectRatio: boxH == null ? "4 / 5" : undefined }}
       >
         <canvas
           ref={canvasRef}

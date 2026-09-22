@@ -800,11 +800,13 @@ export function drawFigure(
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
   /** A running/kicking limb pose (see `bodyPoseFor`) and/or a facing
    *  rotation — optional, additive: every call site that omits this argument
-   *  behaves exactly as before (the still, all-zero-pose figure). */
-  opts?: { pose?: BodyPose; facing?: number },
+   *  behaves exactly as before (the still, all-zero-pose figure). `scale`
+   *  multiplies the base radius — pass `MATCH_SCALE` to draw at the real
+   *  match's own size; omitted, the figure is unchanged from before. */
+  opts?: { pose?: BodyPose; facing?: number; scale?: number },
 ): void {
   const { px, py, unit } = p;
-  const r = Math.max(7, unit * FIGURE_R);
+  const r = Math.max(7, unit * FIGURE_R * (opts?.scale ?? 1));
   const lift = Math.max(0, look.lift ?? 0);
   drawFigureAt(ctx, px(at.x), py(at.y) + r * FEET_Y, r, look, faceStyle, fakeFaceStyle, {
     liftPx: lift * unit * 0.55,
@@ -857,6 +859,32 @@ export function figureRForHeight(heightPx: number): number {
  * which is the whole reason they diverged in the first place.
  */
 export const MATCH_FIGURE_HEIGHT_R = 2.509;
+
+/**
+ * CanvasMatch.tsx's own outfield base-radius multiplier — was a private
+ * `const R = unit * 1.15` there; exported here so it is one real number
+ * instead of two, and CanvasMatch itself now reads it from here.
+ */
+export const MATCH_FIGURE_R_MULT = 1.15;
+
+/**
+ * HOW MUCH BIGGER THE MATCH DRAWS A FIGURE THAN THE SHARED ANATOMY DOES ON
+ * ITS OWN, at the same camera `unit` (px per metre) — the real, measured
+ * ~2x gap behind "it seems like an entirely different game": a match figure
+ * came out 40px tall at real phone size against the trial's 20px, at
+ * cameras zoomed within 1.2% of each other.
+ *
+ * Derived, not a third hand-typed number: `drawFigure`'s own total drawn
+ * height is `unit * FIGURE_R * FIGURE_HEIGHT_R`; the match's is
+ * `unit * MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R` (see `footballer()`'s
+ * own `figureRForHeight(rBase * scale * MATCH_FIGURE_HEIGHT_R)` in
+ * CanvasMatch.tsx — an inverse-then-forward trick for "the r that reaches
+ * this many pixels tall", using the SAME shared anatomy both renderers
+ * already draw with). Passed as `drawFigure`/`drawKeeper`'s own `scale` opt
+ * so a trial or training figure reaches the match's real size without
+ * duplicating its anatomy or its R-multiplier trick.
+ */
+export const MATCH_SCALE = (MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R) / (FIGURE_R * FIGURE_HEIGHT_R);
 
 /**
  * Radians. A keeper at full stretch is horizontal. He is not upside down.
@@ -987,9 +1015,12 @@ export interface KeeperPose {
 export function drawKeeper(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, look: FigureLook,
   pose: KeeperPose, faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+  /** Same `scale` as `drawFigure` — pass `MATCH_SCALE` to match the real
+   *  match's own size. Omitted, the keeper is unchanged from before. */
+  opts?: { scale?: number },
 ): void {
   const { px, py, unit } = p;
-  const r = Math.max(7, unit * FIGURE_R);
+  const r = Math.max(7, unit * FIGURE_R * (opts?.scale ?? 1));
   drawKeeperAt(ctx, px(at.x), py(at.y) + r * FEET_Y, r, look, pose, faceStyle, fakeFaceStyle);
 }
 

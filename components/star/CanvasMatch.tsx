@@ -50,7 +50,8 @@ import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
 import {
-  drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MAX_KEEPER_LEAN, ROLE_KIT,
+  drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT,
+  MAX_KEEPER_LEAN, ROLE_KIT,
   runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose,
 } from "@/lib/star/fiveASide/render";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
@@ -1917,7 +1918,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Now that the projection is flat this holds everywhere on the frame, which
     // it never could before: a man at the goal used to be drawn at 64% of a man
     // at your feet.
-    const R = unit * 1.15;
+    const R = unit * MATCH_FIGURE_R_MULT;
 
     // Running phase, shared by everyone so the crowd of figures does not march
     // in lockstep — each is offset by its own position. Thin wrappers over

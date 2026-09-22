@@ -3,7 +3,7 @@ import {
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R,
 } from "./pitch";
 import {
-  drawFigure, drawKeeper, drawBall as drawSharedBall, ROLE_KIT, type Projection,
+  drawFigure, drawKeeper, drawBall as drawSharedBall, ROLE_KIT, MATCH_SCALE, type Projection,
   type BodyPose,
 } from "./fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "./faceStyle";
@@ -276,7 +276,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     ctx.save();
     if (o.dim) ctx.globalAlpha = 0.55;
     if (o.ring) {
-      const r = Math.max(5, unit * 1.0);
+      const r = Math.max(5, unit * 1.0 * MATCH_SCALE);
       ctx.beginPath();
       ctx.arc(px(x), py(y), r * 1.5, 0, Math.PI * 2);
       ctx.strokeStyle = o.ring;
@@ -286,7 +286,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     drawFigure(ctx, proj, { x, y }, {
       shirt, shorts: rim, trim: rim, skin: C.skin,
       star: o.star, lift: o.z,
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, o.pose ? { pose: o.pose } : undefined);
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { pose: o.pose, scale: MATCH_SCALE });
     ctx.restore();
   };
 
@@ -354,7 +354,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     }, {
       dive: Math.max(-1, Math.min(1, k.dive ?? 0)),
       lunge: Math.max(0, Math.min(1, k.lunge ?? 0)),
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE);
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { scale: MATCH_SCALE });
   }
 
   if (opts.you) footballer(opts.you.x, opts.you.y, C.you, C.youRim, { star: true, pose: opts.you.pose });
