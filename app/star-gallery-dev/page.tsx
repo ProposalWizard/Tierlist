@@ -141,6 +141,30 @@ function cellKeyFor(kind: ScenarioKind, seed: number): string {
 /** HOW MANY versions each kind shows. Grows by one per "+ Add version" and is
  *  remembered, so the grid a person builds up is still there next time. */
 const COUNT_KEY = "star-gallery-version-counts-v1";
+
+/**
+ * CARDS THAT HAVE BEEN DELETED.
+ *
+ * Versions are GENERATED from a count, not stored as a list, so there was no
+ * way to get rid of one: "I added one and I can't delete it... I pressed the
+ * X and it didn't." Delete also only ever appeared once a card was saved,
+ * which is why it looked like a one-on-one-only feature — those were the only
+ * saved ones. This remembers which cards are gone so a generated card can be
+ * deleted like any other.
+ */
+const REMOVED_KEY = "star-gallery-removed-v1";
+type RemovedStore = Record<string, true>;
+function loadRemoved(): RemovedStore {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(REMOVED_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? (parsed as RemovedStore) : {};
+  } catch { return {}; }
+}
+function saveRemoved(v: RemovedStore): void {
+  try { window.localStorage.setItem(REMOVED_KEY, JSON.stringify(v)); } catch { /* a dev tool */ }
+}
 type CountStore = Record<string, number>;
 function loadCounts(): CountStore {
   if (typeof window === "undefined") return {};
@@ -932,6 +956,16 @@ export default function StarGalleryDevPage() {
     });
   }, []);
 
+  // ── Cards that have been deleted ──
+  const [removed, setRemoved] = useState<RemovedStore>({});
+  useEffect(() => {
+    const loaded = loadRemoved();
+    if (Object.keys(loaded).length) setRemoved(loaded);
+  }, []);
+  const markRemoved = useCallback((key: string) => {
+    setRemoved((prev) => { const next = { ...prev, [key]: true as const }; saveRemoved(next); return next; });
+  }, []);
+
   // ── How many versions each kind shows ──
   const [counts, setCounts] = useState<CountStore>({});
   useEffect(() => {
@@ -1066,9 +1100,34 @@ export default function StarGalleryDevPage() {
    * the next load. Honest about a partial result — if the code half fails
    * (no token, a race) it says so rather than claiming a clean delete.
    */
+  /**
+   * DELETE THIS CARD — whatever state it is in.
+   *
+   * Reported: "I added one and I can't delete it... I pressed the X and it
+   * didn't", and that Delete looked like it only existed for one-on-ones.
+   * Two separate causes: the button only rendered once a scenario had been
+   * SAVED (and one-on-ones were the only saved ones), and a generated card
+   * had nowhere to be deleted TO, because versions come from a count rather
+   * than a list. The X is the reject mark, not a delete — see its label.
+   */
   const deleteCell = async (cell: Cell): Promise<void> => {
-    if (typeof window !== "undefined" &&
-        !window.confirm(`Delete this ${kindLabel(cell.kind)} scenario everywhere — the database and the code? This cannot be undone here.`)) return;
+    const isSaved = !!saved[cell.key];
+    const question = isSaved
+      ? `Delete this ${kindLabel(cell.kind)} scenario everywhere — the database and the code? This cannot be undone here.`
+      : `Remove this ${kindLabel(cell.kind)} card? It was never saved, so there is nothing to delete from the database or the code.`;
+    if (typeof window !== "undefined" && !window.confirm(question)) return;
+
+    // Never saved: there is nothing on a server to remove, so just take the
+    // card out and stop. Doing the network round trip would report a
+    // confusing failure for a card that only ever existed on this screen.
+    if (!isSaved) {
+      markRemoved(cell.key);
+      clearOverride(cell.key);
+      setVersionIdx((i) => Math.max(0, i - 1));
+      flashFor(true, "Card removed.");
+      return;
+    }
+
     setBusy("deleting");
     const id = gallerySlug(cell.key);
     const shared = await deleteScenarioShared(id);       // Supabase + local cache
@@ -1087,6 +1146,8 @@ export default function StarGalleryDevPage() {
     setBusy(null);
     setSaved((m) => { const next = { ...m }; delete next[cell.key]; return next; });
     clearOverride(cell.key);
+    markRemoved(cell.key);
+    setVersionIdx((i) => Math.max(0, i - 1));
     if (!shared.ok && repoTail) { flashFor(false, `Delete failed — ${shared.message}${repoTail}`); return; }
     flashFor(!repoTail, repoTail ? `Removed here${repoTail}` : "Deleted — from the database and the code.");
   };
@@ -1229,9 +1290,9 @@ export default function StarGalleryDevPage() {
         const c = cellFromSaved(ms);
         if (c) { extra.push(c); have.add(key); }
       }
-      return [...generated, ...extra];
+      return [...generated, ...extra].filter((c) => !removed[c.key]);
     },
-    [game, kindId, fiveId, countFor, saved],
+    [game, kindId, fiveId, countFor, saved, removed],
   );
   const activeGroupId = game === "eleven" ? kindId : fiveId;
 
@@ -1246,15 +1307,15 @@ export default function StarGalleryDevPage() {
         for (const [key, ms] of Object.entries(saved)) {
           if (ms.source?.kind === k) keys.add(key);
         }
-        const arr = Array.from(keys);
+        const arr = Array.from(keys).filter((key) => !removed[key]);
         return { id: k, label: kindLabel(k), done: reviewedCount(reviews, arr), total: arr.length };
       });
     }
     return FIVE_GROUPS.map((g) => {
-      const keys = fiveVersions(g.id).map((c) => c.key);
+      const keys = fiveVersions(g.id).map((c) => c.key).filter((key) => !removed[key]);
       return { id: g.id, label: g.label, done: reviewedCount(reviews, keys), total: keys.length };
     });
-  }, [game, reviews, countFor, saved]);
+  }, [game, reviews, countFor, saved, removed]);
 
   const openGroup = (g: "eleven" | "five") => { setGame(g); setScreen(g); setSim(null); setBuilderTab(false); };
   const openVersion = (i: number) => { setVersionIdx(i); setScreen("version"); setSim(null); setSelectedId(null); };
@@ -1600,7 +1661,7 @@ export default function StarGalleryDevPage() {
           baseFrame={baseFrame}
           // Phone keeps the phone-sized default. On a desktop the picture you
           // are actually working on gets the room the screen already has.
-          size={wide ? { baseW: 640, maxW: 760, maxH: 800 } : undefined}
+          size={wide ? { baseW: 520, maxW: 560, maxH: 640 } : undefined}
           override={override}
           marks={analysis.marks}
           onCommit={setOverride}
@@ -1641,19 +1702,18 @@ export default function StarGalleryDevPage() {
           >
             {playing ? "◼ Stop" : "▶ Play"}
           </button>
-          {/* Delete only shows when there is a SAVED scenario to delete — a
-              purely generated card has nothing to remove. Removes it from the
-              database and the committed file, so it is gone for everyone. */}
-          {savedScenario && (
-            <button
-              style={{ ...editBtn(false), color: "#f87171" }}
-              disabled={!!busy}
-              title="Delete this saved scenario everywhere"
-              onClick={() => void deleteCell(cell)}
-            >
-              {busy === "deleting" ? "Deleting…" : "Delete"}
-            </button>
-          )}
+          {/* Always here. A saved scenario goes from the database and the
+              committed file too; an unsaved card just goes from the grid. */}
+          <button
+            style={{ ...editBtn(false), color: "#f87171" }}
+            disabled={!!busy}
+            title={savedScenario
+              ? "Delete this scenario everywhere — database and code"
+              : "Remove this card — it was never saved"}
+            onClick={() => void deleteCell(cell)}
+          >
+            {busy === "deleting" ? "Deleting…" : "Delete"}
+          </button>
           {/* Tune: record WHY this generation was bad, without making it one
               of the base scenarios. Only offered when there is a drag to
               learn from. See lib/star/scenarioCorrections.ts. */}
@@ -1728,11 +1788,18 @@ export default function StarGalleryDevPage() {
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>
+        {/* This is the REJECT mark, not a delete — asked twice what the X
+            meant ("is that delete, or does that mean something else?"). It
+            only records that this picture is no good, so it says so. */}
         <button
           onClick={() => setVerdict(cell, verdict === "rejected" ? null : "rejected")}
-          style={bigBtn(verdict === "rejected" ? "#7f1d1d" : "rgba(255,255,255,0.05)", verdict === "rejected" ? "#ef4444" : "rgba(255,255,255,0.09)", verdict === "rejected" ? "#fecaca" : MUTED)}
+          title="Mark this picture as no good — it stays here"
+          style={{
+            ...bigBtn(verdict === "rejected" ? "#7f1d1d" : "rgba(255,255,255,0.05)", verdict === "rejected" ? "#ef4444" : "rgba(255,255,255,0.09)", verdict === "rejected" ? "#fecaca" : MUTED),
+            fontSize: 13, gap: 6, flexDirection: "row",
+          }}
         >
-          &#10005;
+          &#10005; <span style={{ fontSize: 12.5, fontWeight: 700 }}>No good</span>
         </button>
         <button
           onClick={() => {
