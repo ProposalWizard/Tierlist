@@ -1236,8 +1236,8 @@
         "facing": "up"
       },
       "ball": {
-        "x": 25.92,
-        "y": 6.16
+        "x": 24.72,
+        "y": 5.88
       },
       "players": [
         {
@@ -1299,8 +1299,8 @@
         {
           "id": "i8",
           "side": "you",
-          "x": 24.58,
-          "y": 7.32,
+          "x": 23.85,
+          "y": 6.75,
           "label": "YOU"
         },
         {
@@ -1318,7 +1318,7 @@
           "label": "MATE"
         }
       ],
-      "updatedAt": 1790081620600,
+      "updatedAt": 1790081627898,
       "source": {
         "tool": "gallery",
         "kind": "tight_angle",
