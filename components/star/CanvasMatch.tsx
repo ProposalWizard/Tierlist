@@ -49,7 +49,10 @@ import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
-import { drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MAX_KEEPER_LEAN } from "@/lib/star/fiveASide/render";
+import {
+  drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MAX_KEEPER_LEAN, ROLE_KIT,
+  runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose,
+} from "@/lib/star/fiveASide/render";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
@@ -236,14 +239,11 @@ const C = {
   // diagram rather than as a painted field.
   line: "rgba(255,255,250,0.85)",
   lineFaint: "rgba(255,255,250,0.5)",
-  you: "#10b981",
-  youRim: "#065f46",
-  mate: "#3b82f6",
-  mateRim: "#1e3a5f",
-  opp: "#dc2626",
-  oppRim: "#7f1d1d",
-  gk: "#fbbf24",
-  gkRim: "#92400e",
+  // you/youRim/mate/mateRim/opp/oppRim/gk/gkRim: the shared ROLE_KIT
+  // (lib/star/fiveASide/render.ts) — one source now, not a fourth
+  // independently-typed copy of the same numbers. See that constant's own
+  // doc for why this mattered: the trial had quietly drifted off these.
+  ...ROLE_KIT,
   gold: "#fbbf24",
   goldSoft: "#fde68a",
 };
@@ -1855,7 +1855,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // still uses the single point the figure is centred on, exactly as the
     // discs did — so nothing about the physics changed with the artwork.
     const SKIN = "#c68642";
-    type Pose = "idle" | "run" | "kick" | "receive";
+    type Pose = FigurePose;
 
     const footballer = (
       x: number, y: number, rBase: number,
@@ -1876,12 +1876,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // tan smudge and a crowd in the box was unreadable.
       const shorts = opts.shorts ?? rim;
 
-      // Limb swing. Running scissors the legs and counter-swings the arms;
-      // a kick throws one leg through and the arms wide for balance; a man
-      // waiting for the ball opens his arms.
-      const swing = pose === "run" ? Math.sin(phase) : 0;
-      const kick = pose === "kick" ? 1 : 0;
-      const open = pose === "receive" ? 1 : 0;
+      // Limb swing — the shared mapping (fiveASide/render.ts's own
+      // bodyPoseFor), not a second local copy of it. Running scissors the
+      // legs and counter-swings the arms; a kick throws one leg through and
+      // the arms wide for balance; a man waiting for the ball opens his arms.
+      const limbs = bodyPoseFor(pose, phase);
 
       // ── Anchored at the FEET ──
       //
@@ -1899,15 +1898,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {
           facing: opts.facing,
           shadowR: r * 0.42,
-          pose: {
-            legSwing: swing,
-            kick,
-            // Arms out to receive, and out for balance through a kick. Down
-            // by his sides otherwise, which is `armSpread` 0 — the same
-            // still figure the trial's stages already draw.
-            armSpread: open * 0.5 + kick * 0.3,
-            armLift: -0.55 + open * 0.5,
-          },
+          pose: limbs,
           label: opts.label,
           labelColor: opts.labelColor,
           star: opts.star,
@@ -1929,20 +1920,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const R = unit * 1.15;
 
     // Running phase, shared by everyone so the crowd of figures does not march
-    // in lockstep — each is offset by its own position.
+    // in lockstep — each is offset by its own position. Thin wrappers over
+    // fiveASide/render.ts's own shared runPhase/poseFor now, not a second
+    // copy of them — every call site below (`poseFor("id", x, y)`,
+    // `runPhase(x)`) is unchanged.
     const now = performance.now() / 1000;
-    const runPhase = (seedX: number) => now * 9 + seedX * 1.7;
+    const runPhase = (seedX: number) => sharedRunPhase(now, seedX);
 
     // Whether a figure is moving, from how far it travelled since last frame.
     // Cheaper and more reliable than threading velocity out of every entity,
     // and it works for the ones that only expose a position.
     const motion = motionRef.current;
-    const poseFor = (id: string, x: number, y: number): Pose => {
-      const prev = motion.get(id);
-      motion.set(id, { x, y });
-      if (!prev) return "idle";
-      return Math.hypot(x - prev.x, y - prev.y) > 0.02 ? "run" : "idle";
-    };
+    const poseFor = (id: string, x: number, y: number): Pose => sharedPoseFor(motion, id, x, y);
 
     // Highlight the runner while they control a pass they've just won
     const rb = ballRef.current;

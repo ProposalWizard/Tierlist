@@ -10,7 +10,7 @@ import {
 import type { TrialProgress } from "@/lib/star/trial";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
 import {
-  cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawBall,
+  cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawBall, ROLE_KIT,
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
@@ -195,9 +195,14 @@ export function layoutVision(setup: VisionSetup, seed: number, rep: number): Vis
 type Phase = "ready" | "live" | "reveal";
 
 /** Your shirt, and theirs. Two kits that could not be confused at a glance
- *  under a one-second clock. */
-const KIT = { shirt: "#f8fafc", shorts: "#0f172a", trim: "#0f172a" };
-const OPP = { shirt: "#1e3a8a", shorts: "#0b1f4d", trim: "#e2e8f0" };
+ *  under a one-second clock — and, now, the SAME two colours the real match
+ *  and training already use (green you, red opponent) rather than this
+ *  screen's own previous near-white/dark-blue pair, which had drifted far
+ *  enough to mean the opposite thing: this file's own blue read as
+ *  "opponent" here while the real match uses that exact blue for a
+ *  TEAM-MATE. See ROLE_KIT's own doc (fiveASide/render.ts). */
+const KIT = { shirt: ROLE_KIT.you, shorts: ROLE_KIT.youRim, trim: ROLE_KIT.youRim };
+const OPP = { shirt: ROLE_KIT.opp, shorts: ROLE_KIT.oppRim, trim: ROLE_KIT.oppRim };
 
 /** The first rep's countdown: three numerals, a second apart. */
 const TEACH_COUNT_FROM = 3;

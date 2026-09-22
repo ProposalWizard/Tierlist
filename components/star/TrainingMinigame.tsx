@@ -5,6 +5,7 @@ import { getTuning } from "@/lib/star/tuningStore";
 import { mulberry32 } from "@/lib/star/season";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepBallInNet,
+  dragForFullPower,
   type Ball, type Outcome, type Scenario,
 } from "@/lib/star/canvasEngine";
 import {
@@ -19,6 +20,8 @@ import {
 import {
   renderTrainingScene, strikeViewport, gateViewport, type TrainingViewport,
 } from "@/lib/star/trainingRender";
+import { poseFor, runPhase, bodyPoseFor } from "@/lib/star/fiveASide/render";
+import { KICK_POSE_S, isTakerKicking } from "@/components/star/stages/TrialPenalties";
 import ContactBall from "./ContactBall";
 
 /**
@@ -92,8 +95,18 @@ const SKILL_TITLES: Record<keyof Skills, string> = {
 };
 
 const DT_CAP = 0.05;
-const MIN_PULL = 0.04;
-const FULL_POWER_PULL = 0.16;
+// Matches the real match and the trial exactly — both read this off the same
+// exported canvasEngine.ts function, dragForFullPower(skills.power), rather
+// than a flat number. Before this fix, training used a hardcoded 0.04/0.16
+// pair here — the identical shot took a genuinely different drag to pull off
+// in training than the same shot in a match or the trial, which is exactly
+// the "different game" divergence reported directly: "game engine or nature
+// or physics or style or whatever is for some reason different across trial,
+// training, and in game." MIN_PULL itself is pinned to the same 0.008 both
+// of those already use (each file keeps its own local copy of this one by
+// established convention here — see CanvasMatch.tsx/TrialPenalties.tsx's own
+// identically-valued local MIN_PULL — rather than a shared import).
+const MIN_PULL = 0.008;
 
 // ── Shared scoring ─────────────────────────────────────────────────────────
 
@@ -325,6 +338,11 @@ function StrikeDrill({
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const draggingRef = useRef(false);
   const phaseRef = useRef<StrikePhase>("aim");
+  // Seconds since the strike — 0 at rep-start AND at the strike itself, so
+  // (as in TrialPenalties.tsx's identical `flightTRef`) it only means
+  // "just kicked" once the phase has actually left "aim"/"contact"; see the
+  // `struck` gate in `draw()` below.
+  const flightTRef = useRef(0);
 
   const [phase, setPhaseState] = useState<StrikePhase>("aim");
   const setPhase = (p: StrikePhase) => { phaseRef.current = p; setPhaseState(p); };
@@ -350,6 +368,7 @@ function StrikeDrill({
     resolvedRef.current = false;
     dragRef.current = null;
     draggingRef.current = false;
+    flightTRef.current = 0;
     setAim(null);
     setBrief(setup.brief);
     setPhase("aim");
@@ -372,7 +391,7 @@ function StrikeDrill({
     return Math.hypot(((drag.x - ball.x) / W) * (W / H), (drag.y - ball.y) / H);
   };
   const powerFrom = (drag: { x: number; y: number }, ball: { x: number; y: number }, vp: TrainingViewport) =>
-    Math.max(0, Math.min(1, screenPull(drag, ball, vp) / FULL_POWER_PULL));
+    Math.max(0, Math.min(1, screenPull(drag, ball, vp) / dragForFullPower(skills.power)));
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (phaseRef.current !== "aim") return;
@@ -411,6 +430,7 @@ function StrikeDrill({
       x: ballRef.current.pos.x, y: ballRef.current.pos.y, z: ballRef.current.z,
     };
     setAim(null);
+    flightTRef.current = 0;
     setPhase("flight");
   };
 
@@ -461,6 +481,7 @@ function StrikeDrill({
 
       if (phaseRef.current === "flight" && ballRef.current) {
         const ball = ballRef.current;
+        flightTRef.current += dt;
         if (ball.inNet) {
           stepBallInNet(ball, dt);
         } else if (!outcomeRef.current) {
@@ -514,7 +535,16 @@ function StrikeDrill({
           lunge: sc.keeper.saveLunge ?? 0,
         },
         defenders: sc.defenders.map(d => ({ x: d.x, y: d.y, z: d.z ?? 0 })),
-        you: { x: sc.player.x, y: sc.player.y },
+        // `flightTRef` reads 0 both before any kick this rep and at the
+        // instant of one — `struck` is what tells them apart, same gate as
+        // TrialPenalties.tsx's own `draw()` and for the identical reason.
+        you: {
+          x: sc.player.x, y: sc.player.y,
+          pose: isTakerKicking(
+            phaseRef.current === "flight" || phaseRef.current === "judged"
+              ? flightTRef.current : undefined,
+          ) ? bodyPoseFor("kick", 0) : undefined,
+        },
         gate: setup.gate,
         ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : { x: sc.ball.x, y: sc.ball.y, z: 0 },
         ballImage: ballImgRef.current,
@@ -584,6 +614,10 @@ function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: numb
   const liveRef = useRef(false);
   const resolvedRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Who moved since the last frame — CanvasMatch.tsx's own `motionRef`,
+  // read by `poseFor` so a run genuinely reads as a run here too, the same
+  // way its runners and chasers already do.
+  const motionRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [progress, setProgress] = useState(0);
 
@@ -663,11 +697,22 @@ function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: numb
 
       const c = canvasRef.current;
       if (c) {
+        // Read once and shared across every figure this frame — see
+        // `runPhase`'s own doc on why (a crowd must not march in lockstep,
+        // which re-reading `now` per figure would defeat).
+        const nowS = now / 1000;
+        const yourPose = poseFor(motionRef.current, "you", run.pos.x, run.pos.y);
         renderTrainingScene(c, {
           viewport: dribbleViewport(run),
           goal: false,
-          defenders: run.chasers.map(ch => ({ x: ch.x, y: ch.y, awake: ch.awake })),
-          you: { x: run.pos.x, y: run.pos.y },
+          defenders: run.chasers.map((ch, i) => {
+            const p = poseFor(motionRef.current, `chaser${i}`, ch.x, ch.y);
+            return { x: ch.x, y: ch.y, awake: ch.awake, pose: bodyPoseFor(p, runPhase(nowS, ch.x)) };
+          }),
+          you: {
+            x: run.pos.x, y: run.pos.y,
+            pose: bodyPoseFor(yourPose, runPhase(nowS, run.pos.x)),
+          },
           ball: { x: run.pos.x + run.heading.x * 0.9, y: run.pos.y + run.heading.y * 0.9, z: 0 },
           ballImage: ballImgRef.current,
           offsideLine: run.targetY,

@@ -16,7 +16,7 @@ import ContactBall from "@/components/star/ContactBall";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
 import {
   cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawKeeper,
-  drawBall,
+  drawBall, ROLE_KIT, bodyPoseFor,
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
@@ -69,7 +69,14 @@ import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle"
 /** The two men on the edge of the D, and a free kick's wall: not your team,
  *  not the opposition you can name — just bodies in the way. */
 const WALL_KIT = { shirt: "#374151", shorts: "#1f2937", trim: "#e5e7eb" };
-const KEEPER_KIT = { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" };
+// KEEPER_KIT/YOU_KIT/MATE_KIT below all read from the shared ROLE_KIT
+// (fiveASide/render.ts) now — the same real-match/training identity colours
+// (gold keeper, green you, blue team-mate), not this screen's own drifted
+// copies. Reported directly: this file's own YOU_KIT was near-white and
+// MATE_KIT was light grey — neither matched the real match at all, and the
+// trial is meant to be the first look at what this game actually looks
+// like. See ROLE_KIT's own doc for the fuller before/after.
+const KEEPER_KIT = { shirt: ROLE_KIT.gk, shorts: ROLE_KIT.gkRim, trim: ROLE_KIT.gkRim };
 /**
  * ── THE PEOPLE WHO WERE THERE ALL ALONG AND WERE NEVER DRAWN ──
  *
@@ -102,8 +109,8 @@ const KEEPER_KIT = { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" };
  * the frame is what `powerFrom` normalises the drag against, so a wider one
  * would quietly have retuned the power of every kick in the trial.
  */
-const YOU_KIT = { shirt: "#f8fafc", shorts: "#0f172a", trim: "#0f172a" };
-const MATE_KIT = { shirt: "#e2e8f0", shorts: "#1e293b", trim: "#1e293b" };
+const YOU_KIT = { shirt: ROLE_KIT.you, shorts: ROLE_KIT.youRim, trim: ROLE_KIT.youRim };
+const MATE_KIT = { shirt: ROLE_KIT.mate, shorts: ROLE_KIT.mateRim, trim: ROLE_KIT.mateRim };
 
 /**
  * The same aim feel as a real match, and for the same reason TrialPenalty has
@@ -167,6 +174,38 @@ export const SETTLE_BEFORE_BANNER = 0.25;
  * is not. That drift is the whole bug; this is the tripwire for it.
  */
 export const AIM_ARROW_LENGTH = 0.132;
+
+/**
+ * HOW LONG THE TAKER'S FIGURE HOLDS A KICKING POSE AFTER THE BALL IS STRUCK.
+ *
+ * The same real bug as `AIM_ARROW_LENGTH` above, one level deeper: reported
+ * directly — "it seems like youve completely recreated and copied and made
+ * an entirely different game" — and one measured piece of that was that only
+ * `CanvasMatch.tsx` ever animated a figure at all; every taker on this screen
+ * stood in the same still, idle stance whether he was lining up the shot or
+ * had just struck it.
+ *
+ * Pinned to CanvasMatch.tsx's own `KICK_POSE_S`, not re-derived, for the same
+ * reason the arrow length is pinned rather than guessed: the swing has to be
+ * the match's swing. That file counts this DOWN from a ref reset at the
+ * moment of contact; this screen already has `flightTRef`, which counts UP
+ * from zero at the identical moment (see `handleContact`) and only while the
+ * ball is actually in flight — so the equivalent check here is
+ * `flightTRef.current < KICK_POSE_S`, not `> 0`.
+ */
+export const KICK_POSE_S = 0.28;
+
+/**
+ * Whether the taker's figure should be drawn mid-kick right now — pure and
+ * exported so the decision can be tested without a canvas, the same split
+ * this file's own opening comment draws between what a test can and cannot
+ * reach. `flightT` is `undefined` before a kick has actually happened this
+ * rep (see `draw()`'s own `struck` gate) — never a number that happens to be
+ * small, so "just lined up" can never be misread as "just struck".
+ */
+export function isTakerKicking(flightT: number | undefined): boolean {
+  return flightT !== undefined && flightT < KICK_POSE_S;
+}
 
 type Phase = "aim" | "contact" | "flight" | "result";
 
@@ -345,9 +384,20 @@ export function paintTrialScene(
     power: number;
     faceStyle: FaceStyle;
     fakeFaceStyle: FakeFaceStyle;
+    /**
+     * Seconds since the ball was struck — `flightTRef.current`, valid only
+     * once the phase has actually moved past "aim"/"contact" (the caller
+     * passes `undefined` before then; see `draw()`'s own `struck` check —
+     * the same ref reads 0 both before any kick and at the instant of one,
+     * so "aim"/"contact" can't be told apart from "just kicked" without it).
+     * Omitted, or past `KICK_POSE_S`, both draw the taker in his ordinary
+     * still stance — see `KICK_POSE_S`'s own doc comment for why this counts
+     * up, not down.
+     */
+    flightT?: number;
   },
 ) {
-  const { W, H, camera, ball, drag, power, faceStyle, fakeFaceStyle } = opts;
+  const { W, H, camera, ball, drag, power, faceStyle, fakeFaceStyle, flightT } = opts;
   const rules = ELEVEN_A_SIDE_ATTACK;
   const p = projectionFor(rules, W, H, camera);
   const { px, py, unit } = p;
@@ -398,7 +448,10 @@ export function paintTrialScene(
   // same star the real match puts over your own figure, because your kit and
   // a team-mate's kit are the same kit and a first screenshot of this had two
   // identical white men on it with no way to tell which one was you.
-  drawFigure(ctx, p, takerSpot(sc), { ...YOU_KIT, star: true }, faceStyle, fakeFaceStyle);
+  drawFigure(
+    ctx, p, takerSpot(sc), { ...YOU_KIT, star: true }, faceStyle, fakeFaceStyle,
+    isTakerKicking(flightT) ? { pose: bodyPoseFor("kick", 0) } : undefined,
+  );
 
   // ── The ball ──
   drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0);
@@ -1209,6 +1262,13 @@ export function StrikeStage({
     const camera = camRef.current ?? strikeCamera(sc, sc.ball, cssW, cssH);
 
     const dragging = phaseRef.current === "aim" && draggingRef.current ? dragRef.current : null;
+    // `flightTRef` is reset to 0 both at the START of a rep (nothing struck
+    // yet) and at the instant of the strike itself — the same 0 means two
+    // different things, so it is only a real "seconds since contact" signal
+    // once the phase has actually moved past "aim"/"contact". Passed through
+    // for "result" too, matching CanvasMatch.tsx's own choice to keep pose
+    // state live into its result phase rather than freezing it at the cut.
+    const struck = phaseRef.current === "flight" || phaseRef.current === "result";
     paintTrialScene(ctx, sc, {
       W: cssW, H: cssH,
       camera,
@@ -1217,6 +1277,7 @@ export function StrikeStage({
       power: dragging ? powerFrom(dragging, sc.ball, camera) : 0,
       faceStyle: faceStyleRef.current,
       fakeFaceStyle: fakeFaceStyleRef.current,
+      flightT: struck ? flightTRef.current : undefined,
     });
   };
 

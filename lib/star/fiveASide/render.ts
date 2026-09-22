@@ -52,6 +52,38 @@ const TC = {
   boot: "#1f2937",
 };
 
+/**
+ * WHO IS WHO, THE SAME COLOUR EVERYWHERE.
+ *
+ * Reported directly: "game engine or nature or physics or style or whatever
+ * is for some reason different across trial, training, and in game... its
+ * similar sure but its not consistent or the same." A real, found instance
+ * of exactly that: `CanvasMatch.tsx` and `trainingRender.ts` had each
+ * independently hardcoded the identical you/mate/opp/gk values below — real
+ * agreement, but by coincidence, not by a shared source — while the trial's
+ * own `YOU_KIT`/`MATE_KIT`/`KIT`/`OPP` (TrialPenalties.tsx, TrialVision.tsx)
+ * had drifted to different colours entirely (near-white for you, light grey
+ * for a team-mate, dark blue for an opponent — the same blue the real match
+ * uses for a TEAM-MATE). One player in green, red for the opposition, gold
+ * for a keeper is the whole visual language this game uses to say "whose
+ * man is that" at a glance; a trial or a drill that answers it differently
+ * is teaching the wrong thing before the answer even matters.
+ *
+ * One export, every consumer (CanvasMatch.tsx, trainingRender.ts,
+ * TrialPenalties.tsx, TrialVision.tsx) reads from here now instead of
+ * keeping its own copy — a colour changed once reaches all four.
+ */
+export const ROLE_KIT = {
+  you: "#10b981",
+  youRim: "#065f46",
+  mate: "#3b82f6",
+  mateRim: "#1e3a5f",
+  opp: "#dc2626",
+  oppRim: "#7f1d1d",
+  gk: "#fbbf24",
+  gkRim: "#92400e",
+};
+
 const GRASS_TILE = 96;
 let grassTile: HTMLCanvasElement | null | undefined;
 
@@ -555,6 +587,81 @@ export interface BodyPose {
   armLead?: number;
 }
 
+/**
+ * A FIGURE'S MOTION, THE SAME WAY EVERYWHERE.
+ *
+ * Reported directly: "game engine or nature or physics or style or whatever
+ * is for some reason different across trial, training, and in game... it
+ * seems like youve completely recreated and copied and made an entirely
+ * different game." One real, measured piece of that: only `CanvasMatch.tsx`
+ * ever animated a figure at all — every `drawFigure` call in the trial and
+ * in training left `BodyPose` at its all-zero default (see that interface's
+ * own `legSwing` doc above, "the still figure the trial and the five-a-side
+ * already draw"), so every wall, every team-mate, every taker stood in a
+ * fixed idle stance while only the real match's men visibly ran and struck
+ * the ball. Only the keeper animated everywhere, because his dive already
+ * read real engine state (`KeeperPose`) rather than a locally-invented pose.
+ *
+ * `FigurePose`/`runPhase`/`poseFor`/`bodyPoseFor` are CanvasMatch.tsx's own
+ * real-match animation — a continuous per-entity running sine and a flat
+ * kick window — pulled out to here so a drill or a trial stage can give its
+ * own figures the same running/kicking motion instead of reinventing it,
+ * and so CanvasMatch.tsx itself now reads from here too rather than keeping
+ * a second copy that could drift from what every other screen calls.
+ */
+export type FigurePose = "idle" | "run" | "kick" | "receive";
+
+/** A per-entity phase for the running sine below, offset by the entity's own
+ *  position so a crowd of figures does not march in lockstep. `now` is
+ *  `performance.now() / 1000`, read ONCE per frame by the caller and shared
+ *  across every figure that frame — not re-read per figure. */
+export function runPhase(now: number, seedX: number): number {
+  return now * 9 + seedX * 1.7;
+}
+
+/**
+ * Whether a figure is moving, derived from how far it actually travelled
+ * since the last frame — cheaper and more reliable than threading a real
+ * velocity out of every entity, and it works for the ones (a static wall
+ * man, a taker before he runs up) that only ever expose a position.
+ *
+ * `motion` is a plain `Map` the CALLER owns (typically one `useRef(new
+ * Map())` per component/screen) and passes in every call — this function
+ * only reads and updates it, so several independent screens (a real match,
+ * a trial stage, a training drill) never share or clash over one map.
+ */
+export function poseFor(
+  motion: Map<string, { x: number; y: number }>,
+  id: string, x: number, y: number,
+): FigurePose {
+  const prev = motion.get(id);
+  motion.set(id, { x, y });
+  if (!prev) return "idle";
+  return Math.hypot(x - prev.x, y - prev.y) > 0.02 ? "run" : "idle";
+}
+
+/**
+ * A `FigurePose` (running/kicking/idle) turned into the limb numbers
+ * `paintBody` actually reads — the exact mapping `CanvasMatch.tsx`'s own
+ * `footballer()` always used: running scissors the legs on a sine and
+ * counter-swings the arms, a kick throws one leg through with the arms out
+ * for balance, a man waiting to receive opens his arms, and idle is the
+ * still figure every screen already drew.
+ */
+export function bodyPoseFor(
+  pose: FigurePose, phase: number,
+): Pick<BodyPose, "legSwing" | "kick" | "armSpread" | "armLift"> {
+  const swing = pose === "run" ? Math.sin(phase) : 0;
+  const kick = pose === "kick" ? 1 : 0;
+  const open = pose === "receive" ? 1 : 0;
+  return {
+    legSwing: swing,
+    kick,
+    armSpread: open * 0.5 + kick * 0.3,
+    armLift: -0.55 + open * 0.5,
+  };
+}
+
 function paintBody(
   ctx: CanvasRenderingContext2D, r: number, look: FigureLook,
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
@@ -691,6 +798,10 @@ function paintBody(
 export function drawFigure(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, look: FigureLook,
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+  /** A running/kicking limb pose (see `bodyPoseFor`) and/or a facing
+   *  rotation — optional, additive: every call site that omits this argument
+   *  behaves exactly as before (the still, all-zero-pose figure). */
+  opts?: { pose?: BodyPose; facing?: number },
 ): void {
   const { px, py, unit } = p;
   const r = Math.max(7, unit * FIGURE_R);
@@ -700,6 +811,8 @@ export function drawFigure(
     shadowR: r * 0.34 * (1 - Math.min(0.35, lift * 0.12)),
     label: look.label,
     star: look.star,
+    pose: opts?.pose,
+    facing: opts?.facing,
   });
 }
 

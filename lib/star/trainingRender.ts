@@ -3,7 +3,8 @@ import {
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R,
 } from "./pitch";
 import {
-  drawFigure, drawKeeper, drawBall as drawSharedBall, type Projection,
+  drawFigure, drawKeeper, drawBall as drawSharedBall, ROLE_KIT, type Projection,
+  type BodyPose,
 } from "./fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "./faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "./fakeFaceStyle";
@@ -43,12 +44,16 @@ const C = {
   pitch: "#1f9006",
   line: "rgba(255,255,250,0.85)",
   lineFaint: "rgba(255,255,250,0.5)",
-  you: "#10b981",
-  youRim: "#065f46",
-  opp: "#dc2626",
-  oppRim: "#7f1d1d",
-  gk: "#fbbf24",
-  gkRim: "#92400e",
+  // you/youRim/opp/oppRim/gk/gkRim: the shared ROLE_KIT (fiveASide/render.ts)
+  // — these already matched the real match's own values exactly, but by
+  // coincidence (an independent copy), not by a shared source. Now genuinely
+  // one place.
+  you: ROLE_KIT.you,
+  youRim: ROLE_KIT.youRim,
+  opp: ROLE_KIT.opp,
+  oppRim: ROLE_KIT.oppRim,
+  gk: ROLE_KIT.gk,
+  gkRim: ROLE_KIT.gkRim,
   cone: "#f97316",
   coneRim: "#7c2d12",
   skin: "#c68642",
@@ -88,11 +93,19 @@ export interface TrainingSceneOptions {
   /** The keeper, if this drill has one. `dive` is -1..1, where he's going. */
   keeper?: { x: number; y: number; dive?: number; lunge?: number } | null;
   /** Outfield men in the way: a wall, blockers, or chasers. `z` lifts a
-   *  jumping wall off the turf, exactly as the engine's own Defender does. */
-  defenders?: { x: number; y: number; z?: number; awake?: boolean }[];
-  /** Your own figure, when the drill has you on the pitch rather than
-   *  standing over a dead ball. */
-  you?: { x: number; y: number } | null;
+   *  jumping wall off the turf, exactly as the engine's own Defender does.
+   *  `pose` is a chaser's running stride — see `you.pose` below. */
+  defenders?: { x: number; y: number; z?: number; awake?: boolean; pose?: BodyPose }[];
+  /**
+   * Your own figure, when the drill has you on the pitch rather than
+   * standing over a dead ball. `pose` — a run, a kick — is computed by the
+   * CALLER (the same split `CanvasMatch.tsx` already draws between its own
+   * `motionRef`/`poseFor` and the drawing itself): this file only ever
+   * forwards a `BodyPose` to `drawFigure`, it never derives one, so a drill
+   * and a real match reach the same running/kicking figure through the same
+   * shared math rather than two guesses at it.
+   */
+  you?: { x: number; y: number; pose?: BodyPose } | null;
   /** Team-mates to pick out — the vision drill. `highlight` rings one. */
   mates?: { x: number; y: number; highlight?: boolean; dim?: boolean }[];
   /** The two cones of a gate, drawn as real cones with a line between. */
@@ -258,7 +271,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
   const proj: Projection = { px, py, unit, W, H };
   const footballer = (
     x: number, y: number, shirt: string, rim: string,
-    o: { star?: boolean; z?: number; dim?: boolean; ring?: string } = {},
+    o: { star?: boolean; z?: number; dim?: boolean; ring?: string; pose?: BodyPose } = {},
   ) => {
     ctx.save();
     if (o.dim) ctx.globalAlpha = 0.55;
@@ -273,12 +286,14 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     drawFigure(ctx, proj, { x, y }, {
       shirt, shorts: rim, trim: rim, skin: C.skin,
       star: o.star, lift: o.z,
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE);
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, o.pose ? { pose: o.pose } : undefined);
     ctx.restore();
   };
 
   for (const d of opts.defenders ?? []) {
-    footballer(d.x, d.y, d.awake === false ? "#7a8a8f" : C.opp, d.awake === false ? "#3f4a4e" : C.oppRim, { z: d.z });
+    footballer(d.x, d.y, d.awake === false ? "#7a8a8f" : C.opp, d.awake === false ? "#3f4a4e" : C.oppRim, {
+      z: d.z, pose: d.pose,
+    });
   }
   for (const m of opts.mates ?? []) {
     footballer(m.x, m.y, "#3b82f6", "#1e3a5f", {
@@ -342,7 +357,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE);
   }
 
-  if (opts.you) footballer(opts.you.x, opts.you.y, C.you, C.youRim, { star: true });
+  if (opts.you) footballer(opts.you.x, opts.you.y, C.you, C.youRim, { star: true, pose: opts.you.pose });
 
   // ── The ball's trail ──
   if (opts.trail && opts.trail.length > 1) {
