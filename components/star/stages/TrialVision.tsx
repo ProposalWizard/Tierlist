@@ -15,6 +15,8 @@ import {
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
+import { createFaceImageCache, type FaceImageCache } from "@/lib/star/faceImageCache";
+import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { TeachCard, TEACH_COMPACT_AFTER_REP, TEACH_PERSISTS } from "./TrialPenalties";
 
 /**
@@ -221,6 +223,9 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
   // Read once, not per frame — every head on the pitch draws through these.
   const faceStyleRef = useRef<FaceStyle>(loadFaceStyle());
   const fakeFaceStyleRef = useRef<FakeFaceStyle>(loadFakeFaceStyle());
+  // No real identity reaches this drill either — a stable fake face per body
+  // instead of the blank backing circle. See the `fake()` helper in `draw()`.
+  const facesRef = useRef<FaceImageCache>(createFaceImageCache());
   const startedRef = useRef(0);
   const phaseRef = useRef<Phase>("ready");
   const scoresRef = useRef<number[]>([]);
@@ -478,25 +483,27 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
       ctx.stroke();
     };
 
+    const fake = (key: string) => facesRef.current.get(fakeFaceFor(key));
+
     // Markers first, so a team-mate is never hidden behind the man on him.
-    for (const m of l.men) {
-      drawFigure(ctx, p, m.marker, OPP, faceStyleRef.current, fakeFaceStyleRef.current, { scale: MATCH_SCALE });
-    }
+    l.men.forEach((m, i) => {
+      drawFigure(ctx, p, m.marker, { ...OPP, face: fake(`marker-${i}`) }, faceStyleRef.current, fakeFaceStyleRef.current, { scale: MATCH_SCALE });
+    });
     l.men.forEach((m, i) => {
       const colour = reveal
         ? (i === st.correct ? "#34d399" : i === pickedRef.current ? "#f43f5e" : null)
         : null;
       if (colour) ring(m.x, m.y, colour);
-      drawFigure(ctx, p, m, KIT, faceStyleRef.current, fakeFaceStyleRef.current, { scale: MATCH_SCALE });
+      drawFigure(ctx, p, m, { ...KIT, face: fake(`mate-${i}`) }, faceStyleRef.current, fakeFaceStyleRef.current, { scale: MATCH_SCALE });
     });
 
     // You, with the ball at your feet.
     ring(l.you.x, l.you.y, "#fbbf24");
     drawFigure(
-      ctx, p, l.you, { ...KIT, star: true }, faceStyleRef.current, fakeFaceStyleRef.current,
+      ctx, p, l.you, { ...KIT, star: true, face: fake("you") }, faceStyleRef.current, fakeFaceStyleRef.current,
       { scale: MATCH_SCALE },
     );
-    drawBall(ctx, p, { x: l.you.x + 0.9, y: l.you.y + 0.7 }, 0);
+    drawBall(ctx, p, { x: l.you.x + 0.9, y: l.you.y + 0.7 }, 0, MATCH_SCALE);
 
     // The clock, as a bar across the top. A number counting down in tenths is
     // unreadable inside a one-second window; a bar draining is not.

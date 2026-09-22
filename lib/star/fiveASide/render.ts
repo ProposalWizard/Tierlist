@@ -1075,6 +1075,10 @@ export const BALL_MIN_R = 6;
 
 export function drawBall(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, z = 0,
+  /** Same `scale` as `drawFigure`/`drawKeeper` — pass `MATCH_SCALE` so the
+   *  ball stays in proportion once the figures around it are grown to the
+   *  real match's own size. Omitted, the ball is unchanged from before. */
+  scale = 1,
 ): void {
   const { px, py, unit } = p;
   const x = px(at.x), y = py(at.y);
@@ -1094,7 +1098,7 @@ export function drawBall(
    * findable. This is the size the eye needs, not the size the laws of the
    * game specify.
    */
-  const r = Math.max(BALL_MIN_R, unit * BALL_R * 2.6 * (1 + z * 0.06));
+  const r = Math.max(BALL_MIN_R, unit * BALL_R * 2.6 * (1 + z * 0.06) * scale);
 
   // Its shadow stays on the grass while it climbs, which is the only thing
   // that makes height readable from directly above.
@@ -1128,23 +1132,75 @@ export function drawBall(
   ctx.fill();
 }
 
-/** The aim arrow, while you are dragging back from the ball. */
+/**
+ * HOW LONG THE AIM ARROW IS DRAWN, as a fraction of the metres filling the
+ * canvas's height, at full power. CanvasMatch.tsx's own constant — every
+ * screen that draws a drag-to-aim arrow uses this exact number so a pull
+ * feels like the same length pull everywhere, never a screen's own guess.
+ */
+export const AIM_ARROW_LENGTH = 0.132;
+
+/**
+ * The aim arrow, while you are dragging back from the ball.
+ *
+ * Reported directly: five-a-side's own version was "not even an arrow, it's
+ * like a line you draw" — this used to be a plain translucent stroke with no
+ * head, no taper, no colour, while the match and the penalty/free-kick trial
+ * drew a real tapered orange arrow with a triangular head. Rebuilt here to be
+ * that same arrow, so every screen that calls this — the match, both
+ * striking trials, and five-a-side — draws byte-identical shapes rather than
+ * independent copies that drift. They already had: training's own copy of
+ * this arrow was still using the length this exact function used before
+ * `AIM_ARROW_LENGTH` was corrected from 0.11 to 0.132 — one screen's fix
+ * never reached the other two, which is the whole failure mode consolidating
+ * here exists to close off.
+ */
 export function drawAim(
   ctx: CanvasRenderingContext2D, p: Projection, from: Vec2, dir: Vec2, power: number,
 ): void {
-  const { px, py, unit } = p;
-  const len = unit * (3 + power * 9);
+  const { px, py, unit, W, H } = p;
   const n = Math.hypot(dir.x, dir.y) || 1;
-  const ex = px(from.x) + (dir.x / n) * len;
-  const ey = py(from.y) + (dir.y / n) * len;
-  ctx.strokeStyle = `rgba(255,255,255,${0.5 + power * 0.4})`;
-  ctx.lineWidth = Math.max(2, unit * 0.16);
+  // Metres of world-height the canvas shows — equivalent to a camera's own
+  // `y2 - y1`, since every one of these screens fills the canvas height with
+  // the camera's vertical span.
+  const heightSpan = H / unit;
+  const shown = power * heightSpan * AIM_ARROW_LENGTH;
+  const ax = px(from.x), ay = py(from.y);
+  const bx = px(from.x + (dir.x / n) * shown);
+  const by = py(from.y + (dir.y / n) * shown);
+
+  const ang = Math.atan2(by - ay, bx - ax);
+  const ux = Math.cos(ang), uy = Math.sin(ang);
+  const nx = -uy, ny = ux;
+  const arrowLen = Math.hypot(bx - ax, by - ay) || 1;
+  const headLen = Math.max(W * 0.02, Math.min(W * 0.045, arrowLen * 0.45));
+  const headHalf = W * 0.022;
+  const shaftW = W * 0.014;
+  const hbx = bx - ux * headLen, hby = by - uy * headLen;
+
+  const shaftGrad = ctx.createLinearGradient(ax, ay, bx, by);
+  shaftGrad.addColorStop(0, "#fb923c");
+  shaftGrad.addColorStop(1, "#ea580c");
+  ctx.strokeStyle = shaftGrad;
+  ctx.lineWidth = shaftW;
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(px(from.x), py(from.y));
-  ctx.lineTo(ex, ey);
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(hbx, hby);
   ctx.stroke();
   ctx.lineCap = "butt";
+
+  ctx.beginPath();
+  ctx.moveTo(bx, by);
+  ctx.lineTo(hbx + nx * headHalf, hby + ny * headHalf);
+  ctx.lineTo(hbx - nx * headHalf, hby - ny * headHalf);
+  ctx.closePath();
+  ctx.fillStyle = "#f97316";
+  ctx.fill();
+  ctx.lineJoin = "round";
+  ctx.lineWidth = Math.max(1, unit * 0.22);
+  ctx.strokeStyle = "rgba(124,45,18,0.6)";
+  ctx.stroke();
 }
 
 export { TC as FIVE_COLOURS, FIVE_HALFWAY_Y };

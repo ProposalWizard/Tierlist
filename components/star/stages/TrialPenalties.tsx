@@ -16,10 +16,12 @@ import ContactBall from "@/components/star/ContactBall";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
 import {
   cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawKeeper,
-  drawBall, ROLE_KIT, bodyPoseFor, MATCH_SCALE,
+  drawBall, drawAim, ROLE_KIT, bodyPoseFor, MATCH_SCALE,
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
+import { createFaceImageCache, type FaceImageCache } from "@/lib/star/faceImageCache";
+import { fakeFaceFor } from "@/lib/star/fakeFaces";
 
 /**
  * THE PENALTIES STAGE — and, in the second half of this file, the striking
@@ -159,21 +161,14 @@ const FLIGHT_TIMEOUT = 9;
 export const SETTLE_BEFORE_BANNER = 0.25;
 
 /**
- * HOW LONG THE AIM ARROW IS DRAWN, as a fraction of the metres filling the
- * canvas's height, at full power.
- *
- * Not a number this screen gets to choose. It is CanvasMatch.tsx's own
- * constant, copied, because the arrow has to be the match's arrow — reported
- * twice as "the drag arrow still doesn't look like the original football
- * engine", and measured at 0.11 here against 0.132 there, which is 16.7 %
- * short at every power (48.3 px vs 57.9 px at full power on an iPhone 13).
- *
- * A named export rather than a literal buried in the paint function purely so
- * `tests/star/trialStageScreens.mts` can hold it against the real value in
- * CanvasMatch.tsx and fail the day the match's arrow is re-tuned and this one
- * is not. That drift is the whole bug; this is the tripwire for it.
+ * HOW LONG THE AIM ARROW IS DRAWN — moved to `fiveASide/render.ts` (see
+ * `drawAim`) so the match, both striking trials AND five-a-side all draw the
+ * same arrow rather than independent copies that drift, which is exactly how
+ * five-a-side ended up with no arrowhead at all and training ended up stuck
+ * on the old 0.11. Re-exported here so the existing import in
+ * `tests/star/trialStageScreens.mts` keeps working unchanged.
  */
-export const AIM_ARROW_LENGTH = 0.132;
+export { AIM_ARROW_LENGTH } from "@/lib/star/fiveASide/render";
 
 /**
  * HOW LONG THE TAKER'S FIGURE HOLDS A KICKING POSE AFTER THE BALL IS STRUCK.
@@ -384,6 +379,8 @@ export function paintTrialScene(
     power: number;
     faceStyle: FaceStyle;
     fakeFaceStyle: FakeFaceStyle;
+    /** Resolves a decorative body's fake face — see `fake()` below. */
+    faces: FaceImageCache;
     /**
      * Seconds since the ball was struck — `flightTRef.current`, valid only
      * once the phase has actually moved past "aim"/"contact" (the caller
@@ -397,7 +394,7 @@ export function paintTrialScene(
     flightT?: number;
   },
 ) {
-  const { W, H, camera, ball, drag, power, faceStyle, fakeFaceStyle, flightT } = opts;
+  const { W, H, camera, ball, drag, power, faceStyle, fakeFaceStyle, flightT, faces } = opts;
   const rules = ELEVEN_A_SIDE_ATTACK;
   const p = projectionFor(rules, W, H, camera);
   const { px, py, unit } = p;
@@ -412,12 +409,21 @@ export function paintTrialScene(
   // gives each of them a real z/vz). Drawing the lift — the shadow stays on
   // the grass, the figure rises off it — is what makes going under a wall
   // read as a real option rather than a coincidence.
-  for (const d of sc.defenders) {
+  // No real identity reaches this screen at all — a trial happens before you
+  // have even joined a club, so nobody here has a squad photo to draw. A
+  // stable fake face per body, never the blank backing circle that used to
+  // show instead — reported directly: "i dont EVER wanna see a blank circle
+  // face, ALWAYS a fake face at least." `fake()` below is the one place that
+  // decides, keyed by role so the same body keeps the same face frame to
+  // frame without needing any real identity data at all.
+  const fake = (key: string) => faces.get(fakeFaceFor(key));
+
+  sc.defenders.forEach((d, i) => {
     drawFigure(
-      ctx, p, d, { ...WALL_KIT, lift: Math.max(0, d.z ?? 0) },
+      ctx, p, d, { ...WALL_KIT, lift: Math.max(0, d.z ?? 0), face: fake(`wall-${i}`) },
       faceStyle, fakeFaceStyle, { scale: MATCH_SCALE },
     );
-  }
+  });
 
   // ── The keeper ──
   //
@@ -428,7 +434,7 @@ export function paintTrialScene(
     const kk = sc.keeper;
     const d = keeperDive(kk);
     drawKeeper(
-      ctx, p, { x: kk.x, y: kk.y }, KEEPER_KIT,
+      ctx, p, { x: kk.x, y: kk.y }, { ...KEEPER_KIT, face: fake("keeper") },
       { dive: d.dive, lunge: d.lunge },
       faceStyle, fakeFaceStyle, { scale: MATCH_SCALE },
     );
@@ -440,105 +446,32 @@ export function paintTrialScene(
   // after the keeper, because every one of them stands nearer the camera than
   // he does, and among themselves furthest-from-camera first — the same
   // y-sort the rest of this game draws figures by.
-  for (const m of ownSideBodies(sc)) {
-    drawFigure(ctx, p, m, MATE_KIT, faceStyle, fakeFaceStyle, { scale: MATCH_SCALE });
-  }
+  ownSideBodies(sc).forEach((m, i) => {
+    drawFigure(ctx, p, m, { ...MATE_KIT, face: fake(`mate-${i}`) }, faceStyle, fakeFaceStyle, { scale: MATCH_SCALE });
+  });
   // You, standing over it. Last of your own side, because you are the
   // nearest body to the camera on every one of these screens — and with the
   // same star the real match puts over your own figure, because your kit and
   // a team-mate's kit are the same kit and a first screenshot of this had two
   // identical white men on it with no way to tell which one was you.
   drawFigure(
-    ctx, p, takerSpot(sc), { ...YOU_KIT, star: true }, faceStyle, fakeFaceStyle,
+    ctx, p, takerSpot(sc), { ...YOU_KIT, star: true, face: fake("you") }, faceStyle, fakeFaceStyle,
     { scale: MATCH_SCALE, pose: isTakerKicking(flightT) ? bodyPoseFor("kick", 0) : undefined },
   );
 
   // ── The ball ──
-  drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0);
+  drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0, MATCH_SCALE);
 
   // ── The aim arrow ──
   //
-  // The one thing on this canvas that is not football. Kept here rather than
-  // pushed into the shared renderer: a five-a-side aims with `drawAim`, and
-  // this is the MATCH's arrow, which is a different drawing again.
-  //
-  // ── It is the match's arrow to the pixel, and that is the point ──
-  //
-  // Reported twice: "the drag arrow still doesn't look like the original
-  // football engine." Measured against CanvasMatch.tsx's own aim block rather
-  // than eyeballed, and two real differences came out of it:
-  //
-  //  1. LENGTH. This drew `power × heightSpan × 0.11`; the match draws
-  //     `× 0.132` (its own comment records why — half the old length, then
-  //     20 % back on top once the meter went and the arrow became the only
-  //     power readout). On an iPhone 13's 358×439 canvas that is 48.3 px
-  //     against 57.9 px at full power — 16.7 % short at every power, which is
-  //     exactly the kind of difference that reads as "not the same arrow"
-  //     without being nameable.
-  //  2. THE METER. See below.
-  //
-  // Everything else — the gradient shaft (#fb923c → #ea580c), the round cap,
-  // the solid #f97316 head, its dark edge, and all four size formulas off W
-  // and `unit` — was already identical, and is left alone.
-  //
-  // `camera.y2 - camera.y1` is the right span to multiply: the match reads
-  // whichever axis fills the canvas HEIGHT, and these two stages never turn
-  // the frame, so pitch Y always is it.
+  // Now the ONE shared `drawAim` (fiveASide/render.ts) — the match, both
+  // striking trials and five-a-side all draw this exact arrow. This used to
+  // be a hand-rolled copy of it living only here, which is exactly how a
+  // future re-tune of the match's own arrow could drift out of step with
+  // this screen again without anyone noticing.
   if (drag) {
     const dx = sc.ball.x - drag.x, dy = sc.ball.y - drag.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const shown = power * (camera.y2 - camera.y1) * AIM_ARROW_LENGTH;
-    const ax = px(sc.ball.x), ay = py(sc.ball.y);
-    const bx2 = px(sc.ball.x + (dx / len) * shown);
-    const by2 = py(sc.ball.y + (dy / len) * shown);
-
-    const ang = Math.atan2(by2 - ay, bx2 - ax);
-    const ux = Math.cos(ang), uy = Math.sin(ang);
-    const nx = -uy, ny = ux;
-    const arrowLen = Math.hypot(bx2 - ax, by2 - ay) || 1;
-    const headLen = clamp(W * 0.045, W * 0.02, arrowLen * 0.45);
-    const headHalf = W * 0.022;
-    const shaftW = W * 0.014;
-    const hbx = bx2 - ux * headLen, hby = by2 - uy * headLen;
-
-    const shaftGrad = ctx.createLinearGradient(ax, ay, bx2, by2);
-    shaftGrad.addColorStop(0, "#fb923c");
-    shaftGrad.addColorStop(1, "#ea580c");
-    ctx.strokeStyle = shaftGrad;
-    ctx.lineWidth = shaftW;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(ax, ay);
-    ctx.lineTo(hbx, hby);
-    ctx.stroke();
-    ctx.lineCap = "butt";
-
-    ctx.beginPath();
-    ctx.moveTo(bx2, by2);
-    ctx.lineTo(hbx + nx * headHalf, hby + ny * headHalf);
-    ctx.lineTo(hbx - nx * headHalf, hby - ny * headHalf);
-    ctx.closePath();
-    ctx.fillStyle = "#f97316";
-    ctx.fill();
-    ctx.lineJoin = "round";
-    ctx.lineWidth = Math.max(1, unit * 0.22);
-    ctx.strokeStyle = "rgba(124,45,18,0.6)";
-    ctx.stroke();
-
-    // ── The power meter is gone, because the match has not had one for a
-    //    while and this was the only screen still drawing it ──
-    //
-    // A 19.7 × 307 px bar down the left edge with a green/amber/red fill and
-    // an 18 px "NN%" label over it — 3.9 % of an iPhone 13's canvas, on the
-    // first ball anybody in this game ever kicks, showing a number the real
-    // game never shows. CanvasMatch removed its own copy of exactly this
-    // ("reported as redundant with the arrow's own length, which already is
-    // the power readout") and this one simply never followed. Reported
-    // directly as a thing the trial has and the game does not.
-    //
-    // Nothing is lost with it: `power` still drives the arrow's length, which
-    // is the same readout the match trusts, and the teach card already says
-    // "pull further for more power" in words.
+    drawAim(ctx, p, sc.ball, { x: dx, y: dy }, power);
   }
 }
 
@@ -945,6 +878,11 @@ export function StrikeStage({
   const camKeyRef = useRef("");
   const faceStyleRef = useRef<FaceStyle>(loadFaceStyle());
   const fakeFaceStyleRef = useRef<FakeFaceStyle>(loadFakeFaceStyle());
+  // Decorative bodies (the wall, the keeper, team-mates, you) have no real
+  // identity in a trial — this resolves a stable fake face for each instead
+  // of the blank backing circle they drew before. See `fake()` in
+  // `paintTrialScene`.
+  const facesRef = useRef<FaceImageCache>(createFaceImageCache());
 
   /**
    * THE BOX'S HEIGHT, MEASURED IN JS — NOT `aspect-[5/8] max-h-[64vh]`.
@@ -1310,6 +1248,7 @@ export function StrikeStage({
       power: dragging ? powerFrom(dragging, sc.ball, camera) : 0,
       faceStyle: faceStyleRef.current,
       fakeFaceStyle: fakeFaceStyleRef.current,
+      faces: facesRef.current,
       flightT: struck ? flightTRef.current : undefined,
     });
   };

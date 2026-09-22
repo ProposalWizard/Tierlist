@@ -22,6 +22,8 @@ import {
 } from "@/lib/star/trainingRender";
 import { poseFor, runPhase, bodyPoseFor } from "@/lib/star/fiveASide/render";
 import { KICK_POSE_S, isTakerKicking } from "@/components/star/stages/TrialPenalties";
+import { createFaceImageCache } from "@/lib/star/faceImageCache";
+import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import ContactBall from "./ContactBall";
 
 /**
@@ -328,6 +330,10 @@ function StrikeDrill({
   const wrapRef = useRef<HTMLDivElement>(null);
   const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x5f3a) >>> 0));
   const ballImgRef = useRef<HTMLImageElement | null>(null);
+  // No real identity reaches a drill — a stable fake face per body instead
+  // of the blank backing circle it used to draw. See the `fake()` helper
+  // near each `renderTrainingScene` call in this file.
+  const facesRef = useRef(createFaceImageCache());
   const setupRef = useRef<StrikeSetup | null>(null);
   const ballRef = useRef<Ball | null>(null);
   const prevSampleRef = useRef<{ x: number; y: number; z: number } | null>(null);
@@ -479,7 +485,14 @@ function StrikeDrill({
       const setup = setupRef.current;
       if (!setup) return;
 
-      if (phaseRef.current === "flight" && ballRef.current) {
+      if (phaseRef.current === "aim") {
+        // The keeper breathes and shifts his weight while you line the shot
+        // up, exactly as he does on the penalty/free-kick trial and the real
+        // match — reported directly as one of the ways this screen still
+        // reads as a different game. Without this he stood bolt upright and
+        // frozen for the whole aim phase, every rep, every drill.
+        stepKeeper(setup.scenario, dt);
+      } else if (phaseRef.current === "flight" && ballRef.current) {
         const ball = ballRef.current;
         flightTRef.current += dt;
         if (ball.inNet) {
@@ -533,8 +546,11 @@ function StrikeDrill({
           x: sc.keeper.x, y: sc.keeper.y,
           dive: Math.max(-1, Math.min(1, (sc.keeper.dive ?? 0) / 1.6)),
           lunge: sc.keeper.saveLunge ?? 0,
+          face: facesRef.current.get(fakeFaceFor("keeper")),
         },
-        defenders: sc.defenders.map(d => ({ x: d.x, y: d.y, z: d.z ?? 0 })),
+        defenders: sc.defenders.map((d, i) => ({
+          x: d.x, y: d.y, z: d.z ?? 0, face: facesRef.current.get(fakeFaceFor(`wall-${i}`)),
+        })),
         // `flightTRef` reads 0 both before any kick this rep and at the
         // instant of one — `struck` is what tells them apart, same gate as
         // TrialPenalties.tsx's own `draw()` and for the identical reason.
@@ -544,6 +560,7 @@ function StrikeDrill({
             phaseRef.current === "flight" || phaseRef.current === "judged"
               ? flightTRef.current : undefined,
           ) ? bodyPoseFor("kick", 0) : undefined,
+          face: facesRef.current.get(fakeFaceFor("you")),
         },
         gate: setup.gate,
         ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : { x: sc.ball.x, y: sc.ball.y, z: 0 },
@@ -611,6 +628,7 @@ function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: numb
   const runRef = useRef<DribbleState | null>(null);
   const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x1d7c) >>> 0));
   const ballImgRef = useRef<HTMLImageElement | null>(null);
+  const facesRef = useRef(createFaceImageCache());
   const liveRef = useRef(false);
   const resolvedRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -707,11 +725,15 @@ function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: numb
           goal: false,
           defenders: run.chasers.map((ch, i) => {
             const p = poseFor(motionRef.current, `chaser${i}`, ch.x, ch.y);
-            return { x: ch.x, y: ch.y, awake: ch.awake, pose: bodyPoseFor(p, runPhase(nowS, ch.x)) };
+            return {
+              x: ch.x, y: ch.y, awake: ch.awake, pose: bodyPoseFor(p, runPhase(nowS, ch.x)),
+              face: facesRef.current.get(fakeFaceFor(`chaser-${i}`)),
+            };
           }),
           you: {
             x: run.pos.x, y: run.pos.y,
             pose: bodyPoseFor(yourPose, runPhase(nowS, run.pos.x)),
+            face: facesRef.current.get(fakeFaceFor("you")),
           },
           ball: { x: run.pos.x + run.heading.x * 0.9, y: run.pos.y + run.heading.y * 0.9, z: 0 },
           ballImage: ballImgRef.current,
@@ -844,6 +866,7 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x77c1) >>> 0));
+  const facesRef = useRef(createFaceImageCache());
   const [round, setRound] = useState<VisionRound | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [left, setLeft] = useState(1);
@@ -914,13 +937,16 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
       renderTrainingScene(c, {
         viewport: round.viewport,
         goal: false,
-        defenders: round.defenders,
+        defenders: round.defenders.map((d, i) => ({
+          ...d, face: facesRef.current.get(fakeFaceFor(`defender-${i}`)),
+        })),
         mates: round.mates.map((m, i) => ({
           x: m.x, y: m.y,
           highlight: answeredRef.current && i === round.best,
           dim: answeredRef.current && i !== round.best,
+          face: facesRef.current.get(fakeFaceFor(`mate-${i}`)),
         })),
-        you: { x: CX, y: round.viewport.y2 - 3 },
+        you: { x: CX, y: round.viewport.y2 - 3, face: facesRef.current.get(fakeFaceFor("you")) },
         ball: { x: CX, y: round.viewport.y2 - 2.2, z: 0 },
         offsideLine: round.line,
       });
