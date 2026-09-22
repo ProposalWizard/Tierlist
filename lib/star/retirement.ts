@@ -1,3 +1,4 @@
+import { fameOf } from "./fame";
 import type { CareerState } from "./types";
 import { tierWeeklyIncome } from "./economy";
 
@@ -17,7 +18,18 @@ import { tierWeeklyIncome } from "./economy";
  */
 
 export const RETIRE_FROM = 33;
-export const RETIRE_AT = 40;
+/**
+ * The career ends after this many seasons, whatever your age.
+ *
+ * Owners, 21 Sep 2026: "change it so that you can play fifty seasons of the
+ * game before it ends and you retire." It used to be a forced retirement at
+ * age 40, which capped an 18-year-old at about 22 seasons. Choosing to retire
+ * from 33 is unchanged; your skills still decline with age, so the late
+ * seasons are genuinely hard — they are just no longer taken away.
+ */
+export const MAX_SEASONS = 50;
+/** Kept for anything that still reads it; nothing forces retirement by age now. */
+export const RETIRE_AT = Infinity;
 
 export interface RetirementCheck {
   /** Old enough to choose. */
@@ -29,8 +41,8 @@ export interface RetirementCheck {
 
 export function retirementCheck(career: CareerState): RetirementCheck {
   const age = career.player.age;
-  if (age >= RETIRE_AT) {
-    return { canRetire: true, mustRetire: true, reason: `You are ${age}. That is the end of it.` };
+  if (career.season >= MAX_SEASONS) {
+    return { canRetire: true, mustRetire: true, reason: `${MAX_SEASONS} seasons. That is the end of it.` };
   }
   if (age >= RETIRE_FROM) {
     return {
@@ -135,7 +147,7 @@ export function testimonialFor(career: CareerState): { club: string; season: num
   // great one) is now read as weeks of top-flight income, at a rate that
   // puts a great career's send-off at about fifty weeks of it and a modest
   // one at eighteen. A real windfall to retire on; not a second career.
-  const score = apps * 0.9 + career.fame * 1.6 + career.starRating * 22;
+  const score = apps * 0.9 + fameOf(career) * 1.6 + career.starRating * 22;
   const payout = Math.round(score * TESTIMONIAL_WEEKS_PER_POINT * tierWeeklyIncome("world_class"));
   return { club: career.player.club, season: career.season, payout };
 }

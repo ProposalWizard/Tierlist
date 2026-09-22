@@ -1,5 +1,5 @@
 import { generateOffers, acceptOffer, reputation, MOVE_RESET } from "../../lib/star/transfers";
-import { retirementCheck, careerVerdict, retire, RETIRE_FROM, RETIRE_AT } from "../../lib/star/retirement";
+import { retirementCheck, careerVerdict, retire, RETIRE_FROM, MAX_SEASONS } from "../../lib/star/retirement";
 import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { selectionFor } from "../../lib/star/selection";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
@@ -153,8 +153,11 @@ const offerRate = (c: CareerState) =>
   check(vc.canRetire && !vc.mustRetire, `from ${RETIRE_FROM} it is your call`);
   check(vc.reason.length > 0, "and you are told why it is being asked");
 
-  const done = { ...base(), player: { ...PLAYER, age: RETIRE_AT } };
-  check(retirementCheck(done).mustRetire, `at ${RETIRE_AT} it is not`);
+  const old = { ...base(), player: { ...PLAYER, age: 45 } };
+  check(!retirementCheck(old).mustRetire, "age alone never forces retirement any more");
+  const done = { ...base(), season: MAX_SEASONS };
+  check(retirementCheck(done).mustRetire, `after ${MAX_SEASONS} seasons it is not your call`);
+  check(!retirementCheck({ ...base(), season: MAX_SEASONS - 1 }).mustRetire, "season 49 still plays on");
 
   const retired = retire(veteran);
   check(retired.retired === true, "hanging them up is recorded on the career itself");

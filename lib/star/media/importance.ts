@@ -100,7 +100,7 @@ function rarity(e: FootballEvent, m: StoryMemory): number {
  * famous feel like it did something.
  */
 function fameWeight(e: FootballEvent, fame: number, stars: number): number {
-  const standing = Math.min(1, (fame / 140) * 0.6 + (stars / 5) * 0.4);
+  const standing = Math.min(1, (fame / 100) * 0.6 + (stars / 5) * 0.4);
   const personal = e.subject.kind === "you" || e.subject.kind === "teammate";
   if (!personal) return 0.95 + standing * 0.15;
   return 0.62 + standing * 0.5;

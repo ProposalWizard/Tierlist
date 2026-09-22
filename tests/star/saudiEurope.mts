@@ -75,6 +75,8 @@ const EL_NAMED_EXEMPT = ["Olympiacos FC", "RSC Anderlecht", "SL Benfica", "Ajax"
 // ── Pass the real vote ───────────────────────────────────────────────────
 let career = freshCareer();
 career = investInfluence(career, "UEFA", costOf(100)) as CareerState;
+// Proposing a rule also needs 60+ reputation since 21 Sep 2026.
+career = { ...career, reputation: 60 };
 const proposed = proposeRuleChangeVote(career, "UEFA", { saudiClubsInEurope: true }, mulberry32Local(1));
 check(proposed.ok, `enough UEFA influence really does let you put this to a vote (${!proposed.ok ? proposed.reason : ""})`);
 

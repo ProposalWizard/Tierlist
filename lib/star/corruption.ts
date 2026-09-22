@@ -1,3 +1,5 @@
+import { REPUTATION_EVENTS } from "./reputation";
+import { addFame, scandalFame } from "./fame";
 import type { CareerState } from "./types";
 import type { VoteTally } from "./voting";
 import { clampReputation } from "./reputation";
@@ -145,7 +147,11 @@ export function applyGettingCaught(career: CareerState, act: CorruptAct, amountI
   return {
     ...career,
     money: Math.max(0, career.money - c.fine),
-    reputation: { ...career.reputation, world: clampReputation(career.reputation.world - c.worldReputationHit) },
+    // Owners, 21 Sep 2026: getting caught costs a lot of REPUTATION but is a
+    // news story, so it ADDS fame (1-4) rather than taking any away.
+    reputation: clampReputation(career.reputation + REPUTATION_EVENTS.caughtCheating),
+    lastScandalSeason: career.season,
+    fame: addFame(career.fame, scandalFame(((career.season * 131 + career.week * 17 + amountInvolved) % 1000) / 1000)),
     relationships: {
       ...career.relationships,
       boss: clampReputation(career.relationships.boss - 10),

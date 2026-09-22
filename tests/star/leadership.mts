@@ -64,7 +64,7 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
   check(!isBodyPresident(career, "FA"), "nobody starts as president of anything");
   check(!canStandForBodyPresidency(career, "FA"), "no reputation or influence at all means no standing to run");
 
-  const repOnly = { ...career, reputation: { ...career.reputation, world: 95 } };
+  const repOnly = { ...career, reputation: 95 };
   check(!canStandForBodyPresidency(repOnly, "FA"), "high world reputation alone isn't enough — real influence is also required");
 
   const withInfluence = investInfluence(repOnly, "FA", 100_000_000) as CareerState;
@@ -74,10 +74,10 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
 
 // ── The vote itself is real, and winning genuinely records the title ──────
 {
-  let career = freshCareer({ reputation: { world: 95, club: 50, government: 50, shareholders: 50 } });
+  let career = freshCareer({ reputation: 95 });
   career = investInfluence(career, "FA", 100_000_000) as CareerState;
 
-  const blocked = proposeBodyPresidencyVote({ ...career, reputation: { ...career.reputation, world: 10 } }, "FA", mulberry32(1));
+  const blocked = proposeBodyPresidencyVote({ ...career, reputation: 10 }, "FA", mulberry32(1));
   check(!blocked.ok, "can't stand for election without clearing the real bar");
 
   const proposed = proposeBodyPresidencyVote(career, "FA", mulberry32(2));
@@ -91,12 +91,12 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
     check(!alreadyPresident.ok, "can't stand for a presidency you already hold");
 
     const forcedWin = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "yes" } };
-    const beforeRep = career.reputation.world;
+    const beforeRep = career.reputation;
     const elected = resolveBodyPresidencyVote(career, forcedWin, false);
     check(elected.ok, `winning the vote genuinely succeeds (${!elected.ok ? elected.reason : ""})`);
     if (elected.ok) {
       check(isBodyPresident(elected.career, "FA"), "…and the title is genuinely recorded");
-      check(elected.career.reputation.world > beforeRep, "holding the vote at all nudges world reputation up, same pattern every other vote uses");
+      check(elected.career.reputation > beforeRep, "holding the vote at all nudges world reputation up, same pattern every other vote uses");
     }
   }
 }
@@ -105,7 +105,7 @@ function freshCareer(overrides: Partial<CareerState> = {}): CareerState {
 {
   // 92, deliberately: clears the 90-level bar to STAND, but sits below the
   // 95-level bar to OVERRULE — the two are genuinely different thresholds.
-  let career = freshCareer({ reputation: { world: 92, club: 50, government: 50, shareholders: 50 } });
+  let career = freshCareer({ reputation: 92 });
   // Just enough influence to stand for the presidency, not enough to overrule.
 career = investInfluence(career, "FA", costOf(92)) as CareerState;
 
@@ -117,13 +117,13 @@ career = investInfluence(career, "FA", costOf(92)) as CareerState;
 
     check(!canOverrulePresidencyVote(career, "FA"), "the 90-level bar that lets you STAND is not automatically enough to overrule a loss");
 
-    let evenHigherStanding = { ...career, reputation: { ...career.reputation, world: 96 } };
+    let evenHigherStanding = { ...career, reputation: 96 };
     // Tops influence up past the overrule bar too.
     evenHigherStanding = investInfluence(evenHigherStanding, "FA", costOf(6)) as CareerState;
     check(canOverrulePresidencyVote(evenHigherStanding, "FA"), "…but clearing the genuinely higher overrule bar (both reputation AND influence) does allow it");
     const overruled = resolveBodyPresidencyVote(evenHigherStanding, losing, true);
     check(overruled.ok && isBodyPresident(overruled.career, "FA"), "overruling a lost presidency vote at high enough standing genuinely grants the title anyway");
-    check(overruled.ok && overruled.career.reputation.world < evenHigherStanding.reputation.world + 3,
+    check(overruled.ok && overruled.career.reputation < evenHigherStanding.reputation + 3,
       "…at a real reputation cost on top of the ordinary vote-held gain");
   } else {
     check(false, "fixture assumption failed: could not propose the vote to test losing/overruling");
@@ -132,7 +132,7 @@ career = investInfluence(career, "FA", costOf(92)) as CareerState;
 
 // ── The actual point: a president bypasses the ordinary influence gates ───
 {
-  const notPresident = freshCareer({ reputation: { world: 50, club: 50, government: 50, shareholders: 50 } });
+  const notPresident = freshCareer({ reputation: 50 });
   check(!canOverruleRuleVote(notPresident, "FA"), "fixture assumption: no influence at all means no ordinary overrule right");
   check(!canForceClubMovement(notPresident, "FA"), "fixture assumption: no influence at all means no ordinary forced-movement right");
 

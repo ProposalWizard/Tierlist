@@ -1,3 +1,4 @@
+import { fameOf } from "../fame";
 import type { CareerState, Fixture, LeagueResult, MatchStats } from "../types";
 import type {
   CareerRecord, Facts, FootballEvent, MatchRecord, MediaAccount, MediaCycle,
@@ -104,13 +105,13 @@ export function generateForCareer(career: CareerState, moment: CareerRecord["mom
       position: career.player.position,
       squadNumber: career.squadNumber ?? 0,
     },
-    context: { fame: career.fame, starRating: career.starRating, fansStanding: career.relationships.fans },
+    context: { fame: fameOf(career), starRating: career.starRating, fansStanding: career.relationships.fans },
     moment,
   };
 
   const cooled = coolThreads(state.memory);
   const detected = detectCareer(record, cooled);
-  const scored = scoreCareerEvents(detected, cooled, career.fame);
+  const scored = scoreCareerEvents(detected, cooled, fameOf(career));
   const { memory, events } = absorbEvents(cooled, scored, { season: career.season, week: career.week });
 
   return commit(career, state, null, events, memory, id, clockAt(career.season, career.week, 0));
@@ -153,7 +154,7 @@ export function generateForBoardroomSale(
   ];
 
   const cooled = coolThreads(state.memory);
-  const scored = scoreCareerEvents(events, cooled, career.fame);
+  const scored = scoreCareerEvents(events, cooled, fameOf(career));
   const { memory, events: absorbed } = absorbEvents(cooled, scored, { season: career.season, week: career.week });
 
   return commit(career, state, null, absorbed, memory, id, clockAt(career.season, career.week, 0));
@@ -257,7 +258,7 @@ function commit(
     used.push(made.templateId);
   }
 
-  const trends = buildTrends(events, posts, cycleId, career.fame);
+  const trends = buildTrends(events, posts, cycleId, fameOf(career));
   const all = [...state.posts, ...posts]
     .sort((a, b) => a.at - b.at)
     .slice(-POST_CAP);

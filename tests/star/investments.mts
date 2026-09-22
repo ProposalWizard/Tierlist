@@ -360,10 +360,10 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
     // overrule rights — the vote engine itself is already proven separately
     // in tests/star/voting.mts.
     const losingProposal = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "no" } };
-    const beforeShareholders = career.reputation.shareholders;
+    const beforeShareholders = career.reputation;
     const blocked = resolveSellPlayerVote(career, losingProposal, false);
     check(!blocked.ok, "a lost vote, not overruled, blocks the sale");
-    check(blocked.career.reputation.shareholders === beforeShareholders + VOTE_HELD_REPUTATION_GAIN,
+    check(blocked.career.reputation === beforeShareholders + VOTE_HELD_REPUTATION_GAIN,
       "…but holding the vote at all still earned its own real reputation gain");
 
     const overruleAttempt = resolveSellPlayerVote(career, losingProposal, true);
@@ -388,12 +388,12 @@ const RIVAL2 = PREMIER_LEAGUE_CLUBS.filter(c => c !== "Arsenal" && c !== RIVAL)[
   check(proposed.ok, "an 80% owner can still put a sale to a vote in the first place");
   if (proposed.ok) {
     const losingProposal = { ...proposed.proposal, tally: { ...proposed.proposal.tally, winner: "no" } };
-    const before = career.reputation.shareholders;
+    const before = career.reputation;
     const overruled = resolveSellPlayerVote(career, losingProposal, true);
     check(overruled.ok, `overruling a lost vote at high enough ownership genuinely sells him anyway (${!overruled.ok ? overruled.reason : ""})`);
     const expectedAfterCost = Math.max(0, before + VOTE_HELD_REPUTATION_GAIN - OVERRULE_REPUTATION_COST);
-    check(overruled.ok && overruled.career.reputation.shareholders === expectedAfterCost,
-      `overruling costs shareholder reputation on top of the ordinary vote-held gain (saw ${overruled.ok ? overruled.career.reputation.shareholders : "n/a"}, expected ${expectedAfterCost})`);
+    check(overruled.ok && overruled.career.reputation === expectedAfterCost,
+      `overruling costs shareholder reputation on top of the ordinary vote-held gain (saw ${overruled.ok ? overruled.career.reputation : "n/a"}, expected ${expectedAfterCost})`);
   }
 }
 

@@ -1,3 +1,4 @@
+import { fameOf } from "../fame";
 import type { CareerState } from "../types";
 import { primaryRivalOf } from "../rivalries";
 import { sortLeague } from "../season";
@@ -400,8 +401,8 @@ export function selfAccount(career: CareerState): MediaAccount {
     name,
     archetype: "teammate",
     platform: "instagram",
-    verified: career.fame > 40,
-    followers: Math.round(5_000 + career.fame * 24_000 + career.starRating * 180_000),
+    verified: fameOf(career) >= 25,
+    followers: Math.round(5_000 + fameOf(career) * 24_000 + career.starRating * 180_000),
     avatar: {
       initials: initialsOf(name),
       tint: kitsOf(career.player.club).home.shirt,

@@ -157,7 +157,7 @@ export default function Investments(props: Props) {
         )}
 
         {tab === "portfolio" && (
-          <Portfolio career={career} owned={owned} onSellStake={props.onSellStake} onRecommend={props.onRecommend} />
+          <Portfolio career={career} owned={owned} onBuyStake={props.onBuyStake} onSellStake={props.onSellStake} onRecommend={props.onRecommend} />
         )}
 
         {tab === "boardroom" && (
@@ -293,12 +293,17 @@ function Market({
  * is both.
  */
 function StakeControls({
-  club, valuation, money: bank, stake, onBuy, onSell,
+  club, valuation, money: bank, stake, onBuy, onSell, mode = "both",
 }: {
   club: string; valuation: number; money: number;
   stake?: { percent: number; avgBuyValuation: number };
   onBuy: (percent: number) => void; onSell: (percent: number) => void;
+  /** Portfolio opens this for one job at a time: just buying, or just selling. */
+  mode?: "both" | "buy" | "sell";
 }) {
+  // Every buy and sell asks first (owners, 21 Sep 2026: a confirm button so
+  // you cannot press it by mistake).
+  const [pending, setPending] = useState<{ kind: "buy" | "sell"; pct: number; amount: number } | null>(null);
   // What buying up to 100% TOTAL would cost you, capped by what's actually
   // in the bank and by whatever room is left above what you already own —
   // reported directly, from a real save: buying 100% and still being
@@ -313,7 +318,7 @@ function StakeControls({
   const buyPct = valuation > 0 ? (clampedBuy / valuation) * 100 : 0;
   const canAfford = clampedBuy > 0 && clampedBuy <= bank;
 
-  const [sellFraction, setSellFraction] = useState(1); // of your OWN holding
+  const [sellFraction, setSellFraction] = useState(mode === "sell" ? 0.5 : 1); // of your OWN holding
   const sellPct = stakePct * sellFraction;
   const sellAmount = Math.round(valuation * (sellPct / 100));
 
@@ -332,7 +337,33 @@ function StakeControls({
         </div>
       )}
 
+      {pending && (
+        <div className="rounded-lg border-2 border-amber-400 bg-amber-950/60 p-3 space-y-2">
+          <div className="text-sm font-black text-white text-center">
+            {pending.kind === "buy" ? "Buy" : "Sell"} {pending.pct.toFixed(pending.pct < 1 ? 3 : 1)}% of {club} for ★{money(pending.amount)}?
+          </div>
+          {pending.kind === "buy" && stakePct + pending.pct >= MAJORITY_THRESHOLD && stakePct < MAJORITY_THRESHOLD && (
+            <div className="text-[11px] font-black text-emerald-300 text-center">This makes you the majority owner.</div>
+          )}
+          {pending.kind === "sell" && stakePct >= MAJORITY_THRESHOLD && stakePct - pending.pct < MAJORITY_THRESHOLD && (
+            <div className="text-[11px] font-black text-red-300 text-center">You will lose majority control of this club.</div>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => { (pending.kind === "buy" ? onBuy : onSell)(pending.pct); setPending(null); }}
+              className={`flex-1 py-2 rounded-lg font-black text-xs text-white ${pending.kind === "buy" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-red-600 hover:bg-red-500"}`}
+            >
+              Confirm
+            </button>
+            <button onClick={() => setPending(null)} className="flex-1 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 font-black text-xs text-white">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Buy, by amount ── */}
+      {mode !== "sell" && roomPct > 0 && (
       <div>
         <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Buy</div>
         <div className="flex items-center gap-2">
@@ -377,7 +408,7 @@ function StakeControls({
         )}
         <button
           disabled={!canAfford}
-          onClick={() => onBuy(buyPct)}
+          onClick={() => setPending({ kind: "buy", pct: buyPct, amount: clampedBuy })}
           className="mt-2 w-full py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs"
         >
           Buy ★{money(clampedBuy)} ({buyPct.toFixed(buyPct < 1 ? 3 : 1)}%)
@@ -388,11 +419,20 @@ function StakeControls({
           </div>
         )}
       </div>
+      )}
 
       {/* ── Sell, by share of what you own ── */}
-      {stakePct > 0 && (
+      {mode !== "buy" && stakePct > 0 && (
         <div>
           <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-white font-semibold">Sell</div>
+          {/* Any amount, not just the presets below. */}
+          <input
+            type="range" min={1} max={100} step={1}
+            value={Math.round(sellFraction * 100)}
+            onChange={e => setSellFraction(Number(e.target.value) / 100)}
+            aria-label="How much of your stake to sell"
+            className="w-full mb-1.5 accent-red-500"
+          />
           <div className="grid grid-cols-4 gap-1">
             {[0.25, 0.5, 0.75, 1].map(f => (
               <button
@@ -407,10 +447,10 @@ function StakeControls({
             ))}
           </div>
           <button
-            onClick={() => onSell(sellPct)}
+            onClick={() => setPending({ kind: "sell", pct: sellPct, amount: sellAmount })}
             className="mt-2 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 font-black text-xs"
           >
-            Sell {sellPct.toFixed(sellPct < 1 ? 3 : 1)}% for ★{money(sellAmount)}
+            Sell {Math.round(sellFraction * 100)}% of your stake ({sellPct.toFixed(sellPct < 1 ? 3 : 1)}% of the club) for ★{money(sellAmount)}
           </button>
         </div>
       )}
@@ -423,9 +463,10 @@ function StakeControls({
 // ── PORTFOLIO ────────────────────────────────────────────────────────────
 
 function Portfolio({
-  career, owned, onSellStake, onRecommend,
+  career, owned, onBuyStake, onSellStake, onRecommend,
 }: {
   career: CareerState; owned: { club: string; percent: number; avgBuyValuation: number }[];
+  onBuyStake: (club: string, percent: number) => void;
   onSellStake: (club: string, percent: number) => void;
   onRecommend: (club: string, kind: RecommendationKind, detail: string) => ActionResult;
 }) {
@@ -433,6 +474,7 @@ function Portfolio({
   const [recommendKind, setRecommendKind] = useState<RecommendationKind>("sign");
   const [recommendDetail, setRecommendDetail] = useState("");
   const [recommendMessage, setRecommendMessage] = useState<string | null>(null);
+  const [trade, setTrade] = useState<{ club: string; mode: "buy" | "sell" } | null>(null);
   const totalValue = owned.reduce((s, i) => s + clubValuation(i.club, career) * (i.percent / 100), 0);
   const totalCost = owned.reduce((s, i) => s + i.avgBuyValuation * (i.percent / 100), 0);
   const totalProfit = totalValue - totalCost;
@@ -477,12 +519,36 @@ function Portfolio({
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => onSellStake(i.club, i.percent)}
-                className="mt-1.5 w-full py-1.5 rounded-md bg-red-600/80 hover:bg-red-500 text-[10px] font-black"
-              >
-                Sell entire stake
-              </button>
+              <div className="mt-1.5 grid grid-cols-2 gap-1">
+                {i.percent < 100 ? (
+                  <button
+                    onClick={() => setTrade(trade?.club === i.club && trade.mode === "buy" ? null : { club: i.club, mode: "buy" })}
+                    className="py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black text-white"
+                  >
+                    Buy more
+                  </button>
+                ) : (
+                  <div className="py-1.5 rounded-md bg-gray-700 text-center text-[10px] font-black text-white">100% owned</div>
+                )}
+                <button
+                  onClick={() => setTrade(trade?.club === i.club && trade.mode === "sell" ? null : { club: i.club, mode: "sell" })}
+                  className="py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-[10px] font-black text-white"
+                >
+                  Sell some
+                </button>
+              </div>
+              {trade?.club === i.club && (
+                <div className="mt-1.5 overflow-hidden rounded-md">
+                  <StakeControls
+                    key={`${i.club}-${trade.mode}`}
+                    club={i.club} valuation={value} money={career.money}
+                    stake={{ percent: i.percent, avgBuyValuation: i.avgBuyValuation }}
+                    mode={trade.mode}
+                    onBuy={pct => { onBuyStake(i.club, pct); setTrade(null); }}
+                    onSell={pct => { onSellStake(i.club, pct); setTrade(null); }}
+                  />
+                </div>
+              )}
               {i.percent < MAJORITY_THRESHOLD && (
                 <div className="mt-1.5">
                   {recommendClub === i.club ? (

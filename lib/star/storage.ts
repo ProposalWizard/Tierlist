@@ -1,3 +1,4 @@
+import { migrateReputation } from "./reputation";
 import type { CareerState, StarPhase } from "./types";
 import { hasClub } from "./calendar";
 import type { EuroStanding } from "./euro";
@@ -309,7 +310,14 @@ function backfill(c: CareerState): CareerState {
   // shareholder standing on file — backfilled at the same neutral starting
   // point a brand-new career opens with (see makeInitialCareer), not left
   // `undefined` (which every `reputation.*` read would otherwise crash on).
-  if (out.reputation === undefined) out.reputation = { world: 15, club: 50, government: 5, shareholders: 5 };
+  // Reputation became ONE number on 21 Sep 2026. An old four-bar object
+  // becomes the average of the four (agreed directly); a missing one starts
+  // where a new career does.
+  out.reputation = migrateReputation(out.reputation);
+  // Fame was rebuilt as a capped 0-100 the same day. Old saves could have
+  // run it into the hundreds; anything above 100 becomes 100.
+  if (typeof out.fame !== "number" || !Number.isFinite(out.fame)) out.fame = 0;
+  out.fame = Math.max(0, Math.min(100, out.fame));
   // A career saved before the real-manager pool existed has no record of who
   // it's already "used" — the current manager (if any) predates the pool
   // too and was never drawn from it, so the full roster is honestly correct
@@ -321,8 +329,6 @@ function backfill(c: CareerState): CareerState {
   if (!out.kibCans) out.kibCans = { basic: 0, premium: 0, elite: 0 };
   // A career saved before KIB Stat Cans existed has none on the shelf and
   // no boost running — both fields simply didn't exist to have a value.
-  if (!out.statCans) out.statCans = { basic: 0, premium: 0, elite: 0 };
-  if (out.statBoost === undefined) out.statBoost = null;
   // ── …and the squad, which is the third of exactly the same kind ──
   //
   // A squad is only ever created when a career is created or when you sign for

@@ -99,7 +99,7 @@ const EMPTY_SKILLS: Skills = { pace: 0, power: 0, technique: 0, vision: 0, freeK
 // ── TROPHY_FAME: still the one table careerFlow.ts's fame gain reads ───────
 {
   check(TROPHY_FAME["Premier League"] === 25, "a title is still worth the most fame");
-  check(TROPHY_FAME["Community Shield"] === 4, "…and a Community Shield the least of the named ones");
+  check(TROPHY_FAME["Premier League"] >= TROPHY_FAME["Community Shield"] * 10, "…and a title is worth at least 10x a Community Shield (owners, 21 Sep 2026)");
 }
 
 // ── displayOverall: one shared 0-100 scale, monotonic with starRating ──────

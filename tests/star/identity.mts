@@ -85,7 +85,7 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
   check(id.weekActions > 0, "an unsigned career still has a week to spend");
   check(id.sponsors.length > 0, "an unsigned career still has the sponsor slate");
   check(id.relationships.boss > 0, "an unsigned career still has relationships");
-  check(id.reputation.world > 0, "an unsigned career still has a reputation");
+  check(id.reputation > 0, "an unsigned career still has a reputation");
   check(!!id.currentBoot, "an unsigned career still has boots on");
 
   // The rating is computed off skills and honours, neither of which a club
@@ -371,6 +371,11 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
   const withoutChanged = (c: CareerState) => {
     const rest: Record<string, unknown> = { ...c };
     for (const k of EXPECTED_DIFFS) delete rest[k];
+    // KIB Stat Cans were deleted outright (owners, 21 Sep 2026: "only three
+    // types of cans"), so the fixture's two fields for them are gone on purpose.
+    // Fame and reputation were rebuilt the same day: a new career now starts
+    // at 0 fame (was 5) and reputation is one number (was four bars).
+    for (const k of ["statCans", "statBoost", "fame", "reputation"]) delete rest[k];
     return JSON.stringify(rest);
   };
 

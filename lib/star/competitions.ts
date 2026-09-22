@@ -1,3 +1,4 @@
+import { fameOf } from "./fame";
 import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad } from "./types";
 import type { NamedOppGoal } from "./leagueSquads";
 import {
@@ -286,7 +287,7 @@ export function internationalCallUp(career: CareerState): boolean {
   const form = career.form.length
     ? career.form.reduce((s, r) => s + r, 0) / career.form.length
     : 6.5;
-  return career.starRating >= 3.0 || career.fame >= 45 || (career.starRating >= 2.6 && form >= 7.6);
+  return career.starRating >= 3.0 || fameOf(career) >= 40 || (career.starRating >= 2.6 && form >= 7.6);
 }
 
 /** The tournament, if there is one this season. Alternates, every other year. */

@@ -1,0 +1,214 @@
+<title>Knowitball Patch Notes Mikey v0.1</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.1</span>
+  <h1>Knowitball Patch Notes Mikey v0.1</h1>
+  <p class="sub">21 September 2026 · branch Mikey · Star Career economy, fame &amp; reputation · tests: all passing (not yet committed)</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>★100,000</b><span>New top Premier League weekly wage (was ★11,933)</span></div>
+  <div class="s"><b>0–100</b><span>Fame now has six levels and a ceiling</span></div>
+  <div class="s"><b>1</b><span>Reputation number (was four bars)</span></div>
+  <div class="s"><b>50</b><span>Seasons before you must retire (was age 40)</span></div>
+</div>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Careers stuck after season 5: End of Season did nothing</div>
+    <div class="dt">Found on Leo's save (Arsenal, season 5). Pressing End of Season crashed silently while building next season's Champions League draw, so the season never rolled over. Any save with an older Rule Book could hit this. <span class="tag">measured</span></div>
+    <details><summary>Why it happened</summary><p>His save stored a UEFA Rule Book from before the "custom clubs in Europe" rule existed, so that rule was missing and the draw crashed reading it. Saved Rule Books now get any newer rules filled in with defaults. The browser console error Leo sent pointed straight to it. <code>ruleBook.ts</code></p></details>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Fame levels</div>
+    <div class="dt">Fame runs 0–100 across six levels: <b>Unknown, Local Name 10, Rising Star 25, National Name 40, Global Star 60, Icon 80</b>. Each level unlocks more sponsors. <span class="tag seen">seen</span></div>
+    <details><summary>How you earn and lose it</summary>
+      <ul>
+        <li><b>Playing well earns nothing on its own.</b> Big moments do: promotion +3 to +10, first time in Europe +5, trophies (league title +12, FA Cup +8, Champions League +15), Player of the Season +4, Young Player +3, Golden Boot +3, Team of the Season +2, Player of the Month +1, Ballon d'Or top three +5, win +15.</li>
+        <li><b>What you own adds fame too</b>, with each item worth less the more you already own. The whole current shop is worth about 33.</li>
+        <li><b>Scandals and getting caught add 1–4 fame</b> (it's a news story), but cost reputation.</li>
+        <li>You lose fame for relegation (−5), a season mostly on the bench (−4), and by fading back toward your division's normal level each season (National League 15 … Premier League 75).</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Items wear out</div>
+    <div class="dt">Phone about 2 seasons, cars 5, property and jewellery never. A worn-out item gives no fame and shows "WORN OUT — REPLACE" in the shop. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Fame &amp; Reputation screen</div>
+    <div class="dt">Ownership → Reputation now shows your fame level, your reputation, what each unlocks, and why both moved last season. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Buy more / Sell some in Portfolio</div>
+    <div class="dt">"Sell entire stake" is gone. Buy more (up to 100%, can make you majority owner) or sell any amount with a slider. <b>Every buy and sell now asks you to confirm</b>, and warns if you're about to gain or lose majority. <span class="tag seen">seen</span></div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Premier League wages go much higher at the top</div>
+    <div class="dt">Now depends on the club's real wage bill, trophies won last season and your star rating, capped at <b>★100,000 a week</b>. Other divisions unchanged. <span class="tag">measured</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Coventry bench</span><span class="track"><span class="fill now" style="width:2.5%"></span></span><span class="vv">★2,534</span></div>
+      <div class="bar"><span class="lb">Chelsea starter</span><span class="track"><span class="fill now" style="width:13.8%"></span></span><span class="vv">★13,798</span></div>
+      <div class="bar"><span class="lb">Liverpool star</span><span class="track"><span class="fill now" style="width:29.8%"></span></span><span class="vv">★29,831</span></div>
+      <div class="bar"><span class="lb">Everything maxed</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv"><s>★11,933</s> ★100,000</span></div>
+    </div>
+    <details><summary>The three multipliers</summary>
+      <ul>
+        <li><b>Club spending power</b>: real 2025-26 wage bills, Liverpool 13.5× Coventry, softened to 3.7× so squad players don't out-earn stars elsewhere.</li>
+        <li><b>Honours</b>: league won last season ×1.2, Champions League ×1.3, any Ballon d'Or ×1.5.</li>
+        <li><b>Star rating</b>: no effect below 4★, up to ×1.5 at 5★.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Reputation is one number</div>
+    <div class="dt">0–100, starting at 20. 30+ boards take your recommendations seriously, 60+ you can propose Rule Book changes, 90+ you can run for president. <b>Merging clubs now costs 20.</b> Old saves take the average of the four old bars. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Sponsors must be earned again</div>
+    <div class="dt">Deals last one season (two for Watch, Jewellery and Car), then you have to re-qualify. Unlocks follow fame levels; the luxury brands now want a car or a property you own instead of lifestyle points. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">KIB cans: three cans, priced off your wage</div>
+    <div class="dt">The three Stat Cans are removed. Energy cans now cost half a week (Basic), one week (Premium) and two weeks (Elite) of <b>your</b> wage, so they always cost something real. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Cheaper first boots, shorter boot life in the lower tiers</div>
+    <div class="dt">NS-Pure <b>★725 → ★365</b>. Starter, Semi-Pro and Pro boots last about half as long. NS-Swerve lasts 15 matches. <span class="tag seen">seen</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">NS-Pure</span><span class="track"><span class="fill was" style="width:61%"></span><span class="fill now" style="width:30%"></span></span><span class="vv"><s>70</s> 35</span></div>
+      <div class="bar"><span class="lb">NS-Blast</span><span class="track"><span class="fill was" style="width:100%"></span><span class="fill now" style="width:26%"></span></span><span class="vv"><s>115</s> 30</span></div>
+      <div class="bar"><span class="lb">NS-Swerve</span><span class="track"><span class="fill was" style="width:61%"></span><span class="fill now" style="width:13%"></span></span><span class="vv"><s>70</s> 15</span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">A career can last 50 seasons</div>
+    <div class="dt">Forced retirement at age 40 (about 22 seasons max) is gone. The career now ends after season 50. You can still choose to retire from 33. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Smaller balance tweaks</div>
+    <div class="dt">A league title now counts 10× a Community Shield toward your star rating (was about 6×). Dilemma fame rewards scaled down to +1–3 (an advert used to give up to +15, more than a league title). Country call-ups now come at fame 40 (was 45). <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Buying a stake can quietly buy less than you typed <span class="pill p-amb">Low</span></div>
+    <div class="dt">Likely why 10% of AEK Athens became 5.2%: the amount is capped at what's in your bank. The new confirm box now shows the real % before you commit. Not confirmed against the save.</div>
+  </li>
+  <li>
+    <div class="hd">Sponsor "deal ends" line not seen on screen yet <span class="pill p-amb">Low</span></div>
+    <div class="dt">The wording is in the game; the playtest didn't get far enough to sign a deal.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">More ways to earn big at the top</div><div class="dt">Ideas: inside-knowledge investments, tax dodges, betting on your own games, all with a chance of getting caught. Needed to make buying clubs like AC Milan realistic.</div></li>
+  <li><div class="hd">Star rating unlocks abilities</div><div class="dt">Idea only: new shot types, skill moves or movement control at higher star levels.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li>This is the first version.</li>
+</ul>
+</div>
