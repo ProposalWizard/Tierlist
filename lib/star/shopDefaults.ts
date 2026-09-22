@@ -137,9 +137,6 @@ const BOOT_SPECS: BootSpec[] = [
   // ── Semi-Pro: League Two money.
   { id: "speed", name: "NS-Flash", pace: 10, power: 5, technique: 10, tier: "semi_pro", at: 0.45, matches: 25 },
   { id: "power", name: "NS-Thunder", pace: 5, power: 10, technique: 10, tier: "semi_pro", at: 0.7, matches: 30 },
-  // Not a stat boost — a whole extra ability, so it sits at the top of its
-  // own rung's band rather than on the stat-per-star curve the rest follow.
-  { id: "curl", name: "NS-Swerve", pace: 5, power: 5, technique: 10, tier: "semi_pro", at: 1, curve: true, matches: 15 },
 
   // ── Pro: League One money.
   { id: "elite", name: "NS-Elite", pace: 10, power: 10, technique: 10, tier: "pro", at: 0.45, matches: 14 },
@@ -153,11 +150,14 @@ const BOOT_SPECS: BootSpec[] = [
   // ── World Class: top-flight money.
   { id: "phantom", name: "NS-Phantom", pace: 20, power: 20, technique: 20, tier: "world_class", at: 0.55 },
   { id: "galaxy", name: "NS-Galaxy", pace: 25, power: 25, technique: 25, tier: "world_class", at: 0.8 },
-  // Another whole extra ability (Touch Mode — see Boot.extraTouch and
-  // CanvasMatch.tsx), requested as the single most expensive item in the
-  // catalogue ("these boots should cost LOADS obvs"). It is exactly that:
-  // the dear end of the dearest tier's band, which is the most any boot in
-  // this game can cost without leaving the band boots live in.
+  // Both of these are a whole extra ability rather than a stat boost (curve
+  // for NS-Swerve, Touch Mode for NS-Maestro — see Boot.curve/extraTouch and
+  // CanvasMatch.tsx), so both sit at the top of world_class's own band
+  // instead of on the stat-per-star curve the rest follow — tied for the
+  // most any boot in this game can cost without leaving the band boots
+  // live in. Moved up from Semi-Pro (23 Sep 2026): "the NS-Swerve boots
+  // should be worth the same as the NS-Maestro boots."
+  { id: "curl", name: "NS-Swerve", pace: 5, power: 5, technique: 10, tier: "world_class", at: 1, curve: true, matches: 15 },
   { id: "maestro", name: "NS-Maestro", pace: 20, power: 20, technique: 30, tier: "world_class", at: 1, extraTouch: true },
 ];
 
