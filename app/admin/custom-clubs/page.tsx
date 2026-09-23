@@ -8,6 +8,7 @@ import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
 import { KitSwatch } from "@/components/star/Investments";
 import LineupBuilder from "@/components/star/LineupBuilder";
 import type { LeagueSquad } from "@/lib/star/types";
+import PageGuide from "@/components/admin/PageGuide";
 
 /**
  * CUSTOM CLUBS — CREATE A WHOLE FAKE CLUB FROM SCRATCH.
@@ -220,6 +221,7 @@ export default function CustomClubsAdminPage() {
           </div>
         </div>
       </div>
+      <PageGuide page="/admin/custom-clubs" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import FirstPersonDribble from "@/components/star/FirstPersonDribble";
 import FirstPersonRoam from "@/components/star/FirstPersonRoam";
+import PageGuide from "@/components/admin/PageGuide";
 
 /**
  * Standalone sandbox for the two first-person dribbling modes — admin-only,
@@ -181,6 +182,7 @@ export default function StarDribbleDevPage() {
           )}
         </div>
       </div>
+      <PageGuide page="/star-dribble-dev" />
     </div>
   );
 }

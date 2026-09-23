@@ -85,6 +85,7 @@ import {
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import PageGuide from "@/components/admin/PageGuide";
 import {
   applyOverride,
   applyOverrideToScenario,
@@ -1496,6 +1497,7 @@ export default function StarGalleryDevPage() {
       }}
     >
       {children}
+      <PageGuide page="/star-gallery-dev" />
     </main>
   );
 
@@ -1678,10 +1680,12 @@ export default function StarGalleryDevPage() {
     // column now — at 13.5px "+ Team-mate" broke onto two lines and made the
     // row twice as tall as it needed to be.
     flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
-    padding: "0 3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+    // 11px, 2px: six fit a 390px phone once Tune joins (at 12px "+ Mate"
+    // and "Remove" were cut to "+ Ma…" and "Rem…").
+    padding: "0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
 
     border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-    color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
+    color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 11, fontWeight: 700,
   });
 
   // ── Adding and removing figures ──
@@ -1720,7 +1724,12 @@ export default function StarGalleryDevPage() {
     // On a phone the card has 14px either side. The old phone default (340)
     // overflowed a 340px screen and got cut off, while Play fitted the space
     // — a 9% size jump that read as "the goalie is still moved".
-    : { baseW: Math.min(340, vp.w - 28), maxW: Math.min(460, vp.w - 28) };
+    // Floored, and left at the default until the screen has been measured:
+    // vp.w is 0 on the first render and during a resize, and 0 - 28 gave the
+    // pitch a negative size, which threw and took the whole card down.
+    : vp.w > 0
+      ? { baseW: Math.max(200, Math.min(340, vp.w - 28)), maxW: Math.max(200, Math.min(460, vp.w - 28)) }
+      : undefined;
   const simulatePanel = cell.game === "eleven" ? (
     <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
       <button
@@ -1774,7 +1783,7 @@ export default function StarGalleryDevPage() {
   // The edit row — under the picture on a phone, full width under the three
   // columns when the verdicts sit at the sides (see `sides`).
   const editRow = cell.game === "eleven" ? (
-        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+        <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
           <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
           <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
           <button

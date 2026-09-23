@@ -8,8 +8,8 @@
 import { buildScenario, SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { frameFromScenario, type Frame } from "@/lib/star/scenarioFrame";
-import { applyOverride } from "@/lib/star/scenarioEdit";
-import { cardForLive, baseFor, LIVE_SEED_BASE } from "@/lib/star/liveEdit";
+import { applyOverride, overrideFromMatchScenario } from "@/lib/star/scenarioEdit";
+import { cardForLive, baseFor, liveMatchScenario, LIVE_SEED_BASE } from "@/lib/star/liveEdit";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
@@ -41,6 +41,35 @@ for (const kind of kinds) {
 ok(exact === n, `the card shows exactly the live picture (${exact}/${n})`);
 ok(rebuilt === n, `the gallery rebuilds the same base from kind + seed (${rebuilt}/${n})`);
 ok(framed === n, `the card is framed exactly as the match framed it (${framed}/${n})`);
+
+// THE WHOLE TRIP — what Save/Commit on the match screen actually send, through
+// JSON (the wire and the database), rebuilt the way the gallery rebuilds a
+// saved card (base at kind + seed, saved positions laid over). Saved to the
+// nearest centimetre, so "the same" here means within 2cm.
+console.log("\nSAVED LIVE CHANCE → GALLERY CARD");
+const near = (a: Frame, b: Frame) => {
+  const on = (f: Frame) => f.items.filter((i) => i.at.x > -20 && i.at.x < 90 && i.at.y > -20 && i.at.y < 130);
+  const A = on(a), B = on(b);
+  const cover = (x: typeof A, y: typeof A) => x.every((p) => y.some((q) => q.side === p.side && Math.hypot(q.at.x - p.at.x, q.at.y - p.at.y) < 0.02));
+  return A.length === B.length && cover(A, B) && cover(B, A)
+    && Math.hypot(a.ball.x - b.ball.x, a.ball.y - b.ball.y) < 0.02;
+};
+let trips = 0, same = 0, valid = 0;
+for (const kind of SCENARIO_KINDS as readonly ScenarioKind[]) {
+  for (let s = 1; s <= 12; s++) {
+    trips++;
+    const live = buildScenario(kind, mulberry32(s * 7919 + 13));
+    const ms = JSON.parse(JSON.stringify(liveMatchScenario(live, 10)));
+    const nums = [ms.ball.x, ms.ball.y, ms.camera.centerX, ms.camera.centerY, ms.camera.viewHeight,
+      ...ms.players.flatMap((p: { x: number; y: number }) => [p.x, p.y])];
+    if (nums.every((v) => typeof v === "number" && Number.isFinite(v)) && ms.id === `gallery-v-${kind}-${ms.source.seed}`) valid++;
+    const base = frameFromScenario(baseFor(kind, ms.source.seed));
+    const back = applyOverride(base, overrideFromMatchScenario(ms, base.items.length, base.camera));
+    if (near(back, frameFromScenario(live))) same++;
+  }
+}
+ok(valid === trips, `what Save sends is a complete gallery scenario (${valid}/${trips})`);
+ok(same === trips, `the gallery rebuilds exactly the chance you saved (${same}/${trips})`);
 
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }
 console.log("\nAll checks passed.\n");

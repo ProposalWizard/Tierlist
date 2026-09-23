@@ -27,6 +27,315 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.8",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-23T00:00:00Z",
+      "summary": "How to build scenarios, step by step · Save and Commit from inside Infinite Match and Infinite Highlights · the difficulty argument, researched and simulated · an eye (ⓘ) on every admin page",
+      "stats": [
+        {
+          "value": "156/156",
+          "label": "chances saved from a match that come back in the gallery exactly as they were"
+        },
+        {
+          "value": "26",
+          "label": "admin and dev pages that now have the eye explaining every button"
+        },
+        {
+          "value": "9% → 0%",
+          "label": "how much bigger Play was than the picture on a phone — the goalie that \"still moved\""
+        },
+        {
+          "value": "~1 in 100",
+          "label": "players still playing on the day they'd reach the Premier League at today's pace (model)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "How to build scenarios",
+          "items": [
+            {
+              "title": "1. Open the gallery, then 11-a-side",
+              "detail": "knowitball.co.uk/star-gallery-dev, signed in as admin. 5-a-side is for looking only. Tuning & Commit is where saved-but-not-live scenarios wait."
+            },
+            {
+              "title": "2. Pick a chance type",
+              "detail": "Each chip reads in the game / saved, with the same numbers on every device. one on one · 21/22 = 22 saved, 21 committed."
+            },
+            {
+              "title": "3. Open a card and read the two pills",
+              "detail": "Unsaved (this browser) → Saved (the team sees it, not in matches) → Committed (live). A red line names what breaks the chance's own rules."
+            },
+            {
+              "title": "4. Fix it: drag anyone, or the ball",
+              "detail": "+ Mate adds a runner who makes a real run, + Opp adds an opponent, Remove takes out whoever you tapped. A blue border means unsaved."
+            },
+            {
+              "title": "5. Check it plays right: ▶ Play",
+              "detail": "It plays exactly the picture, drags and all. On a phone the keeper, ball and players now land in the same places."
+            },
+            {
+              "title": "6. Keep it or bin it",
+              "detail": "Save & Approve (✓) saves it for the team. ✕ No good marks it on your device only.",
+              "more": {
+                "summary": "The ⋯ menu",
+                "points": [
+                  "Save, Revert to built-in, Commit to repo, Export JSON, Discard unsaved edits.",
+                  "Revert only removes the saved copy. A committed copy stays in the game. Delete removes both."
+                ]
+              }
+            },
+            {
+              "title": "7. Want more? ▶ Sim",
+              "detail": "Rolls a fresh chance of this type the way a match does. Next → rolls another, and Save & Approve adds a good one as the type's next card. The fastest way to reach 30–50 per type."
+            },
+            {
+              "title": "8. Tune: only for teaching the generator",
+              "detail": "After a drag, Tune records what was wrong without saving the picture. Once 3 agree, ask Claude for \"the tuner proposals\". Now: 3 recorded, 0 proposals."
+            },
+            {
+              "title": "9. Put it in the game: Tuning & Commit",
+              "detail": "Look through all N, then press Commit all N once. It makes one commit and one deploy, about 2 minutes. Every commit also saves the same copy to the team's list."
+            },
+            {
+              "title": "10. When the game actually uses them",
+              "detail": "A type needs 5 committed drawings. Each chance served is one drawing nudged up to 2m and checked against the type's laws (true in 9 of 10 drawings). A drawing that breaks a law is never used as a base.",
+              "bars": [
+                {
+                  "label": "one on one, committed",
+                  "was": 0,
+                  "now": 21,
+                  "target": 50,
+                  "state": "good"
+                },
+                {
+                  "label": "tight angle, committed",
+                  "was": 0,
+                  "now": 11,
+                  "target": 50,
+                  "state": "good"
+                },
+                {
+                  "label": "free kick, committed",
+                  "was": 0,
+                  "now": 0,
+                  "target": 50,
+                  "state": "warn"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Save straight from a match",
+          "items": [
+            {
+              "title": "Infinite Match: Edit, Save and Commit pinned to the top",
+              "detail": "Save keeps the chance you're on exactly as it stands. Commit puts it in the game. ✎ Edit opens it to drag first."
+            },
+            {
+              "title": "Infinite Highlights: Save and Commit on every highlight",
+              "detail": "Save used to appear only after a drag, and there was no Commit on that screen."
+            },
+            {
+              "title": "It lands in the gallery as a card of that type",
+              "detail": "It counts in the chips and shows up in Tuning & Commit.",
+              "bars": [
+                {
+                  "label": "saved chances rebuilt exactly",
+                  "was": 0,
+                  "now": 156,
+                  "target": 156,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Not yet seen signed in as admin",
+              "detail": "Both reach the server. My test browser was refused, as expected, because it isn't signed in as admin."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Difficulty, scaling & paying: deep dive",
+          "items": [
+            {
+              "title": "All three of you want modes. You disagree on the default and on who pays",
+              "detail": "Harry: slow road as the main mode, casual clearly labelled. Leo: let players choose; a quick route keeps people. Mikey: have both, never let it go flat."
+            },
+            {
+              "title": "A few long-stayers pay for everything",
+              "detail": "The top 5% of spenders make 70% of revenue, rising to 81% by month 10. 87% of top spenders bought nothing in month 1 (Moloco, 55 games)."
+            },
+            {
+              "title": "Most players leave on day one",
+              "detail": "The typical game keeps 16% to day 2 and 3.7% to day 7; the top quarter keeps 26–28% and 7–8% (GameAnalytics, 11,600 games)."
+            },
+            {
+              "title": "Swings and lulls drive quitting more than a hard start",
+              "detail": "263k players: uneven difficulty mattered more than average difficulty; winning streaks protect; losing streaks didn't make beginners quit."
+            },
+            {
+              "title": "Easier for players about to quit meant more money overall",
+              "detail": "330k-player trial (Ascarza, Netzer & Runge 2025): they spent less that round but stayed longer, about 7–8 cents more per player over 30 days. \"Harder means they spend more\" didn't hold up."
+            },
+            {
+              "title": "Simulation: ~10 in 1,000 players are still playing on the day they'd reach the Prem",
+              "detail": "At 20 hours to the top and 30 minutes a day. Halving the road to 10 hours makes it 17 in 1,000. The live dials are on the linked page."
+            },
+            {
+              "title": "Simulation: does a casual mode make more money?",
+              "detail": "Harry's view 95, Leo's 183, Mikey's 163, worst case 71 (main mode alone = 100). It flips on how many new players casual brings and how long they stay. On Harry's own assumptions it pays for itself at about 1 new player for every 5 you already have."
+            },
+            {
+              "title": "In-game purchases",
+              "detail": "Sell rewarded ads, cosmetics, a cheap starter pack, and expensive time-savers. Hold interstitial ads back until players are well in. Never sell stat boosts for real money.",
+              "more": {
+                "summary": "Why",
+                "points": [
+                  "Cheap skips make the climb feel worthless (Pay to (Not) Play).",
+                  "KIB Stat Cans are fine bought with stars. Selling them for real money is the pay-to-win line.",
+                  "Score! Hero waits until level 25 before interstitial ads."
+                ]
+              }
+            },
+            {
+              "title": "Recommendation: Road to Glory as the default, Superstar Start (casual) beside it",
+              "detail": "Casual is the same game with different settings. A hard mode is earned later. Plan pace in hours, and decide with PostHog data at about 1,000 players per mode.",
+              "pill": {
+                "text": "decision for Harry",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Infinite Match had no Save or Commit in reach",
+              "detail": "There was one Edit button that scrolled away above the scoreboard. Edit, Save and Commit are now pinned to the top."
+            },
+            {
+              "title": "Infinite Highlights had no Commit, and no Save until you dragged",
+              "detail": "Both are now under every highlight."
+            },
+            {
+              "title": "The keeper \"still moved\" when you pressed Play on a phone",
+              "detail": "At 340px the picture drew 340px in a 312px space and got cut off, while Play fitted: a 9% jump. Both are 312px now, seen in a browser.",
+              "bars": [
+                {
+                  "label": "Play vs picture size, phone",
+                  "was": 9,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "title": "A gallery card could go blank on a resize",
+              "detail": "This came from the phone fix, which is already on main: a negative picture size before the screen was measured. 7 errors → 0."
+            },
+            {
+              "title": "Button rows cut off on a phone",
+              "detail": "Infinite Highlights ran to 433px on a 390px screen. The gallery clipped \"+ Mate\" and \"Remove\" once Tune appeared. Everything fits now, measured."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "An eye (ⓘ) on all 26 admin and dev pages",
+              "detail": "It explains every button by its on-screen name, where saving goes, whether anything commits, and where it shows up in the game. Anyone who changes a button now has to update its explanation in the same change."
+            },
+            {
+              "title": "A test for saving from a match",
+              "detail": "156/156 saved live chances rebuild exactly. When the save was broken on purpose, the test caught it: 0/156."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Tune corrections are shared now",
+              "detail": "Mikey ran the migration, and it's confirmed live: 3 corrections, 0 proposals."
+            },
+            {
+              "title": "Leo's 11 scenarios are in the code",
+              "detail": "Merged to main."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "draft-dev pages aren't sandboxes",
+              "detail": "/draft-dev and /draft-dev2 share the real Draft's saved game, post to real history, XP and records, and create real rooms.",
+              "alert": true
+            },
+            {
+              "title": "The goal is drawn differently in Play and in the picture",
+              "detail": "In Play the net rises above the goal line. The players, keeper and ball are in the same places."
+            },
+            {
+              "title": "The Scenario Builder can't reach the game",
+              "detail": "Its text says it saves locally, but it actually saves to the team's list, and it has no commit."
+            },
+            {
+              "title": "The Tuning editor saves in that browser only",
+              "detail": "Nothing on /star-tuning-dev commits."
+            },
+            {
+              "title": "Team-mates right next to you steal your shot as a pass",
+              "detail": "Carried over. Needs the match engine file.",
+              "pill": {
+                "text": "needs Mikey",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "\"Not the same game in the play area\": which part?",
+              "detail": "Carried over.",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Not seen with an admin sign-in",
+              "detail": "Save and Commit from Infinite Match and Infinite Highlights."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.7 — Play matches the picture, the difficulty research",
+              "detail": "Fixed: Play no longer made the picture jump; the ball drags on its own; false \"attacker offside\" 3/65 → 0/65; ✓ on a sim saves; commits also save. Added: Edit this chance in Infinite Match. Still open: team-mates stealing the shot, keeper near-post, camera framing."
+            },
+            {
+              "title": "v0.4 — Play Area, Infinite Match, commit review",
+              "detail": "Play in the gallery used your saved drawing, the Play Area and Infinite Match arrived, and scenarios could be reviewed before committing."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/DYAaW3Bma3zowkG5DcoQaS",
+      "updatedAt": null
+    },
+    {
       "version": "0.7",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-23T00:00:00Z",

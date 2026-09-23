@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import PageGuide from "@/components/admin/PageGuide";
 
 const FIFA_YEARS = Array.from({ length: 20 }, (_, i) => 2007 + i);
 
@@ -508,6 +509,7 @@ export default function ScrapeSofifaPage() {
           </button>
         </div>
       </div>
+      <PageGuide page="/admin/football/scrape" />
     </div>
   );
 }

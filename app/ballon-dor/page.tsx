@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import BallonDorGame from "@/components/ballon-dor/BallonDorGame";
+import PageGuide from "@/components/admin/PageGuide";
 
 export const dynamic = "force-dynamic";
 
@@ -12,5 +13,10 @@ export default async function BallonDorPage() {
   if (!user) redirect("/auth?next=/ballon-dor");
   if (!(await isAdmin(user.id))) redirect("/");
 
-  return <BallonDorGame />;
+  return (
+    <>
+      <BallonDorGame />
+      <PageGuide page="/ballon-dor" />
+    </>
+  );
 }

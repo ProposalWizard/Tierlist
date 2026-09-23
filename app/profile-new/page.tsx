@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProfileNewClient from "./ProfileNewClient";
+import PageGuide from "@/components/admin/PageGuide";
 
 export const metadata = { title: "Profile — KnowItBall" };
 
@@ -18,16 +19,19 @@ export default async function ProfileNewPage() {
     .maybeSingle();
 
   return (
-    <ProfileNewClient
-      userId={user.id}
-      profile={
-        profile ?? {
-          username: null,
-          current_streak: 0,
-          longest_streak: 0,
-          is_anonymous: false,
+    <>
+      <ProfileNewClient
+        userId={user.id}
+        profile={
+          profile ?? {
+            username: null,
+            current_streak: 0,
+            longest_streak: 0,
+            is_anonymous: false,
+          }
         }
-      }
-    />
+      />
+      <PageGuide page="/profile-new" />
+    </>
   );
 }

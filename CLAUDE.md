@@ -426,6 +426,13 @@ Three people are building this. To avoid two sessions editing the same files:
 
 ## Recent Session
 
+**23 September 2026 (Harry, cont.) — Save/Commit from inside a match, an eye (ⓘ) on every admin page, patch notes v0.8 (https://claude.ai/artifact/DYAaW3Bma3zowkG5DcoQaS).**
+
+- Infinite Match: Edit / Save / Commit pinned (sticky) above the match; Save/Commit work on the chance as it stands (`liveMatchScenario`, lib/star/liveEdit.ts — one helper for bar and editor). Infinite Highlights: Save and Commit always shown (was Save only after a drag, no Commit). `tests/star/liveEdit.mts` round trip 156/156, mutation-checked (0/156 when broken).
+- Gallery on a phone: picture sized to the screen (`vp.w - 28`, floored at 200, default until measured — a 0 width once gave the pitch a negative size and blanked the card). Play == picture at 340px (was 9% bigger). Six-button edit rows fit at 390px in gallery and highlights.
+- `components/admin/PageGuide.tsx` + `lib/adminGuides.ts`: the eye on 26 admin/dev pages; `.claude/skills/admin-page-guide` makes updating it part of any button/save/commit change. Findings not fixed: /draft-dev(2) write to the REAL Draft save/history/XP/rooms; Scenario Builder has no commit and stale "saved locally" text; /star-tuning-dev commits nothing; squad builder bench 7 vs 9; highlights missing from AdminNavPanel; custom_clubs.sql status unknown.
+- Patch notes v0.8: scenario tutorial with real screenshots, difficulty/monetisation deep dive with two live models (Prem reached by ~10 in 1,000 players at 20h/30min a day; casual mode = 95 / 183 / 163 / 71 vs main-only 100 for Harry / Leo / Mikey / worst views).
+
 **23 September 2026 (Harry) — Gallery Play matches the picture, mid-match editing, shared counts, difficulty research (patch notes v0.7: https://claude.ai/artifact/U1uHCBfUzgsoozGaFnKxTG).**
 
 - Gallery Play: the picture now draws figures at `MATCH_SCALE` and Play runs at the picture's measured width (`ScenarioPlay`'s `width`) — nothing moved before the kick, it was a 13% size jump. Seen in a browser, keeper/ball/players within a few px.

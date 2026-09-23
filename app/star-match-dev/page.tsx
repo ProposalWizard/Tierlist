@@ -5,6 +5,7 @@ import CanvasMatchTest from "@/components/star/CanvasMatchTest";
 import { shotTuning, SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngineTest";
 import { loadCareer } from "@/lib/star/storage";
 import type { CareerState } from "@/lib/star/types";
+import PageGuide from "@/components/admin/PageGuide";
 
 const POSITIONS = ["ST", "CAM", "LW", "RW", "CM", "CDM", "LM", "RM", "LB", "RB", "CB", "GK"];
 
@@ -294,6 +295,7 @@ export default function StarMatchDevPage() {
           Each session is a 6-chance mini-match — a post-match summary shows after the last one.
         </div>
       </div>
+      <PageGuide page="/star-match-dev" />
     </div>
   );
 }

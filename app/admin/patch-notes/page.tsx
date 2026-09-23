@@ -16,6 +16,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import PatchNotesArchive from "./PatchNotesArchive";
+import PageGuide from "@/components/admin/PageGuide";
 
 export const metadata: Metadata = {
   title: "Patch Notes",
@@ -30,5 +31,10 @@ export default async function PatchNotesPage() {
   if (!user) redirect("/auth?next=/admin/patch-notes");
   if (!(await isAdmin(user.id))) redirect("/");
 
-  return <PatchNotesArchive />;
+  return (
+    <>
+      <PatchNotesArchive />
+      <PageGuide page="/admin/patch-notes" />
+    </>
+  );
 }

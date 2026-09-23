@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FRAME_STYLES, xpForLevel, cumulativeXpForLevel, XP_AWARDS } from "@/lib/xp";
+import PageGuide from "@/components/admin/PageGuide";
 
 interface RewardRow {
   id: string;
@@ -254,6 +255,7 @@ export default function AdminXPPage() {
         {tab === "xp-curve" && <XPCurveTab />}
         {tab === "xp-awards" && <XPAwardsTab />}
       </div>
+      <PageGuide page="/admin/xp" />
     </div>
   );
 }
