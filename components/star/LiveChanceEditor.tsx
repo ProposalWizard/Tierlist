@@ -19,9 +19,9 @@
 import { useMemo, useState } from "react";
 import EditableFrame from "./EditableFrame";
 import type { Scenario } from "@/lib/star/canvasEngine";
-import { cardForLive } from "@/lib/star/liveEdit";
+import { cardForLive, liveMatchScenario } from "@/lib/star/liveEdit";
 import {
-  applyOverride, addFigureTo, removeFigureFrom, frameToMatchScenario, hasEdits, type PosOverride,
+  applyOverride, addFigureTo, removeFigureFrom, hasEdits, type PosOverride,
 } from "@/lib/star/scenarioEdit";
 import { saveScenarioShared } from "@/lib/star/scenarioStore";
 
@@ -44,21 +44,13 @@ export default function LiveChanceEditor({ scenario, minute, onClose }: {
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
 
   const frame = applyOverride(baseFrame, drag);
-  const target = {
-    // Exactly the id the gallery gives a version at this seed, so the card
-    // it rebuilds is this one — see cellFromSaved.
-    id: `gallery-v-${scenario.kind}-${card.seed}`,
-    name: `${kindLabel(scenario.kind)} (from a match, ${minute}')`,
-    kind: scenario.kind as string,
-    seed: card.seed,
-    planId: null,
-    tool: "gallery" as const,
-  };
+  // Same helper the match screen's own Save/Commit use — see liveEdit.ts.
+  const asSaved = () => liveMatchScenario(scenario, minute, drag, card);
   const selected = frame.items.find((it) => it.id === selectedId);
 
   const save = async (): Promise<boolean> => {
     setBusy("saving");
-    const res = await saveScenarioShared(frameToMatchScenario(target, frame));
+    const res = await saveScenarioShared(asSaved());
     setBusy(null);
     setFlash(res.ok
       ? { ok: true, text: `Saved as a ${kindLabel(scenario.kind)} scenario — it is in the gallery now.` }
@@ -71,7 +63,7 @@ export default function LiveChanceEditor({ scenario, minute, onClose }: {
     try {
       const r = await fetch("/api/star/scenarios/commit", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenario: frameToMatchScenario(target, frame) }),
+        body: JSON.stringify({ scenario: asSaved() }),
       });
       const d = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; message?: string };
       setFlash(r.ok && d.ok

@@ -27,7 +27,8 @@ import { buildScenario, type Scenario, type ScenarioKind, type Vec2 } from "./ca
 import { mulberry32 } from "./season";
 import { fixBaseScenario } from "./baseScenario";
 import { frameFromScenario, type Frame, type Item } from "./scenarioFrame";
-import type { PosOverride } from "./scenarioEdit";
+import { applyOverride, frameToMatchScenario, type PosOverride, type SaveTarget } from "./scenarioEdit";
+import type { MatchScenario } from "./scenarios";
 
 /** Seeds for cards made from a live chance — clear of every generated card. */
 export const LIVE_SEED_BASE = 900_000;
@@ -119,4 +120,32 @@ export function cardForLive(live: Scenario, tries = 40): { seed: number; base: F
     if (score === 0) break;
   }
   return { seed: best!.seed, base: best!.base, override: overrideForLive(liveFrame, best!.base) };
+}
+
+const kindLabel = (k: string) => k.replace(/_/g, " ");
+
+/** Where a live chance is saved: exactly the id the gallery gives a version at
+ *  this seed, so the card it rebuilds (cellFromSaved) is this one. */
+export function liveTarget(kind: string, seed: number, minute: number): SaveTarget {
+  return {
+    id: `gallery-v-${kind}-${seed}`,
+    name: `${kindLabel(kind)} (from a match, ${minute}')`,
+    kind,
+    seed,
+    planId: null,
+    tool: "gallery",
+  };
+}
+
+/**
+ * The live chance as a saved scenario — as it stood, or with a further drag on
+ * top. The match screen's own Save/Commit (no editing) and the editor's both
+ * come through here, so the two can never save different things.
+ */
+export function liveMatchScenario(
+  live: Scenario, minute: number, drag?: PosOverride,
+  card: { seed: number; base: Frame; override: PosOverride } = cardForLive(live),
+): MatchScenario {
+  const frame = applyOverride(applyOverride(card.base, card.override), drag);
+  return frameToMatchScenario(liveTarget(live.kind, card.seed, minute), frame);
 }
