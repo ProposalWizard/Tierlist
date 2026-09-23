@@ -343,11 +343,19 @@ const ALL_CLUBS: Record<CareerDivision, string[]> = {
   // boot a rung down. The five tiers' bands overlap in absolute stars, so
   // this is a real property of where each boot sits in its own band, not a
   // consequence of the ladder.
+  // NS-Swerve and NS-Maestro are a deliberate exception (23 Sep 2026,
+  // "NS-Swerve should be worth the same as NS-Maestro"): both sit at the
+  // dear end of the same world_class band, so they're EQUAL by design, not
+  // ascending.
   for (let i = 1; i < BOOTS_CATALOGUE_DEFAULT.length; i++) {
     const prev = BOOTS_CATALOGUE_DEFAULT[i - 1];
     const cur = BOOTS_CATALOGUE_DEFAULT[i];
-    check(cur.price > prev.price,
-      `${cur.name} (★${cur.price}) must cost more than ${prev.name} (★${prev.price})`);
+    const tiedByDesign = new Set([prev.id, cur.id]).size === 2
+      && new Set(["curl", "maestro"]).has(prev.id) && new Set(["curl", "maestro"]).has(cur.id);
+    check(tiedByDesign ? cur.price === prev.price : cur.price > prev.price,
+      tiedByDesign
+        ? `${cur.name} and ${prev.name} cost exactly the same (★${cur.price})`
+        : `${cur.name} (★${cur.price}) must cost more than ${prev.name} (★${prev.price})`);
     check(
       SHOP_TIER_ORDER.indexOf(PRICE_SPECS.boots[cur.id].tier)
         >= SHOP_TIER_ORDER.indexOf(PRICE_SPECS.boots[prev.id].tier),

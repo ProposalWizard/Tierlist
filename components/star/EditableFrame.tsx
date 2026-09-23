@@ -9,7 +9,8 @@
  * (`scenarioFrame.ts`), one set of edit rules (`scenarioEdit.ts`), one pointer
  * handler — this file.
  *
- * Drag any figure or the ball; the grabbed point stays under the pointer (a
+ * Drag any figure (the ball too in five-a-side; in 11-a-side it rides at
+ * your feet and moves with you); the grabbed point stays under the pointer (a
  * rigid translate, not a snap), so the inverse of `projectionFor` has to be
  * exact. A live drag repaints THIS canvas directly, committing to the caller's
  * edit store on release.
@@ -31,7 +32,7 @@ import {
   type Frame,
   type Mark,
 } from "@/lib/star/scenarioFrame";
-import { applyOverride, cloneOverride, type PosOverride } from "@/lib/star/scenarioEdit";
+import { applyOverride, ballFollowsYou, cloneOverride, type PosOverride } from "@/lib/star/scenarioEdit";
 
 export default function EditableFrame({
   editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit, size,
@@ -112,6 +113,8 @@ export default function EditableFrame({
       const d = Math.hypot(sx - wx, sy - wy);
       if (d < r * 1.15 && d < bestD) { bestD = d; best = it.id; }
     });
+    // In 11-a-side the ball is at your feet and moves with you — never grabbed.
+    if (ballFollowsYou(frame)) return best;
     const bd = Math.hypot(p.px(frame.ball.x) - wx, p.py(frame.ball.y) - wy);
     if (bd < Math.max(14, r * 0.6) && bd < bestD) { best = "ball"; }
     return best;
