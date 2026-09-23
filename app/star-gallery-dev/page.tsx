@@ -1722,7 +1722,12 @@ export default function StarGalleryDevPage() {
     // On a phone the card has 14px either side. The old phone default (340)
     // overflowed a 340px screen and got cut off, while Play fitted the space
     // — a 9% size jump that read as "the goalie is still moved".
-    : { baseW: Math.min(340, vp.w - 28), maxW: Math.min(460, vp.w - 28) };
+    // Floored, and left at the default until the screen has been measured:
+    // vp.w is 0 on the first render and during a resize, and 0 - 28 gave the
+    // pitch a negative size, which threw and took the whole card down.
+    : vp.w > 0
+      ? { baseW: Math.max(200, Math.min(340, vp.w - 28)), maxW: Math.max(200, Math.min(460, vp.w - 28)) }
+      : undefined;
   const simulatePanel = cell.game === "eleven" ? (
     <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
       <button
