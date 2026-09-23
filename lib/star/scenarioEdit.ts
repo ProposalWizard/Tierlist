@@ -26,7 +26,6 @@ import type {
   ScenarioMomentKind,
   ScenarioSide,
 } from "./scenarios";
-import { ELEVEN_A_SIDE_ATTACK } from "./fiveASide/rules";
 import {
   YOU, OPP, MATE,
   marksForFaults,
@@ -118,15 +117,6 @@ export function nextAddedId(ovs: (PosOverride | undefined)[]): string {
   return `add${max + 1}`;
 }
 
-/**
- * In an 11-a-side chance the ball is always at YOUR feet — the engine stands
- * you beside it (`standOff`, canvasEngine.ts). So the editor never lets the
- * ball be placed on its own: it rides with you, at exactly the offset the
- * builder gave it. Five-a-side is left alone, because there the ball can be
- * with somebody else.
- */
-export const ballFollowsYou = (frame: Frame): boolean => frame.rules === ELEVEN_A_SIDE_ATTACK;
-
 export const lookFor = (side: ScenarioSide): Omit<FigureLook, "label" | "star"> =>
   side === "opponent" ? OPP : side === "you" ? YOU : MATE;
 
@@ -159,14 +149,7 @@ export function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame 
       removable: true,
     });
   }
-  let ball = ov!.ball ? { ...ov!.ball } : frame.ball;
-  if (ballFollowsYou(frame)) {
-    const was = frame.items.find((it) => it.side === "you");
-    const now = items.find((it) => it.side === "you");
-    ball = was && now
-      ? { x: now.at.x - (was.at.x - frame.ball.x), y: now.at.y - (was.at.y - frame.ball.y) }
-      : frame.ball;
-  }
+  const ball = ov!.ball ? { ...ov!.ball } : frame.ball;
   return { ...frame, items, ball };
 }
 
@@ -196,9 +179,6 @@ export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefine
   let runnerIdx = -1;
   let followerIdx = -1;
 
-  // The ball rides with you (see `ballFollowsYou`) — keep the builder's offset.
-  const ballOff = { x: sc.player.x - sc.ball.x, y: sc.player.y - sc.ball.y };
-
   let i = 0;
   for (const d of sc.defenders) { defIdx.push(i); const p = at(i++); if (p) { d.x = p.x; d.y = p.y; } }
   { const p = at(i++); if (p) { sc.keeper.x = p.x; sc.keeper.y = p.y; } }
@@ -207,7 +187,7 @@ export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefine
   if (goalInView(sc.kind)) { followerIdx = i; const p = at(i++); if (p) { sc.follower.x = p.x; sc.follower.y = p.y; } }
   for (const t of sc.teammates) { mateIdx.push(i); const p = at(i++); if (p) { t.x = p.x; t.y = p.y; } }
   { const p = at(i++); if (p) { sc.player.x = p.x; sc.player.y = p.y; } }
-  sc.ball.x = sc.player.x - ballOff.x; sc.ball.y = sc.player.y - ballOff.y;
+  if (ov!.ball) { sc.ball.x = ov!.ball.x; sc.ball.y = ov!.ball.y; }
 
   // ── Figures taken OUT ──
   // Descending, so an earlier splice never shifts a later one. The keeper and
