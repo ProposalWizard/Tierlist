@@ -102,8 +102,8 @@ Per the house style: republish the SAME artifact in place every time, never
 a fresh URL each round. That means this file has to carry the real URL
 between sessions, or a future round guesses wrong and creates a second page.
 
-**Current link:** https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd (v0.4,
-updated 22 Sep 2026)
+**Current link:** https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd (v0.5,
+updated 23 Sep 2026)
 
 When you ship a new version: read the URL above, `Artifact.publish` with
 that exact `url` so it updates in place, then edit this line with the
@@ -127,17 +127,38 @@ showed a stale MIGRATION NOT RUN banner instead of the actual notes).
   page's own title convention. `version` uses the SAME number as the
   matching claude.ai artifact version, so a reader can find "the same
   round" in either place without the numbers drifting apart.
-- **`version` is a real, if imperfect, shared namespace.** Harry's own
-  track uses this exact same array and field, starting at its own "0.1" —
-  there's no built-in guard against two contributors' tracks landing on
-  the identical version string one day. Not worth solving up front (it's a
-  visible, easy, two-minute fix if it ever actually happens — a duplicate
-  pill in the rail, not silent data loss); just don't invent a prefixing
-  scheme unprompted, either.
-- **Only the NEWEST entry gets a real `artifactUrl`.** The claude.ai link
-  always shows whatever is CURRENTLY live there — pointing an older
-  archived entry at the same URL would send a reader to the wrong
-  version's content. Older entries get `artifactUrl: null` and instead
+- **`version` is a real, if imperfect, shared namespace — and it already
+  collided once.** Harry's own track uses this exact same array and field.
+  At one point Harry's session RENUMBERED this whole archive: my three old
+  entries (which had been "0.2"/"0.3"/"0.4" on THIS page — a different
+  numbering from my own claude.ai artifact's v0.2/v0.3/v0.4, which were
+  never touched) got merged into one entry and renumbered to "0.2" here,
+  freeing "0.3"/"0.4" for Harry's own next rounds, with a note left
+  directly for me inside that merged entry's own Known Issues saying my
+  next number on this page should be "0.4". By the time I next shipped,
+  Harry had already used 0.3, 0.3.5 AND 0.4 for his own rounds in between —
+  so that note was stale, and blindly following it would have collided
+  with Harry's own already-published 0.4 entry. **The fix, and the
+  standing rule going forward: always determine the next number from
+  what's ACTUALLY in the array right now (highest version string present,
+  +0.1), never from a remembered or previously-left instruction, however
+  directly it was addressed to you** — the array itself is the only source
+  of truth, exactly as this file already says for the claude.ai side's
+  `references/` folder. My next entry after this correction used "0.5",
+  matching both the array's real next-free slot and my own claude.ai
+  track's own natural next number — a happy coincidence this time, not
+  guaranteed next time. Not worth building an automated collision guard
+  for unprompted; just don't invent a prefixing scheme either.
+- **Only the NEWEST entry IN YOUR OWN TRACK gets a real `artifactUrl`** —
+  not literally whichever entry sits first in the array. Harry's own
+  entries each publish their own fresh claude.ai page per round rather
+  than republishing one link in place, so his entries keep a real,
+  distinct `artifactUrl` every time, unaffected by anything on this side.
+  The "null out the old one" rule below is specifically about YOUR OWN
+  one-link artifact: the claude.ai link always shows whatever is CURRENTLY
+  live there — pointing an older archived entry of yours at that same URL
+  would send a reader to the wrong version's content. Older entries of
+  yours get `artifactUrl: null` and instead
   get a short, real summary folded into the newest entry's own `history`
   section (see Process below) — the same "PREVIOUS VERSIONS condensing
   every old one" idea the claude.ai page already uses, mirrored here.

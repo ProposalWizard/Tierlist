@@ -27,6 +27,166 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.5",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-09-23T02:30:00Z",
+      "summary": "Five-a-side could freeze solid mid-match — fixed and fuzz-tested · dev cheats to skip the grind · real power for owning the club you play for · PR #568 · 156 tests green",
+      "stats": [
+        {
+          "value": "2,300 → 0",
+          "label": "fuzzed trials against the real engine, zero failures"
+        },
+        {
+          "value": "156",
+          "label": "tests green (was 151)"
+        },
+        {
+          "value": "3",
+          "label": "new powers for owning your own club"
+        },
+        {
+          "value": "6",
+          "label": "new dev cheats to skip the grind"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Five-a-side could freeze solid mid-match",
+              "detail": "Reported directly: \"when the other team gets the ball it just like freezes and essentially is stuck, i have to use dev tools to skip to get past.\"",
+              "bars": [
+                {
+                  "label": "Resolve fns with a fallback",
+                  "was": 0,
+                  "now": 3,
+                  "state": "good",
+                  "unit": " of 3"
+                }
+              ],
+              "more": {
+                "summary": "How it was actually found",
+                "points": [
+                  "2,000 seeded trials replaying the opponent's attack physics on the real engine — 0 timeouts, 0 throws. Ruled out ball physics.",
+                  "300 seeded trials replaying a full simulated match end to end — 300 of 300 clean. Ruled out the match state machine too.",
+                  "The real gap: three functions read a screen reference that's sometimes missing, and did nothing when it was — forever, since nothing else was ever going to call them again.",
+                  "Fixed by having all three re-ask the match what it's actually waiting for and try again, instead of going silent. Worst case a chance replays from scratch — far better than needing a dev-only skip.",
+                  "The exact trigger is a screen-timing thing that can't be reproduced outside a real browser. The fix removes the freeze regardless of what causes it."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Dev cheats for testing without the grind",
+              "detail": "Captain, reputation, fame, skills, happiness, a club switch — six one-tap shortcuts in Settings, same unguarded spirit as the existing money/skip tools."
+            },
+            {
+              "title": "Real extra power for owning the club you play for",
+              "detail": "Asked for directly: \"right now if you own the club you play at you have LESS opportunity, power... you should have MORE.\"",
+              "bars": [
+                {
+                  "label": "Chances your way (Talisman)",
+                  "was": 1,
+                  "now": 2.2,
+                  "state": "good",
+                  "unit": "×"
+                }
+              ],
+              "more": {
+                "summary": "The three new powers",
+                "points": [
+                  "Appoint yourself captain outright — skips the normal earn-it route.",
+                  "Talisman tactic — everyone plays for you. More chances come your way, fewer for team-mates — one shared roll, not a bolted-on second mechanic.",
+                  "Sell yourself to a club of your choice, anywhere in your current division.",
+                  "All three need majority ownership of the club you actually play for. A minority stake gets none of this."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not a feature — do this first",
+              "detail": "Six security holes anyone with the public key can still reach: writing their own XP/rewards, deleting every user's progression, wiping community votes. Two SQL files, both written, both still unrun.",
+              "alert": true
+            },
+            {
+              "title": "Not confirmed live this round either",
+              "detail": "Same honest flag as every round on this game. Confidence rests on the fuzzing numbers above, a clean type-check, a green suite and a clean build — not a screenshot.",
+              "pill": {
+                "text": "unverified",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The ball still \"feels different\" across modes — re-checked, no new cause found",
+              "detail": "Reported again this round. The actual drag-to-power mapping is provably identical everywhere it's used — whatever's still reading as different is either framing/feel on a real phone, or somewhere this pass didn't look."
+            },
+            {
+              "title": "5 of 11 dev tool pages have no login check",
+              "detail": "Found auditing the dev tooling this round. The other 6 check admin status before loading; these 5 (bicycle, gallery, play, highlights, media-lab) don't. Out of scope for this round — nobody asked for it.",
+              "pill": {
+                "text": "flagged, not fixed",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Goalie Mode's wall and extra players are still decorative, not physical",
+              "detail": "Carried from v0.4 — nothing has touched that code since."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Two rounds shipped between v0.4 and this one with no patch notes of their own",
+              "detail": "Trial/training brought in line with the real match engine, then five more consistency gaps fixed (arrow, faces, ball scale, a frozen training keeper) — both real, both shipped, neither got its own version. Say the word and they're written up too."
+            },
+            {
+              "title": "Fix the 5 ungated dev routes",
+              "detail": "Flagged this round, not yet scheduled."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.4 — 22 Sep 2026 — the ice-rink pitch bug, other players, penalty and free kick",
+              "detail": "Fixed: the pitch was never actually drawing — a hard-coded near edge sat inside the camera's own clip since the first build. Added: other players actually on the pitch (visual only), a penalty from the real spot, a free kick with a real wall at football's own 9.15m minimum. 151 tests green. Still open: the six security holes, above · the wall and extra players are decorative, not physical — carried into this version above."
+            },
+            {
+              "title": "v0.3 — 21 Sep 2026 — the real cursor bug, one fixed camera, real shot variety",
+              "detail": "Fixed: the aim reticle wasn't actually where your cursor was — ~0.42m off, every aim. Added: a first-time strike, a real near/far-post split, an on-screen name for every shot. Changed: the camera stopped zooming, one fixed wider shot. 151 tests green. Still open: the six security holes, above."
+            },
+            {
+              "title": "v0.2 — 21 Sep 2026 — Goalie Mode ships, then rebuilt against a real reference video",
+              "detail": "Fixed: the keeper's own camera showed a giant head, not a goal; on phone, touching the screen instantly dove. Added: Goalie Mode itself in the Casino, a real stadium behind the goal. Changed: the camera pushed in then pulled back, matching a reference video — later reversed in v0.3 after it didn't survive real play. 151 tests green. Still open: the six security holes, above."
+            },
+            {
+              "title": "v0.1 — 21 Sep 2026 — the chance-formula camera and gallery rebuild",
+              "detail": "Fixed: scoring was halved, now isn't; the goal stopped changing size; the camera stopped moving the players; chances now match their own name. Added: Simulate, add/remove players in the editor, up to 60 versions per chance type, a real commit-to-repo. 14→64 chance situations, 0% repeats, 8× less scrolling. Still open: the six security holes, above · star_scenarios.sql may still be unrun."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd",
+      "updatedAt": null
+    },
+    {
       "version": "0.4",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-22T12:00:00Z",
