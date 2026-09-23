@@ -1,4 +1,5 @@
 import type { CareerState, Fixture, MatchStats } from "../types";
+import { fameOf } from "../fame";
 import { sortLeague } from "../season";
 import { isDerby, strongestTier, derbyName } from "../rivalries";
 import { monthOfCareer, monthRace, endsMonthOn, MONTH_NAMES } from "../potm";
@@ -217,7 +218,8 @@ export function buildMatchRecord(
       managerName: after.manager?.name ?? "the manager",
       conditions: "",
       fansStanding: after.relationships.fans,
-      fame: after.fame,
+      // The fame players see (earned plus what they own), same as every screen.
+      fame: fameOf(after),
       starRating: after.starRating,
     },
   };

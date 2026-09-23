@@ -562,10 +562,16 @@ export const ADMIN_GUIDES = {
           ["Preview the \"you won it\" modal / team sheets / match commentary", "Opens that screen with sample data."],
         ],
       },
+      {
+        group: "Feed preview (add ?feed to the address)",
+        items: [
+          ["/star-dev/media-lab?feed", "Shows seven fixed sample posts at phone width, drawn exactly the way the phone feed draws them — for judging how a post looks. Nothing to press; scroll to read."],
+        ],
+      },
     ],
     saving: ["Nothing is uploaded or saved — your pictures stay in this browser tab and vanish on refresh."],
-    inGame: ["Nothing here reaches the game on its own. The Anchor numbers go into the code by hand."],
-    dev: "app/star-dev/media-lab/page.tsx · components/star/media/*",
+    inGame: ["Nothing here reaches the game on its own. The Anchor numbers go into the code by hand. The feed preview uses the same post design players see in the phone feed, so a change to how posts look shows up here first."],
+    dev: "app/star-dev/media-lab/page.tsx · components/star/media/* · feed preview: components/star/media/FeedPreview.tsx",
   },
 
   // ════════════════════════════════════════════════════════════════════

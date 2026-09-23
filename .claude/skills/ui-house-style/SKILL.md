@@ -39,6 +39,22 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 23 Sep 2026 — the social feed posts
+- **Posts look like real social media, not cards.** Verbatim: the posts "are
+  all boxed with curved things… what I want is how it is in the concept image
+  where it actually looks like social media, where they just integrate nicely."
+  No box: posts run edge to edge with a hairline between them, picture in a
+  left column, name + tick + handle + time on ONE line, a full action row
+  (replies, reposts, likes, views, share). Measured on 7 sample posts: 1,413 px
+  → 1,239 px at 390 wide.
+- **No category labels on posts.** "Some of them currently are labeled as back
+  page or stats or club, which is unnecessary." Who posted it is enough.
+- **A stat box or award card is an attached picture.** "If you want wording,
+  then it will be at the top. And then below, it will be kind of like that same
+  type of image thing." Words first, the graphic under them like a photo.
+- Judge posts at `/star-dev/media-lab?feed` — the real post component with
+  fixed sample posts.
+
 ### 23 Sep 2026 — the page guide (the eye)
 - **"There should be an information panel on every single page in the admin
   sections: just a little eye on how to use whatever's currently on the page…

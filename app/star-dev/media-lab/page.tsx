@@ -1,7 +1,8 @@
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
 import Graphic from "@/components/star/media/Graphics";
+import FeedPreview from "@/components/star/media/FeedPreview";
 import PortraitPicker from "@/components/star/PortraitPicker";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
@@ -38,6 +39,9 @@ const CLUBS = [
 ];
 
 export default function MediaLab() {
+  // `?feed` shows just the feed preview, at phone width, for judging posts.
+  const [feedOnly, setFeedOnly] = useState(false);
+  useEffect(() => { setFeedOnly(new URLSearchParams(window.location.search).has("feed")); }, []);
   const [pose, setPose] = useState<string | null>(null);
   const [face, setFace] = useState<string | null>(null);
   const [anchor, setAnchor] = useState({ x: 0.5, y: 0.17, size: 0.135 });
@@ -66,6 +70,8 @@ export default function MediaLab() {
   }, []);
 
   const c = CLUBS[club];
+
+  if (feedOnly) return <><FeedPreview /><PageGuide page="/star-dev/media-lab" /></>;
 
   return (
     <div className="min-h-screen bg-gray-900 px-4 py-6 text-white">
