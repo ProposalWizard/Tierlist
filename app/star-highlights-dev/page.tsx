@@ -51,6 +51,7 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
+import PageGuide from "@/components/admin/PageGuide";
 import { outliersOf } from "@/lib/star/scenarioRules";
 import { ruleSetFor, showSavedScenarios } from "@/lib/star/authoredChance";
 import { statusOf } from "@/lib/star/scenarioStatus";
@@ -642,6 +643,7 @@ export default function HighlightsPage() {
       data-hl-figures={liveFrame ? liveFrame.items.length : ""}
     >
       {children}
+      <PageGuide page="/star-highlights-dev" />
     </main>
   );
 

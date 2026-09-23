@@ -1,4 +1,5 @@
 import BicycleKickTrial from "@/components/star/BicycleKickTrial";
+import PageGuide from "@/components/admin/PageGuide";
 
 // Standalone sandbox for prototyping a bicycle-kick shooting mechanic —
 // same spirit as /star-match-dev (a fork of the match engine for trying out
@@ -10,5 +11,10 @@ import BicycleKickTrial from "@/components/star/BicycleKickTrial";
 // /star-match-dev): it reads nothing and writes nothing, so there's no real
 // data to protect and no Supabase round trip needed just to look at it.
 export default function StarBicycleDevPage() {
-  return <BicycleKickTrial />;
+  return (
+    <>
+      <BicycleKickTrial />
+      <PageGuide page="/star-bicycle-dev" />
+    </>
+  );
 }

@@ -13,6 +13,7 @@ import { SAMPLE_MATCHDAY, SAMPLE_CAREER, SAMPLE_FIXTURE } from "@/components/sta
 import { matchdayFor } from "@/lib/star/teamsheet";
 import type { Role } from "@/lib/star/formations";
 import type { GraphicSpec } from "@/lib/star/media/types";
+import PageGuide from "@/components/admin/PageGuide";
 
 /**
  * THE MEDIA LAB
@@ -264,6 +265,7 @@ export default function MediaLab() {
           onClose={() => setShowWin(false)}
         />
       )}
+      <PageGuide page="/star-dev/media-lab" />
     </div>
   );
 }

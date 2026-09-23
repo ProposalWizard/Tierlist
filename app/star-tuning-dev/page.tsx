@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import TuningEditor from "@/components/star/TuningEditor";
+import PageGuide from "@/components/admin/PageGuide";
 
 /**
  * Every game-balance number the star career game ships with, in one place —
@@ -51,6 +52,7 @@ export default function StarTuningDevPage() {
         </p>
         <TuningEditor />
       </div>
+      <PageGuide page="/star-tuning-dev" />
     </div>
   );
 }

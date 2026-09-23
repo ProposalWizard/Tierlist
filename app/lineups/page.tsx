@@ -11,6 +11,7 @@ import {
   type Division,
 } from "@/lib/star/clubs";
 import type { LeagueSquad } from "@/lib/star/types";
+import PageGuide from "@/components/admin/PageGuide";
 
 /**
  * SQUAD BUILDER.
@@ -134,6 +135,8 @@ export default function LineupsPage() {
       ) : (
         <LineupBuilder clubs={[...tab.clubs]} squads={squads} initialClub={initialClub && tab.clubs.includes(initialClub) ? initialClub : undefined} />
       )}
+      {/* Bottom-left: the builder's own "Saved ✓ / ⚠" status sits bottom-right. */}
+      <PageGuide page="/lineups" corner="bottom-left" />
     </main>
   );
 }

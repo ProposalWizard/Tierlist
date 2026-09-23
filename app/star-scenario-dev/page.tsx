@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ScenarioEditor from "@/components/star/ScenarioEditor";
+import PageGuide from "@/components/admin/PageGuide";
 
 // Standalone sandbox for hand-building match scenarios (camera framing +
 // teammate/opponent placement). Admin-only; not linked in nav. See
@@ -48,6 +49,7 @@ export default function StarScenarioDevPage() {
         </p>
         <ScenarioEditor />
       </div>
+      <PageGuide page="/star-scenario-dev" />
     </div>
   );
 }

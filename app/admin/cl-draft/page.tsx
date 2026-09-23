@@ -9,6 +9,7 @@ import CLSeasonView from "@/components/cl-draft/CLSeasonView";
 import { simulateCLSeason } from "@/lib/clSimulator";
 import type { CLSeasonResult, CLMatchResult, CLKnockoutTie, CLLeagueStanding, CLFullBracket } from "@/lib/clSimulator";
 import type { DraftPlayer, PlayerAttributes } from "@/lib/seasonSimulator";
+import PageGuide from "@/components/admin/PageGuide";
 
 type GamePhase = "loading" | "unauthorized" | "setup" | "draft" | "simulate" | "result" | "career-end";
 
@@ -107,7 +108,18 @@ function getPartialBracket(fullResult: CLSeasonResult, simMatchIdx: number): CLF
   };
 }
 
+/** The page itself, with the page guide's eye on every phase — see
+ *  components/admin/PageGuide.tsx. */
 export default function CLDraftPage() {
+  return (
+    <>
+      <CLDraftGame />
+      <PageGuide page="/admin/cl-draft" />
+    </>
+  );
+}
+
+function CLDraftGame() {
   const [phase, setPhase] = useState<GamePhase>("loading");
   const [settings, setSettings] = useState<CLDraftSettings | null>(null);
   const [players, setPlayers] = useState<CLDraftPlayer[]>([]);

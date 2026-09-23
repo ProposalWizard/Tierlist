@@ -85,6 +85,7 @@ import {
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import PageGuide from "@/components/admin/PageGuide";
 import {
   applyOverride,
   applyOverrideToScenario,
@@ -1496,6 +1497,7 @@ export default function StarGalleryDevPage() {
       }}
     >
       {children}
+      <PageGuide page="/star-gallery-dev" />
     </main>
   );
 

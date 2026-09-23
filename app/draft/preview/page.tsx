@@ -7,6 +7,7 @@
 import { useState } from "react";
 import PreviewLeagueTable from "@/components/draft/preview/PreviewLeagueTable";
 import PreviewFormation from "@/components/draft/preview/PreviewFormation";
+import PageGuide from "@/components/admin/PageGuide";
 
 export default function DesignPreviewPage() {
   const [tab, setTab] = useState<"table" | "xi">("table");
@@ -44,6 +45,7 @@ export default function DesignPreviewPage() {
 
         {tab === "table" ? <PreviewLeagueTable /> : <PreviewFormation />}
       </div>
+      <PageGuide page="/draft/preview" />
     </div>
   );
 }

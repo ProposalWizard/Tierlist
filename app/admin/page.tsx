@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
 import AdminPanelLoader from "./AdminPanelLoader";
+import PageGuide from "@/components/admin/PageGuide";
 import type { Tierlist } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -62,6 +63,7 @@ export default async function AdminPage() {
       </div>
 
       <AdminPanelLoader initialTierlists={tierlists ?? []} />
+      <PageGuide page="/admin" />
     </main>
   );
 }

@@ -26,6 +26,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import InfiniteMatch from "@/components/star/InfiniteMatch";
+import PageGuide from "@/components/admin/PageGuide";
 import {
   loadPlaySettings, savePlaySettings,
   PLAY_RANGES, PLAY_POSITIONS, PLAY_DIVISIONS, DEFAULT_PLAY_SETTINGS,
@@ -64,6 +65,7 @@ export default function PlayAreaPage() {
   const shell = (body: React.ReactNode) => (
     <div style={{ minHeight: "100dvh", background: BG, color: INK }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>{body}</div>
+      <PageGuide page="/star-play-dev" />
     </div>
   );
 
