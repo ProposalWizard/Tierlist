@@ -426,6 +426,19 @@ Three people are building this. To avoid two sessions editing the same files:
 
 ## Recent Session
 
+**23 September 2026 (Harry) — Gallery Play matches the picture, mid-match editing, shared counts, difficulty research (patch notes v0.7: https://claude.ai/artifact/U1uHCBfUzgsoozGaFnKxTG).**
+
+- Gallery Play: the picture now draws figures at `MATCH_SCALE` and Play runs at the picture's measured width (`ScenarioPlay`'s `width`) — nothing moved before the kick, it was a 13% size jump. Seen in a browser, keeper/ball/players within a few px.
+- Reverted Mikey's 035ada4 (ball locked to YOU) at Harry's request — the ball drags on its own again.
+- False "attacker offside": a removed poacher was parked at y=-400 (past the goal line = offside). `OFF_PITCH` is now behind the ball. 3/65 → 0/65; `tests/star/removedPoacher.mts`.
+- "+ Mate" in the gallery adds a real support runner (was decorative `sc.teammates`).
+- Gallery chip counts are shared data only: in-game / saved per kind (were per-browser generated counts). ✓ now saves any unsaved card (sims were being ticked and lost).
+- Commit route also upserts the same scenario into `star_scenarios`; `statusOf` treats a newer committed copy as committed and `newestById` merges code + DB (5 tight angles were newer in code than DB after Leo's commit).
+- Infinite Highlights saves as `gallery-sim-<kind>-<seed>` so saves land in the gallery; old `highlight-*` rows still read.
+- Infinite Match: "Edit this chance" (`LiveChanceEditor`, `lib/star/liveEdit.ts`) — CanvasMatch's `onChanceServed` now carries a scenario snapshot; the live chance becomes a gallery card on a 900000+ seed with the match's camera (new optional `PosOverride.camera`). `tests/star/liveEdit.mts` 144/144 exact.
+- Card layout: picture centred, No good left / ✓ … Sim right, edit row under (≥470px wide).
+- Open: which part of the Play Area "isn't the same game" (asked Harry); teammate close-range steal + hitboxes need canvasEngine (Mikey's OK).
+
 **23 September 2026 — The five-a-side freeze bug, re-confirmed ball-movement consistency, a dev-cheats panel, and real extra power for owning the club you play for.**
 
 - **The report, verbatim.** "still not perfect, i swear how the ball moves or is kicked or whatever still seems different across the 3 modes. also on trial mode in 5 a side it keeps glitching and when the other team gets the ball it just like freezes and essentially is stuck, i have to use dev tools to skip to get past. fix. also look at what harrys done with all the admin/dev/testing pages like scenario gallery and stuff like that, make sure theres something like that for EVERYTHING i might need to edit/tune/change a bit in someways, or even just test specific parts without having to literally play the normal game from start to until i get to where i need to be everytime, also do these prompts: 1. add everything that could affect testing but requires playing the game and takes time to dev tools so the admin user can cheat to test quicker (becoming captain, getting money (already done), getting repuation, fame, stats from training, lifestyle, the club you're at, etc). 2: right now if you own the club you play at you have LESS opportunity, power, insane, you should have MORE... make myself captain, Sell me to a club of my choice, add tactics like make me really important and everyone passes to me... go." Four real, separate asks in one message, treated as authorized to build straight through per the trailing "go."
