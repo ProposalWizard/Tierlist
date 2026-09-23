@@ -123,6 +123,7 @@ import {
   submitRecommendation, type RecommendationKind,
   haveASon, ageUpSonWithPotion, promoteSonToFirstTeam, transferSon,
   mergeClubs, setOwnedLineup,
+  appointSelfCaptain, setTalisman, transferSelfTo,
 } from "@/lib/star/clubPowers";
 import { investInfluence, type GoverningBody } from "@/lib/star/governingBodies";
 import { proposeRuleChangeVote, resolveRuleChangeVote, canOverruleRuleVote, type RuleChangeProposal, type RuleBook } from "@/lib/star/ruleBook";
@@ -1446,6 +1447,45 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setCareer({ ...career, money: career.money + amount });
   }, [career]);
 
+  // ── Dev — Career shortcuts ──
+  //
+  // Requested directly: everything that would otherwise need real playtime
+  // to reach (captaincy, reputation, fame, training gains, happiness, a club
+  // move) gets a dev cheat, the same unguarded spirit as handleAddMoney
+  // above. See DevCareerPanel.tsx.
+  const handleSetCaptain = useCallback((captain: boolean) => {
+    if (!career) return;
+    setCareer({ ...career, captain });
+  }, [career]);
+
+  const handleSetReputation = useCallback((delta: number) => {
+    if (!career) return;
+    setCareer({ ...career, reputation: Math.max(0, Math.min(100, delta >= 100 ? 100 : career.reputation + delta)) });
+  }, [career]);
+
+  const handleSetFame = useCallback((delta: number) => {
+    if (!career) return;
+    setCareer({ ...career, fame: Math.max(0, delta >= 100000 ? delta : career.fame + delta) });
+  }, [career]);
+
+  const handleMaxSkills = useCallback(() => {
+    if (!career) return;
+    setCareer({
+      ...career,
+      skills: { pace: 99, power: 99, technique: 99, vision: 99, freeKick: 99 },
+    });
+  }, [career]);
+
+  const handleSetHappiness = useCallback((delta: number) => {
+    if (!career) return;
+    setCareer({ ...career, happiness: Math.max(0, Math.min(100, delta >= 100 ? 100 : career.happiness + delta)) });
+  }, [career]);
+
+  const handleSwitchClub = useCallback((club: string) => {
+    if (!career) return;
+    setCareer(attachClub(career, club, career.league.map(t => t.name), career.division ?? "premier"));
+  }, [career]);
+
   /**
    * "Refresh Player Photos" (SettingsScreen) — a user-triggered version of
    * the same background refresh already run on load (see the mount effect's
@@ -2032,6 +2072,28 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleSetOwnedLineup = useCallback((club: string, lineup: SavedLineup) => {
     if (!career) return { ok: false, reason: "No active career" };
     const result = setOwnedLineup(career, club, lineup);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  // ── Owning the club you actually play for — more power, not less ──
+  const handleAppointSelfCaptain = useCallback((club: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = appointSelfCaptain(career, club);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleSetTalisman = useCallback((club: string, on: boolean) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = setTalisman(career, club, on);
+    if (result.ok) setCareer(result.career);
+    return { ok: result.ok, reason: result.reason };
+  }, [career]);
+
+  const handleTransferSelfTo = useCallback((toClub: string) => {
+    if (!career) return { ok: false, reason: "No active career" };
+    const result = transferSelfTo(career, toClub);
     if (result.ok) setCareer(result.career);
     return { ok: result.ok, reason: result.reason };
   }, [career]);
@@ -2918,6 +2980,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onRecommend={handleSubmitRecommendation}
         onSetFormation={handleSetClubFormation}
         onSetOwnedLineup={handleSetOwnedLineup}
+        onAppointSelfCaptain={handleAppointSelfCaptain}
+        onSetTalisman={handleSetTalisman}
+        onTransferSelfTo={handleTransferSelfTo}
         onSetKit={handleSetClubKit}
         onProposeKitVote={handleProposeKitVote}
         onStandForPresident={handleProposePresidentVote}
@@ -2990,6 +3055,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onBack={handleBackFromSettings}
         onSkip={handleDevSkip}
         onAddMoney={handleAddMoney}
+        onSetCaptain={handleSetCaptain}
+        onSetReputation={handleSetReputation}
+        onSetFame={handleSetFame}
+        onMaxSkills={handleMaxSkills}
+        onSetHappiness={handleSetHappiness}
+        onSwitchClub={handleSwitchClub}
         onSetPortrait={handleSetPortrait}
         onWatchReplay={handleWatchReplay}
         onSaveReplay={handleSaveReplay}

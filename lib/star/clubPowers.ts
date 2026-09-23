@@ -11,6 +11,7 @@ import { getTuning } from "./tuningStore";
 import type { ClubKits } from "./kits";
 import { tierPrice } from "./economy";
 import type { SavedLineup } from "./lineupStore";
+import { attachClub } from "./careerFlow";
 
 /**
  * PHASE 3 OF STAR_POWER_POLITICS.MD — DEEPENING CLUB OWNERSHIP.
@@ -470,6 +471,72 @@ export function transferSon(career: CareerState, toClub: string): BoardActionRes
   if (fromEntry) next = setSquad(next, career.son.club, fromEntry.squad.players.filter(p => p.id !== playerId));
   next = setSquad(next, toClub, [...toEntry.squad.players, moving]);
   return { career: { ...next, son: { ...career.son, club: toClub } }, ok: true };
+}
+
+// ── G2. Owning the club you actually play for — MORE power, not less ───────
+//
+// Reported directly: "right now if you own the club you play at you have
+// LESS opportunity, power... you should have MORE... I should be able to...
+// make myself captain, Sell me to a club of my choice, add tactics like
+// make me really important." The existing majority-owner sign/sell/manager
+// trio (investments.ts) already applies here same as any other club — this
+// section is specifically the powers that only make sense because it's also
+// the club you're ON.
+
+/** MAKE YOURSELF CAPTAIN, BECAUSE YOU OWN THE CLUB. The ordinary route to
+ *  `career.captain` is earned (`captaincyEarned`, careerFlow.ts); a majority
+ *  owner of the club they actually play for skips that and appoints
+ *  themselves outright. */
+export function appointSelfCaptain(career: CareerState, club: string): BoardActionResult {
+  if (career.player.club !== club) return { career, ok: false, reason: "You don't play for this club" };
+  if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
+  if (career.captain) return { career, ok: false, reason: "Already captain" };
+  return { career: { ...career, captain: true }, ok: true };
+}
+
+/**
+ * THE TALISMAN TACTIC — everyone plays for you, at a real team cost.
+ *
+ * "add tactics like make me really important and everyone passes to me...
+ * i get WAYYY more chances but of course the team plays worse overall and
+ * less likely to score themselves outside of my in game chances." Reuses
+ * the exact multiplier idiom the 22 Sep 2026 energy-mode rebuild already
+ * established for "how much more often the ball comes to you" — see
+ * hiddenMatch.ts's `TALISMAN_CHANCES`/`HiddenMatchInputs.talisman`. The
+ * downside is real and falls out of the SAME roll rather than a second
+ * mechanic: whether a chance your team wins lands at your feet or a
+ * team-mate's is one roll, so weighting it toward you weights it away from
+ * every team-mate's own goals, not just a cosmetic label.
+ */
+export function setTalisman(career: CareerState, club: string, on: boolean): BoardActionResult {
+  if (career.player.club !== club) return { career, ok: false, reason: "You don't play for this club" };
+  if (!isMajorityOwner(career, club)) return { career, ok: false, reason: "Not the majority shareholder" };
+  const current = ownedClubState(career, club);
+  return {
+    career: { ...career, ownedClubs: { ...(career.ownedClubs ?? {}), [club]: { ...current, talisman: on } } },
+    ok: true,
+  };
+}
+
+/**
+ * SELL YOURSELF, BECAUSE YOU OWN THE CLUB.
+ *
+ * "Sell me to a club of my choice." An ordinary transfer waits on a scout's
+ * interest; a majority owner of your OWN current club can just move you on,
+ * exactly as directly as `attachClub` already lets `makeInitialCareer`/the
+ * scout-offer screen sign you to any club. Scoped to a club in your own
+ * current division's table — the same list `attachClub` needs to build a
+ * real fixture list against; a cross-division move stays the ordinary
+ * promotion/relegation/transfer-window route.
+ */
+export function transferSelfTo(career: CareerState, toClub: string): BoardActionResult {
+  if (!isMajorityOwner(career, career.player.club)) {
+    return { career, ok: false, reason: "Not the majority shareholder of your own club" };
+  }
+  if (toClub === career.player.club) return { career, ok: false, reason: "You're already there" };
+  const clubs = career.league.map(t => t.name);
+  if (!clubs.includes(toClub)) return { career, ok: false, reason: "Not a club in your current division" };
+  return { career: attachClub(career, toClub, clubs, career.division ?? "premier"), ok: true };
 }
 
 // ── G. Club takeovers/mergers ────────────────────────────────────────────

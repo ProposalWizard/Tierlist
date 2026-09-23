@@ -67,6 +67,11 @@ interface Props {
    *  `ownedLineups`, never the shared global `lineupStore.ts` table. See
    *  types.ts's `ownedLineups` doc and clubPowers.ts's `setOwnedLineup`. */
   onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => ActionResult;
+  /** Owning the club you actually play for — more power, not less. See
+   *  clubPowers.ts's appointSelfCaptain/setTalisman/transferSelfTo. */
+  onAppointSelfCaptain: (club: string) => ActionResult;
+  onSetTalisman: (club: string, on: boolean) => ActionResult;
+  onTransferSelfTo: (toClub: string) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
   onStandForPresident: (club: string) => ActionResult;
@@ -170,6 +175,8 @@ export default function Investments(props: Props) {
                 onSellPlayer={props.onSellPlayer} onProposeSellVote={props.onProposeSellVote} onReplaceManager={props.onReplaceManager}
                 onManagerNegotiationFailed={props.onManagerNegotiationFailed}
                 onSetFormation={props.onSetFormation} onSetOwnedLineup={props.onSetOwnedLineup} onSetKit={props.onSetKit}
+                onAppointSelfCaptain={props.onAppointSelfCaptain} onSetTalisman={props.onSetTalisman}
+                onTransferSelfTo={props.onTransferSelfTo}
                 onProposeKitVote={props.onProposeKitVote} onStandForPresident={props.onStandForPresident}
                 onSetPresidentWage={props.onSetPresidentWage}
                 otherOwnedClubs={owned.map(i => i.club).filter(c => c !== boardroomClub && c !== career.player.club)}
@@ -668,6 +675,7 @@ function Boardroom({
   career, club, onBack, initialSection, onTopUpBudget, onSignPlayer, onSellPlayer, onProposeSellVote, onReplaceManager,
   onManagerNegotiationFailed,
   onSetFormation, onSetOwnedLineup, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  onAppointSelfCaptain, onSetTalisman, onTransferSelfTo,
   otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
@@ -681,6 +689,9 @@ function Boardroom({
   onManagerNegotiationFailed: (club: string, managerName: string) => void;
   onSetFormation: (club: string, formationId: string) => ActionResult;
   onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => ActionResult;
+  onAppointSelfCaptain: (club: string) => ActionResult;
+  onSetTalisman: (club: string, on: boolean) => ActionResult;
+  onTransferSelfTo: (toClub: string) => ActionResult;
   onSetKit: (club: string, kit: ClubKit) => ActionResult;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => ActionResult;
   onStandForPresident: (club: string) => ActionResult;
@@ -960,6 +971,9 @@ function Boardroom({
           career={career} club={club} squad={squad}
           onSetFormation={(c, f) => runAction(onSetFormation(c, f))}
           onSetOwnedLineup={(c, l) => runAction(onSetOwnedLineup(c, l))}
+          onAppointSelfCaptain={(c) => runAction(onAppointSelfCaptain(c))}
+          onSetTalisman={(c, on) => runAction(onSetTalisman(c, on))}
+          onTransferSelfTo={(c) => runAction(onTransferSelfTo(c))}
           onSetKit={(c, k) => runAction(onSetKit(c, k))}
           onProposeKitVote={(c, a, b, favor) => runAction(onProposeKitVote(c, a, b, favor))}
           onStandForPresident={(c) => runAction(onStandForPresident(c))}
@@ -1096,12 +1110,16 @@ function LineupPreview({
 
 function PowersPanel({
   career, club, squad, onSetFormation, onSetOwnedLineup, onSetKit, onProposeKitVote, onStandForPresident, onSetPresidentWage,
+  onAppointSelfCaptain, onSetTalisman, onTransferSelfTo,
   otherOwnedClubs, onMergeClubs, son, onHaveASon, onAgeUpSon, onPromoteSon, onTransferSon,
   onRenameStadium, onUpgradeStadiumCapacity, onUpgradeTrainingGround, onUpgradeYouthAcademy,
 }: {
   career: CareerState; club: string; squad: LeagueSquad | undefined;
   onSetFormation: (club: string, formationId: string) => void;
   onSetOwnedLineup: (club: string, lineup: import("@/lib/star/lineupStore").SavedLineup) => void;
+  onAppointSelfCaptain: (club: string) => void;
+  onSetTalisman: (club: string, on: boolean) => void;
+  onTransferSelfTo: (toClub: string) => void;
   onSetKit: (club: string, kit: ClubKit) => void;
   onProposeKitVote: (club: string, optionA: ClubKit, optionB: ClubKit, favor: "a" | "b" | undefined) => void;
   onStandForPresident: (club: string) => void;
@@ -1151,13 +1169,74 @@ function PowersPanel({
   const [wage, setWage] = useState(state.presidentWage ?? 0);
   const [mergeTarget, setMergeTarget] = useState(otherOwnedClubs[0] ?? "");
   const [stadiumName, setStadiumName] = useState(facilities.stadiumName);
+  const leagueClubs = career.league.map(t => t.name).filter(n => n !== club);
+  const [transferTarget, setTransferTarget] = useState(leagueClubs[0] ?? "");
 
   return (
     <div className="space-y-3">
       {isOwnClub ? (
-        <div className="rounded-xl border border-gray-700 bg-gray-800/60 p-3 text-[11px] font-semibold text-white/90">
-          Formation is already yours to set on the real team sheet — this Powers tab only stands in for a manager
-          this club doesn't have, and you already do.
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-1.5">
+            Owning your own club — more power, not less
+          </div>
+          <p className="mb-2 text-[10px] text-white/70 leading-snug">
+            Formation and lineup are already yours on the real team sheet — this section is the power that's
+            ONLY real because it's also your own club: none of it exists for a club you don't play for.
+          </p>
+
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-gray-900/60 p-2">
+            <span className="text-[11px] font-bold text-white/90">
+              Captain: {career.captain ? "You" : "Someone else"}
+            </span>
+            {!career.captain && (
+              <button
+                onClick={() => onAppointSelfCaptain(club)}
+                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 font-black text-xs text-black whitespace-nowrap"
+              >
+                Appoint yourself
+              </button>
+            )}
+          </div>
+
+          <div className="mb-2 rounded-lg bg-gray-900/60 p-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-white/90">
+                Talisman tactic: {state.talisman ? "On" : "Off"}
+              </span>
+              <button
+                onClick={() => onSetTalisman(club, !state.talisman)}
+                className={`px-3 py-1.5 rounded-lg font-black text-xs whitespace-nowrap ${
+                  state.talisman ? "bg-rose-600 hover:bg-rose-500 text-white" : "bg-emerald-500 hover:bg-emerald-400"
+                }`}
+              >
+                {state.talisman ? "Turn off" : "Turn on"}
+              </button>
+            </div>
+            <p className="mt-1 text-[9px] text-white/60 leading-snug">
+              Everyone plays for you — way more chances come your way, at the cost of your team-mates'
+              own share of them. Only affects real matches you play for this club.
+            </p>
+          </div>
+
+          {leagueClubs.length > 0 && (
+            <div className="rounded-lg bg-gray-900/60 p-2">
+              <div className="text-[11px] font-bold text-white/90 mb-1">Sell yourself to a club of your choice</div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={transferTarget} onChange={e => setTransferTarget(e.target.value)}
+                  className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-xs text-white"
+                >
+                  {leagueClubs.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button
+                  onClick={() => onTransferSelfTo(transferTarget)}
+                  className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 font-black text-xs text-white whitespace-nowrap"
+                >
+                  Transfer
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
