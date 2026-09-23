@@ -365,7 +365,7 @@ export default function HighlightsPage() {
   // ── Saved corrections (the same pool the gallery and the Builder write) ──
   const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
   const [migrationMissing, setMigrationMissing] = useState(false);
-  const [busy, setBusy] = useState<"saving" | "reverting" | "deleting" | null>(null);
+  const [busy, setBusy] = useState<"saving" | "reverting" | "deleting" | "committing" | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
@@ -501,6 +501,36 @@ export default function HighlightsPage() {
     setSaved((m) => ({ ...m, [scenario.id]: scenario }));
     clearOverride(editKey);
     flashFor(true, "Saved for the team. It goes into the game when you commit it.");
+  };
+
+  /**
+   * COMMIT — straight into the game, from the highlight you are looking at.
+   * Asked for directly: every highlight "should save it into the scenario
+   * section of that highlight type and then be able to commit as well" — and
+   * reported: "there is no save and commit buttons inside a match highlight".
+   * Save only appeared after a drag and there was no Commit here at all. The
+   * commit route also saves the same copy to the shared list, so this is a
+   * save and a commit in one.
+   */
+  const commitShot = async (): Promise<void> => {
+    if (!shot || !liveFrame) return;
+    setBusy("committing");
+    const scenario = frameToMatchScenario(saveTargetFor(shot.spec), liveFrame);
+    try {
+      const r = await fetch("/api/star/scenarios/commit", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario }),
+      });
+      const d = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; message?: string };
+      if (!r.ok || d.ok !== true) { flashFor(false, `Not committed — ${d.error ?? `the server refused it (${r.status})`}`); return; }
+      setSaved((m) => ({ ...m, [scenario.id]: scenario }));
+      clearOverride(editKey);
+      flashFor(true, d.message ?? "Committed — in the game once the deploy finishes.");
+    } catch {
+      flashFor(false, "Not committed — couldn't reach the server.");
+    } finally {
+      setBusy(null);
+    }
   };
 
   const revertShot = async (): Promise<void> => {
@@ -837,7 +867,7 @@ export default function HighlightsPage() {
           {/* The editor tools. Same three the gallery's version screen has, in
               the same order, doing the same thing — tap a figure on the
               picture, then take him out; or put a new one in. */}
-          <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+          <div style={{ display: "flex", gap: 5, width: "100%", maxWidth: 460 }}>
             <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
             <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
             <button
@@ -974,29 +1004,38 @@ export default function HighlightsPage() {
             </button>
           </div>
 
-          {/* Only on screen when there is something to do with it. */}
-          {edited ? (
-            <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+          {/* Save and Commit are always here, edited or not — see commitShot. */}
+          <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+            {(edited || !savedScenario) && (
               <button
-                style={{ ...editBtn(false), flex: 2.4, height: 48, background: "rgba(22,163,74,0.24)", border: "1px solid rgba(34,197,94,0.55)", color: "#bbf7d0", fontSize: 15 }}
+                style={{ ...editBtn(false), flex: 2, height: 48, background: "rgba(22,163,74,0.24)", border: "1px solid rgba(34,197,94,0.55)", color: "#bbf7d0", fontSize: 15 }}
                 disabled={!!busy}
                 onClick={() => void saveShot()}
               >
-                {busy === "saving" ? "Saving…" : "Save this fix"}
+                {busy === "saving" ? "Saving…" : edited ? "Save this fix" : "Save"}
               </button>
+            )}
+            <button
+              style={{ ...editBtn(false), flex: 1.4, height: 48, background: "rgba(14,116,144,0.3)", border: "1px solid rgba(56,189,248,0.55)", color: "#e0f2fe", fontSize: 15 }}
+              disabled={!!busy}
+              onClick={() => void commitShot()}
+            >
+              {busy === "committing" ? "Committing…" : "Commit"}
+            </button>
+            {edited ? (
               <button style={{ ...editBtn(false), height: 48 }} onClick={() => { clearOverride(editKey); setSelectedId(null); }}>
                 Discard
               </button>
-            </div>
-          ) : savedScenario ? (
-            <button
-              style={{ ...editBtn(false), width: "100%", maxWidth: 460, color: MUTED }}
-              disabled={!!busy}
-              onClick={() => void revertShot()}
-            >
-              {busy === "reverting" ? "Reverting…" : "Saved — revert to the generated chance"}
-            </button>
-          ) : null}
+            ) : savedScenario ? (
+              <button
+                style={{ ...editBtn(false), flex: 2, height: 48, color: MUTED }}
+                disabled={!!busy}
+                onClick={() => void revertShot()}
+              >
+                {busy === "reverting" ? "Reverting…" : "Saved — revert"}
+              </button>
+            ) : null}
+          </div>
 
           {(flash || migrationMissing) && (
             <div style={{ fontSize: 12.5, fontWeight: 700, textAlign: "center", maxWidth: 460, lineHeight: 1.4, color: flash ? (flash.ok ? "#4ade80" : "#fca5a5") : "#fca5a5" }}>
@@ -1035,7 +1074,7 @@ const editBtn = (off: boolean): React.CSSProperties => ({
   // Up to seven of these share one row since Delete and Tune joined it, so
   // they shrink rather than wrap onto a second line.
   flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
-  padding: "0 4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+  padding: "0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
   border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
+  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 11, fontWeight: 700,
 });
