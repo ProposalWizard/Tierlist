@@ -1717,7 +1717,10 @@ export default function StarGalleryDevPage() {
         const maxW = Math.max(260, Math.min(460, vp.w - 2 * 96 - 40));
         return { baseW: maxW, maxW, maxH: Math.max(420, vp.h - 250) };
       })()
-    : undefined;
+    // On a phone the card has 14px either side. The old phone default (340)
+    // overflowed a 340px screen and got cut off, while Play fitted the space
+    // — a 9% size jump that read as "the goalie is still moved".
+    : { baseW: Math.min(340, vp.w - 28), maxW: Math.min(460, vp.w - 28) };
   const simulatePanel = cell.game === "eleven" ? (
     <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
       <button
