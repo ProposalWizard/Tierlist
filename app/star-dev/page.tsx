@@ -32,7 +32,7 @@ import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
-import { selectionFor, MIN_ENERGY_TO_START } from "@/lib/star/selection";
+import { selectionFor, MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
@@ -1465,7 +1465,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   const handleSetFame = useCallback((delta: number) => {
     if (!career) return;
-    setCareer({ ...career, fame: Math.max(0, delta >= 100000 ? delta : career.fame + delta) });
+    // Fame is capped at 100 (fame.ts), so "Max" is 100, not the old uncapped 100,000.
+    setCareer({ ...career, fame: Math.max(0, Math.min(100, delta >= 100 ? 100 : career.fame + delta)) });
   }, [career]);
 
   const handleMaxSkills = useCallback(() => {
@@ -3291,7 +3292,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                 <div className="bg-black/20 rounded-lg py-2 text-center">
                   <div className="text-white/75 text-[10px] font-bold">Energy</div>
                   <div className={`font-black text-base ${
-                    preMatchEnergy >= 70 ? "text-emerald-300" : preMatchEnergy >= 40 ? "text-amber-300" : "text-red-400"}`}
+                    // Green starts, amber is the bench, red is left out — the real selection lines.
+                    preMatchEnergy >= MIN_ENERGY_TO_START ? "text-emerald-300" : preMatchEnergy >= MIN_ENERGY_TO_SUB ? "text-amber-300" : "text-red-400"}`}
                   >
                     {Math.round(preMatchEnergy)}%
                   </div>

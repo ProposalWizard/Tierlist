@@ -66,8 +66,8 @@ export default function DevCareerPanel({
         <div className="rounded-lg bg-gray-900/60 p-2">
           <div className="text-[10px] font-bold text-white/70">Fame ({career.fame})</div>
           <div className="mt-1 flex gap-1">
-            <button onClick={() => onSetFame(1000)} className="flex-1 py-1 rounded bg-fuchsia-600 hover:bg-fuchsia-500 text-[10px] font-black text-white">+1000</button>
-            <button onClick={() => onSetFame(100000)} className="flex-1 py-1 rounded bg-fuchsia-600 hover:bg-fuchsia-500 text-[10px] font-black text-white">Max</button>
+            <button onClick={() => onSetFame(10)} className="flex-1 py-1 rounded bg-fuchsia-600 hover:bg-fuchsia-500 text-[10px] font-black text-white">+10</button>
+            <button onClick={() => onSetFame(100)} className="flex-1 py-1 rounded bg-fuchsia-600 hover:bg-fuchsia-500 text-[10px] font-black text-white">Max</button>
           </div>
         </div>
         <div className="rounded-lg bg-gray-900/60 p-2">

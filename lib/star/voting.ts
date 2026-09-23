@@ -1,5 +1,5 @@
 import type { Reputation } from "./types";
-import { clampReputation } from "./reputation";
+import { clampReputation, REPUTATION_EVENTS } from "./reputation";
 
 /**
  * THE VOTING/CEREMONY ENGINE — PHASE 2 OF STAR_POWER_POLITICS.MD.
@@ -129,7 +129,7 @@ export const OVERRULE_OWNERSHIP_THRESHOLD = 75;
  *  (see reputation.ts's `clubReputationFromSeason`, which tops out at ±8)
  *  — overruling your own shareholders should sting more than a bad season
  *  does, since it is a choice, not a result you were merely judged on. */
-export const OVERRULE_REPUTATION_COST = 5;
+export const OVERRULE_REPUTATION_COST = -REPUTATION_EVENTS.overruledVote;
 
 /** Holding ANY real vote — even one you were required to hold — nudges
  *  shareholder reputation up a little: "letting people feel heard is
@@ -137,7 +137,7 @@ export const OVERRULE_REPUTATION_COST = 5;
  *  "call a vote purely to build reputation" action once more decisions
  *  exist that don't already require one; this hook fires for every vote
  *  this phase's call sites hold, mandatory or not. */
-export const VOTE_HELD_REPUTATION_GAIN = 2;
+export const VOTE_HELD_REPUTATION_GAIN = REPUTATION_EVENTS.voteHeld;
 
 export function applyVoteHeldReputation(rep: Reputation): Reputation {
   return clampReputation(rep + VOTE_HELD_REPUTATION_GAIN);

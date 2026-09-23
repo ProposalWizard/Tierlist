@@ -2,7 +2,7 @@
 import { fameOf, fameLevel } from "@/lib/star/fame";
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { selectionFor } from "@/lib/star/selection";
+import { selectionFor, MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { expectationStatus, personalDuty } from "@/lib/star/expectations";
 import { reputationTier } from "@/lib/star/manager";
@@ -127,7 +127,7 @@ export default function DashboardStats({ career, onRenew }: Props) {
               Match Fit ({Math.round(career.matchFitness)}%)
             </div>
             <div className={`py-2 rounded-lg font-black text-sm text-center ${
-              career.energy >= 70 ? "bg-emerald-500 text-white" : career.energy >= 40 ? "bg-amber-500 text-gray-950" : "bg-red-600 text-white"}`}
+              career.energy >= MIN_ENERGY_TO_START ? "bg-emerald-500 text-white" : career.energy >= MIN_ENERGY_TO_SUB ? "bg-amber-500 text-gray-950" : "bg-red-600 text-white"}`}
             >
               Energy ({Math.round(career.energy)}%)
             </div>
