@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import type { StoredPost } from "@/lib/star/media/types";
 import PostCard, { FEED_LIST_CLASS } from "./PostCard";
 
@@ -39,11 +40,14 @@ export const PREVIEW_POSTS: StoredPost[] = [
 ];
 
 export default function FeedPreview() {
+  // Hearts work here too, in this tab only, so a like can be tried and judged.
+  const [liked, setLiked] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setLiked(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <div className="min-h-screen bg-gray-950 py-4">
       <div className="mx-auto w-[390px] max-w-full overflow-hidden rounded-[28px] border border-white/15 bg-black">
         <div className={FEED_LIST_CLASS}>
-          {PREVIEW_POSTS.map(p => <PostCard key={p.id} post={p} now={PREVIEW_NOW} />)}
+          {PREVIEW_POSTS.map(p => <PostCard key={p.id} post={{ ...p, liked: liked.has(p.id) }} now={PREVIEW_NOW} onToggleLike={toggle} />)}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useRef } from "react";
 import type { StoredPost } from "@/lib/star/media/types";
 import { relativeTime } from "@/lib/star/media/schedule";
 import Graphic from "./Graphics";
@@ -33,7 +34,37 @@ function count(n: number): string {
 
 const ICON = { width: 17, height: 17, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
-export default function PostCard({ post, now }: { post: StoredPost; now: number }) {
+/** The pink a liked heart turns — the same one real social apps use. */
+const LIKED = "#f91880";
+
+export default function PostCard({ post, now, onToggleLike }: {
+  post: StoredPost;
+  now: number;
+  /** Tapping the heart. Absent: the heart is just a number, not a button. */
+  onToggleLike?: (postId: string) => void;
+}) {
+  const heartRef = useRef<SVGSVGElement>(null);
+  const ringRef = useRef<HTMLSpanElement>(null);
+  const likes = post.metrics.likes + (post.liked ? 1 : 0);
+
+  // Asked for directly: "a very quick animation and it would like almost
+  // flash and turn into a red heart." A pop on the heart and a pink ring
+  // bursting out of it, on liking only; unliking just goes back quietly.
+  const like = () => {
+    if (!onToggleLike) return;
+    if (!post.liked) {
+      heartRef.current?.animate(
+        [{ transform: "scale(0.6)" }, { transform: "scale(1.3)" }, { transform: "scale(1)" }],
+        { duration: 320, easing: "cubic-bezier(.2,.9,.3,1.3)" },
+      );
+      ringRef.current?.animate(
+        [{ transform: "scale(0.3)", opacity: 0.9 }, { transform: "scale(1.6)", opacity: 0 }],
+        { duration: 420, easing: "ease-out" },
+      );
+    }
+    onToggleLike(post.id);
+  };
+
   return (
     <article className="flex gap-3 border-b border-white/10 px-3.5 pb-2.5 pt-3">
       <Avatar
@@ -78,10 +109,23 @@ export default function PostCard({ post, now }: { post: StoredPost; now: number 
             <svg {...ICON} aria-label="Reposts"><path d="M17 2l3 3-3 3M20 5H8a3 3 0 00-3 3v3M7 22l-3-3 3-3M4 19h12a3 3 0 003-3v-3" /></svg>
             {count(post.metrics.reposts)}
           </span>
-          <span className="flex items-center gap-1.5">
-            <svg {...ICON} aria-label="Likes"><path d="M12 20s-7-4.4-8.9-8.6A4.9 4.9 0 0112 6.3a4.9 4.9 0 018.9 5.1C19 15.6 12 20 12 20z" /></svg>
-            {count(post.metrics.likes)}
-          </span>
+          <button
+            type="button"
+            onClick={like}
+            disabled={!onToggleLike}
+            aria-pressed={!!post.liked}
+            aria-label={post.liked ? "Unlike" : "Like"}
+            className="-m-1.5 flex items-center gap-1.5 rounded-full p-1.5 transition-colors enabled:hover:text-[#f91880] disabled:cursor-default"
+            style={post.liked ? { color: LIKED } : undefined}
+          >
+            <span className="relative grid place-items-center">
+              <span ref={ringRef} className="pointer-events-none absolute h-6 w-6 rounded-full opacity-0" style={{ boxShadow: `0 0 0 2px ${LIKED}` }} />
+              <svg ref={heartRef} {...ICON} fill={post.liked ? LIKED : "none"} stroke={post.liked ? LIKED : "currentColor"} aria-hidden>
+                <path d="M12 20s-7-4.4-8.9-8.6A4.9 4.9 0 0112 6.3a4.9 4.9 0 018.9 5.1C19 15.6 12 20 12 20z" />
+              </svg>
+            </span>
+            <span className="tabular-nums">{count(likes)}</span>
+          </button>
           <svg {...ICON} aria-hidden><path d="M5 20V12M10 20V6M15 20v-9M20 20V9" /></svg>
           <svg {...ICON} aria-hidden><path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5" /></svg>
         </footer>

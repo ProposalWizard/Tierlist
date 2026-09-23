@@ -150,7 +150,7 @@ export default function MatchCommentary({
             </div>
           )}
           <div className={`flex gap-2 ${pause.label ? "mt-2.5" : ""}`}>
-            {/* Half time only: drink a Basic KIB can (+25) before the second
+            {/* Half time only: drink a Basic KIB can (+65) before the second
                 half. Takes the left third of the row, same height as the
                 button beside it, so the two read as one bar. */}
             {pause.halfTime && onUseKib && (

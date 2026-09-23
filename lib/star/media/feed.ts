@@ -47,6 +47,13 @@ export function mediaOf(career: CareerState): MediaState {
   return career.media ?? emptyMedia();
 }
 
+/** Like a post, or unlike it if you already had. Nothing else changes. */
+export function toggleLike(career: CareerState, postId: string): CareerState {
+  if (!career.media) return career;
+  const posts = career.media.posts.map(p => (p.id === postId ? { ...p, liked: !p.liked } : p));
+  return { ...career, media: { ...career.media, posts } };
+}
+
 /** The real replay guard — see `MediaState.seenCycleIds`'s own header on why
  *  `lastCycleId`/`lastLeagueCycleId` alone aren't enough. */
 function alreadySeen(state: MediaState, id: string): boolean {

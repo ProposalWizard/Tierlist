@@ -54,6 +54,8 @@ interface Props {
    *  DashboardShell — no header, no Continue, the bottom nav is the way out. */
   mode: "moment" | "browse";
   onContinue?: () => void;
+  /** Tapping a post's heart. Absent: the heart is not tappable. */
+  onToggleLike?: (postId: string) => void;
 }
 
 /**
@@ -70,7 +72,7 @@ const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
   { id: "club", label: "Club", scope: "club" },
 ];
 
-export default function MediaFeed({ career, mode, onContinue }: Props) {
+export default function MediaFeed({ career, mode, onContinue, onToggleLike }: Props) {
   const [filter, setFilter] = useState("all");
   // Feed vs Transfers — two tabs of the one app on the phone, not two
   // separate screens. Dashboard only (mode === "browse"); the post-match
@@ -182,7 +184,7 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
                   </svg>
                 </button>
               )}
-              {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
+              {shown.map(p => <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} />)}
               {shown.length === 0 && (
                 <div className="mx-3 mt-3 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-8 text-center">
                   <div className="text-sm font-black text-white">Quiet out there.</div>
