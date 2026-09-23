@@ -48,7 +48,7 @@ import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/tran
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia } from "@/lib/star/media/feed";
+import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
@@ -94,7 +94,7 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
-import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, kibCanPrice, kibCanEffectLabel, type KibCan } from "@/lib/star/shopData";
 
 /** The dashboard KIB Cans card's own accent per tier — the same colour as
  *  the can's real photo (see shopData.ts's `color`), as a hex value rather
@@ -1085,6 +1085,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     continueAfterMatch(career, !pressQuestion);
   }, [career, continueAfterMatch, pressQuestion]);
 
+  // Tapping a post's heart in the phone feed — saved on the post, so it
+  // stays liked when you come back.
+  const handleToggleLike = useCallback((postId: string) => {
+    setCareer(c => (c ? toggleLike(c, postId) : c));
+  }, []);
+
   const handleMediaContinue = useCallback(() => {
     if (career) continueAfterMatch(career, !pressQuestion);
   }, [career, continueAfterMatch, pressQuestion]);
@@ -1836,10 +1842,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleUseCan = useCallback((id: "basic" | "premium" | "elite") => {
     if (!career || career.kibCans[id] === 0) return;
     const can = KIB_CANS.find((c) => c.id === id)!;
+    // A boot-ability can does nothing if that ability is already waiting.
+    if (can.effect && career.kibAbility?.[can.effect]) return;
     setCareer({
       ...career,
       kibCans: { ...career.kibCans, [id]: career.kibCans[id] - 1 },
-      energy: Math.min(100, career.energy + can.restore),
+      ...(can.effect
+        ? { kibAbility: { ...career.kibAbility, [can.effect]: true } }
+        : { energy: Math.min(100, career.energy + can.restore) }),
     });
   }, [career]);
 
@@ -2782,8 +2792,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       + (bootMatchesLeft ? career.currentBoot.power : 0));
     const effectiveTechnique = Math.min(100, career.skills.technique
       + (bootMatchesLeft ? career.currentBoot.technique : 0));
-    const canCurve = bootMatchesLeft && !!career.currentBoot.curve;
-    const canExtraTouch = bootMatchesLeft && !!career.currentBoot.extraTouch;
+    // Your boots, or a Premium/Elite KIB can drunk before this match.
+    const canCurve = (bootMatchesLeft && !!career.currentBoot.curve) || !!career.kibAbility?.curve;
+    const canExtraTouch = (bootMatchesLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch;
     return (
       <div
         className="min-h-screen bg-gray-950 text-white py-4 px-3"
@@ -2885,7 +2896,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // — full-bleed (see DashboardShell's own prop), so the bottom nav stays
   // on screen under it and there's nothing left needing a back button.
   if (phase === "media" && activeNav !== "media") {
-    return <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} />;
+    return <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} />;
   }
 
   if (phase === "legacy") {
@@ -3433,6 +3444,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               {KIB_CANS.map((c) => {
                 const count = career.kibCans[c.id];
                 const accent = KIB_ACCENT[c.id];
+                // A boot-ability can already drunk and waiting for your next match.
+                const ready = !!(c.effect && career.kibAbility?.[c.effect]);
                 return (
                   <div
                     key={c.id}
@@ -3460,16 +3473,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                     <div className="relative">
                       <KibCanIcon can={c} className="h-[84px] w-full mb-1.5" />
                       <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
-                      <div className="text-[9px] font-bold text-white/55">+{c.restore} energy</div>
+                      <div className="text-[9px] font-bold leading-tight text-white">{kibCanEffectLabel(c)}</div>
                       <button
-                        disabled={count === 0}
+                        disabled={count === 0 || ready}
                         onClick={() => handleUseCan(c.id)}
                         className={`mt-1.5 w-full rounded-md py-1 text-[10px] font-black uppercase tracking-wide transition ${
-                          count > 0 ? "text-gray-950" : "bg-gray-700 text-white/40"
+                          count > 0 && !ready ? "text-gray-950" : "bg-gray-700 text-white"
                         }`}
-                        style={count > 0 ? { backgroundColor: accent.hex } : undefined}
+                        style={count > 0 && !ready ? { backgroundColor: accent.hex } : undefined}
                       >
-                        Use
+                        {ready ? "Ready ✓" : "Use"}
                       </button>
                     </div>
                   </div>
@@ -3483,7 +3496,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <LeagueScreen career={career} />
       )}
       {phase === "media" && activeNav === "media" && (
-        <MediaFeed career={career} mode="browse" />
+        <MediaFeed career={career} mode="browse" onToggleLike={handleToggleLike} />
       )}
       {phase === "skills" && (
         <div>

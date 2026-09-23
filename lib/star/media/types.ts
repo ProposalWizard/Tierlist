@@ -552,6 +552,12 @@ export interface StoredPost {
    * distinction existed at all.
    */
   scope?: "club" | "league";
+  /**
+   * You tapped the heart on this post. Adds one to the like count shown, on
+   * top of `metrics.likes`, and turns the heart pink. Tapping again unlikes.
+   * Optional: absent is "not liked", so every older save still reads.
+   */
+  liked?: boolean;
 }
 
 export interface Trend {

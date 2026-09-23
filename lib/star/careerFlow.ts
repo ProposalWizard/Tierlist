@@ -1103,6 +1103,8 @@ export function creditMatchResult(
     matchFitness: alreadyPlayed ? career.matchFitness : Math.min(100, career.matchFitness + 3 * minuteShare),
     energy: nextEnergy,
     // Basic KIB cans drunk at half time come off your stock now the match is saved.
+    // A can's boot ability lasts one match played — this one.
+    kibAbility: alreadyPlayed ? career.kibAbility : undefined,
     kibCans: alreadyPlayed || !stats.kibCansUsed ? career.kibCans
       : { ...career.kibCans, basic: Math.max(0, (career.kibCans?.basic ?? 0) - stats.kibCansUsed) },
     injury: nextInjury,

@@ -34,6 +34,12 @@ export interface KibCan {
   name: string;
   price: number;
   restore: number;
+  /**
+   * A can that gives a boot ability instead of energy (owners, 23 Sep 2026):
+   * Premium gives NS-Swerve's curve, Elite gives NS-Maestro's Touch Mode, for
+   * the next match you actually play. Absent: an energy can (`restore`).
+   */
+  effect?: "curve" | "extraTouch";
   /** Flat-colour fallback, drawn until — or unless — `image` exists. */
   color: string;
   /** A real product shot, supplied directly (requested: "I can give you an
@@ -48,6 +54,13 @@ export interface KibCan {
  *  lib/star/tuningStore.ts's applyPriceOverrides. Everything else about a
  *  can (name, colour, art) stays fixed; those aren't game-balance numbers. */
 export const KIB_CANS: KibCan[] = applyPriceOverrides("kibCans", KIB_CANS_DEFAULT);
+
+/** What a can does, in the words the shop and dashboard show. */
+export function kibCanEffectLabel(can: KibCan): string {
+  if (can.effect === "curve") return "Swerve boots' curve for your next match";
+  if (can.effect === "extraTouch") return "Touch boots' extra touch for your next match";
+  return `+${can.restore} energy`;
+}
 
 
 /**

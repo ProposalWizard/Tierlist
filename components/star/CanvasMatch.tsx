@@ -1,4 +1,5 @@
 "use client";
+import { KIB_CANS } from "@/lib/star/shopData";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
@@ -886,7 +887,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       startSimulation(true);
     }
   };
-  const KIB_HALF_TIME_RESTORE = 25;
+  // It IS a Basic can, so it gives what a Basic can gives (+65, owners 23 Sep 2026).
+  const KIB_HALF_TIME_RESTORE = KIB_CANS.find(c => c.id === "basic")?.restore ?? 65;
   const drinkHalfTimeKib = () => {
     const owned = (careerRef.current?.kibCans?.basic ?? 0) - kibUsedRef.current;
     if (owned <= 0 || energyRef.current >= 100) return;

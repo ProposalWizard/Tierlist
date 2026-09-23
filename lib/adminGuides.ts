@@ -328,6 +328,7 @@ export const ADMIN_GUIDES = {
           ["▶ Play / ◼ Stop", "Plays this exact picture as a real chance, your drags included, in place of the picture."],
           ["Delete", "Saved card: deletes it from the shared list AND the code (asks first). Unsaved card: just removes it from the grid on this device."],
           ["Tune", "Only after a drag. Records what was wrong with the generated picture as a correction — it is not a save. When enough corrections agree, a rule is proposed."],
+          ["Camera: pick on the whole pitch / Done — back to editing", "11-a-side only. The picture zooms out to the whole pitch with the camera as a dashed frame — drag it where you want the chance filmed from, let go, then Done. It only slides, never zooms. Saved with the scenario, and the game frames that chance from there once it is committed."],
           ["✕ No good", "Marks the picture rejected. It stays in the grid. The mark is kept on this device only."],
           ["✓ / Save & Approve", "If there's anything to save (a drag, or a card nobody has saved yet) it saves it for the team AND ticks it. Otherwise it just ticks it."],
           ["⋯", "Opens the menu below."],

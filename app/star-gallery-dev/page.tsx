@@ -84,6 +84,7 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
+import CameraPicker from "@/components/star/CameraPicker";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
 import PageGuide from "@/components/admin/PageGuide";
 import {
@@ -922,6 +923,12 @@ export default function StarGalleryDevPage() {
   const [showFormations, setShowFormations] = useState(false);
   /** The Play overlay is open on this card — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
+  /**
+   * Which card has the camera picker open ("Pick on the whole pitch", the
+   * Scenario Builder's own feature, asked for here on 23 Sep 2026). Keyed by
+   * card so moving to another picture closes it.
+   */
+  const [pickCameraKey, setPickCameraKey] = useState<string | null>(null);
   /** The picture's width when Play was pressed — the match plays at exactly
    *  this size (see ScenarioPlay's `width`). */
   const [playW, setPlayW] = useState<number | undefined>(undefined);
@@ -1783,6 +1790,7 @@ export default function StarGalleryDevPage() {
   // The edit row — under the picture on a phone, full width under the three
   // columns when the verdicts sit at the sides (see `sides`).
   const editRow = cell.game === "eleven" ? (
+        <>
         <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
           <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
           <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
@@ -1827,6 +1835,21 @@ export default function StarGalleryDevPage() {
             </button>
           )}
         </div>
+        {/* ── CAMERA FRAMING ──
+            The Scenario Builder's "Pick on the whole pitch": the picture zooms
+            out to the whole pitch with the camera as a dashed frame; drag it,
+            let go, and Done. Saved with the scenario, and the game frames the
+            chance from there. The camera slides; it never zooms. */}
+        <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+          <button
+            style={{ ...editBtn(false), ...(pickCameraKey === cell.key ? { background: "#fbbf24", color: "#451a03" } : {}) }}
+            disabled={playing}
+            onClick={() => setPickCameraKey(pickCameraKey === cell.key ? null : cell.key)}
+          >
+            {pickCameraKey === cell.key ? "Done — back to editing" : "Camera: pick on the whole pitch"}
+          </button>
+        </div>
+        </>
   ) : null;
 
   // ── The verdict buttons ──
@@ -1912,6 +1935,12 @@ export default function StarGalleryDevPage() {
             }}
             onStop={() => setPlaying(false)}
             width={playW}
+          />
+        ) : pickCameraKey === cell.key ? (
+          <CameraPicker
+            frame={liveFrame}
+            size={pictureSize}
+            onChange={(camera) => setOverride(cell.key, { ...(override ?? { items: {} }), camera })}
           />
         ) : (
         <EditableFrame

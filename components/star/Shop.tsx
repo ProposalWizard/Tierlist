@@ -2,7 +2,7 @@
 import { fameGainFromBuying, isWornOut, itemLifeSeasons } from "@/lib/star/fame";
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { KIB_CANS, kibCanPrice, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, shopTierOf, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, shopTierOf, type KibCan } from "@/lib/star/shopData";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
@@ -102,7 +102,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                   <KibCanIcon can={c} className="h-20 w-14" />
                   <div className="flex-1 text-left">
                     <div className="font-black text-white text-sm">{c.name}</div>
-                    <div className="text-[10px] text-emerald-300 font-bold">+{c.restore} energy</div>
+                    <div className="text-[10px] text-emerald-300 font-bold">{kibCanEffectLabel(c)}</div>
                     <div className="text-[10px] text-white/75">Owned: {career.kibCans[c.id]}</div>
                   </div>
                   <div className="text-right">

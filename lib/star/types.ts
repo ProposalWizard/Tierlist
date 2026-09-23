@@ -794,6 +794,13 @@ export interface CareerState {
    *  dashboard's own KIB Cans card — a second lever on top of Rest/Skip to
    *  Match Day, not a replacement for either. */
   kibCans: { basic: number; premium: number; elite: number };
+  /**
+   * A boot ability bought with a Premium (curve) or Elite (Touch Mode) KIB can,
+   * waiting for the next match you actually play. Cleared the moment that
+   * match is credited; a week on the bench or in the stands keeps it.
+   * Optional: absent on every older save, which reads as nothing active.
+   */
+  kibAbility?: { curve?: boolean; extraTouch?: boolean };
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];

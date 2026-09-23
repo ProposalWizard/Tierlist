@@ -152,9 +152,9 @@ function def(key: string): number {
   const kib = KIB_CANS.find((c) => c.id === "basic");
   const kibDefault = KIB_CANS_DEFAULT.find((c) => c.id === "basic");
   check(
-    kib?.price === kibDefault?.price && kib?.restore === 25,
+    kib?.price === kibDefault?.price && kib?.restore === 65,
     `KIB_CANS basic ships at its derived price with nothing overridden `
-    + `(got ★${kib?.price}/${kib?.restore}, expected ★${kibDefault?.price}/25)`,
+    + `(got ★${kib?.price}/${kib?.restore}, expected ★${kibDefault?.price}/65)`,
   );
   const boot = BOOTS_CATALOGUE.find((b) => b.id === "galaxy");
   const bootSpec = PRICE_SPECS.boots.galaxy;
