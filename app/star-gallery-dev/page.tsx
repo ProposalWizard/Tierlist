@@ -56,10 +56,11 @@ import {
   listScenarios,
   fetchSharedScenarios,
   saveScenarioShared,
+  saveScenario,
   deleteScenarioShared,
 } from "@/lib/star/scenarioStore";
 import { authoredScenarioList } from "@/lib/star/authoredScenarios";
-import { statusOf, pendingCommit } from "@/lib/star/scenarioStatus";
+import { statusOf, pendingCommit, newestById } from "@/lib/star/scenarioStatus";
 import {
   loadCorrections, saveCorrection, makeCorrection, proposalsFrom, fetchSharedCorrections,
   FAULT_LABEL, PROPOSAL_THRESHOLD, type Correction,
@@ -216,7 +217,10 @@ function cellFromSaved(ms: MatchScenario): Cell | null {
   const kind = ms.source?.kind;
   const seed = ms.source?.seed;
   if (!kind || seed == null) return null;
-  const key = ms.id.startsWith("gallery-") ? ms.id.slice("gallery-".length) : ms.id;
+  // An old Infinite Highlights save is a simulated chance — see indexGallery.
+  const key = ms.id.startsWith("gallery-") ? ms.id.slice("gallery-".length)
+    : ms.id.startsWith("highlight-") ? `sim-${kind}-${seed}`
+    : ms.id;
   return key.startsWith("sim-")
     ? simCell({ kind: kind as ScenarioKind, seed, planId: ms.source?.planId ?? null })
     : buildCell(kind as ScenarioKind, seed);
@@ -674,7 +678,7 @@ function Thumb({
   onOpen: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  const savedOv = saved ? overrideFromMatchScenario(saved, cell.frame.items.length) : undefined;
+  const savedOv = saved ? overrideFromMatchScenario(saved, cell.frame.items.length, cell.frame.camera) : undefined;
   const frame = applyOverride(applyOverride(cell.frame, savedOv), override);
   const analysis = useMemo(
     () => liveAnalysis(cell, [savedOv, override]),
@@ -769,7 +773,7 @@ function ChipRow({
     >
       {chips.map((c) => (
         <button key={c.id} style={style(c.id === activeId && !builderOn)} onClick={() => onPick(c.id)}>
-          {c.label} <span style={{ opacity: 0.6 }}>&middot; {c.done}/{c.total}</span>
+          {c.label} <span style={{ opacity: 0.6 }} title="in the game / saved">&middot; {c.done}/{c.total}</span>
         </button>
       ))}
       {onBuilder && (
@@ -901,6 +905,8 @@ export default function StarGalleryDevPage() {
   const [versionIdx, setVersionIdx] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [wide, setWide] = useState(false);
+  /** Viewport size, for the side-by-side card (see `sides`). */
+  const [vp, setVp] = useState({ w: 0, h: 0 });
   /** Which figure is tapped, for the add/remove controls. */
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /**
@@ -915,6 +921,15 @@ export default function StarGalleryDevPage() {
   const [showFormations, setShowFormations] = useState(false);
   /** The Play overlay is open on this card — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
+  /** The picture's width when Play was pressed — the match plays at exactly
+   *  this size (see ScenarioPlay's `width`). */
+  const [playW, setPlayW] = useState<number | undefined>(undefined);
+  const pictureRef = useRef<HTMLDivElement>(null);
+  const togglePlay = () => {
+    const c = pictureRef.current?.querySelector("canvas");
+    if (!playing && c) setPlayW(Math.round(c.getBoundingClientRect().width));
+    setPlaying((v) => !v);
+  };
   /** The simulated chance currently on screen, if Simulate has been pressed. */
   const [sim, setSim] = useState<Cell | null>(null);
 
@@ -926,7 +941,10 @@ export default function StarGalleryDevPage() {
   }, []);
 
   useEffect(() => {
-    const onResize = () => setWide(window.innerWidth >= 1024);
+    const onResize = () => {
+      setWide(window.innerWidth >= 1024);
+      setVp({ w: window.innerWidth, h: window.innerHeight });
+    };
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -1044,6 +1062,17 @@ export default function StarGalleryDevPage() {
         out[sc.id.slice("gallery-".length)] = sc;
       }
     }
+    // A chance saved from Infinite Highlights before it saved into this list
+    // (`highlight-<kind>-<seed>-<plan>`) is one of its kind's scenarios too —
+    // shown as the simulated card it is, unless a gallery save of the same
+    // chance already exists. New ones are saved straight into this list.
+    for (const sc of all) {
+      if (sc.source?.tool !== "highlights" || !sc.id.startsWith("highlight-")) continue;
+      const kind = sc.source.kind, seed = sc.source.seed;
+      if (!kind || seed == null) continue;
+      const key = `sim-${kind}-${seed}`;
+      if (!out[key]) out[key] = sc;
+    }
     return out;
   };
 
@@ -1055,7 +1084,8 @@ export default function StarGalleryDevPage() {
   // from Supabase — which is exactly why Leo could not see the one-on-ones
   // the game was already using. Read both, file first so a Supabase edit of
   // the same id still wins, same precedence the formula uses.
-  const galleryPool = () => [...authoredScenarioList(), ...listScenarios()];
+  // Newest copy per id wins — see newestById.
+  const galleryPool = () => newestById([...authoredScenarioList(), ...listScenarios()]);
 
   // The dev tools see the team's SAVED drawings as well as the committed
   // ones, so Simulate and the rule set react to a save straight away. The
@@ -1095,7 +1125,7 @@ export default function StarGalleryDevPage() {
 
   const revertCell = async (cell: Cell): Promise<void> => {
     setBusy("reverting");
-    const res = await deleteScenarioShared(gallerySlug(cell.key));
+    const res = await deleteScenarioShared(saved[cell.key]?.id ?? gallerySlug(cell.key));
     setBusy(null);
     if (res.migrationMissing) setMigrationMissing(true);
     if (!res.ok) { flashFor(false, `Not reverted — ${res.message}`); return; }
@@ -1140,7 +1170,7 @@ export default function StarGalleryDevPage() {
     }
 
     setBusy("deleting");
-    const id = gallerySlug(cell.key);
+    const id = saved[cell.key]?.id ?? gallerySlug(cell.key);
     const shared = await deleteScenarioShared(id);       // Supabase + local cache
     let repoTail = "";
     try {
@@ -1244,7 +1274,7 @@ export default function StarGalleryDevPage() {
   const frameOfSaved = useCallback((sc: MatchScenario): Frame | null => {
     const cell = cellFromSaved(sc);
     if (!cell) return null;
-    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items.length));
+    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items.length, cell.frame.camera));
   }, []);
 
   /** Open a saved scenario's own card, for a last edit before committing. */
@@ -1332,6 +1362,11 @@ export default function StarGalleryDevPage() {
       flashFor(false, `Not committed — ${why}`);
       return;
     }
+    // The server saved the same copy to the shared list as it committed it
+    // (see the commit route), so this browser's list follows suit.
+    saveScenario(scenario);
+    setSaved((m) => ({ ...m, [cell.key]: scenario }));
+    clearOverride(cell.key);
     flashFor(true, body.message ?? "Committed.");
   };
 
@@ -1368,16 +1403,15 @@ export default function StarGalleryDevPage() {
   const chips = useMemo(() => {
     if (game === "eleven") {
       return KIND_ORDER.map((k) => {
-        // Generated cards PLUS every saved scenario of this kind that isn't
-        // already one of them — the same set the version grid shows, so the
-        // "done / total" a chip reports matches the number of cards behind it
-        // rather than the bare generated count.
-        const keys = new Set(seedsForKind(k, countFor(k)).map((s) => cellKeyFor(k, s)));
-        for (const [key, ms] of Object.entries(saved)) {
-          if (ms.source?.kind === k) keys.add(key);
-        }
-        const arr = Array.from(keys).filter((key) => !removed[key]);
-        return { id: k, label: kindLabel(k), done: reviewedCount(reviews, arr), total: arr.length };
+        // THE SAME NUMBERS ON EVERY SCREEN. The chip used to count this
+        // browser's generated cards (its own "+ Add version" count, minus its
+        // own deleted cards) plus the saved ones, and "done" was this
+        // browser's own ticks — so Harry saw 21/21, Mikey 23, for the same
+        // one-on-ones. It now counts only what everyone shares: the kind's
+        // SAVED scenarios, and how many of those are in the game.
+        const mine = Object.values(saved).filter((ms) => ms.source?.kind === k);
+        const inGame = mine.filter((ms) => statusOf(ms).tuning).length;
+        return { id: k, label: kindLabel(k), done: inGame, total: mine.length };
       });
     }
     return FIVE_GROUPS.map((g) => {
@@ -1613,7 +1647,7 @@ export default function StarGalleryDevPage() {
   if (!cell) return shell(<div style={{ padding: 20 }}>No versions.</div>, false);
 
   const savedScenario = saved[cell.key];
-  const savedOv = savedScenario ? overrideFromMatchScenario(savedScenario, cell.frame.items.length) : undefined;
+  const savedOv = savedScenario ? overrideFromMatchScenario(savedScenario, cell.frame.items.length, cell.frame.camera) : undefined;
   const override = edits[cell.key];
   const edited = hasEdits(override);
   const baseFrame = applyOverride(cell.frame, savedOv);
@@ -1644,7 +1678,7 @@ export default function StarGalleryDevPage() {
     // column now — at 13.5px "+ Team-mate" broke onto two lines and made the
     // row twice as tall as it needed to be.
     flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
-    padding: "0 6px", whiteSpace: "nowrap",
+    padding: "0 3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
 
     border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
     color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
@@ -1673,6 +1707,20 @@ export default function StarGalleryDevPage() {
   // little square that has a little play button on it". Once you ARE
   // simulating it becomes the wide NEXT button, because that is then the one
   // thing you press over and over.
+  /** The picture in the middle with the verdict buttons down its sides —
+   *  whenever the screen has room for a column either side of it. */
+  const sides = vp.w >= 470;
+  /** The picture's size: as big as the screen allows once nothing but the
+   *  edit row and the status line has to fit under it. */
+  const pictureSize = sides
+    ? (() => {
+        const maxW = Math.max(260, Math.min(460, vp.w - 2 * 96 - 40));
+        return { baseW: maxW, maxW, maxH: Math.max(420, vp.h - 250) };
+      })()
+    // On a phone the card has 14px either side. The old phone default (340)
+    // overflowed a 340px screen and got cut off, while Play fitted the space
+    // — a 9% size jump that read as "the goalie is still moved".
+    : { baseW: Math.min(340, vp.w - 28), maxW: Math.min(460, vp.w - 28) };
   const simulatePanel = cell.game === "eleven" ? (
     <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
       <button
@@ -1723,67 +1771,12 @@ export default function StarGalleryDevPage() {
     </div>
   ) : null;
 
-  const pane = (
-    <div style={{ padding: "12px 14px 24px" }}>
-      <div style={{ position: "relative" }}>
-        {/* Playing swaps the PICTURE for the live match and leaves every
-            control below it in place — play, correct, play again, save,
-            without changing screen. */}
-        {playing ? (
-          <ScenarioPlay
-            build={() => {
-              const sc = rebuildScenario(cell);
-              // The SAVED drawing first, then whatever is being dragged on
-              // top of it — the same two layers, in the same order, that the
-              // picture, the fault rings and the formation strip all compose.
-              // Leaving `savedOv` out of this one call meant Play threw the
-              // saved scenario away and played the raw generated base
-              // instead. Reported directly: "the play in the scenario
-              // gallery moves everything around, and the goalie isn't in the
-              // same position that I place him in". Measured on the card it
-              // was reported from: the drawing had the keeper on 4.6m and
-              // the ball on 11.6m, Play put them on 2.2m and 19.2m.
-              applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
-              return sc;
-            }}
-            onStop={() => setPlaying(false)}
-          />
-        ) : (
-        <EditableFrame
-          editKey={cell.key}
-          baseFrame={baseFrame}
-          // Phone keeps the phone-sized default. On a desktop the picture you
-          // are actually working on gets the room the screen already has.
-          // Third pass at this. 340 (phone-sized everywhere) was too small on
-          // a desktop, 520 x 800 was "too big", 400 x 640 still pushed the
-          // buttons under it off the bottom of the screen. 350 x 560 leaves
-          // the whole card — picture, edit row, verdict row, Simulate and
-          // Across formations — visible at once on a 900px-tall screen.
-          size={wide ? { baseW: 330, maxW: 360, maxH: 520 } : undefined}
-          override={override}
-          marks={analysis.marks}
-          onCommit={setOverride}
-          edited={edited}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onSwipe={(d) => {
-            if (showingSim) simulate(kindId);
-            else if (versions.length > 1) stepVersion(d);
-          }}
-        />
-        )}
-        {!playing && !showingSim && versions.length > 1 && (
-          <>
-            <button onClick={() => go(-1)} style={arrowStyle("left")}>&#8249;</button>
-            <button onClick={() => go(1)} style={arrowStyle("right")}>&#8250;</button>
-          </>
-        )}
-      </div>
-
-      {cell.game === "eleven" && (
+  // The edit row — under the picture on a phone, full width under the three
+  // columns when the verdicts sit at the sides (see `sides`).
+  const editRow = cell.game === "eleven" ? (
         <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
           <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
-          <button style={editBtn(false)} onClick={() => addFigure("opponent")}>+ Opponent</button>
+          <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
           <button
             style={editBtn(!canRemove)}
             disabled={!canRemove}
@@ -1796,7 +1789,7 @@ export default function StarGalleryDevPage() {
               rebuilt through `rebuildScenario`. */}
           <button
             style={{ ...editBtn(false), color: playing ? "#7dd3fc" : "#4ade80" }}
-            onClick={() => setPlaying((v) => !v)}
+            onClick={togglePlay}
           >
             {playing ? "◼ Stop" : "▶ Play"}
           </button>
@@ -1825,7 +1818,127 @@ export default function StarGalleryDevPage() {
             </button>
           )}
         </div>
-      )}
+  ) : null;
+
+  // ── The verdict buttons ──
+  // Built once and placed either in a row under the picture (a narrow phone)
+  // or down the SIDES of it. Asked for directly: "make the actual scenario the
+  // whole middle of the screen … and then have the save and no good all on the
+  // sides of it" — the row under the picture, plus Simulate's Next under that,
+  // was falling off the bottom of the screen.
+  const sideBtn: React.CSSProperties = sides ? { flex: "none", width: "100%", minHeight: 76 } : {};
+  const noGoodBtn = (
+    <button
+      onClick={() => setVerdict(cell, verdict === "rejected" ? null : "rejected")}
+      title="Mark this picture as no good — it stays here"
+      style={{
+        ...bigBtn(verdict === "rejected" ? "#7f1d1d" : "rgba(255,255,255,0.05)", verdict === "rejected" ? "#ef4444" : "rgba(255,255,255,0.09)", verdict === "rejected" ? "#fecaca" : MUTED),
+        fontSize: 13, gap: 6, flexDirection: sides ? "column" : "row", ...sideBtn,
+      }}
+    >
+      &#10005; <span style={{ fontSize: 12.5, fontWeight: 700 }}>No good</span>
+    </button>
+  );
+  /** ✓ saves when there is something to save: an edit, or a card that is
+   *  not one of this kind's scenarios yet (a simulated chance, a generated
+   *  version nobody has saved). */
+  const willSave = canSave && (edited || !savedScenario);
+  const approveBtn = (
+    <button
+      onClick={() => {
+        // Approving a picture that is not saved yet SAVES it — it is now one
+        // of this kind's scenarios, for everyone. It used to save only when
+        // something had been dragged, so approving a good simulated chance
+        // as it was just marked it and threw it away: "when you're simming
+        // through and you save and approve, it doesn't then add it as a
+        // scenario." A card already saved and untouched is only marked.
+        if (willSave) void saveCell(cell, liveFrame);
+        setVerdict(cell, "approved");
+      }}
+      style={{
+        ...bigBtn(
+          verdict === "approved" ? "#14532d" : "rgba(255,255,255,0.05)",
+          verdict === "approved" ? "#22c55e" : "rgba(255,255,255,0.09)",
+          verdict === "approved" ? "#bbf7d0" : MUTED,
+        ),
+        flex: willSave ? 2.2 : 1,
+        fontSize: willSave ? 15 : 19,
+        ...sideBtn,
+        ...(sides ? { minHeight: 120 } : {}),
+      }}
+    >
+      {willSave ? (busy === "saving" ? "Saving…" : "Save & Approve") : "✓"}
+    </button>
+  );
+  const moreBtn = (
+    <button
+      onClick={() => setSheetOpen(true)}
+      style={{ ...bigBtn("rgba(255,255,255,0.05)", "rgba(255,255,255,0.09)", MUTED), ...sideBtn, ...(sides ? { minHeight: 52 } : {}) }}
+    >
+      &#8943;
+    </button>
+  );
+
+  const paneTop = (
+      <div ref={pictureRef} style={{ position: "relative" }}>
+        {/* Playing swaps the PICTURE for the live match and leaves every
+            control below it in place — play, correct, play again, save,
+            without changing screen. */}
+        {playing ? (
+          <ScenarioPlay
+            build={() => {
+              const sc = rebuildScenario(cell);
+              // The SAVED drawing first, then whatever is being dragged on
+              // top of it — the same two layers, in the same order, that the
+              // picture, the fault rings and the formation strip all compose.
+              // Leaving `savedOv` out of this one call meant Play threw the
+              // saved scenario away and played the raw generated base
+              // instead. Reported directly: "the play in the scenario
+              // gallery moves everything around, and the goalie isn't in the
+              // same position that I place him in". Measured on the card it
+              // was reported from: the drawing had the keeper on 4.6m and
+              // the ball on 11.6m, Play put them on 2.2m and 19.2m.
+              applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
+              return sc;
+            }}
+            onStop={() => setPlaying(false)}
+            width={playW}
+          />
+        ) : (
+        <EditableFrame
+          editKey={cell.key}
+          baseFrame={baseFrame}
+          // Phone keeps the phone-sized default. On a desktop the picture you
+          // are actually working on gets the room the screen already has.
+          // Third pass at this. 340 (phone-sized everywhere) was too small on
+          // a desktop, 520 x 800 was "too big", 400 x 640 still pushed the
+          // buttons under it off the bottom of the screen. 350 x 560 leaves
+          // the whole card — picture, edit row, verdict row, Simulate and
+          // Across formations — visible at once on a 900px-tall screen.
+          size={pictureSize}
+          override={override}
+          marks={analysis.marks}
+          onCommit={setOverride}
+          edited={edited}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onSwipe={(d) => {
+            if (showingSim) simulate(kindId);
+            else if (versions.length > 1) stepVersion(d);
+          }}
+        />
+        )}
+        {!sides && !playing && !showingSim && versions.length > 1 && (
+          <>
+            <button onClick={() => go(-1)} style={arrowStyle("left")}>&#8249;</button>
+            <button onClick={() => go(1)} style={arrowStyle("right")}>&#8250;</button>
+          </>
+        )}
+      </div>
+  );
+  const paneBottom = (
+    <>
+      {!sides && editRow}
 
 
       {/* ── WHERE THIS ONE ACTUALLY IS ──
@@ -1885,44 +1998,13 @@ export default function StarGalleryDevPage() {
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 10 }}>
-        {/* This is the REJECT mark, not a delete — asked twice what the X
-            meant ("is that delete, or does that mean something else?"). It
-            only records that this picture is no good, so it says so. */}
-        <button
-          onClick={() => setVerdict(cell, verdict === "rejected" ? null : "rejected")}
-          title="Mark this picture as no good — it stays here"
-          style={{
-            ...bigBtn(verdict === "rejected" ? "#7f1d1d" : "rgba(255,255,255,0.05)", verdict === "rejected" ? "#ef4444" : "rgba(255,255,255,0.09)", verdict === "rejected" ? "#fecaca" : MUTED),
-            fontSize: 13, gap: 6, flexDirection: "row",
-          }}
-        >
-          &#10005; <span style={{ fontSize: 12.5, fontWeight: 700 }}>No good</span>
-        </button>
-        <button
-          onClick={() => {
-            if (edited && canSave) void saveCell(cell, liveFrame);
-            setVerdict(cell, "approved");
-          }}
-          style={{
-            ...bigBtn(
-              verdict === "approved" ? "#14532d" : "rgba(255,255,255,0.05)",
-              verdict === "approved" ? "#22c55e" : "rgba(255,255,255,0.09)",
-              verdict === "approved" ? "#bbf7d0" : MUTED,
-            ),
-            flex: edited && canSave ? 2.2 : 1,
-            fontSize: edited && canSave ? 15 : 19,
-          }}
-        >
-          {edited && canSave ? (busy === "saving" ? "Saving…" : "Save & Approve") : "✓"}
-        </button>
-        <button
-          onClick={() => setSheetOpen(true)}
-          style={bigBtn("rgba(255,255,255,0.05)", "rgba(255,255,255,0.09)", MUTED)}
-        >
-          &#8943;
-        </button>
-      </div>
+      {!sides && (
+        <div style={{ display: "flex", gap: 10 }}>
+          {noGoodBtn}
+          {approveBtn}
+          {moreBtn}
+        </div>
+      )}
 
       {flash && (
         <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, textAlign: "center", color: flash.ok ? "#4ade80" : "#fca5a5" }}>
@@ -1930,12 +2012,19 @@ export default function StarGalleryDevPage() {
         </div>
       )}
 
-      {!wide && (
+      {!sides && (
         <div style={{ marginTop: 14 }}>
           {simulatePanel}
           {formationPanel}
         </div>
       )}
+      {sides && formationPanel}
+    </>
+  );
+  const pane = (
+    <div style={{ padding: "12px 14px 24px" }}>
+      {paneTop}
+      {paneBottom}
     </div>
   );
 
@@ -1948,19 +2037,53 @@ export default function StarGalleryDevPage() {
           {showingSim ? "SIM" : `${versionIdx + 1} / ${versions.length}`}
         </span>,
       )}
-      {wide ? (
-        // ONE centred column, not two. The right-hand column put Simulate and
-        // Across formations off to the side of a picture that was already too
-        // tall to see past; asked for directly: "the across formations could
-        // just go underneath and centralise everything". Same order as the
-        // phone now, so there is one layout to reason about instead of two.
-        <div style={{ display: "flex", justifyContent: "center", padding: "0 24px 24px" }}>
-          <div style={{ width: "min(100%, 460px)" }}>
-            {pane}
-            <div style={{ padding: "0 14px 10px" }}>
-              {simulatePanel}
-              {formationPanel}
-            </div>
+      {sides ? (
+        // THE PICTURE IN THE MIDDLE, the verdicts down its sides. The edit row
+        // (+ Mate, + Opponent, Remove, Play, Delete) sits right under the
+        // picture; No good on the left; ✓ / Save & Approve, the menu and
+        // Simulate's Next on the right. Nothing needs scrolling to reach.
+        <div style={{
+          display: "grid", gridTemplateColumns: "84px auto 84px", gap: 10,
+          justifyContent: "center", alignItems: "center", padding: "0 10px 24px",
+        }}>
+          <div style={{ display: "grid", gap: 10, alignContent: "center" }}>
+            {!playing && !showingSim && versions.length > 1 && (
+              <button onClick={() => go(-1)} style={sideArrow} aria-label="previous version">&#8249;</button>
+            )}
+            {noGoodBtn}
+            {showingSim && (
+              <button
+                onClick={() => { setSim(null); setSelectedId(null); }}
+                style={{ ...sideArrow, fontSize: 12, height: 52 }}
+              >
+                Back to v{versionIdx + 1}
+              </button>
+            )}
+          </div>
+          <div style={{ minWidth: 0 }}>{paneTop}</div>
+          <div style={{ display: "grid", gap: 10, alignContent: "center" }}>
+            {!playing && !showingSim && versions.length > 1 && (
+              <button onClick={() => go(1)} style={sideArrow} aria-label="next version">&#8250;</button>
+            )}
+            {approveBtn}
+            {moreBtn}
+            {cell.game === "eleven" && (
+              <button
+                onClick={() => simulate(kindId)}
+                title={showingSim ? "Next version" : "Simulate a version of this chance"}
+                style={{
+                  ...sideArrow, height: showingSim ? 76 : 52,
+                  border: "1px solid rgba(56,189,248,0.55)", background: "rgba(14,116,144,0.38)",
+                  color: "#e0f2fe", fontSize: showingSim ? 16 : 13,
+                }}
+              >
+                {showingSim ? "Next \u2192" : "\u25B6 Sim"}
+              </button>
+            )}
+          </div>
+          <div style={{ gridColumn: "1 / -1", width: "100%", maxWidth: 560, justifySelf: "center" }}>
+            {editRow}
+            {paneBottom}
           </div>
         </div>
       ) : pane}
@@ -2021,6 +2144,13 @@ export default function StarGalleryDevPage() {
     false,
   );
 }
+
+/** A button in one of the card's side columns. */
+const sideArrow: React.CSSProperties = {
+  width: "100%", height: 52, borderRadius: 14, cursor: "pointer",
+  border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)",
+  color: "#e6edf7", fontSize: 24, fontWeight: 800, lineHeight: 1,
+};
 
 function arrowStyle(side: "left" | "right"): React.CSSProperties {
   return {

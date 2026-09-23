@@ -36,11 +36,12 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import CanvasMatch from "./CanvasMatch";
+import LiveChanceEditor from "./LiveChanceEditor";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { clubsForDivision } from "@/lib/star/scoutOffers";
 import { DEFAULT_RULE_BOOK } from "@/lib/star/ruleBook";
 import type { CareerState, Fixture, StarPlayer } from "@/lib/star/types";
-import type { ScenarioKind } from "@/lib/star/canvasEngine";
+import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PlaySettings } from "@/lib/star/playArea";
 
 const INK = "#f2f5f9";
@@ -108,12 +109,16 @@ export default function InfiniteMatch({ settings, onBack }: {
   // chance is fine, but the ref is what keeps the list stable if React
   // batches two together.
   const servedRef = useRef<Served[]>([]);
+  /** The chance on screen now, as it stood before the kick — what Edit opens. */
+  const [current, setCurrent] = useState<{ scenario: Scenario; minute: number } | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const built = useMemo(() => buildPlayCareer(settings, run), [settings, run]);
 
-  const onChanceServed = useCallback((info: { kind: ScenarioKind | "dribble"; minute: number }) => {
+  const onChanceServed = useCallback((info: { kind: ScenarioKind | "dribble"; minute: number; scenario?: Scenario }) => {
     servedRef.current = [...servedRef.current, { kind: info.kind, minute: info.minute }];
     setServed(servedRef.current);
+    setCurrent(info.scenario ? { scenario: info.scenario, minute: info.minute } : null);
   }, []);
 
   const restart = () => {
@@ -157,6 +162,18 @@ export default function InfiniteMatch({ settings, onBack }: {
         </div>
         <button style={{ ...btn, flex: "none" }} onClick={restart}>New match</button>
       </div>
+
+      {/* Edit the chance on screen — saves into its type, commits to the game. */}
+      <button
+        style={{ ...btn, width: "100%", maxWidth: 460, height: 42, opacity: current ? 1 : 0.4 }}
+        disabled={!current}
+        onClick={() => setEditing(true)}
+      >
+        &#9998; Edit this chance{current ? ` (${kindLabel(current.scenario.kind)})` : ""}
+      </button>
+      {editing && current && (
+        <LiveChanceEditor scenario={current.scenario} minute={current.minute} onClose={() => setEditing(false)} />
+      )}
 
       <div style={{ width: "100%", maxWidth: 460 }}>
         <CanvasMatch

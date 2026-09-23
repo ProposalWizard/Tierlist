@@ -347,7 +347,7 @@ Three people are building this. To avoid two sessions editing the same files:
 | `world_class_potential.sql` | **PENDING — RUN TO ENABLE THE STRONGER TIER** (new, Sep 2026) | Adds `sofifa_players.world_class_potential boolean NOT NULL DEFAULT false` — a second, stronger tier directly above `high_potential`, same admin-toggle shape, requested directly ("a second category... nothing, high potential, or world class potential"). The admin PATCH route always sets `high_potential = true` alongside it, so every existing High Potential hook (`growWonderkids`, `feeFor`, the reach-up bias, the media hype detector) already fires for a World Class player without its own copy of each check — `wonderkids.worldClassMultiplier` (tuning.ts) scales all of them up further on top. Same resilience as `high_potential`: `league-squads/route.ts` degrades gracefully if this column doesn't exist yet, one column at a time. |
 | `star_scenarios.sql` | **PENDING — RUN SO HAND-BUILT SCENARIOS REACH THE GAME** (new, Sep 2026) | Creates the `star_scenarios` table: one row per `MatchScenario` (`lib/star/scenarios.ts`) — camera framing plus hand-placed teammate/opponent positions in real pitch metres. The Scenario Builder (`components/star/ScenarioEditor.tsx`, now hosted both at `/star-scenario-dev` and as a third tab in `/star-gallery-dev`) and the gallery's own base-scenario Save button both write here, so a scenario is DATA the game reads rather than something baked into a deploy. `/api/star/scenarios` is GET public / POST+DELETE admin-only via `isAdmin()`, exactly like `star_lineups`; `lib/star/scenarioStore.ts` keeps localStorage as a synchronous read cache, refreshed via `fetchSharedScenarios()` at load. Until this runs, the route degrades honestly instead of 500ing — GET returns an empty list with `migrationMissing: true` (both screens show a red banner naming this file), and a Save keeps the work in that browser while saying plainly "saved on this device ONLY," never a bare "Saved". |
 | `star_career_slots.sql` | **PENDING — RUN SO EXTRA SAVES FOLLOW A PLAYER ACROSS DEVICES** (new, Sep 2026) | Adds `star_careers.slot` (default 1, backfilling every existing save automatically) and swaps its `UNIQUE (user_id)` for `UNIQUE (user_id, slot)`, so an account can have up to three cloud saves instead of one — see Settings' new Saves panel. `app/api/star/career/route.ts` degrades the same way `league-squads/route.ts` already does: slot 1 (every existing save) works identically whether or not this has run; a second or third save simply stays local to whichever device created it until it has. |
-| `star_scenario_corrections.sql` | **PENDING** (new, Sep 2026) | Creates `star_scenario_corrections` so Tune corrections are one shared team list instead of one per browser. Until it runs, corrections stay in the browser that made them and `scripts/tuner-proposals.mts` says so. Browser-only corrections are uploaded on the first sync after it runs, not lost. |
+| `star_scenario_corrections.sql` | **RUN** (Sep 2026, by Mikey) | Creates `star_scenario_corrections` so Tune corrections are one shared team list instead of one per browser. Confirmed live 23 Sep 2026: the table answers the anon key and held 3 corrections. Browser-only corrections upload on the next sync. |
 
 ---
 
@@ -425,6 +425,19 @@ Three people are building this. To avoid two sessions editing the same files:
 ---
 
 ## Recent Session
+
+**23 September 2026 (Harry) — Gallery Play matches the picture, mid-match editing, shared counts, difficulty research (patch notes v0.7: https://claude.ai/artifact/U1uHCBfUzgsoozGaFnKxTG).**
+
+- Gallery Play: the picture now draws figures at `MATCH_SCALE` and Play runs at the picture's measured width (`ScenarioPlay`'s `width`) — nothing moved before the kick, it was a 13% size jump. Seen in a browser, keeper/ball/players within a few px.
+- Reverted Mikey's 035ada4 (ball locked to YOU) at Harry's request — the ball drags on its own again.
+- False "attacker offside": a removed poacher was parked at y=-400 (past the goal line = offside). `OFF_PITCH` is now behind the ball. 3/65 → 0/65; `tests/star/removedPoacher.mts`.
+- "+ Mate" in the gallery adds a real support runner (was decorative `sc.teammates`).
+- Gallery chip counts are shared data only: in-game / saved per kind (were per-browser generated counts). ✓ now saves any unsaved card (sims were being ticked and lost).
+- Commit route also upserts the same scenario into `star_scenarios`; `statusOf` treats a newer committed copy as committed and `newestById` merges code + DB (5 tight angles were newer in code than DB after Leo's commit).
+- Infinite Highlights saves as `gallery-sim-<kind>-<seed>` so saves land in the gallery; old `highlight-*` rows still read.
+- Infinite Match: "Edit this chance" (`LiveChanceEditor`, `lib/star/liveEdit.ts`) — CanvasMatch's `onChanceServed` now carries a scenario snapshot; the live chance becomes a gallery card on a 900000+ seed with the match's camera (new optional `PosOverride.camera`). `tests/star/liveEdit.mts` 144/144 exact.
+- Card layout: picture centred, No good left / ✓ … Sim right, edit row under (≥470px wide).
+- Open: which part of the Play Area "isn't the same game" (asked Harry); teammate close-range steal + hitboxes need canvasEngine (Mikey's OK).
 
 **23 September 2026 — The five-a-side freeze bug, re-confirmed ball-movement consistency, a dev-cheats panel, and real extra power for owning the club you play for.**
 

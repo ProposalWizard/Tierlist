@@ -124,24 +124,46 @@ const KIND_ORDER: ScenarioKind[] = [
  * or overwrite the other's work.
  */
 const EDIT_KEY = "star-highlights-edits-v1";
-const highlightSlug = (spec: SimSpec) => `highlight-${flagId(spec)}`;
+/**
+ * ONE PLACE FOR A SAVED CHANCE: the gallery's own list for that kind.
+ *
+ * A save made here used to land in its own `highlight-…` namespace, which the
+ * gallery deliberately never read — so a chance saved while playing Infinite
+ * Highlights did not become one of that kind's scenarios anywhere you could
+ * see it. Asked for directly: "when you press save there, it should save it
+ * into the scenario section of that highlight type and then be able to commit
+ * as well." It is now saved exactly as the gallery saves a simulated chance
+ * (`gallery-sim-<kind>-<seed>`, rebuilt from the same kind + seed + plan), so
+ * it shows as a card of its kind, counts in that kind's number and commits
+ * like any other. Rows saved the old way are still read — see
+ * `indexHighlights` — so nothing already saved is lost.
+ */
+const highlightSlug = (spec: SimSpec) => `gallery-sim-${spec.kind}-${spec.seed}`;
+const legacySlug = (spec: SimSpec) => `highlight-${flagId(spec)}`;
 
 const saveTargetFor = (spec: SimSpec) => ({
   id: highlightSlug(spec),
-  name: `${kindLabel(spec.kind)} #${spec.seed}`,
+  name: `${kindLabel(spec.kind)} (sim)`,
   kind: spec.kind as string,
   seed: spec.seed,
   planId: spec.planId,
-  tool: "highlights" as const,
+  tool: "gallery" as const,
 });
 
 function indexHighlights(all: MatchScenario[]): Record<string, MatchScenario> {
   const out: Record<string, MatchScenario> = {};
   for (const sc of all) {
-    if (sc.source?.tool === "highlights" && sc.id.startsWith("highlight-")) out[sc.id] = sc;
+    if (sc.id.startsWith("gallery-sim-")) out[sc.id] = sc;
+  }
+  // An old-style save, under the new address unless a new-style one exists.
+  for (const sc of all) {
+    if (sc.source?.tool !== "highlights" || !sc.id.startsWith("highlight-") || !sc.source.kind) continue;
+    const at = `gallery-sim-${sc.source.kind}-${sc.source.seed}`;
+    if (!out[at]) out[at] = sc;
   }
   return out;
 }
+void legacySlug;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  ONE CHANCE — built and framed. Exactly the gallery's own path.
@@ -205,7 +227,7 @@ function FlagRow({
 }) {
   const spec = specOf(flag);
   const shot = useMemo(() => buildShot(spec), [flag.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items.length) : undefined;
+  const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items.length, shot.base.camera) : undefined;
   const frame = applyOverride(applyOverride(shot.base, savedOv), override);
   const analysis = useMemo(
     () => analysisFor(spec, [savedOv, override]),
@@ -268,6 +290,15 @@ export default function HighlightsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
+  /** The picture's width when Play was pressed — the match plays at exactly
+   *  this size (see ScenarioPlay's `width`). */
+  const [playW, setPlayW] = useState<number | undefined>(undefined);
+  const pictureRef = useRef<HTMLDivElement>(null);
+  const togglePlay = () => {
+    const c = pictureRef.current?.querySelector("canvas");
+    if (!playing && c) setPlayW(Math.round(c.getBoundingClientRect().width));
+    setPlaying((v) => !v);
+  };
   /** Every correction recorded so far, so Tune can say whether this one just
    *  completed a pattern. Same store the gallery and Tuning & Commit read —
    *  a correction made here counts exactly as much as one made there. */
@@ -397,7 +428,7 @@ export default function HighlightsPage() {
   const editKey = shot ? flagId(shot.spec) : "";
   const savedScenario = shot ? saved[highlightSlug(shot.spec)] : undefined;
   const savedOv = shot && savedScenario
-    ? overrideFromMatchScenario(savedScenario, shot.base.items.length)
+    ? overrideFromMatchScenario(savedScenario, shot.base.items.length, shot.base.camera)
     : undefined;
   const override = shot ? edits[editKey] : undefined;
   const edited = hasEdits(override);
@@ -474,12 +505,13 @@ export default function HighlightsPage() {
   const revertShot = async (): Promise<void> => {
     if (!shot) return;
     setBusy("reverting");
-    const id = highlightSlug(shot.spec);
+    const id = savedScenario?.id ?? highlightSlug(shot.spec);
+    const key = highlightSlug(shot.spec);
     const res = await deleteScenarioShared(id);
     setBusy(null);
     if (res.migrationMissing) setMigrationMissing(true);
     if (!res.ok) { flashFor(false, `Not reverted — ${res.message}`); return; }
-    setSaved((m) => { const n = { ...m }; delete n[id]; return n; });
+    setSaved((m) => { const n = { ...m }; delete n[key]; return n; });
     clearOverride(editKey);
     flashFor(true, "Back to the generated chance.");
   };
@@ -533,7 +565,8 @@ export default function HighlightsPage() {
     const q = `Delete this ${kindLabel(shot.spec.kind)} scenario everywhere — the database and the code? This cannot be undone here.`;
     if (typeof window !== "undefined" && !window.confirm(q)) return;
     setBusy("deleting");
-    const id = highlightSlug(shot.spec);
+    const id = savedScenario.id;
+    const key = highlightSlug(shot.spec);
     const shared = await deleteScenarioShared(id);
     let repoTail = "";
     try {
@@ -549,7 +582,7 @@ export default function HighlightsPage() {
     }
     setBusy(null);
     if (shared.migrationMissing) setMigrationMissing(true);
-    setSaved((m) => { const n = { ...m }; delete n[id]; return n; });
+    setSaved((m) => { const n = { ...m }; delete n[key]; return n; });
     clearOverride(editKey);
     flashFor(!repoTail, shared.ok ? `Deleted${repoTail}.` : `Not deleted — ${shared.message}`);
   };
@@ -751,7 +784,7 @@ export default function HighlightsPage() {
           </button>
         </div>
       ) : (
-        <div style={{ padding: "10px 12px 14px", display: "grid", justifyItems: "center", gap: 8 }}>
+        <div ref={pictureRef} style={{ padding: "10px 12px 14px", display: "grid", justifyItems: "center", gap: 8 }}>
           {/* Playing swaps the PICTURE for the live match and leaves every
               control below it exactly where it was, so a chance can be
               played, corrected and saved without changing screen. */}
@@ -763,6 +796,7 @@ export default function HighlightsPage() {
                 return sc;
               }}
               onStop={() => setPlaying(false)}
+              width={playW}
             />
           ) : shot && baseFrame && (
             <EditableFrame
@@ -811,7 +845,7 @@ export default function HighlightsPage() {
             {/* Play this exact chance, edits and all — see ScenarioPlay. */}
             <button
               style={{ ...editBtn(false), color: playing ? "#7dd3fc" : "#4ade80" }}
-              onClick={() => setPlaying((v) => !v)}
+              onClick={togglePlay}
             >
               {playing ? "\u25FC Stop" : "\u25B6 Play"}
             </button>

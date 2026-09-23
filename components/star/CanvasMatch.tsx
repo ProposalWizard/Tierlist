@@ -203,7 +203,14 @@ interface Props {
    * reported as the string "dribble" rather than left out, which would make
    * the tally silently not add up to the chances played.
    */
-  onChanceServed?: (info: { kind: ScenarioKind | "dribble"; minute: number; reason?: string }) => void;
+  onChanceServed?: (info: {
+    kind: ScenarioKind | "dribble"; minute: number; reason?: string;
+    /** A copy of the chance as it stands before you strike it — for a screen
+     *  that lets you edit the chance you are playing (Infinite Match). Never
+     *  the live object: the match goes on mutating its own. Absent for a
+     *  dribble, which has no picture. */
+    scenario?: Scenario;
+  }) => void;
   /**
    * Never take you off, whatever the match thinks.
    *
@@ -356,6 +363,11 @@ function countedRng(seed: number, counter: { current: number }): () => number {
 const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
+
+/** A deep copy of a scenario for a caller to keep — plain data throughout. */
+function snapshotScenario(sc: Scenario): Scenario | undefined {
+  try { return structuredClone(sc); } catch { return undefined; }
+}
 
 export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
@@ -4101,6 +4113,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       kind: scenarioRef.current.kind,
       minute: matchMinuteRef.current,
       reason: request?.reason,
+      scenario: snapshotScenario(scenarioRef.current),
     });
     // One line, once per chance — see logMoment. This is the single thing kept
     // from what used to be an unbroken flood of buildup commentary: the moment

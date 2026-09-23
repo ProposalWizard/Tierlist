@@ -27,6 +27,253 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.7",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-23T00:00:00Z",
+      "summary": "Play now looks exactly like the picture · the ball moves on its own again · every browser counts the same scenarios · edit a chance mid-match in Infinite Match · the difficulty argument, researched",
+      "stats": [
+        {
+          "value": "0/65",
+          "label": "saved scenarios wrongly showing \"attacker offside\" (was 3/65)"
+        },
+        {
+          "value": "13% → 0%",
+          "label": "how much bigger Play was drawn than the picture"
+        },
+        {
+          "value": "5",
+          "label": "tight angles newer in the code than the database — can't be written back over any more"
+        },
+        {
+          "value": "1",
+          "label": "Supabase step for you: star_scenario_corrections.sql"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Pressing Play no longer makes the picture jump",
+              "detail": "Nothing actually moved before the kick — I watched it for 4 seconds in a real browser. Play was drawn about 13% wider than the picture, with players about half as big again, so everything looked like it shifted.",
+              "more": {
+                "summary": "What changed",
+                "points": [
+                  "The picture now draws players at the match's own size, so they are the same size before and after Play.",
+                  "Play now runs at the picture's exact width. Checked side by side: keeper, ball and every player land within a few pixels of where they were.",
+                  "Still different: the goal net is drawn a bit deeper in the match than on the picture. Worth a look before calling it identical."
+                ]
+              }
+            },
+            {
+              "title": "The ball can be dragged on its own again",
+              "detail": "Mikey's \"ball rides at your feet\" change is undone, as you asked. It had also made Play ignore where you put the ball — that's how a ball ended up on top of a defender after pressing Play."
+            },
+            {
+              "title": "False \"attacker offside\" when everyone was behind the ball",
+              "detail": "When you removed the poacher, he was parked 400m past the goal line — which counts as offside. He's parked behind the ball now.",
+              "bars": [
+                {
+                  "label": "Saved scenarios flagged offside",
+                  "was": 3,
+                  "now": 0,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "✓ on a simulated chance now actually saves it",
+              "detail": "It used to save only if you'd dragged something, so approving a good sim just ticked it and lost it. Now ✓ on anything not yet saved saves it, and it becomes that type's next card."
+            },
+            {
+              "title": "Leo's commit worked, but left a trap",
+              "detail": "His 11 scenarios are in the code. But 5 of the tight angles were committed without being saved first, so the database held the older copy — and the next \"Commit all\" from anyone would have written the old copy back.",
+              "more": {
+                "summary": "Two fixes",
+                "points": [
+                  "Every commit now also saves the same copy to the database, so the two can't drift apart.",
+                  "When the code is newer than the database, the card now reads \"Committed\" and is left off the Commit all list, instead of saying the game has the older copy (the opposite of true)."
+                ]
+              }
+            },
+            {
+              "title": "Team-mates you add in the gallery now play",
+              "detail": "\"+ Mate\" used to add scenery that never reacted. Now he's a real support runner: he goes for a ball played near him and can receive a pass or an order. Not seen in a live Play yet."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Edit this chance, mid-match, in Infinite Match",
+              "detail": "A button above the match opens the chance you're on, as it was before the kick. Drag, add or remove players, then Save (it becomes a card of that type in the gallery) or Commit (it goes in the game). Close it and carry on playing.",
+              "more": {
+                "summary": "How it works",
+                "points": [
+                  "A chance in a real match can't be rebuilt later, so a copy is taken when it's served. The match only makes that copy when a screen asks for it; a normal career doesn't.",
+                  "The chance is saved on a base picture of the same type, with your players dragged onto it. Checked on 144 chances: every card shows exactly the chance you were on, with the match's own camera framing.",
+                  "Opponents show in red in the editor whatever kit they wore in the match."
+                ]
+              }
+            },
+            {
+              "title": "A highlight you save in Infinite Highlights now goes into that type's scenarios",
+              "detail": "It used to be saved somewhere the gallery never looked. It's now saved exactly like a gallery sim, so it shows as a card, counts, and commits. The one saved the old way still shows up."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The picture sits in the middle, the verdict buttons down its sides",
+              "detail": "On anything wider than a phone: No good on the left; ✓, the menu and Simulate/Next on the right; the edit row right under the picture. Nothing needs scrolling to reach. Phones keep the stacked layout."
+            },
+            {
+              "title": "Every browser shows the same number for each type",
+              "detail": "The number next to each type now reads in the game / saved, counted from the shared list, so everyone sees the same thing. It used to count each browser's own generated cards, which is why you saw 21 and Mikey saw 23.",
+              "more": {
+                "summary": "Right now",
+                "points": [
+                  "One on one: 21 in the game, 21 saved.",
+                  "Tight angle: 11 in the game, 13 saved (2 saved, not committed).",
+                  "Free kick: 0 in the game, 1 saved."
+                ]
+              }
+            },
+            {
+              "title": "\"+ Opponent\" reads \"+ Opp\"",
+              "detail": "The full word didn't fit on the button once the row sat under a narrower picture."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Difficulty and scaling — what the research says",
+          "items": [
+            {
+              "title": "You're all right about different things",
+              "detail": "Everyone agreed modes should exist. The argument is about which one is the main game and what the others change.",
+              "more": {
+                "summary": "What the evidence backs, person by person",
+                "points": [
+                  "Harry — backed: money comes from players who stay for months. In games that live off big spenders, the top 5% of spenders make over 70% of revenue, rising to 81% by month 10. 87% of eventual top spenders hadn't bought anything in month one (Moloco, Aug 2026, 55 games).",
+                  "Harry — not backed: \"harder means they spend more\". A 330,000-player trial gave players who were about to quit easier levels. They spent less in that round but stayed longer, so they spent more overall — about 7-8 cents more per player over 30 days (Ascarza, Netzer & Runge, 2025).",
+                  "Leo — backed: day one is where most players are lost. The typical game keeps 15-16% of players to day 2 and 3.4-3.9% to day 7 (GameAnalytics, 11,600 games).",
+                  "Leo — not backed: no study I found shows starting at United keeps more players than starting low.",
+                  "Mikey — backed: a study of 263,000 players found swings in difficulty drove quitting more than how hard the game was on average. Losing streaks didn't make beginners quit; winning streaks kept everyone. New Star Soccer's own creator put its pull down to pace: \"you're only two minutes away from another result, another wage packet\"."
+                ]
+              }
+            },
+            {
+              "title": "Recommendation: a slow road to the top as the main mode, a clearly labelled casual mode beside it",
+              "detail": "Main mode pre-selected. \"Superstar Start (casual)\" next to it on the same screen, not buried in settings. A harder mode later, unlocked by earning it.",
+              "more": {
+                "summary": "What each mode changes",
+                "points": [
+                  "Main mode: start low as now. Judge the pace in hours played, not seasons. Something big every session — a promotion chase or a cup tie against a Premier League club in season 1, and an unlock every season (Mikey's free trial of the curve boots fits here).",
+                  "Casual mode: the same game with different settings — where you start, how strong opponents are, shop prices, how easy transfers are. Its own saves and achievements. The main mode's flow doesn't change for it — Harry's condition.",
+                  "Hard mode later, earned (you suggested a Ballon d'Or). No paid boosts in it: real-money stat boosts are what gets a game called pay-to-win.",
+                  "Inside the main mode, even out difficulty spikes without making it easier on average — the research points at spikes, not the average. For example, a retry after watching an ad instead of rigging results.",
+                  "Money: rewarded ads for players who don't pay; hold interstitial ads back until well in (Score! Hero waits until level 25); cosmetics; time-savers priced high enough not to cheapen the climb.",
+                  "Settle it with data, not argument: PostHog is already set up. Compare day-1 and day-7 retention and payer rate by mode, and test how long season 1 takes, once there are about 1,000 players in each mode."
+                ]
+              }
+            },
+            {
+              "title": "What the research couldn't answer",
+              "detail": "No published split of casual vs hardcore spending in football games, no Celeste assist-mode usage numbers, and no test of starting weak vs starting strong. Treat the above as direction, not proof — almost all of it is mobile free-to-play data, not a browser football game."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Team to-dos from today's chat",
+          "items": [
+            {
+              "title": "Leo and Mikey: fill the scenario gallery",
+              "detail": "At least 5 per type, no maximum — aim for 30-50 each, because a rule set from 5 is much worse than one from 50. Harry makes the rule sets after."
+            },
+            {
+              "title": "Check for bugs first",
+              "detail": "Anything not saving, and whether it works in game."
+            },
+            {
+              "title": "Team-mates right next to you steal your shot as a pass",
+              "detail": "Leo's fix: ignore a team-mate that close for about 0.4s after the kick; Harry also thinks everyone's reach is too big. Both mean changing canvasEngine.ts, which Mikey said never to touch — needs his OK first.",
+              "pill": {
+                "text": "needs Mikey",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Keepers on rebounds are too good, and too often off their line",
+              "detail": "\"Permanent prime Neuer\" on rebounds, and near-post positioning too far out. The per-type keeper setting exists; tight angle near-post 0.50 is still waiting on your go."
+            },
+            {
+              "title": "Camera framing can't be changed in the builder",
+              "detail": "Saved cards can now carry their own framing (added for Infinite Match), so a zoom/pan control is a small step from here. Not built."
+            },
+            {
+              "title": "Commits must land on main and be saved",
+              "detail": "Now true by construction: every commit also saves the same copy to the shared list."
+            },
+            {
+              "title": "Energy changes are Mikey's",
+              "detail": "Left alone this round, as you asked."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Run star_scenario_corrections.sql in Supabase",
+              "detail": "Until then Tune corrections stay in the browser that made them.",
+              "alert": true
+            },
+            {
+              "title": "\"It's not the same game in the play area\" — which part?",
+              "detail": "The picture-vs-Play mismatch is fixed. For the rest I need to know what looks or feels different: the kits, the faces, the ball, how the shot feels?",
+              "pill": {
+                "text": "blocked on Harry",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Not seen live: added team-mates reacting in Play",
+              "detail": "I read the code and worked it out; I haven't watched one take a pass."
+            },
+            {
+              "title": "The 5 tight angles are still older in the database",
+              "detail": "Nothing breaks — the gallery shows the newer code copy. They'll match again the next time anyone saves or commits them."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "v0.4 — Play Area, Infinite Match, commit review",
+              "detail": "Play in the gallery used your saved drawing, the Play Area and Infinite Match arrived, and scenarios could be looked through before committing."
+            },
+            {
+              "title": "v0.3.5 — from the 40-minute call",
+              "detail": "Delete on any scenario, the X relabelled No good, and every decision and idea from the call written down."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/U1uHCBfUzgsoozGaFnKxTG",
+      "updatedAt": null
+    },
+    {
       "version": "0.6",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-22T00:00:00Z",

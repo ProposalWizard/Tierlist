@@ -31,7 +31,7 @@ import { useCallback, useEffect, useState } from "react";
 import CanvasMatch from "./CanvasMatch";
 import type { Scenario } from "@/lib/star/canvasEngine";
 
-export default function ScenarioPlay({ build, onStop }: {
+export default function ScenarioPlay({ build, onStop, width }: {
   /** Rebuilds the scenario from scratch. Called for every chance, so this
    *  must be pure — handing back one shared object would let the engine
    *  mutate the card's own picture as you play it. */
@@ -39,6 +39,11 @@ export default function ScenarioPlay({ build, onStop }: {
   /** Back to the editable picture. Kept on the props so a caller that has
    *  no toggle of its own can still offer one. */
   onStop?: () => void;
+  /** The picture's own width, in CSS px. Given, the match plays at exactly
+   *  that size, so pressing Play changes nothing on screen until you kick.
+   *  It used to fill the card instead — about 13% wider than the picture —
+   *  and every player appeared to jump. */
+  width?: number;
 }) {
   const openOn = useCallback(() => build(), [build]);
 
@@ -54,5 +59,7 @@ export default function ScenarioPlay({ build, onStop }: {
   // No Stop button of its own: the card's Play button toggles to Stop, in
   // the place it was already in. Two of them is the same action twice.
   void onStop;
-  return <CanvasMatch key={nonce} openOn={openOn} bare />;
+  const match = <CanvasMatch key={nonce} openOn={openOn} bare />;
+  if (!width) return match;
+  return <div style={{ width, maxWidth: "100%", margin: "0 auto" }}>{match}</div>;
 }
