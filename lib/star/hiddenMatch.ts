@@ -3,6 +3,11 @@ import { getTuning } from "@/lib/star/tuningStore";
 
 const HIGH_MODE_CHANCES = getTuning("energy.highModeChances");
 const LOW_MODE_CHANCES = getTuning("energy.lowModeChances");
+/** On High, the extra chances your own running makes, on top of your side's
+ *  normal rate. Only ever yours: taking a bigger share of your side's
+ *  chances tops out once nearly every one already comes to you, so without
+ *  this High could never reach its intended +35%. */
+const HIGH_MODE_EXTRA = getTuning("energy.highModeExtraChances");
 /**
  * THE TALISMAN TACTIC — see clubPowers.ts's `setTalisman` for the gate
  * (majority owner of the club you actually play for). Same multiplier slot
@@ -117,6 +122,15 @@ export interface HiddenMatchInputs {
    * many chances come to you.
    */
   energyMode?: "low" | "medium" | "high";
+  /**
+   * Mode switches made part-way through a stretch that has already been
+   * simulated ahead. Each one takes over from its own minute onwards, so the
+   * same stretch can be re-run with minutes before the switch identical and
+   * everything after it at the new mode — which is what makes switching
+   * instant rather than waiting for your next chance. Absent: `energyMode`
+   * for the whole run, exactly as before.
+   */
+  energyModeChanges?: { minute: number; mode: "low" | "medium" | "high" }[];
   /**
    * Majority owner of the club you actually play for, tactic switched on —
    * see clubPowers.ts's `setTalisman`. Stacks with `energyMode` rather than
@@ -446,6 +460,17 @@ const clamp1 = (n: number) => Math.max(-1, Math.min(1, n));
  * Returns the events that minute produced and, when the football justifies it,
  * a request for the player to take over.
  */
+/** The energy mode in force at this minute — the latest switch at or before
+ *  it, otherwise the mode the run started on. */
+export function modeAt(inputs: HiddenMatchInputs, minute: number): "low" | "medium" | "high" | undefined {
+  let mode = inputs.energyMode;
+  let at = -Infinity;
+  for (const c of inputs.energyModeChanges ?? []) {
+    if (c.minute <= minute && c.minute >= at) { mode = c.mode; at = c.minute; }
+  }
+  return mode;
+}
+
 export function tick(
   state: HiddenMatchState,
   inputs: HiddenMatchInputs,
@@ -515,7 +540,19 @@ export function tick(
       * (1 + (userHasIt ? edge : -edge) * 0.1)
       * (1 + Math.max(0, userHasIt ? state.momentum : -state.momentum) * 0.2);
 
-    if (rng() < rate) {
+    // One roll decides both, so Medium and Low use the random stream exactly
+    // as before; only High has the extra slice above the normal rate.
+    const chanceRoll = rng();
+    const highExtra = userHasIt && modeAt(inputs, state.minute) === "high"
+      ? rate * (HIGH_MODE_EXTRA - 1) : 0;
+    if (chanceRoll >= rate && chanceRoll < rate + highExtra) {
+      const req = buildRequest(state, rng, inputs);
+      if (req) {
+        state.sinceInvolved = 0;
+        return { events, request: req };
+      }
+    }
+    if (chanceRoll < rate) {
       if (userHasIt) {
         // Your team has worked one. Are you the one on the end of it?
         // Skill raises how often the move finds you.
@@ -523,8 +560,9 @@ export function tick(
         // the chances coming to you"). The +0.08 is the fixed amount a fresh
         // player always had, so Medium plays exactly as before; the energy
         // MODE scales the whole thing below.
-        const modeScale = (inputs.energyMode === "high" ? HIGH_MODE_CHANCES
-          : inputs.energyMode === "low" ? LOW_MODE_CHANCES : 1)
+        const mode = modeAt(inputs, state.minute);
+        const modeScale = (mode === "high" ? HIGH_MODE_CHANCES
+          : mode === "low" ? LOW_MODE_CHANCES : 1)
           * (inputs.talisman ? TALISMAN_CHANCES : 1);
         const baseInvolvement = (0.36
           + (inputs.playerSkill / 100) * 0.26
