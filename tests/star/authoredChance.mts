@@ -16,11 +16,12 @@ import {
 import {
   authoredPool, ruleSetFor, nextAuthoredShape, randomiseAuthored,
   setLiveScenarioPool, applyAuthoredShape, sampleFromScenario, JITTER_M,
-  KEEPER_TUNING,
+  KEEPER_TUNING, KEEPER_TUNING_BY_KIND, placeKeeper,
 } from "@/lib/star/authoredChance";
 import { buildScenario } from "@/lib/star/canvasEngine";
 import { fixBaseScenario, offsideLineOf, scenarioFaults } from "@/lib/star/baseScenario";
 import { mulberry32 } from "@/lib/star/season";
+import { CX } from "@/lib/star/pitch";
 
 let failed = 0;
 const ok = (cond: boolean, what: string) => {
@@ -107,9 +108,61 @@ ok(nextAuthoredShape("__nothing_authored__", rng) === null,
 // broken shape. It yields nothing, and the caller moves on to another
 // drawing. Refusing to serve is the whole safety property.
 const strict = deriveRuleSet("one_on_one", [sampleFromAuthored(pool[0])!]);
-strict.rules.forEach(r => { r.invariant = true; });
+// `at` as well as `invariant`. A law used to mean "this measure must be
+// zero", so flipping every rule to invariant was enough to make the set
+// impossible. A law now holds at whatever value the drawings agree on — and
+// derived from ONE drawing, that value IS that drawing's, so "every rule is
+// a law" became "be exactly this picture", which the picture itself
+// satisfies. The set has to be made genuinely unreachable to still be
+// testing what it says it is.
+strict.rules.forEach(r => { r.invariant = true; r.at = -999; });
 ok(randomiseAuthored(pool[0], strict, mulberry32(7)) === null,
   "a rule set nothing can satisfy yields nothing, never a broken shape");
+
+// ── THE KEEPER'S DIALS, PER CHANCE KIND ─────────────────────────────────
+//
+// A tight angle's keeper and a one-on-one's keeper are different questions
+// with different answers, and the standing rule on this tool is that tuning
+// one highlight type must never move another. The dials used to be global.
+//
+// The number that prompted it, measured on the ten authored tight angles:
+// the keeper covers a median 0.11 of the way across to his near post, and
+// `buildTightAngle` cannot exceed 0.30 because it clamps him inside the
+// posts. Nothing is set here — this checks the mechanism, not a value.
+{
+  const ball = { x: CX + 10, y: 5 };
+  const drawn = { x: CX + 1.2, y: 1.8 };
+  const shares = { nearPost: 0.12, advance: 0.36 };
+  const share = (k: { x: number; y: number }) => (k.x - CX) / (ball.x - CX);
+
+  const asDrawn = placeKeeper(ball, shares, drawn, "tight_angle");
+  ok(Math.abs(share(asDrawn) - 0.12) < 0.01,
+    `with nothing set, the drawing's own share is kept (${share(asDrawn).toFixed(3)})`);
+
+  KEEPER_TUNING_BY_KIND.tight_angle = { nearPost: 0.5 };
+  const tuned = placeKeeper(ball, shares, drawn, "tight_angle");
+  ok(Math.abs(share(tuned) - 0.5) < 0.01,
+    `a kind's own dial overrides the drawing (${share(tuned).toFixed(3)})`);
+
+  const other = placeKeeper(ball, shares, drawn, "one_on_one");
+  ok(Math.abs(share(other) - 0.12) < 0.01,
+    `ANOTHER kind is untouched by it (${share(other).toFixed(3)})`);
+
+  const unknown = placeKeeper(ball, shares, drawn);
+  ok(Math.abs(share(unknown) - 0.12) < 0.01,
+    `a caller that names no kind behaves as it did before (${share(unknown).toFixed(3)})`);
+
+  // The other dial moves on its own, and only its own.
+  KEEPER_TUNING_BY_KIND.tight_angle = { advance: 0.8 };
+  const advanced = placeKeeper(ball, shares, drawn, "tight_angle");
+  ok(Math.abs(share(advanced) - 0.12) < 0.01,
+    "setting how far he comes out leaves his near-post cover alone");
+  ok(advanced.y > drawn.y, `…and does move him off his line (${advanced.y.toFixed(2)}m)`);
+
+  delete KEEPER_TUNING_BY_KIND.tight_angle;
+  ok(Math.abs(share(placeKeeper(ball, shares, drawn, "tight_angle")) - 0.12) < 0.01,
+    "clearing a kind's dial puts the drawing's own share back");
+}
 
 // ── ONE BAD DRAWING MUST NOT TAKE THE RULES DOWN WITH IT ──────────────────
 //
