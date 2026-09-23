@@ -65,6 +65,8 @@ import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPl
 import ContactBall from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
+import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "@/lib/star/energy";
+import { getTuning } from "@/lib/star/tuningStore";
 import ShootoutOverlay from "./ShootoutOverlay";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
@@ -186,6 +188,33 @@ interface Props {
    * itself a new goal to capture.
    */
   onGoalScored?: (replay: GoalReplay) => void;
+  /**
+   * Fired once per chance the match hands you, the instant the picture is
+   * settled and before you are asked to aim at it.
+   *
+   * Purely an OBSERVER — nothing here reads it back, and a caller that does
+   * not pass it changes nothing. It exists because there was no way at all
+   * to find out what a real match actually serves: a match's chance kinds
+   * were decided in `loadScenario` and never left it, so "I've played five
+   * games and seen ZERO one-on-ones" could not be checked against anything.
+   * See /star-play-dev's Infinite Match, which is the one caller.
+   *
+   * A dribble has no `ScenarioKind` at all — it is its own phase — so it is
+   * reported as the string "dribble" rather than left out, which would make
+   * the tally silently not add up to the chances played.
+   */
+  onChanceServed?: (info: { kind: ScenarioKind | "dribble"; minute: number; reason?: string }) => void;
+  /**
+   * Never take you off, whatever the match thinks.
+   *
+   * `hookCheck` can end your afternoon from minute 60 on — bad form, tired
+   * legs, or a game already won. That is right for a career and fatal for a
+   * tool whose whole job is to play thousands of minutes and see what comes
+   * up: a 10,000-minute match was measured ending around minute 75.
+   *
+   * Opt-in and off by default, so a real career is untouched.
+   */
+  neverHooked?: boolean;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -328,7 +357,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, openOn, bare = false }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -618,6 +647,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * which has no real career (or no energy tracking) to seed from at all.
    */
   const startEnergyRef = useRef(career?.energy ?? 100);
+  /**
+   * LIVE ENERGY (22 Sep 2026 — see lib/star/energy.ts).
+   *
+   * `energyRef` is what you have right now; `energyClockRef` is the match
+   * minute it has been charged up to. Every time the clock moves on, the
+   * minutes in between are charged at the CURRENT mode's rate for this
+   * competition — so switching mode takes effect from the very next minute,
+   * and the bar at the bottom of the commentary drops as the clock ticks.
+   */
+  const energyRef = useRef(career?.energy ?? 100);
+  const energyClockRef = useRef(0);
+  const [liveEnergy, setLiveEnergy] = useState(career?.energy ?? 100);
+  const energyModeRef = useRef<EnergyMode>("medium");
+  const [energyMode, setEnergyModeState] = useState<EnergyMode>("medium");
+  const energyFactorRef = useRef(career ? energyFactorFor(career, fixture) : 1);
+  /** Basic KIB cans drunk at half time this match — reported back in the
+   *  match stats and taken off your stock once the match is over. */
+  const kibUsedRef = useRef(0);
+  const [kibUsed, setKibUsed] = useState(0);
   // Where a completed pass left the move, and how many passes deep it is. The
   // next scenario is built from this rather than drawn at random, so a move can
   // actually be built instead of every chance starting from nothing.
@@ -677,7 +725,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return next;
     });
   };
-  const [pause, setPause] = useState<{ label?: string; cta: string; onContinue: () => void } | null>(null);
+  const [pause, setPause] = useState<{ label?: string; cta: string; halfTime?: boolean; onContinue: () => void } | null>(null);
   const halfTimeShownRef = useRef(false);
   /** What to do once the queue has emptied. */
   const simContinueRef = useRef<(() => void) | null>(null);
@@ -742,6 +790,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  current one without re-creating every callback that touches it. */
   const openOnRef = useRef(openOn);
   openOnRef.current = openOn;
+  /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
+   *  same reason `openOn` is — the loop reads them outside React's render. */
+  const onChanceServedRef = useRef(onChanceServed);
+  onChanceServedRef.current = onChanceServed;
+  const neverHookedRef = useRef(neverHooked);
+  neverHookedRef.current = neverHooked;
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -753,10 +807,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * minute the game currently considers itself at, with nothing to
    * desynchronise. Loses up to ENERGY_MATCH_DECAY points by full time.
    */
-  const ENERGY_MATCH_DECAY = 20;
   const liveEnergyAt = (minute: number) => {
-    const decay = Math.min(ENERGY_MATCH_DECAY, (Math.max(0, minute) / MATCH_DURATION) * ENERGY_MATCH_DECAY);
-    return Math.max(0, startEnergyRef.current - decay);
+    // A player who has been taken off stops spending energy.
+    if (hookedRef.current) return energyRef.current;
+    const extra = Math.max(0, minute - energyClockRef.current)
+      * energyPerMinute(energyModeRef.current, energyFactorRef.current);
+    return clampEnergy(energyRef.current - extra);
+  };
+  /** Charge energy up to this minute, at the current mode. */
+  const chargeEnergyTo = (minute: number) => {
+    if (minute > energyClockRef.current) {
+      energyRef.current = liveEnergyAt(minute);
+      energyClockRef.current = minute;
+      setLiveEnergy(energyRef.current);
+    }
+  };
+  /** Move the match clock — the one place energy is charged as it passes. */
+  const setClock = (minute: number) => {
+    chargeEnergyTo(minute);
+    matchMinuteRef.current = minute;
+    setMatchMinute(minute);
+  };
+  const setEnergyMode = (mode: EnergyMode) => {
+    // Bank what the old mode cost up to now before the new rate applies.
+    chargeEnergyTo(matchMinuteRef.current);
+    energyModeRef.current = mode;
+    setEnergyModeState(mode);
+  };
+  const KIB_HALF_TIME_RESTORE = 25;
+  const drinkHalfTimeKib = () => {
+    const owned = (careerRef.current?.kibCans?.basic ?? 0) - kibUsedRef.current;
+    if (owned <= 0 || energyRef.current >= 100) return;
+    kibUsedRef.current += 1;
+    setKibUsed(kibUsedRef.current);
+    energyRef.current = clampEnergy(energyRef.current + KIB_HALF_TIME_RESTORE);
+    setLiveEnergy(energyRef.current);
   };
 
   /**
@@ -768,7 +853,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * required drag distance never becomes a moving target mid-match; see the
    * note by dragForFullPower's call site.
    */
-  const TIRED_SKILLS_MAX_CUT = 0.15;
+  const TIRED_SKILLS_MAX_CUT = getTuning("energy.tiredSkillCut");
   const tiredSkills = (): KickSkills => {
     const energy = liveEnergyAt(matchMinuteRef.current);
     const cut = (1 - energy / 100) * TIRED_SKILLS_MAX_CUT;
@@ -788,6 +873,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // buildRequest's dead-ball block in hiddenMatch.ts.
       position: positionRef.current,
       energy: liveEnergyAt(matchMinuteRef.current),
+      energyMode: energyModeRef.current,
       impactSub: startMinuteRef.current > 0,
     };
   };
@@ -1108,19 +1194,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * `pause` freezes it entirely at the interval and at full time, which are the
    * only two moments the game genuinely needs an answer from you.
    */
-  useEffect(() => {
-    if (pause || queue.length === 0) return;
-    const next = queue[0];
-    const t = setTimeout(() => {
-      setLog(l => [...l, next]);
-      setQueue(q => q.slice(1));
-      if (next.minute !== undefined) {
-        matchMinuteRef.current = next.minute;
-        setMatchMinute(next.minute);
-      }
-      // Half time is inserted by the streamer rather than by the simulation,
-      // which runs 1 to 90 and has never had an interval. See matchLog.
-      if (!halfTimeShownRef.current && next.minute !== undefined && next.minute > HALF_TIME_MINUTE) {
+  /** Stop at the interval: the half-time line, the score so far, and the
+   *  Second Half button (with the half-time KIB can beside it). */
+  const showHalfTime = () => {
         halfTimeShownRef.current = true;
         // Read off REVEALED goals, same fix and same reason as
         // `displayScore` above — not `userScoreRef`/`oppScoreRef`, which are
@@ -1149,12 +1225,48 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         });
         setPause({
           cta: "Second half →",
+          halfTime: true,
           onContinue: () => setPause(null),
         });
+  };
+
+  /**
+   * THE MATCH CLOCK (22 Sep 2026).
+   *
+   * It used to jump straight to each commentary line's minute (4', then 9',
+   * then 21'). Now it walks up one minute at a time, about MINUTE_TICK_MS
+   * per minute divided by your speed, and each line appears when the clock
+   * reaches it. Energy is charged minute by minute as it passes (setClock),
+   * which is what makes the energy bar fall live.
+   */
+  const MINUTE_TICK_MS = 700;
+  useEffect(() => {
+    if (pause || queue.length === 0) return;
+    const next = queue[0];
+    const cur = matchMinuteRef.current;
+    if (next.minute !== undefined && next.minute > cur) {
+      const t = setTimeout(() => {
+        const target = cur + 1;
+        if (!halfTimeShownRef.current && target > HALF_TIME_MINUTE && cur >= HALF_TIME_MINUTE) {
+          halfTimeShownRef.current = true;
+          showHalfTime();
+          return;
+        }
+        setClock(target);
+      }, Math.round(MINUTE_TICK_MS / Math.max(1, speed)));
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      setLog(l => [...l, next]);
+      setQueue(q => q.slice(1));
+      if (next.minute !== undefined) setClock(next.minute);
+      if (!halfTimeShownRef.current && next.minute !== undefined && next.minute > HALF_TIME_MINUTE) {
+        halfTimeShownRef.current = true;
+        showHalfTime();
       }
     }, dwellFor(next.tone, speed));
     return () => clearTimeout(t);
-  }, [queue, pause, speed]);
+  }, [queue, pause, speed, matchMinute]);
 
   /** The queue has run dry: go wherever the passage was heading.
    *
@@ -1179,6 +1291,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (pause || queue.length > 0 || phase !== "feed") return;
     const go = simContinueRef.current;
     if (!go) return;
+    // Walk the clock up to the minute the next chance happens, rather than
+    // jumping to it — same ticking clock as the commentary above.
+    const simMinute = matchStateRef.current.minute;
+    if (simMinute > matchMinuteRef.current) {
+      const cur = matchMinuteRef.current;
+      const t = setTimeout(() => {
+        const target = cur + 1;
+        if (!halfTimeShownRef.current && target > HALF_TIME_MINUTE && cur >= HALF_TIME_MINUTE) {
+          halfTimeShownRef.current = true;
+          showHalfTime();
+          return;
+        }
+        setClock(target);
+      }, Math.round(MINUTE_TICK_MS / Math.max(1, speed)));
+      return () => clearTimeout(t);
+    }
     // A beat on the last line before the pitch takes the screen, so a chance
     // does not arrive on top of the sentence that set it up.
     const t = setTimeout(() => {
@@ -1186,7 +1314,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       go();
     }, Math.round(700 / Math.max(1, speed)));
     return () => clearTimeout(t);
-  }, [queue, pause, phase, speed]);
+  }, [queue, pause, phase, speed, matchMinute]);
 
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number | null>(null);
@@ -1377,6 +1505,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
+        // You were on the bench until now — nothing to charge for.
+        energyClockRef.current = st.minute;
         matchMinuteRef.current = st.minute;
         setMatchMinute(st.minute);
         // The hour you were not on for, read out rather than summarised — the
@@ -3214,6 +3344,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             goalEventsRef.current, null, oppGoalEventsRef.current, fixture,
           ),
           endEnergy: liveEnergyAt(matchMinuteRef.current),
+          kibCansUsed: kibUsedRef.current,
         };
         const gen = sceneGenRef.current;
         window.setTimeout(() => { if (sceneGenRef.current === gen) { setFinalStats(stats); setPhase("postmatch"); } }, 1800);
@@ -3408,7 +3539,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Checked here, between chances, because that is where the clock actually
     // moves. Your afternoon decides it; the game being won decides the
     // flattering version of it.
-    if (!hookedRef.current && !step.fullTime) {
+    if (!hookedRef.current && !step.fullTime && !neverHookedRef.current) {
       const t = tallyRef.current;
       const decision = hookCheck({
         minute: st.minute,
@@ -3474,6 +3605,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // The moment the match actually ended for you — full time, or
             // the minute you were hooked — not necessarily 90.
             endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
+            kibCansUsed: kibUsedRef.current,
             ...(wentToExtraTimeRef.current ? { wentToExtraTime: true } : {}),
             ...(shootoutResultRef.current ? { shootout: shootoutResultRef.current } : {}),
           };
@@ -3767,6 +3899,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         draggingRef.current = false;
         facingRef.current = "up";
         setPhase("fpDribble");
+        // A dribble has no ScenarioKind, so it is reported under its own name
+        // rather than left out — see `onChanceServed`.
+        onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
         logMoment(momentLine(), "you");
         pushLine(request.reason);
         pushLine("Beat your man to win the ball forward.");
@@ -3789,6 +3924,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       setPhase("dribble");
+      onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
       logMoment(momentLine(), "you");
       pushLine(request.reason);
       pushLine("Swipe the way you want to run. Get past them to the line.");
@@ -3955,6 +4091,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
     setPhase("aim");
+    // The kind is final from here: the authored-shape overlay above changes
+    // where the bodies are, never which chance this is.
+    onChanceServedRef.current?.({
+      kind: scenarioRef.current.kind,
+      minute: matchMinuteRef.current,
+      reason: request?.reason,
+    });
     // One line, once per chance — see logMoment. This is the single thing kept
     // from what used to be an unbroken flood of buildup commentary: the moment
     // the ball actually reaches a player of yours to do something with.
@@ -3989,6 +4132,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     oppGoalEventsRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
+    energyRef.current = careerRef.current?.energy ?? 100;
+    energyClockRef.current = 0;
+    setLiveEnergy(energyRef.current);
+    energyModeRef.current = "medium";
+    setEnergyModeState("medium");
+    kibUsedRef.current = 0;
+    setKibUsed(0);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     simContinueRef.current = null;
     pendingRequestRef.current = null;
@@ -4491,6 +4641,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             speed={speed}
             onSpeed={cycleSpeed}
             pause={pause}
+            energy={liveEnergy}
+            energyMode={energyMode}
+            onEnergyMode={setEnergyMode}
+            kibCans={Math.max(0, (career?.kibCans?.basic ?? 0) - kibUsed)}
+            onUseKib={drinkHalfTimeKib}
             // Tapping the commentary empties the queue in one go. Nobody wants
             // to sit through four minutes of build-up twice, and the alternative
             // to letting them skip it is that they turn the speed up and leave
@@ -4498,10 +4653,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             onSkip={queue.length > 0 && !pause ? () => {
               setLog(l => [...l, ...queue]);
               const last = queue[queue.length - 1];
-              if (last?.minute !== undefined) {
-                matchMinuteRef.current = last.minute;
-                setMatchMinute(last.minute);
-              }
+              if (last?.minute !== undefined) setClock(last.minute);
               setQueue([]);
             } : undefined}
           />
@@ -4602,6 +4754,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
                 goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
               ),
               endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
+              kibCansUsed: kibUsedRef.current,
               wentToExtraTime: wentToExtraTimeRef.current,
               shootout: result,
             };

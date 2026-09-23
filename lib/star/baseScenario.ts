@@ -213,6 +213,61 @@ export function scenarioFaults(sc: Scenario): string[] {
  *
  * Returns the list of repairs made, for tests and for the gallery to show.
  */
+/**
+ * YOUR OWN TEAM-MATES DO NOT STAND IN FRONT OF YOUR SHOT.
+ *
+ * The third of the three laws scanned off the authored one-on-ones — not one
+ * of them has a team-mate in the lane. It belongs to every kind where YOU are
+ * the one striking at goal, not just that one.
+ *
+ * Scoped deliberately. A cutback, a cross and a through ball are played TO a
+ * team-mate: moving him out of the lane there would be moving the target of
+ * the pass, which is the chance itself. chanceFormula.ts draws the same line
+ * for the same reason (`YOU_SHOOT_KINDS`).
+ *
+ * Volley and header are NOT in the list either, and that is a measured
+ * decision rather than an oversight: applying this to them in the formula
+ * layer made blocks measurably WORSE (volley 17.8% -> 38.0%, header 6.1% ->
+ * 22.4%), because pushing a body sideways out of a crossing situation puts
+ * him somewhere else in the box that is no better.
+ */
+const YOU_STRIKE = new Set<ScenarioKind>(["one_on_one", "tight_angle", "long_range"]);
+
+function clearShotLaneIn(sc: Scenario, done: string[]): void {
+  if (!YOU_STRIKE.has(sc.kind)) return;
+  const ballY = sc.ball.y;
+  // This runs LAST, after the onside repair, so it has to keep men legal
+  // itself — a first version did not and put a man offside by shoving him
+  // sideways out of the lane (tight_angle picked up 1.3% "attacker offside"
+  // that was not there before). Only a man AHEAD of the ball can be offside;
+  // see isOffside.
+  const line = offsideLineOf(sc);
+  const keepLegal = (m: { y: number }) => {
+    if (line !== null && isOffside(m, line, ballY)) m.y = line + 0.3;
+  };
+  const move = (m: { x: number; y: number }) => {
+    if (m.y >= ballY) return;                 // behind the ball blocks nothing
+    const vx = CX - sc.ball.x, vy = 0 - ballY;
+    const len2 = vx * vx + vy * vy || 1;
+    let t = ((m.x - sc.ball.x) * vx + (m.y - ballY) * vy) / len2;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const px = sc.ball.x + vx * t, py = ballY + vy * t;
+    const off = Math.hypot(m.x - px, m.y - py);
+    if (off >= MATE_LANE_R) return;
+    const nlen = Math.hypot(-vy, vx) || 1;
+    const nx = -vy / nlen, ny = vx / nlen;
+    const sign = ((m.x - px) * nx + (m.y - py) * ny) >= 0 ? 1 : -1;
+    const push = MATE_LANE_R - off + 0.6;
+    m.x = clamp(m.x + sign * nx * push, 2, 66);
+    m.y = Math.max(0.8, m.y + sign * ny * push);
+    keepLegal(m);
+    done.push("moved a team-mate out of your shooting lane");
+  };
+  if (sc.runner) move(sc.runner.pos);
+  for (const r of sc.secondaryRunners) move(r.pos);
+  if (goalInView(sc.kind)) move(sc.follower);
+}
+
 export function fixBaseScenario(sc: Scenario): string[] {
   const done: string[] = [];
 
@@ -258,34 +313,6 @@ export function fixBaseScenario(sc: Scenario): string[] {
         done.push("moved a blocking defender behind the ball (recovering)");
       }
     });
-    // AND YOUR OWN TEAM-MATES ARE NOT IN THE WAY EITHER.
-    //
-    // The third rule the eleven authored one-on-ones are unanimous about:
-    // not one has a team-mate standing in the shot. chanceFormula.ts already
-    // does this (`clearShotLane`) but only for a generated plan — a plain
-    // base build had no such rule, and 4.3% of them put a man in the lane.
-    // Same geometry, applied to the base so it holds however the picture was
-    // made.
-    const clearLane = (m: { x: number; y: number }) => {
-      if (m.y >= ballY) return;                 // behind the ball blocks nothing
-      const vx = CX - sc.ball.x, vy = 0 - ballY;
-      const len2 = vx * vx + vy * vy || 1;
-      let t = ((m.x - sc.ball.x) * vx + (m.y - ballY) * vy) / len2;
-      t = t < 0 ? 0 : t > 1 ? 1 : t;
-      const px = sc.ball.x + vx * t, py = ballY + vy * t;
-      const off = Math.hypot(m.x - px, m.y - py);
-      if (off >= MATE_LANE_R) return;
-      const nlen = Math.hypot(-vy, vx) || 1;
-      const nx = -vy / nlen, ny = vx / nlen;
-      const sign = ((m.x - px) * nx + (m.y - py) * ny) >= 0 ? 1 : -1;
-      const push = MATE_LANE_R - off + 0.6;
-      m.x = clamp(m.x + sign * nx * push, 2, 66);
-      m.y = Math.max(0.8, m.y + sign * ny * push);
-      done.push("moved a team-mate out of your shooting lane");
-    };
-    if (sc.runner) clearLane(sc.runner.pos);
-    for (const r of sc.secondaryRunners) clearLane(r.pos);
-    clearLane(sc.follower);
 
     // The keeper is the one who comes to meet you.
     sc.keeper.y = clamp(Math.max(sc.keeper.y, 2.2), 2.2, Math.max(2.2, ballY - 3));
@@ -329,6 +356,10 @@ export function fixBaseScenario(sc: Scenario): string[] {
       if (moved) done.push("brought an offside attacker back onside");
     }
   }
+
+  // Applies to every kind where you are the one shooting — see
+  // clearShotLaneIn. Last, so it acts on positions nothing else will move.
+  clearShotLaneIn(sc, done);
 
   return done;
 }

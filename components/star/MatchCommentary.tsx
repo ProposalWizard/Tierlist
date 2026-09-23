@@ -2,6 +2,9 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import type { LogLine } from "@/lib/star/matchLog";
 import { labelInk, type Kit } from "@/lib/star/kits";
+import type { EnergyMode } from "@/lib/star/energy";
+import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
+import KibCanIcon from "./KibCanIcon";
 
 /**
  * THE MATCH, AS IT IS BEING PLAYED.
@@ -36,14 +39,22 @@ interface Props {
    * time. Absent while it is streaming, which is most of the time and is the
    * whole point: you are watching a match, not clicking through one.
    */
-  pause?: { label?: string; cta: string; onContinue: () => void } | null;
+  pause?: { label?: string; cta: string; halfTime?: boolean; onContinue: () => void } | null;
   /** Reveal everything queued at once. Absent when there is nothing waiting. */
   onSkip?: () => void;
+  /** Live energy, 0-100, falling as the clock runs (see energy.ts). */
+  energy?: number;
+  energyMode?: EnergyMode;
+  /** Absent (dev screens): no energy bar is shown. */
+  onEnergyMode?: (mode: EnergyMode) => void;
+  /** Basic KIB cans you still have — usable at half time only. */
+  kibCans?: number;
+  onUseKib?: () => void;
 }
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
-  stats, speed, onSpeed, pause, onSkip,
+  speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, kibCans = 0, onUseKib,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -138,25 +149,74 @@ export default function MatchCommentary({
               {pause.label}
             </div>
           )}
-          <button
-            onClick={pause.onContinue}
-            className={`w-full rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99] ${
-              pause.label ? "mt-2.5" : ""}`}
-          >
-            {pause.cta}
-          </button>
+          <div className={`flex gap-2 ${pause.label ? "mt-2.5" : ""}`}>
+            {/* Half time only: drink a Basic KIB can (+25) before the second
+                half. Takes the left third of the row, same height as the
+                button beside it, so the two read as one bar. */}
+            {pause.halfTime && onUseKib && (
+              <button
+                onClick={onUseKib}
+                disabled={kibCans <= 0 || energy >= 100}
+                aria-label={`Use a Basic KIB can, ${kibCans} left`}
+                className="flex basis-1/3 items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-1.5 py-1 text-gray-950 transition hover:bg-orange-400 active:scale-[0.98] disabled:bg-gray-700 disabled:text-white"
+              >
+                <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.png" }} className="h-8 w-5 shrink-0" />
+                <span className="flex flex-col items-start leading-none">
+                  <span className="text-[10px] font-black uppercase tracking-wide">Use KIB can</span>
+                  <span className="mt-0.5 text-sm font-black tabular-nums">&times;{kibCans}</span>
+                </span>
+              </button>
+            )}
+            <button
+              onClick={pause.onContinue}
+              className="flex-1 rounded-lg bg-amber-400 py-2.5 text-sm font-black uppercase tracking-widest text-gray-950 transition hover:bg-amber-300 active:scale-[0.99]"
+            >
+              {pause.cta}
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ── You ── */}
-      <div className="shrink-0 border-t border-white/10 bg-gray-900">
-        <div className="grid grid-cols-4 divide-x divide-white/5">
-          <Cell label="Shots" value={stats.shots} tone="text-white" />
-          <Cell label="Goals" value={stats.goals} tone="text-amber-300" />
-          <Cell label="Assists" value={stats.assists} tone="text-emerald-300" />
-          <Cell label="Passes" value={stats.passesCompleted} tone="text-violet-300" />
+      {/* ── Your energy ──
+          Replaces the stats row that used to sit here (it only repeated the
+          stats at the top of the match screen). Falls live as the clock
+          runs, at the rate of the mode you pick — see lib/star/energy.ts. */}
+      {onEnergyMode && (
+      <div className="shrink-0 border-t border-white/10 bg-gray-900 px-3 pt-2 pb-2.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white">Energy</span>
+          <div
+            className="relative h-3 flex-1 overflow-hidden rounded-full bg-gray-700"
+            role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(energy)} aria-label="Energy"
+          >
+            <div
+              className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+                energy >= MIN_ENERGY_TO_START ? "bg-emerald-500" : energy >= 30 ? "bg-amber-400" : "bg-red-500"}`}
+              style={{ width: `${Math.max(0, Math.min(100, energy))}%` }}
+            />
+          </div>
+          <span className="w-8 text-right text-sm font-black tabular-nums text-white">{Math.round(energy)}</span>
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Energy mode">
+          {(["low", "medium", "high"] as EnergyMode[]).map(m => {
+            const on = energyMode === m;
+            const tint = m === "low" ? "bg-sky-500" : m === "high" ? "bg-rose-500" : "bg-emerald-500";
+            return (
+              <button
+                key={m}
+                role="radio"
+                aria-checked={on}
+                onClick={() => onEnergyMode(m)}
+                className={`rounded-md py-1.5 text-[11px] font-black uppercase tracking-widest transition active:scale-[0.97] ${
+                  on ? `${tint} text-gray-950` : "bg-gray-800 text-white hover:bg-gray-700"}`}
+              >
+                {m}
+              </button>
+            );
+          })}
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -261,15 +321,6 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
         {l.minute !== undefined ? l.minute : ""}
       </span>
       <span className="flex-1 text-[12px] leading-snug">{l.text}</span>
-    </div>
-  );
-}
-
-function Cell({ label, value, tone }: { label: string; value: number; tone: string }) {
-  return (
-    <div className="px-1 py-1 text-center">
-      <div className="text-[8px] font-black uppercase tracking-wider text-white">{label}</div>
-      <div className={`text-sm font-black tabular-nums ${tone}`}>{value}</div>
     </div>
   );
 }

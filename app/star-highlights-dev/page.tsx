@@ -40,7 +40,6 @@ import {
   nextHighlight,
   newSimMemory,
   buildSimScenario,
-  authoredShapeFor,
   simFaults,
   pictureKey,
   type SimSpec,
@@ -53,8 +52,12 @@ import {
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
 import { outliersOf } from "@/lib/star/scenarioRules";
-import { binChance, binnedCount } from "@/lib/star/scenarioReject";
 import { ruleSetFor } from "@/lib/star/authoredChance";
+import { statusOf } from "@/lib/star/scenarioStatus";
+import {
+  loadCorrections, saveCorrection, makeCorrection, proposalsFrom,
+  FAULT_LABEL, type Correction,
+} from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
 import {
   addFigureTo,
@@ -265,8 +268,11 @@ export default function HighlightsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
-  /** Bumped when something is binned, so the count on screen refreshes. */
-  const [binTick, setBinTick] = useState(0);
+  /** Every correction recorded so far, so Tune can say whether this one just
+   *  completed a pattern. Same store the gallery and Tuning & Commit read —
+   *  a correction made here counts exactly as much as one made there. */
+  const [corrections, setCorrections] = useState<Correction[]>([]);
+  useEffect(() => { setCorrections(loadCorrections()); }, []);
 
   // A full-screen dev tool: the site's own nav and footer get out of the way,
   // exactly as /star-gallery-dev does it (globals.css's immersive class).
@@ -315,7 +321,7 @@ export default function HighlightsPage() {
   // ── Saved corrections (the same pool the gallery and the Builder write) ──
   const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
   const [migrationMissing, setMigrationMissing] = useState(false);
-  const [busy, setBusy] = useState<"saving" | "reverting" | null>(null);
+  const [busy, setBusy] = useState<"saving" | "reverting" | "deleting" | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
@@ -399,43 +405,8 @@ export default function HighlightsPage() {
     () => (shot ? outliersOf(ruleSetFor(shot.spec.kind) ?? { kind: "", n: 0, rules: [] }) : []),
     [shot, saved],
   );
-  const binnedForKind = useMemo(
-    () => (shot ? binnedCount(shot.spec.kind) : 0),
-    [shot, binTick],
-  );
   const liveFrame = baseFrame ? applyOverride(baseFrame, override) : null;
 
-  const binThis = useCallback(() => {
-    if (!shot) return;
-    const base = authoredShapeFor(shot.spec)?.sourceId ?? null;
-    binChance(shot.spec.kind, shot.spec.seed, shot.spec.planId, base);
-    setBinTick((t) => t + 1);
-    setPlaying(false);
-    // Commit it to the no-go pool in the REPO as well, so the rejection
-    // survives a cleared browser and can be reviewed by somebody who was not
-    // here. Local skipping has already happened, so a 403 (not signed in as
-    // an admin) or a 503 (no GITHUB_TOKEN) costs nothing but is still SAID —
-    // never a silent half-success.
-    const ms = frameToMatchScenario(
-      { ...saveTargetFor(shot.spec), id: `nogo-${highlightSlug(shot.spec)}`,
-        name: `${kindLabel(shot.spec.kind)} — no-go` },
-      liveFrame ?? shot.base,
-    );
-    void fetch("/api/star/scenarios/commit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pool: "nogo", scenario: ms }),
-    })
-      .then(async (r) => {
-        const d = await r.json().catch(() => null);
-        flashFor(r.ok, r.ok
-          ? "Binned, and added to the repo's no-go list."
-          : `Binned here only — ${d?.error ?? `the repo said ${r.status}`}`);
-      })
-      .catch(() => flashFor(false, "Binned here only — couldn't reach the server."));
-    next();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shot, liveFrame]);
 
   /** A PNG of exactly what is on screen, for sharing a bad picture without
    *  needing anybody to reproduce it. */
@@ -499,6 +470,76 @@ export default function HighlightsPage() {
     setSaved((m) => { const n = { ...m }; delete n[id]; return n; });
     clearOverride(editKey);
     flashFor(true, "Back to the generated chance.");
+  };
+
+  /**
+   * TUNE — record WHAT WAS WRONG with this chance, without saving it.
+   *
+   * The gallery has had this since corrections existed; this screen never
+   * did, which is most of why "some of the tuning stuff doesn't work so
+   * well" — the screen you actually flick through chances on was the one
+   * screen that could not record a correction from one.
+   *
+   * Identical to the gallery's `tuneCell`, on purpose: same `makeCorrection`,
+   * same store, same threshold. A correction is a note about a generated
+   * chance, not a drawing to serve — so this deliberately does NOT save the
+   * picture, and the drag is cleared once it is recorded.
+   */
+  const tuneShot = (): void => {
+    if (!shot || !liveFrame) return;
+    const target = saveTargetFor(shot.spec);
+    const before = frameToMatchScenario(target, shot.base);
+    const after = frameToMatchScenario(target, liveFrame);
+    const c = makeCorrection(highlightSlug(shot.spec), shot.spec.kind, before, after);
+    setCorrections(saveCorrection(c));
+    clearOverride(editKey);
+    if (!c.moves.length) { flashFor(false, "Nothing moved — no correction recorded."); return; }
+    if (!c.faults.length) {
+      flashFor(true, "Recorded. It repaired nothing measurable, so it is not evidence for a rule.");
+      return;
+    }
+    const near = proposalsFrom([...corrections.filter((x) => x.id !== c.id), c])
+      .find((pr) => pr.kind === shot.spec.kind && c.faults.includes(pr.fault));
+    flashFor(true, near
+      ? `Recorded — ${near.count} now agree. There is a rule to look at in Tuning & Commit.`
+      : `Recorded: ${FAULT_LABEL[c.faults[0]]}. It stays quiet until a few more agree.`);
+  };
+
+  /**
+   * DELETE — everywhere, database AND code.
+   *
+   * Different from Revert, which only takes it out of the database and leaves
+   * a committed copy in the build still serving. Asked for directly on the
+   * call: "make a delete button... so you press delete and it asks, 'Are you
+   * sure?' and it actually gets rid of that scenario, no matter what it is."
+   * Same two steps, same wording and the same honest tail when the code half
+   * fails, as the gallery's own Delete.
+   */
+  const deleteShot = async (): Promise<void> => {
+    if (!shot) return;
+    if (!savedScenario) { flashFor(false, "Nothing saved for this chance — there is nothing to delete."); return; }
+    const q = `Delete this ${kindLabel(shot.spec.kind)} scenario everywhere — the database and the code? This cannot be undone here.`;
+    if (typeof window !== "undefined" && !window.confirm(q)) return;
+    setBusy("deleting");
+    const id = highlightSlug(shot.spec);
+    const shared = await deleteScenarioShared(id);
+    let repoTail = "";
+    try {
+      const r = await fetch("/api/star/scenarios/commit", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const d = await r.json().catch(() => null) as { error?: string } | null;
+      if (!r.ok) repoTail = ` — still in the code (${d?.error ?? r.status})`;
+    } catch {
+      repoTail = " — couldn't reach the server to remove it from the code";
+    }
+    setBusy(null);
+    if (shared.migrationMissing) setMigrationMissing(true);
+    setSaved((m) => { const n = { ...m }; delete n[id]; return n; });
+    clearOverride(editKey);
+    flashFor(!repoTail, shared.ok ? `Deleted${repoTail}.` : `Not deleted — ${shared.message}`);
   };
 
   // ── Flagging ──
@@ -746,7 +787,7 @@ export default function HighlightsPage() {
               the same order, doing the same thing — tap a figure on the
               picture, then take him out; or put a new one in. */}
           <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
-            <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Team-mate</button>
+            <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
             <button style={editBtn(false)} onClick={() => addFigure("opponent")}>+ Opponent</button>
             <button
               style={editBtn(!canRemove)}
@@ -762,14 +803,6 @@ export default function HighlightsPage() {
             >
               {playing ? "\u25FC Stop" : "\u25B6 Play"}
             </button>
-            {/* Not worth fixing. See lib/star/scenarioReject.ts. */}
-            <button
-              style={{ ...editBtn(false), color: "#fca5a5" }}
-              title="Never show this again, and add it to the repo's no-go list"
-              onClick={binThis}
-            >
-              No-go
-            </button>
             <button
               style={{ ...editBtn(false), color: MUTED }}
               title="Save this picture as a PNG"
@@ -777,16 +810,74 @@ export default function HighlightsPage() {
             >
               PNG
             </button>
+            {/* Everywhere everything else is, a saved scenario can be taken
+                out of the database AND the code. This screen only had Revert,
+                which leaves a committed copy still being served. */}
+            <button
+              style={{ ...editBtn(!savedScenario), color: savedScenario ? "#f87171" : undefined }}
+              disabled={!savedScenario || !!busy}
+              title={savedScenario
+                ? "Delete this scenario everywhere — database and code"
+                : "Nothing saved for this chance"}
+              onClick={() => void deleteShot()}
+            >
+              {busy === "deleting" ? "Deleting…" : "Delete"}
+            </button>
+            {/* Tune: record WHY this generation was bad, without saving it as
+                a drawing. Only offered when there is a drag to learn from —
+                the same condition the gallery uses. */}
+            {edited && (
+              <button
+                style={{ ...editBtn(false), color: "#c4b5fd" }}
+                title="Record what was wrong with this generation — not saved as a base scenario"
+                onClick={tuneShot}
+              >
+                Tune
+              </button>
+            )}
           </div>
+
+          {/* ── WHERE THIS ONE ACTUALLY IS ──
+              Draft / Saved / Committed, and whether it is feeding the
+              auto-tuner. The same two pills the gallery card carries, from
+              the same `statusOf` — it was possible to save a fix here and
+              have no idea whether it was in the code or only in a database. */}
+          {shot && (() => {
+            const st = statusOf(savedScenario ?? null);
+            const tone = edited || st.state === "draft"
+              ? { fg: "#fcd34d", bg: "rgba(245,158,11,0.15)", br: "rgba(245,158,11,0.45)" }
+              : st.state === "committed"
+                ? { fg: "#86efac", bg: "rgba(34,197,94,0.14)", br: "rgba(34,197,94,0.45)" }
+                : { fg: "#7dd3fc", bg: "rgba(56,189,248,0.14)", br: "rgba(56,189,248,0.45)" };
+            const tunes = edited ? false : st.tuning;
+            return (
+              <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+                  color: tone.fg, background: tone.bg, border: `1px solid ${tone.br}`,
+                }}>
+                  {edited
+                    ? "Unsaved changes — this browser only"
+                    // `statusOf(null)` is "draft", which is right for a card
+                    // somebody has started on and wrong for a chance the
+                    // generator just rolled and nobody has touched.
+                    : savedScenario ? st.label : "Straight from the generator"}
+                </span>
+                <span style={{
+                  fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+                  color: tunes ? "#c4b5fd" : MUTED,
+                  background: tunes ? "rgba(167,139,250,0.14)" : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${tunes ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.09)"}`,
+                }}>
+                  {tunes ? "Tuning the generator" : "Not tuning"}
+                </span>
+              </div>
+            );
+          })()}
 
           {/* A drawing that disagrees with one of its own kind's laws. Named
               rather than silently absorbed — the rules survive one slip, but
               nobody should have to guess that a slip happened. */}
-          {binnedForKind > 0 && (
-            <div style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>
-              {binnedForKind} marked no-go and never shown again
-            </div>
-          )}
 
           {ruleOutliers.length > 0 && (
             <div style={{
@@ -890,7 +981,10 @@ const bigBtn: React.CSSProperties = {
 
 /** The gallery's own edit-row button, same size and same disabled look. */
 const editBtn = (off: boolean): React.CSSProperties => ({
-  flex: 1, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
+  // Up to seven of these share one row since Delete and Tune joined it, so
+  // they shrink rather than wrap onto a second line.
+  flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
+  padding: "0 6px", whiteSpace: "nowrap",
   border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 13.5, fontWeight: 700,
+  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
 });

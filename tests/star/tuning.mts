@@ -120,11 +120,11 @@ function def(key: string): number {
 {
   check(WEEK_ACTIONS === 3, `WEEK_ACTIONS still defaults to 3 (got ${WEEK_ACTIONS})`);
   check(REST_HAPPINESS === 6, `REST_HAPPINESS still defaults to 6 (got ${REST_HAPPINESS})`);
-  check(REST_ENERGY === 20, `REST_ENERGY still defaults to 20 (got ${REST_ENERGY})`);
-  check(MIN_ENERGY_TO_START === 35, `MIN_ENERGY_TO_START still defaults to 35 (got ${MIN_ENERGY_TO_START})`);
-  check(MIN_ENERGY_TO_SUB === 15, `MIN_ENERGY_TO_SUB still defaults to 15 (got ${MIN_ENERGY_TO_SUB})`);
+  check(REST_ENERGY === 10, `REST_ENERGY defaults to 10 (energy master plan, 22 Sep 2026) (got ${REST_ENERGY})`);
+  check(MIN_ENERGY_TO_START === 65, `MIN_ENERGY_TO_START defaults to 65 (got ${MIN_ENERGY_TO_START})`);
+  check(MIN_ENERGY_TO_SUB === 40, `MIN_ENERGY_TO_SUB defaults to 40 (got ${MIN_ENERGY_TO_SUB})`);
   check(MISSED_WEEK.energy === 15, `MISSED_WEEK.energy still defaults to 15 (got ${MISSED_WEEK.energy})`);
-  check(ENERGY_MATCH_COST === 32, `ENERGY_MATCH_COST still defaults to 32 (got ${ENERGY_MATCH_COST})`);
+  check(ENERGY_MATCH_COST === 60, `ENERGY_MATCH_COST (dev fallback) defaults to 60 (got ${ENERGY_MATCH_COST})`);
 
   check(displayOverall(0) === 30, `displayOverall(0) still reads 30 (got ${displayOverall(0)})`);
   check(displayOverall(5) === 100, `displayOverall(5) still reads 100 (got ${displayOverall(5)})`);

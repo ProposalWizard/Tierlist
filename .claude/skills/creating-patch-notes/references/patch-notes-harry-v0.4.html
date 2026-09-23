@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowitball v0.4</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  /* The v0.1 artifact's CSS stopped at the two rules above, which leaves one
+     real gap: a reader on a DARK system who explicitly picks light stamps
+     data-theme="light", and prefers-color-scheme still reports dark — so the
+     light block never matches and the page stays dark against their choice.
+     This repeats the light palette for that stamp. */
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+    .fig{margin:12px 0 4px}
+    .fig img{display:block;width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.14)}
+    .fig figcaption{margin-top:6px;font-size:12px;line-height:1.45;opacity:.72}
+    .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 4px}
+    .pair figure{margin:0;min-width:0}
+    .pair img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid rgba(255,255,255,.14)}
+    .pair figcaption{margin-top:5px;font-size:11.5px}
+  </style>
+
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.4</span>
+  <h1>Harry's patch notes</h1>
+  <p class="sub">The Play button was throwing your drawing away · a new Play Area with an Infinite Match that counts what it actually serves you · and you can finally look at scenarios before committing them</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>2.4m</b><span>the goalie was out by every time you pressed Play</span></div>
+  <div class="s"><b>138′</b><span>minutes played in one go, where a match used to stop at 90</span></div>
+  <div class="s"><b>0 of 11</b><span>saved scenarios that are actually in the code</span></div>
+  <div class="s"><b>155</b><span>test files green</span></div>
+</div>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Play in the scenario gallery was throwing your saved drawing away</div>
+    <div class="dt">It played the raw generated chance instead. Reported directly: “the play in the scenario gallery moves everything around, and the goalie isn't in the same position that I place him in.”</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Goalie off line</span><div class="track"><div class="fill was" style="width:11.5%"></div><div class="fill now" style="width:24.0%"></div></div><span class="vv">4.6m <s>2.2m</s></span></div>
+      <div class="bar"><span class="lb">Ball from goal</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:60.4%"></div></div><span class="vv">11.6m <s>19.2m</s></span></div>
+    </div>
+    <details><summary>What it was doing, and the answer to “is the game wrong too?”</summary>
+      <ul>
+        <li>Every other part of a card stacks TWO layers: the drawing you saved, then whatever you are dragging right now. The picture does it, the fault rings do it, the formation strip does it. Play was the one thing that only applied the second one — so it quietly ignored the whole scenario you had saved.</li>
+        <li>The numbers above are the real card it was reported from: your drawing had the goalie 4.6m off his line and the ball 11.6m out; Play put them on 2.2m and 19.2m. That is the goalie 2.4m out of place and the ball 7.6m too deep, on every single press.</li>
+        <li>THE GAME WAS NEVER WRONG. In a real match it picks one of your saved scenarios and uses it. The goalie specifically is rebuilt from two things your drawing holds — how far he shades the near post, and how far off his line he comes — both measured against where the ball is. Drawn exactly as you left him when nothing moves, and he follows the ball when the variant nudges it. So a goalie you draw rushing out still rushes out.</li>
+        <li>SO: place him where he should be in the drawing. That is what the game uses.</li>
+      </ul>
+    </details>
+    <div class="pair">
+      <figure><img src="img/drawn.png" alt=""><figcaption>What you drew. Goalie out at the edge of the six-yard box.</figcaption></figure>
+      <figure><img src="img/played.png" alt=""><figcaption>Press Play now and it is the same picture. Before this, it was not.</figcaption></figure>
+    </div>
+  </li>
+  <li>
+    <div class="hd">The desktop picture was too big to see the buttons under it</div>
+    <div class="dt">Third pass at this size. 340 was too small, 520×800 was “too big”, 400×640 still pushed the buttons off the bottom. It is 325×520 now.</div>
+    <details><summary>What fits now</summary>
+      <ul>
+        <li>On a 900-pixel-tall window the whole card is on screen at once — picture, edit row, the Saved/Committed pills, the verdict row, Simulate and Across formations.</li>
+        <li>On an 800-pixel window the last strip is still about 80 pixels below the fold. Say the word and it goes smaller again — but any smaller and the picture starts being hard to judge, which is the thing it is for.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A chance nobody had touched was labelled “Draft — this browser only”</div>
+    <div class="dt">In Infinite Highlights. A chance the generator just rolled is not a draft of anything; it now reads “Straight from the generator”.</div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">A Play Area — both play tools behind one door, with the dials on top</div>
+    <div class="dt">Power, technique, curving boots, extra-touch boots, opposition, goalie, position, division and match length. One set, shared by both modes.</div>
+    <details><summary>Why the dials are shared rather than one set per screen</summary>
+      <ul>
+        <li>A number set here means the same thing in whichever mode you open next. Two copies would mean turning the power up in the match and wondering why a highlight still felt identical.</li>
+        <li>None of these are new mechanics. Every one of them was already a real setting the game runs on — they were just fixed at whatever a dev page happened to have typed into it, and could not be changed without a code change.</li>
+        <li>Saved on your own device. Nothing here is part of a career and nothing here reaches the live game.</li>
+      </ul>
+    </details>
+    <figure class="fig"><img src="img/play-area.png" alt=""><figcaption>The two modes and the dials under them. Every number here was already a real setting; it just could not be changed.</figcaption></figure>
+  </li>
+  <li>
+    <div class="hd">The Infinite Match — a real match that does not stop, counting what it serves you</div>
+    <div class="dt">Asked for twice, and the reason was “I've played like 5 games and seen ZERO of these one on ones.” That sentence could not be checked against anything until now.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Match minutes</span><div class="track"><div class="fill was" style="width:54.3%"></div><div class="fill now" style="width:100.0%"></div></div><span class="vv">138 <s>75</s></span></div>
+    </div>
+    <details><summary>What it measured, live, in a real browser</summary>
+      <ul>
+        <li>9 chances over 138 minutes — 5.9 per 90 — across six different kinds: one-on-one 3, header 2, then a free kick, a long range, a midfield pass and a through ball.</li>
+        <li>It is the REAL match, not a copy of one. The same match a career plays, against a real career, so anything it shows you is genuinely what the game does.</li>
+        <li>It needed two things the game did not have. One: a way to be told which chance was served — there was none, the match decided it internally and never said, which is exactly why “zero one-on-ones in five games” had nothing to check against. Two: a way to stop the manager taking you off, which can happen from minute 60. Measured: a 10,000-minute match was ending around minute 75.</li>
+        <li>Both are off unless this tool asks for them, so a real career behaves exactly as it did.</li>
+        <li>Infinite Highlights answers a DIFFERENT question, and both are worth having: it shows what the generator can produce, this shows what a match actually hands you. A match picks an area of the pitch first and the chance second, so the two are not the same list.</li>
+      </ul>
+    </details>
+    <figure class="fig"><img src="img/match-tally.png" alt=""><figcaption>The bottom panel. One real match, still going at 138 minutes.</figcaption></figure>
+  </li>
+  <li>
+    <div class="hd">You can look through scenarios before committing them</div>
+    <div class="dt">Reported directly: “not being able to see them before committing is annoying.” It was a line of ids, and an id is not a picture.</div>
+    <details><summary>How the last check works</summary>
+      <ul>
+        <li>“Look through all 11 first” in Tuning &amp; Commit: one scenario at a time, the real drawing, drawn by the same thing its own card draws with.</li>
+        <li>Back and forward through the whole batch, “Open to edit” if one needs a last drag, and “Leave out” to drop one from this commit without deleting it.</li>
+        <li>The button then reads “Commit 10 of 11 to the repo”, so what you are about to do is never a guess.</li>
+        <li>Looking writes nothing. Leaving one out changes only this batch.</li>
+      </ul>
+    </details>
+    <figure class="fig"><img src="img/commit-review.png" alt=""><figcaption>One at a time, with the real drawing. “Leave out” drops it from this commit only.</figcaption></figure>
+  </li>
+  <li>
+    <div class="hd">Infinite Highlights got Tune, Delete and the Saved/Committed pills</div>
+    <div class="dt">The screen you actually flick through chances on was the one screen that could not record a correction from one.</div>
+    <details><summary>The three that were missing</summary>
+      <ul>
+        <li>TUNE — drag a player where he should have been and record what was wrong, without saving it as a drawing. Same store, same threshold as everywhere else, so a correction made here counts exactly as much as one made in the gallery.</li>
+        <li>DELETE — database AND code, with the “Are you sure?” asked for on the call. It only had Revert before, which clears the database and leaves a committed copy still being served.</li>
+        <li>THE PILLS — whether this one is saved, committed, or only in your browser, and whether it is feeding the auto-tuner. You could save a fix here and have no idea which.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Every position now pulls chances toward itself</div>
+    <div class="dt">A striker lives in the box, the ten finds the through ball and the shot from range, the wingers get the byline and the dribble.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">ST one-on-ones</span><div class="track"><div class="fill was" style="width:61.8%"></div><div class="fill now" style="width:100.0%"></div></div><span class="vv">21.7% <s>13.4%</s></span></div>
+      <div class="bar"><span class="lb">LW byline cross</span><div class="track"><div class="fill was" style="width:10.1%"></div><div class="fill now" style="width:44.7%"></div></div><span class="vv">9.7% <s>2.2%</s></span></div>
+      <div class="bar"><span class="lb">ST build-ups</span><div class="track"><div class="fill was" style="width:48.8%"></div><div class="fill now" style="width:26.7%"></div></div><span class="vv">5.8% <s>10.6%</s></span></div>
+    </div>
+    <details><summary>The whole table, and the thing that nearly went unnoticed</summary>
+      <ul>
+        <li>Striker: one-on-one 21.7%, through ball 15.6%, header 10.9%.</li>
+        <li>Attacking mid: through ball 19.7%, one-on-one 13.4%, long range 11.6%.</li>
+        <li>Wingers: dribble 13.3%, one-on-one 12.1%, byline cross 9.7%.</li>
+        <li>Chances per match stay level across all four — 6.1 to 6.6 — so no position is starved of the ball to give another one more.</li>
+        <li>One thing only showed up by measuring: adding the pull first made striker build-ups go UP, not down. Fewer involvements meant more time starved of the ball, and the rule that rescues a starved player was dragging him back into his own half to find it. Gating that rule by the same pull fixed it.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Simulate is a small square with a play triangle, and Across formations moved underneath</div>
+    <div class="dt">Asked for directly. The desktop right-hand column is gone — one centred column now, same order as the phone, so there is one layout rather than two.</div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="alert">
+      <div class="t">The five-a-side froze mid-game</div>
+      <p>Reported on WhatsApp while starting a new save. Not reproduced yet and not on any idea list — this is a live bug, not a polish item, and it needs chasing on its own.</p>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Nothing is actually in the code yet — 11 saved, 0 committed <span class="pill p-amb">one press away</span></div>
+    <div class="dt">Every scenario made so far lives in the database only. They work everywhere and they do tune the generator, but nothing survives the database. The new review screen exists to make that one press.</div>
+  </li>
+  <li>
+    <div class="hd">The Infinite Match showed 1-7 at half time <span class="pill p-amb">unconfirmed</span></div>
+    <div class="dt">With a test driver that missed 36 of its 45 attempts, so it may be nothing. Worth a real look when someone plays it properly — surfacing exactly this is what the tool is for.</div>
+  </li>
+  <li>
+    <div class="hd">Half time still happens at minute 45 in a 10,000-minute match</div>
+    <div class="dt">The banner and the “Second Half” button fire once and then the match carries on. Cosmetic, left alone.</div>
+  </li>
+  <li>
+    <div class="hd">One number was changed in the file Mikey said never to touch <span class="pill p-amb">Mikey's call</span></div>
+    <div class="dt">A striker's long-range weighting, 6 to 3, in the match engine's chance table. It is a single row of data and reversible in one character — flagged rather than done quietly.</div>
+  </li>
+  <li>
+    <div class="hd">Mikey's branch will clash with this one in a single place</div>
+    <div class="dt">His energy work multiplies the same line the position pull was added to. They compose fine; the two edits just sit on top of each other and will need merging by hand once.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next — the trial, after scenarios</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Stop calling it a trial. It is the game, and you are a free agent.</div>
+    <div class="dt">“If I visited the game and started a save I don't think I would complete the trial.” Agreed on WhatsApp, not started.</div>
+    <details><summary>The shape agreed</summary>
+      <ul>
+        <li>Open in a Sunday league match. A short tutorial of a few highlights, PLAYED, not explained.</li>
+        <li>A scout spots you. You have a conversation with him. Skip a few days in the menu, then go to the scouting session.</li>
+        <li>The session is scenarios — and it should use the live attacks already built for some of them: volleys off a cross, headers, one-twos.</li>
+        <li>NO score per drill and no screens in between. One scouting assessment at the end, the way a real trial ends.</li>
+        <li>The feel: Alex Hunter. Your guy walks in, talks to the scout, an animation to start, the scout egging you on, in a real non-league stadium.</li>
+        <li>“It needs to feel quick and still entertaining while giving you a feel of the real game.” Higgsfield for the cutscenes and animations.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A random crazy injury animation</div>
+    <div class="dt">Your guy gets clattered in 3D, out for six months, loses stats. From the same conversation.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="n">
+  <li>
+    <div class="hd">v0.3.5 — from the 40-minute call</div>
+    <div class="dt">Delete made to work on any scenario rather than looking one-on-one-only, the X relabelled “No good”, and everything decided or raised on the call written down: the sprint to something releasable, ownership staying while the son mechanic goes elsewhere, and fourteen parked ideas.</div>
+  </li>
+  <li>
+    <div class="hd">v0.3 — the scenario gallery, Save vs Commit, and the auto-tuner</div>
+    <div class="dt">Commits go to main and batch into one deploy, every card says whether it is saved or committed, Tune records a correction without saving it as a base scenario, and the rule set is read off your own drawings.</div>
+  </li>
+</ul>
+
+<footer>22 Sep 2026 · also at <code>/admin/patch-notes</code>, generated from the same file. Anything unverified says so.</footer>
+
+</div>
+</html>

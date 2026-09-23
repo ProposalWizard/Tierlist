@@ -166,22 +166,39 @@ export function computeOffside(frame: Frame): number | null {
 
 /** The CSS pixel size a frame paints at — shared with the pointer-to-metre
  *  inverse so the two can never disagree. */
-export function frameCssSize(frame: Frame): { cssW: number; cssH: number } {
+/**
+ * How big to draw a frame, in CSS pixels, keeping the camera's own aspect.
+ *
+ * The defaults are phone-sized, which is right for a thumbnail in a grid and
+ * wrong for the one picture you are actually working on. Reported directly
+ * on a desktop screenshot: "there's way more space on PC for the scenario
+ * gallery to have the scenario more centralised when I'm actually in there".
+ * So the single-scenario view passes a bigger box; nothing else changes.
+ */
+export interface FrameSizing {
+  /** Width to aim for before the caps apply. */
+  baseW?: number;
+  maxW?: number;
+  maxH?: number;
+}
+
+export function frameCssSize(frame: Frame, size: FrameSizing = {}): { cssW: number; cssH: number } {
+  const { baseW = 340, maxW = 460, maxH = 560 } = size;
   const vpW = frame.camera.x2 - frame.camera.x1;
   const vpH = frame.camera.y2 - frame.camera.y1;
-  const CSS_W = 340;
-  let cssW = CSS_W;
-  let cssH = Math.round((CSS_W * vpH) / vpW);
-  const MAX_H = 560;
-  if (cssH > MAX_H) { cssH = MAX_H; cssW = Math.round((MAX_H * vpW) / vpH); }
-  const MAX_W = 460;
-  if (cssW > MAX_W) { cssW = MAX_W; cssH = Math.round((MAX_W * vpH) / vpW); }
+  let cssW = baseW;
+  let cssH = Math.round((baseW * vpH) / vpW);
+  if (cssH > maxH) { cssH = maxH; cssW = Math.round((maxH * vpW) / vpH); }
+  if (cssW > maxW) { cssW = maxW; cssH = Math.round((maxW * vpH) / vpW); }
   return { cssW, cssH };
 }
 
 /** Paint a frame onto a canvas, sized to the camera's own aspect. */
-export function paint(canvas: HTMLCanvasElement, frame: Frame): void {
-  const { cssW, cssH } = frameCssSize(frame);
+export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing = {}): void {
+  // The painter OWNS the canvas size, so a caller that sizes its own element
+  // and then calls paint() gets silently overruled back to the phone default.
+  // That is exactly what happened to the desktop scenario view.
+  const { cssW, cssH } = frameCssSize(frame, size);
 
   const dpr = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
   canvas.width = Math.round(cssW * dpr);
@@ -239,12 +256,14 @@ export const MARK_INK: Record<Mark["tone"], string> = {
 };
 
 /** Paint a frame, then ring whatever is wrong with it. */
-export function paintMarked(canvas: HTMLCanvasElement, frame: Frame, marks: Mark[]): void {
-  paint(canvas, frame);
+export function paintMarked(
+  canvas: HTMLCanvasElement, frame: Frame, marks: Mark[], size: FrameSizing = {},
+): void {
+  paint(canvas, frame, size);
   if (!marks.length) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const { cssW, cssH } = frameCssSize(frame);
+  const { cssW, cssH } = frameCssSize(frame, size);
   const p = projectionFor(frame.rules, cssW, cssH, frame.camera);
   const r = Math.max(7, p.unit * HIT_FIGURE_R);
   ctx.save();

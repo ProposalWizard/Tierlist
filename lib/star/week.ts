@@ -85,7 +85,9 @@ export function rest(career: CareerState): CareerState {
  * playing, not merely by looking at the screen first.
  */
 export function projectedEnergy(career: CareerState): number {
-  return Math.min(100, career.energy + actionsLeft(career) * REST_ENERGY);
+  // 22 Sep 2026: unused actions are no longer worth energy — rest days
+  // between fixtures replace that (energy.ts). What you have is what you play on.
+  return Math.min(100, career.energy);
 }
 
 /**
