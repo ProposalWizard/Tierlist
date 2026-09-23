@@ -26,6 +26,7 @@ import {
   drawFigure,
   drawKeeper,
   drawBall,
+  MATCH_SCALE,
   type Projection,
   type FigureLook,
 } from "./fiveASide/render";
@@ -217,11 +218,15 @@ export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing
   const offY = computeOffside(frame);
   if (offY !== null) drawOffsideLine(ctx, p, cssW, offY);
 
+  // Drawn at the REAL match's own size. The picture used to use the trial's
+  // smaller figures, so pressing Play made every player grow by about half
+  // and the whole scene looked like it had moved when nothing had. Asked for
+  // directly: "the play and the pre-play should be exactly the same".
   for (const it of frame.items) {
-    if (it.keeper) drawKeeper(ctx, p, it.at, it.look, { dive: 0, lunge: 0 }, FACE, FAKE);
-    else drawFigure(ctx, p, it.at, it.look, FACE, FAKE);
+    if (it.keeper) drawKeeper(ctx, p, it.at, it.look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_SCALE });
+    else drawFigure(ctx, p, it.at, it.look, FACE, FAKE, { scale: PICTURE_SCALE });
   }
-  drawBall(ctx, p, frame.ball);
+  drawBall(ctx, p, frame.ball, 0, PICTURE_SCALE);
 }
 
 export function drawOffsideLine(ctx: CanvasRenderingContext2D, p: Projection, w: number, y: number): void {
@@ -244,7 +249,11 @@ export function drawOffsideLine(ctx: CanvasRenderingContext2D, p: Projection, w:
 
 // render.ts's own anatomy, replicated for hit-testing and ring placement only
 // (do NOT edit render.ts). A figure's feet sit at py(at.y); its body rises.
-export const HIT_FIGURE_R = 1.05; // render.ts FIGURE_R
+/** How much bigger than the trial's figures the picture draws — the real
+ *  match's own size (see `paint`). Hit-testing and rings use it too, so a
+ *  grab or a ring still lands on the figure you see. */
+export const PICTURE_SCALE = MATCH_SCALE;
+export const HIT_FIGURE_R = 1.05 * PICTURE_SCALE; // render.ts FIGURE_R, at the picture's scale
 export const HIT_BODY_UP = 0.67; // ~mid-torso, in units of r, above the feet anchor
 
 export interface Mark { at: Vec2; ball?: boolean; tone: "red" | "amber" | "select" }

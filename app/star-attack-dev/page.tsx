@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import LiveAttack from "@/components/star/LiveAttack";
 import { DELIVERY_KINDS, DELIVERY_LABEL, type DeliveryKind } from "@/lib/star/liveAttack";
+import PageGuide from "@/components/admin/PageGuide";
 
 /**
  * Standalone sandbox for the moving attacking-situation mechanic — admin
@@ -120,6 +121,7 @@ export default function StarAttackDevPage() {
           )}
         </div>
       </div>
+      <PageGuide page="/star-attack-dev" />
     </div>
   );
 }

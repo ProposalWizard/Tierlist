@@ -51,6 +51,7 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
+import PageGuide from "@/components/admin/PageGuide";
 import { outliersOf } from "@/lib/star/scenarioRules";
 import { ruleSetFor, showSavedScenarios } from "@/lib/star/authoredChance";
 import { statusOf } from "@/lib/star/scenarioStatus";
@@ -124,24 +125,46 @@ const KIND_ORDER: ScenarioKind[] = [
  * or overwrite the other's work.
  */
 const EDIT_KEY = "star-highlights-edits-v1";
-const highlightSlug = (spec: SimSpec) => `highlight-${flagId(spec)}`;
+/**
+ * ONE PLACE FOR A SAVED CHANCE: the gallery's own list for that kind.
+ *
+ * A save made here used to land in its own `highlight-…` namespace, which the
+ * gallery deliberately never read — so a chance saved while playing Infinite
+ * Highlights did not become one of that kind's scenarios anywhere you could
+ * see it. Asked for directly: "when you press save there, it should save it
+ * into the scenario section of that highlight type and then be able to commit
+ * as well." It is now saved exactly as the gallery saves a simulated chance
+ * (`gallery-sim-<kind>-<seed>`, rebuilt from the same kind + seed + plan), so
+ * it shows as a card of its kind, counts in that kind's number and commits
+ * like any other. Rows saved the old way are still read — see
+ * `indexHighlights` — so nothing already saved is lost.
+ */
+const highlightSlug = (spec: SimSpec) => `gallery-sim-${spec.kind}-${spec.seed}`;
+const legacySlug = (spec: SimSpec) => `highlight-${flagId(spec)}`;
 
 const saveTargetFor = (spec: SimSpec) => ({
   id: highlightSlug(spec),
-  name: `${kindLabel(spec.kind)} #${spec.seed}`,
+  name: `${kindLabel(spec.kind)} (sim)`,
   kind: spec.kind as string,
   seed: spec.seed,
   planId: spec.planId,
-  tool: "highlights" as const,
+  tool: "gallery" as const,
 });
 
 function indexHighlights(all: MatchScenario[]): Record<string, MatchScenario> {
   const out: Record<string, MatchScenario> = {};
   for (const sc of all) {
-    if (sc.source?.tool === "highlights" && sc.id.startsWith("highlight-")) out[sc.id] = sc;
+    if (sc.id.startsWith("gallery-sim-")) out[sc.id] = sc;
+  }
+  // An old-style save, under the new address unless a new-style one exists.
+  for (const sc of all) {
+    if (sc.source?.tool !== "highlights" || !sc.id.startsWith("highlight-") || !sc.source.kind) continue;
+    const at = `gallery-sim-${sc.source.kind}-${sc.source.seed}`;
+    if (!out[at]) out[at] = sc;
   }
   return out;
 }
+void legacySlug;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  ONE CHANCE — built and framed. Exactly the gallery's own path.
@@ -205,7 +228,7 @@ function FlagRow({
 }) {
   const spec = specOf(flag);
   const shot = useMemo(() => buildShot(spec), [flag.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items.length) : undefined;
+  const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items.length, shot.base.camera) : undefined;
   const frame = applyOverride(applyOverride(shot.base, savedOv), override);
   const analysis = useMemo(
     () => analysisFor(spec, [savedOv, override]),
@@ -268,6 +291,15 @@ export default function HighlightsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
+  /** The picture's width when Play was pressed — the match plays at exactly
+   *  this size (see ScenarioPlay's `width`). */
+  const [playW, setPlayW] = useState<number | undefined>(undefined);
+  const pictureRef = useRef<HTMLDivElement>(null);
+  const togglePlay = () => {
+    const c = pictureRef.current?.querySelector("canvas");
+    if (!playing && c) setPlayW(Math.round(c.getBoundingClientRect().width));
+    setPlaying((v) => !v);
+  };
   /** Every correction recorded so far, so Tune can say whether this one just
    *  completed a pattern. Same store the gallery and Tuning & Commit read —
    *  a correction made here counts exactly as much as one made there. */
@@ -333,7 +365,7 @@ export default function HighlightsPage() {
   // ── Saved corrections (the same pool the gallery and the Builder write) ──
   const [saved, setSaved] = useState<Record<string, MatchScenario>>({});
   const [migrationMissing, setMigrationMissing] = useState(false);
-  const [busy, setBusy] = useState<"saving" | "reverting" | "deleting" | null>(null);
+  const [busy, setBusy] = useState<"saving" | "reverting" | "deleting" | "committing" | null>(null);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
@@ -397,7 +429,7 @@ export default function HighlightsPage() {
   const editKey = shot ? flagId(shot.spec) : "";
   const savedScenario = shot ? saved[highlightSlug(shot.spec)] : undefined;
   const savedOv = shot && savedScenario
-    ? overrideFromMatchScenario(savedScenario, shot.base.items.length)
+    ? overrideFromMatchScenario(savedScenario, shot.base.items.length, shot.base.camera)
     : undefined;
   const override = shot ? edits[editKey] : undefined;
   const edited = hasEdits(override);
@@ -471,15 +503,46 @@ export default function HighlightsPage() {
     flashFor(true, "Saved for the team. It goes into the game when you commit it.");
   };
 
+  /**
+   * COMMIT — straight into the game, from the highlight you are looking at.
+   * Asked for directly: every highlight "should save it into the scenario
+   * section of that highlight type and then be able to commit as well" — and
+   * reported: "there is no save and commit buttons inside a match highlight".
+   * Save only appeared after a drag and there was no Commit here at all. The
+   * commit route also saves the same copy to the shared list, so this is a
+   * save and a commit in one.
+   */
+  const commitShot = async (): Promise<void> => {
+    if (!shot || !liveFrame) return;
+    setBusy("committing");
+    const scenario = frameToMatchScenario(saveTargetFor(shot.spec), liveFrame);
+    try {
+      const r = await fetch("/api/star/scenarios/commit", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario }),
+      });
+      const d = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; message?: string };
+      if (!r.ok || d.ok !== true) { flashFor(false, `Not committed — ${d.error ?? `the server refused it (${r.status})`}`); return; }
+      setSaved((m) => ({ ...m, [scenario.id]: scenario }));
+      clearOverride(editKey);
+      flashFor(true, d.message ?? "Committed — in the game once the deploy finishes.");
+    } catch {
+      flashFor(false, "Not committed — couldn't reach the server.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const revertShot = async (): Promise<void> => {
     if (!shot) return;
     setBusy("reverting");
-    const id = highlightSlug(shot.spec);
+    const id = savedScenario?.id ?? highlightSlug(shot.spec);
+    const key = highlightSlug(shot.spec);
     const res = await deleteScenarioShared(id);
     setBusy(null);
     if (res.migrationMissing) setMigrationMissing(true);
     if (!res.ok) { flashFor(false, `Not reverted — ${res.message}`); return; }
-    setSaved((m) => { const n = { ...m }; delete n[id]; return n; });
+    setSaved((m) => { const n = { ...m }; delete n[key]; return n; });
     clearOverride(editKey);
     flashFor(true, "Back to the generated chance.");
   };
@@ -533,7 +596,8 @@ export default function HighlightsPage() {
     const q = `Delete this ${kindLabel(shot.spec.kind)} scenario everywhere — the database and the code? This cannot be undone here.`;
     if (typeof window !== "undefined" && !window.confirm(q)) return;
     setBusy("deleting");
-    const id = highlightSlug(shot.spec);
+    const id = savedScenario.id;
+    const key = highlightSlug(shot.spec);
     const shared = await deleteScenarioShared(id);
     let repoTail = "";
     try {
@@ -549,7 +613,7 @@ export default function HighlightsPage() {
     }
     setBusy(null);
     if (shared.migrationMissing) setMigrationMissing(true);
-    setSaved((m) => { const n = { ...m }; delete n[id]; return n; });
+    setSaved((m) => { const n = { ...m }; delete n[key]; return n; });
     clearOverride(editKey);
     flashFor(!repoTail, shared.ok ? `Deleted${repoTail}.` : `Not deleted — ${shared.message}`);
   };
@@ -609,6 +673,7 @@ export default function HighlightsPage() {
       data-hl-figures={liveFrame ? liveFrame.items.length : ""}
     >
       {children}
+      <PageGuide page="/star-highlights-dev" />
     </main>
   );
 
@@ -751,7 +816,10 @@ export default function HighlightsPage() {
           </button>
         </div>
       ) : (
-        <div style={{ padding: "10px 12px 14px", display: "grid", justifyItems: "center", gap: 8 }}>
+        <div ref={pictureRef} style={{ padding: "10px 12px 14px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", justifyItems: "center", gap: 8 }}>
+          {/* minmax(0, 1fr): without it the column grew to the button row's
+              full width (433px on a 390px phone), so the picture sat
+              off-centre and Delete was cut off the right edge. */}
           {/* Playing swaps the PICTURE for the live match and leaves every
               control below it exactly where it was, so a chance can be
               played, corrected and saved without changing screen. */}
@@ -763,6 +831,7 @@ export default function HighlightsPage() {
                 return sc;
               }}
               onStop={() => setPlaying(false)}
+              width={playW}
             />
           ) : shot && baseFrame && (
             <EditableFrame
@@ -798,9 +867,9 @@ export default function HighlightsPage() {
           {/* The editor tools. Same three the gallery's version screen has, in
               the same order, doing the same thing — tap a figure on the
               picture, then take him out; or put a new one in. */}
-          <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+          <div style={{ display: "flex", gap: 5, width: "100%", maxWidth: 460 }}>
             <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
-            <button style={editBtn(false)} onClick={() => addFigure("opponent")}>+ Opponent</button>
+            <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
             <button
               style={editBtn(!canRemove)}
               disabled={!canRemove}
@@ -811,7 +880,7 @@ export default function HighlightsPage() {
             {/* Play this exact chance, edits and all — see ScenarioPlay. */}
             <button
               style={{ ...editBtn(false), color: playing ? "#7dd3fc" : "#4ade80" }}
-              onClick={() => setPlaying((v) => !v)}
+              onClick={togglePlay}
             >
               {playing ? "\u25FC Stop" : "\u25B6 Play"}
             </button>
@@ -935,29 +1004,38 @@ export default function HighlightsPage() {
             </button>
           </div>
 
-          {/* Only on screen when there is something to do with it. */}
-          {edited ? (
-            <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+          {/* Save and Commit are always here, edited or not — see commitShot. */}
+          <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
+            {(edited || !savedScenario) && (
               <button
-                style={{ ...editBtn(false), flex: 2.4, height: 48, background: "rgba(22,163,74,0.24)", border: "1px solid rgba(34,197,94,0.55)", color: "#bbf7d0", fontSize: 15 }}
+                style={{ ...editBtn(false), flex: 2, height: 48, background: "rgba(22,163,74,0.24)", border: "1px solid rgba(34,197,94,0.55)", color: "#bbf7d0", fontSize: 15 }}
                 disabled={!!busy}
                 onClick={() => void saveShot()}
               >
-                {busy === "saving" ? "Saving…" : "Save this fix"}
+                {busy === "saving" ? "Saving…" : edited ? "Save this fix" : "Save"}
               </button>
+            )}
+            <button
+              style={{ ...editBtn(false), flex: 1.4, height: 48, background: "rgba(14,116,144,0.3)", border: "1px solid rgba(56,189,248,0.55)", color: "#e0f2fe", fontSize: 15 }}
+              disabled={!!busy}
+              onClick={() => void commitShot()}
+            >
+              {busy === "committing" ? "Committing…" : "Commit"}
+            </button>
+            {edited ? (
               <button style={{ ...editBtn(false), height: 48 }} onClick={() => { clearOverride(editKey); setSelectedId(null); }}>
                 Discard
               </button>
-            </div>
-          ) : savedScenario ? (
-            <button
-              style={{ ...editBtn(false), width: "100%", maxWidth: 460, color: MUTED }}
-              disabled={!!busy}
-              onClick={() => void revertShot()}
-            >
-              {busy === "reverting" ? "Reverting…" : "Saved — revert to the generated chance"}
-            </button>
-          ) : null}
+            ) : savedScenario ? (
+              <button
+                style={{ ...editBtn(false), flex: 2, height: 48, color: MUTED }}
+                disabled={!!busy}
+                onClick={() => void revertShot()}
+              >
+                {busy === "reverting" ? "Reverting…" : "Saved — revert"}
+              </button>
+            ) : null}
+          </div>
 
           {(flash || migrationMissing) && (
             <div style={{ fontSize: 12.5, fontWeight: 700, textAlign: "center", maxWidth: 460, lineHeight: 1.4, color: flash ? (flash.ok ? "#4ade80" : "#fca5a5") : "#fca5a5" }}>
@@ -996,7 +1074,7 @@ const editBtn = (off: boolean): React.CSSProperties => ({
   // Up to seven of these share one row since Delete and Tune joined it, so
   // they shrink rather than wrap onto a second line.
   flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
-  padding: "0 6px", whiteSpace: "nowrap",
+  padding: "0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
   border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
+  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 11, fontWeight: 700,
 });

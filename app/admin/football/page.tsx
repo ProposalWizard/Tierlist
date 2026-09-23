@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import PageGuide from "@/components/admin/PageGuide";
 
 /* ── Types matching Wikidata responses ── */
 
@@ -1464,6 +1465,7 @@ export default function FootballDataPage() {
           </>
         )}
       </div>
+      <PageGuide page="/admin/football" />
     </div>
   );
 }

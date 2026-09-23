@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
+import PageGuide from "@/components/admin/PageGuide";
 
 /* ── Attribute label map ── */
 const ATTR_LABELS: Record<string, string> = {
@@ -1365,6 +1366,7 @@ export default function PlayerSearchPage() {
           </>
         )}
       </div>
+      <PageGuide page="/admin/football/players" />
     </div>
   );
 }

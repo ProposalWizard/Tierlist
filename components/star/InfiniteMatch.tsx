@@ -36,11 +36,14 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import CanvasMatch from "./CanvasMatch";
+import LiveChanceEditor from "./LiveChanceEditor";
+import { liveMatchScenario } from "@/lib/star/liveEdit";
+import { saveScenarioShared } from "@/lib/star/scenarioStore";
 import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { clubsForDivision } from "@/lib/star/scoutOffers";
 import { DEFAULT_RULE_BOOK } from "@/lib/star/ruleBook";
 import type { CareerState, Fixture, StarPlayer } from "@/lib/star/types";
-import type { ScenarioKind } from "@/lib/star/canvasEngine";
+import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PlaySettings } from "@/lib/star/playArea";
 
 const INK = "#f2f5f9";
@@ -108,12 +111,48 @@ export default function InfiniteMatch({ settings, onBack }: {
   // chance is fine, but the ref is what keeps the list stable if React
   // batches two together.
   const servedRef = useRef<Served[]>([]);
+  /** The chance on screen now, as it stood before the kick — what Edit opens. */
+  const [current, setCurrent] = useState<{ scenario: Scenario; minute: number } | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState<"saving" | "committing" | null>(null);
+  const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
+
+  /** Save the chance on screen as it stands — no editing needed. */
+  const saveCurrent = async () => {
+    if (!current) return;
+    setBusy("saving");
+    const res = await saveScenarioShared(liveMatchScenario(current.scenario, current.minute));
+    setBusy(null);
+    setFlash(res.ok
+      ? { ok: true, text: `Saved as a ${kindLabel(current.scenario.kind)} scenario — it is in the gallery now.` }
+      : { ok: false, text: `Not saved — ${res.message}` });
+  };
+  /** Commit it straight into the game's code. */
+  const commitCurrent = async () => {
+    if (!current) return;
+    setBusy("committing");
+    try {
+      const r = await fetch("/api/star/scenarios/commit", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario: liveMatchScenario(current.scenario, current.minute) }),
+      });
+      const d = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; message?: string };
+      setFlash(r.ok && d.ok
+        ? { ok: true, text: d.message ?? "Committed — it is in the game." }
+        : { ok: false, text: `Not committed — ${d.error ?? r.status}` });
+    } catch {
+      setFlash({ ok: false, text: "Not committed — couldn't reach the server." });
+    }
+    setBusy(null);
+  };
 
   const built = useMemo(() => buildPlayCareer(settings, run), [settings, run]);
 
-  const onChanceServed = useCallback((info: { kind: ScenarioKind | "dribble"; minute: number }) => {
+  const onChanceServed = useCallback((info: { kind: ScenarioKind | "dribble"; minute: number; scenario?: Scenario }) => {
     servedRef.current = [...servedRef.current, { kind: info.kind, minute: info.minute }];
     setServed(servedRef.current);
+    setCurrent(info.scenario ? { scenario: info.scenario, minute: info.minute } : null);
+    setFlash(null);
   }, []);
 
   const restart = () => {
@@ -157,6 +196,44 @@ export default function InfiniteMatch({ settings, onBack }: {
         </div>
         <button style={{ ...btn, flex: "none" }} onClick={restart}>New match</button>
       </div>
+
+      {/* THE CHANCE ON SCREEN — Edit, Save, Commit. Reported directly: "there is
+          no save and commit buttons inside a match highlight". It was one Edit
+          button that scrolled away above the scoreboard; now all three stay
+          pinned to the top of the screen for as long as the match runs. */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 30, width: "100%", maxWidth: 460,
+        padding: "6px 0", background: "#05070d", display: "grid", gap: 4,
+      }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: MUTED, textAlign: "center", textTransform: "capitalize" }}>
+          {current ? `This chance: ${kindLabel(current.scenario.kind)} · ${current.minute}'` : "Waiting for a chance…"}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button style={{ ...btn, flex: 1, height: 42, opacity: current ? 1 : 0.4 }} disabled={!current} onClick={() => setEditing(true)}>
+            &#9998; Edit
+          </button>
+          <button
+            style={{ ...btn, flex: 1, height: 42, color: "#bbf7d0", borderColor: "rgba(34,197,94,0.45)", opacity: current ? 1 : 0.4 }}
+            disabled={!current || !!busy} onClick={() => void saveCurrent()}
+          >
+            {busy === "saving" ? "Saving…" : "Save"}
+          </button>
+          <button
+            style={{ ...btn, flex: 1, height: 42, color: "#e0f2fe", borderColor: "rgba(56,189,248,0.45)", opacity: current ? 1 : 0.4 }}
+            disabled={!current || !!busy} onClick={() => void commitCurrent()}
+          >
+            {busy === "committing" ? "Committing…" : "Commit"}
+          </button>
+        </div>
+        {flash && (
+          <div style={{ fontSize: 12, fontWeight: 700, textAlign: "center", color: flash.ok ? "#4ade80" : "#fca5a5" }}>
+            {flash.text}
+          </div>
+        )}
+      </div>
+      {editing && current && (
+        <LiveChanceEditor scenario={current.scenario} minute={current.minute} onClose={() => setEditing(false)} />
+      )}
 
       <div style={{ width: "100%", maxWidth: 460 }}>
         <CanvasMatch

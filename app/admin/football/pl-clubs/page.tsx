@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import PageGuide from "@/components/admin/PageGuide";
 
 interface ClubData {
   name: string;
@@ -163,6 +164,7 @@ export default function PLClubsPage() {
           )}
         </>
       )}
+      <PageGuide page="/admin/football/pl-clubs" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ChallengeDraftClient from "./ChallengeDraftClient";
+import PageGuide from "@/components/admin/PageGuide";
 
 export const metadata: Metadata = {
   title: "Challenge Draft (dev)",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function ChallengeDraftDevPage() {
-  return <ChallengeDraftClient />;
+  return (
+    <>
+      <ChallengeDraftClient />
+      <PageGuide page="/draft-challenge-dev" />
+    </>
+  );
 }

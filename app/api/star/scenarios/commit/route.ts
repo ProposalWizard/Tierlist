@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { isMatchScenario } from "@/lib/star/authoredScenarios";
 import { commitScenarios, removeScenariosFromRepo, resolveCommitConfig } from "@/lib/star/commitScenarios";
 import type { MatchScenario } from "@/lib/star/scenarios";
@@ -74,9 +75,36 @@ export async function POST(req: NextRequest) {
     scenarios: raw as MatchScenario[],
   });
 
+  // ── The database gets the SAME copy ──
+  // A commit used to write only the code. Measured on 23 Sep: five tight
+  // angles were newer in the code than in the database, because they were
+  // committed without being saved first — so every browser went on showing
+  // the older database copy as "the game still has the older copy", and the
+  // next Commit all from any of them would have written that older copy back
+  // over the newer one. Whatever is committed is now also saved, so the two
+  // can never disagree. Best effort: a database failure never undoes a
+  // commit that has already happened, it is reported instead.
+  let dbSynced = true;
+  if (result.ok) {
+    try {
+      const service = createServiceClient();
+      const rows = (raw as MatchScenario[]).map((sc) => ({
+        id: sc.id, name: sc.name, kind: sc.kind, scenario: sc, updated_at: new Date().toISOString(),
+      }));
+      const { error } = await service.from("star_scenarios").upsert(rows);
+      if (error) dbSynced = false;
+    } catch {
+      dbSynced = false;
+    }
+  }
+
   return NextResponse.json(
     result.ok
-      ? { ok: true, message: result.message, committed: result.committed, commitSha: result.commitSha }
+      ? {
+        ok: true,
+        message: dbSynced ? result.message : `${result.message} (The shared list could not be updated to match — save it again.)`,
+        committed: result.committed, commitSha: result.commitSha, dbSynced,
+      }
       : { ok: false, error: result.message, raced: result.raced ?? false, committed: [] },
     { status: result.ok ? 200 : result.status },
   );

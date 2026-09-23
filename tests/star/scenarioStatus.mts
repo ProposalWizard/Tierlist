@@ -9,7 +9,7 @@
  */
 
 import { AUTHORED_SCENARIOS } from "@/lib/star/authoredScenarios";
-import { statusOf, pendingCommit, samePicture } from "@/lib/star/scenarioStatus";
+import { statusOf, pendingCommit, newestById, samePicture } from "@/lib/star/scenarioStatus";
 import type { MatchScenario } from "@/lib/star/scenarios";
 
 let failed = 0;
@@ -75,6 +75,26 @@ ok(statusOf(undefined).tuning === false, "a draft does NOT feed the auto-tuner")
   ok(ids.includes(real.id), "a modified one is pending");
   ok(pendingCommit([real]).length === 0, "an already-committed scenario is NOT pending");
   ok(pendingCommit([]).length === 0, "nothing saved means nothing pending");
+}
+
+// ── the code holding the NEWER copy ──────────────────────────────────────
+// 23 Sep: five tight angles were committed without being saved, so the shared
+// list held an older picture than the code. That must read as committed (the
+// game has the newest), never "the game still has the older copy" — and it
+// must not be put back on the Commit all list, or the older copy would be
+// written over the newer one.
+{
+  const stale: MatchScenario = {
+    ...real,
+    ball: { x: real.ball.x + 4, y: real.ball.y },
+    updatedAt: (real.updatedAt ?? 0) - 60_000,
+  };
+  ok(statusOf(stale).state === "committed", "an older shared copy of a newer commit reads as committed");
+  ok(pendingCommit([stale]).length === 0, "…and is NOT queued to be committed over the newer one");
+  const merged = newestById([real, stale]);
+  ok(merged.length === 1 && merged[0] === real, "merging keeps the newest copy of an id");
+  const newer: MatchScenario = { ...stale, updatedAt: (real.updatedAt ?? 0) + 60_000 };
+  ok(newestById([real, newer])[0] === newer, "…whichever side it comes from");
 }
 
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }

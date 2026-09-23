@@ -55,6 +55,16 @@ Newest first. Each is something that was actually said.
 - Judge posts at `/star-dev/media-lab?feed` — the real post component with
   fixed sample posts.
 
+### 23 Sep 2026 — the page guide (the eye)
+- **"There should be an information panel on every single page in the admin
+  sections: just a little eye on how to use whatever's currently on the page…
+  the same UI across everything."** Every admin/dev page carries the same eye
+  button (bottom-right unless it would cover a control) opening one panel:
+  what the page is, every button by its on-screen label, where saving goes,
+  whether it commits to the repo, where it shows up in the game. One look,
+  one data file — see the `admin-page-guide` skill. This is where explanation
+  lives on a dev tool, so the tool itself can stay picture-first.
+
 ### 21 Sep 2026 — Infinite Highlights, second pass
 - **"The actual infinite highlights page should also have the editor tools in
   there."** Seeing a broken chance and being able to fix it are one job, not

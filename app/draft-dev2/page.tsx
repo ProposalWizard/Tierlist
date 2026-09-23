@@ -14,6 +14,7 @@ import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { PlayerAttributes, SeasonResult } from "@/lib/seasonSimulator";
 import type { RoomPlayer } from "@/components/draft/MultiplayerLobby";
 import { shuffle } from "@/lib/shuffle";
+import PageGuide from "@/components/admin/PageGuide";
 
 export interface DraftSettings {
   formation: string;
@@ -1314,6 +1315,7 @@ export default function DraftDev2Page() {
           initialSpeed={settings?.simulationSpeed ?? 1}
         />
       )}
+      <PageGuide page="/draft-dev2" />
     </div>
   );
 }

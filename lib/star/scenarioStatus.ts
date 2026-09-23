@@ -84,6 +84,12 @@ export function statusOf(saved: MatchScenario | null | undefined): ScenarioStatu
   if (!saved) return { state: "draft", ...STATUS.draft };
   const committed = AUTHORED_SCENARIOS[saved.id];
   if (!committed) return { state: "saved", ...STATUS.saved };
+  // The code holding a NEWER copy than the shared list is not "the game has
+  // the older copy" — it is the other way round (a commit made without a
+  // save). Reading it as modified told everyone the opposite of the truth,
+  // and put the older copy on the Commit all list, to be written back over
+  // the newer one.
+  if ((committed.updatedAt ?? 0) > (saved.updatedAt ?? 0)) return { state: "committed", ...STATUS.committed };
   return samePicture(saved, committed)
     ? { state: "committed", ...STATUS.committed }
     : { state: "modified", ...STATUS.modified };
@@ -104,4 +110,18 @@ export function pendingCommit(all: MatchScenario[]): MatchScenario[] {
     const st = statusOf(s).state;
     return st === "saved" || st === "modified";
   });
+}
+
+/**
+ * One copy per id — the NEWEST. For merging the committed file with the
+ * shared list: whichever was written last is the real picture, so a commit
+ * that never reached the database still shows as what it is.
+ */
+export function newestById(list: MatchScenario[]): MatchScenario[] {
+  const by = new Map<string, MatchScenario>();
+  for (const sc of list) {
+    const have = by.get(sc.id);
+    if (!have || (sc.updatedAt ?? 0) >= (have.updatedAt ?? 0)) by.set(sc.id, sc);
+  }
+  return Array.from(by.values());
 }

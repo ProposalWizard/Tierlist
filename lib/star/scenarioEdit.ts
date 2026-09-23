@@ -19,14 +19,13 @@
  * every later figure's edit onto the wrong man.
  */
 
-import { goalInView, type Scenario, type Vec2 } from "./canvasEngine";
+import { goalInView, type Scenario, type Vec2, type Viewport } from "./canvasEngine";
 import type { FigureLook } from "./fiveASide/render";
 import type {
   MatchScenario,
   ScenarioMomentKind,
   ScenarioSide,
 } from "./scenarios";
-import { ELEVEN_A_SIDE_ATTACK } from "./fiveASide/rules";
 import {
   YOU, OPP, MATE,
   marksForFaults,
@@ -50,6 +49,10 @@ export interface PosOverride {
    *  everyone else's, so a new figure is dragged and saved by exactly the
    *  same path a built-in one is. */
   added?: { id: string; side: ScenarioSide }[];
+  /** The picture's framing, when it is not the base picture's own — a card
+   *  made from a live chance keeps the match's camera (lib/star/liveEdit.ts),
+   *  so everyone who was on screen in the match is on screen on the card. */
+  camera?: Viewport;
 }
 
 export type EditStore = Record<string, PosOverride>;
@@ -61,6 +64,7 @@ export function hasEdits(ov: PosOverride | undefined): boolean {
     || !!ov.ball
     || !!ov.removed?.length
     || !!ov.added?.length
+    || !!ov.camera
   );
 }
 
@@ -72,6 +76,7 @@ export function cloneOverride(ov: PosOverride | undefined): PosOverride {
     ball: ov?.ball ? { ...ov.ball } : undefined,
     removed: ov?.removed ? [...ov.removed] : undefined,
     added: ov?.added ? ov.added.map((a) => ({ ...a })) : undefined,
+    camera: ov?.camera ? { ...ov.camera } : undefined,
   };
 }
 
@@ -92,7 +97,9 @@ export function mergeOverrides(ovs: (PosOverride | undefined)[]): PosOverride | 
   const removed = new Set<string>();
   const added: { id: string; side: ScenarioSide }[] = [];
   let ball: Vec2 | undefined;
+  let camera: Viewport | undefined;
   for (const ov of real) {
+    if (ov.camera) camera = { ...ov.camera };
     for (const k of Object.keys(ov.items)) items[k] = { ...ov.items[k] };
     for (const r of ov.removed ?? []) removed.add(r);
     for (const a of ov.added ?? []) if (!added.some((x) => x.id === a.id)) added.push({ ...a });
@@ -103,6 +110,7 @@ export function mergeOverrides(ovs: (PosOverride | undefined)[]): PosOverride | 
     ball,
     removed: removed.size ? Array.from(removed) : undefined,
     added: added.length ? added : undefined,
+    camera,
   };
 }
 
@@ -117,15 +125,6 @@ export function nextAddedId(ovs: (PosOverride | undefined)[]): string {
   }
   return `add${max + 1}`;
 }
-
-/**
- * In an 11-a-side chance the ball is always at YOUR feet — the engine stands
- * you beside it (`standOff`, canvasEngine.ts). So the editor never lets the
- * ball be placed on its own: it rides with you, at exactly the offset the
- * builder gave it. Five-a-side is left alone, because there the ball can be
- * with somebody else.
- */
-export const ballFollowsYou = (frame: Frame): boolean => frame.rules === ELEVEN_A_SIDE_ATTACK;
 
 export const lookFor = (side: ScenarioSide): Omit<FigureLook, "label" | "star"> =>
   side === "opponent" ? OPP : side === "you" ? YOU : MATE;
@@ -159,15 +158,8 @@ export function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame 
       removable: true,
     });
   }
-  let ball = ov!.ball ? { ...ov!.ball } : frame.ball;
-  if (ballFollowsYou(frame)) {
-    const was = frame.items.find((it) => it.side === "you");
-    const now = items.find((it) => it.side === "you");
-    ball = was && now
-      ? { x: now.at.x - (was.at.x - frame.ball.x), y: now.at.y - (was.at.y - frame.ball.y) }
-      : frame.ball;
-  }
-  return { ...frame, items, ball };
+  const ball = ov!.ball ? { ...ov!.ball } : frame.ball;
+  return ov!.camera ? { ...frame, items, ball, camera: { ...ov!.camera } } : { ...frame, items, ball };
 }
 
 /**
@@ -178,11 +170,19 @@ export function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame 
  */
 /** Where a figure that cannot be spliced out of the scenario is walked to
  *  instead — far enough off that nothing measures him. See the removal block
- *  in `applyOverrideToScenario`. */
-const OFF_PITCH: Vec2 = { x: -400, y: -400 };
+ *  in `applyOverrideToScenario`.
+ *
+ *  BEHIND the ball, not beyond the goal line. It was (-400, -400): 400m past
+ *  the goal is ahead of the ball and past every defender, so a removed
+ *  poacher was OFFSIDE — "attacker offside" on a picture where every
+ *  attacker you could see was behind the ball (reported by Leo; measured, 3
+ *  of 65 saved scenarios, every one with the poacher taken out). Nobody is
+ *  offside behind the ball. */
+export const OFF_PITCH: Vec2 = { x: -400, y: 400 };
 
 export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefined): void {
   if (!hasEdits(ov)) return;
+  if (ov!.camera) sc.viewport = { ...ov!.camera };
   const at = (i: number) => ov!.items[String(i)];
   const gone = new Set(ov!.removed ?? []);
   const isGone = (i: number) => gone.has(String(i));
@@ -196,9 +196,6 @@ export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefine
   let runnerIdx = -1;
   let followerIdx = -1;
 
-  // The ball rides with you (see `ballFollowsYou`) — keep the builder's offset.
-  const ballOff = { x: sc.player.x - sc.ball.x, y: sc.player.y - sc.ball.y };
-
   let i = 0;
   for (const d of sc.defenders) { defIdx.push(i); const p = at(i++); if (p) { d.x = p.x; d.y = p.y; } }
   { const p = at(i++); if (p) { sc.keeper.x = p.x; sc.keeper.y = p.y; } }
@@ -207,7 +204,7 @@ export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefine
   if (goalInView(sc.kind)) { followerIdx = i; const p = at(i++); if (p) { sc.follower.x = p.x; sc.follower.y = p.y; } }
   for (const t of sc.teammates) { mateIdx.push(i); const p = at(i++); if (p) { t.x = p.x; t.y = p.y; } }
   { const p = at(i++); if (p) { sc.player.x = p.x; sc.player.y = p.y; } }
-  sc.ball.x = sc.player.x - ballOff.x; sc.ball.y = sc.player.y - ballOff.y;
+  if (ov!.ball) { sc.ball.x = ov!.ball.x; sc.ball.y = ov!.ball.y; }
 
   // ── Figures taken OUT ──
   // Descending, so an earlier splice never shifts a later one. The keeper and
@@ -230,15 +227,23 @@ export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefine
 
   // ── Figures put IN ──
   // An opponent becomes a real defender, so the offside line and every fault
-  // rule genuinely count him. A team-mate becomes one of `sc.teammates` — the
-  // decorative bodies a crosser or a box-filler already is — deliberately NOT
-  // a runner, because a runner is a PASS TARGET and adding one would change
-  // what the chance is, not just who is standing in it.
+  // rule genuinely count him. A team-mate becomes a support runner (below).
   for (const a of ov!.added ?? []) {
     const p = ov!.items[a.id];
     if (!p || gone.has(a.id)) continue;
     if (a.side === "opponent") sc.defenders.push({ x: p.x, y: p.y, role: "hold", baseRole: "hold" });
-    else if (a.side === "teammate") sc.teammates.push({ x: p.x, y: p.y });
+    // A team-mate you add is a real SUPPORT runner — he reacts to a ball
+    // played near him, can take a pass, can be given an order — not scenery.
+    // He used to become one of `sc.teammates`, the decorative bodies, and in
+    // Play he stood there while the ball went past him: "in the play thing,
+    // teammates don't do anything". A support runner is still not the pass
+    // TARGET, so the chance is the same chance; he just plays in it.
+    else if (a.side === "teammate") {
+      sc.secondaryRunners.push({
+        pos: { x: p.x, y: p.y }, to: { x: p.x, y: p.y },
+        speed: 7.0 * 0.95, moving: false, role: "support", sprint: false,
+      });
+    }
   }
 }
 
@@ -421,7 +426,7 @@ export function frameToMatchScenario(target: SaveTarget, frame: Frame): MatchSce
 
 /** The saved positions, back as the index-keyed override — so a saved
  *  scenario is applied through the exact same path a live drag is. */
-export function overrideFromMatchScenario(ms: MatchScenario, baseCount: number): PosOverride {
+export function overrideFromMatchScenario(ms: MatchScenario, baseCount: number, baseCamera?: Viewport): PosOverride {
   const items: Record<string, Vec2> = {};
   const added: { id: string; side: ScenarioSide }[] = [];
   const seenBase = new Set<string>();
@@ -435,11 +440,24 @@ export function overrideFromMatchScenario(ms: MatchScenario, baseCount: number):
   // the editor — the absence IS the removal.
   const removed: string[] = [];
   for (let i = 0; i < baseCount; i++) if (!seenBase.has(String(i))) removed.push(String(i));
+  // The framing, only where the saved picture's differs from the base's —
+  // so every card saved on its own base's camera reads exactly as before.
+  let camera: Viewport | undefined;
+  if (baseCamera) {
+    const bw = baseCamera.x2 - baseCamera.x1, bh = baseCamera.y2 - baseCamera.y1;
+    const cx = (baseCamera.x1 + baseCamera.x2) / 2, cy = (baseCamera.y1 + baseCamera.y2) / 2;
+    const c = ms.camera;
+    if (Math.abs(c.centerX - cx) > 0.05 || Math.abs(c.centerY - cy) > 0.05 || Math.abs(c.viewHeight - bh) > 0.05) {
+      const w = c.viewHeight * (bw / bh);
+      camera = { x1: c.centerX - w / 2, x2: c.centerX + w / 2, y1: c.centerY - c.viewHeight / 2, y2: c.centerY + c.viewHeight / 2 };
+    }
+  }
   return {
     items,
     ball: { x: ms.ball.x, y: ms.ball.y },
     removed: removed.length ? removed : undefined,
     added: added.length ? added : undefined,
+    camera,
   };
 }
 
