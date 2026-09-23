@@ -49,7 +49,11 @@ import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
-import { drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MAX_KEEPER_LEAN } from "@/lib/star/fiveASide/render";
+import {
+  drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT,
+  MAX_KEEPER_LEAN, ROLE_KIT,
+  runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose,
+} from "@/lib/star/fiveASide/render";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
@@ -184,6 +188,33 @@ interface Props {
    * itself a new goal to capture.
    */
   onGoalScored?: (replay: GoalReplay) => void;
+  /**
+   * Fired once per chance the match hands you, the instant the picture is
+   * settled and before you are asked to aim at it.
+   *
+   * Purely an OBSERVER — nothing here reads it back, and a caller that does
+   * not pass it changes nothing. It exists because there was no way at all
+   * to find out what a real match actually serves: a match's chance kinds
+   * were decided in `loadScenario` and never left it, so "I've played five
+   * games and seen ZERO one-on-ones" could not be checked against anything.
+   * See /star-play-dev's Infinite Match, which is the one caller.
+   *
+   * A dribble has no `ScenarioKind` at all — it is its own phase — so it is
+   * reported as the string "dribble" rather than left out, which would make
+   * the tally silently not add up to the chances played.
+   */
+  onChanceServed?: (info: { kind: ScenarioKind | "dribble"; minute: number; reason?: string }) => void;
+  /**
+   * Never take you off, whatever the match thinks.
+   *
+   * `hookCheck` can end your afternoon from minute 60 on — bad form, tired
+   * legs, or a game already won. That is right for a career and fatal for a
+   * tool whose whole job is to play thousands of minutes and see what comes
+   * up: a 10,000-minute match was measured ending around minute 75.
+   *
+   * Opt-in and off by default, so a real career is untouched.
+   */
+  neverHooked?: boolean;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -238,14 +269,11 @@ const C = {
   // diagram rather than as a painted field.
   line: "rgba(255,255,250,0.85)",
   lineFaint: "rgba(255,255,250,0.5)",
-  you: "#10b981",
-  youRim: "#065f46",
-  mate: "#3b82f6",
-  mateRim: "#1e3a5f",
-  opp: "#dc2626",
-  oppRim: "#7f1d1d",
-  gk: "#fbbf24",
-  gkRim: "#92400e",
+  // you/youRim/mate/mateRim/opp/oppRim/gk/gkRim: the shared ROLE_KIT
+  // (lib/star/fiveASide/render.ts) — one source now, not a fourth
+  // independently-typed copy of the same numbers. See that constant's own
+  // doc for why this mattered: the trial had quietly drifted off these.
+  ...ROLE_KIT,
   gold: "#fbbf24",
   goldSoft: "#fde68a",
 };
@@ -329,7 +357,7 @@ const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, openOn, bare = false }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -762,6 +790,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  current one without re-creating every callback that touches it. */
   const openOnRef = useRef(openOn);
   openOnRef.current = openOn;
+  /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
+   *  same reason `openOn` is — the loop reads them outside React's render. */
+  const onChanceServedRef = useRef(onChanceServed);
+  onChanceServedRef.current = onChanceServed;
+  const neverHookedRef = useRef(neverHooked);
+  neverHookedRef.current = neverHooked;
 
   /**
    * How much you have left, RIGHT NOW, at this point in the match — not the
@@ -841,6 +875,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       energy: liveEnergyAt(matchMinuteRef.current),
       energyMode: energyModeRef.current,
       impactSub: startMinuteRef.current > 0,
+      // The talisman tactic — see clubPowers.ts's `setTalisman`. Only ever
+      // true while you're a majority owner of the club you're actually
+      // playing for right now, which `talisman` is stored against.
+      talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
     };
   };
 
@@ -1952,7 +1990,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // still uses the single point the figure is centred on, exactly as the
     // discs did — so nothing about the physics changed with the artwork.
     const SKIN = "#c68642";
-    type Pose = "idle" | "run" | "kick" | "receive";
+    type Pose = FigurePose;
 
     const footballer = (
       x: number, y: number, rBase: number,
@@ -1973,12 +2011,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // tan smudge and a crowd in the box was unreadable.
       const shorts = opts.shorts ?? rim;
 
-      // Limb swing. Running scissors the legs and counter-swings the arms;
-      // a kick throws one leg through and the arms wide for balance; a man
-      // waiting for the ball opens his arms.
-      const swing = pose === "run" ? Math.sin(phase) : 0;
-      const kick = pose === "kick" ? 1 : 0;
-      const open = pose === "receive" ? 1 : 0;
+      // Limb swing — the shared mapping (fiveASide/render.ts's own
+      // bodyPoseFor), not a second local copy of it. Running scissors the
+      // legs and counter-swings the arms; a kick throws one leg through and
+      // the arms wide for balance; a man waiting for the ball opens his arms.
+      const limbs = bodyPoseFor(pose, phase);
 
       // ── Anchored at the FEET ──
       //
@@ -1996,15 +2033,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {
           facing: opts.facing,
           shadowR: r * 0.42,
-          pose: {
-            legSwing: swing,
-            kick,
-            // Arms out to receive, and out for balance through a kick. Down
-            // by his sides otherwise, which is `armSpread` 0 — the same
-            // still figure the trial's stages already draw.
-            armSpread: open * 0.5 + kick * 0.3,
-            armLift: -0.55 + open * 0.5,
-          },
+          pose: limbs,
           label: opts.label,
           labelColor: opts.labelColor,
           star: opts.star,
@@ -2023,23 +2052,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Now that the projection is flat this holds everywhere on the frame, which
     // it never could before: a man at the goal used to be drawn at 64% of a man
     // at your feet.
-    const R = unit * 1.15;
+    const R = unit * MATCH_FIGURE_R_MULT;
 
     // Running phase, shared by everyone so the crowd of figures does not march
-    // in lockstep — each is offset by its own position.
+    // in lockstep — each is offset by its own position. Thin wrappers over
+    // fiveASide/render.ts's own shared runPhase/poseFor now, not a second
+    // copy of them — every call site below (`poseFor("id", x, y)`,
+    // `runPhase(x)`) is unchanged.
     const now = performance.now() / 1000;
-    const runPhase = (seedX: number) => now * 9 + seedX * 1.7;
+    const runPhase = (seedX: number) => sharedRunPhase(now, seedX);
 
     // Whether a figure is moving, from how far it travelled since last frame.
     // Cheaper and more reliable than threading velocity out of every entity,
     // and it works for the ones that only expose a position.
     const motion = motionRef.current;
-    const poseFor = (id: string, x: number, y: number): Pose => {
-      const prev = motion.get(id);
-      motion.set(id, { x, y });
-      if (!prev) return "idle";
-      return Math.hypot(x - prev.x, y - prev.y) > 0.02 ? "run" : "idle";
-    };
+    const poseFor = (id: string, x: number, y: number): Pose => sharedPoseFor(motion, id, x, y);
 
     // Highlight the runner while they control a pass they've just won
     const rb = ballRef.current;
@@ -3516,7 +3543,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Checked here, between chances, because that is where the clock actually
     // moves. Your afternoon decides it; the game being won decides the
     // flattering version of it.
-    if (!hookedRef.current && !step.fullTime) {
+    if (!hookedRef.current && !step.fullTime && !neverHookedRef.current) {
       const t = tallyRef.current;
       const decision = hookCheck({
         minute: st.minute,
@@ -3876,6 +3903,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         draggingRef.current = false;
         facingRef.current = "up";
         setPhase("fpDribble");
+        // A dribble has no ScenarioKind, so it is reported under its own name
+        // rather than left out — see `onChanceServed`.
+        onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
         logMoment(momentLine(), "you");
         pushLine(request.reason);
         pushLine("Beat your man to win the ball forward.");
@@ -3898,6 +3928,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       setPhase("dribble");
+      onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
       logMoment(momentLine(), "you");
       pushLine(request.reason);
       pushLine("Swipe the way you want to run. Get past them to the line.");
@@ -4064,6 +4095,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
     setPhase("aim");
+    // The kind is final from here: the authored-shape overlay above changes
+    // where the bodies are, never which chance this is.
+    onChanceServedRef.current?.({
+      kind: scenarioRef.current.kind,
+      minute: matchMinuteRef.current,
+      reason: request?.reason,
+    });
     // One line, once per chance — see logMoment. This is the single thing kept
     // from what used to be an unbroken flood of buildup commentary: the moment
     // the ball actually reaches a player of yours to do something with.

@@ -16,11 +16,13 @@ import {
 import {
   authoredPool, ruleSetFor, nextAuthoredShape, randomiseAuthored,
   setLiveScenarioPool, applyAuthoredShape, sampleFromScenario, JITTER_M,
-  KEEPER_TUNING,
+  KEEPER_TUNING, KEEPER_TUNING_BY_KIND, placeKeeper, showSavedScenarios,
 } from "@/lib/star/authoredChance";
+import { saveScenario } from "@/lib/star/scenarioStore";
 import { buildScenario } from "@/lib/star/canvasEngine";
 import { fixBaseScenario, offsideLineOf, scenarioFaults } from "@/lib/star/baseScenario";
 import { mulberry32 } from "@/lib/star/season";
+import { CX } from "@/lib/star/pitch";
 
 let failed = 0;
 const ok = (cond: boolean, what: string) => {
@@ -107,9 +109,61 @@ ok(nextAuthoredShape("__nothing_authored__", rng) === null,
 // broken shape. It yields nothing, and the caller moves on to another
 // drawing. Refusing to serve is the whole safety property.
 const strict = deriveRuleSet("one_on_one", [sampleFromAuthored(pool[0])!]);
-strict.rules.forEach(r => { r.invariant = true; });
+// `at` as well as `invariant`. A law used to mean "this measure must be
+// zero", so flipping every rule to invariant was enough to make the set
+// impossible. A law now holds at whatever value the drawings agree on — and
+// derived from ONE drawing, that value IS that drawing's, so "every rule is
+// a law" became "be exactly this picture", which the picture itself
+// satisfies. The set has to be made genuinely unreachable to still be
+// testing what it says it is.
+strict.rules.forEach(r => { r.invariant = true; r.at = -999; });
 ok(randomiseAuthored(pool[0], strict, mulberry32(7)) === null,
   "a rule set nothing can satisfy yields nothing, never a broken shape");
+
+// ── THE KEEPER'S DIALS, PER CHANCE KIND ─────────────────────────────────
+//
+// A tight angle's keeper and a one-on-one's keeper are different questions
+// with different answers, and the standing rule on this tool is that tuning
+// one highlight type must never move another. The dials used to be global.
+//
+// The number that prompted it, measured on the ten authored tight angles:
+// the keeper covers a median 0.11 of the way across to his near post, and
+// `buildTightAngle` cannot exceed 0.30 because it clamps him inside the
+// posts. Nothing is set here — this checks the mechanism, not a value.
+{
+  const ball = { x: CX + 10, y: 5 };
+  const drawn = { x: CX + 1.2, y: 1.8 };
+  const shares = { nearPost: 0.12, advance: 0.36 };
+  const share = (k: { x: number; y: number }) => (k.x - CX) / (ball.x - CX);
+
+  const asDrawn = placeKeeper(ball, shares, drawn, "tight_angle");
+  ok(Math.abs(share(asDrawn) - 0.12) < 0.01,
+    `with nothing set, the drawing's own share is kept (${share(asDrawn).toFixed(3)})`);
+
+  KEEPER_TUNING_BY_KIND.tight_angle = { nearPost: 0.5 };
+  const tuned = placeKeeper(ball, shares, drawn, "tight_angle");
+  ok(Math.abs(share(tuned) - 0.5) < 0.01,
+    `a kind's own dial overrides the drawing (${share(tuned).toFixed(3)})`);
+
+  const other = placeKeeper(ball, shares, drawn, "one_on_one");
+  ok(Math.abs(share(other) - 0.12) < 0.01,
+    `ANOTHER kind is untouched by it (${share(other).toFixed(3)})`);
+
+  const unknown = placeKeeper(ball, shares, drawn);
+  ok(Math.abs(share(unknown) - 0.12) < 0.01,
+    `a caller that names no kind behaves as it did before (${share(unknown).toFixed(3)})`);
+
+  // The other dial moves on its own, and only its own.
+  KEEPER_TUNING_BY_KIND.tight_angle = { advance: 0.8 };
+  const advanced = placeKeeper(ball, shares, drawn, "tight_angle");
+  ok(Math.abs(share(advanced) - 0.12) < 0.01,
+    "setting how far he comes out leaves his near-post cover alone");
+  ok(advanced.y > drawn.y, `…and does move him off his line (${advanced.y.toFixed(2)}m)`);
+
+  delete KEEPER_TUNING_BY_KIND.tight_angle;
+  ok(Math.abs(share(placeKeeper(ball, shares, drawn, "tight_angle")) - 0.12) < 0.01,
+    "clearing a kind's dial puts the drawing's own share back");
+}
 
 // ── ONE BAD DRAWING MUST NOT TAKE THE RULES DOWN WITH IT ──────────────────
 //
@@ -400,6 +454,81 @@ ok(lines.slice(0, inv.length).every(l => l.startsWith("ALWAYS")), "invariants ar
 ok(!lines.some(l => /gkNearPost|gkAdvance/.test(l)), "the readout uses plain English, not ids");
 ok(lines.some(l => /near-post cover[^:]*: 0\.\d\d to 0\.\d\d/.test(l)),
   "a ratio reads as a ratio, not as metres");
+
+// ── THE GAME PLAYS THE COMMITTED DATASET, AND ONLY THAT ─────────────────
+// It used to add the browser's cached copy of the saved list on top, which
+// only a dev tool ever refreshed — so every device played a different set.
+// A drawing saved on this device must not reach the game; the dev tools,
+// which opt in, must see it.
+{
+  const mem = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => mem.get(k) ?? null,
+    setItem: (k: string, v: string) => { mem.set(k, String(v)); },
+    removeItem: (k: string) => { mem.delete(k); },
+    clear: () => mem.clear(),
+  };
+  const committedN = authoredPool("one_on_one").length;
+  const donor = AUTHORED_SCENARIOS[Object.keys(AUTHORED_SCENARIOS)[0]];
+  saveScenario({ ...donor, id: "gallery-saved-not-committed", source: { ...donor.source!, kind: "one_on_one" } });
+
+  showSavedScenarios(false);
+  ok(authoredPool("one_on_one").length === committedN,
+    `the game ignores a drawing saved on this device (${authoredPool("one_on_one").length} = the ${committedN} committed)`);
+  showSavedScenarios(true);
+  ok(authoredPool("one_on_one").length === committedN + 1,
+    "a dev tool that opts in sees it");
+  showSavedScenarios(false);
+  delete (globalThis as { localStorage?: unknown }).localStorage;
+}
+
+// ── FIVE DRAWINGS BEFORE A KIND IS TAKEN OVER ───────────────────────────
+// One saved free kick used to serve 400 of 400 free kicks. Four copies of a
+// real drawing under a kind nobody has drawn: not enough, so the kind falls
+// through. A fifth: now it serves.
+{
+  const donor = AUTHORED_SCENARIOS[Object.keys(AUTHORED_SCENARIOS)[0]];
+  const fake = (i: number) => ({
+    ...donor, id: `min5-${i}`, updatedAt: i,
+    source: { ...(donor.source ?? { tool: "gallery" as const, seed: null }), kind: "corner" },
+  });
+  setLiveScenarioPool([0, 1, 2, 3].map(fake));
+  ok(nextAuthoredShape("corner", mulberry32(1)) === null,
+    "4 drawings of a kind are not enough — the game keeps building it procedurally");
+  setLiveScenarioPool([0, 1, 2, 3, 4].map(fake));
+  ok(nextAuthoredShape("corner", mulberry32(1)) !== null,
+    "the 5th drawing is the one that switches the kind over");
+  setLiveScenarioPool(null);
+}
+
+// ── THE CHANCE AS PLAYED, not the shape ─────────────────────────────────
+//
+// Every check above looks at the SHAPE — the drawing plus its nudge — and the
+// shape obeyed its laws 100% of the time. The chance a player actually got
+// broke one 19.8% of the time for one-on-ones, because the engine often
+// builds more figures than a drawing has and the leftovers stayed where the
+// procedural builder put them, unchecked. Measuring the wrong thing is how it
+// survived. So this measures the right one: build the chance the way the
+// match does, lay a drawing over it, and judge the LIVE scenario.
+for (const liveKind of ["one_on_one", "tight_angle"] as const) {
+  const liveSet = ruleSetFor(liveKind);
+  if (!liveSet || !liveSet.rules.some((r) => r.invariant)) continue;
+  const recentLive: string[] = [];
+  let playedN = 0, playedBroken = 0;
+  for (let t = 0; t < 600; t++) {
+    const r = mulberry32(70000 + t);
+    const live = buildScenario(liveKind as never, r, 70, 60, 55);
+    const sh = nextAuthoredShape(liveKind, r, recentLive);
+    if (!sh) continue;
+    recentLive.push(sh.sourceId); if (recentLive.length > 3) recentLive.shift();
+    applyAuthoredShape(live, sh);
+    playedN++;
+    if (violations(sampleFromScenario(live), liveSet).length) playedBroken++;
+  }
+  ok(playedN > 0, `${liveKind}: chances were actually served (${playedN})`);
+  ok(playedBroken === 0,
+    `${liveKind}: every chance AS PLAYED obeys its laws, leftovers included (${playedBroken} of ${playedN} broke one)`);
+}
 
 console.log(`authoredChance: jitter ${JITTER_M}m, ${pool.length} drawings, ${served} draws`);
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }

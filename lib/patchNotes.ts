@@ -78,7 +78,7 @@ export interface PatchItem {
   /**
    * Names a hand-built visual that belongs with this item — a diagram, or a
    * small thing you can press. The shareable artifact looks the name up in
-   * scripts/patchNotesDemos.ts and drops it in under the item; the archive
+   * lib/patchNotesDemos.ts and drops it in under the item; the archive
    * here ignores it.
    *
    * Why they live outside this file: an interactive demo is markup and

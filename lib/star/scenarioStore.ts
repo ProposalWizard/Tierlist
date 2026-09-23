@@ -32,6 +32,29 @@ import type { MatchScenario } from "./scenarios";
  */
 
 const KEY = "star-scenarios-v1";
+/**
+ * Ids saved on THIS device that the server has not yet confirmed.
+ *
+ * The one thing a mirror must not throw away: a save made offline, or one the
+ * server refused. Everything else in the cache is just a copy of the server
+ * and is replaced by it on every sync — which is what lets a delete made on
+ * one device finally reach every other device.
+ */
+const PENDING_KEY = "star-scenarios-pending-v1";
+
+function readPending(): Set<string> {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writePending(ids: Set<string>): void {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(Array.from(ids))); } catch { /* cache only */ }
+}
 const ENDPOINT = "/api/star/scenarios";
 
 type Store = Record<string, MatchScenario>;
@@ -123,22 +146,25 @@ export interface SyncResult {
 }
 
 /**
- * Pull every shared scenario down and MERGE it into the local cache — the
- * server's copy of an id wins where both exist, but an id the server does
- * not have (yet) is left exactly as it was here, never deleted.
+ * Pull every shared scenario down and make this browser's cache a MIRROR of
+ * the server — plus any save made here that the server never confirmed.
  *
- * Merge rather than replace, for the reason lineupStore.ts's own
- * `fetchSharedLineups` had to be changed to: run right after the table is
- * first created, with nothing in it, a REPLACE would wipe the one and only
- * copy of every scenario — which had been sitting safely in localStorage
- * the whole time — on every device, before any of it was ever pushed up. A
- * sync must never be able to make things WORSE than not syncing at all.
+ * It used to MERGE: the server's copy won where both existed, but anything
+ * the server did not have was "left exactly as it was here, never deleted".
+ * That was right once — the first sync after the table was created would
+ * otherwise have wiped the only copy of every scenario — and it had a cost
+ * nobody saw: a delete only ever cleared the device that made it. Deleted on
+ * one laptop, a scenario lived on in every other browser that had ever seen
+ * it, kept showing as Saved there, and the next Commit all from that browser
+ * wrote it straight back into the code. Asked for directly: "for anything
+ * that's deleted or anything that's solo to one person's browser... make it
+ * the same across everyone's browser."
  *
- * Because a merge cannot express a removal, `deleteScenarioShared` clears
- * the local copy itself.
- *
- * Fire this at load, fire-and-forget, the same way the career's own squad
- * fetches are — the synchronous reads above keep working either way.
+ * The first-sync danger is still covered, just precisely instead of by never
+ * deleting: a failed fetch, and a server that says its table does not exist
+ * yet, both leave the cache exactly as it was. And a save that never reached
+ * the server is kept — it is the one thing here that is not a copy of
+ * anything (see PENDING_KEY).
  */
 export async function fetchSharedScenarios(): Promise<SyncResult & { scenarios?: MatchScenario[] }> {
   let res: Response;
@@ -163,10 +189,26 @@ export async function fetchSharedScenarios(): Promise<SyncResult & { scenarios?:
       if (isMatchScenario(s)) incoming[id] = normaliseScenarioCamera(s);
     }
   }
-  write({ ...read(), ...incoming });
+  if (data.migrationMissing === true) {
+    // No table yet means nothing to mirror — never mistake it for "empty".
+    return { ok: true, migrationMissing: true, message: data.message, scenarios: listScenarios() };
+  }
+  const local = read();
+  const pending = readPending();
+  const next: Store = { ...incoming };
+  for (const id of Array.from(pending)) {
+    const mine = local[id];
+    const theirs = incoming[id];
+    // Keep a local save the server never confirmed — unless the server has
+    // since caught up with it (same edit or newer), in which case it is not
+    // pending any more.
+    if (mine && (!theirs || (mine.updatedAt ?? 0) > (theirs.updatedAt ?? 0))) next[id] = mine;
+    else pending.delete(id);
+  }
+  write(next);
+  writePending(pending);
   return {
     ok: true,
-    migrationMissing: data.migrationMissing === true,
     message: data.message,
     scenarios: listScenarios(),
   };
@@ -184,6 +226,10 @@ export async function fetchSharedScenarios(): Promise<SyncResult & { scenarios?:
 export async function saveScenarioShared(scenario: MatchScenario): Promise<SyncResult> {
   const stamped: MatchScenario = { ...scenario, updatedAt: Date.now() };
   saveScenario(stamped);
+  // Pending until the server says otherwise — see PENDING_KEY.
+  const pending = readPending();
+  pending.add(stamped.id);
+  writePending(pending);
 
   let res: Response;
   try {
@@ -203,6 +249,9 @@ export async function saveScenarioShared(scenario: MatchScenario): Promise<SyncR
       message: body.error ?? `Server refused the save (${res.status}).`,
     };
   }
+  const confirmed = readPending();
+  confirmed.delete(stamped.id);
+  writePending(confirmed);
   return { ok: true };
 }
 
@@ -231,5 +280,8 @@ export async function deleteScenarioShared(id: string): Promise<SyncResult> {
     };
   }
   deleteScenario(id);
+  const pending = readPending();
+  pending.delete(id);
+  writePending(pending);
   return { ok: true };
 }

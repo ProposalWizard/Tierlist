@@ -319,6 +319,10 @@ export interface OwnedClubState {
   formation?: string;
   isPresident?: boolean;
   presidentWage?: number;
+  /** The talisman tactic — see clubPowers.ts's `setTalisman`. Only ever
+   *  reaches the match engine while `CareerState.player.club === this club`;
+   *  it stays recorded here even if you later move elsewhere, harmlessly. */
+  talisman?: boolean;
   /** Set once this club has been absorbed into another via a merger — its
    *  own investable/governable identity ends here, but it is deliberately
    *  NOT removed from the world (clubs.ts's fixed lists, the ladder's fixed

@@ -52,6 +52,38 @@ const TC = {
   boot: "#1f2937",
 };
 
+/**
+ * WHO IS WHO, THE SAME COLOUR EVERYWHERE.
+ *
+ * Reported directly: "game engine or nature or physics or style or whatever
+ * is for some reason different across trial, training, and in game... its
+ * similar sure but its not consistent or the same." A real, found instance
+ * of exactly that: `CanvasMatch.tsx` and `trainingRender.ts` had each
+ * independently hardcoded the identical you/mate/opp/gk values below — real
+ * agreement, but by coincidence, not by a shared source — while the trial's
+ * own `YOU_KIT`/`MATE_KIT`/`KIT`/`OPP` (TrialPenalties.tsx, TrialVision.tsx)
+ * had drifted to different colours entirely (near-white for you, light grey
+ * for a team-mate, dark blue for an opponent — the same blue the real match
+ * uses for a TEAM-MATE). One player in green, red for the opposition, gold
+ * for a keeper is the whole visual language this game uses to say "whose
+ * man is that" at a glance; a trial or a drill that answers it differently
+ * is teaching the wrong thing before the answer even matters.
+ *
+ * One export, every consumer (CanvasMatch.tsx, trainingRender.ts,
+ * TrialPenalties.tsx, TrialVision.tsx) reads from here now instead of
+ * keeping its own copy — a colour changed once reaches all four.
+ */
+export const ROLE_KIT = {
+  you: "#10b981",
+  youRim: "#065f46",
+  mate: "#3b82f6",
+  mateRim: "#1e3a5f",
+  opp: "#dc2626",
+  oppRim: "#7f1d1d",
+  gk: "#fbbf24",
+  gkRim: "#92400e",
+};
+
 const GRASS_TILE = 96;
 let grassTile: HTMLCanvasElement | null | undefined;
 
@@ -555,6 +587,81 @@ export interface BodyPose {
   armLead?: number;
 }
 
+/**
+ * A FIGURE'S MOTION, THE SAME WAY EVERYWHERE.
+ *
+ * Reported directly: "game engine or nature or physics or style or whatever
+ * is for some reason different across trial, training, and in game... it
+ * seems like youve completely recreated and copied and made an entirely
+ * different game." One real, measured piece of that: only `CanvasMatch.tsx`
+ * ever animated a figure at all — every `drawFigure` call in the trial and
+ * in training left `BodyPose` at its all-zero default (see that interface's
+ * own `legSwing` doc above, "the still figure the trial and the five-a-side
+ * already draw"), so every wall, every team-mate, every taker stood in a
+ * fixed idle stance while only the real match's men visibly ran and struck
+ * the ball. Only the keeper animated everywhere, because his dive already
+ * read real engine state (`KeeperPose`) rather than a locally-invented pose.
+ *
+ * `FigurePose`/`runPhase`/`poseFor`/`bodyPoseFor` are CanvasMatch.tsx's own
+ * real-match animation — a continuous per-entity running sine and a flat
+ * kick window — pulled out to here so a drill or a trial stage can give its
+ * own figures the same running/kicking motion instead of reinventing it,
+ * and so CanvasMatch.tsx itself now reads from here too rather than keeping
+ * a second copy that could drift from what every other screen calls.
+ */
+export type FigurePose = "idle" | "run" | "kick" | "receive";
+
+/** A per-entity phase for the running sine below, offset by the entity's own
+ *  position so a crowd of figures does not march in lockstep. `now` is
+ *  `performance.now() / 1000`, read ONCE per frame by the caller and shared
+ *  across every figure that frame — not re-read per figure. */
+export function runPhase(now: number, seedX: number): number {
+  return now * 9 + seedX * 1.7;
+}
+
+/**
+ * Whether a figure is moving, derived from how far it actually travelled
+ * since the last frame — cheaper and more reliable than threading a real
+ * velocity out of every entity, and it works for the ones (a static wall
+ * man, a taker before he runs up) that only ever expose a position.
+ *
+ * `motion` is a plain `Map` the CALLER owns (typically one `useRef(new
+ * Map())` per component/screen) and passes in every call — this function
+ * only reads and updates it, so several independent screens (a real match,
+ * a trial stage, a training drill) never share or clash over one map.
+ */
+export function poseFor(
+  motion: Map<string, { x: number; y: number }>,
+  id: string, x: number, y: number,
+): FigurePose {
+  const prev = motion.get(id);
+  motion.set(id, { x, y });
+  if (!prev) return "idle";
+  return Math.hypot(x - prev.x, y - prev.y) > 0.02 ? "run" : "idle";
+}
+
+/**
+ * A `FigurePose` (running/kicking/idle) turned into the limb numbers
+ * `paintBody` actually reads — the exact mapping `CanvasMatch.tsx`'s own
+ * `footballer()` always used: running scissors the legs on a sine and
+ * counter-swings the arms, a kick throws one leg through with the arms out
+ * for balance, a man waiting to receive opens his arms, and idle is the
+ * still figure every screen already drew.
+ */
+export function bodyPoseFor(
+  pose: FigurePose, phase: number,
+): Pick<BodyPose, "legSwing" | "kick" | "armSpread" | "armLift"> {
+  const swing = pose === "run" ? Math.sin(phase) : 0;
+  const kick = pose === "kick" ? 1 : 0;
+  const open = pose === "receive" ? 1 : 0;
+  return {
+    legSwing: swing,
+    kick,
+    armSpread: open * 0.5 + kick * 0.3,
+    armLift: -0.55 + open * 0.5,
+  };
+}
+
 function paintBody(
   ctx: CanvasRenderingContext2D, r: number, look: FigureLook,
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
@@ -691,15 +798,23 @@ function paintBody(
 export function drawFigure(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, look: FigureLook,
   faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+  /** A running/kicking limb pose (see `bodyPoseFor`) and/or a facing
+   *  rotation — optional, additive: every call site that omits this argument
+   *  behaves exactly as before (the still, all-zero-pose figure). `scale`
+   *  multiplies the base radius — pass `MATCH_SCALE` to draw at the real
+   *  match's own size; omitted, the figure is unchanged from before. */
+  opts?: { pose?: BodyPose; facing?: number; scale?: number },
 ): void {
   const { px, py, unit } = p;
-  const r = Math.max(7, unit * FIGURE_R);
+  const r = Math.max(7, unit * FIGURE_R * (opts?.scale ?? 1));
   const lift = Math.max(0, look.lift ?? 0);
   drawFigureAt(ctx, px(at.x), py(at.y) + r * FEET_Y, r, look, faceStyle, fakeFaceStyle, {
     liftPx: lift * unit * 0.55,
     shadowR: r * 0.34 * (1 - Math.min(0.35, lift * 0.12)),
     label: look.label,
     star: look.star,
+    pose: opts?.pose,
+    facing: opts?.facing,
   });
 }
 
@@ -744,6 +859,32 @@ export function figureRForHeight(heightPx: number): number {
  * which is the whole reason they diverged in the first place.
  */
 export const MATCH_FIGURE_HEIGHT_R = 2.509;
+
+/**
+ * CanvasMatch.tsx's own outfield base-radius multiplier — was a private
+ * `const R = unit * 1.15` there; exported here so it is one real number
+ * instead of two, and CanvasMatch itself now reads it from here.
+ */
+export const MATCH_FIGURE_R_MULT = 1.15;
+
+/**
+ * HOW MUCH BIGGER THE MATCH DRAWS A FIGURE THAN THE SHARED ANATOMY DOES ON
+ * ITS OWN, at the same camera `unit` (px per metre) — the real, measured
+ * ~2x gap behind "it seems like an entirely different game": a match figure
+ * came out 40px tall at real phone size against the trial's 20px, at
+ * cameras zoomed within 1.2% of each other.
+ *
+ * Derived, not a third hand-typed number: `drawFigure`'s own total drawn
+ * height is `unit * FIGURE_R * FIGURE_HEIGHT_R`; the match's is
+ * `unit * MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R` (see `footballer()`'s
+ * own `figureRForHeight(rBase * scale * MATCH_FIGURE_HEIGHT_R)` in
+ * CanvasMatch.tsx — an inverse-then-forward trick for "the r that reaches
+ * this many pixels tall", using the SAME shared anatomy both renderers
+ * already draw with). Passed as `drawFigure`/`drawKeeper`'s own `scale` opt
+ * so a trial or training figure reaches the match's real size without
+ * duplicating its anatomy or its R-multiplier trick.
+ */
+export const MATCH_SCALE = (MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R) / (FIGURE_R * FIGURE_HEIGHT_R);
 
 /**
  * Radians. A keeper at full stretch is horizontal. He is not upside down.
@@ -874,9 +1015,12 @@ export interface KeeperPose {
 export function drawKeeper(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, look: FigureLook,
   pose: KeeperPose, faceStyle: FaceStyle, fakeFaceStyle: FakeFaceStyle,
+  /** Same `scale` as `drawFigure` — pass `MATCH_SCALE` to match the real
+   *  match's own size. Omitted, the keeper is unchanged from before. */
+  opts?: { scale?: number },
 ): void {
   const { px, py, unit } = p;
-  const r = Math.max(7, unit * FIGURE_R);
+  const r = Math.max(7, unit * FIGURE_R * (opts?.scale ?? 1));
   drawKeeperAt(ctx, px(at.x), py(at.y) + r * FEET_Y, r, look, pose, faceStyle, fakeFaceStyle);
 }
 
@@ -931,6 +1075,10 @@ export const BALL_MIN_R = 6;
 
 export function drawBall(
   ctx: CanvasRenderingContext2D, p: Projection, at: Vec2, z = 0,
+  /** Same `scale` as `drawFigure`/`drawKeeper` — pass `MATCH_SCALE` so the
+   *  ball stays in proportion once the figures around it are grown to the
+   *  real match's own size. Omitted, the ball is unchanged from before. */
+  scale = 1,
 ): void {
   const { px, py, unit } = p;
   const x = px(at.x), y = py(at.y);
@@ -950,7 +1098,7 @@ export function drawBall(
    * findable. This is the size the eye needs, not the size the laws of the
    * game specify.
    */
-  const r = Math.max(BALL_MIN_R, unit * BALL_R * 2.6 * (1 + z * 0.06));
+  const r = Math.max(BALL_MIN_R, unit * BALL_R * 2.6 * (1 + z * 0.06) * scale);
 
   // Its shadow stays on the grass while it climbs, which is the only thing
   // that makes height readable from directly above.
@@ -984,23 +1132,75 @@ export function drawBall(
   ctx.fill();
 }
 
-/** The aim arrow, while you are dragging back from the ball. */
+/**
+ * HOW LONG THE AIM ARROW IS DRAWN, as a fraction of the metres filling the
+ * canvas's height, at full power. CanvasMatch.tsx's own constant — every
+ * screen that draws a drag-to-aim arrow uses this exact number so a pull
+ * feels like the same length pull everywhere, never a screen's own guess.
+ */
+export const AIM_ARROW_LENGTH = 0.132;
+
+/**
+ * The aim arrow, while you are dragging back from the ball.
+ *
+ * Reported directly: five-a-side's own version was "not even an arrow, it's
+ * like a line you draw" — this used to be a plain translucent stroke with no
+ * head, no taper, no colour, while the match and the penalty/free-kick trial
+ * drew a real tapered orange arrow with a triangular head. Rebuilt here to be
+ * that same arrow, so every screen that calls this — the match, both
+ * striking trials, and five-a-side — draws byte-identical shapes rather than
+ * independent copies that drift. They already had: training's own copy of
+ * this arrow was still using the length this exact function used before
+ * `AIM_ARROW_LENGTH` was corrected from 0.11 to 0.132 — one screen's fix
+ * never reached the other two, which is the whole failure mode consolidating
+ * here exists to close off.
+ */
 export function drawAim(
   ctx: CanvasRenderingContext2D, p: Projection, from: Vec2, dir: Vec2, power: number,
 ): void {
-  const { px, py, unit } = p;
-  const len = unit * (3 + power * 9);
+  const { px, py, unit, W, H } = p;
   const n = Math.hypot(dir.x, dir.y) || 1;
-  const ex = px(from.x) + (dir.x / n) * len;
-  const ey = py(from.y) + (dir.y / n) * len;
-  ctx.strokeStyle = `rgba(255,255,255,${0.5 + power * 0.4})`;
-  ctx.lineWidth = Math.max(2, unit * 0.16);
+  // Metres of world-height the canvas shows — equivalent to a camera's own
+  // `y2 - y1`, since every one of these screens fills the canvas height with
+  // the camera's vertical span.
+  const heightSpan = H / unit;
+  const shown = power * heightSpan * AIM_ARROW_LENGTH;
+  const ax = px(from.x), ay = py(from.y);
+  const bx = px(from.x + (dir.x / n) * shown);
+  const by = py(from.y + (dir.y / n) * shown);
+
+  const ang = Math.atan2(by - ay, bx - ax);
+  const ux = Math.cos(ang), uy = Math.sin(ang);
+  const nx = -uy, ny = ux;
+  const arrowLen = Math.hypot(bx - ax, by - ay) || 1;
+  const headLen = Math.max(W * 0.02, Math.min(W * 0.045, arrowLen * 0.45));
+  const headHalf = W * 0.022;
+  const shaftW = W * 0.014;
+  const hbx = bx - ux * headLen, hby = by - uy * headLen;
+
+  const shaftGrad = ctx.createLinearGradient(ax, ay, bx, by);
+  shaftGrad.addColorStop(0, "#fb923c");
+  shaftGrad.addColorStop(1, "#ea580c");
+  ctx.strokeStyle = shaftGrad;
+  ctx.lineWidth = shaftW;
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(px(from.x), py(from.y));
-  ctx.lineTo(ex, ey);
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(hbx, hby);
   ctx.stroke();
   ctx.lineCap = "butt";
+
+  ctx.beginPath();
+  ctx.moveTo(bx, by);
+  ctx.lineTo(hbx + nx * headHalf, hby + ny * headHalf);
+  ctx.lineTo(hbx - nx * headHalf, hby - ny * headHalf);
+  ctx.closePath();
+  ctx.fillStyle = "#f97316";
+  ctx.fill();
+  ctx.lineJoin = "round";
+  ctx.lineWidth = Math.max(1, unit * 0.22);
+  ctx.strokeStyle = "rgba(124,45,18,0.6)";
+  ctx.stroke();
 }
 
 export { TC as FIVE_COLOURS, FIVE_HALFWAY_Y };

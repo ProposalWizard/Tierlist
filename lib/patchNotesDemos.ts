@@ -1,5 +1,5 @@
 /**
- * scripts/patchNotesDemos.ts
+ * lib/patchNotesDemos.ts
  *
  * The hand-built visuals that go with individual patch-note items in the
  * SHAREABLE ARTIFACT. lib/patchNotesData.ts names one with `demo: "<key>"`;
@@ -25,6 +25,28 @@
  * matching corrections make a proposal. The geometry, the odds and the
  * wording are a cartoon of that, chosen to be understood in ten seconds.
  */
+
+/**
+ * The colour tokens the demos draw with.
+ *
+ * The artifact already defines these for its whole page, so it never needs
+ * this. The archive at /admin/patch-notes does: it is a Tailwind page with
+ * hard-coded hex, no CSS variables, and it runs each demo inside its own
+ * frame — which starts with nothing. Dark only, because that page is.
+ */
+export const DEMO_TOKENS = `
+  :root{
+    --card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;
+    --r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:transparent;color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .demo{margin:0 !important}
+`;
 
 /* Shared look for every demo box. Emitted once, before the first demo. */
 export const DEMO_CSS = `

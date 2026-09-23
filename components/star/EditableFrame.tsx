@@ -25,6 +25,7 @@ import type { Vec2 } from "@/lib/star/canvasEngine";
 import { projectionFor } from "@/lib/star/fiveASide/render";
 import {
   frameCssSize,
+  type FrameSizing,
   paintMarked,
   HIT_FIGURE_R,
   HIT_BODY_UP,
@@ -34,7 +35,7 @@ import {
 import { applyOverride, ballFollowsYou, cloneOverride, type PosOverride } from "@/lib/star/scenarioEdit";
 
 export default function EditableFrame({
-  editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit,
+  editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit, size,
 }: {
   /** Which picture this is, handed straight back on commit. */
   editKey: string;
@@ -48,6 +49,8 @@ export default function EditableFrame({
   onSelect: (id: string | null) => void;
   /** A flick across empty grass — never across a figure, which is a drag. */
   onSwipe?: (dir: 1 | -1) => void;
+  /** Bigger box on a desktop, where the phone-sized default wastes the screen. */
+  size?: FrameSizing;
   /** Let the canvas shrink to a narrow phone rather than running off the
    *  side. The pointer maths already reads the real rect, so a scaled canvas
    *  still drags exactly. */
@@ -59,7 +62,7 @@ export default function EditableFrame({
   /** Where a press that grabbed NOTHING started, so it can become a swipe. */
   const swipeRef = useRef<{ x: number; y: number } | null>(null);
 
-  const { cssW, cssH } = frameCssSize(baseFrame);
+  const { cssW, cssH } = frameCssSize(baseFrame, size);
   const vp = baseFrame.camera;
 
   const effectiveOverride = (): PosOverride | undefined => workingRef.current ?? override;
@@ -73,7 +76,7 @@ export default function EditableFrame({
     // scenario, not the canvas), so the picture drops them and gets them back
     // the instant the drag commits. The selection ring stays — it is the thing
     // under your finger.
-    paintMarked(ref.current, frame, live ? ring : [...marks, ...ring]);
+    paintMarked(ref.current, frame, live ? ring : [...marks, ...ring], size);
     if (fit && ref.current) {
       ref.current.style.maxWidth = "100%";
       ref.current.style.height = "auto";

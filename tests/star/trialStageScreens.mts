@@ -13,6 +13,7 @@ import {
 import {
   buildPenaltyScenario, strikeCamera, AIM_ARROW_LENGTH, commitKeeperGuess,
   SETTLE_BEFORE_BANNER, ownSideBodies, takerSpot, keeperDive,
+  KICK_POSE_S, isTakerKicking,
 } from "../../components/star/stages/TrialPenalties";
 import {
   buildFreeKickScenario, freeKickView, freeKickWall,
@@ -918,6 +919,44 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
     sc.keeper.dive = 0;
     const d = keeperDive(sc.keeper);
     check(d.lunge === 0 && d.dive === 0, "an uncommitted keeper is drawn mid-dive");
+  }
+}
+
+// ── 11. THE TAKER ACTUALLY KICKS, AND ONLY WHILE HE IS KICKING ─────────────
+//
+// Reported directly: "it seems like youve completely recreated and copied
+// and made an entirely different game" — one measured piece of that was that
+// only CanvasMatch.tsx ever animated a figure at all; every taker on this
+// screen stood in the same still, idle stance whether he was lining up the
+// shot or had just struck it. `isTakerKicking`/`KICK_POSE_S` are the fix; this
+// pins both the pure decision and the pin against CanvasMatch.tsx's own value.
+{
+  // `flightTRef` reads 0 both before any kick this rep (aim/contact) and at
+  // the instant of one (the start of flight) — `undefined` is what tells
+  // them apart, so it must never read as "kicking".
+  check(isTakerKicking(undefined) === false,
+    "no kick has happened yet, but the taker would be drawn mid-kick");
+  check(isTakerKicking(0) === true, "the instant of the strike must show the kick");
+  check(isTakerKicking(KICK_POSE_S - 0.001) === true,
+    "a moment before the window closes must still show the kick");
+  check(isTakerKicking(KICK_POSE_S) === false,
+    "the window has to actually close, not run forever");
+  check(isTakerKicking(KICK_POSE_S + 0.5) === false,
+    "well after the strike, the taker must be back to his ordinary stance");
+
+  // Pinned against CanvasMatch.tsx's own `KICK_POSE_S`, not re-derived — the
+  // same reason `AIM_ARROW_LENGTH` above is pinned rather than guessed: the
+  // swing has to be the match's swing, held for the match's own length.
+  const match = readFileSync("components/star/CanvasMatch.tsx", "utf8");
+  const found = match.match(/const KICK_POSE_S\s*=\s*([0-9.]+)/);
+  check(found !== null,
+    "CanvasMatch still names its kick-pose duration KICK_POSE_S — "
+    + "if it has been renamed, re-point the trial's own pin at it by hand");
+  if (found) {
+    const theirs = Number(found[1]);
+    check(Math.abs(theirs - KICK_POSE_S) < 1e-9,
+      `the trial's kick pose must last as long as the match's: the trial holds it `
+      + `${KICK_POSE_S}s and the match now holds it ${theirs}s. Follow it.`);
   }
 }
 

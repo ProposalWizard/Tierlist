@@ -5,6 +5,7 @@ import { getTuning } from "@/lib/star/tuningStore";
 import { mulberry32 } from "@/lib/star/season";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepBallInNet,
+  dragForFullPower,
   type Ball, type Outcome, type Scenario,
 } from "@/lib/star/canvasEngine";
 import {
@@ -19,6 +20,10 @@ import {
 import {
   renderTrainingScene, strikeViewport, gateViewport, type TrainingViewport,
 } from "@/lib/star/trainingRender";
+import { poseFor, runPhase, bodyPoseFor } from "@/lib/star/fiveASide/render";
+import { KICK_POSE_S, isTakerKicking } from "@/components/star/stages/TrialPenalties";
+import { createFaceImageCache } from "@/lib/star/faceImageCache";
+import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import ContactBall from "./ContactBall";
 
 /**
@@ -92,8 +97,18 @@ const SKILL_TITLES: Record<keyof Skills, string> = {
 };
 
 const DT_CAP = 0.05;
-const MIN_PULL = 0.04;
-const FULL_POWER_PULL = 0.16;
+// Matches the real match and the trial exactly — both read this off the same
+// exported canvasEngine.ts function, dragForFullPower(skills.power), rather
+// than a flat number. Before this fix, training used a hardcoded 0.04/0.16
+// pair here — the identical shot took a genuinely different drag to pull off
+// in training than the same shot in a match or the trial, which is exactly
+// the "different game" divergence reported directly: "game engine or nature
+// or physics or style or whatever is for some reason different across trial,
+// training, and in game." MIN_PULL itself is pinned to the same 0.008 both
+// of those already use (each file keeps its own local copy of this one by
+// established convention here — see CanvasMatch.tsx/TrialPenalties.tsx's own
+// identically-valued local MIN_PULL — rather than a shared import).
+const MIN_PULL = 0.008;
 
 // ── Shared scoring ─────────────────────────────────────────────────────────
 
@@ -315,6 +330,10 @@ function StrikeDrill({
   const wrapRef = useRef<HTMLDivElement>(null);
   const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x5f3a) >>> 0));
   const ballImgRef = useRef<HTMLImageElement | null>(null);
+  // No real identity reaches a drill — a stable fake face per body instead
+  // of the blank backing circle it used to draw. See the `fake()` helper
+  // near each `renderTrainingScene` call in this file.
+  const facesRef = useRef(createFaceImageCache());
   const setupRef = useRef<StrikeSetup | null>(null);
   const ballRef = useRef<Ball | null>(null);
   const prevSampleRef = useRef<{ x: number; y: number; z: number } | null>(null);
@@ -325,6 +344,11 @@ function StrikeDrill({
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const draggingRef = useRef(false);
   const phaseRef = useRef<StrikePhase>("aim");
+  // Seconds since the strike — 0 at rep-start AND at the strike itself, so
+  // (as in TrialPenalties.tsx's identical `flightTRef`) it only means
+  // "just kicked" once the phase has actually left "aim"/"contact"; see the
+  // `struck` gate in `draw()` below.
+  const flightTRef = useRef(0);
 
   const [phase, setPhaseState] = useState<StrikePhase>("aim");
   const setPhase = (p: StrikePhase) => { phaseRef.current = p; setPhaseState(p); };
@@ -350,6 +374,7 @@ function StrikeDrill({
     resolvedRef.current = false;
     dragRef.current = null;
     draggingRef.current = false;
+    flightTRef.current = 0;
     setAim(null);
     setBrief(setup.brief);
     setPhase("aim");
@@ -372,7 +397,7 @@ function StrikeDrill({
     return Math.hypot(((drag.x - ball.x) / W) * (W / H), (drag.y - ball.y) / H);
   };
   const powerFrom = (drag: { x: number; y: number }, ball: { x: number; y: number }, vp: TrainingViewport) =>
-    Math.max(0, Math.min(1, screenPull(drag, ball, vp) / FULL_POWER_PULL));
+    Math.max(0, Math.min(1, screenPull(drag, ball, vp) / dragForFullPower(skills.power)));
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (phaseRef.current !== "aim") return;
@@ -411,6 +436,7 @@ function StrikeDrill({
       x: ballRef.current.pos.x, y: ballRef.current.pos.y, z: ballRef.current.z,
     };
     setAim(null);
+    flightTRef.current = 0;
     setPhase("flight");
   };
 
@@ -459,8 +485,16 @@ function StrikeDrill({
       const setup = setupRef.current;
       if (!setup) return;
 
-      if (phaseRef.current === "flight" && ballRef.current) {
+      if (phaseRef.current === "aim") {
+        // The keeper breathes and shifts his weight while you line the shot
+        // up, exactly as he does on the penalty/free-kick trial and the real
+        // match — reported directly as one of the ways this screen still
+        // reads as a different game. Without this he stood bolt upright and
+        // frozen for the whole aim phase, every rep, every drill.
+        stepKeeper(setup.scenario, dt);
+      } else if (phaseRef.current === "flight" && ballRef.current) {
         const ball = ballRef.current;
+        flightTRef.current += dt;
         if (ball.inNet) {
           stepBallInNet(ball, dt);
         } else if (!outcomeRef.current) {
@@ -512,9 +546,22 @@ function StrikeDrill({
           x: sc.keeper.x, y: sc.keeper.y,
           dive: Math.max(-1, Math.min(1, (sc.keeper.dive ?? 0) / 1.6)),
           lunge: sc.keeper.saveLunge ?? 0,
+          face: facesRef.current.get(fakeFaceFor("keeper")),
         },
-        defenders: sc.defenders.map(d => ({ x: d.x, y: d.y, z: d.z ?? 0 })),
-        you: { x: sc.player.x, y: sc.player.y },
+        defenders: sc.defenders.map((d, i) => ({
+          x: d.x, y: d.y, z: d.z ?? 0, face: facesRef.current.get(fakeFaceFor(`wall-${i}`)),
+        })),
+        // `flightTRef` reads 0 both before any kick this rep and at the
+        // instant of one — `struck` is what tells them apart, same gate as
+        // TrialPenalties.tsx's own `draw()` and for the identical reason.
+        you: {
+          x: sc.player.x, y: sc.player.y,
+          pose: isTakerKicking(
+            phaseRef.current === "flight" || phaseRef.current === "judged"
+              ? flightTRef.current : undefined,
+          ) ? bodyPoseFor("kick", 0) : undefined,
+          face: facesRef.current.get(fakeFaceFor("you")),
+        },
         gate: setup.gate,
         ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : { x: sc.ball.x, y: sc.ball.y, z: 0 },
         ballImage: ballImgRef.current,
@@ -581,9 +628,14 @@ function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: numb
   const runRef = useRef<DribbleState | null>(null);
   const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x1d7c) >>> 0));
   const ballImgRef = useRef<HTMLImageElement | null>(null);
+  const facesRef = useRef(createFaceImageCache());
   const liveRef = useRef(false);
   const resolvedRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Who moved since the last frame — CanvasMatch.tsx's own `motionRef`,
+  // read by `poseFor` so a run genuinely reads as a run here too, the same
+  // way its runners and chasers already do.
+  const motionRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [progress, setProgress] = useState(0);
 
@@ -663,11 +715,26 @@ function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: numb
 
       const c = canvasRef.current;
       if (c) {
+        // Read once and shared across every figure this frame — see
+        // `runPhase`'s own doc on why (a crowd must not march in lockstep,
+        // which re-reading `now` per figure would defeat).
+        const nowS = now / 1000;
+        const yourPose = poseFor(motionRef.current, "you", run.pos.x, run.pos.y);
         renderTrainingScene(c, {
           viewport: dribbleViewport(run),
           goal: false,
-          defenders: run.chasers.map(ch => ({ x: ch.x, y: ch.y, awake: ch.awake })),
-          you: { x: run.pos.x, y: run.pos.y },
+          defenders: run.chasers.map((ch, i) => {
+            const p = poseFor(motionRef.current, `chaser${i}`, ch.x, ch.y);
+            return {
+              x: ch.x, y: ch.y, awake: ch.awake, pose: bodyPoseFor(p, runPhase(nowS, ch.x)),
+              face: facesRef.current.get(fakeFaceFor(`chaser-${i}`)),
+            };
+          }),
+          you: {
+            x: run.pos.x, y: run.pos.y,
+            pose: bodyPoseFor(yourPose, runPhase(nowS, run.pos.x)),
+            face: facesRef.current.get(fakeFaceFor("you")),
+          },
           ball: { x: run.pos.x + run.heading.x * 0.9, y: run.pos.y + run.heading.y * 0.9, z: 0 },
           ballImage: ballImgRef.current,
           offsideLine: run.targetY,
@@ -799,6 +866,7 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x77c1) >>> 0));
+  const facesRef = useRef(createFaceImageCache());
   const [round, setRound] = useState<VisionRound | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [left, setLeft] = useState(1);
@@ -869,13 +937,16 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
       renderTrainingScene(c, {
         viewport: round.viewport,
         goal: false,
-        defenders: round.defenders,
+        defenders: round.defenders.map((d, i) => ({
+          ...d, face: facesRef.current.get(fakeFaceFor(`defender-${i}`)),
+        })),
         mates: round.mates.map((m, i) => ({
           x: m.x, y: m.y,
           highlight: answeredRef.current && i === round.best,
           dim: answeredRef.current && i !== round.best,
+          face: facesRef.current.get(fakeFaceFor(`mate-${i}`)),
         })),
-        you: { x: CX, y: round.viewport.y2 - 3 },
+        you: { x: CX, y: round.viewport.y2 - 3, face: facesRef.current.get(fakeFaceFor("you")) },
         ball: { x: CX, y: round.viewport.y2 - 2.2, z: 0 },
         offsideLine: round.line,
       });

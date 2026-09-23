@@ -9,6 +9,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
+import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import { FIVE_A_SIDE, type MatchRules } from "@/lib/star/fiveASide/rules";
 import {
   buildPassage, buildTheirAttack, aimTheirShot, worldFromTheirAttack,
@@ -28,6 +29,7 @@ import {
 import { passageQuality, summarise, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import {
   cameraFor, projectionFor, drawPitch, drawGoal, drawFigure, drawBall, drawAim,
+  ROLE_KIT, MATCH_SCALE, poseFor, runPhase, bodyPoseFor,
 } from "@/lib/star/fiveASide/render";
 import ContactBall from "./ContactBall";
 
@@ -215,16 +217,24 @@ export default function FiveASide({
   const faces = useRef(createFaceImageCache());
   const faceStyle = useRef(loadFaceStyle());
   const fakeFaceStyle = useRef(loadFakeFaceStyle());
+  // Real running/kicking pose, the same shared math the match and both
+  // striking trials use — see `poseFor`'s own doc on why this Map is a ref
+  // one screen owns rather than shared state.
+  const motionRef = useRef<Map<string, { x: number; y: number }>>(new Map());
 
   const [, forceRender] = useState(0);
   const [phase, setPhaseState] = useState<Phase>("flow");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   // A kit is a shirt and a trim; the shorts take the trim, which is what
-  // `kitsOf` already means by the pair and keeps a look one object.
+  // `kitsOf` already means by the pair and keeps a look one object. Default
+  // colours are ROLE_KIT's own you/opp — the same green/red every other
+  // screen in the game (match, both trials, training) uses for "you" and
+  // "them" — not this screen's own drifted near-white/navy, which never
+  // matched anywhere else and read as "a different game".
   const kit = (k: { shirt: string; trim: string }) => ({ shirt: k.shirt, trim: k.trim, shorts: k.trim });
-  const mine = kit(yourKit ?? { shirt: "#f8fafc", trim: "#0f172a" });
-  const theirs = kit(theirKit ?? { shirt: "#1e3a8a", trim: "#e2e8f0" });
+  const mine = kit(yourKit ?? { shirt: ROLE_KIT.you, trim: ROLE_KIT.youRim });
+  const theirs = kit(theirKit ?? { shirt: ROLE_KIT.opp, trim: ROLE_KIT.oppRim });
 
   /**
    * A five-a-side has no offside, and the engine's law is ON by default — a
@@ -595,10 +605,29 @@ export default function FiveASide({
     fire({ x: aim.dir.x * (vp.x2 - vp.x1), y: aim.dir.y * (vp.y2 - vp.y1) }, aim.power, contact);
   }, [fire]);
 
-  /** Fold YOUR finished touch into the match, then play on. */
+  /**
+   * Fold YOUR finished touch into the match, then play on.
+   *
+   * ── Never leave the match with nothing pending ──
+   *
+   * Reported directly: "when the other team gets the ball it just like
+   * freezes and essentially is stuck, i have to use dev tools to skip to get
+   * past." Every physics/state-machine path this screen drives was fuzzed
+   * directly (2,000 isolated their-attacks, 300 full simulated matches end to
+   * end) and none hung or threw — so the stuck state has to be a React-level
+   * ref falling out of sync with `phase` (a re-render tearing down and
+   * rebuilding the animation-frame effect mid-sequence is the one candidate
+   * that can't be reproduced outside a real browser). Whatever the exact
+   * trigger, the failure mode was always the same: `sc`/`ball` missing here
+   * used to just `return` and do nothing, forever — `pendingRef` was already
+   * cleared by the caller, so nothing would ever call this again. `obey()`
+   * re-reads what the match is actually waiting for and re-dispatches it —
+   * worst case a chance replays from scratch, which is a far better failure
+   * than a screen that needs a dev-only skip to escape.
+   */
   const resolveMine = useCallback((outcome: Outcome | "out") => {
     const sc = scRef.current, ball = ballRef.current;
-    if (!sc || !ball) return;
+    if (!sc || !ball) { obey(); return; }
 
     const crossX = outcome === "goal" || outcome === "wide" || outcome === "over" || outcome === "post"
       ? ball.pos.x : null;
@@ -618,10 +647,12 @@ export default function FiveASide({
     obey();
   }, [finish, obey, onProgress, rng, rules]);
 
-  /** Fold THEIR finished chance into the match, then play on. */
+  /** Fold THEIR finished chance into the match, then play on. See
+   *  `resolveMine`'s own doc for why a missing ref recovers via `obey()`
+   *  rather than silently doing nothing. */
   const resolveTheirs = useCallback((outcome: Outcome | "out") => {
     const their = theirRef.current, ball = ballRef.current;
-    if (!their || !ball) return;
+    if (!their || !ball) { obey(); return; }
     const world = worldFromTheirAttack(their.sc, ball.pos, their.from);
     const next = applyTheirAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
     matchRef.current = next;
@@ -631,10 +662,12 @@ export default function FiveASide({
   }, [finish, obey, onProgress, rng]);
 
   /** Fold a TEAM-MATE's finished chance into the match, then play on. Native —
-   *  the ball is in ordinary coordinates, so no mirror on the way back. */
+   *  the ball is in ordinary coordinates, so no mirror on the way back. See
+   *  `resolveMine`'s own doc for why a missing ref recovers via `obey()`
+   *  rather than silently doing nothing. */
   const resolveMate = useCallback((outcome: Outcome | "out") => {
     const mate = mateRef.current, ball = ballRef.current;
-    if (!mate || !ball) return;
+    if (!mate || !ball) { obey(); return; }
     const world = worldFromMateAttack(mate.sc, ball.pos, mate.from);
     const next = applyMateAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
     matchRef.current = next;
@@ -792,12 +825,33 @@ export default function FiveASide({
     drawGoal(ctx, rules, p, rules.pitch.y1);
     drawGoal(ctx, rules, p, rules.pitch.y2);
 
-    const face = (id?: string) => (id ? faces.current.get(id) : undefined);
-    const fig = (at: Vec2, look: Parameters<typeof drawFigure>[3]) =>
-      drawFigure(ctx, p, at, look, faceStyle.current, fakeFaceStyle.current);
+    // Real running/kicking pose and a real match-sized scale — reported
+    // directly: this screen was "a clear giveaway that its not the same
+    // game", drawn at its own smaller size and never animated at all.
+    const nowS = performance.now() / 1000;
+    const fig = (id: string, at: Vec2, look: Parameters<typeof drawFigure>[3]) => {
+      const ps = poseFor(motionRef.current, id, at.x, at.y);
+      drawFigure(ctx, p, at, look, faceStyle.current, fakeFaceStyle.current, {
+        pose: bodyPoseFor(ps, runPhase(nowS, at.x)), scale: MATCH_SCALE,
+      });
+    };
+    // No `cast` reaches this screen from the trial (`FiveASideProps.cast` is
+    // never passed — see TrialSequence.tsx), so every figure here always
+    // fell through to no face at all: the blank backing circle. Reported
+    // directly: "i dont EVER wanna see a blank circle face, ALWAYS a fake
+    // face at least." A stable fake face per role, keyed by this match's own
+    // seed so a retried trial can show different faces without ever needing
+    // real identity data.
+    const face = (fallbackKey: string, id?: string) =>
+      faces.current.get(id ?? fakeFaceFor(`${seed}:${fallbackKey}`));
+    // Both keepers are on screen at once here, unlike every other screen in
+    // the game (always exactly one) — ROLE_KIT.gk for your own, so it at
+    // least matches the match/trial/training convention when it's genuinely
+    // yours, and a distinct away-keeper purple for theirs rather than the
+    // identical gold, which would make the two indistinguishable.
     const keeperLook = (theirs_: boolean) => theirs_
-      ? { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" }
-      : { shirt: "#34d399", shorts: "#065f46", trim: "#065f46" };
+      ? { shirt: "#7c3aed", shorts: "#4c1d95", trim: "#4c1d95" }
+      : { shirt: ROLE_KIT.gk, shorts: ROLE_KIT.gkRim, trim: ROLE_KIT.gkRim };
 
     if (!sc) {
       // Between touches: no engine picture at all, just the world as the
@@ -807,16 +861,20 @@ export default function FiveASide({
       // men — `assign` eases man i toward a slot, it never swaps two of them —
       // so the fourth man in blue is the same fourth man he was last touch.
       const w = shownRef.current;
-      w.opps.forEach((o, i) => fig(o, {
-        ...theirs, label: cast?.opps?.[i]?.shortName, face: face(cast?.opps?.[i]?.face),
+      w.opps.forEach((o, i) => fig(`opp-${i}`, o, {
+        ...theirs, label: cast?.opps?.[i]?.shortName, face: face(`opp-${i}`, cast?.opps?.[i]?.face),
       }));
-      fig(w.theirKeeper, { ...keeperLook(true), label: cast?.theirKeeper?.shortName, face: face(cast?.theirKeeper?.face) });
-      fig(w.yourKeeper, { ...keeperLook(false), label: cast?.yourKeeper?.shortName, face: face(cast?.yourKeeper?.face) });
-      w.mates.forEach((m, i) => fig(m, {
-        ...mine, label: cast?.mates?.[i]?.shortName, face: face(cast?.mates?.[i]?.face),
+      fig("their-keeper", w.theirKeeper, {
+        ...keeperLook(true), label: cast?.theirKeeper?.shortName, face: face("their-keeper", cast?.theirKeeper?.face),
+      });
+      fig("your-keeper", w.yourKeeper, {
+        ...keeperLook(false), label: cast?.yourKeeper?.shortName, face: face("your-keeper", cast?.yourKeeper?.face),
+      });
+      w.mates.forEach((m, i) => fig(`mate-${i}`, m, {
+        ...mine, label: cast?.mates?.[i]?.shortName, face: face(`mate-${i}`, cast?.mates?.[i]?.face),
       }));
-      fig(w.you, { ...mine, star: true, face: face(cast?.you?.face) });
-      drawBall(ctx, p, w.ball, 0);
+      fig("you", w.you, { ...mine, star: true, face: face("you", cast?.you?.face) });
+      drawBall(ctx, p, w.ball, 0, MATCH_SCALE);
       return;
     }
 
@@ -825,39 +883,45 @@ export default function FiveASide({
     if (watching) {
       // In their move the engine's `defenders` are YOUR men and its runners
       // are theirs; `sc.player` is the man on the ball, in their shirt.
-      for (const r of sc.secondaryRunners) fig(un(r.pos), { ...theirs, label: r.who?.shortName, face: face(r.who?.face) });
-      if (goalInView(sc.kind)) fig(un({ x: sc.follower.x, y: sc.follower.y }), { ...theirs });
-      fig(un(sc.player), { ...theirs });
-      fig(un({ x: sc.keeper.x, y: sc.keeper.y }), keeperLook(false));
-      fig(shownRef.current.theirKeeper, keeperLook(true));
-      for (const d of sc.defenders) fig(un({ x: d.x, y: d.y }), { ...mine });
+      sc.secondaryRunners.forEach((r, i) => fig(`runner-${i}`, un(r.pos), {
+        ...theirs, label: r.who?.shortName, face: face(`runner-${i}`, r.who?.face),
+      }));
+      if (goalInView(sc.kind)) {
+        fig("follower", un({ x: sc.follower.x, y: sc.follower.y }), { ...theirs, face: face("follower") });
+      }
+      fig("player", un(sc.player), { ...theirs, face: face("player") });
+      fig("your-keeper", un({ x: sc.keeper.x, y: sc.keeper.y }), { ...keeperLook(false), face: face("your-keeper") });
+      fig("their-keeper", shownRef.current.theirKeeper, { ...keeperLook(true), face: face("their-keeper") });
+      sc.defenders.forEach((d, i) => fig(`defender-${i}`, un({ x: d.x, y: d.y }), { ...mine, face: face(`defender-${i}`) }));
     } else {
-      for (const d of sc.defenders) {
-        fig({ x: d.x, y: d.y }, { ...theirs, label: d.who?.shortName, face: face(d.who?.face) });
-      }
-      fig({ x: sc.keeper.x, y: sc.keeper.y }, {
-        ...keeperLook(true), label: sc.keeper.who?.shortName, face: face(sc.keeper.who?.face),
+      sc.defenders.forEach((d, i) => {
+        fig(`defender-${i}`, { x: d.x, y: d.y }, {
+          ...theirs, label: d.who?.shortName, face: face(`defender-${i}`, d.who?.face),
+        });
       });
-      fig(matchRef.current.world.yourKeeper, keeperLook(false));
-      for (const r of sc.secondaryRunners) {
-        fig(r.pos, { ...mine, label: r.who?.shortName, face: face(r.who?.face) });
-      }
+      fig("their-keeper", { x: sc.keeper.x, y: sc.keeper.y }, {
+        ...keeperLook(true), label: sc.keeper.who?.shortName, face: face("their-keeper", sc.keeper.who?.face),
+      });
+      fig("your-keeper", matchRef.current.world.yourKeeper, { ...keeperLook(false), face: face("your-keeper") });
+      sc.secondaryRunners.forEach((r, i) => {
+        fig(`runner-${i}`, r.pos, { ...mine, label: r.who?.shortName, face: face(`runner-${i}`, r.who?.face) });
+      });
       // ── Only where he is a real man ──
       //
       // In a midfield passage the engine ignores the follower entirely and all
       // three of your outfielders are runners instead (see passage.ts).
       // Drawing him anyway put a STATIC DUPLICATE on the pitch.
       if (goalInView(sc.kind)) {
-        fig({ x: sc.follower.x, y: sc.follower.y }, {
-          ...mine, label: sc.follower.who?.shortName, face: face(sc.follower.who?.face),
+        fig("follower", { x: sc.follower.x, y: sc.follower.y }, {
+          ...mine, label: sc.follower.who?.shortName, face: face("follower", sc.follower.who?.face),
         });
       }
       // The star marks YOU. On a team-mate's watched chance the man on the ball
       // is a team-mate, not you, so it is drawn without the star.
-      fig(sc.player, { ...mine, star: !mateRef.current });
+      fig("player", sc.player, { ...mine, star: !mateRef.current, face: face("player") });
     }
 
-    drawBall(ctx, p, ballAt, ball ? ball.z : 0);
+    drawBall(ctx, p, ballAt, ball ? ball.z : 0, MATCH_SCALE);
 
     // ── The window, drawn where the eye already is ──
     //
