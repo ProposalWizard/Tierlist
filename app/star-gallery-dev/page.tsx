@@ -49,6 +49,7 @@ import {
   type SimSpec,
 } from "@/lib/star/gallerySim";
 import TuningPanel from "@/components/star/TuningPanel";
+import { showSavedScenarios } from "@/lib/star/authoredChance";
 import ScenarioEditor from "@/components/star/ScenarioEditor";
 import type { MatchScenario, ScenarioSide } from "@/lib/star/scenarios";
 import {
@@ -60,7 +61,7 @@ import {
 import { authoredScenarioList } from "@/lib/star/authoredScenarios";
 import { statusOf, pendingCommit } from "@/lib/star/scenarioStatus";
 import {
-  loadCorrections, saveCorrection, makeCorrection, proposalsFrom,
+  loadCorrections, saveCorrection, makeCorrection, proposalsFrom, fetchSharedCorrections,
   FAULT_LABEL, PROPOSAL_THRESHOLD, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import {
@@ -1056,6 +1057,16 @@ export default function StarGalleryDevPage() {
   // the same id still wins, same precedence the formula uses.
   const galleryPool = () => [...authoredScenarioList(), ...listScenarios()];
 
+  // The dev tools see the team's SAVED drawings as well as the committed
+  // ones, so Simulate and the rule set react to a save straight away. The
+  // game never opts in — it plays the committed dataset only. Switched off
+  // on the way out so a client-side hop to the Play Area can't carry it
+  // into a real match. See showSavedScenarios.
+  useEffect(() => {
+    showSavedScenarios(true);
+    return () => showSavedScenarios(false);
+  }, []);
+
   useEffect(() => {
     setSaved(indexGallery(galleryPool()));
     void fetchSharedScenarios().then((r) => {
@@ -1079,7 +1090,7 @@ export default function StarGalleryDevPage() {
     if (!res.ok) { flashFor(false, `Not saved — ${res.message}`); return; }
     setSaved((m) => ({ ...m, [cell.key]: scenario }));
     clearOverride(cell.key);
-    flashFor(true, "Saved — on every device.");
+    flashFor(true, "Saved for the team. It goes into the game when you commit it.");
   };
 
   const revertCell = async (cell: Cell): Promise<void> => {
@@ -1163,7 +1174,12 @@ export default function StarGalleryDevPage() {
    * that is safe.
    */
   const [corrections, setCorrections] = useState<Correction[]>([]);
-  useEffect(() => { setCorrections(loadCorrections()); }, []);
+  // This browser's copy first (instant), then the team's — see
+  // fetchSharedCorrections. Three people's corrections now add up.
+  useEffect(() => {
+    setCorrections(loadCorrections());
+    void fetchSharedCorrections().then((r) => setCorrections(r.corrections));
+  }, []);
   const proposals = useMemo(() => proposalsFrom(corrections), [corrections]);
 
   const tuneCell = (cell: Cell, edited: Frame): void => {
@@ -1181,7 +1197,7 @@ export default function StarGalleryDevPage() {
     const near = proposalsFrom([...corrections.filter((x) => x.id !== c.id), c])
       .find((pr) => pr.kind === cell.kind && c.faults.includes(pr.fault));
     flashFor(true, near
-      ? `Recorded — ${near.count} now agree. There is a rule to look at on the home screen.`
+      ? `Recorded — ${near.count} now agree. A rule is proposed — ask Claude in the terminal for the tuner proposals.`
       : `Recorded: ${FAULT_LABEL[c.faults[0]]}. It stays quiet until a few more agree.`);
   };
 
@@ -1842,7 +1858,7 @@ export default function StarGalleryDevPage() {
               background: tunes ? "rgba(167,139,250,0.14)" : "rgba(255,255,255,0.05)",
               border: `1px solid ${tunes ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.09)"}`,
             }}>
-              {tunes ? "Tuning the generator" : "Not tuning"}
+              {tunes ? "In the game" : "Not in the game yet"}
             </span>
           </div>
         );

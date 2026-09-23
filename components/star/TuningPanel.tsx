@@ -60,6 +60,9 @@ export interface Proposal {
   fault: string;
   rule: string;
   count: number;
+  value?: number;
+  range?: [number, number];
+  apply?: string;
 }
 
 export default function TuningPanel({
@@ -146,7 +149,7 @@ function CommitSection({
       <Card
         tint="56,189,248"
         title="Nothing waiting to be committed"
-        sub="Everything saved is already in the code. Save puts a scenario in the database, where it works for everyone straight away; Commit puts it in the code, where it survives anything happening to the database."
+        sub="Everything saved is already in the game. Save shares a drawing with the team in the gallery; Commit puts it in the game, for every player."
       />
     );
   }
@@ -156,7 +159,7 @@ function CommitSection({
     <Card
       tint="56,189,248"
       title={`${n} ${n === 1 ? "scenario is" : "scenarios are"} saved but not in the code`}
-      sub={`They already work everywhere and already tune the generator. Committing puts them in the code permanently \u2014 one commit, one deploy, all ${g}.`}
+      sub={`The team can see them in the gallery, but the game only plays committed drawings. Committing puts them in the game for every player \u2014 one commit, one deploy, all ${g}.`}
     >
       {/* ── THE LAST CHECK ──
           Asked for directly, twice: "maybe have it as a thing where you can
@@ -360,7 +363,7 @@ function ProposalsSection({
     <Card
       tint="167,139,250"
       title={`${proposals.length} ${proposals.length === 1 ? "rule" : "rules"} worth a look`}
-      sub={`From ${corrections.length} corrections. Nothing has been applied — these are what the corrections agree on, and each one only ever applies to its own chance kind.`}
+      sub={`From ${corrections.length} corrections across the team. Nothing is applied from here — to act on one, ask Claude in the terminal for the tuner proposals and say which to apply. Each one only ever applies to its own chance kind.`}
     >
       {proposals.map((pr) => (
         <div key={`${pr.kind}|${pr.fault}`} style={{
@@ -377,6 +380,12 @@ function ProposalsSection({
           <div style={{ fontSize: 11.5, color: "rgba(233,213,255,0.7)", marginTop: 3, lineHeight: 1.45 }}>
             {pr.count} corrections fixed {FAULT_LABEL[pr.fault as keyof typeof FAULT_LABEL] ?? pr.fault}
           </div>
+          {pr.value !== undefined && (
+            <div style={{ fontSize: 11.5, color: "#e9d5ff", marginTop: 3, lineHeight: 1.45 }}>
+              Everyone&apos;s drags agree on about <b>{pr.value.toFixed(2)}</b>
+              {pr.range && <> (they ranged {pr.range[0].toFixed(2)}–{pr.range[1].toFixed(2)})</>}
+            </div>
+          )}
           <button
             onClick={() => onShowKind(pr.kind)}
             style={{

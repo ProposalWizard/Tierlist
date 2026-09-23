@@ -35,7 +35,11 @@ ok(statusOf(undefined).tuning === false, "a draft does NOT feed the auto-tuner")
   const novel: MatchScenario = { ...real, id: "gallery-not-in-the-code-at-all" };
   const s = statusOf(novel);
   ok(s.state === "saved", "an id the code has never seen reads as saved-only");
-  ok(s.tuning === true, "…and it STILL feeds the auto-tuner — saving is enough");
+  // Deliberately changed: the game plays the committed dataset only, so a
+  // save alone no longer reaches it — it is the team's working set until
+  // it is committed. It used to be true, and that is why each device played
+  // a different set.
+  ok(s.tuning === false, "…and it is NOT in the game until it is committed");
 }
 
 // ── modified ─────────────────────────────────────────────────────────────

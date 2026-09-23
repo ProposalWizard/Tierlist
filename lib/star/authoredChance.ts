@@ -34,12 +34,12 @@
  */
 
 import { goalInView, type Scenario, type Vec2 } from "./canvasEngine";
-import { CX, GOAL_W } from "./pitch";
+import { CX, GOAL_W, PITCH_W, HALF_LEN } from "./pitch";
 import { AUTHORED_SCENARIOS } from "./authoredScenarios";
 import type { MatchScenario } from "./scenarios";
 import { listScenarios } from "./scenarioStore";
 import {
-  deriveRuleSet, sampleFromAuthored, violations,
+  deriveRuleSet, sampleFromAuthored, violations, MEASURES, MIN_SAMPLES_FOR_INVARIANT,
   type RuleSet, type ShapeSample,
 } from "./scenarioRules";
 
@@ -48,33 +48,46 @@ import {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * THE AUTO-TUNING, and why it needs nobody to remember anything.
+ * THE DATASET — one list, the same for every player on every device.
  *
  * Called out as the part that matters most: "the most important is the auto
  * tuning, once we get that down I can add as many as I want and the ruleset
- * should always adapt."
+ * should always adapt." It still adapts — the rule set is re-scanned off the
+ * pool every time it is asked for — but WHICH pool changed, for a reason
+ * that was felt in play before it was found in the code.
  *
- * So the pool is never handed in and never held. It is READ, at the moment
- * it is asked for, from the two places a scenario can actually live:
+ * THE GAME reads the committed file (`authoredScenarios.json`) and nothing
+ * else. It used to add the browser's own cached copy of the saved list on
+ * top, and the only thing that ever refreshed that cache was opening a dev
+ * tool — so each device played a different set, frozen at whenever that
+ * browser last visited the gallery. Reported directly: "That's why we're
+ * getting different highlights... 1v1 in-game should be playing off of its
+ * 21 1v1s." Now it does, on every device, for every player.
  *
- *   1. `authoredScenarios.json` — committed to the repo by the gallery's
- *      Commit to repo button. Survives anything that happens to the database.
- *   2. `scenarioStore.listScenarios()` — the browser's own copy of the live
- *      Supabase pool, kept current by the `fetchSharedScenarios()` every
- *      screen already fires at load, and written the instant a scenario is
- *      saved.
+ * THE DEV TOOLS (the gallery, Infinite Highlights) additionally see the
+ * team's SAVED drawings, so Simulate and the rule set react to a save the
+ * moment it is made. They opt in with `showSavedScenarios(true)`; the game
+ * never does. The saved list itself is identical for everyone — the sync
+ * mirrors the server rather than merging into whatever a browser had.
  *
- * Because (2) is read live, saving a scenario in the gallery changes the rule
- * set for the very next chance — no deploy, no commit, no restart, and
- * nothing for anyone to wire up. Delete one and it stops counting just as
- * fast. On the server (and in tests) `listScenarios()` safely returns nothing,
- * so the repo file alone is the pool there.
+ * So: Save = the team's shared working set, visible in the dev tools.
+ * Commit = in the game.
  */
 const POST_L = CX - GOAL_W / 2;
 const POST_R = CX + GOAL_W / 2;
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 let injectedPool: MatchScenario[] | null = null;
+/** Off by default, so the game — which never touches it — reads only the
+ *  committed file. See the dataset note above. */
+let savedVisible = false;
+
+/** A dev tool's opt-in to the team's saved drawings. Turn it off again on
+ *  the way out: this is module state, and a client-side navigation from the
+ *  gallery to the Play Area must not carry it into a real match. */
+export function showSavedScenarios(on: boolean): void {
+  savedVisible = on;
+}
 
 /** Force the live half of the pool. Only for tests and for a screen that
  *  wants to preview a rule set against a set it has not saved yet — pass
@@ -85,6 +98,7 @@ export function setLiveScenarioPool(list: MatchScenario[] | null): void {
 
 function livePool(): MatchScenario[] {
   if (injectedPool) return injectedPool;
+  if (!savedVisible) return [];
   try {
     return listScenarios();
   } catch {
@@ -132,8 +146,11 @@ export function ruleSetFor(kind: string): RuleSet | null {
   return set;
 }
 
+/** Does the game actually serve drawings for this kind yet? Five readable
+ *  ones, the same bar as `nextAuthoredShape` — not merely "one exists". */
 export function hasAuthored(kind: string): boolean {
-  return authoredPool(kind).length > 0;
+  const set = ruleSetFor(kind);
+  return !!set && set.n >= MIN_SAMPLES_FOR_INVARIANT;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -366,7 +383,15 @@ export function nextAuthoredShape(
 ): AuthoredShape | null {
   const set = ruleSetFor(kind);
   const pool = authoredPool(kind);
-  if (!set || !pool.length) return null;
+  // FIVE DRAWINGS BEFORE A KIND IS TAKEN OVER — the same bar a law needs.
+  //
+  // It used to be one. Measured: a single saved free kick served 400 of 400
+  // free kicks, every one a nudge of the same picture. A single drawing is
+  // not a dataset, and the rule set already refuses to call anything a law
+  // below five for exactly that reason; serving now agrees with it. Below
+  // five the kind falls straight through to the procedural builder, exactly
+  // as a kind with nothing drawn always has.
+  if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
   const fresh = pool.filter((s) => !recent.includes(s.id));
   const from = fresh.length ? fresh : pool;
   const base = stableKey === undefined
@@ -466,6 +491,10 @@ const mix32 = (n: number): number => {
  */
 export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   defendersPlaced: number; matesPlaced: number;
+  /** Leftover live figures moved because they broke a law — see below. */
+  relocated: number;
+  /** Leftover defenders taken out because no legal spot was found nearby. */
+  removed: number;
 } {
   sc.ball.x = shape.ball.x; sc.ball.y = shape.ball.y;
   sc.player.x = shape.you.x; sc.player.y = shape.you.y;
@@ -507,6 +536,8 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
     bodies[best].y = spot.y;
     matesPlaced++;
   }
+  const { relocated, removed } = legaliseLeftovers(sc, shape, takenD, takenM);
+
   // A runner's `to` is where he is RUNNING, not where he stands — left
   // alone, he would sprint back to a spot from the procedural build the
   // moment the ball is struck, undoing the placement on screen.
@@ -525,5 +556,101 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
     y1: shape.camera.centerY - half, y2: shape.camera.centerY + half,
   };
 
-  return { defendersPlaced, matesPlaced };
+  return { defendersPlaced, matesPlaced, relocated, removed };
+}
+
+/**
+ * THE LEFTOVER FIGURES — the part the laws never saw.
+ *
+ * Counts rarely match between a drawing and a live chance, and until this
+ * existed every live figure without a drawn spot simply stayed where the
+ * procedural builder had put him: around a ball that has since moved to
+ * wherever the drawing has it. The laws were only ever checked against the
+ * DRAWN figures, so nothing checked these.
+ *
+ * Measured on the 21 committed one-on-ones before this: the drawing obeyed
+ * its laws 100% of the time and the chance as actually played broke one
+ * 19.8% of the time — a defender nearer the goal than the ball, one between
+ * the ball and the goal, or a team-mate standing in your shot. 0% broken when
+ * every live figure had a drawn spot, 47% when one was left over. That is the
+ * whole cause, and it is exactly "the one-on-one doesn't look like a
+ * one-on-one".
+ *
+ * The fix touches ONLY a leftover figure, and only one that is actually
+ * breaking a law — a leftover standing somewhere legal is a real body the
+ * engine put somewhere sensible and is left exactly where it is. A breaking
+ * one is moved the SHORTEST distance that makes the picture legal: rings
+ * outward from where he stands, the first legal spot wins. A defender with no
+ * legal spot within reach is taken out; a team-mate never is, because he may
+ * be the pass target, the poacher or a support run and removing him changes
+ * what the chance is.
+ */
+const RELOCATE_RINGS_M = [1, 2, 3, 4, 5, 6, 8, 10];
+const RELOCATE_DIRS = 16;
+
+function legaliseLeftovers(
+  sc: Scenario, shape: AuthoredShape, takenD: Set<number>, takenM: Set<number>,
+): { relocated: number; removed: number } {
+  void shape;
+  const set = ruleSetFor(sc.kind);
+  if (!set || !set.rules.some((r) => r.invariant)) return { relocated: 0, removed: 0 };
+
+  // HOW FAR OFF, not how many laws. Two leftover defenders both goal-side
+  // break ONE law, "nobody nearer the goal than the ball: 2". Counting broken
+  // laws, parking either one alone still leaves it broken, so neither looked
+  // guilty and both were left — the last 0.6% of one-on-ones. Summing how far
+  // each law is from the value it holds at sees each of them as half of it.
+  const laws = set.rules.filter((r) => r.invariant);
+  const count = (): number => {
+    const sample = sampleFromScenario(sc);
+    let off = 0;
+    for (const r of laws) {
+      const m = MEASURES.find((x) => x.id === r.id);
+      const v = m ? m.of(sample) : NaN;
+      if (Number.isFinite(v)) off += Math.abs(v - r.at);
+    }
+    return off;
+  };
+  if (count() === 0) return { relocated: 0, removed: 0 };
+
+  let relocated = 0;
+  const bodies = mateBodiesOf(sc);
+  const leftovers: { p: Vec2; defIndex: number | null }[] = [];
+  sc.defenders.forEach((d, i) => { if (!takenD.has(i)) leftovers.push({ p: d, defIndex: i }); });
+  bodies.forEach((m, i) => { if (!takenM.has(i)) leftovers.push({ p: m, defIndex: null }); });
+
+  const doomed: number[] = [];
+  for (const lf of leftovers) {
+    const before = count();
+    if (before === 0) break;
+    // Does THIS figure contribute? Park him where no law can see him and
+    // see if it helps. FAR UP THE PITCH, not "far away": every law here is
+    // about the space between the ball and the goal, and a first version
+    // parked him at (-500, -500) — beyond the goal line, which is the most
+    // goal-side spot there is. That made "nobody nearer the goal than the
+    // ball" worse, so a real offender read as innocent and 13.8% of
+    // one-on-ones still broke a law.
+    const home = { x: lf.p.x, y: lf.p.y };
+    lf.p.x = -500; lf.p.y = 2000;
+    const without = count();
+    lf.p.x = home.x; lf.p.y = home.y;
+    if (without >= before) continue;           // he isn't the problem
+
+    let moved = false;
+    search: for (const r of RELOCATE_RINGS_M) {
+      for (let k = 0; k < RELOCATE_DIRS; k++) {
+        const a = (k / RELOCATE_DIRS) * Math.PI * 2;
+        const x = home.x + Math.cos(a) * r, y = home.y + Math.sin(a) * r;
+        if (x < 1 || x > PITCH_W - 1 || y < 0.5 || y > HALF_LEN * 2) continue;
+        lf.p.x = x; lf.p.y = y;
+        if (count() <= without) { moved = true; break search; }
+      }
+    }
+    if (moved) { relocated++; continue; }
+    lf.p.x = home.x; lf.p.y = home.y;
+    if (lf.defIndex !== null) doomed.push(lf.defIndex);
+  }
+  // Highest index first so an earlier removal never shifts a later one.
+  doomed.sort((a, b) => b - a).forEach((i) => sc.defenders.splice(i, 1));
+  return { relocated, removed: doomed.length };
 }

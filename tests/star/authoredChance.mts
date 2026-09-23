@@ -16,8 +16,9 @@ import {
 import {
   authoredPool, ruleSetFor, nextAuthoredShape, randomiseAuthored,
   setLiveScenarioPool, applyAuthoredShape, sampleFromScenario, JITTER_M,
-  KEEPER_TUNING, KEEPER_TUNING_BY_KIND, placeKeeper,
+  KEEPER_TUNING, KEEPER_TUNING_BY_KIND, placeKeeper, showSavedScenarios,
 } from "@/lib/star/authoredChance";
+import { saveScenario } from "@/lib/star/scenarioStore";
 import { buildScenario } from "@/lib/star/canvasEngine";
 import { fixBaseScenario, offsideLineOf, scenarioFaults } from "@/lib/star/baseScenario";
 import { mulberry32 } from "@/lib/star/season";
@@ -453,6 +454,81 @@ ok(lines.slice(0, inv.length).every(l => l.startsWith("ALWAYS")), "invariants ar
 ok(!lines.some(l => /gkNearPost|gkAdvance/.test(l)), "the readout uses plain English, not ids");
 ok(lines.some(l => /near-post cover[^:]*: 0\.\d\d to 0\.\d\d/.test(l)),
   "a ratio reads as a ratio, not as metres");
+
+// ── THE GAME PLAYS THE COMMITTED DATASET, AND ONLY THAT ─────────────────
+// It used to add the browser's cached copy of the saved list on top, which
+// only a dev tool ever refreshed — so every device played a different set.
+// A drawing saved on this device must not reach the game; the dev tools,
+// which opt in, must see it.
+{
+  const mem = new Map<string, string>();
+  (globalThis as { localStorage?: unknown }).localStorage = {
+    getItem: (k: string) => mem.get(k) ?? null,
+    setItem: (k: string, v: string) => { mem.set(k, String(v)); },
+    removeItem: (k: string) => { mem.delete(k); },
+    clear: () => mem.clear(),
+  };
+  const committedN = authoredPool("one_on_one").length;
+  const donor = AUTHORED_SCENARIOS[Object.keys(AUTHORED_SCENARIOS)[0]];
+  saveScenario({ ...donor, id: "gallery-saved-not-committed", source: { ...donor.source!, kind: "one_on_one" } });
+
+  showSavedScenarios(false);
+  ok(authoredPool("one_on_one").length === committedN,
+    `the game ignores a drawing saved on this device (${authoredPool("one_on_one").length} = the ${committedN} committed)`);
+  showSavedScenarios(true);
+  ok(authoredPool("one_on_one").length === committedN + 1,
+    "a dev tool that opts in sees it");
+  showSavedScenarios(false);
+  delete (globalThis as { localStorage?: unknown }).localStorage;
+}
+
+// ── FIVE DRAWINGS BEFORE A KIND IS TAKEN OVER ───────────────────────────
+// One saved free kick used to serve 400 of 400 free kicks. Four copies of a
+// real drawing under a kind nobody has drawn: not enough, so the kind falls
+// through. A fifth: now it serves.
+{
+  const donor = AUTHORED_SCENARIOS[Object.keys(AUTHORED_SCENARIOS)[0]];
+  const fake = (i: number) => ({
+    ...donor, id: `min5-${i}`, updatedAt: i,
+    source: { ...(donor.source ?? { tool: "gallery" as const, seed: null }), kind: "corner" },
+  });
+  setLiveScenarioPool([0, 1, 2, 3].map(fake));
+  ok(nextAuthoredShape("corner", mulberry32(1)) === null,
+    "4 drawings of a kind are not enough — the game keeps building it procedurally");
+  setLiveScenarioPool([0, 1, 2, 3, 4].map(fake));
+  ok(nextAuthoredShape("corner", mulberry32(1)) !== null,
+    "the 5th drawing is the one that switches the kind over");
+  setLiveScenarioPool(null);
+}
+
+// ── THE CHANCE AS PLAYED, not the shape ─────────────────────────────────
+//
+// Every check above looks at the SHAPE — the drawing plus its nudge — and the
+// shape obeyed its laws 100% of the time. The chance a player actually got
+// broke one 19.8% of the time for one-on-ones, because the engine often
+// builds more figures than a drawing has and the leftovers stayed where the
+// procedural builder put them, unchecked. Measuring the wrong thing is how it
+// survived. So this measures the right one: build the chance the way the
+// match does, lay a drawing over it, and judge the LIVE scenario.
+for (const liveKind of ["one_on_one", "tight_angle"] as const) {
+  const liveSet = ruleSetFor(liveKind);
+  if (!liveSet || !liveSet.rules.some((r) => r.invariant)) continue;
+  const recentLive: string[] = [];
+  let playedN = 0, playedBroken = 0;
+  for (let t = 0; t < 600; t++) {
+    const r = mulberry32(70000 + t);
+    const live = buildScenario(liveKind as never, r, 70, 60, 55);
+    const sh = nextAuthoredShape(liveKind, r, recentLive);
+    if (!sh) continue;
+    recentLive.push(sh.sourceId); if (recentLive.length > 3) recentLive.shift();
+    applyAuthoredShape(live, sh);
+    playedN++;
+    if (violations(sampleFromScenario(live), liveSet).length) playedBroken++;
+  }
+  ok(playedN > 0, `${liveKind}: chances were actually served (${playedN})`);
+  ok(playedBroken === 0,
+    `${liveKind}: every chance AS PLAYED obeys its laws, leftovers included (${playedBroken} of ${playedN} broke one)`);
+}
 
 console.log(`authoredChance: jitter ${JITTER_M}m, ${pool.length} drawings, ${served} draws`);
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }
