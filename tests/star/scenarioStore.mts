@@ -9,9 +9,12 @@
  * fetch, since there is no server in this environment.
  *
  * The things worth proving hardest:
- *   1. A fetch MERGES. Run right after the table is created and still
- *      empty, a replace would wipe every scenario that only exists in
- *      localStorage — the exact bug lineupStore.ts already had to fix.
+ *   1. A fetch MIRRORS the server. It used to merge, and a merge cannot
+ *      express a delete: a scenario deleted on one device lived on in every
+ *      other browser that had seen it, and the next Commit all from there
+ *      wrote it back into the code. The one exception is a save made on
+ *      THIS device that the server never confirmed — kept until it is.
+ *      A server whose table does not exist yet leaves the cache alone.
  *   2. A save reports honestly. It may write the local cache either way (a
  *      draft is never thrown away), but `ok` is true only when the server
  *      confirmed it, so the builder never shows a flat "Saved" for
@@ -104,10 +107,10 @@ function scenarioAt(id: string, name: string, x: number) {
   );
 }
 
-// ── fetchSharedScenarios MERGES, never replaces ───────────────────────────
+// ── fetchSharedScenarios MIRRORS the server ──────────────────────────────
 {
   store.clear();
-  saveScenario(scenarioAt("sc_localOnly", "Local only", 5));
+  saveScenario(scenarioAt("sc_deletedElsewhere", "Deleted on another laptop", 5));
   saveScenario(scenarioAt("sc_both", "Stale local", 5));
 
   respond = () => ({
@@ -122,22 +125,47 @@ function scenarioAt(id: string, name: string, x: number) {
   });
   const r = await fetchSharedScenarios();
   check(r.ok, "a good fetch reports ok");
-  check(r.migrationMissing === false, "…and no missing migration");
-  check(loadScenario("sc_localOnly") !== null, "an id the server doesn't have is KEPT, never wiped");
+  check(!r.migrationMissing, "…and no missing migration");
+  // THE bug: a merge kept this forever, and the next Commit all from this
+  // browser would have written it straight back into the code.
+  check(loadScenario("sc_deletedElsewhere") === null,
+    "a scenario the server no longer has is GONE from this browser too — a delete reaches everyone");
   check(loadScenario("sc_both")!.ball.x === 61, "the server's copy wins where both exist");
   check(loadScenario("sc_serverOnly") !== null, "an id only the server has is pulled down");
 }
 
-// ── An empty server (migration just run) cannot wipe local work ───────────
+// ── …except a save that never reached the server ─────────────────────────
+{
+  store.clear();
+  respond = () => ({ status: 500, body: { error: "down" } });
+  const failed = await saveScenarioShared(scenarioAt("sc_unsent", "Saved while the server was down", 12));
+  check(failed.ok === false, "a refused save reports not-ok");
+
+  respond = () => ({ status: 200, body: { scenarios: {}, migrationMissing: false } });
+  await fetchSharedScenarios();
+  check(loadScenario("sc_unsent") !== null,
+    "a save the server never confirmed survives a sync — it is not a copy of anything");
+
+  // Once the server has it (same edit or newer), it is not pending any more,
+  // and from then on it behaves like every other mirrored scenario.
+  respond = () => ({ status: 200, body: { scenarios: { sc_unsent: scenarioAt("sc_unsent", "Now on the server", 12) }, migrationMissing: false } });
+  const later = loadScenario("sc_unsent")!;
+  (respond as unknown) = () => ({ status: 200, body: { scenarios: { sc_unsent: { ...later, name: "Now on the server" } }, migrationMissing: false } });
+  await fetchSharedScenarios();
+  respond = () => ({ status: 200, body: { scenarios: {}, migrationMissing: false } });
+  await fetchSharedScenarios();
+  check(loadScenario("sc_unsent") === null,
+    "…and once the server has had it, deleting it there removes it here as well");
+}
+
+// ── A table that doesn't exist yet is not an empty table ─────────────────
 {
   store.clear();
   saveScenario(scenarioAt("sc_only", "The only copy", 9));
-  respond = () => ({ status: 200, body: { scenarios: {}, migrationMissing: false } });
+  respond = () => ({ status: 200, body: { scenarios: {}, migrationMissing: true } });
   await fetchSharedScenarios();
-  check(
-    loadScenario("sc_only") !== null,
-    "an empty server leaves every local scenario intact — a sync must never be worse than no sync",
-  );
+  check(loadScenario("sc_only") !== null,
+    "a server with no table yet leaves the cache alone — that is the one case a mirror would be worse than nothing");
 }
 
 // ── The migration not being run is a NAMED state, not a crash ─────────────

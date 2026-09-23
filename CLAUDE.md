@@ -172,6 +172,18 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 ---
 
+## Tuner proposals live in the terminal
+
+When anyone asks for "the tuner proposals" (or what the Tune corrections add
+up to), run `npx tsx scripts/tuner-proposals.mts` and report what it prints —
+every proposal with its median, spread and the exact line to change, plus
+what is still building up. Nothing is applied from the dev tools; asked for
+directly: "we just want it to propose into the Claude terminal, and then we
+can go from there." Apply one only when told which. It reads the shared
+`star_scenario_corrections` table (needs `star_scenario_corrections.sql` run).
+
+---
+
 ## Commands
 
 ```bash
@@ -335,6 +347,7 @@ Three people are building this. To avoid two sessions editing the same files:
 | `world_class_potential.sql` | **PENDING — RUN TO ENABLE THE STRONGER TIER** (new, Sep 2026) | Adds `sofifa_players.world_class_potential boolean NOT NULL DEFAULT false` — a second, stronger tier directly above `high_potential`, same admin-toggle shape, requested directly ("a second category... nothing, high potential, or world class potential"). The admin PATCH route always sets `high_potential = true` alongside it, so every existing High Potential hook (`growWonderkids`, `feeFor`, the reach-up bias, the media hype detector) already fires for a World Class player without its own copy of each check — `wonderkids.worldClassMultiplier` (tuning.ts) scales all of them up further on top. Same resilience as `high_potential`: `league-squads/route.ts` degrades gracefully if this column doesn't exist yet, one column at a time. |
 | `star_scenarios.sql` | **PENDING — RUN SO HAND-BUILT SCENARIOS REACH THE GAME** (new, Sep 2026) | Creates the `star_scenarios` table: one row per `MatchScenario` (`lib/star/scenarios.ts`) — camera framing plus hand-placed teammate/opponent positions in real pitch metres. The Scenario Builder (`components/star/ScenarioEditor.tsx`, now hosted both at `/star-scenario-dev` and as a third tab in `/star-gallery-dev`) and the gallery's own base-scenario Save button both write here, so a scenario is DATA the game reads rather than something baked into a deploy. `/api/star/scenarios` is GET public / POST+DELETE admin-only via `isAdmin()`, exactly like `star_lineups`; `lib/star/scenarioStore.ts` keeps localStorage as a synchronous read cache, refreshed via `fetchSharedScenarios()` at load. Until this runs, the route degrades honestly instead of 500ing — GET returns an empty list with `migrationMissing: true` (both screens show a red banner naming this file), and a Save keeps the work in that browser while saying plainly "saved on this device ONLY," never a bare "Saved". |
 | `star_career_slots.sql` | **PENDING — RUN SO EXTRA SAVES FOLLOW A PLAYER ACROSS DEVICES** (new, Sep 2026) | Adds `star_careers.slot` (default 1, backfilling every existing save automatically) and swaps its `UNIQUE (user_id)` for `UNIQUE (user_id, slot)`, so an account can have up to three cloud saves instead of one — see Settings' new Saves panel. `app/api/star/career/route.ts` degrades the same way `league-squads/route.ts` already does: slot 1 (every existing save) works identically whether or not this has run; a second or third save simply stays local to whichever device created it until it has. |
+| `star_scenario_corrections.sql` | **PENDING** (new, Sep 2026) | Creates `star_scenario_corrections` so Tune corrections are one shared team list instead of one per browser. Until it runs, corrections stay in the browser that made them and `scripts/tuner-proposals.mts` says so. Browser-only corrections are uploaded on the first sync after it runs, not lost. |
 
 ---
 

@@ -52,10 +52,10 @@ import {
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
 import { outliersOf } from "@/lib/star/scenarioRules";
-import { ruleSetFor } from "@/lib/star/authoredChance";
+import { ruleSetFor, showSavedScenarios } from "@/lib/star/authoredChance";
 import { statusOf } from "@/lib/star/scenarioStatus";
 import {
-  loadCorrections, saveCorrection, makeCorrection, proposalsFrom,
+  loadCorrections, saveCorrection, makeCorrection, proposalsFrom, fetchSharedCorrections,
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
@@ -272,13 +272,25 @@ export default function HighlightsPage() {
    *  completed a pattern. Same store the gallery and Tuning & Commit read —
    *  a correction made here counts exactly as much as one made there. */
   const [corrections, setCorrections] = useState<Correction[]>([]);
-  useEffect(() => { setCorrections(loadCorrections()); }, []);
+  // This browser's copy first (instant), then the team's — see
+  // fetchSharedCorrections. Three people's corrections now add up.
+  useEffect(() => {
+    setCorrections(loadCorrections());
+    void fetchSharedCorrections().then((r) => setCorrections(r.corrections));
+  }, []);
 
   // A full-screen dev tool: the site's own nav and footer get out of the way,
   // exactly as /star-gallery-dev does it (globals.css's immersive class).
   useEffect(() => {
     document.body.classList.add("knowitball-immersive");
     return () => document.body.classList.remove("knowitball-immersive");
+  }, []);
+
+  // A dev tool: sees the team's saved drawings on top of the committed ones.
+  // The game never does — see showSavedScenarios.
+  useEffect(() => {
+    showSavedScenarios(true);
+    return () => showSavedScenarios(false);
   }, []);
 
   /** The seeded stream. One per visit, carried across every press — the
@@ -456,7 +468,7 @@ export default function HighlightsPage() {
     if (!res.ok) { flashFor(false, `Not saved — ${res.message}`); return; }
     setSaved((m) => ({ ...m, [scenario.id]: scenario }));
     clearOverride(editKey);
-    flashFor(true, "Saved — on every device.");
+    flashFor(true, "Saved for the team. It goes into the game when you commit it.");
   };
 
   const revertShot = async (): Promise<void> => {
@@ -501,7 +513,7 @@ export default function HighlightsPage() {
     const near = proposalsFrom([...corrections.filter((x) => x.id !== c.id), c])
       .find((pr) => pr.kind === shot.spec.kind && c.faults.includes(pr.fault));
     flashFor(true, near
-      ? `Recorded — ${near.count} now agree. There is a rule to look at in Tuning & Commit.`
+      ? `Recorded — ${near.count} now agree. A rule is proposed — ask Claude in the terminal for the tuner proposals.`
       : `Recorded: ${FAULT_LABEL[c.faults[0]]}. It stays quiet until a few more agree.`);
   };
 
@@ -869,7 +881,7 @@ export default function HighlightsPage() {
                   background: tunes ? "rgba(167,139,250,0.14)" : "rgba(255,255,255,0.05)",
                   border: `1px solid ${tunes ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.09)"}`,
                 }}>
-                  {tunes ? "Tuning the generator" : "Not tuning"}
+                  {tunes ? "In the game" : "Not in the game yet"}
                 </span>
               </div>
             );

@@ -68,7 +68,9 @@ export type FaultKind =
   | "defender-goal-side"
   | "mate-in-lane"
   | "defender-on-top-of-ball"
-  | "keeper-off-shot-line";
+  | "keeper-off-shot-line"
+  | "keeper-near-post"
+  | "keeper-advance";
 
 export const FAULT_LABEL: Record<FaultKind, string> = {
   "defender-in-lane": "a defender standing in your shooting lane",
@@ -76,6 +78,8 @@ export const FAULT_LABEL: Record<FaultKind, string> = {
   "mate-in-lane": "one of your own standing in your shooting lane",
   "defender-on-top-of-ball": "a defender right on top of the ball",
   "keeper-off-shot-line": "the keeper off the line of the shot",
+  "keeper-near-post": "where the keeper stands across his goal",
+  "keeper-advance": "how far the keeper comes off his line",
 };
 
 export interface Correction {
@@ -88,6 +92,16 @@ export interface Correction {
   faults: FaultKind[];
   moves: Move[];
   at: number;
+  /**
+   * THE NUMBER a correction was aiming for, for the faults that have one.
+   *
+   * The five original faults are yes/no — a defender was in the lane and now
+   * isn't. The keeper is not: dragging him across his goal is a statement
+   * about WHERE he should stand, and the only useful proposal is a number to
+   * set. So a keeper correction carries the share he was left at, and the
+   * proposal is the median of what everyone dragged him to.
+   */
+  values?: Partial<Record<FaultKind, number>>;
 }
 
 // ── Geometry, shared with the rule set's own definitions ──────────────────
@@ -164,15 +178,70 @@ export function faultsRepaired(before: MatchScenario, after: MatchScenario): Fau
   return out;
 }
 
+/**
+ * THE KEEPER, as evidence — a correction the tuner could not see before.
+ *
+ * Measured on the ten committed tight angles: dragging the keeper across to
+ * cover his near post (the fix for "the tight-angle chance is too easy, I
+ * could score every time") was RECORDED all ten times and counted as
+ * evidence zero times. The only keeper fault was "off the line of the shot",
+ * and the shot line runs to the middle of the goal — at a tight angle the
+ * near post is the threat, so moving him the right way looked like nothing.
+ *
+ * Two dials, the same two `KEEPER_TUNING_BY_KIND` sets (authoredChance.ts),
+ * measured the same way `placeKeeper` reads them, so a proposal is a number
+ * that can be dropped straight into the game:
+ *
+ *   near post  how far across he stands, as a share of how wide the ball is.
+ *              0 = dead centre, 1 = square with the ball.
+ *   advance    how far off his line, as a share of the ball's distance out.
+ *
+ * A move under KEEPER_SHIFT is a nudge, not a statement, and is ignored.
+ */
+export const KEEPER_SHIFT = 0.12;
+
+const nearPostShare = (s: MatchScenario, gk: ScenarioPlayer): number | null => {
+  const lat = s.ball.x - CX;
+  if (Math.abs(lat) < 1.5) return null;             // a central ball has no near post
+  return ((gk.x - CX) * Math.sign(lat)) / Math.abs(lat);
+};
+const advanceShare = (s: MatchScenario, gk: ScenarioPlayer): number | null =>
+  (s.ball.y <= 0.01 ? null : gk.y / s.ball.y);
+
+export function keeperEvidence(
+  before: MatchScenario, after: MatchScenario,
+): { faults: FaultKind[]; values: Partial<Record<FaultKind, number>> } {
+  const kb = before.players.find(isKeeper), ka = after.players.find(isKeeper);
+  const faults: FaultKind[] = [];
+  const values: Partial<Record<FaultKind, number>> = {};
+  if (!kb || !ka) return { faults, values };
+  const round = (v: number) => Math.round(v * 100) / 100;
+
+  const npB = nearPostShare(before, kb), npA = nearPostShare(after, ka);
+  if (npB !== null && npA !== null && Math.abs(npA - npB) >= KEEPER_SHIFT) {
+    faults.push("keeper-near-post");
+    values["keeper-near-post"] = round(npA);
+  }
+  const adB = advanceShare(before, kb), adA = advanceShare(after, ka);
+  if (adB !== null && adA !== null && Math.abs(adA - adB) >= KEEPER_SHIFT) {
+    faults.push("keeper-advance");
+    values["keeper-advance"] = round(adA);
+  }
+  return { faults, values };
+}
+
 export function makeCorrection(
   id: string, kind: string, before: MatchScenario, after: MatchScenario,
 ): Correction {
-  return {
+  const keeper = keeperEvidence(before, after);
+  const c: Correction = {
     id, kind,
-    faults: faultsRepaired(before, after),
+    faults: [...faultsRepaired(before, after), ...keeper.faults],
     moves: movesBetween(before, after),
     at: Date.now(),
   };
+  if (keeper.faults.length) c.values = keeper.values;
+  return c;
 }
 
 // ── What several of them, agreeing, add up to ────────────────────────────
@@ -183,6 +252,13 @@ export interface Proposal {
   /** The plain-English rule this would become. */
   rule: string;
   count: number;
+  /** For a keeper fault: the median of what everyone dragged him to. */
+  value?: number;
+  /** …and the range, so a proposal backed by wildly different drags reads as
+   *  exactly that rather than as a confident number. */
+  range?: [number, number];
+  /** The exact line to change to act on it, where there is one. */
+  apply?: string;
   /** The corrections behind it, so the examples can be shown. */
   from: Correction[];
 }
@@ -193,6 +269,14 @@ const RULE_TEXT: Record<FaultKind, string> = {
   "mate-in-lane": "No team-mate stands in your shooting lane",
   "defender-on-top-of-ball": "No defender starts right on top of the ball",
   "keeper-off-shot-line": "The keeper starts on the line of the shot",
+  "keeper-near-post": "The keeper stands further across to cover his near post",
+  "keeper-advance": "The keeper starts a different distance off his line",
+};
+
+/** Where a keeper proposal is acted on — the per-kind dials in authoredChance.ts. */
+const KEEPER_DIAL: Partial<Record<FaultKind, "nearPost" | "advance">> = {
+  "keeper-near-post": "nearPost",
+  "keeper-advance": "advance",
 };
 
 /**
@@ -217,30 +301,135 @@ export function proposalsFrom(corrections: Correction[]): Proposal[] {
   for (const [key, list] of Array.from(buckets.entries())) {
     if (list.length < PROPOSAL_THRESHOLD) continue;
     const [kind, fault] = key.split("|") as [string, FaultKind];
-    out.push({ kind, fault, rule: RULE_TEXT[fault], count: list.length, from: list });
+    const p: Proposal = { kind, fault, rule: RULE_TEXT[fault], count: list.length, from: list };
+    const vals = list.map((c) => c.values?.[fault]).filter((v): v is number => typeof v === "number")
+      .sort((a, b) => a - b);
+    if (vals.length) {
+      p.value = vals[Math.floor(vals.length / 2)];
+      p.range = [vals[0], vals[vals.length - 1]];
+      const dial = KEEPER_DIAL[fault];
+      if (dial) p.apply = `KEEPER_TUNING_BY_KIND.${kind} = { ...KEEPER_TUNING_BY_KIND.${kind}, ${dial}: ${p.value} }  // lib/star/authoredChance.ts`;
+    }
+    out.push(p);
   }
   return out.sort((a, b) => b.count - a.count);
 }
 
-// ── Where they live ───────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────
+//  STORAGE — the team's shared list, with this browser as a cache
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Corrections used to live ONLY in the browser that made them, so three
+// people each making one correction never added up to the three a proposal
+// needs — anywhere. They now go to the database (/api/star/corrections,
+// supabase/migrations/star_scenario_corrections.sql) and every browser
+// holds the team's list plus anything it made that the team lacks, which it
+// uploads on the next sync (see fetchSharedCorrections).
 
 const KEY = "star-scenario-corrections-v1";
+const ENDPOINT = "/api/star/corrections";
+
+const writeLocal = (all: Correction[]): void => {
+  try { localStorage.setItem(KEY, JSON.stringify(all)); } catch { /* a dev tool */ }
+};
+
+/** As deep as the tuner relies on — the same check the API applies. */
+export function isCorrection(c: unknown): c is Correction {
+  if (!c || typeof c !== "object" || Array.isArray(c)) return false;
+  const r = c as Record<string, unknown>;
+  return typeof r.id === "string" && !!r.id && typeof r.kind === "string" && !!r.kind
+    && Array.isArray(r.faults) && Array.isArray(r.moves) && typeof r.at === "number";
+}
 
 export function loadCorrections(): Correction[] {
   try {
     const raw = localStorage.getItem(KEY);
     const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? (parsed as Correction[]) : [];
+    return Array.isArray(parsed) ? (parsed as unknown[]).filter(isCorrection) : [];
   } catch {
     return [];
   }
 }
 
+/**
+ * Record a correction — locally at once, and for the team in the background.
+ *
+ * Returns the local list straight away (the screens need the answer now to
+ * say whether this completed a pattern); the network write is fire-and-forget
+ * and a failed write is not lost: the correction stays in this browser and
+ * the next sync uploads it.
+ */
 export function saveCorrection(c: Correction): Correction[] {
   const all = loadCorrections().filter((x) => x.id !== c.id);
   all.push(c);
-  try { localStorage.setItem(KEY, JSON.stringify(all)); } catch { /* a dev tool */ }
+  writeLocal(all);
+  void shareCorrection(c);
   return all;
+}
+
+export async function shareCorrection(c: Correction): Promise<{ ok: boolean; message?: string }> {
+  if (typeof fetch !== "function") return { ok: false, message: "No network here." };
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correction: c }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      return { ok: false, message: body.error ?? `Server refused it (${res.status}).` };
+    }
+  } catch {
+    return { ok: false, message: "Network error — kept on this device." };
+  }
+  return { ok: true };
+}
+
+/**
+ * Make every browser hold the SAME list: the team's, plus anything this
+ * browser recorded that the team does not have yet — which is uploaded
+ * rather than dropped.
+ *
+ * A union, not a mirror, on purpose. The scenario store mirrors because a
+ * scenario can be deleted and a delete has to reach everyone. A correction
+ * cannot be deleted one at a time — nothing offers it — so there is no
+ * delete to propagate, and a mirror would only ever throw something away:
+ * every correction made before this table existed lives in one browser and
+ * nowhere else, and the first sync would have wiped it. Instead it goes up
+ * to the table on that sync and from then on is everyone's.
+ *
+ * A failed fetch, or a server whose table does not exist yet, leaves the
+ * local list exactly as it was.
+ */
+export async function fetchSharedCorrections(): Promise<{
+  ok: boolean; migrationMissing?: boolean; message?: string; corrections: Correction[];
+}> {
+  const local = loadCorrections();
+  if (typeof fetch !== "function") return { ok: false, corrections: local };
+  let data: { corrections?: unknown; migrationMissing?: boolean; message?: string; error?: string };
+  try {
+    const res = await fetch(ENDPOINT, { cache: "no-store" });
+    data = await res.json();
+    if (!res.ok) return { ok: false, message: data?.error ?? `(${res.status})`, corrections: local };
+  } catch {
+    return { ok: false, message: "Couldn't reach the server.", corrections: local };
+  }
+  if (data.migrationMissing === true) {
+    return { ok: true, migrationMissing: true, message: data.message, corrections: local };
+  }
+  const incoming = Array.isArray(data.corrections) ? data.corrections.filter(isCorrection) : [];
+  const byId = new Map(incoming.map((c) => [c.id, c]));
+  const toUpload: Correction[] = [];
+  for (const mine of local) {
+    const theirs = byId.get(mine.id);
+    if (!theirs || mine.at > theirs.at) { byId.set(mine.id, mine); toUpload.push(mine); }
+  }
+  const next = Array.from(byId.values());
+  writeLocal(next);
+  // Anything the team did not have — including a correction whose earlier
+  // upload failed — goes up now. Fire-and-forget: the local list already
+  // holds it, and the next sync tries again if this one fails.
+  for (const c of toUpload) void shareCorrection(c);
+  return { ok: true, corrections: next };
 }
 
 export function clearCorrections(): void {

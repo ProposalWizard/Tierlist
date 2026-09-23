@@ -34,16 +34,25 @@ export interface ScenarioStatus {
   state: ScenarioState;
   /** Plain English for a badge. */
   label: string;
-  /** Does this one feed `authoredPool`, and so the rule set and the
-   *  randomiser? A draft does not; everything else does. */
+  /** Is this in the GAME's dataset? Only a committed copy is. */
   tuning: boolean;
 }
 
+/**
+ * `tuning` answers ONE question now: is this in the game?
+ *
+ * A saved scenario used to count, because the game read the browser's cached
+ * copy of the saved list. It doesn't any more — the game plays the committed
+ * dataset only, identical for every player (see authoredChance.ts's dataset
+ * note) — so saved-but-not-committed is visible to the team in the dev tools
+ * and not in the game until it is committed. A modified one is in the game,
+ * as the OLDER committed copy.
+ */
 const STATUS: Record<ScenarioState, Omit<ScenarioStatus, "state">> = {
   draft: { label: "Draft — this browser only", tuning: false },
-  saved: { label: "Saved — not in the code yet", tuning: true },
-  committed: { label: "Committed", tuning: true },
-  modified: { label: "Saved — code has an older copy", tuning: true },
+  saved: { label: "Saved — in the game once committed", tuning: false },
+  committed: { label: "Committed — in the game", tuning: true },
+  modified: { label: "Saved — the game still has the older copy", tuning: true },
 };
 
 /**
