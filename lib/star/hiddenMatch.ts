@@ -3,6 +3,14 @@ import { getTuning } from "@/lib/star/tuningStore";
 
 const HIGH_MODE_CHANCES = getTuning("energy.highModeChances");
 const LOW_MODE_CHANCES = getTuning("energy.lowModeChances");
+/**
+ * THE TALISMAN TACTIC — see clubPowers.ts's `setTalisman` for the gate
+ * (majority owner of the club you actually play for). Same multiplier slot
+ * as HIGH_MODE_CHANCES above, stacked on top of it rather than replacing it
+ * — a talisman on Low energy mode is still trading availability for
+ * involvement, exactly like everyone else's Low.
+ */
+const TALISMAN_CHANCES = 2.2;
 
 /**
  * HIDDEN MATCH SIMULATION
@@ -109,6 +117,13 @@ export interface HiddenMatchInputs {
    * many chances come to you.
    */
   energyMode?: "low" | "medium" | "high";
+  /**
+   * Majority owner of the club you actually play for, tactic switched on —
+   * see clubPowers.ts's `setTalisman`. Stacks with `energyMode` rather than
+   * replacing it. Optional; absent (every existing save, every save that
+   * doesn't own its own club) is exactly today's game.
+   */
+  talisman?: boolean;
   /**
    * MATCH CONTEXT (specification §2.9).
    *
@@ -508,8 +523,9 @@ export function tick(
         // the chances coming to you"). The +0.08 is the fixed amount a fresh
         // player always had, so Medium plays exactly as before; the energy
         // MODE scales the whole thing below.
-        const modeScale = inputs.energyMode === "high" ? HIGH_MODE_CHANCES
-          : inputs.energyMode === "low" ? LOW_MODE_CHANCES : 1;
+        const modeScale = (inputs.energyMode === "high" ? HIGH_MODE_CHANCES
+          : inputs.energyMode === "low" ? LOW_MODE_CHANCES : 1)
+          * (inputs.talisman ? TALISMAN_CHANCES : 1);
         const baseInvolvement = (0.36
           + (inputs.playerSkill / 100) * 0.26
           + 0.08

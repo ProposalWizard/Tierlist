@@ -7,6 +7,7 @@ import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/li
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
+import DevCareerPanel from "./DevCareerPanel";
 import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
@@ -17,6 +18,12 @@ interface Props {
   onBack: () => void;
   onSkip: (target: SkipTarget) => void;
   onAddMoney: (amount: number) => void;
+  onSetCaptain: (captain: boolean) => void;
+  onSetReputation: (delta: number) => void;
+  onSetFame: (delta: number) => void;
+  onMaxSkills: () => void;
+  onSetHappiness: (delta: number) => void;
+  onSwitchClub: (club: string) => void;
   onSetPortrait: (portrait: string | undefined) => void;
   onWatchReplay: (replay: GoalReplay) => void;
   onSaveReplay: (index: number, replay: GoalReplay) => void;
@@ -39,7 +46,9 @@ interface Props {
 }
 
 export default function SettingsScreen({
-  career, onBack, onSkip, onAddMoney, onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
+  career, onBack, onSkip, onAddMoney,
+  onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onSetHappiness, onSwitchClub,
+  onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
   immersiveActive, onToggleImmersive,
 }: Props) {
@@ -146,6 +155,16 @@ export default function SettingsScreen({
         <DevSkipPanel career={career} onSkip={onSkip} />
 
         <DevMoneyPanel career={career} onAddMoney={onAddMoney} />
+
+        <DevCareerPanel
+          career={career}
+          onSetCaptain={onSetCaptain}
+          onSetReputation={onSetReputation}
+          onSetFame={onSetFame}
+          onMaxSkills={onMaxSkills}
+          onSetHappiness={onSetHappiness}
+          onSwitchClub={onSwitchClub}
+        />
 
         <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
 

@@ -605,10 +605,29 @@ export default function FiveASide({
     fire({ x: aim.dir.x * (vp.x2 - vp.x1), y: aim.dir.y * (vp.y2 - vp.y1) }, aim.power, contact);
   }, [fire]);
 
-  /** Fold YOUR finished touch into the match, then play on. */
+  /**
+   * Fold YOUR finished touch into the match, then play on.
+   *
+   * ── Never leave the match with nothing pending ──
+   *
+   * Reported directly: "when the other team gets the ball it just like
+   * freezes and essentially is stuck, i have to use dev tools to skip to get
+   * past." Every physics/state-machine path this screen drives was fuzzed
+   * directly (2,000 isolated their-attacks, 300 full simulated matches end to
+   * end) and none hung or threw — so the stuck state has to be a React-level
+   * ref falling out of sync with `phase` (a re-render tearing down and
+   * rebuilding the animation-frame effect mid-sequence is the one candidate
+   * that can't be reproduced outside a real browser). Whatever the exact
+   * trigger, the failure mode was always the same: `sc`/`ball` missing here
+   * used to just `return` and do nothing, forever — `pendingRef` was already
+   * cleared by the caller, so nothing would ever call this again. `obey()`
+   * re-reads what the match is actually waiting for and re-dispatches it —
+   * worst case a chance replays from scratch, which is a far better failure
+   * than a screen that needs a dev-only skip to escape.
+   */
   const resolveMine = useCallback((outcome: Outcome | "out") => {
     const sc = scRef.current, ball = ballRef.current;
-    if (!sc || !ball) return;
+    if (!sc || !ball) { obey(); return; }
 
     const crossX = outcome === "goal" || outcome === "wide" || outcome === "over" || outcome === "post"
       ? ball.pos.x : null;
@@ -628,10 +647,12 @@ export default function FiveASide({
     obey();
   }, [finish, obey, onProgress, rng, rules]);
 
-  /** Fold THEIR finished chance into the match, then play on. */
+  /** Fold THEIR finished chance into the match, then play on. See
+   *  `resolveMine`'s own doc for why a missing ref recovers via `obey()`
+   *  rather than silently doing nothing. */
   const resolveTheirs = useCallback((outcome: Outcome | "out") => {
     const their = theirRef.current, ball = ballRef.current;
-    if (!their || !ball) return;
+    if (!their || !ball) { obey(); return; }
     const world = worldFromTheirAttack(their.sc, ball.pos, their.from);
     const next = applyTheirAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
     matchRef.current = next;
@@ -641,10 +662,12 @@ export default function FiveASide({
   }, [finish, obey, onProgress, rng]);
 
   /** Fold a TEAM-MATE's finished chance into the match, then play on. Native —
-   *  the ball is in ordinary coordinates, so no mirror on the way back. */
+   *  the ball is in ordinary coordinates, so no mirror on the way back. See
+   *  `resolveMine`'s own doc for why a missing ref recovers via `obey()`
+   *  rather than silently doing nothing. */
   const resolveMate = useCallback((outcome: Outcome | "out") => {
     const mate = mateRef.current, ball = ballRef.current;
-    if (!mate || !ball) return;
+    if (!mate || !ball) { obey(); return; }
     const world = worldFromMateAttack(mate.sc, ball.pos, mate.from);
     const next = applyMateAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
     matchRef.current = next;

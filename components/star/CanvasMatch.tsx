@@ -875,6 +875,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       energy: liveEnergyAt(matchMinuteRef.current),
       energyMode: energyModeRef.current,
       impactSub: startMinuteRef.current > 0,
+      // The talisman tactic — see clubPowers.ts's `setTalisman`. Only ever
+      // true while you're a majority owner of the club you're actually
+      // playing for right now, which `talisman` is stored against.
+      talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
     };
   };
 
