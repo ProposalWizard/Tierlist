@@ -3,7 +3,8 @@ import {
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R,
 } from "./pitch";
 import {
-  drawFigure, drawKeeper, drawBall as drawSharedBall, type Projection,
+  drawFigure, drawKeeper, drawBall as drawSharedBall, drawAim, ROLE_KIT, MATCH_SCALE, type Projection,
+  type BodyPose,
 } from "./fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "./faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "./fakeFaceStyle";
@@ -43,12 +44,16 @@ const C = {
   pitch: "#1f9006",
   line: "rgba(255,255,250,0.85)",
   lineFaint: "rgba(255,255,250,0.5)",
-  you: "#10b981",
-  youRim: "#065f46",
-  opp: "#dc2626",
-  oppRim: "#7f1d1d",
-  gk: "#fbbf24",
-  gkRim: "#92400e",
+  // you/youRim/opp/oppRim/gk/gkRim: the shared ROLE_KIT (fiveASide/render.ts)
+  // — these already matched the real match's own values exactly, but by
+  // coincidence (an independent copy), not by a shared source. Now genuinely
+  // one place.
+  you: ROLE_KIT.you,
+  youRim: ROLE_KIT.youRim,
+  opp: ROLE_KIT.opp,
+  oppRim: ROLE_KIT.oppRim,
+  gk: ROLE_KIT.gk,
+  gkRim: ROLE_KIT.gkRim,
   cone: "#f97316",
   coneRim: "#7c2d12",
   skin: "#c68642",
@@ -86,15 +91,26 @@ export interface TrainingSceneOptions {
   /** Draw the goal, its net and the box markings — the striking drills. */
   goal?: boolean;
   /** The keeper, if this drill has one. `dive` is -1..1, where he's going. */
-  keeper?: { x: number; y: number; dive?: number; lunge?: number } | null;
+  keeper?: { x: number; y: number; dive?: number; lunge?: number; face?: HTMLImageElement } | null;
   /** Outfield men in the way: a wall, blockers, or chasers. `z` lifts a
-   *  jumping wall off the turf, exactly as the engine's own Defender does. */
-  defenders?: { x: number; y: number; z?: number; awake?: boolean }[];
-  /** Your own figure, when the drill has you on the pitch rather than
-   *  standing over a dead ball. */
-  you?: { x: number; y: number } | null;
+   *  jumping wall off the turf, exactly as the engine's own Defender does.
+   *  `pose` is a chaser's running stride — see `you.pose` below. `face` — no
+   *  real identity reaches a drill, so the CALLER resolves a stable fake
+   *  face (see `fakeFaceFor`) and passes the loaded image in here; omitted,
+   *  the figure draws the plain backing circle it always has. */
+  defenders?: { x: number; y: number; z?: number; awake?: boolean; pose?: BodyPose; face?: HTMLImageElement }[];
+  /**
+   * Your own figure, when the drill has you on the pitch rather than
+   * standing over a dead ball. `pose` — a run, a kick — is computed by the
+   * CALLER (the same split `CanvasMatch.tsx` already draws between its own
+   * `motionRef`/`poseFor` and the drawing itself): this file only ever
+   * forwards a `BodyPose` to `drawFigure`, it never derives one, so a drill
+   * and a real match reach the same running/kicking figure through the same
+   * shared math rather than two guesses at it.
+   */
+  you?: { x: number; y: number; pose?: BodyPose; face?: HTMLImageElement } | null;
   /** Team-mates to pick out — the vision drill. `highlight` rings one. */
-  mates?: { x: number; y: number; highlight?: boolean; dim?: boolean }[];
+  mates?: { x: number; y: number; highlight?: boolean; dim?: boolean; face?: HTMLImageElement }[];
   /** The two cones of a gate, drawn as real cones with a line between. */
   gate?: { left: { x: number; y: number }; right: { x: number; y: number } } | null;
   /** The ball, with a real height above the turf. */
@@ -258,12 +274,12 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
   const proj: Projection = { px, py, unit, W, H };
   const footballer = (
     x: number, y: number, shirt: string, rim: string,
-    o: { star?: boolean; z?: number; dim?: boolean; ring?: string } = {},
+    o: { star?: boolean; z?: number; dim?: boolean; ring?: string; pose?: BodyPose; face?: HTMLImageElement } = {},
   ) => {
     ctx.save();
     if (o.dim) ctx.globalAlpha = 0.55;
     if (o.ring) {
-      const r = Math.max(5, unit * 1.0);
+      const r = Math.max(5, unit * 1.0 * MATCH_SCALE);
       ctx.beginPath();
       ctx.arc(px(x), py(y), r * 1.5, 0, Math.PI * 2);
       ctx.strokeStyle = o.ring;
@@ -272,18 +288,21 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     }
     drawFigure(ctx, proj, { x, y }, {
       shirt, shorts: rim, trim: rim, skin: C.skin,
-      star: o.star, lift: o.z,
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE);
+      star: o.star, lift: o.z, face: o.face,
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { pose: o.pose, scale: MATCH_SCALE });
     ctx.restore();
   };
 
   for (const d of opts.defenders ?? []) {
-    footballer(d.x, d.y, d.awake === false ? "#7a8a8f" : C.opp, d.awake === false ? "#3f4a4e" : C.oppRim, { z: d.z });
+    footballer(d.x, d.y, d.awake === false ? "#7a8a8f" : C.opp, d.awake === false ? "#3f4a4e" : C.oppRim, {
+      z: d.z, pose: d.pose, face: d.face,
+    });
   }
   for (const m of opts.mates ?? []) {
     footballer(m.x, m.y, "#3b82f6", "#1e3a5f", {
       dim: m.dim,
       ring: m.highlight ? "#facc15" : undefined,
+      face: m.face,
     });
   }
 
@@ -335,14 +354,18 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
   if (opts.keeper) {
     const k = opts.keeper;
     drawKeeper(ctx, proj, { x: k.x, y: k.y }, {
-      shirt: C.gk, shorts: C.gkRim, trim: C.gkRim, skin: C.skin,
+      shirt: C.gk, shorts: C.gkRim, trim: C.gkRim, skin: C.skin, face: k.face,
     }, {
       dive: Math.max(-1, Math.min(1, k.dive ?? 0)),
       lunge: Math.max(0, Math.min(1, k.lunge ?? 0)),
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE);
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { scale: MATCH_SCALE });
   }
 
-  if (opts.you) footballer(opts.you.x, opts.you.y, C.you, C.youRim, { star: true });
+  if (opts.you) {
+    footballer(opts.you.x, opts.you.y, C.you, C.youRim, {
+      star: true, pose: opts.you.pose, face: opts.you.face,
+    });
+  }
 
   // ── The ball's trail ──
   if (opts.trail && opts.trail.length > 1) {
@@ -379,60 +402,19 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
       ctx.fill();
       ctx.drawImage(img, bx - br, by - lift * unit * 0.5 - br, br * 2, br * 2);
     } else {
-      drawSharedBall(ctx, proj, { x: b.x, y: b.y }, Math.max(0, b.z));
+      drawSharedBall(ctx, proj, { x: b.x, y: b.y }, Math.max(0, b.z), MATCH_SCALE);
     }
   }
 
-  // ── The aim arrow — the same tapered gold shaft the real match draws ──
+  // ── The aim arrow — the ONE shared `drawAim` (fiveASide/render.ts) ──
+  //
+  // Used to be a third independent copy of this arrow, still drawn at the
+  // old, pre-fix 0.11 length (`AIM_ARROW_LENGTH` was corrected to 0.132 in
+  // the penalty/free-kick trial and never propagated here) — exactly the
+  // kind of drift consolidating onto one function exists to prevent.
   if (opts.aim) {
     const a = opts.aim;
-    const len = Math.hypot(a.dir.x, a.dir.y) || 1;
-    const shown = a.power * (vp.y2 - vp.y1) * 0.11;
-    const ax = px(a.from.x), ay = py(a.from.y);
-    const bx = px(a.from.x + (a.dir.x / len) * shown);
-    const by = py(a.from.y + (a.dir.y / len) * shown);
-    const ang = Math.atan2(by - ay, bx - ax);
-    const ux = Math.cos(ang), uy = Math.sin(ang);
-    const nx = -uy, ny = ux;
-    const arrowLen = Math.hypot(bx - ax, by - ay) || 1;
-    const headLen = clamp(W * 0.045, W * 0.02, arrowLen * 0.45);
-    const headHalf = W * 0.022, shaftW = W * 0.014;
-    const hbx = bx - ux * headLen, hby = by - uy * headLen;
-    const grad = ctx.createLinearGradient(ax, ay, bx, by);
-    grad.addColorStop(0, "#fb923c");
-    grad.addColorStop(1, "#ea580c");
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = shaftW;
-    ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hbx, hby); ctx.stroke();
-    ctx.lineCap = "butt";
-    ctx.beginPath();
-    ctx.moveTo(bx, by);
-    ctx.lineTo(hbx + nx * headHalf, hby + ny * headHalf);
-    ctx.lineTo(hbx - nx * headHalf, hby - ny * headHalf);
-    ctx.closePath();
-    ctx.fillStyle = "#f97316";
-    ctx.fill();
-    ctx.lineJoin = "round";
-    ctx.lineWidth = Math.max(1, unit * 0.22);
-    ctx.strokeStyle = "rgba(124,45,18,0.6)";
-    ctx.stroke();
-
-    const meterX = W * 0.045, meterTop = H * 0.15, meterH = H * 0.7, meterW = W * 0.055;
-    ctx.fillStyle = "rgba(2,6,23,0.55)";
-    ctx.fillRect(meterX, meterTop, meterW, meterH);
-    const fillH = meterH * a.power;
-    const mg = ctx.createLinearGradient(0, meterTop + meterH, 0, meterTop);
-    mg.addColorStop(0, "#22c55e"); mg.addColorStop(0.6, "#eab308"); mg.addColorStop(1, "#ef4444");
-    ctx.fillStyle = mg;
-    ctx.fillRect(meterX, meterTop + meterH - fillH, meterW, fillH);
-    ctx.strokeStyle = "rgba(251,191,36,0.5)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(meterX, meterTop, meterW, meterH);
-    ctx.fillStyle = "#fde68a";
-    ctx.font = `bold ${Math.round(W * 0.05)}px sans-serif`;
-    ctx.textAlign = "center";
-    ctx.fillText(`${Math.round(a.power * 100)}%`, meterX + meterW / 2, meterTop - W * 0.022);
+    drawAim(ctx, proj, a.from, a.dir, a.power);
   }
 }
 

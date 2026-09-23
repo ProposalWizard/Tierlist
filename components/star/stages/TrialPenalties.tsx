@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   buildScenario, initDefenders, launch, stepBall, stepKeeper, stepDefenders,
   stepBallInNet, settleBall, stepBallPastBar, dragForFullPower, clamp,
@@ -16,10 +16,12 @@ import ContactBall from "@/components/star/ContactBall";
 import { ELEVEN_A_SIDE_ATTACK } from "@/lib/star/fiveASide/rules";
 import {
   cameraContaining, projectionFor, drawPitch, drawGoal, drawFigure, drawKeeper,
-  drawBall,
+  drawBall, drawAim, ROLE_KIT, bodyPoseFor, MATCH_SCALE,
 } from "@/lib/star/fiveASide/render";
 import { loadFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle";
+import { createFaceImageCache, type FaceImageCache } from "@/lib/star/faceImageCache";
+import { fakeFaceFor } from "@/lib/star/fakeFaces";
 
 /**
  * THE PENALTIES STAGE — and, in the second half of this file, the striking
@@ -69,7 +71,14 @@ import { loadFakeFaceStyle, type FakeFaceStyle } from "@/lib/star/fakeFaceStyle"
 /** The two men on the edge of the D, and a free kick's wall: not your team,
  *  not the opposition you can name — just bodies in the way. */
 const WALL_KIT = { shirt: "#374151", shorts: "#1f2937", trim: "#e5e7eb" };
-const KEEPER_KIT = { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" };
+// KEEPER_KIT/YOU_KIT/MATE_KIT below all read from the shared ROLE_KIT
+// (fiveASide/render.ts) now — the same real-match/training identity colours
+// (gold keeper, green you, blue team-mate), not this screen's own drifted
+// copies. Reported directly: this file's own YOU_KIT was near-white and
+// MATE_KIT was light grey — neither matched the real match at all, and the
+// trial is meant to be the first look at what this game actually looks
+// like. See ROLE_KIT's own doc for the fuller before/after.
+const KEEPER_KIT = { shirt: ROLE_KIT.gk, shorts: ROLE_KIT.gkRim, trim: ROLE_KIT.gkRim };
 /**
  * ── THE PEOPLE WHO WERE THERE ALL ALONG AND WERE NEVER DRAWN ──
  *
@@ -102,8 +111,8 @@ const KEEPER_KIT = { shirt: "#fbbf24", shorts: "#92400e", trim: "#92400e" };
  * the frame is what `powerFrom` normalises the drag against, so a wider one
  * would quietly have retuned the power of every kick in the trial.
  */
-const YOU_KIT = { shirt: "#f8fafc", shorts: "#0f172a", trim: "#0f172a" };
-const MATE_KIT = { shirt: "#e2e8f0", shorts: "#1e293b", trim: "#1e293b" };
+const YOU_KIT = { shirt: ROLE_KIT.you, shorts: ROLE_KIT.youRim, trim: ROLE_KIT.youRim };
+const MATE_KIT = { shirt: ROLE_KIT.mate, shorts: ROLE_KIT.mateRim, trim: ROLE_KIT.mateRim };
 
 /**
  * The same aim feel as a real match, and for the same reason TrialPenalty has
@@ -152,21 +161,46 @@ const FLIGHT_TIMEOUT = 9;
 export const SETTLE_BEFORE_BANNER = 0.25;
 
 /**
- * HOW LONG THE AIM ARROW IS DRAWN, as a fraction of the metres filling the
- * canvas's height, at full power.
- *
- * Not a number this screen gets to choose. It is CanvasMatch.tsx's own
- * constant, copied, because the arrow has to be the match's arrow — reported
- * twice as "the drag arrow still doesn't look like the original football
- * engine", and measured at 0.11 here against 0.132 there, which is 16.7 %
- * short at every power (48.3 px vs 57.9 px at full power on an iPhone 13).
- *
- * A named export rather than a literal buried in the paint function purely so
- * `tests/star/trialStageScreens.mts` can hold it against the real value in
- * CanvasMatch.tsx and fail the day the match's arrow is re-tuned and this one
- * is not. That drift is the whole bug; this is the tripwire for it.
+ * HOW LONG THE AIM ARROW IS DRAWN — moved to `fiveASide/render.ts` (see
+ * `drawAim`) so the match, both striking trials AND five-a-side all draw the
+ * same arrow rather than independent copies that drift, which is exactly how
+ * five-a-side ended up with no arrowhead at all and training ended up stuck
+ * on the old 0.11. Re-exported here so the existing import in
+ * `tests/star/trialStageScreens.mts` keeps working unchanged.
  */
-export const AIM_ARROW_LENGTH = 0.132;
+export { AIM_ARROW_LENGTH } from "@/lib/star/fiveASide/render";
+
+/**
+ * HOW LONG THE TAKER'S FIGURE HOLDS A KICKING POSE AFTER THE BALL IS STRUCK.
+ *
+ * The same real bug as `AIM_ARROW_LENGTH` above, one level deeper: reported
+ * directly — "it seems like youve completely recreated and copied and made
+ * an entirely different game" — and one measured piece of that was that only
+ * `CanvasMatch.tsx` ever animated a figure at all; every taker on this screen
+ * stood in the same still, idle stance whether he was lining up the shot or
+ * had just struck it.
+ *
+ * Pinned to CanvasMatch.tsx's own `KICK_POSE_S`, not re-derived, for the same
+ * reason the arrow length is pinned rather than guessed: the swing has to be
+ * the match's swing. That file counts this DOWN from a ref reset at the
+ * moment of contact; this screen already has `flightTRef`, which counts UP
+ * from zero at the identical moment (see `handleContact`) and only while the
+ * ball is actually in flight — so the equivalent check here is
+ * `flightTRef.current < KICK_POSE_S`, not `> 0`.
+ */
+export const KICK_POSE_S = 0.28;
+
+/**
+ * Whether the taker's figure should be drawn mid-kick right now — pure and
+ * exported so the decision can be tested without a canvas, the same split
+ * this file's own opening comment draws between what a test can and cannot
+ * reach. `flightT` is `undefined` before a kick has actually happened this
+ * rep (see `draw()`'s own `struck` gate) — never a number that happens to be
+ * small, so "just lined up" can never be misread as "just struck".
+ */
+export function isTakerKicking(flightT: number | undefined): boolean {
+  return flightT !== undefined && flightT < KICK_POSE_S;
+}
 
 type Phase = "aim" | "contact" | "flight" | "result";
 
@@ -345,9 +379,22 @@ export function paintTrialScene(
     power: number;
     faceStyle: FaceStyle;
     fakeFaceStyle: FakeFaceStyle;
+    /** Resolves a decorative body's fake face — see `fake()` below. */
+    faces: FaceImageCache;
+    /**
+     * Seconds since the ball was struck — `flightTRef.current`, valid only
+     * once the phase has actually moved past "aim"/"contact" (the caller
+     * passes `undefined` before then; see `draw()`'s own `struck` check —
+     * the same ref reads 0 both before any kick and at the instant of one,
+     * so "aim"/"contact" can't be told apart from "just kicked" without it).
+     * Omitted, or past `KICK_POSE_S`, both draw the taker in his ordinary
+     * still stance — see `KICK_POSE_S`'s own doc comment for why this counts
+     * up, not down.
+     */
+    flightT?: number;
   },
 ) {
-  const { W, H, camera, ball, drag, power, faceStyle, fakeFaceStyle } = opts;
+  const { W, H, camera, ball, drag, power, faceStyle, fakeFaceStyle, flightT, faces } = opts;
   const rules = ELEVEN_A_SIDE_ATTACK;
   const p = projectionFor(rules, W, H, camera);
   const { px, py, unit } = p;
@@ -362,12 +409,21 @@ export function paintTrialScene(
   // gives each of them a real z/vz). Drawing the lift — the shadow stays on
   // the grass, the figure rises off it — is what makes going under a wall
   // read as a real option rather than a coincidence.
-  for (const d of sc.defenders) {
+  // No real identity reaches this screen at all — a trial happens before you
+  // have even joined a club, so nobody here has a squad photo to draw. A
+  // stable fake face per body, never the blank backing circle that used to
+  // show instead — reported directly: "i dont EVER wanna see a blank circle
+  // face, ALWAYS a fake face at least." `fake()` below is the one place that
+  // decides, keyed by role so the same body keeps the same face frame to
+  // frame without needing any real identity data at all.
+  const fake = (key: string) => faces.get(fakeFaceFor(key));
+
+  sc.defenders.forEach((d, i) => {
     drawFigure(
-      ctx, p, d, { ...WALL_KIT, lift: Math.max(0, d.z ?? 0) },
-      faceStyle, fakeFaceStyle,
+      ctx, p, d, { ...WALL_KIT, lift: Math.max(0, d.z ?? 0), face: fake(`wall-${i}`) },
+      faceStyle, fakeFaceStyle, { scale: MATCH_SCALE },
     );
-  }
+  });
 
   // ── The keeper ──
   //
@@ -378,9 +434,9 @@ export function paintTrialScene(
     const kk = sc.keeper;
     const d = keeperDive(kk);
     drawKeeper(
-      ctx, p, { x: kk.x, y: kk.y }, KEEPER_KIT,
+      ctx, p, { x: kk.x, y: kk.y }, { ...KEEPER_KIT, face: fake("keeper") },
       { dive: d.dive, lunge: d.lunge },
-      faceStyle, fakeFaceStyle,
+      faceStyle, fakeFaceStyle, { scale: MATCH_SCALE },
     );
   }
 
@@ -390,102 +446,32 @@ export function paintTrialScene(
   // after the keeper, because every one of them stands nearer the camera than
   // he does, and among themselves furthest-from-camera first — the same
   // y-sort the rest of this game draws figures by.
-  for (const m of ownSideBodies(sc)) {
-    drawFigure(ctx, p, m, MATE_KIT, faceStyle, fakeFaceStyle);
-  }
+  ownSideBodies(sc).forEach((m, i) => {
+    drawFigure(ctx, p, m, { ...MATE_KIT, face: fake(`mate-${i}`) }, faceStyle, fakeFaceStyle, { scale: MATCH_SCALE });
+  });
   // You, standing over it. Last of your own side, because you are the
   // nearest body to the camera on every one of these screens — and with the
   // same star the real match puts over your own figure, because your kit and
   // a team-mate's kit are the same kit and a first screenshot of this had two
   // identical white men on it with no way to tell which one was you.
-  drawFigure(ctx, p, takerSpot(sc), { ...YOU_KIT, star: true }, faceStyle, fakeFaceStyle);
+  drawFigure(
+    ctx, p, takerSpot(sc), { ...YOU_KIT, star: true, face: fake("you") }, faceStyle, fakeFaceStyle,
+    { scale: MATCH_SCALE, pose: isTakerKicking(flightT) ? bodyPoseFor("kick", 0) : undefined },
+  );
 
   // ── The ball ──
-  drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0);
+  drawBall(ctx, p, ball ? ball.pos : sc.ball, ball ? Math.max(0, ball.z) : 0, MATCH_SCALE);
 
   // ── The aim arrow ──
   //
-  // The one thing on this canvas that is not football. Kept here rather than
-  // pushed into the shared renderer: a five-a-side aims with `drawAim`, and
-  // this is the MATCH's arrow, which is a different drawing again.
-  //
-  // ── It is the match's arrow to the pixel, and that is the point ──
-  //
-  // Reported twice: "the drag arrow still doesn't look like the original
-  // football engine." Measured against CanvasMatch.tsx's own aim block rather
-  // than eyeballed, and two real differences came out of it:
-  //
-  //  1. LENGTH. This drew `power × heightSpan × 0.11`; the match draws
-  //     `× 0.132` (its own comment records why — half the old length, then
-  //     20 % back on top once the meter went and the arrow became the only
-  //     power readout). On an iPhone 13's 358×439 canvas that is 48.3 px
-  //     against 57.9 px at full power — 16.7 % short at every power, which is
-  //     exactly the kind of difference that reads as "not the same arrow"
-  //     without being nameable.
-  //  2. THE METER. See below.
-  //
-  // Everything else — the gradient shaft (#fb923c → #ea580c), the round cap,
-  // the solid #f97316 head, its dark edge, and all four size formulas off W
-  // and `unit` — was already identical, and is left alone.
-  //
-  // `camera.y2 - camera.y1` is the right span to multiply: the match reads
-  // whichever axis fills the canvas HEIGHT, and these two stages never turn
-  // the frame, so pitch Y always is it.
+  // Now the ONE shared `drawAim` (fiveASide/render.ts) — the match, both
+  // striking trials and five-a-side all draw this exact arrow. This used to
+  // be a hand-rolled copy of it living only here, which is exactly how a
+  // future re-tune of the match's own arrow could drift out of step with
+  // this screen again without anyone noticing.
   if (drag) {
     const dx = sc.ball.x - drag.x, dy = sc.ball.y - drag.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const shown = power * (camera.y2 - camera.y1) * AIM_ARROW_LENGTH;
-    const ax = px(sc.ball.x), ay = py(sc.ball.y);
-    const bx2 = px(sc.ball.x + (dx / len) * shown);
-    const by2 = py(sc.ball.y + (dy / len) * shown);
-
-    const ang = Math.atan2(by2 - ay, bx2 - ax);
-    const ux = Math.cos(ang), uy = Math.sin(ang);
-    const nx = -uy, ny = ux;
-    const arrowLen = Math.hypot(bx2 - ax, by2 - ay) || 1;
-    const headLen = clamp(W * 0.045, W * 0.02, arrowLen * 0.45);
-    const headHalf = W * 0.022;
-    const shaftW = W * 0.014;
-    const hbx = bx2 - ux * headLen, hby = by2 - uy * headLen;
-
-    const shaftGrad = ctx.createLinearGradient(ax, ay, bx2, by2);
-    shaftGrad.addColorStop(0, "#fb923c");
-    shaftGrad.addColorStop(1, "#ea580c");
-    ctx.strokeStyle = shaftGrad;
-    ctx.lineWidth = shaftW;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(ax, ay);
-    ctx.lineTo(hbx, hby);
-    ctx.stroke();
-    ctx.lineCap = "butt";
-
-    ctx.beginPath();
-    ctx.moveTo(bx2, by2);
-    ctx.lineTo(hbx + nx * headHalf, hby + ny * headHalf);
-    ctx.lineTo(hbx - nx * headHalf, hby - ny * headHalf);
-    ctx.closePath();
-    ctx.fillStyle = "#f97316";
-    ctx.fill();
-    ctx.lineJoin = "round";
-    ctx.lineWidth = Math.max(1, unit * 0.22);
-    ctx.strokeStyle = "rgba(124,45,18,0.6)";
-    ctx.stroke();
-
-    // ── The power meter is gone, because the match has not had one for a
-    //    while and this was the only screen still drawing it ──
-    //
-    // A 19.7 × 307 px bar down the left edge with a green/amber/red fill and
-    // an 18 px "NN%" label over it — 3.9 % of an iPhone 13's canvas, on the
-    // first ball anybody in this game ever kicks, showing a number the real
-    // game never shows. CanvasMatch removed its own copy of exactly this
-    // ("reported as redundant with the arrow's own length, which already is
-    // the power readout") and this one simply never followed. Reported
-    // directly as a thing the trial has and the game does not.
-    //
-    // Nothing is lost with it: `power` still drives the arrow's length, which
-    // is the same readout the match trusts, and the teach card already says
-    // "pull further for more power" in words.
+    drawAim(ctx, p, sc.ball, { x: dx, y: dy }, power);
   }
 }
 
@@ -892,6 +878,44 @@ export function StrikeStage({
   const camKeyRef = useRef("");
   const faceStyleRef = useRef<FaceStyle>(loadFaceStyle());
   const fakeFaceStyleRef = useRef<FakeFaceStyle>(loadFakeFaceStyle());
+  // Decorative bodies (the wall, the keeper, team-mates, you) have no real
+  // identity in a trial — this resolves a stable fake face for each instead
+  // of the blank backing circle they drew before. See `fake()` in
+  // `paintTrialScene`.
+  const facesRef = useRef<FaceImageCache>(createFaceImageCache());
+
+  /**
+   * THE BOX'S HEIGHT, MEASURED IN JS — NOT `aspect-[5/8] max-h-[64vh]`.
+   *
+   * Measured in a real browser: that Tailwind pair does not just cap the
+   * box's HEIGHT once it bites — it shrinks its WIDTH too, down to 266px on
+   * an iPhone 13 against the 366px `w-full` gives every other screen in this
+   * game (match, training). That is most of a real, measured ~2x gap in how
+   * tall a figure draws here versus everywhere else — the aim arrow's own
+   * `unit` (px per metre) comes out 10.0 here against the match's 13.9 for
+   * framing within 1.2% of the same real metres, purely because this box is
+   * narrower, not because the camera is doing anything different.
+   *
+   * The fix: `w-full` alone decides width, same as everywhere else; height
+   * is computed HERE, in JS, from that real measured width — capped at the
+   * same 64vh this box has always used (see the "phone-shaped box" comment
+   * below for the full, measured derivation of that number) — so the cap
+   * can still stop the canvas running off a short phone without also
+   * squeezing width down to get there.
+   */
+  const [boxH, setBoxH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const resize = () => {
+      const w = wrap.clientWidth;
+      if (w <= 0) return;
+      setBoxH(Math.min(w * (8 / 5), window.innerHeight * 0.64));
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
 
   const [rep, setRep] = useState(0);
   /**
@@ -1209,6 +1233,13 @@ export function StrikeStage({
     const camera = camRef.current ?? strikeCamera(sc, sc.ball, cssW, cssH);
 
     const dragging = phaseRef.current === "aim" && draggingRef.current ? dragRef.current : null;
+    // `flightTRef` is reset to 0 both at the START of a rep (nothing struck
+    // yet) and at the instant of the strike itself — the same 0 means two
+    // different things, so it is only a real "seconds since contact" signal
+    // once the phase has actually moved past "aim"/"contact". Passed through
+    // for "result" too, matching CanvasMatch.tsx's own choice to keep pose
+    // state live into its result phase rather than freezing it at the cut.
+    const struck = phaseRef.current === "flight" || phaseRef.current === "result";
     paintTrialScene(ctx, sc, {
       W: cssW, H: cssH,
       camera,
@@ -1217,6 +1248,8 @@ export function StrikeStage({
       power: dragging ? powerFrom(dragging, sc.ball, camera) : 0,
       faceStyle: faceStyleRef.current,
       fakeFaceStyle: fakeFaceStyleRef.current,
+      faces: facesRef.current,
+      flightT: struck ? flightTRef.current : undefined,
     });
   };
 
@@ -1278,10 +1311,22 @@ export function StrikeStage({
           rather than trusting the arithmetic, which is the whole reason this
           file insists on measuring rather than assuming. Re-measure the
           header/footer figures above before raising this further; either
-          one growing again eats straight into the 13 px that is left. */}
+          one growing again eats straight into the 13 px that is left.
+
+          ── The 64vh itself was always right; how it was applied was not ──
+          All of the above is still the real derivation of 64vh — that
+          number is unchanged. What changed is HOW it caps the box: applying
+          it as CSS `max-h-[64vh]` alongside `aspect-[5/8]` measurably shrunk
+          the box's WIDTH too, the moment the cap bit — 266px on an iPhone
+          13, not the 366px `w-full` gives every other screen in this game.
+          See `boxH` above: height is now computed in JS from the box's own
+          real measured width, capped at the same `window.innerHeight*0.64`,
+          and applied as an explicit style — width stays `w-full`, full
+          stop, exactly like the match and training screens. */}
       <div
         ref={wrapRef}
-        className="relative mx-auto aspect-[5/8] max-h-[64vh] w-full overflow-hidden rounded-xl border border-white/15"
+        className="relative mx-auto w-full overflow-hidden rounded-xl border border-white/15"
+        style={{ height: boxH ?? "auto", aspectRatio: boxH == null ? "5 / 8" : undefined }}
       >
         <canvas
           ref={canvasRef}
