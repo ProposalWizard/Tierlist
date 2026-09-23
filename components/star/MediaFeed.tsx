@@ -5,7 +5,7 @@ import type { Trend } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
 import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar";
-import PostCard from "./media/PostCard";
+import PostCard, { FEED_LIST_CLASS } from "./media/PostCard";
 import TransfersPanel from "./TransfersPanel";
 import PhoneFrame from "./PhoneFrame";
 
@@ -166,15 +166,15 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
             </div>
           )}
 
-          <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5">
-            <div className="space-y-2">
+          <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto">
+            <div className={FEED_LIST_CLASS}>
               {/* The second of the two Continue buttons — this one scrolls
                   away like any other post, for anyone reading the feed
                   normally rather than reaching for the app-bar one above. */}
               {mode === "moment" && onContinue && (
                 <button
                   onClick={onContinue}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-2 text-[12px] font-black text-black transition hover:bg-emerald-400"
+                  className="mx-3 mt-3 flex w-[calc(100%-1.5rem)] items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-2 text-[12px] font-black text-black transition hover:bg-emerald-400"
                 >
                   Continue
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -184,7 +184,7 @@ export default function MediaFeed({ career, mode, onContinue }: Props) {
               )}
               {shown.map(p => <PostCard key={p.id} post={p} now={now} />)}
               {shown.length === 0 && (
-                <div className="rounded-xl border border-white/12 bg-white/[0.04] px-3 py-8 text-center">
+                <div className="mx-3 mt-3 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-8 text-center">
                   <div className="text-sm font-black text-white">Quiet out there.</div>
                   <p className="mt-1 text-[11px] font-bold text-white/60">
                     {posts.length === 0
