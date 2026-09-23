@@ -388,7 +388,7 @@ export const ADMIN_GUIDES = {
         group: "The picture",
         items: [
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
-          ["+ Mate / + Opponent", "Add a team-mate or an opponent."],
+          ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
           ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included."],
           ["PNG", "Downloads the picture (without the fault rings)."],
@@ -441,9 +441,11 @@ export const ADMIN_GUIDES = {
         items: [
           ["‹ Back", "Back to the Play Area."],
           ["What it served", "Live count of each chance type the match has given you, with shares and a per-90."],
-          ["✎ Edit this chance", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove."],
-          ["Save as a scenario", "Saves it into that chance type in the gallery, for the whole team."],
-          ["Commit to the game", "Saves it AND commits it into the game's code."],
+          ["This chance: …", "The bar pinned to the top of the screen for the whole match: which chance you are on and the minute."],
+          ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove."],
+          ["Save", "Saves the chance exactly as it stands into that chance type in the gallery, for the whole team. No editing needed."],
+          ["Commit", "Saves it AND commits it into the game's code, as it stands."],
+          ["Save as a scenario / Commit to the game", "The same two, inside the editor — they save your edited version."],
           ["Back to the match", "Closes the editor."],
         ],
       },
@@ -453,7 +455,7 @@ export const ADMIN_GUIDES = {
       "Save as a scenario: " + SCENARIO_SAVE_SHARED,
     ],
     commit: [
-      "Only \"Commit to the game\" in the chance editor commits — one scenario, straight onto main.",
+      "Commit (on the pinned bar) and \"Commit to the game\" (in the editor) both commit — one scenario, straight onto main.",
       ...COMMIT_HOW.slice(1),
     ],
     inGame: [

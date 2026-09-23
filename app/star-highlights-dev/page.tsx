@@ -786,7 +786,10 @@ export default function HighlightsPage() {
           </button>
         </div>
       ) : (
-        <div ref={pictureRef} style={{ padding: "10px 12px 14px", display: "grid", justifyItems: "center", gap: 8 }}>
+        <div ref={pictureRef} style={{ padding: "10px 12px 14px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", justifyItems: "center", gap: 8 }}>
+          {/* minmax(0, 1fr): without it the column grew to the button row's
+              full width (433px on a 390px phone), so the picture sat
+              off-centre and Delete was cut off the right edge. */}
           {/* Playing swaps the PICTURE for the live match and leaves every
               control below it exactly where it was, so a chance can be
               played, corrected and saved without changing screen. */}
@@ -836,7 +839,7 @@ export default function HighlightsPage() {
               picture, then take him out; or put a new one in. */}
           <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
             <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
-            <button style={editBtn(false)} onClick={() => addFigure("opponent")}>+ Opponent</button>
+            <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
             <button
               style={editBtn(!canRemove)}
               disabled={!canRemove}
@@ -1032,7 +1035,7 @@ const editBtn = (off: boolean): React.CSSProperties => ({
   // Up to seven of these share one row since Delete and Tune joined it, so
   // they shrink rather than wrap onto a second line.
   flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
-  padding: "0 6px", whiteSpace: "nowrap",
+  padding: "0 4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
   border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
   color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 12, fontWeight: 700,
 });
