@@ -164,13 +164,18 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "energy.highModeChances", category: "Energy", label: "High mode — chance multiplier",
-    description: "How much more often the ball comes to you on High (1.35 = about 35% more).",
+    description: "On High, how much bigger a share of your side's chances comes to you. With 'extra chances made' below, High measures about 35% more chances than Medium (1,500+ simulated matches per position).",
+    default: 1.45, min: 1, max: 3, step: 0.05,
+  },
+  {
+    key: "energy.highModeExtraChances", category: "Energy", label: "High mode — extra chances made",
+    description: "On High, while your side has the ball, extra chances are made that only come to you (1.35 = 35% more on top of your side's normal rate). Your team-mates get none of them.",
     default: 1.35, min: 1, max: 3, step: 0.05,
   },
   {
     key: "energy.lowModeChances", category: "Energy", label: "Low mode — chance multiplier",
-    description: "How often the ball comes to you on Low (0.65 = about 35% fewer).",
-    default: 0.65, min: 0, max: 1, step: 0.05,
+    description: "On Low, how much of your side's chances still come to you. 0.25 measures about 35% fewer chances than Medium: you still go and find the ball after a long quiet spell, which is why it isn't lower.",
+    default: 0.25, min: 0, max: 1, step: 0.05,
   },
   {
     key: "energy.restDayEnergy", category: "Energy", label: "Energy per rest day",

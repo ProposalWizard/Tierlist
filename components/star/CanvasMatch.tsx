@@ -691,6 +691,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // computes a whole passage at once, but you watch it.
   const [log, setLog] = useState<LogLine[]>([]);
   const [queue, setQueue] = useState<LogLine[]>([]);
+  const queueRef = useRef<LogLine[]>([]);
+  queueRef.current = queue;
   // The number painted on the scoreboard — read off what has actually been
   // REVEALED so far, not off the simulation's own running total. Those two
   // used to be the same `score` state, set the instant a whole simulated
@@ -729,6 +731,36 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const halfTimeShownRef = useRef(false);
   /** What to do once the queue has emptied. */
   const simContinueRef = useRef<(() => void) | null>(null);
+  /**
+   * THE STRETCH OF PLAY IN FLIGHT, so an energy-mode switch is instant.
+   *
+   * `startSimulation` works out everything up to your next chance the moment
+   * the last one ends, and the commentary then plays it out minute by minute.
+   * A mode switch made while that plays used to change nothing until the NEXT
+   * stretch. Asked for directly: "if you change to high energy, it changes
+   * everything to high energy mode straight away." So the start of the
+   * stretch is kept here, and a switch re-runs it from the same seed with the
+   * new mode taking over from the next minute: everything already on screen
+   * comes out identical, everything after it is played at the new mode,
+   * including when your next chance arrives. Cleared the moment the stretch
+   * hands over to a chance, so a switch can never rewind an old one.
+   */
+  const stretchRef = useRef<{
+    snapshot: HiddenMatchState;
+    seed: number;
+    inputs: HiddenMatchInputs;
+    userScore: number;
+    oppScore: number;
+    goalEvents: number;
+    oppGoalEvents: number;
+    hooked: HookReason | null;
+    hookedAt: number | null;
+    feed: string[];
+    changes: { minute: number; mode: EnergyMode }[];
+    /** How many lines the stretch queued, so the ones already read out can
+     *  be told apart from the ones still to come. */
+    queued: number;
+  } | null>(null);
 
   // The match going on around you. It owns possession, territory and momentum;
   // your chances are what it hands you, and their kind is decided by where the
@@ -829,10 +861,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setMatchMinute(minute);
   };
   const setEnergyMode = (mode: EnergyMode) => {
+    if (mode === energyModeRef.current) return;
     // Bank what the old mode cost up to now before the new rate applies.
     chargeEnergyTo(matchMinuteRef.current);
     energyModeRef.current = mode;
     setEnergyModeState(mode);
+    // And the football changes now too, not from your next chance: see
+    // stretchRef. From the next minute, so nothing already read out changes.
+    const stretch = stretchRef.current;
+    if (stretch && phaseRef.current === "feed" && !hookedRef.current) {
+      stretch.changes.push({ minute: matchMinuteRef.current + 1, mode });
+      startSimulation(true);
+    }
   };
   const KIB_HALF_TIME_RESTORE = 25;
   const drinkHalfTimeKib = () => {
@@ -1107,6 +1147,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
   const [feed, setFeed] = useState<string[]>([]);
+  const feedRef = useRef<string[]>([]);
+  feedRef.current = feed;
   /**
    * The four-line ticker under the canvas, and ONLY the ticker.
    *
@@ -1315,6 +1357,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // does not arrive on top of the sentence that set it up.
     const t = setTimeout(() => {
       simContinueRef.current = null;
+      // The stretch is over; a mode switch from here on shapes the next one.
+      stretchRef.current = null;
       go();
     }, Math.round(700 / Math.max(1, speed)));
     return () => clearTimeout(t);
@@ -3464,10 +3508,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // earned. The clock is now driven by the simulation — you are pulled in when
   // your side works the ball into a dangerous area, and the situation you get
   // is whatever that area justifies.
-  const startSimulation = () => {
+  const startSimulation = (resim = false) => {
     sceneGenRef.current += 1;
-    seedRef.current += 1;
-    const rng = countedRng(seedRef.current, rngCallCountRef);
+    // A re-run (an energy-mode switch mid-stretch, see stretchRef) puts
+    // everything the stretch touched back where it started and replays it
+    // from the same seed.
+    const prior = resim ? stretchRef.current : null;
+    if (prior) {
+      matchStateRef.current = { ...prior.snapshot };
+      userScoreRef.current = prior.userScore;
+      oppScoreRef.current = prior.oppScore;
+      goalEventsRef.current.length = prior.goalEvents;
+      oppGoalEventsRef.current.length = prior.oppGoalEvents;
+      hookedRef.current = prior.hooked;
+      hookedAtRef.current = prior.hookedAt;
+      setFeed(prior.feed);
+    } else {
+      seedRef.current += 1;
+    }
+    const stretchSeed = prior ? prior.seed : seedRef.current;
+    const rng = countedRng(stretchSeed, rngCallCountRef);
     rngRef.current = rng;
 
     // The refs are the authority on the scoreline (the HUD reads them, and your
@@ -3477,10 +3537,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     st.userScore = userScoreRef.current;
     st.oppScore = oppScoreRef.current;
 
+    const baseInputs: HiddenMatchInputs = prior
+      ? { ...prior.inputs, energyModeChanges: prior.changes }
+      : hiddenInputs();
+    if (!prior) {
+      stretchRef.current = {
+        snapshot: { ...st },
+        seed: stretchSeed,
+        inputs: baseInputs,
+        userScore: userScoreRef.current,
+        oppScore: oppScoreRef.current,
+        goalEvents: goalEventsRef.current.length,
+        oppGoalEvents: oppGoalEventsRef.current.length,
+        hooked: hookedRef.current,
+        hookedAt: hookedAtRef.current,
+        feed: feedRef.current,
+        changes: [],
+        queued: 0,
+      };
+    }
+
     // Dead balls you are not the taker for go to whoever is. Keep advancing
     // until the match hands you something that is actually yours — bounded,
     // because every pass moves the clock and the clock ends the match.
-    let step = advanceUntilInvolved(st, hiddenInputs(), rng, matchCeilingRef.current);
+    let step = advanceUntilInvolved(st, baseInputs, rng, matchCeilingRef.current);
     const handedOver: HiddenMatchEvent[] = [];
     for (let guard = 0; guard < 20; guard++) {
       const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
@@ -3499,7 +3579,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
       }
       resolveScenario(st, scored ? "goal" : "saved");
-      step = advanceUntilInvolved(st, hiddenInputs(), rng, matchCeilingRef.current);
+      step = advanceUntilInvolved(st, baseInputs, rng, matchCeilingRef.current);
     }
 
     const raw = [...handedOver, ...step.events];
@@ -3520,10 +3600,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const squad = onPitch(careerRef.current?.squad ?? []);
     // `announce: true` — these are happening now, live, so they belong in the
     // four-line ticker as well as in the permanent log.
-    const events: SimEvent[] = nameTeamGoals(raw, squad, rng, true);
+    // Names come off their own seeded stream, not the match's: a re-run
+    // (stretchRef) must name every goal already read out exactly as before,
+    // and the match stream past the switch is different by design.
+    const events: SimEvent[] = nameTeamGoals(raw, squad, mulberry32(stretchSeed * 31 + 7), true);
 
-    if (st.oppScore > oppScoreRef.current) playCrowdSwell("groan");
-    else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
+    if (!prior) {
+      if (st.oppScore > oppScoreRef.current) playCrowdSwell("groan");
+      else if (st.userScore > userScoreRef.current) playCrowdSwell("cheer");
+    }
     userScoreRef.current = st.userScore;
     oppScoreRef.current = st.oppScore;
 
@@ -3569,7 +3654,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // `nameTeamGoals` describes for the hour BEFORE you come on, left
         // un-fixed in the mirror-image branch: the substitution that ends your
         // afternoon, rather than the one that starts it.
-        const after = advanceTo(st, hiddenInputs(), rng, matchCeilingRef.current);
+        const after = advanceTo(st, baseInputs, rng, matchCeilingRef.current);
         events.push(...nameTeamGoals(after, onPitch(careerRef.current?.squad ?? []), rng, false));
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
@@ -3584,7 +3669,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // The minute is NOT jumped to here: it is advanced by the streamer as each
     // line is read out, which is the difference between watching the clock run
     // and being told where it got to. See the queue effect.
-    setQueue(linesFrom(events, matchMinuteRef.current));
+    // On a re-run, the lines already read out came out identical; only the
+    // ones still to come are replaced.
+    const shown = prior ? Math.max(0, prior.queued - queueRef.current.length) : 0;
+    if (stretchRef.current) stretchRef.current.queued = events.length;
+    setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
     setPhase("feed");
 
     simContinueRef.current = () => {
@@ -4145,6 +4234,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setKibUsed(0);
     matchStateRef.current = newMatch(mulberry32(seedRef.current));
     simContinueRef.current = null;
+    stretchRef.current = null;
     pendingRequestRef.current = null;
     dribbleRef.current = null;
     flickStartRef.current = null;
