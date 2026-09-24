@@ -129,6 +129,7 @@ export const TEST_ONLY = {
   markers: "Training: the technique drill's cones, drawn on the grass. Decoration only.",
   onBallStep: "Training: watches the ball cross the cone gate. Read-only.",
   dragReferenceHeightPx: "Gallery/highlights: a bigger picture reads the drag against the real match's canvas height, so a kick hits exactly as hard.",
+  scene: "Trial/training: what is on the pitch — a drill can leave out the keeper, the goal, team-mates or the GOAL/PASS text. Only takes things off; the ball and the kick are always the match's (Harry: 'different modes... will be COMPLETELY looking different... it has to be allowed').",
 };
 
 /** Where the canary lives, and what each planted file must (or must not) trip. */
