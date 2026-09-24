@@ -34,6 +34,7 @@ import {
 import { loadPlaySettings, sanitizePlaySettings, type PlaySettings } from "@/lib/star/playArea";
 import type { CareerState, MatchStats } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
+import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 
 /**
  * Real squads, fetched once per club per page — the gallery can press Play a
@@ -154,6 +155,61 @@ export default function EnginePlay({
         onChanceServed={onChanceServed}
         onChanceResolved={onChanceResolved}
         onComplete={onComplete}
+      />
+    </div>
+  );
+}
+
+/**
+ * THE SAME DOOR, FOR A FEATURE THAT IS PART OF THE GAME — not a test screen.
+ *
+ * The trial and the training play real football as part of a career, so they
+ * get none of the Play Area's dials and no borrowed test club: the engine,
+ * the player's own skills (and, for a trial, the "invisible stats" a brand-new
+ * career starts with — Harry, 24 Sep 2026: "if the trial acts differently
+ * because of no ratings for set pieces and boots, let's give invisible stats
+ * for each"), at the real match's size.
+ *
+ * What makes the feature a feature is what it wraps AROUND this — its own
+ * scoring from `onChanceResolved`, its own tutorial card, its own reps — and
+ * the one dial it may turn inside the engine: `penaltyRead`, the trial's
+ * harder keeper. Everything else is the real match.
+ */
+export function EngineFeature({
+  openOn, onChanceServed, onChanceResolved, skills, setPieceSkill, keeperStrength = 62,
+  penaltyRead, seed = 1, markers, onBallStep,
+}: {
+  /** The picture for the next chance. Called again after every result. */
+  openOn: () => Scenario;
+  onChanceServed?: (info: { kind: ScenarioKind | "dribble"; minute: number; reason?: string; scenario?: Scenario }) => void;
+  onChanceResolved?: (info: ChanceResolved) => void;
+  skills: { power: number; technique: number };
+  /** The free-kick rating penalties and free kicks are struck with. */
+  setPieceSkill?: number;
+  keeperStrength?: number;
+  penaltyRead?: Partial<PenaltyReadSettings>;
+  seed?: number;
+  /** Cones on the grass (decoration only). */
+  markers?: { x: number; y: number; color?: string }[];
+  /** Watches the ball each physics step (read-only). */
+  onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+}) {
+  const w = useRealMatchWidth();
+  return (
+    <div style={{ width: w, maxWidth: "100%", margin: "0 auto" }}>
+      <CanvasMatch
+        seed={seed}
+        skills={skills}
+        setPieceSkill={setPieceSkill}
+        keeperStrength={keeperStrength}
+        penaltyRead={penaltyRead}
+        neverHooked
+        openOn={openOn}
+        bare
+        onChanceServed={onChanceServed}
+        onChanceResolved={onChanceResolved}
+        markers={markers}
+        onBallStep={onBallStep}
       />
     </div>
   );

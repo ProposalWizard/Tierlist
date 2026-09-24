@@ -253,6 +253,22 @@ interface Props {
    * read (lib/star/penaltyKeeper.ts). The real career match never passes it.
    */
   penaltyRead?: Partial<PenaltyReadSettings>;
+  /**
+   * The set-piece (free kick) rating to strike penalties and free kicks with
+   * when there is no career to read it from — the trial's "invisible stat",
+   * so a trial free kick is struck the way the same player would strike one
+   * in a match. A career's own rating always wins.
+   */
+  setPieceSkill?: number;
+  /**
+   * EXTRAS ON TOP — for a feature built around the engine (a training drill).
+   * `markers`: cones drawn on the pitch, in pitch metres. Decoration only:
+   * nothing in the engine reads them, so the football is untouched.
+   */
+  markers?: { x: number; y: number; color?: string }[];
+  /** Observer: the ball's position, once per physics step while it flies —
+   *  so a drill can judge "did it go through the gate" off the real flight. */
+  onBallStep?: (ball: { x: number; y: number; z: number }) => void;
 }
 
 /** What `onChanceResolved` reports. */
@@ -412,7 +428,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -887,6 +903,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   onChanceResolvedRef.current = onChanceResolved;
   const penaltyReadRef = useRef(penaltyRead);
   penaltyReadRef.current = penaltyRead;
+  const setPieceSkillRef = useRef(setPieceSkill);
+  setPieceSkillRef.current = setPieceSkill;
+  const markersRef = useRef(markers);
+  markersRef.current = markers;
+  const onBallStepRef = useRef(onBallStep);
+  onBallStepRef.current = onBallStep;
   const neverHookedRef = useRef(neverHooked);
   neverHookedRef.current = neverHooked;
 
@@ -1122,11 +1144,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // honoured in both places: a first attempt wired only `loadScenario` and
   // the Play overlay opened on a build-up, because the opening scene had
   // already been built before that function was ever called. See `openOn`.
-  const scenarioRef = useRef<Scenario>(
-    openOn
+  // Built once: `useRef(expr)` would evaluate the builder on every render
+  // and throw the result away — and call a feature's `openOn` each time.
+  const scenarioRef = useRef<Scenario | null>(null) as React.MutableRefObject<Scenario>;
+  if (scenarioRef.current === null) {
+    scenarioRef.current = openOn
       ? openOn()
-      : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55),
-  );
+      : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55);
+  }
   const ballRef = useRef<Ball | null>(null);
   /**
    * How many times THIS scenario's rng has been drawn from, since it was
@@ -2436,6 +2461,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       drawCaptainOrders(sc);
     }
 
+    // A feature's cones (the markers prop) — on the grass, under everyone.
+    if (markersRef.current?.length) {
+      for (const m of markersRef.current) {
+        const { px, py } = toPx(m.x, m.y);
+        const vpm = viewportRef.current;
+        // A cone about 0.35 m across, at this camera's own pixels per metre.
+        const pxPerM = Math.max(canvas.width, canvas.height) / Math.max(vpm.x2 - vpm.x1, vpm.y2 - vpm.y1);
+        const r = Math.max(3, 0.35 * pxPerM);
+        ctx.fillStyle = m.color ?? "#f97316";
+        ctx.beginPath();
+        ctx.moveTo(px, py - r * 1.6);
+        ctx.lineTo(px + r, py + r * 0.4);
+        ctx.lineTo(px - r, py + r * 0.4);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
     // Defenders + you. A wall man in the air is drawn where he actually is —
     // the same height the block test uses, so what you see is what resolves.
     sc.defenders.forEach((d, i) => {
@@ -2987,6 +3030,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               && acceptsCaptainOrders(scenarioRef.current.kind);
           const caughtUp = touchLive && stepTouchChase(scenarioRef.current, ballRef.current, h);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
+          if (onBallStepRef.current) {
+            const bb = ballRef.current;
+            try { onBallStepRef.current({ x: bb.pos.x, y: bb.pos.y, z: bb.z }); } catch { /* an observer never breaks the match */ }
+          }
           // stepBall's own resolution always wins if it fired the same tick —
           // a defender's clearance or the ball going out is real and takes
           // priority over a chase that only just closed the gap.
@@ -4541,7 +4588,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const tired = tiredSkills();
     const strikeWith = setPieceSkills(
       tired,
-      careerRef.current?.skills.freeKick ?? tired.technique,
+      careerRef.current?.skills.freeKick ?? setPieceSkillRef.current ?? tired.technique,
       scenarioRef.current.kind,
     );
     // Snapshot everything a replay would need to reproduce this exact strike

@@ -1,3 +1,4 @@
+import { getTuning } from "./tuningStore";
 import {
   freeKickDrill, visionDrill, strikeSpot, shotQuality,
   type FreeKickDrillConfig, type VisionDrillConfig,
@@ -366,6 +367,40 @@ export function penaltyCommit(trial: TrialProgress, rep: number): number {
   // he leans left must not also be the rep where he always commits.
   const wobble = Math.sin((attemptSeed(trial) % 1013) * 3.77 + rep * 57.31) * 12911.7;
   return (wobble - Math.floor(wobble)) < chance ? PENALTY_COMMIT_M : 0;
+}
+
+/**
+ * THE TRIAL KEEPER, ON THE REAL GAME'S PENALTY READ (24 Sep 2026).
+ *
+ * The trial used to stand its keeper off-centre before the kick (the "tell")
+ * and start his dive the instant you struck it — a keeper the real match
+ * never had. Harry chose one keeper for both: he stands in the middle and
+ * reads your kick at the strike (lib/star/penaltyKeeper.ts). The trial's
+ * difficulty is now how often he goes and how well he reads you, turned up
+ * as the day gets harder:
+ *   easy:  goes 65 %, reads 55 %   (a real match's keeper: goes 80 %, reads 60 %)
+ *   hard:  goes 95 %, reads 72 %
+ * Measured on the real engine in tests/star/penaltyKeeper.mts.
+ */
+export function penaltyReadForTrial(trial: TrialProgress): { commitChance: number; readChance: number } {
+  const d = difficultyFor(trial, "penalties");
+  return {
+    commitChance: PENALTY_COMMIT_CHANCE_EASY + (PENALTY_COMMIT_CHANCE_HARD - PENALTY_COMMIT_CHANCE_EASY) * d,
+    readChance: 0.55 + 0.17 * d,
+  };
+}
+
+/**
+ * THE TRIAL PLAYER'S INVISIBLE STATS.
+ *
+ * A trial is played before you have a club, a career's skills or boots — so
+ * the engine used to strike trial set pieces with raw power and technique and
+ * nothing else, a purer kick than any match kick. Harry: "give invisible stats
+ * for each". The trial player is a brand-new career: the free-kick rating a new
+ * career starts with, no boots (so no curve), a clear day, fresh legs.
+ */
+export function trialInvisibleStats(): { setPieceSkill: number; canCurve: false } {
+  return { setPieceSkill: getTuning("startingSkills.freeKick"), canCurve: false };
 }
 
 /**

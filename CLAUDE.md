@@ -215,9 +215,12 @@ used the base engine … extra stuff built on top of the base engine."*
 - **Never** add to `KNOWN_COPIES`, raise `CEILING`, touch the canary, or remove
   the guard from the `build` script without being asked in those words. Load the `one-engine` skill
   first.
-- **Still copies, to port next:** trial penalties and free kicks, training
-  strike drills, five-a-side, and 2 dev prototypes. The live list is in the
-  guard.
+- **Ported (24 Sep 2026):** trial penalties and free kicks, training strike
+  drills and the gauntlet. They mount `EngineFeature` (EnginePlay.tsx) and only
+  build each rep's picture and score it. A trial/training difference is a
+  named dial (`TEST_ONLY` in the guard), never a copy.
+- **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
+  and 2 dev prototypes. The live list is in the guard.
 
 ## ALWAYS PLAYTEST STAR CAREER CHANGES — you can now actually see the game
 

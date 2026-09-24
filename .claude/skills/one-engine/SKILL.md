@@ -86,7 +86,7 @@ stop and say so. Don't route around it.
 `KNOWN_COPIES` in the guard is the live list, each entry with its plan. The
 order agreed on 24 Sep 2026 is:
 
-1. trial penalties and free kicks, and the training strike drills: onto EnginePlay with `onChanceResolved` scoring them
+1. ~~trial penalties and free kicks, and the training strike drills~~ — done 24 Sep 2026 (`EngineFeature` + `onChanceResolved`; training's gate uses `markers` + `onBallStep`; the gauntlet is the real match's `FirstPersonDribble`)
 2. five-a-side: a different game, but it must use the match's own drag and arrow
 3. the two dev prototypes: port or delete
 

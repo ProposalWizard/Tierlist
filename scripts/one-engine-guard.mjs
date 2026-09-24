@@ -78,10 +78,8 @@ export const CANVASMATCH_MOUNTS = new Set([REAL_MOUNT, TEST_MOUNT]);
  * EnginePlay.
  */
 export const KNOWN_COPIES = {
-  "components/star/stages/TrialPenalties.tsx":
-    "Trial penalties + free kicks. To be rebuilt on EnginePlay in the trial round.",
-  "components/star/TrainingMinigame.tsx":
-    "Training strike drills. To be rebuilt on EnginePlay in the training round.",
+  // Ported 24 Sep 2026 and removed from this list: TrialPenalties.tsx (trial
+  // penalties + free kicks) and TrainingMinigame.tsx (strike drills + gauntlet).
   "components/star/FiveASide.tsx":
     "Trial five-a-side: a different game (5 v 5, small goal) on the engine's own functions.",
   "components/star/BicycleKickTrial.tsx":
@@ -91,7 +89,7 @@ export const KNOWN_COPIES = {
   "components/star/CanvasMatchTest.tsx":
     "Mikey's physics fork for /star-match-dev (runs canvasEngineTest.ts). Reaches the game only by being ported by hand.",
 };
-export const CEILING = 6;
+export const CEILING = 4;
 
 /**
  * Every file with its own canvas animation loop, other than the real match.
@@ -99,7 +97,6 @@ export const CEILING = 6;
  * function; this is where it shows up. Same rule: only ever shrinks.
  */
 export const KNOWN_CANVASES = {
-  "components/star/stages/TrialPenalties.tsx": "Known copy (above).",
   "components/star/FiveASide.tsx": "Known copy (above).",
   "components/star/BicycleKickTrial.tsx": "Known copy (above).",
   "components/star/LiveAttack.tsx": "Known copy (above).",
@@ -109,7 +106,7 @@ export const KNOWN_CANVASES = {
   "components/star/stages/TrialVision.tsx":
     "Trial vision drill: a still picture you read and tap. Draws, never simulates.",
 };
-export const CANVAS_CEILING = 7;
+export const CANVAS_CEILING = 6;
 
 /** Settings the real match passes that a test screen deliberately does not. */
 export const CAREER_ONLY = {
@@ -127,6 +124,10 @@ export const TEST_ONLY = {
   bare: "No scoreboard on a card that counts nothing.",
   onChanceServed: "Observer: tells a test screen what chance is on.",
   onChanceResolved: "Observer: tells a feature how the chance ended.",
+  setPieceSkill: "Trial/training: the free-kick rating when there is no career (the trial's invisible stat; training's own skill).",
+  penaltyRead: "Trial: a harder keeper read on the harder reps (Harry: 'that should bypass the checks').",
+  markers: "Training: the technique drill's cones, drawn on the grass. Decoration only.",
+  onBallStep: "Training: watches the ball cross the cone gate. Read-only.",
 };
 
 /** Where the canary lives, and what each planted file must (or must not) trip. */
