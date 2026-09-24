@@ -13,6 +13,7 @@
 
 import {
   goalInView,
+  type Facing,
   type Scenario,
   type Vec2,
   type Identity,
@@ -34,6 +35,7 @@ import { offsideLineOf } from "./baseScenario";
 import { DEFAULT_FACE_STYLE } from "./faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "./fakeFaceStyle";
 import type { ScenarioSide } from "./scenarios";
+import type { Kit } from "./kits";
 
 // ── Kit looks. Not real club kits — just enough colour to tell the three
 //    groups apart on a diagram: your side blue, theirs red, a keeper green. ──
@@ -89,6 +91,13 @@ export interface Frame {
   offsideFrom: { defenderIdx: number[]; keeperIdx: number } | null;
   items: Item[];
   ball: Vec2;
+  /**
+   * Which way the real match turns this chance on screen — the scenario's own
+   * `facing`. A corner and a byline cross are watched from the SIDE in the
+   * game (CanvasMatch's `toPx`), so the picture turns them the same way, or
+   * pressing Play spins the whole scene a quarter turn. Absent = "up".
+   */
+  facing?: Facing;
 }
 
 export const idLabel = (who: Identity | undefined, fallback: string): string =>
@@ -148,6 +157,7 @@ export function frameFromScenario(sc: Scenario): Frame {
         : null,
     items: withIds,
     ball: { ...sc.ball },
+    facing: sc.facing,
   };
 }
 
@@ -185,8 +195,13 @@ export interface FrameSizing {
 
 export function frameCssSize(frame: Frame, size: FrameSizing = {}): { cssW: number; cssH: number } {
   const { baseW = 340, maxW = 460, maxH = 560 } = size;
-  const vpW = frame.camera.x2 - frame.camera.x1;
-  const vpH = frame.camera.y2 - frame.camera.y1;
+  // A turned frame shows the pitch's Y span across the screen and its X span
+  // down it — the same quarter turn the real match makes.
+  const turned = frameFacing(frame) !== "up";
+  const spanX = frame.camera.x2 - frame.camera.x1;
+  const spanY = frame.camera.y2 - frame.camera.y1;
+  const vpW = turned ? spanY : spanX;
+  const vpH = turned ? spanX : spanY;
   let cssW = baseW;
   let cssH = Math.round((baseW * vpH) / vpW);
   if (cssH > maxH) { cssH = maxH; cssW = Math.round((maxH * vpW) / vpH); }
@@ -194,8 +209,101 @@ export function frameCssSize(frame: Frame, size: FrameSizing = {}): { cssW: numb
   return { cssW, cssH };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+//  THE TURN — a corner and a byline cross, drawn the way the game draws them
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Which way this picture is turned on screen.
+ *
+ * Only a genuinely side-on camera turns: the scenario says "left"/"right" AND
+ * its camera is wider (in pitch X) than it is deep, which is the shape
+ * `crossViewport` builds. A chance snapshotted after the match cut back to
+ * the ordinary view keeps an upright, portrait camera, and turning that
+ * would draw it on its side.
+ */
+export function frameFacing(frame: Frame): Facing {
+  const f = frame.facing;
+  if (f !== "left" && f !== "right") return "up";
+  const c = frame.camera;
+  return c.x2 - c.x1 > c.y2 - c.y1 ? f : "up";
+}
+
+/** Pitch metres to CSS pixels on a frame's canvas and back, turn and all. */
+export interface FrameScreen {
+  facing: Facing;
+  cssW: number;
+  cssH: number;
+  /** Pixels per metre, the same both ways. */
+  unit: number;
+  toScreen: (v: Vec2) => { x: number; y: number };
+  toWorld: (sx: number, sy: number) => Vec2;
+}
+
+/**
+ * The picture's own camera, written the same way as the real match's
+ * (CanvasMatch's `toPx` / `pitchFromPointer`): the ordinary view is a flat
+ * plan; "right" is that plan turned a quarter turn clockwise, so the goal is
+ * on the right and pitch X runs down the screen; "left" is the same turn the
+ * other way. Painting, fault rings, grabbing and dragging all go through this
+ * one function, so they cannot disagree about where anybody is.
+ */
+export function frameScreen(frame: Frame, cssW: number, cssH: number): FrameScreen {
+  const vp = frame.camera;
+  const spanX = vp.x2 - vp.x1, spanY = vp.y2 - vp.y1;
+  const facing = frameFacing(frame);
+  if (facing === "up") {
+    const p = projectionFor(frame.rules, cssW, cssH, vp);
+    return {
+      facing, cssW, cssH, unit: p.unit,
+      toScreen: (v) => ({ x: p.px(v.x), y: p.py(v.y) }),
+      toWorld: (sx, sy) => ({ x: (sx / cssW) * spanX + vp.x1, y: (sy / cssH) * spanY + vp.y1 }),
+    };
+  }
+  const right = facing === "right";
+  return {
+    facing, cssW, cssH,
+    unit: Math.min(cssH / spanX, cssW / spanY),
+    toScreen: (v) => {
+      const fx = (v.x - vp.x1) / spanX, fy = (v.y - vp.y1) / spanY;
+      return right ? { x: (1 - fy) * cssW, y: fx * cssH } : { x: fy * cssW, y: (1 - fx) * cssH };
+    },
+    toWorld: (sx, sy) => {
+      const u = sx / cssW, w = sy / cssH;
+      const fx = right ? w : 1 - w;
+      const fy = right ? 1 - u : u;
+      return { x: fx * spanX + vp.x1, y: fy * spanY + vp.y1 };
+    },
+  };
+}
+
+/** A projection that puts ONE thing at one screen point: how an upright
+ *  figure is placed on a turned pitch (render.ts's primitives read only
+ *  `px(at.x)`, `py(at.y)` and `unit`). */
+function pointProjection(at: { x: number; y: number }, unit: number, W: number, H: number): Projection {
+  return { px: () => at.x, py: () => at.y, unit, W, H };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  REAL KITS — what Play will put them in
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Your side, their side and their keeper: what the match will wear. */
+export interface FrameKits { ours: Kit; theirs: Kit; keeper: Kit }
+
+/**
+ * A figure's look in the real kits, drawn the way CanvasMatch draws a
+ * footballer: shirt, shorts in the trim colour, trim as the edge. Labels and
+ * the star are kept. Without kits a figure keeps the diagram colours.
+ */
+export function lookInKit(it: Item, kits: FrameKits | undefined): FigureLook {
+  if (!kits) return it.look;
+  const kit = it.keeper ? kits.keeper : it.side === "opponent" ? kits.theirs : kits.ours;
+  return { ...it.look, shirt: kit.shirt, shorts: kit.trim, trim: kit.trim };
+}
+
 /** Paint a frame onto a canvas, sized to the camera's own aspect. */
-export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing = {}): void {
+export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing = {}, kits?: FrameKits): void {
   // The painter OWNS the canvas size, so a caller that sizes its own element
   // and then calls paint() gets silently overruled back to the phone default.
   // That is exactly what happened to the desktop scenario view.
@@ -211,22 +319,42 @@ export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  const p: Projection = projectionFor(frame.rules, cssW, cssH, frame.camera);
-  drawPitch(ctx, frame.rules, p);
-  if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, p, frame.goalAtY);
-
+  const scr = frameScreen(frame, cssW, cssH);
   const offY = computeOffside(frame);
-  if (offY !== null) drawOffsideLine(ctx, p, cssW, offY);
+
+  if (scr.facing === "up") {
+    const p: Projection = projectionFor(frame.rules, cssW, cssH, frame.camera);
+    drawPitch(ctx, frame.rules, p);
+    if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, p, frame.goalAtY);
+    if (offY !== null) drawOffsideLine(ctx, p, cssW, offY);
+  } else {
+    // The grass, the lines, the goal and the offside line are drawn on the
+    // ordinary flat plan and turned a quarter turn as a whole: exactly the
+    // turn CanvasMatch's `toPx` makes (right: x' = W - v, y' = u; left:
+    // x' = v, y' = H - u, where u,v are the unturned plan's own pixels).
+    ctx.save();
+    if (scr.facing === "right") ctx.transform(0, 1, -1, 0, cssW, 0);
+    else ctx.transform(0, -1, 1, 0, 0, cssH);
+    const plan: Projection = projectionFor(frame.rules, cssH, cssW, frame.camera);
+    drawPitch(ctx, frame.rules, plan);
+    if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, plan, frame.goalAtY);
+    if (offY !== null) drawOffsideLine(ctx, plan, cssH, offY);
+    ctx.restore();
+  }
 
   // Drawn at the REAL match's own size. The picture used to use the trial's
   // smaller figures, so pressing Play made every player grow by about half
   // and the whole scene looked like it had moved when nothing had. Asked for
   // directly: "the play and the pre-play should be exactly the same".
+  // People stand UPRIGHT on a turned pitch, as they do in the match: only
+  // where they stand turns, never which way is up.
+  const at = (v: Vec2): Projection => pointProjection(scr.toScreen(v), scr.unit, cssW, cssH);
   for (const it of frame.items) {
-    if (it.keeper) drawKeeper(ctx, p, it.at, it.look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_SCALE });
-    else drawFigure(ctx, p, it.at, it.look, FACE, FAKE, { scale: PICTURE_SCALE });
+    const look = lookInKit(it, kits);
+    if (it.keeper) drawKeeper(ctx, at(it.at), it.at, look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_SCALE });
+    else drawFigure(ctx, at(it.at), it.at, look, FACE, FAKE, { scale: PICTURE_SCALE });
   }
-  drawBall(ctx, p, frame.ball, 0, PICTURE_SCALE);
+  drawBall(ctx, at(frame.ball), frame.ball, 0, PICTURE_SCALE);
 }
 
 export function drawOffsideLine(ctx: CanvasRenderingContext2D, p: Projection, w: number, y: number): void {
@@ -266,19 +394,20 @@ export const MARK_INK: Record<Mark["tone"], string> = {
 
 /** Paint a frame, then ring whatever is wrong with it. */
 export function paintMarked(
-  canvas: HTMLCanvasElement, frame: Frame, marks: Mark[], size: FrameSizing = {},
+  canvas: HTMLCanvasElement, frame: Frame, marks: Mark[], size: FrameSizing = {}, kits?: FrameKits,
 ): void {
-  paint(canvas, frame, size);
+  paint(canvas, frame, size, kits);
   if (!marks.length) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   const { cssW, cssH } = frameCssSize(frame, size);
-  const p = projectionFor(frame.rules, cssW, cssH, frame.camera);
-  const r = Math.max(7, p.unit * HIT_FIGURE_R);
+  const scr = frameScreen(frame, cssW, cssH);
+  const r = Math.max(7, scr.unit * HIT_FIGURE_R);
   ctx.save();
   for (const m of marks) {
-    const x = p.px(m.at.x);
-    const y = m.ball ? p.py(m.at.y) : p.py(m.at.y) - r * HIT_BODY_UP;
+    const s = scr.toScreen(m.at);
+    const x = s.x;
+    const y = m.ball ? s.y : s.y - r * HIT_BODY_UP;
     const rad = m.ball ? Math.max(11, r * 0.75) : r * 1.35;
     ctx.beginPath();
     ctx.arc(x, y, rad, 0, Math.PI * 2);

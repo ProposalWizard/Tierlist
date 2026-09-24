@@ -60,6 +60,7 @@ import {
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
 import {
   addFigureTo,
   analyseEdited,
@@ -289,17 +290,15 @@ export default function HighlightsPage() {
   const [ready, setReady] = useState(false);
   /** Which figure is tapped, for the add/remove controls. */
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** The picture's width, and Play's: the real match's on a phone, bigger on
+   *  a laptop with the same drag feel (see EnginePlay's `width`). */
+  const pictureW = usePlayWidth();
+  /** The kits Play will wear, so pressing Play changes no colours. */
+  const kits = useTestKits();
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
-  /** The picture's width when Play was pressed — the match plays at exactly
-   *  this size (see ScenarioPlay's `width`). */
-  const [playW, setPlayW] = useState<number | undefined>(undefined);
   const pictureRef = useRef<HTMLDivElement>(null);
-  const togglePlay = () => {
-    const c = pictureRef.current?.querySelector("canvas");
-    if (!playing && c) setPlayW(Math.round(c.getBoundingClientRect().width));
-    setPlaying((v) => !v);
-  };
+  const togglePlay = () => setPlaying((v) => !v);
   /** Every correction recorded so far, so Tune can say whether this one just
    *  completed a pattern. Same store the gallery and Tuning & Commit read —
    *  a correction made here counts exactly as much as one made there. */
@@ -831,7 +830,7 @@ export default function HighlightsPage() {
                 return sc;
               }}
               onStop={() => setPlaying(false)}
-              width={playW}
+              width={pictureW}
             />
           ) : shot && baseFrame && (
             <EditableFrame
@@ -845,6 +844,10 @@ export default function HighlightsPage() {
               onSelect={setSelectedId}
               onSwipe={(d) => (d === 1 ? next() : prev())}
               fit
+              // Play runs at exactly this size, so the picture and the match
+              // are the same size, in the same kits (one engine, 24 Sep).
+              size={{ baseW: pictureW, maxW: pictureW, maxH: 4000 }}
+              kits={kits}
             />
           )}
 

@@ -35,14 +35,11 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import CanvasMatch from "./CanvasMatch";
+import EnginePlay from "./EnginePlay";
+import { buildTestCareer } from "@/lib/star/engineProfile";
 import LiveChanceEditor from "./LiveChanceEditor";
 import { liveMatchScenario } from "@/lib/star/liveEdit";
 import { saveScenarioShared } from "@/lib/star/scenarioStore";
-import { makeInitialCareer } from "@/lib/star/careerFlow";
-import { clubsForDivision } from "@/lib/star/scoutOffers";
-import { DEFAULT_RULE_BOOK } from "@/lib/star/ruleBook";
-import type { CareerState, Fixture, StarPlayer } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PlaySettings } from "@/lib/star/playArea";
 
@@ -58,45 +55,11 @@ interface Served {
 }
 
 /**
- * A career that exists only to be played, built the same way a real one is.
- *
- * `makeInitialCareer` is pure, synchronous and touches no network — it is
- * what forty-odd test files already use to get a playable career — so the
- * squad, the league, the fixtures and the kits here are all the real thing
- * rather than stand-ins. The one edit afterwards is the rule book's match
- * length, which is a field the game already reads.
+ * The match is built by the shared test-screen setup (lib/star/engineProfile.ts
+ * `buildTestCareer`), played through EnginePlay — the one way a test screen
+ * plays the game — with the real squads, the real weather and fresh legs
+ * every ninety minutes.
  */
-function buildPlayCareer(s: PlaySettings, seed: number): { career: CareerState; fixture: Fixture } | null {
-  const clubs = clubsForDivision(s.division);
-  if (clubs.length === 0) return null;
-  const club = clubs[seed % clubs.length];
-  const player = {
-    firstName: "Test", lastName: "Player", age: 20,
-    club, position: s.position, nationality: "England",
-  } as StarPlayer;
-  const base = makeInitialCareer(player, [...clubs], s.division);
-  const career: CareerState = {
-    ...base,
-    skills: { ...base.skills, power: s.power, technique: s.technique },
-    ruleBook: {
-      ...(base.ruleBook ?? {}),
-      FA: { ...DEFAULT_RULE_BOOK, matchLengthMinutes: s.matchMinutes },
-    },
-  };
-  // The first unplayed league fixture, read straight off the season the way
-  // the career tests play one. NOT `nextFixtureFor`, which additionally gates
-  // on where the calendar has got to and returns null on a career that has
-  // not had a week advanced yet — measured directly: 48 real unplayed
-  // fixtures on the board and `nextFixtureFor` still null.
-  //
-  // League on purpose: a cup tie can go to extra time and penalties on a
-  // level scoreline, which would end a long run for a reason that has
-  // nothing to do with what it is measuring.
-  const fixture = career.fixtures.find((f) => !f.played && (!f.kind || f.kind === "league"));
-  if (!fixture) return null;
-  return { career, fixture };
-}
-
 export default function InfiniteMatch({ settings, onBack }: {
   settings: PlaySettings;
   onBack: () => void;
@@ -146,7 +109,7 @@ export default function InfiniteMatch({ settings, onBack }: {
     setBusy(null);
   };
 
-  const built = useMemo(() => buildPlayCareer(settings, run), [settings, run]);
+  const built = useMemo(() => buildTestCareer(settings, 1000 + run), [settings, run]);
 
   const onChanceServed = useCallback((info: { kind: ScenarioKind | "dribble"; minute: number; scenario?: Scenario }) => {
     servedRef.current = [...servedRef.current, { kind: info.kind, minute: info.minute }];
@@ -236,18 +199,10 @@ export default function InfiniteMatch({ settings, onBack }: {
       )}
 
       <div style={{ width: "100%", maxWidth: 460 }}>
-        <CanvasMatch
+        <EnginePlay
           key={run}
-          career={built.career}
-          fixture={built.fixture}
+          settings={settings}
           seed={1000 + run}
-          position={settings.position}
-          skills={{ power: settings.power, technique: settings.technique }}
-          canCurve={settings.curve}
-          canExtraTouch={settings.extraTouch}
-          oppStrength={settings.oppStrength}
-          keeperStrength={settings.keeperStrength}
-          neverHooked
           onChanceServed={onChanceServed}
           onComplete={() => setDone("Full time.")}
         />

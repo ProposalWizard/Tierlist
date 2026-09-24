@@ -332,10 +332,43 @@ export function clashes(a: string, b: string): boolean {
   return Math.abs(A.l - B.l) < 0.4;
 }
 
-/** Nothing else worked: whatever the home side is NOT. */
-function emergency(homeShirt: string, trim: string): Kit {
-  const dark = hexToHsl(homeShirt).l < 0.5;
-  return dark ? { shirt: "#F2F4F7", trim } : { shirt: "#17181A", trim };
+/**
+ * Would these two whole KITS be hard to tell apart — shirt and shorts?
+ *
+ * The shorts are drawn in the trim colour. Two different shirts are not
+ * enough on their own: Man United (red shirt, white shorts) against
+ * Bournemouth's change strip (white shirt, red shorts) are the same two
+ * colours swapped, and on a small figure both teams read as red-and-white.
+ * Harry, 24 Sep 2026, asked whether the check should look at the whole kit:
+ * "yes". So a kit clashes when the shirts clash, OR when each side's shirt
+ * clashes with the other side's shorts (the same colours, swapped).
+ */
+export function kitClashes(a: Kit, b: Kit): boolean {
+  if (clashes(a.shirt, b.shirt)) return true;
+  return clashes(a.shirt, b.trim) && clashes(a.trim, b.shirt);
+}
+
+/**
+ * The away side's options, in order, when its own kits clash.
+ *
+ * Real sides swap shorts before they reach for a third strip, so before the
+ * last resort the away side keeps one of its own shirts and changes only the
+ * shorts. Last of all: whatever the home side is NOT, near-white or near-black.
+ */
+function awayFallback(home: Kit, away: ClubKits): Kit {
+  // Plain shorts colours a change strip could plausibly use: black, white,
+  // grey, then navy, royal and green for the few cases none of those escape.
+  const plain = ["#17181A", "#F2F4F7", "#6B7280", "#001F5B", "#0057B8", "#159C56"];
+  const tries: Kit[] = [];
+  for (const t of [away.away.shirt, away.away.trim, ...plain]) tries.push({ shirt: away.home.shirt, trim: t });
+  for (const t of [away.home.shirt, away.home.trim, ...plain]) tries.push({ shirt: away.away.shirt, trim: t });
+  const dark = hexToHsl(home.shirt).l < 0.5;
+  const last = dark ? ["#F2F4F7", "#17181A"] : ["#17181A", "#F2F4F7"];
+  for (const shirt of last) for (const t of [away.away.trim, away.home.trim, away.home.shirt, ...plain]) tries.push({ shirt, trim: t });
+  for (const kit of tries) {
+    if (!clashes(kit.shirt, kit.trim) && !kitClashes(home, kit)) return kit;
+  }
+  return { shirt: last[0], trim: away.away.trim };
 }
 
 export interface MatchKits { home: Kit; away: Kit; keeper: Kit }
@@ -345,7 +378,8 @@ export interface MatchKits { home: Kit; away: Kit; keeper: Kit }
  *
  * The home side wears its home shirt — always, that is what home means. The
  * away side wears its own home shirt too, and changes only if the two would be
- * hard to tell apart. If its change strip clashes as well (sky blue at Chelsea,
+ * hard to tell apart — shirt against shirt, or the same two colours swapped
+ * between shirts and shorts (`kitClashes`). If its change strip clashes as well (sky blue at Chelsea,
  * where royal, navy and sky are all the same colour), it goes to whichever of
  * near-white or near-black the home side is not.
  */
@@ -354,9 +388,9 @@ export function kitsFor(
 ): MatchKits {
   const home = kitsOf(homeClub, homeOverride).home;
   const away = kitsOf(awayClub, awayOverride);
-  const chosen = !clashes(home.shirt, away.home.shirt) ? away.home
-    : !clashes(home.shirt, away.away.shirt) ? away.away
-    : emergency(home.shirt, away.away.trim);
+  const chosen = !kitClashes(home, away.home) ? away.home
+    : !kitClashes(home, away.away) ? away.away
+    : awayFallback(home, away);
   return { home, away: chosen, keeper: keeperKit(home.shirt, chosen.shirt) };
 }
 

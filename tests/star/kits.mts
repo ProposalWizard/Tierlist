@@ -1,4 +1,4 @@
-import { CLUB_KITS, kitsOf, kitsFor, clashes, hexToHsl, keeperKit, labelInk, kitLabelOnDark } from "../../lib/star/kits";
+import { CLUB_KITS, kitsOf, kitsFor, clashes, kitClashes, hexToHsl, keeperKit, labelInk, kitLabelOnDark } from "../../lib/star/kits";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { acceptOffer } from "../../lib/star/transfers";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS } from "../../lib/star/clubs";
@@ -80,6 +80,8 @@ const CLUBS = Object.keys(CLUB_KITS);
       if (m.home.shirt !== CLUB_KITS[h].home.shirt) problems.push(`${h} v ${a}: the home side changed`);
       // And you can always tell them apart.
       if (clashes(m.home.shirt, m.away.shirt)) { bad += 1; problems.push(`${h} v ${a}: the shirts clash`); }
+      // Nor the same two colours swapped between shirt and shorts (Harry, 24 Sep 2026).
+      if (kitClashes(m.home, m.away)) { bad += 1; problems.push(`${h} v ${a}: shirt and shorts are the same colours swapped`); }
       // …and the keeper from both.
       if (clashes(m.keeper.shirt, m.home.shirt) || clashes(m.keeper.shirt, m.away.shirt)) {
         problems.push(`${h} v ${a}: the keeper clashes with somebody`);
@@ -95,6 +97,19 @@ const CLUBS = Object.keys(CLUB_KITS);
   check(changed > 20, `and the ones who would clash change (${changed}/${total})`);
   check(emergencies < total * 0.05, `the last-resort strip is rare (${emergencies}/${total})`);
   console.log(`  ${unchanged} in their own kit, ${changed} changed, ${emergencies} to a neutral`);
+}
+
+// ── Whole kit: the same two colours swapped is a clash ─────────────────────
+// Man United (red shirt, white shorts) v Bournemouth's change strip (white
+// shirt, red shorts) passed the shirt-only check and read as one team.
+{
+  const manu = { shirt: "#DA291C", trim: "#FFFFFF" };
+  check(kitClashes(manu, { shirt: "#F2F4F7", trim: "#DA291C" }), "red/white against white/red clashes");
+  check(!kitClashes(manu, { shirt: "#F2F4F7", trim: "#111111" }), "red/white against white/black does not");
+  check(!kitClashes(manu, { shirt: "#034694", trim: "#FFFFFF" }), "red/white against blue/white does not");
+  const m = kitsFor("Manchester United", "AFC Bournemouth");
+  check(!kitClashes(m.home, m.away), `Man United v Bournemouth: you can tell them apart (${m.away.shirt}/${m.away.trim})`);
+  check(m.home.shirt === CLUB_KITS["Manchester United"].home.shirt, "Man United still wear their own home kit");
 }
 
 // ── The named examples ──────────────────────────────────────────────────────
