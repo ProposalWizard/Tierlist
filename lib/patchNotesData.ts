@@ -27,6 +27,181 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.9",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-24T00:00:00Z",
+      "summary": "One engine: why the trial, the training and the test screens felt like a different game, what is fixed, every open problem, and ten questions to paste back.",
+      "stats": [
+        {
+          "value": "12",
+          "label": "ways the trial and the training differed from the real match, all fixed by one move next round"
+        },
+        {
+          "value": "340 → 366px",
+          "label": "gallery Play now runs at the real match's size, so a drag hits exactly as hard as in a career"
+        },
+        {
+          "value": "6 → no 7th",
+          "label": "copies of the match left, and every build now refuses a new one"
+        },
+        {
+          "value": "10/10",
+          "label": "hidden copies planted to test the guard, all caught, and 2 look-alikes correctly left alone"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed: the test screens now play the real game",
+          "items": [
+            {
+              "title": "A drag now hits exactly as hard as in a career",
+              "detail": "The game measures a drag against the pitch's height, so a smaller pitch meant a harder kick. Every test screen now plays at the real match's size.",
+              "bars": [
+                {
+                  "label": "Kick strength vs a career, gallery on a phone",
+                  "was": 7.6,
+                  "now": 0,
+                  "target": 0,
+                  "unit": "%",
+                  "state": "good"
+                },
+                {
+                  "label": "Kick strength vs a career, laptop",
+                  "was": 16,
+                  "now": 0,
+                  "target": 0,
+                  "unit": "%",
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Real players, not nobody",
+              "detail": "The test screens now load the same real squads a career does: real finishing, real faces, the opposition's own keeper."
+            },
+            {
+              "title": "Real weather, with a switch",
+              "detail": "Windy or wet in about 4 matches in 10, as in a career. Play Area → Weather → Clear turns it off."
+            },
+            {
+              "title": "Infinite Match stopped quietly weakening you",
+              "detail": "From about minute 150 every kick was 30% weaker. You now get fresh legs every 90 minutes. Worked out from the code, not measured in play."
+            },
+            {
+              "title": "Team understanding now counts in test screens",
+              "detail": "The test screens silently used 60. The guard caught it on its first run."
+            },
+            {
+              "title": "Gallery Play: the first chance has people in it, and it no longer restarts mid-kick"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "One door into the engine for every test screen",
+              "detail": "New features plug into it and add their extras around the outside. They never get a copy of the match."
+            },
+            {
+              "title": "A guard inside every deploy",
+              "detail": "The site won't deploy with a new copy of the match. Fable 5.1 tried to break it, and the gaps it found are closed or listed.",
+              "more": {
+                "summary": "What it checks",
+                "points": [
+                  "No new copy of the match, however it's hidden (renamed, re-routed, loaded late).",
+                  "No screen writing its own ball physics (every animation loop is on a list that only shrinks).",
+                  "The test screens get every setting a career gets.",
+                  "It fails if it goes blind (10 planted copies) or jumpy (2 harmless look-alikes)."
+                ]
+              }
+            },
+            {
+              "title": "Play Area: Keeper (Real / Set) and Weather (Real / Clear)",
+              "detail": "Both start on the real game, and they only ever change the test screens."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "The trial and the training are still copies (12 differences)",
+              "detail": "The keeper guesses before the kick, the ball is drawn at half height and always in front of the keeper, and training uses a coarser physics step. The fix is to move them onto the one door next round.",
+              "pill": {
+                "text": "question 1–2",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Five-a-side: a sideways drag hits 20% harder, and the arrow points wider than the ball goes",
+              "pill": {
+                "text": "question 3",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Goalie Mode has no engine, and the two prototypes are copies",
+              "pill": {
+                "text": "questions 4–5",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Two teams in near-identical kits pass the clash check",
+              "detail": "The check only compares shirts.",
+              "pill": {
+                "text": "question 6",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The gallery picture is blue against red, but Play wears club kits",
+              "detail": "Caused this round.",
+              "pill": {
+                "text": "question 7",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "Drawn one-on-ones start 11.9m out against 16.3m, so fewer players react",
+              "detail": "The real game has the same gap. It isn't a highlights bug.",
+              "pill": {
+                "text": "question 8",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "The guard can't stop a person editing its list",
+              "pill": {
+                "text": "questions 9–10",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Trial and training onto the one door",
+              "detail": "Clears all 12 differences."
+            },
+            {
+              "title": "Then difficulty scaling",
+              "detail": "Tuned on the real game."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ",
+      "updatedAt": null
+    },
+    {
       "version": "0.8",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-23T00:00:00Z",

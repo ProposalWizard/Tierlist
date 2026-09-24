@@ -451,6 +451,17 @@ Three people are building this. To avoid two sessions editing the same files:
 
 ## Recent Session
 
+**24 September 2026 (Harry) — One engine: test screens play the real game, and a build guard stops new copies. Patch notes v0.9, with 10 questions to paste back: https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ**
+
+- **Audit (measured):** trial and training run their own loops, with 12 differences from the real match. The trial keeper pre-commits, the ball is drawn at half height and always over the keeper, training steps once a frame, and so on. Five-a-side's drag is 20% stronger sideways. Goalie Mode has no engine at all. The test screens used the real engine but were set up differently: drag +7.6% on a phone / −16% on a laptop, no squad, no weather, and 30% weaker from minute 150 in Infinite Match.
+- **Built:**
+  - `EnginePlay` + `lib/star/engineProfile.ts`: real size, squads, weather and team relationship, plus Play Area dials (Keeper Real/Set, Weather Real/Clear) on that mount only.
+  - `CanvasMatch`: optional `forceKeeperStrength` / `fatigueResetEvery` / `onChanceResolved`, and real players cast on the opening chance.
+  - The gallery and highlights picture is drawn at `realMatchWidth`.
+- **Guard:** `scripts/one-engine-guard.mjs` runs inside `npm run build`, built on the TypeScript compiler with a 10-copy canary plus 2 look-alikes. Fable 5.1 red-teamed it (21 of 31 evasions got past the first, regex version).
+- **"Players don't react in highlights" (measured):** it's the drawn chances, not the highlights. Drawn one-on-ones start 11.9m out against 16.3m, so 1.17 players react against 2.04, and the real game has the same gap.
+- **Open:** Harry's answers to questions 1–10 in v0.9. `authoredChance.mts` fails on main (4 drawings deleted). The corner picture isn't turned like Play and the main game.
+
 **23 September 2026 (Harry, cont.) — Save/Commit from inside a match, an eye (ⓘ) on every admin page, patch notes v0.8 (https://claude.ai/artifact/DYAaW3Bma3zowkG5DcoQaS).**
 
 - Infinite Match: Edit / Save / Commit pinned (sticky) above the match; Save/Commit work on the chance as it stands (`liveMatchScenario`, lib/star/liveEdit.ts — one helper for bar and editor). Infinite Highlights: Save and Commit always shown (was Save only after a drag, no Commit). `tests/star/liveEdit.mts` round trip 156/156, mutation-checked (0/156 when broken).
