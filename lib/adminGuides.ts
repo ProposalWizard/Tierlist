@@ -320,15 +320,16 @@ export const ADMIN_GUIDES = {
       {
         group: "A card",
         items: [
-          ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for the next card."],
+          ["The picture", "Drawn exactly as Play will show it: same size, same club kits (the real ones Play plays in), and corners and byline crosses turned sideways, goal on the right or left, the way the real game films them. Bigger on a laptop (up to 520 wide), full width on a phone."],
+          ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for the next card. On a sideways corner the player follows your finger just the same."],
           ["‹ ›  and the dots", "Previous / next version (arrow keys work too)."],
           ["+ Mate", "Adds a team-mate who makes a real supporting run."],
           ["+ Opp", "Adds an opponent."],
           ["Remove", "Takes out the player you tapped (greyed out when he can't be removed)."],
-          ["▶ Play / ◼ Stop", "Plays this exact picture as a real chance, your drags included, in place of the picture — the real game: same size as a career match (so a drag hits just as hard), real squads and faces, the real weather, and the Play Area's dials."],
+          ["▶ Play / ◼ Stop", "Plays this exact picture as a real chance, your drags included, in place of the picture — at the picture's size, so nothing on screen moves or changes colour until you kick. On a laptop that is bigger than a career match, but a drag still hits exactly as hard as in a career. Real squads and faces, the real weather, and the Play Area's dials."],
           ["Delete", "Saved card: deletes it from the shared list AND the code (asks first). Unsaved card: just removes it from the grid on this device."],
           ["Tune", "Only after a drag. Records what was wrong with the generated picture as a correction — it is not a save. When enough corrections agree, a rule is proposed."],
-          ["Camera: pick on the whole pitch / Done — back to editing", "11-a-side only. The picture zooms out to the whole pitch with the camera as a dashed frame — drag it where you want the chance filmed from, let go, then Done. It only slides, never zooms. Saved with the scenario, and the game frames that chance from there once it is committed."],
+          ["Camera: pick on the whole pitch / Done — back to editing", "11-a-side only. The picture zooms out to the whole pitch (always shown upright, goal at the top, even for a sideways corner) with the camera as a dashed frame — drag it where you want the chance filmed from, let go, then Done. It only slides, never zooms. Saved with the scenario, and the game frames that chance from there once it is committed."],
           ["✕ No good", "Marks the picture rejected. It stays in the grid. The mark is kept on this device only."],
           ["✓ / Save & Approve", "If there's anything to save (a drag, or a card nobody has saved yet) it saves it for the team AND ticks it. Otherwise it just ticks it."],
           ["⋯", "Opens the menu below."],
@@ -388,10 +389,11 @@ export const ADMIN_GUIDES = {
       {
         group: "The picture",
         items: [
+          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, and corners and byline crosses turned sideways like the real game."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
-          ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included — the real game: career-match size, real squads and faces, the real weather, and the Play Area's dials."],
+          ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included, at the picture's size — a drag still hits exactly as hard as in a career. Real squads and faces, the real weather, and the Play Area's dials."],
           ["PNG", "Downloads the picture (without the fault rings)."],
           ["Delete", "Only for a saved chance: deletes it from the shared list AND the code."],
           ["Tune", "Only after a drag: records what was wrong as a correction. Not a save."],

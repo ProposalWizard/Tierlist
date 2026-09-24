@@ -39,6 +39,8 @@ import { DEFAULT_RULE_BOOK } from "./ruleBook";
 import { conditionsFor, type Conditions } from "./weather";
 import { fetchRealSquad, mergeSquadStats } from "./realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, syncLeagueStrengthFromSquads } from "./leagueSquads";
+import { kitsFor, type Kit } from "./kits";
+import { VIEW_ASPECT } from "./canvasEngine";
 import type { CareerState, Fixture, StarPlayer } from "./types";
 import type { PlaySettings } from "./playArea";
 
@@ -58,6 +60,38 @@ export const REAL_MATCH_GUTTER = 24;
 export function realMatchWidth(viewportW: number): number {
   if (!(viewportW > 0)) return REAL_MATCH_MAX_W;
   return Math.max(200, Math.min(REAL_MATCH_MAX_W, Math.round(viewportW - REAL_MATCH_GUTTER)));
+}
+
+/**
+ * HOW BIG A TEST SCREEN MAY DRAW THE MATCH — bigger than a career's, with
+ * the same feel.
+ *
+ * Asked for (24 Sep 2026): "can't it look bigger without feeling different?"
+ * It can. A drag is read as a fraction of the canvas height, which is the
+ * only reason the size was ever locked; a bigger test canvas now passes
+ * `dragReferenceHeightPx` (the real match's own canvas height), so the same
+ * finger movement kicks exactly as hard at 480 px as at 366.
+ *
+ * So: never smaller than the real match (a phone stays full width), never
+ * wider than the screen, never taller than the screen can show, and never
+ * past `TEST_PLAY_MAX_W`.
+ */
+export const TEST_PLAY_MAX_W = 520;
+/** Screen height kept free above and below the picture (header, a margin). */
+export const TEST_PLAY_RESERVE_H = 110;
+
+export function testPlayWidth(viewportW: number, viewportH: number): number {
+  const real = realMatchWidth(viewportW);
+  if (!(viewportW > 0) || !(viewportH > 0)) return real;
+  const byHeight = Math.floor((viewportH - TEST_PLAY_RESERVE_H) * VIEW_ASPECT);
+  const byWidth = Math.round(viewportW - REAL_MATCH_GUTTER);
+  return Math.max(real, Math.min(TEST_PLAY_MAX_W, byHeight, byWidth));
+}
+
+/** The real match's canvas height, in CSS px, on a screen this wide — the
+ *  height a drag is measured against in a career (5:8 canvas). */
+export function realMatchHeight(viewportW: number): number {
+  return realMatchWidth(viewportW) / VIEW_ASPECT;
 }
 
 /** A real match is ninety minutes; a test match that runs for thousands gets
@@ -90,6 +124,31 @@ export function buildTestCareer(s: PlaySettings, seed: number): { career: Career
   const fixture = career.fixtures.find((f) => !f.played && (!f.kind || f.kind === "league"));
   if (!fixture) return null;
   return { career, fixture };
+}
+
+/**
+ * What the two sides will wear when a test screen presses Play — exactly
+ * CanvasMatch's own choice (its `kitsRef` / `ourKit` / `theirKit`, the same
+ * `kitsFor` call with the same home/away test), for the test career
+ * `buildTestCareer` makes from these settings and this seed. A still picture
+ * of a chance draws in these so that pressing Play changes no colours.
+ * Null when the division has no clubs.
+ */
+export function testMatchKits(s: PlaySettings, seed: number): { ours: Kit; theirs: Kit; keeper: Kit } | null {
+  const built = buildTestCareer(s, seed);
+  if (!built) return null;
+  const { career, fixture } = built;
+  const kits = fixture.home
+    ? kitsFor(career.player.club, fixture.opponent, career.clubKits?.[career.player.club], career.clubKits?.[fixture.opponent])
+    : kitsFor(fixture.opponent, career.player.club, career.clubKits?.[fixture.opponent], career.clubKits?.[career.player.club]);
+  // CanvasMatch's `fixtureHomeRef` reads `home !== false`, not `home` — kept
+  // exactly, or a fixture with no home flag would swap the two shirts here.
+  const weAreHome = fixture.home !== false;
+  return {
+    ours: weAreHome ? kits.home : kits.away,
+    theirs: weAreHome ? kits.away : kits.home,
+    keeper: kits.keeper,
+  };
 }
 
 /**

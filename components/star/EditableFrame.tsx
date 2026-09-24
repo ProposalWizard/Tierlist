@@ -21,9 +21,10 @@
 
 import { useEffect, useRef } from "react";
 import type { Vec2 } from "@/lib/star/canvasEngine";
-import { projectionFor } from "@/lib/star/fiveASide/render";
 import {
   frameCssSize,
+  frameScreen,
+  type FrameKits,
   type FrameSizing,
   paintMarked,
   HIT_FIGURE_R,
@@ -34,7 +35,7 @@ import {
 import { applyOverride, cloneOverride, type PosOverride } from "@/lib/star/scenarioEdit";
 
 export default function EditableFrame({
-  editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit, size,
+  editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit, size, kits,
 }: {
   /** Which picture this is, handed straight back on commit. */
   editKey: string;
@@ -54,6 +55,9 @@ export default function EditableFrame({
    *  side. The pointer maths already reads the real rect, so a scaled canvas
    *  still drags exactly. */
   fit?: boolean;
+  /** The kits Play will wear (see `useTestKits`), so pressing Play changes
+   *  no colours. Absent: the diagram's blue against red. */
+  kits?: FrameKits | null;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const workingRef = useRef<PosOverride | null>(null);
@@ -75,7 +79,7 @@ export default function EditableFrame({
     // scenario, not the canvas), so the picture drops them and gets them back
     // the instant the drag commits. The selection ring stays — it is the thing
     // under your finger.
-    paintMarked(ref.current, frame, live ? ring : [...marks, ...ring], size);
+    paintMarked(ref.current, frame, live ? ring : [...marks, ...ring], size, kits ?? undefined);
     if (fit && ref.current) {
       ref.current.style.maxWidth = "100%";
       ref.current.style.height = "auto";
@@ -85,34 +89,36 @@ export default function EditableFrame({
   useEffect(() => {
     repaint(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editKey, baseFrame, override, marks, selectedId, fit]);
+  }, [editKey, baseFrame, override, marks, selectedId, fit, kits]);
 
+  // The exact inverse of the picture's own camera, quarter turn and all — a
+  // corner is drawn turned like the match draws it, so a drag across the
+  // screen there is a drag along pitch Y (scenarioFrame.ts's `frameScreen`).
   function pointerToWorld(e: React.PointerEvent<HTMLCanvasElement>): Vec2 {
     const rect = ref.current!.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * (cssW / (rect.width || cssW));
     const cy = (e.clientY - rect.top) * (cssH / (rect.height || cssH));
-    return {
-      x: cx * ((vp.x2 - vp.x1) / cssW) + vp.x1,
-      y: cy * ((vp.y2 - vp.y1) / cssH) + vp.y1,
-    };
+    return frameScreen(baseFrame, cssW, cssH).toWorld(cx, cy);
   }
 
   /** Nearest grabbable to a world point, or null. Figures are grabbed by their
    *  mid-body (drawn above the feet anchor); the ball by its centre. */
   function grabTargetAt(world: Vec2): "ball" | string | null {
     const frame = currentFrame();
-    const p = projectionFor(frame.rules, cssW, cssH, frame.camera);
-    const r = Math.max(7, p.unit * HIT_FIGURE_R);
-    const wx = p.px(world.x), wy = p.py(world.y);
+    const scr = frameScreen(frame, cssW, cssH);
+    const r = Math.max(7, scr.unit * HIT_FIGURE_R);
+    const w = scr.toScreen(world);
     let best: "ball" | string | null = null;
     let bestD = Infinity;
     frame.items.forEach((it) => {
-      const sx = p.px(it.at.x);
-      const sy = p.py(it.at.y) - r * HIT_BODY_UP;
-      const d = Math.hypot(sx - wx, sy - wy);
+      const s = scr.toScreen(it.at);
+      // Figures stand upright on screen even on a turned pitch, so the body
+      // is always up the SCREEN from the feet.
+      const d = Math.hypot(s.x - w.x, s.y - r * HIT_BODY_UP - w.y);
       if (d < r * 1.15 && d < bestD) { bestD = d; best = it.id; }
     });
-    const bd = Math.hypot(p.px(frame.ball.x) - wx, p.py(frame.ball.y) - wy);
+    const b = scr.toScreen(frame.ball);
+    const bd = Math.hypot(b.x - w.x, b.y - w.y);
     if (bd < Math.max(14, r * 0.6) && bd < bestD) { best = "ball"; }
     return best;
   }

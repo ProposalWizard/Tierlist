@@ -43,7 +43,7 @@ and the real match moved on without it.
    untouched. Never modify `lib/star/canvasEngine.ts` (Mikey's rule).
 3. **A test screen is the real game plus dials.**
    - `EnginePlay` gives it:
-     - the real match's size (`realMatchWidth`); drag power depends on canvas size, so size is not a dial and there is no width prop
+     - the real match's size (`realMatchWidth`) by default; drag power depends on canvas size, so a bigger `width` (guardrailed, `testPlayWidth`) is only allowed because EnginePlay then passes CanvasMatch `dragReferenceHeightPx` (the real match's canvas height) and the same finger movement kicks exactly as hard
      - the real squads
      - the real weather
      - fresh legs every 90 minutes

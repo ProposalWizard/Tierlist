@@ -11,8 +11,11 @@
  *
  * What it guarantees, and why each one was a real, measured difference (see
  * lib/star/engineProfile.ts for the numbers):
- *   - the real match's size, so a drag hits exactly as hard as it does in a
- *     career (`realMatchWidth`);
+ *   - the real match's size by default (`realMatchWidth`). A test screen may
+ *     ask for a bigger one (`width`, guardrailed by `testPlayWidth`'s caps),
+ *     and then the drag is measured against the real match's canvas height
+ *     (`dragReferenceHeightPx`), so a drag still hits exactly as hard as it
+ *     does in a career;
  *   - the real squads — real faces, real finishing, the opposition's own
  *     keeper — from the same fetches the real game makes;
  *   - the real weather, unless the Play Area's Weather dial says clear;
@@ -29,8 +32,10 @@ import { useEffect, useMemo, useState } from "react";
 import CanvasMatch, { type ChanceResolved } from "./CanvasMatch";
 import {
   buildTestCareer, withRealSquads, testConditions, conditionsLabel,
-  realMatchWidth, FATIGUE_RESET_MINUTES,
+  realMatchWidth, realMatchHeight, testPlayWidth, testMatchKits,
+  TEST_PLAY_MAX_W, FATIGUE_RESET_MINUTES,
 } from "@/lib/star/engineProfile";
+import type { FrameKits } from "@/lib/star/scenarioFrame";
 import { loadPlaySettings, sanitizePlaySettings, type PlaySettings } from "@/lib/star/playArea";
 import type { CareerState, MatchStats } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
@@ -68,12 +73,48 @@ export function useRealMatchWidth(): number {
   return realMatchWidth(vw);
 }
 
+/**
+ * The size a test screen's PICTURE and its Play should share on this screen:
+ * the real match's width on a phone, bigger on a laptop (up to
+ * `TEST_PLAY_MAX_W`, and never taller than the screen). Hand the same number
+ * to EnginePlay's `width` and pressing Play changes nothing on screen, while
+ * the drag still kicks exactly as hard as a career's (see `width`).
+ * The real match's default until the screen has been measured.
+ */
+export function usePlayWidth(): number {
+  const [vp, setVp] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const on = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  // Before the screen is measured: the real match's default, never 0 (a 0
+  // width once gave the pitch a negative size and blanked the card).
+  return testPlayWidth(vp.w, vp.h);
+}
+
+/**
+ * The kits EnginePlay's match will wear for these settings and this seed —
+ * the same `kitsFor` choice CanvasMatch makes (see `testMatchKits`). A still
+ * picture of a chance draws in these so pressing Play changes no colours.
+ * Read after mount: the Play Area's saved dials live in this browser.
+ */
+export function useTestKits(settings?: PlaySettings, seed = 1): FrameKits | null {
+  const [kits, setKits] = useState<FrameKits | null>(null);
+  useEffect(() => {
+    const s = sanitizePlaySettings(settings ?? loadPlaySettings());
+    setKits(testMatchKits(s, seed));
+  }, [settings, seed]);
+  return kits;
+}
+
 /** How long to wait for the real squads before playing with the generated
  *  ones — the same fallback the real game uses when a fetch fails. */
 const SQUAD_WAIT_MS = 4000;
 
 export default function EnginePlay({
-  settings, seed = 1, openOn, bare = false,
+  settings, seed = 1, openOn, bare = false, width,
   onChanceServed, onChanceResolved, onComplete,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
@@ -84,6 +125,15 @@ export default function EnginePlay({
   /** Play this picture (the gallery / highlights "Play"). See CanvasMatch. */
   openOn?: () => Scenario;
   bare?: boolean;
+  /**
+   * Play bigger than the real match (the gallery and highlights, on a
+   * laptop). A guardrailed dial: never smaller than the real match's width,
+   * never past `TEST_PLAY_MAX_W`, never wider than the screen. Whenever it
+   * differs from the real width the drag is read against the real match's
+   * canvas height, so the same finger movement kicks exactly as hard.
+   * Absent: the real match's own size.
+   */
+  width?: number;
   onChanceServed?: (info: { kind: ScenarioKind | "dribble"; minute: number; reason?: string; scenario?: Scenario }) => void;
   onChanceResolved?: (info: ChanceResolved) => void;
   /** Given: a full match (Infinite Match). Absent: one chance at a time. */
@@ -109,10 +159,20 @@ export default function EnginePlay({
     return () => { live = false; clearTimeout(fallback); };
   }, [built, s.division]);
 
-  // Not a dial, deliberately: there is no width prop. The engine reads a drag
-  // as a fraction of the canvas, so the size IS part of the game — every test
-  // screen plays at the real match's own size on this screen, full stop.
-  const w = useRealMatchWidth();
+  // The size IS part of the game — the engine reads a drag as a fraction of
+  // the canvas — so a bigger canvas is only allowed together with
+  // `dragReferenceHeightPx`, which puts the feel back exactly.
+  const realW = useRealMatchWidth();
+  const [vpW, setVpW] = useState(0);
+  useEffect(() => {
+    const on = () => setVpW(window.innerWidth);
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  const maxW = vpW > 0 ? Math.min(TEST_PLAY_MAX_W, Math.max(realW, vpW - 24)) : realW;
+  const w = width && width > 0 ? Math.round(Math.max(realW, Math.min(maxW, width))) : realW;
+  const dragReferenceHeightPx = w !== realW ? realMatchHeight(vpW) : undefined;
 
   if (!built) {
     return <div style={{ padding: 20, textAlign: "center", fontSize: 13, color: "#8a97aa" }}>No clubs in that division.</div>;
@@ -129,7 +189,14 @@ export default function EnginePlay({
   const weather = conditionsLabel(conditions);
 
   return (
-    <div style={{ width: w, maxWidth: "100%", margin: "0 auto" }}>
+    // CanvasMatch's own column is Tailwind `max-w-sm` (384 px, the real
+    // match's). A test screen that asked for a bigger `width` lifts that cap
+    // on its direct children only — the real career match never mounts
+    // EnginePlay, so it keeps its 384.
+    <div
+      className={w > realW ? "[&>div]:!max-w-none" : undefined}
+      style={{ width: w, maxWidth: "100%", margin: "0 auto" }}
+    >
       {weather && (
         <div style={{ fontSize: 11.5, fontWeight: 800, color: "#fde68a", textAlign: "center", padding: "2px 0 4px" }}>
           {weather} — the real game&apos;s weather. Play Area → Weather to turn it off.
@@ -155,6 +222,7 @@ export default function EnginePlay({
         onChanceServed={onChanceServed}
         onChanceResolved={onChanceResolved}
         onComplete={onComplete}
+        dragReferenceHeightPx={dragReferenceHeightPx}
       />
     </div>
   );

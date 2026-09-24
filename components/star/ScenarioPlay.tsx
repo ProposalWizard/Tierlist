@@ -43,7 +43,9 @@ export default function ScenarioPlay({ build, onStop, width }: {
   /** The picture's own width, in CSS px. Given, the match plays at exactly
    *  that size, so pressing Play changes nothing on screen until you kick.
    *  It used to fill the card instead — about 13% wider than the picture —
-   *  and every player appeared to jump. */
+   *  and every player appeared to jump. Bigger than the real match is fine:
+   *  EnginePlay then reads the drag against the real match's canvas, so it
+   *  kicks the same (see EnginePlay's `width`). */
   width?: number;
 }) {
   // The latest `build`, read at the moment a chance starts — so the factory
@@ -71,11 +73,8 @@ export default function ScenarioPlay({ build, onStop, width }: {
   // No Stop button of its own: the card's Play button toggles to Stop, in
   // the place it was already in. Two of them is the same action twice.
   void onStop;
-  // `width` is no longer passed on: the match always plays at the real
-  // match's size (see EnginePlay), and the gallery sizes its picture with the
-  // same `realMatchWidth`, so pressing Play still changes nothing on screen.
-  void width;
-  // Through EnginePlay, like every test screen: the real match's size, the
-  // real squads and weather, and the Play Area's dials. See EnginePlay.
-  return <EnginePlay key={key} openOn={openOn} bare />;
+  // Through EnginePlay, like every test screen: the picture's size (the real
+  // match's feel — see EnginePlay's `width`), the real squads and weather,
+  // and the Play Area's dials.
+  return <EnginePlay key={key} openOn={openOn} bare width={width} />;
 }

@@ -77,6 +77,7 @@ import {
   OPP, MATE,
   frameFromScenario,
   frameCssSize,
+  type FrameKits,
   paint,
   paintMarked,
   type Item,
@@ -86,7 +87,8 @@ import {
 import EditableFrame from "@/components/star/EditableFrame";
 import CameraPicker from "@/components/star/CameraPicker";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
-import { realMatchWidth, REAL_MATCH_MAX_W } from "@/lib/star/engineProfile";
+import { testPlayWidth } from "@/lib/star/engineProfile";
+import { useTestKits } from "@/components/star/EnginePlay";
 import PageGuide from "@/components/admin/PageGuide";
 import {
   applyOverride,
@@ -672,8 +674,9 @@ function HomeScreen({
 // ─────────────────────────────────────────────────────────────────────────
 
 function Thumb({
-  cell, override, saved, verdict, onOpen,
+  cell, override, saved, verdict, onOpen, kits,
 }: {
+  kits?: FrameKits | null;
   cell: Cell;
   override: PosOverride | undefined;
   saved: MatchScenario | undefined;
@@ -691,10 +694,10 @@ function Thumb({
 
   useEffect(() => {
     if (!ref.current) return;
-    paintMarked(ref.current, frame, analysis.marks);
+    paintMarked(ref.current, frame, analysis.marks, {}, cell.game === "eleven" ? kits ?? undefined : undefined);
     fillCanvas(ref.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, saved, override]);
+  }, [cell, saved, override, kits]);
 
   return (
     <button
@@ -930,15 +933,12 @@ export default function StarGalleryDevPage() {
    * card so moving to another picture closes it.
    */
   const [pickCameraKey, setPickCameraKey] = useState<string | null>(null);
-  /** The picture's width when Play was pressed — the match plays at exactly
-   *  this size (see ScenarioPlay's `width`). */
-  const [playW, setPlayW] = useState<number | undefined>(undefined);
   const pictureRef = useRef<HTMLDivElement>(null);
-  const togglePlay = () => {
-    const c = pictureRef.current?.querySelector("canvas");
-    if (!playing && c) setPlayW(Math.round(c.getBoundingClientRect().width));
-    setPlaying((v) => !v);
-  };
+  const togglePlay = () => setPlaying((v) => !v);
+  /** The kits Play's match will wear (same seed and Play Area dials as
+   *  ScenarioPlay → EnginePlay), so the picture is drawn in them and pressing
+   *  Play changes no colours. Question 7 of patch notes v0.9. */
+  const kits = useTestKits();
   /** The simulated chance currently on screen, if Simulate has been pressed. */
   const [sim, setSim] = useState<Cell | null>(null);
 
@@ -1597,6 +1597,7 @@ export default function StarGalleryDevPage() {
             saved={saved[c.key]}
             verdict={reviews[c.key]?.verdict}
             onOpen={() => openVersion(i)}
+            kits={kits}
           />
         ))}
         {game === "eleven" && countFor(kindId) < MAX_VERSIONS_PER_KIND && (
@@ -1721,24 +1722,23 @@ export default function StarGalleryDevPage() {
   // thing you press over and over.
   /** The picture in the middle with the verdict buttons down its sides —
    *  whenever the screen has room for a column either side of it. */
-  // Room for the picture at the real match's size AND a 96px column either
-  // side of it (384 + 2*96 + 40). Below that the buttons stack underneath.
-  const sides = vp.w >= REAL_MATCH_MAX_W + 2 * 96 + 40;
   /**
-   * The picture is the REAL MATCH'S size, not "as big as the screen allows".
+   * How big the picture is, and Play with it.
    *
-   * One engine (24 Sep 2026): the engine reads a drag as a fraction of the
-   * canvas, so a match played at any other size kicks differently — the old
-   * 340 px phone picture was 7.6% harder per finger-pixel than a career match,
-   * the 460 px desktop one 16% softer. Play now always runs at
-   * `realMatchWidth` (EnginePlay), and the picture is sized the same so that
-   * pressing Play still changes nothing on screen until you kick.
+   * Asked for (24 Sep 2026): "can't it look bigger without feeling
+   * different?" It is the real match's width on a phone and grows on a
+   * laptop up to 520 px wide, never taller than the screen
+   * (`testPlayWidth`). Play renders at this SAME width; EnginePlay reads the
+   * drag against the real match's canvas height whenever it is bigger, so
+   * the same finger movement kicks exactly as hard as in a career.
    *
-   * No height cap: a cap would shrink the picture below the match on a short
-   * laptop screen, and the page scrolling is the lesser evil. Nothing is
-   * sized until the screen has been measured — vp.w is 0 on the first render.
+   * Nothing is sized until the screen has been measured — vp.w is 0 on the
+   * first render, and testPlayWidth then gives the real match's default.
    */
-  const pictureW = realMatchWidth(vp.w);
+  const pictureW = testPlayWidth(vp.w, vp.h);
+  // Room for the picture AND a 96px column either side of it. Below that the
+  // buttons stack underneath.
+  const sides = vp.w >= pictureW + 2 * 96 + 40;
   const pictureSize = vp.w > 0 ? { baseW: pictureW, maxW: pictureW, maxH: 4000 } : undefined;
   const simulatePanel = cell.game === "eleven" ? (
     <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
@@ -1937,7 +1937,7 @@ export default function StarGalleryDevPage() {
               return sc;
             }}
             onStop={() => setPlaying(false)}
-            width={playW}
+            width={pictureW}
           />
         ) : pickCameraKey === cell.key ? (
           <CameraPicker
@@ -1957,6 +1957,7 @@ export default function StarGalleryDevPage() {
           // the whole card — picture, edit row, verdict row, Simulate and
           // Across formations — visible at once on a 900px-tall screen.
           size={pictureSize}
+          kits={cell.game === "eleven" ? kits : null}
           override={override}
           marks={analysis.marks}
           onCommit={setOverride}

@@ -269,6 +269,15 @@ interface Props {
   /** Observer: the ball's position, once per physics step while it flies —
    *  so a drill can judge "did it go through the gate" off the real flight. */
   onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+  /**
+   * Read a drag against a canvas THIS many CSS pixels tall, instead of this
+   * canvas's own height. A drag is a fraction of the canvas height, so the
+   * same finger movement kicks softer on a bigger canvas; a test screen that
+   * draws the match bigger than a career's passes the real match's own
+   * canvas height here, and the same finger movement kicks exactly as hard.
+   * The real career match never passes it (its canvas IS the reference).
+   */
+  dragReferenceHeightPx?: number;
 }
 
 /** What `onChanceResolved` reports. */
@@ -428,7 +437,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1776,6 +1785,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * screen long. The thumb does not know which way the pitch is facing; it only
    * knows how far it moved.
    */
+  const dragRefHeightRef = useRef(dragReferenceHeightPx);
+  dragRefHeightRef.current = dragReferenceHeightPx;
   const screenPull = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
     const vp = viewportRef.current;
     const W = vp.x2 - vp.x1, H = vp.y2 - vp.y1;
@@ -1790,7 +1801,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const a = toScreen(drag), b = toScreen(ball);
     // sx is a fraction of the canvas WIDTH and sy of its HEIGHT, so put them in
     // the same units before measuring.
-    return Math.hypot((a.sx - b.sx) * VIEW_ASPECT, a.sy - b.sy);
+    const pull = Math.hypot((a.sx - b.sx) * VIEW_ASPECT, a.sy - b.sy);
+    // A fixed reference height (see `dragReferenceHeightPx`): the same pixels
+    // of finger travel, measured against the real match's canvas instead.
+    const refH = dragRefHeightRef.current;
+    const ownH = canvasRef.current?.getBoundingClientRect().height ?? 0;
+    return refH && refH > 0 && ownH > 0 ? pull * (ownH / refH) : pull;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
