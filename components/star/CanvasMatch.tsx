@@ -69,6 +69,7 @@ import MatchCommentary from "./MatchCommentary";
 import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "@/lib/star/energy";
 import { getTuning } from "@/lib/star/tuningStore";
 import ShootoutOverlay from "./ShootoutOverlay";
+import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
@@ -246,6 +247,12 @@ interface Props {
    * copy of the match loop. Purely an observer: nothing here reads it back.
    */
   onChanceResolved?: (info: ChanceResolved) => void;
+  /**
+   * A penalty keeper who reads you better (or worse) than a real match's —
+   * the trial's difficulty dial. Replaces fields of the real game's default
+   * read (lib/star/penaltyKeeper.ts). The real career match never passes it.
+   */
+  penaltyRead?: Partial<PenaltyReadSettings>;
 }
 
 /** What `onChanceResolved` reports. */
@@ -405,7 +412,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -878,6 +885,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   onChanceServedRef.current = onChanceServed;
   const onChanceResolvedRef = useRef(onChanceResolved);
   onChanceResolvedRef.current = onChanceResolved;
+  const penaltyReadRef = useRef(penaltyRead);
+  penaltyReadRef.current = penaltyRead;
   const neverHookedRef = useRef(neverHooked);
   neverHookedRef.current = neverHooked;
 
@@ -1581,6 +1590,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
       ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      if (r.penaltyRead) applyPenaltyRead(scenarioRef.current, r.penaltyRead);
       // Draw the flight's substep sizes from the recorded queue instead of
       // this session's own frame timing — see GoalReplay.flightDtLog. Absent
       // on a replay saved before this existed, which falls back to live
@@ -4553,6 +4563,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
+    // ── A penalty keeper reads your kick (Harry, 24 Sep 2026) ──
+    // He stood still until now; at the strike he decides whether to go and
+    // which way, from where you aimed. Its own seeded draw — not rngRef — so
+    // the match's own random stream is exactly what it was, and the decision
+    // is saved with the replay. See lib/star/penaltyKeeper.ts.
+    if (scenarioRef.current.kind === "penalty") {
+      const read = penaltyReadFor(strengthRef.current, penaltyReadRef.current);
+      const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x5eed) >>> 0);
+      const decision = decidePenaltyRead(scenarioRef.current, ballRef.current, read, [r(), r()]);
+      applyPenaltyRead(scenarioRef.current, decision);
+      if (pendingReplayRef.current) pendingReplayRef.current.penaltyRead = decision;
+    }
     // ── Touch Mode's real "instant catch" bug ──
     //
     // Reported live: "most times he gets it immediately, bad. probs to do
