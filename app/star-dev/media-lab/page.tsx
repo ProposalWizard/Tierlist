@@ -56,6 +56,7 @@ export default function MediaLab() {
   const [labPlayAs, setLabPlayAs] = useState<Role | null>(null);
   const [showFeed, setShowFeed] = useState(false);
   const [feedSpeed, setFeedSpeed] = useState(1);
+  const [labMode, setLabMode] = useState<"low" | "medium" | "high">("medium");
 
   const read = (file: File, set: (s: string) => void) => {
     const r = new FileReader();
@@ -228,6 +229,9 @@ export default function MediaLab() {
               speed={feedSpeed}
               onSpeed={() => setFeedSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}
               pause={null}
+              energy={72}
+              energyMode={labMode}
+              onEnergyMode={setLabMode}
             />
           </div>
         </div>

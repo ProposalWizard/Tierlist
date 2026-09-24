@@ -5,6 +5,7 @@ import { labelInk, type Kit } from "@/lib/star/kits";
 import type { EnergyMode } from "@/lib/star/energy";
 import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
+import EnergyModeIcon from "./EnergyModeIcon";
 
 /**
  * THE MATCH, AS IT IS BEING PLAYED.
@@ -200,17 +201,21 @@ export default function MatchCommentary({
         <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Energy mode">
           {(["low", "medium", "high"] as EnergyMode[]).map(m => {
             const on = energyMode === m;
-            const tint = m === "low" ? "bg-sky-500" : m === "high" ? "bg-rose-500" : "bg-emerald-500";
+            // Icons, not words (owners, 23 Sep 2026) — red Low, amber
+            // Medium, green High; see EnergyModeIcon.
+            const ring = m === "low" ? "ring-red-500/70" : m === "high" ? "ring-green-500/70" : "ring-amber-400/70";
             return (
               <button
                 key={m}
                 role="radio"
                 aria-checked={on}
+                aria-label={`${m} energy`}
+                title={`${m[0].toUpperCase()}${m.slice(1)} energy`}
                 onClick={() => onEnergyMode(m)}
-                className={`rounded-md py-1.5 text-[11px] font-black uppercase tracking-widest transition active:scale-[0.97] ${
-                  on ? `${tint} text-gray-950` : "bg-gray-800 text-white hover:bg-gray-700"}`}
+                className={`grid place-items-center rounded-lg py-0.5 transition active:scale-[0.95] ${
+                  on ? `bg-white/[0.08] ring-2 ${ring}` : "bg-gray-800 hover:bg-gray-700"}`}
               >
-                {m}
+                <EnergyModeIcon mode={m} active={on} size={46} />
               </button>
             );
           })}
