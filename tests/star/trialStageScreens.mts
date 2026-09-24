@@ -1,19 +1,16 @@
 import { readFileSync } from "node:fs";
 import {
-  buildScenario, initDefenders, launch, stepBall, stepKeeper, stepDefenders,
+  initDefenders, launch, stepBall, stepKeeper, stepDefenders,
   VIEW_ASPECT, type Ball, type Outcome, type Scenario,
 } from "../../lib/star/canvasEngine";
 import { mulberry32 } from "../../lib/star/season";
 import { POST_L, POST_R, NET_DEPTH, CX, PEN_SPOT_Y } from "../../lib/star/pitch";
-import { startTrial, type TrialProgress } from "../../lib/star/trial";
+import { startTrial } from "../../lib/star/trial";
 import {
-  REPS, freeKickSetup, visionSetup, penaltySetup, attemptSeed, penaltyTell,
-  PENALTY_COMMIT_M,
+  REPS, freeKickSetup, visionSetup, penaltySetup, attemptSeed,
 } from "../../lib/star/trialStages";
 import {
-  buildPenaltyScenario, strikeCamera, AIM_ARROW_LENGTH, commitKeeperGuess,
-  SETTLE_BEFORE_BANNER, ownSideBodies, takerSpot, keeperDive,
-  KICK_POSE_S, isTakerKicking,
+  buildPenaltyScenario, KICK_POSE_S, isTakerKicking,
 } from "../../components/star/stages/TrialPenalties";
 import {
   buildFreeKickScenario, freeKickView, freeKickWall,
@@ -168,7 +165,7 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
 
 // ── 4. The penalty rep ─────────────────────────────────────────────────────
 {
-  let leaned = 0, leanedRight = 0, resolved = 0, built = 0;
+  let resolved = 0, built = 0;
   for (let s = 0; s < 120; s++) {
     const trial = startTrial(31_337 + s * 6151);
     for (let rep = 0; rep < REPS.penalties; rep++) {
@@ -178,29 +175,13 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
 
       check(sc.ball.x === CX && sc.ball.y === PEN_SPOT_Y, "the penalty is not on the spot");
       check(sc.keeperStrength === setup.keeperStrength, "the trial's keeper never reached the scenario");
-      // A lean he can actually dive from: `stepKeeper` bounds his travel
-      // relative to startX, so leaving startX behind would make the lean
-      // cosmetic — he would simply slide back to the middle.
-      check(sc.keeper.startX === sc.keeper.x && sc.keeper.targetX === sc.keeper.x,
-        "the keeper leans but dives from somewhere else");
-      check(sc.keeper.x >= POST_L - 2.5 && sc.keeper.x <= POST_R + 2.5,
-        "the keeper has leaned himself off the goal");
-
-      // Only counted where the lean is big enough to beat buildPenalty's own
-      // ±0.6 m of jitter on where he starts — a lean of 0.45 moves him 0.675 m,
-      // which is the point at which the sign stops being the jitter's to
-      // decide. Below that it genuinely is not the lean's call, and asserting
-      // on it would be asserting on a coin flip.
-      if (Math.abs(setup.keeperLean) > 0.45) {
-        leaned++;
-        if (Math.sign(sc.keeper.x - CX) === Math.sign(setup.keeperLean)) leanedRight++;
-      }
-
+      // He stands in the middle (buildPenalty's own ±0.6 m of jitter) and
+      // does not move before the strike — the read happens at the kick.
+      check(Math.abs(sc.keeper.x - CX) <= 0.7 && !sc.keeper.scrambling,
+        "the keeper is off his line before the kick");
       if (strikeAndResolve(sc, mulberry32(4242 + rep), -0.2) !== null) resolved++;
     }
   }
-  check(leaned > 60, `only ${leaned} real leans — not enough to judge the direction`);
-  check(leanedRight === leaned, `${leaned - leanedRight}/${leaned} keepers leaned the wrong way`);
   check(resolved === built, `only ${resolved}/${built} penalties ever resolved`);
 }
 
@@ -340,65 +321,9 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   );
 }
 
-// ── 8. THE CAMERA, which is why the screen no longer runs off the phone ────
-//
-// Measured on a simulated iPhone 13 before this: the penalties canvas was
-// `aspectRatio: 5 / 8` with no height cap and ran 108 px off the bottom of a
-// 664 px viewport — the first screen of a new career, a third of it below the
-// fold. The fix is a phone-shaped, height-capped box plus a camera that fits
-// the SHOT to the SCREEN. What that camera must guarantee is checked here at
-// every canvas shape a phone can actually be.
+// ── 8. `cameraContaining` — the vision stage frames with it ──────────────
 {
-  // Real phone canvas shapes, and two deliberately extreme ones — the box is
-  // capped against the viewport, so it genuinely does end up short and wide on
-  // a small screen, and that is exactly when a fixed-frame camera would crop.
   const SHAPES = [[356, 445], [356, 343], [356, 250], [390, 600], [300, 300], [430, 200]];
-
-  for (let s = 0; s < 60; s++) {
-    const trial = startTrial(2_000_000 + s * 7919);
-
-    for (let rep = 0; rep < REPS.penalties; rep++) {
-      const sc = buildPenaltyScenario(trial, rep, mulberry32((s * 7 + rep) >>> 0));
-      for (const [W, H] of SHAPES) {
-        const cam = strikeCamera(sc, sc.ball, W, H);
-        const w = cam.x2 - cam.x1, h = cam.y2 - cam.y1;
-        // Square pixels, or every distance on screen lies about itself.
-        check(Math.abs(w / h - W / H) < 1e-6, `penalty camera is not the canvas shape at ${W}x${H}`);
-        check(cam.x1 <= POST_L && cam.x2 >= POST_R, "penalty camera cuts off the goal mouth");
-        check(cam.y1 <= -NET_DEPTH, "penalty camera cuts off the net");
-        check(sc.ball.x > cam.x1 && sc.ball.x < cam.x2, "the ball is off the side of the shot");
-        check(sc.ball.y > cam.y1 && sc.ball.y < cam.y2, "the ball is off the end of the shot");
-        // The drag pulls BACK from the ball, so the room behind it is the whole
-        // gesture — a shot that ended at the ball's own feet could not be aimed.
-        check(cam.y2 - sc.ball.y >= 6.5, "no room behind the ball to drag back into");
-        // And the men in the way, whole. A frame that stopped at the drag room
-        // sliced both of a penalty's defenders off at the bottom edge — seen in
-        // a screenshot after the first version of this shipped.
-        for (const d of sc.defenders) {
-          check(d.x > cam.x1 && d.x < cam.x2 && d.y > cam.y1 && d.y < cam.y2,
-            "a man in the way is drawn half off the screen");
-        }
-      }
-    }
-
-    for (let rep = 0; rep < REPS.freeKicks; rep++) {
-      const sc = buildFreeKickScenario(trial, rep, mulberry32((s * 13 + rep) >>> 0));
-      for (const [W, H] of SHAPES) {
-        const cam = strikeCamera(sc, sc.ball, W, H);
-        check(Math.abs((cam.x2 - cam.x1) / (cam.y2 - cam.y1) - W / H) < 1e-6,
-          `free-kick camera is not the canvas shape at ${W}x${H}`);
-        check(cam.x1 <= POST_L && cam.x2 >= POST_R, "free-kick camera cuts off the goal mouth");
-        check(cam.y1 <= -NET_DEPTH, "free-kick camera cuts off the net");
-        check(sc.ball.x > cam.x1 && sc.ball.x < cam.x2, "the free kick is off the side of the shot");
-        check(cam.y2 - sc.ball.y >= 6.5, "no room behind the free kick to drag back into");
-        for (const d of sc.defenders) {
-          check(d.x > cam.x1 && d.x < cam.x2 && d.y > cam.y1 && d.y < cam.y2,
-            "a wall man is drawn half off the screen");
-        }
-      }
-    }
-  }
-
   // `cameraContaining` itself: it must GROW, never crop. That is the whole
   // difference between it and `cameraFor`, and it is what the vision stage —
   // a picture you read in one look — depends on.
@@ -418,6 +343,7 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   const zero = cameraContaining(must, 0, 0);
   check(Number.isFinite(zero.x1) && Number.isFinite(zero.y2), "cameraContaining produced nonsense on a 0x0 canvas");
 }
+
 
 // ── 9. A FOOTBALLER IS SHAPED LIKE A FOOTBALLER ────────────────────────────
 //
@@ -445,481 +371,24 @@ function strikeAndResolve(sc: Scenario, rng: () => number, cy: number): Outcome 
   check((r.crossbar ?? 0) > 2, "…and a real crossbar to lift it over");
 }
 
-// ── 11. The sharp keeper standing behind the no-tell rep ───────────────────
+// ── THE STRIKING STAGES ARE THE MATCH ──────────────────────────────────────
 //
-// The one combination in this stage that nobody had ever run, and the reason
-// it was worth running on the real engine rather than reasoning about: the
-// "keeper's on fire" event adds +15 to a keeper who is already 45 + 45·d, and
-// the tell ramp takes his guess away entirely by the third kick. The biggest
-// save radius in the game, behind the one rep that shows you nothing, on the
-// same stage. Two mitigations were on the table — a tell floor whenever an
-// event is live, or having the event pick a different stage — and the
-// measurement is what decided whether either was needed.
-//
-// The taker modelled here is a real one rather than a machine: he reads the
-// lean when there is one to read and picks a side when there is not, aims
-// just inside the post, and misses by a realistic amount. Everything from
-// `buildPenaltyScenario` down is the screen's own code and the real engine.
+// Harry, 24 Sep 2026: the trial had its own camera, its own keeper dive and
+// its own loop — "it seems like you've made an entirely different game".
+// Penalties and free kicks now mount the real match (EngineFeature →
+// CanvasMatch) and only build each rep's picture. What is checked here: the
+// screens hand the engine a picture and run no ball of their own, and the
+// penalty keeper stands in the middle until you strike (penaltyKeeper.mts
+// measures what he does after).
 {
-  const resolveAt = (
-    sc: Scenario, rng: () => number, targetX: number, power: number,
-    skills: { power: number; technique: number },
-    commit: { lean: number; metres: number } | null,
-  ): Outcome | null => {
-    const dir = { x: targetX - sc.ball.x, y: -sc.ball.y };
-    const ball: Ball = launch(sc, dir, power, { cx: 0, cy: -0.15 }, skills, rng);
-    // The screen's own `onStrike`, which is the whole difference between a
-    // keeper who is a static reach test and one who has actually guessed.
-    // Leaving it out here would measure a penalty nobody plays any more.
-    if (commit) commitKeeperGuess(sc, commit.lean, commit.metres);
-    const dt = 1 / 60;
-    for (let f = 0; f < 600; f++) {
-      for (let i = 0; i < 3; i++) {
-        const h = dt / 3;
-        stepDefenders(sc, h, sc.player, false, ball);
-        stepKeeper(sc, h);
-        const res = stepBall(ball, sc, rng, h);
-        if (res) return res;
-      }
-    }
-    return null;
-  };
-
-  const convert = (
-    sharp: boolean, rep: number, difficulty: number,
-    skills: { power: number; technique: number }, n: number,
-  ) => {
-    let goals = 0;
-    for (let k = 0; k < n; k++) {
-      const t0 = startTrial(1000 + k);
-      const t: TrialProgress = {
-        ...t0,
-        baseDifficulty: difficulty,
-        stageRolls: { ...t0.stageRolls, penalties: 0 },
-        adversity: sharp ? "sharp-keeper" : null,
-        adversityStage: sharp ? "penalties" : null,
-      };
-      const rng = mulberry32((0x51ed270b ^ (k * 2654435761)) >>> 0);
-      const sc = buildPenaltyScenario(t, rep, rng);
-      // Read him if there is anything to read; otherwise pick a side.
-      const tell = penaltyTell(t, rep);
-      const side = tell > 0.2 ? -Math.sign(penaltySetup(t, rep).keeperLean) : (rng() < 0.5 ? -1 : 1);
-      const post = side < 0 ? POST_L : POST_R;
-      const targetX = post - side * (0.55 + rng() * 0.5) + (rng() - 0.5) * 1.5;
-      const setup = penaltySetup(t, rep);
-      const res = resolveAt(sc, rng, targetX, 0.72 + rng() * 0.18, skills,
-        { lean: setup.keeperLean, metres: setup.keeperCommit });
-      if (res === "goal" || res === "rebound") goals++;
-    }
-    return goals / n;
-  };
-
-  const N = 500;
-  const GOOD = { power: 60, technique: 60 };
-  const POOR = { power: 30, technique: 30 };
-  const LAST = REPS.penalties - 1;
-
-  // The four corners of the question, at the two ends of the skill range.
-  const goodFirst = convert(false, 0, 0.8, GOOD, N);
-  const goodLastClean = convert(false, LAST, 0.8, GOOD, N);
-  const goodLastSharp = convert(true, LAST, 0.8, GOOD, N);
-  // The genuinely worst cell in the game: a poor taker, the hardest possible
-  // afternoon, a keeper on fire, and the rep that shows him nothing.
-  const worstCell = convert(true, LAST, 1, POOR, N);
-  const worstClean = convert(false, LAST, 1, POOR, N);
-
-  if (process.env.TRIAL_MEASURE) {
-    console.log(`  penalties: rep1 ${(goodFirst * 100).toFixed(1)}%  `
-      + `last clean ${(goodLastClean * 100).toFixed(1)}%  last sharp ${(goodLastSharp * 100).toFixed(1)}%  `
-      + `| worst cell ${(worstCell * 100).toFixed(1)}% (clean ${(worstClean * 100).toFixed(1)}%)`);
+  for (const f of ["components/star/stages/TrialPenalties.tsx", "components/star/stages/TrialFreeKicks.tsx"]) {
+    const src = readFileSync(f, "utf8");
+    check(!/\b(stepBall|launch|stepKeeper)\s*\(/.test(src), `${f} runs its own ball again`);
+    check(!/getContext\(\s*["']2d/.test(src), `${f} draws its own canvas again`);
   }
-
-  // ── The ramp is real on the pitch, not just in the numbers ──
-  check(goodFirst > goodLastClean + 0.05,
-    `the telegraphed first kick must genuinely be easier than the no-tell last one `
-    + `(${(goodFirst * 100).toFixed(1)}% vs ${(goodLastClean * 100).toFixed(1)}%)`);
-
-  // ── The sharp keeper genuinely bites ──
-  check(goodLastSharp < goodLastClean,
-    `a keeper on fire must actually be harder to beat `
-    + `(${(goodLastSharp * 100).toFixed(1)}% vs ${(goodLastClean * 100).toFixed(1)}%)`);
-
-  // ── The stage is not a free pass any more either ──
-  //
-  // It used to be. Measured on the real engine, the no-tell rep converted a
-  // corner 88-99.8 % of the time — because the keeper was pinned to his line
-  // and the save collapsed into a static reach test that a corner beats by a
-  // metre at any keeper strength. Now that he commits at the strike
-  // (`commitKeeperGuess`, and `penaltyCommit` for whether and how far), the
-  // kick you cannot read is a real one. A ceiling as well as a floor, so a
-  // future change cannot quietly put the old free goal back.
-  check(goodLastClean < 0.75,
-    `the rep that tells you nothing must not be a formality, got `
-    + `${(goodLastClean * 100).toFixed(1)}%`);
-
-  // ── …and stacking the sharp keeper on that rep is not a lockout ──
-  //
-  // This is the assertion the whole section exists for. Measured figures with
-  // the keeper committing: rep 1 (readable) 95.0 %, the last rep clean
-  // 50.8 %, the last rep with a keeper on fire 49.2 %, and the genuinely
-  // worst cell in the game — a poor taker, the hardest afternoon, a sharp
-  // keeper, and the rep that shows him nothing — 46.0 %. The bar is set at
-  // 35 % so this is a real regression check on the stacking rather than a pin
-  // on one run's noise. If a future change to the keeper, the ramp, the
-  // commit or the bonus drops the worst cell under this, the mitigation that
-  // was ruled out here (a tell floor, or the event picking a different stage)
-  // becomes necessary after all.
-  check(worstCell > 0.35,
-    `the worst cell in the stage must still be winnable, got ${(worstCell * 100).toFixed(1)}%`);
-  check(worstCell > worstClean * 0.6,
-    `…and the bonus must not turn that rep into a different game entirely `
-    + `(${(worstCell * 100).toFixed(1)}% against a clean ${(worstClean * 100).toFixed(1)}%)`);
-}
-
-// ── THE KEEPER ACTUALLY GOES, AND KEEPS DIVING AFTERWARDS ──────────────────
-//
-// Two reported bugs, one mechanism between them, and both measured rather than
-// argued. See `commitKeeperGuess` (TrialPenalties.tsx) and `penaltyCommit`
-// (trialStages.ts) for the full numbers; this pins the properties they rest on.
-{
-  const trial = startTrial(90210);
-
-  // (1) He does not always go. A keeper who commits every single time turns
-  //     the stage into a coin flip and hands you the middle of the goal —
-  //     measured, that version took a 2.7 % shot to 96.8 %.
-  let goes = 0, holds = 0;
-  for (let seed = 0; seed < 300; seed++) {
-    const t = startTrial(seed * 7919 + 3);
-    for (let rep = 0; rep < REPS.penalties; rep++) {
-      if (penaltySetup(t, rep).keeperCommit > 0) goes++; else holds++;
-    }
-  }
-  const goRate = goes / (goes + holds);
-  check(goRate > 0.55 && goRate < 0.92,
-    `he should usually commit but genuinely sometimes hold, got ${(goRate * 100).toFixed(1)}%`);
-
-  // (2) Which way he goes is the lean's own sign, never a second dice roll.
-  //     That is what makes the stage's whole tell ramp mean something: the
-  //     subtitle has always claimed "he has already guessed", and now he has.
-  for (let seed = 0; seed < 60; seed++) {
-    const t = startTrial(seed * 104729 + 11);
-    for (let rep = 0; rep < REPS.penalties; rep++) {
-      const setup = penaltySetup(t, rep);
-      if (setup.keeperCommit <= 0) continue;
-      const sc = buildPenaltyScenario(t, rep, mulberry32(seed + rep));
-      const before = sc.keeper.startX;
-      commitKeeperGuess(sc, setup.keeperLean, setup.keeperCommit);
-      const wentRight = sc.keeper.targetX > before;
-      check(wentRight === (setup.keeperLean >= 0),
-        `he must commit to the side he is already leaning (rep ${rep}, seed ${seed})`);
-      check(sc.keeper.scrambling === true, "committing must actually set him scrambling");
-      check(sc.keeper.saveLunge > 0, "…and start the dive at the strike, not after it");
-    }
-  }
-
-  // (3) A rep where he holds must be left completely alone — not a scramble
-  //     with a zero-length target, which would still start the dive animation.
-  {
-    const sc = buildPenaltyScenario(trial, 0, mulberry32(5));
-    const was = { x: sc.keeper.x, t: sc.keeper.targetX, s: sc.keeper.scrambling, l: sc.keeper.saveLunge };
-    commitKeeperGuess(sc, 1, 0);
-    check(sc.keeper.scrambling === was.s && sc.keeper.targetX === was.t
-      && sc.keeper.saveLunge === was.l && sc.keeper.x === was.x,
-      "a keeper who is holding his ground must be left untouched");
-  }
-
-  // (4) He genuinely travels during the flight — the point of the whole
-  //     change. `stepKeeper` clamps to its own KEEPER_LATERAL_MAX, so asking
-  //     for more than he can cover is capped by the engine rather than by a
-  //     copy of its constant living in the screen.
-  {
-    const sc = buildPenaltyScenario(trial, 3, mulberry32(77));
-    const x0 = sc.keeper.x;
-    commitKeeperGuess(sc, 1, 999);
-    for (let i = 0; i < 60; i++) stepKeeper(sc, 1 / 60);
-    const moved = sc.keeper.x - x0;
-    check(moved > 1, `he must actually travel when committed, moved ${moved.toFixed(2)} m`);
-    check(moved < 4, `…and never further than the engine's own limit, moved ${moved.toFixed(2)} m`);
-  }
-
-  // (5) THE FROZEN DIVE. Reported as "he dives after the ball goes in the
-  //     net", and measured: the screen holds the flight phase open after the
-  //     outcome, and neither post-outcome branch used to call `stepKeeper`, so
-  //     the dive stopped dead at 13 % and finished a second later as the
-  //     banner appeared. Over 200 real penalties that was 498 ms of visibly
-  //     frozen keeper within the old 1.0 s window, against 0 ms now, and the
-  //     dive completes 149 ms after the outcome — the real match measures
-  //     ~150 ms.
-  //
-  //     Checked here the only way a test can: that a keeper part-way through a
-  //     dive DOES advance when stepped, which is exactly the call the two
-  //     branches were missing. Whether the branches call it is the screen's
-  //     own wiring and is verified by reading it, same standing limitation as
-  //     every other CanvasMatch-shaped check in this file.
-  {
-    const sc = buildPenaltyScenario(trial, 3, mulberry32(11));
-    commitKeeperGuess(sc, 1, PENALTY_COMMIT_M);
-    sc.keeper.saveLunge = 0.13;   // where the old loop left him, measured
-    const before = sc.keeper.saveLunge;
-    let frames = 0;
-    while (sc.keeper.saveLunge < 1 && frames < 120) { stepKeeper(sc, 1 / 60); frames++; }
-    check(sc.keeper.saveLunge > before, "stepping a mid-dive keeper must advance the dive");
-    check(sc.keeper.saveLunge >= 1 && frames < 30,
-      `…and finish it promptly once stepped, took ${(frames * 1000 / 60).toFixed(0)} ms`);
-  }
-
-  // (6) The banner gate. The real match has none at all; this screen keeps a
-  //     short beat so a goal is seen crossing and the dive is seen finishing,
-  //     and nothing like the full second that put the worst measured attempt
-  //     at 8.52 s.
-  check(SETTLE_BEFORE_BANNER > 0 && SETTLE_BEFORE_BANNER <= 0.35,
-    `the settle beat must be short but not nothing, got ${SETTLE_BEFORE_BANNER}s`);
-}
-
-// ── THE AIM ARROW IS THE MATCH'S ARROW ─────────────────────────────────────
-//
-// Reported twice, in the same words both times: "the drag arrow still doesn't
-// look like the original football engine." The reason it matters is already
-// written down beside `MIN_PULL` in TrialPenalties.tsx — a trial that teaches
-// a different gesture from the game it is the opening of is worse than no
-// trial — and it is a pair that has drifted before.
-//
-// Measured, before anything was changed, on the real camera a real penalty is
-// framed by (iPhone 13, a 358 × 439 canvas, a 32.4 m tall camera at 13.6 px/m):
-//
-//   power   trial (0.11)   match (0.132)
-//   0.25      12.1 px        14.5 px
-//   0.50      24.1 px        29.0 px
-//   1.00      48.3 px        57.9 px     — 16.7 % short at every power
-//
-// Everything else about the two arrows — the #fb923c → #ea580c gradient
-// shaft, the round cap, the solid #f97316 head, its rgba(124,45,18,0.6) edge,
-// and all four size formulas off W and `unit` — was already identical and was
-// left alone. So the only thing to hold still is the length coefficient, and
-// the only honest way to check it is against the match's own source: there is
-// no exported constant on that side to import, and re-typing the number here
-// would just be a third copy that could drift with the other two.
-{
-  const match = readFileSync("components/star/CanvasMatch.tsx", "utf8");
-
-  // The one line in CanvasMatch that sets the drawn arrow length.
-  const found = match.match(/lineLen\s*=\s*power\s*\*\s*heightSpan\s*\*\s*([0-9.]+)/);
-  check(found !== null,
-    "CanvasMatch still computes its aim arrow as power × heightSpan × <k> — "
-    + "if this has been restructured, re-derive the trial's arrow against it by hand");
-
-  if (found) {
-    const theirs = Number(found[1]);
-    check(Math.abs(theirs - AIM_ARROW_LENGTH) < 1e-9,
-      `the trial's aim arrow must be the match's aim arrow: the trial draws `
-      + `${AIM_ARROW_LENGTH} and the match now draws ${theirs}. Follow it.`);
-  }
-
-  // The power meter. CanvasMatch removed its own ("redundant with the arrow's
-  // own length, which already is the power readout") and this screen was the
-  // last thing still drawing one — a vertical bar down the left edge with a
-  // green/amber/red fill and an "NN%" label, on the first ball anybody in this
-  // game ever kicks, showing a number the real game never shows. Reported
-  // directly. Checked by its most distinctive marks rather than by the word
-  // "meter", which appears in prose either way.
-  const trialSrc = readFileSync("components/star/stages/TrialPenalties.tsx", "utf8");
-  const drawsAMeter = /ctx\.fillText\(`\$\{Math\.round\(power \* 100\)\}%`/.test(trialSrc)
-    || /createLinearGradient[^;]*\n?[^;]*addColorStop\(0, "#22c55e"\)/.test(trialSrc);
-  check(!drawsAMeter,
-    "the trial must not draw a power percentage the real match does not draw");
-  check(!/#22c55e|#eab308|#ef4444/.test(trialSrc),
-    "the meter's green/amber/red fill is gone from the striking stages");
-}
-
-
-// ── 9. NOBODY IS ON THE PITCH WITHOUT BEING DRAWN ──────────────────────────
-//
-// Reported from a real playthrough of the free kicks: "there are invisible
-// people there… it's probably just taking a regular free kick where you have
-// players around you, and it's just made them invisible."
-//
-// It was. Every scenario the engine builds carries a `follower` — the one
-// interactive rebound-chaser, and on a free kick he stands 9-18 m from goal,
-// roughly central, i.e. straight down the flight path — plus `teammates`, and
-// the taker himself. The screen drew the defenders and the keeper and nothing
-// else, and `stepBall` has the follower on its reception candidate list for
-// any scenario with the goal in view, so a man nobody could see was genuinely
-// deciding free kicks.
-//
-// This holds the SCREEN's own list against the SCENARIO, rather than checking
-// a re-derived list of who ought to be there — a local copy of "who should be
-// drawn" would have agreed with the bug. Same trap as the castDefence fixture
-// in lineup.mts.
-{
-  const near = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-    Math.hypot(a.x - b.x, a.y - b.y) < 1e-6;
-
-  let checkedFK = 0, checkedPen = 0;
-  for (let s = 0; s < 120; s++) {
-    const trial = startTrial(880_000 + s * 7919);
-    for (let rep = 0; rep < REPS.freeKicks; rep++) {
-      for (const [what, sc] of [
-        ["free kick", buildFreeKickScenario(
-          trial, rep, mulberry32(((trial.seed ^ 0x5f5e) ^ ((rep + 1) * 0x9e3779b1)) >>> 0))] as const,
-        ["penalty", buildPenaltyScenario(
-          trial, rep, mulberry32((trial.seed ^ ((rep + 1) * 0x9e3779b1)) >>> 0))] as const,
-      ]) {
-        const drawn = ownSideBodies(sc);
-        if (what === "free kick") checkedFK++; else checkedPen++;
-
-        // The poacher is the man the whole report was about.
-        check(drawn.some(d => near(d, { x: sc.follower.x, y: sc.follower.y })),
-          `${what}: the follower/poacher exists in the scenario and is not drawn`);
-        for (const t of sc.teammates) {
-          check(drawn.some(d => near(d, t)), `${what}: a team-mate is not drawn`);
-        }
-        if (sc.runner) {
-          check(drawn.some(d => near(d, sc.runner!.pos)), `${what}: the runner is not drawn`);
-        }
-        for (const r of sc.secondaryRunners ?? []) {
-          check(drawn.some(d => near(d, r.pos)), `${what}: a secondary runner is not drawn`);
-        }
-        // Count, so nothing invented is drawn either.
-        const want = 1 + sc.teammates.length + (sc.runner ? 1 : 0)
-          + (sc.secondaryRunners ?? []).length;
-        check(drawn.length === want,
-          `${what}: drew ${drawn.length} of your own side, the scenario has ${want}`);
-        // Furthest from the camera first — the game's own y-sort, so a man
-        // nearer the goal is never painted over one nearer you.
-        for (let i = 1; i < drawn.length; i++) {
-          check(drawn[i].y >= drawn[i - 1].y, `${what}: own side drawn out of depth order`);
-        }
-
-        // …and every one of them, plus the taker, is inside the frame the
-        // screen actually films. Worth pinning rather than assuming: the
-        // camera is what `powerFrom` normalises the drag against, so if a new
-        // body ever forced `strikeCamera` to grow, the power of every kick in
-        // the trial would quietly change with it.
-        const cam = strikeCamera(sc, sc.ball, 358, 573);
-        for (const b of [...drawn, takerSpot(sc)]) {
-          check(b.x >= cam.x1 && b.x <= cam.x2 && b.y >= cam.y1 && b.y <= cam.y2,
-            `${what}: a drawn body (${b.x.toFixed(1)}, ${b.y.toFixed(1)}) falls outside the camera`);
-        }
-
-        // The taker is not drawn standing on the ball he is about to drag
-        // back from. Both drills put `scenario.player` directly behind it,
-        // and a figure drawn up-screen from its boots puts its head exactly
-        // there — the first version of this fix drew the ball on his face.
-        const t = takerSpot(sc);
-        check(Math.abs(t.x - sc.ball.x) >= 2.0,
-          `${what}: the taker is drawn on top of the ball (${Math.abs(t.x - sc.ball.x).toFixed(2)} m across)`);
-        // …and he is only ever moved ACROSS, never up or down the pitch.
-        check(Math.abs(t.y - sc.player.y) < 1e-9, `${what}: the taker's depth was moved, not just his side`);
-        // Never nudged into the line you are aiming down.
-        const side = Math.sign(t.x - sc.ball.x);
-        check(side === (sc.ball.x >= CX ? 1 : -1) || Math.abs(sc.player.x - sc.ball.x) >= 2.3,
-          `${what}: the taker is drawn on the goal side of the ball`);
-      }
-    }
-  }
-  check(checkedFK > 300 && checkedPen > 300, "not enough scenarios checked");
-
-  // A taker who is ALREADY standing off to one side (every ordinary scenario,
-  // via the engine's own standOff) is left exactly where he is.
-  {
-    const sc = buildFreeKickScenario(startTrial(4321), 0, mulberry32(7));
-    sc.player = { x: sc.ball.x + 4, y: sc.ball.y + 1 };
-    const t = takerSpot(sc);
-    check(t.x === sc.player.x && t.y === sc.player.y,
-      "a taker already standing off to one side was moved anyway");
-  }
-}
-
-// ── 10. THE KEEPER'S DIVE DOES NOT RESTART HALFWAY THROUGH ─────────────────
-//
-// Reported from a real playthrough of the penalties: "he's just not even
-// diving the right way. It's a little bit buggy. That didn't make sense."
-//
-// `commitKeeperGuess` makes him pick a side and go the instant the ball is
-// struck. When the ball then reaches his line, the engine's own save test
-// unconditionally writes `k.saveDir = sign(xAt − k.x)` and `k.saveLunge =
-// 0.001` — right for a match, where that IS the start of his dive, and wrong
-// here, where it lands on a dive already fully played. On screen he snaps
-// upright out of full stretch and starts a fresh dive the other way as the
-// ball goes past.
-//
-// The bug is REPRODUCED first, off the raw engine fields, so a reader can see
-// what "before" looked like instead of taking it on faith — and then the same
-// run is replayed through `keeperDive` and must be clean.
-{
-  const runPenalty = (seed: number, rep: number, aimSide: number) => {
-    const trial = startTrial(seed);
-    const setup = penaltySetup(trial, rep);
-    const rng = mulberry32((trial.seed ^ ((rep + 1) * 0x9e3779b1)) >>> 0);
-    const sc = buildPenaltyScenario(trial, rep, rng);
-    const dir = { x: aimSide * 3.2, y: -PEN_SPOT_Y };
-    const ball = launch(sc, dir, 0.9, { cx: 0, cy: -0.1 }, { power: 60, technique: 60 }, rng);
-    commitKeeperGuess(sc, setup.keeperLean, setup.keeperCommit);
-
-    const raw: { dir: number; lunge: number }[] = [];
-    const shown: { dive: number; lunge: number }[] = [];
-    const dt = 1 / 60;
-    // Past the outcome, because the reset happens exactly AT it — the screen
-    // keeps stepping him through the settle beat and the result banner.
-    for (let f = 0; f < 240; f++) {
-      for (let i = 0; i < 3; i++) {
-        const h = dt / 3;
-        stepDefenders(sc, h, sc.player, false, ball);
-        stepKeeper(sc, h);
-        stepBall(ball, sc, rng, h);
-        raw.push({ dir: sc.keeper.saveDir, lunge: sc.keeper.saveLunge });
-        shown.push(keeperDive(sc.keeper));
-      }
-    }
-    return { raw, shown, committed: setup.keeperCommit > 0 };
-  };
-
-  const flips = (xs: { dir: number }[]) => {
-    let n = 0, last = 0;
-    for (const x of xs) {
-      if (x.dir !== 0 && last !== 0 && Math.sign(x.dir) !== Math.sign(last)) n++;
-      if (x.dir !== 0) last = x.dir;
-    }
-    return n;
-  };
-  const resets = (xs: { lunge: number }[]) => {
-    let n = 0;
-    for (let i = 1; i < xs.length; i++) if (xs[i].lunge < xs[i - 1].lunge - 1e-9) n++;
-    return n;
-  };
-
-  let reproduced = 0, committedRuns = 0;
-  for (let s = 0; s < 60; s++) {
-    for (let rep = 0; rep < 3; rep++) {
-      for (const aim of [-1, 1]) {
-        const r = runPenalty(700_000 + s * 7919, rep, aim);
-        if (!r.committed) continue;
-        committedRuns++;
-        if (flips(r.raw) > 0 || resets(r.raw) > 0) reproduced++;
-
-        // The fix, on the same run: what is DRAWN never flips direction once
-        // he has started going, and never un-dives.
-        check(flips(r.shown.map(x => ({ dir: Math.sign(x.dive) }))) === 0,
-          "the drawn dive flipped direction mid-attempt");
-        check(resets(r.shown) === 0, "the drawn dive collapsed and restarted mid-attempt");
-      }
-    }
-  }
-  check(committedRuns > 40, `not enough committed penalties to test (${committedRuns})`);
-  // If this ever stops reproducing, the engine has changed underneath and the
-  // latch may no longer be needed — which is worth being told about.
-  check(reproduced > committedRuns * 0.5,
-    `the raw engine fields no longer flip/reset (${reproduced}/${committedRuns}) — re-read `
-    + `keeperDive's note before trusting it`);
-
-  // A keeper who has not committed to anything is drawn standing, not diving.
-  {
-    const sc = buildPenaltyScenario(startTrial(99), 0, mulberry32(3));
-    sc.keeper.saveLunge = 0;
-    sc.keeper.dive = 0;
-    const d = keeperDive(sc.keeper);
-    check(d.lunge === 0 && d.dive === 0, "an uncommitted keeper is drawn mid-dive");
-  }
+  const pen = readFileSync("components/star/stages/TrialPenalties.tsx", "utf8");
+  check(/<EngineFeature\b/.test(pen), "the striking stage no longer mounts the real match");
+  check(/penaltyRead=/.test(pen), "the trial's harder keeper read never reaches the engine");
 }
 
 // ── 11. THE TAKER ACTUALLY KICKS, AND ONLY WHILE HE IS KICKING ─────────────

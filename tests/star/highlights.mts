@@ -59,8 +59,17 @@ console.log("\n── A hundred presses, every kind on ──");
 
   check("100 presses produced 100 chances", runs.length === 100);
   check(`no picture twice running`, immediate === 0, `${immediate} immediate repeats`);
-  check(`distinct pictures`, pics.size >= 95, `${pics.size}/100`);
-  check(`every kind came up`, kinds.size === SCENARIO_KINDS.length, `${kinds.size}/${SCENARIO_KINDS.length}`);
+  // A penalty is one picture by nature (one spot, one keeper), so its repeats
+  // are not a wasted press. Measured 24 Sep 2026 when volley and header were
+  // switched off (lib/star/switchedOffKinds.ts): 98 -> 91 distinct of 100 on
+  // run 1, and across runs 1-5 EVERY repeat was a penalty (9/1/13/11/5) — two
+  // fewer kinds just hands penalties a slightly bigger share. So the variety
+  // that matters is pinned without them, and all of them are counted too.
+  const open = runs.filter((r) => r.kind !== "penalty");
+  const openPics = new Set(open.map((r) => r.picture));
+  check(`distinct pictures, penalties aside`, openPics.size >= Math.floor(open.length * 0.97), `${openPics.size}/${open.length}`);
+  check(`distinct pictures, all presses`, pics.size >= 85, `${pics.size}/100`);
+  check(`every kind came up`, kinds.size === allKinds().length, `${kinds.size}/${allKinds().length} (of ${SCENARIO_KINDS.length}; the rest switched off)`);
   // Not a pass/fail bar — the number the tool exists to surface.
   console.log(`  note  ${faulty}/100 came back with a fault`);
 }

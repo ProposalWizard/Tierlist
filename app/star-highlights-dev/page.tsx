@@ -32,6 +32,7 @@
  * device, any day.
  */
 
+import { isSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
@@ -60,6 +61,7 @@ import {
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
 import {
   addFigureTo,
   analyseEdited,
@@ -101,11 +103,13 @@ const kindLabel = (k: string) => k.replace(/_/g, " ");
 
 /** The order the chips read in — grouped by where on the pitch they happen,
  *  rather than the engine's own declaration order. */
-const KIND_ORDER: ScenarioKind[] = [
+const KIND_ORDER: ScenarioKind[] = ([
   "one_on_one", "tight_angle", "volley", "header", "cutback", "byline_cross",
   "long_range", "through_ball", "midfield_pass", "buildup",
   "penalty", "free_kick", "corner",
-];
+] as ScenarioKind[])
+  // Volley and header are switched off for now (lib/star/switchedOffKinds.ts).
+  .filter(k => !isSwitchedOff(k));
 
 // ─────────────────────────────────────────────────────────────────────────
 //  HOW AN EDIT MADE HERE IS ADDRESSED
@@ -289,17 +293,15 @@ export default function HighlightsPage() {
   const [ready, setReady] = useState(false);
   /** Which figure is tapped, for the add/remove controls. */
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** The picture's width, and Play's: the real match's on a phone, bigger on
+   *  a laptop with the same drag feel (see EnginePlay's `width`). */
+  const pictureW = usePlayWidth();
+  /** The kits Play will wear, so pressing Play changes no colours. */
+  const kits = useTestKits();
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
-  /** The picture's width when Play was pressed — the match plays at exactly
-   *  this size (see ScenarioPlay's `width`). */
-  const [playW, setPlayW] = useState<number | undefined>(undefined);
   const pictureRef = useRef<HTMLDivElement>(null);
-  const togglePlay = () => {
-    const c = pictureRef.current?.querySelector("canvas");
-    if (!playing && c) setPlayW(Math.round(c.getBoundingClientRect().width));
-    setPlaying((v) => !v);
-  };
+  const togglePlay = () => setPlaying((v) => !v);
   /** Every correction recorded so far, so Tune can say whether this one just
    *  completed a pattern. Same store the gallery and Tuning & Commit read —
    *  a correction made here counts exactly as much as one made there. */
@@ -708,7 +710,7 @@ export default function HighlightsPage() {
           <button style={smallBtn} onClick={() => setKindsAnd([])}>None</button>
           <div style={{ flex: 1 }} />
           <span style={{ color: MUTED, fontSize: 13, fontWeight: 700, alignSelf: "center" }}>
-            {kinds.length}/{SCENARIO_KINDS.length}
+            {kinds.length}/{allKinds().length}
           </span>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "10px 14px 100px" }}>
@@ -794,7 +796,7 @@ export default function HighlightsPage() {
         null,
         <div style={{ display: "flex", gap: 8 }}>
           <button style={smallBtn} aria-label="Choose highlights" onClick={() => setScreen("kinds")}>
-            {kinds.length}/{SCENARIO_KINDS.length}
+            {kinds.length}/{allKinds().length}
           </button>
           <button
             aria-label="Flagged list"
@@ -831,7 +833,7 @@ export default function HighlightsPage() {
                 return sc;
               }}
               onStop={() => setPlaying(false)}
-              width={playW}
+              width={pictureW}
             />
           ) : shot && baseFrame && (
             <EditableFrame
@@ -845,6 +847,10 @@ export default function HighlightsPage() {
               onSelect={setSelectedId}
               onSwipe={(d) => (d === 1 ? next() : prev())}
               fit
+              // Play runs at exactly this size, so the picture and the match
+              // are the same size, in the same kits (one engine, 24 Sep).
+              size={{ baseW: pictureW, maxW: pictureW, maxH: 4000 }}
+              kits={kits}
             />
           )}
 

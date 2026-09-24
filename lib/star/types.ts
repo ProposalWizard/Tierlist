@@ -1,4 +1,5 @@
 import type { Scenario, Vec2, Contact, KickSkills } from "./canvasEngine";
+import type { PenaltyReadDecision } from "./penaltyKeeper";
 
 /**
  * Everything needed to watch a goal you scored happen again, exactly as it
@@ -48,7 +49,10 @@ export interface GoalReplay {
   skills: KickSkills;
   /** See the file note above — every physics substep size actually used
    *  between the strike and the flight resolving, in order. */
-  flightDtLog?: number[];
+  flightDtLog?: number[];  /** A penalty: what the keeper decided at the strike (see
+   *  lib/star/penaltyKeeper.ts), so the replay makes the same dive. Absent on
+   *  anything else, and on a penalty saved before the keeper read your aim. */
+  penaltyRead?: PenaltyReadDecision;
 }
 
 export interface StarPlayer {

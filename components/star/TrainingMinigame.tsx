@@ -4,15 +4,10 @@ import type { Skills } from "@/lib/star/types";
 import { getTuning } from "@/lib/star/tuningStore";
 import { mulberry32 } from "@/lib/star/season";
 import {
-  buildScenario, initDefenders, launch, stepBall, stepKeeper, stepBallInNet,
-  dragForFullPower,
-  type Ball, type Outcome, type Scenario,
+  buildScenario, initDefenders,
+  type Scenario,
 } from "@/lib/star/canvasEngine";
-import {
-  newDribble, flick, stepDribble, dribbleViewport, dribbleProgress,
-  type DribbleState,
-} from "@/lib/star/dribble";
-import { CX, POST_L, POST_R, PITCH_W } from "@/lib/star/pitch";
+import { CX, PITCH_W } from "@/lib/star/pitch";
 import {
   powerDrill, techniqueDrill, freeKickDrill, paceDrill, visionDrill,
   strikeSpot, conePositions, gateCrossing, gateQuality, shotQuality,
@@ -20,11 +15,12 @@ import {
 import {
   renderTrainingScene, strikeViewport, gateViewport, type TrainingViewport,
 } from "@/lib/star/trainingRender";
-import { poseFor, runPhase, bodyPoseFor } from "@/lib/star/fiveASide/render";
-import { KICK_POSE_S, isTakerKicking } from "@/components/star/stages/TrialPenalties";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
-import ContactBall from "./ContactBall";
+import FirstPersonDribble from "./FirstPersonDribble";
+import { EngineFeature } from "./EnginePlay";
+import type { ScenePicture } from "@/lib/star/scenePicture";
+import type { ChanceResolved } from "./CanvasMatch";
 
 /**
  * TRAINING, REBUILT.
@@ -96,19 +92,6 @@ const SKILL_TITLES: Record<keyof Skills, string> = {
   freeKick: "Over the Wall",
 };
 
-const DT_CAP = 0.05;
-// Matches the real match and the trial exactly — both read this off the same
-// exported canvasEngine.ts function, dragForFullPower(skills.power), rather
-// than a flat number. Before this fix, training used a hardcoded 0.04/0.16
-// pair here — the identical shot took a genuinely different drag to pull off
-// in training than the same shot in a match or the trial, which is exactly
-// the "different game" divergence reported directly: "game engine or nature
-// or physics or style or whatever is for some reason different across trial,
-// training, and in game." MIN_PULL itself is pinned to the same 0.008 both
-// of those already use (each file keeps its own local copy of this one by
-// established convention here — see CanvasMatch.tsx/TrialPenalties.tsx's own
-// identically-valued local MIN_PULL — rather than a shared import).
-const MIN_PULL = 0.008;
 
 // ── Shared scoring ─────────────────────────────────────────────────────────
 
@@ -209,7 +192,22 @@ function useCanvasSize(canvasRef: React.RefObject<HTMLCanvasElement>, wrapRef: R
 // ═══════════════════════════════════════════════════════════════════════════
 
 type StrikeKind = "power" | "technique" | "freeKick";
-type StrikePhase = "aim" | "contact" | "flight" | "judged";
+
+/**
+ * What each drill puts on the pitch. The ball, the kick and the flight are the
+ * real match's; everything else is only there if the drill is about it.
+ * Harry, 24 Sep 2026: "technique training does not need a goalie/goal yet in
+ * every drill there's a keeper... we literally just need the mechanics."
+ * - Technique: you, a ball and two cones. No keeper, no goal, nobody else.
+ * - Power: the keeper and the bodies in the lane, but no poacher to tidy up.
+ * - Free kick: the wall and the keeper, but no poacher either.
+ * No drill shows the match's own GOAL/PASS text; the drill's flash says it.
+ */
+const DRILL_SCENE: Record<StrikeKind, ScenePicture> = {
+  technique: { keeper: false, goal: false, teammates: false, banners: false },
+  power: { teammates: false, banners: false },
+  freeKick: { teammates: false, banners: false },
+};
 
 interface StrikeSetup {
   scenario: Scenario;
@@ -269,7 +267,7 @@ function buildStrike(kind: StrikeKind, level: number, rep: number, rng: () => nu
     const wallCx = ball.x + ux * 9.15, wallCy = ball.y + uy * 9.15;
     const px = -uy, py = ux;
     sc.defenders = Array.from({ length: cfg.wall }, (_, i) => {
-      const off = (i - (cfg.wall - 1) / 2) * 0.75;
+      const off = (i - (cfg.wall - 1) / 2) * 1.15; // 1.15 m apart, the real engine's own wall spacing
       return {
         x: Math.max(1, Math.min(PITCH_W - 1, wallCx + px * off)),
         y: Math.max(0.6, wallCy + py * off),
@@ -324,262 +322,82 @@ function buildStrike(kind: StrikeKind, level: number, rep: number, rng: () => nu
 function StrikeDrill({
   kind, level, skills, onFinish,
 }: { kind: StrikeKind; level: number; skills: Skills; onFinish: (xp: number) => void }) {
+  // One real match engine (CanvasMatch, via EngineFeature) — the same aim,
+  // contact, flight, keeper and wall a match has. This file only builds the
+  // picture for each rep and scores the result. See .claude/skills/one-engine.
   const REPS = 4;
   const { rep, push, projected } = useDrillScore(REPS, onFinish);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x5f3a) >>> 0));
-  const ballImgRef = useRef<HTMLImageElement | null>(null);
-  // No real identity reaches a drill — a stable fake face per body instead
-  // of the blank backing circle it used to draw. See the `fake()` helper
-  // near each `renderTrainingScene` call in this file.
-  const facesRef = useRef(createFaceImageCache());
+  const repRef = useRef(0);
+  repRef.current = rep;
+  const seedRef = useRef((Date.now() ^ 0x5f3a) >>> 0);
   const setupRef = useRef<StrikeSetup | null>(null);
-  const ballRef = useRef<Ball | null>(null);
-  const prevSampleRef = useRef<{ x: number; y: number; z: number } | null>(null);
-  const trailRef = useRef<{ x: number; y: number }[]>([]);
+  const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossedRef = useRef<{ x: number; z: number } | null>(null);
-  const outcomeRef = useRef<Outcome | null>(null);
-  const resolvedRef = useRef(false);
-  const dragRef = useRef<{ x: number; y: number } | null>(null);
-  const draggingRef = useRef(false);
-  const phaseRef = useRef<StrikePhase>("aim");
-  // Seconds since the strike — 0 at rep-start AND at the strike itself, so
-  // (as in TrialPenalties.tsx's identical `flightTRef`) it only means
-  // "just kicked" once the phase has actually left "aim"/"contact"; see the
-  // `struck` gate in `draw()` below.
-  const flightTRef = useRef(0);
-
-  const [phase, setPhaseState] = useState<StrikePhase>("aim");
-  const setPhase = (p: StrikePhase) => { phaseRef.current = p; setPhaseState(p); };
-  const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
-  const [brief, setBrief] = useState("");
 
-  useCanvasSize(canvasRef, wrapRef);
-  useEffect(() => {
-    const img = new Image();
-    img.src = "/star/ball.png";
-    ballImgRef.current = img;
-  }, []);
-
-  const startRep = useCallback((r: number) => {
-    const setup = buildStrike(kind, level, r, rngRef.current);
+  const openOn = useCallback((): Scenario => {
+    const r = repRef.current;
+    const setup = buildStrike(kind, level, r, mulberry32((seedRef.current ^ Math.imul(r + 1, 0x9e3779b1)) >>> 0));
+    setup.scenario.viewport = { ...setup.viewport };
     setupRef.current = setup;
-    ballRef.current = null;
-    prevSampleRef.current = null;
-    trailRef.current = [];
+    prevRef.current = null;
     crossedRef.current = null;
-    outcomeRef.current = null;
-    resolvedRef.current = false;
-    dragRef.current = null;
-    draggingRef.current = false;
-    flightTRef.current = 0;
-    setAim(null);
-    setBrief(setup.brief);
-    setPhase("aim");
+    return setup.scenario;
   }, [kind, level]);
 
-  useEffect(() => { startRep(0); }, [startRep]);
+  // The HUD line and the cones for this rep — the same seeded build the
+  // engine was handed, so the cones stand exactly where the gate is judged.
+  const view = useMemo(() => {
+    const setup = buildStrike(kind, level, rep, mulberry32((seedRef.current ^ Math.imul(rep + 1, 0x9e3779b1)) >>> 0));
+    return {
+      brief: setup.brief,
+      markers: setup.gate ? [
+        { x: setup.gate.left.x, y: setup.gate.left.y },
+        { x: setup.gate.right.x, y: setup.gate.right.y },
+      ] : [],
+    };
+  }, [kind, level, rep]);
+  const brief = view.brief;
+  const markers = view.markers;
 
-  // ── Pointer → pitch ──
-  const pitchFromPointer = (e: React.PointerEvent) => {
-    const c = canvasRef.current;
-    const vp = setupRef.current?.viewport;
-    if (!c || !vp) return { x: CX, y: 20 };
-    const r = c.getBoundingClientRect();
-    const fx = (e.clientX - r.left) / r.width;
-    const fy = (e.clientY - r.top) / r.height;
-    return { x: vp.x1 + fx * (vp.x2 - vp.x1), y: vp.y1 + fy * (vp.y2 - vp.y1) };
-  };
-  const screenPull = (drag: { x: number; y: number }, ball: { x: number; y: number }, vp: TrainingViewport) => {
-    const H = vp.y2 - vp.y1, W = vp.x2 - vp.x1;
-    return Math.hypot(((drag.x - ball.x) / W) * (W / H), (drag.y - ball.y) / H);
-  };
-  const powerFrom = (drag: { x: number; y: number }, ball: { x: number; y: number }, vp: TrainingViewport) =>
-    Math.max(0, Math.min(1, screenPull(drag, ball, vp) / dragForFullPower(skills.power)));
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (phaseRef.current !== "aim") return;
-    draggingRef.current = true;
-    dragRef.current = pitchFromPointer(e);
-    try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!draggingRef.current) return;
-    dragRef.current = pitchFromPointer(e);
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
-    const d = dragRef.current;
+  // Gate crossing: judged on the two samples that straddle the gate's own
+  // line, so a fast ball is still judged on where it really crossed.
+  const onBallStep = useCallback((b: { x: number; y: number; z: number }) => {
     const setup = setupRef.current;
-    dragRef.current = null;
-    if (!d || !setup) return;
-    if (screenPull(d, setup.scenario.ball, setup.viewport) < MIN_PULL) return;
-    const power = powerFrom(d, setup.scenario.ball, setup.viewport);
-    if (power < 0.05) return;
-    setAim({ dir: { x: setup.scenario.ball.x - d.x, y: setup.scenario.ball.y - d.y }, power });
-    setPhase("contact");
-  };
+    if (!setup?.gate || crossedRef.current) return;
+    const prev = prevRef.current;
+    if (prev) {
+      const c = gateCrossing(prev, b, setup.gate.centre.y);
+      if (c) crossedRef.current = c;
+    }
+    prevRef.current = { ...b };
+  }, []);
 
-  const handleContact = (contact: { cx: number; cy: number }) => {
+  const onChanceResolved = useCallback((info: ChanceResolved) => {
     const setup = setupRef.current;
-    if (!setup || !aim) return;
-    ballRef.current = launch(
-      setup.scenario, aim.dir, aim.power, contact,
-      { power: skills.power, technique: skills.technique },
-      rngRef.current,
-    );
-    prevSampleRef.current = {
-      x: ballRef.current.pos.x, y: ballRef.current.pos.y, z: ballRef.current.z,
-    };
-    setAim(null);
-    flightTRef.current = 0;
-    setPhase("flight");
-  };
-
-  // ── The loop ──
-  useEffect(() => {
-    let raf = 0;
-    let last = performance.now();
-    let settle = 0;
-
-    const judge = () => {
-      if (resolvedRef.current) return;
-      resolvedRef.current = true;
-      const setup = setupRef.current;
-      if (!setup) return;
-      let q = 0;
-      let text = "";
-      if (setup.gate && setup.gateCfg) {
-        q = gateQuality(crossedRef.current, setup.gateCfg, setup.gate.centre.x);
-        text = q >= 0.9 ? "THREADED!" : q >= 0.45 ? "THROUGH" : q > 0 ? "CLIPPED IT" : "MISSED THE GATE";
-      } else {
-        const b = ballRef.current;
-        const crossX = b && outcomeRef.current ? b.pos.x : null;
-        q = shotQuality(outcomeRef.current ?? "out", crossX);
-        text = outcomeRef.current === "goal" || outcomeRef.current === "rebound"
-          ? (q > 0.85 ? "TOP CORNER!" : "GOAL!")
-          : outcomeRef.current === "saved" || outcomeRef.current === "tipped" ? "SAVED"
-          : outcomeRef.current === "caught" ? "CAUGHT"
-          : outcomeRef.current === "post" ? "OFF THE POST"
-          : outcomeRef.current === "blocked" ? "BLOCKED"
-          : outcomeRef.current === "over" ? "OVER"
-          : "WIDE";
-      }
-      setFlash({ text, good: q >= 0.5 });
-      push(q);
-      setPhase("judged");
-      window.setTimeout(() => {
-        setFlash(null);
-        if (rep + 1 < REPS) startRep(rep + 1);
-      }, 1000);
-    };
-
-    const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
-      const dt = Math.min(DT_CAP, (now - last) / 1000);
-      last = now;
-      const setup = setupRef.current;
-      if (!setup) return;
-
-      if (phaseRef.current === "aim") {
-        // The keeper breathes and shifts his weight while you line the shot
-        // up, exactly as he does on the penalty/free-kick trial and the real
-        // match — reported directly as one of the ways this screen still
-        // reads as a different game. Without this he stood bolt upright and
-        // frozen for the whole aim phase, every rep, every drill.
-        stepKeeper(setup.scenario, dt);
-      } else if (phaseRef.current === "flight" && ballRef.current) {
-        const ball = ballRef.current;
-        flightTRef.current += dt;
-        if (ball.inNet) {
-          stepBallInNet(ball, dt);
-        } else if (!outcomeRef.current) {
-          stepKeeper(setup.scenario, dt);
-          const res = stepBall(ball, setup.scenario, rngRef.current, dt);
-          if (res) { outcomeRef.current = res; settle = 0; }
-        }
-
-        // Gate crossing — checked on the two samples that straddle the gate's
-        // own line, so a ball fast enough to skip the gate between frames is
-        // still judged on where it really crossed.
-        if (setup.gate && !crossedRef.current) {
-          const prev = prevSampleRef.current;
-          const nowS = { x: ball.pos.x, y: ball.pos.y, z: ball.z };
-          if (prev) {
-            const c = gateCrossing(prev, nowS, setup.gate.centre.y);
-            if (c) crossedRef.current = c;
-          }
-          prevSampleRef.current = nowS;
-        }
-
-        const t = trailRef.current;
-        const lastT = t[t.length - 1];
-        if (!lastT || Math.hypot(lastT.x - ball.pos.x, lastT.y - ball.pos.y) > 0.6) {
-          t.push({ x: ball.pos.x, y: ball.pos.y });
-          if (t.length > 60) t.shift();
-        }
-
-        // A gate rep is over the moment the ball is past the cones — there is
-        // nothing left to watch, and waiting for it to reach the goal would
-        // just be dead time.
-        if (setup.gate && crossedRef.current) { settle += dt; if (settle > 0.45) judge(); }
-        else if (outcomeRef.current) { settle += dt; if (settle > 0.9) judge(); }
-        else if (setup.gate && ball.pos.y < setup.gate.centre.y - 4) { settle += dt; if (settle > 0.5) judge(); }
-      }
-
-      draw();
-    };
-
-    const draw = () => {
-      const c = canvasRef.current, setup = setupRef.current;
-      if (!c || !setup) return;
-      const b = ballRef.current;
-      const sc = setup.scenario;
-      renderTrainingScene(c, {
-        viewport: setup.viewport,
-        goal: kind !== "technique",
-        keeper: kind === "technique" ? null : {
-          x: sc.keeper.x, y: sc.keeper.y,
-          dive: Math.max(-1, Math.min(1, (sc.keeper.dive ?? 0) / 1.6)),
-          lunge: sc.keeper.saveLunge ?? 0,
-          face: facesRef.current.get(fakeFaceFor("keeper")),
-        },
-        defenders: sc.defenders.map((d, i) => ({
-          x: d.x, y: d.y, z: d.z ?? 0, face: facesRef.current.get(fakeFaceFor(`wall-${i}`)),
-        })),
-        // `flightTRef` reads 0 both before any kick this rep and at the
-        // instant of one — `struck` is what tells them apart, same gate as
-        // TrialPenalties.tsx's own `draw()` and for the identical reason.
-        you: {
-          x: sc.player.x, y: sc.player.y,
-          pose: isTakerKicking(
-            phaseRef.current === "flight" || phaseRef.current === "judged"
-              ? flightTRef.current : undefined,
-          ) ? bodyPoseFor("kick", 0) : undefined,
-          face: facesRef.current.get(fakeFaceFor("you")),
-        },
-        gate: setup.gate,
-        ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : { x: sc.ball.x, y: sc.ball.y, z: 0 },
-        ballImage: ballImgRef.current,
-        trail: trailRef.current,
-        aim: phaseRef.current === "aim" && draggingRef.current && dragRef.current
-          ? {
-            from: sc.ball,
-            dir: { x: sc.ball.x - dragRef.current.x, y: sc.ball.y - dragRef.current.y },
-            power: powerFrom(dragRef.current, sc.ball, setup.viewport),
-          }
-          : null,
-      });
-    };
-
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rep, kind, push, startRep]);
+    if (!setup) return;
+    let q: number;
+    let text: string;
+    if (setup.gate && setup.gateCfg) {
+      q = gateQuality(crossedRef.current, setup.gateCfg, setup.gate.centre.x);
+      text = q >= 0.9 ? "THREADED!" : q >= 0.45 ? "THROUGH" : q > 0 ? "CLIPPED IT" : "MISSED THE GATE";
+    } else {
+      const o = info.teammateShot ? "saved" : info.outcome;
+      const reached = o === "goal" || o === "rebound" || o === "wide" || o === "over" || o === "post";
+      q = shotQuality(o, reached && info.ball ? info.ball.x : null);
+      text = o === "goal" || o === "rebound"
+        ? (q > 0.85 ? "TOP CORNER!" : "GOAL!")
+        : o === "saved" || o === "tipped" ? "SAVED"
+        : o === "caught" ? "CAUGHT"
+        : o === "post" ? "OFF THE POST"
+        : o === "blocked" || o === "tackled" ? "BLOCKED"
+        : o === "over" ? "OVER"
+        : "WIDE";
+    }
+    setFlash({ text, good: q >= 0.5 });
+    window.setTimeout(() => setFlash(null), 1000);
+    push(q);
+  }, [push]);
 
   const instruction = kind === "technique"
     ? "Drag back from the ball to aim and set power, then pick your spot on the ball to bend it through the cones."
@@ -589,26 +407,22 @@ function StrikeDrill({
 
   return (
     <Shell title={SKILL_TITLES[kind]} instruction={instruction} rep={rep} reps={REPS} xp={projected} level={level}>
-      <div
-        ref={wrapRef}
-        className="relative w-full overflow-hidden rounded-xl border-2 border-emerald-800 shadow-2xl touch-none select-none"
-        style={{ aspectRatio: "5 / 8" }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 h-full w-full touch-none"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
+      <div className="relative">
+        <EngineFeature
+          openOn={openOn}
+          onChanceResolved={onChanceResolved}
+          onBallStep={onBallStep}
+          markers={markers}
+          skills={{ power: skills.power, technique: skills.technique }}
+          setPieceSkill={skills.freeKick}
+          keeperStrength={kind === "technique" ? 40 : kind === "freeKick" ? freeKickDrill(level, rep).keeperStrength : powerDrill(level, rep).keeperStrength}
+          seed={seedRef.current}
+          scene={DRILL_SCENE[kind]}
         />
-        {brief && phase === "aim" && (
-          <div className="pointer-events-none absolute top-2 left-2 rounded-md bg-black/55 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200">
+        {brief && (
+          <div className="pointer-events-none absolute top-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200">
             {brief}
           </div>
-        )}
-        {phase === "contact" && aim && (
-          <ContactBall power={aim.power} onContact={handleContact} />
         )}
         {flash && <Flash text={flash.text} good={flash.good} />}
       </div>
@@ -617,157 +431,56 @@ function StrikeDrill({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PACE — the gauntlet, on dribble.ts
+// PACE — the gauntlet, on the real match's own first-person dribble
 // ═══════════════════════════════════════════════════════════════════════════
 
 function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: number) => void }) {
+  // The same run a real match serves (FirstPersonDribble, same camera
+  // settings as CanvasMatch's own mount). Your pace stat is the run speed.
   const REPS = 3;
   const { rep, push, projected } = useDrillScore(REPS, onFinish);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const runRef = useRef<DribbleState | null>(null);
-  const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x1d7c) >>> 0));
-  const ballImgRef = useRef<HTMLImageElement | null>(null);
-  const facesRef = useRef(createFaceImageCache());
-  const liveRef = useRef(false);
-  const resolvedRef = useRef(false);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  // Who moved since the last frame — CanvasMatch.tsx's own `motionRef`,
-  // read by `poseFor` so a run genuinely reads as a run here too, the same
-  // way its runners and chasers already do.
-  const motionRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
-  const [progress, setProgress] = useState(0);
+  const [runKey, setRunKey] = useState(0);
+  const cfg = paceDrill(level, rep);
+  // The drill's chaser count, in the real run's waves of up to three.
+  const waveSizes = useMemo(() => {
+    const out: number[] = [];
+    for (let left = cfg.chasers; left > 0; left -= 3) out.push(Math.min(3, left));
+    return out;
+  }, [cfg.chasers]);
+  const total = waveSizes.reduce((a, b) => a + b, 0);
 
-  useCanvasSize(canvasRef, wrapRef);
-  useEffect(() => {
-    const img = new Image();
-    img.src = "/star/ball.png";
-    ballImgRef.current = img;
-  }, []);
-
-  const startRep = useCallback((r: number) => {
-    const cfg = paceDrill(level, r);
-    runRef.current = newDribble({
-      pace: level, oppStrength: cfg.oppStrength, chasers: cfg.chasers, rng: rngRef.current,
-    });
-    liveRef.current = true;
-    resolvedRef.current = false;
-    setProgress(0);
-  }, [level]);
-
-  useEffect(() => { startRep(0); }, [startRep]);
-
-  // A swipe sets the heading — dribble.ts's own input model, unchanged.
-  const onPointerDown = (e: React.PointerEvent) => {
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
-    const start = dragStartRef.current;
-    dragStartRef.current = null;
-    const run = runRef.current;
-    if (!start || !run || !liveRef.current) return;
-    const dx = e.clientX - start.x, dy = e.clientY - start.y;
-    if (Math.hypot(dx, dy) < 6) return;
-    flick(run, dx, dy);
-  };
-
-  useEffect(() => {
-    let raf = 0;
-    let last = performance.now();
-    let settle = 0;
-
-    const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
-      const dt = Math.min(DT_CAP, (now - last) / 1000);
-      last = now;
-      const run = runRef.current;
-      if (!run) return;
-
-      if (liveRef.current) {
-        const out = stepDribble(run, dt);
-        setProgress(dribbleProgress(run));
-        if (out !== "running") {
-          liveRef.current = false;
-          settle = 0;
-        }
-      } else if (!resolvedRef.current) {
-        settle += dt;
-        if (settle > 0.7) {
-          resolvedRef.current = true;
-          const through = run.outcome === "through";
-          // Getting through is the rep; how much of the run was left in the
-          // clock is what separates a comfortable one from a scramble.
-          const spare = Math.max(0, 1 - run.elapsed / 12);
-          const q = through ? Math.max(0.45, Math.min(1, 0.45 + spare * 0.55)) : 0;
-          setFlash({
-            text: through ? (q > 0.8 ? "GONE!" : "THROUGH") : run.outcome === "out" ? "RAN IT DEAD" : "TACKLED",
-            good: through,
-          });
-          push(q);
-          window.setTimeout(() => {
-            setFlash(null);
-            if (rep + 1 < REPS) startRep(rep + 1);
-          }, 1000);
-        }
-      }
-
-      const c = canvasRef.current;
-      if (c) {
-        // Read once and shared across every figure this frame — see
-        // `runPhase`'s own doc on why (a crowd must not march in lockstep,
-        // which re-reading `now` per figure would defeat).
-        const nowS = now / 1000;
-        const yourPose = poseFor(motionRef.current, "you", run.pos.x, run.pos.y);
-        renderTrainingScene(c, {
-          viewport: dribbleViewport(run),
-          goal: false,
-          defenders: run.chasers.map((ch, i) => {
-            const p = poseFor(motionRef.current, `chaser${i}`, ch.x, ch.y);
-            return {
-              x: ch.x, y: ch.y, awake: ch.awake, pose: bodyPoseFor(p, runPhase(nowS, ch.x)),
-              face: facesRef.current.get(fakeFaceFor(`chaser-${i}`)),
-            };
-          }),
-          you: {
-            x: run.pos.x, y: run.pos.y,
-            pose: bodyPoseFor(yourPose, runPhase(nowS, run.pos.x)),
-            face: facesRef.current.get(fakeFaceFor("you")),
-          },
-          ball: { x: run.pos.x + run.heading.x * 0.9, y: run.pos.y + run.heading.y * 0.9, z: 0 },
-          ballImage: ballImgRef.current,
-          offsideLine: run.targetY,
-        });
-      }
-    };
-
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rep, push, startRep]);
+  const onComplete = useCallback((res: { cleared: boolean; beaten: number }) => {
+    const q = Math.max(0, Math.min(1, (res.beaten / Math.max(1, total)) * 0.8 + (res.cleared ? 0.2 : 0)));
+    setFlash({ text: res.cleared ? (q > 0.8 ? "GONE!" : "THROUGH") : "TACKLED", good: res.cleared });
+    push(q);
+    window.setTimeout(() => {
+      setFlash(null);
+      setRunKey(k => k + 1);
+    }, 1000);
+  }, [push, total]);
 
   return (
     <Shell
       title={SKILL_TITLES.pace}
-      instruction="Swipe to point your run. Reach the yellow line without being caught — you keep going the way you last swiped."
+      instruction="Read each man as he commits, then burst the other way. Beat them all to finish the run."
       rep={rep} reps={REPS} xp={projected} level={level}
     >
-      <div
-        ref={wrapRef}
-        className="relative w-full overflow-hidden rounded-xl border-2 border-emerald-800 shadow-2xl touch-none select-none"
-        style={{ aspectRatio: "5 / 8" }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 h-full w-full touch-none"
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        />
-        <div className="pointer-events-none absolute inset-x-2 top-2 h-1.5 rounded-full bg-black/40 overflow-hidden">
-          <div className="h-full rounded-full bg-emerald-400" style={{ width: `${progress * 100}%` }} />
-        </div>
+      <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "5 / 8" }}>
+        {rep < REPS && (
+          <FirstPersonDribble
+            key={runKey}
+            embedded
+            pace={level}
+            oppStrength={cfg.oppStrength}
+            waveSizes={waveSizes}
+            chaseEye={5}
+            chasePitchDeg={5}
+            chaseOffset={4}
+            cameraFollowRate={10}
+            onComplete={onComplete}
+          />
+        )}
         {flash && <Flash text={flash.text} good={flash.good} />}
       </div>
     </Shell>

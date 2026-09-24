@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/one-engine-guard.mjs && next build",
+    "guard:engine": "node scripts/one-engine-guard.mjs",
     "start": "next start",
     "lint": "next lint",
     "star:playtest": "node scripts/star-sandbox/drive.mjs",

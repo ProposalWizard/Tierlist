@@ -1,4 +1,6 @@
 "use client";
+import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
+import { isSwitchedOff, playableKind, withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
@@ -69,6 +71,7 @@ import MatchCommentary from "./MatchCommentary";
 import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "@/lib/star/energy";
 import { getTuning } from "@/lib/star/tuningStore";
 import ShootoutOverlay from "./ShootoutOverlay";
+import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
@@ -223,6 +226,83 @@ interface Props {
    * Opt-in and off by default, so a real career is untouched.
    */
   neverHooked?: boolean;
+  /**
+   * ── TEST-AREA DIALS (see lib/star/engineProfile.ts) ──
+   *
+   * Each one is a guardrailed override a test screen may pass to ITS OWN
+   * mount of the engine. The real career match never passes any of them, so
+   * absent they change nothing — which is what keeps a dial inside the test
+   * area: "adapting that gameplay should only happen inside the test area
+   * and not uniformly."
+   */
+  /** Use `keeperStrength` even when the opposition's real starting keeper is
+   *  known (the Play Area's Keeper slider with "Real keeper" off). */
+  forceKeeperStrength?: boolean;
+  /** Fresh legs every this-many minutes — for a test match that runs for
+   *  thousands, so energy behaves as it would across a run of real matches
+   *  rather than draining once and never coming back. */
+  fatigueResetEvery?: number;
+  /**
+   * Fired once per chance, the moment it resolves — the engine's own outcome
+   * and what the ball did. The hook a feature built ON TOP of the engine
+   * (a drill, a trial stage, a test tool) reads instead of running its own
+   * copy of the match loop. Purely an observer: nothing here reads it back.
+   */
+  onChanceResolved?: (info: ChanceResolved) => void;
+  /**
+   * A penalty keeper who reads you better (or worse) than a real match's —
+   * the trial's difficulty dial. Replaces fields of the real game's default
+   * read (lib/star/penaltyKeeper.ts). The real career match never passes it.
+   */
+  penaltyRead?: Partial<PenaltyReadSettings>;
+  /**
+   * The set-piece (free kick) rating to strike penalties and free kicks with
+   * when there is no career to read it from — the trial's "invisible stat",
+   * so a trial free kick is struck the way the same player would strike one
+   * in a match. A career's own rating always wins.
+   */
+  setPieceSkill?: number;
+  /**
+   * EXTRAS ON TOP — for a feature built around the engine (a training drill).
+   * `markers`: cones drawn on the pitch, in pitch metres. Decoration only:
+   * nothing in the engine reads them, so the football is untouched.
+   */
+  markers?: { x: number; y: number; color?: string }[];
+  /** Observer: the ball's position, once per physics step while it flies —
+   *  so a drill can judge "did it go through the gate" off the real flight. */
+  onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+  /**
+   * Read a drag against a canvas THIS many CSS pixels tall, instead of this
+   * canvas's own height. A drag is a fraction of the canvas height, so the
+   * same finger movement kicks softer on a bigger canvas; a test screen that
+   * draws the match bigger than a career's passes the real match's own
+   * canvas height here, and the same finger movement kicks exactly as hard.
+   * The real career match never passes it (its canvas IS the reference).
+   */
+  dragReferenceHeightPx?: number;
+  /**
+   * What is on the pitch, for a feature that only needs the mechanics.
+   * Asked for by Harry (24 Sep 2026): "different modes and training/trials
+   * will be COMPLETELY looking different... technique training does not need
+   * a goalie/goal yet in every drill there's a keeper... we literally just need
+   * the mechanics." The ball, the kick, the contact and the flight are always
+   * the real match's; this only takes things OFF the pitch. Every field
+   * defaults to on, and the real career match never passes it.
+   */
+  scene?: ScenePicture;
+}
+
+
+/** What `onChanceResolved` reports. */
+export interface ChanceResolved {
+  outcome: Outcome;
+  kind: ScenarioKind;
+  /** You struck it at goal (not a pass, not a team-mate's finish). */
+  youShot: boolean;
+  /** A team-mate struck it after you — a finish that is his, not yours. */
+  teammateShot: boolean;
+  /** Where the ball was when it resolved, in pitch metres; z is its height. */
+  ball: { x: number; y: number; z: number } | null;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -370,7 +450,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -671,6 +751,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const energyRef = useRef(career?.energy ?? 100);
   const energyClockRef = useRef(0);
+  const fatigueResetEveryRef = useRef(fatigueResetEvery);
+  fatigueResetEveryRef.current = fatigueResetEvery;
   const [liveEnergy, setLiveEnergy] = useState(career?.energy ?? 100);
   const energyModeRef = useRef<EnergyMode>("medium");
   const [energyMode, setEnergyModeState] = useState<EnergyMode>("medium");
@@ -839,6 +921,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  same reason `openOn` is — the loop reads them outside React's render. */
   const onChanceServedRef = useRef(onChanceServed);
   onChanceServedRef.current = onChanceServed;
+  const onChanceResolvedRef = useRef(onChanceResolved);
+  onChanceResolvedRef.current = onChanceResolved;
+  const penaltyReadRef = useRef(penaltyRead);
+  penaltyReadRef.current = penaltyRead;
+  const setPieceSkillRef = useRef(setPieceSkill);
+  setPieceSkillRef.current = setPieceSkill;
+  const markersRef = useRef(markers);
+  markersRef.current = markers;
+  const onBallStepRef = useRef(onBallStep);
+  onBallStepRef.current = onBallStep;
   const neverHookedRef = useRef(neverHooked);
   neverHookedRef.current = neverHooked;
 
@@ -869,6 +961,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
   /** Move the match clock — the one place energy is charged as it passes. */
   const setClock = (minute: number) => {
+    // A test match thousands of minutes long: fresh legs at each new "match"
+    // (see the fatigueResetEvery prop). Never set by the real career match.
+    const every = fatigueResetEveryRef.current;
+    if (every && every > 0 && Math.floor(minute / every) > Math.floor(energyClockRef.current / every)) {
+      energyRef.current = startEnergyRef.current;
+      energyClockRef.current = Math.floor(minute / every) * every;
+    }
     chargeEnergyTo(minute);
     matchMinuteRef.current = minute;
     setMatchMinute(minute);
@@ -1027,7 +1126,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // his own rating wins outright: a real keeper isn't a different man home
   // or away, so the nudge is deliberately dropped here too, not carried
   // over. Clamped to the same 20-99 band the prop itself already uses.
-  strengthRef.current = realKeeperOverall !== undefined
+  strengthRef.current = realKeeperOverall !== undefined && !forceKeeperStrength
     ? Math.max(20, Math.min(99, realKeeperOverall))
     : keeperStrength;
   const positionRef = useRef(position);
@@ -1067,11 +1166,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // honoured in both places: a first attempt wired only `loadScenario` and
   // the Play overlay opened on a build-up, because the opening scene had
   // already been built before that function was ever called. See `openOn`.
-  const scenarioRef = useRef<Scenario>(
-    openOn
+  // Built once: `useRef(expr)` would evaluate the builder on every render
+  // and throw the result away — and call a feature's `openOn` each time.
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
+  const scenarioRef = useRef<Scenario | null>(null) as React.MutableRefObject<Scenario>;
+  if (scenarioRef.current === null) {
+    scenarioRef.current = openOn
       ? openOn()
-      : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55),
-  );
+      : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55);
+    // Volley and header are switched off for now (lib/star/switchedOffKinds.ts).
+    if (!openOn && isSwitchedOff(scenarioRef.current.kind)) {
+      const r = mulberry32(seed ^ 0x51f7);
+      scenarioRef.current = buildScenario(playableKind(scenarioRef.current.kind, r), r, strengthRef.current, teamRelationship, career?.skills.vision ?? 55);
+    }
+    stageScene(scenarioRef.current, scene);
+  }
   const ballRef = useRef<Ball | null>(null);
   /**
    * How many times THIS scenario's rng has been drawn from, since it was
@@ -1390,6 +1500,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const [actionBanner, setActionBanner] = useState<string | null>(null);
   const bannerTimerRef = useRef<number | null>(null);
   const showAction = useCallback((text: string) => {
+    if (sceneRef.current?.banners === false) return;
     setActionBanner(text);
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
     bannerTimerRef.current = window.setTimeout(() => setActionBanner(null), ACTION_BANNER_MS);
@@ -1535,6 +1646,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
       ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      if (r.penaltyRead) applyPenaltyRead(scenarioRef.current, r.penaltyRead);
       // Draw the flight's substep sizes from the recorded queue instead of
       // this session's own frame timing — see GoalReplay.flightDtLog. Absent
       // on a replay saved before this existed, which falls back to live
@@ -1546,9 +1658,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     // The opening scenario is built before this component mounts, so it needs
-    // its defensive shape assigning here too.
+    // its defensive shape assigning here too — and its PEOPLE, the same as
+    // every later chance gets in loadScenario. Without the two cast calls the
+    // first chance of a test screen (the gallery's Play, which only ever plays
+    // its opening picture) was played by nobody in particular: blank heads,
+    // and team-mates finishing on the generic formula instead of their own.
     scenarioRef.current.conditions = conditionsRef.current;
+    castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     initDefenders(scenarioRef.current, rngRef.current);
+    castDefence(scenarioRef.current, oppXIForCast);
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -1689,6 +1807,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * screen long. The thumb does not know which way the pitch is facing; it only
    * knows how far it moved.
    */
+  const dragRefHeightRef = useRef(dragReferenceHeightPx);
+  dragRefHeightRef.current = dragReferenceHeightPx;
   const screenPull = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
     const vp = viewportRef.current;
     const W = vp.x2 - vp.x1, H = vp.y2 - vp.y1;
@@ -1703,7 +1823,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const a = toScreen(drag), b = toScreen(ball);
     // sx is a fraction of the canvas WIDTH and sy of its HEIGHT, so put them in
     // the same units before measuring.
-    return Math.hypot((a.sx - b.sx) * VIEW_ASPECT, a.sy - b.sy);
+    const pull = Math.hypot((a.sx - b.sx) * VIEW_ASPECT, a.sy - b.sy);
+    // A fixed reference height (see `dragReferenceHeightPx`): the same pixels
+    // of finger travel, measured against the real match's canvas instead.
+    const refH = dragRefHeightRef.current;
+    const ownH = canvasRef.current?.getBoundingClientRect().height ?? 0;
+    return refH && refH > 0 && ownH > 0 ? pull * (ownH / refH) : pull;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1951,7 +2076,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // a window rather than a goal: **no tonal separation**. A goal's roof
     // catches the light and its mouth is in shadow, and with both the same
     // brightness there is nothing to tell you which way is in.
-    {
+    if (sceneRef.current?.goal !== false) {
       const hpx = GOAL_H * heightScale;
       const bl = P(POST_L, 0), br = P(POST_R, 0);                 // feet of the posts
       const tl = { px: bl.px, py: bl.py - hpx };                  // top of the near post
@@ -2234,7 +2359,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // whether YOU can beat these men — had one lone blue shirt standing in it,
     // left over from the scenario before. Same leak as the panel above: a figure
     // from a situation that is not the one on screen.
-    if (goalInView(sc.kind)) {
+    if (goalInView(sc.kind) && sceneRef.current?.teammates !== false) {
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
@@ -2372,6 +2497,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // flight is noise.
     if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
       drawCaptainOrders(sc);
+    }
+
+    // A feature's cones (the markers prop) — on the grass, under everyone.
+    if (markersRef.current?.length) {
+      for (const m of markersRef.current) {
+        const { px, py } = toPx(m.x, m.y);
+        const vpm = viewportRef.current;
+        // A cone about 0.35 m across, at this camera's own pixels per metre.
+        const pxPerM = Math.max(canvas.width, canvas.height) / Math.max(vpm.x2 - vpm.x1, vpm.y2 - vpm.y1);
+        const r = Math.max(3, 0.35 * pxPerM);
+        ctx.fillStyle = m.color ?? "#f97316";
+        ctx.beginPath();
+        ctx.moveTo(px, py - r * 1.6);
+        ctx.lineTo(px + r, py + r * 0.4);
+        ctx.lineTo(px - r, py + r * 0.4);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
 
     // Defenders + you. A wall man in the air is drawn where he actually is —
@@ -2526,7 +2669,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // occludes the ball instead of the ball painting over him. Reported
     // directly: "the ball renders in front of goalie even when its behind
     // it in the goal."
-    const keeperInView = goalInView(sc.kind);
+    const keeperInView = goalInView(sc.kind) && sceneRef.current?.keeper !== false;
     const liveBall = ballRef.current;
     const ballY = liveBall ? liveBall.pos.y : (phaseRef.current === "aim" ? sc.ball.y : null);
     const ballBehindKeeper = keeperInView && ballY !== null && ballY < sc.keeper.y;
@@ -2779,6 +2922,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
 
   const spawnGoalFx = () => {
+    if (sceneRef.current?.banners === false) return;
     if (reducedMotionRef.current) {
       flashRef.current = { t: 0.25, dur: 0.25 };
       return;
@@ -2925,6 +3069,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               && acceptsCaptainOrders(scenarioRef.current.kind);
           const caughtUp = touchLive && stepTouchChase(scenarioRef.current, ballRef.current, h);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
+          if (onBallStepRef.current) {
+            const bb = ballRef.current;
+            try { onBallStepRef.current({ x: bb.pos.x, y: bb.pos.y, z: bb.z }); } catch { /* an observer never breaks the match */ }
+          }
           // stepBall's own resolution always wins if it fired the same tick —
           // a defender's clearance or the ball going out is real and takes
           // priority over a chase that only just closed the gap.
@@ -3100,6 +3248,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const youShot = ballRef.current?.youStruckAtGoal === true && !receiverShot;
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
+
+    // The observer hook for features built on top of the engine — see the
+    // onChanceResolved prop. Read-only, and fired before anything below
+    // mutates the scenario for the next chance.
+    if (onChanceResolvedRef.current) {
+      const b = ballRef.current;
+      try {
+        onChanceResolvedRef.current({
+          outcome: res, kind: sc.kind, youShot, teammateShot: receiverShot,
+          ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : null,
+        });
+      } catch { /* an observer never breaks the match */ }
+    }
 
     // A live shootout kick (see loadShootoutPenalty) is NOT a chance in the
     // ongoing match — there is no ongoing match while a shootout is being
@@ -3946,6 +4107,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
       initDefenders(scenarioRef.current, rng);
       castDefence(scenarioRef.current, oppXIForCast);
+      stageScene(scenarioRef.current, sceneRef.current);
       facingRef.current = scenarioRef.current.facing ?? "up";
       viewportRef.current = { ...scenarioRef.current.viewport };
       baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -4054,7 +4216,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       } else {
         // Built from where the pass actually arrived, so playing it into the
         // corner gives you a cutback and finding someone central gives you a shot.
-        const kind = chainKindFor(chain.pos, rng, chain.ambition);
+        const kind = playableKind(chainKindFor(chain.pos, rng, chain.ambition), rng);
         scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
       }
       scenarioRef.current.chainDepth = chain.depth;
@@ -4076,8 +4238,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // for anything the formula has no variant of (a dead ball, a build-up,
       // a dribble), and that falls straight through to exactly today's
       // behaviour.
+      // Volley and header are switched off for now (lib/star/switchedOffKinds.ts).
+      const playable = { ...request, kinds: withoutSwitchedOff(request.kinds) };
       const plan = selectChance({
-        request, position: positionRef.current, rng, memory: chanceMemoryRef.current,
+        request: playable, position: positionRef.current, rng, memory: chanceMemoryRef.current,
         shape: formationShapeFor(),
       });
       if (plan) {
@@ -4089,11 +4253,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         applyChancePlan(scenarioRef.current, plan, rng);
         appliedPlan = true;
       } else {
-        const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
+        const kind = pickScenarioKindFrom(positionRef.current, rng, playable.kinds);
         scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
       }
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current, visionRef.current);
+    }
+    // Whatever picked it, a switched-off chance type (volley, header — see
+    // lib/star/switchedOffKinds.ts) is swapped before it is ever shown. The
+    // chain path above already swapped; this catches the engine's own pickers.
+    if (!chain && isSwitchedOff(scenarioRef.current.kind)) {
+      scenarioRef.current = buildScenario(playableKind(scenarioRef.current.kind, rng), rng, strengthRef.current, teamRef.current, visionRef.current);
+      appliedPlan = false;
     }
 
     // ── Play the pictures that were actually DRAWN ──
@@ -4466,7 +4637,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const tired = tiredSkills();
     const strikeWith = setPieceSkills(
       tired,
-      careerRef.current?.skills.freeKick ?? tired.technique,
+      careerRef.current?.skills.freeKick ?? setPieceSkillRef.current ?? tired.technique,
       scenarioRef.current.kind,
     );
     // Snapshot everything a replay would need to reproduce this exact strike
@@ -4488,6 +4659,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
     ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
+    // ── A penalty keeper reads your kick (Harry, 24 Sep 2026) ──
+    // He stood still until now; at the strike he decides whether to go and
+    // which way, from where you aimed. Its own seeded draw — not rngRef — so
+    // the match's own random stream is exactly what it was, and the decision
+    // is saved with the replay. See lib/star/penaltyKeeper.ts.
+    if (scenarioRef.current.kind === "penalty") {
+      const read = penaltyReadFor(strengthRef.current, penaltyReadRef.current);
+      const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x5eed) >>> 0);
+      const decision = decidePenaltyRead(scenarioRef.current, ballRef.current, read, [r(), r()]);
+      applyPenaltyRead(scenarioRef.current, decision);
+      if (pendingReplayRef.current) pendingReplayRef.current.penaltyRead = decision;
+    }
     // ── Touch Mode's real "instant catch" bug ──
     //
     // Reported live: "most times he gets it immediately, bad. probs to do
@@ -4725,7 +4908,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {/* Outcome. Deliberately NOT announced for anything the pitch already
             shows you — the ball in the net, off the post, wide, in the keeper's
             hands. The only banner is the referee's call, which has no visual. */}
-        {phase === "result" && outcome === "offside" && (
+        {phase === "result" && outcome === "offside" && scene?.banners !== false && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl text-yellow-200 bg-gray-950/70 ring-1 ring-yellow-400/50">
               OFFSIDE

@@ -3,5 +3,31 @@
     "allow": [
       "mcp__Adobe_for_creativity__*"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/guard-lock.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/hooks/guard-stop.mjs",
+            "timeout": 120,
+            "statusMessage": "One-engine guard: checking this turn's code"
+          }
+        ]
+      }
+    ]
   }
 }
