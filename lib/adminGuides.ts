@@ -325,7 +325,7 @@ export const ADMIN_GUIDES = {
           ["+ Mate", "Adds a team-mate who makes a real supporting run."],
           ["+ Opp", "Adds an opponent."],
           ["Remove", "Takes out the player you tapped (greyed out when he can't be removed)."],
-          ["▶ Play / ◼ Stop", "Plays this exact picture as a real chance, your drags included, in place of the picture."],
+          ["▶ Play / ◼ Stop", "Plays this exact picture as a real chance, your drags included, in place of the picture — the real game: same size as a career match (so a drag hits just as hard), real squads and faces, the real weather, and the Play Area's dials."],
           ["Delete", "Saved card: deletes it from the shared list AND the code (asks first). Unsaved card: just removes it from the grid on this device."],
           ["Tune", "Only after a drag. Records what was wrong with the generated picture as a correction — it is not a save. When enough corrections agree, a rule is proposed."],
           ["Camera: pick on the whole pitch / Done — back to editing", "11-a-side only. The picture zooms out to the whole pitch with the camera as a dashed frame — drag it where you want the chance filmed from, let go, then Done. It only slides, never zooms. Saved with the scenario, and the game frames that chance from there once it is committed."],
@@ -370,7 +370,7 @@ export const ADMIN_GUIDES = {
       "5-a-side cards are review only — nothing from them reaches the game yet.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,TuningPanel}.tsx · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
+    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel}.tsx · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
   },
 
   "/star-highlights-dev": {
@@ -391,7 +391,7 @@ export const ADMIN_GUIDES = {
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
-          ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included."],
+          ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included — the real game: career-match size, real squads and faces, the real weather, and the Play Area's dials."],
           ["PNG", "Downloads the picture (without the fault rings)."],
           ["Delete", "Only for a saved chance: deletes it from the shared list AND the code."],
           ["Tune", "Only after a drag: records what was wrong as a correction. Not a save."],
@@ -425,14 +425,16 @@ export const ADMIN_GUIDES = {
 
   "/star-play-dev": {
     title: "Play Area",
-    what: "One door to Infinite Highlights and Infinite Match, with the dials both of them run on.",
+    what: "One door to Infinite Highlights and Infinite Match, with the dials they — and the gallery's Play — run on. Every dial starts on the real game.",
     buttons: [
       {
         group: "Home",
         items: [
           ["Infinite Highlights →", "Opens Infinite Highlights."],
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
-          ["Power / Technique / Opposition / Keeper / Match length", "Sliders for you, the other side, their keeper, and how long Infinite Match lasts."],
+          ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
+          ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
+          ["Weather: Real / Clear", "Real (the default) is the game's own weather — windy or wet in about 4 matches in 10, named above the pitch when it happens. Clear is still air on a perfect pitch."],
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
           ["Back to the defaults", "Resets every dial."],
@@ -462,11 +464,12 @@ export const ADMIN_GUIDES = {
       ...COMMIT_HOW.slice(1),
     ],
     inGame: [
-      "The dials only affect the Play Area — never a real career.",
+      "The dials only affect the test screens (Infinite Highlights, Infinite Match, the gallery's Play) — never a real career.",
+      "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,LiveChanceEditor}.tsx · lib/star/{playArea,liveEdit}.ts",
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts",
   },
 
   "/star-scenario-dev": {

@@ -20,15 +20,16 @@
  * Save, Next, the flag. Play it, see what is wrong, drag a defender, play it
  * again, save. No screen change in between.
  *
- * It runs in CanvasMatch's own standalone sandbox mode: no fixture, no
- * onComplete, so nothing is tallied and nothing reaches a career. `bare`
+ * It runs through EnginePlay (the one way a test screen plays the game) in
+ * the engine's standalone mode: no onComplete, so nothing is tallied and
+ * nothing reaches a career. `bare`
  * strips the scoreboard, the commentary ticker and the hint — none of them
  * say anything about a scenario, and a goals tally is actively misleading on
  * a screen that counts nothing.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import CanvasMatch from "./CanvasMatch";
+import { useCallback, useMemo, useRef } from "react";
+import EnginePlay from "./EnginePlay";
 import type { Scenario } from "@/lib/star/canvasEngine";
 
 export default function ScenarioPlay({ build, onStop, width }: {
@@ -45,21 +46,36 @@ export default function ScenarioPlay({ build, onStop, width }: {
    *  and every player appeared to jump. */
   width?: number;
 }) {
-  const openOn = useCallback(() => build(), [build]);
+  // The latest `build`, read at the moment a chance starts — so the factory
+  // handed to the engine stays the same function across re-renders.
+  const buildRef = useRef(build);
+  buildRef.current = build;
+  const openOn = useCallback(() => buildRef.current(), []);
 
   /**
-   * CanvasMatch takes its FIRST scenario at ref creation, so handing it a new
-   * `openOn` does not move the picture already on screen — it would only take
-   * effect on the chance after this one. Remounting is what makes an edit, or
-   * a move to the next chance, land immediately.
+   * CanvasMatch takes its FIRST scenario at ref creation, so a changed picture
+   * only lands by remounting. Keyed on WHAT the picture is, not on the
+   * function that builds it: the gallery and highlights pass a fresh inline
+   * `build` on every render, so keying on the function remounted the match on
+   * any re-render at all — a phone's address bar hiding mid-kick was enough
+   * to throw the chance away (found in the one-engine audit, 24 Sep 2026).
    */
-  const [nonce, setNonce] = useState(0);
-  useEffect(() => { setNonce((n) => n + 1); }, [build]);
+  let picture = "";
+  try { picture = JSON.stringify(build()); } catch { picture = String(Math.random()); }
+  const key = useMemo(() => {
+    let h = 0;
+    for (let i = 0; i < picture.length; i++) h = (h * 31 + picture.charCodeAt(i)) | 0;
+    return h;
+  }, [picture]);
 
   // No Stop button of its own: the card's Play button toggles to Stop, in
   // the place it was already in. Two of them is the same action twice.
   void onStop;
-  const match = <CanvasMatch key={nonce} openOn={openOn} bare />;
-  if (!width) return match;
-  return <div style={{ width, maxWidth: "100%", margin: "0 auto" }}>{match}</div>;
+  // `width` is no longer passed on: the match always plays at the real
+  // match's size (see EnginePlay), and the gallery sizes its picture with the
+  // same `realMatchWidth`, so pressing Play still changes nothing on screen.
+  void width;
+  // Through EnginePlay, like every test screen: the real match's size, the
+  // real squads and weather, and the Play Area's dials. See EnginePlay.
+  return <EnginePlay key={key} openOn={openOn} bare />;
 }

@@ -194,6 +194,31 @@ npm run lint   # Run ESLint
 
 ---
 
+## ONE ENGINE — every screen that plays football runs the real match
+
+Asked for by Harry (24 Sep 2026): *"there has to be a way that ANY new feature
+used the base engine … extra stuff built on top of the base engine."*
+
+- **The real match** (`app/star-dev/page.tsx`) mounts `CanvasMatch` directly.
+- **Everything else mounts `EnginePlay`** (`components/star/EnginePlay.tsx`).
+  It plays the real game's size, squads and weather, with the Play Area's
+  dials on that one mount only. A feature is extras around it, reading
+  `onChanceServed` and `onChanceResolved`. It never gets its own loop.
+- **`scripts/one-engine-guard.mjs` runs inside `npm run build`, so it
+  blocks every Vercel deploy.** It fails on:
+  - a new copy of the loop
+  - a direct `<CanvasMatch>` mount
+  - a grown `KNOWN_COPIES` list
+  - a new canvas animation loop (a screen writing its own ball physics)
+  - the test screens missing a setting the real match passes
+  - a guard that has stopped seeing its planted canary, or flags a harmless one
+- **Never** add to `KNOWN_COPIES`, raise `CEILING`, touch the canary, or remove
+  the guard from the `build` script without being asked in those words. Load the `one-engine` skill
+  first.
+- **Still copies, to port next:** trial penalties and free kicks, training
+  strike drills, five-a-side, and 2 dev prototypes. The live list is in the
+  guard.
+
 ## ALWAYS PLAYTEST STAR CAREER CHANGES — you can now actually see the game
 
 > This supersedes every earlier note in this file claiming `/star-dev` can't be

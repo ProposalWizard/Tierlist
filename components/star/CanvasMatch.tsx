@@ -223,6 +223,41 @@ interface Props {
    * Opt-in and off by default, so a real career is untouched.
    */
   neverHooked?: boolean;
+  /**
+   * ── TEST-AREA DIALS (see lib/star/engineProfile.ts) ──
+   *
+   * Each one is a guardrailed override a test screen may pass to ITS OWN
+   * mount of the engine. The real career match never passes any of them, so
+   * absent they change nothing — which is what keeps a dial inside the test
+   * area: "adapting that gameplay should only happen inside the test area
+   * and not uniformly."
+   */
+  /** Use `keeperStrength` even when the opposition's real starting keeper is
+   *  known (the Play Area's Keeper slider with "Real keeper" off). */
+  forceKeeperStrength?: boolean;
+  /** Fresh legs every this-many minutes — for a test match that runs for
+   *  thousands, so energy behaves as it would across a run of real matches
+   *  rather than draining once and never coming back. */
+  fatigueResetEvery?: number;
+  /**
+   * Fired once per chance, the moment it resolves — the engine's own outcome
+   * and what the ball did. The hook a feature built ON TOP of the engine
+   * (a drill, a trial stage, a test tool) reads instead of running its own
+   * copy of the match loop. Purely an observer: nothing here reads it back.
+   */
+  onChanceResolved?: (info: ChanceResolved) => void;
+}
+
+/** What `onChanceResolved` reports. */
+export interface ChanceResolved {
+  outcome: Outcome;
+  kind: ScenarioKind;
+  /** You struck it at goal (not a pass, not a team-mate's finish). */
+  youShot: boolean;
+  /** A team-mate struck it after you — a finish that is his, not yours. */
+  teammateShot: boolean;
+  /** Where the ball was when it resolved, in pitch metres; z is its height. */
+  ball: { x: number; y: number; z: number } | null;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -370,7 +405,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -671,6 +706,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const energyRef = useRef(career?.energy ?? 100);
   const energyClockRef = useRef(0);
+  const fatigueResetEveryRef = useRef(fatigueResetEvery);
+  fatigueResetEveryRef.current = fatigueResetEvery;
   const [liveEnergy, setLiveEnergy] = useState(career?.energy ?? 100);
   const energyModeRef = useRef<EnergyMode>("medium");
   const [energyMode, setEnergyModeState] = useState<EnergyMode>("medium");
@@ -839,6 +876,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  same reason `openOn` is — the loop reads them outside React's render. */
   const onChanceServedRef = useRef(onChanceServed);
   onChanceServedRef.current = onChanceServed;
+  const onChanceResolvedRef = useRef(onChanceResolved);
+  onChanceResolvedRef.current = onChanceResolved;
   const neverHookedRef = useRef(neverHooked);
   neverHookedRef.current = neverHooked;
 
@@ -869,6 +908,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
   /** Move the match clock — the one place energy is charged as it passes. */
   const setClock = (minute: number) => {
+    // A test match thousands of minutes long: fresh legs at each new "match"
+    // (see the fatigueResetEvery prop). Never set by the real career match.
+    const every = fatigueResetEveryRef.current;
+    if (every && every > 0 && Math.floor(minute / every) > Math.floor(energyClockRef.current / every)) {
+      energyRef.current = startEnergyRef.current;
+      energyClockRef.current = Math.floor(minute / every) * every;
+    }
     chargeEnergyTo(minute);
     matchMinuteRef.current = minute;
     setMatchMinute(minute);
@@ -1027,7 +1073,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // his own rating wins outright: a real keeper isn't a different man home
   // or away, so the nudge is deliberately dropped here too, not carried
   // over. Clamped to the same 20-99 band the prop itself already uses.
-  strengthRef.current = realKeeperOverall !== undefined
+  strengthRef.current = realKeeperOverall !== undefined && !forceKeeperStrength
     ? Math.max(20, Math.min(99, realKeeperOverall))
     : keeperStrength;
   const positionRef = useRef(position);
@@ -1546,9 +1592,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     // The opening scenario is built before this component mounts, so it needs
-    // its defensive shape assigning here too.
+    // its defensive shape assigning here too — and its PEOPLE, the same as
+    // every later chance gets in loadScenario. Without the two cast calls the
+    // first chance of a test screen (the gallery's Play, which only ever plays
+    // its opening picture) was played by nobody in particular: blank heads,
+    // and team-mates finishing on the generic formula instead of their own.
     scenarioRef.current.conditions = conditionsRef.current;
+    castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     initDefenders(scenarioRef.current, rngRef.current);
+    castDefence(scenarioRef.current, oppXIForCast);
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -3100,6 +3152,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const youShot = ballRef.current?.youStruckAtGoal === true && !receiverShot;
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
+
+    // The observer hook for features built on top of the engine — see the
+    // onChanceResolved prop. Read-only, and fired before anything below
+    // mutates the scenario for the next chance.
+    if (onChanceResolvedRef.current) {
+      const b = ballRef.current;
+      try {
+        onChanceResolvedRef.current({
+          outcome: res, kind: sc.kind, youShot, teammateShot: receiverShot,
+          ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : null,
+        });
+      } catch { /* an observer never breaks the match */ }
+    }
 
     // A live shootout kick (see loadShootoutPenalty) is NOT a chance in the
     // ongoing match — there is no ongoing match while a shootout is being

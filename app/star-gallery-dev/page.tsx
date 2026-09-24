@@ -86,6 +86,7 @@ import {
 import EditableFrame from "@/components/star/EditableFrame";
 import CameraPicker from "@/components/star/CameraPicker";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import { realMatchWidth, REAL_MATCH_MAX_W } from "@/lib/star/engineProfile";
 import PageGuide from "@/components/admin/PageGuide";
 import {
   applyOverride,
@@ -1720,23 +1721,25 @@ export default function StarGalleryDevPage() {
   // thing you press over and over.
   /** The picture in the middle with the verdict buttons down its sides —
    *  whenever the screen has room for a column either side of it. */
-  const sides = vp.w >= 470;
-  /** The picture's size: as big as the screen allows once nothing but the
-   *  edit row and the status line has to fit under it. */
-  const pictureSize = sides
-    ? (() => {
-        const maxW = Math.max(260, Math.min(460, vp.w - 2 * 96 - 40));
-        return { baseW: maxW, maxW, maxH: Math.max(420, vp.h - 250) };
-      })()
-    // On a phone the card has 14px either side. The old phone default (340)
-    // overflowed a 340px screen and got cut off, while Play fitted the space
-    // — a 9% size jump that read as "the goalie is still moved".
-    // Floored, and left at the default until the screen has been measured:
-    // vp.w is 0 on the first render and during a resize, and 0 - 28 gave the
-    // pitch a negative size, which threw and took the whole card down.
-    : vp.w > 0
-      ? { baseW: Math.max(200, Math.min(340, vp.w - 28)), maxW: Math.max(200, Math.min(460, vp.w - 28)) }
-      : undefined;
+  // Room for the picture at the real match's size AND a 96px column either
+  // side of it (384 + 2*96 + 40). Below that the buttons stack underneath.
+  const sides = vp.w >= REAL_MATCH_MAX_W + 2 * 96 + 40;
+  /**
+   * The picture is the REAL MATCH'S size, not "as big as the screen allows".
+   *
+   * One engine (24 Sep 2026): the engine reads a drag as a fraction of the
+   * canvas, so a match played at any other size kicks differently — the old
+   * 340 px phone picture was 7.6% harder per finger-pixel than a career match,
+   * the 460 px desktop one 16% softer. Play now always runs at
+   * `realMatchWidth` (EnginePlay), and the picture is sized the same so that
+   * pressing Play still changes nothing on screen until you kick.
+   *
+   * No height cap: a cap would shrink the picture below the match on a short
+   * laptop screen, and the page scrolling is the lesser evil. Nothing is
+   * sized until the screen has been measured — vp.w is 0 on the first render.
+   */
+  const pictureW = realMatchWidth(vp.w);
+  const pictureSize = vp.w > 0 ? { baseW: pictureW, maxW: pictureW, maxH: 4000 } : undefined;
   const simulatePanel = cell.game === "eleven" ? (
     <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
       <button
@@ -2059,8 +2062,10 @@ export default function StarGalleryDevPage() {
       {sides && formationPanel}
     </>
   );
+  // 12px a side, the same as the real match's own column — so the picture
+  // (and Play) fits at exactly the real match's width.
   const pane = (
-    <div style={{ padding: "12px 14px 24px" }}>
+    <div style={{ padding: "12px 12px 24px" }}>
       {paneTop}
       {paneBottom}
     </div>

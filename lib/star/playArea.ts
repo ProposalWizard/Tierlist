@@ -44,6 +44,19 @@ export interface PlaySettings {
   division: CareerDivision;
   /** How long an Infinite Match runs for, in real match minutes. */
   matchMinutes: number;
+  /**
+   * The weather. "real" is the real game's own roll (about 4 matches in 10
+   * have wind, rain or a heavy pitch — `conditionsFor`, weather.ts); "clear"
+   * is still air on a perfect pitch, for judging a chance on its own. A test
+   * area is the real game plus dials, so the dial starts on the real game.
+   */
+  weather: "real" | "clear";
+  /**
+   * Whose keeper you face. On (the real game): the opposition's own starting
+   * keeper, with his own rating — the Keeper slider is ignored. Off: the
+   * Keeper slider decides, whoever is in goal.
+   */
+  realKeeper: boolean;
 }
 
 export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
@@ -56,6 +69,8 @@ export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
   position: "ST",
   division: "premier",
   matchMinutes: 10000,
+  weather: "real",
+  realKeeper: true,
 };
 
 /** Every dial's real range, exported so the sliders and the clamp read the
@@ -114,6 +129,9 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
     position,
     division,
     matchMinutes: clampTo(o.matchMinutes, PLAY_RANGES.matchMinutes, d.matchMinutes),
+    weather: o.weather === "clear" ? "clear" : d.weather,
+    // Absent on a save from before this existed: the real game.
+    realKeeper: typeof o.realKeeper === "boolean" ? o.realKeeper : d.realKeeper,
   };
 }
 

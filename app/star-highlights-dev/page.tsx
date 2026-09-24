@@ -60,6 +60,7 @@ import {
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import { useRealMatchWidth } from "@/components/star/EnginePlay";
 import {
   addFigureTo,
   analyseEdited,
@@ -289,6 +290,8 @@ export default function HighlightsPage() {
   const [ready, setReady] = useState(false);
   /** Which figure is tapped, for the add/remove controls. */
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** The real match's width — the picture is drawn at it so Play matches. */
+  const pictureW = useRealMatchWidth();
   /** The Play overlay is open — see ScenarioPlay. */
   const [playing, setPlaying] = useState(false);
   /** The picture's width when Play was pressed — the match plays at exactly
@@ -845,6 +848,9 @@ export default function HighlightsPage() {
               onSelect={setSelectedId}
               onSwipe={(d) => (d === 1 ? next() : prev())}
               fit
+              // The real match's own size — Play runs at exactly this, so the
+              // picture and the match are the same size (one engine, 24 Sep).
+              size={{ baseW: pictureW, maxW: pictureW, maxH: 4000 }}
             />
           )}
 

@@ -131,8 +131,10 @@ export default function PlayAreaPage() {
         <section style={{ ...tile, cursor: "default" }}>
           <div style={tileTitle}>Tuning</div>
           <div style={{ ...tileSub, marginBottom: 12 }}>
-            You, your boots and who you are playing. Saved on this device, shared by
-            both modes above.
+            You, your boots and who you are playing. Every dial starts on the real
+            game, and a change here only reaches the test screens — Infinite
+            Highlights, Infinite Match and the gallery&apos;s Play — never a career.
+            Saved on this device.
           </div>
 
           <Slider label="Power" hint="How hard the same drag hits."
@@ -141,8 +143,18 @@ export default function PlayAreaPage() {
             value={settings.technique} range={PLAY_RANGES.technique} onChange={(v) => set("technique", v)} />
           <Slider label="Opposition" hint="How good the side you are playing is."
             value={settings.oppStrength} range={PLAY_RANGES.oppStrength} onChange={(v) => set("oppStrength", v)} />
-          <Slider label="Keeper" hint="The one number his reach scales off."
-            value={settings.keeperStrength} range={PLAY_RANGES.keeperStrength} onChange={(v) => set("keeperStrength", v)} />
+          <Row label="Keeper" hint="Real: the opposition's own starting keeper, as in a career. Set: the slider below decides.">
+            <Toggle on={settings.realKeeper} onClick={() => set("realKeeper", true)}>Real</Toggle>
+            <Toggle on={!settings.realKeeper} onClick={() => set("realKeeper", false)}>Set</Toggle>
+          </Row>
+          {!settings.realKeeper && (
+            <Slider label="Keeper rating" hint="The one number his reach scales off."
+              value={settings.keeperStrength} range={PLAY_RANGES.keeperStrength} onChange={(v) => set("keeperStrength", v)} />
+          )}
+          <Row label="Weather" hint="Real: the game's own weather, windy or wet about 4 matches in 10. Clear: still air, perfect pitch.">
+            <Toggle on={settings.weather === "real"} onClick={() => set("weather", "real")}>Real</Toggle>
+            <Toggle on={settings.weather === "clear"} onClick={() => set("weather", "clear")}>Clear</Toggle>
+          </Row>
           <Slider label="Match length" hint="Minutes an Infinite Match runs for." step={10}
             value={settings.matchMinutes} range={PLAY_RANGES.matchMinutes} onChange={(v) => set("matchMinutes", v)} />
 
