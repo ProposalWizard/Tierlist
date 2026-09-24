@@ -1,4 +1,5 @@
 import { SCENARIO_KINDS, type ScenarioKind } from "./canvasEngine";
+import { isSwitchedOff } from "./switchedOffKinds";
 import type { SimSpec } from "./gallerySim";
 
 /**
@@ -36,14 +37,16 @@ export function specOf(f: FlaggedChance): SimSpec {
   return { kind: f.kind, seed: f.seed, planId: f.planId };
 }
 
+// A switched-off kind (volley, header — lib/star/switchedOffKinds.ts) is never
+// in the pool, even if an older saved selection still lists it.
 const isKind = (v: unknown): v is ScenarioKind =>
-  typeof v === "string" && (SCENARIO_KINDS as readonly string[]).includes(v);
+  typeof v === "string" && (SCENARIO_KINDS as readonly string[]).includes(v) && !isSwitchedOff(v as ScenarioKind);
 
 // ── Which kinds are in the pool ──
 
 /** Every kind, which is the default — you turn things OFF, not on. */
 export function allKinds(): ScenarioKind[] {
-  return [...SCENARIO_KINDS];
+  return SCENARIO_KINDS.filter(k => !isSwitchedOff(k));
 }
 
 export function loadKinds(): ScenarioKind[] {

@@ -1,5 +1,6 @@
 "use client";
 import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
+import { isSwitchedOff, playableKind, withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
@@ -1174,6 +1175,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     scenarioRef.current = openOn
       ? openOn()
       : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55);
+    // Volley and header are switched off for now (lib/star/switchedOffKinds.ts).
+    if (!openOn && isSwitchedOff(scenarioRef.current.kind)) {
+      const r = mulberry32(seed ^ 0x51f7);
+      scenarioRef.current = buildScenario(playableKind(scenarioRef.current.kind, r), r, strengthRef.current, teamRelationship, career?.skills.vision ?? 55);
+    }
     stageScene(scenarioRef.current, scene);
   }
   const ballRef = useRef<Ball | null>(null);
@@ -4210,7 +4216,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       } else {
         // Built from where the pass actually arrived, so playing it into the
         // corner gives you a cutback and finding someone central gives you a shot.
-        const kind = chainKindFor(chain.pos, rng, chain.ambition);
+        const kind = playableKind(chainKindFor(chain.pos, rng, chain.ambition), rng);
         scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
       }
       scenarioRef.current.chainDepth = chain.depth;
@@ -4232,8 +4238,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // for anything the formula has no variant of (a dead ball, a build-up,
       // a dribble), and that falls straight through to exactly today's
       // behaviour.
+      // Volley and header are switched off for now (lib/star/switchedOffKinds.ts).
+      const playable = { ...request, kinds: withoutSwitchedOff(request.kinds) };
       const plan = selectChance({
-        request, position: positionRef.current, rng, memory: chanceMemoryRef.current,
+        request: playable, position: positionRef.current, rng, memory: chanceMemoryRef.current,
         shape: formationShapeFor(),
       });
       if (plan) {
@@ -4245,11 +4253,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         applyChancePlan(scenarioRef.current, plan, rng);
         appliedPlan = true;
       } else {
-        const kind = pickScenarioKindFrom(positionRef.current, rng, request.kinds);
+        const kind = pickScenarioKindFrom(positionRef.current, rng, playable.kinds);
         scenarioRef.current = buildScenario(kind, rng, strengthRef.current, teamRef.current, visionRef.current);
       }
     } else {
       scenarioRef.current = buildWeightedScenario(rng, positionRef.current, strengthRef.current, teamRef.current, visionRef.current);
+    }
+    // Whatever picked it, a switched-off chance type (volley, header — see
+    // lib/star/switchedOffKinds.ts) is swapped before it is ever shown. The
+    // chain path above already swapped; this catches the engine's own pickers.
+    if (!chain && isSwitchedOff(scenarioRef.current.kind)) {
+      scenarioRef.current = buildScenario(playableKind(scenarioRef.current.kind, rng), rng, strengthRef.current, teamRef.current, visionRef.current);
+      appliedPlan = false;
     }
 
     // ── Play the pictures that were actually DRAWN ──

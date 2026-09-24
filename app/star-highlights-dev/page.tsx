@@ -32,6 +32,7 @@
  * device, any day.
  */
 
+import { isSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
@@ -102,11 +103,13 @@ const kindLabel = (k: string) => k.replace(/_/g, " ");
 
 /** The order the chips read in — grouped by where on the pitch they happen,
  *  rather than the engine's own declaration order. */
-const KIND_ORDER: ScenarioKind[] = [
+const KIND_ORDER: ScenarioKind[] = ([
   "one_on_one", "tight_angle", "volley", "header", "cutback", "byline_cross",
   "long_range", "through_ball", "midfield_pass", "buildup",
   "penalty", "free_kick", "corner",
-];
+] as ScenarioKind[])
+  // Volley and header are switched off for now (lib/star/switchedOffKinds.ts).
+  .filter(k => !isSwitchedOff(k));
 
 // ─────────────────────────────────────────────────────────────────────────
 //  HOW AN EDIT MADE HERE IS ADDRESSED
@@ -707,7 +710,7 @@ export default function HighlightsPage() {
           <button style={smallBtn} onClick={() => setKindsAnd([])}>None</button>
           <div style={{ flex: 1 }} />
           <span style={{ color: MUTED, fontSize: 13, fontWeight: 700, alignSelf: "center" }}>
-            {kinds.length}/{SCENARIO_KINDS.length}
+            {kinds.length}/{allKinds().length}
           </span>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "10px 14px 100px" }}>
@@ -793,7 +796,7 @@ export default function HighlightsPage() {
         null,
         <div style={{ display: "flex", gap: 8 }}>
           <button style={smallBtn} aria-label="Choose highlights" onClick={() => setScreen("kinds")}>
-            {kinds.length}/{SCENARIO_KINDS.length}
+            {kinds.length}/{allKinds().length}
           </button>
           <button
             aria-label="Flagged list"
