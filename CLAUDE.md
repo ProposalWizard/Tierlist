@@ -480,6 +480,9 @@ Three people are building this. To avoid two sessions editing the same files:
   - Every item is Problem → Why → Fix, with before/after pictures for anything confusing.
   - A "Check these" list goes near the top; answers to questions go low.
   - The rule is in `artifact-house-style` and both patch-notes skills.
+- **Volley and header chances switched off for now** (Harry): one list, `lib/star/switchedOffKinds.ts`. The match swaps them before they are shown, and the gallery and highlights never list them. The engine still builds both, and a team-mate still heads a cross; delete the word from the list to turn one back on.
+- **Five-a-side freeze fixed:** `startMateAttack` wiped `mateRef` on the next line, so a team-mate's chance replayed forever. Seen fixed live (15'→17' after a mate chance; runs to 43'/44').
+- **Modes choose what is on the pitch:** `scene` (`lib/star/scenePicture.ts`). Technique training is you, a ball and cones.
 - **Open:** Q8 (drawn one-on-ones start 11.9m out, not 16.3m) and Q10 (GitHub sign-off; recommended not now). Harry should also check that Vercel's Build Command is the default `npm run build`.
 
 **24 September 2026 (Harry) — One engine: test screens play the real game, and a build guard stops new copies. Patch notes v0.9, with 10 questions to paste back: https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ**

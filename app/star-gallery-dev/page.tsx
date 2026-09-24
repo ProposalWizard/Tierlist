@@ -21,6 +21,7 @@
  * A through ball's deliberate early runner rings AMBER, uncaptioned.
  */
 
+import { isSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SCENARIO_KINDS,
@@ -522,11 +523,13 @@ const CARD = "#111823";
 const INK = "#f2f5f9";
 const MUTED = "#8a97aa";
 
-const KIND_ORDER: ScenarioKind[] = [
+const KIND_ORDER: ScenarioKind[] = ([
   "one_on_one", "tight_angle", "long_range", "volley", "cutback", "header",
   "through_ball", "byline_cross", "midfield_pass", "buildup", "penalty",
   "free_kick", "corner",
-];
+] as ScenarioKind[])
+  // Volley and header are switched off for now (lib/star/switchedOffKinds.ts).
+  .filter(k => !isSwitchedOff(k));
 const kindLabel = (k: string) => k.replace(/_/g, " ");
 
 const FIVE_GROUPS: { id: string; label: string }[] = [
