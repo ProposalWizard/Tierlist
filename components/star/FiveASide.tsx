@@ -358,9 +358,15 @@ export default function FiveASide({
     initDefenders(sc, rng.next);
     const shot = aimTheirShot(sc, difficulty, rng.next);
     scRef.current = sc;
+    // Set, and left set. A second `mateRef.current = null` a line below used
+    // to wipe it straight away, so the finished chance was filed as THEIRS:
+    // resolveTheirs found no attack of theirs, fell back to `obey()`, the
+    // match had not moved on, and the same team-mate chance replayed forever —
+    // clock frozen, banner stuck on "They keep it." / "Blocked!". Seen live
+    // 24 Sep 2026 (3 of 3 phone runs), and the real cause of the 23 Sep
+    // "freezes when the other team gets the ball" report.
     mateRef.current = { sc, from };
     theirRef.current = null;
-    mateRef.current = null;
     aimRef.current = null;
     blockRef.current = null;
     committedRef.current = null;
