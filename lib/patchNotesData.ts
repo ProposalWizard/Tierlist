@@ -30,7 +30,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.10",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-24T12:00:00Z",
-      "summary": "One engine, round two: the trial, the training and five-a-side now use the real match, the penalty keeper reads your kick, the gallery corner matches Play, and the guard in plain English.",
+      "summary": "The headline is the guard: why the trial, training and five-a-side felt different from a match, and what now stops it happening again. Then every change as the problem, why it happened, and the fix.",
       "stats": [
         {
           "value": "6 → 4",
@@ -45,11 +45,39 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "five-a-side: how far the arrow pointed from where the ball went"
         },
         {
-          "value": "40/40",
-          "label": "gallery corners now drawn turned like Play, within 0.6px"
+          "value": "2,634 → 0",
+          "label": "fixtures where both teams wore the same two colours, swapped"
         }
       ],
       "sections": [
+        {
+          "kind": "changed",
+          "title": "The headline: the guard",
+          "items": [
+            {
+              "title": "Problem: the trial, training and five-a-side felt slightly different from a real match",
+              "detail": "The keeper dived differently, kicks came out harder or softer, and five-a-side's arrow pointed a bit off."
+            },
+            {
+              "title": "Why: six screens had their own copy of the match",
+              "detail": "Each copy was right on the day it was made. The real match kept improving and the copies drifted: 12 differences in the trial and training alone. Nothing stopped new copies."
+            },
+            {
+              "title": "Fix: one door into the real match, and a guard on every deploy",
+              "detail": "Every screen plays the real match and adds its extras around it. The guard reads the code before each deploy and stops the site going live if anyone adds a copy. 4 copies left, down from 6; the list can only shrink.",
+              "more": {
+                "summary": "What this means for you",
+                "points": [
+                  "When you play: the trial, training and gallery feel like the real game because they are the real game.",
+                  "Want a screen to play differently? Ask for it by name. It becomes a named dial, not a copy.",
+                  "A deploy fails with ONE ENGINE GUARD: players see nothing wrong, the live site keeps the last good version. Paste the message into Claude.",
+                  "Claude asks to edit the guard: say yes only if you asked for that change.",
+                  "Cost: each deploy takes about 20 seconds longer."
+                ]
+              }
+            }
+          ]
+        },
         {
           "kind": "fixed",
           "title": "Check these",
@@ -104,25 +132,46 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Five-a-side: a drag up the screen hits the same as in the match",
-              "detail": "Trial → Five-a-side"
+              "detail": "Problem: a drag up the screen hit harder than the same drag in a match (67.7% vs 54.1%).",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: five-a-side's pitch is shorter than the match's, and it measured your drag against its own height.",
+                  "Fix: it reads your drag against the match's height (your answer to question 11)."
+                ]
+              }
             }
           ]
         },
         {
           "kind": "fixed",
-          "title": "Fixed",
+          "title": "Problems fixed",
           "items": [
             {
               "title": "The trial's penalties and free kicks are the real match",
-              "detail": "Its own camera, keeper and ball loop are gone. It builds each rep's picture and scores the result. Invisible stats: a new career's free-kick rating, no boots, a clear day, fresh legs."
+              "detail": "Problem: the trial keeper was already diving as you struck, and the ball flew a little differently.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: the trial ran its own copy of the match (about 1,280 lines) that had drifted.",
+                  "Fix: the trial plays the real match and only sets up and scores each rep (about 600 lines). Stats are invisible, like you asked."
+                ]
+              }
             },
             {
               "title": "Training's strike drills and Pace run are the real match",
-              "detail": "Power, Technique and Free Kick run on the real match; Technique's cones are drawn on the real pitch. Pace is the real first-person dribble. The free-kick wall stands 1.15m apart like the match."
+              "detail": "Problem: Power, Technique and Free Kick kicked harder or softer than a match, and the wall stood squashed together.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: training had its own copy too. Its wall was 0.75m apart; the match uses 1.15m.",
+                  "Fix: the drills play the real match; cones are on the real pitch; Pace is the match's first-person run; the wall is spaced like the match."
+                ]
+              }
             },
             {
               "title": "Five-a-side shoots like the match",
-              "detail": "Same drag maths as the match. Its own 5-v-5 game stays, as you said.",
+              "detail": "Problem: the arrow pointed slightly away from where the ball went, and a sideways drag hit about 20% harder.",
               "bars": [
                 {
                   "label": "Sideways 40px drag, power",
@@ -140,15 +189,29 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "unit": "°",
                   "state": "good"
                 }
-              ]
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: it measured your drag against its own, differently shaped pitch.",
+                  "Fix: it uses the match's exact drag maths and draws the arrow along the ball's real path."
+                ]
+              }
             },
             {
               "title": "Gallery corners are turned like Play and the real match",
-              "detail": "The picture is bigger on a laptop (up to 520px) with the same kick strength, and draws the real kits."
+              "detail": "Problem: the corner picture was flat, but Play turned it sideways, so it looked like a different chance.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: the picture was drawn with different settings from Play.",
+                  "Fix: the picture is turned like Play (40/40 within 0.6px), bigger on a laptop, with real kits."
+                ]
+              }
             },
             {
               "title": "Kits: no more two teams in the same two colours swapped",
-              "detail": "Your answer to question 6. The check looks at shirt and shorts together; the away side changes its shorts first, like real teams.",
+              "detail": "Problem: Man United (red/white) v Bournemouth's change kit (white/red) were hard to tell apart.",
               "bars": [
                 {
                   "label": "Fixtures with swapped colours (of 14,280)",
@@ -157,11 +220,18 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "target": 0,
                   "state": "good"
                 }
-              ]
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: the clash check only compared shirts.",
+                  "Fix: it checks shirt and shorts together, and the away side changes its shorts first."
+                ]
+              }
             },
             {
               "title": "Five-a-side: a drag up the screen hits the same as in the match",
-              "detail": "Your answer to question 11. It reads the drag against the match's pitch height. Worked out, not played.",
+              "detail": "Problem: a drag up the screen hit harder than the same drag in a match (67.7% vs 54.1%).",
               "bars": [
                 {
                   "label": "40px drag up, power",
@@ -171,7 +241,14 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "unit": "%",
                   "state": "good"
                 }
-              ]
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: five-a-side's pitch is shorter than the match's, and it measured your drag against its own height.",
+                  "Fix: it reads your drag against the match's height (your answer to question 11)."
+                ]
+              }
             },
             {
               "title": "The first chance of every match was built on every redraw and thrown away",
@@ -185,7 +262,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "The penalty keeper reads your kick (real game, every penalty)",
-              "detail": "He stands in the middle until you strike, then goes 80% of the time and guesses the right side 60% of the time (better keepers read better). Measured on the real engine.",
+              "detail": "Problem: a corner penalty scored 99.8% of the time; down the middle scored 0%.",
               "bars": [
                 {
                   "label": "Corner, scored",
@@ -208,7 +285,14 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
                   "unit": "%",
                   "state": "good"
                 }
-              ]
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: the keeper didn't react to penalties at all.",
+                  "Fix: he waits in the middle, then dives 80% of the time and picks your side 60% (your answer to question 1)."
+                ]
+              }
             },
             {
               "title": "A harder trial keeper, as a named dial",

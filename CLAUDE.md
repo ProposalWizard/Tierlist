@@ -454,6 +454,29 @@ Three people are building this. To avoid two sessions editing the same files:
 
 ## Recent Session
 
+**24 September 2026 (Harry, cont.) — Trial and training on the real match, the penalty keeper reads your kick, kit clashes, and patch notes as Problem → Why → Fix. Patch notes v0.10 (same link as v0.9): https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ**
+
+- **Ported:**
+  - Trial penalties and free kicks, plus training's Power, Technique and Free Kick drills, now mount `EngineFeature`.
+  - Training Pace is the embedded first-person run.
+  - The guard's list went from 6 copies to 4.
+- **Penalty keeper (Q1):**
+  - He is central until the strike, then commits 80% of the time and picks your side 60% (`lib/star/penaltyKeeper.ts`).
+  - Corner penalties: 99.8% → 70%. Down the middle: 0% → 22% (400 per row, measured).
+  - The trial raises both numbers rep by rep (`penaltyReadForTrial`).
+- **Kits (Q6):** `kitClashes` compares shirt and shorts together. `awayFallback` swaps the away side's shorts first. Swapped-colour fixtures: 2,634 of 14,280 → 0.
+- **Five-a-side (Q3/Q11):** it now uses the match's drag maths (`lib/star/kickInput.ts`) and reads the drag against the match's height.
+  - Arrow vs ball path: 3.7° → 0.01°.
+  - A drag up the screen: 67.7% → 54.1%, which matches the match (worked out, not played).
+- **Seen in a browser:** trial penalties, free kicks and five-a-side all worked, with no freeze and no console errors. Training and a career match were not reached, because the test player wasn't signed in time. Suite: 166/167 (only `authoredChance.mts`, which also fails on main).
+- **Standing patch-notes rule (Harry):**
+  - Write for someone who wasn't in the conversation.
+  - The biggest or most confusing change is the headline.
+  - Every item is Problem → Why → Fix, with before/after pictures for anything confusing.
+  - A "Check these" list goes near the top; answers to questions go low.
+  - The rule is in `artifact-house-style` and both patch-notes skills.
+- **Open:** Q8 (drawn one-on-ones start 11.9m out, not 16.3m) and Q10 (GitHub sign-off; recommended not now). Harry should also check that Vercel's Build Command is the default `npm run build`.
+
 **24 September 2026 (Harry) — One engine: test screens play the real game, and a build guard stops new copies. Patch notes v0.9, with 10 questions to paste back: https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ**
 
 - **Audit (measured):** trial and training run their own loops, with 12 differences from the real match. The trial keeper pre-commits, the ball is drawn at half height and always over the keeper, training steps once a frame, and so on. Five-a-side's drag is 20% stronger sideways. Goalie Mode has no engine at all. The test screens used the real engine but were set up differently: drag +7.6% on a phone / −16% on a laptop, no squad, no weather, and 30% weaker from minute 150 in Infinite Match.

@@ -56,12 +56,40 @@ is.
 page must be skimmable end to end without opening a single one, and reward
 opening any of them.
 
+## Every item is Problem → Why → Fix (patch notes)
+
+Asked for directly (24 Sep 2026): *"the patch notes has to be readable for
+people who didn't work through the whole problem — it should be list of
+problems — explain — solution found. Anything super confusing needs that extra
+help with before/afters illustrations, and sometimes stuff like the guard is
+the main headline."*
+
+- **Write for someone who wasn't in the conversation.** Never assume the
+  reader knows what "the guard", "a copy", "drawn chances" or "question 6"
+  mean. Say it in the item itself.
+- **Every fixed/added item is a card with three labelled rows:**
+  **Problem** (what a player would have noticed, in their words and with the
+  number), **Why** (the cause, in plain English), **Fix** (what changed, and
+  whose answer it came from). Known issues use Problem / Why / Status.
+- **The biggest or most confusing change is the headline**, above the
+  checklist: its own bordered section with the same Problem / Why / Fix, a
+  before/after, and "what this means for you".
+- **Before/after pictures for anything confusing.** A real screenshot pair
+  when one exists; otherwise a small drawn diagram (inline SVG or HTML boxes)
+  labelled as a drawing, with anything exaggerated for visibility saying so.
+- **Answers to their questions go low**, after the changes, never at the top.
+  A reply only makes sense once the reader knows what changed.
+- Page order: header → stat strip → headline → Check these → Problems fixed →
+  Seen in a browser → Your questions, answered → Known issues → New questions
+  → Next → Previous versions. Reference: v0.10 (`pn10` build, published at the
+  same patch notes URL).
+
 ## What always goes in
 
-- **"Check these" at the very top — every time.** Asked for directly (24 Sep
+- **"Check these" near the top — every time** (straight after the headline). Asked for directly (24 Sep
   2026): *"at the top have a very simple list no yap of all bug fixes to
   check — all patch notes going forward should have a list of every changed
-  feature at the top."* Straight after the stat strip: one line per changed
+  feature at the top."* Straight after the headline section: one line per changed
   feature or fix, a tick box each, and a grey line under it saying exactly
   where to go to see it (screen → tab). No explanations, no numbers — those
   live in the sections below. Every item in FIXED / ADDED / CHANGED gets a

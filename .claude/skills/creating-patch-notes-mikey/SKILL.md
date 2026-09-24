@@ -10,6 +10,12 @@ description: Build "Knowitball Patch Notes Mikey (version)" — a shareable arti
 Patch notes are how Mikey tells **Harry and Leo** what changed in Knowitball, and how the team tracks updates and bugs over time. Neither of them writes code. Write for someone who plays the game, not someone who reads it.
 
 
+> **Standing rule (Harry, 24 Sep 2026):** readable by someone who wasn't in
+> the conversation. The biggest or most confusing change is the headline;
+> every item is Problem → Why → Fix; confusing ones get a before/after
+> picture; answers to questions go low. See `artifact-house-style` → Every
+> item is Problem → Why → Fix.
+
 > **Standing rule (Harry, 24 Sep 2026):** every patch notes page opens with a
 > "Check these" list — one plain line per changed feature or fix, with where
 > to find it, no explanations. See `artifact-house-style` → What always goes
