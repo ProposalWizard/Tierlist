@@ -1,4 +1,5 @@
 "use client";
+import { stageScene, type ScenePicture } from "@/lib/star/scenePicture";
 import { KIB_CANS } from "@/lib/star/shopData";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
@@ -278,7 +279,18 @@ interface Props {
    * The real career match never passes it (its canvas IS the reference).
    */
   dragReferenceHeightPx?: number;
+  /**
+   * What is on the pitch, for a feature that only needs the mechanics.
+   * Asked for by Harry (24 Sep 2026): "different modes and training/trials
+   * will be COMPLETELY looking different... technique training does not need
+   * a goalie/goal yet in every drill there's a keeper... we literally just need
+   * the mechanics." The ball, the kick, the contact and the flight are always
+   * the real match's; this only takes things OFF the pitch. Every field
+   * defaults to on, and the real career match never passes it.
+   */
+  scene?: ScenePicture;
 }
+
 
 /** What `onChanceResolved` reports. */
 export interface ChanceResolved {
@@ -437,7 +449,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1155,11 +1167,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // already been built before that function was ever called. See `openOn`.
   // Built once: `useRef(expr)` would evaluate the builder on every render
   // and throw the result away — and call a feature's `openOn` each time.
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
   const scenarioRef = useRef<Scenario | null>(null) as React.MutableRefObject<Scenario>;
   if (scenarioRef.current === null) {
     scenarioRef.current = openOn
       ? openOn()
       : buildWeightedScenario(mulberry32(seed), position, strengthRef.current, teamRelationship, career?.skills.vision ?? 55);
+    stageScene(scenarioRef.current, scene);
   }
   const ballRef = useRef<Ball | null>(null);
   /**
@@ -1479,6 +1494,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const [actionBanner, setActionBanner] = useState<string | null>(null);
   const bannerTimerRef = useRef<number | null>(null);
   const showAction = useCallback((text: string) => {
+    if (sceneRef.current?.banners === false) return;
     setActionBanner(text);
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
     bannerTimerRef.current = window.setTimeout(() => setActionBanner(null), ACTION_BANNER_MS);
@@ -2054,7 +2070,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // a window rather than a goal: **no tonal separation**. A goal's roof
     // catches the light and its mouth is in shadow, and with both the same
     // brightness there is nothing to tell you which way is in.
-    {
+    if (sceneRef.current?.goal !== false) {
       const hpx = GOAL_H * heightScale;
       const bl = P(POST_L, 0), br = P(POST_R, 0);                 // feet of the posts
       const tl = { px: bl.px, py: bl.py - hpx };                  // top of the near post
@@ -2337,7 +2353,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // whether YOU can beat these men — had one lone blue shirt standing in it,
     // left over from the scenario before. Same leak as the panel above: a figure
     // from a situation that is not the one on screen.
-    if (goalInView(sc.kind)) {
+    if (goalInView(sc.kind) && sceneRef.current?.teammates !== false) {
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
@@ -2647,7 +2663,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // occludes the ball instead of the ball painting over him. Reported
     // directly: "the ball renders in front of goalie even when its behind
     // it in the goal."
-    const keeperInView = goalInView(sc.kind);
+    const keeperInView = goalInView(sc.kind) && sceneRef.current?.keeper !== false;
     const liveBall = ballRef.current;
     const ballY = liveBall ? liveBall.pos.y : (phaseRef.current === "aim" ? sc.ball.y : null);
     const ballBehindKeeper = keeperInView && ballY !== null && ballY < sc.keeper.y;
@@ -2900,6 +2916,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
 
   const spawnGoalFx = () => {
+    if (sceneRef.current?.banners === false) return;
     if (reducedMotionRef.current) {
       flashRef.current = { t: 0.25, dur: 0.25 };
       return;
@@ -4084,6 +4101,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
       initDefenders(scenarioRef.current, rng);
       castDefence(scenarioRef.current, oppXIForCast);
+      stageScene(scenarioRef.current, sceneRef.current);
       facingRef.current = scenarioRef.current.facing ?? "up";
       viewportRef.current = { ...scenarioRef.current.viewport };
       baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -4875,7 +4893,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {/* Outcome. Deliberately NOT announced for anything the pitch already
             shows you — the ball in the net, off the post, wide, in the keeper's
             hands. The only banner is the referee's call, which has no visual. */}
-        {phase === "result" && outcome === "offside" && (
+        {phase === "result" && outcome === "offside" && scene?.banners !== false && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl text-yellow-200 bg-gray-950/70 ring-1 ring-yellow-400/50">
               OFFSIDE

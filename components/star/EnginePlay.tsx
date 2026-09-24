@@ -30,6 +30,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import CanvasMatch, { type ChanceResolved } from "./CanvasMatch";
+import type { ScenePicture } from "@/lib/star/scenePicture";
 import {
   buildTestCareer, withRealSquads, testConditions, conditionsLabel,
   realMatchWidth, realMatchHeight, testPlayWidth, testMatchKits,
@@ -245,7 +246,7 @@ export default function EnginePlay({
  */
 export function EngineFeature({
   openOn, onChanceServed, onChanceResolved, skills, setPieceSkill, keeperStrength = 62,
-  penaltyRead, seed = 1, markers, onBallStep,
+  penaltyRead, seed = 1, markers, onBallStep, scene,
 }: {
   /** The picture for the next chance. Called again after every result. */
   openOn: () => Scenario;
@@ -261,6 +262,9 @@ export function EngineFeature({
   markers?: { x: number; y: number; color?: string }[];
   /** Watches the ball each physics step (read-only). */
   onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+  /** What is on the pitch: leave out the keeper, goal, team-mates or the
+   *  match's own GOAL/PASS text. The ball and the kick are always the match's. */
+  scene?: ScenePicture;
 }) {
   const w = useRealMatchWidth();
   return (
@@ -278,6 +282,7 @@ export function EngineFeature({
         onChanceResolved={onChanceResolved}
         markers={markers}
         onBallStep={onBallStep}
+        scene={scene}
       />
     </div>
   );

@@ -41,7 +41,24 @@ and the real match moved on without it.
    If a feature needs something the engine does not do yet, add it to the
    engine as an optional prop that is **off by default**, so the real match is
    untouched. Never modify `lib/star/canvasEngine.ts` (Mikey's rule).
-3. **A test screen is the real game plus dials.**
+3. **Shared mechanics, not a shared picture.** Harry (24 Sep 2026):
+   *"different modes and training/trials will be COMPLETELY looking different -
+   and that can't be seen as a new build it has to be allowed - i.e technique
+   training does not need a goalie/goal yet in every drill there's a keeper -
+   now the main game is dragging into every mode when we literally just need
+   the mechanics."*
+   - What must be the real match's: the ball, the drag, the contact screen,
+     the flight, the keeper's AI **when there is a keeper**.
+   - What a mode decides for itself: what is on the pitch. Pass `scene`
+     (`lib/star/scenePicture.ts`) to `EngineFeature` to take off the keeper,
+     the goal, the team-mates, or the match's GOAL/PASS text. It only takes
+     things off; it can never add a physics rule.
+   - Build a mode with only what it is about. A gate drill is you, a ball and
+     two cones. Do not leave a keeper standing there because the match has one.
+   - Anything a mode needs that `scene` can't do yet (a different pitch size, a
+     different goal) is a new named dial on the engine, listed in the guard's
+     `TEST_ONLY`, off by default — never a copy.
+4. **A test screen is the real game plus dials.**
    - `EnginePlay` gives it:
      - the real match's size (`realMatchWidth`) by default; drag power depends on canvas size, so a bigger `width` (guardrailed, `testPlayWidth`) is only allowed because EnginePlay then passes CanvasMatch `dragReferenceHeightPx` (the real match's canvas height) and the same finger movement kicks exactly as hard
      - the real squads
@@ -50,7 +67,7 @@ and the real match moved on without it.
    - The Play Area's dials (`lib/star/playArea.ts`) are props on that one mount.
    - A dial must never write to a career, to `tuning.ts`, or to the engine.
    - Every dial's default is the real game.
-4. **Something wrong in a copy gets fixed in the engine, not in the copy.** If
+5. **Something wrong in a copy gets fixed in the engine, not in the copy.** If
    the trial's keeper felt better, that behaviour belongs in the real match
    too, or it goes. Ask Harry which.
 

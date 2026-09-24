@@ -215,6 +215,11 @@ used the base engine … extra stuff built on top of the base engine."*
 - **Never** add to `KNOWN_COPIES`, raise `CEILING`, touch the canary, or remove
   the guard from the `build` script without being asked in those words. Load the `one-engine` skill
   first.
+- **Shared mechanics, not a shared picture** (Harry, 24 Sep 2026: "different
+  modes ... will be COMPLETELY looking different ... it has to be allowed").
+  A mode keeps the real ball, drag, contact and flight, and chooses what is on
+  the pitch with `scene` (`lib/star/scenePicture.ts`): no keeper, no goal, no
+  team-mates, no GOAL/PASS text. Technique training is you, a ball and cones.
 - **Ported (24 Sep 2026):** trial penalties and free kicks, training strike
   drills and the gauntlet. They mount `EngineFeature` (EnginePlay.tsx) and only
   build each rep's picture and score it. A trial/training difference is a

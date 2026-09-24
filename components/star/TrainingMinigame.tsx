@@ -19,6 +19,7 @@ import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import FirstPersonDribble from "./FirstPersonDribble";
 import { EngineFeature } from "./EnginePlay";
+import type { ScenePicture } from "@/lib/star/scenePicture";
 import type { ChanceResolved } from "./CanvasMatch";
 
 /**
@@ -191,6 +192,22 @@ function useCanvasSize(canvasRef: React.RefObject<HTMLCanvasElement>, wrapRef: R
 // ═══════════════════════════════════════════════════════════════════════════
 
 type StrikeKind = "power" | "technique" | "freeKick";
+
+/**
+ * What each drill puts on the pitch. The ball, the kick and the flight are the
+ * real match's; everything else is only there if the drill is about it.
+ * Harry, 24 Sep 2026: "technique training does not need a goalie/goal yet in
+ * every drill there's a keeper... we literally just need the mechanics."
+ * - Technique: you, a ball and two cones. No keeper, no goal, nobody else.
+ * - Power: the keeper and the bodies in the lane, but no poacher to tidy up.
+ * - Free kick: the wall and the keeper, but no poacher either.
+ * No drill shows the match's own GOAL/PASS text; the drill's flash says it.
+ */
+const DRILL_SCENE: Record<StrikeKind, ScenePicture> = {
+  technique: { keeper: false, goal: false, teammates: false, banners: false },
+  power: { teammates: false, banners: false },
+  freeKick: { teammates: false, banners: false },
+};
 
 interface StrikeSetup {
   scenario: Scenario;
@@ -400,6 +417,7 @@ function StrikeDrill({
           setPieceSkill={skills.freeKick}
           keeperStrength={kind === "technique" ? 40 : kind === "freeKick" ? freeKickDrill(level, rep).keeperStrength : powerDrill(level, rep).keeperStrength}
           seed={seedRef.current}
+          scene={DRILL_SCENE[kind]}
         />
         {brief && (
           <div className="pointer-events-none absolute top-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200">

@@ -501,6 +501,9 @@ export function StrikeStage({
           keeperStrength={keeperStrengthFor?.(rep) ?? 62}
           penaltyRead={penaltyRead}
           seed={seed}
+          // A trial is you against the keeper (and the wall): no team-mate
+          // following in to tidy up a rebound. Harry, 24 Sep 2026.
+          scene={{ teammates: false }}
         />
         {showTeach && teach && (
           <TeachCard
