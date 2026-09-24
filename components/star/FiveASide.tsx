@@ -1,8 +1,8 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  initDefenders, launch, stepBall, stepKeeper, stepReactions, settleBall,
-  stepBallInNet, stepBallPastBar, dragForFullPower, setOffsideRuleEnabled, goalInView,
+  initDefenders, launch, stepBall, stepKeeper, stepReactions, stepDefenders, settleBall,
+  stepBallInNet, stepBallPastBar, setOffsideRuleEnabled, goalInView,
   type Ball, type Outcome, type Scenario, type Viewport, type Vec2,
 } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
@@ -32,6 +32,7 @@ import {
   ROLE_KIT, MATCH_SCALE, poseFor, runPhase, bodyPoseFor,
 } from "@/lib/star/fiveASide/render";
 import ContactBall from "./ContactBall";
+import { aimFromDrag, screenToPitch } from "@/lib/star/kickInput";
 
 /**
  * A REAL SMALL-SIDED MATCH, PLAYED ON THE LIVE ENGINE.
@@ -71,10 +72,11 @@ import ContactBall from "./ContactBall";
  * the loop, the thumb, and the paint.
  */
 
-/** Matches the live match's own aim feel exactly. A dead-zone so a tap is not
- *  a shot, and a full-power drag computed from the striker's own power the
- *  same way `CanvasMatch` computes it. */
-const MIN_PULL = 0.008;
+// The aim feel — the dead-zone, the pull, the power, the direction — is the
+// real match's own, from lib/star/kickInput.ts. It used to be worked out here
+// as `hypot(Δx/W, Δy/H)`: on this 5:6 canvas that bought a sideways drag 20%
+// more power per pixel than the match, and drew the arrow ~20% wider than the
+// ball actually went. See tests/star/kickInput.mts for the numbers.
 
 /**
  * ── The weird loading time ──
@@ -537,11 +539,18 @@ export default function FiveASide({
     if (!wrap) return;
     const r = wrap.getBoundingClientRect();
     const now = { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
-    const dx = dragRef.current.x - now.x, dy = dragRef.current.y - now.y;
-    const pull = Math.hypot(dx, dy);
-    if (pull < MIN_PULL) { aimRef.current = null; forceRender(n => n + 1); return; }
-    const full = dragForFullPower(skills.power);
-    aimRef.current = { dir: { x: dx, y: dy }, power: Math.min(1, pull / full) };
+    // The match's own drag maths (kickInput.ts): both ends turned into pitch
+    // metres through the camera on screen, the pull measured on the glass as a
+    // fraction of the canvas HEIGHT (so a pixel is worth the same sideways as
+    // up the screen), and the direction kept in METRES — the exact vector
+    // `launch` gets, so the arrow drawn from it points where the ball goes.
+    // The anchor is where the thumb went down (this screen's gesture; the
+    // match anchors on the ball) — only the maths is shared, not the grab.
+    const vp = camRef.current ?? scRef.current?.viewport;
+    if (!vp || r.height <= 0) return;
+    const anchor = screenToPitch(dragRef.current.x, dragRef.current.y, vp);
+    const finger = screenToPitch(now.x, now.y, vp);
+    aimRef.current = aimFromDrag(finger, anchor, vp, skills.power, "up", r.width / r.height);
     forceRender(n => n + 1);
   };
 
@@ -597,12 +606,9 @@ export default function FiveASide({
   const strike = useCallback((contact: { cx: number; cy: number }) => {
     const sc = scRef.current, aim = aimRef.current;
     if (!sc || !aim) { setPhase("aim"); return; }
-    // The drag is in screen fractions; the engine wants pitch metres. The
-    // CAMERA's metres, not the engine frame's — the drag is a fraction of what
-    // is on screen, and once the camera crops the frame those are two
-    // different rectangles.
-    const vp = camRef.current ?? sc.viewport;
-    fire({ x: aim.dir.x * (vp.x2 - vp.x1), y: aim.dir.y * (vp.y2 - vp.y1) }, aim.power, contact);
+    // Already pitch metres, through the camera that was on screen when you
+    // dragged — the same vector the arrow was drawn along.
+    fire(aim.dir, aim.power, contact);
   }, [fire]);
 
   /**
@@ -728,6 +734,13 @@ export default function FiveASide({
           let res: Outcome | null = null;
           for (let i = 0; i < 3 && !res; i++) {
             const h = dt / 3;
+            // The real match's substep, in the real match's order:
+            // stepDefenders -> stepKeeper -> stepReactions -> stepBall.
+            // (stepDefenders only ever moves a free-kick wall, which five-a-
+            // side never builds; it is here so the loop is the match's loop,
+            // not so something changes today. Defenders chasing the ball in
+            // flight is stepReactions, which was already here.)
+            stepDefenders(sc, h, ball.pos, false, ball);
             stepKeeper(sc, h);
             stepReactions(sc, ball, h, rng.next);
             // After the reactions and before the ball, the same slot
@@ -761,7 +774,7 @@ export default function FiveASide({
         if (sc && ball) {
           if (ball.inNet) stepBallInNet(ball, dt);
           else if (ball.overBar) stepBallPastBar(ball, dt);
-          else settleBall(ball, dt);
+          else settleBall(ball, dt, sc);   // the match passes the scenario (its weather) too
           if (!sc.keeper.done) stepKeeper(sc, dt);
         }
         const p = pendingRef.current;
