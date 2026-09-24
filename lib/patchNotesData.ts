@@ -27,6 +27,140 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.10",
+      "title": "Harry's patch notes",
+      "publishedAt": "2026-09-24T12:00:00Z",
+      "summary": "One engine, round two: the trial, the training and five-a-side now use the real match, the penalty keeper reads your kick, the gallery corner matches Play, and the guard in plain English.",
+      "stats": [
+        {
+          "value": "6 → 4",
+          "label": "copies of the match left. The trial and training are now the real match"
+        },
+        {
+          "value": "99.8% → 70.3%",
+          "label": "a corner penalty in the real game, now the keeper reads your kick at the strike"
+        },
+        {
+          "value": "3.7° → 0.01°",
+          "label": "five-a-side: how far the arrow pointed from where the ball went"
+        },
+        {
+          "value": "40/40",
+          "label": "gallery corners now drawn turned like Play, within 0.6px"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "The trial's penalties and free kicks are the real match",
+              "detail": "Its own camera, keeper and ball loop are gone. It builds each rep's picture and scores the result. Invisible stats: a new career's free-kick rating, no boots, a clear day, fresh legs."
+            },
+            {
+              "title": "Training's strike drills and Pace run are the real match",
+              "detail": "Power, Technique and Free Kick run on the real match; Technique's cones are drawn on the real pitch. Pace is the real first-person dribble. The free-kick wall stands 1.15m apart like the match."
+            },
+            {
+              "title": "Five-a-side shoots like the match",
+              "detail": "Same drag maths as the match. Its own 5-v-5 game stays, as you said.",
+              "bars": [
+                {
+                  "label": "Sideways 40px drag, power",
+                  "was": 83.7,
+                  "now": 69.8,
+                  "target": 69.8,
+                  "unit": "%",
+                  "state": "good"
+                },
+                {
+                  "label": "Arrow vs ball direction",
+                  "was": 3.7,
+                  "now": 0.01,
+                  "target": 0,
+                  "unit": "°",
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Gallery corners are turned like Play and the real match",
+              "detail": "The picture is bigger on a laptop (up to 520px) with the same kick strength, and draws the real kits."
+            },
+            {
+              "title": "The first chance of every match was built on every redraw and thrown away",
+              "detail": "It's built once now. No change to how it plays."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The penalty keeper reads your kick (real game, every penalty)",
+              "detail": "He stands in the middle until you strike, then goes 80% of the time and guesses the right side 60% of the time (better keepers read better). Measured on the real engine.",
+              "bars": [
+                {
+                  "label": "Corner, scored",
+                  "was": 99.8,
+                  "now": 70.3,
+                  "unit": "%",
+                  "state": "good"
+                },
+                {
+                  "label": "2m from centre, scored",
+                  "was": 67.5,
+                  "now": 41.5,
+                  "unit": "%",
+                  "state": "good"
+                },
+                {
+                  "label": "Down the middle, scored",
+                  "was": 0,
+                  "now": 22,
+                  "unit": "%",
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "A harder trial keeper, as a named dial",
+              "detail": "Harder reps turn up how often he goes and how well he reads. Corner scored: 73% on the easiest trial, 45% on the hardest. It's a listed test dial, not a copy."
+            },
+            {
+              "title": "Claude checks the guard at the end of every turn, and asks you before touching it"
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "A whole-kit clash: Man United vs Bournemouth away",
+              "detail": "Red shirts and white shorts against white shirts and red shorts. The shirts differ, so today's check lets it through.",
+              "pill": {
+                "text": "question",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Five-a-side's pitch is shorter than the match's on a phone",
+              "detail": "468px against 624px, so a drag up the screen is about 1.33× stronger. Worked out from the sizes."
+            },
+            {
+              "title": "authoredChance test fails on main",
+              "detail": "4 one-on-one drawings were deleted. Mikey and Leo's area."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/5njEpoPHxLK1oWvin2NLhZ",
+      "updatedAt": null
+    },
+    {
       "version": "0.9",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-24T00:00:00Z",
