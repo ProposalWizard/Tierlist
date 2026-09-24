@@ -58,6 +58,15 @@ opening any of them.
 
 ## What always goes in
 
+- **"Check these" at the very top — every time.** Asked for directly (24 Sep
+  2026): *"at the top have a very simple list no yap of all bug fixes to
+  check — all patch notes going forward should have a list of every changed
+  feature at the top."* Straight after the stat strip: one line per changed
+  feature or fix, a tick box each, and a grey line under it saying exactly
+  where to go to see it (screen → tab). No explanations, no numbers — those
+  live in the sections below. Every item in FIXED / ADDED / CHANGED gets a
+  line here; nothing is left off because it's small. Ticks are remembered
+  per viewer in localStorage (wrapped in try/catch), never shared.
 - **A stat strip at the top** — four big numbers, the ones that would make
   someone say "oh, good". Not four numbers you happen to have.
 - **Known issues, honestly.** Including things nobody asked about, and

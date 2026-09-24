@@ -9,6 +9,13 @@ description: Build "Knowitball Patch Notes Mikey (version)" — a shareable arti
 
 Patch notes are how Mikey tells **Harry and Leo** what changed in Knowitball, and how the team tracks updates and bugs over time. Neither of them writes code. Write for someone who plays the game, not someone who reads it.
 
+
+> **Standing rule (Harry, 24 Sep 2026):** every patch notes page opens with a
+> "Check these" list — one plain line per changed feature or fix, with where
+> to find it, no explanations. See `artifact-house-style` → What always goes
+> in. The site entry (`lib/patchNotesData.ts`) gets it too, as its first
+> section's items.
+
 ## Naming and versions
 
 - Title, exactly: **`Knowitball Patch Notes Mikey vX.Y`** — used for the page `<title>`, the `<h1>`, and the artifact name.

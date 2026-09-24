@@ -52,6 +52,64 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "sections": [
         {
           "kind": "fixed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Trial penalties: keeper stays in the middle until you kick, then dives",
+              "detail": "New career → Trial → Penalties"
+            },
+            {
+              "title": "Trial free kicks: real match, wall jumps",
+              "detail": "Trial → Free kicks"
+            },
+            {
+              "title": "Real match penalties: same keeper, central until the strike",
+              "detail": "Any career match with a penalty"
+            },
+            {
+              "title": "Training Technique: cones on the pitch, ball judged through them",
+              "detail": "Training → Technique"
+            },
+            {
+              "title": "Training Power and Free Kick: the real match, result after each rep",
+              "detail": "Training → Power / Free Kick"
+            },
+            {
+              "title": "Training Pace: the first-person run",
+              "detail": "Training → Pace"
+            },
+            {
+              "title": "Five-a-side: the arrow points where the ball goes",
+              "detail": "Trial → Five-a-side"
+            },
+            {
+              "title": "Five-a-side: a sideways drag isn't stronger than in the match",
+              "detail": "Trial → Five-a-side"
+            },
+            {
+              "title": "Gallery corner: picture turned sideways, same as Play",
+              "detail": "/star-gallery-dev → corner"
+            },
+            {
+              "title": "Gallery: real kits, and a bigger picture on a laptop",
+              "detail": "/star-gallery-dev on a laptop"
+            },
+            {
+              "title": "Play Area power dial changes Gallery Play and Highlights",
+              "detail": "/star-play-dev → Power, then Gallery Play"
+            },
+            {
+              "title": "Kits: teams never wear the same two colours swapped (e.g. Man United v Bournemouth)",
+              "detail": "Any career match · /star-gallery-dev corner"
+            },
+            {
+              "title": "Five-a-side: a drag up the screen hits the same as in the match",
+              "detail": "Trial → Five-a-side"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
           "title": "Fixed",
           "items": [
             {
@@ -87,6 +145,33 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             {
               "title": "Gallery corners are turned like Play and the real match",
               "detail": "The picture is bigger on a laptop (up to 520px) with the same kick strength, and draws the real kits."
+            },
+            {
+              "title": "Kits: no more two teams in the same two colours swapped",
+              "detail": "Your answer to question 6. The check looks at shirt and shorts together; the away side changes its shorts first, like real teams.",
+              "bars": [
+                {
+                  "label": "Fixtures with swapped colours (of 14,280)",
+                  "was": 2634,
+                  "now": 0,
+                  "target": 0,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Five-a-side: a drag up the screen hits the same as in the match",
+              "detail": "Your answer to question 11. It reads the drag against the match's pitch height. Worked out, not played.",
+              "bars": [
+                {
+                  "label": "40px drag up, power",
+                  "was": 67.7,
+                  "now": 54.1,
+                  "target": 54.1,
+                  "unit": "%",
+                  "state": "good"
+                }
+              ]
             },
             {
               "title": "The first chance of every match was built on every redraw and thrown away",
@@ -138,18 +223,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "known",
           "title": "Known issues",
           "items": [
-            {
-              "title": "A whole-kit clash: Man United vs Bournemouth away",
-              "detail": "Red shirts and white shorts against white shirts and red shorts. The shirts differ, so today's check lets it through.",
-              "pill": {
-                "text": "question",
-                "tone": "amber"
-              }
-            },
-            {
-              "title": "Five-a-side's pitch is shorter than the match's on a phone",
-              "detail": "468px against 624px, so a drag up the screen is about 1.33× stronger. Worked out from the sizes."
-            },
             {
               "title": "authoredChance test fails on main",
               "detail": "4 one-on-one drawings were deleted. Mikey and Leo's area."

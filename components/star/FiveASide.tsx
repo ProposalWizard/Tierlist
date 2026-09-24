@@ -33,6 +33,7 @@ import {
 } from "@/lib/star/fiveASide/render";
 import ContactBall from "./ContactBall";
 import { aimFromDrag, screenToPitch } from "@/lib/star/kickInput";
+import { realMatchHeight } from "@/lib/star/engineProfile";
 
 /**
  * A REAL SMALL-SIDED MATCH, PLAYED ON THE LIVE ENGINE.
@@ -550,7 +551,11 @@ export default function FiveASide({
     if (!vp || r.height <= 0) return;
     const anchor = screenToPitch(dragRef.current.x, dragRef.current.y, vp);
     const finger = screenToPitch(now.x, now.y, vp);
-    aimRef.current = aimFromDrag(finger, anchor, vp, skills.power, "up", r.width / r.height);
+    // Read against the real match's pitch height, not this shorter one (468px
+    // against 624px on a phone), so the same finger movement is the same kick.
+    // Harry, 24 Sep 2026, question 11: "A".
+    const refH = realMatchHeight(window.innerWidth);
+    aimRef.current = aimFromDrag(finger, anchor, vp, skills.power, "up", r.width / r.height, refH > 0 ? r.height / refH : 1);
     forceRender(n => n + 1);
   };
 

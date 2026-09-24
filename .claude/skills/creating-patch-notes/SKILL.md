@@ -23,6 +23,13 @@ Harry or Mikey might run for their own work one day. It's fixed text, not
 derived from whatever the git branch happens to be called in a given
 session.
 
+
+> **Standing rule (Harry, 24 Sep 2026):** every patch notes page opens with a
+> "Check these" list — one plain line per changed feature or fix, with where
+> to find it, no explanations. See `artifact-house-style` → What always goes
+> in. The site entry (`lib/patchNotesData.ts`) gets it too, as its first
+> section's items.
+
 ## Load `artifact-house-style` first, every time
 
 That skill is the actual page recipe — five rules, the mechanics, what goes

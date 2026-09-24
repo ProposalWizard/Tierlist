@@ -82,11 +82,14 @@ export function screenToPitch(
  */
 export function screenPull(
   drag: Vec2, ball: Vec2, vp: Viewport, facing: KickFacing = "up", aspect: number = VIEW_ASPECT,
+  heightScale = 1,
 ): number {
   const a = pitchToScreen(drag, vp, facing), b = pitchToScreen(ball, vp, facing);
   // sx is a fraction of the canvas WIDTH and sy of its HEIGHT, so put them in
-  // the same units before measuring.
-  return Math.hypot((a.sx - b.sx) * aspect, a.sy - b.sy);
+  // the same units before measuring. `heightScale` is this canvas's height over
+  // the real match's (CanvasMatch's `dragReferenceHeightPx`): a screen drawn a
+  // different height reads the same finger movement as the same kick.
+  return Math.hypot((a.sx - b.sx) * aspect, a.sy - b.sy) * heightScale;
 }
 
 /** A pull (fraction of canvas height) -> strike power 0-1, scaled by the
@@ -98,9 +101,9 @@ export function powerFromPull(pull: number, powerSkill: number): number {
 /** CanvasMatch's `powerFromDrag`. */
 export function powerFromDrag(
   drag: Vec2, ball: Vec2, vp: Viewport, powerSkill: number,
-  facing: KickFacing = "up", aspect: number = VIEW_ASPECT,
+  facing: KickFacing = "up", aspect: number = VIEW_ASPECT, heightScale = 1,
 ): number {
-  return powerFromPull(screenPull(drag, ball, vp, facing, aspect), powerSkill);
+  return powerFromPull(screenPull(drag, ball, vp, facing, aspect, heightScale), powerSkill);
 }
 
 /** Which way the ball goes: from the thumb back through the ball, in pitch
@@ -117,10 +120,10 @@ export function aimDirection(drag: Vec2, ball: Vec2): Vec2 {
  */
 export function aimFromDrag(
   drag: Vec2, ball: Vec2, vp: Viewport, powerSkill: number,
-  facing: KickFacing = "up", aspect: number = VIEW_ASPECT,
+  facing: KickFacing = "up", aspect: number = VIEW_ASPECT, heightScale = 1,
 ): { dir: Vec2; power: number } | null {
-  const power = powerFromDrag(drag, ball, vp, powerSkill, facing, aspect);
-  if (screenPull(drag, ball, vp, facing, aspect) < MIN_PULL) return null;
+  const power = powerFromDrag(drag, ball, vp, powerSkill, facing, aspect, heightScale);
+  if (screenPull(drag, ball, vp, facing, aspect, heightScale) < MIN_PULL) return null;
   if (power < MIN_POWER) return null;
   return { dir: aimDirection(drag, ball), power };
 }

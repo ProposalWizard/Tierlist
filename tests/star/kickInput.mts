@@ -225,6 +225,21 @@ const REF = {
     "after the fix, any arrow/ball gap must be the engine's own launch scatter, nothing of the arrow's");
 }
 
+// ── Five-a-side reads the drag against the match's pitch height ────────────
+// Harry, 24 Sep 2026, question 11 "A": its pitch is shorter on a phone, so
+// the same finger movement must be scaled by (own height / match height).
+{
+  const vp = { x1: 0, x2: 40, y1: 0, y2: 64 };
+  const ball = { x: 20, y: 40 }, drag = { x: 20, y: 46 };
+  const full = screenPull(drag, ball, vp);
+  const scaled = screenPull(drag, ball, vp, "up", VIEW_ASPECT, 468 / 585.6);
+  check(Math.abs(scaled - full * (468 / 585.6)) < 1e-12, "heightScale scales the pull exactly");
+  check(screenPull(drag, ball, vp, "up", VIEW_ASPECT, 1) === full, "heightScale 1 changes nothing");
+  // 60px up a 468px five-a-side pitch = 60px up a 585.6px match pitch.
+  const fiveA = 60 / 468 * (468 / 585.6), match = 60 / 585.6;
+  check(Math.abs(fiveA - match) < 1e-12, "the same 60px drag is the same pull in both");
+}
+
 if (problems.length) {
   console.error(`kickInput: ${problems.length} problem(s)`);
   for (const p of problems.slice(0, 30)) console.error("  - " + p);
