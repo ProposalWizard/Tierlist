@@ -1,4 +1,5 @@
 "use client";
+import TrophyImage from "./TrophyImage";
 import type { CareerState } from "@/lib/star/types";
 import { trophyWinners, type AwardWinner } from "@/lib/star/seasonAwards";
 import { kitsOf, labelInk } from "@/lib/star/kits";
@@ -69,7 +70,7 @@ function TrophyCard({ competition, club, isYou }: {
   return (
     <div className={`rounded-xl border p-2.5 ${isYou ? "border-amber-400/50 bg-amber-500/10" : "border-white/12 bg-white/[0.04]"}`}>
       <div className="text-[9px] font-black uppercase tracking-widest text-amber-300/90">
-        {TROPHY_ICON[competition] ?? "🏆"} {competition}
+        <span className="mr-1 inline-flex align-middle"><TrophyImage name={competition} height={22} fallback={TROPHY_ICON[competition] ?? "🏆"} /></span>{competition}
       </div>
       {club ? (
         <div className="mt-1.5 flex items-center gap-1.5">
@@ -98,7 +99,7 @@ function AwardCard({ id, winner }: { id: keyof typeof AWARD_META; winner: AwardW
   return (
     <div className={`rounded-xl border p-3 ${winner?.isYou ? "border-amber-400/50 bg-amber-500/10" : "border-white/12 bg-white/[0.04]"}`}>
       <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300/90">
-        <span>{meta.icon}</span> {meta.label}
+        <TrophyImage name={meta.label} height={22} fallback={meta.icon} /> {meta.label}
       </div>
       {winner ? (
         <div className="mt-1.5 flex items-center gap-2">

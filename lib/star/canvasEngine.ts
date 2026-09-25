@@ -1189,11 +1189,28 @@ const WIDE_DELIVERY_X = (side: number) => CX + side * (WIDE_DELIVERY_VIEW.x2 - C
 const CROSS_VIEW_X = VIEW_H;  // metres across the pitch, filling the screen's height
 const CROSS_SWITCH_Y = 15; // …and where the ball has got close enough to cut
 
-function crossViewport(side: number): Viewport {
-  const h = CROSS_VIEW_X;
+/**
+ * A corner's side-on frame: pulled back so the REAL corner flag fits in it.
+ *
+ * Corners used to be taken 6-7.5 m in from the flag, because the fixed 42 m
+ * crossing frame could not hold the flag, room below it to pull back for
+ * power, and the far post all at once. Mikey (25 Sep 2026): "I want it to be
+ * taken from the corner areas" — and, choosing between a moving camera and a
+ * wider one, the wider one. Same far edge as the cross view (so the far post
+ * sits exactly where it always did); the near edge moved out to leave the
+ * flag the same share of the screen to pull back into as the old spot had at
+ * its worst (9 m of 42 = 21%): (77.3 - 67) / 48.3 = 21%. Every figure on a
+ * corner is drawn about 13% smaller as a result — the cost, taken knowingly.
+ */
+const CORNER_VIEW_X = 48.3;
+
+function crossViewport(side: number, across = CROSS_VIEW_X): Viewport {
+  // The far edge is held where the ordinary cross view puts it, so only the
+  // near (touchline) edge moves when the frame is widened for a corner.
+  const far = side > 0 ? PITCH_W + 3 - CROSS_VIEW_X : -3 + CROSS_VIEW_X;
+  const h = across;
   const w = h * VIEW_ASPECT;          // metres up the pitch, filling the width
-  // Held against the touchline you are crossing from.
-  const x1 = side > 0 ? PITCH_W + 3 - h : -3;
+  const x1 = side > 0 ? far : far - h;
   return { x1, x2: x1 + h, y1: -4.5, y2: -4.5 + w };
 }
 
@@ -2614,8 +2631,11 @@ function buildFreeKick(rng: () => number, keeperStrength: number, teamRelationsh
 // relationship to the other. A real ratio needs to be built by hand.
 function buildCorner(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  const bx = side > 0 ? PITCH_W - (6 + rng() * 1.5) : 6 + rng() * 1.5;
-  const by = 0.6 + rng() * 0.5;
+  // In the corner arc itself (1 m radius) — see CORNER_VIEW_X for the frame
+  // that makes room for it. Same two rng() draws as the old 6-7.5 m spot, so
+  // nothing else about a seeded corner moves.
+  const bx = side > 0 ? PITCH_W - (0.45 + rng() * 0.3) : 0.45 + rng() * 0.3;
+  const by = 0.45 + rng() * 0.3;
   const to = { x: CX + (rng() - 0.5) * 10, y: 4 + rng() * 5 };
   const from = { x: to.x - side * 2.2, y: to.y + 2.5 + rng() * 1.5 };
 
@@ -2742,7 +2762,7 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
     // Watched from the side, then cut to the ordinary view when it arrives.
     const side = sc.ball.x >= CX ? 1 : -1;
     sc.facing = side > 0 ? "right" : "left";
-    sc.viewport = crossViewport(side);
+    sc.viewport = crossViewport(side, kind === "corner" ? CORNER_VIEW_X : CROSS_VIEW_X);
     sc.crossSwitchY = CROSS_SWITCH_Y;
     sc.crossSwitchView = WIDE_DELIVERY_VIEW;
   }

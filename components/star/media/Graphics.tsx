@@ -1,4 +1,5 @@
 "use client";
+import TrophyImage from "../TrophyImage";
 import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { initialsOf, ordinal, shortClub, surname } from "@/lib/star/media/grammar";
@@ -259,7 +260,7 @@ function Transfer({ s }: { s: Extract<GraphicSpec, { type: "transfer" }> }) {
 function Trophy({ s }: { s: Extract<GraphicSpec, { type: "trophy" }> }) {
   return (
     <div className="overflow-hidden rounded-xl border border-amber-400/50 bg-gradient-to-b from-amber-400/30 to-gray-900/80 px-3 py-4 text-center">
-      <div className="text-3xl">🏆</div>
+      <div className="flex justify-center"><TrophyImage name={s.competition} height={110} /></div>
       <div className="mt-1 text-base font-black uppercase leading-tight text-white">{s.competition}</div>
       <div className="text-[11px] font-black text-amber-200">{s.club} · Season {s.season}</div>
     </div>

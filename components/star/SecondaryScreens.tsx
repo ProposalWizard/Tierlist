@@ -1,4 +1,5 @@
 "use client";
+import TrophyImage from "./TrophyImage";
 import { fameOf, fameLevel, nextFameLevel, FAME_LEVELS } from "@/lib/star/fame";
 import { reputationLabel, REPUTATION_RECOMMEND_MIN, REPUTATION_PROPOSE_RULES_MIN, REPUTATION_PRESIDENCY_MIN } from "@/lib/star/reputation";
 import { useState } from "react";
@@ -251,7 +252,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
         </div>
 
         <div className="bg-gradient-to-b from-yellow-800 to-yellow-950 rounded-xl border-2 border-yellow-500 p-4 mb-3 text-center">
-          <div className="text-4xl mb-1">🏆</div>
+          <div className="mb-1 flex justify-center"><TrophyImage name="Ballon d'Or" height={96} /></div>
           <div className="font-black text-yellow-300 text-xl">{ballonDors}</div>
           <div className="text-[10px] font-black text-yellow-200 uppercase tracking-widest">Ballon d&apos;Or</div>
         </div>
@@ -263,7 +264,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
             </div>
             {kinds.map((kind, i) => (
               <div key={kind} className={`flex items-center gap-2.5 px-3 py-2 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
-                <span className="text-lg">{AWARD_ICON[kind] ?? "🏅"}</span>
+                <span className="flex w-8 justify-center"><TrophyImage name={kind} height={34} fallback={AWARD_ICON[kind] ?? "🏅"} /></span>
                 <span className="flex-1 font-bold text-white text-sm">{kind}</span>
                 <span className="font-black text-amber-300 text-sm">×{counts.get(kind)}</span>
               </div>
@@ -279,7 +280,7 @@ export function TrophiesScreen({ trophies, onBack, ballonDors, awards }: {
           <div className="bg-gray-700 rounded-xl border border-gray-600 overflow-hidden">
             {trophies.map((t, i) => (
               <div key={i} className={`flex items-center gap-3 p-3 border-b border-black/20 ${i % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}>
-                <div className="text-2xl">🥇</div>
+                <div className="flex w-10 justify-center"><TrophyImage name={t.competition} height={48} fallback="🥇" /></div>
                 <div className="flex-1">
                   <div className="font-black text-white text-sm">{t.competition}</div>
                   <div className="text-[10px] text-white">{t.club} · Season {t.season}</div>

@@ -370,7 +370,14 @@ export function renderScenario(canvas: HTMLCanvasElement, opts: RenderScenarioOp
   };
 
   const rBase = Math.max(6, unit * 1.0);
-  for (const p of opts.players) {
+  // Far-to-near by where each man's boots land on screen, so a man standing
+  // behind another is drawn behind him from every camera facing — not in list
+  // order, which put whoever was listed later on top (see CanvasMatch).
+  const byDepth = opts.players
+    .map((p, i) => ({ p, i, py: toPx(p.x, p.y).py }))
+    .sort((a, b) => a.py - b.py || a.i - b.i)
+    .map((e) => e.p);
+  for (const p of byDepth) {
     const kit = SIDE_KIT[p.side];
     footballer(p.x, p.y, rBase, kit.shirt, kit.rim, { star: p.side === "you" });
     if (p.selected) {

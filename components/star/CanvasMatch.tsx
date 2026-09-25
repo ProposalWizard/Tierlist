@@ -2175,10 +2175,44 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const SKIN = "#c68642";
     type Pose = FigurePose;
 
+    type FigureOpts = { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement };
+
+    // ── Nearer men in front of further ones ──
+    //
+    // Figures used to be painted in groups — team-mates, then runners, then
+    // defenders, then you — so whoever's group came later was always on top.
+    // A striker standing BEHIND his marker was drawn over him, head planted in
+    // the marker's shirt, "like he is standing on top of him" (Mikey, 25 Sep
+    // 2026, a far-post cross seen from the right). While `figureQueue` is open
+    // every call below is held, then all of them are painted far-to-near by
+    // where their boots land on screen — the one depth that is right from
+    // every camera facing, since up the screen is always further away.
+    let figureQueue: { py: number; draw: () => void }[] | null = null;
     const footballer = (
       x: number, y: number, rBase: number,
       shirt: string, rim: string,
-      opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement } = {},
+      opts: FigureOpts = {},
+    ) => {
+      if (figureQueue) {
+        const at = toPx(x, y).py;
+        figureQueue.push({ py: at, draw: () => paintFootballer(x, y, rBase, shirt, rim, opts) });
+        return;
+      }
+      paintFootballer(x, y, rBase, shirt, rim, opts);
+    };
+    const flushFigures = () => {
+      const q = figureQueue;
+      figureQueue = null;
+      if (!q) return;
+      // Stable: two men on exactly the same line keep their old order.
+      q.map((f, i) => ({ f, i }))
+        .sort((a, b) => a.f.py - b.f.py || a.i - b.i)
+        .forEach(({ f }) => f.draw());
+    };
+    const paintFootballer = (
+      x: number, y: number, rBase: number,
+      shirt: string, rim: string,
+      opts: FigureOpts = {},
     ) => {
       const { px, py, scale } = toPx(x, y);
       // Further up the pitch is further from the camera, so figures there are
@@ -2359,6 +2393,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // whether YOU can beat these men — had one lone blue shirt standing in it,
     // left over from the scenario before. Same leak as the panel above: a figure
     // from a situation that is not the one on screen.
+    figureQueue = [];
     if (goalInView(sc.kind) && sceneRef.current?.teammates !== false) {
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
@@ -2495,9 +2530,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // aiming at. Only while you still have the ball: once it is struck the
     // orders are being carried out, and a pitch covered in arrows during the
     // flight is noise.
-    if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
-      drawCaptainOrders(sc);
-    }
 
     // A feature's cones (the markers prop) — on the grass, under everyone.
     if (markersRef.current?.length) {
@@ -2674,7 +2706,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const ballY = liveBall ? liveBall.pos.y : (phaseRef.current === "aim" ? sc.ball.y : null);
     const ballBehindKeeper = keeperInView && ballY !== null && ballY < sc.keeper.y;
 
-    if (keeperInView && !ballBehindKeeper) drawKeeper();
+    // The keeper joins the same far-to-near sort as everyone else, so a man
+    // standing between him and the camera at a corner is drawn in front of
+    // him, not behind. (Once the ball is behind him he is drawn after it,
+    // further down, exactly as before.)
+    if (keeperInView && !ballBehindKeeper && figureQueue) {
+      figureQueue.push({ py: toPx(sc.keeper.x, sc.keeper.y).py, draw: drawKeeper });
+    }
+    flushFigures();
+    // The orders go over every man now rather than between the groups — the
+    // groups no longer exist as layers. Thin gold lines, so they never hide
+    // what you are aiming at.
+    if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
+      drawCaptainOrders(sc);
+    }
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---
     const trail = trailRef.current;

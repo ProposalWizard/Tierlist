@@ -1,4 +1,5 @@
 "use client";
+import { trophyArt } from "@/lib/star/trophyArt";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { DEFAULT_FACE_STYLE, loadFaceStyle, CROP_VIEWPORT, type FaceStyle } from "@/lib/star/faceStyle";
@@ -404,7 +405,7 @@ function Horse({ faded = false }: { faded?: boolean }) {
  *  glass-and-wood trophy cabinet (a real trophy-count HUD — a cabinet glyph
  *  + a number, never a sentence) and a small figure ambling between a few
  *  fixed spots on its own via a slow CSS animation. */
-function GardenScene({ trophyCount, ballonDors }: { trophyCount: number; ballonDors: number }) {
+function GardenScene({ trophyCount, ballonDors, trophyNames = [] }: { trophyCount: number; ballonDors: number; trophyNames?: string[] }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
       <Ground />
@@ -451,7 +452,12 @@ function GardenScene({ trophyCount, ballonDors }: { trophyCount: number; ballonD
           <rect x="-26" y="15.5" width="52" height="1.6" fill="rgba(255,255,255,0.18)" />
           {Array.from({ length: Math.min(trophyCount, 6) }).map((_, i) => {
             const col = i % 3, row = Math.floor(i / 3);
-            return <text key={i} x={-18 + col * 18} y={-9 + row * 15.5} fontSize="14">🏆</text>;
+            // The real picture of a trophy you have won, newest first; the old
+            // emoji only for one that has no picture yet.
+            const src = trophyNames[i] ? trophyArt(trophyNames[i]) : null;
+            return src
+              ? <image key={i} href={src} x={-24 + col * 18} y={-28.5 + row * 15.5} width="12" height="13" preserveAspectRatio="xMidYMax meet" />
+              : <text key={i} x={-18 + col * 18} y={-9 + row * 15.5} fontSize="14">🏆</text>;
           })}
         </g>
 
@@ -894,7 +900,8 @@ export default function GardenScreen({ career, onBack }: { career: CareerState; 
               <StableScene horse={career.horse} />
             </div>
             <div style={{ width: `${100 / SCENES.length}%` }}>
-              <GardenScene trophyCount={trophyCount} ballonDors={career.ballonDorWins} />
+              <GardenScene trophyCount={trophyCount} ballonDors={career.ballonDorWins}
+                trophyNames={[...(career.trophies ?? [])].reverse().map((t) => t.competition)} />
             </div>
             <div style={{ width: `${100 / SCENES.length}%` }}>
               <BenchScene visitors={visitors} />
