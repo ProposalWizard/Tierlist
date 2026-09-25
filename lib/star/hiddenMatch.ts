@@ -94,6 +94,9 @@ export interface HiddenMatchInputs {
   playerSkill: number;
   /** 0-100. A quicker player is handed the ball to run at them more often. */
   pace?: number;
+  /** Your free-kick rating (0-100). A better dead-ball striker is handed more
+   *  free kicks and corners — see takesIt in buildRequest. */
+  freeKick?: number;
   /**
    * The position you are playing, e.g. "ST"/"CM" — the same string
    * `pickScenarioKindFrom` weights by. Used ONLY to stop set pieces
@@ -744,7 +747,15 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   const takesIt = (kind: "penalty" | "free_kick" | "corner"): boolean => {
     if (!inputs.position) return true;   // an old caller is byte-identical
     const w = (SET_PIECE_DUTY[inputs.position] ?? DEFAULT_DUTY)[kind];
-    return rng() < Math.max(0.15, Math.min(0.9, w / 8));
+    // The better your free-kick rating, the more often the free kicks and
+    // corners are yours (Mikey, 25 Sep 2026). 40, where a career starts, is
+    // exactly the old share; 100 is half as many again; below 40 a little
+    // less. Penalties keep their own duty rule (setPieces.ts).
+    const fk = inputs.freeKick;
+    const taker = kind === "penalty" || fk === undefined
+      ? 1
+      : Math.max(0.7, 1 + (Math.min(100, Math.max(0, fk)) - 40) / 60 * 0.5);
+    return rng() < Math.max(0.15, Math.min(0.9, (w / 8) * taker));
   };
   const lane = state.lane ?? "centre";
   // A penalty keeps its own rate and its own gate (the duty is the taker's).

@@ -521,14 +521,15 @@ const mates = (sc: Scenario) => [...(sc.runner ? [sc.runner] : []), ...sc.second
     id, name: id, shortName: id, position, overall,
     seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0,
   });
-  // Eight modest, genuinely attacking-ish players — enough to cover a
-  // corner's own worst case (up to 5 decorative team-mates, the runner and
-  // the poacher: 7 attacking-context slots in one scenario) — against six
+  // Nine modest, genuinely attacking-ish players — enough to cover a
+  // corner's own worst case (up to 5 decorative team-mates, the runner, the
+  // poacher, and at vision 55 sometimes a second support man since vision
+  // became a smooth curve: 8 attacking-context slots) — against six
   // ELITE centre-backs, deliberately rated far above every one of them.
   const EXHAUST_SQUAD: SquadPlayer[] = [
     mkSquad("gk", "GK", 80),
     mkSquad("st1", "ST", 68), mkSquad("st2", "ST", 66),
-    mkSquad("cam1", "CAM", 67), mkSquad("cam2", "CAM", 65),
+    mkSquad("cam1", "CAM", 67), mkSquad("cam2", "CAM", 65), mkSquad("cam3", "CAM", 60),
     mkSquad("cm1", "CM", 64), mkSquad("cm2", "CM", 62),
     mkSquad("lw1", "LW", 63), mkSquad("rw1", "RW", 61),
     mkSquad("lb1", "LB", 58), mkSquad("rb1", "RB", 58), mkSquad("cdm1", "CDM", 58),
