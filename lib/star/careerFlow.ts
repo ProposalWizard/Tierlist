@@ -1040,7 +1040,12 @@ export function creditMatchResult(
   // into the real attributes underneath the rating instead (rating.ts's
   // computeStarRating reads them back out), scaled by how fast a player of
   // this age actually develops — see growthMultiplier.
-  const matchSkillPool = alreadyPlayed ? 0
+  //
+  // Switched off (Mikey, 25 Sep 2026: "matches don't give skill points").
+  // Skills now come only from training stars — see lib/star/trainingLevels.ts.
+  // Kept as a zero rather than deleted so turning it back on is one line.
+  const MATCHES_GIVE_SKILL = false;
+  const matchSkillPool = alreadyPlayed || !MATCHES_GIVE_SKILL ? 0
     : stats.rating >= 8 ? getTuning("training.matchPoolRating8")
     : stats.rating >= 7 ? getTuning("training.matchPoolRating7")
     : stats.rating >= 6 ? getTuning("training.matchPoolRating6")

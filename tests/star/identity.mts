@@ -376,6 +376,13 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // Fame and reputation were rebuilt the same day: a new career now starts
     // at 0 fame (was 5) and reputation is one number (was four bars).
     for (const k of ["statCans", "statBoost", "fame", "reputation"]) delete rest[k];
+    // Free kick now starts at 40 like every other skill (Mikey, 25 Sep 2026:
+    // "everything starts at 40"); the fixture has the old 30, and the opening
+    // star rating is worked out from the skills, so it moves with it.
+    if (rest.skills) { const sk = { ...(rest.skills as Record<string, number>) }; delete sk.freeKick; rest.skills = sk; }
+    delete rest.starRating;
+    // …and the squad number is drawn from a seed that includes the star rating.
+    delete rest.squadNumber;
     return JSON.stringify(rest);
   };
 

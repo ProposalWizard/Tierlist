@@ -127,8 +127,10 @@ const EMPTY_SKILLS: Skills = { pace: 0, power: 0, technique: 0, vision: 0, freeK
     sponsorPay: 0, totalCash: 3, homeScore: 2, awayScore: 1, minutes: 90,
   };
   const { career: after } = creditMatchResult(c, fixture, great);
-  check(after.skills.technique > c.skills.technique,
-    `an 8.5-rated performance sharpens real attributes, not a separate number (${c.skills.technique} -> ${after.skills.technique})`);
+  // Matches no longer give skill points (Mikey, 25 Sep 2026) — skills come
+  // only from training stars (lib/star/trainingLevels.ts).
+  check(after.skills.technique === c.skills.technique,
+    `a match, even an 8.5, no longer changes a skill (${c.skills.technique} -> ${after.skills.technique})`);
   check(after.starRating > c.starRating,
     `…and the rating itself reads that straight back out (${c.starRating.toFixed(2)} -> ${after.starRating.toFixed(2)})`);
 

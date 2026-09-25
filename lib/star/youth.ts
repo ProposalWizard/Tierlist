@@ -362,7 +362,12 @@ export const YOUTH_MATCH_ENERGY = 12;
  * team better than sitting in your garden": you are being coached, and you
  * are playing.
  */
+const YOUTH_MATCHES_GIVE_SKILL = false;
+
 function matchSkillGain(rating: number, age: number): number {
+  // Matches no longer give skill points, youth or first team (Mikey, 25 Sep
+  // 2026) — skills come only from training stars (trainingLevels.ts).
+  if (!YOUTH_MATCHES_GIVE_SKILL) return 0;
   const pool = rating >= 8 ? getTuning("training.matchPoolRating8")
     : rating >= 7 ? getTuning("training.matchPoolRating7")
     : rating >= 6 ? getTuning("training.matchPoolRating6")

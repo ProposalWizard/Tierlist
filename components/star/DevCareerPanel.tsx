@@ -22,13 +22,15 @@ import type { CareerState } from "@/lib/star/types";
 const SKILL_KEYS = ["pace", "power", "technique", "vision", "freeKick"] as const;
 
 export default function DevCareerPanel({
-  career, onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onSetHappiness, onSwitchClub,
+  career, onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
 }: {
   career: CareerState;
   onSetCaptain: (captain: boolean) => void;
   onSetReputation: (delta: number) => void;
   onSetFame: (delta: number) => void;
   onMaxSkills: () => void;
+  /** Every training level open (one star each), so any level can be tested. */
+  onUnlockTraining?: () => void;
   onSetHappiness: (delta: number) => void;
   onSwitchClub: (club: string) => void;
 }) {
@@ -87,6 +89,14 @@ export default function DevCareerPanel({
           >
             Max all to 99
           </button>
+          {onUnlockTraining && (
+            <button
+              onClick={onUnlockTraining}
+              className="mt-1 w-full py-1 rounded bg-amber-600 hover:bg-amber-500 text-[10px] font-black text-white"
+            >
+              Unlock all 30 training levels (1★ each)
+            </button>
+          )}
         </div>
       </div>
 
