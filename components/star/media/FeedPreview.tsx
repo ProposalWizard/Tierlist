@@ -35,6 +35,9 @@ export const PREVIEW_POSTS: StoredPost[] = [
   base("p6", { handle: "@NationalLeague", name: "National League", archetype: "league", platform: "x", verified: true, initials: "NL", tint: "#1e3a8a", tint2: "#3b82f6", glyph: "trophy" },
     "Your Player of the Month for August 🏆", { replies: 212, reposts: 890, likes: 6100 },
     { graphic: { type: "potmWinner", month: "August", firstName: "NS", lastName: "Died", club: "Barnet", goals: 6, assists: 2, isYou: true, number: 9 } }),
+  base("p8", { handle: "@Barnet", name: "Barnet FC", archetype: "club", platform: "x", verified: true, initials: "BF", tint: "#b45309", tint2: "#f59e0b" },
+    "CHAMPIONS 🏆", { replies: 402, reposts: 2100, likes: 18000 },
+    { graphic: { type: "trophy", competition: "Premier League", club: "Barnet", season: 3 } }),
   base("p7", { handle: "@tactics_tom", name: "Tom · Tactics", archetype: "pundit", platform: "x", verified: false, initials: "TT", tint: "#be123c", tint2: "#f43f5e", glyph: "mic" },
     "Barnet's shape without the ball is the most improved thing in the league this season. Everyone talks about the goals, but look at how narrow they get when Cardiff try to play through the middle — nothing gets in.", { replies: 41, reposts: 58, likes: 402 }),
 ];

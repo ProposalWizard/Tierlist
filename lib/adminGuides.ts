@@ -571,6 +571,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Feed preview (add ?feed to the address)",
         items: [
+          ["/star-dev/media-lab?trophies", "Shows the Trophy Cabinet filled with every trophy that has a picture, for judging the trophy art."],
           ["/star-dev/media-lab?feed", "Shows seven fixed sample posts at phone width, drawn exactly the way the phone feed draws them — for judging how a post looks. Nothing to press; scroll to read."],
         ],
       },
