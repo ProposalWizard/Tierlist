@@ -4850,6 +4850,86 @@
         "seed": 7244,
         "planId": null
       }
+    },
+    "gallery-sim-free_kick-1153211887": {
+      "id": "gallery-sim-free_kick-1153211887",
+      "name": "free kick (sim)",
+      "kind": "free_kick",
+      "camera": {
+        "centerX": 32.08,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 26.5,
+        "y": 19.48
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 28.18,
+          "y": 10.32,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 29.25,
+          "y": 10.73,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 30.32,
+          "y": 11.15,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 31.4,
+          "y": 11.56,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 35.1,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 41.55,
+          "y": 14.46,
+          "label": "POACH"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 27.8,
+          "y": 19.63,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 40.91,
+          "y": 13.05,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790306657005,
+      "source": {
+        "tool": "gallery",
+        "kind": "free_kick",
+        "seed": 1153211887,
+        "planId": null
+      }
     }
   }
 }
