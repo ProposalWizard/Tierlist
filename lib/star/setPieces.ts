@@ -58,7 +58,9 @@ export function setPieceDuties(career: CareerState, status: Selection = career.s
  * counting for something.
  */
 export function setPieceSkills(skills: KickSkills, freeKick: number, kind: string): KickSkills {
-  if (kind !== "free_kick" && kind !== "penalty") return skills;
+  // A corner is a dead ball too — struck standing still, with time, and all
+  // about where it lands and how it bends (Mikey, 25 Sep 2026).
+  if (kind !== "free_kick" && kind !== "penalty" && kind !== "corner") return skills;
   return {
     power: skills.power,
     technique: Math.round(skills.technique * 0.4 + freeKick * 0.6),

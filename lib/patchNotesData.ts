@@ -27,6 +27,237 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.11",
+      "title": "Mikey's patch notes",
+      "publishedAt": "2026-09-25T12:00:00Z",
+      "summary": "The headline: what you see on the pitch now matches where people really stand. Nearer players in front, the ball behind whoever is in front of it, corners from the flag. Plus real trophy pictures, instant energy modes, likes on posts and new KIB cans.",
+      "stats": [
+        {
+          "value": "14",
+          "label": "trophies now shown as real pictures, not emoji"
+        },
+        {
+          "value": "6 m → 0.5 m",
+          "label": "how far corners are taken from the flag"
+        },
+        {
+          "value": "+35% / −35%",
+          "label": "chances in High / Low energy mode, from the minute you switch"
+        },
+        {
+          "value": "12",
+          "label": "new long-shot drawings, so long shots get their own rules"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Players standing behind someone are drawn behind him",
+              "detail": "Any match; corners and crosses show it best."
+            },
+            {
+              "title": "The ball is hidden behind a player standing in front of it",
+              "detail": "Any match, and the gallery picture."
+            },
+            {
+              "title": "Corners are taken from the corner flag",
+              "detail": "Any corner in a match, Infinite Highlights, the scenario gallery."
+            },
+            {
+              "title": "Trophy pictures",
+              "detail": "Trophy Cabinet, end-of-season awards, feed trophy posts, the Garden cabinet."
+            },
+            {
+              "title": "Energy mode buttons are icons, and switching changes the match straight away",
+              "detail": "Live commentary during a match."
+            },
+            {
+              "title": "Feed posts look like real social media, and you can like them",
+              "detail": "The phone feed after a match."
+            },
+            {
+              "title": "KIB cans: Basic +65, Premium = Swerve curve, Elite = Touch Mode; half-time can +65",
+              "detail": "Home, KIB cans panel; the Shop; half-time."
+            },
+            {
+              "title": "NS-Swerve costs ★35,000, the same as NS-Maestro",
+              "detail": "Shop, boots."
+            },
+            {
+              "title": "Gallery: \"Camera: pick on the whole pitch\", and a Long Range rule set",
+              "detail": "/star-gallery-dev."
+            },
+            {
+              "title": "Scout Report no longer shows the tactics text box",
+              "detail": "Match day, before the team sheets."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The headline: the pitch matches where people stand",
+          "items": [
+            {
+              "title": "Players standing behind someone are no longer drawn on top of him",
+              "detail": "Problem: a striker behind his marker was drawn over him, as if standing on top of him. Why: players were drawn in fixed groups (team-mates, runners, defenders, you, keeper), so a later group was always on top. Fix: everyone, keeper included, is drawn furthest-first by where his feet touch the grass, from every camera angle."
+            },
+            {
+              "title": "The ball is hidden behind a player standing in front of it",
+              "detail": "Problem: a ball at your feet with a defender in front of you was drawn across his head. Why: the ball was always drawn last. Fix: the ball joins the same nearest-in-front order, placed by its shadow."
+            },
+            {
+              "title": "Corners are taken from the corner flag",
+              "detail": "Problem: corners were taken 6–7.5 m in from the flag. Why: the fixed corner camera couldn't fit the flag, pull-back room and the far post. Fix: ball in the corner arc (0.45–0.75 m); corner camera shows 48 m instead of 42 m, so players on corners are about 13% smaller. Byline crosses unchanged. The gallery picture also stops the goal line and touchline at the corner and draws the quarter circle, like the match.",
+              "bars": [
+                {
+                  "label": "Distance from the flag (m)",
+                  "was": 6.75,
+                  "now": 0.6,
+                  "state": "good",
+                  "unit": " m"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Real trophy pictures",
+              "detail": "14 trophies, backgrounds cut out, about 2 MB → 27–81 KB each. Community Shield, Super Cup, Conference League, European Championship and Play-Offs keep their emoji until pictures arrive."
+            },
+            {
+              "title": "Like a post in the feed",
+              "detail": "Tap the heart: it pops pink and the count goes up by one; tap again to unlike. Saved with the career."
+            },
+            {
+              "title": "Gallery: \"Camera: pick on the whole pitch\"",
+              "detail": "Zoom out, drag the dashed frame, let go. The camera saves with the scenario. Left/right facing not included yet."
+            },
+            {
+              "title": "Long shots get their own rule set",
+              "detail": "12 new long-range drawings (was 1; 5 are needed). Simulate: 400/400 built, 0 rules broken, 3.75% with a minor fault."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Switching energy mode changes the match straight away",
+              "detail": "The rest of the stretch re-runs from the next minute at the new mode; what's on screen stays identical. High now gets extra chances that come only to you (1,500 simulated matches).",
+              "bars": [
+                {
+                  "label": "High mode: extra chances (%)",
+                  "was": 23,
+                  "now": 35,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "title": "Energy mode buttons are icons",
+              "detail": "Red Low, amber Medium, green High, with 2/4/6 sparks. The chosen one glows."
+            },
+            {
+              "title": "KIB cans",
+              "detail": "Basic +25 → +65. Half-time can +25 → +65. Premium +50 energy → the NS-Swerve curve for your next match. Elite +100 energy → NS-Maestro Touch Mode for your next match."
+            },
+            {
+              "title": "NS-Swerve costs the same as NS-Maestro",
+              "detail": "★2,300 → ★35,000.",
+              "bars": [
+                {
+                  "label": "NS-Swerve price",
+                  "was": 2300,
+                  "now": 35000,
+                  "state": "good",
+                  "unit": "★"
+                }
+              ]
+            },
+            {
+              "title": "Feed posts look like real social media",
+              "detail": "Edge to edge, name + tick + handle + time on one line, no category labels, a full action row, graphics under the words."
+            },
+            {
+              "title": "Scout Report: tactics text box hidden",
+              "detail": "Took too much of the page. Hidden, not deleted; the opponent still sets up that way."
+            },
+            {
+              "title": "Smaller fixes: energy colours, dev fame buttons, feed fame, voting numbers",
+              "detail": "Energy colours follow the real selection lines (green 65+, amber 40+, red below). Dev fame buttons are +10 / Max 100 (were +1,000 / 100,000)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Google Analytics counts our own test browsers as new UK users",
+              "detail": "Most of the ~120 new users (118 UK, no sign-ups) are likely test browsers. Fix ready, waiting on a yes.",
+              "pill": {
+                "text": "high",
+                "tone": "red"
+              }
+            },
+            {
+              "title": "authoredChance.mts fails 7 checks on main",
+              "detail": "From the one-on-one drawing changes; identical before and after this round.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Pitch drawing fixes not yet seen inside a real career match",
+              "detail": "Seen in Infinite Highlights, which draws with the same code.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Trial: the dribble stage starts behind its how-to card",
+              "detail": "And the trial's dev skip panel is open to everyone. Fixes ready.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Pictures for the last 5 trophies",
+              "detail": "Waiting on images."
+            },
+            {
+              "title": "Home page as three swipeable pages",
+              "detail": "Waiting on a decision to build."
+            },
+            {
+              "title": "App Store / Play Store app via Capacitor",
+              "detail": "Waiting on a decision."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm",
+      "updatedAt": null
+    },
+    {
       "version": "0.10",
       "title": "Harry's patch notes",
       "publishedAt": "2026-09-24T12:00:00Z",

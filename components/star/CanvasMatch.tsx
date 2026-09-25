@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
-  stepKeeper, stepDefenders, stepReactions, stepTouchChase, initDefenders, resetForTouchOn,
+  stepKeeper, stepDefenders, stepReactions, stepTouchChase, touchChaseSpeed, initDefenders, resetForTouchOn,
   chainKindFor, chainReturnChance, CHAIN_MAX, TOUCH_CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
@@ -1021,6 +1021,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
+      freeKick: careerRef.current?.skills.freeKick,
       // So a corner/free kick/penalty is weighted by the position you play
       // like every other chance is, instead of bypassing it — see
       // buildRequest's dead-ball block in hiddenMatch.ts.
@@ -2713,13 +2714,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (keeperInView && !ballBehindKeeper && figureQueue) {
       figureQueue.push({ py: toPx(sc.keeper.x, sc.keeper.y).py, draw: drawKeeper });
     }
-    flushFigures();
-    // The orders go over every man now rather than between the groups — the
-    // groups no longer exist as layers. Thin gold lines, so they never hide
-    // what you are aiming at.
-    if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
-      drawCaptainOrders(sc);
-    }
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---
     const trail = trailRef.current;
@@ -2808,9 +2802,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
     }
 
+    // The ball joins the same far-to-near sort as the players, placed by its
+    // shadow — the spot on the grass it is actually over. It used to be
+    // painted after everybody, so a ball at your feet with a defender standing
+    // in front of you was drawn across HIS head, as if he had it (Mikey, 25
+    // Sep 2026). Now whoever is nearer the camera covers it, the way he would.
+    // The trail and the landing mark above stay on the grass, under everyone.
     const ball = ballRef.current;
-    if (ball) drawBall(ball.pos.x, ball.pos.y, ball.z);
-    else if (phaseRef.current === "aim") drawBall(sc.ball.x, sc.ball.y, 0);
+    const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
+      : phaseRef.current === "aim" ? { x: sc.ball.x, y: sc.ball.y, z: 0 } : null;
+    if (ballAt) {
+      const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
+      if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
+      else drawIt();
+    }
+    flushFigures();
+    // The orders go over every man now rather than between the groups — the
+    // groups no longer exist as layers. Thin gold lines, so they never hide
+    // what you are aiming at.
+    if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
+      drawCaptainOrders(sc);
+    }
 
     // He's been beaten — draw him now, after the ball, so his body is what
     // occludes it rather than the other way round.
@@ -3112,7 +3124,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const touchLive = touchModeOnRef.current && canExtraTouch
               && ballRef.current.owner === "you" && ballRef.current.lastTouch !== "keeper"
               && acceptsCaptainOrders(scenarioRef.current.kind);
-          const caughtUp = touchLive && stepTouchChase(scenarioRef.current, ballRef.current, h);
+          const caughtUp = touchLive && stepTouchChase(scenarioRef.current, ballRef.current, h,
+            careerRef.current ? touchChaseSpeed(careerRef.current.skills.pace) : undefined);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           if (onBallStepRef.current) {
             const bb = ballRef.current;

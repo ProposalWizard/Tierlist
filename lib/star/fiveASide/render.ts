@@ -1,6 +1,6 @@
 import type { Vec2, Viewport } from "../canvasEngine";
 import {
-  BALL_R, CX, PEN_SPOT_Y, ARC_R,
+  BALL_R, CX, PEN_SPOT_Y, ARC_R, CORNER_R,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
 } from "../pitch";
 import { drawPlayerHead } from "../drawPlayerHead";
@@ -280,10 +280,14 @@ export function drawPitch(ctx: CanvasRenderingContext2D, rules: MatchRules, p: P
 
     ctx.strokeStyle = TC.line;
     ctx.lineWidth = Math.max(1.5, unit * 0.11);
-    // The goal line, right across the frame — the one line that is always in
-    // shot, whatever the camera is looking at.
+    // The goal line, touchline to touchline. It used to run right across the
+    // frame, and the touchlines ran the full height of it, so once corners were
+    // taken from the real flag (25 Sep 2026) the gallery showed both lines
+    // carrying on past the corner — "it doesn't really seem like it's part of
+    // the pitch" (Mikey). The real match stops them at the corner and draws
+    // the quarter circle; so does this now.
     ctx.beginPath();
-    ctx.moveTo(0, py(pitch.y1)); ctx.lineTo(W, py(pitch.y1));
+    ctx.moveTo(px(pitch.x1), py(pitch.y1)); ctx.lineTo(px(pitch.x2), py(pitch.y1));
     ctx.stroke();
     ctx.strokeRect(px(SIX_L), py(pitch.y1), (SIX_R - SIX_L) * unit, SIX_DEPTH * unit);
     ctx.strokeRect(px(BOX_L), py(pitch.y1), (BOX_R - BOX_L) * unit, BOX_DEPTH * unit);
@@ -301,12 +305,16 @@ export function drawPitch(ctx: CanvasRenderingContext2D, rules: MatchRules, p: P
     ctx.arc(px(CX), py(PEN_SPOT_Y), Math.max(2, unit * 0.16), 0, Math.PI * 2);
     ctx.fill();
 
-    // The touchlines, for a free kick wide enough to see one.
-    ctx.strokeStyle = TC.lineFaint;
-    ctx.lineWidth = Math.max(1.2, unit * 0.09);
+    // The touchlines, from the goal line back, and the corner arcs — the
+    // same 1 m quarter circle the match draws, so a corner is taken from a
+    // corner and not from a spot in the middle of two crossing lines.
+    ctx.strokeStyle = TC.line;
+    ctx.lineWidth = Math.max(1.5, unit * 0.11);
     for (const x of [pitch.x1, pitch.x2]) {
-      ctx.beginPath(); ctx.moveTo(px(x), 0); ctx.lineTo(px(x), H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px(x), py(pitch.y1)); ctx.lineTo(px(x), py(pitch.y2)); ctx.stroke();
     }
+    ctx.beginPath(); ctx.arc(px(pitch.x1), py(pitch.y1), CORNER_R * unit, 0, Math.PI / 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(px(pitch.x2), py(pitch.y1), CORNER_R * unit, Math.PI / 2, Math.PI); ctx.stroke();
     return;
   }
 

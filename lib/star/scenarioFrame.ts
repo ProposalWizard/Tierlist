@@ -349,12 +349,21 @@ export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing
   // People stand UPRIGHT on a turned pitch, as they do in the match: only
   // where they stand turns, never which way is up.
   const at = (v: Vec2): Projection => pointProjection(scr.toScreen(v), scr.unit, cssW, cssH);
-  for (const it of frame.items) {
-    const look = lookInKit(it, kits);
-    if (it.keeper) drawKeeper(ctx, at(it.at), it.at, look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_SCALE });
-    else drawFigure(ctx, at(it.at), it.at, look, FACE, FAKE, { scale: PICTURE_SCALE });
-  }
-  drawBall(ctx, at(frame.ball), frame.ball, 0, PICTURE_SCALE);
+  // Far-to-near by where each one stands on screen — the ball by its spot on
+  // the grass — the same rule as the match (CanvasMatch), so a man behind
+  // another is drawn behind him and a man in front of the ball covers it.
+  // Drawing in list order with the ball last put whoever came later, and the
+  // ball, on top from every angle (Mikey, 25 Sep 2026).
+  const layers: { y: number; draw: () => void }[] = frame.items.map((it) => ({
+    y: scr.toScreen(it.at).y,
+    draw: () => {
+      const look = lookInKit(it, kits);
+      if (it.keeper) drawKeeper(ctx, at(it.at), it.at, look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_SCALE });
+      else drawFigure(ctx, at(it.at), it.at, look, FACE, FAKE, { scale: PICTURE_SCALE });
+    },
+  }));
+  layers.push({ y: scr.toScreen(frame.ball).y, draw: () => drawBall(ctx, at(frame.ball), frame.ball, 0, PICTURE_SCALE) });
+  layers.map((l, i) => ({ l, i })).sort((a, b) => a.l.y - b.l.y || a.i - b.i).forEach(({ l }) => l.draw());
 }
 
 export function drawOffsideLine(ctx: CanvasRenderingContext2D, p: Projection, w: number, y: number): void {

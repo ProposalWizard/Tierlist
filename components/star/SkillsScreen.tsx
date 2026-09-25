@@ -10,11 +10,11 @@ interface Props {
 }
 
 const SKILL_LABELS: [keyof Skills, string, string, string][] = [
-  ["pace", "Pace", "⚡", "Sprint faster, reach through balls"],
+  ["pace", "Pace", "⚡", "Faster dribbles, more runs into space, quicker Touch Mode chase"],
   ["power", "Power", "💪", "Long shots and stronger crosses"],
   ["technique", "Technique", "🎯", "Ball control, curl, precise strikes"],
-  ["vision", "Vision", "👁️", "Better passing options highlighted"],
-  ["freeKick", "Free Kick", "🎪", "Set-piece accuracy, curl — and who takes them"],
+  ["vision", "Vision", "👁️", "More team-mates to pass to in every chance"],
+  ["freeKick", "Free Kick", "🎪", "Free kicks, corners and penalties — and how many are yours"],
 ];
 
 const ENERGY_COST = getTuning("energy.trainingCost");

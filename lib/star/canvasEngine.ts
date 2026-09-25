@@ -2852,9 +2852,19 @@ const SUPPORT_RANGE: Record<ScenarioKind, [number, number]> = {
  * the obvious man, at 90 you have three. It used to draw rings over people
  * instead, which is a HUD feature wearing an attribute's clothes.
  */
-export function supportSeen(vision: number): number {
+export function supportSeen(vision: number, roll = 0.5): number {
   const v = clamp(vision, 0, 100);
-  return v < 40 ? 0 : v < 70 ? 1 : 2;
+  if (v < 40) return 0;
+  // A smooth curve rather than two big steps (Mikey, 25 Sep 2026: "the more
+  // vision you have, the more options you have"). 40 — where a career starts —
+  // is exactly the one man it always was; every 10 points after that is a
+  // quarter of a man on average, so 80 is one extra and 100 is one and a
+  // half. It used to jump to two at 70 and then do nothing up to 100, so
+  // training vision past 70 bought nothing. `roll` (0-1) decides whether a
+  // fraction rounds up.
+  const expected = 1 + (v - 40) / 40;
+  const whole = Math.floor(expected);
+  return whole + (roll < expected - whole ? 1 : 0);
 }
 
 /**
@@ -3006,7 +3016,11 @@ function addSupport(sc: Scenario, rng: () => number, vision = 55) {
   const base = bodyCount(slo, shi, rng);
   // Dead balls are a still frame by design and gain nobody from vision.
   const dead = sc.kind === "penalty" || sc.kind === "free_kick";
-  const want = dead ? base : base + supportSeen(vision);
+  // The round-up roll for supportSeen comes from where the ball is, not from
+  // `rng`: drawing from `rng` here would shift every later placement in every
+  // seeded chance, and a starting player's vision (40) never needs it.
+  const visionRoll = Math.abs(Math.sin(sc.ball.x * 12.9898 + sc.ball.y * 78.233) * 43758.5453) % 1;
+  const want = dead ? base : base + supportSeen(vision, visionRoll);
   // Where a man may stand: the rectangle if this situation already has one, the
   // pitch otherwise.
   const vp = sc.viewport;
@@ -5289,7 +5303,17 @@ const TOUCH_CHASE_CATCH_R = CONTROL_R; // the same "close enough to take it"
  * exactly as the original remap did, and re-checking them here would just
  * be a second copy of the same condition to keep in sync.
  */
-export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number): boolean {
+/**
+ * How fast you chase your own touch, from your pace (Mikey, 25 Sep 2026: pace
+ * should matter when "you kick the ball and then you chase it"). 6.8 m/s at 40,
+ * where a career starts, up to 8.4 m/s at 100. Without a pace the chase keeps
+ * its old flat TOUCH_CHASE_SPEED.
+ */
+export function touchChaseSpeed(pace: number): number {
+  return clamp(6.8 + (clamp(pace, 0, 100) - 40) / 60 * 1.6, 6.0, 8.4);
+}
+
+export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number, speed = TOUCH_CHASE_SPEED): boolean {
   const p = scenario.player;
   const dist = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
   if (!scenario.touchChaseArmed) {
@@ -5297,7 +5321,7 @@ export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number): bool
     else return false; // frozen — let the ball do the separating, unchased
   }
   if (dist > 0.02) {
-    const step = Math.min(dist, TOUCH_CHASE_SPEED * dt);
+    const step = Math.min(dist, speed * dt);
     p.x += ((ball.pos.x - p.x) / dist) * step;
     p.y += ((ball.pos.y - p.y) / dist) * step;
   }
