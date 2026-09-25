@@ -27,6 +27,178 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.12",
+      "title": "Mikey's patch notes",
+      "publishedAt": "2026-09-25T22:00:00Z",
+      "summary": "The headline: training works like New Star Soccer. 30 fixed levels per skill, three tries, stars raise the skill 40 → 100. Plus: pace, vision and free kick now matter in matches, every skill starts at 40, and matches no longer give skill points.",
+      "stats": [
+        {
+          "value": "30 levels",
+          "label": "per training game, each the same picture every time"
+        },
+        {
+          "value": "90 ★",
+          "label": "per skill; all 90 take it from 40 to 100"
+        },
+        {
+          "value": "3.2 → 4.7",
+          "label": "team-mates per chance, vision 40 → 100"
+        },
+        {
+          "value": "0",
+          "label": "skill points from matches now (training only)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Training: pick a skill, then one of 30 levels",
+              "detail": "Home → Training → tap a skill."
+            },
+            {
+              "title": "3 tries a level: 1st ★★★, 2nd ★★, 3rd ★; any star unlocks the next",
+              "detail": "Play level 1 of any skill."
+            },
+            {
+              "title": "Level 1 opens on a how-it-works card",
+              "detail": "Level 1 of each training game."
+            },
+            {
+              "title": "Vision counts you in: 3, 2, 1, GO",
+              "detail": "Any Vision level."
+            },
+            {
+              "title": "Every skill starts at 40, with ★ n/90 under it",
+              "detail": "New career → Training."
+            },
+            {
+              "title": "Matches no longer raise skills",
+              "detail": "Play a match, check Training before and after."
+            },
+            {
+              "title": "Vision, pace and free kick now matter in matches",
+              "detail": "Team-mates per chance, the Touch Mode chase, corners and set-piece duty."
+            },
+            {
+              "title": "New dev page to play any training level",
+              "detail": "/star-training-dev, or the admin menu → Training Levels."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The headline: training works like New Star Soccer",
+          "items": [
+            {
+              "title": "30 fixed levels per skill, three tries, stars raise the skill",
+              "detail": "Problem: every session was a random new picture, and a perfect one at 18 gave 10 points, so 40 → 100 took about 7 sessions. Fix: 30 fixed levels (level 1 = the old drill at 40, level 30 = the old drill at 100), 3 tries (★★★ / ★★ / ★), any star unlocks the next, all 90 stars take a skill from 40 to 100, only new stars count, age makes no difference. Old saves keep what they had (a skill at 70 opens with levels 1–15 at ★★★)."
+            },
+            {
+              "title": "Level 1 of every game opens on a how-it-works card",
+              "detail": "A small drawing, three one-line steps, the star rule, and a Let's go button."
+            },
+            {
+              "title": "Vision counts you in: 3, 2, 1, GO",
+              "detail": "The pitch is hidden until GO, with \"Pick the free pass\" under the number. A miss runs it again on the same picture."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Every skill starts at 40",
+              "detail": "Free kick used to start at 30."
+            },
+            {
+              "title": "Matches no longer give skill points",
+              "detail": "A great match used to add about +0.6 to every skill. Now 0, first team and youth team."
+            },
+            {
+              "title": "Vision: more team-mates on a smooth curve",
+              "detail": "Team-mates per chance: 3.18 at 40, 4.18 at 80, 4.69 at 100 (used to stop rising at 70).",
+              "bars": [
+                {
+                  "label": "Team-mates per chance at vision 100",
+                  "was": 4.19,
+                  "now": 4.69,
+                  "state": "good"
+                }
+              ]
+            },
+            {
+              "title": "Pace speeds up the Touch Mode chase",
+              "detail": "6.8 m/s at 40 up to 8.4 at 100 (was a flat 7.6). An 8 m chase: 1.01 s → 0.81 s."
+            },
+            {
+              "title": "Free kick counts on corners, and hands you more set pieces",
+              "detail": "Corners use the 60/40 free-kick mix. Free kicks + corners per match (CM): 0.59 at 40 → 0.81 at 100."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added (dev tools)",
+          "items": [
+            {
+              "title": "Training Levels page: play any level of any game",
+              "detail": "/star-training-dev. All 30 levels open, skills 40 / 70 / 100, ‹ All levels and ◀ L13 ▶. Nothing is saved."
+            },
+            {
+              "title": "Dev panel: Unlock all 30 training levels",
+              "detail": "One star on every level of every skill."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Winning a training level not yet seen on a screen",
+              "detail": "The star screen and \"Level 2 unlocked\" haven't been seen; the rules pass their tests.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Two drawing tests fail on main",
+              "detail": "authoredChance (one-on-one drawings) and longRangeRules (40/300 faults after a drawing was deleted).",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Google Analytics counts our own test browsers as new UK users",
+              "detail": "Fix ready, waiting on a yes.",
+              "pill": {
+                "text": "high",
+                "tone": "red"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Play a few levels of each game and judge the difficulty",
+              "detail": "/star-training-dev is the quickest way."
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ",
+      "updatedAt": null
+    },
+    {
       "version": "0.11",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-25T12:00:00Z",

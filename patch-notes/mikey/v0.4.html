@@ -1,0 +1,256 @@
+<title>Knowitball Patch Notes Mikey v0.4</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+
+<style>
+  .check{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:6px 14px;margin:0 0 8px}
+  .check li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+  .check li:last-child{border-bottom:0}
+  .check li span{color:var(--ink2)}
+  .pw{margin:8px 0 0;font-size:14px;color:var(--ink2)}
+  .pw b{color:var(--ink)}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 2px}
+  .ba figure{margin:0}
+  .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+  .ba figcaption{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-top:5px;color:var(--ink3)}
+  .ba figure.after figcaption{color:var(--green)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.4</span>
+  <h1>Knowitball Patch Notes Mikey v0.4</h1>
+  <p class="sub">25 September 2026 · branch Mikey · 2 pushed changes + this one · tests: all passing except the 2 that also fail on main</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>30 levels</b><span>per training game, each the same picture every time</span></div>
+  <div class="s"><b>90 ★</b><span>per skill; all 90 take it from 40 to 100</span></div>
+  <div class="s"><b>3.2 → 4.7</b><span>team-mates per chance, vision 40 → 100</span></div>
+  <div class="s"><b>0</b><span>skill points from matches now (training only)</span></div>
+</div>
+
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="check n">
+  <li>Training: pick a skill, then one of 30 levels <span>· Home → Training → tap a skill</span></li>
+  <li>3 tries a level: 1st ★★★, 2nd ★★, 3rd ★; any star unlocks the next <span>· play level 1 of any skill</span></li>
+  <li>Level 1 opens on a how-it-works card <span>· level 1 of each training game</span></li>
+  <li>Vision counts you in: 3, 2, 1, GO <span>· any Vision level</span></li>
+  <li>Every skill starts at 40, with ★ n/90 under it <span>· new career → Training</span></li>
+  <li>Matches no longer raise skills <span>· play a match, check Training before and after</span></li>
+  <li>Vision gives more team-mates to pass to as it rises <span>· any match chance</span></li>
+  <li>Pace speeds up the Touch Mode chase <span>· a match with NS-Maestro boots or an Elite KIB can</span></li>
+  <li>Free kick now counts on corners, and hands you more set pieces <span>· corners in a match</span></li>
+  <li>Skills screen says what each skill does <span>· Training</span></li>
+  <li>New dev page to play any training level <span>· /star-training-dev, or the admin menu → Training Levels</span></li>
+  <li>Dev panel: unlock all 30 training levels <span>· Settings → dev panel</span></li>
+</ul>
+
+<h2 class="fix"><i></i>The headline: training works like New Star Soccer</h2>
+<ul class="n">
+  <li>
+    <div class="hd">30 fixed levels per skill, three tries, stars raise the skill</div>
+    <p class="pw"><b>Problem:</b> every training session was a random new picture, so you could never learn it or aim to beat it. Points came in lumps: a perfect session at 18 was worth <b>10 points</b>, so a young player could go 40 → 100 in about <b>7 sessions</b>.</p>
+    <p class="pw"><b>Why:</b> the drill's shape followed your skill number on a smooth scale, and its details (where blockers stand, how the keeper moves) were re-rolled every time. Points came from how well each go went, times an age bonus.</p>
+    <p class="pw"><b>Fix:</b> each game now has <b>30 fixed levels</b>, the same picture every time. Level 1 is the old drill at 40, level 30 the old drill at 100. You get <b>3 tries</b>: in on the first is ★★★, the second ★★, the third ★. Any star unlocks the next level, and any unlocked level can be replayed for the stars you missed. <b>All 90 stars take a skill from 40 to 100</b>, so 3 new stars is +2. Only new stars count. Age makes no difference. One level costs one day and 30 energy, the same as a session did. <span class="tag seen">seen</span></p>
+    <div class="ba">
+      <figure><img src="v0.4/skills.webp" alt="The Training screen with every skill at 40 and ★ 0/90 under each"><figcaption>Skills: all 40, ★ 0/90</figcaption></figure>
+      <figure class="after"><img src="v0.4/levels.webp" alt="The level select for Technique: 30 tiles, level 1 open, the rest locked"><figcaption>Pick a level</figcaption></figure>
+    </div>
+    <details><summary>How hard the levels get</summary>
+      <ul>
+        <li><b>Power:</b> level 1 is 20 m, 1 blocker, keeper 60. Level 30 is 34 m, 4 blockers, keeper 93.</li>
+        <li><b>Technique:</b> a gate 20 m away and 3.8 m wide, up to 32 m away and 1.9 m wide, far enough off your line that you have to curl it.</li>
+        <li><b>Free kick:</b> 22 m with a wall of 3, up to 30 m with a wall of 5 and a keeper of 95.</li>
+        <li><b>Pace:</b> 4 chasers at speed 59, up to 6 at speed 95.</li>
+        <li><b>Vision:</b> 5 options with 1.9 s, up to 8 options with under 1 s.</li>
+      </ul>
+      <p>What counts as passing: Power and Free kick, score. Technique, between the cones. Pace, reach the line with the ball. Vision, pick the free man in time.</p>
+    </details>
+    <details><summary>Old saves, and losing points</summary>
+      <p>An old save keeps what it had: a skill at 70 opens with levels 1–15 at ★★★ and level 16 next.</p>
+      <p>Skills still drop if you don't train them for 18 weeks, and pace and power drop with age from 30. Stars are never taken away, and passing any level wins lost points back, one per star.</p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Level 1 of every game opens on a how-it-works card</div>
+    <p class="pw">A small drawing, three one-line steps, the star rule, and a "Let's go" button. Nothing starts, and Vision's timer doesn't run, until you press it. <span class="tag seen">seen</span></p>
+  </li>
+  <li>
+    <div class="hd">Vision counts you in: 3, 2, 1, GO</div>
+    <p class="pw">Before every try the pitch is hidden behind a big 3, 2, 1, GO! with "Pick the free pass" under it. Then the players appear and the timer starts. A miss runs the countdown again on the same picture. <span class="tag seen">seen</span></p>
+    <div class="ba">
+      <figure><img src="v0.4/intro.webp" alt="The Technique how-it-works card"><figcaption>Level 1 card</figcaption></figure>
+      <figure class="after"><img src="v0.4/countdown.webp" alt="The Vision countdown showing 3 and Pick the free pass"><figcaption>Vision countdown</figcaption></figure>
+    </div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Every skill starts at 40</div>
+    <div class="dt">Free kick used to start at 30. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Matches no longer give skill points</div>
+    <div class="dt">A great match (rating 8+) used to add about <b>+0.6</b> to every skill. Now <b>0</b>, first team and youth team. Skills come only from training. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Vision gives more team-mates to pass to, on a smooth curve</div>
+    <p class="pw"><b>Problem:</b> vision added team-mates in two jumps (+1 at 40, +2 at 70), so training it from 70 to 100 did nothing. <b>Fix:</b> 40 plays as before, and every 10 points after that adds a quarter of a man. <span class="tag">measured</span> (1,500 chances)</p>
+    <div class="bars">
+      <div class="bar"><span class="lb">Vision 40</span><span class="track"><span class="fill was" style="width:68%"></span></span><span class="vv">3.18</span></div>
+      <div class="bar"><span class="lb">Vision 80</span><span class="track"><span class="fill now" style="width:89%"></span></span><span class="vv">4.18</span></div>
+      <div class="bar"><span class="lb">Vision 100</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv">4.69</span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Pace speeds up the Touch Mode chase</div>
+    <div class="dt">It was a flat 7.6 m/s for everyone. Now <b>6.8 m/s at pace 40</b> up to <b>8.4 m/s at 100</b>. An 8 m chase takes <b>1.01 s → 0.81 s</b>. Pace already set your dribble-run speed and how often you get space to run into. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Free kick counts on corners, and hands you more set pieces</div>
+    <div class="dt">Corners use the same 60% free kick / 40% technique mix as free kicks and penalties. A better rating makes you the taker more often: free kicks + corners per match (playing CM) <b>0.59 at 40 → 0.81 at 100</b>. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">The Skills screen says what each skill does</div>
+    <div class="dt">Pace "Faster dribbles, more runs into space, quicker Touch Mode chase". Vision "More team-mates to pass to in every chance". Free Kick "Free kicks, corners and penalties — and how many are yours". <span class="tag seen">seen</span></div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added (dev tools)</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Training Levels page: play any level of any game</div>
+    <p class="pw">At <b>/star-training-dev</b>, and in the admin menu under Star Career. Pick a game, tap any of the 30 levels (all open), and set the player's skills to 40, 70 or 100. While playing: "‹ All levels" and ◀ L13 ▶. Nothing is saved. <span class="tag seen">seen</span></p>
+    <div class="ba">
+      <figure class="after"><img src="v0.4/dev.webp" alt="The Training Levels dev page with Vision's 30 levels"><figcaption>/star-training-dev</figcaption></figure>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Dev panel: "Unlock all 30 training levels"</div>
+    <div class="dt">Puts one star on every level of every skill, so any level can be played inside a career. <span class="tag">not yet seen</span></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Winning a training level not yet seen on a screen <span class="pill p-amb">Low</span></div>
+    <div class="dt">The playtest couldn't land a shot through the cones, so the star screen, "Level 2 unlocked" and the +2 haven't been seen. The rules pass their tests.</div>
+  </li>
+  <li>
+    <div class="hd">"Not this time" (0 stars) screen not caught <span class="pill p-amb">Low</span></div>
+    <div class="dt">After three misses it should show for about 1.5 s before going back. The playtest went straight back to Training. It may have missed it.</div>
+  </li>
+  <li>
+    <div class="hd">Two drawing tests fail on main <span class="pill p-amb">Low</span></div>
+    <div class="dt">One-on-one drawings (authoredChance, 7 checks), and long shots after one long-shot drawing was deleted (40 faults in 300; the limit is under 30). Both fail on main without these changes.</div>
+  </li>
+  <li>
+    <div class="hd">Google Analytics counts our own test browsers as new UK users <span class="pill p-red">High</span></div>
+    <div class="dt">Still open. Fix ready: only count the real site and real browsers. Waiting on a yes.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Play a few levels of each game and judge the difficulty</div><div class="dt">/star-training-dev is the quickest way.</div></li>
+  <li><div class="hd">Pictures for the last 5 trophies</div><div class="dt">Waiting on: images.</div></li>
+  <li><div class="hd">Home page as three swipeable pages</div><div class="dt">Waiting on: a decision to build.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 25 September 2026 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>

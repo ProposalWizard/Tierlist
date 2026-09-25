@@ -77,6 +77,7 @@ const GROUPS: AdminGroup[] = [
       { name: "Scenario Gallery", href: "/star-gallery-dev" },
       { name: "Play Area", href: "/star-play-dev" },
       { name: "Scenario Builder", href: "/star-scenario-dev" },
+      { name: "Training Levels", href: "/star-training-dev" },
       { name: "Squad Builder", href: "/lineups" },
       { name: "Tuning", href: "/star-tuning-dev" },
       { name: "Media Lab", href: "/star-dev/media-lab" },
