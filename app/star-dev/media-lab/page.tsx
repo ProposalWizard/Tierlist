@@ -1,4 +1,6 @@
 "use client";
+import TrainingMinigame from "@/components/star/TrainingMinigame";
+import type { Skills } from "@/lib/star/types";
 import { useCallback, useEffect, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
 import Graphic from "@/components/star/media/Graphics";
@@ -44,10 +46,17 @@ export default function MediaLab() {
   const [feedOnly, setFeedOnly] = useState(false);
   // `?trophies` shows the Trophy Cabinet with every pictured trophy, for judging the art.
   const [trophiesOnly, setTrophiesOnly] = useState(false);
+  // `?training=vision&level=1` plays one training level with every skill at
+  // 40, for judging the level-1 how-it-works card and the vision countdown.
+  const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     setFeedOnly(q.has("feed"));
     setTrophiesOnly(q.has("trophies"));
+    const t = q.get("training") as keyof Skills | null;
+    if (t && ["pace", "power", "technique", "vision", "freeKick"].includes(t)) {
+      setTrainingPreview({ skill: t, level: Math.max(1, Math.min(30, Number(q.get("level") ?? 1) || 1)) });
+    }
   }, []);
   const [pose, setPose] = useState<string | null>(null);
   const [face, setFace] = useState<string | null>(null);
@@ -80,6 +89,18 @@ export default function MediaLab() {
   const c = CLUBS[club];
 
   if (feedOnly) return <><FeedPreview /><PageGuide page="/star-dev/media-lab" /></>;
+  if (trainingPreview) {
+    return <>
+      <TrainingMinigame
+        key={`${trainingPreview.skill}-${trainingPreview.level}-${trainingPreview.run ?? 0}`}
+        skill={trainingPreview.skill}
+        trainingLevel={trainingPreview.level}
+        skills={{ pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40 }}
+        onComplete={() => setTrainingPreview({ ...trainingPreview, run: (trainingPreview.run ?? 0) + 1 })}
+      />
+      <PageGuide page="/star-dev/media-lab" />
+    </>;
+  }
   if (trophiesOnly) {
     const comps = ["Premier League", "Champions League", "FA Cup", "League Cup", "Europa League", "World Cup",
       "Championship", "League One", "League Two", "National League", "Community Shield"];

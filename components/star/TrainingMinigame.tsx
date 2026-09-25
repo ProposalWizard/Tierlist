@@ -18,6 +18,7 @@ import {
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import FirstPersonDribble from "./FirstPersonDribble";
+import TrainingIntro from "./TrainingIntro";
 import { EngineFeature } from "./EnginePlay";
 import type { ScenePicture } from "@/lib/star/scenePicture";
 import type { ChanceResolved } from "./CanvasMatch";
@@ -596,6 +597,11 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
   const startedRef = useRef(0);
   const answeredRef = useRef(false);
   const cfg = useMemo(() => visionDrill(level, rep), [level, rep]);
+  // 3, 2, 1, GO before every try, with the picture hidden (Mikey, 25 Sep
+  // 2026). 0 is "GO"; null once it's over and the clock is running.
+  const [count, setCount] = useState<number | null>(3);
+  const countRef = useRef<number | null>(3);
+  countRef.current = count;
 
   useCanvasSize(canvasRef, wrapRef);
 
@@ -605,6 +611,7 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
     startedRef.current = performance.now();
     answeredRef.current = false;
     setLeft(1);
+    setCount(3);
   }, [level, trainingLevel]);
 
   useEffect(() => { startRep(0); }, [startRep]);
@@ -638,12 +645,26 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
     }, 950);
   }, [round, cfg.window, attempt, rep, startRep]);
 
+  // The countdown: 3, 2, 1 a beat apart, then GO, then the picture and the
+  // clock start together.
+  useEffect(() => {
+    if (count === null) return;
+    const t = window.setTimeout(() => {
+      if (count > 0) setCount(count - 1);
+      else {
+        startedRef.current = performance.now();
+        setCount(null);
+      }
+    }, count > 0 ? 700 : 450);
+    return () => window.clearTimeout(t);
+  }, [count]);
+
   // The clock.
   useEffect(() => {
     let raf = 0;
     const tick = () => {
       raf = requestAnimationFrame(tick);
-      if (answeredRef.current) return;
+      if (answeredRef.current || countRef.current !== null) return;
       const spent = (performance.now() - startedRef.current) / 1000;
       const frac = Math.max(0, 1 - spent / cfg.window);
       setLeft(frac);
@@ -683,7 +704,7 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
 
   const tap = (e: React.PointerEvent) => {
     const c = canvasRef.current;
-    if (!c || !round || answeredRef.current) return;
+    if (!c || !round || answeredRef.current || countRef.current !== null) return;
     const r = c.getBoundingClientRect();
     const vp = round.viewport;
     const x = vp.x1 + ((e.clientX - r.left) / r.width) * (vp.x2 - vp.x1);
@@ -714,6 +735,14 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
             style={{ width: `${left * 100}%` }}
           />
         </div>
+        {count !== null && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-950">
+            <div key={count} className="text-7xl font-black text-white">
+              {count > 0 ? count : "GO!"}
+            </div>
+            <div className="mt-3 text-base font-black text-emerald-300">Pick the free pass</div>
+          </div>
+        )}
         {flash && <Flash text={flash.text} good={flash.good} />}
       </div>
     </Shell>
@@ -744,6 +773,8 @@ function CompleteScreen({ title, trainingLevel, stars }: { title: string; traini
 
 export default function TrainingMinigame({ skill, trainingLevel, skills, onComplete }: Props) {
   const [result, setResult] = useState<number | null>(null);
+  // Level 1 of every game opens on a short how-it-works card.
+  const [introDone, setIntroDone] = useState(trainingLevel !== 1);
   const calledRef = useRef(false);
 
   useEffect(() => {
@@ -755,6 +786,7 @@ export default function TrainingMinigame({ skill, trainingLevel, skills, onCompl
   }, [result, onComplete]);
 
   if (result !== null) return <CompleteScreen title={SKILL_TITLES[skill]} trainingLevel={trainingLevel} stars={result} />;
+  if (!introDone) return <TrainingIntro skill={skill} onStart={() => setIntroDone(true)} />;
 
   switch (skill) {
     case "pace":

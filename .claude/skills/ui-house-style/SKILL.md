@@ -39,6 +39,16 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 25 Sep 2026 — training levels
+- **Level 1 of every training game opens on a how-it-works card.** "A very
+  short, small tutorial or pop-up… doesn't have to be many words, just
+  something that tells you how it works." A small drawing, three one-line
+  steps, the star rule (1st ★★★ · 2nd ★★ · 3rd ★), one "Let's go" button
+  (`components/star/TrainingIntro.tsx`).
+- **Vision counts you in: 3, 2, 1, GO — picture hidden until GO,** with
+  "Pick the free pass" under the number. Before every try, not only the first.
+  Judge both at `/star-dev/media-lab?training=vision&level=1`.
+
 ### 24 Sep 2026 — energy-mode icons
 - **Low / Medium / High are icons, not words.** From Mikey's three concept
   images: a split ring with a lightning bolt breaking through it — red Low,
