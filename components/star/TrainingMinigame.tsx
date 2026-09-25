@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Skills } from "@/lib/star/types";
-import { getTuning } from "@/lib/star/tuningStore";
+import { levelDifficulty, levelSeed, starsForTry } from "@/lib/star/trainingLevels";
 import { mulberry32 } from "@/lib/star/season";
 import {
   buildScenario, initDefenders,
@@ -69,19 +69,26 @@ import type { ChanceResolved } from "./CanvasMatch";
 
 interface Props {
   skill: keyof Skills;
+  /** Which of the 30 training levels is being played (lib/star/trainingLevels.ts). */
+  trainingLevel: number;
   /**
    * The player's CURRENT value in the stat being trained, 0-100.
    *
    * The single most important addition in the rebuild: this is what the
    * whole difficulty ladder reads. It was never passed before — which is
    * exactly why every session played identically for ever.
+   *
+   * No longer read (25 Sep 2026): a level's difficulty comes from the level
+   * number, not the stat. Kept so a caller still passing it compiles.
    */
-  level: number;
+  level?: number;
   /** The real skills, handed to `launch` so a strike in training is the same
    *  strike it would be in a match — your power decides how far it goes and
    *  your technique decides how much it bends. */
   skills: Skills;
-  onComplete: (xpGained: number) => void;
+  /** Stars won on this level: 3 on the first try, 2 on the second, 1 on
+   *  the third, 0 if all three missed. */
+  onComplete: (stars: number) => void;
 }
 
 const SKILL_TITLES: Record<keyof Skills, string> = {
@@ -93,63 +100,62 @@ const SKILL_TITLES: Record<keyof Skills, string> = {
 };
 
 
-// ── Shared scoring ─────────────────────────────────────────────────────────
+// ── Three tries ─────────────────────────────────────────────────────────────
+//
+// A level is passed or it isn't, and you get three goes at it: in on the first
+// is three stars, the second two, the third one (New Star Soccer's rule —
+// Mikey, 25 Sep 2026). The level ends the moment it's done.
 
-function qualitiesToXp(qualities: number[], reps: number): number {
-  const base = getTuning("training.minigameBaseXp");
-  const max = getTuning("training.minigameMaxXp");
-  const scale = getTuning("training.minigameScale");
-  if (qualities.length === 0) return base;
-  const avg = qualities.reduce((a, b) => a + b, 0) / reps;
-  return Math.max(base, Math.min(max, Math.round(base + avg * scale)));
-}
+export const TRIES = 3;
 
-function useDrillScore(reps: number, onFinish: (xp: number) => void) {
-  const [qualities, setQualities] = useState<number[]>([]);
+function useTries(onFinish: (stars: number) => void) {
+  const [results, setResults] = useState<boolean[]>([]);
   const finishedRef = useRef(false);
-  const push = useCallback((q: number) => {
-    setQualities(prev => (prev.length >= reps ? prev : [...prev, q]));
-  }, [reps]);
-
+  const attempt = useCallback((ok: boolean) => {
+    setResults(prev => (prev.length >= TRIES || prev.includes(true) ? prev : [...prev, ok]));
+  }, []);
   useEffect(() => {
-    if (qualities.length === reps && !finishedRef.current) {
-      finishedRef.current = true;
-      const xp = qualitiesToXp(qualities, reps);
-      const t = setTimeout(() => onFinish(xp), 850);
-      return () => clearTimeout(t);
-    }
-  }, [qualities, reps, onFinish]);
-
-  return { rep: qualities.length, push, projected: qualitiesToXp(qualities, Math.max(1, qualities.length)) };
+    if (finishedRef.current) return;
+    const hit = results.indexOf(true);
+    if (hit < 0 && results.length < TRIES) return;
+    finishedRef.current = true;
+    const stars = hit < 0 ? 0 : starsForTry(hit);
+    const t = setTimeout(() => onFinish(stars), 850);
+    return () => clearTimeout(t);
+  }, [results, onFinish]);
+  const done = results.includes(true) || results.length >= TRIES;
+  return { tryIndex: results.length, results, attempt, done };
 }
 
 function Shell({
-  title, instruction, rep, reps, xp, level, children,
+  title, instruction, results, trainingLevel, children,
 }: {
-  title: string; instruction: string; rep: number; reps: number; xp: number;
-  level: number; children: React.ReactNode;
+  title: string; instruction: string; results: boolean[];
+  trainingLevel: number; children: React.ReactNode;
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1 bg-gray-800 rounded-lg px-3 py-1.5 border border-gray-600">
-            {Array.from({ length: reps }).map((_, i) => (
-              <span key={i} className={`text-sm ${i < rep ? "opacity-100" : "opacity-25"}`}>⚽</span>
-            ))}
+          <div className="flex items-center gap-1.5 bg-gray-800 rounded-lg px-3 py-1.5 border border-gray-600">
+            {Array.from({ length: TRIES }).map((_, i) => {
+              const r = results[i];
+              return (
+                <span
+                  key={i}
+                  className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-black ${
+                    r === true ? "bg-emerald-400 text-emerald-950" : r === false ? "bg-red-500 text-white" : i === results.length ? "border-2 border-amber-300 text-amber-200" : "border border-white/40 text-white"
+                  }`}
+                >
+                  {r === true ? "✓" : r === false ? "✗" : i + 1}
+                </span>
+              );
+            })}
           </div>
           <div className="text-right">
             <div className="text-[10px] font-black text-emerald-300 uppercase tracking-wide">{title}</div>
-            <div className="text-xs text-emerald-400 font-bold">Proj. +{xp} XP</div>
+            <div className="text-xs text-amber-300 font-black">Level {trainingLevel} · {"★".repeat(Math.max(0, TRIES - results.length))} on this try</div>
           </div>
-        </div>
-        {/* The ladder, made visible — the drill is calibrated to this number,
-            so it should be on screen while you play it. */}
-        <div className="mb-2 flex items-center gap-2">
-          <div className="h-1.5 flex-1 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-amber-400" style={{ width: `${level}%` }} />
-          </div>
-          <div className="text-[10px] font-black text-white/60 tabular-nums">LV {Math.round(level)}</div>
         </div>
         {children}
         <div className="mt-2 bg-gray-800/90 border border-gray-600 rounded-lg px-3 py-2">
@@ -320,24 +326,24 @@ function buildStrike(kind: StrikeKind, level: number, rep: number, rng: () => nu
 }
 
 function StrikeDrill({
-  kind, level, skills, onFinish,
-}: { kind: StrikeKind; level: number; skills: Skills; onFinish: (xp: number) => void }) {
+  kind, trainingLevel, skills, onFinish,
+}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void }) {
   // One real match engine (CanvasMatch, via EngineFeature) — the same aim,
   // contact, flight, keeper and wall a match has. This file only builds the
   // picture for each rep and scores the result. See .claude/skills/one-engine.
-  const REPS = 4;
-  const { rep, push, projected } = useDrillScore(REPS, onFinish);
-  const repRef = useRef(0);
-  repRef.current = rep;
-  const seedRef = useRef((Date.now() ^ 0x5f3a) >>> 0);
+  // A level is one fixed picture: the same difficulty, the same seed, the same
+  // layout on every try, so it can be learnt (Mikey, 25 Sep 2026).
+  const level = levelDifficulty(trainingLevel);
+  const rep = 0;
+  const { results, attempt, done } = useTries(onFinish);
+  const seedRef = useRef(levelSeed(kind, trainingLevel));
   const setupRef = useRef<StrikeSetup | null>(null);
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossedRef = useRef<{ x: number; z: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
 
   const openOn = useCallback((): Scenario => {
-    const r = repRef.current;
-    const setup = buildStrike(kind, level, r, mulberry32((seedRef.current ^ Math.imul(r + 1, 0x9e3779b1)) >>> 0));
+    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current));
     setup.scenario.viewport = { ...setup.viewport };
     setupRef.current = setup;
     prevRef.current = null;
@@ -348,7 +354,7 @@ function StrikeDrill({
   // The HUD line and the cones for this rep — the same seeded build the
   // engine was handed, so the cones stand exactly where the gate is judged.
   const view = useMemo(() => {
-    const setup = buildStrike(kind, level, rep, mulberry32((seedRef.current ^ Math.imul(rep + 1, 0x9e3779b1)) >>> 0));
+    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current));
     return {
       brief: setup.brief,
       markers: setup.gate ? [
@@ -394,10 +400,13 @@ function StrikeDrill({
         : o === "over" ? "OVER"
         : "WIDE";
     }
-    setFlash({ text, good: q >= 0.5 });
+    // Passed: through the cones for the gate (anything inside them counts),
+    // in the net for a shot or a free kick.
+    const ok = setup.gate ? q >= 0.25 : q >= 0.5;
+    setFlash({ text, good: ok });
     window.setTimeout(() => setFlash(null), 1000);
-    push(q);
-  }, [push]);
+    attempt(ok);
+  }, [attempt]);
 
   const instruction = kind === "technique"
     ? "Drag back from the ball to aim and set power, then pick your spot on the ball to bend it through the cones."
@@ -406,9 +415,9 @@ function StrikeDrill({
       : "Drag back to aim and set power, then pick your spot on the ball.";
 
   return (
-    <Shell title={SKILL_TITLES[kind]} instruction={instruction} rep={rep} reps={REPS} xp={projected} level={level}>
+    <Shell title={SKILL_TITLES[kind]} instruction={instruction} results={results} trainingLevel={trainingLevel}>
       <div className="relative">
-        <EngineFeature
+        {!done && <EngineFeature
           openOn={openOn}
           onChanceResolved={onChanceResolved}
           onBallStep={onBallStep}
@@ -418,7 +427,7 @@ function StrikeDrill({
           keeperStrength={kind === "technique" ? 40 : kind === "freeKick" ? freeKickDrill(level, rep).keeperStrength : powerDrill(level, rep).keeperStrength}
           seed={seedRef.current}
           scene={DRILL_SCENE[kind]}
-        />
+        />}
         {brief && (
           <div className="pointer-events-none absolute top-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200">
             {brief}
@@ -434,14 +443,14 @@ function StrikeDrill({
 // PACE — the gauntlet, on the real match's own first-person dribble
 // ═══════════════════════════════════════════════════════════════════════════
 
-function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: number) => void }) {
+function GauntletDrill({ trainingLevel, onFinish }: { trainingLevel: number; onFinish: (stars: number) => void }) {
   // The same run a real match serves (FirstPersonDribble, same camera
   // settings as CanvasMatch's own mount). Your pace stat is the run speed.
-  const REPS = 3;
-  const { rep, push, projected } = useDrillScore(REPS, onFinish);
+  const level = levelDifficulty(trainingLevel);
+  const { results, attempt, done } = useTries(onFinish);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [runKey, setRunKey] = useState(0);
-  const cfg = paceDrill(level, rep);
+  const cfg = paceDrill(level, 0);
   // The drill's chaser count, in the real run's waves of up to three.
   const waveSizes = useMemo(() => {
     const out: number[] = [];
@@ -450,27 +459,28 @@ function GauntletDrill({ level, onFinish }: { level: number; onFinish: (xp: numb
   }, [cfg.chasers]);
   const total = waveSizes.reduce((a, b) => a + b, 0);
 
+  // Passed: you got to the line with the ball.
   const onComplete = useCallback((res: { cleared: boolean; beaten: number }) => {
-    const q = Math.max(0, Math.min(1, (res.beaten / Math.max(1, total)) * 0.8 + (res.cleared ? 0.2 : 0)));
-    setFlash({ text: res.cleared ? (q > 0.8 ? "GONE!" : "THROUGH") : "TACKLED", good: res.cleared });
-    push(q);
+    setFlash({ text: res.cleared ? (res.beaten >= total ? "GONE!" : "THROUGH") : "TACKLED", good: res.cleared });
+    attempt(res.cleared);
     window.setTimeout(() => {
       setFlash(null);
       setRunKey(k => k + 1);
     }, 1000);
-  }, [push, total]);
+  }, [attempt, total]);
 
   return (
     <Shell
       title={SKILL_TITLES.pace}
-      instruction="Read each man as he commits, then burst the other way. Beat them all to finish the run."
-      rep={rep} reps={REPS} xp={projected} level={level}
+      instruction="Read each man as he commits, then burst the other way. Get to the line with the ball."
+      results={results} trainingLevel={trainingLevel}
     >
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "5 / 8" }}>
-        {rep < REPS && (
+        {!done && (
           <FirstPersonDribble
             key={runKey}
             embedded
+            seed={levelSeed("pace", trainingLevel)}
             pace={level}
             oppStrength={cfg.oppStrength}
             waveSizes={waveSizes}
@@ -573,12 +583,12 @@ function buildVisionRound(level: number, rep: number, rng: () => number): Vision
   };
 }
 
-function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: number) => void }) {
-  const REPS = 5;
-  const { rep, push, projected } = useDrillScore(REPS, onFinish);
+function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; onFinish: (stars: number) => void }) {
+  const level = levelDifficulty(trainingLevel);
+  const rep = 0;
+  const { results, attempt } = useTries(onFinish);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const rngRef = useRef<() => number>(mulberry32((Date.now() ^ 0x77c1) >>> 0));
   const facesRef = useRef(createFaceImageCache());
   const [round, setRound] = useState<VisionRound | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
@@ -589,12 +599,13 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
 
   useCanvasSize(canvasRef, wrapRef);
 
+  // The same picture on every try: a fresh generator from the level's own seed.
   const startRep = useCallback((r: number) => {
-    setRound(buildVisionRound(level, r, rngRef.current));
+    setRound(buildVisionRound(level, r, mulberry32(levelSeed("vision", trainingLevel))));
     startedRef.current = performance.now();
     answeredRef.current = false;
     setLeft(1);
-  }, [level]);
+  }, [level, trainingLevel]);
 
   useEffect(() => { startRep(0); }, [startRep]);
 
@@ -617,13 +628,15 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
         text = "SAFE BALL";
       }
     }
-    setFlash({ text, good: q >= 0.5 });
-    push(q);
+    // Passed: the best ball on, in time.
+    const ok = !!picked && picked.onside && i === round.best;
+    setFlash({ text, good: ok });
+    attempt(ok);
     window.setTimeout(() => {
       setFlash(null);
-      if (rep + 1 < REPS) startRep(rep + 1);
+      if (!ok) startRep(rep);
     }, 950);
-  }, [round, cfg.window, push, rep, startRep]);
+  }, [round, cfg.window, attempt, rep, startRep]);
 
   // The clock.
   useEffect(() => {
@@ -687,7 +700,7 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
     <Shell
       title={SKILL_TITLES.vision}
       instruction="Pick the best ball on: the man in the most space who is still ONSIDE — behind the yellow line."
-      rep={rep} reps={REPS} xp={projected} level={level}
+      results={results} trainingLevel={trainingLevel}
     >
       <div
         ref={wrapRef}
@@ -709,48 +722,50 @@ function VisionDrillView({ level, onFinish }: { level: number; onFinish: (xp: nu
 
 // ═══════════════════════════════════════════════════════════════════════════
 
-function CompleteScreen({ title, xp }: { title: string; xp: number }) {
-  const rating = xp >= 32 ? "World Class" : xp >= 22 ? "Great Session" : xp >= 12 ? "Solid Work" : "Keep Grinding";
+function CompleteScreen({ title, trainingLevel, stars }: { title: string; trainingLevel: number; stars: number }) {
+  const verdict = stars === 3 ? "First time!" : stars === 2 ? "Second try" : stars === 1 ? "Just made it" : "Not this time";
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-950 text-white flex flex-col items-center justify-center py-3 px-3">
       <div className="w-full max-w-sm bg-gray-800 border border-gray-600 rounded-xl p-6 text-center shadow-2xl">
-        <div className="text-4xl mb-2">🏆</div>
-        <div className="text-[11px] font-black text-emerald-300 uppercase tracking-widest">Session Complete</div>
-        <div className="text-lg font-black text-white mt-1">{title}</div>
-        <div className="mt-4 text-5xl font-black text-emerald-400">+{xp}</div>
-        <div className="text-xs font-bold text-emerald-300 uppercase tracking-wide">XP Earned</div>
-        <div className="mt-3 inline-block bg-emerald-500/20 border border-emerald-400 rounded-lg px-4 py-1.5 text-sm font-black text-emerald-200">
-          {rating}
+        <div className="text-[11px] font-black text-emerald-300 uppercase tracking-widest">{title} · Level {trainingLevel}</div>
+        <div className="mt-3 text-5xl tracking-widest">
+          {[0, 1, 2].map(i => (
+            <span key={i} className={i < stars ? "text-amber-300" : "text-white/20"}>★</span>
+          ))}
+        </div>
+        <div className="mt-3 text-lg font-black text-white">{verdict}</div>
+        <div className="mt-1 text-sm font-bold text-white">
+          {stars > 0 ? (trainingLevel < 30 ? `Level ${trainingLevel + 1} unlocked` : "Top level done") : "Try it again next time"}
         </div>
       </div>
     </div>
   );
 }
 
-export default function TrainingMinigame({ skill, level, skills, onComplete }: Props) {
+export default function TrainingMinigame({ skill, trainingLevel, skills, onComplete }: Props) {
   const [result, setResult] = useState<number | null>(null);
   const calledRef = useRef(false);
 
   useEffect(() => {
     if (result !== null && !calledRef.current) {
       calledRef.current = true;
-      const t = setTimeout(() => onComplete(result), 1100);
+      const t = setTimeout(() => onComplete(result), 1400);
       return () => clearTimeout(t);
     }
   }, [result, onComplete]);
 
-  if (result !== null) return <CompleteScreen title={SKILL_TITLES[skill]} xp={result} />;
+  if (result !== null) return <CompleteScreen title={SKILL_TITLES[skill]} trainingLevel={trainingLevel} stars={result} />;
 
   switch (skill) {
     case "pace":
-      return <GauntletDrill level={level} onFinish={setResult} />;
+      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} />;
     case "vision":
-      return <VisionDrillView level={level} onFinish={setResult} />;
+      return <VisionDrillView trainingLevel={trainingLevel} onFinish={setResult} />;
     case "power":
     case "technique":
     case "freeKick":
-      return <StrikeDrill kind={skill} level={level} skills={skills} onFinish={setResult} />;
+      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} />;
     default:
-      return <GauntletDrill level={level} onFinish={setResult} />;
+      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} />;
   }
 }
