@@ -21,7 +21,9 @@
 export function pinnedTopHeight(ignore?: Element | null): number {
   if (typeof window === "undefined") return 0;
   const vh = window.innerHeight;
-  let bottom = 0;
+  // Bars can stack: a header pinned at 0 and a second bar pinned just under
+  // it (lib/pinnedTop.ts). Collect every top bar, then chain them in order.
+  const bars: { top: number; h: number }[] = [];
   for (const el of Array.from(document.body.querySelectorAll<HTMLElement>("*"))) {
     const cs = getComputedStyle(el);
     if (cs.position !== "sticky" && cs.position !== "fixed") continue;
@@ -33,8 +35,15 @@ export function pinnedTopHeight(ignore?: Element | null): number {
     // is not something to scroll under.
     if (r.height > vh * 0.4) continue;
     const topCss = parseFloat(cs.top);
-    if (!Number.isFinite(topCss) || topCss > 12) continue;
-    bottom = Math.max(bottom, topCss + r.height);
+    if (!Number.isFinite(topCss) || topCss > vh * 0.4) continue;
+    bars.push({ top: topCss, h: r.height });
+  }
+  bars.sort((a, b) => a.top - b.top);
+  let bottom = 0;
+  for (const b of bars) {
+    // Only a bar that starts at the top, or right under one that does.
+    if (b.top > bottom + 12) break;
+    bottom = Math.max(bottom, b.top + b.h);
   }
   return bottom;
 }

@@ -32,6 +32,7 @@ import {
   PLAY_RANGES, PLAY_POSITIONS, PLAY_DIVISIONS, DEFAULT_PLAY_SETTINGS,
   type PlaySettings,
 } from "@/lib/star/playArea";
+import { usePinnedTop } from "@/lib/pinnedTop";
 
 const BG = "#05070d";
 const INK = "#f2f5f9";
@@ -42,6 +43,7 @@ type Screen = "home" | "match";
 
 export default function PlayAreaPage() {
   const [screen, setScreen] = useState<Screen>("home");
+  const pinnedRef = usePinnedTop();
   // Read once on mount rather than at first render: localStorage does not
   // exist on the server, and reading it during render is what makes a page
   // hydrate to something different from what it rendered.
@@ -69,10 +71,13 @@ export default function PlayAreaPage() {
     </div>
   );
 
-  const header = (title: string, back?: () => void) => (
-    <div style={{
+  // `pin: false` on Infinite Match: there its Edit / Save / Commit bar is the
+  // one that stays, and a second pinned bar above it would push the goal end
+  // of the pitch under the bars on a phone (59 px of it on an iPhone 13).
+  const header = (title: string, back?: () => void, pin = true) => (
+    <div ref={pin ? pinnedRef : undefined} style={{
       display: "flex", alignItems: "center", gap: 10, padding: "14px 14px 10px",
-      position: "sticky", top: 0, background: BG, zIndex: 5,
+      position: pin ? "sticky" : "relative", top: 0, background: BG, zIndex: 5,
     }}>
       {back && (
         <button onClick={back} aria-label="Back" style={{
@@ -90,7 +95,7 @@ export default function PlayAreaPage() {
   if (screen === "match") {
     return shell(
       <>
-        {header("Infinite Match", () => setScreen("home"))}
+        {header("Infinite Match", () => setScreen("home"), false)}
         <InfiniteMatch settings={settings} onBack={() => setScreen("home")} />
       </>,
     );

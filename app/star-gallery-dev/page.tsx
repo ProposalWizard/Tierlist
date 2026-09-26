@@ -109,6 +109,7 @@ import {
   type EditStore,
   type PosOverride,
 } from "@/lib/star/scenarioEdit";
+import { PINNED_TOP, usePinnedTop } from "@/lib/pinnedTop";
 
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -775,7 +776,7 @@ function ChipRow({
           ? { display: "flex", flexDirection: "column", gap: 6 }
           : {
               display: "flex", gap: 8, overflowX: "auto", padding: "10px 14px",
-              position: "sticky", top: 0, zIndex: 4,
+              position: "sticky", top: PINNED_TOP, zIndex: 4,
               background: "rgba(5,7,13,0.92)", backdropFilter: "blur(10px)",
               borderBottom: "1px solid rgba(255,255,255,0.06)",
               scrollbarWidth: "none",
@@ -1491,8 +1492,10 @@ export default function StarGalleryDevPage() {
   }, [playing]);
 
   // ── Chrome ──
+  const pinnedRef = usePinnedTop();
   const header = (title: string, back: () => void, right?: React.ReactNode) => (
     <div
+      ref={pinnedRef}
       style={{
         display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
         borderBottom: "1px solid rgba(255,255,255,0.06)",

@@ -8,6 +8,18 @@ html, body {
   max-width: 100vw;
 }
 
+/* Test screens: pinned bars stay pinned. `overflow-x: hidden` above turns the
+   page into its own scroller, which silently switches off every
+   `position: sticky` bar under it (measured: the highlights bar sat at -260px
+   after a 260px scroll). `clip` stops sideways scroll the same way without
+   that side effect. Only on the full-screen test pages (gallery, Play Area,
+   Infinite Match, highlights) — Harry, 26 Sep 2026: "test screens only" — so
+   the site menu does not start pinning on every phone page. */
+html:has(body.knowitball-immersive),
+body.knowitball-immersive {
+  overflow-x: clip;
+}
+
 /* No double-tap zoom on controls. On a phone a quick second tap on a button
  * (Next, Next, Next…) zoomed the page instead of pressing it again. Pinch-zoom
  * still works everywhere — the viewport keeps user-scalable on purpose (see
