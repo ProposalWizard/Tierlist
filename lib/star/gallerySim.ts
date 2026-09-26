@@ -1,5 +1,5 @@
-import {
 import { setupKind } from "./kindRules";
+import {
   buildScenario,
   type Scenario,
   type ScenarioKind,
