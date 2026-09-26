@@ -338,6 +338,10 @@ export default function TrialSequence({
             oppStrength={dribble.oppStrength}
             waveSizes={dribble.waveSizes}
             hideHint={!dribbleTeachDone}
+            // Nobody moves while the card is up — the run used to start
+            // underneath it and was over ~1.2 s after NEXT. After the card,
+            // the run waits for its own "Tap to start".
+            hold={!dribbleTeachDone}
             onComplete={(res: { cleared: boolean; beaten: number }) =>
               finishStage("dribbling", dribbleQuality(res, dribble))}
           />

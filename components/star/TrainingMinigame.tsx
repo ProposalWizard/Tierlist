@@ -22,6 +22,7 @@ import TrainingIntro from "./TrainingIntro";
 import { EngineFeature } from "./EnginePlay";
 import type { ScenePicture } from "@/lib/star/scenePicture";
 import type { ChanceResolved } from "./CanvasMatch";
+import { revealOnScreen } from "@/lib/revealOnScreen";
 
 /**
  * TRAINING, REBUILT.
@@ -134,6 +135,17 @@ function Shell({
   title: string; instruction: string; results: boolean[];
   trainingLevel: number; children: React.ReactNode;
 }) {
+  // Open a drill with its pitch on screen. The intro card is taller than the
+  // screen, so "Let's go" is reached by scrolling — and the drill then opened
+  // at that same scroll: 344 px down, the goal off the top (phone audit,
+  // 26 Sep 2026), with a pitch that swallows the swipe you'd use to get back
+  // up. The pitch wins over the tries row above it when both can't fit (a
+  // phone under the site nav): it is the thing being played. Instant, not
+  // smooth, so any clock starts on a still screen.
+  const pitchRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    revealOnScreen(pitchRef.current, { smooth: false });
+  }, []);
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 text-white flex flex-col items-center py-3 px-3">
       <div className="w-full max-w-sm">
@@ -144,7 +156,7 @@ function Shell({
               return (
                 <span
                   key={i}
-                  className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-black ${
+                  className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-black ${
                     r === true ? "bg-emerald-400 text-emerald-950" : r === false ? "bg-red-500 text-white" : i === results.length ? "border-2 border-amber-300 text-amber-200" : "border border-white/40 text-white"
                   }`}
                 >
@@ -154,11 +166,11 @@ function Shell({
             })}
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-black text-emerald-300 uppercase tracking-wide">{title}</div>
+            <div className="text-[11px] font-black text-emerald-300 uppercase tracking-wide">{title}</div>
             <div className="text-xs text-amber-300 font-black">Level {trainingLevel} · {"★".repeat(Math.max(0, TRIES - results.length))} on this try</div>
           </div>
         </div>
-        {children}
+        <div ref={pitchRef}>{children}</div>
         <div className="mt-2 bg-gray-800/90 border border-gray-600 rounded-lg px-3 py-2">
           <div className="text-xs font-bold text-gray-200 text-center">{instruction}</div>
         </div>
@@ -175,6 +187,35 @@ function Flash({ text, good }: { text: string; good: boolean }) {
       </div>
     </div>
   );
+}
+
+/**
+ * True while most of this element (85%) is on screen. A timed drill's clock
+ * waits on it: Vision used to count down and time out off the top of the
+ * screen, so a phone showed "TOO SLOW" on a try the player never saw.
+ */
+function useMostlyOnScreen(ref: React.RefObject<HTMLElement>): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    const check = () => {
+      const el = ref.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const seen = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0));
+      setOn(r.height > 0 && seen / r.height >= 0.85);
+    };
+    const onMove = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(check); };
+    check();
+    window.addEventListener("scroll", onMove, { passive: true });
+    window.addEventListener("resize", onMove);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onMove);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [ref]);
+  return on;
 }
 
 /** Sizes a canvas to its wrapper at devicePixelRatio and keeps it there. */
@@ -430,7 +471,7 @@ function StrikeDrill({
           scene={DRILL_SCENE[kind]}
         />}
         {brief && (
-          <div className="pointer-events-none absolute top-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200">
+          <div className="pointer-events-none absolute top-2 left-2 z-30 rounded-md bg-black/55 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-amber-200">
             {brief}
           </div>
         )}
@@ -604,6 +645,8 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
   countRef.current = count;
 
   useCanvasSize(canvasRef, wrapRef);
+  // The countdown (and so the clock) only runs while the pitch is on screen.
+  const onScreen = useMostlyOnScreen(wrapRef);
 
   // The same picture on every try: a fresh generator from the level's own seed.
   const startRep = useCallback((r: number) => {
@@ -646,9 +689,10 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
   }, [round, cfg.window, attempt, rep, startRep]);
 
   // The countdown: 3, 2, 1 a beat apart, then GO, then the picture and the
-  // clock start together.
+  // clock start together — and not before the pitch is on screen: the count
+  // holds on its number until it is.
   useEffect(() => {
-    if (count === null) return;
+    if (count === null || !onScreen) return;
     const t = window.setTimeout(() => {
       if (count > 0) setCount(count - 1);
       else {
@@ -657,7 +701,7 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
       }
     }, count > 0 ? 700 : 450);
     return () => window.clearTimeout(t);
-  }, [count]);
+  }, [count, onScreen]);
 
   // The clock.
   useEffect(() => {

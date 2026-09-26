@@ -314,6 +314,10 @@ export default function ScenarioEditor() {
   // here while still existing for everyone else (and comes straight back on
   // the next load, since the fetch merges rather than replaces).
   const remove = async (id: string) => {
+    // One tap on a small ✕ used to delete a SHARED scenario for everyone,
+    // with rows 39 px apart (phone audit, 26 Sep 2026). Ask first.
+    const name = saved.find(s => s.id === id)?.name ?? "this scenario";
+    if (!window.confirm(`Delete "${name}" for everyone? It goes from the shared list on every device.`)) return;
     setBusy(true);
     const r = await deleteScenarioShared(id);
     setBusy(false);
@@ -350,16 +354,16 @@ export default function ScenarioEditor() {
       <div className="rounded-xl border border-gray-700 bg-gray-900 p-2">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex flex-row sm:flex-col gap-1.5 sm:w-28 shrink-0">
-            <button onClick={() => addSide("teammate")} className="flex-1 sm:flex-none rounded-lg bg-sky-600 py-1.5 text-[11px] font-black text-white hover:bg-sky-500">+ Teammate</button>
-            <button onClick={() => addSide("opponent")} className="flex-1 sm:flex-none rounded-lg bg-red-600 py-1.5 text-[11px] font-black text-white hover:bg-red-500">+ Opponent</button>
+            <button onClick={() => addSide("teammate")} className="min-h-[40px] flex-1 sm:flex-none rounded-lg bg-sky-600 py-1.5 text-[11px] font-black text-white hover:bg-sky-500">+ Teammate</button>
+            <button onClick={() => addSide("opponent")} className="min-h-[40px] flex-1 sm:flex-none rounded-lg bg-red-600 py-1.5 text-[11px] font-black text-white hover:bg-red-500">+ Opponent</button>
             <button
               onClick={removeSelected}
               disabled={!selectedId || selectedId === "you"}
-              className="flex-1 sm:flex-none rounded-lg bg-gray-700 py-1.5 text-[10px] font-black text-white/80 hover:bg-gray-600 disabled:opacity-40"
+              className="min-h-[40px] flex-1 sm:flex-none rounded-lg bg-gray-700 py-1.5 text-[11px] font-black text-white/80 hover:bg-gray-600 disabled:opacity-40"
             >
               Remove
             </button>
-            <div className="hidden sm:block text-[9px] text-white/50">
+            <div className="hidden sm:block text-[11px] text-white/50">
               {teammateCount} mate(s)<br />{opponentCount} opp(s)
             </div>
           </div>
@@ -378,7 +382,7 @@ export default function ScenarioEditor() {
               <button
                 onClick={removeSelected}
                 aria-label="Delete selected player"
-                className="absolute z-10 grid h-7 w-7 -translate-x-1/2 -translate-y-full place-items-center rounded-full border-2 border-white/80 bg-red-600 text-xs font-black text-white shadow-lg hover:bg-red-500"
+                className="absolute z-10 grid h-10 w-10 -translate-x-1/2 -translate-y-full place-items-center rounded-full border-2 border-white/80 bg-red-600 text-xs font-black text-white shadow-lg hover:bg-red-500"
                 style={{ left: `${deleteButtonPct.left}%`, top: `calc(${deleteButtonPct.top}% - 12px)` }}
               >
                 ✕
@@ -386,17 +390,17 @@ export default function ScenarioEditor() {
             )}
             {pitchPicker && (
               <div className="pointer-events-none absolute inset-x-0 top-1 z-10 flex justify-center">
-                <span className="rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-black text-amber-300">
+                <span className="rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-black text-amber-300">
                   Drag anywhere — release to set the camera there
                 </span>
               </div>
             )}
-            <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-[10px] font-bold text-white/70">
+            <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-[11px] font-bold text-white/70">
               <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.you }} /> You</span>
               <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.teammate }} /> Teammate</span>
               <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: SIDE_COLOR.opponent }} /> Opponent</span>
             </div>
-            <div className="mt-1 px-1 text-[10px] text-white/50">
+            <div className="mt-1 px-1 text-[11px] text-white/50">
               {pitchPicker ? "Drag to move the camera's frame." : "Drag a player to place him, tap him then ✕ to remove him."}
             </div>
           </div>
@@ -406,20 +410,20 @@ export default function ScenarioEditor() {
       {/* ── Controls ── */}
       <div className="flex flex-col gap-3">
         <div className="rounded-xl border border-gray-700 bg-gray-800 p-3">
-          <label className="block text-[10px] font-black uppercase tracking-wide text-white/60">Name</label>
+          <label className="block text-[11px] font-black uppercase tracking-wide text-white/60">Name</label>
           <input
             value={scenario.name}
             onChange={e => setScenario(s => ({ ...s, name: e.target.value }))}
             className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm font-bold text-white"
           />
 
-          <label className="mt-3 block text-[10px] font-black uppercase tracking-wide text-white/60">Moment</label>
+          <label className="mt-3 block text-[11px] font-black uppercase tracking-wide text-white/60">Moment</label>
           <div className="mt-1 grid grid-cols-3 gap-1">
             {SCENARIO_KINDS.map(k => (
               <button
                 key={k}
                 onClick={() => setKind(k)}
-                className={`rounded-lg px-1.5 py-1 text-[10px] font-black uppercase transition ${
+                className={`min-h-[40px] rounded-lg px-1.5 py-1 text-[11px] font-black uppercase transition ${
                   scenario.kind === k ? "bg-emerald-500 text-white" : "bg-gray-700 text-white/70 hover:bg-gray-600"}`}
               >
                 {KIND_LABEL[k]}
@@ -429,11 +433,11 @@ export default function ScenarioEditor() {
         </div>
 
         <div className="rounded-xl border border-gray-700 bg-gray-800 p-3">
-          <div className="text-[10px] font-black uppercase tracking-wide text-white/60">Camera framing</div>
+          <div className="text-[11px] font-black uppercase tracking-wide text-white/60">Camera framing</div>
 
           <button
             onClick={() => setPitchPicker(v => !v)}
-            className={`mt-2 w-full rounded-lg py-1.5 text-[11px] font-black uppercase transition ${
+            className={`mt-2 min-h-[40px] w-full rounded-lg py-1.5 text-[11px] font-black uppercase transition ${
               pitchPicker ? "bg-amber-400 text-amber-950" : "bg-gray-700 text-white/80 hover:bg-gray-600"}`}
           >
             {pitchPicker ? "Done — back to editing" : "Pick on the whole pitch"}
@@ -448,26 +452,26 @@ export default function ScenarioEditor() {
               the reported "you move and the goal can be different sizes or
               different zoom". The camera slides; it never zooms. */}
 
-          <label className="mt-3 block text-[10px] font-black uppercase tracking-wide text-white/60">Angle</label>
+          <label className="mt-3 block text-[11px] font-black uppercase tracking-wide text-white/60">Angle</label>
           <div className="mt-1 grid grid-cols-3 gap-1">
             {(["up", "left", "right"] as Facing[]).map(f => (
               <button
                 key={f}
                 onClick={() => setFacing(f)}
-                className={`rounded-lg px-1.5 py-1.5 text-[10px] font-black uppercase transition ${
+                className={`min-h-[40px] rounded-lg px-1.5 py-1.5 text-[11px] font-black uppercase transition ${
                   facing() === f ? "bg-emerald-500 text-white" : "bg-gray-700 text-white/70 hover:bg-gray-600"}`}
               >
                 {FACING_LABEL[f]}
               </button>
             ))}
           </div>
-          <div className="mt-1 text-[9px] text-white/40">
+          <div className="mt-1 text-[11px] text-white/40">
             The same three the real match ever shoots from — a free tilt would show an angle the game could not actually film.
           </div>
         </div>
 
         {migrationMissing && (
-          <div className="rounded-xl border border-red-500 bg-red-950/70 p-2.5 text-[10px] font-bold leading-relaxed text-red-200">
+          <div className="rounded-xl border border-red-500 bg-red-950/70 p-2.5 text-[11px] font-bold leading-relaxed text-red-200">
             <div className="text-[11px] font-black">Sharing is off — the database table doesn&rsquo;t exist yet.</div>
             Run <code className="text-red-100">supabase/migrations/star_scenarios.sql</code> in the Supabase SQL
             Editor. Until then a scenario saves in THIS browser only and reaches no other device — a save will
@@ -479,38 +483,38 @@ export default function ScenarioEditor() {
           <button
             onClick={() => { void save(); }}
             disabled={busy}
-            className="flex-1 rounded-lg bg-emerald-500 py-2 text-xs font-black text-white hover:bg-emerald-400 disabled:opacity-50"
+            className="min-h-[40px] flex-1 rounded-lg bg-emerald-500 py-2 text-xs font-black text-white hover:bg-emerald-400 disabled:opacity-50"
           >
             {busy ? "Saving…" : "Save scenario"}
           </button>
-          <button onClick={startNew} className="rounded-lg bg-gray-700 px-3 py-2 text-xs font-black text-white/80 hover:bg-gray-600">New</button>
+          <button onClick={startNew} className="min-h-[40px] rounded-lg bg-gray-700 px-3 py-2 text-xs font-black text-white/80 hover:bg-gray-600">New</button>
         </div>
         {status && (
-          <div className={`text-center text-[10px] font-bold leading-relaxed ${status.ok ? "text-emerald-300" : "text-red-300"}`}>
+          <div className={`text-center text-[11px] font-bold leading-relaxed ${status.ok ? "text-emerald-300" : "text-red-300"}`}>
             {status.text}
           </div>
         )}
 
         <div className="rounded-xl border border-gray-700 bg-gray-800 p-3">
-          <div className="text-[10px] font-black uppercase tracking-wide text-white/60">
+          <div className="text-[11px] font-black uppercase tracking-wide text-white/60">
             Saved ({saved.length}) {!migrationMissing && <span className="text-emerald-400">· shared</span>}
           </div>
-          <div className="mt-1.5 max-h-56 space-y-1 overflow-y-auto">
-            {saved.length === 0 && <div className="text-[10px] text-white/40">Nothing saved yet.</div>}
+          <div className="mt-1.5 max-h-72 space-y-2 overflow-y-auto">
+            {saved.length === 0 && <div className="text-[11px] text-white/40">Nothing saved yet.</div>}
             {saved.map(s => (
               <div
                 key={s.id}
-                className={`flex items-center justify-between gap-1 rounded-lg px-2 py-1 text-[10px] ${
+                className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-[11px] ${
                   s.id === scenario.id ? "bg-emerald-600/30" : "bg-gray-900"}`}
               >
-                <button onClick={() => load(s.id)} className="min-w-0 flex-1 truncate text-left font-bold text-white">
+                <button onClick={() => load(s.id)} className="min-h-[40px] min-w-0 flex-1 truncate text-left font-bold text-white">
                   {s.name} <span className="text-white/40">· {KIND_LABEL[s.kind]}</span>
                 </button>
                 <button
                   onClick={() => { void remove(s.id); }}
                   disabled={busy}
                   title="Delete this scenario everywhere, not just on this device"
-                  className="shrink-0 rounded bg-red-900/60 px-1.5 py-0.5 font-black text-red-200 hover:bg-red-800 disabled:opacity-50"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-red-900/60 font-black text-red-200 hover:bg-red-800 disabled:opacity-50"
                 >
                   ✕
                 </button>
@@ -528,7 +532,7 @@ function SliderRow({ label, value, min, max, step, onChange }: {
 }) {
   return (
     <div className="mt-2">
-      <div className="flex items-center justify-between text-[10px] font-bold text-white/70">
+      <div className="flex items-center justify-between text-[11px] font-bold text-white/70">
         <span>{label}</span>
         <span className="tabular-nums text-white">{value}</span>
       </div>
