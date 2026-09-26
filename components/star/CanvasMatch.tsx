@@ -4832,8 +4832,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const awayScore = matchMode ? (fixture!.home ? displayScore.opp : displayScore.user) : 0;
 
   const statCell = (label: string, value: string, valueClass: string) => (
-    <div className="px-1.5 py-1 text-center">
-      <div className="text-[8px] uppercase tracking-widest text-white font-bold leading-none">{label}</div>
+    <div className="min-w-0 px-1 py-1 text-center">
+      <div className="text-[11px] uppercase tracking-tight text-white font-bold leading-none">{label}</div>
       <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
     </div>
   );
@@ -4884,7 +4884,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       {!bare && (
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
-          <div className="px-2.5 flex items-center border-r border-white/5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300/90">
+          <div className="px-2.5 flex items-center border-r border-white/5 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-300/90">
             {matchMode && career ? competitionAbbrev(fixture!, divisionOf(career)) : "Match Lab"}
           </div>
           <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">

@@ -1018,14 +1018,14 @@ export default function FiveASide({
 
         {banner && phase !== "aim" && (
           <div className="pointer-events-none absolute inset-x-0 top-1/3 text-center">
-            <span className="rounded-full bg-black/70 px-4 py-2 text-sm font-black text-white">
+            <span className="inline-block max-w-[92%] rounded-2xl bg-black/70 px-4 py-2 text-sm font-black leading-snug text-white">
               {banner}
             </span>
           </div>
         )}
         {phase === "brace" && (
           <div className="pointer-events-none absolute inset-x-0 bottom-3 text-center">
-            <span className="rounded-full bg-black/55 px-3 py-1 text-[11px] font-bold text-white/85">
+            <span className="inline-block max-w-[92%] rounded-2xl bg-black/55 px-3 py-1 text-[11px] font-bold leading-snug text-white/85">
               {committed
                 ? committed.kind === "keeper" ? "Keeper committed" : "Body on the line"
                 : "Tap a man to throw a body at it · tap the goal to send your keeper"}
@@ -1034,7 +1034,7 @@ export default function FiveASide({
         )}
         {phase === "aim" && !aimRef.current && (
           <div className="pointer-events-none absolute inset-x-0 bottom-3 text-center">
-            <span className="rounded-full bg-black/55 px-3 py-1 text-[11px] font-bold text-white/85">
+            <span className="inline-block max-w-[92%] rounded-2xl bg-black/55 px-3 py-1 text-[11px] font-bold leading-snug text-white/85">
               Tap a team-mate to pass · drag back from the ball to shoot
             </span>
           </div>
