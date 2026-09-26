@@ -1,0 +1,293 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Knowitball v0.2</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  /* The v0.1 artifact's CSS stopped at the two rules above, which leaves one
+     real gap: a reader on a DARK system who explicitly picks light stamps
+     data-theme="light", and prefers-color-scheme still reports dark — so the
+     light block never matches and the page stays dark against their choice.
+     This repeats the light palette for that stamp. */
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.2</span>
+  <h1>Leo's patch notes</h1>
+  <p class="sub">Goalie Mode · rounds 1-4 combined · a new keeper-POV minigame, its camera rebuilt against real reference footage, a real cursor bug fixed, real shot variety, and the pitch actually drawn - 151 star tests green</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>0→real</b><span>grass — was silently never drawn at all</span></div>
+  <div class="s"><b>9</b><span>shot kinds now (was 7)</span></div>
+  <div class="s"><b>9.15m</b><span>the free-kick wall's real IFAB distance</span></div>
+  <div class="s"><b>151</b><span>star test files, all green</span></div>
+</div>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The camera didn't match what &quot;goalie mode&quot; should look like</div>
+    <div class="dt">Three real screen recordings of a reference game were sent, called close to the exact template wanted. The camera was rebuilt from measured reference frames — a tight personal push-in right up to the strike, then a hard cut wide for the save itself.</div>
+  </li>
+  <li>
+    <div class="hd">A real mobile bug: a tap instantly committed the dive</div>
+    <div class="dt">On phone, touching the screen at all locked in the save spot immediately — no way to preview an aim the way a mouse can hover without clicking. Fixed to the same design a mouse already had: touch-down only starts tracking, touch-move live-updates the aim, and release commits.</div>
+  </li>
+  <li>
+    <div class="hd">Your aim was never actually under your cursor</div>
+    <div class="dt">Reported directly, on PC: &quot;the aim/cursor thing is very offset and not at all on my cursor.&quot;</div>
+    <details><summary>The real cause, worked out by hand</summary>
+      <ul>
+        <li>Reading a screen tap back into a world position is only the exact inverse of the camera's own projection when the camera looks dead level.</li>
+        <li>The previous camera was tilted slightly downward for a &quot;looking down&quot; feel — which the aim math never accounted for.</li>
+        <li>Checked by hand: aiming at a genuine low corner inverted back roughly 0.42m off target — about a fifth of the goal's own playable height, on every single aim.</li>
+        <li>Fixed by dropping the tilt to exactly zero, which makes the exact same formula provably exact again — proven with a script: max error over 500 random targets was about 1e-16m, floating-point noise, not an approximation.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The zoom that &quot;sucked&quot; — removed, not retuned</div>
+    <div class="dt">Reported directly: &quot;the weird zooming in thing sucks.&quot; Replaced the 3-stage push-in/reveal camera with one fixed, wide shot for the whole sequence — goal, both posts and your full dive reach always on screen, never something that only resolves once a camera move finishes.</div>
+  </li>
+  <li>
+    <div class="hd">The pitch is grass again, not an ice rink</div>
+    <div class="dt">Reported directly: &quot;i dont even see any green... looks like an ice rink.&quot; A real bug, not a taste note.</div>
+    <details><summary>The actual cause</summary>
+      <ul>
+        <li>The ground quad's near edge was hard-coded to a flat 0.05m in front of the camera, whatever the camera's real distance actually was.</li>
+        <li>The projection clips anything nearer than 0.35m — so that edge was ALWAYS inside the clip, every frame, on every device.</li>
+        <li>Both near corners of the grass polygon came back null, so the whole fill — stripes, goal line, all of it — silently skipped drawing. Nothing else on screen depended on it, so nothing else looked wrong.</li>
+        <li>Fixed by computing the real depth that lands on the canvas's own bottom row, the same formula the game's own ground hit-testing already uses, instead of a guessed offset.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Goalie Mode — a new minigame, in the Casino</div>
+    <div class="dt">You're the keeper, facing a shot. A real timing tension: diving too early sags and costs you reach by the time the ball actually arrives, so reading the tell and committing at or right after the strike is the genuinely best play — not holding your gloves in a corner from the start.</div>
+    <details><summary>How the bet works</summary>
+      <ul>
+        <li>A real push-your-luck ladder: cash out any time and bank the current multiplier, or push on into a harder shot for a bigger one.</li>
+        <li>One goal conceded busts the run and the stake with it — no partial credit.</li>
+        <li>The multiplier climbs steeply (nearly 5x by streak 5) but is bounded, capped at 12x.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A real first-time strike</div>
+    <div class="dt">A firm, rushed shot off an already-moving ball — its own distinct timing and arc, not a relabelled drive.</div>
+  </li>
+  <li>
+    <div class="hd">Real near-post vs far-post variety</div>
+    <div class="dt">Rolled independently of the tell, so a shot is sometimes tucked in near post and sometimes struck across the body to the far corner. Measured: 56.9% near vs 43.1% far of the eligible drives in a real batch — a genuine split, not one dominating.</div>
+  </li>
+  <li>
+    <div class="hd">A real on-screen shot tag</div>
+    <div class="dt">HEADER FROM A CROSS, VOLLEY, FIRST-TIME STRIKE, CURLING EFFORT, LONG RANGE, NEAR POST, FAR POST — so the variety is something you consciously notice, not just something the physics knows about.</div>
+  </li>
+  <li>
+    <div class="hd">Other players are actually on the pitch now <span class="pill p-amb">visual only this round</span></div>
+    <div class="dt">Reported directly: &quot;obvs other attackers and defenders should be in there even if they arent involved.&quot; Ambient goalmouth figures — real positions, a gentle idle sway and shuffle so they read as alive, not a diagram.</div>
+    <details><summary>What this is, and isn't, yet</summary>
+      <ul>
+        <li>They genuinely make the shot harder to read at a glance — that part is real.</li>
+        <li>They do NOT yet touch the ball. Blocking or deflecting off them is a real, named next step, not quietly half-built.</li>
+        <li>Skipped for a penalty — the real rule is an empty box, not a missing one.</li>
+        <li>Skipped for a free kick — the wall (below) already is the other players in that picture.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Penalty</div>
+    <div class="dt">Struck from the exact real spot, dead in front of goal. The only thing to read is the disguise — no wall, no angle, nothing else.</div>
+  </li>
+  <li>
+    <div class="hd">Free kick</div>
+    <div class="dt">A real defensive wall, positioned at football's actual minimum distance (9.15m), on the real sightline between the ball and the goal.</div>
+    <details><summary>How it plays</summary>
+      <ul>
+        <li>3 to 5 bodies, evenly spaced, standing exactly where a real wall would.</li>
+        <li>They jump reactively, right as the ball is struck — never held up early.</li>
+        <li>A shot aimed through the wall's own footprint gets bent around its nearest edge or lofted clear over real jump height instead — the two genuine techniques a free-kick taker actually has.</li>
+        <li>Doesn't block or deflect the ball yet either — same honest scope as the decorative players above.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="alert">
+      <div class="t">Leo — your three versions were renumbered into this one, so the next number is free</div>
+      <p>0.2, 0.3 and 0.4 were all Goalie Mode, so they are one entry now. Nothing was deleted; every item is still here, word for word.</p>
+    </div>
+    <details><summary>What this means for your next set of notes</summary>
+      <ul>
+        <li>Your shipped 0.3 and 0.4 no longer exist as their own entries on this page. Their content is in the Fixed/Added lists above, and the round-by-round breakdown is in “What each round did” at the bottom.</li>
+        <li>0.3 on this page is now Harry's — the scenario gallery and auto-tuning round. That is the same number your Goalie Mode round 3 used to have, so a link or screenshot pointing at “v0.3” means something different now.</li>
+        <li>Your saved artifact HTML in .claude/skills/creating-patch-notes/references/ still has files named v0.2, v0.3 and v0.4. They were left alone — only this page was renumbered.</li>
+        <li>The claude.ai artifact you keep republishing is untouched and still one link — https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd. It covers round 4 only, so this entry links a generated page that matches all four rounds instead.</li>
+        <li>Next time you write notes, the number to use on this page is 0.4, not 0.5. Pick it by looking at what is already listed here rather than by adding one to your last artifact.</li>
+        <li>There is still no collision guard — version is one shared text field across both tracks, so two people can pick the same number and nothing stops them. Worth a proper fix; say the word and it gets one.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The push-in/reveal camera itself wasn't re-confirmed live after this round's rebuild</div>
+    <div class="dt">Confidence rested on the measured reference frames and the re-verified projection math, not a fresh recording — and it went on to be reported back as still not right (see v0.3).</div>
+  </li>
+  <li>
+    <div class="hd">Not confirmed with a fresh live look this round</div>
+    <div class="dt">A real attempt was made and got stuck on an unrelated harness/timing issue in the trial-penalty skip sequence — cut off rather than keep burning time on it. Confidence rested on the cursor fix's exact computed proof and a full clean test suite, said plainly rather than claimed as seen.</div>
+  </li>
+  <li>
+    <div class="hd">Not re-confirmed with a fresh live look this round</div>
+    <div class="dt">Same honest flag as the last two rounds. Confidence here rests on the grass bug's exact root-cause math, deterministic tests for the wall's geometry and the penalty's tighter tell, and a full clean suite + build — not a screenshot.</div>
+    <details><summary>What's actually been verified</summary>
+      <ul>
+        <li>The grass fix: the exact same depth formula the game's own ground hit-testing already trusts, not a new guess.</li>
+        <li>The penalty's tell: proven exactly 0.6× an ordinary kind's, at the identical difficulty, to floating-point precision — a real test, not an eyeballed claim.</li>
+        <li>The wall: always 3-5 bodies, always at the real 9.15m distance, always evenly spaced — checked on every single generated free kick in the test batch, not sampled.</li>
+        <li>151 star test files pass on their real exit code, tsc --noEmit is clean, and a full production build succeeds.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The wall and the extra players are decorative, not physical</div>
+    <div class="dt">Named directly above too — worth repeating here since it's the one thing this round didn't do that it plausibly could look like it does.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Real deflection off a nearby player</div>
+    <div class="dt">The ask mentioned it directly as a maybe — genuinely interesting, genuinely a separate build from this round's visual pass.</div>
+  </li>
+  <li>
+    <div class="hd">The wall and extras actually touching the ball</div>
+    <div class="dt">Once that's real, a shot through the wall should sometimes just get blocked, not always bend around it.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>What each round did</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Round 1–2 — Goalie Mode ships, then its camera is rebuilt</div>
+    <div class="dt">A new keeper-POV minigame in the Casino, then the camera matched against real reference footage. Plus a real mobile bug: a tap instantly committed the dive.</div>
+  </li>
+  <li>
+    <div class="hd">Round 3 — the cursor bug, the zoom, and real shot variety</div>
+    <div class="dt">Aim was never under your cursor (~0.42m off, every aim). The zoom removed rather than retuned. Near-post vs far-post variety and a real first-time strike.</div>
+  </li>
+  <li>
+    <div class="hd">Round 4 — real grass, real bodies, two new shot types</div>
+    <div class="dt">The pitch was silently never drawn. Other players actually on the pitch. Penalty and free kick added, with the wall at its real 9.15m IFAB distance.</div>
+  </li>
+</ul>
+
+<footer>22 Sep 2026 · also at <code>/admin/patch-notes</code>, generated from the same file. Anything unverified says so.</footer>
+
+</div>
+
+</body></html>

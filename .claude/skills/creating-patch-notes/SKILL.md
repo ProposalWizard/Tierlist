@@ -240,3 +240,12 @@ entry either (a typo, a config tweak).
 Same rules as any Knowitball artifact — see `artifact-house-style`. This
 file only exists so each round doesn't have to re-decide the title, the
 version number, or which URL to update.
+
+## The site shows the page itself (standing, 26 Sep 2026)
+
+Harry: the admin archive must look EXACTLY like the artifact. After publishing a
+version, copy the published page into `patch-notes/pages/<site version>/index.html`
+with every image it references (keep the relative paths, e.g. `img/x.jpg`), and add
+the version to `PATCH_NOTE_PAGES` in `lib/patchNotePages.ts`. Mikey's pages already
+live in `patch-notes/mikey/`, so point at those instead of copying. The data entry
+in `lib/patchNotesData.ts` stays too; it is the archive's Text tab.

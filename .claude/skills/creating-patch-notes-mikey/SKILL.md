@@ -81,3 +81,12 @@ Start from `template.html` in this folder. It has the full style (dark green the
 1. Append the new entry to `patch-notes/mikey/versions.json` (with the artifact URL and `toCommit` = current `HEAD`).
 2. Tell Mikey: the link, the version number, and a 3–5 bullet summary. Remind him the artifact is private until he shares it with Harry and Leo from the page's Share menu.
 3. Don't commit or push unless Mikey asks. If he does, the patch-notes files go in the same commit.
+
+## The site shows the page itself (standing, 26 Sep 2026)
+
+Harry: the admin archive must look EXACTLY like the artifact. After publishing a
+version, copy the published page into `patch-notes/pages/<site version>/index.html`
+with every image it references (keep the relative paths, e.g. `img/x.jpg`), and add
+the version to `PATCH_NOTE_PAGES` in `lib/patchNotePages.ts`. Mikey's pages already
+live in `patch-notes/mikey/`, so point at those instead of copying. The data entry
+in `lib/patchNotesData.ts` stays too; it is the archive's Text tab.

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { DEMOS, DEMO_CSS, DEMO_TOKENS } from "@/lib/patchNotesDemos";
+import { PATCH_NOTE_PAGES, patchNotePageUrl } from "@/lib/patchNotePages";
 import {
   SECTION_COLOR,
   barGroupCeiling,
@@ -90,7 +91,7 @@ export default function PatchNotesArchive() {
           <div className="lg:flex lg:gap-8">
             <VersionRail notes={notes} selected={selected} onSelect={setSelected} />
             <div className="min-w-0 flex-1">
-              {note && <NoteBody note={note} />}
+              {note && <VersionView key={note.version} note={note} />}
             </div>
           </div>
         )}
@@ -153,6 +154,113 @@ function VersionRail({
 }
 
 /* ── One version ─────────────────────────────────────────────────────── */
+
+/**
+ * PAGE or TEXT. Asked for directly: the archive should look EXACTLY like the
+ * artifact — "rn I think it loses images and stuff". The data below never
+ * had the pictures, so a version whose real page is kept in the repo
+ * (lib/patchNotePages.ts) opens on that page, untouched; Text is the old
+ * data view, still there for every version.
+ */
+function VersionView({ note }: { note: PatchNote }) {
+  const hasPage = !!PATCH_NOTE_PAGES[note.version];
+  const [view, setView] = useState<"page" | "text">(hasPage ? "page" : "text");
+  const tab = (v: "page" | "text", label: string) => (
+    <button
+      type="button"
+      onClick={() => setView(v)}
+      aria-pressed={view === v}
+      className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-extrabold ${
+        view === v ? "bg-[#3ddc84] text-[#06170e]" : `border ${LINE} ${INK2}`
+      }`}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <>
+      {hasPage && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {tab("page", "Page")}
+          {tab("text", "Text")}
+          <span className={`text-[12px] ${INK3}`}>
+            {view === "page" ? "The artifact exactly as it was published, pictures and all." : "The same notes as plain data."}
+          </span>
+        </div>
+      )}
+      {view === "page" && hasPage ? <PageFrame note={note} /> : <NoteBody note={note} />}
+    </>
+  );
+}
+
+/**
+ * The kept page, in a frame sized to its full height so the archive scrolls
+ * it like any other content. Loaded as text into `srcdoc`: the site sends
+ * X-Frame-Options: DENY on every response, so a frame pointed at a URL would
+ * be blank (lib/patchNotePageServe.ts).
+ */
+function PageFrame({ note }: { note: PatchNote }) {
+  const ref = useRef<HTMLIFrameElement | null>(null);
+  const [html, setHtml] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [height, setHeight] = useState(900);
+
+  useEffect(() => {
+    let live = true;
+    fetch(patchNotePageUrl(note.version), { cache: "no-store" })
+      .then(async (r) => {
+        const body = await r.text();
+        if (!live) return;
+        if (!r.ok) {
+          let msg = `Couldn't load the page (${r.status}).`;
+          try { msg = (JSON.parse(body) as { error?: string }).error ?? msg; } catch { /* not JSON */ }
+          setError(msg);
+        } else setHtml(body);
+      })
+      .catch(() => { if (live) setError("Couldn't reach the server."); });
+    return () => { live = false; };
+  }, [note.version]);
+
+  // Follow the page's own height — its toggles open and close.
+  const onLoad = () => {
+    const doc = ref.current?.contentDocument;
+    if (!doc) return;
+    const measure = () => setHeight(Math.max(200, doc.documentElement.scrollHeight));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(doc.documentElement);
+    if (doc.body) ro.observe(doc.body);
+    ref.current?.contentWindow?.addEventListener("unload", () => ro.disconnect());
+  };
+
+  if (error) {
+    return (
+      <div className={`rounded-xl border ${LINE} ${CARD} p-4 text-[13px] ${INK2}`}>
+        {error} The Text tab still has this version.
+      </div>
+    );
+  }
+  if (html === null) return <div className={`p-6 text-[13px] ${INK3}`}>Loading v{note.version}…</div>;
+  return (
+    <div>
+      <iframe
+        ref={ref}
+        title={`Patch notes v${note.version}`}
+        srcDoc={html}
+        onLoad={onLoad}
+        style={{ height }}
+        className="block w-full rounded-xl border-0 bg-white"
+      />
+      {note.artifactUrl && (
+        <p className={`mt-3 text-[12.5px] ${INK3}`}>
+          <a href={note.artifactUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#6fb8ff] underline underline-offset-2">
+            Open the original artifact ↗
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}
 
 function NoteBody({ note }: { note: PatchNote }) {
   return (

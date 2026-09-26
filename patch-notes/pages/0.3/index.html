@@ -1,0 +1,781 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Knowitball v0.3</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  /* The v0.1 artifact's CSS stopped at the two rules above, which leaves one
+     real gap: a reader on a DARK system who explicitly picks light stamps
+     data-theme="light", and prefers-color-scheme still reports dark — so the
+     light block never matches and the page stays dark against their choice.
+     This repeats the light palette for that stamp. */
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .demo{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px;margin:12px 0 2px}
+  .demo h4{margin:0 0 3px;font-size:13px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--ink3)}
+  .demo .how{margin:0 0 11px;font-size:13px;color:var(--ink2)}
+  .demo .eg{display:block;font-size:11.5px;font-weight:700;color:var(--ink3);
+    border:1px dashed var(--line);border-radius:8px;padding:7px 10px;margin:0 0 11px}
+  .demo svg{width:100%;height:auto;display:block;border-radius:8px;background:var(--card2);
+    border:1px solid var(--line);touch-action:none}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--ink);
+    font:inherit;font-size:13px;font-weight:700;padding:8px 14px;border-radius:999px;cursor:pointer}
+  .btn:hover{border-color:var(--ink3)}
+  .btn:disabled{opacity:.4;cursor:default}
+  .btn.go{background:var(--green);border-color:var(--green);color:#06170e}
+  .btn.go:disabled{background:var(--card2);border-color:var(--line);color:var(--ink)}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:11px}
+  .rules{list-style:none;margin:11px 0 0;padding:0;font-size:13.5px}
+  .rules li{display:flex;gap:8px;align-items:flex-start;padding:4px 0;color:var(--ink2)}
+  .rules .m{flex:0 0 auto;font-weight:800;width:14px;text-align:center}
+  .ok .m{color:var(--green)} .no .m{color:var(--red)} .fixed .m{color:var(--amber)}
+  .note{margin-top:11px;font-size:13px;color:var(--ink2);min-height:19px}
+  .note b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;
+    text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);
+    background:var(--card2);color:var(--ink3)}
+  .tag.on{background:var(--green);border-color:var(--green);color:#06170e}
+  .tag.warn{background:var(--amber);border-color:var(--amber);color:#1a1200}
+  .where{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+  .where div{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--card2)}
+  .where b{display:block;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
+  .where span{display:block;font-size:13px;margin-top:5px;color:var(--ink2)}
+  .where.hit-db div:first-child, .where.hit-code div:last-child{border-color:var(--green)}
+  .where.hit-db div:first-child b, .where.hit-code div:last-child b{color:var(--green)}
+  .prop{margin-top:11px;border:1px solid var(--line);border-left:3px solid var(--green);
+    border-radius:8px;padding:11px 13px;background:var(--card2)}
+  .prop b{display:block;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--green)}
+  .prop p{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
+  .count{font-variant-numeric:tabular-nums;font-weight:800;color:var(--ink)}
+
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.3</span>
+  <h1>Harry's patch notes</h1>
+  <p class="sub">The scenario gallery and the auto-tuner, explained from the top · three of the boxes below are things you can actually press · 151 test files green, every number measured</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>15%→0%</b><span>chances that did not match their own name</span></div>
+  <div class="s"><b>10→21</b><span>scenarios you can actually see</span></div>
+  <div class="s"><b>34%→0%</b><span>shots blocked by your own team-mate</span></div>
+  <div class="s"><b>1</b><span>rebuild, however many you commit at once</span></div>
+</div>
+
+<h2 class="chg"><i></i>Start here — the two buttons everything hangs off</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Save puts a scenario in the database. Commit to repo puts it in the game's code.</div>
+    <div class="dt">Two different places, two different lifespans. This is the thing that was unclear yesterday, so it is first.</div>
+
+<div class="demo" id="d1">
+  <h4>Press them and see where the scenario ends up</h4>
+  <p class="eg">A drawing to explain the idea — <b>not</b> the real screen. Simplified on purpose, and the numbers here are made up.</p>
+  <p class="how">Two buttons, two destinations. Press either one.</p>
+
+  <div class="row">
+    <span class="tag" id="d1-badge">Draft</span>
+    <button class="btn" id="d1-save">Save</button>
+    <button class="btn" id="d1-commit">Commit to repo</button>
+    <button class="btn" id="d1-reset">Start again</button>
+  </div>
+
+  <div class="where" id="d1-where">
+    <div><b>Database</b><span id="d1-db">empty</span></div>
+    <div><b>The game's code</b><span id="d1-code">empty</span></div>
+  </div>
+
+  <p class="note" id="d1-note">A new scenario is a <b>draft</b>. It is in your browser and nowhere else.</p>
+</div>
+<script>
+(function(){
+  var db=false, code=false, dirty=false;
+  var badge=document.getElementById('d1-badge'), where=document.getElementById('d1-where');
+  var dbEl=document.getElementById('d1-db'), codeEl=document.getElementById('d1-code');
+  var note=document.getElementById('d1-note');
+  function paint(){
+    dbEl.textContent = db ? 'has this scenario' : 'empty';
+    codeEl.textContent = code ? 'has this scenario' : 'empty';
+    var label = !db && !code ? 'Draft' : (code && dirty ? 'Modified' : (code ? 'Committed' : 'Saved'));
+    badge.textContent = label;
+    badge.className = 'tag' + (label==='Committed' ? ' on' : (label==='Modified' ? ' warn' : ''));
+  }
+  document.getElementById('d1-save').onclick=function(){
+    db=true; if(code) dirty=true;
+    where.className='where hit-db';
+    note.innerHTML = dirty
+      ? 'Saved again. The code still has the <b>older</b> version, so this is <b>Modified</b> \u2014 that badge is the one to watch.'
+      : 'Saved. <b>Instant</b>, no waiting. Everyone opening the gallery sees it and the game is already using it.';
+    paint();
+  };
+  document.getElementById('d1-commit').onclick=function(){
+    code=true; dirty=false;
+    where.className='where hit-code';
+    note.innerHTML = 'Committed. Took about <b>two minutes</b> to rebuild \u2014 and now it survives anything happening to the database.';
+    paint();
+  };
+  document.getElementById('d1-reset').onclick=function(){
+    db=false; code=false; dirty=false; where.className='where';
+    note.innerHTML='A new scenario is a <b>draft</b>. It is in your browser and nowhere else.';
+    paint();
+  };
+  paint();
+})();
+</script>
+    <details><summary>What each one actually does</summary>
+      <ul>
+        <li>SAVE writes the scenario to the database. It is instant, there is no waiting, and the next person to open the gallery sees it. The game starts using it straight away.</li>
+        <li>COMMIT TO REPO writes the scenario into the code itself. It takes about two minutes, because the site has to rebuild.</li>
+        <li>So why bother committing? Because the database can be wiped, restored, or swapped, and the code cannot. A committed scenario is in the game permanently — it is there on a brand-new machine that has never touched the database, and it is there in the version history if anyone ever needs to see what changed.</li>
+        <li>Rule of thumb: Save while you are working. Commit when you are happy and want it to stick.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Yesterday there were three reasons this went wrong</div>
+    <div class="dt">None of them were about the scenarios themselves.</div>
+    <details><summary>The three, and what each one does now</summary>
+      <ul>
+        <li>Commits were going to a branch named after one person, so they reached nobody else until that branch was merged. Leo could commit a scenario and Harry would never see it. They go to the main branch now — one press, everyone has it.</li>
+        <li>Every single commit kicked off its own two-minute rebuild. Committing five scenarios meant five rebuilds. They batch now — see below.</li>
+        <li>Nothing on screen said whether a scenario was saved, committed, both or neither. Every card carries a badge now — see below.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Every card now says which it is</div>
+    <div class="dt">Four badges, and you never have to remember which you pressed.</div>
+    <details><summary>What each badge means</summary>
+      <ul>
+        <li>DRAFT — only in this browser. Nobody else can see it, and it is gone if you clear your browser data.</li>
+        <li>SAVED — in the database. Everyone sees it, the game is using it, but it is not in the code yet.</li>
+        <li>COMMITTED — in the code. Permanent.</li>
+        <li>MODIFIED — it is committed, but you have changed it since, and the change is not committed yet. This is the one worth watching: it means the version in the code and the version on your screen no longer match.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Everything you have saved but not committed sits in one tab, and one press commits the lot</div>
+    <div class="dt">Save all morning, commit once. Twenty scenarios is one two-minute rebuild, not twenty.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Rebuilds</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:5.0%"></div></div><span class="vv">1 <s>20</s></span></div>
+    </div>
+    <details><summary>How to use it</summary>
+      <ul>
+        <li>The tab lists every scenario that is saved or drafted but not in the code yet. If it is empty, nothing is waiting.</li>
+        <li>Press Commit and the whole list goes in one go, as one change, with one rebuild.</li>
+        <li>Work normally, and treat committing as the thing you do at the end, not after every drag.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">No-go is gone</div>
+    <div class="dt">Asked for it to be taken out until it is clearer what it should do, so it is out rather than sat there half-explained.</div>
+    <details><summary>What it was, and what to use instead</summary>
+      <ul>
+        <li>The idea was a bin for chances you never want to see again. The problem is there are millions of possible chances, so binning one specific picture stops almost nothing from coming back.</li>
+        <li>It was deleted outright, not hidden — the code and its file are gone. Nothing is quietly still running.</li>
+        <li>Tune does the job you actually wanted from it: instead of banning one picture, you show what is wrong with it, and the fix applies to every chance like it. That is the section below.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Delete removes a scenario from both places at once</div>
+    <div class="dt">Out of the database and out of the code, in one press. Before this there was no way to get rid of one at all.</div>
+  </li>
+  <li>
+    <div class="hd">Play a scenario without leaving the editor</div>
+    <div class="dt">Press Play and the chance becomes the real game, in the same panel. Your edit tools and Save button stay on screen, and Next moves you on.</div>
+    <details><summary>What changed from yesterday</summary>
+      <ul>
+        <li>Yesterday, playing a highlight took over the screen and there was no way back — you had to leave and start again.</li>
+        <li>The commentary at the bottom is gone during editing, as asked. It was describing the match, which is not what you are looking at when you are building a chance.</li>
+        <li>This works in the gallery and in Infinite Highlights.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>The auto-tuner, in plain English</h2>
+<ul class="n">
+  <li>
+    <div class="hd">You draw chances. It works out the rules you were following. Every chance the game makes then obeys them.</div>
+    <div class="dt">You never write a rule. Draw more, and the rules update on their own — that is the whole point of it.</div>
+
+<div class="demo" id="d2">
+  <h4>Press Simulate</h4>
+  <p class="eg">A drawing to explain the idea — <b>not</b> the real screen. Simplified on purpose, and the numbers here are made up.</p>
+  <p class="how">Each press throws up a rough one-on-one and checks it against three rules. Some come
+  out wrong on purpose so you can watch one get repaired — the real gallery does not break this often.</p>
+
+  <svg viewBox="0 0 320 210" role="img" aria-label="A one-on-one chance drawn top down, goal at the top">
+    
+  <g stroke="currentColor" fill="none" stroke-width="1.5" opacity=".22">
+    <rect x="62" y="10" width="196" height="76"/>
+    <rect x="112" y="10" width="96" height="31"/>
+    <path d="M118 86 A 46 34 0 0 0 202 86"/>
+  </g>
+  <line x1="0" y1="11" x2="320" y2="11" stroke="currentColor" stroke-width="2" opacity=".4"/>
+  <line x1="126" y1="11" x2="194" y2="11" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+
+    <g id="d2-figs" color="var(--ink)"></g>
+  </svg>
+
+  <ul class="rules" id="d2-rules"></ul>
+  <div class="row">
+    <button class="btn go" id="d2-go">Simulate</button>
+    <span class="note" style="margin:0" id="d2-note"></span>
+  </div>
+</div>
+<script>
+(function(){
+  var figs=document.getElementById('d2-figs'), rules=document.getElementById('d2-rules');
+  var note=document.getElementById('d2-note');
+  var GOAL={x:160,y:8};
+  // A figure near the top of the box gets its name ABOVE it, or the text sits
+  // on whoever is standing behind him.
+  function fig(x,y,fill,label){
+    var ly = y+21;
+    return '<g><circle cx="'+x+'" cy="'+y+'" r="8" fill="'+fill+'" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>'+
+      '<text x="'+x+'" y="'+ly+'" text-anchor="middle" font-size="9.5" font-weight="700" fill="currentColor" opacity=".75">'+label+'</text></g>';
+  }
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function draw(s){
+    var h='<line x1="'+s.ball.x+'" y1="'+s.ball.y+'" x2="'+GOAL.x+'" y2="'+GOAL.y+
+      '" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".55"/>';
+    h+=fig(s.keeper.x,s.keeper.y,'#f5b942','keeper');
+    s.defs.forEach(function(d){h+=fig(d.x,d.y,'#ff6b6b','defender');});
+    h+=fig(s.ball.x,s.ball.y,'#6fb8ff','you');
+    h+='<circle cx="'+(s.ball.x+11)+'" cy="'+(s.ball.y+6)+'" r="3.4" fill="#f2f7f4"/>';
+    figs.innerHTML=h;
+  }
+  // "Between the ball and the goal" = close to the dashed line, and ahead of the ball.
+  function inLane(p,ball){
+    var dx=GOAL.x-ball.x, dy=GOAL.y-ball.y, L=Math.hypot(dx,dy);
+    var t=((p.x-ball.x)*dx+(p.y-ball.y)*dy)/(L*L);
+    if(t<=0.04||t>=1) return false;
+    return Math.abs((p.x-ball.x)*dy-(p.y-ball.y)*dx)/L < 17;
+  }
+  function line(state,text){
+    return '<li class="'+state+'"><span class="m">'+(state==='no'?'\u2717':(state==='fixed'?'\u21BB':'\u2713'))+
+      '</span><span>'+text+'</span></li>';
+  }
+  document.getElementById('d2-go').onclick=function(){
+    var ball={x:rnd(108,212),y:rnd(132,176)};
+    var keeper={x:GOAL.x+(ball.x-GOAL.x)*0.22,y:rnd(30,42)};
+    var defs=[{x:rnd(34,80),y:rnd(72,116)},{x:rnd(240,290),y:rnd(72,116)}];
+    var broke=Math.random()<0.34;
+    if(broke) defs.push({x:(ball.x+GOAL.x)/2+rnd(-7,7), y:(ball.y+GOAL.y)/2+rnd(-7,7)});
+    var s={ball:ball,keeper:keeper,defs:defs};
+    draw(s);
+    var bad=defs.filter(function(d){return inLane(d,ball);});
+    if(bad.length){
+      rules.innerHTML=line('no','A defender is between you and the goal \u2014 so this is not a one-on-one')
+        +line('ok','Nobody is nearer the goal than the ball')
+        +line('ok','No team-mate in the way of your shot');
+      note.innerHTML='<b>Broken.</b> Repairing\u2026';
+      setTimeout(function(){
+        bad.forEach(function(d){ d.x = d.x < GOAL.x ? d.x-52 : d.x+52; });
+        draw(s);
+        rules.innerHTML=line('fixed','Defender moved out from between you and the goal')
+          +line('ok','Nobody is nearer the goal than the ball')
+          +line('ok','No team-mate in the way of your shot');
+        note.innerHTML='<b>Repaired.</b> This is what you would actually have been shown \u2014 you never see the broken one.';
+      },900);
+    } else {
+      rules.innerHTML=line('ok','No defender between you and the goal')
+        +line('ok','Nobody is nearer the goal than the ball')
+        +line('ok','No team-mate in the way of your shot');
+      note.innerHTML='Passed all three. Served as it is.';
+    }
+  };
+  document.getElementById('d2-go').click();
+})();
+</script>
+    <details><summary>The three steps, in order</summary>
+      <ul>
+        <li>1. You draw. Right now there are 17 hand-drawn one-on-ones.</li>
+        <li>2. It reads all of them and asks what is true in every single one. In your one-on-ones: no defender between the ball and the goal, nobody standing nearer the goal than the ball, and no team-mate in the way of your shot.</li>
+        <li>3. Every chance the game builds has to pass those. One that does not gets repaired before you ever see it.</li>
+        <li>Draw ten more tomorrow and it re-reads all 27 and adjusts. Nothing to update by hand.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A rule is always “none of this”, never “usually about three of these”</div>
+    <div class="dt">This sounds like a small detail. It is the difference between the tuner working and it quietly ruining everything.</div>
+    <details><summary>Why, with the example that nearly happened</summary>
+      <ul>
+        <li>Suppose it noticed that nearly all your drawings have three defenders in them, and made that a rule.</li>
+        <li>From then on, a chance with four defenders could never be built. Neither could one with two. You would have accidentally banned most of football by drawing three pictures that happened to look alike.</li>
+        <li>“No defender between the ball and the goal” cannot do that. It says what a one-on-one IS. “Three defenders” only says what your drawings happened to look like.</li>
+        <li>So it only ever takes a rule from something that appears zero times across your drawings.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Nine drawings out of ten have to agree. Yesterday it needed all ten.</div>
+    <div class="dt">Needing every drawing to agree meant one slip switched real rules off — and you would not have been told.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Rules kept</span><div class="track"><div class="fill was" style="width:6.7%"></div><div class="fill now" style="width:20.0%"></div></div><span class="vv">3 of 3 <s>1 of 3</s></span></div>
+      <div class="bar"><span class="lb">Bad chances</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><span class="vv">0% <s>15%</s></span></div>
+    </div>
+    <details><summary>What was actually happening, measured</summary>
+      <ul>
+        <li>Test: eleven good drawings, plus one with a defender in a place a one-on-one would never have him.</li>
+        <li>That one drawing switched off two of the three rules. Not weakened them — off. And then 15 out of every 100 chances the game served did not look like the thing they were called.</li>
+        <li>One drawing outvoted eleven, silently. Nothing on screen said a rule had stopped applying.</li>
+        <li>Now: a rule holds if nine in ten agree. The odd one out gets named as an outlier on its own card, and the game never uses it as a starting point for a new chance.</li>
+        <li>The point is you can draw a duff one and it does not matter. You get told which one it is.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Tune: one correction does nothing. The same correction three times becomes a proposal.</div>
+    <div class="dt">Drag a player where he should have been and press Tune. It is recorded and nothing else happens. Do the same kind of fix three times and it turns into a suggested change you can approve.</div>
+
+<div class="demo" id="d3">
+  <h4>Drag the team-mate out of the way, then press Tune</h4>
+  <p class="eg">A drawing to explain the idea — <b>not</b> the real screen. Simplified on purpose, and the numbers here are made up.</p>
+  <p class="how">He is standing in front of your shot. Move him somewhere sensible and press Tune.
+  Then do it twice more and watch what happens on the third. Three is the real threshold; everything
+  else here is simplified.</p>
+
+  <svg viewBox="0 0 320 210" role="img" aria-label="A chance with a team-mate blocking the shot">
+    
+  <g stroke="currentColor" fill="none" stroke-width="1.5" opacity=".22">
+    <rect x="62" y="10" width="196" height="76"/>
+    <rect x="112" y="10" width="96" height="31"/>
+    <path d="M118 86 A 46 34 0 0 0 202 86"/>
+  </g>
+  <line x1="0" y1="11" x2="320" y2="11" stroke="currentColor" stroke-width="2" opacity=".4"/>
+  <line x1="126" y1="11" x2="194" y2="11" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+
+    <line id="d3-lane" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".55"/>
+    <g id="d3-figs" color="var(--ink)"></g>
+    <g id="d3-mate" color="var(--ink)" style="cursor:grab">
+      <circle r="9.5" fill="#ff9f43" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
+      <circle r="18" fill="transparent"/>
+      <text y="22" text-anchor="middle" font-size="9.5" font-weight="700"
+        fill="currentColor" opacity=".75">team-mate</text>
+    </g>
+  </svg>
+
+  <div class="row">
+    <button class="btn go" id="d3-tune" disabled>Tune</button>
+    <span class="tag" id="d3-count">0 of 3 corrections</span>
+    <button class="btn" id="d3-reset">Start again</button>
+  </div>
+  <p class="note" id="d3-note">Drag the <b>orange</b> figure out of the dashed line.</p>
+  <div id="d3-prop"></div>
+</div>
+<script>
+(function(){
+  var svg=document.querySelector('#d3 svg'), figs=document.getElementById('d3-figs');
+  var lane=document.getElementById('d3-lane'), tune=document.getElementById('d3-tune');
+  var count=document.getElementById('d3-count'), note=document.getElementById('d3-note');
+  var prop=document.getElementById('d3-prop');
+  var GOAL={x:160,y:8}, n=0, mate, ball, start, dragging=false;
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function inLane(p){
+    var dx=GOAL.x-ball.x, dy=GOAL.y-ball.y, L=Math.hypot(dx,dy);
+    var t=((p.x-ball.x)*dx+(p.y-ball.y)*dy)/(L*L);
+    if(t<=0.04||t>=1) return false;
+    return Math.abs((p.x-ball.x)*dy-(p.y-ball.y)*dx)/L < 17;
+  }
+  var mateEl=document.getElementById('d3-mate');
+  function fig(x,y,fill,label){
+    var ly = y+21;
+    return '<g><circle cx="'+x+'" cy="'+y+'" r="8" fill="'+fill+'" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>'+
+      '<text x="'+x+'" y="'+ly+'" text-anchor="middle" font-size="9.5" font-weight="700" fill="currentColor" opacity=".75">'+label+'</text></g>';
+  }
+  // The team-mate is a PERSISTENT node moved by transform, never redrawn:
+  // replacing the markup mid-drag destroys the very element being dragged,
+  // which drops the pointer capture and the drag dies after one move.
+  function placeMate(){ mateEl.setAttribute('transform','translate('+mate.x+','+mate.y+')'); }
+  function draw(){
+    lane.setAttribute('x1',ball.x); lane.setAttribute('y1',ball.y);
+    lane.setAttribute('x2',GOAL.x); lane.setAttribute('y2',GOAL.y);
+    figs.innerHTML = fig(GOAL.x+(ball.x-GOAL.x)*0.22,34,'#f5b942','keeper')
+      + fig(64,92,'#ff6b6b','defender') + fig(258,96,'#ff6b6b','defender')
+      + fig(ball.x,ball.y,'#6fb8ff','you')
+      + '<circle cx="'+(ball.x+11)+'" cy="'+(ball.y+6)+'" r="3.4" fill="#f2f7f4"/>';
+    placeMate();
+  }
+  function deal(){
+    ball={x:rnd(118,202),y:rnd(148,178)};
+    // 0.45 of the way to goal, not half: the midpoint lands him on the keeper.
+    mate={x:ball.x+(GOAL.x-ball.x)*0.45+rnd(-5,5), y:ball.y+(GOAL.y-ball.y)*0.45+rnd(-4,4)};
+    start={x:mate.x,y:mate.y};
+    tune.disabled=true; draw();
+    note.innerHTML='Drag the <b>orange</b> figure out of the dashed line.';
+  }
+  function pt(e){
+    var r=svg.getBoundingClientRect();
+    return {x:(e.clientX-r.left)/r.width*320, y:(e.clientY-r.top)/r.height*210};
+  }
+  // Grab anywhere on the pitch rather than only on the small circle: on a
+  // phone the figure is about 12px across and would be near-impossible to hit.
+  svg.addEventListener('pointerdown',function(e){
+    dragging=true;
+    if(svg.setPointerCapture) try{ svg.setPointerCapture(e.pointerId); }catch(_){}
+    move(e); e.preventDefault();
+  });
+  function move(e){
+    var p=pt(e);
+    mate.x=Math.max(14,Math.min(306,p.x)); mate.y=Math.max(14,Math.min(188,p.y));
+    placeMate();
+    var moved=Math.hypot(mate.x-start.x,mate.y-start.y);
+    var clear=!inLane(mate);
+    tune.disabled = !(clear && moved>14);
+    note.innerHTML = clear
+      ? (moved>14 ? 'Out of the way. Press <b>Tune</b>.' : 'Nudge him a bit further \u2014 a tiny move is not counted as a correction.')
+      : 'Still in front of your shot.';
+  }
+  svg.addEventListener('pointermove',function(e){ if(dragging) move(e); });
+  ['pointerup','pointercancel'].forEach(function(k){
+    svg.addEventListener(k,function(){dragging=false;});
+  });
+  tune.onclick=function(){
+    n++; count.textContent = n+' of 3 corrections';
+    count.className = 'tag' + (n>=3 ? ' on' : '');
+    if(n<3){
+      note.innerHTML='Recorded. <b>Nothing has changed yet</b> \u2014 one bad chance is not evidence of anything. '+
+        'It did not become one of the 17 drawings either.';
+      prop.innerHTML='';
+      setTimeout(deal,700);
+    } else {
+      note.innerHTML='Same fix, three times. That is a <b>pattern</b>.';
+      prop.innerHTML='<div class="prop"><b>Proposal \u2014 waiting in the commit tab</b>'+
+        '<p>\u201cA team-mate was standing in your shooting line, and you moved him out, on 3 separate chances. '+
+        'Suggested rule: never place a team-mate in the line between the ball and the goal.\u201d</p>'+
+        '<p style="color:var(--ink3)">You approve it or you ignore it. It never changes anything on its own.</p></div>';
+      tune.disabled=true;
+    }
+  };
+  document.getElementById('d3-reset').onclick=function(){ n=0; count.textContent='0 of 3 corrections';
+    count.className='tag'; prop.innerHTML=''; deal(); };
+  deal();
+})();
+</script>
+    <details><summary>Why it waits for three, and where the proposals show up</summary>
+      <ul>
+        <li>A correction is not a new drawing. It does not join the 17 and it does not start pulling the rules around — a single bad chance you happened to see is not evidence of anything.</li>
+        <li>What it records is the SHAPE of what you fixed: not “this defender, this picture” but “a defender was between the ball and the goal, and I moved him out”.</li>
+        <li>Do that once and it is one data point. Do it three times on different chances and it is a pattern — the game is repeatedly making the same mistake, and that is worth changing the rules over.</li>
+        <li>At three, a proposal appears in the commit tab, in plain words, saying what it thinks the new rule should be. You approve it or you ignore it. It never changes anything on its own.</li>
+        <li>A nudge of less than about half a metre is ignored, so tidying up a picture does not count as a correction.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Your own team-mates were standing in front of your shot</div>
+    <div class="dt">On long shots this was happening in a third of them. Fixed for one-on-ones a while back; the other kinds where you are the one shooting never got the same treatment.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Long range</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><span class="vv">0% <s>34.4%</s></span></div>
+      <div class="bar"><span class="lb">Tight angle</span><div class="track"><div class="fill was" style="width:32.6%"></div><div class="fill now warn" style="width:3.5%"></div></div><span class="vv">1.2% <s>11.2%</s></span></div>
+    </div>
+    <details><summary>Why tight angle is not zero, and where this is deliberately left alone</summary>
+      <ul>
+        <li>Tight angle went from about 1 in 9 chances to about 1 in 80. The last few are a real trade, not laziness: from a tight angle the only place left to move that team-mate is offside, and swapping a blocked shot for a wrongly-placed player is not a fix.</li>
+        <li>It is not applied to a cutback, a cross or a through ball. Those chances are you passing TO a team-mate, so moving him out of the way would be moving the chance itself.</li>
+        <li>It is not applied to a volley or a header either — measured, doing so made the shot MORE likely to be blocked, not less.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Offside was being called on players who were not offside</div>
+    <div class="dt">Every one of the three offside warnings on your own drawings was wrong. The rule has two halves and only one was being checked.</div>
+    <details><summary>The half that was missing</summary>
+      <ul>
+        <li>A player is only offside if he is nearer the goal than the last defender AND nearer the goal than the ball. Being behind the ball means you cannot be offside, whatever the defenders are doing.</li>
+        <li>Only the defender half was being tested. So a team-mate standing a few metres BEHIND the ball got flagged.</li>
+        <li>On your drawings: three warnings, all three on a man behind the ball. Across everything, 46 of 153 calls were wrong.</li>
+        <li>Worse than the warning: the auto-repair believed it, and was physically dragging players who were standing perfectly legally.</li>
+        <li>The match itself was never affected — the game always had this right. This was the red text in the editor and the repair acting on it.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The keeper stopped following the ball when a chance was randomised</div>
+    <div class="dt">A third of the time, moving the ball left him worse positioned than the drawing had him — sometimes at the wrong post entirely.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Left worse</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><span class="vv">0% <s>32.8%</s></span></div>
+    </div>
+    <details><summary>What was happening</summary>
+      <ul>
+        <li>He was copied straight off your drawing and then nudged on his own, with no reference to where the ball had ended up.</li>
+        <li>In your drawings he always shades the near post. After a nudge he could end up shading the FAR post — the exact opposite of the one thing all seventeen drawings agree on.</li>
+        <li>Now he is worked out from the ball: your drawing's own near-post shade and distance off his line, re-applied to wherever the ball actually is. A keeper you drew rushing out still rushes out. He just looks at the ball now.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The plain generated one-on-one did not obey your own rules</div>
+    <div class="dt">About one in seven broke a rule taken from your own drawings.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Obeyed</span><div class="track"><div class="fill was" style="width:85.6%"></div><div class="fill now" style="width:100.0%"></div></div><span class="vv">100% <s>85.6%</s></span></div>
+    </div>
+    <details><summary>Two causes</summary>
+      <ul>
+        <li>The repair that moves a defender out from between ball and goal only fired if he was within 14 metres of the middle. Your drawings have no defender there at ANY width. It also let a man half a metre in front through.</li>
+        <li>Nothing was clearing a TEAM-MATE out of your shooting line in a plain build, so 1 in 23 put one there.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Leo could not see the scenarios the game was already using</div>
+    <div class="dt">The gallery and the game were looking in two different places.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Cards shown</span><div class="track"><div class="fill was" style="width:47.6%"></div><div class="fill now" style="width:100.0%"></div></div><span class="vv">21 <s>10</s></span></div>
+    </div>
+    <details><summary>The mismatch</summary>
+      <ul>
+        <li>The game reads the committed code, which everyone has. The gallery was only reading the database.</li>
+        <li>So a committed scenario was driving the game for everybody while showing on nobody's screen. The game was working the whole time — the display was not.</li>
+        <li>It reads both now, and every saved scenario gets its own card, including ones saved off a simulation that never had a slot of their own.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Your edits could land on a completely different picture</div>
+    <div class="dt">Saving one scenario could silently repaint half the others.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Repainted</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:18.0%"></div></div><span class="vv">9% <s>50%</s></span></div>
+    </div>
+    <details><summary>Why, and why 9% and not 0%</summary>
+      <ul>
+        <li>Each card picked which drawing to build from by its POSITION in the list. Save one scenario, the list reorders, and every card after it is now building from a different drawing than it was a second ago.</li>
+        <li>Cards now pick by identity, not position, so adding or saving one leaves the rest alone.</li>
+        <li>9% is the floor, not a leftover bug: with 17 drawings and a card having to pick one of them, roughly one in eleven will land on a different drawing purely because the pool it is choosing from has genuinely changed. The first attempt at this fix measured 31%, with one drawing winning 189 times out of 400 — that was a real bug, and it is gone.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The poacher was the one team-mate you could never remove</div>
+    <div class="dt">Reported as “I cannot remove team-mates”. It was only ever this one figure, and it was the same in every editor.</div>
+    <details><summary>Checked properly before fixing</summary>
+      <ul>
+        <li>Measured across all the editors rather than assumed: the supporting runner could be removed, extra defenders could be removed, the poacher could not — his button was greyed out everywhere.</li>
+        <li>He is removable now, the same as everybody else.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The site failed to build because of a font</div>
+    <div class="dt">Nothing to do with any code change. The build happened to run while Google's font service did not answer, and the whole deploy failed.</div>
+    <details><summary>Why it cannot happen again</summary>
+      <ul>
+        <li>The site was downloading the Cinzel font from Google every time it built. If that download fails, the build fails, however good the code is.</li>
+        <li>My first guess was wrong and I said so rather than pushing a fix on a hunch — the build ran clean locally, which ruled it out.</li>
+        <li>The font file now lives in the project. Nothing is fetched at build time, so there is nothing left to fail.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Also changed — patch notes themselves</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The shareable page is now generated from this file, so the two cannot disagree</div>
+    <div class="dt">Every version here has an Open-the-artifact link at the bottom. The page behind it is built from the same array this archive reads.</div>
+    <details><summary>How it works, and the one thing it cannot do</summary>
+      <ul>
+        <li>npx tsx scripts/patch-notes-artifact.mts 0.3 prints the page. Publish it as an artifact and paste the link into that version's artifactUrl.</li>
+        <li>Written by hand, the archive and the artifact drift: one gets a correction, the other keeps the old number, and nobody can tell which is right. There is now one copy of the words.</li>
+        <li>It uses Harry's own v0.1 artifact as the visual template, so a generated page looks like the ones already shared.</li>
+        <li>What it cannot do is screenshots — there is nowhere in the data to put an image, so a page that needs one gets it added by hand after. That is why v0.1 has no link: its artifact has six screenshots whose files are not in the repo.</li>
+        <li>Fixed on the way through: the template's CSS had no rule for an explicit light choice, so a reader on a dark system who picked light still got the dark page. It now has one.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Leo's 0.2, 0.3 and 0.4 are one entry now — all three were Goalie Mode</div>
+    <div class="dt">Merged into a single v0.2, his wording kept exactly. The full note for him, including which number to use next, is in that entry's Known issues.</div>
+    <details><summary>Why they were merged, and the one thing it breaks</summary>
+      <ul>
+        <li>Three separate version numbers for three rounds of the same feature read as three features. One entry with a round-by-round history at the bottom says what actually happened.</li>
+        <li>Nothing was dropped: 18 of his 20 items carried over word for word, and the 2 that did not were his own one-line summaries of 0.2 and 0.3, which the new history section replaces.</li>
+        <li>What it breaks: this v0.3 is Harry's, and Leo already shipped a v0.3. Any older link or screenshot saying “v0.3” now points at something else.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Patch notes live in the code, not a database table</div>
+    <div class="dt">The page showed MIGRATION NOT RUN instead of the notes, because nothing had been loaded into the table.</div>
+    <details><summary>Why the table was the wrong shape</summary>
+      <ul>
+        <li>Nothing authors a patch note through the web — they are written alongside the work. So the content was already in the repo, and the table was a second copy somebody had to hand-feed.</li>
+        <li>As a file it is in git, reviewable in a diff, revertible, and live the moment it deploys. The page now has no request, no loading state and nothing that can fail.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues &amp; open decisions</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The keeper's near-post shading is still yours to pick</div>
+    <div class="dt">The generator shades twice as hard as you actually drew — and more is worse, not better.</div>
+    <details><summary>The measured trade</summary>
+      <ul>
+        <li>Engine today: 0.46 of the ball's width. Your drawings: 0.23. Over half of wide one-on-ones today have the near post completely dead.</li>
+        <li>0.20 (what you drew) is the only value where BOTH corners stay shootable at every ball width. Past ~0.35 the near post stops existing and the chance collapses to one answer.</li>
+        <li>The cost of 0.20: he will not LOOK like he is covering his near post. That is the trade, and it is a decision, not a bug.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">How often anyone should be offside is undecided</div>
+    <div class="dt">Zero offside means offside doesn't exist; the engine's own notes record 391/400 one-on-ones ending offside before the repair existed.</div>
+  </li>
+  <li>
+    <div class="hd">Three base faults left deliberately unfixed</div>
+    <div class="dt">long_range 16.1% show an 11m+ hole in the line; tight_angle 7.0% have an empty central channel. Both are &quot;is this actually wrong?&quot; design calls.</div>
+  </li>
+  <li>
+    <div class="hd">Only one-on-ones have hand-drawn scenarios</div>
+    <div class="dt">The other 12 kinds still run purely procedurally. The rule set adapts automatically as you draw more.</div>
+  </li>
+  <li>
+    <div class="alert">
+      <div class="t">A security migration is still unrun</div>
+      <p>security_rls_hardening_jul2026.sql closes six confirmed holes reachable with the public key. Highest-priority non-feature item.</p>
+    </div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Draw scenarios for a second kind</div>
+    <div class="dt">Cutback or tight angle — the first real test of whether the scanner reads a situation it has never seen.</div>
+  </li>
+  <li>
+    <div class="hd">Formations and playstyles</div>
+    <div class="dt">Parked deliberately. A formation should MODULATE a drawn shape rather than replace it.</div>
+  </li>
+  <li>
+    <div class="hd">Trial plus three full seasons</div>
+    <div class="dt">Play it through and report everything.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="n">
+  <li>
+    <div class="hd">v0.2 — Leo's Goalie Mode, rounds 1-4 combined</div>
+    <div class="dt">The keeper-POV minigame, its camera rebuilt against reference footage, the cursor bug, real shot variety, and the pitch actually drawn.</div>
+  </li>
+  <li>
+    <div class="hd">v0.1 — the scenario gallery and the chance formula</div>
+    <div class="dt">14→64 distinct chance situations, 0% same chance twice running, 8× less scrolling.</div>
+  </li>
+</ul>
+
+<footer>22 Sep 2026 · also at <code>/admin/patch-notes</code>, generated from the same file. Anything unverified says so.</footer>
+
+</div>
+
+</body></html>

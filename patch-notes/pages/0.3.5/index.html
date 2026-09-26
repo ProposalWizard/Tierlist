@@ -1,0 +1,310 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Knowitball v0.3.5</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  /* The v0.1 artifact's CSS stopped at the two rules above, which leaves one
+     real gap: a reader on a DARK system who explicitly picks light stamps
+     data-theme="light", and prefers-color-scheme still reports dark — so the
+     light block never matches and the page stays dark against their choice.
+     This repeats the light palette for that stamp. */
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.3.5</span>
+  <h1>Harry's patch notes</h1>
+  <p class="sub">From the 40-minute call with Leo and Mikey · what got fixed off the back of it, what was decided, and every idea that came up · nothing here is built unless it says it is</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>3</b><span>things fixed straight off the call</span></div>
+  <div class="s"><b>6</b><span>decisions made, written down so they stay made</span></div>
+  <div class="s"><b>14</b><span>ideas parked, none of them started</span></div>
+  <div class="s"><b>0</b><span>of those ideas built — this is a list, not a changelog</span></div>
+</div>
+
+<h2 class="fix"><i></i>Fixed off the back of the call</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Delete works on any scenario now, not just one-on-ones</div>
+    <div class="dt">Leo was blocked: “I added one and I can't delete it”, and Delete looked like a one-on-one-only feature.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Volley cards</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:90.0%"></div></div><span class="vv">9 <s>10</s></span></div>
+    </div>
+    <details><summary>Two causes, neither about one-on-ones</summary>
+      <ul>
+        <li>The Delete button only appeared once a scenario had been SAVED. The only saved scenarios were one-on-ones, so it looked kind-specific. It is always there now.</li>
+        <li>A generated card had nowhere to be deleted TO — versions come from a count, not a list, so there was no way to say “not this one”. There is now, and it is remembered after a reload.</li>
+        <li>On a saved scenario Delete still clears the database and the code. On a card that was never saved it just takes the card out, and says so, instead of reporting a server error for something that never reached a server.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The X is the reject mark, not a delete — it says so now</div>
+    <div class="dt">Asked twice on the call what it meant: “is that delete, or does that mean something else?” It reads “No good”.</div>
+  </li>
+  <li>
+    <div class="hd">The scenario picture on desktop — too small, then too big, now 400×640</div>
+    <div class="dt">It was hard-coded to phone size on any screen. First pass overshot to 500×800. Phone is unchanged throughout.</div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Decided on the call</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Sprint to something releasable, then tune it</div>
+    <div class="dt">“This could release today, I'm not even joking” — if the scenarios were done, the trial was done, and the engine worked everywhere.</div>
+    <details><summary>What that means in practice</summary>
+      <ul>
+        <li>The three things between here and a release: every chance kind has drawings, the trial works, and the same match engine runs in the trial and in training rather than only in a match.</li>
+        <li>Everything else on this page waits behind those three. The reason is that tuning a chance is guesswork until the chances themselves exist — “it's hard to make the scenario stuff good when it's not done”.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A stronger opponent means FEWER chances, not different ones</div>
+    <div class="dt">Non-league against another non-league side might be ten chances. Against Liverpool it might be two or three. A one-on-one is still one of the things those two can be.</div>
+    <details><summary>Where it was left</summary>
+      <ul>
+        <li>Agreed: the opponent's strength changes how many chances you get.</li>
+        <li>Open: whether two one-on-ones against Liverpool as a non-league side is wrong. Harry's read is that it does not strictly need to make sense, so long as chances are rarer.</li>
+        <li>Also agreed: your position should tilt which chances you get, not decide it. A striker getting only striker chances was called out as wrong — whatever position you play should get you into the game a lot.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Extra modes arrive through the game, never through a settings switch</div>
+    <div class="dt">The home screen already has casino, sponsors, awards, trophies. Adding ownership and garden to that list was called overwhelming.</div>
+    <details><summary>The shape agreed, and the one that was rejected</summary>
+      <ul>
+        <li>Rejected: a Settings toggle that says “turn on funky features”. Called silly, and for a good reason — nobody finds it, so nobody uses it, so why build it.</li>
+        <li>Agreed instead: it arrives as an event. Around £1m, an investor approaches you with a chance to buy into some clubs, and ownership unlocks from that moment.</li>
+        <li>Mikey's version was a profile tab you scroll down to. Same instinct, and worth keeping in mind — the difference is whether it is discovered or given to you.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Ownership stays. The son mechanic and the agent game go somewhere else.</div>
+    <div class="dt">Investing and eventually owning a club is wanted. Spawning a son, ageing him up, running an agency is a different game wearing this one's clothes.</div>
+    <details><summary>Why the line is drawn there</summary>
+      <ul>
+        <li>The test used on the call: would somebody see this and think “what the hell is this?” Investing survives it. A potion that ages up your son does not.</li>
+        <li>The concern is not that the ideas are bad — they were both wanted originally. It is that a game with all of them in reads as a gimmick rather than as a football career.</li>
+        <li>Manager after you retire is fine, and is mostly built already. Agent and the chaotic simulation stuff become their own game, using this as the base.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">This engine is a base for more than one game</div>
+    <div class="dt">“We could make the best possible NSS, then the best possible other game.” Anything cut from here is not thrown away, it is the start of the next one.</div>
+  </li>
+  <li>
+    <div class="hd">Scenario work is split by chance kind, and everyone saves into the same place</div>
+    <div class="dt">Pick a kind, make ten to fifteen varied ones, save each as you go, then commit the whole lot at once from Tuning &amp; Commit.</div>
+    <details><summary>The bit that was unclear on the call</summary>
+      <ul>
+        <li>Do NOT press commit per scenario. Save them, then commit once — that is the whole reason the Tuning &amp; Commit page exists.</li>
+        <li>A kind with no drawings has no rule set, so the first ten for a new kind are what teach it what that chance IS. Range matters more than polish.</li>
+        <li>Tune is not the same as Save. Tune records a correction and changes nothing on its own; it waits until several corrections agree before proposing anything.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Ideas from the call — none of these are started</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Chances should come out of the passage of play</div>
+    <div class="dt">You held it up, played it wide, the cross comes in, you head it. Right now a chance is picked from your position and where the ball is, with no memory of what just happened.</div>
+  </li>
+  <li>
+    <div class="hd">Difficulty settings, with a mode you have to earn</div>
+    <div class="dt">Easy is roughly original NSS — five goals a game from day one. Hard makes training brutal (five drills for +1) and the opposition far stronger. Win the Ballon d'Or on Hard and something harder again unlocks.</div>
+    <details><summary>Why this came up</summary>
+      <ul>
+        <li>It answers the split in the room: one of us finds easy scoring boring, and a casual player bounces off a game that is hard from minute one.</li>
+        <li>Named as being like FM's challenge modes rather than a difficulty slider.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Keepers that get better as you climb</div>
+    <div class="dt">From playing real NSS for research: early keepers only go to ground, and a bouncing ball straight at them can go over. Higher up they start reaching top corners.</div>
+    <details><summary>What it buys</summary>
+      <ul>
+        <li>Scoring is easy at the start because the keeper is bad, not because the game is generous — and you can feel the difference when you move up.</li>
+        <li>Same idea for everything around you: your energy drink does 10% in the bottom division and a lot more once you have a real gym behind you.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Unlocks tied to star rating and to reaching a new league</div>
+    <div class="dt">New mechanics arrive as you climb, so a promotion changes what the game is, not just the badge next to your name. Compared to Spore and Blue Lock on the call.</div>
+  </li>
+  <li>
+    <div class="hd">Achievements paying out coins</div>
+    <div class="dt">Something to spend progress on beyond the shop.</div>
+  </li>
+  <li>
+    <div class="hd">Tap a team-mate to pass, and play carries on</div>
+    <div class="dt">From the five-a-side build. Tap him, he goes, he can lay it back to you — the move does not cut away the moment you release.</div>
+  </li>
+  <li>
+    <div class="hd">A ball that is already moving when it reaches you</div>
+    <div class="dt">A cross should arrive travelling. Right now the ball you strike is sitting still even when it was just played into you.</div>
+  </li>
+  <li>
+    <div class="hd">Take a touch round the keeper</div>
+    <div class="dt">Rather than only shooting from where the chance starts.</div>
+  </li>
+  <li>
+    <div class="hd">Left and right mid should probably be wingers</div>
+    <div class="dt">Raised as a real doubt about the position list rather than a decision.</div>
+  </li>
+  <li>
+    <div class="hd">The goal and the six-yard box might be the wrong size <span class="pill p-amb">disagreed</span></div>
+    <div class="dt">Mikey: the goal and six-yard box look too small, and a tight angle does not look like a tight angle. Harry: the pitch is deliberately bigger than life because it is cartoony. Unresolved — worth measuring rather than arguing.</div>
+  </li>
+  <li>
+    <div class="hd">The tight-angle chance is too easy</div>
+    <div class="dt">“I could score every time.” The keeper is not on his line where he should be, and a tight angle in real football is a hard chance, not an easy one.</div>
+  </li>
+  <li>
+    <div class="hd">Goalie mode needs a reason to be in a player's career <span class="pill p-amb">question</span></div>
+    <div class="dt">“What is goalie mode doing in my career as a player?” Liked as a thing to play, questioned as a thing that belongs here.</div>
+  </li>
+  <li>
+    <div class="hd">The engine should run in the trial and in training too <span class="pill p-amb">disagreed</span></div>
+    <div class="dt">Mikey's view is that the opening is the hook and matters as much as anything. Harry's is that scenarios come first. Both agreed it is near the top either way.</div>
+  </li>
+  <li>
+    <div class="hd">Scale the whole game to the player, because we actually can</div>
+    <div class="dt">NSS did not scale its world because it could not. Playing Liverpool could mean genuinely worse team-mates around you, not just a higher number on the opposition.</div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Still open from before the call</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The infinite match is not built yet</div>
+    <div class="dt">The tool for seeing what a real match actually serves you, over thousands of minutes. Looked for on the call and not there.</div>
+  </li>
+  <li>
+    <div class="hd">One-on-ones are showing up in game again</div>
+    <div class="dt">Confirmed live on the call — “finally”. Worth saying plainly that this was confirmed by playing, not by a test.</div>
+  </li>
+  <li>
+    <div class="hd">Only one-on-one has drawings</div>
+    <div class="dt">Tight angle and free kick have one each, which is below the five needed for a rule. Eleven kinds have none and run on the generator's built-in shapes.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="n">
+  <li>
+    <div class="hd">v0.3 — the scenario gallery, Save vs Commit, and the auto-tuner</div>
+    <div class="dt">Commits go to main and batch into one deploy, every card says whether it is saved or committed, Tune records a correction without saving it as a base scenario, and the rule set is read off your own drawings.</div>
+  </li>
+</ul>
+
+<footer>22 Sep 2026 · also at <code>/admin/patch-notes</code>, generated from the same file. Anything unverified says so.</footer>
+
+</div>
+
+</body></html>
