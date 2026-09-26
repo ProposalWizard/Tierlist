@@ -27,6 +27,110 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.13",
+      "title": "Mikey's patch notes",
+      "publishedAt": "2026-09-26T12:00:00Z",
+      "summary": "The headline: how you get picked. A better-rated team-mate in your position starts ahead of you until you win the shirt; once won, you keep it on form. Form now counts over 3 games, subs come on when the score says, and fringe players start some early cup rounds.",
+      "stats": [
+        {
+          "value": "5 → 3",
+          "label": "matches the manager judges your form on"
+        },
+        {
+          "value": "50'–80'",
+          "label": "when a sub comes on now, going by the score (was always 58'–72')"
+        },
+        {
+          "value": "6.8",
+          "label": "recent form that wins you the shirt over a better-rated rival"
+        },
+        {
+          "value": "60%",
+          "label": "early cup rounds a fringe player starts"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Three poor games puts you on the bench; three good ones win it back",
+              "detail": "Any career, watch the pre-match screen."
+            },
+            {
+              "title": "Subs come on sooner when you're losing",
+              "detail": "A match where you start on the bench."
+            },
+            {
+              "title": "A better-rated team-mate in your position starts ahead of you until you win the shirt",
+              "detail": "A new career, or a transfer to a club with a stronger player in your spot."
+            },
+            {
+              "title": "Once you've won the shirt, you keep it on form",
+              "detail": "Keep playing after winning it."
+            },
+            {
+              "title": "Fringe players start some early cup rounds",
+              "detail": "A cup game before the quarter-final while you're on the bench."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The headline: how you get picked",
+          "items": [
+            {
+              "title": "Win your shirt from a better-rated rival",
+              "detail": "Problem: the rest of your squad never counted, so a new 18-year-old started every game at Man City. Fix: rated higher than the best team-mate in your position, you start; rated the same or lower, you start on the bench and take his place with 2+ appearances at a 6.8 average, or when he hits a bad patch (under 6.0) while you're at 6.3+. Once won, ratings stop mattering. A new club means winning it again; old saves keep their place; made-up squads have no rival."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Form counts faster",
+              "detail": "Last 3 matches (was 5); form is 35% of the manager's score (was 30%). Three poor games (5.5) bench you, three good ones (7.2) win it back."
+            },
+            {
+              "title": "A substitute comes on when the game needs him",
+              "detail": "2 down 50', 1 down 56', level 64', 1 up 72', well ahead 80' (was always 58'–72')."
+            },
+            {
+              "title": "Cup rotation",
+              "detail": "A regular is never rotated out. A fringe player starts about 60% of early cup rounds."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Selection changes not seen in a real career yet",
+              "detail": "The test browser can't load real squads, so it never gets a rival.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Google Analytics counts our own test browsers as new UK users",
+              "detail": "Fix ready, waiting on a yes.",
+              "pill": {
+                "text": "high",
+                "tone": "red"
+              }
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/Q681hvwMs83X9895Aevav7",
+      "updatedAt": null
+    },
+    {
       "version": "0.12",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-25T22:00:00Z",

@@ -9,7 +9,7 @@ import {
   buildLeague, buildFixtures, playLeagueWeek, updateLeagueWithUserResult, sortLeague, mulberry32,
   simulateFixtureScore,
 } from "./season";
-import { selectionFor, MISSED_WEEK } from "./selection";
+import { recordAppearance, selectionFor, MISSED_WEEK } from "./selection";
 import { startNewWeek, WEEK_ACTIONS, actionsLeft, REST_ENERGY } from "./week";
 import { judgeSeason } from "./expectations";
 import {
@@ -1187,6 +1187,11 @@ export function creditMatchResult(
   // scoreline — it costs you a little more of him than the rating alone.
   if (stats.hooked === "form" && !alreadyPlayed) {
     next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss - 3) };
+  }
+  // One more appearance at this club, and whether that has won you your shirt
+  // (selection.ts). Only for a match you actually played in.
+  if (!alreadyPlayed && (stats.minutes ?? 0) > 0) {
+    next.shirt = recordAppearance(next);
   }
   // The manager's view going into next week, so the dashboard's status is live
   // rather than the "1st Team" it was stamped with when the career was created.

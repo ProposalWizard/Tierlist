@@ -1,0 +1,195 @@
+<title>Knowitball Patch Notes Mikey v0.5</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+
+<style>
+  .check{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:6px 14px;margin:0 0 8px}
+  .check li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+  .check li:last-child{border-bottom:0}
+  .check li span{color:var(--ink2)}
+  .pw{margin:8px 0 0;font-size:14px;color:var(--ink2)}
+  .pw b{color:var(--ink)}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 2px}
+  .ba figure{margin:0}
+  .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+  .ba figcaption{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-top:5px;color:var(--ink3)}
+  .ba figure.after figcaption{color:var(--green)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.5</span>
+  <h1>Knowitball Patch Notes Mikey v0.5</h1>
+  <p class="sub">26 September 2026 · branch Mikey · 1 change · tests: all passing except the 2 that also fail on main</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>5 → 3</b><span>matches the manager judges your form on</span></div>
+  <div class="s"><b>50'–80'</b><span>when a sub comes on now, going by the score (was always 58'–72')</span></div>
+  <div class="s"><b>6.8</b><span>recent form that wins you the shirt over a better-rated rival</span></div>
+  <div class="s"><b>60%</b><span>early cup rounds a fringe player starts</span></div>
+</div>
+
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="check n">
+  <li>Three poor games puts you on the bench; three good ones win it back <span>· any career, watch the pre-match screen</span></li>
+  <li>Subs come on sooner when you're losing <span>· a match where you start on the bench</span></li>
+  <li>Pre-match says "Bench (on when the game needs you)" <span>· pre-match screen as a sub</span></li>
+  <li>A better-rated team-mate in your position starts ahead of you until you win the shirt <span>· a new career or a transfer to a club with a stronger player in your spot</span></li>
+  <li>Once you've won the shirt, you keep it on form <span>· keep playing after winning it</span></li>
+  <li>Fringe players start some early cup rounds <span>· a cup game before the quarter-final while you're on the bench</span></li>
+</ul>
+
+<h2 class="fix"><i></i>The headline: how you get picked</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Win your shirt: a better-rated rival starts ahead of you until you earn it</div>
+    <p class="pw"><b>Problem:</b> the other players at your club never counted. A brand-new 18-year-old started every game from week one, at Man City the same as at Barnet.</p>
+    <p class="pw"><b>Why:</b> the manager only looked at you: his opinion of you, your form, your star rating and your fitness.</p>
+    <p class="pw"><b>Fix:</b> your rival is the best real team-mate in your position.</p>
+    <ul style="margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px">
+      <li><b style="color:var(--ink)">Rated higher than him</b> (signed as the main man): you start, on your own form.</li>
+      <li><b style="color:var(--ink)">Rated the same or lower:</b> you start on the bench. The pre-match screen names him and compares your forms. You take his place with 2+ appearances at a recent average of 6.8 (about a goal and an assist across three sub appearances), or when he hits a bad patch (under 6.0) while you're at 6.3+.</li>
+      <li><b style="color:var(--ink)">Once won, ratings stop mattering.</b> You keep your place on form, fitness and the manager, however much higher rated he is.</li>
+      <li>A new club means winning it again. Old saves where you've been playing keep your place. A made-up squad (no ratings) has no rival.</li>
+    </ul>
+    <p class="pw"><span class="tag">measured</span> <span class="tag">not yet seen</span></p>
+    <details><summary>Why 6.8 and not 7.0</summary><p>A short sub appearance pulls your rating towards 6.5: a 25-minute goal is about 7.4, an assist about 7.0, nothing about 6.2. A 7.0 average would need two goals in three appearances.</p></details>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Form counts faster</div>
+    <div class="dt">The manager judges your last <b>3</b> matches (was 5), and form counts for <b>35%</b> of his score (was 30%; his opinion of you 45% → 40%). Three poor games (5.5) now bench you, and three good ones off the bench (7.2) win your place back. Two dreadful games (4.8) are enough on their own. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">A substitute comes on when the game needs him</div>
+    <div class="dt">It was always somewhere between 58' and 72'. Now, from the 50th minute: <b>2 down 50'</b> · <b>1 down 56'</b> · <b>level 64'</b> · <b>1 up 72'</b> · <b>well ahead 80'</b>, plus up to 4 minutes either way. <span class="tag">measured</span> <span class="tag">not yet seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Cup rotation</div>
+    <div class="dt">A regular is never rotated out. A player who isn't one starts about <b>60%</b> of early cup rounds (anything before the quarter-final). <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Selection changes not seen in a real career yet <span class="pill p-amb">Low</span></div>
+    <div class="dt">The test browser can't load real squads, so it never gets a rival. The rules pass their tests.</div>
+  </li>
+  <li>
+    <div class="hd">Winning a training level not yet seen on a screen <span class="pill p-amb">Low</span></div>
+    <div class="dt">Carried from v0.4.</div>
+  </li>
+  <li>
+    <div class="hd">Two drawing tests fail on main <span class="pill p-amb">Low</span></div>
+    <div class="dt">authoredChance (one-on-one drawings) and longRangeRules (after a long-shot drawing was deleted).</div>
+  </li>
+  <li>
+    <div class="hd">Google Analytics counts our own test browsers as new UK users <span class="pill p-red">High</span></div>
+    <div class="dt">Fix ready, waiting on a yes.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Play a new career at a big club and check the rival and shirt feel right</div><div class="dt">Needs real squads, so a signed-in look on the live site.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 25 September 2026 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 25 September 2026 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>

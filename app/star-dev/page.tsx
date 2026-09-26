@@ -3306,7 +3306,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                     : preMatchSelection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
                 >
                   {preMatchSelection.status === "1st Team" ? "Starting Eleven"
-                    : preMatchSelection.status === "Substitute" ? `Bench (on ~${preMatchSelection.onAt}')`
+                    : preMatchSelection.status === "Substitute" ? "Bench (on when the game needs you)"
                       : preMatchSelection.status === "Injured" ? "Injured"
                         : "Out of Squad"}
                 </span>
