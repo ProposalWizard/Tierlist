@@ -136,6 +136,19 @@ function useRevealPitch(onChanceServed?: (info: ServedInfo) => void) {
       revealOnScreen(pitch ?? boxRef.current);
     });
   }, [onChanceServed]);
+  // The FIRST chance is built as the match mounts and is not "served", so
+  // reveal once as soon as the pitch exists too (after the real squads have
+  // loaded, for EnginePlay).
+  useEffect(() => {
+    let raf = 0, frames = 0;
+    const tick = () => {
+      const pitch = boxRef.current?.querySelector("canvas")?.parentElement;
+      if (pitch && pitch.getBoundingClientRect().height > 0) { revealOnScreen(pitch); return; }
+      if (++frames < 600) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
   return { boxRef, served };
 }
 

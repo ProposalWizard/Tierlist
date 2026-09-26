@@ -47,7 +47,8 @@ export default function DevTrialPanel({
   // It used to open in the page flow, and once opened it stayed open on every
   // stage, so the pitch sat at 501–913 px on a 664 px phone (phone audit,
   // 26 Sep 2026). Now the resting line is the only thing in the flow and the
-  // panel drops down over the stage; tapping the line again closes it.
+  // panel drops down over the stage; tapping the line again closes it. Skip
+  // and Sim close it too, so it never sits over the result card's Next.
   return (
     <div className="relative mb-1.5">
       <button
@@ -96,14 +97,14 @@ export default function DevTrialPanel({
           <div className="mt-2 grid grid-cols-2 gap-1.5">
             <button
               disabled={!stage}
-              onClick={() => stage && onSkipStage(level)}
+              onClick={() => { if (!stage) return; setOpen(false); onSkipStage(level); }}
               className="min-h-[40px] rounded-lg bg-sky-500/25 py-2 text-[11px] font-black uppercase tracking-wide text-sky-100 transition hover:bg-sky-500/40 disabled:opacity-40"
             >
               Skip {stage ? STAGE_LABEL[stage] : "stage"}
             </button>
             <button
               disabled={!stage}
-              onClick={() => stage && onSimTrial(level)}
+              onClick={() => { if (!stage) return; setOpen(false); onSimTrial(level); }}
               className="min-h-[40px] rounded-lg bg-sky-400 py-2 text-[11px] font-black uppercase tracking-wide text-gray-950 transition hover:bg-sky-300 disabled:opacity-40"
             >
               Sim whole trial
