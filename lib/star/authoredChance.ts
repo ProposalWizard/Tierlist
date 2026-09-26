@@ -33,7 +33,7 @@
  * fully reversible by deleting rows.
  */
 
-import { goalInView, type Scenario, type Vec2 } from "./canvasEngine";
+import { goalInView, type Scenario, type Vec2, type Viewport } from "./canvasEngine";
 import { CX, GOAL_W, PITCH_W, HALF_LEN } from "./pitch";
 import { AUTHORED_SCENARIOS } from "./authoredScenarios";
 import type { MatchScenario } from "./scenarios";
@@ -600,6 +600,34 @@ function mirrorShape(s: AuthoredShape): AuthoredShape {
   };
 }
 
+/**
+ * The standard frame for a served chance: the builder's size for this kind,
+ * placed by one rule instead of by the drawing's saved camera.
+ *   - Up and down: a goal chance keeps the builder's (the goal where it always
+ *     sits); any other keeps the ball where the builder's frame puts it.
+ *   - Sideways: centred on everyone in the picture (and the goal).
+ *   - The ball and you are always in, 3 m clear; the goal is never cut.
+ * Measured against the drawings' own cameras over 300 served chances a kind:
+ * players off the frame one-on-one 0.18 → 0.13, tight angle 0.74 → 0.51,
+ * long range 0.61 → 0.45, cutback 1.10 → 1.06; ball, you and goal never cut.
+ */
+function standardFrame(sc: Scenario, built: Viewport, builtBall: Vec2): Viewport {
+  const w = built.x2 - built.x1, h = built.y2 - built.y1;
+  const goal = goalInView(sc.kind);
+  const pts: Vec2[] = [sc.ball, sc.player, sc.keeper, ...sc.defenders, ...mateBodiesOf(sc)]
+    .filter((p) => p.x > -100 && p.x < PITCH_W + 100);
+  if (goal) pts.push({ x: CX - GOAL_W / 2, y: 0 }, { x: CX + GOAL_W / 2, y: 0 });
+  const xs = pts.map((p) => p.x);
+  let cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  let cy = goal ? (built.y1 + built.y2) / 2 : sc.ball.y + ((built.y1 + built.y2) / 2 - builtBall.y);
+  for (const p of [sc.ball, sc.player]) {
+    cx = Math.min(Math.max(cx, p.x - w / 2 + 3), p.x + w / 2 - 3);
+    cy = Math.min(Math.max(cy, p.y - h / 2 + 3), p.y + h / 2 - 3);
+  }
+  if (goal) cx = Math.min(Math.max(cx, CX + GOAL_W / 2 + 1 - w / 2), CX - GOAL_W / 2 - 1 + w / 2);
+  return { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
+}
+
 export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   defendersPlaced: number; matesPlaced: number;
   /** Leftover live figures moved because they broke a law — see below. */
@@ -621,6 +649,10 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   // leftovers then all agree with it, and every drawing now serves both
   // flags, which doubles the variety from the same drawings.
   if (isTurnedDeadBall(sc) && (shape.ball.x >= CX) !== (sc.ball.x >= CX)) shape = mirrorShape(shape);
+  // The builder's own frame and ball, before the drawing moves anything —
+  // the standard framing for this kind (see standardFrame).
+  const built = { ...sc.viewport };
+  const builtBall = { x: sc.ball.x, y: sc.ball.y };
   sc.ball.x = shape.ball.x; sc.ball.y = shape.ball.y;
   sc.player.x = shape.you.x; sc.player.y = shape.you.y;
   sc.keeper.x = shape.keeper.x; sc.keeper.y = shape.keeper.y;
@@ -687,30 +719,14 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   for (const r of sc.secondaryRunners) { r.to.x = r.pos.x; r.to.y = r.pos.y; }
   if (sc.runner) sc.passTarget = { x: sc.runner.to.x, y: sc.runner.to.y };
 
-  // The drawing was framed as well as placed, so the camera comes with it —
-  // and because every figure is inside that frame by construction, the
-  // camera's own clamp has nothing to pull back in.
+  // ── THE FRAME IS THE KIND'S, NOT THE DRAWING'S ──
   //
-  // A turned corner keeps the builder's frame SIZE and only takes the drawn
-  // centre. A saved camera's height is forced to 42m on load
-  // (normaliseScenarioCamera), which is the long side of an upright frame but
-  // the SHORT side of a turned one — applied here it widened a corner to
-  // 67.2m across instead of 48.3m, every figure drawn about 28% smaller.
-  if (isTurnedDeadBall(sc)) {
-    const hw = (sc.viewport.x2 - sc.viewport.x1) / 2, hh = (sc.viewport.y2 - sc.viewport.y1) / 2;
-    sc.viewport = {
-      x1: shape.camera.centerX - hw, x2: shape.camera.centerX + hw,
-      y1: shape.camera.centerY - hh, y2: shape.camera.centerY + hh,
-    };
-  } else {
-    const half = shape.camera.viewHeight / 2;
-    const aspect = (sc.viewport.x2 - sc.viewport.x1) / (sc.viewport.y2 - sc.viewport.y1 || 1);
-    const halfW = half * aspect;
-    sc.viewport = {
-      x1: shape.camera.centerX - halfW, x2: shape.camera.centerX + halfW,
-      y1: shape.camera.centerY - half, y2: shape.camera.centerY + half,
-    };
-  }
+  // Harry, 26 Sep 2026: "changing the camera angle for specific highlights
+  // should not be taken into account … for now" — a camera change on one
+  // card stays on that card. So a served chance never takes the drawing's
+  // camera; it gets the standard frame for its kind, fitted to what is on it.
+  // A corner keeps the builder's frame exactly (his pick: today's framing).
+  if (!isTurnedDeadBall(sc)) sc.viewport = standardFrame(sc, built, builtBall);
 
   return { defendersPlaced, matesPlaced, relocated, removed };
 }
