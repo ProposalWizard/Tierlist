@@ -496,11 +496,11 @@ export default function ObjectivesAdmin() {
       {subTab === "season" && <SeasonAdmin />}
 
       {subTab === "objectives" && <>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold text-white">
           Objectives {!loading && `(${objectives.length})`}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowAudit(s => !s)}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition border ${showAudit ? "bg-amber-600 border-amber-500 text-white" : "bg-gray-800 border-gray-700 text-amber-300 hover:text-amber-200 hover:border-amber-600/50"}`}
