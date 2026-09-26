@@ -801,8 +801,9 @@ export default function HighlightsPage() {
   return shell(
     <>
       {bar(
-        // "Highlights" alone on a narrow phone, so Next fits in the bar.
-        <><span className="max-[419px]:hidden">Infinite </span>Highlights</>,
+        // Shorter on a narrow phone so Next fits in the bar: "Highlights"
+        // under 420 px, nothing under 360 (it read "H…" at 320).
+        <span className="max-[359px]:hidden"><span className="max-[419px]:hidden">Infinite </span>Highlights</span>,
         null,
         <div style={{ display: "flex", gap: 8 }}>
           <button style={smallBtn} aria-label="Choose highlights" onClick={() => setScreen("kinds")}>
@@ -895,7 +896,7 @@ export default function HighlightsPage() {
               picture, then take him out; or put a new one in. */}
           {/* Wraps onto a second row rather than cutting words: at 360 px
               "Remove" was cut, at 320 px "+ Mate", "Remove" and "Delete". */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, width: "100%", maxWidth: 460 }} className="[&>button]:!basis-[58px] [&>button]:!grow">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, width: "100%", maxWidth: 460 }} className="[&>button]:!basis-[54px] [&>button]:!grow">
             <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
             <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
             <button
