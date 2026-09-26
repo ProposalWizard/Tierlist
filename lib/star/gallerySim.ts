@@ -1,4 +1,5 @@
 import {
+import { setupKind } from "./kindRules";
   buildScenario,
   type Scenario,
   type ScenarioKind,
@@ -214,6 +215,9 @@ export function buildSimScenario(spec: SimSpec): Scenario {
   // was made for. See stableBase().
   const shape = authoredShapeFor(spec);
   if (shape) applyAuthoredShape(sc, shape);
+  // The kind's hard ruleset, exactly as the match applies it (CanvasMatch's
+  // loadScenario), so Simulate shows what the game actually serves.
+  setupKind(sc, mulberry32(spec.seed ^ 0x7e11), { appliedAuthored: !!shape, appliedPlan: !!plan, keeperStrength: 62 });
   return sc;
 }
 
