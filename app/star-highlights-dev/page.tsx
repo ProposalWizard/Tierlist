@@ -232,7 +232,7 @@ function FlagRow({
 }) {
   const spec = specOf(flag);
   const shot = useMemo(() => buildShot(spec), [flag.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items.length, shot.base.camera) : undefined;
+  const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items.length, shot.base.camera, shot.base.facing) : undefined;
   const frame = applyOverride(applyOverride(shot.base, savedOv), override);
   const analysis = useMemo(
     () => analysisFor(spec, [savedOv, override]),
@@ -431,7 +431,7 @@ export default function HighlightsPage() {
   const editKey = shot ? flagId(shot.spec) : "";
   const savedScenario = shot ? saved[highlightSlug(shot.spec)] : undefined;
   const savedOv = shot && savedScenario
-    ? overrideFromMatchScenario(savedScenario, shot.base.items.length, shot.base.camera)
+    ? overrideFromMatchScenario(savedScenario, shot.base.items.length, shot.base.camera, shot.base.facing)
     : undefined;
   const override = shot ? edits[editKey] : undefined;
   const edited = hasEdits(override);

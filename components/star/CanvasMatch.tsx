@@ -72,6 +72,7 @@ import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "
 import { getTuning } from "@/lib/star/tuningStore";
 import ShootoutOverlay from "./ShootoutOverlay";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
+import { setupKind, strikeKind, replayStrike, stepKind, type StrikeDecision } from "@/lib/star/kindRules";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
@@ -930,6 +931,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   onChanceResolvedRef.current = onChanceResolved;
   const penaltyReadRef = useRef(penaltyRead);
   penaltyReadRef.current = penaltyRead;
+  /** The strike rule in play for this ball (lib/star/kindRules), if any. */
+  const strikeRuleRef = useRef<StrikeDecision | null>(null);
   const setPieceSkillRef = useRef(setPieceSkill);
   setPieceSkillRef.current = setPieceSkill;
   const markersRef = useRef(markers);
@@ -1186,6 +1189,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const r = mulberry32(seed ^ 0x51f7);
       scenarioRef.current = buildScenario(playableKind(scenarioRef.current.kind, r), r, strengthRef.current, teamRelationship, career?.skills.vision ?? 55);
     }
+    // The kind's hard ruleset (lib/star/kindRules) — its own seeded stream,
+    // so the match's opening draws are exactly what they were. A feature's
+    // own picture (openOn) is played as given.
+    if (!openOn) setupKind(scenarioRef.current, mulberry32(seed ^ 0x7e11), { appliedAuthored: false, appliedPlan: false, keeperStrength: strengthRef.current });
     stageScene(scenarioRef.current, scene);
   }
   const ballRef = useRef<Ball | null>(null);
@@ -1653,6 +1660,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       rngRef.current = replayRng;
       ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
       if (r.penaltyRead) applyPenaltyRead(scenarioRef.current, r.penaltyRead);
+      strikeRuleRef.current = r.kindStrike ?? null;
+      if (r.kindStrike) replayStrike(scenarioRef.current, ballRef.current, r.kindStrike);
       // Draw the flight's substep sizes from the recorded queue instead of
       // this session's own frame timing — see GoalReplay.flightDtLog. Absent
       // on a replay saved before this existed, which falls back to live
@@ -3118,6 +3127,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           stepDefenders(scenarioRef.current, h, ballRef.current.pos, false, ballRef.current);
           stepKeeper(scenarioRef.current, h);
           stepReactions(scenarioRef.current, ballRef.current, h, rngRef.current);
+          stepKind(scenarioRef.current, ballRef.current, h, strikeRuleRef.current);
           // ── Touch Mode (Boot.extraTouch) ──
           //
           // Reported back live after the first version shipped: "my player
@@ -4404,6 +4414,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // next piece of this, and is deliberately not guessed at here.
     if (!appliedPlan && !appliedAuthored) applyFormationShape(scenarioRef.current, formationShapeFor());
 
+    // ── The kind's hard ruleset (lib/star/kindRules) ── the wall, the
+    // keeper's spot, the markers: after every shape has been placed and
+    // before the defence is given its roles, so press/cover are read off it.
+    strikeRuleRef.current = null;
+    if (!isTouchContinuation) setupKind(scenarioRef.current, rng, { appliedAuthored, appliedPlan, keeperStrength: strengthRef.current });
+
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
 
@@ -4741,6 +4757,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const decision = decidePenaltyRead(scenarioRef.current, ballRef.current, read, [r(), r()]);
       applyPenaltyRead(scenarioRef.current, decision);
       if (pendingReplayRef.current) pendingReplayRef.current.penaltyRead = decision;
+    }
+    // ── The kind's strike rules (lib/star/kindRules) ── e.g. who wins the
+    // first contact at a corner. Its own seeded draw, like the penalty read,
+    // and saved with the replay.
+    {
+      const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x85ebca6b)) ^ 0x6b1d) >>> 0);
+      const kd = strikeKind(scenarioRef.current, ballRef.current, r, {
+        keeperStrength: strengthRef.current, setPieceSkill: setPieceSkillRef.current,
+        power: strikeWith.power, technique: strikeWith.technique,
+      });
+      strikeRuleRef.current = kd;
+      if (pendingReplayRef.current && kd) pendingReplayRef.current.kindStrike = kd;
     }
     // ── Touch Mode's real "instant catch" bug ──
     //

@@ -53,6 +53,9 @@ export interface GoalReplay {
    *  lib/star/penaltyKeeper.ts), so the replay makes the same dive. Absent on
    *  anything else, and on a penalty saved before the keeper read your aim. */
   penaltyRead?: PenaltyReadDecision;
+  /** The chance kind's strike-time rule decision (lib/star/kindRules) — e.g.
+   *  who won the first contact at a corner — so the replay plays the same. */
+  kindStrike?: { kind: string; data: Record<string, number | string | boolean | null> };
 }
 
 export interface StarPlayer {
