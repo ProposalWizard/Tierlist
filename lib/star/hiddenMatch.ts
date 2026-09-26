@@ -785,9 +785,22 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   const pattern: ChancePattern =
     (state.sinceTurnover ?? 99) <= 2 && advanced >= 1 && rng() < 0.55 ? "transition" : "settled";
 
+  // ── More long shots when the game asks for them (Harry's long-range
+  // rules, 26 Sep 2026) ── chasing the game, or a side far better than the
+  // one parked in front of it, shoots from range more. Measured on the
+  // instrumented match: game state had no effect at all, and a much stronger
+  // side got FEWER long shots (ST 4.7% at 85 v 60 against 7.1% at 60 v 85),
+  // backwards from real football. Doubling its weight where the zone already
+  // offers it takes a CAM chasing from 60' from 11.9% to 18.0% of his
+  // chances, and adds only 0.5-1 point overall.
+  const kinds = kindsForZone(state.zone, lane);
+  const chasing = state.minute >= 60 && state.userScore < state.oppScore;
+  const lowBlock = inputs.teamStrength - inputs.oppStrength >= 15;
+  if ((chasing || lowBlock) && kinds.includes("long_range")) kinds.push("long_range");
+
   return {
     zone: state.zone,
-    kinds: kindsForZone(state.zone, lane),
+    kinds,
     lane,
     pattern,
     reason: pattern === "transition"
