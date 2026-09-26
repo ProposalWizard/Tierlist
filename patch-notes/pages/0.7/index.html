@@ -1,0 +1,313 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Knowitball v0.7</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  /* The v0.1 artifact's CSS stopped at the two rules above, which leaves one
+     real gap: a reader on a DARK system who explicitly picks light stamps
+     data-theme="light", and prefers-color-scheme still reports dark — so the
+     light block never matches and the page stays dark against their choice.
+     This repeats the light palette for that stamp. */
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.7</span>
+  <h1>Harry's patch notes</h1>
+  <p class="sub">Play now looks exactly like the picture · the ball moves on its own again · every browser counts the same scenarios · edit a chance mid-match in Infinite Match · the difficulty argument, researched</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>0/65</b><span>saved scenarios wrongly showing &quot;attacker offside&quot; (was 3/65)</span></div>
+  <div class="s"><b>13% → 0%</b><span>how much bigger Play was drawn than the picture</span></div>
+  <div class="s"><b>5</b><span>tight angles newer in the code than the database — can't be written back over any more</span></div>
+  <div class="s"><b>1</b><span>Supabase step for you: star_scenario_corrections.sql</span></div>
+</div>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Pressing Play no longer makes the picture jump</div>
+    <div class="dt">Nothing actually moved before the kick — I watched it for 4 seconds in a real browser. Play was drawn about 13% wider than the picture, with players about half as big again, so everything looked like it shifted.</div>
+    <details><summary>What changed</summary>
+      <ul>
+        <li>The picture now draws players at the match's own size, so they are the same size before and after Play.</li>
+        <li>Play now runs at the picture's exact width. Checked side by side: keeper, ball and every player land within a few pixels of where they were.</li>
+        <li>Still different: the goal net is drawn a bit deeper in the match than on the picture. Worth a look before calling it identical.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">The ball can be dragged on its own again</div>
+    <div class="dt">Mikey's &quot;ball rides at your feet&quot; change is undone, as you asked. It had also made Play ignore where you put the ball — that's how a ball ended up on top of a defender after pressing Play.</div>
+  </li>
+  <li>
+    <div class="hd">False &quot;attacker offside&quot; when everyone was behind the ball</div>
+    <div class="dt">When you removed the poacher, he was parked 400m past the goal line — which counts as offside. He's parked behind the ball now.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Saved scenarios flagged offside</span><div class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now" style="width:0.0%"></div></div><span class="vv">0 <s>3</s></span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">✓ on a simulated chance now actually saves it</div>
+    <div class="dt">It used to save only if you'd dragged something, so approving a good sim just ticked it and lost it. Now ✓ on anything not yet saved saves it, and it becomes that type's next card.</div>
+  </li>
+  <li>
+    <div class="hd">Leo's commit worked, but left a trap</div>
+    <div class="dt">His 11 scenarios are in the code. But 5 of the tight angles were committed without being saved first, so the database held the older copy — and the next &quot;Commit all&quot; from anyone would have written the old copy back.</div>
+    <details><summary>Two fixes</summary>
+      <ul>
+        <li>Every commit now also saves the same copy to the database, so the two can't drift apart.</li>
+        <li>When the code is newer than the database, the card now reads &quot;Committed&quot; and is left off the Commit all list, instead of saying the game has the older copy (the opposite of true).</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Team-mates you add in the gallery now play</div>
+    <div class="dt">&quot;+ Mate&quot; used to add scenery that never reacted. Now he's a real support runner: he goes for a ball played near him and can receive a pass or an order. Not seen in a live Play yet.</div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Edit this chance, mid-match, in Infinite Match</div>
+    <div class="dt">A button above the match opens the chance you're on, as it was before the kick. Drag, add or remove players, then Save (it becomes a card of that type in the gallery) or Commit (it goes in the game). Close it and carry on playing.</div>
+    <details><summary>How it works</summary>
+      <ul>
+        <li>A chance in a real match can't be rebuilt later, so a copy is taken when it's served. The match only makes that copy when a screen asks for it; a normal career doesn't.</li>
+        <li>The chance is saved on a base picture of the same type, with your players dragged onto it. Checked on 144 chances: every card shows exactly the chance you were on, with the match's own camera framing.</li>
+        <li>Opponents show in red in the editor whatever kit they wore in the match.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A highlight you save in Infinite Highlights now goes into that type's scenarios</div>
+    <div class="dt">It used to be saved somewhere the gallery never looked. It's now saved exactly like a gallery sim, so it shows as a card, counts, and commits. The one saved the old way still shows up.</div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The picture sits in the middle, the verdict buttons down its sides</div>
+    <div class="dt">On anything wider than a phone: No good on the left; ✓, the menu and Simulate/Next on the right; the edit row right under the picture. Nothing needs scrolling to reach. Phones keep the stacked layout.</div>
+  </li>
+  <li>
+    <div class="hd">Every browser shows the same number for each type</div>
+    <div class="dt">The number next to each type now reads in the game / saved, counted from the shared list, so everyone sees the same thing. It used to count each browser's own generated cards, which is why you saw 21 and Mikey saw 23.</div>
+    <details><summary>Right now</summary>
+      <ul>
+        <li>One on one: 21 in the game, 21 saved.</li>
+        <li>Tight angle: 11 in the game, 13 saved (2 saved, not committed).</li>
+        <li>Free kick: 0 in the game, 1 saved.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">&quot;+ Opponent&quot; reads &quot;+ Opp&quot;</div>
+    <div class="dt">The full word didn't fit on the button once the row sat under a narrower picture.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Difficulty and scaling — what the research says</h2>
+<ul class="n">
+  <li>
+    <div class="hd">You're all right about different things</div>
+    <div class="dt">Everyone agreed modes should exist. The argument is about which one is the main game and what the others change.</div>
+    <details><summary>What the evidence backs, person by person</summary>
+      <ul>
+        <li>Harry — backed: money comes from players who stay for months. In games that live off big spenders, the top 5% of spenders make over 70% of revenue, rising to 81% by month 10. 87% of eventual top spenders hadn't bought anything in month one (Moloco, Aug 2026, 55 games).</li>
+        <li>Harry — not backed: &quot;harder means they spend more&quot;. A 330,000-player trial gave players who were about to quit easier levels. They spent less in that round but stayed longer, so they spent more overall — about 7-8 cents more per player over 30 days (Ascarza, Netzer &amp; Runge, 2025).</li>
+        <li>Leo — backed: day one is where most players are lost. The typical game keeps 15-16% of players to day 2 and 3.4-3.9% to day 7 (GameAnalytics, 11,600 games).</li>
+        <li>Leo — not backed: no study I found shows starting at United keeps more players than starting low.</li>
+        <li>Mikey — backed: a study of 263,000 players found swings in difficulty drove quitting more than how hard the game was on average. Losing streaks didn't make beginners quit; winning streaks kept everyone. New Star Soccer's own creator put its pull down to pace: &quot;you're only two minutes away from another result, another wage packet&quot;.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Recommendation: a slow road to the top as the main mode, a clearly labelled casual mode beside it</div>
+    <div class="dt">Main mode pre-selected. &quot;Superstar Start (casual)&quot; next to it on the same screen, not buried in settings. A harder mode later, unlocked by earning it.</div>
+    <details><summary>What each mode changes</summary>
+      <ul>
+        <li>Main mode: start low as now. Judge the pace in hours played, not seasons. Something big every session — a promotion chase or a cup tie against a Premier League club in season 1, and an unlock every season (Mikey's free trial of the curve boots fits here).</li>
+        <li>Casual mode: the same game with different settings — where you start, how strong opponents are, shop prices, how easy transfers are. Its own saves and achievements. The main mode's flow doesn't change for it — Harry's condition.</li>
+        <li>Hard mode later, earned (you suggested a Ballon d'Or). No paid boosts in it: real-money stat boosts are what gets a game called pay-to-win.</li>
+        <li>Inside the main mode, even out difficulty spikes without making it easier on average — the research points at spikes, not the average. For example, a retry after watching an ad instead of rigging results.</li>
+        <li>Money: rewarded ads for players who don't pay; hold interstitial ads back until well in (Score! Hero waits until level 25); cosmetics; time-savers priced high enough not to cheapen the climb.</li>
+        <li>Settle it with data, not argument: PostHog is already set up. Compare day-1 and day-7 retention and payer rate by mode, and test how long season 1 takes, once there are about 1,000 players in each mode.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">What the research couldn't answer</div>
+    <div class="dt">No published split of casual vs hardcore spending in football games, no Celeste assist-mode usage numbers, and no test of starting weak vs starting strong. Treat the above as direction, not proof — almost all of it is mobile free-to-play data, not a browser football game.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Team to-dos from today's chat</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Leo and Mikey: fill the scenario gallery</div>
+    <div class="dt">At least 5 per type, no maximum — aim for 30-50 each, because a rule set from 5 is much worse than one from 50. Harry makes the rule sets after.</div>
+  </li>
+  <li>
+    <div class="hd">Check for bugs first</div>
+    <div class="dt">Anything not saving, and whether it works in game.</div>
+  </li>
+  <li>
+    <div class="hd">Team-mates right next to you steal your shot as a pass <span class="pill p-amb">needs Mikey</span></div>
+    <div class="dt">Leo's fix: ignore a team-mate that close for about 0.4s after the kick; Harry also thinks everyone's reach is too big. Both mean changing canvasEngine.ts, which Mikey said never to touch — needs his OK first.</div>
+  </li>
+  <li>
+    <div class="hd">Keepers on rebounds are too good, and too often off their line</div>
+    <div class="dt">&quot;Permanent prime Neuer&quot; on rebounds, and near-post positioning too far out. The per-type keeper setting exists; tight angle near-post 0.50 is still waiting on your go.</div>
+  </li>
+  <li>
+    <div class="hd">Camera framing can't be changed in the builder</div>
+    <div class="dt">Saved cards can now carry their own framing (added for Infinite Match), so a zoom/pan control is a small step from here. Not built.</div>
+  </li>
+  <li>
+    <div class="hd">Commits must land on main and be saved</div>
+    <div class="dt">Now true by construction: every commit also saves the same copy to the shared list.</div>
+  </li>
+  <li>
+    <div class="hd">Energy changes are Mikey's</div>
+    <div class="dt">Left alone this round, as you asked.</div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="alert">
+      <div class="t">Run star_scenario_corrections.sql in Supabase</div>
+      <p>Until then Tune corrections stay in the browser that made them.</p>
+    </div>
+  </li>
+  <li>
+    <div class="hd">&quot;It's not the same game in the play area&quot; — which part? <span class="pill p-amb">blocked on Harry</span></div>
+    <div class="dt">The picture-vs-Play mismatch is fixed. For the rest I need to know what looks or feels different: the kits, the faces, the ball, how the shot feels?</div>
+  </li>
+  <li>
+    <div class="hd">Not seen live: added team-mates reacting in Play</div>
+    <div class="dt">I read the code and worked it out; I haven't watched one take a pass.</div>
+  </li>
+  <li>
+    <div class="hd">The 5 tight angles are still older in the database</div>
+    <div class="dt">Nothing breaks — the gallery shows the newer code copy. They'll match again the next time anyone saves or commits them.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="n">
+  <li>
+    <div class="hd">v0.4 — Play Area, Infinite Match, commit review</div>
+    <div class="dt">Play in the gallery used your saved drawing, the Play Area and Infinite Match arrived, and scenarios could be looked through before committing.</div>
+  </li>
+  <li>
+    <div class="hd">v0.3.5 — from the 40-minute call</div>
+    <div class="dt">Delete on any scenario, the X relabelled No good, and every decision and idea from the call written down.</div>
+  </li>
+</ul>
+
+<footer>23 Sep 2026 · also at <code>/admin/patch-notes</code>, generated from the same file. Anything unverified says so.</footer>
+
+</div>
+
+</body></html>

@@ -27,6 +27,2685 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "1.0",
+      "title": "V1: every problem and its fix",
+      "publishedAt": "2026-09-26T18:00:00Z",
+      "summary": "Every change from every patch notes version so far (v0.1 to v0.13), from Harry, Leo and Mikey, oldest first. Each item says what was wrong; open \"Why, and the fix\" for why it happened and what fixed it. The guard is the headline.",
+      "stats": [
+        {
+          "value": "143",
+          "label": "problems fixed or features added, 21–26 Sep"
+        },
+        {
+          "value": "15",
+          "label": "patch notes versions folded into this one"
+        },
+        {
+          "value": "85 · 13 · 46",
+          "label": "changes by Harry · Leo · Mikey"
+        },
+        {
+          "value": "35",
+          "label": "known issues still open (16 raised along the way are now fixed)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "The headline: the guard",
+          "items": [
+            {
+              "title": "The guard: the game can't quietly split into copies again (v0.10 · Harry)",
+              "detail": "The trial, training and five-a-side felt slightly different from a real match: the keeper dived differently, kicks came out harder or softer, and five-a-side's arrow pointed a bit off.",
+              "bars": [
+                {
+                  "label": "Copies of the match",
+                  "was": 6,
+                  "now": 4,
+                  "state": "warn",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Six screens had their own copy of the match. Each was right on the day it was made; the real match kept improving and the copies drifted (12 differences in the trial and training alone). Nothing stopped a new copy.",
+                  "Fix: Every screen now plays the real match through one door and adds its extras around it. An automatic check (the guard) reads the code before every deploy and stops the site going live if anyone adds a copy. 4 copies left, down from 6; the list can only shrink."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Problems fixed",
+          "items": [
+            {
+              "title": "Scoring was halved (v0.1 · Harry)",
+              "detail": "With the new chance generator switched on, far fewer chances went in: a cutback or a one-on-one converted only 9.8% of the time.",
+              "bars": [
+                {
+                  "label": "Cutback",
+                  "was": 9.8,
+                  "now": 41.3,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "One-on-one",
+                  "was": 9.8,
+                  "now": 47.6,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Tight angle",
+                  "was": 13.3,
+                  "now": 39.7,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Header",
+                  "was": 6.6,
+                  "now": 26.8,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Through ball",
+                  "was": 11.2,
+                  "now": 18.7,
+                  "state": "warn",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Four separate bugs. The keeper's tuned position was overwritten so he was always in the right place; cutbacks came from the touchline (20.2m off centre instead of 11.5m); the check for a defender in the way was blind (it found 0 of the 223 real blockers in 300 cutbacks); and two rules ran in the wrong order, so one put a man straight back in the shooting lane.",
+                  "Fix: All four fixed, nothing re-tuned by hand. A one-on-one now scores more than its old number on purpose: the old one had a defender in the way 99.8% of the time, so it was never a real one-on-one. Through balls are still low."
+                ]
+              }
+            },
+            {
+              "title": "The goal changed size from chance to chance (v0.1 · Harry)",
+              "detail": "Harry reported the goal should look the same every time, just moved up, down, left or right. 69% of chances were framed at the wrong size.",
+              "bars": [
+                {
+                  "label": "Frame sizes in use",
+                  "was": 3,
+                  "now": 1,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Three causes: the Scenario Builder had a free zoom slider with a 5x range; the generator used three different frame heights (69.2% weren't the standard one); and the frame quietly grew to keep the keeper in shot (another 10%).",
+                  "Fix: One frame size everywhere, so the goal sits in the same place every chance. Cost: a tight angle from right on the touchline no longer fits, so that one band of tight angles was dropped."
+                ]
+              }
+            },
+            {
+              "title": "A tighter camera made the goal go missing (v0.1 · Harry)",
+              "detail": "A camera that zoomed in closer shipped, and in play the goal was often not on screen. Harry sent five screenshots. The whole goal showed in only 63.9% of chances, and 0% of tight angles.",
+              "bars": [
+                {
+                  "label": "Whole goal on screen",
+                  "was": 63.9,
+                  "now": 87.4,
+                  "state": "warn",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: It was signed off by checking the chances before the match adds its own camera on top, which scored 100%. Nobody checked what the match actually shows until the screenshots arrived.",
+                  "Fix: Undone the same day on Harry's instruction. The whole goal now shows in 87.4% of chances, a little better than the old camera's 83.4%. Still not good enough: about 1 chance in 8 misses part of the goal."
+                ]
+              }
+            },
+            {
+              "title": "Chances didn't match their own name (v0.1 · Harry)",
+              "detail": "A one-on-one didn't look like a one-on-one: 99.7% of them had a defender between you and the goal. Corners (19.7%) and byline crosses (8.7%) were broken too.",
+              "bars": [
+                {
+                  "label": "One-on-ones broken",
+                  "was": 99.7,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Corners broken",
+                  "was": 19.7,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Byline crosses broken",
+                  "was": 8.7,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Every chance is now checked against its own definition and anything clearly illegal is repaired. Broken one-on-ones, corners and byline crosses are all at 0%."
+                ]
+              }
+            },
+            {
+              "title": "On long shots the defence sat on its own keeper (v0.1 · Harry)",
+              "detail": "Harry reported the back line looked wrong on long shots. It sat 10.4-13.6m from goal, 3 to 6m deeper than the edge of the box, every time.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The rule places the line at a fixed share of the ball's distance, which keeps dropping deeper as the ball gets further out. Past the box, that stops being what a real defence does.",
+                  "Fix: The line now holds the edge of the box when the ball is outside it: 13.8-16.1m out. This made long shots easier to score (21.8% to 26.7%), not harder."
+                ]
+              }
+            },
+            {
+              "title": "A team-mate's rebound counted as your goal (v0.1 · Harry)",
+              "detail": "You shot, it came back off the keeper, a team-mate scored, and the goal went down as yours with your assist gone.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The game remembers 'you shot' and only cleared it on one of the two ways a team-mate can finish a loose ball. On the other way, his goal was credited to you. An earlier fix only covered the first way, which is why it kept happening.",
+                  "Fix: Once a team-mate strikes the ball it stops being your shot, whichever way he finished it."
+                ]
+              }
+            },
+            {
+              "title": "Your own team-mates stood in front of your shot (v0.1 · Harry)",
+              "detail": "On generated chances, a team-mate was in your shooting line on 28% of long shots and 22.3% of tight angles.",
+              "bars": [
+                {
+                  "label": "Long range",
+                  "was": 28.0,
+                  "now": 0.3,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Tight angle",
+                  "was": 22.3,
+                  "now": 0.5,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The rule only worked for shots from 14m or more, so close chances had no protection, and it measured against the middle of the goal rather than the line the ball actually travels.",
+                  "Fix: Now measured from where you stand, at every distance. Volleys and headers were left alone on purpose: moving team-mates aside there pushed defenders into the lane and blocks went up (volley 17.8% to 38%)."
+                ]
+              }
+            },
+            {
+              "title": "The first camera showed a giant head, not a goal (v0.2 · Leo)",
+              "detail": "On the first version, the goalposts were far off both edges of the screen, the grass vanished, the keeper was one giant head, and the ball was a few pixels wide.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The camera sat 0.75m behind the goal line, a position worked out wrongly by hand, and the ball was drawn at its true size, which is tiny on a phone.",
+                  "Fix: The camera distance was picked by measuring what each option actually puts on screen: at 7m back both posts are in frame with room to spare. The ball is drawn larger on purpose, like elsewhere in the game."
+                ]
+              }
+            },
+            {
+              "title": "On a phone, any touch dived straight away (v0.2 · Leo)",
+              "detail": "Touching the screen at all locked in the dive, so there was no way to aim first. On a computer you could hover the mouse to preview.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A touch has no hover, so the first touch was treated as the final choice.",
+                  "Fix: Pressing now only starts aiming, dragging moves the aim, and letting go dives, as Leo suggested. A plain click on a computer still dives at once."
+                ]
+              }
+            },
+            {
+              "title": "The camera zoom made the shot hard to judge (v0.2 · Leo)",
+              "detail": "Round 2 rebuilt the camera to copy three reference videos: a tight push-in on the striker, then a pull back wide for the save. In play it was reported as 'the weird zooming in thing sucks', and the goal wasn't big enough to judge the shot.",
+              "bars": [
+                {
+                  "label": "Goal width on screen",
+                  "was": 94.2,
+                  "now": 96.9,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: With the push-in, the whole goal and your full dive only came into view once the camera move had finished.",
+                  "Fix: One fixed wide shot for the whole sequence, set slightly closer, so the goal, both posts and your full dive reach are always on screen. The screen is also less tall, so the goal fills more of it."
+                ]
+              }
+            },
+            {
+              "title": "Your aim wasn't under your cursor (v0.2 · Leo)",
+              "detail": "Reported on PC: the aim was 'very offset and not at all on my cursor'. Aiming at a low corner landed about 0.42m away, around a fifth of the goal's height, on every aim.",
+              "bars": [
+                {
+                  "label": "Aim error",
+                  "was": 0.42,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "m"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The camera was tilted slightly downward, and the maths that turns a point on screen back into a spot in the goal assumed a level camera.",
+                  "Fix: The tilt is now exactly level, which makes the aim exact. Checked over 500 random targets: the error is effectively zero."
+                ]
+              }
+            },
+            {
+              "title": "The pitch looked like an ice rink (v0.2 · Leo)",
+              "detail": "Reported: 'i dont even see any green... looks like im on an ice rink'. No grass, stripes or goal line were drawn.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The near edge of the grass was set 0.05m in front of the camera, inside the zone the camera cuts off, so the whole grass area silently failed to draw on every device since the first version.",
+                  "Fix: The grass edge is now placed where the bottom of the screen really is, using the same maths the game already uses to work out where you tapped on the ground."
+                ]
+              }
+            },
+            {
+              "title": "A committed scenario only reached one person (v0.3 · Harry)",
+              "detail": "Leo could commit a scenario and Harry would never see it.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Commits went to a branch named after one person, so they reached nobody else until that branch was merged.",
+                  "Fix: Commits now go to the main branch: one press and everyone has it."
+                ]
+              }
+            },
+            {
+              "title": "One odd drawing switched the rules off (v0.3 · Harry)",
+              "detail": "In a test with eleven good drawings and one odd one, two of the three rules switched off without warning, and 15 in every 100 chances didn't match their name.",
+              "bars": [
+                {
+                  "label": "Rules kept",
+                  "was": 1,
+                  "now": 3,
+                  "state": "good",
+                  "unit": " of 3"
+                },
+                {
+                  "label": "Chances not matching their name",
+                  "was": 15,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A rule needed every single drawing to agree, so one slip outvoted eleven.",
+                  "Fix: A rule now holds if nine in ten drawings agree. The odd one is named as an outlier on its own card and never used as a starting point."
+                ]
+              }
+            },
+            {
+              "title": "Your own team-mates stood in front of your shot (v0.3 · Harry)",
+              "detail": "On long shots a team-mate was in your shooting line a third of the time.",
+              "bars": [
+                {
+                  "label": "Long range",
+                  "was": 34.4,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Tight angle",
+                  "was": 11.2,
+                  "now": 1.2,
+                  "state": "warn",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: An earlier fix covered one-on-ones; the other chances where you are the one shooting never got the same treatment.",
+                  "Fix: Applied to long shots and tight angles. Tight angle stops at 1.2% because the only place left to move that team-mate is offside. Not applied to cutbacks, crosses or through balls (he's who you're passing to), or to volleys and headers (it made blocks more likely)."
+                ]
+              }
+            },
+            {
+              "title": "Offside was called on players who weren't offside (v0.3 · Harry)",
+              "detail": "All three offside warnings on Harry's drawings were wrong, and 46 of 153 calls overall. The auto-repair then dragged legally placed players around.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Offside needs a player to be past both the last defender and the ball; only the defender half was checked, so a man behind the ball got flagged.",
+                  "Fix: Both halves are checked now. The match itself was never affected; this was the editor's warning and the repair acting on it."
+                ]
+              }
+            },
+            {
+              "title": "A randomised chance put the keeper in the wrong place (v0.3 · Harry)",
+              "detail": "A third of the time, moving the ball left the keeper worse placed than in the drawing, sometimes shading the wrong post.",
+              "bars": [
+                {
+                  "label": "Keeper left worse placed",
+                  "was": 32.8,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: He was copied off the drawing and nudged on his own, without looking at where the ball ended up.",
+                  "Fix: He's now placed from the ball, using the drawing's own near-post shade and distance off his line. A keeper drawn rushing out still rushes out."
+                ]
+              }
+            },
+            {
+              "title": "Plain one-on-ones broke the drawn rules (v0.3 · Harry)",
+              "detail": "About one in seven plain generated one-on-ones broke a rule taken from the drawings.",
+              "bars": [
+                {
+                  "label": "Obeyed the rules",
+                  "was": 85.6,
+                  "now": 100,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The repair that moves a defender out of the way only worked within 14m of the middle and let a man half a metre in front through; and nothing cleared a team-mate out of your shooting line (1 in 23 had one).",
+                  "Fix: Both fixed: every plain one-on-one now obeys the rules."
+                ]
+              }
+            },
+            {
+              "title": "Leo couldn't see scenarios the game was using (v0.3 · Harry)",
+              "detail": "Committed scenarios were in the game for everyone but showed on nobody's gallery.",
+              "bars": [
+                {
+                  "label": "One-on-one cards shown",
+                  "was": 10,
+                  "now": 21,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The game reads the code; the gallery only read the database.",
+                  "Fix: The gallery reads both, and every saved scenario gets its own card, including ones saved from a simulation."
+                ]
+              }
+            },
+            {
+              "title": "Saving one scenario repainted others (v0.3 · Harry)",
+              "detail": "Saving one scenario could silently change the picture on half the other cards.",
+              "bars": [
+                {
+                  "label": "Cards repainted by a save",
+                  "was": 50,
+                  "now": 9,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Each card picked its drawing by position in the list, so when the list reordered after a save, cards picked different drawings.",
+                  "Fix: Cards pick by identity now. The 9% left is the floor: when a new drawing joins the pool, about one card in eleven genuinely lands on a different one."
+                ]
+              }
+            },
+            {
+              "title": "The poacher couldn't be removed (v0.3 · Harry)",
+              "detail": "Reported as 'I can't remove teammates'. It was only ever the poacher: his Remove button was greyed out in every editor, and in a free kick he's the only team-mate.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The game has exactly one slot for the poacher, with no way to leave it empty, so the editor never offered to remove him.",
+                  "Fix: He can be removed like everyone else; a saved scenario then has no poacher at all."
+                ]
+              }
+            },
+            {
+              "title": "A deploy failed because of a font (v0.3 · Harry)",
+              "detail": "The whole site build failed with no code at fault.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The site downloaded its Cinzel font from Google on every build, and Google's font service didn't answer that time.",
+                  "Fix: The font file is now stored in the project, so nothing is fetched during a build."
+                ]
+              }
+            },
+            {
+              "title": "The patch notes page showed MIGRATION NOT RUN (v0.3 · Harry)",
+              "detail": "The admin patch notes page showed a red MIGRATION NOT RUN banner instead of the notes.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The notes were stored in a database table that had to be filled by hand, and it hadn't been.",
+                  "Fix: The notes now live in the code, so the page shows them the moment it deploys. The shareable page for each version is generated from the same notes, so the two can't disagree."
+                ]
+              }
+            },
+            {
+              "title": "Delete only seemed to work on one-on-ones (v0.3.5 · Harry)",
+              "detail": "Leo added a scenario for another kind of chance and could not delete it. Delete looked like a one-on-one-only button, which blocked him from building other kinds.",
+              "bars": [
+                {
+                  "label": "Volley cards",
+                  "was": 10,
+                  "now": 9,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The Delete button only appeared once a scenario had been saved, and the only saved scenarios were one-on-ones. A generated card had no way to be removed at all, because versions came from a count rather than a list.",
+                  "Fix: Delete is always shown now. On a saved scenario it still clears the database and the code; on a card that was never saved it just takes the card out and remembers that after a reload (volley went from 10 cards to 9 and stayed at 9)."
+                ]
+              }
+            },
+            {
+              "title": "Nobody could tell what the X button did (v0.3.5 · Harry)",
+              "detail": "On the call it was asked twice whether the X meant delete or something else.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The X is the reject mark for a scenario, not a delete, but nothing on screen said so.",
+                  "Fix: The button now reads \"No good\"."
+                ]
+              }
+            },
+            {
+              "title": "The scenario picture was phone-sized on a computer (v0.3.5 · Harry)",
+              "detail": "On a wide desktop screen the scenario picture stayed at phone size (340×544) and hugged the left, with empty space beside it.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The picture's size was fixed to phone size on every screen, and the drawing step reset any bigger size straight back to the phone default.",
+                  "Fix: The desktop picture now uses the screen and sits centred. A first pass went too big (500×800), so it settled at 400×640. Phones are unchanged."
+                ]
+              }
+            },
+            {
+              "title": "Pressing Play moved everything you'd drawn (v0.4 · Harry)",
+              "detail": "Play in the scenario gallery moved the players around. On the card where this was reported, the goalie was drawn 4.6m off his line and the ball 11.6m out, but Play put them at 2.2m and 19.2m every time.",
+              "bars": [
+                {
+                  "label": "Goalie off his line",
+                  "was": 2.2,
+                  "now": 4.6,
+                  "state": "good",
+                  "unit": "m"
+                },
+                {
+                  "label": "Ball from goal",
+                  "was": 19.2,
+                  "now": 11.6,
+                  "state": "good",
+                  "unit": "m"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Every other part of a card combines two layers: the saved drawing, then whatever you're dragging right now. Play only applied the second layer, so it ignored the saved drawing and played the raw generated chance.",
+                  "Fix: Play now uses your drawing, so the goalie and ball stay where you put them. The real match was never affected: it uses your saved scenarios and places the goalie from your drawing, so draw him where he should be."
+                ]
+              }
+            },
+            {
+              "title": "On a computer, the buttons fell off the bottom of the scenario card (v0.4 · Harry)",
+              "detail": "At 400×640 the scenario picture pushed the buttons below it off the bottom of a desktop screen. This was the third attempt at the size: 340 was too small and 520×800 was too big.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The picture was too tall for a normal window, and desktop used its own layout with a separate right-hand column.",
+                  "Fix: The picture is now 325×520, so the whole card fits on a 900-pixel-tall window (about 80 pixels are still hidden on an 800-pixel one). As asked for, Simulate is now a small square with a play triangle, Across formations sits under the picture, and desktop uses the same single centred column as the phone."
+                ]
+              }
+            },
+            {
+              "title": "Untouched chances were labelled \"Draft\" (v0.4 · Harry)",
+              "detail": "In Infinite Highlights, a chance the generator had just rolled said \"Draft — this browser only\", even though nobody had touched it.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The label treated anything not yet saved as a draft.",
+                  "Fix: An untouched chance now reads \"Straight from the generator\"."
+                ]
+              }
+            },
+            {
+              "title": "Five-a-side froze when the other team got the ball (v0.5 · Leo)",
+              "detail": "In the trial's five-a-side, the match sometimes froze solid when the other team got the ball, and the only way past it was a dev skip.",
+              "bars": [
+                {
+                  "label": "Freeze points with a way out",
+                  "was": 0,
+                  "now": 3,
+                  "state": "good",
+                  "unit": " of 3"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Three steps of the match gave up without doing anything when a piece of the screen they needed was missing, and nothing ever called them again. 2,300 test runs of the ball physics and the full match flow found no faults, so the exact trigger is a screen-timing issue that can't be reproduced outside a real browser.",
+                  "Fix: All three steps now check what the match is waiting for and try again, instead of going silent. At worst a chance replays from the start, so the permanent freeze can't happen whatever triggers it."
+                ]
+              }
+            },
+            {
+              "title": "Careers got stuck at End of Season (v0.6 · Mikey)",
+              "detail": "On Leo's save (Arsenal, season 5), pressing End of Season did nothing, so the season never rolled over. Any save with an older Rule Book could hit this.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: His save held a UEFA Rule Book from before the \"custom clubs in Europe\" rule existed. That rule was missing, and building next season's Champions League draw crashed trying to read it. The browser error Leo sent pointed straight to it.",
+                  "Fix: Saved Rule Books now get any newer rules filled in with their defaults instead of crashing."
+                ]
+              }
+            },
+            {
+              "title": "Careers ended after about 22 seasons (v0.6 · Mikey)",
+              "detail": "A career could only run about 22 seasons, not the length it was meant to. At first this looked like a hard 5-season limit.",
+              "bars": [
+                {
+                  "label": "Longest possible career",
+                  "was": 22,
+                  "now": 50,
+                  "state": "good",
+                  "unit": " seasons"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Players were forced to retire at age 40, which ends an 18-year-old's career after roughly 22 seasons.",
+                  "Fix: Forced retirement at 40 is gone. A career now ends after season 50, and you can still choose to retire from age 33."
+                ]
+              }
+            },
+            {
+              "title": "Pressing Play made the picture jump (v0.7 · Harry)",
+              "detail": "In the scenario gallery, pressing Play made every player seem to shift before the kick.",
+              "bars": [
+                {
+                  "label": "How much bigger Play was than the picture",
+                  "was": 13,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Nothing actually moved (watched for 4 seconds in a real browser). Play was drawn about 13% wider than the picture, with players about half as big again, so everything looked like it jumped.",
+                  "Fix: The picture now draws players at the match's own size, and Play runs at the picture's exact width. Side by side, keeper, ball and every player land within a few pixels. Still different: the goal net is drawn a bit deeper in the match."
+                ]
+              }
+            },
+            {
+              "title": "The ball was stuck to your player (v0.7 · Harry)",
+              "detail": "In the scenario editor the ball always sat to your right and couldn't be moved, and Play ignored where a saved drawing had put it. That's how a ball ended up on top of a defender after pressing Play.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Mikey's change that made the ball ride at your feet locked it to your figure.",
+                  "Fix: That change is undone at Harry's request: the ball can be dragged on its own again."
+                ]
+              }
+            },
+            {
+              "title": "False \"attacker offside\" with everyone behind the ball (v0.7 · Harry)",
+              "detail": "3 of 65 saved scenarios were flagged \"attacker offside\" even though every attacker was behind the ball.",
+              "bars": [
+                {
+                  "label": "Saved scenarios wrongly flagged offside (of 65)",
+                  "was": 3,
+                  "now": 0,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Removing the poacher parked him 400m past the goal line, which counts as offside.",
+                  "Fix: A removed poacher is now parked behind the ball. 0 of 65 flagged."
+                ]
+              }
+            },
+            {
+              "title": "Approving a simulated chance didn't save it (v0.7 · Harry)",
+              "detail": "Pressing ✓ on a good simulated chance just ticked it, and it was lost.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: ✓ only saved a card if you had dragged something on it.",
+                  "Fix: ✓ now saves anything not yet saved, and it becomes that type's next card."
+                ]
+              }
+            },
+            {
+              "title": "The next \"Commit all\" would have put old scenarios back (v0.7 · Harry)",
+              "detail": "Leo's 11 scenarios reached the game, but the database still held older copies of 5 tight angles. The next \"Commit all\" from anyone would have written the old copies back, and those cards claimed the game had the older copy (the opposite of true).",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Those 5 were committed without being saved first, so the game's copy and the database's copy drifted apart.",
+                  "Fix: Every commit now also saves the same copy to the database. When the game's copy is newer than the database, the card reads \"Committed\" and is left off the Commit all list."
+                ]
+              }
+            },
+            {
+              "title": "Team-mates added with \"+ Mate\" just stood there (v0.7 · Harry)",
+              "detail": "A team-mate added with \"+ Mate\" never reacted when you pressed Play.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: \"+ Mate\" only added scenery, not a real player.",
+                  "Fix: He's now a real support runner: he goes for a ball played near him and can receive a pass or an order."
+                ]
+              }
+            },
+            {
+              "title": "Highlights saved in Infinite Highlights never reached the gallery (v0.7 · Harry)",
+              "detail": "A highlight you saved didn't show up as a scenario card.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: It was saved somewhere the gallery never looked.",
+                  "Fix: It's now saved exactly like a gallery simulation, so it shows as a card of that type, counts and can be committed. The one saved the old way still shows up."
+                ]
+              }
+            },
+            {
+              "title": "You couldn't keep a good chance straight from a match (v0.8 · Harry)",
+              "detail": "Infinite Match had one Edit button above the scoreboard that scrolled away, with no Save or Commit. Infinite Highlights only showed Save after you dragged someone, and had no Commit at all.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Infinite Match now has Edit, Save and Commit pinned to the top for the whole match, and Save keeps the chance exactly as it stands. Every highlight has Save and Commit underneath. A saved chance lands in the gallery as a new card of its type; a test rebuilt 156 of 156 saved chances exactly, and caught it (0/156) when the save was broken on purpose. Not yet tried signed in as admin."
+                ]
+              }
+            },
+            {
+              "title": "The keeper seemed to move when you pressed Play on a phone (v0.8 · Harry)",
+              "detail": "On a 340px phone, pressing ▶ Play made everything jump: Play was drawn 9% bigger than the still picture, which read as the keeper moving.",
+              "bars": [
+                {
+                  "label": "Play vs picture size, phone",
+                  "was": 9,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The picture drew 340px wide inside a 312px space and got cut off, while Play shrank to fit the space.",
+                  "Fix: Both are drawn at 312px now. Side by side in a browser, the keeper, ball and players land within 5px of each other. The goal net is still drawn differently (see known issues)."
+                ]
+              }
+            },
+            {
+              "title": "A gallery card could go blank when the screen resized (v0.8 · Harry)",
+              "detail": "Resizing the window could crash a gallery card and leave it blank: 7 errors on one resize.",
+              "bars": [
+                {
+                  "label": "Errors on one resize",
+                  "was": 7,
+                  "now": 0,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A side effect of the phone fix above: before the page had measured the screen, the picture was given a negative size.",
+                  "Fix: The picture now starts at a safe default size until the screen is measured. 0 errors on the same resize."
+                ]
+              }
+            },
+            {
+              "title": "Buttons fell off the edge of a phone screen (v0.8 · Harry)",
+              "detail": "On Infinite Highlights, Delete was cut off. In the gallery, \"+ Mate\" and \"Remove\" were clipped once the Tune button appeared.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The button rows were wider than the phone: Infinite Highlights' row ran to 433px on a 390px screen, and the gallery's row grew when Tune was added to it.",
+                  "Fix: Every button now fits on a 390px screen, in both places, measured."
+                ]
+              }
+            },
+            {
+              "title": "A drag kicked harder or softer than in a career (v0.9 · Harry)",
+              "detail": "The same drag in the gallery hit 7.6% harder than in a career on a phone, and 16% softer on a laptop.",
+              "bars": [
+                {
+                  "label": "Kick strength vs a career, phone",
+                  "was": 7.6,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Kick strength vs a career, laptop (softer)",
+                  "was": 16,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The game measures a drag as a share of the pitch's height, so a smaller pitch means a harder kick. The gallery played at 340px on a phone and 460px on a laptop, not the real match's size.",
+                  "Fix: Every test screen (gallery Play, Infinite Highlights, Infinite Match) now plays at the real match's size, 366px on a phone. Kick strength is the same as a career on both."
+                ]
+              }
+            },
+            {
+              "title": "Test screens played with nobody in the shirts (v0.9 · Harry)",
+              "detail": "In the gallery, team-mates finished like anonymous men (no curl, no chip, no first-time finish) and every keeper was a flat 62.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The gallery never loaded a squad, and the first chance of any match never had real players put into the shirts. Gallery Play only ever plays its first chance, so it never had any.",
+                  "Fix: Test screens load the same real squads a career does, including the first chance. Checked in a match: Eze, Saka and Rice for Arsenal against Coventry's own keeper, Rushworth."
+                ]
+              }
+            },
+            {
+              "title": "Test screens never had any weather (v0.9 · Harry)",
+              "detail": "A career has wind or rain in about 4 matches in 10; the test screens had none.",
+              "bars": [
+                {
+                  "label": "Test matches with wind or rain",
+                  "was": 0,
+                  "now": 42,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The test screens set the real match up differently from a career, and weather was one of the settings left out.",
+                  "Fix: They now use the real weather, and a line above the pitch says when it's windy. Play Area → Weather → Clear turns it off."
+                ]
+              }
+            },
+            {
+              "title": "Infinite Match quietly weakened every kick after minute 150 (v0.9 · Harry)",
+              "detail": "From about minute 150, every kick was 30% weaker for the rest of the run.",
+              "bars": [
+                {
+                  "label": "Kick weakened, minute 150 onwards",
+                  "was": 30,
+                  "now": 0,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Your energy drained as if one 90-minute match was stretched over 10,000 minutes.",
+                  "Fix: You get fresh legs every 90 minutes. Worked out from the code, not played."
+                ]
+              }
+            },
+            {
+              "title": "Team understanding was ignored in test screens (v0.9 · Harry)",
+              "detail": "A career passes in how well your team combines; the test screens always used 60 instead.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The setting was never passed to the test screens, so they fell back to 60 without saying so.",
+                  "Fix: The test screens now get the real value. The new deploy guard caught this on its very first run."
+                ]
+              }
+            },
+            {
+              "title": "Gallery Play restarted in the middle of a kick (v0.9 · Harry)",
+              "detail": "A chance in gallery Play could be thrown away mid-kick, even by a phone's address bar hiding.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Anything that redrew the card restarted the chance.",
+                  "Fix: It now restarts only if the picture itself actually changes."
+                ]
+              }
+            },
+            {
+              "title": "The trial's penalties and free kicks didn't play like a match (v0.10 · Harry)",
+              "detail": "The trial keeper was already diving as you struck, and the ball flew a little differently from a real match.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The trial ran its own copy of the match (about 1,280 lines) that had drifted.",
+                  "Fix: The trial now plays the real match and only sets up and scores each rep. Its stats are invisible, as Harry asked."
+                ]
+              }
+            },
+            {
+              "title": "Penalties in the corner always went in (v0.10 · Harry)",
+              "detail": "In a real match a penalty aimed at the corner scored 99.8% of the time; down the middle scored 0%.",
+              "bars": [
+                {
+                  "label": "Corner, scored",
+                  "was": 99.8,
+                  "now": 70,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Down the middle, scored",
+                  "was": 0,
+                  "now": 22,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The keeper didn't react to penalties. He stood in the middle.",
+                  "Fix: Harry's answer to question 1: he waits in the middle, then dives 80% of the time and picks your side 60%. The trial turns those two numbers up rep by rep."
+                ]
+              }
+            },
+            {
+              "title": "Training kicked differently from a match (v0.10 · Harry)",
+              "detail": "Power, Technique and Free Kick drills kicked harder or softer than a match, and the free-kick wall stood squashed together.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Training had its own copy of the match. Its wall was 0.75m apart; the match uses 1.15m.",
+                  "Fix: The drills play the real match; Technique's cones are on the real pitch; Pace is the match's first-person run; the wall is spaced like the match."
+                ]
+              }
+            },
+            {
+              "title": "Five-a-side's arrow and drag didn't match the match (v0.10 · Harry)",
+              "detail": "The arrow pointed slightly away from where the ball went, a sideways drag hit about 20% harder, and a drag up the screen hit harder too.",
+              "bars": [
+                {
+                  "label": "Arrow vs where the ball went",
+                  "was": 3.7,
+                  "now": 0.01,
+                  "state": "good",
+                  "unit": "°"
+                },
+                {
+                  "label": "40px drag up, power (match 54.1%)",
+                  "was": 67.7,
+                  "now": 54.1,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Five-a-side measured your drag against its own, differently shaped pitch.",
+                  "Fix: It uses the match's exact drag maths, draws the arrow along the ball's real path, and reads your drag against the match's height (Harry's answer to question 11)."
+                ]
+              }
+            },
+            {
+              "title": "A gallery corner looked different when you pressed Play (v0.10 · Harry)",
+              "detail": "The corner picture was drawn flat, but Play turned it sideways like the real game, so it looked like a different chance. It was also small on a laptop, with made-up kits.",
+              "bars": [
+                {
+                  "label": "Gallery picture on a laptop",
+                  "was": 384,
+                  "now": 493,
+                  "state": "good",
+                  "unit": "px"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The picture was drawn with different settings from Play.",
+                  "Fix: The picture is turned like Play (40 of 40 within 0.6px), up to 520px on a laptop, with real kits."
+                ]
+              }
+            },
+            {
+              "title": "Some teams wore the same two colours, swapped (v0.10 · Harry)",
+              "detail": "Man United (red shirts, white shorts) against Bournemouth's change kit (white shirts, red shorts): both sides red and white.",
+              "bars": [
+                {
+                  "label": "Fixtures with swapped colours",
+                  "was": 2634,
+                  "now": 0,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The clash check only compared shirts.",
+                  "Fix: Harry's answer to question 6: it checks shirt and shorts together, and the away side changes its shorts first."
+                ]
+              }
+            },
+            {
+              "title": "Five-a-side froze when a team-mate had the ball (v0.10.1 · Harry)",
+              "detail": "In the trial's five-a-side the game got stuck, usually around a team-mate's chance, and you needed dev tools to skip past it.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The next line of code wiped the team-mate's chance as soon as it was set. The result was then filed as the other team's attack, so the match kept asking for the same chance, forever.",
+                  "Fix: The chance is kept until it resolves and is filed as your team-mate's. In a browser, a phone run went past a team-mate's chance (15' to 17') and runs finished at 43' and 44' with nothing stuck."
+                ]
+              }
+            },
+            {
+              "title": "Players standing behind someone were drawn on top of him (v0.11 · Mikey)",
+              "detail": "At a corner or cross, a striker standing behind his marker was drawn over him, head in the marker's shirt, as if standing on his shoulders. It happened from every camera angle.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Players weren't drawn in order of who was nearer. They were drawn in fixed groups (team-mates, runners, defenders, you, then the keeper), so a later group was always on top.",
+                  "Fix: Every player, keeper included, is now drawn furthest-first by where his feet touch the grass, from any camera angle. The scenario gallery picture does the same."
+                ]
+              }
+            },
+            {
+              "title": "The ball was drawn across the head of a player in front of it (v0.11 · Mikey)",
+              "detail": "With a defender standing just in front of you, the ball at your feet was drawn across his head, as if he had it.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The ball was always drawn last, on top of everybody.",
+                  "Fix: The ball now takes its place in the same nearest-in-front order, placed by its shadow on the grass, so anyone nearer the camera partly covers it. A lofted ball can pass behind a nearer player, and the landing cross and ball trail sit under the players."
+                ]
+              }
+            },
+            {
+              "title": "Corners were taken 6 to 7.5 metres in from the flag (v0.11 · Mikey)",
+              "detail": "In the real game and the gallery, every corner was taken 6 to 7.5 m in from the corner flag, not from the flag.",
+              "bars": [
+                {
+                  "label": "Distance from the flag",
+                  "was": 6.75,
+                  "now": 0.6,
+                  "state": "good",
+                  "unit": " m"
+                },
+                {
+                  "label": "Pitch shown on corners",
+                  "was": 42,
+                  "now": 48,
+                  "state": "warn",
+                  "unit": " m"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: It was done on purpose: the corner camera never zoomed out, and it couldn't fit the flag, room to drag back for power, and the far post all at once.",
+                  "Fix: The ball now starts in the corner arc, 0.45 to 0.75 m from the flag. On corners only, the camera shows 48 m of pitch instead of 42 m, so players look about 13% smaller; the far post and the pull-back room are unchanged. This needed a change to the core match engine, normally off-limits, which Mikey approved. In the gallery, the goal line and touchline now stop at the corner with the quarter circle drawn, like the match. Byline crosses are unchanged."
+                ]
+              }
+            },
+            {
+              "title": "Four small numbers were reading the wrong scale (v0.11 · Mikey)",
+              "detail": "The energy colours on the dashboard and pre-match screen didn't match the real selection lines. The dev fame buttons added +1,000 and set 100,000. The feed didn't weigh the fame you actually see. Voting read its reputation numbers from its own list.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Found in a check of money, fame, reputation and energy. The cause of each was not recorded.",
+                  "Fix: Energy colours now follow the selection lines: green 65+ (starts), amber 40+ (bench), red below (left out). Dev fame buttons are +10 and Max = 100. The feed counts earned plus owned fame. Voting reads from the one reputation table."
+                ]
+              }
+            },
+            {
+              "title": "Training vision past 70 did nothing in matches (v0.12 · Mikey)",
+              "detail": "Vision added team-mates to pass to in two jumps (+1 at 40, +2 at 70), so training it from 70 to 100 made no difference.",
+              "bars": [
+                {
+                  "label": "Team-mates per chance at vision 100",
+                  "was": 4.19,
+                  "now": 4.69,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The extra team-mates came in two fixed steps that stopped at 70.",
+                  "Fix: Vision now works on a smooth curve: 40 plays as before, and every 10 points after that adds a quarter of a man. Over 1,500 chances: 3.18 team-mates per chance at 40, 4.18 at 80, 4.69 at 100."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "No way to see a chance exactly as the match serves it (v0.1 · Harry)",
+              "detail": "The gallery only showed fixed example versions, not the chances a real match would give you.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Needed to check what players actually get, rather than hand-picked examples.",
+                  "Fix: A Simulate button: one press, one chance built exactly as the match builds it. Over 1,300 presses: 1,221 different pictures, no repeats in a row, no faults. Penalties are the exception (23 different in 100) because there is almost nothing to vary."
+                ]
+              }
+            },
+            {
+              "title": "Checking chances meant one at a time (v0.1 · Harry)",
+              "detail": "There was no quick way to look at lots of real chances, which is how the broken camera slipped through.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A check that measures the wrong thing still passes; a person flicking through a hundred real chances catches it in a minute.",
+                  "Fix: Infinite Highlights: an endless Next button in the gallery, plus a page where you pick which of the 13 chance types to see. Faults are ringed in red with one line of English, and Flag saves a bad one to find again. On day one it found four fault messages ringing the ball instead of the player they named, now fixed."
+                ]
+              }
+            },
+            {
+              "title": "You couldn't add or remove players in a scenario (v0.1 · Harry)",
+              "detail": "Harry reported you couldn't add team-mates or add or remove opponents in the editor.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Needed to build and correct chances by hand.",
+                  "Fix: Tap a figure, then + Team-mate, + Opponent or Remove. It's real: adding an opponent to a one-on-one moves the offside line and the warning changes to 'not a one-on-one'. The keeper, the poacher and you couldn't be removed yet."
+                ]
+              }
+            },
+            {
+              "title": "Only 10 versions per chance type (v0.1 · Harry)",
+              "detail": "Each chance type stopped at 10 versions in the gallery.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Harry asked for more versions per type after using the gallery.",
+                  "Fix: An Add version tile adds more, up to 60 per type, and remembers how many you have."
+                ]
+              }
+            },
+            {
+              "title": "No way out of the full-screen dev pages (v0.1 · Harry)",
+              "detail": "On immersive pages like the scenario gallery the normal menu is hidden, so getting to another admin page was awkward.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Harry asked for every admin and test page to be reachable from anywhere.",
+                  "Fix: An ADMIN tab on the left edge lists all 25 admin and dev pages, even where the menu is hidden. Only admins see it, and only on desktop."
+                ]
+              }
+            },
+            {
+              "title": "Commit to repo had never really been used (v0.1 · Harry)",
+              "detail": "The button that saves a scenario into the game's code had only ever been tested against a fake.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Mikey's first genuine commit through the button landed this round."
+                ]
+              }
+            },
+            {
+              "title": "No way to play as the keeper (v0.2 · Leo)",
+              "detail": "There was no keeper game anywhere in the career.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Asked for: a Casino minigame where you face shots in goal and bet on a run of saves.",
+                  "Fix: Goalie Mode, in the Casino. You drag to aim your dive, and diving takes real time, so the best play is to commit right as the ball is struck: that saves 90-100% of shots, while diving before the shot saves about 28%, barely above the 12% of never diving at all. Cash out any time, or push on to a harder shot; the multiplier climbs to a 12x cap and one goal loses the lot."
+                ]
+              }
+            },
+            {
+              "title": "The goal stood in front of a flat sky (v0.2 · Leo)",
+              "detail": "Behind the goal there was nothing but a flat sky.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Asked for better, more in-game-looking graphics.",
+                  "Fix: A stadium behind the goal: a curved roof, two floodlight towers, a crowd, advertising boards and a running track."
+                ]
+              }
+            },
+            {
+              "title": "Every shot felt the same (v0.2 · Leo)",
+              "detail": "Leo asked for different scenarios: long shots, near and far post, headers from crosses, volleys, first-time shots, curl, different power and placement.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Variety is what makes each save a new read.",
+                  "Fix: A new first-time strike; near-post and far-post finishes rolled separately (56.9% near, 43.1% far in a real batch); and a label on screen for each shot: HEADER FROM A CROSS, VOLLEY, FIRST-TIME STRIKE, CURLING EFFORT, LONG RANGE, NEAR POST, FAR POST."
+                ]
+              }
+            },
+            {
+              "title": "The goalmouth was empty apart from the striker (v0.2 · Leo)",
+              "detail": "Reported: 'obvs other attackers and defenders should be in there even if they arent involved.'",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Other bodies make the shot harder to read, like in a real match.",
+                  "Fix: Attackers and defenders now stand in real goalmouth positions, swaying and shuffling so they look alive. Visual only: they don't touch the ball yet. Left out for penalties (the box is empty by the rules) and free kicks (the wall takes their place)."
+                ]
+              }
+            },
+            {
+              "title": "No penalties or free kicks to face (v0.2 · Leo)",
+              "detail": "Leo asked for two more shot types he'd forgotten: penalty and free kick.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: They're the set pieces every keeper faces.",
+                  "Fix: Penalty: struck from the real spot, and the striker gives away much less about where it's going (0.6x the usual clue), so it's a pure guessing duel. Free kick: a wall of 3 to 5 players at the real 9.15m, on the line between ball and goal, jumping as the ball is struck; shots are bent round it or lifted over it. The wall doesn't block the ball yet."
+                ]
+              }
+            },
+            {
+              "title": "Nothing said whether a scenario was saved or committed (v0.3 · Harry)",
+              "detail": "Save and Commit to repo were confused for each other, and no card said which had happened.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: They go to two different places. Save puts a scenario in the database: instant, everyone sees it, the game uses it straight away. Commit to repo puts it in the game's code: about two minutes to rebuild, but permanent even if the database is wiped.",
+                  "Fix: Every card now shows a badge: DRAFT (only in your browser), SAVED (in the database), COMMITTED (in the code), or MODIFIED (committed, but changed since and the change isn't committed yet)."
+                ]
+              }
+            },
+            {
+              "title": "There was no way to delete a scenario (v0.3 · Harry)",
+              "detail": "Once saved or committed, a scenario could not be got rid of.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Delete removes it from the database, your browser and the code in one press. If the code part can't be reached, it says so rather than claiming it's gone."
+                ]
+              }
+            },
+            {
+              "title": "Drawn chances didn't shape the chances the game makes (v0.3 · Harry)",
+              "detail": "Hand-drawn one-on-ones were just pictures; the game's own generated chances didn't follow them.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The game needs rules that describe what a chance is, so it can make endless new ones that still look right.",
+                  "Fix: The tuner reads all the drawings (17 one-on-ones) and finds what's true in every one: no defender between ball and goal, nobody nearer the goal than the ball, no team-mate in your shooting line. Every generated chance must pass these or is repaired before you see it. It only makes 'none of this' rules, never 'usually three defenders', which would have banned most of football."
+                ]
+              }
+            },
+            {
+              "title": "No way to correct a bad generated chance (v0.3 · Harry)",
+              "detail": "If the game made a bad chance, the only options were to ignore it or save it as a new drawing.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: One bad chance you happened to see isn't evidence of anything, so it shouldn't change the rules on its own.",
+                  "Fix: Tune: drag a player to where he should be and press Tune. It's recorded and nothing else happens. The same kind of fix three times on different chances becomes a proposal in the commit tab, in plain words, which you approve or ignore. Nudges under about half a metre don't count."
+                ]
+              }
+            },
+            {
+              "title": "Test settings could only be changed in the code (v0.4 · Harry)",
+              "detail": "Power, technique, curving boots, extra-touch boots, opposition, goalie, position, division and match length were stuck at whatever a dev page had set, and changing them needed a code change.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Testing how chances feel means changing those settings, and a number set once has to mean the same thing in every play tool.",
+                  "Fix: A Play Area puts both play tools behind one door, with one shared set of dials on top. The settings are saved on your own device and never touch a career or the live game."
+                ]
+              }
+            },
+            {
+              "title": "There was no way to check which chances a match actually gives you (v0.4 · Harry)",
+              "detail": "\"I've played like 5 games and seen ZERO of these one on ones\" couldn't be checked. Also, a very long test match was ending at around minute 75.",
+              "bars": [
+                {
+                  "label": "Test match lasted",
+                  "was": 75,
+                  "now": 138,
+                  "state": "good",
+                  "unit": " min"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The match picked each chance internally and never reported it. The manager can also take you off from minute 60, which ended long test matches early.",
+                  "Fix: The Infinite Match is the real match, but it doesn't stop and it counts every chance it serves. In a live test it served 9 chances in 138 minutes (5.9 per 90) across six kinds, 3 of them one-on-ones. Both additions stay off in a real career."
+                ]
+              }
+            },
+            {
+              "title": "You couldn't see scenarios before committing them (v0.4 · Harry)",
+              "detail": "\"Not being able to see them before committing is annoying.\" The commit list was just a line of IDs.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Committing puts a scenario into the code permanently, and an ID doesn't show you the drawing.",
+                  "Fix: Tuning & Commit now has \"Look through all first\". It shows one drawing at a time, with back and forward, \"Open to edit\" and \"Leave out\" to drop one from this batch without deleting it. The button then shows the count, such as \"Commit 10 of 11 to the repo\". Looking changes nothing."
+                ]
+              }
+            },
+            {
+              "title": "Infinite Highlights couldn't tune or properly delete a chance (v0.4 · Harry)",
+              "detail": "You flick through chances on this screen, but it was the one screen that couldn't record a correction. It only had Revert, which left a committed copy still in the game, and it didn't show whether a chance was saved or committed.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Infinite Highlights now has Tune, which counts exactly the same as a correction made in the gallery. It also has Delete, which clears both the database and the code after an \"Are you sure?\" (asked for on the call), and the Saved/Committed pills."
+                ]
+              }
+            },
+            {
+              "title": "Testing a late-game situation meant playing the whole game to get there (v0.5 · Leo)",
+              "detail": "To test something like the captaincy, high reputation or a different club, you had to play from the start until you got there.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Faster testing was asked for, so any part of the game that takes time to reach can be reached straight away.",
+                  "Fix: Settings now has six one-tap cheats: make yourself captain, set reputation, fame or happiness, max all skills to 99, and switch club. The club switch goes through a real transfer, so the save stays consistent. Like the existing money and skip tools, these have no login check."
+                ]
+              }
+            },
+            {
+              "title": "Owning the club you played for gave you less power, not more (v0.5 · Leo)",
+              "detail": "\"Right now if you own the club you play at you have LESS opportunity, power... you should have MORE.\" For your own club, the Boardroom's Powers tab only showed a placeholder.",
+              "bars": [
+                {
+                  "label": "Chances your way (Talisman on)",
+                  "was": 1,
+                  "now": 2.2,
+                  "state": "good",
+                  "unit": "×"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The Boardroom's powers were only built for clubs you own but don't play for.",
+                  "Fix: A majority owner of their own club now has three powers: appoint yourself captain outright, sell yourself to any club in your division, and a Talisman tactic. Talisman sends 2.2 times as many chances your way, fewer to team-mates, and the team plays worse overall. A minority stake gives none of these."
+                ]
+              }
+            },
+            {
+              "title": "You could only sell your whole stake in a club (v0.6 · Mikey)",
+              "detail": "The Portfolio had one \"Sell entire stake\" button: no way to sell part of a stake or top it up, and no confirm step.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A single mis-click could cost you a whole stake.",
+                  "Fix: Two buttons, Buy more (up to 100%) and Sell some, each with a slider for how much. Every buy and sell asks you to confirm and warns if you're about to gain or lose majority ownership."
+                ]
+              }
+            },
+            {
+              "title": "No way to choose how hard to work in a match (v0.6 · Mikey)",
+              "detail": "You had no say in how much energy a match used or how involved you were.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: An energy bar with Low / Medium / High buttons now sits at the bottom of the commentary screen, where the repeated stats row was. A full Premier League match costs 30 / 60 / 95 energy. High gives about 35% more chances, Low about 35% fewer, Medium plays exactly as before. Measured in a real match: Medium drained 0.667 a minute (100 → 64 by minute 54), High 1.075 a minute."
+                ]
+              }
+            },
+            {
+              "title": "No way to top up energy at half time (v0.6 · Mikey)",
+              "detail": "Energy cans couldn't be used during a match.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: A \"Use KIB can\" button sits beside Second Half, showing how many Basic cans you own. Each tap gives +25 energy; the cans come off your stock once the match is saved."
+                ]
+              }
+            },
+            {
+              "title": "A chance in Infinite Match couldn't be kept or fixed (v0.7 · Harry)",
+              "detail": "If Infinite Match served a good or broken chance, there was no way to edit it, save it or put it in the game.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A chance in a real match can't be rebuilt afterwards, so it has to be copied the moment it's served.",
+                  "Fix: An \"Edit this chance\" button above the match opens the chance as it was before the kick. Drag, add or remove players, then Save (it becomes a gallery card of that type) or Commit (it goes in the game), and carry on playing. Checked on 144 chances: every card showed exactly the chance you were on, with the match's own camera framing. A normal career doesn't take these copies."
+                ]
+              }
+            },
+            {
+              "title": "Admin pages didn't explain their own buttons (v0.8 · Harry)",
+              "detail": "Nothing on the admin and dev pages said what each button did, where saving went, or whether anything reached the game.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Harry asked for \"a little eye on how to use whatever's currently on the page\", the same on every admin page.",
+                  "Fix: An eye (ⓘ) in the bottom-right corner of all 26 admin and dev pages explains the page, every button by its on-screen name, where saving goes, whether it commits, and where it shows up in the game. Anyone who changes a button now has to update its explanation in the same change. Writing them turned up several of the known issues below."
+                ]
+              }
+            },
+            {
+              "title": "There was no step-by-step guide to building scenarios (v0.8 · Harry)",
+              "detail": "Building scenarios meant knowing the difference between Unsaved, Saved and Committed, what every gallery button did, and when real matches actually start using a drawing.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The team needs 30–50 drawings per chance type, and only committed ones ever reach real matches.",
+                  "Fix: A ten-step guide: open the gallery, pick a type, read the two pills, drag to fix, ▶ Play to check, Save & Approve, ▶ Sim for more, Tune, then Commit all from Tuning & Commit. It also states the rule: a type needs 5 committed drawings before matches use any, and each chance served nudges one drawing by up to 2m. At the time: one on one 21 committed, tight angle 11, free kick 0."
+                ]
+              }
+            },
+            {
+              "title": "The team disagreed on difficulty with no evidence either way (v0.8 · Harry)",
+              "detail": "Harry wanted a slow road to the top as the main mode, Leo wanted players to pick a quick route before they start, and Mikey wanted both without the game going flat. Nobody had numbers.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The default mode decides who stays and who pays, so it needed research before building.",
+                  "Fix: Research plus two live simulations. At 20 hours to the Premier League and 30 minutes a day, about 10 in 1,000 players are still playing on the day they'd get there (17 in 1,000 if the road is halved). Adding a casual mode comes out at 95 on Harry's assumptions, 183 on Leo's, 163 on Mikey's and 71 at worst, against 100 for the main mode alone. Recommendation: Road to Glory as the default with a casual Superstar Start beside it, decided with PostHog data. The decision is Harry's."
+                ]
+              }
+            },
+            {
+              "title": "Test screens felt like a different game from a career (v0.9 · Harry)",
+              "detail": "Four screens ran their own copy of the match, and the ones that did use the real match set it up differently, so a test never felt quite like a career.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Each copy was right on the day it was made, then the real match kept improving and the copies didn't. Harry asked that any new feature use the base engine, with extras built on top.",
+                  "Fix: One door into the real match for every test screen: gallery Play, Infinite Highlights and Infinite Match now go through it with a career's settings. A new feature plugs in and adds its buttons and scoring around the outside, never its own copy. A written rule now tells every Claude session the same. The trial and training are not moved yet."
+                ]
+              }
+            },
+            {
+              "title": "Nothing stopped someone adding a new copy of the match (v0.9 · Harry)",
+              "detail": "Any new screen could quietly build its own copy of the match, and it would drift like the others.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Copies are how the trial, training and test screens ended up feeling different.",
+                  "Fix: A check inside every deploy: the site won't go live with a new copy of the match, and the build log says what to fix. Fable 5.1 tried to break it; the first version missed 21 of 31 tricks, so it now reads the code the way the compiler does. It caught all 10 planted copies and left 2 harmless look-alikes alone. It also found Goalie Mode's own ball physics and the team-understanding gap. Adds about 20 seconds to each deploy."
+                ]
+              }
+            },
+            {
+              "title": "No way to switch off the real keeper or weather when testing (v0.9 · Harry)",
+              "detail": "Once the test screens played the real keeper and real weather, there was no way to test a chance with a set keeper rating or clear skies.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Testing sometimes needs a fixed keeper or no wind, without touching a career.",
+                  "Fix: Two Play Area rows: Keeper (Real / Set) and Weather (Real / Clear). Both start on Real; Keeper → Set brings back the rating slider. Every dial now says it only changes the test screens, never a career."
+                ]
+              }
+            },
+            {
+              "title": "Every trophy was an emoji (v0.11 · Mikey)",
+              "detail": "Every trophy and award showed as an emoji (🏆 🥇 🏅).",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: 14 real trophy pictures now show in the Trophy Cabinet (including the Ballon d'Or box and each award), on the end-of-season award cards, in feed posts about a trophy win, and on the Garden's glass shelves (your 6 most recent). Backgrounds were cut out and each file shrank from about 2 MB to 27–81 KB. Community Shield, Super Cup, Conference League, European Championship and Play-Offs keep their emoji until pictures arrive."
+                ]
+              }
+            },
+            {
+              "title": "You couldn't like a post in the feed (v0.11 · Mikey)",
+              "detail": "Posts in the phone feed showed a like count, but you couldn't like them yourself.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Tap the heart: it pops pink and the count goes up by one (84 → 85). Tap again to unlike. Your likes are saved with the career."
+                ]
+              }
+            },
+            {
+              "title": "The gallery had no way to choose a chance's camera (v0.11 · Mikey)",
+              "detail": "In the scenario gallery you couldn't pick where the camera framed an 11-a-side chance. The Scenario Builder could.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The Scenario Builder already had this; the gallery didn't.",
+                  "Fix: Every 11-a-side card has a \"Camera: pick on the whole pitch\" button: zoom out to the whole pitch, drag the dashed frame, let go, then \"Done — back to editing\". The camera saves with the scenario and the game frames the chance from there. Chances facing left or right aren't included yet."
+                ]
+              }
+            },
+            {
+              "title": "Long shots had no rules to build new ones from (v0.11 · Mikey)",
+              "detail": "The gallery couldn't simulate new long-range chances.",
+              "bars": [
+                {
+                  "label": "Long-range drawings",
+                  "was": 1,
+                  "now": 13,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The gallery builds rules for a chance type from saved drawings and needs at least 5. Long range had 1.",
+                  "Fix: 12 new long-range drawings: a defender steps out 4–8 m to close the shooter, the back line holds 11–15 m out (it used to sit 3.5 m out, on the keeper), and the keeper is just off his line toward his near post. Simulate: 400 of 400 built from the drawings, 0 rules broken, 3.75% with a minor fault."
+                ]
+              }
+            },
+            {
+              "title": "Level 1 started with no explanation (v0.12 · Mikey)",
+              "detail": "The first level of each training game started straight away, with nothing explaining how it works.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Level 1 of every game now opens on a how-it-works card: a small drawing, three one-line steps, the star rule and a \"Let's go\" button. Nothing starts, and Vision's timer doesn't run, until you press it."
+                ]
+              }
+            },
+            {
+              "title": "Vision's timer started the moment the pitch appeared (v0.12 · Mikey)",
+              "detail": "In Vision training the players appeared and the clock started at the same moment, with no warning.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Before every try the pitch is hidden behind a big 3, 2, 1, GO! with \"Pick the free pass\" under it; then the players appear and the timer starts. A miss runs the countdown again on the same picture."
+                ]
+              }
+            },
+            {
+              "title": "Testing a late training level meant playing every level before it (v0.12 · Mikey)",
+              "detail": "There was no way to jump straight to, say, level 25 of a training game to judge it.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Needed to judge each game's difficulty quickly.",
+                  "Fix: A new Training Levels dev page (also in the admin menu under Star Career): pick a game, tap any of the 30 levels (all open), set the player's skills to 40, 70 or 100, and step between levels while playing. Nothing is saved. The dev panel in Settings can also unlock all 30 levels inside a career (not yet seen on screen)."
+                ]
+              }
+            },
+            {
+              "title": "Early cup rounds were picked like league games (v0.13 · Mikey)",
+              "detail": "A player who wasn't a regular had no extra route into early cup games.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: A player who isn't a regular now starts about 60% of early cup rounds (anything before the quarter-final). A regular is never rotated out."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The same few chances kept coming up (v0.1 · Harry)",
+              "detail": "The match only had 14 different chance situations to show you, so highlights repeated.",
+              "bars": [
+                {
+                  "label": "Different situations",
+                  "was": 14,
+                  "now": 64,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: The new chance generator is switched on: 64 different situations, and you never get the same situation twice in a row. It had been built earlier but held back until the scoring drop above was fixed."
+                ]
+              }
+            },
+            {
+              "title": "The gallery was 15 screens of scrolling (v0.1 · Harry)",
+              "detail": "The front page took about 15 phone screens to scroll through and was mostly explanation text.",
+              "bars": [
+                {
+                  "label": "Scrolling",
+                  "was": 12921,
+                  "now": 1596,
+                  "state": "good",
+                  "unit": "px"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: It had been built as an essay rather than a gallery.",
+                  "Fix: Rebuilt: the front page is one screen, and a problem is shown as a red ring on the thing that's wrong instead of a paragraph. Across formations is now behind a toggle, off by default, because it took 60% of the screen and didn't work yet."
+                ]
+              }
+            },
+            {
+              "title": "Too many long shots, not enough one-on-ones (v0.1 · Harry)",
+              "detail": "Harry reported lots of long shots and build-up, few one-on-ones, no headers and no byline crosses.",
+              "bars": [
+                {
+                  "label": "Long range",
+                  "was": 13.1,
+                  "now": 10.6,
+                  "state": "warn",
+                  "unit": "%"
+                },
+                {
+                  "label": "One-on-one",
+                  "was": 11.9,
+                  "now": 14.3,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Through ball",
+                  "was": 13.0,
+                  "now": 12.6,
+                  "state": "bad",
+                  "unit": "%"
+                },
+                {
+                  "label": "Build-up",
+                  "was": 9.5,
+                  "now": 9.5,
+                  "state": "bad",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The table that sets how often each chance type comes up was guessed, not measured.",
+                  "Fix: Half fixed: fewer long shots and more one-on-ones. Through balls and build-up barely moved (see known issues)."
+                ]
+              }
+            },
+            {
+              "title": "Every commit meant its own two-minute rebuild (v0.3 · Harry)",
+              "detail": "Committing five scenarios meant five rebuilds of the site.",
+              "bars": [
+                {
+                  "label": "Rebuilds for 20 scenarios",
+                  "was": 20,
+                  "now": 1,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Each commit was sent on its own. Harry: 'imagine all three of us are doing a bunch of scenarios... we commit, and it's one production.'",
+                  "Fix: Everything saved but not committed sits in one tab, and one press commits the lot as one change with one rebuild. Save while you work, commit at the end."
+                ]
+              }
+            },
+            {
+              "title": "No-go didn't really stop bad chances (v0.3 · Harry)",
+              "detail": "No-go was a bin for chances you never want to see again, but it was unclear what it should do.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: There are millions of possible chances, so binning one exact picture stops almost nothing coming back.",
+                  "Fix: Removed completely, as asked. Tune (below) does the job instead: you fix what's wrong with a chance and the fix applies to every chance like it."
+                ]
+              }
+            },
+            {
+              "title": "Playing a chance took over the screen with no way back (v0.3 · Harry)",
+              "detail": "Once you pressed Play there was no way back to editing; you had to leave and find the card again.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Play opened as a full-screen layer that covered the editor.",
+                  "Fix: Play now swaps only the picture for the live match. Edit buttons, Save and Next stay where they are, and the match commentary is hidden while editing. Works in the gallery and in Infinite Highlights."
+                ]
+              }
+            },
+            {
+              "title": "Leo's Goalie Mode was spread over three versions (v0.3 · Harry)",
+              "detail": "Leo's 0.2, 0.3 and 0.4 were all Goalie Mode, which read as three separate features.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Each round of the same feature had been given its own number.",
+                  "Fix: Merged into one v0.2 with his wording kept. Side effect: this v0.3 is Harry's, so an older link or screenshot saying 'Leo v0.3' now means something different."
+                ]
+              }
+            },
+            {
+              "title": "It was unclear whether to commit each scenario (v0.3.5 · Harry)",
+              "detail": "On the call it wasn't clear how scenario work should be split, or whether to press commit after every scenario.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Save and commit do different things. A kind of chance with no drawings has no rules of its own yet, so its first drawings are what teach the game what that chance is.",
+                  "Fix: Agreed on the call: each person picks a kind of chance, makes ten to fifteen varied ones and saves each one as they go, then commits the whole batch once from Tuning & Commit. Tune is not the same as Save: it only records a correction and waits until several agree."
+                ]
+              }
+            },
+            {
+              "title": "Your position barely changed which chances you got (v0.4 · Harry)",
+              "detail": "A striker got a one-on-one only 13.4% of the time, and a left winger got a byline cross only 2.2% of the time.",
+              "bars": [
+                {
+                  "label": "Striker one-on-ones",
+                  "was": 13.4,
+                  "now": 21.7,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Left wing byline crosses",
+                  "was": 2.2,
+                  "now": 9.7,
+                  "state": "good",
+                  "unit": "%"
+                },
+                {
+                  "label": "Striker build-ups",
+                  "was": 10.6,
+                  "now": 5.8,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The call agreed that your position should tilt which chances you get without deciding them completely.",
+                  "Fix: Every position now pulls chances towards itself: striker one-on-ones went up to 21.7%, left winger byline crosses to 9.7%, and striker build-up play fell from 10.6% to 5.8%. Every position still gets 6.1 to 6.6 chances a match. One engine setting changed in this round (a striker's long-range weighting, 6 to 3) was flagged as Mikey's call."
+                ]
+              }
+            },
+            {
+              "title": "Premier League wages topped out at ★11,933 a week (v0.6 · Mikey)",
+              "detail": "Even with everything maxed, the best Premier League wage was ★11,933 a week, and a big club paid no more than a small one for the same player.",
+              "bars": [
+                {
+                  "label": "Top weekly wage, everything maxed",
+                  "was": 11933,
+                  "now": 100000,
+                  "state": "good",
+                  "unit": "★"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Wages didn't take into account how much a club really spends on wages, its recent trophies or your star rating.",
+                  "Fix: Premier League wages now stack three things: the club's real 2025-26 wage bill (Liverpool 13.5× Coventry in real life, softened to 3.7× so squad players don't out-earn stars elsewhere), last season's honours (league ×1.2, Champions League ×1.3, Ballon d'Or ×1.5) and star rating (up to ×1.5 at 5★). Capped at ★100,000 a week. Examples: Coventry bench ★2,534, Chelsea starter ★13,798, Liverpool star ★29,831. Other divisions unchanged."
+                ]
+              }
+            },
+            {
+              "title": "Energy cans cost the same whatever you earned, and Stat Cans are gone (v0.6 · Mikey)",
+              "detail": "Energy cans had one flat price whatever you earned. The shop also sold three Stat Cans that boosted Power and Technique for a few matches.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Pricing off your wage means a can always costs something real. Why the Stat Cans were removed: Not recorded.",
+                  "Fix: The three Stat Cans are removed. The three energy cans now cost half a week (Basic), one week (Premium) and two weeks (Elite) of your own wage."
+                ]
+              }
+            },
+            {
+              "title": "First boots were expensive and lasted too long (v0.6 · Mikey)",
+              "detail": "The cheapest boots, NS-Pure, cost ★725, and Starter, Semi-Pro and Pro boots lasted about twice as long as intended.",
+              "bars": [
+                {
+                  "label": "NS-Pure price",
+                  "was": 725,
+                  "now": 365,
+                  "state": "good",
+                  "unit": "★"
+                },
+                {
+                  "label": "NS-Pure lifespan",
+                  "was": 70,
+                  "now": 35,
+                  "state": "warn",
+                  "unit": " matches"
+                },
+                {
+                  "label": "NS-Blast lifespan",
+                  "was": 115,
+                  "now": 30,
+                  "state": "warn",
+                  "unit": " matches"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: NS-Pure is half price at ★365. Lower-tier boots wear out about twice as fast: NS-Pure 70 → 35 matches, NS-Blast 115 → 30, NS-Swerve 70 → 15."
+                ]
+              }
+            },
+            {
+              "title": "Fame had no ceiling and came just from playing (v0.6 · Mikey)",
+              "detail": "Fame had no levels or top limit, and it went up simply from playing matches.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Fame is one number, 0-100, with six levels: Unknown, Local Name (10), Rising Star (25), National Name (40), Global Star (60), Icon (80). Each level unlocks more sponsors. It comes only from big moments, e.g. promotion +3 to +10, league title +12, Champions League +15, winning the Ballon d'Or +15. You lose it for relegation (-5), a season mostly on the bench (-4), and by drifting back toward your division's normal level each season."
+                ]
+              }
+            },
+            {
+              "title": "An advert gave more fame than winning the league (v0.6 · Mikey)",
+              "detail": "Choosing an advert in a dilemma could give up to +15 fame, more than a league title (+12).",
+              "bars": [
+                {
+                  "label": "Best dilemma fame reward",
+                  "was": 15,
+                  "now": 3,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Dilemma fame rewards are now +1 to +3. Also: a league title counts 10× a Community Shield toward your star rating (was about 6×), and country call-ups come at fame 40 (was 45)."
+                ]
+              }
+            },
+            {
+              "title": "Things you owned gave fame forever (v0.6 · Mikey)",
+              "detail": "A car or a watch gave a flat fame bonus and never wore out.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Each item adds fame on a flattening curve, so the more you own the less each one adds (the whole current shop is worth about 33). Items now wear out: a phone after about 2 seasons, a car after 5, property and jewellery never. A worn-out item gives no fame and shows \"WORN OUT — REPLACE\" in the shop."
+                ]
+              }
+            },
+            {
+              "title": "A scandal only took fame away (v0.6 · Mikey)",
+              "detail": "Getting caught in a scandal simply cut your fame.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Being infamous is still fame; it should cost you somewhere else instead.",
+                  "Fix: A scandal or getting caught now adds 1-4 fame (it's a news story) and costs reputation."
+                ]
+              }
+            },
+            {
+              "title": "Reputation was four separate bars (v0.6 · Mikey)",
+              "detail": "Reputation was split across four bars, and merging two clubs cost only 5.",
+              "bars": [
+                {
+                  "label": "Reputation cost of a merger",
+                  "was": 5,
+                  "now": 20,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Reputation is one number, 0-100, starting at 20. At 30+ boards take your recommendations seriously, at 60+ you can propose Rule Book changes, at 90+ you can run for president. Merging clubs costs 20. Old saves take the average of their four old bars."
+                ]
+              }
+            },
+            {
+              "title": "Sponsor deals lasted forever once signed (v0.6 · Mikey)",
+              "detail": "Once you signed a sponsor, the deal never ended.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Deals last one season (two for Watch, Jewellery and Car), then you have to qualify again. Unlocks follow fame levels, and the luxury brands now want a car or property you own instead of lifestyle points."
+                ]
+              }
+            },
+            {
+              "title": "The match minute jumped around (v0.6 · Mikey)",
+              "detail": "The minute jumped unpredictably from one commentary line to the next.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: The clock now ticks up one minute at a time (1, 2, 3 … 90), about 0.7 seconds per minute at normal speed, and your energy falls with it live."
+                ]
+              }
+            },
+            {
+              "title": "Doing nothing all week refilled your energy (v0.6 · Mikey)",
+              "detail": "Each weekly action you didn't use was worth +20 energy, so a week of doing nothing gained you 28. Rest gave +20 and training cost only 15.",
+              "bars": [
+                {
+                  "label": "Energy from Rest",
+                  "was": 20,
+                  "now": 10,
+                  "state": "warn",
+                  "unit": ""
+                },
+                {
+                  "label": "Energy cost of training",
+                  "was": 15,
+                  "now": 30,
+                  "state": "warn",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Energy now comes back from real rest days: +8 for every day between matches (Saturday to Saturday is 6 days, Saturday to Wednesday is 3), plus a little for owning a property and for your club's training ground. Rest gives +10, training costs 30. All adjustable in the tuning editor."
+                ]
+              }
+            },
+            {
+              "title": "Every competition was equally tiring (v0.6 · Mikey)",
+              "detail": "How big the game was made no difference to how much energy it took.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: The Premier League costs the most, down to the National League at 78% of that. FA Cup, League Cup and Community Shield cost whatever the opponent's league costs. Europa League is 6% more; Champions League and Super Cup 11% more."
+                ]
+              }
+            },
+            {
+              "title": "Being tired barely mattered (v0.6 · Mikey)",
+              "detail": "You were only benched below 35 energy and left out of the squad below 15, and tiredness cut your power and curve by at most 15%.",
+              "bars": [
+                {
+                  "label": "Benched below",
+                  "was": 35,
+                  "now": 65,
+                  "state": "warn",
+                  "unit": " energy"
+                },
+                {
+                  "label": "Out of the squad below",
+                  "was": 15,
+                  "now": 40,
+                  "state": "warn",
+                  "unit": " energy"
+                },
+                {
+                  "label": "Most power/curve lost when tired",
+                  "was": 15,
+                  "now": 30,
+                  "state": "warn",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Benched below 65, out of the squad below 40. Power and curve up to 30% weaker when tired. Tired-legs substitutions below 25, extra injury risk below 30. Tiredness no longer changes how many chances you get; the energy mode does."
+                ]
+              }
+            },
+            {
+              "title": "Each browser showed a different scenario count (v0.7 · Harry)",
+              "detail": "The number next to each scenario type differed between people: Harry saw 21, Mikey saw 23.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: It counted each browser's own generated cards.",
+                  "Fix: It now reads \"in the game / saved\", counted from the shared list, so everyone sees the same numbers. At the time: One on one 21 / 21, Tight angle 11 / 13, Free kick 0 / 1."
+                ]
+              }
+            },
+            {
+              "title": "On a computer, the card buttons were a phone-style stack (v0.7 · Harry)",
+              "detail": "On anything wider than a phone, the card used the stacked phone layout.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: The picture sits in the middle: No good on the left; ✓, the menu and Simulate/Next on the right; the edit row right under the picture, with nothing needing a scroll. Phones keep the stacked layout. \"+ Opponent\" now reads \"+ Opp\" because the full word no longer fit under the narrower picture."
+                ]
+              }
+            },
+            {
+              "title": "Tune corrections only lived in one browser (v0.8 · Harry)",
+              "detail": "A correction recorded with Tune stayed in the browser that recorded it, so the team never saw each other's.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The shared list for corrections didn't exist in the database until its setup script was run.",
+                  "Fix: Mikey ran it, and it's confirmed live: corrections are one shared team list. At the time, 3 corrections recorded and 0 proposals."
+                ]
+              }
+            },
+            {
+              "title": "Leo's 11 scenarios weren't in the game yet (v0.8 · Harry)",
+              "detail": "Leo had built 11 scenarios that real matches couldn't use.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Mikey merged them into the game's code."
+                ]
+              }
+            },
+            {
+              "title": "Every drill had a keeper and a goal, even the ones that don't need one (v0.10.1 · Harry)",
+              "detail": "After the trial and training moved onto the real match, every drill showed a full match picture: a goal, a keeper and team-mates, including the technique drill, which is just you, a ball and two cones.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Joining the real match brought its whole picture along, when those modes only needed its ball, drag, contact and flight.",
+                  "Fix: Each mode now chooses what is on the pitch: keeper, goal, team-mates and the GOAL/PASS banners can each be switched off. The ball physics stay the real match's. Technique training is now you, a ball and cones. Free kicks keep the keeper and wall. Trial penalties lose the stray team-mates. This is a named test-only setting in the guard, not a copy of the match."
+                ]
+              }
+            },
+            {
+              "title": "Volley and header chances are switched off for now (v0.10.1 · Harry)",
+              "detail": "Harry asked for volleys and headers out of the scenario gallery and out of the game for now.",
+              "bars": [
+                {
+                  "label": "Different chances in 100 highlights",
+                  "was": 98,
+                  "now": 91,
+                  "state": "warn",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not a bug: a decision while they're reworked.",
+                  "Fix: One list turns them off. Matches swap them for another chance before it is shown (0 got through in the test). The gallery and Infinite Highlights no longer list them. Team-mates can still head a cross in open play. Delete the word from the list to bring one back."
+                ]
+              }
+            },
+            {
+              "title": "Feed posts looked like boxed cards, not social media (v0.11 · Mikey)",
+              "detail": "Each post in the phone feed sat in its own box with category labels, which didn't look like a real social media app.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Posts now run edge to edge with a thin line between them. Name, tick, handle and time sit on one line, category labels are gone, there's a full row of replies, reposts, likes, views and share, and graphics sit under the words like an attached picture. Only the look changed."
+                ]
+              }
+            },
+            {
+              "title": "Switching energy mode mid-match did almost nothing (v0.11 · Mikey)",
+              "detail": "Tapping High or Low during the commentary carried on the current stretch of the match at the old mode, and High barely changed anything.",
+              "bars": [
+                {
+                  "label": "High mode: extra chances",
+                  "was": 23,
+                  "now": 35,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: A new mode only started at the next stretch, and High's extra chances ran into a cap at about +23%.",
+                  "Fix: A switch now replays the rest of the stretch from the next minute at the new mode; everything already on screen stays the same. High also gets an extra share of chances that come only to you. Over 1,500 simulated matches: High +35% chances, Low −35%, Medium unchanged."
+                ]
+              }
+            },
+            {
+              "title": "Energy mode buttons were plain (v0.11 · Mikey)",
+              "detail": "The Low, Medium and High energy buttons in the live commentary were plain buttons, not icons.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: They are now icons drawn from Mikey's concept images: a split ring with a lightning bolt, red for Low, amber for Medium and green for High, with 2, 4 or 6 sparks so the level reads without colour. The chosen one glows and the others dim."
+                ]
+              }
+            },
+            {
+              "title": "KIB cans gave small energy top-ups (v0.11 · Mikey)",
+              "detail": "The Basic can and the half-time can gave +25 energy; Premium gave +50 and Elite +100.",
+              "bars": [
+                {
+                  "label": "Basic can energy",
+                  "was": 25,
+                  "now": 65,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Basic and the half-time can (which is a Basic can) now give +65. Premium gives you the NS-Swerve curve for your next match, and Elite gives NS-Maestro's Touch Mode for your next match. A missed week keeps the effect, cans you already own work the new way, and the Shop and dashboard say what each one does."
+                ]
+              }
+            },
+            {
+              "title": "NS-Swerve was far cheaper than NS-Maestro (v0.11 · Mikey)",
+              "detail": "NS-Swerve cost ★2,300 while NS-Maestro cost ★35,000.",
+              "bars": [
+                {
+                  "label": "NS-Swerve price",
+                  "was": 2300,
+                  "now": 35000,
+                  "state": "warn",
+                  "unit": "★"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Both boots give a whole new ability rather than a stat boost, so they should sit at the same top price.",
+                  "Fix: NS-Swerve now costs ★35,000, the same as NS-Maestro."
+                ]
+              }
+            },
+            {
+              "title": "The Scout Report's tactics box took too much of the page (v0.11 · Mikey)",
+              "detail": "Before the team sheets, the Scout Report showed a big box of formation, playstyle and \"sit in two banks…\" text.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: It took up too much of the page.",
+                  "Fix: The box is hidden, not deleted, and one switch brings it back. The opponent still sets up that way in the match."
+                ]
+              }
+            },
+            {
+              "title": "Training was a new random picture every time, and skills rose in lumps (v0.12 · Mikey)",
+              "detail": "Every training session was a random new picture, so you could never learn one or aim to beat it. Points came in lumps: a perfect session at age 18 was worth 10 points, so a young player could go from 40 to 100 in about 7 sessions.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The drill's shape followed your skill number, and its details (where blockers stand, how the keeper moves) were re-rolled every time. Points came from how well each go went, times an age bonus.",
+                  "Fix: Each game now has 30 fixed levels, the same picture every time: level 1 is the old drill at skill 40, level 30 the old drill at 100 (Power goes from 20 m, 1 blocker and a keeper of 60 to 34 m, 4 blockers and a keeper of 93). You get 3 tries: in first time is ★★★, second ★★, third ★. Any star unlocks the next level, all 90 stars take a skill from 40 to 100 (3 new stars = +2), only new stars count, age makes no difference, and one level costs a day and 30 energy like a session did. Old saves keep their skill (70 opens with levels 1–15 at ★★★), skills still drop without training, and passing a level wins lost points back, one per star."
+                ]
+              }
+            },
+            {
+              "title": "Free kick started lower than every other skill (v0.12 · Mikey)",
+              "detail": "A new player's Free Kick started at 30; every other skill started at 40.",
+              "bars": [
+                {
+                  "label": "Free kick at the start",
+                  "was": 30,
+                  "now": 40,
+                  "state": "good",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Every skill now starts at 40, with ★ n/90 shown under it on the Skills screen."
+                ]
+              }
+            },
+            {
+              "title": "Matches raised every skill (v0.12 · Mikey)",
+              "detail": "A great match (rating 8+) added about +0.6 to every skill, in the first team and the youth team.",
+              "bars": [
+                {
+                  "label": "Skill points from a great match",
+                  "was": 0.6,
+                  "now": 0,
+                  "state": "warn",
+                  "unit": ""
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Matches now give 0 skill points. Skills come only from training."
+                ]
+              }
+            },
+            {
+              "title": "Pace made no difference to the Touch Mode chase (v0.12 · Mikey)",
+              "detail": "With Touch Mode, every player chased the ball down at the same flat 7.6 m/s, whatever his pace.",
+              "bars": [
+                {
+                  "label": "8 m Touch Mode chase, pace 100",
+                  "was": 1.01,
+                  "now": 0.81,
+                  "state": "good",
+                  "unit": " s"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The chase used one speed for everyone.",
+                  "Fix: The chase now runs from 6.8 m/s at pace 40 to 8.4 m/s at pace 100. An 8 m chase at pace 100 takes 0.81 s. Pace already set your dribble-run speed and how often you get space to run into."
+                ]
+              }
+            },
+            {
+              "title": "Free kick didn't count on corners or decide who takes set pieces (v0.12 · Mikey)",
+              "detail": "Your Free Kick skill wasn't used on corners, and a better rating didn't make you the taker any more often.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Corners now use the same 60% free kick / 40% technique mix as free kicks and penalties. A better rating makes you the taker more often: free kicks plus corners per match, playing CM, go from 0.59 at 40 to 0.81 at 100 (up to 1.5 times the old share)."
+                ]
+              }
+            },
+            {
+              "title": "The Skills screen didn't say what each skill does (v0.12 · Mikey)",
+              "detail": "The Skills screen listed skills without saying what they change in a match.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: Each skill now says what it does, e.g. Pace \"Faster dribbles, more runs into space, quicker Touch Mode chase\", Vision \"More team-mates to pass to in every chance\", Free Kick \"Free kicks, corners and penalties — and how many are yours\"."
+                ]
+              }
+            },
+            {
+              "title": "A new 18-year-old started every game, even at Man City (v0.13 · Mikey)",
+              "detail": "The other players at your club never counted. A brand-new 18-year-old started every game from week one, at Man City the same as at Barnet.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The manager only looked at you: his opinion of you, your form, your star rating and your fitness.",
+                  "Fix: Your rival is now the best real team-mate in your position. Rated higher than him, you start. Rated the same or lower, you start on the bench (the pre-match screen names him and compares your forms) and take his place with 2+ appearances at a recent average of 6.8, or when he drops under 6.0 while you're at 6.3+. Once you've won the shirt, ratings stop mattering and you keep it on form; a new club means winning it again, old saves where you've been playing keep their place, and a made-up squad has no rival. The bar is 6.8, not 7.0, because a short sub appearance pulls your rating towards 6.5 and 7.0 would need two goals in three appearances."
+                ]
+              }
+            },
+            {
+              "title": "Form took five games to count (v0.13 · Mikey)",
+              "detail": "The manager judged your form over your last 5 matches, so a bad run took a long time to cost you your place, or to win it back.",
+              "bars": [
+                {
+                  "label": "Matches judged for form",
+                  "was": 5,
+                  "now": 3,
+                  "state": "good",
+                  "unit": ""
+                },
+                {
+                  "label": "Form's share of the manager's score",
+                  "was": 30,
+                  "now": 35,
+                  "state": "good",
+                  "unit": "%"
+                }
+              ],
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: Not recorded.",
+                  "Fix: He now judges your last 3 matches, and form is 35% of his score (his opinion of you drops from 45% to 40%). Three poor games (5.5) bench you, three good ones off the bench (7.2) win your place back, and two dreadful games (4.8) are enough on their own."
+                ]
+              }
+            },
+            {
+              "title": "A substitute always came on between 58' and 72' (v0.13 · Mikey)",
+              "detail": "If you started on the bench, you came on somewhere between the 58th and 72nd minute, whatever the score.",
+              "more": {
+                "summary": "Why, and the fix",
+                "points": [
+                  "Why: The time was picked from a fixed window that ignored the score.",
+                  "Fix: From the 50th minute, the sub now comes on when the game needs him: 2 down 50', 1 down 56', level 64', 1 up 72', well ahead 80', give or take up to 4 minutes. The pre-match screen says \"Bench (on when the game needs you)\"."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Still open",
+          "items": [
+            {
+              "title": "Six security holes are still open (raised in v0.1 · Harry)",
+              "detail": "Anyone with the site's public key can write their own XP and rewards, delete every user's progression, or wipe community votes. Two fixes are written but not run on the database.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The two database scripts haven't been run yet.",
+                  "Status: Still open. The fix is written; it has to be run in Supabase's SQL editor. Highest priority."
+                ]
+              }
+            },
+            {
+              "title": "Still too much build-up (raised in v0.1 · Harry)",
+              "detail": "Build-up, midfield passes and dribbles are 23% of what a striker sees, and none of them show the goal. Through balls didn't respond to the retune, and the top three chance types are 37.5% of everything against a 32% target. 'The goal wasn't on screen' reports are this, not the camera.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded. Something other than the weighting is driving through balls.",
+                  "Status: Not revisited since v0.1."
+                ]
+              }
+            },
+            {
+              "title": "Byline crosses are rare for a striker (raised in v0.1 · Harry)",
+              "detail": "1.7% against a 5% target.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Possibly not a bug: a striker receives crosses rather than delivering them, and a left winger gets 9.2%.",
+                  "Status: Not revisited since v0.1."
+                ]
+              }
+            },
+            {
+              "title": "5 chances in 6,612 have an attacker offside (raised in v0.1 · Harry)",
+              "detail": "0.076% of chances build with an attacker offside. Flagged in the gallery, not hidden.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still flagged in the gallery; not revisited."
+                ]
+              }
+            },
+            {
+              "title": "The wall and the extra players don't touch the ball (raised in v0.2 · Leo)",
+              "detail": "They look like they're in the way, but a shot passes straight through them. Blocks and deflections are the next step.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Built as a visual pass first; making them physical is a separate build.",
+                  "Status: Still only for show. Blocks and deflections were named as Leo's next step."
+                ]
+              }
+            },
+            {
+              "title": "How hard the keeper covers his near post is undecided (raised in v0.3 · Harry)",
+              "detail": "The generator shades him towards the near post twice as much as the drawings (0.46 against 0.23), and over half of wide one-on-ones have the near post completely closed. 0.20 keeps both corners open but he won't look like he's covering.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: A design choice for Harry, not a bug.",
+                  "Status: Waiting on Harry's go for 0.50 on tight angles."
+                ]
+              }
+            },
+            {
+              "title": "How often anyone should be offside is undecided (raised in v0.3 · Harry)",
+              "detail": "Zero offside means offside doesn't exist; before the repair, 391 of 400 one-on-ones ended offside.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not decided yet.",
+                  "Status: Not decided yet."
+                ]
+              }
+            },
+            {
+              "title": "Two base faults left alone on purpose (raised in v0.3 · Harry)",
+              "detail": "16.1% of long shots have an 11m+ gap in the defence; 7.0% of tight angles have nobody in the middle.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: It's not clear they're actually wrong.",
+                  "Status: Left for a human decision."
+                ]
+              }
+            },
+            {
+              "title": "Only one-on-ones have drawn scenarios (raised in v0.3 · Harry)",
+              "detail": "The other 12 chance types are still made purely by the generator.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Nobody has drawn them yet; the rules adapt automatically once they do.",
+                  "Status: Partly: tight angles got drawings in v0.8 (Leo's 11). Most chance types still have none."
+                ]
+              }
+            },
+            {
+              "title": "The Infinite Match showed 1-7 at half time (raised in v0.4 · Harry)",
+              "detail": "Unconfirmed. The test player missed 36 of its 45 attempts, so it may be nothing, but it's worth a proper look.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Unconfirmed, not looked at since."
+                ]
+              }
+            },
+            {
+              "title": "Half time still happens at minute 45 in a very long match (raised in v0.4 · Harry)",
+              "detail": "The half-time banner and the \"Second Half\" button appear once, then the match carries on. This is only cosmetic.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Cosmetic, still open."
+                ]
+              }
+            },
+            {
+              "title": "One number was changed in the engine file Mikey said never to touch (raised in v0.4 · Harry)",
+              "detail": "A striker's long-range weighting went from 6 to 3. It can be undone in one character and needs Mikey's call.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: It was part of making positions pull chances towards themselves.",
+                  "Status: Waiting on Mikey's call (a striker's long-range weighting, 6 → 3)."
+                ]
+              }
+            },
+            {
+              "title": "5 of 11 dev tool pages have no login check (raised in v0.5 · Leo)",
+              "detail": "The bicycle, gallery, play, highlights and media-lab pages load without checking for an admin. The other 6 do check.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded. It was found during this round's audit and left alone because nobody had asked for it.",
+                  "Status: Still open."
+                ]
+              }
+            },
+            {
+              "title": "Switching energy mode changes your chances a little late (raised in v0.6 · Mikey)",
+              "detail": "Energy use changes from the very next minute, but how many chances you get only changes from the next stretch of play, usually a few match minutes later.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Making it instant means rebuilding how the part of the match you don't play is run.",
+                  "Status: Not revisited."
+                ]
+              }
+            },
+            {
+              "title": "Buying a stake can quietly buy less than you typed (raised in v0.6 · Mikey)",
+              "detail": "10% of AEK Athens became 5.2%.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Likely the amount is capped at what's in your bank. Not confirmed against the save; the new confirm box now shows the real % before you commit.",
+                  "Status: Not revisited."
+                ]
+              }
+            },
+            {
+              "title": "The goal net is deeper in the match than on the picture (raised in v0.7 · Harry)",
+              "detail": "After the Play fix, the net is still drawn a bit deeper in the match than on the gallery picture.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still open: in Play the net rises above the goal line and the six-yard box isn't drawn."
+                ]
+              }
+            },
+            {
+              "title": "Team-mates right next to you steal your shot as a pass (raised in v0.7 · Harry)",
+              "detail": "A team-mate standing very close takes your shot as if it were a pass to him.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded. Leo's fix (ignore a team-mate that close for about 0.4s after the kick) and Harry's view that everyone's reach is too big both mean changing the match engine, which needs Mikey's OK.",
+                  "Status: Still open. Fixing it means touching the match physics file, which needs Mikey's OK."
+                ]
+              }
+            },
+            {
+              "title": "Keepers on rebounds are too good, and too often off their line (raised in v0.7 · Harry)",
+              "detail": "\"Permanent prime Neuer\" on rebounds, and near-post positioning too far out.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still open."
+                ]
+              }
+            },
+            {
+              "title": "The draft-dev pages aren't sandboxes (raised in v0.8 · Harry)",
+              "detail": "/draft-dev and /draft-dev2 share the real Draft's saved game on that device, post to real Draft history, XP and records, and create real multiplayer rooms.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still open: they write to the real Draft save, history, XP and rooms."
+                ]
+              }
+            },
+            {
+              "title": "The Scenario Builder can't reach the game (raised in v0.8 · Harry)",
+              "detail": "Its text says \"saved locally\" but it actually saves to the team's list, and it has no commit, so nothing built there reaches matches.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still open: no commit, and its \"saved locally\" text is wrong."
+                ]
+              }
+            },
+            {
+              "title": "The Tuning editor saves in that browser only (raised in v0.8 · Harry)",
+              "detail": "Nothing on /star-tuning-dev commits, even though earlier notes describe it as part of the commit system.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still open."
+                ]
+              }
+            },
+            {
+              "title": "Small admin gaps (raised in v0.8 · Harry)",
+              "detail": "Squad Builder's Best XI fills 7 bench spots but the bench holds 9; Infinite Highlights is missing from the admin menu; the XP, custom clubs and football admin pages have no admin check on the page itself (their data is still admin-only); nobody knows whether the custom clubs database setup has been run.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still open: bench 7 vs 9 in the squad builder, Infinite Highlights missing from the admin menu."
+                ]
+              }
+            },
+            {
+              "title": "Goalie Mode has no engine at all (raised in v0.9 · Harry)",
+              "detail": "Its keeper stops dead when the result lands.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: It uses its own scripted ball flight instead of the real match.",
+                  "Status: Leo's area, left alone as asked. It stays on the guard's watch list."
+                ]
+              }
+            },
+            {
+              "title": "Two dev prototypes are full copies of the match (raised in v0.9 · Harry)",
+              "detail": "The bicycle kick and Live Attack. Neither is reachable in the game.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still copies (the bicycle-kick and Live Attack labs), kept as labs by Harry's call."
+                ]
+              }
+            },
+            {
+              "title": "Players barely react after shots in drawn one-on-ones (raised in v0.9 · Harry)",
+              "detail": "1.17 team-mates move after the shot in a drawn one-on-one, against 2.04 in a generated one (0.81 against 1.69 on tight angles). Highlights and the real game show the same gap.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Hand-drawn one-on-ones start 11.9m from goal against 16.3m, so the shot arrives in 1.84s instead of 2.32s, before anyone has time to move.",
+                  "Status: Waiting on Harry's answer to question 8."
+                ]
+              }
+            },
+            {
+              "title": "A scenario test fails on main (raised in v0.9 · Harry)",
+              "detail": "It expects 27 one-on-one drawings.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: 4 of them were deleted in recent commits.",
+                  "Status: Still failing: 4 one-on-one drawings were deleted. Mikey and Leo's area."
+                ]
+              }
+            },
+            {
+              "title": "The guard can't stop a person editing its list (raised in v0.9 · Harry)",
+              "detail": "Someone can edit the guard's list to turn a red build green, and physics copied under a new name with no animation loop of its own isn't caught automatically.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Code can't stop a person editing code; only the written rule covers it, until Harry answers on locking it.",
+                  "Status: Partly fixed in v0.10: Claude now asks before touching it. A GitHub sign-off (question 10) would close it."
+                ]
+              }
+            },
+            {
+              "title": "Google Analytics counts our own test browsers as new UK users (raised in v0.11 · Mikey)",
+              "detail": "Most of the ~120 \"new users\" (118 in the UK, no sign-ups) are likely automated test browsers. A fix to only count the real site and real browsers is ready, waiting on a yes.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Analytics loads on every copy of the site, including local test copies.",
+                  "Status: Still open as of v0.13. A fix is ready, waiting on a yes."
+                ]
+              }
+            },
+            {
+              "title": "Pitch drawing fixes not yet seen in a real career match (raised in v0.11 · Mikey)",
+              "detail": "Players in front, the ball behind, and corners were seen in Infinite Highlights, not in a career match.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Infinite Highlights draws with the same code as the match, so it was used to check them.",
+                  "Status: Still open."
+                ]
+              }
+            },
+            {
+              "title": "Trial: the dribble stage starts behind its how-to card (raised in v0.11 · Mikey)",
+              "detail": "The run is already going while the teaching card is still up. The trial's dev skip panel is also open to everyone. Fixes ready, waiting on a yes.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: Not recorded.",
+                  "Status: Still open."
+                ]
+              }
+            },
+            {
+              "title": "Scenario editor \"ball at your feet\" was undone (raised in v0.11 · Mikey)",
+              "detail": "It shipped, then Harry reverted it; the ball is placed on its own again.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The ball locked to your right side.",
+                  "Status: Still open."
+                ]
+              }
+            },
+            {
+              "title": "Winning a training level not yet seen on a screen (raised in v0.12 · Mikey)",
+              "detail": "The star screen, \"Level 2 unlocked\" and the +2 haven't been seen. The rules pass their tests.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The playtest couldn't land a shot through the cones.",
+                  "Status: Still not seen as of v0.13."
+                ]
+              }
+            },
+            {
+              "title": "The \"Not this time\" screen wasn't caught (raised in v0.12 · Mikey)",
+              "detail": "After three misses it should show for about 1.5 s before going back. The playtest went straight back to Training.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The playtest may have missed it.",
+                  "Status: Still open."
+                ]
+              }
+            },
+            {
+              "title": "Two drawing tests fail on main (raised in v0.12 · Mikey)",
+              "detail": "The one-on-one drawings check fails 7 checks, and long shots show 40 faults in 300 (the limit is under 30). Both fail on main without these changes.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: One-on-one drawing changes on main, and a long-shot drawing being deleted.",
+                  "Status: Still open as of v0.13: the one-on-one drawings check and the long-shot rules check."
+                ]
+              }
+            },
+            {
+              "title": "Selection changes not seen in a real career yet (raised in v0.13 · Mikey)",
+              "detail": "The rules pass their tests but nobody has watched them on a real career's pre-match screen.",
+              "more": {
+                "summary": "Why, and where it stands",
+                "points": [
+                  "Why: The test browser can't load real squads, so it never gets a rival.",
+                  "Status: Still open."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/YEK3ykwCQjUpH4S6bQbqKR",
+      "updatedAt": null
+    },
+    {
       "version": "0.13",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-26T12:00:00Z",
