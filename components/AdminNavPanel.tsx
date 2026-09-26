@@ -31,11 +31,18 @@ import { usePathname } from "next/navigation";
  *     parent, so the panel survives — which is the point, since the gallery
  *     is exactly the page you want to navigate away from.
  *
- *  3. DESKTOP ONLY. "Have that somewhere on the screen on PC, more so than
- *     mobile." The edge tab is `hidden lg:flex` — on a phone there is no
- *     floating element to collide with a game's own corner buttons. Admins
- *     on a phone still reach /admin from the existing nav menu.
+ *  3. THE EDGE TAB IS DESKTOP ONLY, EXCEPT ON FULL-SCREEN PAGES. "Have that
+ *     somewhere on the screen on PC, more so than mobile." On a phone the
+ *     same list opens from the menu ("Admin & Dev tools", NavMenu.tsx, via
+ *     OPEN_ADMIN_NAV_EVENT) — before that, a phone reached /admin and
+ *     nothing else: the gallery, Play Area and training had no link at all.
+ *     A full-screen page (gallery, Play Area, highlights) hides the menu, and
+ *     the gallery has no way out, so there the tab shows on a phone too,
+ *     slim, mid-left, where no game control sits.
  */
+
+/** Fired by the phone menu to open this panel. */
+export const OPEN_ADMIN_NAV_EVENT = "knowitball:open-admin-nav";
 
 interface AdminLink {
   name: string;
@@ -118,8 +125,23 @@ export default function AdminNavPanel() {
   const pathname = usePathname();
   const current = activeHref(pathname);
 
+  // A full-screen page hides the menu, so the tab is the only way out there.
+  const [immersive, setImmersive] = useState(false);
+
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setOpen(false); }, [pathname]);
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_ADMIN_NAV_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_ADMIN_NAV_EVENT, onOpen);
+  }, []);
+  useEffect(() => {
+    const read = () => setImmersive(document.body.classList.contains("knowitball-immersive"));
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => mo.disconnect();
+  }, []);
 
   const onKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") setOpen(false);
@@ -135,12 +157,13 @@ export default function AdminNavPanel() {
 
   return createPortal(
     <div data-admin-nav>
-      {/* Edge tab — desktop only, left edge, vertically centred so it clears
-          the top-left hamburger and any game UI pinned to the corners. */}
+      {/* Edge tab — left edge, vertically centred so it clears the top-left
+          hamburger and any game UI pinned to the corners. Desktop always; a
+          phone only on a full-screen page, where the menu is hidden. */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Open admin menu"
-        className={`fixed left-0 top-1/2 z-[80] hidden -translate-y-1/2 items-center gap-1.5 rounded-r-lg border border-l-0 border-amber-500/40 bg-gray-950/80 py-4 pl-1.5 pr-2 text-amber-400 shadow-lg backdrop-blur transition-all hover:bg-gray-900 hover:text-amber-300 lg:flex ${
+        className={`fixed left-0 top-1/2 z-[80] -translate-y-1/2 items-center gap-1.5 rounded-r-lg border border-l-0 border-amber-500/40 bg-gray-950/80 py-4 pl-1 pr-1 text-amber-400 shadow-lg backdrop-blur transition-all hover:bg-gray-900 hover:text-amber-300 lg:flex lg:pl-1.5 lg:pr-2 ${immersive ? "flex" : "hidden"} ${
           open ? "pointer-events-none opacity-0" : "opacity-70 hover:opacity-100"
         }`}
       >
@@ -159,7 +182,7 @@ export default function AdminNavPanel() {
 
       {/* Panel */}
       <div
-        className={`fixed left-0 top-0 z-[90] flex h-full w-80 flex-col border-r border-amber-500/30 bg-gray-950 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-amber-500/30 bg-gray-950 shadow-2xl transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -190,15 +213,15 @@ export default function AdminNavPanel() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`group mx-3 my-0.5 flex items-center justify-between gap-3 rounded-lg px-3 py-1.5 transition-colors ${
+                    className={`group mx-3 my-0.5 flex min-h-[40px] items-center justify-between gap-3 rounded-lg px-3 py-1.5 transition-colors lg:min-h-0 ${
                       isActive
                         ? "bg-amber-500/15 text-white"
                         : "text-white hover:bg-gray-900"
                     }`}
                   >
-                    <span className="whitespace-nowrap text-sm font-bold">{link.name}</span>
+                    <span className="text-sm font-bold lg:whitespace-nowrap">{link.name}</span>
                     <span
-                      className={`shrink-0 whitespace-nowrap font-mono text-[9px] ${
+                      className={`hidden shrink-0 whitespace-nowrap font-mono text-[9px] sm:inline ${
                         isActive ? "text-amber-400" : "text-gray-600 group-hover:text-gray-500"
                       }`}
                     >
