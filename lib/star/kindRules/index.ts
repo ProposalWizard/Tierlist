@@ -22,8 +22,6 @@
  * A kind with no entry below behaves exactly as before.
  */
 import type { Ball, Scenario } from "../canvasEngine";
-import { longRangeRules } from "./longRange";
-import { cornerRules } from "./corner";
 import { freeKickRules } from "./freeKick";
 
 export interface SetupContext {
@@ -58,9 +56,12 @@ export interface KindRule {
   step?(sc: Scenario, ball: Ball, dt: number, d: StrikeDecision): void;
 }
 
+// Long range and corners deliberately have NO entry (Harry, 26 Sep 2026:
+// "go back to EXACTLY how we did it for one on ones, take the current base
+// scenarios and work from those, don't add rules outside of that"). They are
+// the drawings plus the rule set scanned off them (lib/star/scenarioRules.ts,
+// lib/star/authoredChance.ts), nothing added on top.
 const RULES: Partial<Record<string, KindRule>> = {
-  long_range: longRangeRules,
-  corner: cornerRules,
   free_kick: freeKickRules,
 };
 

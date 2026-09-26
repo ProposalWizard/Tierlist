@@ -227,6 +227,24 @@ used the base engine … extra stuff built on top of the base engine."*
 - **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
   and 2 dev prototypes. The live list is in the guard.
 
+## SCENARIO RULES COME FROM THE DRAWINGS — the one-on-one way, for every kind
+
+Harry, 26 Sep 2026, after hand-written corner and long-range rulesets made the
+highlight sims "suck": *"go back to EXACTLY how we did it for one on ones, take
+the current base scenarios and work from those, don't add rules outside of
+that … going forward that's how it needs to be."*
+
+- A chance kind is **its drawings + the rule set scanned off them**
+  (`lib/star/scenarioRules.ts`, `lib/star/authoredChance.ts`). Nothing
+  hand-written places people. Harry's football research decides what is worth
+  MEASURING; the drawings decide the values.
+- **Anything added outside that must be checked by eye**: generate a sheet of
+  pictures (gallery Simulate / served chances), look at every one, and show
+  them — numbers passing is not enough ("some of the generations are rlly
+  bad": overlapping bodies, stranded players, a man behind the keeper).
+- `lib/star/kindRules/` only holds rules Harry asked for by name (penalty
+  keeper, free kicks). Long range and corners have no entry, on purpose.
+
 ## ALWAYS PLAYTEST STAR CAREER CHANGES — you can now actually see the game
 
 > This supersedes every earlier note in this file claiming `/star-dev` can't be

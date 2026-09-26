@@ -48,11 +48,6 @@ const DEAD_BALL = new Set<ScenarioKind>(["penalty", "free_kick", "corner"]);
  *  back-line spacing. A box scene shows markers in different zones instead. */
 const LINE_KINDS = new Set<ScenarioKind>(["long_range", "through_ball"]);
 
-/** How far out a long shot is still a long shot (Harry, 26 Sep 2026:
- *  "17-25m, occasionally up to 30"). Measured straight out, like every
- *  other depth in this file. */
-export const LONG_RANGE_MAX_M = 30;
-
 /** How close to the line of your shot a team-mate has to be before he is
  *  genuinely in the way. The same radius chanceFormula.ts uses for the same
  *  job, so the base and the formula agree about what "in the way" means. */
@@ -196,11 +191,7 @@ export function scenarioFaults(sc: Scenario): string[] {
     if (!sc.defenders.some(d => Math.abs(d.x - CX) <= 6.5)) out.push("empty central channel");
   }
 
-  // How far out a line is still judged. A long shot's own ruleset
-  // (kindRules/longRange.ts) serves it from 17-30m, so its line is judged
-  // over that whole range; the old 25m gate saw ~5% of served long shots.
-  const holeGate = sc.kind === "long_range" ? LONG_RANGE_MAX_M : 25;
-  if (LINE_KINDS.has(sc.kind) && dist <= holeGate && sc.defenders.length >= 2) {
+  if (LINE_KINDS.has(sc.kind) && dist <= 25 && sc.defenders.length >= 2) {
     const deepest = Math.min(...sc.defenders.map(d => d.y));
     const lineMen = sc.defenders.filter(d => d.y - deepest <= 4).map(d => d.x).sort((a, b) => a - b);
     for (let i = 1; i < lineMen.length; i++) {
