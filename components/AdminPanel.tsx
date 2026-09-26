@@ -11,7 +11,8 @@ import { TIER_COLOR_OPTIONS } from "@/lib/types";
 import {
   DndContext,
   closestCenter,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -180,7 +181,13 @@ export default function AdminPanel({
     await fetch("/api/admin/feedback", { method: "DELETE", body: JSON.stringify({ id }), headers: { "Content-Type": "application/json" } });
     setFeedbackItems(prev => prev.filter(f => f.id !== id));
   };
-  const adminDndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  // Mouse: drag after 5 px, as before. Touch: press and hold ~¼ s, then drag —
+  // a plain swipe still scrolls the page. With the old pointer-only sensor a
+  // phone's swipe always became a scroll, so images could not be reordered.
+  const adminDndSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  );
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
 
   function showSaveConfirmation(message: string) {
@@ -1419,10 +1426,13 @@ export default function AdminPanel({
       )}
 
       {/* ── Tabs ───────────────────────────────────────────────────────── */}
-      <div className="mb-6 flex items-center gap-2 border-b border-gray-800 pb-2">
+      {/* Below a laptop the tabs wrap onto extra lines. They used to run off the
+          right edge, and with the page's overflow-x hidden, Blind Rankings to
+          Feedback and Export Backup could not be reached on a phone at all. */}
+      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-gray-800 pb-2 lg:flex-nowrap">
         <button
           onClick={() => setTab("tierlists")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "tierlists" ? "bg-indigo-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1430,7 +1440,7 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => setTab("categories")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "categories" ? "bg-indigo-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1438,7 +1448,7 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => { setTab("vote-tierlists"); loadVotelists(); }}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "vote-tierlists" ? "bg-purple-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1446,7 +1456,7 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => setTab("blind-rankings")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "blind-rankings" ? "bg-amber-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1454,7 +1464,7 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => setTab("tictactoe")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "tictactoe" ? "bg-indigo-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1462,7 +1472,7 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => setTab("tenable")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "tenable" ? "bg-emerald-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1470,7 +1480,7 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => setTab("objectives")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "objectives" ? "bg-amber-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1478,7 +1488,7 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => setTab("cards")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "cards" ? "bg-rose-600 text-white" : "text-white hover:text-white"
           }`}
         >
@@ -1486,22 +1496,22 @@ export default function AdminPanel({
         </button>
         <button
           onClick={() => { setTab("feedback"); loadFeedback(); }}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors lg:whitespace-normal lg:px-4 ${
             tab === "feedback" ? "bg-cyan-600 text-white" : "text-white hover:text-white"
           }`}
         >
           Feedback {feedbackLoaded ? `(${feedbackItems.length})` : ""}
         </button>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2 lg:flex-nowrap">
           <a
             href="/admin/football/scrape"
-            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors"
+            className="flex min-h-[40px] items-center rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors lg:block lg:min-h-0"
           >
             ⚽ Scrape Data
           </a>
           <a
             href="/admin/football/players"
-            className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors"
+            className="flex min-h-[40px] items-center rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-gray-400 hover:text-white transition-colors lg:block lg:min-h-0"
           >
             👥 Players DB
           </a>
@@ -1534,7 +1544,7 @@ export default function AdminPanel({
         <div className="space-y-3">
           {catError && <p className="text-sm text-red-400">{catError}</p>}
           {categories.map((cat) => (
-            <div key={cat.id} className="flex items-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3">
+            <div key={cat.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-3 py-3 sm:flex-nowrap sm:gap-3 sm:px-4">
               {editingCatId === cat.id ? (
                 <>
                   <input
@@ -1555,11 +1565,11 @@ export default function AdminPanel({
                 </>
               ) : (
                 <>
-                  <span className="flex-1 text-sm text-white">{cat.name}</span>
+                  <span className="min-w-0 flex-1 basis-full text-sm text-white sm:basis-auto">{cat.name}</span>
                   <button
                     onClick={() => moveCategory(cat.id, "up")}
                     disabled={categories.indexOf(cat) === 0}
-                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-white hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="min-w-[40px] rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-white hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed sm:min-w-0"
                     title="Move up"
                   >
                     ↑
@@ -1567,7 +1577,7 @@ export default function AdminPanel({
                   <button
                     onClick={() => moveCategory(cat.id, "down")}
                     disabled={categories.indexOf(cat) === categories.length - 1}
-                    className="rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-white hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="min-w-[40px] rounded-lg border border-gray-600 px-2 py-1.5 text-xs font-semibold text-white hover:border-indigo-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed sm:min-w-0"
                     title="Move down"
                   >
                     ↓
@@ -1752,7 +1762,9 @@ export default function AdminPanel({
             className="overflow-hidden rounded-xl border border-gray-700 bg-gray-900"
           >
             {/* ── Collapsed row ─────────────────────────────────────── */}
-            <div className="flex items-center gap-3 p-4">
+            {/* On a phone the buttons drop to their own line, so the title
+                gets the width instead of ~9 letters. */}
+            <div className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:p-4">
               {/* Cover thumbnail */}
               <div className="h-12 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-gray-700 bg-gray-800 bg-cover bg-center"
                 style={tl.cover_image_url ? { backgroundImage: `url("${tl.cover_image_url}")` } : {}}
@@ -1765,7 +1777,7 @@ export default function AdminPanel({
               {/* Title + meta */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <p className="truncate text-sm font-semibold text-white">{tl.title}</p>
+                  <p className="break-words text-sm font-semibold text-white sm:truncate">{tl.title}</p>
                   {((tl as Tierlist & { additional_categories?: string[] }).additional_categories?.length ?? 0) > 0 && (
                     <span className="flex-shrink-0 text-yellow-400 text-sm" title={`Also in: ${(tl as Tierlist & { additional_categories?: string[] }).additional_categories!.join(", ")}`}>★</span>
                   )}
@@ -1778,25 +1790,25 @@ export default function AdminPanel({
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-shrink-0 items-center gap-2">
+              <div className="flex w-full flex-shrink-0 items-center gap-2 sm:w-auto">
                 {editingId === tl.id ? (
                   <button
                     onClick={closeEdit}
-                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-gray-400 hover:text-white"
+                    className="flex-1 rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold sm:flex-none text-white transition-colors hover:border-gray-400 hover:text-white"
                   >
                     Cancel
                   </button>
                 ) : (
                   <button
                     onClick={() => openEdit(tl)}
-                    className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white"
+                    className="flex-1 rounded-lg border border-gray-600 px-3 py-1.5 sm:flex-none text-xs font-semibold text-white transition-colors hover:border-indigo-500 hover:text-white"
                   >
                     Edit
                   </button>
                 )}
                 <button
                   onClick={() => setDeleteConfirmId(tl.id)}
-                  className="rounded-lg border border-red-900 px-3 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:border-red-500 hover:text-red-300"
+                  className="flex-1 rounded-lg border border-red-900 px-3 py-1.5 sm:flex-none text-xs font-semibold text-red-400 transition-colors hover:border-red-500 hover:text-red-300"
                 >
                   Delete
                 </button>
@@ -1907,7 +1919,7 @@ export default function AdminPanel({
                       <label className="mb-2 block text-xs font-semibold text-white">
                         Cover Photo
                       </label>
-                      <div className="flex gap-4 items-start">
+                      <div className="flex flex-wrap gap-4 items-start min-[360px]:flex-nowrap">
                         {/* Preview — matches homepage card dimensions exactly */}
                         <div className="flex-shrink-0">
                           <p className="mb-1 text-[10px] text-white">Homepage preview</p>
@@ -2035,7 +2047,7 @@ export default function AdminPanel({
                     {/* Tiers */}
                     <div>
                       <label className="mb-1.5 block text-xs font-semibold text-white">Tiers</label>
-                      <div className="space-y-1.5">
+                      <div className="space-y-3 sm:space-y-1.5">
                         {editState.tiers.map((tier, idx) => (
                           <div key={idx} className="flex items-center gap-2">
                             <input
@@ -2051,7 +2063,7 @@ export default function AdminPanel({
                               className="w-20 rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:border-indigo-500 focus:outline-none"
                               placeholder="Label"
                             />
-                            <div className="flex gap-1">
+                            <div className="flex min-w-0 flex-wrap gap-1.5 sm:gap-1">
                               {TIER_COLOR_OPTIONS.map((c) => (
                                 <button
                                   key={c}
@@ -2064,7 +2076,7 @@ export default function AdminPanel({
                                       return { ...p, tiers: next };
                                     })
                                   }
-                                  className={`h-5 w-5 rounded-full border-2 transition-transform ${
+                                  data-compact className={`h-8 w-8 rounded-full border-2 transition-transform sm:h-5 sm:w-5 ${
                                     tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"
                                   }`}
                                   style={{ backgroundColor: c }}
@@ -2078,7 +2090,7 @@ export default function AdminPanel({
                                     p ? { ...p, tiers: p.tiers.filter((_, i) => i !== idx) } : p
                                   )
                                 }
-                                className="text-xs text-red-400 hover:text-red-300"
+                                className="min-w-[40px] flex-shrink-0 text-base text-red-400 sm:min-w-0 sm:text-xs hover:text-red-300"
                               >
                                 ×
                               </button>
@@ -2205,7 +2217,8 @@ export default function AdminPanel({
                                             handleDeleteImage(tl.id, img.id);
                                           }}
                                           title="Remove image"
-                                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                          data-compact
+                                          className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white transition-opacity group-hover:opacity-100 sm:-right-1.5 sm:-top-1.5 sm:h-5 sm:w-5 sm:text-xs [@media(hover:hover)]:opacity-0"
                                         >
                                           ×
                                         </button>
@@ -2216,7 +2229,7 @@ export default function AdminPanel({
                                               e.stopPropagation();
                                               setAdminCropImage({ tierlistId: tl.id, imageId: img.id, imageUrl: img.image_url, imageName: img.name });
                                             }}
-                                            className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300"
+                                            className="min-w-[40px] rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300 sm:min-w-0"
                                             title="Crop image"
                                           >
                                             ✂
@@ -2250,7 +2263,8 @@ export default function AdminPanel({
                                         });
                                       }}
                                       title="Remove"
-                                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                      data-compact
+                                          className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white transition-opacity group-hover:opacity-100 sm:-right-1.5 sm:-top-1.5 sm:h-5 sm:w-5 sm:text-xs [@media(hover:hover)]:opacity-0"
                                     >
                                       ×
                                     </button>
@@ -2453,7 +2467,7 @@ export default function AdminPanel({
               {/* Tier editor */}
               <div>
                 <p className="mb-1.5 text-xs font-semibold text-white">Tiers</p>
-                <div className="space-y-1.5">
+                <div className="space-y-3 sm:space-y-1.5">
                   {newVoteTiers.map((tier, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <input
@@ -2466,18 +2480,18 @@ export default function AdminPanel({
                         className="w-20 rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:border-purple-500 focus:outline-none"
                         placeholder="Label"
                       />
-                      <div className="flex gap-1">
+                      <div className="flex min-w-0 flex-wrap gap-1.5 sm:gap-1">
                         {TIER_COLOR_OPTIONS.map((c) => (
                           <button key={c} type="button"
                             onClick={() => { const next = [...newVoteTiers]; next[idx] = { ...next[idx], color: c }; setNewVoteTiers(next); }}
-                            className={`h-5 w-5 rounded-full border-2 transition-transform ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
+                            data-compact className={`h-8 w-8 rounded-full border-2 transition-transform sm:h-5 sm:w-5 ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
                             style={{ backgroundColor: c }}
                           />
                         ))}
                       </div>
                       {newVoteTiers.length > 1 && (
                         <button onClick={() => setNewVoteTiers((prev) => prev.filter((_, i) => i !== idx))}
-                          className="text-xs text-red-400 hover:text-red-300">×</button>
+                          className="min-w-[40px] flex-shrink-0 text-base text-red-400 hover:text-red-300 sm:min-w-0 sm:text-xs">×</button>
                       )}
                     </div>
                   ))}
@@ -2505,7 +2519,8 @@ export default function AdminPanel({
                         <img src={URL.createObjectURL(f)} alt={f.name} className="h-full w-full object-cover" />
                         <button
                           onClick={() => setNewVoteImageFiles((prev) => prev.filter((_, j) => j !== i))}
-                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white opacity-0 group-hover:opacity-100"
+                          data-compact
+                          className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white group-hover:opacity-100 sm:-right-1 sm:-top-1 sm:h-4 sm:w-4 sm:text-[9px] [@media(hover:hover)]:opacity-0"
                         >×</button>
                       </div>
                     ))}
@@ -2592,8 +2607,8 @@ export default function AdminPanel({
           <div className="space-y-2">
             {votelists.map((vl) => (
               <div key={vl.id} className="overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
-                {/* Row */}
-                <div className="flex items-center gap-3 p-4">
+                {/* Row — buttons drop under the title on a phone */}
+                <div className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:p-4">
                   <div className="h-12 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-gray-700 bg-gray-800 bg-cover bg-center"
                     style={vl.cover_image_url ? { backgroundImage: `url("${vl.cover_image_url}")` } : {}}>
                     {!vl.cover_image_url && <div className="flex h-full w-full items-center justify-center text-xl">🗳️</div>}
@@ -2620,14 +2635,14 @@ export default function AdminPanel({
                     ) : (
                       <button
                         onClick={() => { setEditingVoteTitleId(vl.id); setEditVoteTitleValue(vl.title); }}
-                        className="group flex items-center gap-1.5 text-left"
+                        className="group flex max-w-full items-center gap-1.5 text-left"
                         title="Click to rename"
                       >
-                        <p className="truncate text-sm font-semibold text-white group-hover:text-purple-300">{vl.title}</p>
+                        <p className="min-w-0 break-words text-sm font-semibold sm:truncate text-white group-hover:text-purple-300">{vl.title}</p>
                         <span className="text-[10px] text-white opacity-0 group-hover:opacity-100">✏️</span>
                       </button>
                     )}
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2">
                       <span className={`text-xs font-semibold ${vl.is_active ? "text-green-400" : "text-white"}`}>
                         {vl.is_active ? "Active" : "Inactive"}
                       </span>
@@ -2637,16 +2652,16 @@ export default function AdminPanel({
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-shrink-0 items-center gap-2">
+                  <div className="flex w-full flex-shrink-0 items-center gap-2 sm:w-auto">
                     <button
                       onClick={() => handleExpandVote(vl.id)}
-                      className="rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:border-purple-500 hover:text-white">
+                      className="flex-1 rounded-lg border border-gray-600 px-3 py-1.5 sm:flex-none text-xs font-semibold text-white hover:border-purple-500 hover:text-white">
                       {expandedVoteId === vl.id ? "Close" : "Manage"}
                     </button>
                     <button
                       onClick={() => handleToggleVoteActive(vl)}
                       disabled={togglingVoteId === vl.id}
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                      className={`flex-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 sm:flex-none ${
                         vl.is_active
                           ? "border-yellow-800 text-yellow-400 hover:border-yellow-500"
                           : "border-green-800 text-green-400 hover:border-green-500"
@@ -2655,7 +2670,7 @@ export default function AdminPanel({
                     </button>
                     <button
                       onClick={() => setDeleteVoteConfirmId(vl.id)}
-                      className="rounded-lg border border-red-900 px-3 py-1.5 text-xs font-semibold text-red-400 hover:border-red-500">
+                      className="flex-1 rounded-lg border border-red-900 px-3 py-1.5 sm:flex-none text-xs font-semibold text-red-400 hover:border-red-500">
                       Delete
                     </button>
                   </div>
@@ -2671,7 +2686,7 @@ export default function AdminPanel({
                         {/* Cover photo */}
                         <div>
                           <p className="mb-2 text-xs font-semibold text-white">Cover Photo</p>
-                          <div className="flex gap-4 items-start">
+                          <div className="flex flex-wrap gap-4 items-start min-[360px]:flex-nowrap">
                             <div className="flex-shrink-0">
                               <p className="mb-1 text-[10px] text-white">Homepage preview</p>
                               <div className={`h-32 w-48 overflow-hidden rounded-xl border-2 transition-colors ${
@@ -2809,7 +2824,7 @@ export default function AdminPanel({
                         {/* Tier editing */}
                         <div>
                           <p className="mb-2 text-xs font-semibold text-white">Tiers</p>
-                          <div className="space-y-1.5 mb-3">
+                          <div className="space-y-3 sm:space-y-1.5 mb-3">
                             {voteEditState.tiers.map((tier, idx) => (
                               <div key={idx} className="flex items-center gap-2">
                                 <input
@@ -2824,7 +2839,7 @@ export default function AdminPanel({
                                   }}
                                   className="w-20 rounded border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:border-purple-500 focus:outline-none"
                                 />
-                                <div className="flex gap-1 flex-wrap">
+                                <div className="flex min-w-0 flex-wrap gap-1.5 sm:gap-1">
                                   {TIER_COLOR_OPTIONS.map((c) => (
                                     <button key={c} type="button"
                                       onClick={() => {
@@ -2835,7 +2850,7 @@ export default function AdminPanel({
                                           return { ...p, tiers: next, isDirty: true };
                                         });
                                       }}
-                                      className={`h-5 w-5 rounded-full border-2 transition-transform ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
+                                      data-compact className={`h-8 w-8 rounded-full border-2 transition-transform sm:h-5 sm:w-5 ${tier.color === c ? "border-white scale-110" : "border-transparent hover:scale-110"}`}
                                       style={{ backgroundColor: c }}
                                     />
                                   ))}
@@ -2847,7 +2862,7 @@ export default function AdminPanel({
                                         p ? { ...p, tiers: p.tiers.filter((_, i) => i !== idx), isDirty: true } : p
                                       )
                                     }
-                                    className="text-xs text-red-400 hover:text-red-300">×</button>
+                                    className="min-w-[40px] flex-shrink-0 text-base text-red-400 hover:text-red-300 sm:min-w-0 sm:text-xs">×</button>
                                 )}
                               </div>
                             ))}
@@ -2933,7 +2948,8 @@ export default function AdminPanel({
                                                 };
                                               });
                                             }}
-                                            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                            data-compact
+                                          className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white transition-opacity group-hover:opacity-100 sm:-right-1.5 sm:-top-1.5 sm:h-5 sm:w-5 sm:text-xs [@media(hover:hover)]:opacity-0">
                                             ×
                                           </button>
                                           {!img.isNew && (
@@ -2942,7 +2958,7 @@ export default function AdminPanel({
                                                 onClick={() => {
                                                   setAdminCropImage({ tierlistId: vl.id, imageId: img.id, imageUrl: displayUrl, imageName: img.name, isVote: true });
                                                 }}
-                                                className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300"
+                                                className="min-w-[40px] rounded bg-gray-800 px-1.5 py-0.5 text-xs text-amber-400 hover:bg-gray-700 hover:text-amber-300 sm:min-w-0"
                                                 title="Crop image"
                                               >
                                                 ✂
