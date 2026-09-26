@@ -8,6 +8,7 @@ import { cameraFor } from "@/lib/star/firstPersonView";
 import { renderFirstPerson, type DuelPip } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
+import { revealOnScreen } from "@/lib/revealOnScreen";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 
@@ -113,7 +114,17 @@ import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
  * touched forward each stride instead of gliding at one fixed distance.
  */
 
-type Phase = "run" | "result";
+/**
+ * "ready" — the picture is drawn, nobody moves, and it waits for a tap.
+ *
+ * Found by a phone audit (26 Sep 2026): the run used to start the moment it
+ * mounted. In the trial the How-to-Play card covered the bottom third and the
+ * whole stage was lost ~1.2 s after tapping NEXT, before the card was even
+ * read; training's Pace lost its first try in ~1.6 s; the dev sandbox showed
+ * "Beaten in wave 1" on load. Nobody moves until you tap now — in a real
+ * match too, where the tap is the moment you have seen the screen.
+ */
+type Phase = "ready" | "run" | "result";
 
 const DT_CAP = 0.05;
 const FLICK_MIN_PX_FRAC = 0.06;   // of canvas width
@@ -249,11 +260,17 @@ export interface FirstPersonDribbleProps {
    * the two would sit on top of each other and say the same thing twice.
    */
   hideHint?: boolean;
+  /**
+   * Keep the run waiting while the caller shows its own card over it (the
+   * trial's How-to-Play). Nothing moves and no "Tap to start" is drawn until
+   * this goes false; then a tap starts it — never the card's own dismissal.
+   */
+  hold?: boolean;
 }
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
-  hideHint = false,
+  hideHint = false, hold = false,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -276,6 +293,8 @@ export default function FirstPersonDribble({
   // roster), so it needs the same fallback tuning to look right.
   const fakeFaceStyleRef = useRef(loadFakeFaceStyle());
   const rngRef = useRef<() => number>(() => Math.random());
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
   const reducedMotionRef = useRef(false);
   // Camera-lag and ball-touch-spring state — see the file header. Reset
   // alongside the run itself so a fresh attempt doesn't inherit the last
@@ -284,8 +303,8 @@ export default function FirstPersonDribble({
   const ballXRef = useRef(0);
   const ballVXRef = useRef(0);
 
-  const phaseRef = useRef<Phase>("run");
-  const [phase, setPhaseState] = useState<Phase>("run");
+  const phaseRef = useRef<Phase>("ready");
+  const [phase, setPhaseState] = useState<Phase>("ready");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
 
   const [resultText, setResultText] = useState("");
@@ -316,7 +335,7 @@ export default function FirstPersonDribble({
     seed !== undefined ? mulberry32(seed) : mulberry32((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0)
   ), [seed]);
 
-  const reset = useCallback(() => {
+  const reset = useCallback((startNow = false) => {
     const rng = newRng();
     rngRef.current = rng;
     const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng });
@@ -327,11 +346,26 @@ export default function FirstPersonDribble({
     draggingRef.current = false;
     gestureStartRef.current = null;
     setResultText("");
-    setPhase("run");
+    // A fresh run waits for its tap; "Go Again" IS a tap, so it goes straight in.
+    setPhase(startNow ? "run" : "ready");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes)]);
 
   useEffect(() => { reset(); }, [reset]);
+
+  /** The tap that starts the run — only from "ready", and only once not held. */
+  const start = useCallback(() => {
+    if (phaseRef.current !== "ready" || holdRef.current) return;
+    setPhase("run");
+  }, []);
+
+  // Waiting for that tap: make sure the whole pitch is on screen to tap on.
+  // Does nothing when it already is (the real match's own overlay always is).
+  useEffect(() => {
+    if (phase !== "ready" || hold) return;
+    const id = requestAnimationFrame(() => revealOnScreen(wrapRef.current));
+    return () => cancelAnimationFrame(id);
+  }, [phase, hold]);
 
   // ── Canvas sizing — raw backing-store pixels, no separate DPR transform:
   // firstPersonView's project() already produces true pixel coordinates,
@@ -421,6 +455,12 @@ export default function FirstPersonDribble({
     const held = new Set<string>();
     const KEY_STEER = 6; // m/s while held
     const onDown = (e: KeyboardEvent) => {
+      // The keyboard's own "tap to start" — an arrow, Space or Enter.
+      if (phaseRef.current === "ready" && !holdRef.current
+        && (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === " " || e.key === "Enter")) {
+        setPhase("run");
+        return;
+      }
       if (phaseRef.current !== "run") return;
       const run = runRef.current;
       if (!run) return;
@@ -585,10 +625,31 @@ export default function FirstPersonDribble({
 
       {phase === "run" && !hideHint && (
         <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 flex flex-col items-center gap-1 px-4">
-          <p className="rounded-lg bg-black/55 px-3 py-1 text-center text-[10px] font-bold text-white/80">
+          <p className="rounded-lg bg-black/55 px-3 py-1 text-center text-[11px] font-bold text-white/80">
             Tap left or right to touch the ball that way. Flick to burst past him.
           </p>
         </div>
+      )}
+
+      {/* Waiting for you. The whole pitch is the button, so the tap can land
+          anywhere; nothing moves underneath it until it does. */}
+      {phase === "ready" && !hold && (
+        <button
+          type="button"
+          onClick={start}
+          aria-label="Tap to start the run"
+          className="absolute inset-0 z-30 bg-black/25"
+        >
+          {/* Over the stand, not the men: the first wave is the thing to read. */}
+          <span className="absolute inset-x-0 top-[27%] flex flex-col items-center gap-2 px-6 text-center">
+            <span className="rounded-full bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950 shadow-lg shadow-black/50 motion-safe:animate-pulse">
+              Tap to start
+            </span>
+            <span className="rounded-lg bg-black/55 px-3 py-1 text-[12px] font-bold leading-snug text-white">
+              Tap left or right to touch the ball. Flick to burst past him.
+            </span>
+          </span>
+        </button>
       )}
 
       {phase === "result" && (
@@ -602,8 +663,8 @@ export default function FirstPersonDribble({
                 retry button. */}
             {!embedded && (
               <button
-                onClick={reset}
-                className="mt-4 rounded-lg bg-emerald-500 px-5 py-2 text-sm font-black text-emerald-950 active:scale-95"
+                onClick={() => reset(true)}
+                className="mt-4 min-h-[44px] rounded-lg bg-emerald-500 px-5 py-2 text-sm font-black text-emerald-950 active:scale-95"
               >
                 Go Again
               </button>

@@ -77,17 +77,19 @@ export default function StarDribbleDevPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-5xl px-3 py-4 flex flex-col lg:flex-row gap-6">
-        <div className="flex-1 flex flex-col items-center gap-3">
+        {/* The run fills the column's width: centring it let it shrink to
+            its content, a 177 px pitch on a 390 px phone. */}
+        <div className="flex-1 flex flex-col items-center gap-3 [&>*:last-child]:w-full">
           <div className="flex rounded-lg bg-white/10 p-1">
             <button
               onClick={() => setMode("duel")}
-              className={`px-4 py-1.5 rounded-md text-sm font-bold ${mode === "duel" ? "bg-emerald-500 text-emerald-950" : "text-white/70"}`}
+              className={`min-h-[40px] px-4 py-1.5 rounded-md text-sm font-bold ${mode === "duel" ? "bg-emerald-500 text-emerald-950" : "text-white/70"}`}
             >
               One-on-one duels
             </button>
             <button
               onClick={() => setMode("roam")}
-              className={`px-4 py-1.5 rounded-md text-sm font-bold ${mode === "roam" ? "bg-sky-500 text-sky-950" : "text-white/70"}`}
+              className={`min-h-[40px] px-4 py-1.5 rounded-md text-sm font-bold ${mode === "roam" ? "bg-sky-500 text-sky-950" : "text-white/70"}`}
             >
               Open run (classic dribble)
             </button>
@@ -136,7 +138,7 @@ export default function StarDribbleDevPage() {
                 <button
                   key={n}
                   onClick={() => setCount(n)}
-                  className={`flex-1 rounded-lg py-1.5 text-sm font-bold ${
+                  className={`min-h-[40px] flex-1 rounded-lg py-1.5 text-sm font-bold ${
                     count === n ? "bg-emerald-500 text-emerald-950" : "bg-white/10 text-white/70"
                   }`}
                 >
