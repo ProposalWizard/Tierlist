@@ -133,7 +133,7 @@ function useRevealPitch(onChanceServed?: (info: ServedInfo) => void) {
     onChanceServed?.(info);
     requestAnimationFrame(() => {
       const pitch = boxRef.current?.querySelector("canvas")?.parentElement;
-      revealOnScreen(pitch ?? boxRef.current);
+      revealOnScreen(pitch ?? boxRef.current, { whole: boxRef.current });
     });
   }, [onChanceServed]);
   // The FIRST chance is built as the match mounts and is not "served", so
@@ -143,7 +143,7 @@ function useRevealPitch(onChanceServed?: (info: ServedInfo) => void) {
     let raf = 0, frames = 0;
     const tick = () => {
       const pitch = boxRef.current?.querySelector("canvas")?.parentElement;
-      if (pitch && pitch.getBoundingClientRect().height > 0) { revealOnScreen(pitch); return; }
+      if (pitch && pitch.getBoundingClientRect().height > 0) { revealOnScreen(pitch, { whole: boxRef.current }); return; }
       if (++frames < 600) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);

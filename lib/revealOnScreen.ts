@@ -39,9 +39,23 @@ export function pinnedTopHeight(ignore?: Element | null): number {
   return bottom;
 }
 
-export function revealOnScreen(el: Element | null | undefined, opts: { margin?: number; smooth?: boolean } = {}): void {
+export function revealOnScreen(
+  el: Element | null | undefined,
+  opts: {
+    margin?: number;
+    smooth?: boolean;
+    /** A bigger block around `el` (the scoreboard and the pitch) to show
+     *  whole instead, when it fits — so what sits above the pitch stays in
+     *  view on a tall screen. */
+    whole?: Element | null;
+  } = {},
+): void {
   if (!el || typeof window === "undefined") return;
   const margin = opts.margin ?? 6;
+  if (opts.whole && opts.whole !== el) {
+    const w = opts.whole.getBoundingClientRect();
+    if (w.height > 0 && w.height <= window.innerHeight - pinnedTopHeight(opts.whole) - 2 * margin) el = opts.whole;
+  }
   const r = el.getBoundingClientRect();
   if (r.height <= 0) return;
   const vh = window.innerHeight;
