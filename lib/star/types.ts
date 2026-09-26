@@ -687,6 +687,14 @@ export interface CareerState {
    * than reading every skill as already overdue on the very next match.
    */
   lastTrainedWeek?: Partial<Record<keyof Skills, number>>;
+  /** Stars per training level (30 per skill, 0-3 each) — see
+   *  lib/star/trainingLevels.ts. Missing on an old save: worked out from the
+   *  skill's number the first time it's needed. */
+  trainingStars?: Partial<Record<keyof Skills, number[]>>;
+  /** Whether you've won your shirt at this club (lib/star/selection.ts,
+   *  shirtWon). `apps` counts your appearances here. Absent on an old save:
+   *  a player who has already been playing keeps his place. */
+  shirt?: { club: string; won: boolean; apps: number };
   relationships: Relationships;
   reputation: Reputation;
   /** The last season you were caught up in a scandal (a scandal dilemma

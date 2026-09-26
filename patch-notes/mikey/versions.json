@@ -11,8 +11,32 @@
     "version": "0.2",
     "date": "2026-09-22",
     "fromCommit": "a406c46",
-    "toCommit": "HEAD",
+    "toCommit": "0220a83",
     "url": "https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu",
     "headline": "Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules"
+  },
+  {
+    "version": "0.3",
+    "date": "2026-09-25",
+    "fromCommit": "0220a83",
+    "toCommit": "846abc5",
+    "url": "https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm",
+    "headline": "What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes"
+  },
+  {
+    "version": "0.4",
+    "date": "2026-09-25",
+    "fromCommit": "846abc5",
+    "toCommit": "d7e8cd1",
+    "url": "https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ",
+    "headline": "Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches"
+  },
+  {
+    "version": "0.5",
+    "date": "2026-09-26",
+    "fromCommit": "d7e8cd1",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/Q681hvwMs83X9895Aevav7",
+    "headline": "How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation"
   }
 ]

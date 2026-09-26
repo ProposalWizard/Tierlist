@@ -1,8 +1,11 @@
 "use client";
+import TrainingMinigame from "@/components/star/TrainingMinigame";
+import type { Skills } from "@/lib/star/types";
 import { useCallback, useEffect, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
 import Graphic from "@/components/star/media/Graphics";
 import FeedPreview from "@/components/star/media/FeedPreview";
+import { TrophiesScreen } from "@/components/star/SecondaryScreens";
 import PortraitPicker from "@/components/star/PortraitPicker";
 import PotmWinModal from "@/components/star/PotmWinModal";
 import VersusScreen from "@/components/star/VersusScreen";
@@ -41,7 +44,20 @@ const CLUBS = [
 export default function MediaLab() {
   // `?feed` shows just the feed preview, at phone width, for judging posts.
   const [feedOnly, setFeedOnly] = useState(false);
-  useEffect(() => { setFeedOnly(new URLSearchParams(window.location.search).has("feed")); }, []);
+  // `?trophies` shows the Trophy Cabinet with every pictured trophy, for judging the art.
+  const [trophiesOnly, setTrophiesOnly] = useState(false);
+  // `?training=vision&level=1` plays one training level with every skill at
+  // 40, for judging the level-1 how-it-works card and the vision countdown.
+  const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    setFeedOnly(q.has("feed"));
+    setTrophiesOnly(q.has("trophies"));
+    const t = q.get("training") as keyof Skills | null;
+    if (t && ["pace", "power", "technique", "vision", "freeKick"].includes(t)) {
+      setTrainingPreview({ skill: t, level: Math.max(1, Math.min(30, Number(q.get("level") ?? 1) || 1)) });
+    }
+  }, []);
   const [pose, setPose] = useState<string | null>(null);
   const [face, setFace] = useState<string | null>(null);
   const [anchor, setAnchor] = useState({ x: 0.5, y: 0.17, size: 0.135 });
@@ -56,6 +72,7 @@ export default function MediaLab() {
   const [labPlayAs, setLabPlayAs] = useState<Role | null>(null);
   const [showFeed, setShowFeed] = useState(false);
   const [feedSpeed, setFeedSpeed] = useState(1);
+  const [labMode, setLabMode] = useState<"low" | "medium" | "high">("medium");
 
   const read = (file: File, set: (s: string) => void) => {
     const r = new FileReader();
@@ -72,6 +89,31 @@ export default function MediaLab() {
   const c = CLUBS[club];
 
   if (feedOnly) return <><FeedPreview /><PageGuide page="/star-dev/media-lab" /></>;
+  if (trainingPreview) {
+    return <>
+      <TrainingMinigame
+        key={`${trainingPreview.skill}-${trainingPreview.level}-${trainingPreview.run ?? 0}`}
+        skill={trainingPreview.skill}
+        trainingLevel={trainingPreview.level}
+        skills={{ pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40 }}
+        onComplete={() => setTrainingPreview({ ...trainingPreview, run: (trainingPreview.run ?? 0) + 1 })}
+      />
+      <PageGuide page="/star-dev/media-lab" />
+    </>;
+  }
+  if (trophiesOnly) {
+    const comps = ["Premier League", "Champions League", "FA Cup", "League Cup", "Europa League", "World Cup",
+      "Championship", "League One", "League Two", "National League", "Community Shield"];
+    return <>
+      <TrophiesScreen
+        trophies={comps.map((c, i) => ({ season: i + 1, competition: c, club: "Barnet" }))}
+        ballonDors={2}
+        awards={[{ kind: "Player of the Season" }, { kind: "Golden Boot" }, { kind: "Golden Boot" }, { kind: "Player of the Month" }]}
+        onBack={() => setTrophiesOnly(false)}
+      />
+      <PageGuide page="/star-dev/media-lab" />
+    </>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 px-4 py-6 text-white">
@@ -228,6 +270,9 @@ export default function MediaLab() {
               speed={feedSpeed}
               onSpeed={() => setFeedSpeed(sp => (sp === 1 ? 2 : sp === 2 ? 4 : 1))}
               pause={null}
+              energy={72}
+              energyMode={labMode}
+              onEnergyMode={setLabMode}
             />
           </div>
         </div>

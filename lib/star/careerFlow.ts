@@ -9,7 +9,7 @@ import {
   buildLeague, buildFixtures, playLeagueWeek, updateLeagueWithUserResult, sortLeague, mulberry32,
   simulateFixtureScore,
 } from "./season";
-import { selectionFor, MISSED_WEEK } from "./selection";
+import { recordAppearance, selectionFor, MISSED_WEEK } from "./selection";
 import { startNewWeek, WEEK_ACTIONS, actionsLeft, REST_ENERGY } from "./week";
 import { judgeSeason } from "./expectations";
 import {
@@ -1040,7 +1040,12 @@ export function creditMatchResult(
   // into the real attributes underneath the rating instead (rating.ts's
   // computeStarRating reads them back out), scaled by how fast a player of
   // this age actually develops — see growthMultiplier.
-  const matchSkillPool = alreadyPlayed ? 0
+  //
+  // Switched off (Mikey, 25 Sep 2026: "matches don't give skill points").
+  // Skills now come only from training stars — see lib/star/trainingLevels.ts.
+  // Kept as a zero rather than deleted so turning it back on is one line.
+  const MATCHES_GIVE_SKILL = false;
+  const matchSkillPool = alreadyPlayed || !MATCHES_GIVE_SKILL ? 0
     : stats.rating >= 8 ? getTuning("training.matchPoolRating8")
     : stats.rating >= 7 ? getTuning("training.matchPoolRating7")
     : stats.rating >= 6 ? getTuning("training.matchPoolRating6")
@@ -1182,6 +1187,11 @@ export function creditMatchResult(
   // scoreline — it costs you a little more of him than the rating alone.
   if (stats.hooked === "form" && !alreadyPlayed) {
     next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss - 3) };
+  }
+  // One more appearance at this club, and whether that has won you your shirt
+  // (selection.ts). Only for a match you actually played in.
+  if (!alreadyPlayed && (stats.minutes ?? 0) > 0) {
+    next.shirt = recordAppearance(next);
   }
   // The manager's view going into next week, so the dashboard's status is live
   // rather than the "1st Team" it was stamped with when the career was created.

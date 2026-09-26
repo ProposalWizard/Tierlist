@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   buildWeightedScenario, buildAttackingScenario, buildScenario, pickScenarioKindFrom,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar,
-  stepKeeper, stepDefenders, stepReactions, stepTouchChase, initDefenders, resetForTouchOn,
+  stepKeeper, stepDefenders, stepReactions, stepTouchChase, touchChaseSpeed, initDefenders, resetForTouchOn,
   chainKindFor, chainReturnChance, CHAIN_MAX, TOUCH_CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
@@ -45,7 +45,7 @@ import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes } from "@/lib/star/matchStats";
-import { hookCheck, type HookReason } from "@/lib/star/selection";
+import { hookCheck, subComesOnNow, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
@@ -863,6 +863,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
   const startMinuteRef = useRef(startMinute);
   startMinuteRef.current = startMinute;
+  /** The minute you actually came on. For a substitute this follows the game
+   *  (subComesOnNow, selection.ts), so it can differ from `startMinute`,
+   *  which now only says "you're on the bench". Minutes played, the rating's
+   *  cameo adjustment and "settled in before being taken off" all read it. */
+  const enteredAtRef = useRef(startMinute);
   /** Set once the manager has taken you off, so nothing after it can play. */
   const hookedRef = useRef<HookReason | null>(null);
   /** The minute you came off. The rest of the match is played without you, so
@@ -1021,6 +1026,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
+      freeKick: careerRef.current?.skills.freeKick,
       // So a corner/free kick/penalty is weighted by the position you play
       // like every other chance is, instead of bypassing it — see
       // buildRequest's dead-ball block in hiddenMatch.ts.
@@ -1682,7 +1688,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const rng = countedRng(seedRef.current, rngCallCountRef);
         rngRef.current = rng;
         const st = matchStateRef.current;
-        const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
+        // Play the match without you until the manager decides to send you
+        // on: from the 50th minute, when the scoreline says so.
+        const jitter = ((careerRef.current?.week ?? 0) * 37 + (careerRef.current?.season ?? 0) * 11) % 5;
+        const before = advanceTo(st, hiddenInputs(), rng, 50);
+        while (st.minute < 88 && !subComesOnNow(st.minute, st.userScore - st.oppScore, jitter)) {
+          before.push(...advanceTo(st, hiddenInputs(), rng, st.minute + 1));
+        }
+        enteredAtRef.current = st.minute;
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
         // You were on the bench until now — nothing to charge for.
@@ -1712,6 +1725,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       // Starting: the match opens on the commentary, at nil-nil, with a
       // whistle — not on a pitch waiting for a chance that has not arrived.
+      enteredAtRef.current = 0;
       setLog([logLine("Kick Off", "period", 0)]);
       startSimulation();
       return;
@@ -2175,10 +2189,44 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const SKIN = "#c68642";
     type Pose = FigurePose;
 
+    type FigureOpts = { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement };
+
+    // ── Nearer men in front of further ones ──
+    //
+    // Figures used to be painted in groups — team-mates, then runners, then
+    // defenders, then you — so whoever's group came later was always on top.
+    // A striker standing BEHIND his marker was drawn over him, head planted in
+    // the marker's shirt, "like he is standing on top of him" (Mikey, 25 Sep
+    // 2026, a far-post cross seen from the right). While `figureQueue` is open
+    // every call below is held, then all of them are painted far-to-near by
+    // where their boots land on screen — the one depth that is right from
+    // every camera facing, since up the screen is always further away.
+    let figureQueue: { py: number; draw: () => void }[] | null = null;
     const footballer = (
       x: number, y: number, rBase: number,
       shirt: string, rim: string,
-      opts: { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement } = {},
+      opts: FigureOpts = {},
+    ) => {
+      if (figureQueue) {
+        const at = toPx(x, y).py;
+        figureQueue.push({ py: at, draw: () => paintFootballer(x, y, rBase, shirt, rim, opts) });
+        return;
+      }
+      paintFootballer(x, y, rBase, shirt, rim, opts);
+    };
+    const flushFigures = () => {
+      const q = figureQueue;
+      figureQueue = null;
+      if (!q) return;
+      // Stable: two men on exactly the same line keep their old order.
+      q.map((f, i) => ({ f, i }))
+        .sort((a, b) => a.f.py - b.f.py || a.i - b.i)
+        .forEach(({ f }) => f.draw());
+    };
+    const paintFootballer = (
+      x: number, y: number, rBase: number,
+      shirt: string, rim: string,
+      opts: FigureOpts = {},
     ) => {
       const { px, py, scale } = toPx(x, y);
       // Further up the pitch is further from the camera, so figures there are
@@ -2359,6 +2407,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // whether YOU can beat these men — had one lone blue shirt standing in it,
     // left over from the scenario before. Same leak as the panel above: a figure
     // from a situation that is not the one on screen.
+    figureQueue = [];
     if (goalInView(sc.kind) && sceneRef.current?.teammates !== false) {
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
@@ -2495,9 +2544,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // aiming at. Only while you still have the ball: once it is struck the
     // orders are being carried out, and a pitch covered in arrows during the
     // flight is noise.
-    if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
-      drawCaptainOrders(sc);
-    }
 
     // A feature's cones (the markers prop) — on the grass, under everyone.
     if (markersRef.current?.length) {
@@ -2674,7 +2720,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const ballY = liveBall ? liveBall.pos.y : (phaseRef.current === "aim" ? sc.ball.y : null);
     const ballBehindKeeper = keeperInView && ballY !== null && ballY < sc.keeper.y;
 
-    if (keeperInView && !ballBehindKeeper) drawKeeper();
+    // The keeper joins the same far-to-near sort as everyone else, so a man
+    // standing between him and the camera at a corner is drawn in front of
+    // him, not behind. (Once the ball is behind him he is drawn after it,
+    // further down, exactly as before.)
+    if (keeperInView && !ballBehindKeeper && figureQueue) {
+      figureQueue.push({ py: toPx(sc.keeper.x, sc.keeper.y).py, draw: drawKeeper });
+    }
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---
     const trail = trailRef.current;
@@ -2763,9 +2815,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
     }
 
+    // The ball joins the same far-to-near sort as the players, placed by its
+    // shadow — the spot on the grass it is actually over. It used to be
+    // painted after everybody, so a ball at your feet with a defender standing
+    // in front of you was drawn across HIS head, as if he had it (Mikey, 25
+    // Sep 2026). Now whoever is nearer the camera covers it, the way he would.
+    // The trail and the landing mark above stay on the grass, under everyone.
     const ball = ballRef.current;
-    if (ball) drawBall(ball.pos.x, ball.pos.y, ball.z);
-    else if (phaseRef.current === "aim") drawBall(sc.ball.x, sc.ball.y, 0);
+    const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
+      : phaseRef.current === "aim" ? { x: sc.ball.x, y: sc.ball.y, z: 0 } : null;
+    if (ballAt) {
+      const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
+      if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
+      else drawIt();
+    }
+    flushFigures();
+    // The orders go over every man now rather than between the groups — the
+    // groups no longer exist as layers. Thin gold lines, so they never hide
+    // what you are aiming at.
+    if (isCaptainRef.current && phaseRef.current === "aim" && acceptsCaptainOrders(sc.kind)) {
+      drawCaptainOrders(sc);
+    }
 
     // He's been beaten — draw him now, after the ball, so his body is what
     // occludes it rather than the other way round.
@@ -3067,7 +3137,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const touchLive = touchModeOnRef.current && canExtraTouch
               && ballRef.current.owner === "you" && ballRef.current.lastTouch !== "keeper"
               && acceptsCaptainOrders(scenarioRef.current.kind);
-          const caughtUp = touchLive && stepTouchChase(scenarioRef.current, ballRef.current, h);
+          const caughtUp = touchLive && stepTouchChase(scenarioRef.current, ballRef.current, h,
+            careerRef.current ? touchChaseSpeed(careerRef.current.skills.pace) : undefined);
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           if (onBallStepRef.current) {
             const bb = ballRef.current;
@@ -3807,7 +3878,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const t = tallyRef.current;
       const decision = hookCheck({
         minute: st.minute,
-        startMinute: startMinuteRef.current,
+        startMinute: enteredAtRef.current,
         liveRating: liveRating(attemptsRef.current, t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
         scoreDiff: st.userScore - st.oppScore,
         rng,
@@ -3866,7 +3937,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const stats: MatchStats = {
             ...finaliseMatch(
               attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-              Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+              Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
               userScoreRef.current, oppScoreRef.current, careerForStats,
               goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
             ),
@@ -4794,7 +4865,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
             {statCell("Avg Rat", regressForMinutes(
               liveRating(stats.chances, stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp),
-              Math.max(1, matchMinute - startMinute),
+              Math.max(1, matchMinute - enteredAtRef.current),
               // Reported directly: this on-screen number used to jump the
               // moment the match ended, because only the FINAL rating
               // applied the cameo-minutes regression below — the live
@@ -5041,7 +5112,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             const stats: MatchStats = {
               ...finaliseMatch(
                 attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
                 userScoreRef.current, oppScoreRef.current, careerForStats,
                 goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
               ),

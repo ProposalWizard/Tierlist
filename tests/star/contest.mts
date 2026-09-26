@@ -284,7 +284,11 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
   let marked = 0, curled = 0, n = 0;
   for (let seed = 0; seed < 1500; seed++) {
     const rng = mulberry32(seed * 13 + 7);
-    const sc = buildScenario(seed % 2 ? "long_range" : "byline_cross", rng, 62, 60);
+    // Vision 40: exactly one support man, the same picture this sample was
+    // measured on before vision became a smooth curve (25 Sep 2026). A second
+    // man changes nothing here — everyone is cleared off below — but placing
+    // him uses up random numbers, which reshuffles which 1,500 shots are taken.
+    const sc = buildScenario(seed % 2 ? "long_range" : "byline_cross", rng, 62, 60, 40);
     initDefenders(sc, rng);
     // Nothing to intervene: this is about the flight and nothing else.
     sc.defenders = []; sc.runner = null; sc.secondaryRunners = [];

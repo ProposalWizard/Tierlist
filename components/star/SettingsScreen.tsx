@@ -22,6 +22,7 @@ interface Props {
   onSetReputation: (delta: number) => void;
   onSetFame: (delta: number) => void;
   onMaxSkills: () => void;
+  onUnlockTraining?: () => void;
   onSetHappiness: (delta: number) => void;
   onSwitchClub: (club: string) => void;
   onSetPortrait: (portrait: string | undefined) => void;
@@ -47,7 +48,7 @@ interface Props {
 
 export default function SettingsScreen({
   career, onBack, onSkip, onAddMoney,
-  onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onSetHappiness, onSwitchClub,
+  onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
   immersiveActive, onToggleImmersive,
@@ -162,6 +163,7 @@ export default function SettingsScreen({
           onSetReputation={onSetReputation}
           onSetFame={onSetFame}
           onMaxSkills={onMaxSkills}
+          onUnlockTraining={onUnlockTraining}
           onSetHappiness={onSetHappiness}
           onSwitchClub={onSwitchClub}
         />

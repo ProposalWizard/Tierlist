@@ -39,6 +39,27 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 25 Sep 2026 — training levels
+- **Level 1 of every training game opens on a how-it-works card.** "A very
+  short, small tutorial or pop-up… doesn't have to be many words, just
+  something that tells you how it works." A small drawing, three one-line
+  steps, the star rule (1st ★★★ · 2nd ★★ · 3rd ★), one "Let's go" button
+  (`components/star/TrainingIntro.tsx`).
+- **Vision counts you in: 3, 2, 1, GO — picture hidden until GO,** with
+  "Pick the free pass" under the number. Before every try, not only the first.
+  Judge both at `/star-dev/media-lab?training=vision&level=1`.
+
+### 24 Sep 2026 — energy-mode icons
+- **Low / Medium / High are icons, not words.** From Mikey's three concept
+  images: a split ring with a lightning bolt breaking through it — red Low,
+  amber Medium, green High. "Instead of saying what it is, it should just use
+  these icons… design new icons based upon these concept images." Drawn as
+  vector (`components/star/EnergyModeIcon.tsx`); 2 · 4 · 6 sparks show the
+  level without colour. The chosen one glows; the others dim.
+- First pass at 34px was too small and the thin bolt read as a black line —
+  46px and a chunky two-tone bolt fixed it. A thin shape under a thick
+  outline disappears at phone size.
+
 ### 23 Sep 2026 — the social feed posts
 - **Posts look like real social media, not cards.** Verbatim: the posts "are
   all boxed with curved things… what I want is how it is in the concept image

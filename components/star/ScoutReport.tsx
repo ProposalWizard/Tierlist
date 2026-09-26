@@ -193,6 +193,14 @@ function EmptyPlayerCard({ role }: { role: "scorer" | "assist" }) {
   );
 }
 
+/**
+ * The "how they'll set up" panel (formation, playstyle, line and a sentence).
+ * Hidden for now — Mikey (25 Sep 2026): "this is taking up too much of the
+ * page... get rid of this for now." The tactics are still worked out and
+ * still drive the match; flip this to true to show the panel again.
+ */
+const SHOW_TACTICS = false;
+
 export default function ScoutReportCard({ report }: { report: ScoutReport }) {
   const noPlayerData = !report.topScorer && !report.topAssister && !report.bestPlayer;
 
@@ -209,7 +217,7 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
           sit, framed by the strength gap to you. See scoutTacticsFor
           (lib/star/formationShape.ts); the same three inputs the in-match
           defensive block layer reads, so this describes what you'll face. */}
-      <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2">
+      {SHOW_TACTICS && <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2">
         <div className="mb-1.5 flex flex-wrap items-center gap-1">
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-black text-white">{report.tactics.formationName}</span>
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-white/90">{report.tactics.backLine}</span>
@@ -220,7 +228,7 @@ export default function ScoutReportCard({ report }: { report: ScoutReport }) {
           )}
         </div>
         <p className="text-[10px] font-medium leading-snug text-white">{report.tactics.summary}</p>
-      </div>
+      </div>}
 
       {noPlayerData ? (
         <div className="mt-2 text-[10px] text-white/60 text-center py-1">

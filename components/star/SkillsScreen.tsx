@@ -1,6 +1,7 @@
 "use client";
 import type { CareerState, Skills } from "@/lib/star/types";
 import { setPieceDuties } from "@/lib/star/setPieces";
+import { starsOf, totalStars } from "@/lib/star/trainingLevels";
 import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
 import { getTuning } from "@/lib/star/tuningStore";
 
@@ -10,14 +11,15 @@ interface Props {
 }
 
 const SKILL_LABELS: [keyof Skills, string, string, string][] = [
-  ["pace", "Pace", "⚡", "Sprint faster, reach through balls"],
+  ["pace", "Pace", "⚡", "Faster dribbles, more runs into space, quicker Touch Mode chase"],
   ["power", "Power", "💪", "Long shots and stronger crosses"],
   ["technique", "Technique", "🎯", "Ball control, curl, precise strikes"],
-  ["vision", "Vision", "👁️", "Better passing options highlighted"],
-  ["freeKick", "Free Kick", "🎪", "Set-piece accuracy, curl — and who takes them"],
+  ["vision", "Vision", "👁️", "More team-mates to pass to in every chance"],
+  ["freeKick", "Free Kick", "🎪", "Free kicks, corners and penalties — and how many are yours"],
 ];
 
 const ENERGY_COST = getTuning("energy.trainingCost");
+
 
 export default function SkillsScreen({ career, onTrain }: Props) {
   const duties = setPieceDuties(career);
@@ -26,7 +28,7 @@ export default function SkillsScreen({ career, onTrain }: Props) {
     <div className="mt-2 space-y-2">
       <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3 text-center">
         <div className="text-[10px] font-black text-emerald-300 uppercase tracking-widest">Training</div>
-        <div className="text-sm text-white mt-0.5">Each session costs a day and {ENERGY_COST} energy</div>
+        <div className="text-sm text-white mt-0.5">Each level costs a day and {ENERGY_COST} energy. 3 tries, up to ★★★.</div>
         <div className="mt-2 flex items-center justify-center gap-1.5">
           {Array.from({ length: WEEK_ACTIONS }, (_, i) => (
             <span
@@ -77,7 +79,7 @@ export default function SkillsScreen({ career, onTrain }: Props) {
             </div>
             <div className="text-center">
               <div className="text-lg font-black text-emerald-400">{val}</div>
-              <div className="text-[9px] text-white/65">/100</div>
+              <div className="text-[9px] font-bold text-amber-300">★ {totalStars(starsOf(career, key))}/90</div>
             </div>
           </button>
         );

@@ -535,7 +535,11 @@ function bestOption(sc: Scenario): number {
       // 60.9% — zooming out shows you more nothing, not more football), and
       // the floor stops it ever becoming a keyhole.
       const long = Math.max(vp.y2 - vp.y1, vp.x2 - vp.x1);
-      check(long <= 42.01 && long >= 27.99, `${kind}: framed within the zoom band (${long.toFixed(1)} m)`);
+      // The one exception, chosen by the owner (Mikey, 25 Sep 2026): a corner
+      // is taken from the real flag, and its side-on frame is pulled back to
+      // 48.3 m to hold the flag, pulling-back room and the far post together.
+      const ceiling = kind === "corner" ? 48.31 : 42.01;
+      check(long <= ceiling && long >= 27.99, `${kind}: framed within the zoom band (${long.toFixed(1)} m)`);
 
       // And wherever it lands, the goal does not wander up and down the screen
       // between chances — the thing the owner actually disliked ("it feels

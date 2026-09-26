@@ -70,8 +70,8 @@ export const TUNABLES: TunableDef[] = [
   },
   {
     key: "startingSkills.freeKick", category: "Starting Skills", label: "Starting Free Kick",
-    description: "Set-piece ability a brand-new career starts with, 0-100. Starts a notch below the other four on purpose — nobody arrives already good at dead balls.",
-    default: 30, min: 0, max: 100, step: 1,
+    description: "Set-piece ability a brand-new career starts with, 0-100. 40 like the other four (Mikey, 25 Sep 2026): every skill climbs the same 30-level training ladder from 40.",
+    default: 40, min: 0, max: 100, step: 1,
   },
 
   // ── Attribute decay ──────────────────────────────────────────────────

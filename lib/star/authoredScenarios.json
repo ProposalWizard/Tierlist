@@ -855,83 +855,83 @@
     },
     "gallery-sim-one_on_one-749521351": {
       "id": "gallery-sim-one_on_one-749521351",
-      "name": "one_on_one (sim)",
+      "ball": {
+        "x": 32.73,
+        "y": 17.04
+      },
       "kind": "open_play",
+      "name": "one_on_one (sim)",
       "camera": {
+        "facing": "up",
         "centerX": 32.54,
         "centerY": 17.3,
-        "viewHeight": 42,
-        "facing": "up"
+        "viewHeight": 42
       },
-      "ball": {
-        "x": 33.92,
-        "y": 9.55
+      "source": {
+        "kind": "one_on_one",
+        "seed": 749521351,
+        "tool": "gallery",
+        "planId": "one_on_one|spot|half_space|R|closing|set|transition|normal|between|weak|b4"
       },
       "players": [
         {
+          "x": 40.79,
+          "y": 20.67,
           "id": "i0",
           "side": "opponent",
-          "x": 37.94,
-          "y": 15.03,
           "label": "D1"
         },
         {
-          "id": "i1",
-          "side": "opponent",
           "x": 33.63,
           "y": 1.66,
+          "id": "i1",
+          "side": "opponent",
           "label": "GK"
         },
         {
+          "x": 42.15,
+          "y": 16.25,
           "id": "i2",
           "side": "teammate",
-          "x": 36.92,
-          "y": 15.77,
           "label": "SUP"
         },
         {
+          "x": 26.63,
+          "y": 30.73,
           "id": "i3",
           "side": "teammate",
-          "x": 27.88,
-          "y": 20.45,
           "label": "SUP"
         },
         {
+          "x": 25.76,
+          "y": 23.44,
           "id": "i4",
           "side": "teammate",
-          "x": 25.94,
-          "y": 14.71,
           "label": "POACH"
         },
         {
+          "x": 31.51,
+          "y": 17.81,
           "id": "i5",
           "side": "you",
-          "x": 33.53,
-          "y": 10.38,
           "label": "YOU"
         },
         {
+          "x": 27.89,
+          "y": 21.66,
           "id": "iadd1",
           "side": "opponent",
-          "x": 27.18,
-          "y": 14.65,
           "label": "OPP"
         },
         {
+          "x": 28.37,
+          "y": 29.17,
           "id": "iadd2",
           "side": "opponent",
-          "x": 29.02,
-          "y": 19.84,
           "label": "OPP"
         }
       ],
-      "updatedAt": 1790006903068,
-      "source": {
-        "tool": "gallery",
-        "kind": "one_on_one",
-        "seed": 749521351,
-        "planId": "one_on_one|spot|half_space|R|closing|set|transition|normal|between|weak|b4"
-      }
+      "updatedAt": 1790213831364
     },
     "gallery-sim-one_on_one-452939548": {
       "id": "gallery-sim-one_on_one-452939548",
@@ -1154,76 +1154,76 @@
     },
     "gallery-sim-one_on_one-1536883055": {
       "id": "gallery-sim-one_on_one-1536883055",
-      "name": "one_on_one (sim)",
+      "ball": {
+        "x": 38.19,
+        "y": 18.74
+      },
       "kind": "open_play",
+      "name": "one_on_one (sim)",
       "camera": {
+        "facing": "up",
         "centerX": 34.46,
         "centerY": 17.3,
-        "viewHeight": 42,
-        "facing": "up"
+        "viewHeight": 42
       },
-      "ball": {
-        "x": 38.49,
-        "y": 14.23
+      "source": {
+        "kind": "one_on_one",
+        "seed": 1536883055,
+        "tool": "gallery",
+        "planId": "one_on_one|golden|half_space|R|closing|out|settled|normal|ball|weak|b4"
       },
       "players": [
         {
+          "x": 34.36,
+          "y": 24.66,
           "id": "i0",
           "side": "opponent",
-          "x": 36.14,
-          "y": 18.42,
           "label": "D1"
         },
         {
+          "x": 34.3,
+          "y": 3.99,
           "id": "i1",
           "side": "opponent",
-          "x": 36.56,
-          "y": 8.2,
           "label": "GK"
         },
         {
+          "x": 41.84,
+          "y": 25.57,
           "id": "i2",
           "side": "teammate",
-          "x": 43.21,
-          "y": 16.9,
           "label": "SUP"
         },
         {
+          "x": 24.94,
+          "y": 30.95,
           "id": "i3",
           "side": "teammate",
-          "x": 29.45,
-          "y": 18.65,
           "label": "POACH"
         },
         {
+          "x": 37.18,
+          "y": 19.61,
           "id": "i4",
           "side": "you",
-          "x": 38.66,
-          "y": 15.45,
           "label": "YOU"
         },
         {
+          "x": 25.55,
+          "y": 21.9,
           "id": "iadd1",
           "side": "opponent",
-          "x": 28.4,
-          "y": 17.39,
           "label": "OPP"
         },
         {
+          "x": 44.19,
+          "y": 23.01,
           "id": "iadd2",
           "side": "opponent",
-          "x": 44.31,
-          "y": 15.94,
           "label": "OPP"
         }
       ],
-      "updatedAt": 1790013866897,
-      "source": {
-        "tool": "gallery",
-        "kind": "one_on_one",
-        "seed": 1536883055,
-        "planId": "one_on_one|golden|half_space|R|closing|out|settled|normal|ball|weak|b4"
-      }
+      "updatedAt": 1790213678236
     },
     "gallery-main-tight_angle": {
       "id": "gallery-main-tight_angle",
@@ -3673,6 +3673,3042 @@
         }
       ],
       "updatedAt": 1790196147275
+    },
+    "gallery-v-long_range-7234": {
+      "id": "gallery-v-long_range-7234",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 29.79,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 18.4,
+        "y": 28.71
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 23.95,
+          "y": 23.2,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 33.17,
+          "y": 13.18,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 19.28,
+          "y": 12.16,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 30.55,
+          "y": 12.57,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 36.48,
+          "y": 12.63,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 41.51,
+          "y": 13.02,
+          "label": "D6"
+        },
+        {
+          "id": "i6",
+          "side": "opponent",
+          "x": 30.57,
+          "y": 2.37,
+          "label": "GK"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 18.06,
+          "y": 16.06,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 20.16,
+          "y": 14.72,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 29.54,
+          "y": 15.03,
+          "label": "POACH"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 19.7,
+          "y": 28.86,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7234,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7255": {
+      "id": "gallery-v-long_range-7255",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 33.34,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 21.62,
+        "y": 27.67
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 25.21,
+          "y": 23.38,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 31.15,
+          "y": 12.57,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 21.62,
+          "y": 12.7,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 35.13,
+          "y": 12.74,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 45.07,
+          "y": 12.65,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 30.82,
+          "y": 1.57,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 23.12,
+          "y": 16.3,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 22.18,
+          "y": 16.19,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 31.88,
+          "y": 16.02,
+          "label": "POACH"
+        },
+        {
+          "id": "i9",
+          "side": "you",
+          "x": 22.92,
+          "y": 27.82,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7255,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7243": {
+      "id": "gallery-v-long_range-7243",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 33.81,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 27.49,
+        "y": 28.05
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 31.63,
+          "y": 24.01,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 37.86,
+          "y": 11.57,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 38.1,
+          "y": 13.42,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 22.09,
+          "y": 13.13,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 36.4,
+          "y": 13.11,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 45.54,
+          "y": 13.6,
+          "label": "D6"
+        },
+        {
+          "id": "i6",
+          "side": "opponent",
+          "x": 32.14,
+          "y": 1.59,
+          "label": "GK"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 42.28,
+          "y": 14.25,
+          "label": "TARGET"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 22.09,
+          "y": 15.31,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 42.67,
+          "y": 15.14,
+          "label": "SUP"
+        },
+        {
+          "id": "i10",
+          "side": "teammate",
+          "x": 27.99,
+          "y": 15.14,
+          "label": "POACH"
+        },
+        {
+          "id": "i11",
+          "side": "you",
+          "x": 28.79,
+          "y": 28.2,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7243,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7220": {
+      "id": "gallery-v-long_range-7220",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 33.5,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 30.27,
+        "y": 29.9
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 29.22,
+          "y": 25.67,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 44.25,
+          "y": 15.64,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 21.78,
+          "y": 12.87,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 36.46,
+          "y": 12.95,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 45.23,
+          "y": 13.66,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 33.09,
+          "y": 2.24,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 38.04,
+          "y": 16.53,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 28.44,
+          "y": 16.67,
+          "label": "POACH"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 31.57,
+          "y": 30.05,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7220,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7218": {
+      "id": "gallery-v-long_range-7218",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 33.04,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 30.84,
+        "y": 29.9
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 29.87,
+          "y": 23.63,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 44.76,
+          "y": 12.14,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 21.31,
+          "y": 12.91,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 32.57,
+          "y": 12.19,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 44.76,
+          "y": 12.85,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 33.63,
+          "y": 1.41,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 37.91,
+          "y": 15.72,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 27.67,
+          "y": 15.89,
+          "label": "POACH"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 32.14,
+          "y": 30.05,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7218,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7250": {
+      "id": "gallery-v-long_range-7250",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 32.2,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 33.48,
+        "y": 25.7
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 35.46,
+          "y": 20.58,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 29.17,
+          "y": 10.98,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 33.05,
+          "y": 11.43,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 20.48,
+          "y": 12.01,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 35.39,
+          "y": 9.85,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 43.93,
+          "y": 11.88,
+          "label": "D6"
+        },
+        {
+          "id": "i6",
+          "side": "opponent",
+          "x": 34,
+          "y": 2.36,
+          "label": "GK"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 23.76,
+          "y": 12.64,
+          "label": "TARGET"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 25.75,
+          "y": 12.4,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 31.33,
+          "y": 12.85,
+          "label": "POACH"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 34.78,
+          "y": 25.85,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7250,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7205": {
+      "id": "gallery-v-long_range-7205",
+      "ball": {
+        "x": 35.72,
+        "y": 29.9
+      },
+      "kind": "open_play",
+      "name": "long_range",
+      "camera": {
+        "facing": "up",
+        "centerX": 35.46,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 7205,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 37.91,
+          "y": 22.56,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 30.33,
+          "y": 15.92,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 37.37,
+          "y": 13.43,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 43.09,
+          "y": 18.74,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 34.41,
+          "y": 0.55,
+          "id": "i5",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 43.32,
+          "y": 21.99,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 33.1,
+          "y": 19.58,
+          "id": "i8",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 37.02,
+          "y": 30.05,
+          "id": "i9",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790211704011
+    },
+    "gallery-v-long_range-7253": {
+      "id": "gallery-v-long_range-7253",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 36.25,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 36.16,
+        "y": 29.9
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 29.56,
+          "y": 14.31,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 38.73,
+          "y": 24.62,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 24.53,
+          "y": 12.01,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 29.89,
+          "y": 12.8,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 37.64,
+          "y": 12.12,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 46.14,
+          "y": 13.09,
+          "label": "D6"
+        },
+        {
+          "id": "i6",
+          "side": "opponent",
+          "x": 34.51,
+          "y": 2.8,
+          "label": "GK"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 47.98,
+          "y": 15.51,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 24.53,
+          "y": 15.65,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 30.07,
+          "y": 15.49,
+          "label": "POACH"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 37.46,
+          "y": 30.05,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7253,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7228": {
+      "id": "gallery-v-long_range-7228",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 33.96,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 38.05,
+        "y": 26.73
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 34.54,
+          "y": 21.11,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 37.8,
+          "y": 9.58,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 35.79,
+          "y": 11.83,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 22.23,
+          "y": 11.27,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 34.17,
+          "y": 11.11,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 45.68,
+          "y": 12.11,
+          "label": "D6"
+        },
+        {
+          "id": "i6",
+          "side": "opponent",
+          "x": 35.07,
+          "y": 1.47,
+          "label": "GK"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 42.87,
+          "y": 12.22,
+          "label": "TARGET"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 32.53,
+          "y": 13.24,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 45.68,
+          "y": 12.61,
+          "label": "SUP"
+        },
+        {
+          "id": "i10",
+          "side": "teammate",
+          "x": 45.68,
+          "y": 13.5,
+          "label": "SUP"
+        },
+        {
+          "id": "i11",
+          "side": "teammate",
+          "x": 40.66,
+          "y": 13.36,
+          "label": "POACH"
+        },
+        {
+          "id": "i12",
+          "side": "you",
+          "x": 39.35,
+          "y": 26.88,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7228,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7226": {
+      "id": "gallery-v-long_range-7226",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 34.31,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 38.59,
+        "y": 26.01
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 25.65,
+          "y": 12.39,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 40.24,
+          "y": 19.72,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 22.59,
+          "y": 12.61,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 33.77,
+          "y": 13.2,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 46.04,
+          "y": 12.93,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 34.66,
+          "y": 1.23,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 46.04,
+          "y": 15.89,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 44.89,
+          "y": 16.03,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 30.45,
+          "y": 15.66,
+          "label": "POACH"
+        },
+        {
+          "id": "i9",
+          "side": "you",
+          "x": 39.89,
+          "y": 26.16,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7226,
+        "planId": null
+      }
+    },
+    "gallery-v-long_range-7244": {
+      "id": "gallery-v-long_range-7244",
+      "name": "long_range",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 35.3,
+        "centerY": 17.3,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 41.75,
+        "y": 25.88
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 25.03,
+          "y": 11.65,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 36.7,
+          "y": 19.74,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 23.58,
+          "y": 12.59,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 36.18,
+          "y": 13.12,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 47.03,
+          "y": 12.97,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 35.32,
+          "y": 1.91,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 47.03,
+          "y": 14.39,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 31.16,
+          "y": 14.82,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 27.34,
+          "y": 15.07,
+          "label": "POACH"
+        },
+        {
+          "id": "i9",
+          "side": "you",
+          "x": 43.05,
+          "y": 26.03,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790208000000,
+      "source": {
+        "tool": "gallery",
+        "kind": "long_range",
+        "seed": 7244,
+        "planId": null
+      }
+    },
+    "gallery-sim-free_kick-1153211887": {
+      "id": "gallery-sim-free_kick-1153211887",
+      "ball": {
+        "x": 26.5,
+        "y": 19.48
+      },
+      "kind": "free_kick",
+      "name": "free kick (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 32.08,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "free_kick",
+        "seed": 1153211887,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 28.18,
+          "y": 10.32,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 29.25,
+          "y": 10.73,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 30.32,
+          "y": 11.15,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 31.4,
+          "y": 11.56,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 35.1,
+          "y": 0.55,
+          "id": "i4",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 41.55,
+          "y": 14.46,
+          "id": "i5",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 27.8,
+          "y": 19.63,
+          "id": "i6",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 40.91,
+          "y": 13.05,
+          "id": "iadd1",
+          "side": "opponent",
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790306657005
+    },
+    "gallery-sim-one_on_one-393119392": {
+      "id": "gallery-sim-one_on_one-393119392",
+      "ball": {
+        "x": 31.85,
+        "y": 17.75
+      },
+      "kind": "open_play",
+      "name": "one on one (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 32.54,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "one_on_one",
+        "seed": 393119392,
+        "tool": "gallery",
+        "planId": "one_on_one|golden|half_space|R|free|set|transition|normal|between|even|b4"
+      },
+      "players": [
+        {
+          "x": 29.07,
+          "y": 20.93,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 26.52,
+          "y": 29.61,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 39.49,
+          "y": 21.6,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 33.63,
+          "y": 1.73,
+          "id": "i3",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 43.04,
+          "y": 16.42,
+          "id": "i4",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 27.38,
+          "y": 30,
+          "id": "i5",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 30.63,
+          "y": 18.52,
+          "id": "i6",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790302530495
+    },
+    "gallery-sim-tight_angle-1337921689": {
+      "id": "gallery-sim-tight_angle-1337921689",
+      "ball": {
+        "x": 46.05,
+        "y": 6.2
+      },
+      "kind": "open_play",
+      "name": "tight angle (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 39.83,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "tight_angle",
+        "seed": 1337921689,
+        "tool": "gallery",
+        "planId": "tight_angle|spot|wide|R|free|set|settled|normal|ball|strong|b5"
+      },
+      "players": [
+        {
+          "x": 42.09,
+          "y": 6.84,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 30.96,
+          "y": 7.63,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 43.91,
+          "y": 11.47,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 38.6,
+          "y": 10.72,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 36.21,
+          "y": 0.65,
+          "id": "i4",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 44.05,
+          "y": 14.02,
+          "id": "i5",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 33.85,
+          "y": 12.53,
+          "id": "i6",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 47.35,
+          "y": 6.35,
+          "id": "i7",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 29.98,
+          "y": 7.86,
+          "id": "iadd1",
+          "side": "teammate",
+          "label": "MATE"
+        }
+      ],
+      "updatedAt": 1790302509528
+    },
+    "gallery-sim-midfield_pass-956042999": {
+      "id": "gallery-sim-midfield_pass-956042999",
+      "ball": {
+        "x": 38.36,
+        "y": 36.3
+      },
+      "kind": "open_play",
+      "name": "midfield pass (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 38.36,
+        "centerY": 32.19,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "midfield_pass",
+        "seed": 956042999,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 30.97,
+          "y": 37.03,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 43.36,
+          "y": 24.01,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 34,
+          "y": 1.6,
+          "id": "i2",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 28.75,
+          "y": 37.4,
+          "id": "i3",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 47.11,
+          "y": 36.59,
+          "id": "i4",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 44.65,
+          "y": 26.73,
+          "id": "i5",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 39.66,
+          "y": 36.45,
+          "id": "i6",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790302464015
+    },
+    "gallery-sim-buildup-1194677198": {
+      "id": "gallery-sim-buildup-1194677198",
+      "ball": {
+        "x": 39.59,
+        "y": 40.46
+      },
+      "kind": "open_play",
+      "name": "buildup (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 37.32,
+        "centerY": 36.53,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "buildup",
+        "seed": 1194677198,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 43.38,
+          "y": 33.25,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 36.43,
+          "y": 30.48,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 34,
+          "y": 0.55,
+          "id": "i2",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 41.83,
+          "y": 29.04,
+          "id": "i3",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 34.72,
+          "y": 47.02,
+          "id": "i4",
+          "side": "teammate",
+          "label": "R1"
+        },
+        {
+          "x": 28.74,
+          "y": 35.52,
+          "id": "i5",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 40.89,
+          "y": 40.61,
+          "id": "i7",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 30.39,
+          "y": 38.03,
+          "id": "iadd1",
+          "side": "opponent",
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790298403584
+    },
+    "gallery-sim-one_on_one-81634676": {
+      "id": "gallery-sim-one_on_one-81634676",
+      "ball": {
+        "x": 38.48,
+        "y": 16.82
+      },
+      "kind": "open_play",
+      "name": "one on one (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 34.46,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "one_on_one",
+        "seed": 81634676,
+        "tool": "gallery",
+        "planId": "one_on_one|spot|centre|L|closing|stepped|settled|normal|between|strong|b4"
+      },
+      "players": [
+        {
+          "x": 25.37,
+          "y": 23.01,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 34.01,
+          "y": 19.88,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 34.56,
+          "y": 3.64,
+          "id": "i2",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 24.84,
+          "y": 30.44,
+          "id": "i3",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 43.27,
+          "y": 25.91,
+          "id": "i4",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 30.29,
+          "y": 16.89,
+          "id": "i5",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 37.22,
+          "y": 17.5,
+          "id": "i6",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790298285834
+    },
+    "gallery-sim-buildup-1032559854": {
+      "id": "gallery-sim-buildup-1032559854",
+      "ball": {
+        "x": 19.72,
+        "y": 43.01
+      },
+      "kind": "open_play",
+      "name": "buildup (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 29.67,
+        "centerY": 37.11,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "buildup",
+        "seed": 1032559854,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 36.5,
+          "y": 30.11,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 33.59,
+          "y": 38.1,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 34,
+          "y": 0.55,
+          "id": "i2",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 40.85,
+          "y": 29.81,
+          "id": "i3",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 32.04,
+          "y": 54.32,
+          "id": "i4",
+          "side": "teammate",
+          "label": "R1"
+        },
+        {
+          "x": 20.74,
+          "y": 32.74,
+          "id": "i5",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 36.33,
+          "y": 34.25,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 21.02,
+          "y": 43.16,
+          "id": "i7",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 20.24,
+          "y": 35.41,
+          "id": "iadd1",
+          "side": "opponent",
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790213250516
+    },
+    "gallery-sim-through_ball-1548805818": {
+      "id": "gallery-sim-through_ball-1548805818",
+      "ball": {
+        "x": 37.47,
+        "y": 24.23
+      },
+      "kind": "open_play",
+      "name": "through ball (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 37.47,
+        "centerY": 22.13,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "through_ball",
+        "seed": 1548805818,
+        "tool": "gallery",
+        "planId": "through_ball|range|centre|R|free|stepped|transition|normal|ball|strong|b4"
+      },
+      "players": [
+        {
+          "x": 33.16,
+          "y": 14.85,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 42.17,
+          "y": 15.13,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 32.25,
+          "y": 22.19,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 33.15,
+          "y": 3.09,
+          "id": "i3",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 36.6,
+          "y": 16.32,
+          "id": "i4",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 25.63,
+          "y": 17.02,
+          "id": "i5",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 48.47,
+          "y": 15.39,
+          "id": "i6",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 38.77,
+          "y": 24.38,
+          "id": "i7",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790212829156
+    },
+    "gallery-sim-cutback-548823077": {
+      "id": "gallery-sim-cutback-548823077",
+      "ball": {
+        "x": 24.21,
+        "y": 2.23
+      },
+      "kind": "open_play",
+      "name": "cutback (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 29.11,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "cutback",
+        "seed": 548823077,
+        "tool": "gallery",
+        "planId": "cutback|six|half_space|L|closing|set|settled|normal|between|weak|b5"
+      },
+      "players": [
+        {
+          "x": 28.25,
+          "y": 2.42,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 34.77,
+          "y": 8.09,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 34.98,
+          "y": 3.5,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 28.18,
+          "y": 9.57,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 30.95,
+          "y": 0.49,
+          "id": "i4",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 38.72,
+          "y": 9.42,
+          "id": "i5",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 23.23,
+          "y": 27.71,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 36.38,
+          "y": 18.51,
+          "id": "i7",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 29.69,
+          "y": 7.88,
+          "id": "i8",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 22.91,
+          "y": 2.38,
+          "id": "i9",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 33.57,
+          "y": 16.29,
+          "id": "iadd1",
+          "side": "opponent",
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790212804340
+    },
+    "gallery-sim-long_range-584389306": {
+      "id": "gallery-sim-long_range-584389306",
+      "ball": {
+        "x": 17.28,
+        "y": 33.14
+      },
+      "kind": "open_play",
+      "name": "long_range (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 24.89,
+        "centerY": 16.7,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 584389306,
+        "tool": "gallery",
+        "planId": "long_range|range|centre|R|pressed|stepped|settled|normal|between|even|b5"
+      },
+      "players": [
+        {
+          "x": 20.19,
+          "y": 26.55,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 23.43,
+          "y": 15.07,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 38.93,
+          "y": 19.18,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 28.26,
+          "y": 21.82,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 33.18,
+          "y": 14.54,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 33.39,
+          "y": 3.35,
+          "id": "i5",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 24.5,
+          "y": 27.42,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 24.76,
+          "y": 19.68,
+          "id": "i7",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 34.2,
+          "y": 18.55,
+          "id": "i8",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 15.73,
+          "y": 33.29,
+          "id": "i9",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790212693564
+    },
+    "gallery-sim-long_range-1445785911": {
+      "id": "gallery-sim-long_range-1445785911",
+      "ball": {
+        "x": 31.24,
+        "y": 29.42
+      },
+      "kind": "open_play",
+      "name": "long_range (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 32.18,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 1445785911,
+        "tool": "gallery",
+        "planId": "long_range|range|half_space|L|closing|set|transition|normal|between|strong|b4"
+      },
+      "players": [
+        {
+          "x": 28.78,
+          "y": 20.99,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 39.18,
+          "y": 18.43,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 28.97,
+          "y": 13.55,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 36.46,
+          "y": 13.68,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 20.52,
+          "y": 15.02,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 33.45,
+          "y": 2.65,
+          "id": "i5",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 23.99,
+          "y": 14.29,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 37.7,
+          "y": 17.74,
+          "id": "i7",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 27.89,
+          "y": 23.97,
+          "id": "i8",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 33.21,
+          "y": 17.13,
+          "id": "i9",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 32.54,
+          "y": 29.57,
+          "id": "i10",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790212674292
+    },
+    "gallery-sim-long_range-54338947": {
+      "id": "gallery-sim-long_range-54338947",
+      "ball": {
+        "x": 36.94,
+        "y": 28.23
+      },
+      "kind": "open_play",
+      "name": "long_range (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 33.16,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 54338947,
+        "tool": "gallery",
+        "planId": "long_range|range|wide|L|free|stepped|transition|normal|goal|strong|b4"
+      },
+      "players": [
+        {
+          "x": 39.58,
+          "y": 13.24,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 33.65,
+          "y": 21.27,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 23.21,
+          "y": 28.1,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 37.06,
+          "y": 8.15,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 43.33,
+          "y": 7.9,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 30.58,
+          "y": 6.88,
+          "id": "i5",
+          "side": "opponent",
+          "label": "D6"
+        },
+        {
+          "x": 33.67,
+          "y": 2.19,
+          "id": "i6",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 45.81,
+          "y": 10.35,
+          "id": "i7",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 41.31,
+          "y": 14.6,
+          "id": "i8",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 21.38,
+          "y": 35.46,
+          "id": "i9",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 32.13,
+          "y": 7.09,
+          "id": "i10",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 22.54,
+          "y": 10.76,
+          "id": "i11",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 38.36,
+          "y": 29.33,
+          "id": "i12",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 27.8,
+          "y": 15.08,
+          "id": "iadd1",
+          "side": "teammate",
+          "label": "MATE"
+        },
+        {
+          "x": 40.61,
+          "y": 9.08,
+          "id": "iadd2",
+          "side": "teammate",
+          "label": "MATE"
+        },
+        {
+          "x": 28.04,
+          "y": 12.84,
+          "id": "iadd3",
+          "side": "opponent",
+          "label": "OPP"
+        },
+        {
+          "x": 21.16,
+          "y": 12.87,
+          "id": "iadd4",
+          "side": "opponent",
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790212654228
+    },
+    "gallery-sim-long_range-1603338497": {
+      "id": "gallery-sim-long_range-1603338497",
+      "ball": {
+        "x": 17.25,
+        "y": 32.82
+      },
+      "kind": "open_play",
+      "name": "long_range (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 24.89,
+        "centerY": 16.7,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 1603338497,
+        "tool": "gallery",
+        "planId": "long_range|range|half_space|L|pressed|set|transition|normal|ball|even|b4"
+      },
+      "players": [
+        {
+          "x": 24.33,
+          "y": 15.07,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 38.02,
+          "y": 20.45,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 17.21,
+          "y": 26.85,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 32.86,
+          "y": 36.7,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 32.36,
+          "y": 15.34,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 25.22,
+          "y": 23.63,
+          "id": "i5",
+          "side": "opponent",
+          "label": "D6"
+        },
+        {
+          "x": 33.39,
+          "y": 3.32,
+          "id": "i6",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 24.2,
+          "y": 18.53,
+          "id": "i7",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 34.99,
+          "y": 17.71,
+          "id": "i8",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 23.93,
+          "y": 27.86,
+          "id": "i9",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 15.7,
+          "y": 32.97,
+          "id": "i10",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 14.19,
+          "y": 15.39,
+          "id": "iadd1",
+          "side": "opponent",
+          "label": "OPP"
+        },
+        {
+          "x": 11.77,
+          "y": 19.5,
+          "id": "iadd2",
+          "side": "teammate",
+          "label": "MATE"
+        }
+      ],
+      "updatedAt": 1790212444284
+    },
+    "gallery-sim-long_range-1492608205": {
+      "id": "gallery-sim-long_range-1492608205",
+      "ball": {
+        "x": 35.06,
+        "y": 27.22
+      },
+      "kind": "open_play",
+      "name": "long_range (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 33.36,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 1492608205,
+        "tool": "gallery",
+        "planId": "long_range|range|wide|R|free|stepped|transition|normal|goal|even|b4"
+      },
+      "players": [
+        {
+          "x": 30.23,
+          "y": 22.11,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 37.62,
+          "y": 19.95,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 22.35,
+          "y": 13.97,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 31.02,
+          "y": 14.95,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 39.81,
+          "y": 14.08,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 34.03,
+          "y": 1.6,
+          "id": "i5",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 37.09,
+          "y": 14.67,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 20.45,
+          "y": 14.57,
+          "id": "i7",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 36.36,
+          "y": 27.37,
+          "id": "i8",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 24.85,
+          "y": 21.26,
+          "id": "iadd1",
+          "side": "teammate",
+          "label": "MATE"
+        },
+        {
+          "x": 38.69,
+          "y": 21.43,
+          "id": "iadd2",
+          "side": "teammate",
+          "label": "MATE"
+        }
+      ],
+      "updatedAt": 1790212243284
+    },
+    "gallery-sim-long_range-355600261": {
+      "id": "gallery-sim-long_range-355600261",
+      "ball": {
+        "x": 30.81,
+        "y": 29.97
+      },
+      "kind": "open_play",
+      "name": "long_range (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 32.18,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 355600261,
+        "tool": "gallery",
+        "planId": "long_range|range|centre|L|free|set|transition|normal|ball|even|b4"
+      },
+      "players": [
+        {
+          "x": 24.87,
+          "y": 14.27,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 37.71,
+          "y": 18.49,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 35.11,
+          "y": 14.56,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 28.46,
+          "y": 23.19,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 19.19,
+          "y": 22.43,
+          "id": "i5",
+          "side": "opponent",
+          "label": "D6"
+        },
+        {
+          "x": 33.36,
+          "y": 2.7,
+          "id": "i6",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 23.64,
+          "y": 16.19,
+          "id": "i7",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 35.85,
+          "y": 17.27,
+          "id": "i8",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 23.19,
+          "y": 27.09,
+          "id": "i9",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 32.11,
+          "y": 30.12,
+          "id": "i10",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790212017140
+    },
+    "gallery-sim-long_range-1247036430": {
+      "id": "gallery-sim-long_range-1247036430",
+      "ball": {
+        "x": 31.75,
+        "y": 30.44
+      },
+      "kind": "open_play",
+      "name": "long_range (sim)",
+      "camera": {
+        "facing": "up",
+        "centerX": 32.18,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 1247036430,
+        "tool": "gallery",
+        "planId": "long_range|range|half_space|R|closing|set|transition|normal|between|weak|b4"
+      },
+      "players": [
+        {
+          "x": 29.91,
+          "y": 22.12,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 39.21,
+          "y": 17.73,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 25.73,
+          "y": 13.97,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 36.34,
+          "y": 14.46,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 19.72,
+          "y": 21.65,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 33.55,
+          "y": 2.74,
+          "id": "i5",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 36.61,
+          "y": 18.28,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 23.42,
+          "y": 14.66,
+          "id": "i7",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 33.05,
+          "y": 30.59,
+          "id": "i8",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 23.67,
+          "y": 25.21,
+          "id": "iadd1",
+          "side": "teammate",
+          "label": "MATE"
+        }
+      ],
+      "updatedAt": 1790211999660
+    },
+    "gallery-v-long_range-7211": {
+      "id": "gallery-v-long_range-7211",
+      "ball": {
+        "x": 48.55,
+        "y": 23.38
+      },
+      "kind": "open_play",
+      "name": "long_range",
+      "camera": {
+        "facing": "up",
+        "centerX": 39.1,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 7211,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 42.88,
+          "y": 19.43,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 35.31,
+          "y": 12.97,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 28.39,
+          "y": 9.21,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 39.36,
+          "y": 9.56,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 47.05,
+          "y": 8.62,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 35.32,
+          "y": 0.79,
+          "id": "i5",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 50.83,
+          "y": 8.8,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 50.83,
+          "y": 8.8,
+          "id": "i7",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 50.83,
+          "y": 8.66,
+          "id": "i8",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 33.93,
+          "y": 14.95,
+          "id": "i9",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 47.13,
+          "y": 24.24,
+          "id": "i10",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 27.51,
+          "y": 10.05,
+          "id": "iadd1",
+          "side": "teammate",
+          "label": "MATE"
+        },
+        {
+          "x": 30.53,
+          "y": 31.12,
+          "id": "iadd2",
+          "side": "teammate",
+          "label": "MATE"
+        },
+        {
+          "x": 30.99,
+          "y": 25.64,
+          "id": "iadd3",
+          "side": "opponent",
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790211824955
+    },
+    "gallery-v-long_range-7203": {
+      "id": "gallery-v-long_range-7203",
+      "ball": {
+        "x": 33.8,
+        "y": 30.2
+      },
+      "kind": "open_play",
+      "name": "long_range",
+      "camera": {
+        "facing": "up",
+        "centerX": 32.46,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 7203,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 29.58,
+          "y": 24.78,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 35.14,
+          "y": 20.95,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 21.63,
+          "y": 11.98,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 30.83,
+          "y": 12.65,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 41.63,
+          "y": 10.57,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 32.81,
+          "y": 1.03,
+          "id": "i5",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 25.06,
+          "y": 14.85,
+          "id": "i6",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 39.95,
+          "y": 15.01,
+          "id": "i7",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 34.8,
+          "y": 30.71,
+          "id": "i8",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790211584155
+    },
+    "gallery-v-long_range-7202": {
+      "id": "gallery-v-long_range-7202",
+      "ball": {
+        "x": 31.35,
+        "y": 29.9
+      },
+      "kind": "open_play",
+      "name": "long_range",
+      "camera": {
+        "facing": "up",
+        "centerX": 32.18,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 7202,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 26.78,
+          "y": 19.55,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 39.68,
+          "y": 18.34,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 19.77,
+          "y": 13.84,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 28.73,
+          "y": 12.71,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 38.06,
+          "y": 13.64,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 35.7,
+          "y": 24.15,
+          "id": "i5",
+          "side": "opponent",
+          "label": "D6"
+        },
+        {
+          "x": 33.47,
+          "y": 2.69,
+          "id": "i6",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 25.02,
+          "y": 14.8,
+          "id": "i7",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 37.41,
+          "y": 19.08,
+          "id": "i8",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 27.58,
+          "y": 22.3,
+          "id": "i9",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 32.65,
+          "y": 30.05,
+          "id": "i10",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790211461651
+    },
+    "gallery-v-long_range-7201": {
+      "id": "gallery-v-long_range-7201",
+      "ball": {
+        "x": 36.15,
+        "y": 28.51
+      },
+      "kind": "open_play",
+      "name": "long_range",
+      "camera": {
+        "facing": "up",
+        "centerX": 33.16,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "long_range",
+        "seed": 7201,
+        "tool": "gallery",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 30.82,
+          "y": 18.23,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 36.56,
+          "y": 11.74,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 37.63,
+          "y": 7.18,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 21.44,
+          "y": 7.48,
+          "id": "i3",
+          "side": "opponent",
+          "label": "D4"
+        },
+        {
+          "x": 28.78,
+          "y": 7.36,
+          "id": "i4",
+          "side": "opponent",
+          "label": "D5"
+        },
+        {
+          "x": 46.28,
+          "y": 7.09,
+          "id": "i5",
+          "side": "opponent",
+          "label": "D6"
+        },
+        {
+          "x": 33.11,
+          "y": 0.55,
+          "id": "i6",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 41.53,
+          "y": 16.13,
+          "id": "i7",
+          "side": "teammate",
+          "label": "TARGET"
+        },
+        {
+          "x": 21.43,
+          "y": 8.8,
+          "id": "i8",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 44.88,
+          "y": 8.8,
+          "id": "i9",
+          "side": "teammate",
+          "label": "SUP"
+        },
+        {
+          "x": 31.3,
+          "y": 8.95,
+          "id": "i10",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 37.45,
+          "y": 28.66,
+          "id": "i11",
+          "side": "you",
+          "label": "YOU"
+        },
+        {
+          "x": 22.81,
+          "y": 35.33,
+          "id": "iadd1",
+          "side": "teammate",
+          "label": "MATE"
+        },
+        {
+          "x": 24,
+          "y": 22.29,
+          "id": "iadd2",
+          "side": "opponent",
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1790211383107
+    },
+    "highlight-free_kick-1774706661-base": {
+      "id": "highlight-free_kick-1774706661-base",
+      "ball": {
+        "x": 42.29,
+        "y": 21.84
+      },
+      "kind": "free_kick",
+      "name": "free kick #1774706661",
+      "camera": {
+        "facing": "up",
+        "centerX": 36.72,
+        "centerY": 17.3,
+        "viewHeight": 42
+      },
+      "source": {
+        "kind": "free_kick",
+        "seed": 1774706661,
+        "tool": "highlights",
+        "planId": null
+      },
+      "players": [
+        {
+          "x": 37.69,
+          "y": 13.99,
+          "id": "i0",
+          "side": "opponent",
+          "label": "D1"
+        },
+        {
+          "x": 38.77,
+          "y": 13.61,
+          "id": "i1",
+          "side": "opponent",
+          "label": "D2"
+        },
+        {
+          "x": 39.86,
+          "y": 13.23,
+          "id": "i2",
+          "side": "opponent",
+          "label": "D3"
+        },
+        {
+          "x": 34.77,
+          "y": 0.55,
+          "id": "i3",
+          "side": "opponent",
+          "label": "GK"
+        },
+        {
+          "x": 36.55,
+          "y": 14.32,
+          "id": "i4",
+          "side": "teammate",
+          "label": "POACH"
+        },
+        {
+          "x": 43.1,
+          "y": 22.39,
+          "id": "i5",
+          "side": "you",
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1790012022774
     }
   }
 }

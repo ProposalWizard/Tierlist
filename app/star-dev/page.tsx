@@ -84,6 +84,8 @@ import { kitsFor } from "@/lib/star/kits";
 import { groundFor, crowdFor } from "@/lib/star/stadiums";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
+import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
+import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
 import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
@@ -251,6 +253,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);
   const [trainingTab, setTrainingTab] = useState<"training" | "life">("training");
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
+  /** Which of the 30 levels is being played; null while picking one. */
+  const [trainingLevel, setTrainingLevel] = useState<number | null>(null);
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
   const [contractOfferReason, setContractOfferReason] = useState<"form" | "star" | null>(null);
@@ -633,6 +637,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleTrain = useCallback((skill: keyof Skills) => {
     if (!career || !canAct(career)) return;
     setTrainingSkill(skill);
+    setTrainingLevel(null);
     setPhase("training");
   }, [career]);
 
@@ -673,17 +678,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setCareer(c => (c ? deleteSavedReplay(c, id) : c));
   }, []);
 
-  const handleTrainingComplete = useCallback((xp: number) => {
-    if (!career || !trainingSkill) return;
-    const currentVal = career.skills[trainingSkill];
-    // A younger player gets more out of the same session than a veteran
-    // does — see growthMultiplier's own note; applied here rather than to
-    // `xp` itself so the drill's own scoring (TrainingMinigame.tsx) stays
-    // exactly what it always was.
-    const gain = Math.min(100 - currentVal, Math.round(Math.floor(xp / getTuning("training.minigameXpDivisor")) * growthMultiplier(career.player.age)));
+  const handleTrainingComplete = useCallback((stars: number) => {
+    if (!career || !trainingSkill || trainingLevel === null) return;
+    // Stars, not XP (Mikey, 25 Sep 2026): each NEW star on a level is two
+    // thirds of a point, age makes no difference, and a pass also wins back
+    // points lost to decay or age — see lib/star/trainingLevels.ts.
+    const banked = applyLevelResult(career, trainingSkill, trainingLevel, stars).career;
     const updated: CareerState = {
-      ...career,
-      skills: { ...career.skills, [trainingSkill]: currentVal + gain },
+      ...banked,
       // This is the "trained it" clock decaySkills reads — a session
       // resets it regardless of how much it actually gained, same as
       // real training: showing up is what keeps a skill maintained.
@@ -698,11 +700,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     toastRatingChange(career.starRating, updated.starRating);
     setCareer(spendAction(updated));
     setTrainingSkill(null);
+    setTrainingLevel(null);
     // A youth-team player's week is lived on his own screen, so training
     // from it comes back to it rather than dropping him on the first team's
     // skills page with no obvious way back.
     setPhase(career.placement?.kind === "youth" ? "youth" : "skills");
-  }, [career, trainingSkill]);
+  }, [career, trainingSkill, trainingLevel]);
 
   // Committing to play is what actually banks whatever's left of the week —
   // every unspent action credited as if Rest had been pressed for it (see
@@ -1483,6 +1486,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     });
   }, [career]);
 
+  // Dev: open every training level (one star on each) so any of the 30 can
+  // be played without climbing to it. Keeps any better stars already won.
+  const handleUnlockTraining = useCallback(() => {
+    if (!career) return;
+    const keys: (keyof Skills)[] = ["pace", "power", "technique", "vision", "freeKick"];
+    const trainingStars = { ...(career.trainingStars ?? {}) };
+    for (const k of keys) trainingStars[k] = starsOf(career, k).map(s => Math.max(1, s));
+    setCareer({ ...career, trainingStars });
+  }, [career]);
+
   const handleSetHappiness = useCallback((delta: number) => {
     if (!career) return;
     setCareer({ ...career, happiness: Math.max(0, Math.min(100, delta >= 100 ? 100 : career.happiness + delta)) });
@@ -1541,6 +1554,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setActiveNav(null);
     setTrainingTab("training");
     setTrainingSkill(null);
+    setTrainingLevel(null);
     setLastMatchStats(null);
     setCurrentDilemma(null);
     setContractOfferReason(null);
@@ -2757,16 +2771,28 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "training" && trainingSkill) {
-    // `level` is the whole point of the rebuilt drills: every one of them is
-    // calibrated to the stat it trains, so the same session gets genuinely
-    // harder as that number climbs (see lib/star/trainingDrills.ts). It was
-    // never passed before, which is why training played identically at 5 and
-    // at 95. `skills` goes to the engine's own `launch`, so a strike in
-    // training is the same strike it would be in a match.
+    // Pick a level first (30 per skill, stars on each), then play it. A level
+    // sets its own difficulty and its own fixed picture; `skills` still goes
+    // to the engine's own `launch`, so a strike in training is the same
+    // strike it would be in a match.
+    if (trainingLevel === null) {
+      return (
+        <TrainingLevelSelect
+          career={career}
+          skill={trainingSkill}
+          onPlay={setTrainingLevel}
+          onBack={() => {
+            setTrainingSkill(null);
+            setPhase(career.placement?.kind === "youth" ? "youth" : "skills");
+          }}
+        />
+      );
+    }
     return (
       <TrainingMinigame
+        key={`${trainingSkill}-${trainingLevel}`}
         skill={trainingSkill}
-        level={career.skills[trainingSkill]}
+        trainingLevel={trainingLevel}
         skills={career.skills}
         onComplete={handleTrainingComplete}
       />
@@ -3071,6 +3097,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onSetReputation={handleSetReputation}
         onSetFame={handleSetFame}
         onMaxSkills={handleMaxSkills}
+        onUnlockTraining={handleUnlockTraining}
         onSetHappiness={handleSetHappiness}
         onSwitchClub={handleSwitchClub}
         onSetPortrait={handleSetPortrait}
@@ -3279,7 +3306,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                     : preMatchSelection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
                 >
                   {preMatchSelection.status === "1st Team" ? "Starting Eleven"
-                    : preMatchSelection.status === "Substitute" ? `Bench (on ~${preMatchSelection.onAt}')`
+                    : preMatchSelection.status === "Substitute" ? "Bench (on when the game needs you)"
                       : preMatchSelection.status === "Injured" ? "Injured"
                         : "Out of Squad"}
                 </span>

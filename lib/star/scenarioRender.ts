@@ -370,23 +370,18 @@ export function renderScenario(canvas: HTMLCanvasElement, opts: RenderScenarioOp
   };
 
   const rBase = Math.max(6, unit * 1.0);
-  for (const p of opts.players) {
-    const kit = SIDE_KIT[p.side];
-    footballer(p.x, p.y, rBase, kit.shirt, kit.rim, { star: p.side === "you" });
-    if (p.selected) {
-      const { px, py, scale } = toPx(p.x, p.y);
-      ctx.beginPath();
-      ctx.arc(px, py, rBase * scale * 1.35, 0, Math.PI * 2);
-      ctx.strokeStyle = "#facc15";
-      ctx.lineWidth = Math.max(1.5, rBase * scale * 0.1);
-      ctx.setLineDash([rBase * scale * 0.25, rBase * scale * 0.2]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  // ── Ball — always drawn last, at the human player's feet ──
-  {
+  // Far-to-near by where each man's boots land on screen, so a man standing
+  // behind another is drawn behind him from every camera facing — not in list
+  // order, which put whoever was listed later on top (see CanvasMatch).
+  const byDepth = opts.players
+    .map((p, i) => ({ p, i, py: toPx(p.x, p.y).py }))
+    .sort((a, b) => a.py - b.py || a.i - b.i)
+    .map((e) => e.p);
+  // The ball, drawn in the same far-to-near order as the men — by its spot
+  // on the grass — so a man standing in front of it covers it, exactly as in
+  // the match (CanvasMatch). It used to be drawn last, across whoever was in
+  // front of it.
+  const drawBall = () => {
     const { px, py, scale } = toPx(opts.ball.x, opts.ball.y);
     const bScale = Math.max(4.5, unit * 0.5) * scale;
     ctx.beginPath();
@@ -405,7 +400,25 @@ export function renderScenario(canvas: HTMLCanvasElement, opts: RenderScenarioOp
       ctx.strokeStyle = "#0f172a";
       ctx.stroke();
     }
+  };
+  const ballPy = toPx(opts.ball.x, opts.ball.y).py;
+  let ballDrawn = false;
+  for (const p of byDepth) {
+    if (!ballDrawn && toPx(p.x, p.y).py > ballPy) { drawBall(); ballDrawn = true; }
+    const kit = SIDE_KIT[p.side];
+    footballer(p.x, p.y, rBase, kit.shirt, kit.rim, { star: p.side === "you" });
+    if (p.selected) {
+      const { px, py, scale } = toPx(p.x, p.y);
+      ctx.beginPath();
+      ctx.arc(px, py, rBase * scale * 1.35, 0, Math.PI * 2);
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = Math.max(1.5, rBase * scale * 0.1);
+      ctx.setLineDash([rBase * scale * 0.25, rBase * scale * 0.2]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   }
+  if (!ballDrawn) drawBall();
 
   // ── The camera-picker's frame overlay, if asked for — on top of
   // everything, so it always reads clearly against grass or a player. ──

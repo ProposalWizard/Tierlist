@@ -374,6 +374,35 @@ export const ADMIN_GUIDES = {
     dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel}.tsx · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
   },
 
+  "/star-training-dev": {
+    title: "Training Levels",
+    what: "Play any of the 30 levels of any training game straight away, to see and test what each one is.",
+    buttons: [
+      {
+        group: "The level list",
+        items: [
+          ["Power / Technique / Free Kick / Pace / Vision", "Which training game's levels to show."],
+          ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100."],
+          ["A level tile", "Plays that level. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
+        ],
+      },
+      {
+        group: "While playing",
+        items: [
+          ["‹ All levels", "Back to the list at any time."],
+          ["◀ L13 ▶", "Previous or next level, starting it fresh."],
+          ["Let's go", "Level 1 of each game opens on its how-it-works card first, as in a career."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. No career is touched and no stars are banked; the stars on the tiles are forgotten when you leave the page.",
+    ],
+    inGame: [
+      "Each level here is exactly the level a player gets: Training → pick a skill → pick a level. Same picture, same three tries, same stars.",
+    ],
+    dev: "app/star-training-dev/page.tsx mounts components/star/TrainingMinigame.tsx with trainingLevel = the tile. Levels: lib/star/trainingLevels.ts; drill numbers: lib/star/trainingDrills.ts.",
+  },
   "/star-highlights-dev": {
     title: "Infinite Highlights",
     what: "Real chances straight off the match's own generator, as fast as you can press Next — flag the bad ones and fix them on the spot.",
@@ -571,6 +600,8 @@ export const ADMIN_GUIDES = {
       {
         group: "Feed preview (add ?feed to the address)",
         items: [
+          ["/star-dev/media-lab?trophies", "Shows the Trophy Cabinet filled with every trophy that has a picture, for judging the trophy art."],
+          ["/star-dev/media-lab?training=vision&level=1", "Plays one training level with every skill at 40 (skill = pace, power, technique, vision or freeKick; level 1-30). Level 1 opens on its how-it-works card. Nothing is saved to a career."],
           ["/star-dev/media-lab?feed", "Shows seven fixed sample posts at phone width, drawn exactly the way the phone feed draws them — for judging how a post looks. Nothing to press; scroll to read."],
         ],
       },

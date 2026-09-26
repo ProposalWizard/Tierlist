@@ -1189,11 +1189,28 @@ const WIDE_DELIVERY_X = (side: number) => CX + side * (WIDE_DELIVERY_VIEW.x2 - C
 const CROSS_VIEW_X = VIEW_H;  // metres across the pitch, filling the screen's height
 const CROSS_SWITCH_Y = 15; // …and where the ball has got close enough to cut
 
-function crossViewport(side: number): Viewport {
-  const h = CROSS_VIEW_X;
+/**
+ * A corner's side-on frame: pulled back so the REAL corner flag fits in it.
+ *
+ * Corners used to be taken 6-7.5 m in from the flag, because the fixed 42 m
+ * crossing frame could not hold the flag, room below it to pull back for
+ * power, and the far post all at once. Mikey (25 Sep 2026): "I want it to be
+ * taken from the corner areas" — and, choosing between a moving camera and a
+ * wider one, the wider one. Same far edge as the cross view (so the far post
+ * sits exactly where it always did); the near edge moved out to leave the
+ * flag the same share of the screen to pull back into as the old spot had at
+ * its worst (9 m of 42 = 21%): (77.3 - 67) / 48.3 = 21%. Every figure on a
+ * corner is drawn about 13% smaller as a result — the cost, taken knowingly.
+ */
+const CORNER_VIEW_X = 48.3;
+
+function crossViewport(side: number, across = CROSS_VIEW_X): Viewport {
+  // The far edge is held where the ordinary cross view puts it, so only the
+  // near (touchline) edge moves when the frame is widened for a corner.
+  const far = side > 0 ? PITCH_W + 3 - CROSS_VIEW_X : -3 + CROSS_VIEW_X;
+  const h = across;
   const w = h * VIEW_ASPECT;          // metres up the pitch, filling the width
-  // Held against the touchline you are crossing from.
-  const x1 = side > 0 ? PITCH_W + 3 - h : -3;
+  const x1 = side > 0 ? far : far - h;
   return { x1, x2: x1 + h, y1: -4.5, y2: -4.5 + w };
 }
 
@@ -2614,8 +2631,11 @@ function buildFreeKick(rng: () => number, keeperStrength: number, teamRelationsh
 // relationship to the other. A real ratio needs to be built by hand.
 function buildCorner(rng: () => number, keeperStrength: number, teamRelationship: number) {
   const side = rng() < 0.5 ? -1 : 1;
-  const bx = side > 0 ? PITCH_W - (6 + rng() * 1.5) : 6 + rng() * 1.5;
-  const by = 0.6 + rng() * 0.5;
+  // In the corner arc itself (1 m radius) — see CORNER_VIEW_X for the frame
+  // that makes room for it. Same two rng() draws as the old 6-7.5 m spot, so
+  // nothing else about a seeded corner moves.
+  const bx = side > 0 ? PITCH_W - (0.45 + rng() * 0.3) : 0.45 + rng() * 0.3;
+  const by = 0.45 + rng() * 0.3;
   const to = { x: CX + (rng() - 0.5) * 10, y: 4 + rng() * 5 };
   const from = { x: to.x - side * 2.2, y: to.y + 2.5 + rng() * 1.5 };
 
@@ -2742,7 +2762,7 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
     // Watched from the side, then cut to the ordinary view when it arrives.
     const side = sc.ball.x >= CX ? 1 : -1;
     sc.facing = side > 0 ? "right" : "left";
-    sc.viewport = crossViewport(side);
+    sc.viewport = crossViewport(side, kind === "corner" ? CORNER_VIEW_X : CROSS_VIEW_X);
     sc.crossSwitchY = CROSS_SWITCH_Y;
     sc.crossSwitchView = WIDE_DELIVERY_VIEW;
   }
@@ -2832,9 +2852,19 @@ const SUPPORT_RANGE: Record<ScenarioKind, [number, number]> = {
  * the obvious man, at 90 you have three. It used to draw rings over people
  * instead, which is a HUD feature wearing an attribute's clothes.
  */
-export function supportSeen(vision: number): number {
+export function supportSeen(vision: number, roll = 0.5): number {
   const v = clamp(vision, 0, 100);
-  return v < 40 ? 0 : v < 70 ? 1 : 2;
+  if (v < 40) return 0;
+  // A smooth curve rather than two big steps (Mikey, 25 Sep 2026: "the more
+  // vision you have, the more options you have"). 40 — where a career starts —
+  // is exactly the one man it always was; every 10 points after that is a
+  // quarter of a man on average, so 80 is one extra and 100 is one and a
+  // half. It used to jump to two at 70 and then do nothing up to 100, so
+  // training vision past 70 bought nothing. `roll` (0-1) decides whether a
+  // fraction rounds up.
+  const expected = 1 + (v - 40) / 40;
+  const whole = Math.floor(expected);
+  return whole + (roll < expected - whole ? 1 : 0);
 }
 
 /**
@@ -2986,7 +3016,11 @@ function addSupport(sc: Scenario, rng: () => number, vision = 55) {
   const base = bodyCount(slo, shi, rng);
   // Dead balls are a still frame by design and gain nobody from vision.
   const dead = sc.kind === "penalty" || sc.kind === "free_kick";
-  const want = dead ? base : base + supportSeen(vision);
+  // The round-up roll for supportSeen comes from where the ball is, not from
+  // `rng`: drawing from `rng` here would shift every later placement in every
+  // seeded chance, and a starting player's vision (40) never needs it.
+  const visionRoll = Math.abs(Math.sin(sc.ball.x * 12.9898 + sc.ball.y * 78.233) * 43758.5453) % 1;
+  const want = dead ? base : base + supportSeen(vision, visionRoll);
   // Where a man may stand: the rectangle if this situation already has one, the
   // pitch otherwise.
   const vp = sc.viewport;
@@ -5269,7 +5303,17 @@ const TOUCH_CHASE_CATCH_R = CONTROL_R; // the same "close enough to take it"
  * exactly as the original remap did, and re-checking them here would just
  * be a second copy of the same condition to keep in sync.
  */
-export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number): boolean {
+/**
+ * How fast you chase your own touch, from your pace (Mikey, 25 Sep 2026: pace
+ * should matter when "you kick the ball and then you chase it"). 6.8 m/s at 40,
+ * where a career starts, up to 8.4 m/s at 100. Without a pace the chase keeps
+ * its old flat TOUCH_CHASE_SPEED.
+ */
+export function touchChaseSpeed(pace: number): number {
+  return clamp(6.8 + (clamp(pace, 0, 100) - 40) / 60 * 1.6, 6.0, 8.4);
+}
+
+export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number, speed = TOUCH_CHASE_SPEED): boolean {
   const p = scenario.player;
   const dist = Math.hypot(p.x - ball.pos.x, p.y - ball.pos.y);
   if (!scenario.touchChaseArmed) {
@@ -5277,7 +5321,7 @@ export function stepTouchChase(scenario: Scenario, ball: Ball, dt: number): bool
     else return false; // frozen — let the ball do the separating, unchased
   }
   if (dist > 0.02) {
-    const step = Math.min(dist, TOUCH_CHASE_SPEED * dt);
+    const step = Math.min(dist, speed * dt);
     p.x += ((ball.pos.x - p.x) / dist) * step;
     p.y += ((ball.pos.y - p.y) / dist) * step;
   }

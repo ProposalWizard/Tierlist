@@ -221,8 +221,10 @@ function runSpell(career: CareerState, weeks: number, seed: number): { at: numbe
   const c = inYouth(clubsForDivision("national_league")[0], "national_league");
   const before = youthAbility(c.skills);
   const { end } = runSpell(c, 40, 999);
-  check(youthAbility(end.skills) > before,
-    `forty weeks of youth football makes you better (${before} → ${youthAbility(end.skills)})`);
+  // Matches no longer give skill points, youth or first team (Mikey, 25 Sep
+  // 2026) — a youth player improves by training, like everybody else.
+  check(youthAbility(end.skills) <= before,
+    `forty weeks of youth football alone no longer adds skill points (${before} → ${youthAbility(end.skills)})`);
 }
 
 // ═══════════════════════════════════════════════════════════════════════

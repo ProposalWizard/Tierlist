@@ -1,0 +1,278 @@
+<title>Knowitball Patch Notes Mikey v0.3</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+
+<style>
+  .check{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:6px 14px;margin:0 0 8px}
+  .check li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+  .check li:last-child{border-bottom:0}
+  .check li span{color:var(--ink2)}
+  .pw{margin:8px 0 0;font-size:14px;color:var(--ink2)}
+  .pw b{color:var(--ink)}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 2px}
+  .ba figure{margin:0}
+  .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+  .ba figcaption{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-top:5px;color:var(--ink3)}
+  .ba figure.after figcaption{color:var(--green)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.3</span>
+  <h1>Knowitball Patch Notes Mikey v0.3</h1>
+  <p class="sub">25 September 2026 · branch Mikey · 10 pushed changes + 2 waiting · tests: 171 of 172 passing (the 1 also fails on main)</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>14</b><span>trophies now shown as real pictures, not emoji</span></div>
+  <div class="s"><b>6 m → 0.5 m</b><span>how far corners are taken from the flag</span></div>
+  <div class="s"><b>+35% / −35%</b><span>chances in High / Low energy mode, from the minute you switch</span></div>
+  <div class="s"><b>12</b><span>new long-shot drawings, so long shots get their own rules</span></div>
+</div>
+
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="check n">
+  <li>Players standing behind someone are drawn behind him <span>· any match, corners and crosses show it best</span></li>
+  <li>The ball is hidden behind a player standing in front of it <span>· any match, and the gallery picture</span></li>
+  <li>Corners are taken from the corner flag <span>· any corner in a match, Infinite Highlights, the scenario gallery</span></li>
+  <li>Gallery corner cards: the goal line and touchline stop at the corner, with the quarter circle <span>· /star-gallery-dev, corner chip</span></li>
+  <li>Trophy pictures <span>· Trophy Cabinet, end-of-season awards, feed trophy posts, the Garden cabinet</span></li>
+  <li>Energy mode buttons are icons (red Low, amber Medium, green High) <span>· live commentary during a match</span></li>
+  <li>Switching energy mode changes the match straight away <span>· tap a mode mid-commentary</span></li>
+  <li>Feed posts look like real social media, and you can like them <span>· the phone feed after a match</span></li>
+  <li>KIB cans: Basic +65 energy, Premium = Swerve curve, Elite = Touch Mode <span>· Home, KIB cans panel; the Shop</span></li>
+  <li>Half-time can gives +65 <span>· half-time in a match</span></li>
+  <li>NS-Swerve costs ★35,000, the same as NS-Maestro <span>· Shop, boots</span></li>
+  <li>Gallery "Camera: pick on the whole pitch" button <span>· /star-gallery-dev, under any 11-a-side card's edit row</span></li>
+  <li>Long shots have a rule set <span>· /star-gallery-dev, Long Range chip, Simulate</span></li>
+  <li>Scout Report no longer shows the tactics text box <span>· match day, before the team sheets</span></li>
+  <li>Dashboard energy colours <span>· green 65+, amber 40+, red below</span></li>
+</ul>
+
+<h2 class="fix"><i></i>The headline: what you see on the pitch now matches where people really stand</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Players standing behind someone are no longer drawn on top of him</div>
+    <p class="pw"><b>Problem:</b> at a corner or cross, a striker standing <i>behind</i> his marker was drawn over him, head planted in the marker's shirt, as if standing on top of him. It happened from every camera angle.</p>
+    <p class="pw"><b>Why:</b> players weren't drawn in order of who was nearer. They were drawn in fixed groups (team-mates, runners, defenders, you, then the keeper), and whoever's group came later was always on top.</p>
+    <p class="pw"><b>Fix:</b> every player, and the keeper, is now drawn furthest-first by where his feet touch the grass. Lower on the screen means nearer the camera, from any angle. Same in the scenario gallery picture. <span class="tag seen">seen</span></p>
+    <div class="ba">
+      <figure><img src="v0.3/overlap-before.webp" alt="Before: red striker drawn on top of the white defender in front of him"><figcaption>Before</figcaption></figure>
+      <figure class="after"><img src="v0.3/overlap-after.webp" alt="After: the red defender nearer the camera is drawn in front of you"><figcaption>After</figcaption></figure>
+    </div>
+  </li>
+  <li>
+    <div class="hd">The ball is hidden behind a player standing in front of it</div>
+    <p class="pw"><b>Problem:</b> with a defender standing just in front of you, the ball at your feet was drawn across <i>his</i> head, as if he had it.</p>
+    <p class="pw"><b>Why:</b> the ball was always drawn last, on top of everybody.</p>
+    <p class="pw"><b>Fix:</b> the ball now joins the same nearest-in-front order, placed by its shadow on the grass. Anyone nearer the camera partly covers it. A lofted ball can now pass behind a nearer player, and the landing cross and ball trail sit under the players. <span class="tag seen">seen</span> <span class="tag">not pushed yet</span></p>
+    <div class="ba">
+      <figure><img src="v0.3/ball-before.webp" alt="Before: the ball drawn over the opposing player's head"><figcaption>Before</figcaption></figure>
+      <figure class="after"><img src="v0.3/ball-after.webp" alt="After: the ball partly hidden behind the defender's legs"><figcaption>After</figcaption></figure>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Corners are taken from the corner flag</div>
+    <p class="pw"><b>Problem:</b> corners, in the real game and the gallery, were taken <b>6–7.5 m</b> in from the flag.</p>
+    <p class="pw"><b>Why:</b> on purpose, in the match engine. The corner camera never zoomed out, and it couldn't fit the flag, room to drag back for power, and the far post all at once.</p>
+    <p class="pw"><b>Fix:</b> the ball now starts in the corner arc (<b>0.45–0.75 m</b> from the flag). On corners only, the camera shows <b>48 m</b> of pitch instead of <b>42 m</b>, so players on corners are about <b>13% smaller</b>. The far post sits exactly where it did, and the pull-back room below the ball is the same as the old spot at its worst (<b>21%</b> of the screen). Byline crosses are unchanged. <span class="tag seen">seen</span></p>
+    <p class="pw"><b>And in the gallery:</b> the gallery picture drew the goal line right across the frame and the touchlines the full height of it, with no corner arc. With the ball on the real flag, the corner looked like a spot in the middle of two crossing lines. Both lines now stop at the corner and the 1 m quarter circle is drawn, the same as the match. The gallery cards also now draw the nearer player, and the ball, in front. <span class="tag seen">seen</span> <span class="tag">not pushed yet</span></p>
+    <div class="ba">
+      <figure><img src="v0.3/corner-before.webp" alt="Before: the corner taken well in from the flag"><figcaption>Before</figcaption></figure>
+      <figure class="after"><img src="v0.3/corner-after.webp" alt="After: the corner taken from the corner arc"><figcaption>After</figcaption></figure>
+    </div>
+    <details><summary>Where the change lives</summary><p>This is in <code>lib/star/canvasEngine.ts</code> (<code>buildCorner</code> and a new <code>CORNER_VIEW_X</code>), the file normally kept off-limits. Mikey approved changing it for this. One test that held every chance to a 42 m zoom (<code>support.mts</code>) now allows corners as the one exception.</p></details>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Real trophy pictures everywhere a trophy shows</div>
+    <p class="pw"><b>Problem:</b> every trophy and award was an emoji (🏆 🥇 🏅).</p>
+    <p class="pw"><b>Fix:</b> 14 pictures are now shown in the Trophy Cabinet (including the Ballon d'Or box and each award), on the end-of-season awards cards, in feed posts about a trophy win, and on the Garden's glass shelves (your 6 most recent). Backgrounds were cut out, and each file shrank from about <b>2 MB</b> to <b>27–81 KB</b>. <span class="tag seen">seen</span></p>
+    <details><summary>Still emoji</summary><p>Community Shield, Super Cup, Conference League, European Championship and Play-Offs have no picture yet. Send one and it slots straight in.</p></details>
+  </li>
+  <li>
+    <div class="hd">Like a post in the feed</div>
+    <div class="dt">Tap the heart: it pops pink and the count goes up by one (84 → 85). Tap again to unlike. Saved with the career. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Gallery: "Camera: pick on the whole pitch"</div>
+    <div class="dt">Same as the Scenario Builder: zoom out to the whole pitch, drag the dashed frame, let go, "Done — back to editing". The camera saves with the scenario, and the game frames the chance from there. Left/right facing isn't included yet. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Long shots get their own rule set</div>
+    <p class="pw"><b>Problem:</b> the gallery builds rules for a chance type from saved drawings (5 or more needed), and long range had <b>1</b>, so it had no rules to simulate new ones from.</p>
+    <p class="pw"><b>Fix:</b> <b>12</b> new long-range drawings, each built so a defender steps out 4–8 m to close the shooter, the back line holds 11–15 m out, and the keeper is just off his line toward his near post. Simulate: <b>400 of 400</b> built from the drawings, <b>0</b> rules broken, <b>3.75%</b> with a minor fault. <span class="tag">measured</span></p>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Switching energy mode changes the match straight away</div>
+    <p class="pw"><b>Problem:</b> tapping High or Low mid-commentary carried on the current stretch at the old mode, and High barely did anything.</p>
+    <p class="pw"><b>Why:</b> a new mode only kicked in at the next stretch, and High's extra chances ran into a cap at about <b>+23%</b>.</p>
+    <p class="pw"><b>Fix:</b> a switch re-runs the rest of the stretch from the next minute at the new mode. Everything already on screen stays identical. High now gets an extra share of chances that come only to you. <span class="tag">measured</span> (1,500 simulated matches)</p>
+    <div class="bars">
+      <div class="bar"><span class="lb">Low</span><span class="track"><span class="fill now warn" style="width:47%"></span></span><span class="vv">−35%</span></div>
+      <div class="bar"><span class="lb">Medium</span><span class="track"><span class="fill was" style="width:74%"></span></span><span class="vv">same</span></div>
+      <div class="bar"><span class="lb">High before</span><span class="track"><span class="fill was" style="width:91%"></span></span><span class="vv"><s>+23%</s></span></div>
+      <div class="bar"><span class="lb">High now</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv">+35%</span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Energy mode buttons are icons</div>
+    <div class="dt">A split ring with a lightning bolt, from Mikey's concept images: red Low, amber Medium, green High, with 2/4/6 sparks so the level reads without colour. The chosen one glows, the others dim. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">KIB cans</div>
+    <div class="dt">Basic <b>+25 → +65</b> energy. Half-time can <b>+25 → +65</b> (it's a Basic can). Premium <b>+50 energy → the NS-Swerve curve</b> for your next match. Elite <b>+100 energy → NS-Maestro Touch Mode</b> for your next match. Cans you already own work the new way. The Shop and dashboard say what each does. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">NS-Swerve costs the same as NS-Maestro</div>
+    <div class="dt"><b>★2,300 → ★35,000</b>. Both are whole-ability boots, so both now sit at the top price. <span class="tag">measured</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Swerve before</span><span class="track"><span class="fill was" style="width:7%"></span></span><span class="vv"><s>★2,300</s></span></div>
+      <div class="bar"><span class="lb">Swerve now</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv">★35,000</span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Feed posts look like real social media</div>
+    <div class="dt">Edge to edge with a thin line between posts. Name, tick, handle and time on one line, no category labels, a full action row (replies, reposts, likes, views, share), and graphics under the words like an attached picture. Only the look changed. <span class="tag seen">seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Scout Report: tactics text box hidden</div>
+    <div class="dt">The formation / playstyle / "sit in two banks…" box took too much of the page. Hidden, not deleted. The opponent still sets up that way in the match, and it's one switch to bring back. <span class="tag">not yet seen</span> <span class="tag">not pushed yet</span></div>
+  </li>
+  <li>
+    <div class="hd">Smaller fixes from a check of money, fame, reputation and energy</div>
+    <div class="dt">Dashboard energy colours follow the real selection lines (green 65+ starts, amber 40+ bench, red left out). The dev fame buttons are +10 and Max = 100 (were +1,000 and 100,000). The feed counts the fame you actually see. Voting reads its reputation numbers from the one reputation table. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Google Analytics counts our own test browsers as new UK users <span class="pill p-red">High</span></div>
+    <div class="dt">Most of the ~120 "new users" (118 in the UK, no sign-ups) are likely automated test browsers, because analytics loads on every copy of the site, including local ones. Fix ready: only count the real site and real browsers. Waiting on a yes.</div>
+  </li>
+  <li>
+    <div class="hd">One test file fails on main <span class="pill p-amb">Low</span></div>
+    <div class="dt"><code>authoredChance.mts</code> fails 7 checks after the one-on-one drawing changes on main. Same failures before and after this round's changes. Harry to look.</div>
+  </li>
+  <li>
+    <div class="hd">Pitch drawing fixes not yet seen inside a real career match <span class="pill p-amb">Low</span></div>
+    <div class="dt">Players-in-front, ball-behind and corners were seen in Infinite Highlights, which draws with the same code as the match.</div>
+  </li>
+  <li>
+    <div class="hd">Trial: the dribble stage starts behind its how-to card <span class="pill p-amb">Low</span></div>
+    <div class="dt">The run is already going while the teaching card is still up. The trial's dev skip panel is also open to everyone. Fixes ready, waiting on a yes.</div>
+  </li>
+  <li>
+    <div class="hd">Scenario editor "ball at your feet" was undone <span class="pill p-amb">Low</span></div>
+    <div class="dt">Shipped, then reverted by Harry because the ball locked to your right side. The ball is placed on its own again.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Pictures for the last 5 trophies</div><div class="dt">Waiting on: images.</div></li>
+  <li><div class="hd">Home page as three swipeable pages (stats left, contract and wages right)</div><div class="dt">Waiting on: a decision to build.</div></li>
+  <li><div class="hd">Gallery camera picker for left/right-facing chances</div><div class="dt">Waiting on: a decision to build.</div></li>
+  <li><div class="hd">App Store / Play Store app via Capacitor</div><div class="dt">Waiting on: a decision; notes kept for when it comes up.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>
