@@ -48,11 +48,6 @@ const DEAD_BALL = new Set<ScenarioKind>(["penalty", "free_kick", "corner"]);
  *  back-line spacing. A box scene shows markers in different zones instead. */
 const LINE_KINDS = new Set<ScenarioKind>(["long_range", "through_ball"]);
 
-/** How far out a long shot is still a long shot (Harry, 26 Sep 2026:
- *  "17-25m, occasionally up to 30"). Measured straight out, like every
- *  other depth in this file. */
-export const LONG_RANGE_MAX_M = 30;
-
 /** How close to the line of your shot a team-mate has to be before he is
  *  genuinely in the way. The same radius chanceFormula.ts uses for the same
  *  job, so the base and the formula agree about what "in the way" means. */
@@ -196,11 +191,7 @@ export function scenarioFaults(sc: Scenario): string[] {
     if (!sc.defenders.some(d => Math.abs(d.x - CX) <= 6.5)) out.push("empty central channel");
   }
 
-  // How far out a line is still judged. A long shot's own ruleset
-  // (kindRules/longRange.ts) serves it from 17-30m, so its line is judged
-  // over that whole range; the old 25m gate saw ~5% of served long shots.
-  const holeGate = sc.kind === "long_range" ? LONG_RANGE_MAX_M : 25;
-  if (LINE_KINDS.has(sc.kind) && dist <= holeGate && sc.defenders.length >= 2) {
+  if (LINE_KINDS.has(sc.kind) && dist <= 25 && sc.defenders.length >= 2) {
     const deepest = Math.min(...sc.defenders.map(d => d.y));
     const lineMen = sc.defenders.filter(d => d.y - deepest <= 4).map(d => d.x).sort((a, b) => a - b);
     for (let i = 1; i < lineMen.length; i++) {
@@ -208,7 +199,7 @@ export function scenarioFaults(sc: Scenario): string[] {
     }
   }
 
-  if (sc.defenders.some(d => d.y < sc.keeper.y)) out.push("defender behind his own keeper");
+  if (sc.defenders.some(d => d.y < sc.keeper.y && !isPostMan(sc, d))) out.push("defender behind his own keeper");
 
   return out;
 }
@@ -222,6 +213,20 @@ export function scenarioFaults(sc: Scenario): string[] {
  *
  * Returns the list of repairs made, for tests and for the gallery to show.
  */
+/**
+ * A corner's man on the post: on or just off the goal line, inside the
+ * six-yard box's width. Goal-side of his keeper on purpose — the keeper comes
+ * off his line to claim, the post man covers behind him.
+ *
+ * Harry's corner drawings, 26 Sep 2026: 6 of 9 have one (y 0 to 2 m, from
+ * inside the far post to 4 m outside the near one). "Defender behind his own
+ * keeper" was a rule for open play that the drawings disagree with, so a
+ * corner's post man is neither a fault nor something to repair.
+ */
+export function isPostMan(sc: Scenario, d: { x: number; y: number }): boolean {
+  return sc.kind === "corner" && d.y <= 2.5 && Math.abs(d.x - CX) <= 9.16;
+}
+
 /**
  * YOUR OWN TEAM-MATES DO NOT STAND IN FRONT OF YOUR SHOT.
  *
@@ -285,7 +290,7 @@ export function fixBaseScenario(sc: Scenario): string[] {
 
   // A defender cannot be goal-side of his own goalkeeper.
   for (const d of sc.defenders) {
-    if (d.y < sc.keeper.y) {
+    if (d.y < sc.keeper.y && !isPostMan(sc, d)) {
       d.y = sc.keeper.y + 2.2;
       done.push("moved a defender out from behind his own keeper");
     }

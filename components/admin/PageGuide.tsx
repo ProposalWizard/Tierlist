@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ADMIN_GUIDES, type AdminGuide, type GuidePage } from "@/lib/adminGuides";
 
@@ -29,12 +29,71 @@ import { ADMIN_GUIDES, type AdminGuide, type GuidePage } from "@/lib/adminGuides
  */
 
 type Corner = "bottom-right" | "bottom-left" | "top-right";
+/** Where the eye may sit. `top-left` and `tucked` are only ever chosen by the
+ *  phone's free-corner search, never asked for by a page. */
+type Spot = Corner | "top-left" | "tucked";
 
-const CORNER: Record<Corner, string> = {
+const CORNER: Record<Spot, string> = {
   "bottom-right": "right-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
   "bottom-left": "left-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
   "top-right": "right-2 top-2",
+  "top-left": "left-2 top-2",
+  // Mostly off the right edge: 16 px showing, in the page's own gutter.
+  "tucked": "-right-6 top-[58%]",
 };
+const SPOTS: Spot[] = ["bottom-right", "bottom-left", "top-right", "top-left"];
+
+/**
+ * ON A PHONE THE EYE MOVES OUT OF THE WAY.
+ *
+ * A fixed corner covers something on almost every game screen on a phone —
+ * found by a phone audit (26 Sep 2026): Remove in the Infinite Match editor,
+ * Close in the gallery's ⋯ sheet, Next → while simulating, SECOND HALF → at
+ * half-time, the POWER % on the strike screen, values on the Play Area and
+ * the bicycle sandbox. So below this width the eye checks what is under each
+ * corner a few times a second and sits in the first one with nothing to press
+ * or read under it (the page's own `corner` first). If every corner is busy
+ * (a long form of sliders and inputs), it tucks mostly off the right edge,
+ * 16 px showing in the page's gutter, unless a corner costs less. A laptop
+ * keeps the page's chosen corner.
+ */
+const FREE_CORNER_BELOW_PX = 768;
+const EYE_PX = 40;
+const EDGE_PX = 8;
+/** How much of a tucked eye still shows at the right edge. */
+const TUCK_SHOW_PX = 16;
+
+/** How much is under this corner: nine points, each weighted by what it lands
+ *  on — see `weight`. 0 is a clear corner. */
+function busyAt(spot: Spot): number {
+  const tucked = spot === "tucked";
+  const w = tucked ? TUCK_SHOW_PX : EYE_PX;
+  const x0 = tucked ? window.innerWidth - TUCK_SHOW_PX
+    : spot.endsWith("left") ? EDGE_PX : window.innerWidth - EDGE_PX - EYE_PX;
+  const y0 = tucked ? window.innerHeight * 0.58
+    : spot.startsWith("top") ? EDGE_PX : window.innerHeight - EDGE_PX - EYE_PX;
+  let busy = 0;
+  for (const fx of [0.15, 0.5, 0.85]) {
+    for (const fy of [0.15, 0.5, 0.85]) {
+      const under = document.elementsFromPoint(x0 + w * fx, y0 + EYE_PX * fy)
+        .find((el) => !el.closest("[data-page-guide]"));
+      if (under) busy += weight(under);
+    }
+  }
+  return busy;
+}
+
+/** What covering this would cost. A control is worst (4): covering Back or
+ *  Next is the complaint. Words next (2). The pitch or a picture least (1):
+ *  when every corner is busy, the eye would rather sit on the edge of the
+ *  grass than on a button. A bare background panel costs nothing. */
+function weight(el: Element): number {
+  if (el === document.body || el === document.documentElement) return 0;
+  if (el.closest("button, a, input, select, textarea, label, [role=button]")) return 4;
+  if (Array.from(el.childNodes).some((n) => n.nodeType === 3 && (n.textContent ?? "").trim().length > 0)) return 2;
+  if (el.closest("canvas, svg, img")) return 1;
+  return 0;
+}
 
 const NO_COMMIT = "Nothing on this page commits to the repo.";
 
@@ -48,6 +107,8 @@ export default function PageGuide({
   corner?: Corner;
 }) {
   const [open, setOpen] = useState(false);
+  const [spot, setSpot] = useState<Spot>(corner);
+  const spotRef = useRef<Spot>(corner);
   // createPortal needs a real document, which does not exist during SSR.
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -61,6 +122,37 @@ export default function PageGuide({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onKey]);
 
+  // The phone's free-corner search — see FREE_CORNER_BELOW_PX.
+  useEffect(() => {
+    if (!mounted || open) return;
+    const move = (to: Spot) => { if (to !== spotRef.current) { spotRef.current = to; setSpot(to); } };
+    const pick = () => {
+      if (window.innerWidth >= FREE_CORNER_BELOW_PX) { move(corner); return; }
+      // Stay put while the current corner is clear, so it doesn't wander —
+      // but a tucked eye comes back out as soon as a corner is free.
+      const cur = spotRef.current;
+      const curBusy = busyAt(cur);
+      if (curBusy === 0 && cur !== "tucked") return;
+      const order: Spot[] = [corner, ...SPOTS.filter((s) => s !== corner), "tucked"];
+      let best = cur, bestBusy = curBusy;
+      for (const s of order) {
+        const b = busyAt(s);
+        if (b === 0 && s !== "tucked") { move(s); return; }
+        if (b < bestBusy) { best = s; bestBusy = b; }
+      }
+      move(best);
+    };
+    pick();
+    const id = window.setInterval(pick, 400);
+    window.addEventListener("scroll", pick, { passive: true });
+    window.addEventListener("resize", pick);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("scroll", pick);
+      window.removeEventListener("resize", pick);
+    };
+  }, [mounted, open, corner]);
+
   const g: AdminGuide | undefined = ADMIN_GUIDES[page];
   if (!mounted || !g) return null;
 
@@ -71,7 +163,7 @@ export default function PageGuide({
         onClick={() => setOpen(true)}
         aria-label="How this page works"
         title="How this page works"
-        className={`fixed z-[95] grid h-9 w-9 place-items-center rounded-full border border-sky-400/50 bg-gray-950/85 text-sky-300 shadow-lg shadow-black/50 backdrop-blur transition hover:border-sky-300 hover:text-white ${CORNER[corner]} ${open ? "pointer-events-none opacity-0" : "opacity-90"}`}
+        className={`fixed z-[95] grid h-10 w-10 place-items-center rounded-full border border-sky-400/50 bg-gray-950/85 text-sky-300 shadow-lg shadow-black/50 backdrop-blur transition hover:border-sky-300 hover:text-white ${CORNER[spot]} ${spot === "tucked" ? "justify-items-start pl-px" : ""} ${open ? "pointer-events-none opacity-0" : "opacity-90"}`}
       >
         <EyeIcon />
       </button>

@@ -60,7 +60,10 @@ export default function StarAttackDevPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-5xl px-3 py-4 flex flex-col lg:flex-row gap-6">
-        <div className="flex-1 flex flex-col items-center gap-3">
+        {/* w-full: this column centres its child, and LiveAttack sizes its
+            pitch from its own width — without it the pitch shrank to 203 px
+            on a 390 px phone. */}
+        <div className="flex-1 flex flex-col items-center gap-3 [&>*]:w-full">
           <LiveAttack
             key={runKey}
             skills={{ power, technique }}
@@ -82,7 +85,7 @@ export default function StarAttackDevPage() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setKindMode("random")}
-                className={`col-span-2 rounded-lg py-1.5 text-sm font-bold ${
+                className={`min-h-[40px] col-span-2 rounded-lg py-1.5 text-sm font-bold ${
                   kindMode === "random" ? "bg-sky-500 text-sky-950" : "bg-white/10 text-white/70"
                 }`}
               >
@@ -92,7 +95,7 @@ export default function StarAttackDevPage() {
                 <button
                   key={k}
                   onClick={() => setKindMode(k)}
-                  className={`rounded-lg py-1.5 text-xs font-bold ${
+                  className={`min-h-[40px] rounded-lg py-1.5 text-xs font-bold ${
                     kindMode === k ? "bg-emerald-500 text-emerald-950" : "bg-white/10 text-white/70"
                   }`}
                 >

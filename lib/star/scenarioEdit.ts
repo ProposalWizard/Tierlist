@@ -462,16 +462,88 @@ export function frameToMatchScenario(target: SaveTarget, frame: Frame): MatchSce
   };
 }
 
+/**
+ * Which base figure each saved player is — by slot number when the slots
+ * still line up, by ROLE when they don't.
+ *
+ * A saved card stores who stood where as slot numbers into the picture its
+ * seed builds (defenders, keeper, team-mates, you — frameFromScenario's
+ * order). When that base picture changes shape after the save — a builder
+ * change, a drawing added to the pool — the slots shift, and a slot-number
+ * load puts YOU on the poacher's spot and a team-mate in goal. Measured
+ * 26 Sep 2026: 6 of 14 saved one-on-one cards and both saved midfield passes
+ * were loading like that. So a card whose slots no longer line up is matched
+ * by role instead: keeper to keeper, you to you, defenders in order,
+ * team-mates by label then in order. Anyone left over on the saved side is
+ * added; anyone left over on the base side was not in the picture.
+ *
+ * A card whose slots do line up keeps its slot numbers exactly, so every
+ * card that loads right today loads identically.
+ */
+function savedIdMap(ms: MatchScenario, base: Item[]): Map<number, string> {
+  const map = new Map<number, string>();
+  const num = (p: { id: string }, i: number) => {
+    const id = p.id.startsWith("i") ? p.id.slice(1) : String(i);
+    return /^\d+$/.test(id) ? id : null;
+  };
+  // The saved keeper: the last builder-slot opponent (defenders come first,
+  // the keeper straight after them; added opponents have no slot number).
+  let savedKeeper = -1;
+  ms.players.forEach((p, i) => { if (p.side === "opponent" && num(p, i) !== null) savedKeeper = i; });
+  const baseKeeper = base.findIndex((it) => it.keeper);
+  const lined = ms.players.every((p, i) => {
+    const id = num(p, i);
+    if (id === null) return true;
+    const it = base[Number(id)];
+    if (!it || it.side !== p.side) return false;
+    return (i === savedKeeper) === (Number(id) === baseKeeper);
+  });
+  if (lined) {
+    ms.players.forEach((p, i) => { const id = num(p, i); if (id !== null) map.set(i, id); });
+    return map;
+  }
+  const used = new Set<number>();
+  const take = (j: number, i: number) => { used.add(j); map.set(i, String(j)); };
+  ms.players.forEach((p, i) => {
+    if (num(p, i) === null) return;
+    if (i === savedKeeper && baseKeeper >= 0) take(baseKeeper, i);
+    else if (p.side === "you") { const j = base.findIndex((it) => it.side === "you"); if (j >= 0) take(j, i); }
+  });
+  // Team-mates with the same label first (TARGET to TARGET, POACH to POACH).
+  ms.players.forEach((p, i) => {
+    if (map.has(i) || num(p, i) === null || p.side !== "teammate") return;
+    const j = base.findIndex((it, k) => !used.has(k) && it.side === "teammate" && it.look.label === p.label);
+    if (j >= 0) take(j, i);
+  });
+  ms.players.forEach((p, i) => {
+    if (map.has(i) || num(p, i) === null) return;
+    const j = base.findIndex((it, k) => !used.has(k) && !it.keeper && it.side === p.side);
+    if (j >= 0) take(j, i);
+  });
+  return map;
+}
+
 /** The saved positions, back as the index-keyed override — so a saved
- *  scenario is applied through the exact same path a live drag is. */
+ *  scenario is applied through the exact same path a live drag is. Pass the
+ *  base picture's items (not just their count) so a card saved against an
+ *  older shape of its base still lands on the right figures — see savedIdMap. */
 export function overrideFromMatchScenario(
-  ms: MatchScenario, baseCount: number, baseCamera?: Viewport, baseFacing?: Frame["facing"],
+  ms: MatchScenario, baseItems: number | Item[], baseCamera?: Viewport, baseFacing?: Frame["facing"],
 ): PosOverride {
+  const baseCount = typeof baseItems === "number" ? baseItems : baseItems.length;
+  const idMap = typeof baseItems === "number" ? null : savedIdMap(ms, baseItems);
   const items: Record<string, Vec2> = {};
   const added: { id: string; side: ScenarioSide }[] = [];
   const seenBase = new Set<string>();
+  let extra = 0;
   ms.players.forEach((p, i) => {
-    const id = p.id.startsWith("i") ? p.id.slice(1) : String(i);
+    let id = p.id.startsWith("i") ? p.id.slice(1) : String(i);
+    if (idMap && /^\d+$/.test(id)) {
+      const mapped = idMap.get(i);
+      // A saved figure with no base figure left to be: it is in the picture,
+      // so it comes back as an added one.
+      id = mapped ?? `addsaved${++extra}`;
+    }
     items[id] = { x: p.x, y: p.y };
     if (/^\d+$/.test(id)) seenBase.add(id);
     else added.push({ id, side: p.side });

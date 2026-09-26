@@ -302,7 +302,7 @@ function RewardSection({
           const frameStyle = showImage ? (FRAME_STYLES[r.id] ?? null) : null;
 
           return (
-            <div key={r.id} className="px-5 py-3">
+            <div key={r.id} className="px-4 py-3 sm:px-5">
               {isEditing ? (
                 <RewardForm
                   form={editForm}
@@ -312,7 +312,7 @@ function RewardSection({
                   saving={saving}
                 />
               ) : (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   {/* Image preview for frames */}
                   {frameStyle?.image && (
                     <div className="relative w-10 h-14 rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/10">
@@ -321,11 +321,11 @@ function RewardSection({
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2">
                       <span className="font-bold text-white text-sm">{r.name}</span>
-                      <span className="text-[10px] text-white font-mono">{r.id}</span>
+                      <span className="break-all text-[11px] text-white font-mono sm:text-[10px]">{r.id}</span>
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5 text-xs text-white">
+                    <div className="flex flex-wrap items-center gap-x-3 mt-0.5 text-xs text-white">
                       <span className={`font-bold ${rarityColor(r.rarity)}`}>{r.rarity}</span>
                       <span>
                         {r.unlock_type === "level" ? `Level ${r.unlock_value}` : `${r.unlock_value} ${r.unlock_stat}`}
@@ -380,7 +380,7 @@ function RewardForm({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {isNew && (
           <div>
-            <label className="block text-[10px] font-bold text-white uppercase mb-1">ID</label>
+            <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">ID</label>
             <input
               value={form.id ?? ""}
               onChange={(e) => set("id", e.target.value)}
@@ -390,7 +390,7 @@ function RewardForm({
           </div>
         )}
         <div>
-          <label className="block text-[10px] font-bold text-white uppercase mb-1">Name</label>
+          <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Name</label>
           <input
             value={form.name ?? ""}
             onChange={(e) => set("name", e.target.value)}
@@ -398,7 +398,7 @@ function RewardForm({
           />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-white uppercase mb-1">Category</label>
+          <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Category</label>
           <select
             value={form.category ?? "frame"}
             onChange={(e) => set("category", e.target.value)}
@@ -410,7 +410,7 @@ function RewardForm({
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-white uppercase mb-1">Rarity</label>
+          <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Rarity</label>
           <select
             value={form.rarity ?? "bronze"}
             onChange={(e) => set("rarity", e.target.value)}
@@ -425,7 +425,7 @@ function RewardForm({
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
-          <label className="block text-[10px] font-bold text-white uppercase mb-1">Unlock Type</label>
+          <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Unlock Type</label>
           <select
             value={form.unlock_type ?? "level"}
             onChange={(e) => set("unlock_type", e.target.value)}
@@ -436,7 +436,7 @@ function RewardForm({
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-white uppercase mb-1">Unlock Stat</label>
+          <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Unlock Stat</label>
           <select
             value={form.unlock_stat ?? "level"}
             onChange={(e) => set("unlock_stat", e.target.value)}
@@ -454,7 +454,7 @@ function RewardForm({
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-white uppercase mb-1">Unlock Value</label>
+          <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Unlock Value</label>
           <input
             type="number"
             value={form.unlock_value ?? ""}
@@ -463,7 +463,7 @@ function RewardForm({
           />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-white uppercase mb-1">Sort Order</label>
+          <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Sort Order</label>
           <input
             type="number"
             value={form.sort_order ?? ""}
@@ -473,7 +473,7 @@ function RewardForm({
         </div>
       </div>
       <div>
-        <label className="block text-[10px] font-bold text-white uppercase mb-1">Description</label>
+        <label className="block text-[11px] font-bold text-white uppercase mb-1 sm:text-[10px]">Description</label>
         <input
           value={form.description ?? ""}
           onChange={(e) => set("description", e.target.value || null)}
@@ -574,12 +574,12 @@ function XPAwardsTab() {
       </div>
       <div className="divide-y divide-gray-800/30">
         {awards.sort(([, a], [, b]) => b - a).map(([key, xp]) => (
-          <div key={key} className="flex items-center justify-between px-5 py-3">
-            <div>
+          <div key={key} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+            <div className="min-w-0">
               <span className="text-sm text-white font-medium">{labels[key] ?? key}</span>
-              <span className="text-xs text-white ml-2 font-mono">{key}</span>
+              <span className="text-xs text-white ml-2 font-mono break-all">{key}</span>
             </div>
-            <span className="text-sm font-black text-amber-400">+{xp} XP</span>
+            <span className="shrink-0 whitespace-nowrap text-sm font-black text-amber-400">+{xp} XP</span>
           </div>
         ))}
       </div>
