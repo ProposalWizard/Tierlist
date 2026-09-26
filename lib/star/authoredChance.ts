@@ -351,7 +351,11 @@ export function randomiseAuthored(
   for (const scale of ATTEMPT_SCALE) {
     // The ball and you travel as one rigid pair, so the stance between you
     // survives; everyone else is nudged independently.
-    const shift = scale === 0 ? { x: 0, y: 0 } : nudge({ x: 0, y: 0 }, BALL_JITTER_M * scale, rng);
+    // A corner's ball sits on the flag: the open-play nudge put it off the
+    // pitch in 34.2% of served corners (behind the goal line or over the
+    // touchline). The taker stays with it, so neither moves.
+    const deadBall = (base.source?.kind ?? base.kind) === "corner";
+    const shift = scale === 0 || deadBall ? { x: 0, y: 0 } : nudge({ x: 0, y: 0 }, BALL_JITTER_M * scale, rng);
     const cand: ShapeSample = {
       ball: { x: s0.ball.x + shift.x, y: s0.ball.y + shift.y },
       you: { x: s0.you.x + shift.x, y: s0.you.y + shift.y },
@@ -489,6 +493,23 @@ const mix32 = (n: number): number => {
  *
  * Returns what actually landed, for the caller's own log.
  */
+/** A corner, watched from the side (the builder's crossViewport turn). */
+function isTurnedDeadBall(sc: Scenario): boolean {
+  return sc.kind === "corner" && (sc.facing === "left" || sc.facing === "right");
+}
+
+/** The same drawing taken from the other flag: every x reflected across the
+ *  pitch's centre line, depth untouched. */
+function mirrorShape(s: AuthoredShape): AuthoredShape {
+  const m = (v: Vec2): Vec2 => ({ x: PITCH_W - v.x, y: v.y });
+  return {
+    ...s,
+    ball: m(s.ball), you: m(s.you), keeper: m(s.keeper),
+    defenders: s.defenders.map(m), mates: s.mates.map(m),
+    camera: { ...s.camera, centerX: PITCH_W - s.camera.centerX },
+  };
+}
+
 export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   defendersPlaced: number; matesPlaced: number;
   /** Leftover live figures moved because they broke a law — see below. */
@@ -496,6 +517,20 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   /** Leftover defenders taken out because no legal spot was found nearby. */
   removed: number;
 } {
+  // ── A CORNER IS FILMED FROM ITS OWN FLAG ──
+  //
+  // The builder picks a flag at random and turns the camera to it; a drawing
+  // carries its own flag. Laying a right-flag drawing over a left-flag build
+  // kept the LEFT turn and camera — measured: 50.2% of served corners filmed
+  // from the wrong side, the taker drawn up in the top third, and the
+  // builder's leftover bodies stranded on the far side (519 in 2,000). Harry
+  // and Mikey saw it as "the camera issue" on corners.
+  //
+  // So the drawing is mirrored onto the builder's flag instead (x → pitch
+  // width − x; nothing about depth changes). The builder's turn, frame and
+  // leftovers then all agree with it, and every drawing now serves both
+  // flags, which doubles the variety from the same drawings.
+  if (isTurnedDeadBall(sc) && (shape.ball.x >= CX) !== (sc.ball.x >= CX)) shape = mirrorShape(shape);
   sc.ball.x = shape.ball.x; sc.ball.y = shape.ball.y;
   sc.player.x = shape.you.x; sc.player.y = shape.you.y;
   sc.keeper.x = shape.keeper.x; sc.keeper.y = shape.keeper.y;
@@ -548,13 +583,27 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   // The drawing was framed as well as placed, so the camera comes with it —
   // and because every figure is inside that frame by construction, the
   // camera's own clamp has nothing to pull back in.
-  const half = shape.camera.viewHeight / 2;
-  const aspect = (sc.viewport.x2 - sc.viewport.x1) / (sc.viewport.y2 - sc.viewport.y1 || 1);
-  const halfW = half * aspect;
-  sc.viewport = {
-    x1: shape.camera.centerX - halfW, x2: shape.camera.centerX + halfW,
-    y1: shape.camera.centerY - half, y2: shape.camera.centerY + half,
-  };
+  //
+  // A turned corner keeps the builder's frame SIZE and only takes the drawn
+  // centre. A saved camera's height is forced to 42m on load
+  // (normaliseScenarioCamera), which is the long side of an upright frame but
+  // the SHORT side of a turned one — applied here it widened a corner to
+  // 67.2m across instead of 48.3m, every figure drawn about 28% smaller.
+  if (isTurnedDeadBall(sc)) {
+    const hw = (sc.viewport.x2 - sc.viewport.x1) / 2, hh = (sc.viewport.y2 - sc.viewport.y1) / 2;
+    sc.viewport = {
+      x1: shape.camera.centerX - hw, x2: shape.camera.centerX + hw,
+      y1: shape.camera.centerY - hh, y2: shape.camera.centerY + hh,
+    };
+  } else {
+    const half = shape.camera.viewHeight / 2;
+    const aspect = (sc.viewport.x2 - sc.viewport.x1) / (sc.viewport.y2 - sc.viewport.y1 || 1);
+    const halfW = half * aspect;
+    sc.viewport = {
+      x1: shape.camera.centerX - halfW, x2: shape.camera.centerX + halfW,
+      y1: shape.camera.centerY - half, y2: shape.camera.centerY + half,
+    };
+  }
 
   return { defendersPlaced, matesPlaced, relocated, removed };
 }

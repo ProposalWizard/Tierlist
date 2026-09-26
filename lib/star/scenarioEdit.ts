@@ -21,6 +21,7 @@
 
 import { goalInView, type Scenario, type Vec2, type Viewport } from "./canvasEngine";
 import type { FigureLook } from "./fiveASide/render";
+import { CX, PITCH_W } from "./pitch";
 import type {
   MatchScenario,
   ScenarioMomentKind,
@@ -53,6 +54,10 @@ export interface PosOverride {
    *  made from a live chance keeps the match's camera (lib/star/liveEdit.ts),
    *  so everyone who was on screen in the match is on screen on the card. */
   camera?: Viewport;
+  /** A corner's flag, when it is not the base picture's own — "Swap flag" in
+   *  the gallery mirrors the whole picture onto the other corner. The turn
+   *  follows the flag (scenarioFrame.ts's `frameFacing`). */
+  facing?: "left" | "right";
 }
 
 export type EditStore = Record<string, PosOverride>;
@@ -65,6 +70,7 @@ export function hasEdits(ov: PosOverride | undefined): boolean {
     || !!ov.removed?.length
     || !!ov.added?.length
     || !!ov.camera
+    || !!ov.facing
   );
 }
 
@@ -77,6 +83,7 @@ export function cloneOverride(ov: PosOverride | undefined): PosOverride {
     removed: ov?.removed ? [...ov.removed] : undefined,
     added: ov?.added ? ov.added.map((a) => ({ ...a })) : undefined,
     camera: ov?.camera ? { ...ov.camera } : undefined,
+    facing: ov?.facing,
   };
 }
 
@@ -98,8 +105,10 @@ export function mergeOverrides(ovs: (PosOverride | undefined)[]): PosOverride | 
   const added: { id: string; side: ScenarioSide }[] = [];
   let ball: Vec2 | undefined;
   let camera: Viewport | undefined;
+  let facing: PosOverride["facing"];
   for (const ov of real) {
     if (ov.camera) camera = { ...ov.camera };
+    if (ov.facing) facing = ov.facing;
     for (const k of Object.keys(ov.items)) items[k] = { ...ov.items[k] };
     for (const r of ov.removed ?? []) removed.add(r);
     for (const a of ov.added ?? []) if (!added.some((x) => x.id === a.id)) added.push({ ...a });
@@ -111,6 +120,33 @@ export function mergeOverrides(ovs: (PosOverride | undefined)[]): PosOverride | 
     removed: removed.size ? Array.from(removed) : undefined,
     added: added.length ? added : undefined,
     camera,
+    facing,
+  };
+}
+
+/**
+ * SWAP FLAG — the same corner taken from the other side.
+ *
+ * Asked for directly (Harry, 26 Sep 2026): "a way to choose which side it's
+ * being taken from in the editor". Every figure, the ball and the camera are
+ * reflected across the pitch's centre line (x → width − x); depth is
+ * untouched, and the turn flips with the flag. Built from the picture as it
+ * stands, so a second press swaps it straight back.
+ */
+export function mirrorOverride(frame: Frame, ov: PosOverride | undefined): PosOverride {
+  const cur = applyOverride(frame, ov);
+  const m = (v: Vec2): Vec2 => ({ x: PITCH_W - v.x, y: v.y });
+  const items: Record<string, Vec2> = {};
+  for (const it of cur.items) items[it.id] = m(it.at);
+  const c = cur.camera;
+  const facing = cur.facing === "left" ? "right" : cur.facing === "right" ? "left" : undefined;
+  return {
+    items,
+    ball: m(cur.ball),
+    removed: ov?.removed ? [...ov.removed] : undefined,
+    added: ov?.added ? ov.added.map((a) => ({ ...a })) : undefined,
+    camera: { x1: PITCH_W - c.x2, x2: PITCH_W - c.x1, y1: c.y1, y2: c.y2 },
+    facing,
   };
 }
 
@@ -159,7 +195,8 @@ export function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame 
     });
   }
   const ball = ov!.ball ? { ...ov!.ball } : frame.ball;
-  return ov!.camera ? { ...frame, items, ball, camera: { ...ov!.camera } } : { ...frame, items, ball };
+  const out: Frame = ov!.camera ? { ...frame, items, ball, camera: { ...ov!.camera } } : { ...frame, items, ball };
+  return ov!.facing ? { ...out, facing: ov!.facing } : out;
 }
 
 /**
@@ -183,6 +220,7 @@ export const OFF_PITCH: Vec2 = { x: -400, y: 400 };
 export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefined): void {
   if (!hasEdits(ov)) return;
   if (ov!.camera) sc.viewport = { ...ov!.camera };
+  if (ov!.facing) sc.facing = ov!.facing;
   const at = (i: number) => ov!.items[String(i)];
   const gone = new Set(ov!.removed ?? []);
   const isGone = (i: number) => gone.has(String(i));
@@ -426,7 +464,9 @@ export function frameToMatchScenario(target: SaveTarget, frame: Frame): MatchSce
 
 /** The saved positions, back as the index-keyed override — so a saved
  *  scenario is applied through the exact same path a live drag is. */
-export function overrideFromMatchScenario(ms: MatchScenario, baseCount: number, baseCamera?: Viewport): PosOverride {
+export function overrideFromMatchScenario(
+  ms: MatchScenario, baseCount: number, baseCamera?: Viewport, baseFacing?: Frame["facing"],
+): PosOverride {
   const items: Record<string, Vec2> = {};
   const added: { id: string; side: ScenarioSide }[] = [];
   const seenBase = new Set<string>();
@@ -447,10 +487,25 @@ export function overrideFromMatchScenario(ms: MatchScenario, baseCount: number, 
     const bw = baseCamera.x2 - baseCamera.x1, bh = baseCamera.y2 - baseCamera.y1;
     const cx = (baseCamera.x1 + baseCamera.x2) / 2, cy = (baseCamera.y1 + baseCamera.y2) / 2;
     const c = ms.camera;
-    if (Math.abs(c.centerX - cx) > 0.05 || Math.abs(c.centerY - cy) > 0.05 || Math.abs(c.viewHeight - bh) > 0.05) {
+    const turned = baseFacing === "left" || baseFacing === "right";
+    if (turned) {
+      // A turned corner frame keeps its own size: a saved height is forced to
+      // 42m on load, which is the SHORT side of a turned frame, and read as
+      // the height it zoomed every saved corner out 1.39x. Only the centre is
+      // the author's.
+      if (Math.abs(c.centerX - cx) > 0.05 || Math.abs(c.centerY - cy) > 0.05) {
+        camera = { x1: c.centerX - bw / 2, x2: c.centerX + bw / 2, y1: c.centerY - bh / 2, y2: c.centerY + bh / 2 };
+      }
+    } else if (Math.abs(c.centerX - cx) > 0.05 || Math.abs(c.centerY - cy) > 0.05 || Math.abs(c.viewHeight - bh) > 0.05) {
       const w = c.viewHeight * (bw / bh);
       camera = { x1: c.centerX - w / 2, x2: c.centerX + w / 2, y1: c.centerY - c.viewHeight / 2, y2: c.centerY + c.viewHeight / 2 };
     }
+  }
+  // A corner saved from the other flag ("Swap flag") is filmed from that flag.
+  let facing: PosOverride["facing"];
+  if ((baseFacing === "left" || baseFacing === "right")) {
+    const side = ms.ball.x >= CX ? "right" : "left";
+    if (side !== baseFacing) facing = side;
   }
   return {
     items,
@@ -458,6 +513,7 @@ export function overrideFromMatchScenario(ms: MatchScenario, baseCount: number, 
     removed: removed.length ? removed : undefined,
     added: added.length ? added : undefined,
     camera,
+    facing,
   };
 }
 

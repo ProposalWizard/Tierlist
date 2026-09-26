@@ -101,6 +101,7 @@ import {
   frameToMatchScenario,
   loadEditStore,
   mergeOverrides,
+  mirrorOverride,
   overrideFromMatchScenario,
   roundVec,
   saveEditStore,
@@ -687,7 +688,7 @@ function Thumb({
   onOpen: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  const savedOv = saved ? overrideFromMatchScenario(saved, cell.frame.items.length, cell.frame.camera) : undefined;
+  const savedOv = saved ? overrideFromMatchScenario(saved, cell.frame.items.length, cell.frame.camera, cell.frame.facing) : undefined;
   const frame = applyOverride(applyOverride(cell.frame, savedOv), override);
   const analysis = useMemo(
     () => liveAnalysis(cell, [savedOv, override]),
@@ -1286,7 +1287,7 @@ export default function StarGalleryDevPage() {
   const frameOfSaved = useCallback((sc: MatchScenario): Frame | null => {
     const cell = cellFromSaved(sc);
     if (!cell) return null;
-    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items.length, cell.frame.camera));
+    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items.length, cell.frame.camera, cell.frame.facing));
   }, []);
 
   /** Open a saved scenario's own card, for a last edit before committing. */
@@ -1661,7 +1662,7 @@ export default function StarGalleryDevPage() {
   if (!cell) return shell(<div style={{ padding: 20 }}>No versions.</div>, false);
 
   const savedScenario = saved[cell.key];
-  const savedOv = savedScenario ? overrideFromMatchScenario(savedScenario, cell.frame.items.length, cell.frame.camera) : undefined;
+  const savedOv = savedScenario ? overrideFromMatchScenario(savedScenario, cell.frame.items.length, cell.frame.camera, cell.frame.facing) : undefined;
   const override = edits[cell.key];
   const edited = hasEdits(override);
   const baseFrame = applyOverride(cell.frame, savedOv);
@@ -1854,6 +1855,20 @@ export default function StarGalleryDevPage() {
           >
             {pickCameraKey === cell.key ? "Done — back to editing" : "Camera: pick on the whole pitch"}
           </button>
+          {/* ── SWAP FLAG ── a corner (or byline cross) taken from the other
+              side: the whole picture mirrored across the pitch, turn and
+              all. Asked for directly (Harry, 26 Sep 2026). The game plays
+              every corner drawing from both flags anyway; this is for
+              drawing it the way round you want to look at it. */}
+          {(cell.frame.facing === "left" || cell.frame.facing === "right") && (
+            <button
+              style={{ ...editBtn(playing), flex: "0 0 auto", padding: "0 12px" }}
+              disabled={playing || pickCameraKey === cell.key}
+              onClick={() => setOverride(cell.key, mirrorOverride(baseFrame, override))}
+            >
+              Swap flag ⇄
+            </button>
+          )}
         </div>
         </>
   ) : null;
