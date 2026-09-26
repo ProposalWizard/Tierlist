@@ -4833,7 +4833,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="min-w-0 px-1 py-1 text-center">
-      <div className="text-[11px] uppercase tracking-tight text-white font-bold leading-none">{label}</div>
+      <div className="whitespace-nowrap text-[11px] uppercase tracking-tight text-white font-bold leading-none">{label}</div>
       <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
     </div>
   );
