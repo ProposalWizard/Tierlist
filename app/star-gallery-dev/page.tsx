@@ -91,6 +91,7 @@ import ScenarioPlay from "@/components/star/ScenarioPlay";
 import { testPlayWidth } from "@/lib/star/engineProfile";
 import { useTestKits } from "@/components/star/EnginePlay";
 import PageGuide from "@/components/admin/PageGuide";
+import { revealOnScreen } from "@/lib/revealOnScreen";
 import {
   applyOverride,
   applyOverrideToScenario,
@@ -1473,6 +1474,22 @@ export default function StarGalleryDevPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [screen, showingSim, kindId, simulate, stepVersion]);
 
+  // Each new simulated chance (and each Play) brings the picture fully on
+  // screen, under the sticky header. On a phone Next sat below a 586 px
+  // picture, so every Next needed a scroll back up to see what it made, and
+  // Play left you 341 px down looking at grass (phone audit, 26 Sep 2026).
+  // Play's own pitch is revealed by EnginePlay once its chance is served.
+  useEffect(() => {
+    if (!sim) return;
+    const id = requestAnimationFrame(() => revealOnScreen(pictureRef.current));
+    return () => cancelAnimationFrame(id);
+  }, [sim]);
+  useEffect(() => {
+    if (!playing) return;
+    const id = requestAnimationFrame(() => revealOnScreen(pictureRef.current));
+    return () => cancelAnimationFrame(id);
+  }, [playing]);
+
   // ── Chrome ──
   const header = (title: string, back: () => void, right?: React.ReactNode) => (
     <div
@@ -1820,7 +1837,8 @@ export default function StarGalleryDevPage() {
           {/* Always here. A saved scenario goes from the database and the
               committed file too; an unsaved card just goes from the grid. */}
           <button
-            style={{ ...editBtn(false), color: "#f87171" }}
+            // A gap before it: it sat 4 px from Play, and it deletes.
+            style={{ ...editBtn(false), color: "#f87171", marginLeft: 10 }}
             disabled={!!busy}
             title={savedScenario
               ? "Delete this scenario everywhere — database and code"
@@ -2043,18 +2061,26 @@ export default function StarGalleryDevPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 6, justifyContent: "center", margin: "10px 0 9px", visibility: showingSim ? "hidden" : "visible" }}>
+      {/* The dots are the look; the button round each one is a 40 px tall
+          target, as wide as the row allows (they were 6 x 7 px, 29 in a row,
+          on a phone). A long row wraps rather than shrinking the targets. */}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", margin: "4px 0 3px", visibility: showingSim ? "hidden" : "visible" }}>
         {versions.map((v, i) => (
           <button
             key={v.key}
             onClick={() => { setVersionIdx(i); setSim(null); setSelectedId(null); }}
             aria-label={`version ${i + 1}`}
             style={{
-              width: i === versionIdx ? 20 : 7, height: 7, borderRadius: 999, padding: 0,
-              border: "none", cursor: "pointer",
-              background: i === versionIdx ? "#38bdf8" : "rgba(255,255,255,0.22)",
+              width: Math.max(18, Math.min(36, Math.floor(Math.max(200, vp.w - 40) / Math.max(1, versions.length)))),
+              height: 40, padding: 0, border: "none", background: "transparent", cursor: "pointer",
+              display: "grid", placeItems: "center",
             }}
-          />
+          >
+            <span style={{
+              display: "block", width: i === versionIdx ? 20 : 8, height: 8, borderRadius: 999,
+              background: i === versionIdx ? "#38bdf8" : "rgba(255,255,255,0.3)",
+            }} />
+          </button>
         ))}
       </div>
 
@@ -2095,9 +2121,25 @@ export default function StarGalleryDevPage() {
       {header(
         `${game === "eleven" ? kindLabel(cell.kind) : (FIVE_GROUPS.find((g) => g.id === fiveId)?.label ?? "")}`,
         () => { setScreen(game); setSim(null); setSelectedId(null); },
-        <span style={{ color: showingSim ? "#7dd3fc" : MUTED, fontSize: 13, fontWeight: 800, flex: "none" }}>
-          {showingSim ? "SIM" : `${versionIdx + 1} / ${versions.length}`}
-        </span>,
+        showingSim && !sides ? (
+          // Pinned in the sticky header while simulating, so the next chance
+          // is one tap away with the whole picture on screen — the big Next
+          // under the picture is 586 px further down on a phone.
+          <button
+            onClick={() => simulate(kindId)}
+            style={{
+              flex: "none", height: 40, padding: "0 16px", borderRadius: 12, cursor: "pointer",
+              border: "1px solid rgba(56,189,248,0.55)", background: "rgba(14,116,144,0.38)",
+              color: "#e0f2fe", fontSize: 15, fontWeight: 800,
+            }}
+          >
+            Next →
+          </button>
+        ) : (
+          <span style={{ color: showingSim ? "#7dd3fc" : MUTED, fontSize: 13, fontWeight: 800, flex: "none" }}>
+            {showingSim ? "SIM" : `${versionIdx + 1} / ${versions.length}`}
+          </span>
+        ),
       )}
       {sides ? (
         // THE PICTURE IN THE MIDDLE, the verdicts down its sides. The edit row
@@ -2159,7 +2201,7 @@ export default function StarGalleryDevPage() {
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "100%", background: "#0c1220", borderTopLeftRadius: 24, borderTopRightRadius: 24,
-              padding: 14, display: "grid", gap: 8,
+              padding: "14px 14px calc(14px + env(safe-area-inset-bottom))", display: "grid", gap: 8,
               borderTop: "1px solid rgba(255,255,255,0.08)",
             }}
           >

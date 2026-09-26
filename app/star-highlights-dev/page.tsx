@@ -62,6 +62,7 @@ import {
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
 import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
+import { revealOnScreen } from "@/lib/revealOnScreen";
 import {
   addFigureTo,
   analyseEdited,
@@ -414,6 +415,14 @@ export default function HighlightsPage() {
     setIdx((i) => Math.max(0, i - 1));
   }, []);
 
+  // Every new chance comes up with its whole picture on screen, under the
+  // sticky bar: a phone's big Next sits under a 586 px picture, so pressing
+  // it used to leave the next picture half above the screen.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => revealOnScreen(pictureRef.current?.firstElementChild));
+    return () => cancelAnimationFrame(id);
+  }, [idx]);
+
   // First chance as soon as there is a stream to draw it from. Guarded by a
   // ref for the same strict-mode reason: the effect runs twice on mount.
   const started = useRef(false);
@@ -679,7 +688,7 @@ export default function HighlightsPage() {
     </main>
   );
 
-  const bar = (title: string, back: (() => void) | null, right?: React.ReactNode) => (
+  const bar = (title: React.ReactNode, back: (() => void) | null, right?: React.ReactNode) => (
     <div
       style={{
         display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
@@ -695,7 +704,7 @@ export default function HighlightsPage() {
           &#8249;
         </Link>
       )}
-      <div style={{ fontSize: 18, fontWeight: 800, flex: 1, minWidth: 0, letterSpacing: "-0.01em" }}>{title}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, flex: 1, minWidth: 0, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
       {right}
     </div>
   );
@@ -792,7 +801,8 @@ export default function HighlightsPage() {
   return shell(
     <>
       {bar(
-        "Infinite Highlights",
+        // "Highlights" alone on a narrow phone, so Next fits in the bar.
+        <><span className="max-[419px]:hidden">Infinite </span>Highlights</>,
         null,
         <div style={{ display: "flex", gap: 8 }}>
           <button style={smallBtn} aria-label="Choose highlights" onClick={() => setScreen("kinds")}>
@@ -805,6 +815,16 @@ export default function HighlightsPage() {
           >
             &#9873; {flags.length}
           </button>
+          {/* Next, pinned in the sticky bar: the big one under the picture is
+              below the fold on a phone (picture 586 px on a 664 px screen). */}
+          {kinds.length > 0 && (
+            <button
+              onClick={next}
+              style={{ ...smallBtn, minHeight: 40, color: "#e0f2fe", borderColor: "rgba(56,189,248,0.55)", background: "rgba(14,116,144,0.38)" }}
+            >
+              Next &#8594;
+            </button>
+          )}
         </div>,
       )}
 
@@ -873,7 +893,9 @@ export default function HighlightsPage() {
           {/* The editor tools. Same three the gallery's version screen has, in
               the same order, doing the same thing — tap a figure on the
               picture, then take him out; or put a new one in. */}
-          <div style={{ display: "flex", gap: 5, width: "100%", maxWidth: 460 }}>
+          {/* Wraps onto a second row rather than cutting words: at 360 px
+              "Remove" was cut, at 320 px "+ Mate", "Remove" and "Delete". */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, width: "100%", maxWidth: 460 }} className="[&>button]:!basis-[58px] [&>button]:!grow">
             <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
             <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
             <button

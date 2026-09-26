@@ -103,6 +103,14 @@ export default function LiveChanceEditor({ scenario, minute, onClose }: {
           fit
         />
 
+        {/* Pinned to the bottom of the editor while you scroll: on a phone
+            Save and Commit sat below the fold inside this overlay (Remove at
+            614–656, Save at 666–718 on a 664 px screen). */}
+        <div style={{
+          position: "sticky", bottom: 0, zIndex: 2, width: "100%", display: "grid", gap: 8,
+          padding: "8px 0 calc(8px + env(safe-area-inset-bottom))", background: "#05070d",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}>
         <div style={{ width: "100%", display: "flex", gap: 6 }}>
           <button style={row} onClick={() => setDrag(addFigureTo(frame, "teammate", drag, [card.override]).override)}>+ Mate</button>
           <button style={row} onClick={() => setDrag(addFigureTo(frame, "opponent", drag, [card.override]).override)}>+ Opp</button>
@@ -121,6 +129,7 @@ export default function LiveChanceEditor({ scenario, minute, onClose }: {
           <button style={{ ...big, color: "#e0f2fe", borderColor: "rgba(56,189,248,0.45)" }} disabled={!!busy} onClick={() => void commit()}>
             {busy === "committing" ? "Committing…" : "Commit to the game"}
           </button>
+        </div>
         </div>
         {flash && (
           <div style={{ fontSize: 12.5, fontWeight: 700, textAlign: "center", color: flash.ok ? "#4ade80" : "#fca5a5" }}>
