@@ -148,7 +148,9 @@ export default function CustomClubsAdminPage() {
 
         <div className="grid md:grid-cols-[240px_1fr] gap-4">
           {/* ── Club list ── */}
-          <div>
+          {/* min-w-0 on both columns: a long player name was stretching the
+              single phone column to 440 px and pushing + Add / Delete off. */}
+          <div className="min-w-0">
             <div className="flex gap-1.5 mb-2">
               <input
                 value={newClubName}
@@ -186,7 +188,7 @@ export default function CustomClubsAdminPage() {
           </div>
 
           {/* ── Selected club editor ── */}
-          <div>
+          <div className="min-w-0">
             {!selectedClub && (
               <div className="text-sm text-white/60 py-10 text-center">Pick a club on the left, or create a new one.</div>
             )}
@@ -196,7 +198,7 @@ export default function CustomClubsAdminPage() {
                   <h2 className="text-lg font-black">{selectedClub.name}</h2>
                   <button
                     onClick={() => deleteClub(selectedClub.name)}
-                    className="text-[10px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest"
+                    className="text-[12px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest sm:text-[10px]"
                   >
                     Delete club
                   </button>
@@ -416,13 +418,13 @@ function SquadEditor({ club }: { club: string }) {
             )}
             <div className="flex-1 min-w-0">
               <div className="text-sm font-bold truncate">{p.name}</div>
-              <div className="text-[10px] text-white/60">
+              <div className="text-[11px] text-white/60 sm:text-[10px]">
                 {p.positions} · OVR {p.overall} · Age {p.age} · {p.nationality || "—"}
                 {p.world_class_potential ? " · World Class" : p.high_potential ? " · High Potential" : ""}
               </div>
             </div>
-            <button onClick={() => setEditing(p.sofifa_id)} className="px-2.5 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">Edit</button>
-            <button onClick={() => deletePlayer(p.sofifa_id)} className="px-2.5 py-1 rounded-md bg-red-700/80 hover:bg-red-600 text-[10px] font-black">Delete</button>
+            <button onClick={() => setEditing(p.sofifa_id)} className="shrink-0 px-2.5 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-[12px] font-black sm:text-[10px]">Edit</button>
+            <button onClick={() => deletePlayer(p.sofifa_id)} className="shrink-0 px-2.5 py-1 rounded-md bg-red-700/80 hover:bg-red-600 text-[12px] font-black sm:text-[10px]">Delete</button>
           </div>
         ))}
       </div>
