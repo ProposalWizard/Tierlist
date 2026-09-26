@@ -199,7 +199,7 @@ export function scenarioFaults(sc: Scenario): string[] {
     }
   }
 
-  if (sc.defenders.some(d => d.y < sc.keeper.y)) out.push("defender behind his own keeper");
+  if (sc.defenders.some(d => d.y < sc.keeper.y && !isPostMan(sc, d))) out.push("defender behind his own keeper");
 
   return out;
 }
@@ -213,6 +213,20 @@ export function scenarioFaults(sc: Scenario): string[] {
  *
  * Returns the list of repairs made, for tests and for the gallery to show.
  */
+/**
+ * A corner's man on the post: on or just off the goal line, inside the
+ * six-yard box's width. Goal-side of his keeper on purpose — the keeper comes
+ * off his line to claim, the post man covers behind him.
+ *
+ * Harry's corner drawings, 26 Sep 2026: 6 of 9 have one (y 0 to 2 m, from
+ * inside the far post to 4 m outside the near one). "Defender behind his own
+ * keeper" was a rule for open play that the drawings disagree with, so a
+ * corner's post man is neither a fault nor something to repair.
+ */
+export function isPostMan(sc: Scenario, d: { x: number; y: number }): boolean {
+  return sc.kind === "corner" && d.y <= 2.5 && Math.abs(d.x - CX) <= 9.16;
+}
+
 /**
  * YOUR OWN TEAM-MATES DO NOT STAND IN FRONT OF YOUR SHOT.
  *
@@ -276,7 +290,7 @@ export function fixBaseScenario(sc: Scenario): string[] {
 
   // A defender cannot be goal-side of his own goalkeeper.
   for (const d of sc.defenders) {
-    if (d.y < sc.keeper.y) {
+    if (d.y < sc.keeper.y && !isPostMan(sc, d)) {
       d.y = sc.keeper.y + 2.2;
       done.push("moved a defender out from behind his own keeper");
     }

@@ -688,7 +688,7 @@ function Thumb({
   onOpen: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  const savedOv = saved ? overrideFromMatchScenario(saved, cell.frame.items.length, cell.frame.camera, cell.frame.facing) : undefined;
+  const savedOv = saved ? overrideFromMatchScenario(saved, cell.frame.items, cell.frame.camera, cell.frame.facing) : undefined;
   const frame = applyOverride(applyOverride(cell.frame, savedOv), override);
   const analysis = useMemo(
     () => liveAnalysis(cell, [savedOv, override]),
@@ -1287,7 +1287,7 @@ export default function StarGalleryDevPage() {
   const frameOfSaved = useCallback((sc: MatchScenario): Frame | null => {
     const cell = cellFromSaved(sc);
     if (!cell) return null;
-    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items.length, cell.frame.camera, cell.frame.facing));
+    return applyOverride(cell.frame, overrideFromMatchScenario(sc, cell.frame.items, cell.frame.camera, cell.frame.facing));
   }, []);
 
   /** Open a saved scenario's own card, for a last edit before committing. */
@@ -1662,7 +1662,7 @@ export default function StarGalleryDevPage() {
   if (!cell) return shell(<div style={{ padding: 20 }}>No versions.</div>, false);
 
   const savedScenario = saved[cell.key];
-  const savedOv = savedScenario ? overrideFromMatchScenario(savedScenario, cell.frame.items.length, cell.frame.camera, cell.frame.facing) : undefined;
+  const savedOv = savedScenario ? overrideFromMatchScenario(savedScenario, cell.frame.items, cell.frame.camera, cell.frame.facing) : undefined;
   const override = edits[cell.key];
   const edited = hasEdits(override);
   const baseFrame = applyOverride(cell.frame, savedOv);
