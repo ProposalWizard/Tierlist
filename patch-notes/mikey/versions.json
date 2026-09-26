@@ -27,8 +27,16 @@
     "version": "0.4",
     "date": "2026-09-25",
     "fromCommit": "846abc5",
-    "toCommit": "HEAD",
+    "toCommit": "d7e8cd1",
     "url": "https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ",
     "headline": "Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches"
+  },
+  {
+    "version": "0.5",
+    "date": "2026-09-26",
+    "fromCommit": "d7e8cd1",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/Q681hvwMs83X9895Aevav7",
+    "headline": "How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation"
   }
 ]

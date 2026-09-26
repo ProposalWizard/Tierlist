@@ -99,7 +99,10 @@ const stats = (rating: number): MatchStats => ({
   }
   check(seen[0] === "1st Team", `one bad game does not cost you your place (${seen[0]})`);
   check(seen.includes("Substitute"), `a run of them does (${seen.join(" → ")})`);
-  check(seen.indexOf("Substitute") >= 2, "and it takes at least three of them");
+  // Form bites faster since 25 Sep 2026 (three-game window, Mikey): two
+  // dreadful games like these (4.2) are enough; ordinary poor ones (5.5)
+  // take three — see tests/star/selectionForm.mts.
+  check(seen.indexOf("Substitute") >= 1, `and it takes at least two of them (${seen.join(" → ")})`);
 }
 
 // ── A cameo is judged on less evidence ─────────────────────────────────────

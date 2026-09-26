@@ -1,6 +1,9 @@
 import type { CareerState } from "./types";
 import { STYLE_SELECTION } from "./manager";
 import { getTuning } from "./tuningStore";
+import { nextFixtureFor } from "./competitions";
+import { attributeOverall } from "./rating";
+import { mulberry32 } from "./season";
 
 /**
  * TEAM SELECTION
@@ -35,8 +38,10 @@ export interface SelectionVerdict {
 
 /** A player with no recent games is judged on a neutral performance, not a bad one. */
 const NEUTRAL_FORM = 6.5;
-/** How many games the manager judges you on. */
-const FORM_WINDOW = 5;
+/** How many games the manager judges you on. Three (was five), so a run
+ *  shows up quickly both ways: three poor games puts your place at risk and
+ *  three good ones wins it back (Mikey, 25 Sep 2026: "form bites faster"). */
+const FORM_WINDOW = 3;
 
 /**
  * Recent form, over a FIXED five-game window padded with neutral performances.
@@ -68,12 +73,95 @@ export const MIN_ENERGY_TO_SUB = getTuning("energy.minToSub");
 
 export function selectionStanding(career: CareerState): number {
   const form = recentForm(career.form);
+  // Form counts for more than it did (35%, was 30%) and the manager's
+  // goodwill a little less (40%, was 45%), so how you are actually playing
+  // decides your place sooner.
   return Math.max(0, Math.min(100,
-    career.relationships.boss * 0.45
-    + (form / 10) * 100 * 0.30
+    career.relationships.boss * 0.40
+    + (form / 10) * 100 * 0.35
     + (career.starRating / 5) * 100 * 0.15
     + career.matchFitness * 0.10,
   ));
+}
+
+// ── Winning your shirt (Mikey, 25 Sep 2026) ──────────────────────────────
+//
+// Your rival is the best real team-mate in your position. He only matters
+// until you've won your shirt at this club:
+//  - rated higher than him (a club that signs you as the main man): you start
+//    on your own form, as before;
+//  - rated the same or lower: he starts ahead of you until you earn it — two
+//    or more appearances here with recent form 6.8+ (about a goal and an assist
+//    across three cameos), or him going through a
+//    bad patch (form under 6.0) while you're doing all right (6.3+).
+// Once won, ratings stop mattering: you keep your place on form, fitness and
+// the manager, however much higher rated he is. "It's unreasonable to expect
+// people to upgrade their training ratings so much at the beginning."
+// A generated squad has no ratings, so there's no rival and nothing changes.
+
+export interface ShirtRival { name: string; overall: number; form: number; lastRating: number }
+
+/** His rating for one week — a seeded roll around what a player of his level
+ *  usually gets, so his form has real ups and downs. */
+function rivalWeek(overall: number, id: string, season: number, week: number): number {
+  let h = 0;
+  for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const rng = mulberry32((h ^ (season * 7919) ^ (week * 104729)) >>> 0);
+  const noise = (rng() + rng() + rng() - 1.5) * 1.1;
+  return Math.max(4.5, Math.min(9.5, 6.6 + (overall - 75) * 0.02 + noise));
+}
+
+export function shirtRival(career: CareerState): ShirtRival | null {
+  const pos = career.player.position;
+  let best: CareerState["squad"][number] | null = null;
+  for (const p of career.squad ?? []) {
+    if (p.position !== pos || typeof p.overall !== "number") continue;
+    if (!best || (p.overall ?? 0) > (best.overall ?? 0)) best = p;
+  }
+  if (!best || typeof best.overall !== "number") return null;
+  const w = career.week;
+  const weeks = [w - 1, w - 2, w - 3].map((k) => rivalWeek(best!.overall!, best!.id, career.season, k));
+  return {
+    name: best.shortName || best.name,
+    overall: best.overall,
+    form: weeks.reduce((a, b) => a + b, 0) / weeks.length,
+    lastRating: weeks[0],
+  };
+}
+
+/** Have you won your shirt at this club? */
+export function shirtWon(career: CareerState): boolean {
+  const here = career.shirt && career.shirt.club === career.player.club ? career.shirt : null;
+  if (here?.won) return true;
+  // An old save from before this existed: someone already playing keeps his place.
+  if (!career.shirt && career.form.length > 0) return true;
+  const rival = shirtRival(career);
+  if (!rival) return true;
+  if (attributeOverall(career.skills) > rival.overall) return true;
+  const mine = recentForm(career.form);
+  if ((here?.apps ?? 0) >= 2 && mine >= 6.8) return true;
+  if (rival.form < 6.0 && mine >= 6.3) return true;
+  return false;
+}
+
+/** Update the shirt record after a match you played in. */
+export function recordAppearance(career: CareerState): CareerState["shirt"] {
+  const club = career.player.club;
+  const here = career.shirt && career.shirt.club === club ? career.shirt : { club, won: false, apps: 0 };
+  const next = { ...here, apps: here.apps + 1 };
+  return { ...next, won: next.won || shirtWon({ ...career, shirt: next }) };
+}
+
+// ── Cup rotation (Mikey, 25 Sep 2026) ──────────────────────────────────────
+// A regular is never rotated out. A player who isn't a regular might start an
+// early cup round (anything before the quarter-final) when the manager rests
+// his first choices.
+const CUP_ROTATION_CHANCE = 0.6;
+function earlyCupRound(career: CareerState): boolean {
+  const f = nextFixtureFor(career);
+  if (!f || f.kind !== "cup") return false;
+  const r = f.round ?? "";
+  return !/Quarter|Semi|Final/i.test(r);
 }
 
 /**
@@ -106,6 +194,25 @@ export function selectionFor(career: CareerState): SelectionVerdict {
   const BENCH = BENCH_AT + bend.bench;
 
   let status: Selection = standing >= START ? "1st Team" : standing >= BENCH ? "Substitute" : "Squad";
+  let why: string | null = null;
+
+  // Not yet the first choice here: the better-rated man in your position
+  // starts ahead of you until you've won the shirt.
+  if (status === "1st Team" && !shirtWon(career)) {
+    const rival = shirtRival(career)!;
+    status = "Substitute";
+    why = `${rival.name} (${rival.overall}) starts ahead of you — his last 3 average ${rival.form.toFixed(1)}, yours ${form.toFixed(1)}. Play well when you come on to take his place.`;
+  }
+
+  // An early cup round: the manager rests his regulars, and a player who
+  // isn't one gets a start. Seeded off the week so it doesn't change.
+  if (status !== "1st Team" && earlyCupRound(career)) {
+    const roll = mulberry32((career.season * 131 + career.week * 977) >>> 0)();
+    if (roll < CUP_ROTATION_CHANCE) {
+      status = "1st Team";
+      why = "Cup game — the manager rests some regulars and you start.";
+    }
+  }
 
   // Energy's two floors, applied on top of the standing verdict just picked —
   // never upgrading it, only ever pulling it down. See the constants' own
@@ -118,9 +225,9 @@ export function selectionFor(career: CareerState): SelectionVerdict {
       status,
       onAt: 0,
       standing,
-      reason: standing >= 78
+      reason: why ?? (standing >= 78
         ? "First name on the team sheet."
-        : "You start.",
+        : "You start."),
     };
   }
 
@@ -133,6 +240,8 @@ export function selectionFor(career: CareerState): SelectionVerdict {
       standing,
       reason: career.energy < MIN_ENERGY_TO_START
         ? "Too fatigued to start — fit enough for the bench, not for ninety minutes."
+        : why
+        ? why
         : career.relationships.boss < 40
         ? "The manager has left you out. You are on the bench."
         : `Form has dipped (${form.toFixed(1)} avg). You start on the bench.`,
@@ -149,6 +258,21 @@ export function selectionFor(career: CareerState): SelectionVerdict {
       ? "You are not in the squad. The manager has made his feelings clear."
       : "You are not in the squad this week.",
   };
+}
+
+/**
+ * WHEN A SUBSTITUTE COMES ON — follows the game (Mikey, 25 Sep 2026).
+ *
+ * It used to be a fixed minute between 58 and 72 whatever the score. Now the
+ * manager reads the scoreline from the 50th minute: two down and you're on
+ * straight away, one down just before the hour, level around 64, protecting
+ * a one-goal lead around 72, and well ahead only for the last ten minutes.
+ * `jitter` (0-4 minutes, seeded off the week) stops it being the same
+ * minute every time.
+ */
+export function subComesOnNow(minute: number, scoreDiff: number, jitter = 0): boolean {
+  const at = scoreDiff <= -2 ? 50 : scoreDiff === -1 ? 56 : scoreDiff === 0 ? 64 : scoreDiff === 1 ? 72 : 80;
+  return minute >= at + jitter;
 }
 
 /**

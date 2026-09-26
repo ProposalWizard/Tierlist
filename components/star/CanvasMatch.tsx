@@ -45,7 +45,7 @@ import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes } from "@/lib/star/matchStats";
-import { hookCheck, type HookReason } from "@/lib/star/selection";
+import { hookCheck, subComesOnNow, type HookReason } from "@/lib/star/selection";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
@@ -863,6 +863,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
   const startMinuteRef = useRef(startMinute);
   startMinuteRef.current = startMinute;
+  /** The minute you actually came on. For a substitute this follows the game
+   *  (subComesOnNow, selection.ts), so it can differ from `startMinute`,
+   *  which now only says "you're on the bench". Minutes played, the rating's
+   *  cameo adjustment and "settled in before being taken off" all read it. */
+  const enteredAtRef = useRef(startMinute);
   /** Set once the manager has taken you off, so nothing after it can play. */
   const hookedRef = useRef<HookReason | null>(null);
   /** The minute you came off. The rest of the match is played without you, so
@@ -1683,7 +1688,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const rng = countedRng(seedRef.current, rngCallCountRef);
         rngRef.current = rng;
         const st = matchStateRef.current;
-        const before = advanceTo(st, hiddenInputs(), rng, startMinuteRef.current);
+        // Play the match without you until the manager decides to send you
+        // on: from the 50th minute, when the scoreline says so.
+        const jitter = ((careerRef.current?.week ?? 0) * 37 + (careerRef.current?.season ?? 0) * 11) % 5;
+        const before = advanceTo(st, hiddenInputs(), rng, 50);
+        while (st.minute < 88 && !subComesOnNow(st.minute, st.userScore - st.oppScore, jitter)) {
+          before.push(...advanceTo(st, hiddenInputs(), rng, st.minute + 1));
+        }
+        enteredAtRef.current = st.minute;
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
         // You were on the bench until now — nothing to charge for.
@@ -1713,6 +1725,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       // Starting: the match opens on the commentary, at nil-nil, with a
       // whistle — not on a pitch waiting for a chance that has not arrived.
+      enteredAtRef.current = 0;
       setLog([logLine("Kick Off", "period", 0)]);
       startSimulation();
       return;
@@ -3865,7 +3878,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const t = tallyRef.current;
       const decision = hookCheck({
         minute: st.minute,
-        startMinute: startMinuteRef.current,
+        startMinute: enteredAtRef.current,
         liveRating: liveRating(attemptsRef.current, t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
         scoreDiff: st.userScore - st.oppScore,
         rng,
@@ -3924,7 +3937,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const stats: MatchStats = {
             ...finaliseMatch(
               attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-              Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+              Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
               userScoreRef.current, oppScoreRef.current, careerForStats,
               goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
             ),
@@ -4852,7 +4865,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
             {statCell("Avg Rat", regressForMinutes(
               liveRating(stats.chances, stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp),
-              Math.max(1, matchMinute - startMinute),
+              Math.max(1, matchMinute - enteredAtRef.current),
               // Reported directly: this on-screen number used to jump the
               // moment the match ended, because only the FINAL rating
               // applied the cameo-minutes regression below — the live
@@ -5099,7 +5112,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             const stats: MatchStats = {
               ...finaliseMatch(
                 attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - startMinuteRef.current),
+                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
                 userScoreRef.current, oppScoreRef.current, careerForStats,
                 goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
               ),
