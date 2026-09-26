@@ -641,7 +641,7 @@ export default function FirstPersonDribble({
           className="absolute inset-0 z-30 bg-black/25"
         >
           {/* Over the stand, not the men: the first wave is the thing to read. */}
-          <span className="absolute inset-x-0 top-[27%] flex flex-col items-center gap-2 px-6 text-center">
+          <span className="absolute inset-x-0 top-[22%] flex flex-col items-center gap-2 px-6 text-center">
             <span className="rounded-full bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950 shadow-lg shadow-black/50 motion-safe:animate-pulse">
               Tap to start
             </span>
