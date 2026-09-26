@@ -28,7 +28,8 @@
  * `onChanceResolved` after it.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { revealOnScreen } from "@/lib/revealOnScreen";
 import CanvasMatch, { type ChanceResolved } from "./CanvasMatch";
 import type { ScenePicture } from "@/lib/star/scenePicture";
 import {
@@ -110,6 +111,34 @@ export function useTestKits(settings?: PlaySettings, seed = 1): FrameKits | null
   return kits;
 }
 
+type ServedInfo = { kind: ScenarioKind | "dribble"; minute: number; reason?: string; scenario?: Scenario };
+
+/**
+ * PUT THE PITCH ON SCREEN WHEN A CHANCE IS SERVED.
+ *
+ * Found on a phone (26 Sep 2026): the bars above the pitch pushed it off the
+ * bottom — Infinite Match drew the pitch at 292→878 px on a 664 px screen, so
+ * "Where do you strike it?" put the ball at 635–838, mostly out of sight; the
+ * trial's penalties had the ball at 544–742. And the pitch swallows swipes,
+ * so there was no scrolling down to it from the pitch itself.
+ *
+ * Scrolling, not resizing: the canvas stays exactly the size it was, so a
+ * drag reads exactly as hard as before (`dragReferenceHeightPx` untouched).
+ * Nothing moves when the pitch is already fully on screen, and the real
+ * career match never mounts this, so it is untouched.
+ */
+function useRevealPitch(onChanceServed?: (info: ServedInfo) => void) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const served = useCallback((info: ServedInfo) => {
+    onChanceServed?.(info);
+    requestAnimationFrame(() => {
+      const pitch = boxRef.current?.querySelector("canvas")?.parentElement;
+      revealOnScreen(pitch ?? boxRef.current);
+    });
+  }, [onChanceServed]);
+  return { boxRef, served };
+}
+
 /** How long to wait for the real squads before playing with the generated
  *  ones — the same fallback the real game uses when a fetch fails. */
 const SQUAD_WAIT_MS = 4000;
@@ -174,6 +203,7 @@ export default function EnginePlay({
   const maxW = vpW > 0 ? Math.min(TEST_PLAY_MAX_W, Math.max(realW, vpW - 24)) : realW;
   const w = width && width > 0 ? Math.round(Math.max(realW, Math.min(maxW, width))) : realW;
   const dragReferenceHeightPx = w !== realW ? realMatchHeight(vpW) : undefined;
+  const { boxRef, served } = useRevealPitch(onChanceServed);
 
   if (!built) {
     return <div style={{ padding: 20, textAlign: "center", fontSize: 13, color: "#8a97aa" }}>No clubs in that division.</div>;
@@ -195,6 +225,7 @@ export default function EnginePlay({
     // on its direct children only — the real career match never mounts
     // EnginePlay, so it keeps its 384.
     <div
+      ref={boxRef}
       className={w > realW ? "[&>div]:!max-w-none" : undefined}
       style={{ width: w, maxWidth: "100%", margin: "0 auto" }}
     >
@@ -220,7 +251,7 @@ export default function EnginePlay({
         neverHooked
         openOn={openOn}
         bare={bare}
-        onChanceServed={onChanceServed}
+        onChanceServed={served}
         onChanceResolved={onChanceResolved}
         onComplete={onComplete}
         dragReferenceHeightPx={dragReferenceHeightPx}
@@ -267,8 +298,9 @@ export function EngineFeature({
   scene?: ScenePicture;
 }) {
   const w = useRealMatchWidth();
+  const { boxRef, served } = useRevealPitch(onChanceServed);
   return (
-    <div style={{ width: w, maxWidth: "100%", margin: "0 auto" }}>
+    <div ref={boxRef} style={{ width: w, maxWidth: "100%", margin: "0 auto" }}>
       <CanvasMatch
         seed={seed}
         skills={skills}
@@ -278,7 +310,7 @@ export function EngineFeature({
         neverHooked
         openOn={openOn}
         bare
-        onChanceServed={onChanceServed}
+        onChanceServed={served}
         onChanceResolved={onChanceResolved}
         markers={markers}
         onBallStep={onBallStep}
