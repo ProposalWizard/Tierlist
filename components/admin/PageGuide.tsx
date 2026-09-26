@@ -29,15 +29,17 @@ import { ADMIN_GUIDES, type AdminGuide, type GuidePage } from "@/lib/adminGuides
  */
 
 type Corner = "bottom-right" | "bottom-left" | "top-right";
-/** Where the eye may sit. `top-left` is only ever chosen by the phone's
- *  free-corner search, never asked for by a page. */
-type Spot = Corner | "top-left";
+/** Where the eye may sit. `top-left` and `tucked` are only ever chosen by the
+ *  phone's free-corner search, never asked for by a page. */
+type Spot = Corner | "top-left" | "tucked";
 
 const CORNER: Record<Spot, string> = {
   "bottom-right": "right-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
   "bottom-left": "left-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
   "top-right": "right-2 top-2",
   "top-left": "left-2 top-2",
+  // Mostly off the right edge: 16 px showing, in the page's own gutter.
+  "tucked": "-right-6 top-[58%]",
 };
 const SPOTS: Spot[] = ["bottom-right", "bottom-left", "top-right", "top-left"];
 
@@ -50,22 +52,30 @@ const SPOTS: Spot[] = ["bottom-right", "bottom-left", "top-right", "top-left"];
  * half-time, the POWER % on the strike screen, values on the Play Area and
  * the bicycle sandbox. So below this width the eye checks what is under each
  * corner a few times a second and sits in the first one with nothing to press
- * or read under it (the page's own `corner` first). If every corner is busy it
- * takes the least busy. A laptop keeps the page's chosen corner.
+ * or read under it (the page's own `corner` first). If every corner is busy
+ * (a long form of sliders and inputs), it tucks mostly off the right edge,
+ * 16 px showing in the page's gutter, unless a corner costs less. A laptop
+ * keeps the page's chosen corner.
  */
 const FREE_CORNER_BELOW_PX = 768;
 const EYE_PX = 40;
 const EDGE_PX = 8;
+/** How much of a tucked eye still shows at the right edge. */
+const TUCK_SHOW_PX = 16;
 
 /** How much is under this corner: nine points, each weighted by what it lands
  *  on — see `weight`. 0 is a clear corner. */
 function busyAt(spot: Spot): number {
-  const x0 = spot.endsWith("left") ? EDGE_PX : window.innerWidth - EDGE_PX - EYE_PX;
-  const y0 = spot.startsWith("top") ? EDGE_PX : window.innerHeight - EDGE_PX - EYE_PX;
+  const tucked = spot === "tucked";
+  const w = tucked ? TUCK_SHOW_PX : EYE_PX;
+  const x0 = tucked ? window.innerWidth - TUCK_SHOW_PX
+    : spot.endsWith("left") ? EDGE_PX : window.innerWidth - EDGE_PX - EYE_PX;
+  const y0 = tucked ? window.innerHeight * 0.58
+    : spot.startsWith("top") ? EDGE_PX : window.innerHeight - EDGE_PX - EYE_PX;
   let busy = 0;
   for (const fx of [0.15, 0.5, 0.85]) {
     for (const fy of [0.15, 0.5, 0.85]) {
-      const under = document.elementsFromPoint(x0 + EYE_PX * fx, y0 + EYE_PX * fy)
+      const under = document.elementsFromPoint(x0 + w * fx, y0 + EYE_PX * fy)
         .find((el) => !el.closest("[data-page-guide]"));
       if (under) busy += weight(under);
     }
@@ -118,14 +128,17 @@ export default function PageGuide({
     const move = (to: Spot) => { if (to !== spotRef.current) { spotRef.current = to; setSpot(to); } };
     const pick = () => {
       if (window.innerWidth >= FREE_CORNER_BELOW_PX) { move(corner); return; }
-      // Stay put while the current corner is clear, so it doesn't wander.
-      if (busyAt(spotRef.current) === 0) return;
-      const order = [corner, ...SPOTS.filter((s) => s !== corner)];
-      let best = spotRef.current, bestBusy = busyAt(spotRef.current);
+      // Stay put while the current corner is clear, so it doesn't wander —
+      // but a tucked eye comes back out as soon as a corner is free.
+      const cur = spotRef.current;
+      const curBusy = busyAt(cur);
+      if (curBusy === 0 && cur !== "tucked") return;
+      const order: Spot[] = [corner, ...SPOTS.filter((s) => s !== corner), "tucked"];
+      let best = cur, bestBusy = curBusy;
       for (const s of order) {
         const b = busyAt(s);
+        if (b === 0 && s !== "tucked") { move(s); return; }
         if (b < bestBusy) { best = s; bestBusy = b; }
-        if (b === 0) break;
       }
       move(best);
     };
@@ -150,7 +163,7 @@ export default function PageGuide({
         onClick={() => setOpen(true)}
         aria-label="How this page works"
         title="How this page works"
-        className={`fixed z-[95] grid h-10 w-10 place-items-center rounded-full border border-sky-400/50 bg-gray-950/85 text-sky-300 shadow-lg shadow-black/50 backdrop-blur transition hover:border-sky-300 hover:text-white ${CORNER[spot]} ${open ? "pointer-events-none opacity-0" : "opacity-90"}`}
+        className={`fixed z-[95] grid h-10 w-10 place-items-center rounded-full border border-sky-400/50 bg-gray-950/85 text-sky-300 shadow-lg shadow-black/50 backdrop-blur transition hover:border-sky-300 hover:text-white ${CORNER[spot]} ${spot === "tucked" ? "justify-items-start pl-px" : ""} ${open ? "pointer-events-none opacity-0" : "opacity-90"}`}
       >
         <EyeIcon />
       </button>
