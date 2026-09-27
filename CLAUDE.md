@@ -349,6 +349,7 @@ never change it; and never modify `lib/star/canvasEngine.ts`.
 | `star-playtest` | Any change to `lib/star/**`, `components/star/**`, `app/star-dev/**`. Boots a real browser and reports what it SAW. |
 | `show-options` | A number, size, colour, shape or layout a non-coder has to judge. Renders candidates at phone size, labels each with its cost, never ships the choice. |
 | `explain-and-prompt` | Writing up a build so it can be judged without opening a file, or working out which of two meanings a request had. |
+| `playtest-video` (skill) | They hand over a screen recording. `scripts/playtest-video/` turns it into timestamped pictures + a transcript; every claim is checked in the real game before it's reported. |
 | `make-artifact` | A build, review or batch of changes that needs a shareable page. Verdict, decisions needed, changes, numbers, what's broken, what wasn't seen — in that order. |
 
 ## Working alongside the other two developers
