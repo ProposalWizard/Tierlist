@@ -180,7 +180,11 @@ console.log("\nTHE TRIAL — harder on purpose, and ramping (easiest vs hardest 
   // the keeper reads a kick down the middle at his read chance. Measured on
   // these seeds: easiest 55.9 %, hardest 38.6 % (was 48.6 % and 25.1 %).
   ok(easy.s <= 0.585, `the easiest trial rep: ${pct(easy.s)} (pinned 55.9 %; was 48.6 % before one dive)`);
-  ok(hard.s <= 0.41, `the hardest trial rep: ${pct(hard.s)} (pinned 38.6 %; was 25.1 % before one dive)`);
+  // Re-pinned again in v0.15 A2: item 17 (on a loose ball the nearest
+  // team-mate goes for it) means a parried trial penalty is now followed in
+  // more often — measured 38.6 % → 41.4 % on these seeds (the prototype's
+  // own measurement: chipped penalties 7 % → 20 %).
+  ok(hard.s <= 0.43, `the hardest trial rep: ${pct(hard.s)} (pinned 41.4 %; 38.6 % before item 17, 25.1 % before one dive)`);
   ok(hard.s < easy.s - 0.1, "it still ramps");
   ok(easy.s < overall.s - 0.15, `the trial is harder than a real match (${pct(easy.s)} vs ${pct(overall.s)})`);
 }

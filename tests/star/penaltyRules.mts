@@ -38,6 +38,7 @@ import { penaltyReadFor } from "../../lib/star/penaltyKeeper";
 import { brainSetup, brainAim, brainStrike, brainStep } from "../../lib/star/keeperBrain";
 import { frameFromScenario } from "../../lib/star/scenarioFrame";
 import { CX, PEN_SPOT_Y, BOX_DEPTH, BOX_L, BOX_R, ARC_R } from "../../lib/star/pitch";
+import { makeChance } from "../../lib/star/chanceMaker";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
@@ -53,14 +54,13 @@ const setOff = (names: string[], path = "/star-gallery-dev") => {
   g.window = names.length ? { location: { pathname: path }, localStorage: { getItem: (k: string) => (off.has(k.replace("star-compare-", "")) ? "off" : null), setItem() {}, removeItem() {} } } : undefined;
 };
 
-/** The real match's penalty: CanvasMatch.loadScenario's order. */
+/** The real match's penalty: CanvasMatch.loadScenario's order (since v0.15
+ *  A2 every chance is made by lib/star/chanceMaker.ts's makeChance). */
 function served(seed: number): { sc: Scenario; drawn: boolean; rng: () => number } {
   showSavedScenarios(false); setLiveScenarioPool(null);
   const rng = mulberry32(seed);
-  const sc = buildScenario("penalty", rng, 62, 60, 55);
-  const shape = nextAuthoredShape("penalty", rng, []);
-  if (shape) applyAuthoredShape(sc, shape);
-  setupKind(sc, rng, { appliedAuthored: !!shape, appliedPlan: false, keeperStrength: 62 });
+  const made = makeChance({ source: { from: "kind", kind: "penalty" }, rng, strength: { keeper: 62, team: 60, vision: 55 }, memory: null });
+  const sc = made.sc, shape = made.shape;
   enforceHardRules(sc);
   initDefenders(sc, rng);
   return { sc, drawn: !!shape, rng };
@@ -230,8 +230,12 @@ console.log("\nTHE COMPARE SWITCH");
   const intruded = old.filter((sc) => others(sc).some((p) => inBox(p) || inD(p))).length;
   const offSpot = old.filter((sc) => Math.hypot(sc.ball.x - CX, sc.ball.y - PEN_SPOT_Y) > 0.05).length;
   ok(keeperOut > 150, `off: the keeper is back where the drawing put him, not dead centre on his line (${keeperOut}/200)`);
-  ok(intruded > 100, `off: somebody is inside the box or the D again (${intruded}/200)`);
-  ok(offSpot > 150, `off: the ball is off the spot again (${offSpot}/200)`);
+  // v0.15 A2 (rules audit R3): the serving no longer nudges a penalty at all,
+  // so with the rules off the picture is the drawing exactly — the ball on
+  // its drawn spot (was off it 199/200 with the nudge) and the drawings' own
+  // men, some just inside the box or the D (85/200 measured; was 186/200).
+  ok(intruded > 50, `off: somebody is inside the box or the D again, as drawn (${intruded}/200)`);
+  ok(offSpot === 0, `off: the ball stays on its drawn spot — nothing nudges a penalty any more (${offSpot}/200 off it)`);
   // The real game (/star-dev: a career, its trial and shootouts) never reads it.
   setOff(["penaltyRules"], "/star-dev");
   const game = Array.from({ length: 50 }, (_, i) => served(1000 + i * 7919).sc);

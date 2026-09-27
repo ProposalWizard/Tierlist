@@ -259,6 +259,7 @@ export default function EnginePlay({
         oppStrength={s.oppStrength}
         keeperStrength={s.keeperStrength}
         forceKeeperStrength={!s.realKeeper}
+        chanceMaker={s.chanceMaker}
         conditions={conditions}
         fatigueResetEvery={FATIGUE_RESET_MINUTES}
         neverHooked

@@ -173,6 +173,10 @@ export default function PlayAreaPage() {
             <Toggle on={settings.weather === "real"} onClick={() => set("weather", "real")}>Real</Toggle>
             <Toggle on={settings.weather === "clear"} onClick={() => set("weather", "clear")}>Clear</Toggle>
           </Row>
+          <Row label="Chances" hint="Drawings: one of your drawings, nudged and mirrored — the game. Generator: every player built from the spread of all the drawings of that kind, never one drawing replayed. Test screens only; a career always plays the drawings.">
+            <Toggle on={settings.chanceMaker === "drawings"} onClick={() => set("chanceMaker", "drawings")}>Drawings</Toggle>
+            <Toggle on={settings.chanceMaker === "generator"} onClick={() => set("chanceMaker", "generator")}>Generator</Toggle>
+          </Row>
           <Slider label="Match length" hint="Minutes an Infinite Match runs for." step={10}
             value={settings.matchMinutes} range={PLAY_RANGES.matchMinutes} onChange={(v) => set("matchMinutes", v)} />
 

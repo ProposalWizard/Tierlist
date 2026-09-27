@@ -23,8 +23,8 @@
  *     outside the NEAR post (the post on the ball's side) and the rest build
  *     inward from him. Size by angle: 4-5 men central, 3-4 half-angled,
  *     2-3 at an angle.
- *  3. The keeper: on his line, cheated toward the FAR post — the half of the
- *     goal the wall does not cover.
+ *  3. The keeper: on his line (0.4 m, the engine's goal line), cheated
+ *     toward the FAR post — the half of the goal the wall does not cover.
  *  4. At the strike: most walls jump; about one in seven is told to stay
  *     down (which is what makes going under it a gamble, not a free goal).
  *  5. In flight: the keeper cannot see the ball through his wall. Once it has
@@ -53,6 +53,8 @@ export const FREE_KICK = {
   postManOutside: 0.45,      // the end man stands this far outside the near-post line
   /** Rule 3 — the keeper's cheat toward the far post, metres off centre. */
   keeperCheat: [0.35, 0.95] as [number, number],
+  /** …and on his line: the engine's goal-line depth (makeKeeper, penalty.ts). */
+  keeperLineY: 0.4,
   /** Rule 4 — chance the whole wall stays down instead of jumping. */
   wallStaysDown: 0.15,
   /** Rule 5 — the keeper's read once he can see it. */
@@ -141,19 +143,20 @@ export function setupFreeKick(sc: Scenario, rng: () => number, appliedAuthored =
   men.forEach((m, i) => { m.x = wall[i].x; m.y = wall[i].y; m.z = 0; m.vz = 0; });
   sc.defenders = [...men, ...others];
 
-  // ── Your team-mate stands over the ball with you ──
-  // He used to wait at the penalty spot, goal-side of the wall, so every
-  // rebound he touched was flagged offside — and stood level with the wall
-  // instead (measured) he followed in 7% of all free kicks, because the wall
-  // holds its ground while the ball is live and nobody marks him. Real direct
-  // free kicks have the second man over the ball; that is where he goes.
-  sc.follower.x = clamp(b.x + side * 2.6, 2, 66);
-  sc.follower.y = b.y + 2.6;   // 3.7 m off, clear of the 2 m a man takes a ball in
+  // (There used to be a sixth rule here, moving your team-mate to stand over
+  // the ball 3.7 m behind it — median 14.1 m from where he was drawn. It was
+  // not one of Harry's five points, and it is gone: he stays where drawn.)
 
   // ── Rule 3: the keeper ──
   const k = sc.keeper;
   const cheat = F.keeperCheat[0] + rng() * (F.keeperCheat[1] - F.keeperCheat[0]);
   k.x = clamp(CX - side * cheat, POST_L + 0.6, POST_R - 0.6);
+  // …and ON his line (Harry's rule 3). This used to be left to a separate
+  // floor that pushed every served keeper 1.6 m out (rules audit R1, deleted
+  // v0.15) — with it gone, a drawn keeper a metre off his line would stay
+  // there, so the rule now says where "on his line" is itself: the engine's
+  // own goal-line depth, the same as a penalty keeper's.
+  k.y = FREE_KICK.keeperLineY;
   k.startX = k.x;
   k.targetX = k.x;
   k.adjusting = false;

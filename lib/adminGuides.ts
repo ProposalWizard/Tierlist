@@ -416,6 +416,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["‹", "Back to the Scenario Gallery."],
           ["N/13", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
+          ["▦ 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
           ["⚑ N", "Your flagged list. Tap one to jump back to it; Clear empties the list."],
         ],
       },
@@ -452,7 +453,7 @@ export const ADMIN_GUIDES = {
       "Delete also removes a saved chance from the code. Commit and Delete both need an admin sign-in and GITHUB_TOKEN in Vercel.",
     ],
     inGame: [
-      "The chances are generated exactly as in a real /star-dev match, so what you see here is what players get.",
+      "The chances are made by the same function as in a real /star-dev match (lib/star/chanceMaker.ts): one of your drawings, nudged, mirrored half the time, the drawing's own players and nobody else, never one of the last five pictures of its type. The Play Area's Chances dial can switch this page (and the gallery's Sim) to the generator; a career always plays the drawings.",
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
     needs: [SCENARIO_TABLE_NEEDED],
@@ -472,6 +473,7 @@ export const ADMIN_GUIDES = {
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
           ["Weather: Real / Clear", "Real (the default) is the game's own weather — windy or wet in about 4 matches in 10, named above the pitch when it happens. Clear is still air on a perfect pitch."],
+          ["Chances: Drawings / Generator", "Drawings (the default, and the game): each chance is one of your drawings, nudged and mirrored. Generator: every player is built from the spread of all the drawings of that type, so no drawing is ever replayed. Reaches Infinite Match, Infinite Highlights and the gallery's Sim — never a career."],
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],

@@ -62,6 +62,11 @@ function penalty(seed: number, zone: Zone, read: PenaltyReadSettings, ks: number
   const track = () => {
     const vx = (sc.keeper.x - prevX) / h; prevX = sc.keeper.x;
     if (t > 2) return;
+    // A team-mate's follow-up is a NEW shot, which he is right to go for —
+    // not a turn on his dive. (v0.15 A2, item 17: the nearest team-mate now
+    // chases a loose ball, so a penalty off the bar can be followed in and
+    // shot again inside the 2 s window — measured once in 800 kicks here.)
+    if ((sc.receiverShots ?? 0) > 0 || sc.follower.shot) { lastDir = 0; return; }
     const dir = vx > 0.5 ? 1 : vx < -0.5 ? -1 : 0;
     if (dir !== 0) { if (lastDir !== 0 && dir !== lastDir) turned = true; lastDir = dir; }
   };

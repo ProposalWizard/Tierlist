@@ -243,7 +243,48 @@ export function penaltyDragSpot(x: number, view: Viewport = PENALTY_VIEW): Vec2 
   return { x: CX + side * Math.min(max, Math.max(min, Math.abs(off))), y: PENALTY.lineY };
 }
 
+/**
+ * The variety, for a served penalty (v0.15 A2). The serving no longer nudges
+ * a penalty (the open-play nudge put the ball off the spot every time), so
+ * "no two penalties look the same" is this rule's own: before the men are put
+ * on the edge of the box, each slides along it — up to PENALTY_SLIDE_M either
+ * way, from the chance's own stream. Nobody leaves his side of the D because
+ * of it (lineSpots keeps sides), and the ball, you and the keeper never move.
+ */
+export const PENALTY_SLIDE_M = 2.0;
+function slideAlongTheLine(sc: Scenario, rngIn: () => number): void {
+  // One draw from the chance's stream seeds its own, so the rest of the
+  // chance draws exactly what it would have.
+  let a = Math.floor(rngIn() * 4294967296) >>> 0;
+  const rng = () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const bodies: Vec2[] = [...sc.defenders];
+  if (sc.runner) bodies.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners) bodies.push(r.pos);
+  if (!parked(sc.follower)) bodies.push(sc.follower);
+  for (const t of sc.teammates) bodies.push(t);
+  for (const b of bodies) {
+    if (parked(b)) continue;
+    const side = Math.sign(b.x - CX) || 1;
+    const nx = b.x + (rng() * 2 - 1) * PENALTY_SLIDE_M;
+    // Stays on his own side of the middle.
+    b.x = (nx - CX) * side > 0.5 ? nx : CX + side * 0.5;
+    // …and a touch up or down, which only decides whether rule 4's variety
+    // stands him a step back or has him close in (it reads his spot).
+    b.y += (rng() * 2 - 1) * 0.5;
+  }
+}
+
 export const penaltyRules: KindRule = {
-  setup(sc) { enforcePenalty(sc); },
+  setup(sc, rng) {
+    if (sc.kind !== "penalty" || !switchOn("penaltyRules")) return;
+    slideAlongTheLine(sc, rng);
+    enforcePenalty(sc);
+  },
   enforce(sc) { enforcePenalty(sc); },
 };

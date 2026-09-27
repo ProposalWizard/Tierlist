@@ -16,6 +16,21 @@ import {
   type ChancePlan,
 } from "./chanceFormula";
 import { selectChance, newSelectionMemory, type SelectionMemory } from "./scenarioSelect";
+import {
+  simIsMadeHere, buildDrawnSim, nextDrawnSeed, PictureMemory, servedFaults,
+} from "./chanceMaker";
+
+/**
+ * The dev tools' picture memory lives WITH the stream it serves (one per
+ * visit, carried beside the SelectionMemory), so a run number still replays
+ * press for press, and a gallery session never shares one with a career.
+ */
+const reviewMemories = new WeakMap<SelectionMemory, PictureMemory>();
+function reviewMemoryFor(mem: SelectionMemory): PictureMemory {
+  let m = reviewMemories.get(mem);
+  if (!m) { m = new PictureMemory("review", false); reviewMemories.set(mem, m); }
+  return m;
+}
 import type { Lane, Zone, ChancePattern } from "./hiddenMatch";
 
 /**
@@ -114,6 +129,15 @@ export function nextSim(
   lastPicture?: string,
   position = "ST",
 ): SimSpec {
+  // ── The chance maker's new ways (lib/star/chanceMaker.ts) ──
+  // A drawn kind's Sim is made by the SAME function the match uses, and the
+  // next one is picked so it is not one of the last few pictures of its kind
+  // (the dev tools' own memory, kept apart from a career's). The seed still
+  // rebuilds the same picture forever — the memory only chooses the seed.
+  if (simIsMadeHere(kind)) {
+    const { seed } = nextDrawnSeed(kind, rng, reviewMemoryFor(memory));
+    return { kind, seed, planId: null };
+  }
   let planId: string | null = null;
   const zones = zonesForKind(kind);
 
@@ -191,6 +215,7 @@ export function planById(id: string | null): ChancePlan | null {
  * the base always has the last word.
  */
 export function buildSimScenario(spec: SimSpec): Scenario {
+  if (simIsMadeHere(spec.kind)) return buildDrawnSim(spec.kind, spec.seed).sc;
   const sc = buildScenario(spec.kind, mulberry32(spec.seed));
   fixBaseScenario(sc);
   const plan = planById(spec.planId);
@@ -224,11 +249,15 @@ export function buildSimScenario(spec: SimSpec): Scenario {
 /** Which authored drawing this spec is built from, if any — so a binned
  *  the draw `buildSimScenario` makes, so the answer is the real one. */
 export function authoredShapeFor(spec: SimSpec) {
+  if (simIsMadeHere(spec.kind)) return buildDrawnSim(spec.kind, spec.seed).shape;
   return nextAuthoredShape(spec.kind, mulberry32(spec.seed ^ 0x5bf03635), [], spec.seed);
 }
 
 /** What is wrong with a simulated picture, in plain English. */
 export function simFaults(sc: Scenario, planId: string | null): string[] {
+  // The chance maker's own checks — the same ones its rebuild loop uses —
+  // so a fault the drawing itself has is still shown to a person.
+  if (!planId && simIsMadeHere(sc.kind)) return servedFaults(sc);
   const plan = planById(planId);
   return plan ? planFaults(sc, plan) : scenarioFaults(sc);
 }

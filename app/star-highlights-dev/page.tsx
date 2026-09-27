@@ -61,6 +61,7 @@ import {
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import ChanceSheet from "@/components/star/ChanceSheet";
 import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
 import { revealOnScreen } from "@/lib/revealOnScreen";
 import {
@@ -282,7 +283,7 @@ function FlagRow({
 //  THE PAGE
 // ─────────────────────────────────────────────────────────────────────────
 
-type Screen = "run" | "kinds" | "flags";
+type Screen = "run" | "kinds" | "flags" | "sheet";
 
 export default function HighlightsPage() {
   const [screen, setScreen] = useState<Screen>("run");
@@ -755,6 +756,17 @@ export default function HighlightsPage() {
     );
   }
 
+  // ── SHEET OF 24 ── (components/star/ChanceSheet.tsx) — every generated
+  // picture is checked by eye; this puts 24 of one kind on one screen.
+  if (screen === "sheet") {
+    return shell(
+      <>
+        {bar("Sheet of 24", () => setScreen("run"))}
+        <ChanceSheet kinds={kinds.length ? kinds : allKinds()} kits={kits} onBack={() => setScreen("run")} />
+      </>,
+    );
+  }
+
   // ── FLAGS ──
   if (screen === "flags") {
     return shell(
@@ -808,6 +820,9 @@ export default function HighlightsPage() {
         <div style={{ display: "flex", gap: 8 }}>
           <button style={smallBtn} aria-label="Choose highlights" onClick={() => setScreen("kinds")}>
             {kinds.length}/{allKinds().length}
+          </button>
+          <button style={smallBtn} aria-label="Sheet of 24" title="Sheet of 24: 24 of one kind on one screen" onClick={() => setScreen("sheet")}>
+            &#9638; 24
           </button>
           <button
             aria-label="Flagged list"

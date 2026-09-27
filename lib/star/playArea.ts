@@ -57,6 +57,15 @@ export interface PlaySettings {
    * Keeper slider decides, whoever is in goal.
    */
   realKeeper: boolean;
+  /**
+   * How a chance is made (lib/star/chanceMaker.ts). "drawings" is the game:
+   * one of your drawings, nudged and mirrored. "generator" builds every figure
+   * from the spread of all the drawings of that kind — a test dial only, for
+   * Infinite Match, Infinite Highlights and the gallery's Sim; a career always
+   * plays the drawings (Harry, v0.15: the generator "stays behind a Play Area
+   * switch only").
+   */
+  chanceMaker: "drawings" | "generator";
 }
 
 export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
@@ -71,6 +80,7 @@ export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
   matchMinutes: 10000,
   weather: "real",
   realKeeper: true,
+  chanceMaker: "drawings",
 };
 
 /** Every dial's real range, exported so the sliders and the clamp read the
@@ -132,6 +142,7 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
     weather: o.weather === "clear" ? "clear" : d.weather,
     // Absent on a save from before this existed: the real game.
     realKeeper: typeof o.realKeeper === "boolean" ? o.realKeeper : d.realKeeper,
+    chanceMaker: o.chanceMaker === "generator" ? "generator" : d.chanceMaker,
   };
 }
 
