@@ -334,6 +334,16 @@ just agreeing with us… I want to know for sure if that is a good idea."*
 Before agreeing with a design call, go and find what argues against it. If
 nothing does, say what you checked.
 
+**In plan mode, every change is prototyped and filmed before it's built.**
+Harry, 27 Sep 2026: *"film and show images of every change done in the plan
+mode (so that I can tell you if it's good now before you go ahead and then
+actually make it happen) … Film it all. Make sure you check it right."* Build
+each item as a throwaway prototype (a worktree, never pushed), film it at
+phone size in the real game, and put before/after pictures and short clips
+under the item on the plan page. Only a picture Harry has approved gets built
+for real. How the filming works: "Checking what a frame can't show" in
+`scripts/playtest-video/README.md`.
+
 **The change list goes out before the push, every time** — written so it
 survives being forwarded to someone who wasn't in the conversation. Shared
 files (`app/star-dev/page.tsx`, `lib/star/types.ts`, tailwind config) get
