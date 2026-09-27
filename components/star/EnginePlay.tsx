@@ -43,6 +43,7 @@ import { pressureFromDial } from "@/lib/star/pressure";
 import type { CareerState, MatchStats } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
+import type { RunupStyleId } from "@/lib/star/runupStyles";
 
 /**
  * Real squads, fetched once per club per page — the gallery can press Play a
@@ -271,6 +272,7 @@ export default function EnginePlay({
         onComplete={onComplete}
         dragReferenceHeightPx={dragReferenceHeightPx}
         pressure={pressureFromDial(s.pressure, s.division)}
+        runupStyle={s.runupStyle}
       />
     </div>
   );
@@ -293,7 +295,7 @@ export default function EnginePlay({
  */
 export function EngineFeature({
   openOn, onChanceServed, onChanceResolved, skills, setPieceSkill, keeperStrength = 62,
-  penaltyRead, seed = 1, markers, onBallStep, scene,
+  penaltyRead, seed = 1, markers, onBallStep, scene, runupStyle,
 }: {
   /** The picture for the next chance. Called again after every result. */
   openOn: () => Scenario;
@@ -312,6 +314,8 @@ export function EngineFeature({
   /** What is on the pitch: leave out the keeper, goal, team-mates or the
    *  match's own GOAL/PASS text. The ball and the kick are always the match's. */
   scene?: ScenePicture;
+  /** The player's penalty/free-kick run-up style (lib/star/runupStyles.ts). Looks only. */
+  runupStyle?: RunupStyleId;
 }) {
   const w = useRealMatchWidth();
   const { boxRef, served } = useRevealPitch(onChanceServed);
@@ -331,6 +335,7 @@ export function EngineFeature({
         markers={markers}
         onBallStep={onBallStep}
         scene={scene}
+        runupStyle={runupStyle}
       />
     </div>
   );

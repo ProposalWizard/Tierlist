@@ -13,6 +13,7 @@ import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
 import RefreshPhotosPanel from "./RefreshPhotosPanel";
+import { ownedRunupStyles, runupStyleOf, type RunupStyleId } from "@/lib/star/runupStyles";
 
 interface Props {
   career: CareerState;
@@ -45,6 +46,8 @@ interface Props {
    *  navigating away from Settings, this screen just reads/flips it. */
   immersiveActive: boolean;
   onToggleImmersive: () => void;
+  /** Equip a penalty/free-kick run-up style you own (lib/star/runupStyles.ts). */
+  onSetRunupStyle?: (id: RunupStyleId) => void;
 }
 
 export default function SettingsScreen({
@@ -52,7 +55,7 @@ export default function SettingsScreen({
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive,
+  immersiveActive, onToggleImmersive, onSetRunupStyle,
 }: Props) {
   const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
 
@@ -219,6 +222,30 @@ export default function SettingsScreen({
         />
 
         <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
+
+        {onSetRunupStyle && (
+          <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+            <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Penalty run-up</div>
+            <p className="mt-1 text-[11px] font-semibold text-white/90">
+              How you run up to penalties and free kicks. Looks only — the kick is the same.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {ownedRunupStyles(career.ownedAnimations).map((r) => {
+                const on = runupStyleOf(career.runupStyle) === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => onSetRunupStyle(r.id)}
+                    title={r.blurb}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black ${on ? "bg-emerald-600 text-white" : "bg-gray-700 text-white/80 hover:bg-gray-600"}`}
+                  >
+                    {r.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Player Graphics</div>

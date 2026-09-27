@@ -100,7 +100,7 @@ export function canNudge(kind: string): boolean {
 export interface RunupPath { from: Vec2; to: Vec2 }
 
 /** Straight back from the ball, away from the goal (the goal's centre is CX, 0). */
-function backDir(ball: Vec2): Vec2 {
+export function backDir(ball: Vec2): Vec2 {
   const dx = ball.x - CX, dy = ball.y;
   const L = Math.hypot(dx, dy);
   return L > 1e-6 ? { x: dx / L, y: dy / L } : { x: 0, y: 1 };
@@ -111,7 +111,7 @@ function backDir(ball: Vec2): Vec2 {
  * you on, or your left — a right-footer's run-up — when it put you dead
  * behind it (a penalty always does: kindRules/penalty.ts).
  */
-function sideOf(ball: Vec2, player: Vec2): number {
+export function sideOf(ball: Vec2, player: Vec2): number {
   const b = backDir(ball);
   // Sideways = the back direction turned a quarter; + = to the right of a
   // taker facing the goal.
@@ -121,13 +121,22 @@ function sideOf(ball: Vec2, player: Vec2): number {
 
 /** Where you stand before the run-up: a few steps back and to one side. */
 export function standBack(ball: Vec2, player: Vec2): Vec2 {
+  return standBackAt(ball, player, RUNUP.startBack, RUNUP.startAngleDeg);
+}
+
+/**
+ * The same, `back` metres from the ball and `angleDeg` off the straight line
+ * behind it — how far back and how wide a run-up STYLE starts
+ * (lib/star/runupStyles.ts). `standBack` is this at the standard numbers.
+ */
+export function standBackAt(ball: Vec2, player: Vec2, back: number, angleDeg: number): Vec2 {
   const side = sideOf(ball, player);
   const b = backDir(ball);
-  const a = (RUNUP.startAngleDeg * Math.PI) / 180;
+  const a = (angleDeg * Math.PI) / 180;
   // Rotate "straight back" by the run-up angle toward your side.
   const s = side * Math.sin(a), c = Math.cos(a);
   const d = { x: b.x * c + b.y * s, y: b.y * c - b.x * s };
-  return { x: ball.x + d.x * RUNUP.startBack, y: ball.y + d.y * RUNUP.startBack };
+  return { x: ball.x + d.x * back, y: ball.y + d.y * back };
 }
 
 /** Where your standing foot lands: beside the ball, just behind it. */

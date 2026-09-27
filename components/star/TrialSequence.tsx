@@ -18,6 +18,7 @@ import TrialVision from "./stages/TrialVision";
 import { TeachCard } from "./stages/TrialPenalties";
 import { stageQualityFrom, type FiveASideSummary } from "@/lib/star/fiveASide/score";
 import type { FiveMatchState } from "@/lib/star/fiveASide/match";
+import type { RunupStyleId } from "@/lib/star/runupStyles";
 
 /**
  * THE TRIAL, STAGE BY STAGE.
@@ -51,10 +52,12 @@ export interface TrialSequenceProps {
   /** Pace is here because the dribbling stage is entirely about it — see the
    *  note at its call site. */
   skills?: { power: number; technique: number; pace: number };
+  /** Your penalty/free-kick run-up style (lib/star/runupStyles.ts) — looks only. */
+  runupStyle?: RunupStyleId;
 }
 
 export default function TrialSequence({
-  trial, onTrial, onComplete, playerName, skills = { power: 40, technique: 40, pace: 40 },
+  trial, onTrial, onComplete, playerName, skills = { power: 40, technique: 40, pace: 40 }, runupStyle,
 }: TrialSequenceProps) {
   const stage = nextStage(trial);
   const [showingResult, setShowingResult] = useState<TrialStage | null>(null);
@@ -406,7 +409,7 @@ export default function TrialSequence({
         {progress}
         {devPanel}
         {eventBanner}
-        <TrialPenalties trial={trial} skills={skills} onDone={q => finishStage("penalties", q)} />
+        <TrialPenalties trial={trial} skills={skills} runupStyle={runupStyle} onDone={q => finishStage("penalties", q)} />
       </div>
     );
   }
@@ -417,7 +420,7 @@ export default function TrialSequence({
         {progress}
         {devPanel}
         {eventBanner}
-        <TrialFreeKicks trial={trial} skills={skills} onDone={q => finishStage("freeKicks", q)} />
+        <TrialFreeKicks trial={trial} skills={skills} runupStyle={runupStyle} onDone={q => finishStage("freeKicks", q)} />
       </div>
     );
   }

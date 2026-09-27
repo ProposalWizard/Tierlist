@@ -1,5 +1,6 @@
 import type { Scenario, Vec2, Contact, KickSkills } from "./canvasEngine";
 import type { PenaltyReadDecision } from "./penaltyKeeper";
+import type { RunupStyleId } from "./runupStyles";
 
 /**
  * Everything needed to watch a goal you scored happen again, exactly as it
@@ -847,6 +848,14 @@ export interface CareerState {
    * Optional: absent on every older save, which reads as nothing active.
    */
   kibAbility?: { curve?: boolean; extraTouch?: boolean };
+  /**
+   * The penalty/free-kick run-up you take (lib/star/runupStyles.ts) — looks
+   * only, never who scores. Absent on older saves: Standard.
+   */
+  runupStyle?: RunupStyleId;
+  /** Animation ids you own (the shop's Animations). "standard" always counts
+   *  as owned, listed or not. Absent on older saves: none bought yet. */
+  ownedAnimations?: string[];
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];

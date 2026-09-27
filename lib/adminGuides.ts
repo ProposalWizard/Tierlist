@@ -480,6 +480,7 @@ export const ADMIN_GUIDES = {
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
           ["Pressure: Real (by division) / Off / Light / Premier League", "How hard the nearest opponent closes you down while you pull the ball back (he tackles you, or fouls you about 1 time in 3: a free kick, or a penalty inside the box). Real follows the Division above: Premier League full (a through ball is lost after about 2.6 s), Championship light, lower none. Test screens only — a career match always uses its own division."],
+          ["Run-up style", "How you run up to a penalty or a direct free kick: Standard, The Stroll, The Skip, The Sprint, Stutter Step, Two Steps or The Arc — every style, owned or not, so each can be seen on the real pitch (open a penalty or free-kick card in Infinite Highlights or the gallery and press Play). Looks only: who scores is the same with every style. Test screens only — a career uses the style it has equipped in Settings → Penalty run-up."],
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
           ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
           ["Scenario Gallery →", "Opens the gallery."],
@@ -514,7 +515,7 @@ export const ADMIN_GUIDES = {
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure}.ts",
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
   },
 
   "/star-radar-dev": {

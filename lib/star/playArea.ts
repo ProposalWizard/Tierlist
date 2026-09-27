@@ -22,6 +22,7 @@
 
 import type { CareerDivision } from "./calendar";
 import type { PressureDial } from "./pressure";
+import { runupStyleOf, DEFAULT_RUNUP_STYLE, type RunupStyleId } from "./runupStyles";
 
 export interface PlaySettings {
   /** `CanvasMatch`'s `skills.power` — how hard the same drag hits. */
@@ -73,6 +74,12 @@ export interface PlaySettings {
    * light, below that none) — lib/star/pressure.ts. Test screens only.
    */
   pressure: PressureDial;
+  /**
+   * Your penalty and free-kick run-up style (lib/star/runupStyles.ts), to see
+   * each one on the real pitch. Looks only. Test screens only: a career uses
+   * the style it has equipped (Settings → Penalty run-up).
+   */
+  runupStyle: RunupStyleId;
 }
 
 export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
@@ -89,6 +96,7 @@ export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
   realKeeper: true,
   chanceMaker: "drawings",
   pressure: "real",
+  runupStyle: DEFAULT_RUNUP_STYLE,
 };
 
 /** Every dial's real range, exported so the sliders and the clamp read the
@@ -153,6 +161,7 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
     chanceMaker: o.chanceMaker === "generator" ? "generator" : d.chanceMaker,
     pressure: o.pressure === "off" || o.pressure === "light" || o.pressure === "full" || o.pressure === "real"
       ? o.pressure : d.pressure,
+    runupStyle: runupStyleOf(o.runupStyle),
   };
 }
 

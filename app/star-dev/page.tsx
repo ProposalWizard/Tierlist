@@ -2,6 +2,7 @@
 import { freshItem, isWornOut } from "@/lib/star/fame";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState, StarPhase, StarPlayer, MatchStats, Skills, Boot, OwnedItem, Horse, Fixture, GoalReplay } from "@/lib/star/types";
+import type { RunupStyleId } from "@/lib/star/runupStyles";
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import {
@@ -672,6 +673,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * called from a control that can sit open across a save, and the picture is
    * the one piece of the career a stale copy would silently discard the rest of.
    */
+  // Settings → Penalty run-up (lib/star/runupStyles.ts): equip a style you own.
+  const handleSetRunupStyle = useCallback((id: RunupStyleId) => {
+    setCareer(c => (c ? { ...c, runupStyle: id } : c));
+  }, []);
+
   const handleSetPortrait = useCallback((portrait: string | undefined) => {
     setCareer(c => (c
       ? { ...c, player: { ...c.player, ...(portrait ? { portrait } : { portrait: undefined }) } }
@@ -2739,6 +2745,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <TrialSequence
         trial={career.trial}
         playerName={career.player.firstName}
+        runupStyle={career.runupStyle}
         skills={{
           power: career.skills.power,
           technique: career.skills.technique,
@@ -2901,6 +2908,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             seed={career.season * 1000 + career.week}
             onGoalScored={handleGoalScored}
             pressure={pressureForDivision(career.division)}
+            runupStyle={career.runupStyle}
           />
         </div>
       </div>
@@ -3174,6 +3182,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onDeleteSave={handleDeleteSave}
         immersiveActive={immersive.active}
         onToggleImmersive={immersive.toggle}
+        onSetRunupStyle={handleSetRunupStyle}
       />
     );
   }

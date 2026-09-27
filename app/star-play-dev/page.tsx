@@ -36,6 +36,7 @@ import { usePinnedTop } from "@/lib/pinnedTop";
 import { COMPARE_SWITCHES, switchOn, setSwitch, resetSwitches, type CompareSwitch } from "@/lib/star/compareSwitches";
 import { BRAIN_DIAL_FLAG, type OpenPlayDial } from "@/lib/star/keeperBrain";
 import { PRESSURE_DIALS } from "@/lib/star/pressure";
+import { RUNUP_STYLES } from "@/lib/star/runupStyles";
 
 const BG = "#05070d";
 const INK = "#f2f5f9";
@@ -212,6 +213,14 @@ export default function PlayAreaPage() {
             {PRESSURE_DIALS.map((d) => (
               <Toggle key={d.id} on={settings.pressure === d.id} onClick={() => set("pressure", d.id)}>
                 {d.label}
+              </Toggle>
+            ))}
+          </Row>
+
+          <Row label="Run-up style" hint="How you run up to a penalty or a direct free kick — every style, owned or not, to see each one on the real pitch. Looks only: the kick is the same. Test screens only; a career uses the style it has equipped in Settings.">
+            {RUNUP_STYLES.map((r) => (
+              <Toggle key={r.id} on={settings.runupStyle === r.id} onClick={() => set("runupStyle", r.id)}>
+                {r.name}
               </Toggle>
             ))}
           </Row>
