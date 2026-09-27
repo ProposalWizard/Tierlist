@@ -36,9 +36,10 @@
  *   - a PENALTY: lib/star/penaltyKeeper.ts decides at the strike whether he
  *     goes, which way, how far and with what reach (and whether he reads one
  *     down the middle). The brain throws that dive: a touch after the strike,
- *     paced to the ball, once. During the run-up (penaltyRunup.ts) he hops
- *     on about half of kicks (`hopChance`): small, visual, and he dives the
- *     way he hopped.
+ *     paced to the ball, once. During the run-up (penaltyRunup.ts) he may
+ *     lean (`leanChance`, about a third of kicks): a half-metre shuffle to a
+ *     random side before the strike, and his dive runs from there. (The old
+ *     hop, `hopChance`, is switched off.)
  *   - a FREE KICK: lib/star/kindRules/freeKick.ts places him and moves him
  *     (the far-post cheat, the reaction once the ball clears the wall). The
  *     brain stands down for free kicks.
@@ -142,6 +143,22 @@ export const KEEPER_BRAIN = {
   /** When in the run-up he hops, seconds after you let go (a random point in
    *  this window) — early enough to be seen, late enough to be a read. */
   hopAt: [1.0, 1.8] as [number, number],
+  /**
+   * THE LEAN — not the hop. Harry, 27 Sep 2026: "on the keeper have it be
+   * random chance they do that" — the keeper "moving over to one side as we
+   * shoot to help reach corners, it's just not called a 'hop'". On a penalty,
+   * once per kick, this share of keepers shuffle `leanDistM` to a random side
+   * during the run-up, before the strike. It is a guess, not a read: the side
+   * is a coin flip, whatever you aimed. His ordinary dive then runs from where
+   * the lean left him — so he reaches further toward the side he leaned and
+   * less far toward the other.
+   */
+  leanChance: 0.35,
+  /** How far he shuffles (m). */
+  leanDistM: 0.5,
+  /** When in the run-up he leans, seconds after you let go — finished (at
+   *  his walking pace) before the shortest run-up (Two Steps, 1.7 s) strikes. */
+  leanAt: [0.5, 1.1] as [number, number],
   /**
    * THE ONE DIAL for how hard long shots and through balls are (Harry's
    * question 1 — he chose the Middle: `OPEN_PLAY_DIAL.middle`). It is how
@@ -351,6 +368,11 @@ interface State {
   hopAt: number | null;
   /** A penalty run-up: where he stood before the hop (his dive is measured from here). */
   hopFromX: number | null;
+  /** A penalty run-up: when he will lean (s), or -1 = he won't; null = not decided yet. */
+  leanAt: number | null;
+  /** …and to which side (−1 / +1), and whether he has gone yet. */
+  leanSide: number;
+  leaned: boolean;
   /** 0..1: how much harder this shot is to read, from the open-play dial and its distance. */
   farRead: number;
   lastShot: boolean;
@@ -378,6 +400,8 @@ export function brainStateOf(sc: Scenario | null | undefined) {
     start: { ...st.start }, moveAtT: st.moveAtT, stepAtT: st.stepAtT, diveAtT: st.diveAtT,
     wrongFooted: st.wrongFooted, diveFloor: st.diveFloor, rating: st.ab.rating,
     stepTravelled: st.stepTravelled, diveTravelled: st.diveTravelled, hopSide: st.hopSide,
+    /** The run-up lean: the side he shuffled (0 = he didn't, or not yet). */
+    leanSide: st.leaned ? st.leanSide : 0,
   };
 }
 
@@ -419,7 +443,7 @@ export function brainSetup(sc: Scenario, seed: number, rating: number, opts: Bra
     ab, opts, kind: sc.kind, start: { x: k.x, y: k.y }, setTarget: { x: k.x, y: k.y }, moving: false,
     baseReach: sc.keeperReach, rng, strikeSeed: 0,
     phase: "set", t: 0, rt: 0, dir: 0, target: k.x, stepTravelled: 0, diveTravelled: 0,
-    nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, hopAt: null, hopFromX: null, farRead: 0,
+    nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, hopAt: null, hopFromX: null, leanAt: null, leanSide: 0, leaned: false, farRead: 0,
     lastShot: false, ownShot: false, lastRecv: null, planted: false, reason: "",
     moveAtT: null, stepAtT: null, diveAtT: null, wrongFooted: false,
   };
@@ -526,6 +550,19 @@ export function brainRunUp(sc: Scenario, dt: number, runT: number, aimX: number)
     st.hopFromX = k.x;
     st.setTarget = { x: k.x + st.hopSide * KEEPER_BRAIN.hopM, y: k.y };
     st.reason = "hopped";
+  }
+  // The lean (KEEPER_BRAIN.leanChance): rolled once per kick, off his own
+  // stream — never the match's — then a shuffle to a random side.
+  if (st.leanAt === null) {
+    const go = st.rng() < KEEPER_BRAIN.leanChance;
+    st.leanSide = st.rng() < 0.5 ? -1 : 1;
+    const [a, b] = KEEPER_BRAIN.leanAt;
+    const at = a + st.rng() * (b - a);
+    st.leanAt = go ? at : -1;
+  }
+  if (!st.leaned && st.leanAt >= 0 && runT >= st.leanAt) {
+    st.leaned = true;
+    st.setTarget = { x: st.setTarget.x + st.leanSide * KEEPER_BRAIN.leanDistM, y: st.setTarget.y };
   }
   moveToward(sc, st, st.setTarget, st.ab.setSpeed, dt);
   k.startX = k.x; k.targetX = k.x;

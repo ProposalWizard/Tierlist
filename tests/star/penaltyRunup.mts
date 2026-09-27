@@ -12,9 +12,9 @@
  *   - the real match (keeper 62, 1,500 kicks, the realistic spread) still
  *     scores ~75-80 % overall and ~75 % into the corners with the run-up;
  *   - a taker who ignores the keeper scores what he scored without a run-up;
- *   - he hops on roughly half of kicks, a little more for a better keeper;
- *   - a hop is small (0.18 m) and final: a keeper who hopped and dives,
- *     dives the way he hopped;
+ *   - he never hops (Harry, 27 Sep) — but leans: on about a third of kicks
+ *     he shuffles half a metre to a random side before the strike, and a
+ *     corner on the side he leaned AWAY from scores more;
  *   - the nudge, the path (penalty and free kick), the scuff;
  *   - item 5r: what counts as a cheeky strike, and what it costs;
  *   - item 7b: the trial keeper, kick by kick, through the run-up.
@@ -62,7 +62,7 @@ function mixKick(rng: () => number): Kick {
   return kickFor(u < 0.7 ? "placed" : u < 0.9 ? "middle" : "chip", rng);
 }
 
-interface Out { scored: boolean; hopped: number; went: boolean; diveDir: number }
+interface Out { scored: boolean; hopped: number; leaned: number; went: boolean; diveDir: number }
 
 /** One penalty, struck the way CanvasMatch strikes it. `taker` = what you do during the run-up. */
 function penalty(seed: number, k: Kick, taker: Taker, keeper: Keeper, skills = { power: 60, technique: 60 }): Out {
@@ -102,6 +102,7 @@ function penalty(seed: number, k: Kick, taker: Taker, keeper: Keeper, skills = {
     }
   }
   const hopped = brainStateOf(sc)?.hopSide ?? 0;
+  const leaned = brainStateOf(sc)?.leanSide ?? 0;
   const ball = launch(sc, dir, power, contact, skills, rng);
   brainStrike(sc, ball, (seed ^ 0x5eed) >>> 0);
   const st = brainStateOf(sc);
@@ -116,7 +117,7 @@ function penalty(seed: number, k: Kick, taker: Taker, keeper: Keeper, skills = {
     brainStep(sc, ball, h);
     res = stepBall(ball, sc, rng, h);
   }
-  return { scored: (res === "goal" || res === "rebound") && !sc.follower.shot, hopped, went, diveDir };
+  return { scored: (res === "goal" || res === "rebound") && !sc.follower.shot, hopped, leaned, went, diveDir };
 }
 
 function scored(taker: Taker, n: number, keeper: Keeper, gen: (rng: () => number) => Kick = mixKick, skills?: { power: number; technique: number }): number {
@@ -148,7 +149,7 @@ ok(away === ignores && toward === ignores, `with no hop there is nothing to read
 ok(scuff < ignores - 0.2, `a scuff is a clearly worse kick (${pct(scuff)} vs ${pct(ignores)})`);
 
 // ─────────────────────────────────────────────────────────────────────────
-console.log("\nTHE KEEPER'S HOP — the brain's, one decision");
+console.log("\nTHE KEEPER DOESN'T HOP — HE SOMETIMES LEANS (the brain's, one decision)");
 {
   for (const ks of [40, 62, 85]) {
     let hops = 0, n = 1500, sideOk = 0, sideN = 0, far = 0;
@@ -166,18 +167,42 @@ console.log("\nTHE KEEPER'S HOP — the brain's, one decision");
     ok(share === 0 && want === 0, `keeper ${ks} never hops (${pct(share)})`);
     void sideOk; void sideN;
   }
-  // Small: he ends the run-up no more than a hop from the middle.
-  let maxOff = 0;
+  // THE LEAN (not a hop): about a third of run-ups, half a metre, a random
+  // side — and never more than that.
+  let maxOff = 0, leans = 0, done = 0;
   for (let i = 0; i < 300; i++) {
     const rng = mulberry32(900 + i);
     const sc = buildScenario("penalty", rng, 62, 60, 55);
     enforceHardRules(sc); initDefenders(sc, rng);
     const x0 = sc.keeper.x;
     brainSetup(sc, i, 62, { penalty: penaltyReadFor(62) });
-    for (let t = 0; t < RUNUP.runupS; t += 1 / 60) { stepKeeper(sc, 1 / 60); brainRunUp(sc, 1 / 60, t, x0 + 3); }
-    maxOff = Math.max(maxOff, Math.abs(sc.keeper.x - x0));
+    // The shortest run-up there is (Two Steps, 1.7 s): the lean is finished by then.
+    for (let t = 0; t < 1.7; t += 1 / 60) { stepKeeper(sc, 1 / 60); brainRunUp(sc, 1 / 60, t, x0 + 3); }
+    const off = Math.abs(sc.keeper.x - x0);
+    maxOff = Math.max(maxOff, off);
+    if ((brainStateOf(sc)?.leanSide ?? 0) !== 0) { leans++; if (Math.abs(off - KEEPER_BRAIN.leanDistM) < 0.05) done++; }
   }
-  ok(maxOff <= KEEPER_BRAIN.hopM + 1e-6, `a hop is small: never more than ${KEEPER_BRAIN.hopM} m (${maxOff.toFixed(3)} m)`);
+  ok(leans >= 75 && leans <= 135, `he leans on about a third of run-ups (${leans} of 300, asked ${KEEPER_BRAIN.leanChance * 100}%)`);
+  ok(done === leans, `…the whole ${KEEPER_BRAIN.leanDistM} m, before even a 1.7 s run-up ends (${done} of ${leans})`);
+  ok(maxOff <= KEEPER_BRAIN.leanDistM + 1e-6, `…and never further (${maxOff.toFixed(3)} m)`);
+  // Leaning is a guess: the corner he leaned away from goes in more.
+  const row = (off: number) => {
+    const by = { left: [0, 0], none: [0, 0], right: [0, 0] } as Record<string, number[]>;
+    for (let i = 0; i < 400; i++) {
+      const seed = 3000 + i * 7919;
+      const kr = mulberry32((seed ^ 0xa11ce) >>> 0);
+      const k = { off: off + (kr() - 0.5) * 0.6, power: 0.6 + kr() * 0.3, cy: -1 + kr() * 1.25 };
+      const o = penalty(seed, k, "ignores", K62);
+      const key = o.leaned < 0 ? "left" : o.leaned > 0 ? "right" : "none";
+      by[key][0]++; if (o.scored) by[key][1]++;
+    }
+    return Object.fromEntries(Object.entries(by).map(([k, [n, g]]) => [k, n ? g / n : NaN])) as Record<string, number>;
+  };
+  const rightCorner = row(3.0), leftCorner = row(-3.0);
+  console.log(`  right corner: he leaned left ${pct(rightCorner.left)}, didn't lean ${pct(rightCorner.none)}, leaned right ${pct(rightCorner.right)}`);
+  console.log(`  left corner:  he leaned left ${pct(leftCorner.left)}, didn't lean ${pct(leftCorner.none)}, leaned right ${pct(leftCorner.right)}`);
+  ok(rightCorner.left > rightCorner.none + 0.05 && rightCorner.right < rightCorner.none, "leaning left makes a right-corner kick score more, leaning right less");
+  ok(leftCorner.right > leftCorner.none + 0.03, "…and leaning right makes a left-corner kick score more");
 }
 
 // ─────────────────────────────────────────────────────────────────────────
