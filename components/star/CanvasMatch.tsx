@@ -46,6 +46,31 @@ import {
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes } from "@/lib/star/matchStats";
 import { hookCheck, subComesOnNow, type HookReason } from "@/lib/star/selection";
+import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
+
+/**
+ * How the ball moves on the contact screen for this chance (Mikey, 27 Sep
+ * 2026): a header floats across in the air, a volley bounces across, and a
+ * ball at your feet bobbles about a third of the time. Dead balls — penalties,
+ * free kicks, corners — and passes you play from your feet stay still.
+ * Picked from the chance's seed, so it never draws a random number.
+ */
+function contactMotion(kind: string, seed: number): BallMotion {
+  if (kind === "header") return "float";
+  if (kind === "volley") return "bounce";
+  if (kind === "one_on_one" || kind === "tight_angle" || kind === "long_range") {
+    return ((Math.imul(seed, 2654435761) >>> 0) % 100) < 35 ? "bobble" : "still";
+  }
+  return "still";
+}
+
+/** A goal or assist line that varies without drawing a random number (so
+ *  nothing else in a seeded match moves): picked by the minute and the name. */
+function variedLine(pool: string[], name: string, minute: number): string {
+  let h = minute;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return pool[h % pool.length].replace("{name}", name);
+}
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
@@ -65,7 +90,7 @@ import { competitionAbbrev } from "@/lib/star/competitions";
 import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
-import ContactBall from "./ContactBall";
+import ContactBall, { type BallMotion } from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "@/lib/star/energy";
@@ -596,12 +621,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           assistId: oppAssister?.id, assist: oppAssister?.name,
         });
 
-        const oppGoalLine = `⚽ ${oppScorer.shortName} scores!`;
+        const oppGoalLine = variedLine(GOAL_LINES, oppScorer.shortName, e.minute);
         if (announce) pushLine(`${e.minute}' ${oppGoalLine}${oppAssister ? ` (${oppAssister.shortName})` : ""}`);
         return oppAssister
           ? [
               { minute: e.minute, text: oppGoalLine, isGoal: true, isOpponent: true },
-              { minute: e.minute, text: `🎯 ${oppAssister.shortName} assists!`, tone: "assist", isOpponent: true },
+              { minute: e.minute, text: variedLine(ASSIST_LINES, oppAssister.shortName, e.minute), tone: "assist", isOpponent: true },
             ]
           : [{ minute: e.minute, text: oppGoalLine, isGoal: true, isOpponent: true }];
       }
@@ -615,7 +640,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false,
       });
 
-      const goalLine = `⚽ ${scorer.shortName} scores!`;
+      const goalLine = variedLine(GOAL_LINES, scorer.shortName, e.minute);
       if (announce) pushLine(`${e.minute}' ${goalLine}${assister ? ` (${assister.shortName})` : ""}`);
       // The assist is its own line, not a parenthetical on the goal's — "A:
       // Cucurella" reads as a fact about the goal rather than as trivia tucked
@@ -623,7 +648,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return assister
         ? [
             { minute: e.minute, text: goalLine, isGoal: true },
-            { minute: e.minute, text: `🎯 ${assister.shortName} assists!`, tone: "assist" },
+            { minute: e.minute, text: variedLine(ASSIST_LINES, assister.shortName, e.minute), tone: "assist" },
           ]
         : [{ minute: e.minute, text: goalLine, isGoal: true }];
     });
@@ -4986,7 +5011,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay */}
         {phase === "contact" && aim && (
-          <ContactBall power={aim.power} onContact={handleContact} />
+          <ContactBall
+            power={aim.power}
+            onContact={handleContact}
+            motion={contactMotion(scenarioRef.current.kind, seedRef.current)}
+            technique={skills.technique}
+          />
         )}
 
         {/* Action banner — the moment an action actually completes. "PASS" when

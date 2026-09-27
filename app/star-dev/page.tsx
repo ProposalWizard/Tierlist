@@ -96,7 +96,7 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
-import { KIB_CANS, kibCanPrice, kibCanEffectLabel, type KibCan } from "@/lib/star/shopData";
+import { LIFESTYLE_ALL_LEVELS, KIB_CANS, kibCanPrice, kibCanEffectLabel, type KibCan } from "@/lib/star/shopData";
 
 /** The dashboard KIB Cans card's own accent per tier — the same colour as
  *  the can's real photo (see shopData.ts's `color`), as a hex value rather
@@ -1890,12 +1890,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // You can own each item once — but a WORN-OUT one can be bought again,
     // which replaces it (fame.ts). Owning it raises fame through fameOf(),
     // not by adding to earned fame, so it disappears again if it breaks.
-    const owned = career?.ownedItems.find((o) => o.id === item.id);
-    if (!career || career.money < item.price || (owned && !isWornOut(owned))) return;
+    // Levels (27 Sep 2026): you own one level of each item. Buying a higher
+    // level replaces the one you have; the same or a lower level is only for
+    // replacing a worn-out one.
+    const base = item.baseId ?? item.id;
+    const owned = career?.ownedItems.find((o) => (o.baseId ?? o.id) === base);
+    const ownedLevel = owned ? (owned.level ?? LIFESTYLE_ALL_LEVELS.find((l) => l.id === owned.id)?.level ?? 0) : 0;
+    if (!career || career.money < item.price) return;
+    if (owned && !isWornOut(owned) && (item.level ?? 0) <= ownedLevel && ownedLevel > 0) return;
+    if (owned && !isWornOut(owned) && owned.id === item.id) return;
     setCareer({
       ...career,
       money: career.money - item.price,
-      ownedItems: [...career.ownedItems.filter((o) => o.id !== item.id), freshItem(item)],
+      ownedItems: [...career.ownedItems.filter((o) => (o.baseId ?? o.id) !== base), freshItem(item)],
       happiness: Math.min(100, career.happiness + Math.floor(item.lifestyleValue / 3)),
     });
   }, [career]);

@@ -3,9 +3,20 @@
 // so it stays deterministic per seed like everything else in canvasEngine.ts.
 
 import type { Outcome, ScenarioKind } from "./canvasEngine";
+import {
+  pickFresh, EXTRA_BUILDUP, EXTRA_STRIKE, EXTRA_RECEIVED, EXTRA_RECEIVER_SHOT,
+  EXTRA_RESULT_SELF, EXTRA_RESULT_TEAMMATE,
+} from "./commentaryExtra";
 
+// Lines used lately, across matches in this session, so the same phrase
+// doesn't keep coming back (27 Sep 2026). One random draw, as before.
+const RECENT: string[] = [];
 function pick<T>(pool: T[], rng: () => number): T {
+  if (pool.length && typeof pool[0] === "string") return pickFresh(pool as unknown as string[], rng, RECENT, 120) as unknown as T;
   return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];
+}
+function withExtra(base: Record<string, string[]>, extra: Record<string, string[]>): void {
+  for (const k of Object.keys(extra)) base[k] = [...(base[k] ?? []), ...extra[k]];
 }
 
 // --- The situation, narrated as it's presented (aim phase) ---
@@ -227,6 +238,13 @@ const STRIKE_NAMED: Partial<Record<ScenarioKind, string[]>> = {
   corner: ["Swings it in towards {name}!", "Picks out {name} in the crowd!", "A teasing delivery onto {name}!"],
   buildup: ["Picks out {name}!", "Plays it forward into {name}!", "Threads it up to {name}!"],
 };
+
+withExtra(BUILDUP as Record<string, string[]>, EXTRA_BUILDUP);
+withExtra(STRIKE as Record<string, string[]>, EXTRA_STRIKE);
+withExtra(RESULT_SELF as Record<string, string[]>, EXTRA_RESULT_SELF);
+withExtra(RESULT_TEAMMATE_TEMPLATES as Record<string, string[]>, EXTRA_RESULT_TEAMMATE);
+RECEIVED.push(...EXTRA_RECEIVED);
+RECEIVER_SHOT.push(...EXTRA_RECEIVER_SHOT);
 
 export function commentaryBuildup(kind: ScenarioKind, rng: () => number, name?: string): string {
   const named = name ? BUILDUP_NAMED[kind] : undefined;

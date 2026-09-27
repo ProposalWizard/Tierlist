@@ -2,7 +2,7 @@ import type { Boot, OwnedItem } from "./types";
 import type { KibCan } from "./shopData";
 import type { ShopTierId, PriceBandId } from "./economy";
 import {
-  bandPrice, tierPrice, bootMatchesFor,
+  bandPrice, tierPrice, bootMatchesFor, SHOP_TIER_ORDER,
   RATING_CONVERTER_WEEKS, RATING_CONVERTER_TIERS,
 } from "./economy";
 
@@ -298,6 +298,107 @@ export const LIFESTYLE_ITEMS_DEFAULT: OwnedItem[] = LIFESTYLE_SPECS.map((spec) =
   };
 });
 
+// ═══════════════════════════════════════════════════════════════════════
+//  FIVE LEVELS OF EVERYTHING (Mikey, 27 Sep 2026)
+// ═══════════════════════════════════════════════════════════════════════
+//
+// Every boot and every lifestyle item comes in five levels, one per money
+// rung: level 1 is priced for National League wages (Starter), level 5 for
+// the Premier League (World Class). Each level is priced in that rung's own
+// band, so it costs about the same number of weeks of THAT level's money.
+//
+// An item's existing entry is its level at its own rung (a Phone is level 1,
+// a Private Jet level 5), with the same id as before, so old saves and
+// everything that looks items up by id still work. The other levels get ids
+// like "phone-l3". A few lifestyle prices are nudged up so that, within one
+// level, a better item never costs less.
+//
+// A level up is worth more: boots ×1.25 on each stat per level, lifestyle
+// ×1.4 status (fame) per level. Abilities (NS-Swerve's curve, NS-Maestro's
+// Touch Mode) come with every level of those boots.
+
+export const SHOP_LEVEL_COUNT = 5;
+const BOOT_STAT_STEP = 1.25;
+const LIFESTYLE_VALUE_STEP = 1.4;
+
+/** Which level an item's own rung is. */
+export function levelOfTier(tier: ShopTierId): number {
+  return SHOP_TIER_ORDER.indexOf(tier) + 1;
+}
+function tierOfLevel(level: number): ShopTierId {
+  return SHOP_TIER_ORDER[Math.max(0, Math.min(SHOP_LEVEL_COUNT - 1, level - 1))];
+}
+export function levelItemId(baseId: string, level: number, ownLevel: number): string {
+  return level === ownLevel ? baseId : `${baseId}-l${level}`;
+}
+
+export const BOOT_LEVELS: Boot[] = BOOT_SPECS.flatMap((spec) => {
+  const own = levelOfTier(spec.tier);
+  const base = BOOTS_CATALOGUE_DEFAULT.find((b) => b.id === spec.id)!;
+  return Array.from({ length: SHOP_LEVEL_COUNT }, (_, i) => {
+    const level = i + 1;
+    if (level === own) return { ...base, level, baseId: spec.id };
+    const tier = tierOfLevel(level);
+    const band = bandPrice(tier, "upgrade", spec.at);
+    const price = spec.priceFactor ? Math.round((band * spec.priceFactor) / 5) * 5 : band;
+    const k = Math.pow(BOOT_STAT_STEP, level - own);
+    const stat = (v: number) => Math.max(1, Math.round(v * k));
+    return {
+      id: levelItemId(spec.id, level, own),
+      name: spec.name,
+      level,
+      baseId: spec.id,
+      pace: stat(spec.pace),
+      power: stat(spec.power),
+      technique: stat(spec.technique),
+      // Every level lasts as long as the boot's own level: a cheaper level
+      // lasting longer read as backwards (level 1 of NS-Galaxy was 105
+      // matches, level 5 twelve).
+      matches: base.matches,
+      price,
+      ...(spec.curve ? { curve: true } : {}),
+      ...(spec.extraTouch ? { extraTouch: true } : {}),
+    } as Boot;
+  });
+});
+
+export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
+  const out: OwnedItem[] = LIFESTYLE_SPECS.flatMap((spec) => {
+    const own = levelOfTier(spec.tier);
+    return Array.from({ length: SHOP_LEVEL_COUNT }, (_, i) => {
+      const level = i + 1;
+      return {
+        id: levelItemId(spec.id, level, own),
+        name: spec.name,
+        category: spec.category,
+        level,
+        baseId: spec.id,
+        price: bandPrice(tierOfLevel(level), spec.band, spec.at),
+        lifestyleValue: Math.max(1, Math.round(spec.lifestyleValue * Math.pow(LIFESTYLE_VALUE_STEP, level - own))),
+      };
+    });
+  });
+  // Within one category and one level, a thing worth more never costs less —
+  // the same rule the base catalogue is held to (tests/star/economy.mts).
+  for (const cat of ["item", "vehicle", "property"] as const) {
+    for (let level = 1; level <= SHOP_LEVEL_COUNT; level++) {
+      const row = out.filter((o) => o.category === cat && o.level === level)
+        .sort((a, b) => a.lifestyleValue - b.lifestyleValue || a.price - b.price);
+      for (let j = 1; j < row.length; j++) {
+        const prev = row[j - 1], cur = row[j];
+        if (cur.lifestyleValue > prev.lifestyleValue && cur.price <= prev.price) cur.price = Math.ceil((prev.price * 1.05) / 5) * 5;
+        if (cur.lifestyleValue === prev.lifestyleValue && cur.price < prev.price) cur.price = prev.price;
+      }
+    }
+  }
+  return out;
+})();
+
+/** The item or boot a level entry is a level of. */
+export function baseIdOf(x: { id: string; baseId?: string }): string {
+  return x.baseId ?? x.id;
+}
+
 /** Every catalogue's specs, by item id — the tiering the shop UI groups on
  *  and the thing `tests/star/economy.mts` holds every price to. Built from
  *  the same spec arrays the prices themselves come from, so the two can
@@ -309,6 +410,15 @@ export const PRICE_SPECS: Record<string, Record<string, PriceSpec>> = {
   lifestyle: Object.fromEntries(
     LIFESTYLE_SPECS.map((s) => [s.id, { tier: s.tier, band: s.band, at: s.at }]),
   ),
+  // The other four levels of each, priced in their own level's rung.
+  bootLevels: Object.fromEntries(BOOT_SPECS.flatMap((s) => {
+    const own = levelOfTier(s.tier);
+    return [1, 2, 3, 4, 5].filter((l) => l !== own).map((l) => [levelItemId(s.id, l, own), { tier: tierOfLevel(l), band: "upgrade" as PriceBandId, at: s.at }]);
+  })),
+  lifestyleLevels: Object.fromEntries(LIFESTYLE_SPECS.flatMap((s) => {
+    const own = levelOfTier(s.tier);
+    return [1, 2, 3, 4, 5].filter((l) => l !== own).map((l) => [levelItemId(s.id, l, own), { tier: tierOfLevel(l), band: s.band, at: s.at }]);
+  })),
 };
 
 /** Which tier an item belongs to, for the shop's own grouping. Falls back

@@ -3,6 +3,7 @@ import { applyPriceOverrides } from "./tuningStore";
 import {
   KIB_CANS_DEFAULT, BOOTS_CATALOGUE_DEFAULT, LIFESTYLE_ITEMS_DEFAULT,
   PRICE_SPECS, shopTierOf, KIB_CAN_TIERS,
+  BOOT_LEVELS, LIFESTYLE_LEVELS, SHOP_LEVEL_COUNT, baseIdOf,
 } from "./shopDefaults";
 import { KIB_CAN_WAGE_WEEKS, WAGE_FLOOR } from "./economy";
 
@@ -83,6 +84,12 @@ export const BOOTS_CATALOGUE: Boot[] = applyPriceOverrides("boots", BOOTS_CATALO
 /** Only `price` is editable at /star-tuning-dev, same reasoning as boots
  *  above — `lifestyleValue` is what an item IS, not a price to tune. */
 export const LIFESTYLE_ITEMS: OwnedItem[] = applyPriceOverrides("lifestyle", LIFESTYLE_ITEMS_DEFAULT);
+
+/** Every level (1-5) of every boot and lifestyle item — what the shop sells.
+ *  A price set at /star-tuning-dev for an item's own level still applies. */
+export const BOOTS_ALL_LEVELS: Boot[] = applyPriceOverrides("boots", BOOT_LEVELS);
+export const LIFESTYLE_ALL_LEVELS: OwnedItem[] = applyPriceOverrides("lifestyle", LIFESTYLE_LEVELS);
+export { SHOP_LEVEL_COUNT, baseIdOf };
 
 /**
  * WHAT A CAN COSTS YOU — a slice of your OWN weekly wage (owners, 21 Sep

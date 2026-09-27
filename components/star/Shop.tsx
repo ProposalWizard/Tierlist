@@ -2,7 +2,8 @@
 import { fameGainFromBuying, isWornOut, itemLifeSeasons } from "@/lib/star/fame";
 import { useState } from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
-import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_CATALOGUE, LIFESTYLE_ITEMS, shopTierOf, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, SHOP_LEVEL_COUNT, baseIdOf, type KibCan } from "@/lib/star/shopData";
+import { divisionOf } from "@/lib/star/calendar";
 import { SHOP_TIERS, weeksOfWallet } from "@/lib/star/economy";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
@@ -53,7 +54,13 @@ interface Props {
 
 export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket }: Props) {
   const [tab, setTab] = useState<"item" | "vehicle" | "property">("item");
-  const [selectedBoot, setSelectedBoot] = useState<Boot | null>(BOOTS_CATALOGUE[0]);
+  // Five levels of everything (27 Sep 2026). The shop opens on the level
+  // priced for the league you're in: National League level 1 … Premier League 5.
+  const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
+  const bootBases = Array.from(new Set(BOOTS_ALL_LEVELS.map((b) => baseIdOf(b))));
+  const [selectedBoot, setSelectedBoot] = useState<Boot | null>(
+    BOOTS_ALL_LEVELS.find((b) => baseIdOf(b) === bootBases[0] && b.level === homeLevel) ?? BOOTS_ALL_LEVELS[0],
+  );
   const [useLawyers, setUseLawyers] = useState(false);
   const [blackMarketMessage, setBlackMarketMessage] = useState<string | null>(null);
   const bannedBoots = new Set(ruleBookFor(career, "FA").bannedItems);
@@ -126,60 +133,40 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
 
         {kind === "boots" && (
           <>
-            <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 mb-3">
-              <div className="grid grid-cols-[1fr_40px_40px_50px_40px] py-1.5 bg-gray-800 text-[10px] font-black text-center text-white">
-                <div>Boot</div>
-                <div>Pow</div>
-                <div>Tec</div>
-                <div>Match</div>
-                <div>★</div>
-              </div>
-              {/* Grouped by tier, in ladder order — the shop's whole
-                  progression used to be invisible because the catalogue was
-                  one flat list of absolute prices with nothing to group on.
-                  Every boot sits in its tier's `upgrade` band, so a header
-                  here is also a real statement about price: these are the
-                  boots that cost about this many weeks of THAT rung's money. */}
-              <div className="max-h-[380px] overflow-y-auto">
-                {SHOP_TIERS.map((tier) => {
-                  const boots = BOOTS_CATALOGUE.filter((b) => shopTierOf("boots", b.id) === tier.id);
-                  if (boots.length === 0) return null;
-                  return (
-                  <div key={tier.id}>
-                    <div className="px-3 py-1.5 bg-gray-900/70 border-y border-black/30">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">{tier.label}</div>
-                      <div className="text-[9px] font-bold text-white/60 leading-tight">{tier.blurb}</div>
+            <div className="mb-2 text-[11px] font-bold text-white">
+              Every boot comes in 5 levels. Level 1 is priced for National League money, level 5 for the Premier League. A higher level has better stats.
+            </div>
+            <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 mb-3 max-h-[400px] overflow-y-auto">
+              {bootBases.map((base) => {
+                const levels = BOOTS_ALL_LEVELS.filter((b) => baseIdOf(b) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+                const first = levels[0];
+                const isSel = !!selectedBoot && baseIdOf(selectedBoot) === base;
+                return (
+                  <div key={base} className={`border-b border-black/30 px-3 py-2 ${isSel ? "bg-gray-800" : ""}`}>
+                    <div className="flex items-center gap-1 text-[12px] font-black text-white">
+                      {first.name}
+                      {first.curve && <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>}
+                      {first.extraTouch && <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>}
+                      {bannedBoots.has(base) && <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>}
                     </div>
-                    {boots.map((b) => (
-                      <button
-                        key={b.id}
-                        onClick={() => setSelectedBoot(b)}
-                        className={`w-full grid grid-cols-[1fr_40px_40px_50px_40px] py-2 text-[10px] font-bold text-center ${
-                          selectedBoot?.id === b.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white hover:bg-gray-600"
-                        }`}
-                      >
-                        <div className="text-left pl-3 flex items-center gap-1">
-                          {b.name}
-                          {b.curve && (
-                            <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
-                          )}
-                          {b.extraTouch && (
-                            <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-fuchsia-500 text-white font-black tracking-wide">TOUCH</span>
-                          )}
-                          {bannedBoots.has(b.id) && (
-                            <span className="text-[8px] leading-none px-1 py-0.5 rounded bg-red-600 text-white font-black tracking-wide">BANNED</span>
-                          )}
-                        </div>
-                        <div>{b.power.toFixed(1)}</div>
-                        <div>{b.technique.toFixed(1)}</div>
-                        <div>{b.matches}</div>
-                        <div className="text-yellow-300">{formatMoney(b.price)}</div>
-                      </button>
-                    ))}
+                    <div className="mt-1.5 grid grid-cols-5 gap-1">
+                      {levels.map((b) => {
+                        const on = selectedBoot?.id === b.id;
+                        return (
+                          <button
+                            key={b.id}
+                            onClick={() => setSelectedBoot(b)}
+                            className={`rounded-md py-1.5 text-center ${on ? "bg-emerald-500 text-emerald-950" : "bg-gray-600 text-white"}`}
+                          >
+                            <div className="text-[10px] font-black">L{b.level}</div>
+                            <div className={`text-[9px] font-bold ${on ? "text-emerald-950" : "text-yellow-300"}`}>{formatMoney(b.price)}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  );
-                })}
-              </div>
+                );
+              })}
             </div>
             {selectedBoot?.curve && (
               <div className="bg-sky-900/40 border border-sky-500/60 rounded-lg p-2.5 mb-3 text-[11px] text-sky-100 text-center">
@@ -200,8 +187,11 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                  weeks' wages for every match they lasted. */
               <div className="bg-gray-800 rounded-lg p-2.5 mb-3 border border-gray-600 flex items-center justify-between">
                 <div className="text-left">
-                  <div className="text-[11px] font-black text-white">{selectedBoot.name}</div>
-                  <div className="text-[9px] font-bold text-white/60">
+                  <div className="text-[11px] font-black text-white">{selectedBoot.name} · Level {selectedBoot.level ?? 1}</div>
+                  <div className="text-[10px] font-bold text-white">
+                    Power +{selectedBoot.power} · Technique +{selectedBoot.technique}
+                  </div>
+                  <div className="text-[9px] font-bold text-white">
                     {selectedBoot.matches} matches — {formatWeeks(weeksOfWallet(selectedBoot.price / selectedBoot.matches, career.contract.wage))} per match
                   </div>
                 </div>
@@ -214,7 +204,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
             <div className="bg-gray-700 rounded-lg p-3 border border-gray-600 text-center">
               <div className="text-xs text-white/85">Current boot</div>
               <div className="font-black text-white">
-                {career.currentBoot.name} — {career.currentBoot.matches} matches left
+                {career.currentBoot.name}{career.currentBoot.level ? ` L${career.currentBoot.level}` : ""} — {career.currentBoot.matches} matches left
                 {career.currentBoot.curve && career.currentBoot.matches > 0 && (
                   <span className="ml-1.5 text-[9px] align-middle px-1 py-0.5 rounded bg-sky-500 text-white font-black tracking-wide">CURVE</span>
                 )}
@@ -223,7 +213,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 )}
               </div>
             </div>
-            {selectedBoot && bannedBoots.has(selectedBoot.id) ? (
+            {selectedBoot && bannedBoots.has(baseIdOf(selectedBoot)) ? (
               <div className="mt-3 bg-red-950/60 border border-red-700 rounded-xl p-3">
                 <div className="text-[11px] text-red-200 font-bold text-center mb-2">
                   Banned by the FA — a real chance of getting caught buying it anyway.
@@ -252,7 +242,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 onClick={() => selectedBoot && onBuyBoot(selectedBoot)}
                 className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600 flex items-center justify-center gap-2"
               >
-                Buy {selectedBoot?.name} — ★{formatMoney(selectedBoot?.price ?? 0)}
+                Buy {selectedBoot?.name} L{selectedBoot?.level ?? 1} — ★{formatMoney(selectedBoot?.price ?? 0)}
               </button>
             )}
           </>
@@ -271,52 +261,77 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
                 </button>
               ))}
             </div>
-            <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 max-h-[350px] overflow-y-auto">
-              {LIFESTYLE_ITEMS.filter((i) => i.category === tab).map((i) => {
-                const mine = career.ownedItems.find((o) => o.id === i.id);
-                const owned = !!mine && !isWornOut(mine);
+            <div className="mb-2 text-[11px] font-bold text-white">
+              Every item comes in 5 levels. Level 1 is priced for National League money, level 5 for the Premier League. A higher level adds more fame, and replaces the one you own.
+            </div>
+            <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 max-h-[380px] overflow-y-auto">
+              {Array.from(new Set(LIFESTYLE_ALL_LEVELS.filter((i) => i.category === tab).map((i) => baseIdOf(i)))).map((base) => {
+                const levels = LIFESTYLE_ALL_LEVELS.filter((i) => baseIdOf(i) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+                const first = levels[0];
+                const mine = career.ownedItems.find((o) => baseIdOf(o) === base);
+                const mineLevel = mine ? (mine.level ?? levels.find((l) => l.id === mine.id)?.level ?? 0) : 0;
                 const worn = !!mine && isWornOut(mine);
-                const life = itemLifeSeasons(i);
-                const gain = fameGainFromBuying(career.ownedItems, i);
                 return (
-                  <button
-                    key={i.id}
-                    onClick={() => setSelectedItem(i)}
-                    className={`w-full flex items-center gap-2 p-2.5 border-b border-black/20 text-left ${
-                      selectedItem?.id === i.id ? "bg-emerald-600" : owned ? "bg-gray-800" : "bg-gray-700 hover:bg-gray-600"
-                    }`}
-                  >
-                    <LifestyleIcon id={i.id} category={i.category} />
-                    <div className="flex-1">
-                      <div className="font-black text-white text-sm">{i.name}</div>
+                  <div key={base} className="border-b border-black/30 px-2.5 py-2">
+                    <div className="flex items-center gap-2">
+                      <LifestyleIcon id={base} category={first.category} />
+                      <div className="flex-1 text-sm font-black text-white">{first.name}</div>
+                      {mine && !worn && <div className="text-[10px] font-black text-emerald-400">OWNED L{mineLevel || "?"}</div>}
+                      {worn && <div className="text-[10px] font-black text-red-400">WORN OUT</div>}
+                    </div>
+                    <div className="mt-1.5 grid grid-cols-5 gap-1">
+                      {levels.map((i) => {
+                        const on = selectedItem?.id === i.id;
+                        const have = !!mine && !worn && mineLevel === i.level;
+                        return (
+                          <button
+                            key={i.id}
+                            onClick={() => setSelectedItem(i)}
+                            className={`rounded-md py-1.5 text-center ${on ? "bg-emerald-500 text-emerald-950" : have ? "bg-emerald-900 text-white ring-1 ring-emerald-400" : "bg-gray-600 text-white"}`}
+                          >
+                            <div className="text-[10px] font-black">L{i.level}{have ? " ✓" : ""}</div>
+                            <div className={`text-[9px] font-bold ${on ? "text-emerald-950" : "text-yellow-300"}`}>{formatMoney(i.price)}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {selectedItem && (() => {
+              const base = baseIdOf(selectedItem);
+              const mine = career.ownedItems.find((o) => baseIdOf(o) === base);
+              const mineLevel = mine ? (mine.level ?? LIFESTYLE_ALL_LEVELS.find((l) => l.id === mine.id)?.level ?? 0) : 0;
+              const worn = !!mine && isWornOut(mine);
+              const blocked = !!mine && !worn && (selectedItem.level ?? 0) <= mineLevel;
+              const gain = fameGainFromBuying(career.ownedItems, selectedItem);
+              const life = itemLifeSeasons(selectedItem);
+              return (
+                <>
+                  <div className="mt-2 bg-gray-800 rounded-lg p-2.5 border border-gray-600 flex items-center justify-between">
+                    <div className="text-left">
+                      <div className="text-[11px] font-black text-white">{selectedItem.name} · Level {selectedItem.level ?? 1}</div>
                       <div className="text-[10px] font-bold text-amber-300">
                         +{gain < 1 ? gain.toFixed(1) : Math.round(gain)} fame
                         <span className="text-white"> · {life === null ? "lasts forever" : `lasts ${life} season${life === 1 ? "" : "s"}`}</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="flex items-center gap-1 font-black text-yellow-300 text-sm">
-                        <StarIcon /> {formatMoney(i.price)}
-                      </div>
-                      <Weeks price={i.price} wage={career.contract.wage} />
-                      {owned && <div className="text-[9px] text-emerald-400 font-bold">
-                        OWNED{typeof mine?.seasonsLeft === "number" ? ` · ${mine.seasonsLeft} season${mine.seasonsLeft === 1 ? "" : "s"} left` : ""}
-                      </div>}
-                      {worn && <div className="text-[9px] text-red-400 font-bold">WORN OUT — REPLACE</div>}
+                      <div className="font-black text-yellow-300 text-sm">★{formatMoney(selectedItem.price)}</div>
+                      <Weeks price={selectedItem.price} wage={career.contract.wage} />
                     </div>
+                  </div>
+                  <button
+                    disabled={blocked || career.money < selectedItem.price}
+                    onClick={() => onBuyItem(selectedItem)}
+                    className="mt-2 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600"
+                  >
+                    {blocked ? `You own level ${mineLevel}` : `${mine && !worn ? "Upgrade to" : "Buy"} ${selectedItem.name} L${selectedItem.level ?? 1} — ★${formatMoney(selectedItem.price)}`}
                   </button>
-                );
-              })}
-            </div>
-            {selectedItem && !career.ownedItems.some((o) => o.id === selectedItem.id && !isWornOut(o)) && (
-              <button
-                disabled={career.money < selectedItem.price}
-                onClick={() => onBuyItem(selectedItem)}
-                className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40 disabled:bg-gray-600"
-              >
-                Buy {selectedItem.name} — ★{formatMoney(selectedItem.price)}
-              </button>
-            )}
+                </>
+              );
+            })()}
           </>
         )}
       </div>

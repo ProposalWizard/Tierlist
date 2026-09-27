@@ -1,5 +1,38 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/**
+ * How the ball is moving while you pick where to hit it (Mikey, 27 Sep 2026).
+ * - still: a ball at your feet or a dead ball (penalty, free kick, corner).
+ * - float: a cross hanging in the air for a header, drifting across in a curve.
+ * - bounce: bouncing across at half height, for a volley.
+ * - bobble: skipping over the grass in small hops.
+ * Only WHERE you hit it matters, not when: the tap is read against the ball
+ * wherever it is at that moment. Higher technique makes it move slower.
+ */
+export type BallMotion = "still" | "float" | "bounce" | "bobble";
+
+/** Where the ball is, as fractions of the play area, `t` seconds in. */
+export function ballMotionAt(motion: BallMotion, t: number, period: number): { x: number; y: number } {
+  if (motion === "still") return { x: 0, y: 0 };
+  // Side to side, easing at each end, then back — a slow sweep.
+  const phase = (t / period) % 2;
+  const sweep = phase < 1 ? phase : 2 - phase;
+  // ±12% of the width, so the ball never slides under the power bar on the right.
+  const x = -0.12 + 0.24 * (0.5 - 0.5 * Math.cos(Math.PI * sweep));
+  if (motion === "float") {
+    // An arc high in the air: highest in the middle of the sweep.
+    return { x, y: -0.42 - 0.08 * Math.sin(Math.PI * sweep) };
+  }
+  if (motion === "bounce") {
+    // Two and a half bounces per sweep, up to about half height.
+    const b = Math.abs(Math.sin(Math.PI * 2.5 * sweep));
+    return { x, y: -0.26 * b };
+  }
+  // bobble: small, quick hops on the grass.
+  const b = Math.abs(Math.sin(Math.PI * 6 * sweep));
+  return { x: x * 0.6, y: -0.05 * b };
+}
 
 interface Props {
   power: number;
@@ -9,11 +42,34 @@ interface Props {
    *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
    *  a real match leaves it off, having already taught this once. */
   tutorial?: boolean;
+  /** How the ball moves on this screen; still when not given. */
+  motion?: BallMotion;
+  /** Your technique, 0-100. Higher = the ball moves slower. */
+  technique?: number;
 }
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial }: Props) {
+export default function ContactBall({ power, onContact, tutorial, motion = "still", technique = 50 }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
+  const moverRef = useRef<HTMLDivElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
+  // One sweep across takes 2.2s at technique 40, 3.4s at 100.
+  const period = 2.2 + Math.max(0, Math.min(100, technique) - 40) / 60 * 1.2;
+  useEffect(() => {
+    if (motion === "still") return;
+    let raf = 0;
+    const t0 = performance.now();
+    const step = () => {
+      raf = requestAnimationFrame(step);
+      if (locked.current) return; // freeze where it was hit
+      const area = areaRef.current, mover = moverRef.current;
+      if (!area || !mover) return;
+      const { x, y } = ballMotionAt(motion, (performance.now() - t0) / 1000, period);
+      mover.style.transform = `translate(${x * area.clientWidth}px, ${y * area.clientHeight}px)`;
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [motion, period]);
   const [spark, setSpark] = useState<{ left: number; top: number } | null>(null);
   const locked = useRef(false);
 
@@ -83,7 +139,7 @@ export default function ContactBall({ power, onContact, tutorial }: Props) {
             textShadow: "0 3px 6px rgba(0,0,0,0.6)",
           }}
         >
-          Strike it?
+          {motion === "float" ? "Head it?" : "Strike it?"}
         </div>
 
         {/* Three ways to read the ball, as chips rather than a run-on line —
@@ -136,16 +192,17 @@ export default function ContactBall({ power, onContact, tutorial }: Props) {
       {/* The ball — sitting ON the grass. It used to float in the middle of the
           sky with the turf a long way below it, which reads as a ball in the
           air, and this screen is you standing over a ball at your feet. */}
-      <div className="relative z-30 flex-1 flex items-end justify-center pb-[10%]">
+      <div ref={areaRef} className="relative z-30 flex-1 flex items-end justify-center pb-[10%]">
+        <div ref={moverRef} className="flex w-full items-end justify-center" style={{ willChange: motion === "still" ? undefined : "transform" }}>
         <div
           ref={ballRef}
           onPointerDown={handleTap}
           className="relative cursor-pointer"
-          style={{ width: "56%", aspectRatio: "1 / 1", touchAction: "none" }}
+          style={{ width: motion === "still" ? "56%" : "40%", aspectRatio: "1 / 1", touchAction: "none" }}
         >
           {/* A grounding shadow — without it the ball reads as pasted onto the
               grass rather than resting on it. */}
-          <div
+          {(motion === "still" || motion === "bobble") && <div
             className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
             style={{
               bottom: "-9%",
@@ -154,7 +211,7 @@ export default function ContactBall({ power, onContact, tutorial }: Props) {
               borderRadius: "50%",
               background: "radial-gradient(ellipse, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 72%)",
             }}
-          />
+          />}
           {/* The real thing — a photograph, not a diagram. CSS/SVG cannot fake
               leather grain or an actual reflection, so this is the club's own
               ball, pre-cropped to a circle with a transparent surround (see
@@ -174,6 +231,7 @@ export default function ContactBall({ power, onContact, tutorial }: Props) {
               ⚡
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
