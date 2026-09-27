@@ -5,6 +5,7 @@ import { labelInk, type Kit } from "@/lib/star/kits";
 import type { EnergyMode } from "@/lib/star/energy";
 import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import KibCanIcon from "./KibCanIcon";
+import { minuteLabel as labelFor } from "@/lib/star/addedTime";
 import EnergyModeIcon from "./EnergyModeIcon";
 
 /**
@@ -51,11 +52,18 @@ interface Props {
   /** Basic KIB cans you still have — usable at half time only. */
   kibCans?: number;
   onUseKib?: () => void;
+  /** Added time (v0.15 item 30): the clock as it reads — "90+3" — and how to read a line's minute. */
+  minuteLabel?: string;
+  added?: number;
+  regulation?: number;
+  /** Item 35: opens every live score in the division. Absent: no button. */
+  onOpenScores?: () => void;
 }
 
 export default function MatchCommentary({
   lines, minute, homeTeam, awayTeam, homeScore, awayScore, userKit, oppKit,
   speed, onSpeed, pause, onSkip, energy = 100, energyMode = "medium", onEnergyMode, kibCans = 0, onUseKib,
+  minuteLabel, added = 0, regulation = 90, onOpenScores,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -122,7 +130,7 @@ export default function MatchCommentary({
             `scrollTop` to the newest line once there's enough of it to
             overflow) is untouched and still does its job either way. */}
         <div className="flex min-h-full flex-col justify-start">
-          {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} />)}
+          {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} added={added} regulation={regulation} />)}
         </div>
       </div>
 
@@ -134,13 +142,24 @@ export default function MatchCommentary({
         aria-label={`Commentary speed ${speed}x`}
         className="absolute right-2 top-2 z-20 flex w-12 flex-col items-center justify-center rounded-lg border border-white/10 bg-gray-900/85 py-1 shadow-md backdrop-blur-sm transition hover:bg-gray-800"
       >
-        <span className="text-sm font-black leading-none tabular-nums text-white">{minute}&#39;</span>
+        <span className={`font-black leading-none tabular-nums ${minuteLabel && minuteLabel.includes("+") ? "text-[12px] text-amber-300" : "text-sm text-white"}`}>{minuteLabel ?? minute}&#39;</span>
         <span className={`mt-0.5 text-[9px] font-black leading-none ${
           speed > 1 ? "text-amber-300" : "text-white/45"}`}
         >
           {"▶".repeat(speed === 4 ? 3 : speed)}
         </span>
       </button>
+
+      {/* Every other score in the division, right now (item 35). */}
+      {onOpenScores && (
+        <button
+          onClick={onOpenScores}
+          aria-label="Live scores"
+          className="absolute right-2 top-[3.1rem] z-20 flex w-12 items-center justify-center gap-0.5 rounded-lg border border-white/10 bg-gray-900/85 py-1 text-[9px] font-black uppercase text-white shadow-md backdrop-blur-sm transition hover:bg-gray-800"
+        >
+          Scores <span aria-hidden className="text-[10px]">▸</span>
+        </button>
+      )}
 
       {/* ── Waiting on you ── */}
       {pause && (
@@ -233,12 +252,13 @@ export default function MatchCommentary({
  * `linesFrom`. Everything else is a continuation of the passage above it, and a
  * number on each row turns one attack into four unrelated incidents.
  */
-function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit }) {
+function Line({ l, userKit, oppKit, added = 0, regulation = 90 }: { l: LogLine; userKit: Kit; oppKit: Kit; added?: number; regulation?: number }) {
+  const shownMinute = l.minute !== undefined ? labelFor(l.minute, added, regulation) : "";
   if (l.tone === "period") {
     return (
       <div className="kib-line flex items-center gap-2 border-y border-white/10 bg-gray-800/80 px-3 py-1.5">
         {l.minute !== undefined && (
-          <span className="w-6 shrink-0 text-[10px] font-black tabular-nums text-white">{l.minute}</span>
+          <span className="min-w-6 shrink-0 text-[10px] font-black tabular-nums text-white">{shownMinute}</span>
         )}
         <span className="flex-1 text-center text-[11px] font-black uppercase tracking-[0.18em] text-white">
           {l.text}
@@ -247,6 +267,16 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
             only centres in the space left over after it, and the line reads
             visibly off-centre. */}
         {l.minute !== undefined && <span className="w-6 shrink-0" aria-hidden />}
+      </div>
+    );
+  }
+
+  // Another game's score (item 35): its own quiet broadcast-strip look.
+  if (l.tone === "elsewhere") {
+    return (
+      <div className="kib-line flex items-baseline gap-2 bg-sky-950/90 px-3 py-1.5 text-sky-100">
+        <span className="min-w-6 shrink-0 rounded bg-black/70 px-0.5 py-0.5 text-center text-[10px] font-black tabular-nums text-white">{shownMinute}</span>
+        <span className="flex-1 text-[11px] font-bold leading-snug">{l.text}</span>
       </div>
     );
   }
@@ -322,8 +352,8 @@ function Line({ l, userKit, oppKit }: { l: LogLine; userKit: Kit; oppKit: Kit })
           whichever team's colour the row happened to be made the timings
           hard to read at a glance. A fixed black chip keeps it legible and
           visibly separate from the line it's timing, on every row. */}
-      <span className="w-6 shrink-0 rounded bg-black/70 py-0.5 text-center text-[10px] font-black tabular-nums text-white">
-        {l.minute !== undefined ? l.minute : ""}
+      <span className="min-w-6 shrink-0 rounded bg-black/70 px-0.5 py-0.5 text-center text-[10px] font-black tabular-nums text-white">
+        {shownMinute}
       </span>
       <span className="flex-1 text-[12px] leading-snug">{l.text}</span>
     </div>

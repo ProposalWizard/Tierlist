@@ -40,7 +40,9 @@ export type LogTone =
   /** Kick-off, half time, full time. A marker, not an event. */
   | "period"
   /** A chance that came to nothing, either way. */
-  | "chance";
+  | "chance"
+  /** A goal in another game that matters to you (v0.15 item 35 — liveScores.ts). */
+  | "elsewhere";
 
 export interface LogLine {
   /** Stable across re-renders and unique within a match. */

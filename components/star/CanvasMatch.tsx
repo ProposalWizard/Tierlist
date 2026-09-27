@@ -16,7 +16,7 @@ import {
   type Facing, type Runner,
 } from "@/lib/star/canvasEngine";
 import {
-  newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
+  newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota,
   type HiddenMatchState, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
 } from "@/lib/star/hiddenMatch";
 import { applyChancePlan } from "@/lib/star/chanceFormula";
@@ -44,8 +44,9 @@ import {
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
-import { finaliseMatch, liveRating, regressForMinutes } from "@/lib/star/matchStats";
-import { hookCheck, subComesOnNow, type HookReason } from "@/lib/star/selection";
+import { finaliseMatch, regressForMinutes, fairRating } from "@/lib/star/matchStats";
+import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type HookReason } from "@/lib/star/selection";
+import type { ChanceEntry, ChanceOutcome } from "@/lib/star/chanceLog";
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { applyFormationShape, formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
@@ -60,6 +61,7 @@ import {
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
+import { matchTeamStrength } from "@/lib/star/matchday";
 import { kitsFor, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
 import { shortClub } from "@/lib/star/media/grammar";
@@ -79,6 +81,11 @@ import {
   line as logLine, linesFrom, halfTimeSplit, dwellFor, HALF_TIME_MINUTE,
   type LogLine,
 } from "@/lib/star/matchLog";
+import { rollAddedTime, addedTimeSeed, minuteLabel } from "@/lib/star/addedTime";
+import { liveWeekFor, goalsForFollowed, scoresAt, type LiveGoal } from "@/lib/star/liveScores";
+import { followedTeams, toggleFollowedTeam } from "@/lib/star/matchDayPrefs";
+import LiveScorePop from "./LiveScorePop";
+import LiveScoresPanel from "./LiveScoresPanel";
 
 /**
  * `feed` is the commentary screen, and it is where a match LIVES — see
@@ -723,7 +730,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const sceneGenRef = useRef(0);
   const attemptsRef = useRef(0);
-  const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
+  const tallyRef = useRef({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
   const userScoreRef = useRef(0);
   const oppScoreRef = useRef(0);
   const goalEventsRef = useRef<GoalEvent[]>([]);
@@ -733,6 +740,40 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // --- Simulation between chances ---
   const matchMinuteRef = useRef(0);
   const [matchMinute, setMatchMinute] = useState(0);
+
+  // ── Added time (v0.15 plan item 30) ──
+  // The fourth official's board: 1-5 minutes, rolled once per match off its
+  // own seed (addedTime.ts), so the ninety minutes play exactly as before.
+  // 0 outside a real career match.
+  const addedRef = useRef<number | null>(null);
+  if (addedRef.current === null) {
+    addedRef.current = fixture && onComplete
+      ? rollAddedTime(mulberry32(addedTimeSeed(seed))) : 0;
+  }
+  const ADDED = addedRef.current;
+  const boardShownRef = useRef(false);
+
+  // ── Other scores (v0.15 plan item 35) ──
+  // The rest of the division's games are played at kick-off, off their own
+  // seed (liveScores.ts) — the very scores the table records at full time.
+  // A goal for a club you have ticked pops up as the clock passes it (one
+  // card at a time), and the Scores button shows every game as it stands.
+  const liveWeekRef = useRef<{ fixtures: { home: string; away: string }[]; goals: LiveGoal[] } | null>(null);
+  if (liveWeekRef.current === null) {
+    let week: { fixtures: { home: string; away: string }[]; goals: LiveGoal[] } = { fixtures: [], goals: [] };
+    try {
+      if (fixture && onComplete && career) week = liveWeekFor(career, fixture);
+    } catch { /* no other games to show */ }
+    liveWeekRef.current = week;
+  }
+  const liveShownRef = useRef(0);
+  const livePopIdRef = useRef(0);
+  const [livePop, setLivePop] = useState<(LiveGoal & { id: number }) | null>(null);
+  const [following, setFollowing] = useState<string[]>(() => followedTeams());
+  const followingRef = useRef(following);
+  followingRef.current = following;
+  const [scoresOpen, setScoresOpen] = useState(false);
+  const closeLivePop = useCallback(() => setLivePop(null), []);
   /**
    * Energy at kickoff, seeded once (React's lazy useRef initializer, not
    * re-synced like careerRef) — the career's own value isn't touched again
@@ -856,6 +897,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     /** How many lines the stretch queued, so the ones already read out can
      *  be told apart from the ones still to come. */
     queued: number;
+    /** This stretch carried the added-time board (item 30), so a re-run carries it too. */
+    board?: boolean;
   } | null>(null);
 
   // The match going on around you. It owns possession, territory and momentum;
@@ -869,6 +912,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  which now only says "you're on the bench". Minutes played, the rating's
    *  cameo adjustment and "settled in before being taken off" all read it. */
   const enteredAtRef = useRef(startMinute);
+  /** Item 24: true once you are actually on as a substitute, and how many
+   *  chances the unseen match has handed you since. */
+  const subOnRef = useRef(false);
+  const subChancesRef = useRef(0);
+  /** Item 24: your energy the minute you came on — a fresher sub squeezes more in. */
+  const subFitnessRef = useRef(100);
+  /** Item 26: every chance that came to you, one line each (chanceLog.ts). */
+  const chanceLogRef = useRef<ChanceEntry[]>([]);
+  const logChance = (kind: string, outcome: ChanceOutcome) => {
+    chanceLogRef.current.push({ minute: matchMinuteRef.current, kind, outcome });
+  };
   /** Set once the manager has taken you off, so nothing after it can play. */
   const hookedRef = useRef<HookReason | null>(null);
   /** The minute you came off. The rest of the match is played without you, so
@@ -1021,10 +1075,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     return { power: skills.power * (1 - cut), technique: skills.technique * (1 - cut) };
   };
 
+  /**
+   * The rating so far, the one formula every reader uses: the manager's hook,
+   * the live AVG RAT box and the post-match screen. Item 26: the fair rating
+   * (only real misses cost you).
+   */
+  const ratingSoFar = (t: typeof tallyRef.current, us: number, them: number): number =>
+    fairRating({ goals: t.goals, assists: t.assists, passes: t.passesCompleted, dribbles: t.dribbles, misses: t.misses, lost: t.lost }, us, them).rating;
+  /** What finaliseMatch needs beyond the old tally, and the extras for the post-match screen. */
+  const matchExtras = () => {
+    const t = tallyRef.current;
+    return {
+      tally: { misses: t.misses, lost: t.lost, dribbles: t.dribbles },
+      extra: {
+        ...(subOnRef.current ? { cameo: true, enteredAt: enteredAtRef.current } : {}),
+        chanceLog: chanceLogRef.current.slice(),
+      },
+    };
+  };
+
   const hiddenInputs = (): HiddenMatchInputs => {
     const car = careerRef.current;
     return {
-      teamStrength: teamRef.current,
+      // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
+      // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
+      // The relationship keeps its own job: how team-mates combine inside a
+      // chance (buildScenario's teamRelationship, via teamRef below).
+      teamStrength: matchTeamStrength(car, teamRef.current, fixture),
       oppStrength: oppStrengthRef.current,
       playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
       home: fixture?.home,
@@ -1041,6 +1118,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
+      // Item 24: once you are on as a sub, your chances are squeezed into the
+      // minutes left (allowing for your energy), and from 70' one is owed.
+      lateSub: subOnRef.current
+        ? { enteredAt: enteredAtRef.current, owed: Math.max(0, lateSubQuota(enteredAtRef.current) - subChancesRef.current), fitness: subFitnessRef.current }
+        : undefined,
+      // Added time: chasing in it, everyone goes forward (hiddenMatch.ts's FERGIE_*).
+      ...(ADDED > 0 ? { fergie: { from: MATCH_DURATION, to: MATCH_DURATION + ADDED } } : {}),
     };
   };
 
@@ -1238,7 +1322,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // just keeps running against the new ceiling — instead of extra time being
   // a single non-interactive jump straight to the final minute. 0 = normal
   // time; 1 = first half of extra time in progress; 2 = second half.
-  const matchCeilingRef = useRef(MATCH_DURATION);
+  const matchCeilingRef = useRef(MATCH_DURATION + ADDED);
   const extraTimeStageRef = useRef<0 | 1 | 2>(0);
   // A live, player-controlled shootout kick in progress — see
   // `loadShootoutPenalty`. Non-null while the aim/contact/flight canvas is
@@ -1282,7 +1366,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   touchModeOnRef.current = touchModeOn;
 
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
+  const [stats, setStats] = useState({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
   const [feed, setFeed] = useState<string[]>([]);
   const feedRef = useRef<string[]>([]);
   feedRef.current = feed;
@@ -1450,6 +1534,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }, dwellFor(next.tone, speed));
     return () => clearTimeout(t);
   }, [queue, pause, speed, matchMinute]);
+
+  // ── Other scores, revealed as the clock passes each goal (item 35) ──
+  // Only clubs you have ticked get a commentary line and a card, and only
+  // one card is up at a time: the newest goal replaces the last.
+  useEffect(() => {
+    const goals = liveWeekRef.current?.goals;
+    if (!goals || liveShownRef.current >= goals.length) return;
+    const due: LiveGoal[] = [];
+    while (liveShownRef.current < goals.length && goals[liveShownRef.current].minute <= matchMinute) {
+      due.push(goals[liveShownRef.current++]);
+    }
+    const mine = goalsForFollowed(due, followingRef.current);
+    if (!mine.length) return;
+    setLog(l => [...l, ...mine.map(g => logLine(
+      `📻 ${shortClub(g.home)} ${g.hs}-${g.as} ${shortClub(g.away)}${g.scorer ? ` · ${g.scorer}` : ""}`,
+      "elsewhere", g.minute,
+    ))]);
+    // A jump in the clock (coming off the bench) logs the older goals quietly;
+    // only one from the last few minutes pops up.
+    const latest = mine.filter(g => matchMinute - g.minute <= 3).pop();
+    if (latest) setLivePop({ ...latest, id: ++livePopIdRef.current });
+  }, [matchMinute]);
 
   /** The queue has run dry: go wherever the passage was heading.
    *
@@ -1700,15 +1806,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // Play the match without you until the manager decides to send you
         // on: from the 50th minute, when the scoreline says so.
         const jitter = ((careerRef.current?.week ?? 0) * 37 + (careerRef.current?.season ?? 0) * 11) % 5;
+        // Item 24: `startMinute` is the manager's plan off your ladder rung
+        // (selectionFor); chasing the game only brings you on earlier.
+        const rung = startMinuteRef.current;
         const before = advanceTo(st, hiddenInputs(), rng, 50);
-        while (st.minute < 88 && !subComesOnNow(st.minute, st.userScore - st.oppScore, jitter)) {
+        while (st.minute < 88 && !subComesOnNow(st.minute, st.userScore - st.oppScore, jitter, rung)) {
           before.push(...advanceTo(st, hiddenInputs(), rng, st.minute + 1));
         }
         enteredAtRef.current = st.minute;
+        subOnRef.current = true;
+        subChancesRef.current = 0;
         userScoreRef.current = st.userScore;
         oppScoreRef.current = st.oppScore;
         // You were on the bench until now — nothing to charge for.
         energyClockRef.current = st.minute;
+        subFitnessRef.current = liveEnergyAt(st.minute);
         matchMinuteRef.current = st.minute;
         setMatchMinute(st.minute);
         // The hour you were not on for, read out rather than summarised — the
@@ -3364,7 +3476,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       t.passesCompleted += d.passesCompleted;
       t.chances += d.chances;
       t.assists += d.assists;
+      // Item 26: only a REAL miss counts against you — your own shot that
+      // did not go in, or the ball lost. A pass that found its man (even if
+      // he then missed) and a Touch Mode touch are not misses.
+      if (kind !== "goal" && res !== "delivered" && res !== "touchOn" && !receiverShot) {
+        if (youShot) t.misses += 1; else t.lost += 1;
+      }
       setStats({ ...t });
+      // …and one line in the list the post-match rating opens (chanceLog.ts).
+      // A Touch Mode touch is the same chance carrying on, not a new one.
+      if (res !== "touchOn") {
+        logChance(sc.kind, kind === "goal" ? (d.goals > 0 ? "goal" : d.assists > 0 ? "assist" : "pass")
+          : res === "delivered" ? "pass"
+            : res === "offside" ? "offside"
+              : receiverShot ? "setup"
+                : youShot ? "miss"
+                  : res === "tackled" ? "tackled" : "lost");
+      }
     }
 
     // Your team scores whenever the ball ends up in the net — your own finish or a
@@ -3521,7 +3649,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         onGoalScoredRef.current?.({
           id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
           savedAt: new Date().toISOString(),
-          label: `${verb} · ${matchMinuteRef.current}'`,
+          label: `${verb} · ${minuteLabel(matchMinuteRef.current, ADDED, MATCH_DURATION)}'`,
           ...pendingReplayRef.current,
           flightDtLog: flightDtLogRef.current.slice(),
         });
@@ -3645,7 +3773,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ...finaliseMatch(
             attemptsRef.current, t.goals, t.assists, t.passesCompleted,
             90, userScoreRef.current, oppScoreRef.current, careerForStats,
-            goalEventsRef.current, null, oppGoalEventsRef.current, fixture,
+            goalEventsRef.current, null, oppGoalEventsRef.current, fixture, matchExtras().tally,
           ),
           endEnergy: liveEnergyAt(matchMinuteRef.current),
           kibCansUsed: kibUsedRef.current,
@@ -3677,6 +3805,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     attemptsRef.current += 1;
 
     if (out === "through" && s) {
+      tallyRef.current.dribbles += 1;
+      setStats({ ...tallyRef.current });
+      logChance("dribble", "dribble");
       pushLine("You are through — and the chance is on.");
       showAction("BEAT HIM");
       // Beating your man is the bravest thing available, so what follows is read
@@ -3696,7 +3827,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (matchModeRef.current) resolveScenario(matchStateRef.current, "lost");
     const t = tallyRef.current;
     t.chances += 1;
+    t.lost += 1;
     setStats({ ...t });
+    logChance("dribble", "tackled");
     if (matchModeRef.current) {
       const gen = sceneGenRef.current;
       window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1600);
@@ -3726,6 +3859,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const rng = rngRef.current;
 
     if (result.cleared) {
+      tallyRef.current.dribbles += 1;
+      setStats({ ...tallyRef.current });
+      logChance("dribble", "dribble");
       const bonus = result.beaten >= 7;
       pushLine(bonus ? "Clean through — you've beaten the lot of them." : "You are through — and the chance is on.");
       showAction("BEAT HIM");
@@ -3746,7 +3882,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (matchModeRef.current) resolveScenario(matchStateRef.current, "lost");
     const t = tallyRef.current;
     t.chances += 1;
+    t.lost += 1;
     setStats({ ...t });
+    logChance("dribble", "tackled");
     if (matchModeRef.current) {
       const gen = sceneGenRef.current;
       window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1600);
@@ -3816,7 +3954,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Dead balls you are not the taker for go to whoever is. Keep advancing
     // until the match hands you something that is actually yours — bounded,
     // because every pass moves the clock and the clock ends the match.
-    let step = advanceUntilInvolved(st, baseInputs, rng, matchCeilingRef.current);
+    // Item 25: a substitute comes off the minute his energy reaches
+    // SUB_OFF_ENERGY — so the stretch stops there instead of at full time.
+    let offAt = Infinity;
+    if (subOnRef.current && !hookedRef.current && !neverHookedRef.current) {
+      const perMin = energyPerMinute(energyModeRef.current, energyFactorRef.current);
+      const e = liveEnergyAt(st.minute);
+      if (perMin > 0) offAt = e <= SUB_OFF_ENERGY ? st.minute : st.minute + Math.ceil((e - SUB_OFF_ENERGY) / perMin);
+    }
+    const stretchEnd = Math.min(matchCeilingRef.current, offAt);
+    let step = advanceUntilInvolved(st, baseInputs, rng, stretchEnd);
     const handedOver: HiddenMatchEvent[] = [];
     for (let guard = 0; guard < 20; guard++) {
       const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
@@ -3835,8 +3982,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         handedOver.push({ minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
       }
       resolveScenario(st, scored ? "goal" : "saved");
-      step = advanceUntilInvolved(st, baseInputs, rng, matchCeilingRef.current);
+      step = advanceUntilInvolved(st, baseInputs, rng, stretchEnd);
     }
+    /** Item 25: the stretch ran out because his legs did, not the clock. */
+    const legsGone = !step.request && offAt < matchCeilingRef.current && st.minute >= offAt;
+    if (legsGone) step = { ...step, fullTime: false };
 
     const raw = [...handedOver, ...step.events];
 
@@ -3886,15 +4036,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // flattering version of it.
     if (!hookedRef.current && !step.fullTime && !neverHookedRef.current) {
       const t = tallyRef.current;
-      const decision = hookCheck({
-        minute: st.minute,
-        startMinute: enteredAtRef.current,
-        liveRating: liveRating(attemptsRef.current, t.goals, t.assists, t.passesCompleted, st.userScore, st.oppScore),
-        scoreDiff: st.userScore - st.oppScore,
-        rng,
-        liveEnergy: liveEnergyAt(st.minute),
-      });
+      const decision = legsGone
+        ? { hooked: true, reason: "legs" as HookReason, message: `Out on your feet at ${Math.round(liveEnergyAt(st.minute))}% energy — you are taken off.` }
+        : hookCheck({
+          minute: st.minute,
+          startMinute: enteredAtRef.current,
+          liveRating: ratingSoFar(t, st.userScore, st.oppScore),
+          scoreDiff: st.userScore - st.oppScore,
+          rng,
+          liveEnergy: liveEnergyAt(st.minute),
+          cameo: subOnRef.current,
+        });
       if (decision.hooked) {
+        // Spend the energy up to the minute you came off BEFORE freezing it —
+        // liveEnergyAt stops counting the moment hookedRef is set, and the
+        // commentary has not reached this minute yet (filmed: off "at 11%"
+        // while the bar and the saved energy stayed on 21).
+        chargeEnergyTo(st.minute);
         hookedRef.current = decision.reason;
         hookedAtRef.current = st.minute;
         events.push({ minute: st.minute, text: decision.message });
@@ -3919,6 +4077,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
 
     pendingRequestRef.current = step.request;
+    if (step.request && subOnRef.current) subChancesRef.current += 1;
 
     // ── Into the commentary, a line at a time ──
     //
@@ -3927,6 +4086,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // and being told where it got to. See the queue effect.
     // On a re-run, the lines already read out came out identical; only the
     // ones still to come are replaced.
+    // ── Added time: the fourth official's board (item 30) ──
+    // Goes up once, in the stretch that first runs past 90', before the first
+    // line of added time. A re-run of that stretch carries it again.
+    const board = prior ? !!prior.board
+      : ADDED > 0 && !boardShownRef.current && extraTimeStageRef.current === 0 && st.minute > MATCH_DURATION;
+    if (board) {
+      boardShownRef.current = true;
+      if (stretchRef.current) stretchRef.current.board = true;
+      const at = events.findIndex(e => e.minute > MATCH_DURATION);
+      events.splice(at < 0 ? events.length : at, 0, {
+        minute: MATCH_DURATION, tone: "period",
+        text: `+${ADDED} minute${ADDED === 1 ? "" : "s"} added`,
+      });
+    }
     const shown = prior ? Math.max(0, prior.queued - queueRef.current.length) : 0;
     if (stretchRef.current) stretchRef.current.queued = events.length;
     setQueue(linesFrom(events.slice(shown), matchMinuteRef.current));
@@ -3949,8 +4122,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               attemptsRef.current, t.goals, t.assists, t.passesCompleted,
               Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
               userScoreRef.current, oppScoreRef.current, careerForStats,
-              goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
+              goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture, matchExtras().tally,
             ),
+            ...matchExtras().extra,
             // The moment the match actually ended for you — full time, or
             // the minute you were hooked — not necessarily 90.
             endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
@@ -4003,7 +4177,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             onContinue: () => {
               setPause(null);
               extraTimeStageRef.current = 2;
-              matchCeilingRef.current = MATCH_DURATION + 30;
+              matchCeilingRef.current = MATCH_DURATION + ADDED + 30;
               setLog(l => [...l, logLine(
                 "Second half of extra time.", "period", matchCeilingRef.current,
               )]);
@@ -4040,9 +4214,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const oppGoals = l.filter(x => x.tone === "oppGoal").length;
           const homeFinal = fixtureHomeRef.current ? userGoals : oppGoals;
           const awayFinal = fixtureHomeRef.current ? oppGoals : userGoals;
-          return [...l, logLine(`Full Time  ${homeFinal} - ${awayFinal}`, "period", MATCH_DURATION)];
+          return [...l, logLine(`Full Time  ${homeFinal} - ${awayFinal}`, "period", MATCH_DURATION + ADDED)];
         });
-        setMatchMinute(MATCH_DURATION);
+        setMatchMinute(MATCH_DURATION + ADDED);
 
         // ── A knockout cannot be drawn ──
         //
@@ -4079,9 +4253,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // at that ceiling (handled by the extraTimeStageRef === 1 branch
             // above) before the second half resumes it further still.
             extraTimeStageRef.current = 1;
-            matchCeilingRef.current = MATCH_DURATION + 15;
+            matchCeilingRef.current = MATCH_DURATION + ADDED + 15;
             setLog(l => [...l, logLine(
-              "Extra time — first half.", "period", MATCH_DURATION,
+              "Extra time — first half.", "period", MATCH_DURATION + ADDED,
             )]);
             startSimulation();
           },
@@ -4467,7 +4641,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // One line, once per chance — see logMoment. This is the single thing kept
     // from what used to be an unbroken flood of buildup commentary: the moment
     // the ball actually reaches a player of yours to do something with.
-    logMoment(momentLine(), "you");
+    logMoment(request?.lateCharge
+      ? `Everyone's forward — it's launched into the box for ${playerLabel()}.`
+      : momentLine(), "you");
     // Say where the chance came from before describing it, so it reads as the
     // end of a move rather than as a situation that appeared from nowhere.
     if (request) pushLine(request.reason);
@@ -4491,7 +4667,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const restartSession = () => {
     sceneGenRef.current += 1;
     attemptsRef.current = 0;
-    tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 };
+    tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 };
+    chanceLogRef.current = [];
     userScoreRef.current = 0;
     oppScoreRef.current = 0;
     goalEventsRef.current = [];
@@ -4514,7 +4691,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     hookedRef.current = null;
     hookedAtRef.current = null;
     chainRef.current = null;
-    setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0 });
+    setStats({ shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0 });
     setFinalStats(null);
     setFeed([]);
     setLog([]);
@@ -4892,7 +5069,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
             {statCell("Avg Rat", regressForMinutes(
-              liveRating(stats.chances, stats.goals, stats.assists, stats.passesCompleted, displayScore.user, displayScore.opp),
+              // Item 26: the same formula the post-match screen uses (the old
+              // box counted only lost dribbles as waste, the final counted
+              // every chance — two different numbers for one match).
+              ratingSoFar(stats, displayScore.user, displayScore.opp),
               Math.max(1, matchMinute - enteredAtRef.current),
               // Reported directly: this on-screen number used to jump the
               // moment the match ended, because only the FINAL rating
@@ -4936,6 +5116,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           onPointerCancel={onPointerUp}
           className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : "cursor-default"}`}
         />
+
+        {/* Added time on the pitch (item 30): the clock otherwise only lives on
+            the commentary, so a chance in added time says so. */}
+        {ADDED > 0 && matchMinute > MATCH_DURATION && extraTimeStageRef.current === 0
+          && (phase === "aim" || phase === "contact" || phase === "flight" || phase === "result") && (
+          <div className="pointer-events-none absolute left-2 top-2 z-30 rounded-md bg-amber-400 px-1.5 py-0.5 text-[12px] font-black tabular-nums text-gray-950 shadow-lg">
+            ⏱ {minuteLabel(matchMinute, ADDED, MATCH_DURATION)}&apos;
+          </div>
+        )}
+        {/* Other scores (item 35), over the commentary only — never over your chance. */}
+        {phase === "feed" && livePop && !scoresOpen && <LiveScorePop pop={livePop} onClose={closeLivePop} />}
+        {/* Every score in the division right now (item 35), from the button under the clock. */}
+        {phase === "feed" && scoresOpen && liveWeekRef.current && (
+          <LiveScoresPanel
+            rows={scoresAt(liveWeekRef.current.fixtures, liveWeekRef.current.goals, matchMinute)}
+            minuteLabel={minuteLabel(matchMinute, ADDED, MATCH_DURATION)}
+            followed={following}
+            onToggleFollow={(club) => setFollowing(toggleFollowedTeam(club))}
+            onClose={() => setScoresOpen(false)}
+          />
+        )}
 
         {/* Touch Mode (Boot.extraTouch) — the button itself, not just the
             mechanic. A corner toggle rather than a Settings checkbox, since
@@ -5022,6 +5223,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <MatchCommentary
             lines={log}
             minute={matchMinute}
+            minuteLabel={minuteLabel(matchMinute, ADDED, MATCH_DURATION)}
+            added={ADDED}
+            regulation={MATCH_DURATION}
+            onOpenScores={liveWeekRef.current && liveWeekRef.current.fixtures.length ? () => setScoresOpen(true) : undefined}
             homeTeam={homeTeam}
             awayTeam={awayTeam}
             homeScore={homeScore}
@@ -5142,8 +5347,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
                 attemptsRef.current, t.goals, t.assists, t.passesCompleted,
                 Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
                 userScoreRef.current, oppScoreRef.current, careerForStats,
-                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
+                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture, matchExtras().tally,
               ),
+              ...matchExtras().extra,
               endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
               kibCansUsed: kibUsedRef.current,
               wentToExtraTime: wentToExtraTimeRef.current,

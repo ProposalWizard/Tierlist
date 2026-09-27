@@ -1,7 +1,10 @@
 "use client";
+import { useState } from "react";
 import type { MatchStats } from "@/lib/star/types";
 import { kitsFor } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
+import { CHANCE_KIND_LABEL, CHANCE_OUTCOME_LABEL, chanceOutcomeGood, type ChanceOutcome } from "@/lib/star/chanceLog";
+import { minuteLabel } from "@/lib/star/addedTime";
 
 interface Props {
   stats: MatchStats;
@@ -21,6 +24,10 @@ interface Props {
   competition?: string;
   /** What the tie did to the run: through, out, or a trophy. */
   knockout?: string | null;
+  /** Your star rating before and after this match — the bar on a simmed
+   *  match's result (item 36). */
+  starBefore?: number;
+  starAfter?: number;
 }
 
 // The same black outline the live scoreboard puts on its club-name text —
@@ -30,10 +37,13 @@ const NAME_OUTLINE = {
   textShadow: "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000",
 };
 
-export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true }: Props) {
+export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, competition, knockout, youAreHome = true, starBefore, starAfter }: Props) {
   const hs = youAreHome ? stats.homeScore : stats.awayScore;
   const as = youAreHome ? stats.awayScore : stats.homeScore;
   const kits = kitsFor(homeTeam, awayTeam);
+  // Item 26: tapping the rating opens the list of your chances.
+  const [chancesOpen, setChancesOpen] = useState(false);
+  const log = stats.chanceLog;
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white px-3 py-4">
       <div className="max-w-sm mx-auto">
@@ -68,6 +78,19 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
             {knockout}
           </div>
         )}
+        {/* Item 36: a simmed match is just the score, your goals and assists,
+            your rating and your star rating — then home. */}
+        {stats.simmed ? (
+          <div className={`bg-gray-700 border border-gray-600 ${knockout ? "rounded-b-xl" : "mt-2 rounded-xl"} overflow-hidden`}>
+            <div className="bg-sky-900/70 py-1.5 text-center text-[11px] font-black uppercase tracking-widest text-sky-100">
+              ⏩ Simulated{stats.enteredAt ? ` · on at ${stats.enteredAt}'` : ""}
+            </div>
+            <Row label="Goals" value={stats.goals} highlight={stats.goals > 0} />
+            <Row label="Assists" value={stats.assists} highlight={stats.assists > 0} />
+            <RowRating label="Match Rating" value={stats.rating} />
+            <StarBar before={starBefore} after={starAfter} />
+          </div>
+        ) : (<>
         <div className={`bg-gray-800 border-x border-gray-600 py-3 text-center ${knockout ? "" : "mt-2 rounded-t-xl border-t"}`}>
           <div className="text-xl font-black text-white uppercase tracking-wider">Match Stats</div>
         </div>
@@ -77,7 +100,13 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
           <Row label="Goals" value={stats.goals} highlight={stats.goals > 0} />
           <Row label="Assists" value={stats.assists} highlight={stats.assists > 0} />
           <Row label="Passes" value={stats.passes} />
-          <RowRating label="Match Rating" value={stats.rating} />
+          <RowRating
+            label="Match Rating"
+            value={stats.rating}
+            onTap={log ? () => setChancesOpen((o) => !o) : undefined}
+            open={chancesOpen}
+          />
+          {log && chancesOpen && <ChanceList chances={log} />}
           <RowStar label="Wage" value={stats.wage} />
           <RowStar label="Goal Bonus" value={stats.goalBonus} />
           <RowStar label="Sponsors" value={stats.sponsorPay} />
@@ -102,6 +131,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
             )}
           </div>
         </div>
+        </>)}
 
         <button
           onClick={onContinue}
@@ -125,12 +155,70 @@ function Row({ label, value, highlight }: { label: string; value: number; highli
     </div>
   );
 }
-function RowRating({ label, value }: { label: string; value: number }) {
+function RowRating({ label, value, onTap, open }: { label: string; value: number; onTap?: () => void; open?: boolean }) {
   const color = value >= 8 ? "text-emerald-300" : value >= 7 ? "text-yellow-300" : value >= 6 ? "text-white" : "text-red-400";
-  return (
-    <div className="flex items-center py-2 px-3 border-b border-black/30 bg-emerald-800/50">
-      <div className="font-black text-xs text-white flex-1">{label}</div>
+  const inner = (
+    <>
+      <div className="font-black text-xs text-white flex-1 text-left">
+        {label}
+        {onTap && <span className="ml-1.5 text-[10px] font-bold text-white/75">{open ? "Hide chances ▴" : "Your chances ▾"}</span>}
+      </div>
       <div className={`font-black text-lg ${color}`}>{value.toFixed(1)}</div>
+    </>
+  );
+  return onTap ? (
+    <button onClick={onTap} aria-expanded={open} className="flex w-full items-center py-2 px-3 border-b border-black/30 bg-emerald-800/50 hover:bg-emerald-800/70">
+      {inner}
+    </button>
+  ) : (
+    <div className="flex items-center py-2 px-3 border-b border-black/30 bg-emerald-800/50">{inner}</div>
+  );
+}
+/** Item 26: every chance that came to you — the minute, what it was, what happened. */
+function ChanceList({ chances }: { chances: { minute: number; kind: string; outcome: string }[] }) {
+  return (
+    <div className="px-3 py-2 border-b border-black/30 bg-gray-900/70">
+      {chances.length === 0 && <div className="text-[12px] font-bold text-white/80">No chances came to you.</div>}
+      {chances.map((c, i) => (
+        <div key={i} className="flex items-center gap-2 py-0.5 text-[12px] font-black text-white">
+          <span className="w-10 shrink-0 tabular-nums text-white/75">{minuteLabel(c.minute)}&apos;</span>
+          <span className="min-w-0 flex-1 truncate">{CHANCE_KIND_LABEL[c.kind] ?? c.kind}</span>
+          <span className={`shrink-0 ${chanceOutcomeGood(c.outcome) ? "text-emerald-300" : "text-red-300"}`}>
+            {CHANCE_OUTCOME_LABEL[c.outcome as ChanceOutcome] ?? c.outcome}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+/**
+ * Item 36: your star rating and how far it has come towards the next tenth —
+ * the one progress number a simmed match shows.
+ */
+function StarBar({ before, after }: { before?: number; after?: number }) {
+  if (after === undefined) return null;
+  const from = before ?? after;
+  const tenth = (r: number) => Math.floor(r * 10 + 1e-9);
+  const frac = (r: number) => Math.max(0, Math.min(1, r * 10 - tenth(r)));
+  const up = tenth(after) > tenth(from);
+  const startPct = up ? 0 : frac(from) * 100;
+  const endPct = frac(after) * 100;
+  return (
+    <div className="px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        <StarIcon large />
+        <div className="flex-1 text-sm font-black text-white">Star Rating</div>
+        <div className="text-sm font-black text-amber-300 tabular-nums">
+          {up ? `${(tenth(from) / 10).toFixed(1)} → ` : ""}{(tenth(after) / 10).toFixed(1)}
+        </div>
+      </div>
+      <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-gray-900" role="meter" aria-label="Progress to the next star rating" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(endPct)}>
+        <div className="absolute inset-y-0 left-0 bg-amber-500/60" style={{ width: `${startPct}%` }} />
+        <div className="absolute inset-y-0 bg-amber-300" style={{ left: `${startPct}%`, width: `${Math.max(0, endPct - startPct)}%` }} />
+      </div>
+      <div className="mt-1 text-[10px] font-bold text-white/80">
+        {up ? "Up a notch!" : `${Math.round(endPct)}% of the way to ${((tenth(after) + 1) / 10).toFixed(1)}`}
+      </div>
     </div>
   );
 }
