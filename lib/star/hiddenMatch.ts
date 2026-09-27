@@ -1,3 +1,4 @@
+import { pickFresh, EXTRA_QUIET_USER, EXTRA_QUIET_OPP, EXTRA_MISS_USER, EXTRA_MISS_OPP } from "./commentaryExtra";
 import { pickScenarioKindFrom, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { getTuning } from "@/lib/star/tuningStore";
 
@@ -56,6 +57,8 @@ const USER_DANGER: Zone[] = ["attacking", "box"];
 const OPP_DANGER: Zone[] = ["defensive", "own_box"];
 
 export interface HiddenMatchState {
+  /** Commentary lines used lately this match, so they don't repeat. */
+  usedLines?: string[];
   minute: number;
   possession: Side;
   zone: Zone;
@@ -389,6 +392,18 @@ const MISS_OPP = [
   "Your keeper gets down well to smother their effort.",
 ];
 
+// Lines added 27 Sep 2026 and picked without repeats — see commentaryExtra.ts.
+const QUIET_USER_ALL = [...QUIET_USER, ...EXTRA_QUIET_USER];
+const QUIET_OPP_ALL = [...QUIET_OPP, ...EXTRA_QUIET_OPP];
+const MISS_USER_ALL = [...MISS_USER, ...EXTRA_MISS_USER];
+const MISS_OPP_ALL = [...MISS_OPP, ...EXTRA_MISS_OPP];
+/** A line from a bank that this match hasn't used lately. One random draw,
+ *  the same as before, so a seeded match plays out identically otherwise. */
+function freshLine(state: HiddenMatchState, bank: string[], rng: () => number): string {
+  if (!state.usedLines) state.usedLines = [];
+  return pickFresh(bank, rng, state.usedLines);
+}
+
 export function newMatch(rng: () => number = Math.random): HiddenMatchState {
   return {
     minute: 0,
@@ -606,7 +621,7 @@ export function tick(
           state.momentum = clamp1(state.momentum + 0.3);
           events.push({ minute: state.minute, text: "⚽ Your side score!", isGoal: true, teammateGoal: true });
         } else {
-          events.push({ minute: state.minute, text: MISS_USER[Math.floor(rng() * MISS_USER.length)], isOpponent: false });
+          events.push({ minute: state.minute, text: freshLine(state, MISS_USER_ALL, rng), isOpponent: false });
         }
         endOfMove(state, scored, "user");
       } else {
@@ -616,7 +631,7 @@ export function tick(
           state.momentum = clamp1(state.momentum - 0.3);
           events.push({ minute: state.minute, text: "⚽ They score!", isGoal: true });
         } else {
-          events.push({ minute: state.minute, text: MISS_OPP[Math.floor(rng() * MISS_OPP.length)], isOpponent: true });
+          events.push({ minute: state.minute, text: freshLine(state, MISS_OPP_ALL, rng), isOpponent: true });
         }
         endOfMove(state, scored, "opponent");
       }
@@ -652,8 +667,8 @@ export function tick(
   // Quiet minute. Reported sparingly — a line every minute would be noise.
   // Attributed to whoever actually has the ball right now, not to nobody.
   if (rng() < 0.22) {
-    const bank = userHasIt ? QUIET_USER : QUIET_OPP;
-    events.push({ minute: state.minute, text: bank[Math.floor(rng() * bank.length)], isOpponent: !userHasIt });
+    const bank = userHasIt ? QUIET_USER_ALL : QUIET_OPP_ALL;
+    events.push({ minute: state.minute, text: freshLine(state, bank, rng), isOpponent: !userHasIt });
   }
 
   return { events, request: null };

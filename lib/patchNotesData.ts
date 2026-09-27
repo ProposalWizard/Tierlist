@@ -27,6 +27,145 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.14",
+      "title": "Mikey's patch notes",
+      "publishedAt": "2026-09-27T12:00:00Z",
+      "summary": "The headline: five levels of every boot and lifestyle item, each priced for its league. Plus a moving ball on the strike screen (headers float, volleys bounce, ground balls bobble), commentary that barely repeats, and new chants.",
+      "stats": [
+        {
+          "value": "5 levels",
+          "label": "of every boot and lifestyle item (70 boots, 155 items)"
+        },
+        {
+          "value": "★30 → ★920",
+          "label": "a Phone, level 1 to level 5"
+        },
+        {
+          "value": "8.3 → 0.1",
+          "label": "repeated commentary lines per match"
+        },
+        {
+          "value": "3",
+          "label": "ways the ball moves on the strike screen"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Every boot has L1–L5 buttons with a price",
+              "detail": "Shop → Boots."
+            },
+            {
+              "title": "Every lifestyle item has L1–L5 buttons; a higher level replaces the one you own",
+              "detail": "Shop → Lifestyle."
+            },
+            {
+              "title": "A ball at your feet sometimes bobbles on the strike screen",
+              "detail": "One-on-ones, tight angles, long shots."
+            },
+            {
+              "title": "Headers float across, volleys bounce across",
+              "detail": "Once headers and volleys are switched back on; /star-dev/media-lab?contact=float."
+            },
+            {
+              "title": "Commentary barely repeats",
+              "detail": "Watch a full match's commentary."
+            },
+            {
+              "title": "New chants for Ronaldo, Messi, Saka, Pogba and more",
+              "detail": "The feed after a named player scores."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "The headline: five levels of everything in the shop",
+          "items": [
+            {
+              "title": "Every boot and lifestyle item comes in 5 levels",
+              "detail": "Problem: each item had one price and sat in one money tier. Fix: level 1 priced for National League money up to level 5 for the Premier League; boots about 25% more power and technique per level, lifestyle about 40% more fame. You own one level of each item; a higher one replaces it. Old saves keep what they own.",
+              "bars": [
+                {
+                  "label": "Phone price, L1 → L5",
+                  "was": 30,
+                  "now": 920,
+                  "state": "good",
+                  "unit": "★"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "The ball moves on the strike screen",
+              "detail": "Headers float across in an arc (\"Head it?\"), volleys bounce across, a ball at your feet bobbles about a third of the time. Dead balls stay still. Only where you tap counts; higher technique makes it slower."
+            },
+            {
+              "title": "New chants",
+              "detail": "Ronaldo, Messi, Wan-Bissaka, Rogers, João Pedro, Brobbey, Calvert-Lewin, Lukaku, plus Saka and Pogba. Names match despite accents and hyphens."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Commentary barely repeats",
+              "detail": "About 300 new lines, and a line isn't reused while unused ones remain. Repeats per match: 8.3 → 0.1 (200 simulated matches).",
+              "bars": [
+                {
+                  "label": "Repeated lines per match",
+                  "was": 8.3,
+                  "now": 0.1,
+                  "state": "good"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "NS-Swerve and NS-Maestro abilities come with every level",
+              "detail": "Touch Mode for about ★1,200 at level 1. Waiting on a decision.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Floating and bouncing balls don't appear in matches yet",
+              "detail": "Headers and volleys are switched off in matches.",
+              "pill": {
+                "text": "low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Google Analytics counts our own test browsers as new UK users",
+              "detail": "Fix ready, waiting on a yes.",
+              "pill": {
+                "text": "high",
+                "tone": "red"
+              }
+            }
+          ]
+        }
+      ],
+      "artifactUrl": "https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue",
+      "updatedAt": null
+    },
+    {
       "version": "0.13",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-09-26T12:00:00Z",

@@ -7,6 +7,18 @@ import { DATA_TEMPLATES } from "./data";
 import { CHANT_TEMPLATES } from "./chants";
 
 /**
+ * A scorer's name against a chant's, ignoring accents, hyphens and case, so
+ * "Joao Pedro" matches "João Pedro" and "Calvert Lewin" matches
+ * "Calvert-Lewin" — the database spells names its own way.
+ */
+function normName(n: string): string {
+  return n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-'’.]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+}
+function sameName(a: unknown, b: string): boolean {
+  return typeof a === "string" && normName(a) === normName(b);
+}
+
+/**
  * THE TEMPLATE LIBRARY
  *
  * A template is a sentence with holes in it, and it is matched on four axes:
@@ -147,7 +159,7 @@ export function chooseTemplate(
     && (!wantThread || !!t.threadBody || t.id.endsWith("-generic"))
     && (t.club === undefined || event.facts.club === t.club)
     && (t.score === undefined || event.facts.score === t.score)
-    && (t.player === undefined || event.facts.scorer === t.player)
+    && (t.player === undefined || sameName(event.facts.scorer, t.player))
     && (t.result === undefined || event.facts.result === t.result)
     && (t.subject === undefined || event.subject.kind === t.subject));
 

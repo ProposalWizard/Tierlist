@@ -502,6 +502,10 @@ export interface MatchStats {
 export interface Boot {
   id: string;
   name: string;
+  /** Shop level 1-5 (BOOT_LEVELS). Absent on a boot from before levels. */
+  level?: number;
+  /** The boot this is a level of ("galaxy" for "galaxy-l2"). */
+  baseId?: string;
   /**
    * INERT — kept for save compatibility, deliberately not shown anywhere.
    *
@@ -541,6 +545,12 @@ export interface Boot {
 export interface OwnedItem {
   id: string;
   name: string;
+  /** Shop level 1-5 (lib/star/shopDefaults.ts, LIFESTYLE_LEVELS). Absent on
+   *  an item bought before levels existed. */
+  level?: number;
+  /** The item this is a level of ("phone" for "phone-l4"). Absent means the
+   *  id IS the base. */
+  baseId?: string;
   category: "item" | "vehicle" | "property";
   price: number;
   /** Status — how much owning this adds to your fame (fame.ts). */
