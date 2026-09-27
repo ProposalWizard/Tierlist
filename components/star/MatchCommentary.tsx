@@ -129,7 +129,13 @@ export default function MatchCommentary({
             playing out downward. The auto-scroll effect above (pinning
             `scrollTop` to the newest line once there's enough of it to
             overflow) is untouched and still does its job either way. */}
-        <div className="flex min-h-full flex-col justify-start">
+        {/* Every line keeps a right-hand gutter the width of the minute plate
+            and the Scores button, which float over the feed's top-right
+            corner: at any scroll position one of them used to sit on a
+            line's text ("breaks dow…" under 90+5', the Scores button over
+            "the middle." — final playtest, 27 Sep 2026). The rows' colours
+            still run the full width; only the words stop short of it. */}
+        <div className="flex min-h-full flex-col justify-start [&>div]:pr-16">
           {lines.map(l => <Line key={l.id} l={l} userKit={userKit} oppKit={oppKit} added={added} regulation={regulation} />)}
         </div>
       </div>

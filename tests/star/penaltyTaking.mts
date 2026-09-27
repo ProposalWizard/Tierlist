@@ -31,6 +31,7 @@ import {
   OFF_PITCH_PEN_CONVERT, PENALTY_STAR_WEIGHT, type PenaltyTaker,
 } from "../../lib/star/penaltyTaking";
 import { setPieceDuties } from "../../lib/star/setPieces";
+import { createShootout, nextShootoutSide, nextTakerIndex, takeNextKick } from "../../lib/star/shootout";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
@@ -133,6 +134,33 @@ console.log("\nWHO TAKES THEM");
   const you: PenaltyTaker = { ...m("you", 75), you: true };
   const order = shootoutOrder(mates, you);
   ok(order.map((p) => p.id).join(",") === "b,you,a,c,gk", `the shootout order: best first, you where your rating puts you, the keeper last (${order.map((p) => p.id).join(",")})`);
+  // You are always one of the five (final playtest: a 52 among 62s went 10th
+  // and never kicked); a test screen can ask for you earlier still.
+  const squad = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"].map((id) => m(id, 62));
+  const weak: PenaltyTaker = { ...m("you", 52), you: true };
+  const five = shootoutOrder([...squad, m("gk", 70, true)], weak);
+  ok(five.findIndex((p) => p.you) === 4 && five[five.length - 1].id === "gk" && five.length === 12, `a weak taker still takes the 5th kick (${five.findIndex((p) => p.you) + 1}th), the keeper still last`);
+  ok(shootoutOrder([...squad], weak, 3).findIndex((p) => p.you) === 2, "…and no later than the 3rd when asked (the Highlights shootout)");
+  ok(shootoutOrder([...squad], { ...m("you", 90), you: true }).findIndex((p) => p.you) === 0, "a strong taker still goes where his rating puts him (1st)");
+  // Played out: how often a shootout reaches you.
+  const reaches = (at: number) => {
+    let got = 0;
+    for (let t = 0; t < 2000; t++) {
+      const r = mulberry32(900 + t);
+      let st = createShootout();
+      let yours = false;
+      while (!st.over) {
+        const side = nextShootoutSide(st);
+        if (side === "away" && nextTakerIndex(st, side, 11) === at) yours = true;
+        st = takeNextKick(st, r() < 0.76, 11);
+      }
+      if (yours) got++;
+    }
+    return got / 2000;
+  };
+  const r10 = reaches(9), r5 = reaches(4), r3 = reaches(2);
+  console.log(`  a shootout reaches you: 10th ${pct(r10)} → 5th ${pct(r5)} → 3rd ${pct(r3)}`);
+  ok(r3 === 1 && r5 > 0.5 && r10 < 0.1, "as 3rd you kick in every shootout; as 5th in over half; as 10th almost never");
   ok(designatedTaker(mates)?.id === "b", "the designated taker is the best outfield taker");
   ok(takerRating({ shooting: 88, overall: 70 }) === 88 && takerRating({ overall: 70 }) === 70 && takerRating({}) === 62, "a taker's rating is his finishing, then his overall");
   ok(yourPenaltyRating({ technique: 60, freeKick: 70 }, 2) === 60 * 0.4 + 70 * 0.6 + 6, "your rating is your dead-ball strike plus a little per star");

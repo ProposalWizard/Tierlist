@@ -55,16 +55,30 @@ export function yourPenaltyRating(skills: { technique: number; freeKick: number 
 }
 
 /**
- * The order a side takes a shootout in: best takers first, you where your own
- * penalty rating puts you, the keeper last. Wraps after the eleventh kick
- * (shootout.ts's `nextTakerIndex`), the way a real shootout does.
+ * You are always one of your side's five takers — the kicks a manager names.
+ * Final playtest (27 Sep 2026): ranked purely on rating, a player with a
+ * modest dead ball (52 against a squad of 62s) went 10th of 11, so a shootout
+ * almost never reached him — 0 kicks in 4 shootouts. Within the five, your
+ * rating still decides where (a weaker taker goes 5th).
  */
-export function shootoutOrder(mates: PenaltyTaker[], you?: PenaltyTaker | null): PenaltyTaker[] {
+export const YOU_WITHIN_FIRST = 5;
+
+/**
+ * The order a side takes a shootout in: best takers first, you where your own
+ * penalty rating puts you — but never later than kick `youBy` (default: one of
+ * the five) — the keeper last. Wraps after the eleventh kick (shootout.ts's
+ * `nextTakerIndex`), the way a real shootout does.
+ */
+export function shootoutOrder(mates: PenaltyTaker[], you?: PenaltyTaker | null, youBy = YOU_WITHIN_FIRST): PenaltyTaker[] {
   const outfield = mates.filter((p) => !p.isGK);
   const keepers = mates.filter((p) => p.isGK);
   const all = you ? [...outfield, you] : outfield;
   // Stable: equal ratings keep the order they came in.
   const ranked = all.map((p, i) => ({ p, i })).sort((a, b) => b.p.rating - a.p.rating || a.i - b.i).map((x) => x.p);
+  if (you) {
+    const at = ranked.indexOf(you), latest = Math.max(0, youBy - 1);
+    if (at > latest) { ranked.splice(at, 1); ranked.splice(latest, 0, you); }
+  }
   return [...ranked, ...keepers];
 }
 

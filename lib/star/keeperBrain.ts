@@ -95,8 +95,7 @@ export const KEEPER_BRAIN = {
    * (Harry, v0.15: "up to 2.2 m", less in a tight-angle view, where the
    * drawing IS the picture and the near post is right there).
    */
-  walkCapX: 2.2,
-  walkCapY: 1.8,
+  walkCap: 2.2,
   walkCapTight: 1.0,
   /** A team-mate receives it: the one step he gets to reset (metres). */
   receptionStep: 0.7,
@@ -283,10 +282,14 @@ export function idealDepth(ball: { x: number; y: number }): number {
   return clamp(central * wideCut, 0.8, Math.max(0.8, ball.y - 4));
 }
 
-/** How far he may walk from the drawn spot for this kind of chance. */
-export function walkCapFor(kind: string): { x: number; y: number } {
-  if (kind === "tight_angle") return { x: KEEPER_BRAIN.walkCapTight, y: KEEPER_BRAIN.walkCapTight };
-  return { x: KEEPER_BRAIN.walkCapX, y: KEEPER_BRAIN.walkCapY };
+/**
+ * How far he may walk from the drawn spot for this kind of chance: a RADIUS,
+ * metres in any direction. It was two separate caps (2.2 m sideways, 1.8 m
+ * forward), so a diagonal walk reached 2.8 m — past the "up to 2.2 m" Harry
+ * set (final playtest, 27 Sep 2026).
+ */
+export function walkCapFor(kind: string): number {
+  return kind === "tight_angle" ? KEEPER_BRAIN.walkCapTight : KEEPER_BRAIN.walkCap;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -377,6 +380,20 @@ export function brainStateOf(sc: Scenario | null | undefined) {
   };
 }
 
+/**
+ * The salt a match mount mixes into every keeper seed it hands this brain
+ * (setup, strike, the penalty read). A feature's own picture (Infinite
+ * Highlights, the gallery's Play, the trial, a shootout) mounts the match
+ * afresh with the same seed every time, so without it every kick there drew
+ * the same keeper: 200 of 200 highlight penalties dived the same way and none
+ * hopped (final playtest, 27 Sep 2026). The real match takes 0 — its seeded,
+ * replayable stream is untouched; a goal replay restores him from his
+ * snapshot either way.
+ */
+export function keeperSaltFor(feature: boolean, random: () => number = Math.random): number {
+  return feature ? (random() * 0x100000000) >>> 0 : 0;
+}
+
 /** Does this chance have a brain? (A free kick, or a scene with no keeper, = no.) */
 export function hasBrain(sc: Scenario): boolean { return states.has(sc); }
 
@@ -435,12 +452,13 @@ function planSet(sc: Scenario, st: State, ball: { x: number; y: number }): { x: 
   const bad = rng() < ab.badSet ? 2.5 : 1;
   tx += gauss(rng) * ab.posErr * bad;
   ty += gauss(rng) * ab.posErr * 0.5 * bad;
-  tx = k.x + clamp(tx - k.x, -cap.x, cap.x);
-  ty = k.y + clamp(ty - k.y, -cap.y, cap.y);
-  return {
-    x: clamp(tx, POST_L - 1.2, POST_R + 1.2),
-    y: clamp(ty, 0.4, Math.max(0.4, D - 3)),
-  };
+  tx = clamp(tx, POST_L - 1.2, POST_R + 1.2);
+  ty = clamp(ty, 0.4, Math.max(0.4, D - 3));
+  // The cap last, as a circle round the drawn spot: never further than `cap`
+  // in any direction (inside the bounds above whenever he was drawn inside them).
+  const wx = tx - k.x, wy = ty - k.y, walk = Math.hypot(wx, wy);
+  if (walk > cap) { tx = k.x + (wx / walk) * cap; ty = k.y + (wy / walk) * cap; }
+  return { x: tx, y: ty };
 }
 
 function stepToward(from: { x: number; y: number }, to: { x: number; y: number }, max: number) {

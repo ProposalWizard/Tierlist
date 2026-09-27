@@ -86,7 +86,7 @@ import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { switchOn } from "@/lib/star/compareSwitches";
 import { strikingPower } from "@/lib/star/strikePower";
 import {
-  brainOptionsHere, hasBrain, brainSetup, brainAim, brainRunUp, brainStrike, brainStep, brainSnapshot, brainRestore,
+  brainOptionsHere, hasBrain, brainSetup, keeperSaltFor, brainAim, brainRunUp, brainStrike, brainStep, brainSnapshot, brainRestore,
 } from "@/lib/star/keeperBrain";
 import {
   RUNUP, hasRunup, canNudge, standBack, plantBeside, playerAt, goalLineX, nudgedDir, nudgeFromDrag,
@@ -1036,7 +1036,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * kick keeps its own rules and gets no brain. On everywhere, at the
    * "Middle" dial; only the Play Area can pick another, on a test screen.
    */
+  /** A feature's keeper draws off this mount's own random salt (keeperSaltFor):
+   *  the same picture, played again, is not the same kick. 0 in the real match. */
+  const keeperSaltRef = useRef<number | null>(null);
+  if (keeperSaltRef.current === null) keeperSaltRef.current = keeperSaltFor(!!openOn);
   const setUpKeeper = (sc: Scenario, seed: number) => {
+    seed = (seed ^ (keeperSaltRef.current ?? 0)) >>> 0;
     const opts = brainOptionsHere();
     // The keeper facing THIS kick: an automatic kick (a shootout, a
     // team-mate's penalty) names him; otherwise the match's.
@@ -1049,6 +1054,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** v0.15 item 16: blocks deflected this strike (one per strike; the next
    *  defender to get to it wins it, as today). */
   const deflectionsRef = useRef(0);
+  /**
+   * The banner for a ball that reached a team-mate. A strike that came off a
+   * defender first was not a pass: a free kick into the wall that fell to a
+   * team-mate read "PASS" (final playtest, 27 Sep 2026).
+   */
+  const passBanner = () => (deflectionsRef.current > 0
+    ? (scenarioRef.current.kind === "free_kick" ? "OFF THE WALL" : "DEFLECTED")
+    : "PASS");
   const setPieceSkillRef = useRef(setPieceSkill);
   setPieceSkillRef.current = setPieceSkill;
   const markersRef = useRef(markers);
@@ -1831,6 +1844,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // See lib/star/faceImageCache.ts — extracted from what used to be a local
   // closure here so the first-person dribble mode can draw real faces too
   // off the exact same cache shape, not a second copy of it.
+  // Never a blank circle: a man with no identity to draw from (the trial,
+  // training — no squad) wears a stable fake face for his role, and a photo
+  // that fails to load becomes one too (faceImageCache.ts).
   const faceImageCacheRef = useRef(createFaceImageCache());
   const getFaceImage = (url: string | undefined): HTMLImageElement | undefined =>
     faceImageCacheRef.current.get(url);
@@ -2713,7 +2729,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
-        face: getFaceImage(sc.follower.who?.face),
+        face: getFaceImage(sc.follower.who?.face ?? fakeFaceFor("follower")),
         label: faceStyleRef.current.namesEnabled ? sc.follower.who?.shortName : undefined,
       });
     }
@@ -2818,7 +2834,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(t.x, t.y, R, ourKit().shirt, ourKit().trim, {
         pose: poseFor(`mate${i}`, t.x, t.y),
         phase: runPhase(t.x),
-        face: getFaceImage(t.who?.face),
+        face: getFaceImage(t.who?.face ?? fakeFaceFor(`mate${i}`)),
         label: faceStyleRef.current.namesEnabled ? t.who?.shortName : undefined,
       });
     });
@@ -2833,7 +2849,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(r.pos.x, r.pos.y, R, ourKit().shirt, ourKit().trim, {
         pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
-        face: getFaceImage(r.who?.face),
+        face: getFaceImage(r.who?.face ?? fakeFaceFor(`run${i}`)),
         label: faceStyleRef.current.namesEnabled ? r.who?.shortName : undefined,
       });
     });
@@ -2871,7 +2887,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       footballer(d.x, d.y - lift, R, theirKit().shirt, theirKit().trim, {
         pose: (d.z ?? 0) > 0.15 ? "kick" : poseFor(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
-        face: getFaceImage(d.who?.face),
+        face: getFaceImage(d.who?.face ?? fakeFaceFor(`def${i}`)),
         label: faceStyleRef.current.namesEnabled ? d.who?.shortName : undefined,
       });
     });
@@ -2992,7 +3008,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           shorts: gkKit.trim,
           trim: gkKit.trim,
           skin: SKIN,
-          face: getFaceImage(kk.who?.face),
+          face: getFaceImage(kk.who?.face ?? fakeFaceFor("keeper")),
         },
         // The lean below is this screen's own, per-save-kind one rather than
         // the shared renderer's generic one, so every save still pitches over
@@ -3584,7 +3600,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // His name, if we know it — and by now we do, because the identity is
           // taken off whoever the ball actually reached. See lib/star/lineup.ts.
           const label = receiver.who?.shortName ?? receiver.roleLabel;
-          if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction("PASS"); }
+          if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction(passBanner()); }
           else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); kickPoseRef.current = KICK_POSE_S; }
           // He was told to leave it, and he has left it. Named, because the
           // whole point of the order is that the move went through somebody
@@ -3856,7 +3872,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // way a goal does. It only said PASS when the move carried on into a
       // finish, so the safe ball in midfield resolved in silence and read as
       // nothing having happened.
-      showAction("PASS");
+      showAction(passBanner());
     } else if (res === "touchOn") {
       // Touch Mode's own catch had no banner at all — the result screen paused
       // exactly the way a genuinely dead chance does, with nothing on screen
@@ -4877,6 +4893,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // an automatic kick on it is started here.
   useEffect(() => { scheduleAutoKick(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
+  // ── Every chance opens with the whole pitch on screen ──
+  //
+  // Final playtest (27 Sep 2026, 390x664): the match's first chance opened
+  // with the page still at the top (the site's nav above the scoreboard), so
+  // the pitch ran 160 px past the bottom of the screen — and the strike
+  // screen that follows the pull-back fills the pitch with its ball at the
+  // bottom: 44% of that ball was below the fold and the tap landed under it.
+  // The frame itself was never the cause (1,000 served chances: the ball
+  // always on screen with a full pull below it). The run-up already scrolled
+  // for its strike screen; now every chance does, the moment it is served —
+  // while nothing is timed or dragged. Only when the pitch is not already
+  // fully showing, so nothing moves under someone reading.
+  useEffect(() => {
+    if (phase !== "aim") return;
+    const w = wrapRef.current?.getBoundingClientRect();
+    if (!w || w.bottom <= window.innerHeight + 1) return;
+    const id = requestAnimationFrame(() => revealOnScreen(wrapRef.current, { smooth: false }));
+    return () => cancelAnimationFrame(id);
+  }, [phase]);
+
   // Load a new scenario onto the canvas and enter aim phase.
   const loadScenario = (attacking: boolean) => {
     sceneGenRef.current += 1;
@@ -4896,7 +4932,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // touch-mode re-touch is the SAME move carrying on and still chains
     // normally. Everything else puts you back on the chosen picture, which
     // is what makes it useful for judging a scenario rather than a match.
-    if (openOnRef.current && !chainRef.current) {
+    // …nor when a foul on you has just given a set piece (v0.15 item 22):
+    // that is the next chance on a test screen too. Without this the banner
+    // said PENALTY or FOUL and the same picture came back (final playtest:
+    // 3 of 3 fouls on Infinite Highlights / the Play Area).
+    if (openOnRef.current && !chainRef.current && !setPieceNextRef.current) {
       chainRef.current = null;
       pendingRequestRef.current = null;
       scenarioRef.current = openOnRef.current();
@@ -5568,7 +5608,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // throws the dive the penalty rule set decides (penaltyKeeper.ts), so the
     // plain read below is only for a chance with no brain.
     if (hasBrain(scenarioRef.current)) {
-      const bs = ((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0xc2b2ae35)) ^ 0x4b7f) >>> 0;
+      const bs = ((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0xc2b2ae35)) ^ 0x4b7f ^ (keeperSaltRef.current ?? 0)) >>> 0;
       if (pendingReplayRef.current) pendingReplayRef.current.keeperBrain = brainSnapshot(scenarioRef.current, bs);
       brainStrike(scenarioRef.current, ballRef.current, bs);
     } else
@@ -5582,7 +5622,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // for your team-mate, yours for their taker); otherwise the match's.
       const facing = autoKickOf(scenarioRef.current)?.keeper?.strength ?? strengthRef.current;
       const read = penaltyReadFor(facing, penaltyReadRef.current);
-      const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x5eed) >>> 0);
+      const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x5eed ^ (keeperSaltRef.current ?? 0)) >>> 0);
       const decision = decidePenaltyRead(scenarioRef.current, ballRef.current, read, [r(), r()]);
       applyPenaltyRead(scenarioRef.current, decision);
       if (pendingReplayRef.current) pendingReplayRef.current.penaltyRead = decision;

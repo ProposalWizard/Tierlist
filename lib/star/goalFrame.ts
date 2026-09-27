@@ -32,7 +32,8 @@ import {
   goalInView, dragForFullPower, VIEW_ASPECT,
   type Scenario, type Viewport, type Vec2,
 } from "./canvasEngine";
-import { NET_DEPTH, GOAL_H, POST_L, POST_R, PITCH_W } from "./pitch";
+import { NET_DEPTH, GOAL_H, POST_L, POST_R, PITCH_W, BOX_L, BOX_R, BOX_DEPTH } from "./pitch";
+import { MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT } from "./fiveASide/render";
 
 /** The top of the goal as the match draws it: the back frame's bar, drawn at
  *  true height above the back of the net (CanvasMatch's goal block). */
@@ -191,7 +192,8 @@ export function finishServedFrame(sc: Scenario): FrameReport {
   const h0 = vp0.y2 - vp0.y1;
   const rep = NONE(h0);
   const turned = (sc.facing ?? "up") !== "up";
-  if (turned || !goalInView(sc.kind)) return rep;
+  if (turned) { finishTurnedFrame(sc, rep); return rep; }
+  if (!goalInView(sc.kind)) return rep;
   const before = { ...vp0 };
   let v = { ...vp0 };
   const k = roomShare();
@@ -250,4 +252,81 @@ export function finishServedFrame(sc: Scenario): FrameReport {
   sc.viewport = v;
   rep.movedIn = pullInside(sc, before, v);
   return rep;
+}
+
+// ── The corner-flag views (corners, byline crosses) ─────────────────────────
+//
+// Final playtest (27 Sep 2026): "the net and 3–4 players in the box run off
+// the TOP edge while half the screen is empty grass" — in Infinite Highlights
+// and in the real match (52', 77'). The side view was hung from one fixed
+// point (the far touchline, or the ball at 80% down) and nothing checked what
+// was drawn at the far end: the goal is drawn standing up the screen from its
+// posts, and every figure up the screen from his boots, so a frame whose top
+// edge sat 1.3 m past the far post cut the goal's top off every time (corners
+// 0/300 whole) and the men beyond it (a box player cut on 281 of 300).
+//
+// The same rule as the straight view, turned: the camera moves, never the
+// chance. The frame slides towards the goal until the whole goal and every
+// man drawn in the box are on screen, keeping below the ball the room a full
+// pull-back plus a thumb needs; only when one frame cannot hold both does it
+// pull out, just enough.
+
+/** A figure's drawn height, in pitch metres — boots to the top of the head. */
+export const FIGURE_DRAWN_H = MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R;
+/** Clear air left above the goal's drawn top and above the highest head. */
+const TOP_AIR = 0.4;
+/** Clear air left below the lowest boots, and beside anyone drawn. */
+const FEET_AIR = 0.8;
+
+const inPenaltyArea = (p: Vec2) =>
+  p.x >= BOX_L - 1 && p.x <= BOX_R + 1 && p.y >= -1 && p.y <= BOX_DEPTH + 1;
+
+/** Everyone drawn in the box, plus the men the frame is obliged to hold. */
+function turnedMustShow(sc: Scenario): Vec2[] {
+  const all: Vec2[] = [sc.player, sc.keeper, sc.follower, ...sc.teammates, ...sc.defenders];
+  for (const r of [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners]) all.push(r.pos, r.to);
+  const box = all.filter((p) => onPitchBody(p) && inPenaltyArea(p));
+  return [...box, ...mustHold(sc)].filter(onPitchBody);
+}
+
+/**
+ * Frame a corner-flag view. Screen-down is pitch x in a turned frame
+ * ("right": x grows down the screen; "left": it shrinks), so the frame is
+ * worked in `s`, metres down the screen, and turned back at the end. The
+ * frame's goal-end edge (pitch y1) never moves; it only grows away from it.
+ */
+function finishTurnedFrame(sc: Scenario, rep: FrameReport): void {
+  const v = sc.viewport;
+  const right = sc.facing === "right";
+  const s = (x: number) => (right ? x : -x);
+  const H0 = v.x2 - v.x1;
+  let T = right ? v.x1 : -v.x2;
+  let H = H0;
+  const k = roomShare();
+  const show = turnedMustShow(sc);
+  // The top: the goal drawn standing up from its upper post, and every head.
+  const topPost = right ? POST_L : POST_R;
+  let top = s(topPost) - GOAL_H - TOP_AIR;
+  for (const p of show) top = Math.min(top, s(p.x) - FIGURE_DRAWN_H - TOP_AIR);
+  // The bottom: a full pull plus a thumb below the ball, and everyone's boots.
+  let feet = s(sc.ball.x) + 0.3;
+  for (const p of show) feet = Math.max(feet, s(p.x) + FEET_AIR);
+  const bottom = (h: number) => Math.max(s(sc.ball.x) + k * h, feet);
+  // Across the screen (pitch y from the goal end): everyone, and the ball.
+  let across = sc.ball.y + BALL_SIDE_NEED;
+  for (const p of show) across = Math.max(across, p.y + FEET_AIR);
+  H = Math.max(H, (across - v.y1) / VIEW_ASPECT);
+  // The frame [T, T+H] must satisfy T <= top and T + H >= bottom(H).
+  if (top + H < bottom(H) - 1e-9) {
+    // One frame cannot hold both: pull out just enough, top on the goal.
+    H = Math.max(H, (s(sc.ball.x) - top) / (1 - k), feet - top);
+  }
+  // As little slide as it takes from where it was hung.
+  const lo = bottom(H) - H, hi = top;
+  T = clamp(T, Math.min(lo, hi), hi);
+  const x1 = right ? T : -(T + H);
+  const nv: Viewport = { x1, x2: x1 + H, y1: v.y1, y2: v.y1 + H * VIEW_ASPECT };
+  rep.slidUp = right ? v.x1 - nv.x1 : nv.x2 - v.x2;
+  rep.goalZoomH = rep.zoomH = H;
+  sc.viewport = nv;
 }

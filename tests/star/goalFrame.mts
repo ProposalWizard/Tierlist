@@ -14,9 +14,9 @@
  */
 import { VIEW_ASPECT, dragForFullPower, type ScenarioKind, type Scenario } from "@/lib/star/canvasEngine";
 import { makeChance } from "@/lib/star/chanceMaker";
-import { finishServedFrame, naturalTargets, FRAME_TOP_FOR_GOAL, ROOM_FOR_POWER, THUMB_FRAC_W } from "@/lib/star/goalFrame";
+import { finishServedFrame, naturalTargets, FRAME_TOP_FOR_GOAL, ROOM_FOR_POWER, THUMB_FRAC_W, FIGURE_DRAWN_H, roomShare } from "@/lib/star/goalFrame";
 import { mulberry32 } from "@/lib/star/season";
-import { POST_L, POST_R } from "@/lib/star/pitch";
+import { POST_L, POST_R, GOAL_H, NET_DEPTH, BOX_L, BOX_R, BOX_DEPTH } from "@/lib/star/pitch";
 
 let failed = 0;
 const ok = (c: boolean, msg: string) => { console.log(`  ${c ? "✓" : "✗"} ${msg}`); if (!c) failed++; };
@@ -70,6 +70,43 @@ console.log("\n2. THE CAMERA MOVES, NEVER THE CHANCE");
     if (Math.hypot(sc.ball.x - b.x, sc.ball.y - b.y) > 1e-9 || Math.hypot(sc.player.x - you.x, sc.player.y - you.y) > 1e-9) moved++;
   }
   ok(moved === 0, `ball and you never moved (${moved}/${n})`);
+}
+
+// ── The corner-flag views (final playtest, 27 Sep 2026) ──
+// Before: corners 0/300 with the whole goal on screen and a box player cut
+// on 281; byline crosses 113/300 and 180. Screen-down is pitch x there.
+console.log("\n5. CORNERS AND BYLINE CROSSES: THE WHOLE GOAL AND EVERY MAN IN THE BOX ON SCREEN");
+{
+  const toS = (sc: Scenario, x: number, y: number) => {
+    const v = sc.viewport, fx = (x - v.x1) / (v.x2 - v.x1), fy = (y - v.y1) / (v.y2 - v.y1);
+    return sc.facing === "right" ? { sx: 1 - fy, sy: fx } : { sx: fy, sy: 1 - fx };
+  };
+  const on = (p: { sx: number; sy: number }) => p.sx >= -1e-6 && p.sx <= 1 + 1e-6 && p.sy >= -1e-6 && p.sy <= 1 + 1e-6;
+  for (const kind of ["corner", "byline_cross"] as ScenarioKind[]) {
+    let n = 0, goal = 0, cut = 0, room = 0, shape = 0, again = 0, maxH = 0;
+    for (let i = 0; i < 300; i++) {
+      const sc = makeChance({ source: { from: "kind", kind }, rng: mulberry32(700 + i * 7919), memory: null }).sc;
+      if ((sc.facing ?? "up") === "up") continue;
+      n++;
+      const v = sc.viewport, H = v.x2 - v.x1, m = 1 / H;
+      maxH = Math.max(maxH, H);
+      if (Math.abs((v.y2 - v.y1) / H - VIEW_ASPECT) > 1e-6) shape++;
+      const posts = [[POST_L, 0], [POST_R, 0], [POST_L, -NET_DEPTH], [POST_R, -NET_DEPTH]].map(([x, y]) => toS(sc, x, y));
+      if (posts.every((p) => on(p) && p.sy - GOAL_H * m >= -1e-6)) goal++;
+      const men = [sc.player, sc.keeper, sc.follower, ...sc.teammates, ...sc.defenders,
+        ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map((r) => r.pos)]
+        .filter((p) => p.x >= BOX_L - 1 && p.x <= BOX_R + 1 && p.y >= -1 && p.y <= BOX_DEPTH + 1);
+      if (men.some((p) => { const f = toS(sc, p.x, p.y); return !on(f) || f.sy - FIGURE_DRAWN_H * m < -1e-6; })) cut++;
+      if (1 - toS(sc, sc.ball.x, sc.ball.y).sy >= roomShare() - 1e-6) room++;
+      const c2: Scenario = structuredClone(sc);
+      finishServedFrame(c2);
+      if (Math.abs(c2.viewport.x1 - v.x1) + Math.abs(c2.viewport.x2 - v.x2) > 1e-6) again++;
+    }
+    ok(goal === n, `${kind}: the whole goal on screen, standing up from its posts (${goal}/${n})`);
+    ok(cut === 0, `${kind}: every man drawn in the box on screen, boots to head (${n - cut}/${n})`);
+    ok(room === n, `${kind}: a full pull plus a thumb below the ball (${room}/${n})`);
+    ok(shape === 0 && again === 0 && maxH <= 60, `${kind}: canvas shape kept, a second pass changes nothing, widest ${maxH.toFixed(1)} m`);
+  }
 }
 
 if (failed) { console.log(`\n${failed} FAILED`); process.exit(1); }

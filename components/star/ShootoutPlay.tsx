@@ -80,7 +80,10 @@ function sidesFor(career: CareerState, fixture: Fixture, keeperDial: number, rea
     strength: Math.max(20, Math.min(99, realKeeper && theirGk?.overall !== undefined ? theirGk.overall : keeperDial)),
     id: theirGk?.id, name: theirGk?.name, shortName: theirGk?.short, face: theirGk ? (theirGk.face ?? fakeFaceFor(theirGk.id)) : undefined,
   };
-  const ourOrder = shootoutOrder(mates, you), theirOrder = shootoutOrder(theirs);
+  // A shootout can be over after three rounds, never sooner — so on this
+  // screen, which exists to play your kick, you take one of the first three:
+  // every shootout reaches you (final playtest: 0 kicks for you in 4).
+  const ourOrder = shootoutOrder(mates, you, 3), theirOrder = shootoutOrder(theirs);
   const home = fixture.home !== false;
   return {
     homeClub: home ? career.player.club : fixture.opponent,
@@ -176,7 +179,9 @@ export default function ShootoutPlay({ seed = 1, width, onExit }: {
       {done ? (
         <div style={{ display: "grid", gap: 10, justifyItems: "center", padding: "18px 12px" }}>
           <div style={{ fontSize: 16, fontWeight: 800 }}>
-            {state.winner === sides.yourSide ? "Won" : "Lost"} {state.homeScore}–{state.awayScore} on penalties
+            {/* From your side: "Won 4–2", never "Won 2–4" when you are away. */}
+            {state.winner === sides.yourSide ? "Won" : "Lost"}{" "}
+            {sides.yourSide === "home" ? state.homeScore : state.awayScore}–{sides.yourSide === "home" ? state.awayScore : state.homeScore} on penalties
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={again} style={btn}>Another shootout</button>

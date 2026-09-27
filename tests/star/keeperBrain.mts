@@ -114,15 +114,17 @@ for (const [ks, floor] of [[45, 0.55], [88, 0.8]] as const) {
   ok(m / n >= floor, `rating ${ks}: moves before it reaches him ${pct(m, n)} (today ~1 %)`);
 }
 
-console.log("\nWHILE YOU AIM: A WALK OF AT MOST 2.2 m (1 m IN A TIGHT ANGLE); A PENALTY KEEPER STAYS PUT");
+console.log("\nWHILE YOU AIM: A WALK OF AT MOST 2.2 m IN ANY DIRECTION (1 m IN A TIGHT ANGLE); A PENALTY KEEPER STAYS PUT");
 {
   let moved = 0;
   for (let s = 1; s <= 60; s++) if (play("penalty", s * 7919 + 5, 88).aimMove > 1e-6) moved++;
   ok(moved === 0, `no penalty keeper moved while you aimed (${moved} of 60)`);
-  for (const [kind, cap] of [["one_on_one", B.KEEPER_BRAIN.walkCapX], ["long_range", B.KEEPER_BRAIN.walkCapX], ["tight_angle", B.KEEPER_BRAIN.walkCapTight]] as const) {
+  // Measured as the straight-line walk, not each axis on its own: two
+  // separate caps (2.2 m across, 1.8 m out) let a diagonal walk reach 2.8 m.
+  for (const [kind, cap] of [["one_on_one", B.KEEPER_BRAIN.walkCap], ["long_range", B.KEEPER_BRAIN.walkCap], ["tight_angle", B.KEEPER_BRAIN.walkCapTight]] as const) {
     let worst = 0, walked = 0;
-    for (const ks of [45, 88]) for (let s = 1; s <= 80; s++) { const r = play(kind, s * 7919 + 11, ks); worst = Math.max(worst, r.aimDx, r.aimDy); if (r.aimMove > 0.3) walked++; }
-    ok(worst <= cap + 1e-6 && walked > 40, `${kind}: he walks while you aim (${walked} of 160 over 0.3 m) but never more than ${cap} m either way (most ${worst.toFixed(2)} m)`);
+    for (const ks of [45, 88]) for (let s = 1; s <= 80; s++) { const r = play(kind, s * 7919 + 11, ks); worst = Math.max(worst, r.aimMove); if (r.aimMove > 0.3) walked++; }
+    ok(worst <= cap + 1e-6 && walked > 40, `${kind}: he walks while you aim (${walked} of 160 over 0.3 m) but never more than ${cap} m in any direction (most ${worst.toFixed(2)} m)`);
   }
 }
 
@@ -164,6 +166,36 @@ console.log("\nA PENALTY RUN-UP HOP IS SMALL, AND HE DIVES THE WAY HE HOPPED");
   ok(hopped > 60, `an 88 keeper hops during the run-up (${hopped} of 120)`);
   ok(small === hopped, `…a small hop, never more than ${B.KEEPER_BRAIN.hopM} m (${small} of ${hopped})`);
   ok(dived > 0 && sameWay === dived, `…and every dive after it goes the way he hopped (${sameWay} of ${dived})`);
+}
+
+console.log("\nTHE SAME PICTURE, PLAYED AGAIN, IS NOT THE SAME KICK (final playtest: 11 of 11 dived one way, none hopped)");
+{
+  // A feature screen mounts the match with the SAME seed every Play (EnginePlay's
+  // seed 1), so one picture played 200 times hands the brain the same seeds —
+  // unless the mount's salt (keeperSaltFor) is mixed in, as CanvasMatch does.
+  const run = (feature: boolean) => {
+    let low = 0, high = 0, hops = 0;
+    const saltRng = mulberry32(4242);
+    for (let i = 0; i < 200; i++) {
+      const salt = B.keeperSaltFor(feature, saltRng);
+      const { sc } = serve("penalty", 31337, 62);
+      B.brainSetup(sc, ((1 ^ 0x4b7e) ^ salt) >>> 0, 62, { penalty: penaltyReadFor(62) });
+      const aimX = POST_L + 0.7; // the same corner every kick
+      const x0 = sc.keeper.x;
+      for (let t = 0; t < 2; t += 1 / 60) { E.stepKeeper(sc, 1 / 60); B.brainRunUp(sc, 1 / 60, t, aimX); }
+      if (Math.abs(sc.keeper.x - x0) > 1e-6) hops++;
+      const ball = E.launch(sc, { x: aimX - sc.ball.x, y: -sc.ball.y }, 0.8, { cx: 0, cy: -0.4 }, { power: 60, technique: 60 }, mulberry32(5));
+      B.brainStrike(sc, ball, ((2 ^ Math.imul(37, 0xc2b2ae35)) ^ 0x4b7f ^ salt) >>> 0);
+      const d = B.brainStateOf(sc)!.dir;
+      if (d < 0) low++; else if (d > 0) high++;
+    }
+    return { low, high, hops };
+  };
+  const game = run(false), feature = run(true);
+  ok(B.keeperSaltFor(false) === 0, "the real match's keeper keeps its seeded, replayable stream (salt 0)");
+  ok(game.hops === 0 || game.hops === 200, `without the salt one picture is one kick, every time (dived low ${game.low} / high ${game.high}, hopped ${game.hops} of 200)`);
+  ok(feature.low >= 60 && feature.high >= 60, `with it he dives both ways (low ${feature.low} / high ${feature.high} of 200)`);
+  ok(feature.hops >= 70 && feature.hops <= 130, `…and hops on about half of the run-ups (${feature.hops} of 200)`);
 }
 
 console.log("\nA BETTER KEEPER CONCEDES FEWER (item 10) — 200 each");
