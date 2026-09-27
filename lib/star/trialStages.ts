@@ -395,6 +395,50 @@ export function penaltyReadForTrial(trial: TrialProgress): { commitChance: numbe
 }
 
 /**
+ * THE TRIAL KEEPER GETS HARDER EVERY KICK (v0.15 plan, item 7b).
+ *
+ * Harry: "He needs to get harder on every kick." His answer: a kick-by-kick
+ * ramp now, with the random-difficulty day switched off for the penalty
+ * keeper (the day itself is decided at the end). "Kick 1 should feel good, a
+ * really good trial should be hard, with a little luck involved."
+ *
+ * Today, `penaltySetup`/`penaltyReadForTrial` above set ONE keeper for every
+ * kick of the stage from that day's random difficulty. The ramp replaces that
+ * with a fixed keeper per kick, built on today's four penalty-keeper dials:
+ *
+ *   keeperStrength — his rating: how big his save radius is (the engine's own)
+ *   commitChance   — how often he goes at the strike rather than standing
+ *   readChance     — given he goes, how often he goes YOUR way
+ *   metres         — how far along his line he dives
+ *
+ * The first kick is the first row, the last kick the last row, whatever the
+ * stage's length (3 today — `REPS.penalties`), with the kicks between spread
+ * evenly. The luck is his guess on each kick (two rolls, penaltyKeeper.ts),
+ * never the ramp itself: the same kick number is the same keeper on every
+ * trial. The keeper brain (keeperBrain.ts) reads these same
+ * rows through its override.
+ */
+export interface PenaltyRampRow { keeperStrength: number; commitChance: number; readChance: number; metres: number }
+export const PENALTY_RAMP_FIRST: PenaltyRampRow = { keeperStrength: 45, commitChance: 0.6, readChance: 0.5, metres: 1.3 };
+export const PENALTY_RAMP_LAST: PenaltyRampRow = { keeperStrength: 88, commitChance: 0.95, readChance: 0.75, metres: 1.65 };
+
+export function penaltyRampFor(rep: number, reps: number): { keeperStrength: number; read: { commitChance: number; readChance: number; metres: number } } {
+  const i = Math.max(0, Math.floor(Number.isFinite(rep) ? rep : 0));
+  const p = reps > 1 ? Math.min(1, i / (reps - 1)) : 0;
+  const lerp = (a: number, b: number) => a + (b - a) * p;
+  const r2 = (v: number) => Math.round(v * 100) / 100;
+  const F = PENALTY_RAMP_FIRST, L = PENALTY_RAMP_LAST;
+  return {
+    keeperStrength: Math.round(lerp(F.keeperStrength, L.keeperStrength)),
+    read: {
+      commitChance: r2(lerp(F.commitChance, L.commitChance)),
+      readChance: r2(lerp(F.readChance, L.readChance)),
+      metres: r2(lerp(F.metres, L.metres)),
+    },
+  };
+}
+
+/**
  * THE TRIAL PLAYER'S INVISIBLE STATS.
  *
  * A trial is played before you have a club, a career's skills or boots — so

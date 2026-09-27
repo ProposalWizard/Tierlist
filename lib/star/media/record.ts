@@ -199,6 +199,11 @@ export function buildMatchRecord(
       careerAssists: after.careerStats.assists,
       careerAppearances: after.careerStats.appearances,
       clubAppearances: after.clubAppearances ?? after.careerStats.appearances,
+      ...(stats.cheekyMisses?.length ? {
+        cheekyMisses: stats.cheekyMisses.length,
+        cheekyKind: stats.cheekyMisses[0].kind,
+        cheekyMinute: stats.cheekyMisses[0].minute,
+      } : {}),
     },
 
     goals,

@@ -417,6 +417,7 @@ export const ADMIN_GUIDES = {
           ["‹", "Back to the Scenario Gallery."],
           ["N/13", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
           ["▦ 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
+          ["⚽ Play a penalty shootout", "On the chance-types screen. A whole shootout on the real match, with the Play Area's test sides: every kick live — team-mates at their keeper, their takers at yours (from the same end), yours to take when your turn comes. Nothing is saved; \"Another shootout\" starts again."],
           ["⚑ N", "Your flagged list. Tap one to jump back to it; Clear empties the list."],
         ],
       },
@@ -429,6 +430,7 @@ export const ADMIN_GUIDES = {
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
           ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included, at the picture's size — a drag still hits exactly as hard as in a career. Real squads and faces, the real weather, and the Play Area's dials."],
+          ["Run-up", "A penalty or a direct free kick: you let go of your aim, your player jogs to the ball, then the strike screen gives you 1 second. On a penalty you can drag sideways during the jog to swing your aim, and the keeper may hop."],
           ["PNG", "Downloads the picture (without the fault rings)."],
           ["Delete", "Only for a saved chance: deletes it from the shared list AND the code."],
           ["Tune", "Only after a drag: records what was wrong as a correction. Not a save."],
@@ -457,7 +459,7 @@ export const ADMIN_GUIDES = {
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
     needs: [SCENARIO_TABLE_NEEDED],
-    dev: "app/star-highlights-dev/page.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit}.ts · /api/star/scenarios, /api/star/scenarios/commit",
+    dev: "app/star-highlights-dev/page.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit}.ts · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
   "/star-play-dev": {

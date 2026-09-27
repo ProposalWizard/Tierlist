@@ -51,7 +51,7 @@ import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
  */
 const REAL_SQUADS = new Map<string, Promise<Pick<CareerState, "squad" | "leagueSquads" | "league">>>();
 
-function realSquadsFor(career: CareerState, key: string) {
+export function realSquadsFor(career: CareerState, key: string) {
   let p = REAL_SQUADS.get(key);
   if (!p) {
     p = withRealSquads(career).then((c) => ({ squad: c.squad, leagueSquads: c.leagueSquads, league: c.league }));

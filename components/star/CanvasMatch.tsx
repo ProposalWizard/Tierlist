@@ -13,7 +13,7 @@ import {
   curveDirFromSwipe, applyCurveSwipe,
   setOffsideRuleEnabled,
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
-  type Facing, type Runner,
+  type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario,
@@ -62,8 +62,14 @@ import {
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
-import { kitsFor, type MatchKits } from "@/lib/star/kits";
+import { kitsFor, keeperKit, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
+import {
+  attachAutoKick, autoKickOf, aimFor, planPenalty, takerSkills, takerRating, yourPenaltyRating,
+  shootoutOrder, designatedTaker, clearForShootout, AUTO_STAND_MS,
+  type AutoKick, type PenaltyTaker,
+} from "@/lib/star/penaltyTaking";
+import LiveShootout, { type LiveKick } from "./LiveShootout";
 import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
@@ -72,15 +78,20 @@ import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "@/lib/star/energy";
 import { getTuning } from "@/lib/star/tuningStore";
-import ShootoutOverlay from "./ShootoutOverlay";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
 import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { switchOn } from "@/lib/star/compareSwitches";
 import { strikingPower } from "@/lib/star/strikePower";
 import {
-  brainOptionsHere, hasBrain, brainSetup, brainAim, brainStrike, brainStep, brainSnapshot, brainRestore,
+  brainOptionsHere, hasBrain, brainSetup, brainAim, brainRunUp, brainStrike, brainStep, brainSnapshot, brainRestore,
 } from "@/lib/star/keeperBrain";
+import {
+  RUNUP, hasRunup, canNudge, standBack, plantBeside, playerAt, goalLineX, nudgedDir, nudgeFromDrag,
+  scuffStrike, cheekyStrike, isCheekyMiss,
+  type RunupPath, type CheekyKind,
+} from "@/lib/star/penaltyRunup";
+import { revealOnScreen } from "@/lib/revealOnScreen";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
@@ -94,7 +105,13 @@ import {
  * called `sim` and was a panel that appeared over the pitch to report minutes
  * you had already skipped past.
  */
-type Phase = "aim" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble" | "fpDribble" | "shootout";
+/**
+ * `runup` is the run-up to a penalty or a direct free kick
+ * (lib/star/penaltyRunup.ts): between letting go of the aim and the strike
+ * screen, you jog to the ball. On a penalty you may swing your aim and the
+ * keeper may hop (the keeper brain's `brainRunUp`).
+ */
+type Phase = "aim" | "runup" | "contact" | "flight" | "result" | "feed" | "postmatch" | "dribble" | "fpDribble" | "shootout";
 
 /**
  * WHICH DRIBBLE SCENARIO REAL MATCHES USE.
@@ -321,6 +338,9 @@ export interface ChanceResolved {
   teammateShot: boolean;
   /** Where the ball was when it resolved, in pitch metres; z is its height. */
   ball: { x: number; y: number; z: number } | null;
+  /** Set when the match struck it for somebody else (a team-mate's or an
+   *  opponent's penalty — see lib/star/penaltyTaking.ts). */
+  autoKick?: "us" | "them";
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -964,7 +984,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const setUpKeeper = (sc: Scenario, seed: number) => {
     const opts = brainOptionsHere();
-    opts.penalty = penaltyReadFor(strengthRef.current, penaltyReadRef.current);
+    // The keeper facing THIS kick: an automatic kick (a shootout, a
+    // team-mate's penalty) names him; otherwise the match's.
+    const facing = autoKickOf(sc)?.keeper?.strength ?? strengthRef.current;
+    opts.penalty = penaltyReadFor(facing, penaltyReadRef.current);
     brainSetup(sc, seed, sc.keeperStrength, opts);
   };
   /** The strike rule in play for this ball (lib/star/kindRules), if any. */
@@ -1080,6 +1103,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
+      // v0.15 item 6: penalties won in any move, not only yours.
+      livePenalties: true,
     };
   };
 
@@ -1205,6 +1230,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** Yours and theirs, whichever end of the fixture you are. */
   const ourKit = () => (fixtureHomeRef.current ? kitsRef.current.home : kitsRef.current.away);
   const theirKit = () => (fixtureHomeRef.current ? kitsRef.current.away : kitsRef.current.home);
+  /**
+   * YOUR keeper's kit — only ever drawn when they take a penalty at him (a
+   * shootout, v0.15 item 7). Picked like any keeper's (kits.ts keeperKit), and
+   * away from the other keeper's colours so the two are never the same man.
+   */
+  const ourKeeperKitRef = useRef(keeperKit(ourKit().shirt, kitsRef.current.keeper.shirt));
 
   // strengthRef.current is already the real keeper's own rating here when
   // there is one — see its own assignment just above — so the very first
@@ -1264,6 +1295,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
 
+  // ── The run-up (lib/star/penaltyRunup.ts) — every penalty and direct free kick ──
+  //
+  // Between letting go of the aim and the strike screen: `t` seconds into the
+  // jog, the aim you let go with (`dir0`) and how far you've swung it
+  // (`nudgeM`, metres along the goal line — a penalty only, `nudge`). The
+  // keeper's hop is the keeper brain's own (brainRunUp). Null otherwise.
+  const runupRef = useRef<{
+    t: number; dir0: Vec2; power: number; nudgeM: number; path: RunupPath;
+    nudge: boolean; arrived: boolean;
+    /** Somebody else's penalty (v0.15 items 6/7): struck for him on arrival, no strike screen. */
+    auto?: { contact: { cx: number; cy: number }; skills: KickSkills };
+  } | null>(null);
+  /** A sideways drag during the run-up: where it started, and the swing then. */
+  const nudgeDragRef = useRef<{ x0: number; base: number } | null>(null);
+  /** The strike screen's countdown for this kick, seconds — null = no limit (every kick but a run-up). */
+  const [contactTimerS, setContactTimerS] = useState<number | null>(null);
+  // Item 5r — a "cheeky" kick (a penalty chipped or down the middle, or an
+  // open-play chip) that didn't go in costs a little reputation. The kind of the kick just struck,
+  // and the misses so far this match (handed out with the match's stats).
+  const cheekyStrikeRef = useRef<CheekyKind | null>(null);
+  const cheekyMissesRef = useRef<{ kind: CheekyKind; minute: number }[]>([]);
+  const cheekyStats = () => (cheekyMissesRef.current.length ? { cheekyMisses: [...cheekyMissesRef.current] } : {});
+
   // ── Extra time / penalty shootout ──
   //
   // Set only when a level knockout tie needs a shootout — see
@@ -1271,10 +1325,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // finalising the match immediately. `wentToExtraTimeRef` records whether
   // extra time was played at all (even if it then resolved outright,
   // without needing penalties) so the final MatchStats carries it either way.
-  const [shootoutInfo, setShootoutInfo] = useState<{
-    homeClub: string; awayClub: string; yourSide: "home" | "away";
-    yourSkill: number; teamSkill: number; oppSkill: number;
-  } | null>(null);
   const wentToExtraTimeRef = useRef(false);
   const shootoutResultRef = useRef<{ home: number; away: number } | null>(null);
   // The live-chance loop's own "how far can this match still run" ceiling.
@@ -1286,12 +1336,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // time; 1 = first half of extra time in progress; 2 = second half.
   const matchCeilingRef = useRef(MATCH_DURATION);
   const extraTimeStageRef = useRef<0 | 1 | 2>(0);
-  // A live, player-controlled shootout kick in progress — see
-  // `loadShootoutPenalty`. Non-null while the aim/contact/flight canvas is
-  // standing in for the corner-picker UI for exactly one kick; resolveOutcome
-  // reads this to report the REAL physical result back to the shootout state
+  // A live shootout kick in progress — see `loadShootoutKick`. Non-null
+  // while one kick of the shootout is on the pitch; resolveOutcome reads
+  // this to report the REAL physical result back to the shootout state
   // machine instead of resuming the ordinary match simulation.
   const shootoutKickRef = useRef<{ resolve: (scored: boolean) => void } | null>(null);
+  /**
+   * The live shootout (v0.15 item 7): every kick played on the pitch — yours
+   * to take, everybody else's watched (their kicks at your keeper, from the
+   * same camera end). Set when a knockout goes to penalties.
+   */
+  const [liveShootout, setLiveShootout] = useState<{
+    homeClub: string; awayClub: string; yourSide: "home" | "away";
+    home: PenaltyTaker[]; away: PenaltyTaker[];
+    homeKeeper: { strength: number; id?: string; name?: string; shortName?: string; face?: string };
+    awayKeeper: { strength: number; id?: string; name?: string; shortName?: string; face?: string };
+  } | null>(null);
+  /** The latest handleContact, for an automatic kick struck from a timer. */
+  const handleContactRef = useRef<((contact: { cx: number; cy: number }, over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills }) => void) | null>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const draggingRef = useRef(false);
   // ── v0.15 items 21 + 22 ──
@@ -1756,6 +1818,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     initDefenders(scenarioRef.current, rngRef.current);
     castDefence(scenarioRef.current, oppXIForCast);
+    dressAutoKeeper(scenarioRef.current);
+    standBackForRunup(scenarioRef.current);
     setUpKeeper(scenarioRef.current, (seed ^ 0x4b7e) >>> 0);
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
@@ -2699,6 +2763,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         label: faceStyleRef.current.namesEnabled ? d.who?.shortName : undefined,
       });
     });
+    // An automatic kick (v0.15 items 6/7): the man over the ball is the taker —
+    // a team-mate in your shirt, or one of theirs in theirs — named, no star.
+    const auto = autoKickOf(sc);
+    const takerKit = auto?.side === "them" ? theirKit() : ourKit();
+    if (auto) {
+      footballer(sc.player.x, sc.player.y, R, takerKit.shirt, takerKit.trim, {
+        pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
+        phase: runPhase(sc.player.x),
+        face: getFaceImage(auto.taker.face),
+        label: auto.taker.shortName,
+      });
+    } else
     // You wear the same shirt as everybody else on your side — you are one of
     // eleven, not a differently-coloured avatar. The armband of a name label is
     // what picks you out, which is how you pick a player out watching football.
@@ -2794,13 +2870,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
       // No highlight ring on a save. The dive is the thing you are watching;
       // a yellow disc drawn over it only told you what you had already seen.
+      // Their penalty at YOUR keeper (a shootout): he wears your keeper's kit.
+      const gkKit = autoKickOf(sc)?.side === "them" ? ourKeeperKitRef.current : kitsRef.current.keeper;
       drawKeeperAt(
         ctx,
         cx + KR * weight * (1 - lunge), py, kr,
         {
-          shirt: kitsRef.current.keeper.shirt,
-          shorts: kitsRef.current.keeper.trim,
-          trim: kitsRef.current.keeper.trim,
+          shirt: gkKit.shirt,
+          shorts: gkKit.trim,
+          trim: gkKit.trim,
           skin: SKIN,
           face: getFaceImage(kk.who?.face),
         },
@@ -2825,7 +2903,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             armLift: 0.15 + armUp * diveN * 0.85 + lunge * 0.5,
             armLead: sign,
           },
-          label: faceStyleRef.current.namesEnabled ? kk.who?.shortName : undefined,
+          // A kick you are watching names both men: who is taking it, who is in goal.
+          label: faceStyleRef.current.namesEnabled || autoKickOf(sc) ? kk.who?.shortName : undefined,
         },
       );
 
@@ -2842,7 +2921,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // it in the goal."
     const keeperInView = goalInView(sc.kind) && sceneRef.current?.keeper !== false;
     const liveBall = ballRef.current;
-    const ballY = liveBall ? liveBall.pos.y : (phaseRef.current === "aim" ? sc.ball.y : null);
+    const onTheSpot = phaseRef.current === "aim" || phaseRef.current === "runup";
+    const ballY = liveBall ? liveBall.pos.y : (onTheSpot ? sc.ball.y : null);
     const ballBehindKeeper = keeperInView && ballY !== null && ballY < sc.keeper.y;
 
     // The keeper joins the same far-to-near sort as everyone else, so a man
@@ -2948,7 +3028,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // The trail and the landing mark above stay on the grass, under everyone.
     const ball = ballRef.current;
     const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
-      : phaseRef.current === "aim" ? { x: sc.ball.x, y: sc.ball.y, z: 0 } : null;
+      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: 0 } : null;
     if (ballAt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -3007,10 +3087,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
 
     // --- Aim slingshot overlay (brand gold) ---
-    if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
-      const d = dragRef.current;
-      const power = powerFromDrag(d, sc.ball);
-      const dx = sc.ball.x - d.x, dy = sc.ball.y - d.y;
+    // One arrow, drawn for the drag and for the aim you run up with (the
+    // penalty run-up, below) — the same arrow both times, so it reads the same.
+    const drawAimArrow = (dx: number, dy: number, power: number) => {
       const len = Math.hypot(dx, dy) || 1;
       // Half the previous length at full power, then 20% longer again on top
       // of that (0.11 * 1.2) — reported as reading a little short once the
@@ -3077,6 +3156,37 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // The left-edge power meter that used to sit beside this arrow is gone
       // — reported as redundant with the arrow's own length, which already
       // is the power readout.
+    };
+    if (phaseRef.current === "aim" && draggingRef.current && dragRef.current) {
+      const d = dragRef.current;
+      drawAimArrow(sc.ball.x - d.x, sc.ball.y - d.y, powerFromDrag(d, sc.ball));
+    }
+    // ── The run-up (penaltyRunup.ts) ──
+    // The aim you're running up with stays on screen. On a penalty it swings
+    // with your drag, with a faint line on to the goal line and a ring where
+    // it crosses — so a swing can be judged against the keeper's hop.
+    if (phaseRef.current === "runup" && runupRef.current && !runupRef.current.auto) {
+      const ru = runupRef.current;
+      const dir = ru.nudge ? nudgedDir(sc.ball, ru.dir0, ru.nudgeM) : ru.dir0;
+      if (ru.nudge) {
+        const from = toPx(sc.ball.x, sc.ball.y), to = toPx(goalLineX(sc.ball, dir), 0);
+        ctx.save();
+        ctx.setLineDash([Math.max(3, unit * 0.5), Math.max(3, unit * 0.45)]);
+        ctx.strokeStyle = "rgba(255,255,255,0.6)";
+        ctx.lineWidth = Math.max(1.5, W * 0.005);
+        ctx.beginPath();
+        ctx.moveTo(from.px, from.py);
+        ctx.lineTo(to.px, to.py);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(to.px, to.py, Math.max(4, unit * 0.55), 0, Math.PI * 2);
+        ctx.strokeStyle = "#fbbf24";
+        ctx.lineWidth = Math.max(2, W * 0.007);
+        ctx.stroke();
+        ctx.restore();
+      }
+      drawAimArrow(dir.x, dir.y, ru.power);
     }
 
     // --- Confetti (brand colours, goal only) ---
@@ -3180,6 +3290,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // stepCommitted.
       if (phaseRef.current === "aim" && aimCommitRef.current !== null) {
         stepCommitted(dt);
+      }
+
+      // ── The run-up (lib/star/penaltyRunup.ts) ──
+      //
+      // Your figure jogs from where you stood to beside the ball — the same
+      // figure, the same run animation any moving man gets — while the
+      // camera stays put. On a penalty the keeper brain may hop (brainRunUp:
+      // his one decision, made visible). Nothing else moves and the ball is
+      // not touched: the kick itself is still handleContact → launch().
+      if (phaseRef.current === "runup") {
+        const ru = runupRef.current;
+        const sc = scenarioRef.current;
+        stepKeeper(sc, dt);
+        if (ru && !ru.arrived) {
+          ru.t += dt;
+          const dirNow = ru.nudge ? nudgedDir(sc.ball, ru.dir0, ru.nudgeM) : ru.dir0;
+          brainRunUp(sc, dt, ru.t, goalLineX(sc.ball, dirNow));
+          sc.player = playerAt(ru.path, ru.t / RUNUP.runupS);
+          if (ru.t >= RUNUP.runupS && ru.auto) {
+            // Somebody else's penalty: struck for him the moment he gets there.
+            ru.arrived = true;
+            handleContactRef.current?.(ru.auto.contact, { dir: dirNow, power: ru.power, skills: ru.auto.skills });
+          } else if (ru.t >= RUNUP.runupS) {
+            ru.arrived = true;
+            nudgeDragRef.current = null;
+            setAim({ dir: dirNow, power: ru.power });
+            setContactTimerS(RUNUP.timerS);
+            setPhase("contact");
+            // The page was scrolled to show the strike screen when the jog
+            // began (startRunup). Only if it has moved since — the one cheap
+            // check — scroll again.
+            const w = wrapRef.current?.getBoundingClientRect();
+            if (w && w.bottom > window.innerHeight + 1) {
+              requestAnimationFrame(() => revealOnScreen(wrapRef.current, { smooth: false }));
+            }
+          }
+        }
       }
 
       // ── The cut, on a cross ──
@@ -3474,7 +3621,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // shooting means he struck it AFTER you, and it stopped being your shot the
     // moment he did. Fixed here rather than in the engine, which is never
     // modified; it is a credit rule, not a physics one.
-    const youShot = ballRef.current?.youStruckAtGoal === true && !receiverShot;
+    // An automatic kick (v0.15 items 6/7) was struck by the match for somebody
+    // else: never your shot, never your stats.
+    const auto = autoKickOf(sc);
+    const youShot = !auto && ballRef.current?.youStruckAtGoal === true && !receiverShot;
     const isSimplePass = !youShot && !receiverShot && sc.passTarget != null;
     const kind = OUTCOME_TEXT[res].kind;
 
@@ -3487,11 +3637,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         onChanceResolvedRef.current({
           outcome: res, kind: sc.kind, youShot, teammateShot: receiverShot,
           ball: b ? { x: b.pos.x, y: b.pos.y, z: b.z } : null,
+          ...(auto ? { autoKick: auto.side } : {}),
         });
       } catch { /* an observer never breaks the match */ }
     }
 
-    // A live shootout kick (see loadShootoutPenalty) is NOT a chance in the
+    // Item 5r — a cheeky kick (a penalty chipped or down the middle, or an
+    // open-play chip — tagged at the strike, see handleContact) that didn't
+    // go in. A penalty you struck is always yours; an open-play chip only
+    // while it is still your shot (a team-mate's follow-up is his). Your
+    // shootout kicks count too. Credited as a
+    // small reputation hit at full time (careerFlow's creditMatchResult).
+    {
+      const ch = cheekyStrikeRef.current;
+      cheekyStrikeRef.current = null;
+      if (ch && (sc.kind === "penalty" || youShot) && isCheekyMiss(res)) {
+        cheekyMissesRef.current.push({ kind: ch, minute: matchMinuteRef.current });
+      }
+    }
+
+    // A live shootout kick (see loadShootoutKick) is NOT a chance in the
     // ongoing match — there is no ongoing match while a shootout is being
     // taken. It must not credit match stats, touch the match scoreline, or
     // feed the hidden-match simulation; its real result is reported back to
@@ -3505,7 +3670,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // just a mirror for the HUD.
     const d = creditChance(res, { youShot, receiverShot, isSimplePass });
     const t = tallyRef.current;
-    if (!isShootoutKick) {
+    if (!isShootoutKick && !auto) {
       t.shots += d.shots;
       t.goals += d.goals;
       t.passes += d.passes;
@@ -3517,18 +3682,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // Your team scores whenever the ball ends up in the net — your own finish or a
     // teammate you set up (same rule the old DOM match used: goal || assist).
-    if (!isShootoutKick && kind === "goal") {
+    if (!isShootoutKick && !auto && kind === "goal") {
       userScoreRef.current += 1;
     }
 
     // Hand the outcome back to the match. Without this it would carry on as
     // though your moment never happened — you would score and the ball would
     // still be in their box. Not for a shootout kick — there is no ongoing
-    // hidden-match state to hand it back to.
-    if (!isShootoutKick && matchModeRef.current) resolveScenario(matchStateRef.current, matchResultFor(res));
+    // hidden-match state to hand it back to. (A team-mate's penalty hands its
+    // own result back, below.)
+    if (!isShootoutKick && !auto && matchModeRef.current) resolveScenario(matchStateRef.current, matchResultFor(res));
 
     // Celebration / impact FX + sound, matched to what the physics produced.
-    if (kind === "goal") {
+    // Their penalty at your keeper reads the other way round.
+    if (auto?.side === "them") {
+      if (kind === "goal") { showAction("SCORED"); playNet(); playCrowdSwell("groan"); }
+      else if (res === "saved" || res === "caught" || res === "tipped") { showAction("SAVED!"); nudge(0.18, 0.14); playSave(); playCrowdSwell("cheer"); }
+      else { showAction("MISSED!"); if (res === "post") playPost(); playCrowdSwell("cheer"); }
+    } else if (auto && kind !== "goal") {
+      showAction(res === "saved" || res === "caught" || res === "tipped" ? "SAVED" : "MISSED");
+      if (res === "post") playPost(); else playSave();
+      playCrowdSwell("groan");
+    } else if (kind === "goal") {
       showAction("GOAL");
       spawnGoalFx();
       playNet();
@@ -3579,7 +3754,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Chain goals → a named attacker from the squad scores; user assisted.
     // Direct user goals → optionally pick a named squad member as assister.
     let commentaryRoleLabel = sc.receiver?.roleLabel;
-    if (!isShootoutKick && kind === "goal" && careerRef.current) {
+    if (!isShootoutKick && !auto && kind === "goal" && careerRef.current) {
       const squad = onPitch(careerRef.current.squad ?? []);
       const pFirst = careerRef.current.player.firstName;
       const pLast = careerRef.current.player.lastName;
@@ -3714,6 +3889,40 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
 
+    // ── A team-mate's penalty in open play (v0.15 item 6) ──
+    //
+    // Your side's goal (or not), his name on it, nothing on your own stats —
+    // then the match carries on exactly as it does after any chance.
+    if (auto && auto.context === "match") {
+      const gen = sceneGenRef.current;
+      const saved = res === "saved" || res === "caught" || res === "tipped";
+      if (kind === "goal") {
+        userScoreRef.current += 1;
+        goalEventsRef.current.push({
+          minute: matchMinuteRef.current, scorer: auto.taker.name, isUserGoal: false, how: "penalty", distance: 11,
+        });
+        logMoment(`⚽ ${auto.taker.shortName} scores the penalty!`, "goal");
+      } else {
+        logMoment(`${auto.taker.shortName}'s penalty is ${saved ? "saved" : "missed"}.`, "chance");
+      }
+      if (matchModeRef.current) {
+        resolveScenario(matchStateRef.current, kind === "goal" ? "goal" : "saved");
+        window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1800);
+      } else {
+        window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1800);
+      }
+      return;
+    }
+    // ── A shootout kick on a test screen (Infinite Highlights' Shootout) ──
+    // The screen keeps the score through onChanceResolved (above); the engine
+    // only asks it for the next kick. Never one of your chances, so it never
+    // counts towards the sandbox's six.
+    if (auto) {
+      const gen = sceneGenRef.current;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1600);
+      return;
+    }
+
     // A pass that found its man can keep the move going. This used to apply to
     // build-up only, and jumped to a random attacking situation; now any
     // completed pass can come back, and what you get next is read off where the
@@ -3797,6 +4006,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ),
           endEnergy: liveEnergyAt(matchMinuteRef.current),
           kibCansUsed: kibUsedRef.current,
+          ...cheekyStats(),
         };
         const gen = sceneGenRef.current;
         window.setTimeout(() => { if (sceneGenRef.current === gen) { setFinalStats(stats); setPhase("postmatch"); } }, 1800);
@@ -3984,6 +4194,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     for (let guard = 0; guard < 20; guard++) {
       const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
       if (!kind || mayTake(kind) || (kind !== "free_kick" && kind !== "penalty")) break;
+      // v0.15 item 6: a penalty your side has won is taken LIVE by the team's
+      // taker (loadScenario → loadTeammatePenalty), not handed over as a line.
+      if (kind === "penalty" && step.request?.penaltyWon) break;
 
       const label = kind === "penalty" ? "penalty" : "free kick";
       const scored = rng() < (kind === "penalty" ? 0.76 : 0.09);
@@ -4120,6 +4333,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             kibCansUsed: kibUsedRef.current,
             ...(wentToExtraTimeRef.current ? { wentToExtraTime: true } : {}),
             ...(shootoutResultRef.current ? { shootout: shootoutResultRef.current } : {}),
+            ...cheekyStats(),
           };
           if (matchModeRef.current && onCompleteRef.current) {
             onCompleteRef.current(stats);
@@ -4129,23 +4343,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           }
         };
 
-        const runShootout = () => {
-          const yourSide: "home" | "away" = fixtureHomeRef.current ? "home" : "away";
-          const homeClub = fixtureHomeRef.current ? (careerRef.current?.player.club ?? "Home") : (fixture?.opponent ?? "Away");
-          const awayClub = fixtureHomeRef.current ? (fixture?.opponent ?? "Away") : (careerRef.current?.player.club ?? "Home");
-          // A deliberate, honestly-scoped simplification (see
-          // ShootoutOverlay.tsx's own doc comment): every kick that isn't
-          // yours (teammate or opponent) still resolves on a real
-          // skill-weighted chance rather than a full per-player roster of
-          // shooting stats for all twenty-two takers. Your OWN kick is now a
-          // real, live aim/contact/flight penalty — see loadShootoutPenalty
-          // and handleShootoutYourKick — not a corner pick.
-          const yourSkill = ((skills.technique ?? 55) + (skills.power ?? 55)) / 2;
-          const teamSkill = Math.max(30, yourSkill - 8);
-          const oppSkill = oppStrengthRef.current;
-          setShootoutInfo({ homeClub, awayClub, yourSide, yourSkill, teamSkill, oppSkill });
-          setPhase("shootout");
-        };
+        // See startShootout (component level: the live shootout).
+        const runShootout = () => startShootout();
 
         // ── Reaching the ceiling mid-extra-time is not the match ending ──
         //
@@ -4256,46 +4455,134 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
 
   /**
-   * The player's OWN shootout kick — a real, live penalty.
-   *
-   * Every other kick in a shootout (teammate or opponent) still resolves on
-   * `penaltyConversionChance`'s skill-weighted roll — there is no real
-   * per-player roster of shooting stats for all twenty-two takers to draw
-   * on. But the PLAYER's own kick used to be the same kind of roll dressed
-   * up as a corner pick, which is exactly what was reported as
-   * unacceptable: reused directly, the SAME real dead-ball penalty
-   * `buildScenario("penalty", …)` already builds for an ordinary in-game
-   * penalty (see the `mayTake`/`loadScenario` branch above) — you drag to
-   * aim, strike, and the keeper's own real save physics decide it, with no
-   * time limit, exactly like any other player-controlled chance in this
-   * game. `onResult` is called once the real outcome is known (see
-   * `resolveOutcome`'s `shootoutKickRef` branch).
+   * A penalty or a direct free kick (lib/star/penaltyRunup.ts): you stand a
+   * few steps back and to one side before you aim, not on the ball.
+   * Everything else about the picture is untouched. A function declaration
+   * so the mount effect above can reach it.
    */
-  const loadShootoutPenalty = (oppSkill: number, onResult: (scored: boolean) => void) => {
+  function standBackForRunup(sc: Scenario) {
+    if (hasRunup(sc.kind)) sc.player = standBack(sc.ball, sc.player);
+  }
+
+  // ── v0.15: the kicks you WATCH (items 6 and 7) ────────────────────────────
+  //
+  // A team-mate's penalty, and every kick of a shootout, played on the real
+  // pitch. The kick itself is `handleContact` — the one strike — with the
+  // taker's aim (lib/star/penaltyTaking.ts's plan) instead of your drag.
+
+  /** The eleven on the pitch now (not you), as penalty takers. */
+  const ourTakers = (): { outfield: PenaltyTaker[]; keeper: (PenaltyTaker & { overall?: number }) | null } => {
+    const squad = onPitch(careerRef.current?.squad ?? []);
+    const all = squad.map((p) => ({
+      id: p.id, name: p.name, shortName: p.shortName, face: p.imageUrl ?? fakeFaceFor(p.id),
+      rating: takerRating(p), isGK: p.position === "GK", overall: p.overall,
+    }));
+    const outfield = all.filter((t) => !t.isGK);
+    // A generated or thin squad still has five men to take one.
+    for (let i = outfield.length; i < 5; i++) {
+      outfield.push({ id: `mate-${i}`, name: `Team-mate ${i + 1}`, shortName: `No. ${i + 7}`, face: fakeFaceFor(`mate-${i}`), rating: 62, isGK: false, overall: undefined });
+    }
+    return { outfield, keeper: all.find((t) => t.isGK) ?? null };
+  };
+  /** Their eleven, from the real team sheet when there is one. */
+  const theirTakers = (): { outfield: PenaltyTaker[]; keeper: PenaltyTaker | null } => {
+    const xi = oppXIForCast ?? [];
+    const all: PenaltyTaker[] = xi.map((p) => ({
+      id: p.id, name: p.name, shortName: p.shortName, face: p.face ?? fakeFaceFor(p.id),
+      rating: takerRating({ overall: p.overall }), isGK: p.isGK,
+    }));
+    const outfield = all.filter((t) => !t.isGK);
+    for (let i = outfield.length; i < 5; i++) {
+      outfield.push({ id: `opp-${i}`, name: `Their No. ${i + 7}`, shortName: `No. ${i + 7}`, face: fakeFaceFor(`opp-${i}`), rating: 62 });
+    }
+    return { outfield, keeper: all.find((t) => t.isGK) ?? null };
+  };
+  const ourClubStrength = () => {
+    const car = careerRef.current;
+    return car?.league.find((t) => t.name === car.player.club)?.strength ?? teamRef.current;
+  };
+  const liveShootoutRef = useRef(liveShootout);
+  liveShootoutRef.current = liveShootout;
+
+  /**
+   * A knockout goes to penalties: every kick is played on the pitch, in a
+   * real order (v0.15 item 7 — it used to be your kick live and everybody
+   * else's a dice roll shown as a tick or a cross).
+   */
+  const startShootout = () => {
+    const yourSide: "home" | "away" = fixtureHomeRef.current ? "home" : "away";
+    const homeClub = fixtureHomeRef.current ? (careerRef.current?.player.club ?? "Home") : (fixture?.opponent ?? "Away");
+    const awayClub = fixtureHomeRef.current ? (fixture?.opponent ?? "Away") : (careerRef.current?.player.club ?? "Home");
+    const car = careerRef.current;
+    const us = ourTakers(), them = theirTakers();
+    // You take one only if you are still on the pitch, and where your own
+    // penalty rating puts you in the order — not always first.
+    const you: PenaltyTaker | null = hookedRef.current ? null : {
+      id: "you", name: car ? `${car.player.firstName} ${car.player.lastName}` : "You", shortName: playerLabel(),
+      face: car?.player.portrait ?? DEFAULT_FAKE_FACE,
+      rating: yourPenaltyRating({ technique: skills.technique, freeKick: car?.skills.freeKick ?? skills.technique }, car?.starRating ?? 0),
+      you: true,
+    };
+    const ourOrder = shootoutOrder([...us.outfield, ...(us.keeper ? [us.keeper] : [])], you);
+    const theirOrder = shootoutOrder([...them.outfield, ...(them.keeper ? [them.keeper] : [])]);
+    // Each keeper's rating is his own where the squad data has one.
+    const ourKeeper = {
+      strength: Math.max(20, Math.min(99, us.keeper?.overall ?? ourClubStrength())),
+      id: us.keeper?.id, name: us.keeper?.name, shortName: us.keeper?.shortName, face: us.keeper?.face,
+    };
+    const theirKeeper = {
+      strength: strengthRef.current,
+      id: them.keeper?.id, name: them.keeper?.name, shortName: them.keeper?.shortName, face: them.keeper?.face,
+    };
+    const home = yourSide === "home";
+    setLiveShootout({
+      homeClub, awayClub, yourSide,
+      home: home ? ourOrder : theirOrder, away: home ? theirOrder : ourOrder,
+      homeKeeper: home ? ourKeeper : theirKeeper, awayKeeper: home ? theirKeeper : ourKeeper,
+    });
+    logMoment("Penalties.", "period");
+  };
+
+  /** One kick of the live shootout, on the pitch. */
+  const loadShootoutKick = (kick: LiveKick, submit: (scored: boolean) => void) => {
+    const info = liveShootoutRef.current;
+    if (!info) return;
     sceneGenRef.current += 1;
     seedRef.current += 1;
     rngRef.current = countedRng(seedRef.current, rngCallCountRef);
     const rng = rngRef.current;
-
     chainRef.current = null;
     dribbleRef.current = null;
     fpDribbleRef.current = null;
 
-    scenarioRef.current = buildScenario("penalty", rng, oppSkill, teamRef.current, visionRef.current);
-    // Harry's penalty rules hold in a shootout too: the keeper was standing up
-    // to 0.6 m off centre here ("one step to the left or right").
-    enforceHardRules(scenarioRef.current);
-    scenarioRef.current.conditions = conditionsRef.current;
-    castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
-    initDefenders(scenarioRef.current, rng);
-    castDefence(scenarioRef.current, oppXIForCast);
-    setUpKeeper(scenarioRef.current, (seedRef.current ^ 0x4b7e) >>> 0);
-
-    facingRef.current = scenarioRef.current.facing ?? "up";
-    viewportRef.current = { ...scenarioRef.current.viewport };
-    baseViewportRef.current = { ...scenarioRef.current.viewport };
+    const ours = kick.side === info.yourSide;
+    // The kicker faces the OTHER side's keeper.
+    const keeper = kick.side === "home" ? info.awayKeeper : info.homeKeeper;
+    const sc = buildScenario("penalty", rng, keeper.strength, teamRef.current, visionRef.current);
+    // Harry's penalty rules (kindRules/penalty.ts): ball on the spot, keeper
+    // centred on his line, the one penalty camera.
+    enforceHardRules(sc);
+    sc.conditions = conditionsRef.current;
+    initDefenders(sc, rng);
+    // A shootout: everybody else is in the centre circle.
+    stageScene(sc, { teammates: false });
+    clearForShootout(sc);
+    if (keeper.name) sc.keeper.who = { id: keeper.id ?? "gk", name: keeper.name, shortName: keeper.shortName ?? keeper.name, position: "GK", face: keeper.face };
+    if (!kick.taker.you) {
+      const plan = planPenalty(kick.taker.rating, mulberry32((seedRef.current ^ 0x7a11c) >>> 0));
+      attachAutoKick(sc, { side: ours ? "us" : "them", taker: kick.taker, plan, keeper, context: "shootout" });
+    }
+    // A few steps back for the run-up, and the keeper brain for THIS keeper.
+    standBackForRunup(sc);
+    setUpKeeper(sc, (seedRef.current ^ 0x4b7e) >>> 0);
+    scenarioRef.current = sc;
+    facingRef.current = sc.facing ?? "up";
+    viewportRef.current = { ...sc.viewport };
+    baseViewportRef.current = { ...sc.viewport };
     ballRef.current = null;
     setAim(null);
+    runupRef.current = null;
+    setContactTimerS(null);
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -4307,27 +4594,113 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     particlesRef.current = [];
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
-    shootoutKickRef.current = { resolve: onResult };
+    shootoutKickRef.current = { resolve: submit };
     setPhase("aim");
-    logMoment("Your penalty — up to you.", "you");
+    logMoment(kick.taker.you ? "Your penalty — up to you." : `${kick.taker.shortName} steps up…`, "you");
     playWhistle();
+    if (!kick.taker.you) scheduleAutoKick();
   };
 
-  /**
-   * Wired to `<ShootoutOverlay onYourKick>`. Handed a `submit` function that
-   * feeds the real outcome straight into the shootout's own state machine
-   * (`takeNextKick`, untouched) — the overlay hides itself (see the render
-   * call site's `hidden` prop) for the duration of the live kick, so the
-   * canvas underneath is what the player actually sees and plays.
-   */
-  const handleShootoutYourKick = (submit: (scored: boolean) => void) => {
-    const info = shootoutInfo;
-    if (!info) return;
-    loadShootoutPenalty(info.oppSkill, (scored) => {
-      submit(scored);
-      setPhase("shootout");
+  /** A penalty your side has won that a team-mate takes, live (item 6). Built from `rng`. */
+  const loadTeammatePenalty = (request: ScenarioRequest, rng: () => number): boolean => {
+    const us = ourTakers();
+    const taker = designatedTaker(us.outfield);
+    if (!taker) return false;
+    const sc = buildScenario("penalty", rng, strengthRef.current, teamRef.current, visionRef.current);
+    enforceHardRules(sc);
+    sc.conditions = conditionsRef.current;
+    // The rest of your side on the edge of the box — not the taker twice.
+    castScenario(sc, onPitch(careerRef.current?.squad ?? []).filter((p) => p.id !== taker.id));
+    initDefenders(sc, rng);
+    castDefence(sc, oppXIForCast);
+    const kw = sc.keeper.who;
+    const plan = planPenalty(taker.rating, mulberry32((seedRef.current ^ 0x7a11c) >>> 0));
+    attachAutoKick(sc, {
+      side: "us", taker, plan, context: "match",
+      keeper: { strength: strengthRef.current, id: kw?.id, name: kw?.name, shortName: kw?.shortName, face: kw?.face },
     });
+    standBackForRunup(sc);
+    setUpKeeper(sc, (seedRef.current ^ 0x4b7e) >>> 0);
+    scenarioRef.current = sc;
+    facingRef.current = sc.facing ?? "up";
+    viewportRef.current = { ...sc.viewport };
+    baseViewportRef.current = { ...sc.viewport };
+    ballRef.current = null;
+    setAim(null);
+    runupRef.current = null;
+    setContactTimerS(null);
+    setOutcome(null);
+    dragRef.current = null;
+    draggingRef.current = false;
+    curveSwipeStartRef.current = null;
+    captainDragRef.current = null;
+    bumpOrders();
+    trailRef.current = [];
+    particlesRef.current = [];
+    shakeRef.current.t = 0;
+    flashRef.current.t = 0;
+    setPhase("aim");
+    onChanceServedRef.current?.({ kind: "penalty", minute: matchMinuteRef.current, reason: request.reason, scenario: snapshotScenario(sc) });
+    logMoment(`Penalty! ${taker.shortName} to take it.`, "you");
+    pushLine(request.reason);
+    playWhistle();
+    scheduleAutoKick();
+    return true;
   };
+
+  /** The shootout is over (either version): finish the match with its result. */
+  const finishShootout = (result: { home: number; away: number }) => {
+    shootoutResultRef.current = result;
+    setLiveShootout(null);
+    const careerForStats = careerRef.current ?? FALLBACK_CAREER;
+    const t = tallyRef.current;
+    const stats: MatchStats = {
+      ...finaliseMatch(
+        attemptsRef.current, t.goals, t.assists, t.passesCompleted,
+        Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
+        userScoreRef.current, oppScoreRef.current, careerForStats,
+        goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
+      ),
+      endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
+      kibCansUsed: kibUsedRef.current,
+      wentToExtraTime: wentToExtraTimeRef.current,
+      shootout: result,
+      ...cheekyStats(),
+    };
+    if (matchModeRef.current && onCompleteRef.current) {
+      onCompleteRef.current(stats);
+    } else {
+      setFinalStats(stats);
+      setPhase("postmatch");
+    }
+  };
+
+  /** The keeper an automatic kick names: his rating and his face on the picture. */
+  const dressAutoKeeper = (sc: Scenario) => {
+    const k = autoKickOf(sc)?.keeper;
+    if (!k) return;
+    sc.keeperStrength = k.strength;
+    if (k.name) sc.keeper.who = { id: k.id ?? "gk", name: k.name, shortName: k.shortName ?? k.name, position: "GK", face: k.face };
+  };
+
+  /** Start an automatic kick's run-up once the taker has stood over it for a beat. */
+  const scheduleAutoKick = () => {
+    if (!autoKickOf(scenarioRef.current)) return;
+    const gen = sceneGenRef.current;
+    window.setTimeout(() => {
+      if (sceneGenRef.current !== gen || phaseRef.current !== "aim") return;
+      const sc = scenarioRef.current;
+      const k = autoKickOf(sc);
+      if (!k) return;
+      // He runs up like you do (penaltyRunup.ts) — the keeper may hop — and
+      // it is struck for him when he gets there.
+      const a = aimFor(sc, k.plan);
+      startRunup(a.dir, a.power, { contact: a.contact, skills: takerSkills(k.taker.rating) });
+    }, AUTO_STAND_MS);
+  };
+  // A feature's first picture (openOn) is built before the match mounts, so
+  // an automatic kick on it is started here.
+  useEffect(() => { scheduleAutoKick(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   // Load a new scenario onto the canvas and enter aim phase.
   const loadScenario = (attacking: boolean) => {
@@ -4360,12 +4733,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       initDefenders(scenarioRef.current, rng);
       castDefence(scenarioRef.current, oppXIForCast);
       stageScene(scenarioRef.current, sceneRef.current);
+      // A feature's automatic kick (the Shootout on Infinite Highlights)
+      // names its own keeper — castDefence has just put theirs in goal.
+      dressAutoKeeper(scenarioRef.current);
+      standBackForRunup(scenarioRef.current);
       setUpKeeper(scenarioRef.current, (seedRef.current ^ 0x4b7e) >>> 0);
       facingRef.current = scenarioRef.current.facing ?? "up";
       viewportRef.current = { ...scenarioRef.current.viewport };
       baseViewportRef.current = { ...scenarioRef.current.viewport };
       ballRef.current = null;
       setAim(null);
+      runupRef.current = null;
+      setContactTimerS(null);
       setOutcome(null);
       dragRef.current = null;
       draggingRef.current = false;
@@ -4379,6 +4758,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       flashRef.current.t = 0;
       setPhase("aim");
       playWhistle();
+      scheduleAutoKick();
       return;
     }
 
@@ -4412,6 +4792,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     dribbleRef.current = null;
     fpDribbleRef.current = null;
 
+    // ── A penalty your side has won, and you are not on them (v0.15 item 6) ──
+    // The team's taker takes it, live, and you watch. On them, you take it —
+    // the ordinary path below builds it for you exactly as before.
+    if (!attacking && !chain && request?.penaltyWon && !mayTake("penalty")) {
+      if (loadTeammatePenalty(request, rng)) return;
+    }
+
     // A run at the defence rather than a ball to strike.
     if (!attacking && request?.dribble) {
       if (USE_FIRST_PERSON_DRIBBLE) {
@@ -4422,6 +4809,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // each, never more than ten men across the whole run.
         fpDribbleRef.current = { waveSizes: pickWaveSizes(rng), seed: Math.floor(rng() * 1e9) };
         setAim(null);
+        runupRef.current = null;
+        setContactTimerS(null);
         setOutcome(null);
         dragRef.current = null;
         draggingRef.current = false;
@@ -4443,6 +4832,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         rng,
       });
       setAim(null);
+      runupRef.current = null;
+      setContactTimerS(null);
       setOutcome(null);
       dragRef.current = null;
       draggingRef.current = false;
@@ -4563,12 +4954,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       };
       separateBodies(sc);
     }
+    standBackForRunup(scenarioRef.current);
 
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
     ballRef.current = null;
     setAim(null);
+    runupRef.current = null;
+    setContactTimerS(null);
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -4625,6 +5019,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     oppScoreRef.current = 0;
     goalEventsRef.current = [];
     oppGoalEventsRef.current = [];
+    cheekyMissesRef.current = [];
     matchMinuteRef.current = 0;
     setMatchMinute(0);
     energyRef.current = careerRef.current?.energy ?? 100;
@@ -4669,6 +5064,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     primeMatchSound();
+    // Somebody else's penalty (v0.15 items 6/7): you watch it, you don't take it.
+    if (phaseRef.current === "aim" && autoKickOf(scenarioRef.current)) return;
     if (phaseRef.current === "dribble") {
       flickStartRef.current = pitchFromPointer(e.clientX, e.clientY);
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -4678,6 +5075,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (!canCurve) return;
       curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
       curveSwipeCurrentRef.current = { x: e.clientX, y: e.clientY };
+      try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
+    // The run-up: on a penalty a sideways drag anywhere on the pitch swings
+    // your aim along the goal line (penaltyRunup.ts, up to RUNUP.nudgeMaxM
+    // either way). A free kick's run-up takes no input.
+    if (phaseRef.current === "runup") {
+      const ru = runupRef.current;
+      if (!ru || ru.arrived || !ru.nudge) return;
+      nudgeDragRef.current = { x0: e.clientX, base: ru.nudgeM };
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
@@ -4736,6 +5143,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (phaseRef.current === "dribble") return;
+    if (nudgeDragRef.current) {
+      const ru = runupRef.current;
+      const canvas = canvasRef.current;
+      if (ru && !ru.arrived && canvas) {
+        // A penalty is always watched straight on ("up"), so sideways on the
+        // screen is sideways along the goal line.
+        const vp = viewportRef.current;
+        const m = nudgeFromDrag(e.clientX - nudgeDragRef.current.x0, canvas.getBoundingClientRect().width, vp.x2 - vp.x1);
+        ru.nudgeM = Math.max(-RUNUP.nudgeMaxM, Math.min(RUNUP.nudgeMaxM, nudgeDragRef.current.base + m));
+      }
+      return;
+    }
     if (curveSwipeStartRef.current) {
       curveSwipeCurrentRef.current = { x: e.clientX, y: e.clientY };
       return;
@@ -4755,6 +5174,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    if (nudgeDragRef.current) {
+      // The swing stays where you left it; another drag carries on from there.
+      nudgeDragRef.current = null;
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      return;
+    }
     // A flick is a direction and nothing else. Short taps are ignored so a
     // mis-touch cannot send the run sideways.
     if (phaseRef.current === "dribble") {
@@ -4858,17 +5283,71 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // directly. Any pull past the absolute pixel floor above now counts.
     if (power < 0.02) return;
     const dir = { x: b.x - d.x, y: b.y - d.y };
+    // A penalty or a direct free kick: you jog to the ball first, and the
+    // strike screen opens when you get there (lib/star/penaltyRunup.ts).
+    if (hasRunup(scenarioRef.current.kind)) {
+      startRunup(dir, power);
+      return;
+    }
     setAim({ dir, power });
     setPhase("contact");
   };
 
+  /**
+   * THE RUN-UP BEGINS — you let go of the aim on a penalty or a direct free
+   * kick. The loop below walks you to the ball; on a penalty the keeper
+   * brain may hop on the way (brainRunUp — his own seeded stream, so the
+   * match's random stream is exactly what it was); the strike screen opens
+   * when you arrive, with its 1-second countdown.
+   */
+  const startRunup = (
+    rawDir: { x: number; y: number }, power: number,
+    auto?: { contact: { cx: number; cy: number }; skills: KickSkills },
+  ) => {
+    const sc = scenarioRef.current;
+    const L = Math.hypot(rawDir.x, rawDir.y) || 1;
+    const dir0 = { x: rawDir.x / L, y: rawDir.y / L };
+    runupRef.current = {
+      t: 0, dir0, power, nudgeM: 0,
+      path: { from: { x: sc.player.x, y: sc.player.y }, to: plantBeside(sc.ball, sc.player) },
+      nudge: !auto && canNudge(sc.kind), arrived: false,
+      ...(auto ? { auto } : {}),
+    };
+    if (auto) { setPhase("runup"); return; }
+    nudgeDragRef.current = null;
+    setAim({ dir: dir0, power });
+    setPhase("runup");
+    pushLine("He runs up…");
+    // The strike screen at the end of this jog has a countdown, so all of it
+    // must be on screen when it opens. Measured on a 390x664 phone: the real
+    // match left the bottom 44% of that ball below the fold (551-753 px of
+    // 664). The scroll happens NOW, while nothing is timed: done as the
+    // strike screen opened, the page froze for ~0.27 s in a recording and
+    // the countdown ran on underneath (its ring was a quarter gone on the
+    // first frame anyone could see).
+    requestAnimationFrame(() => revealOnScreen(wrapRef.current, { smooth: false }));
+  };
+
   // --- Contact chosen -> launch ---
-  const handleContact = (contact: { cx: number; cy: number }) => {
-    if (!aim) return;
+  //
+  // `over` replaces the aim for a kick you didn't drag yourself:
+  //   - the run-up's timed-out kick (handleScuff below): the scuff's
+  //     direction and power, struck with your skills;
+  //   - an automatic kick (v0.15 items 6/7): the match strikes it for a
+  //     team-mate or an opponent with HIS aim and HIS skills (`skills`) —
+  //     the SAME strike as yours from here on.
+  const handleContact = (
+    contact: { cx: number; cy: number },
+    over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
+  ) => {
+    const a = over ? { dir: over.dir, power: over.power } : aim;
+    if (!a) return;
+    const auto = over?.skills ? { skills: over.skills } : null;
+    setContactTimerS(null);
     // A dead ball is struck with your free-kick rating, not your general
     // technique — the one strike in football that is purely placement and curl.
     const tired = tiredSkills();
-    const strikeWith = setPieceSkills(
+    const strikeWith = auto ? auto.skills : setPieceSkills(
       tired,
       careerRef.current?.skills.freeKick ?? setPieceSkillRef.current ?? tired.technique,
       scenarioRef.current.kind,
@@ -4887,13 +5366,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // ball actually ends up in the net (resolveOutcome), so this costs
     // nothing on the far more common outcome of a shot that doesn't score.
     // `skills` is what the ball was struck WITH, so a goal replays at the
-    // pace it was scored at.
-    pendingReplayRef.current = {
+    // pace it was scored at. Never for somebody else's kick: it is not a
+    // goal of yours to save.
+    pendingReplayRef.current = auto ? null : {
       seed: seedRef.current,
       callsBeforeStrike: rngCallCountRef.current,
       scenario: JSON.parse(JSON.stringify(scenarioRef.current)),
-      dir: aim.dir,
-      power: aim.power,
+      dir: a.dir,
+      power: a.power,
       contact,
       skills: launchWith,
     };
@@ -4903,7 +5383,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
     deflectionsRef.current = 0;
-    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, launchWith, rngRef.current);
+    ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
     // a goal replay throws exactly the same dive. For a penalty the brain
@@ -4920,12 +5400,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // the match's own random stream is exactly what it was, and the decision
     // is saved with the replay. See lib/star/penaltyKeeper.ts.
     if (scenarioRef.current.kind === "penalty") {
-      const read = penaltyReadFor(strengthRef.current, penaltyReadRef.current);
+      // The keeper facing THIS kick: an automatic kick names him (their keeper
+      // for your team-mate, yours for their taker); otherwise the match's.
+      const facing = autoKickOf(scenarioRef.current)?.keeper?.strength ?? strengthRef.current;
+      const read = penaltyReadFor(facing, penaltyReadRef.current);
       const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x5eed) >>> 0);
       const decision = decidePenaltyRead(scenarioRef.current, ballRef.current, read, [r(), r()]);
       applyPenaltyRead(scenarioRef.current, decision);
       if (pendingReplayRef.current) pendingReplayRef.current.penaltyRead = decision;
     }
+    // The run-up (penaltyRunup.ts) is over: the keeper's hop, if he took one,
+    // was the brain's (brainRunUp) and rides into the strike above.
+    runupRef.current = null;
+    // Item 5r: was this a "cheeky" kick — a penalty chipped or driven down
+    // the middle, or a chip at goal in open play? Judged off the ball as
+    // struck; resolveOutcome decides whether it went in. Only ever yours —
+    // never a team-mate's or an opponent's kick you are watching.
+    cheekyStrikeRef.current = auto ? null : cheekyStrike(
+      scenarioRef.current.kind, ballRef.current,
+      (scenarioRef.current.goal.x1 + scenarioRef.current.goal.x2) / 2, ballRef.current.youStruckAtGoal === true,
+    );
     // ── The kind's strike rules (lib/star/kindRules) ── e.g. who wins the
     // first contact at a corner. Its own seeded draw, like the penalty read,
     // and saved with the replay.
@@ -4968,7 +5462,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // reactions elsewhere in the engine during flight (initDefenders,
     // stepReactions), and only Touch Mode's own kicks should ever see it
     // move before it's actually kicked toward.
-    if (touchModeOnRef.current && canExtraTouch) {
+    if (touchModeOnRef.current && canExtraTouch && !auto) {
       scenarioRef.current.player = { x: ballRef.current.pos.x, y: ballRef.current.pos.y };
     }
     setPhase("flight");
@@ -4989,6 +5483,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     playKick();
     kickPoseRef.current = KICK_POSE_S;
+  };
+  handleContactRef.current = handleContact;
+
+  /**
+   * The strike screen's countdown ran out (the run-up): the kick happens
+   * without you, and it's a scuff — under a third of the power, up to 18°
+   * off your line, struck on the top half of the ball (penaltyRunup.ts's
+   * scuffStrike; measured in tests/star/penaltyRunup.mts). The same
+   * launch() as any kick. Its own seeded draw, so the match's random stream
+   * is untouched.
+   */
+  const handleScuff = () => {
+    if (!aim) return;
+    const r = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x27d4eb2d)) ^ 0x5c0f) >>> 0);
+    const s = scuffStrike(aim.dir, aim.power, r);
+    showAction("SCUFFED");
+    handleContact(s.contact, { dir: s.dir, power: s.power });
   };
 
   const scenarioLabel = SCENARIO_LABEL[scenarioRef.current.kind];
@@ -5102,7 +5613,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : "cursor-default"}`}
+          className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : phase === "runup" ? "cursor-ew-resize" : "cursor-default"}`}
         />
 
         {/* Touch Mode (Boot.extraTouch) — the button itself, not just the
@@ -5115,7 +5626,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             meant for this button would fall straight through and start an
             aim-drag underneath it — same class of bug the captain-order fix
             elsewhere in this file exists to prevent. */}
-        {canExtraTouch && (phase === "aim" || phase === "contact" || phase === "flight" || phase === "result") && (
+        {canExtraTouch && (phase === "aim" || phase === "runup" || phase === "contact" || phase === "flight" || phase === "result") && (
           <button
             onClick={() => setTouchModeOn(t => !t)}
             aria-label={touchModeOn ? "Turn off Touch Mode" : "Turn on Touch Mode"}
@@ -5152,9 +5663,42 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           />
         )}
 
-        {/* Contact overlay */}
+        {/* Contact overlay. After a run-up it has a countdown
+            (penaltyRunup.ts); run out and the kick is scuffed. */}
         {phase === "contact" && aim && (
-          <ContactBall power={aim.power} onContact={handleContact} />
+          <ContactBall
+            power={aim.power}
+            onContact={(c) => handleContact(c)}
+            timeLimitS={contactTimerS ?? undefined}
+            onTimeout={contactTimerS ? handleScuff : undefined}
+          />
+        )}
+
+        {/* The run-up's one line of instruction — the only new gesture in
+            the flow, so it says what it is while it's live. On the empty
+            grass under the penalty arc: at the bottom edge it sat under the
+            trial's how-to-play box (filmed). */}
+        {phase === "runup" && runupRef.current?.nudge && (
+          <div className="pointer-events-none absolute inset-x-0 top-[64%] z-20 flex justify-center">
+            <div className="rounded-full bg-black/60 px-3 py-1 text-[11px] font-black text-white shadow">
+              ↔ Drag sideways to change your aim
+            </div>
+          </div>
+        )}
+
+        {/* The live shootout (v0.15 item 7): the score and who is next, over
+            the pitch every kick is played on. */}
+        {liveShootout && (
+          <LiveShootout
+            homeClub={liveShootout.homeClub}
+            awayClub={liveShootout.awayClub}
+            home={liveShootout.home}
+            away={liveShootout.away}
+            homeColor={kitsRef.current.home.shirt}
+            awayColor={kitsRef.current.away.shirt}
+            onKick={loadShootoutKick}
+            onComplete={finishShootout}
+          />
         )}
 
         {/* Action banner — the moment an action actually completes. "PASS" when
@@ -5281,51 +5825,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         </div>
       )}
 
-      {shootoutInfo && (
-        <ShootoutOverlay
-          // Kept MOUNTED (not just visible) for the whole shootout, even
-          // while `phase` swings away to "aim"/"contact"/"flight"/"result"
-          // for the player's own live kick — its internal running
-          // score/kick-tally state lives inside this component instance, and
-          // unmounting it between kicks would lose that state. `hidden`
-          // just stops it rendering its own UI over the canvas while the
-          // real penalty scenario underneath is the thing to look at and
-          // play; the black backdrop and score strip return the moment
-          // control comes back (see handleShootoutYourKick).
-          hidden={phase !== "shootout"}
-          homeClub={shootoutInfo.homeClub}
-          awayClub={shootoutInfo.awayClub}
-          yourSide={shootoutInfo.yourSide}
-          yourSkill={shootoutInfo.yourSkill}
-          teamSkill={shootoutInfo.teamSkill}
-          oppSkill={shootoutInfo.oppSkill}
-          onYourKick={handleShootoutYourKick}
-          onComplete={(result) => {
-            shootoutResultRef.current = result;
-            setShootoutInfo(null);
-            const careerForStats = careerRef.current ?? FALLBACK_CAREER;
-            const t = tallyRef.current;
-            const stats: MatchStats = {
-              ...finaliseMatch(
-                attemptsRef.current, t.goals, t.assists, t.passesCompleted,
-                Math.max(1, (hookedAtRef.current ?? matchMinuteRef.current) - enteredAtRef.current),
-                userScoreRef.current, oppScoreRef.current, careerForStats,
-                goalEventsRef.current, hookedRef.current, oppGoalEventsRef.current, fixture,
-              ),
-              endEnergy: liveEnergyAt(hookedAtRef.current ?? matchMinuteRef.current),
-              kibCansUsed: kibUsedRef.current,
-              wentToExtraTime: wentToExtraTimeRef.current,
-              shootout: result,
-            };
-            if (matchModeRef.current && onCompleteRef.current) {
-              onCompleteRef.current(stats);
-            } else {
-              setFinalStats(stats);
-              setPhase("postmatch");
-            }
-          }}
-        />
-      )}
 
       {/* Session complete — reuse the real post-match screen for the summary */}
       {phase === "postmatch" && finalStats && (

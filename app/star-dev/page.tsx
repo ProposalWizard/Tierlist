@@ -34,6 +34,7 @@ import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { selectionFor, MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
+import PenaltyDutyLine from "@/components/star/PenaltyDutyLine";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
@@ -465,6 +466,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const seasonOver = !!career && career.fixtures.length > 0 && !nextFixture;
   // Who the manager has picked this week, and which dead balls would be yours.
   const selection = career ? selectionFor(career) : null;
+  // v0.15 item 6: each star counts double towards penalties (setPieces.ts).
   const duties = career && selection ? setPieceDuties(career, selection.status) : null;
   // What your energy — and therefore your selection — will actually be once
   // you go and play: every day still unspent this week counts toward it
@@ -3339,6 +3341,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                   </div>
                 </div>
               </div>
+              <PenaltyDutyLine career={career} fixture={nextFixture} status={preMatchSelection.status} />
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import { pickScenarioKindFrom, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { getTuning } from "@/lib/star/tuningStore";
+import { OFF_PITCH_PEN_CONVERT } from "@/lib/star/penaltyTaking";
 
 const HIGH_MODE_CHANCES = getTuning("energy.highModeChances");
 const LOW_MODE_CHANCES = getTuning("energy.lowModeChances");
@@ -142,6 +143,21 @@ export interface HiddenMatchInputs {
    */
   talisman?: boolean;
   /**
+   * PENALTIES WON IN ANY MOVE (v0.15 plan, item 6).
+   *
+   * Harry: "A top team should get one every 6–7 games", won "whether or not
+   * you're in the move". Today a penalty only exists inside a move that has
+   * already come to you (buildRequest's 8.5 %), and for a striker 1 in 3 of
+   * those quietly turn into an ordinary team-mate chance. With this on, every
+   * chance your side works in the box has its own `PENALTY_WON_IN_BOX` roll,
+   * BEFORE anyone asks whether it is yours, and the request carries
+   * `penaltyWon` — CanvasMatch decides who takes it (you, if you are on the
+   * pitch and on penalties; otherwise the team's taker, live). The real
+   * match (CanvasMatch) always sets it. Absent — the unit tests and the
+   * gallery's simulations — every roll is exactly as before.
+   */
+  livePenalties?: boolean;
+  /**
    * MATCH CONTEXT (specification §2.9).
    *
    * "The Hidden Match Simulation must also understand the broader match
@@ -190,7 +206,21 @@ export interface ScenarioRequest {
   lane?: Lane;
   /** How the chance came about. Absent reads as "settled". */
   pattern?: ChancePattern;
+  /**
+   * A penalty your SIDE has won — not necessarily in a move that involved you
+   * (see HiddenMatchInputs.livePenalties). Who takes it is the match's call.
+   */
+  penaltyWon?: boolean;
 }
+
+/**
+ * How often a chance your side works in the penalty area is a penalty, when
+ * penalties are won in any move (`livePenalties`). Set so a top side (85
+ * against a league spread) wins one about every 6–7 games — measured with the
+ * unseen match itself, `teamStrength` = the club's league strength
+ * (tests/star/penaltyTaking.mts).
+ */
+export const PENALTY_WON_IN_BOX = 0.029;
 
 /**
  * What the player did with the chance, fed back so the match reacts to it.
@@ -556,6 +586,19 @@ export function tick(
       }
     }
     if (chanceRoll < rate) {
+      // ── A penalty, won in the move itself (v0.15 item 6) ──
+      // Before anyone asks whether the chance is yours: a foul in the box is a
+      // foul in the box, whoever was on the ball. Only with `livePenalties`,
+      // so the roll — and every roll after it — is exactly as before without.
+      if (userHasIt && inputs.livePenalties && state.zone === "box" && rng() < PENALTY_WON_IN_BOX) {
+        return {
+          events,
+          request: {
+            zone: "box", kinds: ["penalty"], lane: "centre", pattern: "set_piece",
+            reason: "Penalty! Brought down in the box", penaltyWon: true,
+          },
+        };
+      }
       if (userHasIt) {
         // Your team has worked one. Are you the one on the end of it?
         // Skill raises how often the move finds you.
@@ -759,7 +802,9 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   };
   const lane = state.lane ?? "centre";
   // A penalty keeps its own rate and its own gate (the duty is the taker's).
-  if (state.zone === "box" && rng() < 0.085) {
+  // With `livePenalties` they are won in tick() instead, in any move, and
+  // this roll is not made at all (so they are never counted twice).
+  if (!inputs.livePenalties && state.zone === "box" && rng() < 0.085) {
     return takesIt("penalty")
       ? { zone: state.zone, kinds: ["penalty"], lane: "centre", pattern: "set_piece", reason: "You are brought down in the box — penalty" }
       : null;
@@ -856,6 +901,16 @@ export function advanceTo(
     const step = tick(state, inputs, rng);
     events.push(...step.events);
     if (step.request) {
+      // A penalty won while you are off the pitch (v0.15 item 6): taken
+      // by the team's taker, at the rate his live kick converts at.
+      if (step.request.penaltyWon) {
+        const scored = rng() < OFF_PITCH_PEN_CONVERT;
+        events.push(scored
+          ? { minute: state.minute, text: "⚽ Your side score the penalty!", isGoal: true, teammateGoal: true }
+          : { minute: state.minute, text: "A penalty for your side — saved!", isOpponent: false });
+        resolveScenario(state, scored ? "goal" : "saved");
+        continue;
+      }
       // It went to somebody else. Resolved at the rate a team-mate converts,
       // and reported, so watching from the bench is still watching a match.
       const inBox = step.request.zone === "box";

@@ -504,6 +504,10 @@ export interface MatchStats {
    *  — `home`/`away` mirror the match's own home/away sides, same as
    *  `homeScore`/`awayScore`. Absent when the tie never needed one. */
   shootout?: { home: number; away: number };
+  /** Your "cheeky" kicks that didn't go in — a penalty down the middle, or a
+   *  chip — see lib/star/penaltyRunup.ts. Each costs a little reputation
+   *  (reputation.ts, `cheekyMiss`). Absent when there were none. */
+  cheekyMisses?: { kind: "penalty-middle" | "chip"; minute: number }[];
 }
 
 export interface Boot {
