@@ -7,6 +7,7 @@ Download a playtest recording from a share link into .playtests/<name>/.
 Works with:
   - Google Drive   https://drive.google.com/file/d/<ID>/view?...   (and open?id= / uc?id=)
   - Dropbox        https://www.dropbox.com/...?dl=0                 (rewritten to dl=1)
+  - a bare Drive file id (what the Drive connector's search returns)
   - any direct https link to an .mp4
 
 The file has to be shared as "Anyone with the link". If it isn't, Drive hands
@@ -29,6 +30,8 @@ def direct_url(link: str) -> str:
     m = re.search(r"drive\.google\.com/(?:file/d/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]+)", link)
     if m:
         return f"https://drive.usercontent.google.com/download?id={m.group(1)}&export=download&confirm=t"
+    if re.fullmatch(r"[\w-]{25,}", link):  # a bare Drive file id
+        return f"https://drive.usercontent.google.com/download?id={link}&export=download&confirm=t"
     if "dropbox.com" in link:
         link = re.sub(r"([?&])dl=0", r"\1dl=1", link)
         return link if "dl=1" in link else link + ("&" if "?" in link else "?") + "dl=1"

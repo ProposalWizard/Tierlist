@@ -11,8 +11,9 @@ The workflow for Claude is in `.claude/skills/playtest-video/SKILL.md`.
 - **Turn the microphone on.** The talking is half the value: it becomes a
   timestamped transcript lined up with the pictures.
 - On a phone: the built-in screen recorder, with the microphone switched on.
-- Put the file in Google Drive → Share → **Anyone with the link** → paste the
-  link to Claude.
+- Drop the file in the Drive folder **Knowitball playtest recordings**
+  (https://drive.google.com/drive/folders/1w_AJFndensiBWMicxiSReM9ZDlyQfBik),
+  set once to **Anyone with the link**, and tell Claude it's there.
 
 ## Running it
 

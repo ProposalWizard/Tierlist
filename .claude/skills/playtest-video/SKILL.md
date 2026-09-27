@@ -13,12 +13,20 @@ without the picture. The recording is the picture. Use it.
 
 ## 1. Get the file
 
-They drop the mp4 in Google Drive, set **Share → General access → Anyone with
-the link**, and paste the link.
+The drop folder is **Knowitball playtest recordings** in Harry's Drive:
+https://drive.google.com/drive/folders/1w_AJFndensiBWMicxiSReM9ZDlyQfBik
+(folder id `1w_AJFndensiBWMicxiSReM9ZDlyQfBik`). Once the folder itself is set
+to **Anyone with the link**, every video dropped in it inherits that, so they
+only have to say "new recording's in". Find the newest one with the Google
+Drive connector:
+
+`search_files` with `parentId = '1w_AJFndensiBWMicxiSReM9ZDlyQfBik' and mimeType contains 'video/'`
+
+then pass its `id` straight to fetch.py. A link pasted in chat works too.
 
 ```bash
 bash scripts/playtest-video/setup.sh                       # once per container
-python3 scripts/playtest-video/fetch.py "<link>" --name harry-0927
+python3 scripts/playtest-video/fetch.py "<link or file id>" --name harry-0927
 ```
 
 A link that isn't public comes back as "Got a web page, not a video" — ask
