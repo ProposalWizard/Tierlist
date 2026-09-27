@@ -375,7 +375,7 @@ function LabelEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative w-full max-w-2xl rounded-2xl bg-gray-900 border border-gray-700 p-6 shadow-2xl"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-gray-900 border border-gray-700 p-4 shadow-2xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -922,7 +922,7 @@ export default function TicTacToeAdmin() {
                   onDragOver={(e) => onDragOver(e, idx)}
                   onDrop={() => onDrop(idx)}
                   onDragEnd={onDragEnd}
-                  className={`flex items-center gap-3 rounded-lg border px-3 py-3 transition-all select-none ${
+                  className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-3 transition-all select-none sm:flex-nowrap ${
                     isDragging
                       ? "opacity-40 border-gray-600 bg-gray-800"
                       : isDragOver
@@ -932,16 +932,32 @@ export default function TicTacToeAdmin() {
                           : "border-gray-700/50 bg-gray-900/60 opacity-70"
                   }`}
                 >
-                  {/* Drag handle */}
-                  <span className="cursor-grab text-gray-500 text-sm select-none px-0.5" title="Drag to reorder">⠿</span>
+                  {/* Drag handle — a mouse drags; a phone can't, so it gets ↑ ↓ */}
+                  <span className="cursor-grab text-gray-500 text-sm select-none px-0.5 [@media(hover:none)]:hidden" title="Drag to reorder">⠿</span>
+                  <span className="hidden shrink-0 gap-1 [@media(hover:none)]:flex">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => setOrderedDailies((prev) => { const next = [...prev]; [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]; return next; })}
+                      aria-label="Move up"
+                      className="grid h-10 w-10 place-items-center rounded-lg border border-gray-700 bg-gray-800 text-base text-white disabled:opacity-30"
+                    >↑</button>
+                    <button
+                      type="button"
+                      disabled={idx === orderedDailies.length - 1}
+                      onClick={() => setOrderedDailies((prev) => { const next = [...prev]; [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]]; return next; })}
+                      aria-label="Move down"
+                      className="grid h-10 w-10 place-items-center rounded-lg border border-gray-700 bg-gray-800 text-base text-white disabled:opacity-30"
+                    >↓</button>
+                  </span>
 
                   {/* Day label */}
                   <span className="text-xs font-black text-gray-400 w-10 shrink-0 text-center">
                     Day {idx + 1}
                   </span>
 
-                  {/* Title */}
-                  <div className="flex-1 min-w-0">
+                  {/* Title — on a phone it keeps half the row; date + Live wrap below */}
+                  <div className="flex-1 min-w-[45%] sm:min-w-0">
                     <p className="font-bold text-white text-sm truncate">{p.title}</p>
                     <p className="text-[10px] text-gray-500">{p.difficulty}</p>
                   </div>
@@ -952,7 +968,7 @@ export default function TicTacToeAdmin() {
                       type="date"
                       value={p.daily_date ?? ""}
                       onChange={(e) => updateQueueItem(p.id, { daily_date: e.target.value || null })}
-                      className="rounded bg-gray-800 border border-gray-700 px-2 py-1 text-xs text-white focus:border-indigo-500 focus:outline-none w-32"
+                      className="rounded bg-gray-800 border border-gray-700 px-2 py-1 text-xs text-white focus:border-indigo-500 focus:outline-none w-44 sm:w-32"
                     />
                   </div>
 
@@ -993,9 +1009,9 @@ export default function TicTacToeAdmin() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg font-bold text-white">Tic Tac Toe Puzzles ({puzzles.length})</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {puzzles.length > 0 && (
             <button onClick={exportAll}
               className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-bold text-white hover:text-white hover:border-gray-500">

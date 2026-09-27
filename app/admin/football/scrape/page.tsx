@@ -456,7 +456,7 @@ export default function ScrapeSofifaPage() {
             ref={fileRef}
             type="file"
             accept=".csv,.json"
-            className="text-sm text-white"
+            className="max-w-full text-sm text-white"
           />
           <label className="flex items-center gap-1.5 text-sm text-white cursor-pointer select-none">
             <input
@@ -493,13 +493,13 @@ export default function ScrapeSofifaPage() {
           </div>
         )}
         <div className="flex flex-wrap items-center gap-3">
-          <label className="text-sm text-gray-400">
+          <label className="max-w-full text-sm text-gray-400">
             Club logos:
-            <input ref={clubLogosRef} type="file" accept=".json" className="ml-2 text-sm text-white" />
+            <input ref={clubLogosRef} type="file" accept=".json" className="ml-2 max-w-full text-sm text-white" />
           </label>
-          <label className="text-sm text-gray-400">
+          <label className="max-w-full text-sm text-gray-400">
             League logos:
-            <input ref={leagueLogosRef} type="file" accept=".json" className="ml-2 text-sm text-white" />
+            <input ref={leagueLogosRef} type="file" accept=".json" className="ml-2 max-w-full text-sm text-white" />
           </label>
           <button
             onClick={handleLogosImport}

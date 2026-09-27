@@ -378,8 +378,12 @@ export function penaltyCommit(trial: TrialProgress, rep: number): number {
  * reads your kick at the strike (lib/star/penaltyKeeper.ts). The trial's
  * difficulty is now how often he goes and how well he reads you, turned up
  * as the day gets harder:
- *   easy:  goes 65 %, reads 55 %   (a real match's keeper: goes 80 %, reads 60 %)
+ *   easy:  goes 65 %, reads 55 %
  *   hard:  goes 95 %, reads 72 %
+ * The trial keeps the older, harder keeper on purpose (fixed 1.4 m dive, full
+ * reach). Since 26 Sep the REAL match's keeper is built to real penalty
+ * numbers instead: goes 96 %, reads 50 %, dives 1-2.5 m and can't stretch
+ * back once committed — about 80 % scored (penaltyKeeper.ts).
  * Measured on the real engine in tests/star/penaltyKeeper.mts.
  */
 export function penaltyReadForTrial(trial: TrialProgress): { commitChance: number; readChance: number } {

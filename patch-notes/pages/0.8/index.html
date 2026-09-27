@@ -1,0 +1,820 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Knowitball v0.8</title>
+<style>
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--teal:#00838f;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 20px}
+  nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px}
+  nav.toc a{font-size:12.5px;font-weight:700;color:var(--ink2);text-decoration:none;
+    border:1px solid var(--line);background:var(--card);padding:5px 10px;border-radius:999px}
+  nav.toc a:focus-visible,nav.toc a:hover{color:var(--ink);border-color:var(--ink3)}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:44px 0 12px;display:flex;align-items:center;gap:9px;scroll-margin-top:12px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  h3{font-size:17px;margin:28px 0 6px;letter-spacing:-.01em;text-wrap:balance}
+  .lead{color:var(--ink2);font-size:14.5px;margin:0 0 14px;max-width:66ch}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+  .tut i{background:var(--teal)} .tut{color:var(--teal)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* where a scenario lives */
+  .flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:6px;align-items:stretch;margin:6px 0 18px}
+  .flow .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:11px 12px}
+  .flow .box b{display:block;font-size:13.5px}
+  .flow .box span{display:block;font-size:12.5px;color:var(--ink2);margin-top:3px;line-height:1.4}
+  .flow .box em{display:inline-block;font-style:normal;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-top:7px;color:var(--teal)}
+  .flow .ar{align-self:center;color:var(--ink3);font-weight:800;font-size:18px}
+  @media (max-width:560px){.flow{grid-template-columns:1fr}.flow .ar{transform:rotate(90deg);justify-self:center;line-height:1}}
+
+  /* tutorial steps */
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:st}
+  ol.steps>li{counter-increment:st;display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:16px;
+    padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+  ol.steps>li:last-child{border-bottom:0}
+  ol.steps>li.noimg{grid-template-columns:minmax(0,1fr)}
+  ol.steps .t{display:flex;gap:10px;align-items:baseline}
+  ol.steps .t::before{content:counter(st);flex:0 0 auto;width:24px;height:24px;border-radius:50%;
+    background:var(--teal);color:#fff;font-size:12.5px;font-weight:800;display:grid;place-items:center;transform:translateY(-1px)}
+  :root:not([data-theme="light"]) ol.steps .t::before{color:#041b1e}
+  ol.steps .t .hd{font-size:16px}
+  ol.steps .body{padding-left:34px}
+  ol.steps .body ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+  ol.steps .body li{margin:3px 0}
+  ol.steps .body li b{color:var(--ink)}
+  figure{margin:0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#05070d}
+  figcaption{font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.4}
+  .wide-fig{margin:14px 0 4px}
+  @media (max-width:600px){
+    ol.steps>li{grid-template-columns:minmax(0,1fr)}
+    ol.steps>li figure{padding-left:34px;max-width:320px}
+  }
+  .k{display:inline-block;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:var(--card2);
+    border-radius:7px;padding:0 6px;color:var(--ink);white-space:nowrap}
+
+  .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;margin:8px 0 0;padding:0;list-style:none}
+  .checks li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px;display:flex;gap:8px}
+  .checks li::before{content:"\2713";color:var(--green);font-weight:800}
+  .checks li.redo::before{content:"\21bb";color:var(--amber)}
+
+  .pair{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 4px}
+  @media (max-width:600px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+  /* bars */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(96px,150px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);line-height:1.25}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.blue{background:var(--blue)}
+  .fill.now.bad{background:var(--red)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  /* people */
+  .people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:10px 0}
+  @media (max-width:640px){.people{grid-template-columns:1fr}}
+  .p{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px}
+  .p .who{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .p .pos{font-weight:700;margin:4px 0 6px;font-size:14.5px;line-height:1.35}
+  .p q{display:block;font-size:13px;color:var(--ink2);border-left:2px solid var(--line);padding-left:8px;margin:6px 0 0;quotes:"\201C" "\201D"}
+
+  table.v{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+  .tw{overflow-x:auto}
+  table.v th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.v td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink2)}
+  table.v td:first-child{color:var(--ink);font-weight:600}
+  .tag{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .t-g{background:rgba(15,157,88,.14);color:var(--green)}
+  .t-a{background:rgba(168,115,10,.15);color:var(--amber)}
+  .t-r{background:rgba(198,40,40,.13);color:var(--red)}
+  .t-n{background:var(--card2);color:var(--ink3)}
+
+  /* simulations */
+  .sim{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin:12px 0}
+  .sim .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;margin:8px 0}
+  .sim label{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .sim label small{display:block;font-weight:400;color:var(--ink3);font-size:12px}
+  .sim output{font-variant-numeric:tabular-nums;font-weight:800;text-align:right;font-size:14px;white-space:nowrap}
+  .sim input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--teal)}
+  .sim .presets{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+  .sim button{font:inherit;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:var(--card2);
+    color:var(--ink);border-radius:999px;padding:6px 11px;cursor:pointer}
+  .sim button[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+  .sim button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;grid-column:1/-1}
+  .result{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+  .big{font-size:clamp(24px,6vw,34px);font-weight:800;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums}
+  .result p{margin:6px 0 0;color:var(--ink2);font-size:14px}
+  .result p b{color:var(--ink)}
+  .chart{margin-top:10px}
+  .chart svg{width:100%;height:auto;display:block}
+  .chart text{fill:var(--ink3);font-size:15px;font-family:inherit}
+  .note{font-size:12px;color:var(--ink3);margin-top:8px;line-height:1.45}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(198,40,40,.13);color:var(--red)}
+  .p-amb{background:rgba(168,115,10,.15);color:var(--amber)}
+  .p-grn{background:rgba(15,157,88,.14);color:var(--green)}
+
+  .callout{border:1px solid var(--line);border-left:3px solid var(--teal);background:var(--card);border-radius:var(--r);padding:12px 14px;margin:12px 0}
+  .callout .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+  .callout p{margin:0;font-size:14px;color:var(--ink2)}
+  .callout p b{color:var(--ink)}
+  .alert{border-left-color:var(--red)} .alert .t{color:var(--red)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  @media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.8</span>
+  <h1>Harry's patch notes</h1>
+  <p class="sub">How to build scenarios, step by step · Save and Commit from inside Infinite Match and Infinite Highlights · the difficulty argument, researched and simulated · an eye (ⓘ) on every admin page</p>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#tutorial">How to build scenarios</a>
+  <a href="#frommatch">Save from a match</a>
+  <a href="#difficulty">Difficulty &amp; paying</a>
+  <a href="#changes">All other changes</a>
+  <a href="#known">Known issues</a>
+</nav>
+
+<div class="strip">
+  <div class="s"><b>156/156</b><span>chances saved from a match that come back in the gallery exactly as they were</span></div>
+  <div class="s"><b>26</b><span>admin and dev pages that now have the eye explaining every button</span></div>
+  <div class="s"><b>9% → 0%</b><span>how much bigger Play was than the picture on a phone — the goalie that &quot;still moved&quot;</span></div>
+  <div class="s"><b>~1 in 100</b><span>players still playing on the day they'd reach the Premier League at today's pace (model)</span></div>
+</div>
+
+<!-- ═══════════════════════ TUTORIAL ═══════════════════════ -->
+<h2 class="tut" id="tutorial"><i></i>How to build scenarios</h2>
+<p class="lead">A scenario is one hand-drawn picture of a chance type: a one-on-one, a corner, a tight angle. The game plays the drawings the team has <b>committed</b>, nudging each one slightly every time so they never repeat exactly.</p>
+
+<div class="flow" role="list" aria-label="Where a scenario lives">
+  <div class="box" role="listitem"><b>This browser</b><span>Your drags, ✓ / ✕ marks and extra versions. Nobody else sees them.</span><em>Drag</em></div>
+  <div class="ar" aria-hidden="true">→</div>
+  <div class="box" role="listitem"><b>The team's list</b><span>Everyone sees it in the gallery straight away. Not in real matches yet.</span><em>Save</em></div>
+  <div class="ar" aria-hidden="true">→</div>
+  <div class="box" role="listitem"><b>The game</b><span>Real matches use it for every player, about 2 minutes after the commit.</span><em>Commit</em></div>
+</div>
+
+<ol class="steps">
+  <li>
+    <div>
+      <div class="t"><span class="hd">Open the gallery, then 11-a-side</span></div>
+      <div class="body">
+        <div class="dt"><code>knowitball.co.uk/star-gallery-dev</code>. Sign in with the admin account first, or nothing will save.</div>
+        <ul>
+          <li><b>5-a-side</b> is for looking only; nothing there reaches the game yet.</li>
+          <li><b>Tuning &amp; Commit</b> is where everything saved but not yet in the game waits.</li>
+        </ul>
+      </div>
+    </div>
+    <figure><img src="img/g-home.jpg" alt="Scenario Gallery home with 11-a-side and 5-a-side tiles" loading="lazy"><figcaption>The bar at the top says how many are waiting to commit.</figcaption></figure>
+  </li>
+  <li>
+    <div>
+      <div class="t"><span class="hd">Pick a chance type</span></div>
+      <div class="body">
+        <div class="dt">Each chip reads <b>in the game / saved</b> and shows the same numbers on every device.</div>
+        <ul>
+          <li><span class="k">one on one · 21/22</span>: 22 saved, 21 of them committed.</li>
+          <li><span class="k">long range · 0/0</span>: nothing drawn yet. The game still uses its built-in shapes for it.</li>
+          <li><b>+ Add version</b> gives you another blank card of this type to draw on.</li>
+        </ul>
+      </div>
+    </div>
+    <figure><img src="img/g-grid.jpg" alt="Chance type chips and a grid of cards" loading="lazy"><figcaption>Tap any card to open it.</figcaption></figure>
+  </li>
+  <li>
+    <div>
+      <div class="t"><span class="hd">Open a card and read the two pills</span></div>
+      <div class="body">
+        <div class="dt">The first pill says where this card is; the second says whether real matches use it.</div>
+        <ul>
+          <li><b>Draft / Unsaved changes</b>: this browser only.</li>
+          <li><b>Saved — in the game once committed</b>: the team can see it; matches can't use it yet.</li>
+          <li><b>Committed — in the game</b>: live.</li>
+          <li><b>Saved — the game still has the older copy</b>: you changed it after it was committed. Commit again.</li>
+          <li>A <b>red line</b> under the picture names what breaks the chance's own rules, e.g. a defender between the ball and goal in a one-on-one.</li>
+        </ul>
+      </div>
+    </div>
+    <figure><img src="img/g-card.jpg" alt="An open tight angle card with its buttons" loading="lazy"><figcaption>‹ › or a swipe on the grass moves between versions.</figcaption></figure>
+  </li>
+  <li>
+    <div>
+      <div class="t"><span class="hd">Fix it: drag anyone, or the ball</span></div>
+      <div class="body">
+        <div class="dt">Tap a player to select him (blue ring), then drag. The ball drags on its own too.</div>
+        <ul>
+          <li><b>+ Mate</b> adds a team-mate who makes a real supporting run and can take a pass.</li>
+          <li><b>+ Opp</b> adds an opponent.</li>
+          <li><b>Remove</b> takes out the player you tapped.</li>
+          <li>A blue border and the amber pill mean it's unsaved and only in this browser.</li>
+        </ul>
+      </div>
+    </div>
+    <figure><img src="img/g-drag.jpg" alt="A defender selected and dragged, with the unsaved pill showing" loading="lazy"><figcaption>After a drag the Tune button appears. See step 8.</figcaption></figure>
+  </li>
+  <li class="noimg">
+    <div>
+      <div class="t"><span class="hd">Check it plays right: ▶ Play</span></div>
+      <div class="body">
+        <div class="dt">▶ Play turns the picture into the real chance, drags and all, without leaving the card. ◼ Stop brings the picture back.</div>
+        <figure class="wide-fig"><img src="img/g-play.jpg" alt="The picture on the left and the same chance after pressing Play on the right" loading="lazy"><figcaption>Left: the picture. Right: after Play, on a 340px phone. The keeper, ball and every player are in the same place. Before this round Play was drawn 9% bigger on a phone, which read as the keeper moving. The goal net is still drawn differently; see Known issues.</figcaption></figure>
+      </div>
+    </div>
+  </li>
+  <li>
+    <div>
+      <div class="t"><span class="hd">Keep it or bin it</span></div>
+      <div class="body">
+        <div class="dt"><b>Save &amp; Approve</b> (the ✓ button) saves it for the team and ticks it. <b>✕ No good</b> marks a bad one on your device only; the card stays.</div>
+        <ul>
+          <li>The ✓ only says "Save &amp; Approve" when there's something to save: a drag, or a card nobody has saved yet.</li>
+          <li>The <b>⋯</b> menu has Save, Revert to built-in, Commit to repo, Export JSON and Discard unsaved edits.</li>
+          <li><b>Revert</b> only removes the saved copy. If it was committed, it's still in the game. <b>Delete</b> removes it from both.</li>
+        </ul>
+      </div>
+    </div>
+    <figure><img src="img/g-menu.jpg" alt="The ⋯ menu open" loading="lazy"><figcaption>Commit to repo here commits just this one card.</figcaption></figure>
+  </li>
+  <li>
+    <div>
+      <div class="t"><span class="hd">Want more? ▶ Sim</span></div>
+      <div class="body">
+        <div class="dt">The small ▶ under the verdict row rolls a fresh chance of this type, the way a real match would. <b>Next →</b> rolls another.</div>
+        <ul>
+          <li>Save &amp; Approve on a good one adds it as that type's next card, so 22/22 becomes 22/23.</li>
+          <li>"Back to version N" returns to where you were.</li>
+          <li>This is the fastest way to reach 30–50 per type: sim, fix, approve, next.</li>
+        </ul>
+      </div>
+    </div>
+    <figure><img src="img/g-sim.jpg" alt="A simulated tight angle chance" loading="lazy"><figcaption>"SIM" in the corner means this card isn't saved yet.</figcaption></figure>
+  </li>
+  <li class="noimg">
+    <div>
+      <div class="t"><span class="hd">Tune: only when you're teaching the generator</span></div>
+      <div class="body">
+        <div class="dt">After a drag on a generated picture, <b>Tune</b> records <i>what was wrong</i> without saving the picture. Once 3 corrections of the same type agree, a rule is proposed.</div>
+        <ul>
+          <li>Nothing is changed automatically. Ask Claude for <b>"the tuner proposals"</b> and it prints each rule and the exact number it would change.</li>
+          <li>Now: 3 corrections recorded and 0 proposals. Two patterns are at 1 of 3: <i>one on one: a defender nearer goal than the ball</i> and <i>tight angle: how far the keeper comes off his line</i>.</li>
+        </ul>
+      </div>
+    </div>
+  </li>
+  <li class="noimg">
+    <div>
+      <div class="t"><span class="hd">Put it in the game: Tuning &amp; Commit</span></div>
+      <div class="body">
+        <div class="dt"><b>Look through all N first</b>, open or leave out any card, then <b>Commit all N to the repo</b>. It makes one commit and one deploy, and takes about 2 minutes to go live.</div>
+        <ul>
+          <li>Press it once. The count doesn't update until the deploy finishes.</li>
+          <li>Every commit also saves the same copy to the team's list, so the two can't drift apart.</li>
+        </ul>
+        <figure class="wide-fig"><img src="img/g-commit.jpg" alt="The Tuning and Commit screen" loading="lazy"><figcaption>Right now 5 are saved but not in the code: 2 sims, 2 tight angles and 1 free kick.</figcaption></figure>
+      </div>
+    </div>
+  </li>
+  <li class="noimg">
+    <div>
+      <div class="t"><span class="hd">When the game actually starts using them</span></div>
+      <div class="body">
+        <div class="dt">A type needs <b>5 committed drawings</b> before real matches use any of them. Below 5 it uses the built-in generator.</div>
+        <ul>
+          <li>Each chance a match serves is one drawing, with every player nudged by up to 2m.</li>
+          <li>That's checked against the type's <b>laws</b>: anything true in 9 out of 10 of its drawings. If the nudge breaks a law, it's redrawn with a smaller one. The last try has no nudge at all.</li>
+          <li>A drawing that breaks a law itself is never used as a base. It shows up as an outlier to fix or delete.</li>
+          <li>Drawings of one type never affect another.</li>
+        </ul>
+        <div class="bars" aria-label="Committed drawings per type">
+          <div class="bar"><span class="lb">one on one</span><div class="track"><div class="fill now" style="width:42%"></div></div><span class="vv">21 · in use</span></div>
+          <div class="bar"><span class="lb">tight angle</span><div class="track"><div class="fill now" style="width:22%"></div></div><span class="vv">11 · in use</span></div>
+          <div class="bar"><span class="lb">free kick</span><div class="track"><div class="fill now warn" style="width:0%"></div></div><span class="vv">0 <s>(1 saved)</s></span></div>
+          <div class="bar"><span class="lb">the other 10 types</span><div class="track"></div><span class="vv">0 · built-in</span></div>
+        </div>
+        <div class="note">Bars are out of 50, the top of the 30–50 target. The 5-drawing minimum is the point where a type's laws start to count.</div>
+      </div>
+    </div>
+  </li>
+</ol>
+
+<details>
+  <summary>Rules of thumb</summary>
+  <ul>
+    <li><b>Aim for 30–50 per type.</b> Laws read off 5 drawings are much weaker than laws read off 50. Harry sets the rules after.</li>
+    <li><b>Saved isn't in the game.</b> Only a commit reaches real matches.</li>
+    <li><b>Revert vs Delete.</b> Revert takes the saved copy out of the team's list and leaves a committed copy in the game. Delete removes both, and asks first.</li>
+    <li><b>You need the admin sign-in</b> to save or commit. Signed out you get "Forbidden — needs an admin sign-in", and nothing is lost from your screen.</li>
+    <li><b>On a laptop</b> the picture sits in the middle: ✕ No good on the left; ✓, ⋯ and ▶ Sim on the right; the edit row underneath.</li>
+    <li><b>Stuck on a screen?</b> Tap the eye (ⓘ) bottom-right. Every admin page now explains each button, where it saves and whether it commits.</li>
+  </ul>
+  <div class="pair" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <figure><img src="img/g-wide.jpg" alt="The gallery card on a laptop" loading="lazy"><figcaption>Laptop layout.</figcaption></figure>
+    <figure><img src="img/g-eye.jpg" alt="The eye info panel open on the gallery" loading="lazy"><figcaption>The eye, open.</figcaption></figure>
+  </div>
+</details>
+
+<h3>Working, tested by Harry today</h3>
+<ul class="checks">
+  <li>Play looks the same as the picture (tight angle, phone)</li>
+  <li>The ball drags on its own</li>
+  <li>No false "attacker offside" after removing the poacher</li>
+  <li>+ Mate makes a runner who moves in Play</li>
+  <li>Type counts match across browsers</li>
+  <li>▶ Sim → ✓ saves it into the type</li>
+  <li>Laptop layout: picture centred, buttons at the sides</li>
+  <li>Commit shows "Committed"</li>
+  <li>An Infinite Highlights save lands in the gallery</li>
+  <li>Tune corrections are shared between browsers</li>
+  <li class="redo">Infinite Match Save / Commit: rebuilt this round, test again</li>
+</ul>
+
+<!-- ═══════════════════════ FROM A MATCH ═══════════════════════ -->
+<h2 class="add" id="frommatch"><i></i>Side note: save straight from a match</h2>
+<p class="lead">You can now add to a chance type's scenarios without opening the gallery. If a chance comes up in the Play Area that's worth keeping, or needs fixing, save it where it is.</p>
+<ul class="n">
+  <li>
+    <div class="hd">Infinite Match: Edit, Save and Commit stay pinned to the top</div>
+    <div class="dt">The bar names the chance you're on and the minute. <b>Save</b> keeps it exactly as it stands, with no editing needed. <b>Commit</b> puts it in the game. <b>✎ Edit</b> opens it to drag first, and the editor has its own Save and Commit.</div>
+  </li>
+  <li>
+    <div class="hd">Infinite Highlights: Save and Commit on every highlight</div>
+    <div class="dt">Save used to appear only after a drag, and there was no Commit on that screen. Both are always there now. After a drag, Save reads "Save this fix".</div>
+  </li>
+  <li>
+    <div class="hd">Where it lands</div>
+    <div class="dt">In the gallery, as a new card of that chance type. It counts in the chip numbers and shows up in Tuning &amp; Commit like anything else. Commit sends it into real matches.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">saved chances rebuilt exactly (13 types × 12)</span><div class="track"><div class="fill now" style="width:100%"></div></div><span class="vv">156/156</span></div>
+    </div>
+  </li>
+</ul>
+<div class="pair">
+  <figure><img src="img/im-bar.jpg" alt="Infinite Match with the pinned Edit, Save and Commit bar" loading="lazy"><figcaption>Infinite Match: the bar stays at the top while you scroll.</figcaption></figure>
+  <figure><img src="img/im-editor.jpg" alt="The chance editor opened from Infinite Match" loading="lazy"><figcaption>✎ Edit: the same chance, ready to drag. Opponents are red here whatever kit they wore.</figcaption></figure>
+  <figure><img src="img/hl-save.jpg" alt="Infinite Highlights with Save and Commit" loading="lazy"><figcaption>Infinite Highlights: Save and Commit under every highlight.</figcaption></figure>
+</div>
+<div class="callout"><div class="t">Not yet seen signed in</div><p>Both buttons reach the server. In my test browser they were refused as expected, because it isn't signed in as admin. The first real save is yours to try.</p></div>
+
+<!-- ═══════════════════════ DIFFICULTY ═══════════════════════ -->
+<h2 class="chg" id="difficulty"><i></i>Difficulty, scaling &amp; paying: deep dive</h2>
+<p class="lead">Short version: <b>all three of you want modes</b>. The real disagreement is which mode is the default, and which players pay. The research settles some of it. For the rest, two numbers nobody has measured decide the answer, and the simulations below show which.</p>
+
+<h3>The argument, in one screen</h3>
+<div class="people">
+  <div class="p">
+    <div class="who">Harry</div>
+    <div class="pos">Main mode is a slow road to the top. The easy mode should be clearly casual.</div>
+    <q>people love a challenging game with real progression</q>
+    <q>even if the easy side was like 30% bigger wed still probably make more from the grind people</q>
+    <q>the progression has to be so elite on the main version that we can just toggle these variables and make an easy version</q>
+  </div>
+  <div class="p">
+    <div class="who">Leo</div>
+    <div class="pos">Let players choose before they start. A quick route keeps people the grind would lose.</div>
+    <q>ONE HUNDRED percent let the user select before they start like a difficulty/mode</q>
+    <q>we're missing out on probably like half the audience</q>
+    <q>i want the 10% to have an option</q>
+  </div>
+  <div class="p">
+    <div class="who">Mikey</div>
+    <div class="pos">Have both, and never let the game go flat.</div>
+    <q>Could have 2 difficulties one where its more of a challenge to get near the prem and another whether you can climb divisions easier</q>
+    <q>The game cannot get boring … A lull when your playing and then you don't feel like coming back</q>
+    <q>Fifa points make them billions</q>
+  </div>
+</div>
+<div class="callout"><div class="t">Where you already agree</div><p>Everyone backed modes (<i>"I back having multiple modes"</i>; <i>"I already agreed with having difficulty like 5 times"</i>). Everyone accepted Harry's condition that the easy mode is <b>the same game with different settings</b>: cheaper shop, weaker opponents, easier transfers. And Mikey's worry, lulls, turns out to be the best-supported point in the research.</p></div>
+
+<h3>What the research says</h3>
+<ul class="n">
+  <li>
+    <div class="hd">A few long-stayers pay for everything</div>
+    <div class="dt">In games that live off big spenders, the top 5% of spenders make 70% of revenue, rising to 81% by month 10 (Moloco, 55 games, 20M+ payers). Only 2–5% of players ever pay.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">revenue from top 5% of spenders, month 1</span><div class="track"><div class="fill now blue" style="width:70%"></div></div><span class="vv">70%</span></div>
+      <div class="bar"><span class="lb">same, by month 10</span><div class="track"><div class="fill now blue" style="width:81%"></div></div><span class="vv">81%</span></div>
+      <div class="bar"><span class="lb">top spenders who bought nothing in month 1</span><div class="track"><div class="fill now blue" style="width:87%"></div></div><span class="vv">87%</span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Most players leave on day one</div>
+    <div class="dt">The typical game keeps 16% of players to day 2 and 3.7% to day 7. A game in the top quarter keeps 26–28% and 7–8% (GameAnalytics, 11,600 games).</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">still playing day 1 (typical / top 25%)</span><div class="track"><div class="fill was" style="width:27%"></div><div class="fill now" style="width:16%"></div></div><span class="vv">16% <s>27%</s></span></div>
+      <div class="bar"><span class="lb">still playing day 7 (typical / top 25%)</span><div class="track"><div class="fill was" style="width:7.5%"></div><div class="fill now" style="width:3.7%"></div></div><span class="vv">3.7% <s>7.5%</s></span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Uneven difficulty drives quitting more than hard difficulty</div>
+    <div class="dt">In a study of 263,000 players, swings in difficulty mattered more than the average level. Winning streaks were the strongest protection against quitting. Losing streaks did <b>not</b> make beginners quit; they only hurt advanced players.</div>
+  </li>
+  <li>
+    <div class="hd">The most important finding: easier for players about to quit meant more money overall</div>
+    <div class="dt">In a controlled trial with 330,000 players (Ascarza, Netzer &amp; Runge, 2025), players about to quit were given easier levels. They spent less in that round because they didn't need help. But they stayed longer, and spent about 7–8 cents more per player over 30 days.</div>
+  </li>
+  <li>
+    <div class="hd">Paying to skip only works if the skip is expensive</div>
+    <div class="dt">Timer-and-skip games made over $3B in 2021. The same study found that skips priced too cheaply make the game less satisfying. The healthy version is expensive skips bought by a few big spenders.</div>
+  </li>
+  <li>
+    <div class="hd">Hard games sell when there's a way around the wall</div>
+    <div class="dt">Elden Ring: 70.8% beat the first big boss, 30M sold. Sekiro: 47.5% beat its early skill-check boss, 10M sold. Both kept the difficulty, and Elden Ring gave players a way round it: summon help, or go elsewhere and level up.</div>
+  </li>
+  <li>
+    <div class="hd">Football games specifically</div>
+    <div class="dt">New Star Soccer hit #1 top-grossing in the UK, earning about £7k a day at peak, with in-app purchases about half of that. Its creator: <i>"you're only two minutes away from another result, another wage packet."</i> Football Manager (fan poll, weak source): 36% quit a save within 5 seasons, and 23% play more than 21.</div>
+    <details><summary>EA and Ultimate Team</summary>
+      <ul>
+        <li>Ultimate Team made $1.62B in EA's 2021 financial year, 29% of EA's revenue. EA's finance chief said about half of Ultimate Team players spend.</li>
+        <li>That money is pack-opening in a player-vs-player mode, not paying to skip a solo career. It shows sports players spend. It doesn't show who, and EA has never published a split between hardcore and casual players.</li>
+      </ul>
+    </details>
+  </li>
+</ul>
+
+<h3>Each claim, checked</h3>
+<div class="tw">
+<table class="v">
+  <thead><tr><th>Claim</th><th>Who</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>The money comes from players who stay for months</td><td>Harry</td><td><span class="tag t-g">backed</span> 87% of top spenders hadn't paid in month 1.</td></tr>
+    <tr><td>Harder means they spend more</td><td>Harry</td><td><span class="tag t-r">against it</span> The one controlled test found easier-for-quitters made more money.</td></tr>
+    <tr><td>Most players want to start at the bottom</td><td>Harry</td><td><span class="tag t-n">no data</span> No study compares starting weak with starting strong.</td></tr>
+    <tr><td>Day one is where players are lost</td><td>Leo</td><td><span class="tag t-g">backed</span> About 84% of players are gone by day 2.</td></tr>
+    <tr><td>Without a quick mode we lose half the audience</td><td>Leo</td><td><span class="tag t-a">unproven</span> Nobody has measured it. Simulation 2 shows the whole answer turns on it.</td></tr>
+    <tr><td>A lull kills the game</td><td>Mikey</td><td><span class="tag t-g">backed</span> Difficulty swings and lulls drive quitting more than a hard start does.</td></tr>
+    <tr><td>Casual players are the ones who pay to skip</td><td>Mikey</td><td><span class="tag t-n">no data</span> The FIFA points money is pack-opening, not skipping.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- SIM 1 -->
+<h3>Simulation 1: who ever sees the Premier League?</h3>
+<p class="lead">Harry flagged it himself: "prem after like 7 szns … if thats half the game cycle all of the ownership stuff … probably is never getting hit". Move the dials.</p>
+<div class="sim" id="sim1">
+  <div class="row">
+    <label for="s1h">Hours of play to reach the Premier League<small>20 is a guess: 7 seasons × about 3 hours. PostHog can measure the real number.</small></label>
+    <output id="s1h-o" for="s1h">20 h</output>
+    <input type="range" id="s1h" min="2" max="40" step="1" value="20">
+  </div>
+  <div class="row">
+    <label for="s1m">Minutes a day a typical player plays</label>
+    <output id="s1m-o" for="s1m">30 min</output>
+    <input type="range" id="s1m" min="10" max="90" step="5" value="30">
+  </div>
+  <div class="result" aria-live="polite">
+    <div class="big" id="s1-big">10 in 1,000</div>
+    <p id="s1-txt">players are still playing on <b>day 40</b>, the day they'd reach the Premier League. In a top-25% game: <b>21 in 1,000</b>.</p>
+    <div class="chart"><svg id="s1-chart" viewBox="0 0 400 230" role="img" aria-label="Share of players still playing, by day"></svg></div>
+    <div class="note">The curve runs through the typical game's real day-1 and day-7 figures (16%, 3.7%). "Still playing that day" is a ceiling: reaching the Prem also needs them to have played that much in total. Halving the road to the top, from 20 hours to 10, takes it from 10 to 17 in 1,000, without changing where the game starts.</div>
+  </div>
+</div>
+
+<!-- SIM 2 -->
+<h3>Simulation 2: does adding a casual mode make more money?</h3>
+<p class="lead">This is a model of one month of new players over their first six months. Tap a person to load their view of the argument, then move the dials.</p>
+<div class="sim" id="sim2">
+  <div class="presets" role="group" aria-label="Load a view">
+    <button type="button" data-p="harry">Harry's view</button>
+    <button type="button" data-p="leo">Leo's view</button>
+    <button type="button" data-p="mikey">Mikey's view</button>
+    <button type="button" data-p="worst">Worst case</button>
+  </div>
+  <div class="row">
+    <label for="s2s">Players who'd pick casual instead of the main mode</label>
+    <output id="s2s-o" for="s2s">30%</output>
+    <input type="range" id="s2s" min="0" max="60" step="5" value="30">
+  </div>
+  <div class="row">
+    <label for="s2e">New players who only come because casual exists<small>Leo's "half the audience" is 50–100%</small></label>
+    <output id="s2e-o" for="s2e">20%</output>
+    <input type="range" id="s2e" min="0" max="100" step="5" value="20">
+  </div>
+  <div class="row">
+    <label for="s2u">Casual players who come back on day 1, extra</label>
+    <output id="s2u-o" for="s2u">+30%</output>
+    <input type="range" id="s2u" min="0" max="60" step="5" value="30">
+  </div>
+  <div class="row">
+    <label id="s2t-l">After that, casual players drop off…</label>
+    <output id="s2t-o">faster</output>
+    <div class="seg" role="group" aria-labelledby="s2t-l">
+      <button type="button" data-t="1">the same as main</button>
+      <button type="button" data-t="1.2">faster</button>
+      <button type="button" data-t="1.4">much faster</button>
+    </div>
+  </div>
+  <div class="row">
+    <label for="s2m">What a casual player spends a day, vs a main-mode player<small>Mikey: casual players buy to reach the good bits sooner</small></label>
+    <output id="s2m-o" for="s2m">100%</output>
+    <input type="range" id="s2m" min="50" max="200" step="10" value="100">
+  </div>
+  <div class="result" aria-live="polite">
+    <div class="big" id="s2-big">+18%</div>
+    <p id="s2-txt">money with both modes, against the main mode alone.</p>
+    <div class="bars">
+      <div class="bar"><span class="lb">main mode only</span><div class="track"><div class="fill now blue" id="s2-b1" style="width:50%"></div></div><span class="vv">100</span></div>
+      <div class="bar"><span class="lb">both modes</span><div class="track"><div class="fill now" id="s2-b2" style="width:59%"></div></div><span class="vv" id="s2-b2v">118</span></div>
+    </div>
+    <p id="s2-even"></p>
+  </div>
+  <div class="note">Only the comparison means anything; the money itself is made up. Spending per active player rises with time in the game, about 7× by month 6, because big spenders arrive late. Main-mode players follow the typical retention curve. Casual players get the day-1 boost and the drop-off you pick.</div>
+</div>
+<div class="callout"><div class="t">What the simulation says</div><p><b>Harry's view: 95</b> (casual costs a little). <b>Leo's: 183.</b> <b>Mikey's: 163.</b> <b>Worst case: 71.</b> The answer flips on two numbers: <b>how many new players casual brings in</b>, and <b>how long they stay</b>. Even on Harry's assumptions, casual pays for itself if it brings in about <b>1 new player for every 5</b> you already have. Nobody has measured either number, and PostHog can.</p></div>
+
+<h3>In-game purchases: what to sell, and what not to</h3>
+<ul class="n">
+  <li><div class="hd">Sell: rewarded ads</div><div class="dt">Watch an ad for a retry or one more chance. It's money from the 95%+ who never pay, and it smooths out difficulty spikes, which the research says is what keeps players.</div></li>
+  <li><div class="hd">Sell: cosmetics and a cheap starter pack</div><div class="dt">Kits, boots skins, celebrations. A starter pack at £0.99–2.99 is the usual first purchase. Weak sources say one purchase makes another 5–10× likelier.</div></li>
+  <li><div class="hd">Sell: time-savers, priced high</div><div class="dt">Cheap skips make the climb feel worthless. Priced high, a few big spenders buy them and everyone else's grind still means something.</div></li>
+  <li><div class="hd">Hold back: interstitial ads until players are well in</div><div class="dt">Score! Hero waits until level 25, so buyers can convert first.</div></li>
+  <li><div class="hd">Don't: sell stat boosts for real money</div><div class="dt">That's what gets a game called pay-to-win. KIB Stat Cans (+3/+5/+8) are fine as they are, bought with in-game stars. Selling them for real money is the line. Never in a hard mode.</div></li>
+</ul>
+
+<h3>Recommendation</h3>
+<ul class="n">
+  <li><div class="hd">Road to Glory is the default, pre-selected <span class="pill p-amb">decision for Harry</span></div><div class="dt">"Superstar Start (casual)" sits next to it on the same screen, clearly labelled, not buried in settings. It gets its own saves and achievements.</div></li>
+  <li><div class="hd">Casual is the same game with different settings</div><div class="dt">Where you start, opponent strength, shop prices and transfer ease. The main mode's flow doesn't change (Harry's condition).</div></li>
+  <li><div class="hd">A hard mode later, earned</div><div class="dt">Unlocked by a Ballon d'Or, as Harry suggested. No paid boosts in it.</div></li>
+  <li><div class="hd">Plan pace in hours, not seasons</div><div class="dt">Something big every session: a promotion race or a cup tie against a Premier League club in season 1, plus an unlock every season, like Mikey's free trial of the curve boots. Simulation 1 is the reason.</div></li>
+  <li><div class="hd">Smooth out spikes in the main mode without making it easier overall</div><div class="dt">A retry after a rewarded ad, not rigged results.</div></li>
+  <li><div class="hd">Settle it with data</div><div class="dt">Add PostHog events for: which mode was picked, session length, day 1 and day 7 back, time to each promotion, and the day of first purchase. Decide once there are about 1,000 players in each mode.</div></li>
+</ul>
+<details><summary>What the research couldn't answer</summary>
+  <ul>
+    <li>There's no published split of hardcore vs casual spending in football games, and no Celeste Assist Mode usage figures.</li>
+    <li>Nobody has tested starting weak against starting strong.</li>
+    <li>Almost all of this comes from mobile free-to-play games in general, not a browser football career game. Treat it as direction, not proof.</li>
+  </ul>
+</details>
+<details><summary>Sources</summary>
+  <ul>
+    <li>Moloco, Aug 2026: whale-driven games, 55 games, 20M+ payers (via mobilemarketingreads.com)</li>
+    <li>GameAnalytics 2025 benchmarks, 11,600 games; AppsFlyer 2024 gaming report</li>
+    <li>Difficulty and churn, 263k players: pmc.ncbi.nlm.nih.gov/articles/PMC10839887</li>
+    <li>Ascarza, Netzer &amp; Runge (2025), dynamic difficulty trial, 330k players: papers.ssrn.com, abstract 4653319</li>
+    <li>"Pay to (Not) Play", arXiv 2312.10205</li>
+    <li>EA engagement-optimised matchmaking, arXiv 1702.06820</li>
+    <li>EA Ultimate Team revenue (gamedeveloper.com); EA 10-K, FY2025</li>
+    <li>PocketGamer.biz, New Star Games studio profile; Wikipedia, New Star Soccer</li>
+    <li>PC Gamer (Elden Ring 70.8%); Shacknews (30M); Gematsu (Sekiro 10M)</li>
+    <li>Sports Interactive forum poll (FM seasons, weak); gamebizconsulting.com (Score! Hero ads)</li>
+  </ul>
+</details>
+
+<!-- ═══════════════════════ OTHER CHANGES ═══════════════════════ -->
+<h2 class="fix" id="changes"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Infinite Match had no Save or Commit in reach</div>
+    <div class="dt">There was one Edit button above the scoreboard, and it scrolled away. Edit, Save and Commit are now pinned to the top for the whole match.</div>
+  </li>
+  <li>
+    <div class="hd">Infinite Highlights had no Commit, and no Save until you dragged</div>
+    <div class="dt">Both are now under every highlight.</div>
+  </li>
+  <li>
+    <div class="hd">The keeper "still moved" when you pressed Play on a phone</div>
+    <div class="dt">At 340px wide, the picture drew 340px in a 312px space and got cut off, while Play fitted the space: a 9% size jump. Both are 312px now. Seen side by side in a browser, everything lands within 5px.</div>
+    <div class="bars"><div class="bar"><span class="lb">Play vs picture size, 340px phone</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:0%"></div></div><span class="vv">0% <s>9%</s></span></div></div>
+  </li>
+  <li>
+    <div class="hd">A gallery card could go blank on a resize</div>
+    <div class="dt">This came from the phone fix above, which is already on main. Before the page had measured the screen, the picture got a negative size and the whole card crashed. Seen in a browser: 7 errors on a resize before, 0 after.</div>
+  </li>
+  <li>
+    <div class="hd">Button rows cut off on a phone</div>
+    <div class="dt">Infinite Highlights ran to 433px on a 390px screen, which cut Delete off. The gallery clipped "+ Mate" and "Remove" once Tune appeared. All buttons now fit at 390px, measured.</div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">An eye (ⓘ) on all 26 admin and dev pages</div>
+    <div class="dt">It looks the same everywhere and explains what the page is, every button by its on-screen name, where saving goes, whether anything commits, and where it shows up in the game. A standing rule now means anyone who changes a button has to update its explanation in the same change.</div>
+    <details><summary>Which pages</summary>
+      <ul>
+        <li><b>Admin:</b> /admin, XP, custom clubs, CL draft, football (players, PL clubs, scrape), patch notes.</li>
+        <li><b>Star tools:</b> Scenario Gallery, Infinite Highlights, Play Area, Scenario Builder, Lineups, Tuning, Media Lab.</li>
+        <li><b>Sandboxes:</b> match, dribble, attack, bicycle, draft-dev (×2), draft challenge, draft preview, profile-new, Ballon d'Or.</li>
+        <li>Left out on purpose: the game itself (/star-dev) and the public squad builder.</li>
+      </ul>
+    </details>
+  </li>
+  <li>
+    <div class="hd">A test for saving from a match</div>
+    <div class="dt">It saves a live chance, sends it through the same route as a real save, and rebuilds it the way the gallery does: 156/156 come back exact. Checked by breaking the save on purpose: the test caught it, 0/156.</div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li><div class="hd">Tune corrections are shared now</div><div class="dt">Mikey ran the migration, and it's confirmed live: 3 corrections recorded, 0 proposals yet.</div></li>
+  <li><div class="hd">Leo's 11 scenarios are in the code</div><div class="dt">Merged to main by Mikey.</div></li>
+  <li><div class="hd">Energy is Mikey's</div><div class="dt">It's covered in his own patch notes, not here.</div></li>
+</ul>
+
+<h2 class="bug" id="known"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="alert callout"><div class="t">draft-dev pages aren't sandboxes</div><p><code>/draft-dev</code> and <code>/draft-dev2</code> share the real Draft's saved game on that device. They also post to real Draft history, XP and records, and create real multiplayer rooms. Found while writing their info panel; not fixed.</p></div>
+  </li>
+  <li><div class="hd">The goal is drawn differently in Play and in the picture</div><div class="dt">Seen in a browser: in Play the net rises above the goal line and the six-yard box isn't drawn. Players, keeper and ball are in the same places; only the goal looks different.</div></li>
+  <li><div class="hd">The Scenario Builder can't reach the game</div><div class="dt">Its text says "saved locally", but it actually saves to the team's list. It has no commit, so nothing built there goes into matches.</div></li>
+  <li><div class="hd">The Tuning editor saves in that browser only</div><div class="dt">Nothing on /star-tuning-dev commits, even though earlier notes describe it as part of the commit system.</div></li>
+  <li>
+    <div class="hd">Small things the info-panel check turned up</div>
+    <details><summary>Four items</summary>
+      <ul>
+        <li>Squad Builder: "Best XI" fills 7 bench spots, but the bench holds 9.</li>
+        <li>Infinite Highlights is missing from the admin side menu.</li>
+        <li>/admin/xp, custom clubs and the football pages have no admin check on the page itself. Their data is still admin-only.</li>
+        <li><code>custom_clubs.sql</code> isn't in the migrations list, so nobody knows if it has been run.</li>
+      </ul>
+    </details>
+  </li>
+  <li><div class="hd">Team-mates right next to you steal your shot as a pass <span class="pill p-amb">needs Mikey</span></div><div class="dt">Carried over from v0.7. The fix changes the match engine file Mikey asked nobody to touch.</div></li>
+  <li><div class="hd">Keepers on rebounds and near-post positioning</div><div class="dt">Carried over. Tight angle near-post 0.50 is waiting on your go.</div></li>
+  <li><div class="hd">"Not the same game in the play area": which part? <span class="pill p-amb">blocked on Harry</span></div><div class="dt">Carried over. The kits, the faces, the ball, or how a shot feels?</div></li>
+  <li><div class="hd">Not seen with an admin sign-in</div><div class="dt">Save and Commit from Infinite Match and Infinite Highlights. Added team-mates taking a pass in Play.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Your call on the mode structure</div><div class="dt">Default mode, what casual changes, and which PostHog events to add first.</div></li>
+  <li><div class="hd">Leo and Mikey: 30–50 scenarios per type</div><div class="dt">Sim → fix → Save &amp; Approve → Next is the fastest route. Commit in batches from Tuning &amp; Commit.</div></li>
+  <li><div class="hd">Camera framing in the builder</div><div class="dt">Saved cards can already carry their own framing (from Infinite Match), so a zoom and pan control is a small step. Not built.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.7 — 23 Sep 2026 · Play matches the picture, the difficulty research</summary>
+  <ul>
+    <li><b>Fixed:</b> pressing Play no longer made the picture jump (13% → 0% on a laptop) · the ball drags on its own again · false "attacker offside" (3/65 → 0/65) · ✓ on a sim now saves it · every commit also saves, so the list and the code can't drift · added team-mates make real runs</li>
+    <li><b>Added:</b> Edit this chance in Infinite Match · Infinite Highlights saves land in the gallery</li>
+    <li><b>Changed:</b> picture in the middle, buttons at the sides on a laptop · type counts shared across browsers · "+ Opponent" became "+ Opp"</li>
+    <li>Still open from it: team-mates stealing the shot · keeper near-post · camera framing · "not the same game" · team-mates in Play not seen live</li>
+  </ul>
+</details>
+<details>
+  <summary>v0.4 — Play Area, Infinite Match, commit review</summary>
+  <ul>
+    <li>Play in the gallery used your saved drawing, the Play Area and Infinite Match arrived, and scenarios could be reviewed before committing.</li>
+  </ul>
+</details>
+<details>
+  <summary>v0.3.5 — from the 40-minute call</summary>
+  <ul>
+    <li>Delete on any scenario, the X relabelled No good, and every decision and idea from the call written down.</li>
+  </ul>
+</details>
+
+<footer>23 Sep 2026 · also at <code>/admin/patch-notes</code>. The simulations are models with their assumptions stated. Screenshots are from a real browser at phone and laptop size, not signed in as admin.</footer>
+
+</div>
+
+<script>
+(function(){
+  // ── Retention curves: power law through day-1 and day-7 benchmarks ──
+  function curve(d1,d7){var k=Math.log(d1/d7)/Math.log(7);return function(d,up,tail){up=up||0;tail=tail||1;return d<=0?1:Math.min(1,d1*(1+up)*Math.pow(d,-k*tail));};}
+  var typical=curve(0.16,0.037), top=curve(0.27,0.075);
+
+  // ── Simulation 1 ──
+  var h=document.getElementById('s1h'), m=document.getElementById('s1m');
+  var svgNS='http://www.w3.org/2000/svg';
+  function el(n,a){var e=document.createElementNS(svgNS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
+  function sim1(){
+    var hours=+h.value, mins=+m.value, day=Math.ceil(hours*60/mins);
+    document.getElementById('s1h-o').textContent=hours+' h';
+    document.getElementById('s1m-o').textContent=mins+' min';
+    var a=Math.round(typical(day)*1000), b=Math.round(top(day)*1000);
+    document.getElementById('s1-big').textContent=a+' in 1,000';
+    document.getElementById('s1-txt').innerHTML='players are still playing on <b>day '+day+'</b>, the day they’d reach the Premier League. In a top-25% game: <b>'+b+' in 1,000</b>.';
+    // chart: 0–120 days, 0–20%
+    var svg=document.getElementById('s1-chart'); while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var L=40,R=385,T=12,B=196, X=function(d){return L+(R-L)*d/120;}, Y=function(v){return B-(B-T)*Math.min(v,0.2)/0.2;};
+    [0,0.05,0.1,0.15,0.2].forEach(function(v){svg.appendChild(el('line',{x1:L,x2:R,y1:Y(v),y2:Y(v),stroke:'currentColor','stroke-opacity':'0.12'}));var t=el('text',{x:L-6,y:Y(v)+3,'text-anchor':'end'});t.textContent=Math.round(v*100)+'%';svg.appendChild(t);});
+    [0,30,60,90,120].forEach(function(d){var t=el('text',{x:X(d),y:B+22,'text-anchor':d===0?'start':d===120?'end':'middle'});t.textContent=d===0?'day 0':''+d;svg.appendChild(t);});
+    function path(f,col,dash){var p='';for(var d=1;d<=120;d++){p+=(d===1?'M':'L')+X(d).toFixed(1)+','+Y(f(d)).toFixed(1);}var e=el('path',{d:p,fill:'none',stroke:col,'stroke-width':'2'});if(dash)e.setAttribute('stroke-dasharray','5 4');svg.appendChild(e);}
+    var cs=getComputedStyle(document.documentElement);
+    path(top,cs.getPropertyValue('--ink3').trim()||'#888',true);
+    path(typical,cs.getPropertyValue('--teal').trim()||'#00838f',false);
+    var dx=Math.min(day,120);
+    svg.appendChild(el('line',{x1:X(dx),x2:X(dx),y1:T,y2:B,stroke:cs.getPropertyValue('--amber').trim()||'#a8730a','stroke-width':'1.5'}));
+    svg.appendChild(el('circle',{cx:X(dx),cy:Y(typical(dx)),r:4.5,fill:cs.getPropertyValue('--amber').trim()||'#a8730a'}));
+    var lab=el('text',{x:Math.min(X(dx)+6,R-4),y:T+12,'text-anchor':X(dx)>R-110?'end':'start'});lab.textContent=day>120?'Prem: day '+day+' →':'Prem: day '+day;svg.appendChild(lab);
+    var l1=el('text',{x:R-4,y:T+44,'text-anchor':'end'});l1.textContent='solid: typical game';svg.appendChild(l1);var l2=el('text',{x:R-4,y:T+62,'text-anchor':'end'});l2.textContent='dashed: top 25%';svg.appendChild(l2);
+  }
+  h.addEventListener('input',sim1); m.addEventListener('input',sim1); sim1();
+
+  // ── Simulation 2 ──
+  var spend=function(d,mult){return 0.01*mult*(1+Math.min(d,180)/30);};
+  function rev(up,tail,mult){var s=0;for(var d=0;d<=180;d++)s+=typical(d,up,tail)*spend(d,mult);return s;}
+  var G=rev(0,1,1), tail=1.2;
+  var S=document.getElementById('s2s'),E=document.getElementById('s2e'),U=document.getElementById('s2u'),M=document.getElementById('s2m');
+  var tBtns=[].slice.call(document.querySelectorAll('#sim2 [data-t]')), pBtns=[].slice.call(document.querySelectorAll('#sim2 [data-p]'));
+  var P={harry:[30,10,20,1.3,100],leo:[30,50,50,1,100],mikey:[40,30,30,1.1,150],worst:[50,0,20,1.4,80]};
+  function tailWord(t){return t<=1?'the same':t<1.3?'faster':'much faster';}
+  function sim2(){
+    var s=S.value/100,e=E.value/100,u=U.value/100,mult=M.value/100;
+    document.getElementById('s2s-o').textContent=S.value+'%';
+    document.getElementById('s2e-o').textContent=E.value+'%';
+    document.getElementById('s2u-o').textContent='+'+U.value+'%';
+    document.getElementById('s2m-o').textContent=M.value+'%';
+    document.getElementById('s2t-o').textContent=tailWord(tail);
+    var near=[1,1.2,1.4].reduce(function(a,b){return Math.abs(b-tail)<Math.abs(a-tail)?b:a;});
+    tBtns.forEach(function(b){b.setAttribute('aria-pressed',+b.dataset.t===near?'true':'false');});
+    var C=rev(u,tail,mult), both=(1-s)*G+(s+e)*C, idx=Math.round(both/G*100), diff=idx-100;
+    document.getElementById('s2-big').textContent=(diff>=0?'+':'−')+Math.abs(diff)+'%';
+    document.getElementById('s2-txt').textContent=(diff>=0?'more':'less')+' money with both modes, against the main mode alone.';
+    var max=Math.max(200,idx);
+    document.getElementById('s2-b1').style.width=(100/max*100)+'%';
+    var b2=document.getElementById('s2-b2'); b2.style.width=(idx/max*100)+'%'; b2.className='fill now'+(idx<100?' bad':'');
+    document.getElementById('s2-b2v').textContent=idx;
+    var ev=document.getElementById('s2-even');
+    if(C>=G){ev.innerHTML='Here a casual player is worth <b>at least as much</b> as a main-mode one, so casual pays for itself with no new players at all.';}
+    else{var need=Math.round(s*(G/C-1)*100);ev.innerHTML='Here a casual player is worth <b>'+Math.round(C/G*100)+'%</b> of a main-mode one. Casual pays for itself if it brings in at least <b>'+need+'% new players</b>'+(s===0?'.':' (you have '+E.value+'%).');}
+  }
+  function load(k){var v=P[k];S.value=v[0];E.value=v[1];U.value=v[2];tail=v[3];M.value=v[4];pBtns.forEach(function(b){b.setAttribute('aria-pressed',b.dataset.p===k?'true':'false');});sim2();}
+  [S,E,U,M].forEach(function(i){i.addEventListener('input',function(){pBtns.forEach(function(b){b.setAttribute('aria-pressed','false');});sim2();});});
+  tBtns.forEach(function(b){b.addEventListener('click',function(){tail=+b.dataset.t;pBtns.forEach(function(x){x.setAttribute('aria-pressed','false');});sim2();});});
+  pBtns.forEach(function(b){b.addEventListener('click',function(){load(b.dataset.p);});});
+  pBtns.forEach(function(b){b.setAttribute('aria-pressed','false');});
+  sim2();
+})();
+</script>
+
+</body></html>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { OPEN_ADMIN_NAV_EVENT } from "./AdminNavPanel";
 
 interface Props {
   isLoggedIn: boolean;
@@ -162,6 +163,17 @@ export default function NavMenu({ isLoggedIn, isAdmin }: Props) {
                     >
                       Admin
                     </Link>
+                  )}
+                  {isAdmin && (
+                    // The full admin & dev list (gallery, Play Area, training…)
+                    // — on a phone the only way to reach those screens.
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); window.dispatchEvent(new Event(OPEN_ADMIN_NAV_EVENT)); }}
+                      className="px-4 py-2.5 text-left text-sm font-semibold text-amber-400 hover:bg-gray-900 hover:text-amber-300"
+                    >
+                      Admin &amp; Dev tools →
+                    </button>
                   )}
                   <MobileProfileLink />
                   <div className="mx-4 my-1 border-t border-gray-800" />

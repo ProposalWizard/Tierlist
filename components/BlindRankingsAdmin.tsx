@@ -632,17 +632,19 @@ export default function BlindRankingsAdmin() {
                             className="w-full bg-transparent text-[11px] text-white placeholder-gray-600 focus:text-white focus:outline-none truncate"
                           />
                         </div>
-                        <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
+                        <div className="absolute top-1 right-1 flex gap-1 group-hover:flex [@media(hover:hover)]:hidden">
                           <button
                             onClick={() => setCropTarget({ imageUrl: img.image_url, imageName: img.name, type: "image", id: img.id })}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white"
+                            data-compact
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs text-white sm:h-5 sm:w-5 sm:text-[10px]"
                             title="Crop"
                           >
                             ✂
                           </button>
                           <button
                             onClick={() => stageDeleteExisting(img.id)}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white"
+                            data-compact
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-xs text-white sm:h-5 sm:w-5 sm:text-[10px]"
                           >
                             x
                           </button>
@@ -673,17 +675,19 @@ export default function BlindRankingsAdmin() {
                           />
                         </div>
                         <span className="absolute top-1 left-1 rounded bg-amber-600/80 px-1 text-[9px] font-bold text-white">NEW</span>
-                        <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
+                        <div className="absolute top-1 right-1 flex gap-1 group-hover:flex [@media(hover:hover)]:hidden">
                           <button
                             onClick={() => setCropTarget({ imageUrl: img.preview, imageName: img.name || "New image", type: "staged", id: img.tempId })}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white"
+                            data-compact
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs text-white sm:h-5 sm:w-5 sm:text-[10px]"
                             title="Crop"
                           >
                             ✂
                           </button>
                           <button
                             onClick={() => removeStagedImage(img.tempId)}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white"
+                            data-compact
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-xs text-white sm:h-5 sm:w-5 sm:text-[10px]"
                           >
                             x
                           </button>

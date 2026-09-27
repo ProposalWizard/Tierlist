@@ -42,6 +42,7 @@ import { liveMatchScenario } from "@/lib/star/liveEdit";
 import { saveScenarioShared } from "@/lib/star/scenarioStore";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PlaySettings } from "@/lib/star/playArea";
+import { PINNED_TOP } from "@/lib/pinnedTop";
 
 const INK = "#f2f5f9";
 const MUTED = "#8a97aa";
@@ -165,7 +166,7 @@ export default function InfiniteMatch({ settings, onBack }: {
           button that scrolled away above the scoreboard; now all three stay
           pinned to the top of the screen for as long as the match runs. */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 30, width: "100%", maxWidth: 460,
+        position: "sticky", top: PINNED_TOP, zIndex: 30, width: "100%", maxWidth: 460,
         padding: "6px 0", background: "#05070d", display: "grid", gap: 4,
       }}>
         <div style={{ fontSize: 11.5, fontWeight: 800, color: MUTED, textAlign: "center", textTransform: "capitalize" }}>

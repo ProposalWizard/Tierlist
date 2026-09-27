@@ -1,0 +1,603 @@
+<title>Knowitball v0.9</title>
+<style>
+  :root{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--teal:#00838f;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+      --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+      --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 20px}
+  nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 24px}
+  nav.toc a{font-size:12.5px;font-weight:700;color:var(--ink2);text-decoration:none;
+    border:1px solid var(--line);background:var(--card);padding:5px 10px;border-radius:999px}
+  nav.toc a:focus-visible,nav.toc a:hover{color:var(--ink);border-color:var(--ink3)}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:44px 0 12px;display:flex;align-items:center;gap:9px;scroll-margin-top:12px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  h3{font-size:17px;margin:28px 0 6px;letter-spacing:-.01em;text-wrap:balance}
+  .lead{color:var(--ink2);font-size:14.5px;margin:0 0 14px;max-width:66ch}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+  .tut i{background:var(--teal)} .tut{color:var(--teal)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* where a scenario lives */
+  .flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:6px;align-items:stretch;margin:6px 0 18px}
+  .flow .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:11px 12px}
+  .flow .box b{display:block;font-size:13.5px}
+  .flow .box span{display:block;font-size:12.5px;color:var(--ink2);margin-top:3px;line-height:1.4}
+  .flow .box em{display:inline-block;font-style:normal;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-top:7px;color:var(--teal)}
+  .flow .ar{align-self:center;color:var(--ink3);font-weight:800;font-size:18px}
+  @media (max-width:560px){.flow{grid-template-columns:1fr}.flow .ar{transform:rotate(90deg);justify-self:center;line-height:1}}
+
+  /* tutorial steps */
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:st}
+  ol.steps>li{counter-increment:st;display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:16px;
+    padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+  ol.steps>li:last-child{border-bottom:0}
+  ol.steps>li.noimg{grid-template-columns:minmax(0,1fr)}
+  ol.steps .t{display:flex;gap:10px;align-items:baseline}
+  ol.steps .t::before{content:counter(st);flex:0 0 auto;width:24px;height:24px;border-radius:50%;
+    background:var(--teal);color:#fff;font-size:12.5px;font-weight:800;display:grid;place-items:center;transform:translateY(-1px)}
+  :root:not([data-theme="light"]) ol.steps .t::before{color:#041b1e}
+  ol.steps .t .hd{font-size:16px}
+  ol.steps .body{padding-left:34px}
+  ol.steps .body ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+  ol.steps .body li{margin:3px 0}
+  ol.steps .body li b{color:var(--ink)}
+  figure{margin:0}
+  figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#05070d}
+  figcaption{font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.4}
+  .wide-fig{margin:14px 0 4px}
+  @media (max-width:600px){
+    ol.steps>li{grid-template-columns:minmax(0,1fr)}
+    ol.steps>li figure{padding-left:34px;max-width:320px}
+  }
+  .k{display:inline-block;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:var(--card2);
+    border-radius:7px;padding:0 6px;color:var(--ink);white-space:nowrap}
+
+  .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px;margin:8px 0 0;padding:0;list-style:none}
+  .checks li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px;display:flex;gap:8px}
+  .checks li::before{content:"\2713";color:var(--green);font-weight:800}
+  .checks li.redo::before{content:"\21bb";color:var(--amber)}
+
+  .pair{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 4px}
+  @media (max-width:600px){.pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+  /* bars */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(96px,150px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);line-height:1.25}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.blue{background:var(--blue)}
+  .fill.now.bad{background:var(--red)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  /* people */
+  .people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:10px 0}
+  @media (max-width:640px){.people{grid-template-columns:1fr}}
+  .p{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px}
+  .p .who{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .p .pos{font-weight:700;margin:4px 0 6px;font-size:14.5px;line-height:1.35}
+  .p q{display:block;font-size:13px;color:var(--ink2);border-left:2px solid var(--line);padding-left:8px;margin:6px 0 0;quotes:"\201C" "\201D"}
+
+  table.v{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+  .tw{overflow-x:auto}
+  table.v th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.v td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink2)}
+  table.v td:first-child{color:var(--ink);font-weight:600}
+  .tag{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .t-g{background:rgba(15,157,88,.14);color:var(--green)}
+  .t-a{background:rgba(168,115,10,.15);color:var(--amber)}
+  .t-r{background:rgba(198,40,40,.13);color:var(--red)}
+  .t-n{background:var(--card2);color:var(--ink3)}
+
+  /* simulations */
+  .sim{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin:12px 0}
+  .sim .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;margin:8px 0}
+  .sim label{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .sim label small{display:block;font-weight:400;color:var(--ink3);font-size:12px}
+  .sim output{font-variant-numeric:tabular-nums;font-weight:800;text-align:right;font-size:14px;white-space:nowrap}
+  .sim input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--teal)}
+  .sim .presets{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+  .sim button{font:inherit;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:var(--card2);
+    color:var(--ink);border-radius:999px;padding:6px 11px;cursor:pointer}
+  .sim button[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+  .sim button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;grid-column:1/-1}
+  .result{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+  .big{font-size:clamp(24px,6vw,34px);font-weight:800;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums}
+  .result p{margin:6px 0 0;color:var(--ink2);font-size:14px}
+  .result p b{color:var(--ink)}
+  .chart{margin-top:10px}
+  .chart svg{width:100%;height:auto;display:block}
+  .chart text{fill:var(--ink3);font-size:15px;font-family:inherit}
+  .note{font-size:12px;color:var(--ink3);margin-top:8px;line-height:1.45}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details li b{color:var(--ink)}
+  summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(198,40,40,.13);color:var(--red)}
+  .p-amb{background:rgba(168,115,10,.15);color:var(--amber)}
+  .p-grn{background:rgba(15,157,88,.14);color:var(--green)}
+
+  .callout{border:1px solid var(--line);border-left:3px solid var(--teal);background:var(--card);border-radius:var(--r);padding:12px 14px;margin:12px 0}
+  .callout .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+  .callout p{margin:0;font-size:14px;color:var(--ink2)}
+  .callout p b{color:var(--ink)}
+  .alert{border-left-color:var(--red)} .alert .t{color:var(--red)}
+
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  @media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+
+  /* prompts to paste back */
+  .prompt{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:var(--r);padding:12px 14px;margin:12px 0 4px}
+  .prompt .t{font-weight:800;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .prompt .q{font-weight:700;font-size:14.5px;margin:0 0 6px}
+  .prompt ol{margin:0 0 8px;padding-left:20px;color:var(--ink2);font-size:13.5px}
+  .prompt ol li{margin:3px 0}
+  .prompt ol li b{color:var(--ink)}
+  .prompt .rec{font-size:12.5px;color:var(--ink3);margin:0 0 8px}
+  .prompt .rec b{color:var(--green)}
+  .prompt pre{white-space:pre-wrap;word-break:break-word;font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin:0;color:var(--ink)}
+  .prompt button{font:inherit;font-size:12px;font-weight:800;border:1px solid var(--line);background:var(--card2);color:var(--ink);
+    border-radius:999px;padding:5px 11px;cursor:pointer;letter-spacing:0;text-transform:none}
+  .prompt button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .prompt .who{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--ink3)}
+
+  /* before / after screenshot pairs */
+  .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 4px}
+  .duo figure img{max-height:520px;object-fit:contain}
+  .fig-one{max-width:300px;margin:12px 0 4px}
+
+  /* one engine diagram */
+  .eng{display:grid;gap:8px;margin:10px 0 6px}
+  .eng .core{background:var(--green);color:#04170c;border-radius:var(--r);padding:11px 13px;font-weight:800;font-size:14px}
+  :root:not([data-theme="light"]) .eng .core{color:#04170c}
+  .eng .core span{display:block;font-weight:600;font-size:12.5px;opacity:.85;margin-top:2px}
+  .eng .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  @media (max-width:560px){.eng .row{grid-template-columns:1fr}}
+  .eng .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+  .eng .box b{display:block;font-size:13.5px}
+  .eng .box span{display:block;font-size:12.5px;color:var(--ink2);margin-top:3px;line-height:1.4}
+  .eng .box.ok{border-color:var(--green)}
+  .eng .box.copy{border-style:dashed;border-color:var(--amber)}
+  .eng .lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-top:4px}
+
+  .guard td:nth-child(2){white-space:nowrap}
+  pre.out{white-space:pre-wrap;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#05070d;color:#d7e3dc;
+    border-radius:10px;padding:11px 12px;margin:10px 0 0;overflow-x:auto;border:1px solid var(--line)}
+  pre.out .g{color:#3ddc84} pre.out .r{color:#ff8a80}
+</style>
+<div class="wrap">
+
+<header>
+  <span class="ver">v0.9</span>
+  <h1>Harry's patch notes</h1>
+  <p class="sub">One engine. Why the trial, the training and the test screens felt like a different game, what is fixed, what still isn't, and the questions only you can answer.</p>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#why">The problem</a>
+  <a href="#fixed">Fixed</a>
+  <a href="#guard">The guard</a>
+  <a href="#reactions">Players not reacting</a>
+  <a href="#known">Known issues</a>
+  <a href="#questions">Your questions</a>
+</nav>
+
+<div class="strip">
+  <div class="s"><b>12</b><span>ways the trial and the training differed from the real match: found, listed, and all fixed by one move (next round)</span></div>
+  <div class="s"><b>340 → 366px</b><span>gallery Play now runs at the real match's size, so a drag hits exactly as hard as in a career</span></div>
+  <div class="s"><b>6 → no 7th</b><span>copies of the match left, and every build now refuses a new one</span></div>
+  <div class="s"><b>10/10</b><span>hidden copies planted to test the guard, all caught, and 2 look-alikes correctly left alone</span></div>
+</div>
+
+<!-- ═══════════ THE PROBLEM ═══════════ -->
+<h2 class="chg" id="why"><i></i>The problem, in one picture</h2>
+<p class="lead"><b>There was one real match, and four screens running their own copy of it.</b> Each copy was right on the day it was made. Then the real match kept improving, and the copies didn't.</p>
+
+<div class="eng">
+  <div class="core">The real match engine<span>What a career plays. Keeper, ball, players, physics.</span></div>
+  <div class="lbl">Now plays it for real</div>
+  <div class="row">
+    <div class="box ok"><b>A career match</b><span>Unchanged.</span></div>
+    <div class="box ok"><b>Gallery Play &amp; Infinite Highlights</b><span>Were the engine, set up wrong. Now the real set-up.</span></div>
+    <div class="box ok"><b>Infinite Match</b><span>Same. Now the real set-up.</span></div>
+  </div>
+  <div class="lbl">Still a copy (the guard lists them, and they can only go down)</div>
+  <div class="row">
+    <div class="box copy"><b>Trial penalties &amp; free kicks</b><span>Own loop. Port next round.</span></div>
+    <div class="box copy"><b>Training strike drills</b><span>Own loop. Port next round.</span></div>
+    <div class="box copy"><b>Five-a-side</b><span>A different game on the engine's parts, with its own drag.</span></div>
+  </div>
+</div>
+<details><summary>The other copies</summary>
+  <ul>
+    <li><b>Goalie Mode (Casino):</b> its own ball flight entirely, no engine at all. Question 4.</li>
+    <li><b>Bicycle kick and Live Attack:</b> two dev prototypes, not in the game. Question 5.</li>
+    <li><b>Mikey's match lab</b> (/star-match-dev): a deliberate copy for trying physics. It stays a lab.</li>
+  </ul>
+</details>
+
+<!-- ═══════════ FIXED ═══════════ -->
+<h2 class="fix" id="fixed"><i></i>Fixed: the test screens now play the real game</h2>
+<p class="lead">Gallery Play, Infinite Highlights and Infinite Match already used the real engine. But they set it up differently from a career match, and that alone changed how it felt.</p>
+
+<ul class="n">
+  <li>
+    <div class="hd">A drag now hits exactly as hard as in a career</div>
+    <div class="dt">The game measures your drag as a share of the pitch's height, so a smaller pitch meant a harder kick. The gallery played at 340px on a phone, and at 460px on a laptop (too soft). Every test screen now plays at the real match's size.</div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Kick strength vs a career, gallery on a phone</span><div class="track"><div class="fill was" style="width:40%"></div><div class="fill now" style="width:0%"></div></div><span class="vv">same <s>+7.6%</s></span></div>
+      <div class="bar"><span class="lb">Kick strength vs a career, laptop</span><div class="track"><div class="fill was" style="width:84%"></div><div class="fill now" style="width:0%"></div></div><span class="vv">same <s>−16%</s></span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Real players, not nobody</div>
+    <div class="dt">The gallery had no squad at all, so team-mates finished like anonymous men (no curl, no chip, no first-time finish) and every keeper was a flat 62. Test screens now load the same real squads a career does. Checked in the match: Eze, Saka and Rice for Arsenal, against Coventry's own keeper, Rushworth.</div>
+    <div class="duo">
+      <figure><img src="img/gal-before.jpg" alt="Gallery Play before: blue and red shirts, plain heads" loading="lazy"><figcaption>Before: blue against red, nobody in the shirts, 340px wide.</figcaption></figure>
+      <figure><img src="img/gal-after.jpg" alt="Gallery Play after: real club kits, 366px wide" loading="lazy"><figcaption>After: real kits and real players, 366px, the real match's size. (Photos are blocked in the test browser, so most heads show plain here. The players are real.)</figcaption></figure>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Real weather, with a switch</div>
+    <div class="dt">A career has wind or rain in about 4 matches in 10. The test screens never had any. They now use the real weather, and a line above the pitch says when it's windy. Play Area → Weather → Clear turns it off.</div>
+    <div class="bars"><div class="bar"><span class="lb">Matches with weather</span><div class="track"><div class="fill was" style="width:0%"></div><div class="fill now" style="width:42%"></div></div><span class="vv">~42% <s>0%</s></span></div></div>
+  </li>
+  <li>
+    <div class="hd">Infinite Match stopped quietly weakening you</div>
+    <div class="dt">Your energy drained as if one 90-minute match ran for 10,000 minutes. From about minute 150, every kick was 30% weaker for the rest of the run. You now get fresh legs every 90 minutes. Worked out from the code, not measured in play.</div>
+    <div class="bars"><div class="bar"><span class="lb">Kick weakened, minute 150 onwards</span><div class="track"><div class="fill was" style="width:30%"></div><div class="fill now" style="width:0%"></div></div><span class="vv">0% <s>30%</s></span></div></div>
+  </li>
+  <li>
+    <div class="hd">Team understanding now counts in test screens</div>
+    <div class="dt">A career passes how well your team combines, and the test screens silently used 60. The new guard caught this one on its very first run.</div>
+  </li>
+  <li>
+    <div class="hd">The first chance in gallery Play now has people in it</div>
+    <div class="dt">Every chance after the first gets real players put into the shirts, but the first one never did. Gallery Play only ever plays its first chance, so it never had any.</div>
+  </li>
+  <li>
+    <div class="hd">Gallery Play no longer restarts mid-kick</div>
+    <div class="dt">Anything that redrew the card, even a phone's address bar hiding, threw the chance away. It now restarts only if the picture actually changes.</div>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">One door into the engine for every test screen</div>
+    <div class="dt">A new feature plugs into it and adds its own buttons and scoring around the outside. It can see each chance before it starts and how it ended. It never gets its own copy of the match.</div>
+  </li>
+  <li>
+    <div class="hd">Play Area: Keeper and Weather switches</div>
+    <div class="dt">Both start on the real game. Keeper → Set brings back the rating slider. Every dial now says plainly that it only changes the test screens, never a career.</div>
+    <figure class="fig-one"><img src="img/playarea.jpg" alt="Play Area tuning with Keeper Real/Set and Weather Real/Clear" loading="lazy"><figcaption>The two new rows, both on Real by default.</figcaption></figure>
+  </li>
+  <li>
+    <div class="hd">A rule every Claude session reads</div>
+    <div class="dt">Written into the team's shared instructions, plus a skill that loads whenever anyone builds anything that plays football. It says: use the one door, never copy the match, and never edit the guard unless one of you asks for exactly that.</div>
+  </li>
+</ul>
+
+<!-- ═══════════ GUARD ═══════════ -->
+<h2 class="add" id="guard"><i></i>The guard, and whether it can fail</h2>
+<p class="lead"><b>It runs inside every Vercel deploy.</b> If anything tries to add a new copy of the match, the site doesn't deploy, and the build log says exactly what to fix. You asked whether it could fail or fade, so Fable 5.1 was set to break it: it planted 31 tricks against the first version. What it found, and what's done about each:</p>
+
+<div class="tw"><table class="v guard">
+  <thead><tr><th>How a guard fails</th><th>Now</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Nobody runs it</td><td><span class="tag t-g">fixed</span></td><td>It's inside the build itself, so a deploy can't skip it. <b>One thing to check:</b> Vercel's Build Command setting must be the default (question 9).</td></tr>
+    <tr><td>A copy hidden by renaming, re-routing or loading it late</td><td><span class="tag t-g">fixed</span></td><td>The first version read the code as text and missed 21 of 31 tricks. It now reads the code the way the compiler does and follows every name back to where it came from.</td></tr>
+    <tr><td>It goes blind and passes everything</td><td><span class="tag t-g">fixed</span></td><td>10 hidden copies sit in a test folder on purpose. If it ever stops seeing one, the build fails with "GUARD IS BLIND". Tested by removing one: it failed.</td></tr>
+    <tr><td>A false alarm blocks all three of you</td><td><span class="tag t-g">fixed</span></td><td>Two harmless look-alikes (a button called "launch", a type-only use) must NOT trip it, or it fails with "GUARD IS JUMPY". Tested.</td></tr>
+    <tr><td>A screen writes its own ball physics without touching the engine</td><td><span class="tag t-g">fixed</span></td><td>Every screen with its own animation loop has to be on a list that only shrinks. That's how Goalie Mode was found.</td></tr>
+    <tr><td>The test screens drift from the career match's settings</td><td><span class="tag t-g">fixed</span></td><td>Any setting a career passes to the engine has to reach the test screens too, or be named as career-only. This caught team understanding.</td></tr>
+    <tr><td>It crashes</td><td><span class="tag t-g">fixed</span></td><td>A crash fails the build rather than waving it through.</td></tr>
+    <tr><td>Someone edits its list to make a red build green</td><td><span class="tag t-a">needs you</span></td><td>Code can't stop a person editing code. Two safety nets need your yes: questions 9 and 10.</td></tr>
+    <tr><td>Physics copied under a new name, with no animation loop of its own</td><td><span class="tag t-a">rule only</span></td><td>Nothing automatic sees it. The written rule covers it.</td></tr>
+  </tbody>
+</table></div>
+<details><summary>What the build log shows</summary>
+<pre class="out">ONE ENGINE GUARD (19.4s)
+  6 copies of the match still to port (6 on 24 Sep 2026):
+    - copy still to port: trial penalties + free kicks
+    - copy still to port: training strike drills
+    - …
+  <span class="g">✓ no new copies; every test screen goes through the one door with the career match's settings; the canary is seen.</span></pre>
+<pre class="out"><span class="r">  ✗ components/star/NewDrill.tsx runs its own copy of the match.
+    Build it on EnginePlay instead — see .claude/skills/one-engine.</span></pre>
+<p style="margin-top:8px">It adds about 20 seconds to each deploy.</p>
+</details>
+
+<!-- ═══════════ REACTIONS ═══════════ -->
+<h2 class="chg" id="reactions"><i></i>"Players don't react after shots in highlights"</h2>
+<p class="lead"><b>Measured: the highlights are the same as the real game here. The difference is the drawn chances.</b> Hand-drawn one-on-ones and tight angles start much closer to goal, so the shot arrives before anybody has time to move. Players only react once the ball comes near them. A real match plays the same drawings, so it has exactly the same gap.</p>
+<div class="bars">
+  <div class="bar"><span class="lb">One-on-one, generated</span><div class="track"><div class="fill now" style="width:68%"></div></div><span class="vv">2.04 react</span></div>
+  <div class="bar"><span class="lb">One-on-one, drawn (real game)</span><div class="track"><div class="fill now warn" style="width:39%"></div></div><span class="vv">1.17 react</span></div>
+  <div class="bar"><span class="lb">One-on-one, drawn (highlights)</span><div class="track"><div class="fill now warn" style="width:42%"></div></div><span class="vv">1.27 react</span></div>
+  <div class="bar"><span class="lb">Tight angle, generated</span><div class="track"><div class="fill now" style="width:56%"></div></div><span class="vv">1.69 react</span></div>
+  <div class="bar"><span class="lb">Tight angle, drawn (real game)</span><div class="track"><div class="fill now warn" style="width:27%"></div></div><span class="vv">0.81 react</span></div>
+</div>
+<p class="note">Team-mates who move after the shot, averaged over 200 chances each. The other six chance types are identical in all three. Drawn one-on-ones start 11.9m from goal, against 16.3m for generated ones, and the shot arrives in 1.84s instead of 2.32s. Question 8.</p>
+
+<!-- ═══════════ KNOWN ═══════════ -->
+<h2 class="bug" id="known"><i></i>Known issues: every problem found, with the fix</h2>
+
+<h3>The trial and the training (fixed together by moving them onto the one door)</h3>
+<div class="duo">
+  <figure><img src="img/trial-aim.jpg" alt="Trial penalty before the kick: keeper leaning to one side" loading="lazy"><figcaption>Trial: the keeper stands off-centre before you kick. The subtitle even says so. A match keeper never does this.</figcaption></figure>
+  <figure><img src="img/trial-flight.jpg" alt="Trial penalty mid-flight: keeper already diving, ball drawn on top of him" loading="lazy"><figcaption>He's already diving as you strike, and the ball is drawn on top of him even once it's past.</figcaption></figure>
+</div>
+<figure class="fig-one"><img src="img/match-pen.jpg" alt="Real match penalty: keeper centred" loading="lazy"><figcaption>The real match's penalty for comparison: keeper central, different framing, real kits.</figcaption></figure>
+<ul class="n">
+  <li><div class="hd">The trial keeper guesses before you kick <span class="pill p-amb">question 1</span></div><div class="dt">This is the "dives wrong" you felt. It was added to the trial on purpose, because real-match penalties have a strip about 1–1.3m inside each post that no keeper can reach at any rating (92% scored in the corners, against 64–71% on a one-on-one).</div></li>
+  <li><div class="hd">The ball is drawn at half its height</div><div class="dt">But the crossbar is drawn full height, so a shot over the bar can look like it went under it. Trial and training.</div></li>
+  <li><div class="hd">The ball is always drawn in front of the keeper</div><div class="dt">The real match puts him in front once he's beaten.</div></li>
+  <li><div class="hd">Training runs a coarser physics step</div><div class="dt">One step a frame against the match's three. Post and bar hits resolve differently, the free-kick wall never jumps, and the wall stands 0.75m apart instead of 1.15m.</div></li>
+  <li><div class="hd">The keeper is drawn 22% bigger</div><div class="dt">And he has none of the match's catch, low, high or fingertip save poses.</div></li>
+  <li><div class="hd">Trial kicks are "cleaner" than match kicks</div><div class="dt">No free-kick rating on set pieces, no tiredness, no weather, no curve boots.</div></li>
+  <li><div class="hd">After the result, things behave differently</div><div class="dt">In the trial the ball rolls on after a save, where the match stops it. In training the ball and the keeper freeze mid-air.</div></li>
+  <li><div class="hd">Smaller differences</div>
+    <details><summary>Five more</summary><ul>
+      <li>The weakest kick that still counts is 5% power in the trial and training, 2% in the match.</li>
+      <li>Nobody in the trial has a running animation. Only your kick moves.</li>
+      <li>The training dribble drill is the old top-down game, not the match's first-person duel.</li>
+      <li>Training's "out of play" box may not match what's on screen (worked out from the code, not seen).</li>
+      <li>Training faces ignore your Face Editor settings.</li>
+    </ul></details>
+  </li>
+  <li><div class="hd">The fix for all of the above <span class="pill p-grn">ready next round</span></div><div class="dt">Rebuild the trial and the training on the one door. Every difference above then disappears at once, because there's no second copy left to drift. Question 2.</div></li>
+</ul>
+
+<h3>Five-a-side, Goalie Mode and the prototypes</h3>
+<ul class="n">
+  <li><div class="hd">Five-a-side: a sideways drag hits 20% harder <span class="pill p-amb">question 3</span></div><div class="dt">Its drag maths aren't the match's. The arrow also points about 20% wider than the ball actually goes, and defenders don't move while the ball is in the air.</div></li>
+  <li><div class="hd">Goalie Mode has no engine at all <span class="pill p-amb">question 4</span></div><div class="dt">It uses its own scripted ball flight, and its keeper stops dead when the result lands.</div></li>
+  <li><div class="hd">Two dev prototypes are full copies <span class="pill p-amb">question 5</span></div><div class="dt">The bicycle kick and Live Attack. Neither is reachable in the game.</div></li>
+</ul>
+
+<h3>Found while checking this round</h3>
+<div class="duo">
+  <figure><img src="img/corner-pic.jpg" alt="Gallery corner picture, not turned" loading="lazy"><figcaption>The gallery's still picture draws a corner un-turned, as a wide diagram.</figcaption></figure>
+  <figure><img src="img/corner-play.jpg" alt="Corner in Play: turned sideways, both teams in red and white" loading="lazy"><figcaption>Play shows it sideways, the same as the main game. Both teams are in red and white.</figcaption></figure>
+</div>
+<ul class="n">
+  <li><div class="hd">Two teams in near-identical kits <span class="pill p-amb">question 6</span></div><div class="dt">Red shirts with white shorts against white shirts with red shorts passes the kit-clash check, because the check only compares shirts. This is the real game's check, so it can happen in a career too.</div></li>
+  <li><div class="hd">The gallery picture and Play now use different kit colours <span class="pill p-red">caused this round</span></div><div class="dt">Play wears real club kits now, and the picture still draws blue against red. Players are still in the same places, but the colours change when you press Play. Question 7.</div></li>
+  <li><div class="hd">Gallery corners and crosses: the picture isn't turned like the game <span class="pill p-amb">Mikey / Leo</span></div><div class="dt">The main game and Play draw them sideways, and the still picture doesn't. To match, the picture needs to turn the same way.</div></li>
+  <li><div class="hd">The laptop gallery picture shrank from 460 to 384px</div><div class="dt">This was deliberate, to match the career match's size, but it'll look smaller.</div></li>
+  <li><div class="hd">A scenario test fails on main <span class="pill p-amb">Mikey / Leo</span></div><div class="dt">It expects 27 one-on-one drawings, and 4 were deleted in recent commits. It fails with or without this round's changes.</div></li>
+</ul>
+
+<details><summary>Carried over from v0.8, still open</summary>
+  <ul>
+    <li><b>draft-dev pages aren't sandboxes:</b> they write to the real Draft save, history, XP, records and rooms.</li>
+    <li><b>The goal looks different in Play and in the picture:</b> the net rises above the goal line, and there's no six-yard box.</li>
+    <li><b>The Scenario Builder can't reach the game:</b> it has no commit, and its "saved locally" text is wrong.</li>
+    <li><b>The Tuning editor only saves in the browser.</b> It commits nothing.</li>
+    <li><b>Small items:</b> the squad builder's bench is 7 vs 9 · Infinite Highlights is missing from the admin menu · some admin pages have no page-level check · <code>custom_clubs.sql</code> status unknown.</li>
+    <li><b>Team-mates right next to you steal your shot as a pass:</b> needs Mikey's engine OK.</li>
+    <li><b>Keeper near-post 0.50 on tight angles:</b> waiting on your go.</li>
+  </ul>
+</details>
+
+<ul class="n" style="margin-top:10px">
+  <li><div class="hd">Not seen yet</div><div class="dt">Save and Commit with an admin sign-in. Real photos inside the test screens: the test browser blocks them, and the players were checked by name instead. Infinite Match's fresh legs were worked out from the code, not played.</div></li>
+</ul>
+
+<!-- ═══════════ QUESTIONS ═══════════ -->
+<h2 class="nxt" id="questions" style="color:var(--blue)"><i style="background:var(--blue)"></i>Your questions: copy, answer, paste back</h2>
+<p class="lead">Each one is ready to paste. Delete the options you don't want, or just write the letter.</p>
+
+<div class="prompt"><div class="t">1 · Trial keeper <button type="button" data-copy="p1">Copy</button></div>
+  <p class="q">The trial keeper guesses a side before you kick. The match keeper doesn't. Which way?</p>
+  <ol type="A">
+    <li><b>Into the real game:</b> match penalties get the same guess, so they stop being 92% in the corners.</li>
+    <li><b>Drop it:</b> trial penalties become exactly as hard as match penalties.</li>
+    <li><b>Trial-only:</b> a switch on the one door, off everywhere except the trial.</li>
+  </ol>
+  <p class="rec">Recommended: <b>A</b>. The unsaveable strip is a real-game problem, and fixing it once fixes both.</p>
+  <pre id="p1">One engine, question 1 (trial keeper guess): I choose ___ . Notes: </pre>
+</div>
+
+<div class="prompt"><div class="t">2 · When to move the trial and training onto the one door <button type="button" data-copy="p2">Copy</button></div>
+  <p class="q">This fixes all 12 differences at once. Do it first, before the difficulty work?</p>
+  <ol type="A">
+    <li><b>Yes, first:</b> then difficulty scaling is tuned on the real game.</li>
+    <li><b>After difficulty.</b></li>
+    <li><b>Only the trial now</b>, and training later.</li>
+  </ol>
+  <p class="rec">Recommended: <b>A</b>. Tuning difficulty on a copy that's about to be deleted is wasted work.</p>
+  <pre id="p2">One engine, question 2: move trial penalties, free kicks and training strike drills onto the one door — ___ .</pre>
+</div>
+
+<div class="prompt"><div class="t">3 · Five-a-side feel <button type="button" data-copy="p3">Copy</button></div>
+  <p class="q">Five-a-side stays its own game, but should its drag, arrow and defenders match the real match's?</p>
+  <ol type="A">
+    <li><b>Yes:</b> sideways drags get about 20% weaker than today, the arrow points where the ball actually goes, and defenders move while the ball is in the air.</li>
+    <li><b>No:</b> leave it as it is.</li>
+  </ol>
+  <p class="rec">Recommended: <b>A</b>. An arrow that lies is a bug whatever the game is.</p>
+  <pre id="p3">One engine, question 3 (five-a-side drag/arrow/defenders): ___ .</pre>
+</div>
+
+<div class="prompt"><div class="t">4 · Goalie Mode <button type="button" data-copy="p4">Copy</button></div>
+  <p class="q">It's a first-person keeper game with its own ball flight. Separate game, or rebuild it on the engine?</p>
+  <ol type="A">
+    <li><b>Separate game:</b> the guard lists it as its own game, on purpose.</li>
+    <li><b>Rebuild:</b> shots use the real engine's flight, curl and speed.</li>
+  </ol>
+  <p class="rec">No strong lean. B is more work, but shots would feel like the real ones.</p>
+  <pre id="p4">One engine, question 4 (Goalie Mode): ___ .</pre>
+</div>
+
+<div class="prompt"><div class="t">5 · The two prototypes <button type="button" data-copy="p5">Copy</button></div>
+  <p class="q">The bicycle kick and Live Attack are full copies, and neither is in the game.</p>
+  <ol type="A"><li><b>Delete both.</b></li><li><b>Rebuild them on the one door.</b></li><li><b>Keep them as labs</b>, listed.</li></ol>
+  <pre id="p5">One engine, question 5 (bicycle kick + Live Attack): ___ .</pre>
+</div>
+
+<div class="prompt"><div class="t">6 · Kit clash <button type="button" data-copy="p6">Copy</button></div>
+  <p class="q">Should the kit-clash check compare the whole kit (shirt and shorts), and switch to the away kit when two teams look alike?</p>
+  <ol type="A"><li><b>Yes.</b></li><li><b>No</b>, shirts only is fine.</li></ol>
+  <p class="rec">Recommended: <b>A</b>. It's the real game, and it happens in careers.</p>
+  <pre id="p6">One engine, question 6 (kit clash on whole kit): ___ .</pre>
+</div>
+
+<div class="prompt"><div class="t">7 · Gallery kit colours <button type="button" data-copy="p7">Copy</button></div>
+  <p class="q">Play wears real club kits now, and the still picture is blue against red. Make them match how?</p>
+  <ol type="A">
+    <li><b>The picture draws the real kits too.</b></li>
+    <li><b>Blue against red in the gallery's Play only</b>, as a gallery setting.</li>
+    <li><b>Leave it.</b></li>
+  </ol>
+  <p class="rec">Recommended: <b>A</b>. Play is the real game, so the picture should look like it.</p>
+  <pre id="p7">One engine, question 7 (gallery picture kit colours): ___ .</pre>
+</div>
+
+<div class="prompt"><div class="t">8 · Drawn chances start too close <span class="who">you + Mikey/Leo</span> <button type="button" data-copy="p8">Copy</button></div>
+  <p class="q">Drawn one-on-ones start 11.9m out, against 16.3m for generated ones, so fewer players react in time. What should happen?</p>
+  <ol type="A">
+    <li><b>Leave it:</b> the drawings are how it should look.</li>
+    <li><b>Draw more from further out</b> (Mikey and Leo).</li>
+    <li><b>Let the game place drawn chances a little further back.</b></li>
+  </ol>
+  <pre id="p8">One engine, question 8 (drawn chances start close, fewer reactions): ___ .</pre>
+</div>
+
+<div class="prompt"><div class="t">9 · Lock the guard against Claude <button type="button" data-copy="p9">Copy</button></div>
+  <p class="q">Should every Claude session (mine, Mikey's, Leo's) be stopped from editing the guard's lists unless a person approves in that chat? And should the guard run at the end of each Claude turn that changed code, adding about 20 seconds?</p>
+  <ol type="A">
+    <li><b>Both.</b></li>
+    <li><b>Only the lock.</b></li>
+    <li><b>Neither</b>, the written rule is enough.</li>
+  </ol>
+  <p class="rec">Recommended: <b>A</b>. It's the only thing that stops a session quietly making a red build green. <b>Also check once:</b> Vercel → Settings → Build Command should be the default (npm run build). If someone has typed "next build" there, the guard is skipped.</p>
+  <pre id="p9">One engine, question 9 (lock the guard in Claude sessions + run at end of turn): ___ . Vercel build command checked: yes/no</pre>
+</div>
+
+<div class="prompt"><div class="t">10 · A person signs off guard changes <button type="button" data-copy="p10">Copy</button></div>
+  <p class="q">GitHub can require one of you to approve any change to the guard files before it reaches main. I can add the file that names you as the owner. You'd switch on the rule in GitHub's settings: one tap per guard change, nothing for anything else.</p>
+  <ol type="A"><li><b>Yes:</b> add it and tell me the steps.</li><li><b>No.</b></li></ol>
+  <pre id="p10">One engine, question 10 (GitHub sign-off on guard changes): ___ .</pre>
+</div>
+
+<!-- ═══════════ NEXT ═══════════ -->
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Trial and training onto the one door</div><div class="dt">This clears the 12 differences, and the guard's list drops from 6 to 4 by itself.</div></li>
+  <li><div class="hd">Then difficulty scaling</div><div class="dt">From the v0.8 deep dive, tuned on the real game rather than a copy.</div></li>
+</ul>
+
+<!-- ═══════════ HISTORY ═══════════ -->
+<h2 class="nxt"><i></i>Previous versions</h2>
+<details>
+  <summary>v0.8 — 23 Sep 2026 · scenario tutorial, save from a match, difficulty deep dive</summary>
+  <ul>
+    <li><b>Stats:</b> 156/156 saved chances come back exact · 26 pages got the eye · Play vs picture on a phone 9% → 0% · ~1 in 1,000 still playing on the day they'd reach the Prem.</li>
+    <li><b>Fixed:</b> Save and Commit pinned in Infinite Match · Save and Commit on every highlight · Play no longer bigger than the picture on a phone · a card no longer goes blank on a resize · button rows fit at 390px.</li>
+    <li><b>Added:</b> the eye on 26 admin and dev pages · a save-from-match test · the full scenario tutorial and the difficulty and paying deep dive (<a href="https://claude.ai/artifact/DYAaW3Bma3zowkG5DcoQaS">still on the v0.8 page</a>).</li>
+    <li><b>Changed:</b> Tune corrections shared · Leo's 11 scenarios in the code.</li>
+    <li>Still open from it: draft-dev pages · the goal drawn differently · the Scenario Builder · the Tuning editor · small items · team-mates stealing the shot · keeper near-post. All in Known issues above.</li>
+  </ul>
+</details>
+<details>
+  <summary>v0.7 — 23 Sep 2026 · Play matches the picture, the difficulty research</summary>
+  <ul>
+    <li><b>Fixed:</b> pressing Play no longer made the picture jump (13% → 0% on a laptop) · the ball drags on its own again · false "attacker offside" (3/65 → 0/65) · ✓ on a sim now saves it · every commit also saves · added team-mates make real runs.</li>
+    <li><b>Added:</b> Edit this chance in Infinite Match · Infinite Highlights saves land in the gallery.</li>
+    <li>Still open from it: team-mates stealing the shot · keeper near-post · camera framing. "Not the same game" is answered by this version.</li>
+  </ul>
+</details>
+<details>
+  <summary>v0.4 — Play Area, Infinite Match, commit review</summary>
+  <ul><li>Play in the gallery used your saved drawing, the Play Area and Infinite Match arrived, and scenarios could be reviewed before committing.</li></ul>
+</details>
+<details>
+  <summary>v0.3.5 — from the 40-minute call</summary>
+  <ul><li>Delete on any scenario, the X relabelled No good, and every decision and idea from the call written down.</li></ul>
+</details>
+
+<footer>24 Sep 2026 · also at <code>/admin/patch-notes</code>. Screenshots are from a real browser at phone size, before (old main) and after (this round), not signed in as admin. Every number is measured unless it says "worked out" or "from the code".</footer>
+
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('[data-copy]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var pre=document.getElementById(b.getAttribute('data-copy')); if(!pre) return;
+      var txt=pre.textContent;
+      function sel(){var r=document.createRange();r.selectNodeContents(pre);var s=window.getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected — copy it';}
+      try{
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          navigator.clipboard.writeText(txt).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1600);},sel);
+        } else sel();
+      }catch(e){sel();}
+    });
+  });
+})();
+</script>

@@ -1,0 +1,51 @@
+/*
+ * ADMIN ON A PHONE — scoped to app/admin/** by app/admin/layout.tsx.
+ *
+ * Harry tests the admin pages on his phone ("mobile admin needs a big look
+ * over", 26 Sep 2026). Two things were true on nearly every admin page:
+ *
+ *  1. Buttons were 26–30 px tall. A finger needs about 40 px.
+ *  2. Every text box and dropdown used 12–14 px text, and iPhone Safari zooms
+ *     the whole page in the moment you tap one (it does that for anything
+ *     under 16 px), then leaves you zoomed in.
+ *
+ * Both are fixed here once rather than on 200+ buttons one at a time. Only
+ * below 768 px (the same width the page-guide eye switches at), so a laptop
+ * is untouched. A button that must stay small (a colour dot, an × on a
+ * thumbnail) carries data-compact.
+ *
+ * :where() keeps the button rule at zero specificity, so any page that sets
+ * its own min-height still wins. The input rule is deliberately stronger: a
+ * `text-sm` on an input is exactly what causes the zoom.
+ */
+@media (max-width: 767px) {
+  :where(.admin-touch) :where(button:not([data-compact]), select, summary, [role="button"]:not([data-compact])) {
+    min-height: 40px;
+  }
+
+  .admin-touch
+    :is(
+      input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+      select,
+      textarea
+    ) {
+    font-size: 16px;
+  }
+
+  /* Text boxes and date pickers are finger-sized too. */
+  :where(.admin-touch)
+    :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"])) {
+    min-height: 40px;
+  }
+
+  /* A text box in a row never pushes its Search/Add button off the screen. */
+  :where(.admin-touch) :where(input, select, textarea) {
+    min-width: 0;
+  }
+
+  /* Helper lines written at 9–10 px are hard to read on a phone: lift the
+     sentences (p, label) to 11 px. Badges and tags keep their size. */
+  .admin-touch :is(p, label):is(.text-\[9px\], .text-\[10px\]) {
+    font-size: 11px;
+  }
+}

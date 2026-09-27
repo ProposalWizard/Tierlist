@@ -288,7 +288,7 @@ export function TeachCard(
         <button
           type="button"
           onClick={onDismiss}
-          className="teach-dismiss pointer-events-auto -my-1 -mr-1 ml-auto shrink-0 rounded-lg border border-amber-300/50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-200 transition hover:bg-white/10 hover:text-white"
+          className="teach-dismiss pointer-events-auto -my-1 -mr-1 ml-auto min-h-[40px] shrink-0 rounded-lg border border-amber-300/50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-amber-200 transition hover:bg-white/10 hover:text-white"
         >
           Got it ✕
         </button>

@@ -66,7 +66,6 @@ export default function EditableFrame({
   const swipeRef = useRef<{ x: number; y: number } | null>(null);
 
   const { cssW, cssH } = frameCssSize(baseFrame, size);
-  const vp = baseFrame.camera;
 
   const effectiveOverride = (): PosOverride | undefined => workingRef.current ?? override;
   const currentFrame = (): Frame => applyOverride(baseFrame, effectiveOverride());
@@ -98,7 +97,13 @@ export default function EditableFrame({
     const rect = ref.current!.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * (cssW / (rect.width || cssW));
     const cy = (e.clientY - rect.top) * (cssH / (rect.height || cssH));
-    return frameScreen(baseFrame, cssW, cssH).toWorld(cx, cy);
+    // The camera actually DRAWN — the saved/base one with any unsaved camera
+    // move on top. Reading `baseFrame.camera` here meant that after "Camera:
+    // pick on the whole pitch" moved the view, a press was placed as if the
+    // camera had never moved: on the reported one-on-one a press on a player
+    // landed 32m away on empty grass, so nothing in the new view could be
+    // grabbed until the card was saved (Harry and Mikey, scenario sprint).
+    return frameScreen(currentFrame(), cssW, cssH).toWorld(cx, cy);
   }
 
   /** Nearest grabbable to a world point, or null. Figures are grabbed by their
@@ -123,10 +128,15 @@ export default function EditableFrame({
     return best;
   }
 
-  const clampToView = (v: Vec2): Vec2 => ({
-    x: Math.max(vp.x1, Math.min(vp.x2, v.x)),
-    y: Math.max(vp.y1, Math.min(vp.y2, v.y)),
-  });
+  // Held inside the camera on screen, for the same reason — the old camera's
+  // box would stop a drag at an edge you can no longer see.
+  const clampToView = (v: Vec2): Vec2 => {
+    const vp = currentFrame().camera;
+    return {
+      x: Math.max(vp.x1, Math.min(vp.x2, v.x)),
+      y: Math.max(vp.y1, Math.min(vp.y2, v.y)),
+    };
+  };
 
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (e.button !== 0) return;

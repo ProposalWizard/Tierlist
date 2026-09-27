@@ -816,11 +816,13 @@ export default function PlayerSearchPage() {
                         tabIndex={0}
                         onClick={() => setExpandedPlayer(isOpen ? null : group.sofifa_id)}
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpandedPlayer(isOpen ? null : group.sofifa_id); }}
-                        className={`w-full text-left px-5 py-3.5 flex items-center gap-4 transition-colors cursor-pointer ${
+                        className={`w-full text-left px-4 py-3.5 flex flex-wrap items-center gap-x-3 gap-y-2 transition-colors cursor-pointer sm:flex-nowrap sm:gap-4 sm:px-5 ${
                           isOpen ? "bg-gray-800" : "bg-gray-900 hover:bg-gray-850"
                         }`}
                       >
-                        <div className="flex-1 min-w-0">
+                        {/* Full width on a phone, so the name reads on one line and
+                            the tags/peak/editions sit together underneath. */}
+                        <div className="flex-1 min-w-0 basis-full sm:basis-0">
                           <span className="font-bold text-white text-base">{group.name}</span>
                           <span className="ml-3 text-xs text-white">ID: {group.sofifa_id}</span>
                         </div>
@@ -881,18 +883,18 @@ export default function PlayerSearchPage() {
                           <span>{fc27?.world_class_potential ? "★" : "☆"}</span>
                           <span className="hidden sm:inline">World Class</span>
                         </button>
-                        <div className="text-sm text-white">{editionRange}</div>
-                        <div className="px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-400 text-sm font-bold">
+                        <div className="whitespace-nowrap text-sm text-white">{editionRange}</div>
+                        <div className="whitespace-nowrap px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-400 text-sm font-bold">
                           Peak {bestOvr}
                         </div>
-                        <div className="text-sm text-white font-medium">
+                        <div className="whitespace-nowrap text-sm text-white font-medium">
                           {group.editions.length} edition{group.editions.length !== 1 ? "s" : ""}
                         </div>
-                        <div className="text-white">{isOpen ? "▲" : "▼"}</div>
+                        <div className="ml-auto text-white sm:ml-0">{isOpen ? "▲" : "▼"}</div>
                       </div>
 
                       {isOpen && (
-                        <div className="border-t border-gray-800">
+                        <div className="border-t border-gray-800 overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="bg-gray-900/80 border-b border-gray-800/50">

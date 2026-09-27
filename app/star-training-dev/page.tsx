@@ -55,15 +55,15 @@ export default function TrainingDev() {
         <div className="flex items-center justify-between gap-2 bg-gray-950 px-3 py-2">
           <button
             onClick={() => setLevel(null)}
-            className="rounded-full border border-gray-500 bg-gray-800 px-4 py-1.5 text-sm font-black text-white"
+            className="min-h-[40px] rounded-full border border-gray-500 bg-gray-800 px-4 py-1.5 text-sm font-black text-white"
           >
             ‹ All levels
           </button>
           <span className="text-xs font-black text-white">{SKILLS.find(s => s.key === skill)?.label} · skills {you}</span>
           <div className="flex items-center rounded-full border border-gray-500 bg-gray-800">
-            <button onClick={() => go(level - 1)} disabled={level <= 1} className="px-3 py-1.5 text-sm font-black text-white disabled:opacity-40" aria-label="Previous level">◀</button>
+            <button onClick={() => go(level - 1)} disabled={level <= 1} className="min-h-[40px] min-w-[40px] px-3 py-1.5 text-sm font-black text-white disabled:opacity-40" aria-label="Previous level">◀</button>
             <span className="text-sm font-black text-amber-300 tabular-nums">L{level}</span>
-            <button onClick={() => go(level + 1)} disabled={level >= TRAINING_LEVELS} className="px-3 py-1.5 text-sm font-black text-white disabled:opacity-40" aria-label="Next level">▶</button>
+            <button onClick={() => go(level + 1)} disabled={level >= TRAINING_LEVELS} className="min-h-[40px] min-w-[40px] px-3 py-1.5 text-sm font-black text-white disabled:opacity-40" aria-label="Next level">▶</button>
           </div>
         </div>
         <TrainingMinigame
@@ -91,7 +91,7 @@ export default function TrainingDev() {
             <button
               key={s.key}
               onClick={() => setSkill(s.key)}
-              className={`rounded-lg px-1 py-2 text-[11px] font-black ${
+              className={`min-h-[40px] rounded-lg px-1 py-2 text-[11px] font-black ${
                 skill === s.key ? "bg-emerald-400 text-emerald-950" : "border border-gray-600 bg-gray-800 text-white"
               }`}
             >
@@ -106,7 +106,7 @@ export default function TrainingDev() {
             <button
               key={v}
               onClick={() => setYou(v)}
-              className={`rounded-full px-3 py-1 text-xs font-black ${
+              className={`min-h-[40px] min-w-[48px] rounded-full px-3 py-1 text-sm font-black ${
                 you === v ? "bg-amber-300 text-gray-950" : "border border-gray-600 bg-gray-800 text-white"
               }`}
             >
@@ -132,7 +132,7 @@ export default function TrainingDev() {
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 text-[10px] font-bold text-white">{levelLine(skill, n)}</div>
+                <div className="mt-0.5 text-[11px] font-bold text-white">{levelLine(skill, n)}</div>
               </button>
             );
           })}

@@ -33,7 +33,7 @@
  * fully reversible by deleting rows.
  */
 
-import { goalInView, type Scenario, type Vec2 } from "./canvasEngine";
+import { goalInView, type Scenario, type Vec2, type Viewport } from "./canvasEngine";
 import { CX, GOAL_W, PITCH_W, HALF_LEN } from "./pitch";
 import { AUTHORED_SCENARIOS } from "./authoredScenarios";
 import type { MatchScenario } from "./scenarios";
@@ -341,6 +341,17 @@ export interface AuthoredShape {
  * Exported on its own so the gallery can show a variant without a live
  * `Scenario` anywhere near it, and so it can be tested directly.
  */
+/** The distance between the two closest outfield players (you included). */
+function closestPair(s: ShapeSample): number {
+  const pts = [s.you, ...s.defenders, ...s.mates];
+  let best = Infinity;
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+    const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
 export function randomiseAuthored(
   base: MatchScenario, set: RuleSet, rng: () => number,
 ): AuthoredShape | null {
@@ -351,7 +362,11 @@ export function randomiseAuthored(
   for (const scale of ATTEMPT_SCALE) {
     // The ball and you travel as one rigid pair, so the stance between you
     // survives; everyone else is nudged independently.
-    const shift = scale === 0 ? { x: 0, y: 0 } : nudge({ x: 0, y: 0 }, BALL_JITTER_M * scale, rng);
+    // A corner's ball sits on the flag: the open-play nudge put it off the
+    // pitch in 34.2% of served corners (behind the goal line or over the
+    // touchline). The taker stays with it, so neither moves.
+    const deadBall = (base.source?.kind ?? base.kind) === "corner";
+    const shift = scale === 0 || deadBall ? { x: 0, y: 0 } : nudge({ x: 0, y: 0 }, BALL_JITTER_M * scale, rng);
     const cand: ShapeSample = {
       ball: { x: s0.ball.x + shift.x, y: s0.ball.y + shift.y },
       you: { x: s0.you.x + shift.x, y: s0.you.y + shift.y },
@@ -361,6 +376,13 @@ export function randomiseAuthored(
       mates: s0.mates.map((m) => (scale === 0 ? m : nudge(m, JITTER_M * scale, rng))),
     };
     cand.keeper = placeKeeper(cand.ball, shares, s0.keeper, base.source?.kind);
+    // NO NUDGE PUTS TWO MEN INSIDE EACH OTHER. Harry, 26 Sep 2026, on a sheet
+    // of simulated corners: bodies stacked on top of each other. The spacing
+    // is the drawing's own — a nudge may never bring any two players closer
+    // than the drawing's closest pair (or 1 m, whichever is smaller) — so it
+    // is not a new rule, just the drawing kept as drawn.
+    const spacing = Math.min(1, closestPair(s0));
+    if (closestPair(cand) + 0.05 < spacing) { rejected++; continue; }
     if (violations(cand, set).length === 0) {
       return {
         sourceId: base.id, ...cand, camera: base.camera, jitter: scale, rejected,
@@ -489,6 +511,123 @@ const mix32 = (n: number): number => {
  *
  * Returns what actually landed, for the caller's own log.
  */
+/** Kinds served as exactly their drawing's men (see applyAuthoredShape). */
+const DRAWING_IS_THE_TEAM = new Set<string>(["corner", "long_range"]);
+
+/** Behind the ball and off the picture: where a man the drawing doesn't have
+ *  is walked to when he can't simply be taken out (the poacher). Same spot as
+ *  scenarioEdit.ts's OFF_PITCH, for the same reason: nobody is offside
+ *  behind the ball. */
+const OFF_THE_PICTURE: Vec2 = { x: -400, y: 400 };
+
+/**
+ * Make the live chance carry exactly the drawing's men: drawn defenders the
+ * build didn't have are added at their spots, and every build figure with no
+ * drawn spot leaves. The pass target (the runner) always keeps a drawn spot —
+ * if he was the one left over, he takes the spot of a man who can leave.
+ */
+function drawnHeadcount(
+  sc: Scenario, shape: AuthoredShape, takenD: Set<number>, takenM: Set<number>, bodies: Vec2[],
+): { defendersPlaced: number; matesPlaced: number; removed: number } {
+  // Defenders the drawing has and the build didn't: the spots the matching
+  // never reached are exactly the tail of the drawing's list.
+  let placedD = takenD.size;
+  if (sc.defenders.length > 0) {
+    const tmpl = sc.defenders[0];
+    for (let k = placedD; k < shape.defenders.length; k++) {
+      const s = shape.defenders[k];
+      sc.defenders.push({ ...tmpl, x: s.x, y: s.y, homeX: undefined, homeY: undefined, role: undefined, baseRole: undefined, interceptTo: undefined, who: undefined });
+      takenD.add(sc.defenders.length - 1);
+      placedD++;
+    }
+  }
+  const before = sc.defenders.length;
+  sc.defenders = sc.defenders.filter((_, i) => takenD.has(i));
+  const removed = before - sc.defenders.length;
+
+  // Team-mates. Which live object is each body in mateBodiesOf's order?
+  const kinds: ("runner" | "second" | "follower" | "mate")[] = [];
+  if (sc.runner) kinds.push("runner");
+  for (let i = 0; i < sc.secondaryRunners.length; i++) kinds.push("second");
+  if (goalInView(sc.kind)) kinds.push("follower");
+  for (let i = 0; i < sc.teammates.length; i++) kinds.push("mate");
+
+  // The runner is the one a pass or cross is aimed at: he always stands on a
+  // drawn spot. Left over, he swaps with the nearest man who can leave.
+  const runnerIdx = kinds.indexOf("runner");
+  if (runnerIdx >= 0 && !takenM.has(runnerIdx)) {
+    let best = -1, bestD = Infinity;
+    bodies.forEach((b, i) => {
+      if (!takenM.has(i) || (kinds[i] !== "mate" && kinds[i] !== "second")) return;
+      const d = Math.hypot(b.x - bodies[runnerIdx].x, b.y - bodies[runnerIdx].y);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    if (best >= 0) {
+      bodies[runnerIdx].x = bodies[best].x; bodies[runnerIdx].y = bodies[best].y;
+      takenM.delete(best); takenM.add(runnerIdx);
+    }
+  }
+
+  const leaving = new Set<Vec2>();
+  bodies.forEach((b, i) => { if (!takenM.has(i)) leaving.add(b); });
+  sc.teammates = sc.teammates.filter((m) => !leaving.has(m));
+  sc.secondaryRunners = sc.secondaryRunners.filter((r) => !leaving.has(r.pos));
+  if (leaving.has(sc.follower)) { sc.follower.x = OFF_THE_PICTURE.x; sc.follower.y = OFF_THE_PICTURE.y; }
+
+  // Drawn team-mates the build had no body for: extra men in the box.
+  let placedM = takenM.size;
+  for (let k = placedM; k < shape.mates.length; k++) {
+    sc.teammates.push({ x: shape.mates[k].x, y: shape.mates[k].y });
+    placedM++;
+  }
+  return { defendersPlaced: placedD, matesPlaced: placedM, removed };
+}
+
+/** A corner, watched from the side (the builder's crossViewport turn). */
+function isTurnedDeadBall(sc: Scenario): boolean {
+  return sc.kind === "corner" && (sc.facing === "left" || sc.facing === "right");
+}
+
+/** The same drawing taken from the other flag: every x reflected across the
+ *  pitch's centre line, depth untouched. */
+function mirrorShape(s: AuthoredShape): AuthoredShape {
+  const m = (v: Vec2): Vec2 => ({ x: PITCH_W - v.x, y: v.y });
+  return {
+    ...s,
+    ball: m(s.ball), you: m(s.you), keeper: m(s.keeper),
+    defenders: s.defenders.map(m), mates: s.mates.map(m),
+    camera: { ...s.camera, centerX: PITCH_W - s.camera.centerX },
+  };
+}
+
+/**
+ * The standard frame for a served chance: the builder's size for this kind,
+ * placed by one rule instead of by the drawing's saved camera.
+ *   - Up and down: a goal chance keeps the builder's (the goal where it always
+ *     sits); any other keeps the ball where the builder's frame puts it.
+ *   - Sideways: centred on everyone in the picture (and the goal).
+ *   - The ball and you are always in, 3 m clear; the goal is never cut.
+ * Measured against the drawings' own cameras over 300 served chances a kind:
+ * players off the frame one-on-one 0.18 → 0.13, tight angle 0.74 → 0.51,
+ * long range 0.61 → 0.45, cutback 1.10 → 1.06; ball, you and goal never cut.
+ */
+function standardFrame(sc: Scenario, built: Viewport, builtBall: Vec2): Viewport {
+  const w = built.x2 - built.x1, h = built.y2 - built.y1;
+  const goal = goalInView(sc.kind);
+  const pts: Vec2[] = [sc.ball, sc.player, sc.keeper, ...sc.defenders, ...mateBodiesOf(sc)]
+    .filter((p) => p.x > -100 && p.x < PITCH_W + 100);
+  if (goal) pts.push({ x: CX - GOAL_W / 2, y: 0 }, { x: CX + GOAL_W / 2, y: 0 });
+  const xs = pts.map((p) => p.x);
+  let cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  let cy = goal ? (built.y1 + built.y2) / 2 : sc.ball.y + ((built.y1 + built.y2) / 2 - builtBall.y);
+  for (const p of [sc.ball, sc.player]) {
+    cx = Math.min(Math.max(cx, p.x - w / 2 + 3), p.x + w / 2 - 3);
+    cy = Math.min(Math.max(cy, p.y - h / 2 + 3), p.y + h / 2 - 3);
+  }
+  if (goal) cx = Math.min(Math.max(cx, CX + GOAL_W / 2 + 1 - w / 2), CX - GOAL_W / 2 - 1 + w / 2);
+  return { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
+}
+
 export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   defendersPlaced: number; matesPlaced: number;
   /** Leftover live figures moved because they broke a law — see below. */
@@ -496,6 +635,24 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   /** Leftover defenders taken out because no legal spot was found nearby. */
   removed: number;
 } {
+  // ── A CORNER IS FILMED FROM ITS OWN FLAG ──
+  //
+  // The builder picks a flag at random and turns the camera to it; a drawing
+  // carries its own flag. Laying a right-flag drawing over a left-flag build
+  // kept the LEFT turn and camera — measured: 50.2% of served corners filmed
+  // from the wrong side, the taker drawn up in the top third, and the
+  // builder's leftover bodies stranded on the far side (519 in 2,000). Harry
+  // and Mikey saw it as "the camera issue" on corners.
+  //
+  // So the drawing is mirrored onto the builder's flag instead (x → pitch
+  // width − x; nothing about depth changes). The builder's turn, frame and
+  // leftovers then all agree with it, and every drawing now serves both
+  // flags, which doubles the variety from the same drawings.
+  if (isTurnedDeadBall(sc) && (shape.ball.x >= CX) !== (sc.ball.x >= CX)) shape = mirrorShape(shape);
+  // The builder's own frame and ball, before the drawing moves anything —
+  // the standard framing for this kind (see standardFrame).
+  const built = { ...sc.viewport };
+  const builtBall = { x: sc.ball.x, y: sc.ball.y };
   sc.ball.x = shape.ball.x; sc.ball.y = shape.ball.y;
   sc.player.x = shape.you.x; sc.player.y = shape.you.y;
   sc.keeper.x = shape.keeper.x; sc.keeper.y = shape.keeper.y;
@@ -536,7 +693,24 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
     bodies[best].y = spot.y;
     matesPlaced++;
   }
-  const { relocated, removed } = legaliseLeftovers(sc, shape, takenD, takenM);
+
+  // ── THE DRAWING DECIDES WHO IS ON THE PITCH (corners, long range) ──
+  //
+  // Harry, 26 Sep 2026, looking at a sheet of simulated corners: players
+  // stranded outside the box, bodies stacked on each other. Measured over
+  // 600 pictures: those strays were the BUILDER's own men that the drawing
+  // has no spot for, left wherever the builder put them (about one a
+  // picture; someone at or past the frame edge in 72% of long shots and 78%
+  // of corners), and corners were also a defender SHORT of the drawing (6.0
+  // drawn, 4.9 built). Nothing here is a new rule: the served picture is
+  // simply the drawing — its men, its spots — and the builder's extras leave.
+  let relocated = 0, removed = 0;
+  if (DRAWING_IS_THE_TEAM.has(sc.kind)) {
+    const r = drawnHeadcount(sc, shape, takenD, takenM, bodies);
+    defendersPlaced = r.defendersPlaced; matesPlaced = r.matesPlaced; removed = r.removed;
+  } else {
+    ({ relocated, removed } = legaliseLeftovers(sc, shape, takenD, takenM));
+  }
 
   // A runner's `to` is where he is RUNNING, not where he stands — left
   // alone, he would sprint back to a spot from the procedural build the
@@ -545,16 +719,14 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   for (const r of sc.secondaryRunners) { r.to.x = r.pos.x; r.to.y = r.pos.y; }
   if (sc.runner) sc.passTarget = { x: sc.runner.to.x, y: sc.runner.to.y };
 
-  // The drawing was framed as well as placed, so the camera comes with it —
-  // and because every figure is inside that frame by construction, the
-  // camera's own clamp has nothing to pull back in.
-  const half = shape.camera.viewHeight / 2;
-  const aspect = (sc.viewport.x2 - sc.viewport.x1) / (sc.viewport.y2 - sc.viewport.y1 || 1);
-  const halfW = half * aspect;
-  sc.viewport = {
-    x1: shape.camera.centerX - halfW, x2: shape.camera.centerX + halfW,
-    y1: shape.camera.centerY - half, y2: shape.camera.centerY + half,
-  };
+  // ── THE FRAME IS THE KIND'S, NOT THE DRAWING'S ──
+  //
+  // Harry, 26 Sep 2026: "changing the camera angle for specific highlights
+  // should not be taken into account … for now" — a camera change on one
+  // card stays on that card. So a served chance never takes the drawing's
+  // camera; it gets the standard frame for its kind, fitted to what is on it.
+  // A corner keeps the builder's frame exactly (his pick: today's framing).
+  if (!isTurnedDeadBall(sc)) sc.viewport = standardFrame(sc, built, builtBall);
 
   return { defendersPlaced, matesPlaced, relocated, removed };
 }

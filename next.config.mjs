@@ -15,6 +15,14 @@ const nextConfig = {
     // instrumentation.ts (Sentry's server/edge init) is still opt-in on
     // Next.js 14 — stable without this flag from 15 on.
     instrumentationHook: true,
+    // The patch notes archive shows each version's kept artifact page, read
+    // from patch-notes/ at request time (lib/patchNotePageServe.ts). Files a
+    // route reads by a computed path are not traced into the serverless
+    // bundle on their own, so the folder is listed here or Vercel 404s them.
+    outputFileTracingIncludes: {
+      "/api/admin/patch-notes/page": ["./patch-notes/**/*"],
+      "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
+    },
   },
   // face-api.js depends on node-fetch (which needs 'encoding') and
   // references 'fs' for model loading.  Neither is needed at build

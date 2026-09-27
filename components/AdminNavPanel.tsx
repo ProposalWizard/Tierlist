@@ -31,11 +31,73 @@ import { usePathname } from "next/navigation";
  *     parent, so the panel survives — which is the point, since the gallery
  *     is exactly the page you want to navigate away from.
  *
- *  3. DESKTOP ONLY. "Have that somewhere on the screen on PC, more so than
- *     mobile." The edge tab is `hidden lg:flex` — on a phone there is no
- *     floating element to collide with a game's own corner buttons. Admins
- *     on a phone still reach /admin from the existing nav menu.
+ *  3. THE EDGE TAB IS DESKTOP ONLY, EXCEPT ON FULL-SCREEN PAGES. "Have that
+ *     somewhere on the screen on PC, more so than mobile." On a phone the
+ *     same list opens from the menu ("Admin & Dev tools", NavMenu.tsx, via
+ *     OPEN_ADMIN_NAV_EVENT) — before that, a phone reached /admin and
+ *     nothing else: the gallery, Play Area and training had no link at all.
+ *     A full-screen page (gallery, Play Area, highlights) hides the menu, and
+ *     the gallery has no way out, so there the tab shows on a phone too —
+ *     and never on top of the pitch or a button (see placeTab below).
  */
+
+/** Where the phone tab may sit, and how wide it is. */
+type TabSpot = { top: number; slim: boolean };
+
+const TAB_H = 82;
+const FULL_W = 24;
+/** Every phone test screen leaves at least 12 px of gutter left of the
+ *  pitch (measured: highlights 12, gallery 15, on SE / 13 / Pixel 5). */
+const SLIM_W = 10;
+
+/**
+ * THE PHONE TAB NEVER SITS ON THE PITCH. Harry, 26 Sep 2026: the mid-left
+ * tab covered 14 px of the pitch's edge, so a drag starting there opened the
+ * menu. This looks down the left edge, nearest the middle first, for a spot
+ * where the full tab covers nothing drawn (no pitch, control, card or
+ * label); failing that, a spot for a 10 px sliver, which fits in the gutter
+ * beside the pitch.
+ */
+function placeTab(): TabSpot {
+  const H = window.innerHeight, W = window.innerWidth;
+  // What is drawn at one point of the left edge, ignoring this panel: a
+  // pitch, a control, or any card/bar/label narrower than the page counts as
+  // taken; only the page's own full-width background is free.
+  const taken = (x: number, y: number): boolean => {
+    for (const el of document.elementsFromPoint(x, y)) {
+      if (el.closest("[data-admin-nav]")) continue;
+      if (el === document.body || el === document.documentElement) return false;
+      if (el.matches("canvas, button, a, input, select, textarea, label, [role=button]")) return true;
+      return el.getBoundingClientRect().width < W - 8;
+    }
+    return false;
+  };
+  const STEP = 6;
+  const rows = Math.ceil(H / STEP);
+  const col = (x: number) => Array.from({ length: rows }, (_, i) => taken(x, i * STEP + 1));
+  const full = [col(2), col(FULL_W / 2), col(FULL_W - 2)];
+  const slim = [col(2), col(SLIM_W - 2)];
+  const clear = (top: number, cols: boolean[][]) => {
+    for (let i = Math.floor((top - 2) / STEP); i <= Math.ceil((top + TAB_H + 2) / STEP); i++) {
+      if (i < 0 || i >= rows) continue;
+      if (cols.some((c) => c[i])) return false;
+    }
+    return true;
+  };
+  const lo = 60, hi = Math.max(lo, H - 60 - TAB_H), mid = (H - TAB_H) / 2;
+  const tops: number[] = [];
+  for (let d = 0; d <= H; d += 12) {
+    if (mid - d >= lo) tops.push(Math.round(mid - d));
+    if (d && mid + d <= hi) tops.push(Math.round(mid + d));
+    if (mid - d < lo && mid + d > hi) break;
+  }
+  for (const t of tops) if (clear(t, full)) return { top: t, slim: false };
+  for (const t of tops) if (clear(t, slim)) return { top: t, slim: true };
+  return { top: Math.round(mid), slim: true };
+}
+
+/** Fired by the phone menu to open this panel. */
+export const OPEN_ADMIN_NAV_EVENT = "knowitball:open-admin-nav";
 
 interface AdminLink {
   name: string;
@@ -118,8 +180,43 @@ export default function AdminNavPanel() {
   const pathname = usePathname();
   const current = activeHref(pathname);
 
+  // A full-screen page hides the menu, so the tab is the only way out there.
+  const [immersive, setImmersive] = useState(false);
+  const [spot, setSpot] = useState<TabSpot | null>(null);
+
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setOpen(false); }, [pathname]);
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_ADMIN_NAV_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_ADMIN_NAV_EVENT, onOpen);
+  }, []);
+  useEffect(() => {
+    const read = () => setImmersive(document.body.classList.contains("knowitball-immersive"));
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => mo.disconnect();
+  }, []);
+  // Re-place the phone tab as the page moves under it (a new picture, a
+  // scroll, an opened editor) — a few times a second, like the page guide.
+  useEffect(() => {
+    if (!immersive) { setSpot(null); return; }
+    const place = () => {
+      if (window.innerWidth >= 1024) { setSpot(null); return; }
+      const next = placeTab();
+      setSpot((cur) => (cur && cur.top === next.top && cur.slim === next.slim ? cur : next));
+    };
+    place();
+    const id = window.setInterval(place, 500);
+    window.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("scroll", place);
+      window.removeEventListener("resize", place);
+    };
+  }, [immersive]);
 
   const onKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") setOpen(false);
@@ -135,18 +232,24 @@ export default function AdminNavPanel() {
 
   return createPortal(
     <div data-admin-nav>
-      {/* Edge tab — desktop only, left edge, vertically centred so it clears
-          the top-left hamburger and any game UI pinned to the corners. */}
+      {/* Edge tab — left edge, vertically centred so it clears the top-left
+          hamburger and any game UI pinned to the corners. Desktop always; a
+          phone only on a full-screen page, where the menu is hidden. */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Open admin menu"
-        className={`fixed left-0 top-1/2 z-[80] hidden -translate-y-1/2 items-center gap-1.5 rounded-r-lg border border-l-0 border-amber-500/40 bg-gray-950/80 py-4 pl-1.5 pr-2 text-amber-400 shadow-lg backdrop-blur transition-all hover:bg-gray-900 hover:text-amber-300 lg:flex ${
+        style={spot ? { top: spot.top, height: TAB_H, width: spot.slim ? SLIM_W : FULL_W, transform: "none" } : undefined}
+        className={`fixed left-0 top-1/2 z-[80] -translate-y-1/2 items-center justify-center gap-1.5 overflow-hidden rounded-r-lg border border-l-0 border-amber-500/40 bg-gray-950/80 py-4 text-amber-400 shadow-lg backdrop-blur transition-all hover:bg-gray-900 hover:text-amber-300 lg:flex lg:pl-1.5 lg:pr-2 ${immersive ? "flex" : "hidden"} ${
           open ? "pointer-events-none opacity-0" : "opacity-70 hover:opacity-100"
         }`}
       >
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] [writing-mode:vertical-rl]">
-          Admin
-        </span>
+        {spot?.slim ? (
+          <span className="h-full w-[3px] rounded-full bg-amber-400" />
+        ) : (
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] [writing-mode:vertical-rl]">
+            Admin
+          </span>
+        )}
       </button>
 
       {/* Overlay */}
@@ -159,7 +262,7 @@ export default function AdminNavPanel() {
 
       {/* Panel */}
       <div
-        className={`fixed left-0 top-0 z-[90] flex h-full w-80 flex-col border-r border-amber-500/30 bg-gray-950 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-amber-500/30 bg-gray-950 shadow-2xl transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -190,15 +293,15 @@ export default function AdminNavPanel() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`group mx-3 my-0.5 flex items-center justify-between gap-3 rounded-lg px-3 py-1.5 transition-colors ${
+                    className={`group mx-3 my-0.5 flex min-h-[40px] items-center justify-between gap-3 rounded-lg px-3 py-1.5 transition-colors lg:min-h-0 ${
                       isActive
                         ? "bg-amber-500/15 text-white"
                         : "text-white hover:bg-gray-900"
                     }`}
                   >
-                    <span className="whitespace-nowrap text-sm font-bold">{link.name}</span>
+                    <span className="text-sm font-bold lg:whitespace-nowrap">{link.name}</span>
                     <span
-                      className={`shrink-0 whitespace-nowrap font-mono text-[9px] ${
+                      className={`hidden shrink-0 whitespace-nowrap font-mono text-[9px] sm:inline ${
                         isActive ? "text-amber-400" : "text-gray-600 group-hover:text-gray-500"
                       }`}
                     >
