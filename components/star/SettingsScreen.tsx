@@ -4,6 +4,7 @@ import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
+import { followedTeams, toggleFollowedTeam, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
@@ -60,6 +61,15 @@ export default function SettingsScreen({
     setPostMatchReactions(next);
     setPostMatchReactionsEnabled(next);
   };
+
+  // Live-score alerts (v0.15 item 35): the clubs whose goals pop up during
+  // your match. None ticked by default; the bell in the in-match Scores
+  // panel writes the same list.
+  const [following, setFollowing] = useState<string[]>(() => followedTeams());
+  const divisionClubs = career.league.map((t) => t.name).filter((n) => n !== career.player.club).sort();
+  // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
+  const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
+  const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
 
   // Quick on/off switches, separate from the full editor — read/write the
   // exact same shared FaceStyle object FaceEditorScreen and CanvasMatch do,
@@ -126,6 +136,30 @@ export default function SettingsScreen({
         </div>
 
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-white">Live scores</div>
+          <p className="mt-1 text-[11px] text-white">
+            Tick a club to see its goals pop up during your match. The Scores button under the match clock shows every game.
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            {divisionClubs.map((club) => {
+              const on = following.includes(club);
+              return (
+                <button
+                  key={club}
+                  onClick={() => setFollowing(toggleFollowedTeam(club))}
+                  role="checkbox"
+                  aria-checked={on}
+                  className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] font-black ${on ? "bg-amber-400 text-gray-950" : "bg-black/25 text-white"}`}
+                >
+                  <span aria-hidden>{on ? "🔔" : "○"}</span>
+                  <span className="truncate">{club}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Photo</div>
           <p className="mt-1 text-[11px] text-gray-300">
             Change the photograph on your graphics, or take it back off.
@@ -151,6 +185,22 @@ export default function SettingsScreen({
         <div className="mt-6 mb-1 border-t border-gray-700 pt-3">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300/90">Developer tools</div>
           <p className="text-[10px] font-semibold text-white/50">Testing and tuning options — not needed for normal play.</p>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+          <div>
+            <div className="text-[11px] font-black text-white">Show developer info</div>
+            <p className="text-[11px] text-white">On the match-day card: the minute a sub is planned to come on, and his ladder.</p>
+          </div>
+          <button
+            onClick={flipDevInfo}
+            role="switch"
+            aria-checked={devInfo}
+            aria-label="Show developer info"
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${devInfo ? "bg-emerald-500" : "bg-gray-600"}`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${devInfo ? "translate-x-5" : "translate-x-0.5"}`} />
+          </button>
         </div>
 
         <DevSkipPanel career={career} onSkip={onSkip} />

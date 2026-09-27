@@ -32,9 +32,11 @@ import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
-import { selectionFor, MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB } from "@/lib/star/selection";
+import { selectionFor, MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, SUB_LADDER } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import PenaltyDutyLine from "@/components/star/PenaltyDutyLine";
+import { devInfoOn } from "@/lib/star/matchDayPrefs";
+import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
@@ -71,6 +73,10 @@ import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
+// Swipe home screens — Stats · Home · Training (v0.15 item 34).
+import SwipePages from "@/components/star/SwipePages";
+import HomeHub from "@/components/star/HomeHub";
+import ShopItemsCard from "@/components/star/ShopItemsCard";
 import LeagueScreen from "@/components/star/LeagueScreen";
 import LadderScreen from "@/components/star/LadderScreen";
 import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
@@ -98,17 +104,7 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
-import { KIB_CANS, kibCanPrice, kibCanEffectLabel, type KibCan } from "@/lib/star/shopData";
-
-/** The dashboard KIB Cans card's own accent per tier — the same colour as
- *  the can's real photo (see shopData.ts's `color`), as a hex value rather
- *  than a Tailwind class so it can drive an inline border/background wash
- *  too, not just a token. */
-const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
-  basic: { hex: "#fb923c" },
-  premium: { hex: "#60a5fa" },
-  elite: { hex: "#c084fc" },
-};
+import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
 
 import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
@@ -254,10 +250,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [phase, setPhase] = useState<StarPhase>("profile-setup");
   const [activeNav, setActiveNav] = useState<NavTab | null>(null);
   const [trainingTab, setTrainingTab] = useState<"training" | "life">("training");
+  /** Swipe home screens: Stats (0) or Home (1); Training is the "skills"
+   *  phase, see SwipePages below. */
+  const [homePage, setHomePage] = useState<0 | 1>(1);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   /** Which of the 30 levels is being played; null while picking one. */
   const [trainingLevel, setTrainingLevel] = useState<number | null>(null);
   const [lastMatchStats, setLastMatchStats] = useState<MatchStats | null>(null);
+  /** Your star rating before and after the last match — the bar on a simmed result (item 36). */
+  const [lastStarChange, setLastStarChange] = useState<{ from: number; to: number } | null>(null);
   const [currentDilemma, setCurrentDilemma] = useState<Dilemma | null>(null);
   const [contractOfferReason, setContractOfferReason] = useState<"form" | "star" | null>(null);
   /** Set right before jumping to "investments" from the Ownership hub, so a
@@ -476,6 +477,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // about to have rather than a stale one from before this week finished.
   const preMatchEnergy = career ? projectedEnergy(career) : 0;
   const preMatchSelection = career ? selectionFor({ ...career, energy: preMatchEnergy }) : null;
+  // Item 24: the sub's planned minute and ladder show only with Settings →
+  // Developer tools → "Show developer info" on (a per-device switch).
+  const showDevInfo = devInfoOn();
   const myTeam = (f: typeof nextFixture) =>
     f?.kind === "international" ? nationOf(career!) : career!.player.club;
   const nextMatchLabel = nextFixture
@@ -582,7 +586,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setActiveNav(tab);
     if (tab === "league") setPhase("league");
     else if (tab === "skills") { setTrainingTab("training"); setPhase("skills"); }
-    else if (tab === "home") setPhase("dashboard");
+    else if (tab === "home") { setHomePage(1); setPhase("dashboard"); }
     else if (tab === "media") setPhase("media");
     else if (tab === "play") setPhase("pre-match");
   }, []);
@@ -904,11 +908,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setTimeout(() => setRatingChange(null), 3000);
   };
 
-  const handleMatchComplete = useCallback((stats: MatchStats) => {
-    if (!career || !nextFixture) return;
+  // `readied` is the career the match was played from — the Sim button
+  // (item 36) hands it over, the way handlePlayMatch readies the week first.
+  const careerNow = career;
+  const handleMatchComplete = useCallback((stats: MatchStats, readied?: CareerState) => {
+    if (!nextFixture) return;
+    const career = readied ?? careerNow;
+    if (!career) return;
     setLastMatchStats(stats);
     setPlayedFixture(nextFixture);
     const { career: next, newlyUnlocked, potmAwarded } = creditMatchResult(career, nextFixture, stats);
+    setLastStarChange({ from: career.starRating, to: next.starRating });
     toastAchievements(newlyUnlocked);
     toastRatingChange(career.starRating, next.starRating);
     // The world reacts. Generated once, here, from the career on both sides of
@@ -950,7 +960,28 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // week but a genuine collapse; see `formHasCollapsed` (youth.ts).
     setCareer(applyFormCollapse(next));
     setPhase("post-match");
-  }, [career, nextFixture, applyFormCollapse]);
+  }, [careerNow, nextFixture, applyFormCollapse]);
+
+  // Item 36 (v0.15): "Sim this match" — the unseen match plays out and each
+  // chance that comes to you is settled by your skills (lib/star/simMatch.ts),
+  // then it is credited exactly like a played match.
+  const handleSimMatch = useCallback(() => {
+    if (!career || !nextFixture) return;
+    // Readied exactly as handlePlayMatch readies a played match: the week's
+    // actions spent and the rest days' energy banked.
+    const readied: CareerState = { ...career, weekActions: 0, energy: projectedEnergy(career) };
+    const sel = selectionFor(readied);
+    const bootOn = readied.currentBoot.matches > 0;
+    const stats = simulateOwnMatch(readied, nextFixture, {
+      selection: sel,
+      duties: setPieceDuties(readied, sel.status),
+      skills: {
+        power: Math.min(100, readied.skills.power + (bootOn ? readied.currentBoot.power : 0)),
+        technique: Math.min(100, readied.skills.technique + (bootOn ? readied.currentBoot.technique : 0)),
+      },
+    });
+    handleMatchComplete(stats, readied);
+  }, [career, nextFixture, handleMatchComplete]);
 
   // The end of a season, reachable from the post-match screen and — after a
   // refresh dropped you on the dashboard — from the dashboard prompt too.
@@ -1019,7 +1050,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         const state = from.cupState?.find((s) => s.competition === cupCompetition);
         const round = state ? currentRound(state) : null;
         const freshlyDrawn = round && round.ties.length >= 2 && round.ties.every((t) => t.hs === undefined);
-        if (freshlyDrawn && round) {
+        // Only a draw you're in (v0.15 item 32) — knocked out, the next
+        // round is drawn without you and the game moves straight on.
+        const youreIn = !!round && round.ties.some((t) => t.home === from.player.club || t.away === from.player.club);
+        if (freshlyDrawn && round && youreIn) {
           setPendingDraw({ competition: cupCompetition, round });
           setPhase("draw");
           return;
@@ -1086,10 +1120,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // A per-device preference (Settings → Post-Match Reactions), not game
     // data — requested directly: after the rating/money screen, some
     // players would rather go straight back to the dashboard than always
-    // pass through the phone screen.
-    if (getPostMatchReactionsEnabled() && hasFreshMedia(career)) { setPhase("media"); return; }
+    // pass through the phone screen. A simmed match (item 36) always goes
+    // straight back home.
+    if (!lastMatchStats?.simmed && getPostMatchReactionsEnabled() && hasFreshMedia(career)) { setPhase("media"); return; }
     continueAfterMatch(career, !pressQuestion);
-  }, [career, continueAfterMatch, pressQuestion]);
+  }, [career, continueAfterMatch, pressQuestion, lastMatchStats]);
 
   // Tapping a post's heart in the phone feed — saved on the post, so it
   // stays liked when you come back.
@@ -1861,6 +1896,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const can = KIB_CANS.find((c) => c.id === id)!;
     // A boot-ability can does nothing if that ability is already waiting.
     if (can.effect && career.kibAbility?.[can.effect]) return;
+    // …and an energy can does nothing at full energy (v0.15 item 28).
+    if (!can.effect && career.energy >= 100) return;
     setCareer({
       ...career,
       kibCans: { ...career.kibCans, [id]: career.kibCans[id] - 1 },
@@ -2885,6 +2922,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         youAreHome={playedFixture.home !== false}
         competition={playedFixture.kind && playedFixture.kind !== "league" ? fixtureLabel(playedFixture) : undefined}
         knockout={career.knockoutMessage}
+        starBefore={lastStarChange?.from}
+        starAfter={lastStarChange?.to ?? career.starRating}
         onContinue={handlePostMatchContinue}
       />
     );
@@ -3305,16 +3344,40 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Your role</span>
-                <span className={`text-xs font-black ${
+                <style>{`@keyframes kibRoleFlip { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } } .kib-role-flip { display: inline-block; animation: kibRoleFlip 0.45s cubic-bezier(0.2,0.9,0.3,1.35) both; }`}</style>
+                <span key={preMatchSelection.status} className={`kib-role-flip text-xs font-black ${
                   preMatchSelection.status === "1st Team" ? "text-emerald-300"
                     : preMatchSelection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
                 >
                   {preMatchSelection.status === "1st Team" ? "Starting Eleven"
-                    : preMatchSelection.status === "Substitute" ? "Bench (on when the game needs you)"
+                    : preMatchSelection.status === "Substitute"
+                      // Item 24: the planned minute is developer info only
+                      // (Settings → Developer tools → Show developer info).
+                      ? (showDevInfo ? `Bench — on around ${preMatchSelection.onAt}'` : "Bench (on when the game needs you)")
                       : preMatchSelection.status === "Injured" ? "Injured"
                         : "Out of Squad"}
                 </span>
               </div>
+
+              {/* Item 24: the substitute's ladder — earn earlier minutes.
+                  Developer info only, like the minute above. */}
+              {showDevInfo && preMatchSelection.status === "Substitute" && (
+                <div className="mt-2">
+                  <div className="flex gap-1">
+                    {[...SUB_LADDER.map((m) => `${m}'`), "Start"].map((rung, i) => {
+                      const here = i < SUB_LADDER.length && SUB_LADDER[i] === preMatchSelection.onAt;
+                      return (
+                        <div key={rung} className={`flex-1 rounded-md py-1 text-center text-[11px] font-black ${
+                          here ? "bg-amber-400 text-gray-950" : "bg-black/30 text-white/70"}`}
+                        >{rung}</div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-1 text-[10px] font-bold text-white/80">
+                    Goals and good ratings off the bench move you up. On from 70&apos;, you&apos;re guaranteed a chance.
+                  </div>
+                </div>
+              )}
 
               {nextFixture.kind !== "international" && (
                 <PositionPicker
@@ -3342,6 +3405,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
                 </div>
               </div>
               <PenaltyDutyLine career={career} fixture={nextFixture} status={preMatchSelection.status} />
+              {/* v0.15 item 28: drink a Basic can before kick-off, on its own
+                  full-width row. Enough to clear the starting line and
+                  "Bench" flips to "Starting Eleven" above, on the spot. Off
+                  at full energy. */}
+              <button
+                onClick={() => handleUseCan("basic")}
+                disabled={career.kibCans.basic <= 0 || preMatchEnergy >= 100}
+                aria-label={`Use a Basic KIB can, ${career.kibCans.basic} left`}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-1.5 text-gray-950 transition hover:bg-orange-400 active:scale-[0.99] disabled:bg-gray-700 disabled:text-white"
+              >
+                <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.png" }} className="h-7 w-4 shrink-0" />
+                <span className="text-[11px] font-black uppercase tracking-wide">
+                  {preMatchEnergy >= 100 ? "Energy full" : "Use a Basic can"}
+                </span>
+                <span className="text-xs font-black tabular-nums">&times;{career.kibCans.basic}</span>
+              </button>
             </div>
           )}
 
@@ -3365,6 +3444,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               </button>
             )}
           </div>
+          {/* Item 36: sim it instead of playing it — starter or sub. */}
+          {(preMatchSelection?.status === "1st Team" || preMatchSelection?.status === "Substitute") && (
+            <button onClick={handleSimMatch} className="mt-2 w-full py-3 bg-sky-700 hover:bg-sky-600 rounded-xl font-black">
+              ⏩ Sim this match
+            </button>
+          )}
         </div>
       </div>
     );
@@ -3395,6 +3480,27 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
+  // Swipe home screens: only ever the dashboard and the training phase, which
+  // are its middle/left and right screens.
+  const swipeActive = phase === "dashboard" || phase === "skills";
+  const trainingBody = (
+        <div>
+          <div className="mb-2 grid grid-cols-2 gap-1.5">
+            <TrainingTabBtn label="Training" active={trainingTab === "training"} onClick={() => setTrainingTab("training")} />
+            <TrainingTabBtn label="Life" active={trainingTab === "life"} onClick={() => setTrainingTab("life")} />
+          </div>
+          {trainingTab === "training" ? (
+            <SkillsScreen career={career} onTrain={handleTrain} />
+          ) : (
+            <LifeScreen
+              career={career}
+              onPlayRelationshipGame={handleOpenRelationshipGame}
+              onRest={handleRest}
+            />
+          )}
+        </div>
+  );
+
   return (
     <DashboardShell
       career={career}
@@ -3406,6 +3512,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       nextMatchLabel={nextMatchLabel}
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
+      compact={swipeActive}
     >
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
@@ -3450,102 +3557,46 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </button>
         </div>
       )}
-      {phase === "dashboard" && (
-        <DashboardStats career={career} onRenew={() => setPhase("contract-renewal")} />
-      )}
-      {phase === "dashboard" && (
-        <>
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            <QuickBtn label="KIB" icon="🥤" onClick={() => setPhase("shop-kib")} />
-            <QuickBtn label="Boots" icon="👟" onClick={() => setPhase("shop-boots")} />
-            <QuickBtn label="Style" icon="💎" onClick={() => setPhase("shop-lifestyle")} />
-            <QuickBtn label="Casino" icon="🎰" onClick={() => setPhase("casino-menu")} />
-          </div>
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            <QuickBtn label="Sponsors" icon="🤝" onClick={() => setPhase("sponsors")} />
-            <QuickBtn label="Awards" icon="⭐" onClick={() => setPhase("achievements")} />
-            <QuickBtn label="Trophies" icon="🏆" onClick={() => setPhase("trophies")} />
-            <QuickBtn label="Ownership" icon="🏛️" onClick={() => setPhase("ownership")} />
-          </div>
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            <QuickBtn label="Garden" icon="🌳" onClick={() => setPhase("garden")} />
-          </div>
-          <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 p-3">
-            <div className="text-[10px] font-black uppercase text-white/85 tracking-widest mb-2">KIB Cans</div>
-            <div className="grid grid-cols-3 gap-2">
-              {KIB_CANS.map((c) => {
-                const count = career.kibCans[c.id];
-                const accent = KIB_ACCENT[c.id];
-                // A boot-ability can already drunk and waiting for your next match.
-                const ready = !!(c.effect && career.kibAbility?.[c.effect]);
-                return (
-                  <div
-                    key={c.id}
-                    className="relative overflow-hidden rounded-xl border p-2 text-center"
-                    style={{ borderColor: `${accent.hex}66`, backgroundColor: "#15151a" }}
-                  >
-                    {/* A diagonal wash in the can's own colour, standing in
-                        for the concept art's background graphics — no extra
-                        art asset needed, just the accent already on the
-                        can's own data. */}
-                    <div
-                      className="pointer-events-none absolute inset-0 opacity-25"
-                      style={{
-                        backgroundImage: `repeating-linear-gradient(115deg, ${accent.hex}55 0px, ${accent.hex}55 2px, transparent 2px, transparent 14px)`,
-                      }}
-                    />
-                    {/* How many owned, as a corner badge rather than its own
-                        text row — same information, less vertical space. */}
-                    <div
-                      className="absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums text-gray-950"
-                      style={{ backgroundColor: accent.hex }}
-                    >
-                      ×{count}
-                    </div>
-                    <div className="relative">
-                      <KibCanIcon can={c} className="h-[84px] w-full mb-1.5" />
-                      <div className="text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
-                      <div className="text-[9px] font-bold leading-tight text-white">{kibCanEffectLabel(c)}</div>
-                      <button
-                        disabled={count === 0 || ready}
-                        onClick={() => handleUseCan(c.id)}
-                        className={`mt-1.5 w-full rounded-md py-1 text-[10px] font-black uppercase tracking-wide transition ${
-                          count > 0 && !ready ? "text-gray-950" : "bg-gray-700 text-white"
-                        }`}
-                        style={count > 0 && !ready ? { backgroundColor: accent.hex } : undefined}
-                      >
-                        {ready ? "Ready ✓" : "Use"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
       {phase === "league" && (
         <LeagueScreen career={career} />
       )}
       {phase === "media" && activeNav === "media" && (
         <MediaFeed career={career} mode="browse" onToggleLike={handleToggleLike} />
       )}
-      {phase === "skills" && (
-        <div>
-          <div className="mb-2 grid grid-cols-2 gap-1.5">
-            <TrainingTabBtn label="Training" active={trainingTab === "training"} onClick={() => setTrainingTab("training")} />
-            <TrainingTabBtn label="Life" active={trainingTab === "life"} onClick={() => setTrainingTab("life")} />
-          </div>
-          {trainingTab === "training" ? (
-            <SkillsScreen career={career} onTrain={handleTrain} />
-          ) : (
-            <LifeScreen
+      {/* ── The swipe home screens: Stats · Home · Training ──
+          Harry, 27 Sep 2026: stats on the left, training on the right, the
+          next game, form, energy and you in your kit in the middle. The
+          right-hand screen IS the "skills" phase, so the Training button,
+          every Back-to-Life path and a swipe all land in the same place. */}
+      {swipeActive && (
+        <SwipePages
+          index={phase === "skills" ? 2 : homePage}
+          onIndex={(i) => {
+            if (i === 2) { handleNavigate("skills"); return; }
+            setHomePage(i === 0 ? 0 : 1);
+            setActiveNav("home");
+            setPhase("dashboard");
+          }}
+          labels={["Stats", "Home", "Training"]}
+        >
+          {[
+            <div key="stats">
+              <DashboardStats career={career} onRenew={() => setPhase("contract-renewal")} />
+              <ShopItemsCard career={career} onOpenShop={() => setPhase("shop-kib")} />
+            </div>,
+            <HomeHub
+              key="home"
               career={career}
-              onPlayRelationshipGame={handleOpenRelationshipGame}
-              onRest={handleRest}
-            />
-          )}
-        </div>
+              nextFixture={nextFixture}
+              nextMatchDate={nextMatchDate ?? undefined}
+              myTeam={nextFixture ? myTeam(nextFixture) : career.player.club}
+              onUseCan={handleUseCan}
+              onBuyCan={handleBuyKib}
+              onOpen={(ph) => setPhase(ph)}
+            />,
+            <div key="training">{trainingBody}</div>,
+          ]}
+        </SwipePages>
       )}
       {/* Above every phase, because winning it can land on the post-match
           screen and must not be something you have to go looking for. */}
@@ -3565,18 +3616,6 @@ function TrainingTabBtn({ label, active, onClick }: { label: string; active: boo
       }`}
     >
       {label}
-    </button>
-  );
-}
-
-function QuickBtn({ label, icon, onClick }: { label: string; icon: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg py-2 flex flex-col items-center transition"
-    >
-      <div className="text-xl">{icon}</div>
-      <div className="text-[10px] font-black text-white mt-0.5">{label}</div>
     </button>
   );
 }

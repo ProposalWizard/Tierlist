@@ -60,6 +60,20 @@ function recentForm(form: number[]): number {
 const START_AT = 55;    // standing needed to be in the starting eleven
 const BENCH_AT = 34;    // …and to make the bench at all
 
+// ── The substitute's ladder (item 24, v0.15, Harry) ────────────────────────
+//
+// "You slowly then come on at 70, come on at 60, come on at 50, and then
+// you're a star." Where you stand in the bench band decides the minute the
+// manager plans to send you on. A player who would start on standing but is
+// kept out by a better-rated man (the shirt) is on the top rung.
+export const SUB_LADDER = [80, 70, 60, 50] as const;
+
+/** The minute a substitute is planned to come on, from his standing. */
+export function subLadderMinute(standing: number, start = START_AT, bench = BENCH_AT): number {
+  const p = (standing - bench) / Math.max(1, start - bench);
+  return p < 0.25 ? 80 : p < 0.5 ? 70 : p < 0.75 ? 60 : 50;
+}
+
 // ── Energy's two hard gates ──────────────────────────────────────────────
 //
 // Applied on TOP of the standing-based verdict above, not blended into it —
@@ -138,7 +152,10 @@ export function shirtWon(career: CareerState): boolean {
   const rival = shirtRival(career);
   if (!rival) return true;
   if (attributeOverall(career.skills) > rival.overall) return true;
-  const mine = recentForm(career.form);
+  // Item 24: judged on your REAL rating. A cameo's rating is pulled toward
+  // 6.5 for the minutes you missed (regressForMinutes), which made a goal off
+  // the bench rate about 6.75 — the shirt could hardly ever be won from the bench.
+  const mine = recentForm(career.rawForm?.length ? career.rawForm : career.form);
   if ((here?.apps ?? 0) >= 2 && mine >= 6.8) return true;
   if (rival.form < 6.0 && mine >= 6.3) return true;
   return false;
@@ -233,7 +250,8 @@ export function selectionFor(career: CareerState): SelectionVerdict {
 
   if (status === "Substitute") {
     // Somewhere in the last half hour. Seeded off the week so it is stable.
-    const onAt = 58 + ((career.week * 37 + career.season * 11) % 15);
+    // Item 24: the minute comes off the ladder instead — your standing.
+    const onAt = subLadderMinute(standing, START, BENCH);
     return {
       status,
       onAt,
@@ -270,7 +288,13 @@ export function selectionFor(career: CareerState): SelectionVerdict {
  * `jitter` (0-4 minutes, seeded off the week) stops it being the same
  * minute every time.
  */
-export function subComesOnNow(minute: number, scoreDiff: number, jitter = 0): boolean {
+export function subComesOnNow(minute: number, scoreDiff: number, jitter = 0, rung?: number): boolean {
+  // Item 24: the ladder minute is the plan; chasing the game only ever brings
+  // you on EARLIER (one down: 5 minutes sooner, two down: 10), never later.
+  if (rung !== undefined) {
+    const at = Math.max(50, rung - (scoreDiff <= -2 ? 10 : scoreDiff === -1 ? 5 : 0));
+    return minute >= at + jitter;
+  }
   const at = scoreDiff <= -2 ? 50 : scoreDiff === -1 ? 56 : scoreDiff === 0 ? 64 : scoreDiff === 1 ? 72 : 80;
   return minute >= at + jitter;
 }
@@ -310,6 +334,10 @@ export interface HookDecision {
 
 /** Nobody is hooked before the hour, or within a quarter of an hour of coming on. */
 const HOOK_EARLIEST = 60;
+/** Item 25: a substitute is certain to come off when his energy runs out (%)… */
+export const SUB_OFF_ENERGY = 0;
+/** …and below this it starts to be a chance, rising as he nears empty. */
+export const SUB_TIRED_FROM = 10;
 const HOOK_SETTLE_IN = 15;
 
 export function hookCheck(args: {
@@ -324,8 +352,22 @@ export function hookCheck(args: {
    *  does not track it (the star-match-dev fork, older tests) simply never
    *  sees a "legs" hook, the same as before this was reinstated. */
   liveEnergy?: number;
+  /** Item 25: true while you are on as a substitute. */
+  cameo?: boolean;
 }): HookDecision {
   const none: HookDecision = { hooked: false, reason: null, message: "" };
+  // Item 25 (v0.15, Harry): a substitute stays on unless his energy runs
+  // out. No bad-afternoon hook and no "job done" hook for a sub: he came on
+  // to change the game. The chance of coming off only starts as his energy
+  // nears empty (under SUB_TIRED_FROM, rising to half a check at 1%), and at
+  // 0% he is off.
+  if (args.cameo) {
+    const energy = args.liveEnergy ?? 100;
+    const off = { hooked: true, reason: "legs" as HookReason, message: `Out on your feet at ${Math.round(energy)}% energy — you are taken off.` };
+    if (energy <= SUB_OFF_ENERGY) return off;
+    if (energy < SUB_TIRED_FROM && args.rng() < 0.5 * (1 - energy / SUB_TIRED_FROM)) return off;
+    return none;
+  }
   if (args.minute < HOOK_EARLIEST) return none;
   if (args.minute - args.startMinute < HOOK_SETTLE_IN) return none;
 

@@ -4,7 +4,7 @@ import { seasonStartYear } from "@/lib/star/calendar";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { formatMoneyPrecise } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 
 /**
@@ -21,10 +21,9 @@ import ImageWithFallback from "@/components/ImageWithFallback";
  * photo and a position/age line per player — are why `TransferMove`/
  * `LoanMove` (leagueTransfers.ts) now also carry `position`/`age`/
  * `imageUrl`: every `Candidate` that file already reads had them the whole
- * time, they just never survived into the news feed. Missing photo falls
- * back to the same silhouette every other screen in this game uses
- * (lib/silhouette.ts) — a generated squad-filler player has never had a
- * real photo, same as before.
+ * time, they just never survived into the news feed. A missing photo falls
+ * back to that player's own fake face (faceOrFake, fakeFaces.ts) — never a
+ * silhouette (Harry, v0.15 item 37).
  *
  * The "forced the move" callout the concept dropped is gone — reported
  * directly as unnecessary noise, it showed up on nearly every row. The
@@ -210,8 +209,8 @@ function TransferRow({ row }: { row: Row }) {
       )}
 
       <ImageWithFallback
-        src={row.imageUrl || SILHOUETTE_SRC}
-        fallbackSrc={SILHOUETTE_SRC}
+        src={faceOrFake(row.imageUrl, row.player)}
+        fallbackSrc={faceOrFake(null, row.player)}
         alt=""
         className="h-11 w-11 shrink-0 rounded-full border border-white/15 bg-gray-800 object-cover"
       />

@@ -5,7 +5,7 @@ import type { LeagueResult } from "@/lib/star/types";
 import { kitsFor, kitLabelOnDark, type Kit } from "@/lib/star/kits";
 import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import { faceOrFake, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { place, across } from "@/lib/star/pitchLayout";
 import ClubCrest from "./ClubCrest";
@@ -498,14 +498,13 @@ function Man({ p, kit, keeper, bottom }: {
           className="h-full w-full overflow-hidden rounded-full border-2 border-white/60"
           style={{ backgroundColor: worn.shirt }}
         >
-          {/* The same stand-in the Draft uses for a player with no photo — one
-              "nobody's face" across the whole game, not a different
-              placeholder per screen. `fallbackSrc` covers the other half of
-              it: a face whose URL has gone dead looks the same as one that
-              was never there, rather than an empty box. */}
+          {/* A player with no photo gets his own fake face — the same one the
+              match draws on him — never a silhouette (Harry, v0.15 item 37).
+              `fallbackSrc` covers a real URL that has gone dead. You, with no
+              photo of your own, get the default fake face the match uses. */}
           <ImageWithFallback
-            src={p.face || SILHOUETTE_SRC}
-            fallbackSrc={SILHOUETTE_SRC}
+            src={p.isYou && !p.face ? DEFAULT_FAKE_FACE : faceOrFake(p.face, p.id)}
+            fallbackSrc={p.isYou ? DEFAULT_FAKE_FACE : faceOrFake(null, p.id)}
             alt=""
             className="h-full w-full object-cover object-top"
           />

@@ -41,6 +41,7 @@ import { seasonStanding } from "./seasonStanding";
 import { considerRecommendations, payPresidentWages } from "./clubPowers";
 import { creditStadiumRevenue, facilitiesFor, progressStadiumBuilds } from "./facilities";
 import { ruleBookFor } from "./ruleBook";
+import { otherGamesRng } from "./liveScores";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
@@ -81,11 +82,19 @@ export const INJURY_RISK_BASE = 0.015;
 export const INJURY_FATIGUE_FLOOR = getTuning("energy.injuryFloor");
 export const INJURY_RISK_FATIGUE_EXTRA = 0.085;
 
+/** The chance of picking up an injury in a match you finish on this much
+ *  energy — the one full-time roll creditMatchResult makes. Also read by the
+ *  Match Radar (/star-radar-dev) so its full-time injury check is this one. */
+export function injuryRiskFor(energyAtFullTime: number): number {
+  return INJURY_RISK_BASE
+    + Math.max(0, (INJURY_FATIGUE_FLOOR - energyAtFullTime) / INJURY_FATIGUE_FLOOR) * INJURY_RISK_FATIGUE_EXTRA;
+}
+
 /**
  * How long it keeps you out. Weighted toward a knock rather than a
  * lay-off — most injuries in a real season are the former.
  */
-function rollInjury(rng: () => number): { weeksRemaining: number; note: string } {
+export function rollInjury(rng: () => number): { weeksRemaining: number; note: string } {
   const r = rng();
   if (r < 0.6) {
     const weeks = 1 + Math.floor(rng() * 2); // 1-2
@@ -725,7 +734,7 @@ export function creditMatchResult(
     const round = playLeagueWeek(league, fixture.week, {
       club: career.player.club, opponent: fixture.opponent, home: fixture.home, scored, conceded,
       goals: yours, oppGoals: theirs,
-    }, rng, squads, faRules);
+    }, rng, squads, faRules, otherGamesRng(career.season, fixture.week));
     league = round.league;
     leagueSquads = squads;
     // Replaying a week replaces it rather than doubling it.
@@ -785,8 +794,7 @@ export function creditMatchResult(
   //    outcome on a replay regardless, but the energy it is weighed against
   //    must not have silently drifted from the double-drain above.
   const fatigueAtFullTime = stats.endEnergy ?? career.energy;
-  const injuryRisk = INJURY_RISK_BASE
-    + Math.max(0, (INJURY_FATIGUE_FLOOR - fatigueAtFullTime) / INJURY_FATIGUE_FLOOR) * INJURY_RISK_FATIGUE_EXTRA;
+  const injuryRisk = injuryRiskFor(fatigueAtFullTime);
   const injuryRng = mulberry32(career.season * 8191 + fixture.week * 97 + fixture.opponent.length * 3);
   const nextInjury = !alreadyPlayed && !career.injury && injuryRng() < injuryRisk
     ? rollInjury(injuryRng)
@@ -1141,6 +1149,10 @@ export function creditMatchResult(
     horse,
     squad: updatedSquad,
     form: alreadyPlayed ? career.form : [stats.rating, ...career.form].slice(0, 5),
+    // Item 24: the real ratings, never pulled toward 6.5 for a cameo — what
+    // the shirt is judged on. Seeded from `form` on a save that predates it.
+    rawForm: alreadyPlayed ? career.rawForm
+      : [stats.rawRating ?? stats.rating, ...(career.rawForm ?? career.form)].slice(0, 5),
   };
   // Appearances at THIS club, which is what the armband is judged on — career
   // appearances would hand it to a signing on his first day. Guarded like
@@ -1194,6 +1206,14 @@ export function creditMatchResult(
   // scoreline — it costs you a little more of him than the rating alone.
   if (stats.hooked === "form" && !alreadyPlayed) {
     next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss - 3) };
+  }
+  // Item 24 (v0.15): a substitute who changes the game moves up the ladder.
+  // +5 with the manager per goal or assist off the bench (at most +10), on
+  // top of what the rating itself earns — about +2 standing each, so two
+  // cameo goals are roughly one rung (80' → 70').
+  if (stats.cameo && !alreadyPlayed) {
+    const boost = Math.min(10, 5 * (stats.goals + stats.assists));
+    if (boost > 0) next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss + boost) };
   }
   // One more appearance at this club, and whether that has won you your shirt
   // (selection.ts). Only for a match you actually played in.
@@ -1591,6 +1611,7 @@ export function advanceSeason(
     energy: 100,
     injury: null,
     form: [],
+    rawForm: [],
     contract: { ...career.contract, seasonsRemaining: career.contract.seasonsRemaining - 1 },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
     squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
@@ -1782,7 +1803,7 @@ export function simulateMissedFixture(
     const round = playLeagueWeek(league, fixture.week, {
       club: career.player.club, opponent: fixture.opponent, home: fixture.home,
       scored: userScore, conceded: oppScore,
-    }, rng, squads, faRules);
+    }, rng, squads, faRules, otherGamesRng(career.season, fixture.week));
     league = round.league;
     leagueSquads = squads;
     weekResults = [...weekResults.filter(r => r.week !== fixture.week), ...round.results];

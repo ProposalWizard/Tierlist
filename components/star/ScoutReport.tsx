@@ -1,6 +1,6 @@
 "use client";
 import type { ScoutReport, ScoutPlayer } from "@/lib/star/scoutReport";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ClubBadge from "@/components/star/ClubBadge";
 import { shortNameOf } from "@/lib/star/realSquad";
@@ -76,8 +76,8 @@ function PlayerCard({ role, player }: { role: "scorer" | "assist" | "rated"; pla
       {/* The photo sits BELOW the frame — the frame's circle is a real
           transparent cutout, so it shows through exactly there. */}
       <ImageWithFallback
-        src={player.image || SILHOUETTE_SRC}
-        fallbackSrc={SILHOUETTE_SRC}
+        src={faceOrFake(player.image, player.name)}
+        fallbackSrc={faceOrFake(null, player.name)}
         alt=""
         className="absolute rounded-full object-cover"
         style={{
