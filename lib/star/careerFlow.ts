@@ -34,7 +34,7 @@ import { settleBets, betNewsLines } from "./competitionBetting";
 import { checkNewAchievements } from "./achievements";
 import { updatePersonalBests } from "./records";
 import { computeStarRating, growthMultiplier } from "./rating";
-import { REPUTATION_START } from "./reputation";
+import { REPUTATION_START, changeReputation, cheekyMissReputation } from "./reputation";
 import { addFame, FAME_EVENTS, wearItems, isWornOut } from "./fame";
 import { restDaysBetween, dailyRecovery, energyFactorFor, clampEnergy, ENERGY_FULL_MATCH_MEDIUM } from "./energy";
 import { seasonStanding } from "./seasonStanding";
@@ -1146,6 +1146,13 @@ export function creditMatchResult(
   // appearances would hand it to a signing on his first day. Guarded like
   // every other appearance tally above.
   next.clubAppearances = (career.clubAppearances ?? 0) + (isInternational || alreadyPlayed ? 0 : 1);
+
+  // A missed "cheeky" kick — a penalty down the middle, or a chip — costs a
+  // little reputation (reputation.ts, `cheekyMiss`; Harry, 27 Sep 2026).
+  // Guarded like every other tally: a replay doesn't cost it twice.
+  if (!alreadyPlayed && stats.cheekyMisses?.length) {
+    next.reputation = changeReputation(next.reputation, cheekyMissReputation(stats.cheekyMisses.length));
+  }
 
   // The match is over, so a new week starts: three things you can do before
   // the next one — except on a replay, which already started that week the

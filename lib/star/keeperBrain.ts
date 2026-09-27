@@ -36,8 +36,9 @@
  *   - a PENALTY: lib/star/penaltyKeeper.ts decides at the strike whether he
  *     goes, which way, how far and with what reach (and whether he reads one
  *     down the middle). The brain throws that dive: a touch after the strike,
- *     paced to the ball, once. A run-up hop (65+) is small, visual, and he
- *     dives the way he hopped.
+ *     paced to the ball, once. During the run-up (penaltyRunup.ts) he hops
+ *     on about half of kicks (`hopChance`): small, visual, and he dives the
+ *     way he hopped.
  *   - a FREE KICK: lib/star/kindRules/freeKick.ts places him and moves him
  *     (the far-post cheat, the reaction once the ball clears the wall). The
  *     brain stands down for free kicks.
@@ -132,6 +133,16 @@ export const KEEPER_BRAIN = {
    *  it buys him nothing but the side he has chosen. */
   hopM: 0.18,
   /**
+   * How often he hops during a run-up (v0.15, Harry: not every time): this
+   * share for a 40-rated keeper up to the second for a 95, straight between
+   * — about half of kicks for a typical keeper (0.48 at 62). Measured in
+   * tests/star/penaltyRunup.mts.
+   */
+  hopShare: [0.4, 0.6] as [number, number],
+  /** When in the run-up he hops, seconds after you let go (a random point in
+   *  this window) — early enough to be seen, late enough to be a read. */
+  hopAt: [1.0, 1.8] as [number, number],
+  /**
    * THE ONE DIAL for how hard long shots and through balls are (Harry's
    * question 1 — he chose the Middle: `OPEN_PLAY_DIAL.middle`). It is how
    * well he reads a shot from DISTANCE — most through balls in this game are
@@ -221,7 +232,8 @@ export interface Abilities {
   maxTravel: number;
   /** His reach floor once landed, as a share of the standing reach. */
   diveWindow: number;
-  /** A penalty run-up hop: 0 below 65, then a keeper who reads the run-up. */
+  /** Anticipation: 0 below 65, then a keeper who reads the run-up. (The
+   *  run-up hop itself is `hopChance`, on every keeper — v0.15.) */
   anticipStep: number;
 }
 
@@ -297,6 +309,8 @@ export interface KeeperBrainSnapshot {
   opts: BrainOptions;
   /** The side he hopped in a penalty run-up (0 = no hop). */
   hopSide?: number;
+  /** Where he stood before that hop. */
+  hopFromX?: number | null;
   /** The strike stream's seed. */
   strikeSeed: number;
 }
@@ -329,6 +343,10 @@ interface State {
   penFloor: number;
   /** A penalty run-up: the side he hopped (0 = none). */
   hopSide: number;
+  /** A penalty run-up: when he will hop (s), or -1 = he won't; null = not decided yet. */
+  hopAt: number | null;
+  /** A penalty run-up: where he stood before the hop (his dive is measured from here). */
+  hopFromX: number | null;
   /** 0..1: how much harder this shot is to read, from the open-play dial and its distance. */
   farRead: number;
   lastShot: boolean;
@@ -383,7 +401,7 @@ export function brainSetup(sc: Scenario, seed: number, rating: number, opts: Bra
     ab, opts, kind: sc.kind, start: { x: k.x, y: k.y }, setTarget: { x: k.x, y: k.y }, moving: false,
     baseReach: sc.keeperReach, rng, strikeSeed: 0,
     phase: "set", t: 0, rt: 0, dir: 0, target: k.x, stepTravelled: 0, diveTravelled: 0,
-    nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, farRead: 0,
+    nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, hopAt: null, hopFromX: null, farRead: 0,
     lastShot: false, ownShot: false, lastRecv: null, planted: false, reason: "",
     moveAtT: null, stepAtT: null, diveAtT: null, wrongFooted: false,
   };
@@ -456,22 +474,39 @@ export function brainAim(sc: Scenario, dt: number): void {
   k.startX = k.x; k.targetX = k.x; k.adjusting = false;
 }
 
+/** The chance a keeper of this rating hops during a penalty run-up. */
+export function hopChance(rating: number): number {
+  const [lo, hi] = KEEPER_BRAIN.hopShare;
+  return lo + (hi - lo) * grow(clamp(Number.isFinite(rating) ? rating : 62, 20, 99), 40, 95, 1.0);
+}
+
 /**
- * A penalty's run-up (for a run-up to call every frame): a keeper who
- * anticipates (65+) may take ONE small hop, 1.2 s into it, toward the side he
- * reads from your arrow. It is only a hop (`KEEPER_BRAIN.hopM`) — it buys
- * him no ground — but it IS his choice: if he dives, he dives that way; he
- * cannot change direction after it. `aimX` = where the arrow points.
+ * A penalty's run-up (lib/star/penaltyRunup.ts calls this every frame of it):
+ * on about half of kicks (`hopChance`, a little more for a better keeper) he
+ * takes ONE small hop, at a point in `KEEPER_BRAIN.hopAt`, toward the side he
+ * reads from your arrow (his rule set's `readChance`). It is only a hop
+ * (`KEEPER_BRAIN.hopM`) — it buys him no ground — but it IS his choice: if he
+ * dives, he dives that way (onShot); he cannot change direction after it.
+ * A keeper who doesn't hop decides at the strike, off your real kick.
+ * `aimX` = where the arrow crosses the goal line now.
  */
 export function brainRunUp(sc: Scenario, dt: number, runT: number, aimX: number): void {
   const st = states.get(sc);
   if (!st || sc.kind !== "penalty" || sc.keeper.done) return;
   const k = sc.keeper;
-  if (st.hopSide === 0 && runT > 1.2 && st.ab.anticipStep > 0) {
+  if (st.hopAt === null) {
+    const [a, b] = KEEPER_BRAIN.hopAt;
+    const go = st.rng() < hopChance(st.ab.rating);
+    const at = a + st.rng() * (b - a);
+    st.hopAt = go ? at : -1;
+  }
+  if (st.hopSide === 0 && st.hopAt >= 0 && runT >= st.hopAt) {
     const read = (st.opts.penalty ?? penaltyReadFor(st.ab.rating)).readChance;
     const aimedSide = Math.abs(aimX - k.x) < 0.5 ? (st.rng() < 0.5 ? -1 : 1) : Math.sign(aimX - k.x);
     st.hopSide = st.rng() < read ? aimedSide : -aimedSide;
+    st.hopFromX = k.x;
     st.setTarget = { x: k.x + st.hopSide * KEEPER_BRAIN.hopM, y: k.y };
+    st.reason = "hopped";
   }
   moveToward(sc, st, st.setTarget, st.ab.setSpeed, dt);
   k.startX = k.x; k.targetX = k.x;
@@ -526,7 +561,9 @@ function onShot(sc: Scenario, st: State, ball: Ball) {
     // A keeper who hopped in the run-up has chosen: he cannot change direction.
     const side = st.hopSide !== 0 ? st.hopSide : d.side;
     st.dir = side;
-    st.target = k.x + side * d.metres;
+    // The hop buys him no ground: the dive lands where it would have from
+    // where he stood before it (KEEPER_BRAIN.hopM is the look, not the reach).
+    st.target = (st.hopFromX ?? k.x) + side * d.metres;
     st.penFloor = d.reach ?? 1;
     const P = KEEPER_BRAIN.penGo;
     st.rt = P[0] + rng() * (P[1] - P[0]);
@@ -761,7 +798,7 @@ export function brainSnapshot(sc: Scenario, strikeSeed: number): KeeperBrainSnap
   return {
     rating: st.ab.rating, kind: st.kind, start: { ...st.start }, setTarget: { ...st.setTarget },
     moving: st.moving, baseReach: st.baseReach ?? null,
-    opts: JSON.parse(JSON.stringify(st.opts)) as BrainOptions, hopSide: st.hopSide,
+    opts: JSON.parse(JSON.stringify(st.opts)) as BrainOptions, hopSide: st.hopSide, hopFromX: st.hopFromX,
     strikeSeed: strikeSeed >>> 0,
   };
 }
@@ -777,4 +814,5 @@ export function brainRestore(sc: Scenario, s: KeeperBrainSnapshot): void {
   st.moving = s.moving;
   st.baseReach = s.baseReach ?? undefined;
   st.hopSide = s.hopSide ?? 0;
+  st.hopFromX = s.hopFromX ?? null;
 }

@@ -23,29 +23,51 @@ export interface SetPieceDuties {
   /** What it would take to take the ones you are not on, for the skills screen. */
   freeKickNeeded: number;
   penaltyNeeded: number;
+  /** What you have towards the penalty duty: free kick + stars × the star weight. */
+  penaltyStanding: number;
+  /** How much each star is worth towards the penalty duty. */
+  penaltyStarWeight: number;
 }
 
+/**
+ * How much each star counts towards the PENALTY duty (v0.15 item 6, Harry:
+ * being a star should get you the duty sooner). Free kicks stay at 4.
+ */
+export const PENALTY_STAR_WEIGHT = 8;
+/** The old penalty weight, and still the free-kick one. */
+export const FREE_KICK_STAR_WEIGHT = 4;
+
 /** Reputation counts as well as technique — a star gets handed the ball. */
-function effectiveTaker(career: CareerState): number {
-  return career.skills.freeKick + career.starRating * 4;
+function effectiveTaker(career: CareerState, starWeight = 4): number {
+  return career.skills.freeKick + career.starRating * starWeight;
 }
 
 function clubStrength(career: CareerState): number {
   return career.league.find(t => t.name === career.player.club)?.strength ?? 70;
 }
 
-export function setPieceDuties(career: CareerState, status: Selection = career.status): SetPieceDuties {
+/**
+ * `penaltyStarWeight` — how much each star counts towards the PENALTY duty
+ * (free kicks always 4). Absent: `PENALTY_STAR_WEIGHT` (8, v0.15 item 6).
+ */
+export function setPieceDuties(
+  career: CareerState, status: Selection = career.status, opts: { penaltyStarWeight?: number } = {},
+): SetPieceDuties {
   const s = clubStrength(career);
   const freeKickNeeded = Math.max(30, Math.min(88, s - 12));
   const penaltyNeeded = Math.max(25, Math.min(80, s - 20));
   // You have to be on the pitch. A substitute can absolutely take a penalty.
   const onThePitch = status !== "Squad";
   const eff = effectiveTaker(career);
+  const penaltyStarWeight = opts.penaltyStarWeight ?? PENALTY_STAR_WEIGHT;
+  const penaltyStanding = effectiveTaker(career, penaltyStarWeight);
   return {
     freeKicks: onThePitch && eff >= freeKickNeeded,
-    penalties: onThePitch && eff >= penaltyNeeded,
+    penalties: onThePitch && penaltyStanding >= penaltyNeeded,
     freeKickNeeded,
     penaltyNeeded,
+    penaltyStanding,
+    penaltyStarWeight,
   };
 }
 

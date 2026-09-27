@@ -126,7 +126,24 @@ const POOR_SHOWING: Detector = (r) => {
   }, "hour", "form-cold");
 };
 
+/**
+ * A cheeky kick that didn't come off — a penalty down the middle, or a chip
+ * (Harry, 27 Sep 2026: "a small reputation hit on a missed penalty or a chip
+ * down the middle, for sure"). It costs reputation in creditMatchResult; this
+ * is the part everybody gets to talk about. `chip` / `middle` are separate
+ * facts so a line about a Panenka is never written about a driven penalty.
+ */
+const CHEEKY_MISS: Detector = (r) => {
+  if (!r.you.cheekyMisses) return null;
+  const chip = r.you.cheekyKind === "chip";
+  return ev("cheeky-miss", you(r), 62, ["shame", "drama"], {
+    ...base(r),
+    ...(chip ? { chip: true } : { middle: true }),
+    ...(r.you.cheekyMinute !== undefined ? { minute: r.you.cheekyMinute } : {}),
+  }, "instant", "form-cold");
+};
+
 export const PERSONAL_DETECTORS: Detector[] = [
   DEBUT, APPEARANCE_MILESTONE, STAR_MAN, MASTERCLASS, ANONYMOUS, HOOKED,
-  CAPTAIN_PERFORMANCE, FORM_SWING, SUBSTITUTE_IMPACT, POOR_SHOWING,
+  CAPTAIN_PERFORMANCE, FORM_SWING, SUBSTITUTE_IMPACT, POOR_SHOWING, CHEEKY_MISS,
 ];

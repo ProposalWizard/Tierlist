@@ -108,6 +108,21 @@ export function pressQuestionFor(
       "“They went in. That's all that matters.”");
   }
 
+  // A cheeky kick that didn't come off (see penaltyRunup.ts's cheekyStrike) —
+  // the papers want to know if it was arrogance. It also costs a little
+  // reputation (reputation.ts, `cheekyMiss`) whatever you say here.
+  const cheeky = stats.cheekyMisses?.[0];
+  if (cheeky) {
+    const chip = cheeky.kind === "chip";
+    return standard("cheeky-miss", chip ? "PANENKA" : "SPOT OF BOTHER",
+      chip
+        ? "You tried to chip it and it didn't come off. Was that arrogant?"
+        : "Straight down the middle — and you missed. What happened?", 1.1,
+      "“I'd do it again tomorrow. That's the kind of player I am.”",
+      "“That one's on me. I've apologised to the lads.”",
+      chip ? "“Some go in, some don't. Move on.”" : "“Penalties get missed. Move on.”");
+  }
+
   if (knockout && lost) {
     return standard("cup-out", "OUT", `Out of the ${fixture.competition}. Where does that leave you?`, 1.25,
       "“We weren't good enough, and I'll say that publicly.”",

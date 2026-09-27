@@ -56,9 +56,11 @@ console.log("\nTHE DRAG FEELS THE SAME");
 // The drag is read off your REAL power before the ball is struck (CanvasMatch's
 // powerFromDrag -> dragForFullPower(skills.power)); only launch gets the
 // curve's number. Pinned in the source, since it lives in a React component.
+// (v0.15 A4: the aim is `a` — your drag, or a run-up scuff's / a watched
+// team-mate's kick — so the pin reads `a.dir, a.power`.)
 const src = readFileSync(new URL("../../components/star/CanvasMatch.tsx", import.meta.url), "utf8");
 ok(/screenPull\(drag, ball\) \/ dragForFullPower\(skills\.power\)/.test(src), "the pull is measured against your real power");
-ok(/power: strikingPower\(strikeWith\.power\)/.test(src) && /launch\(scenarioRef\.current, aim\.dir, aim\.power, contact, launchWith, rngRef\.current\)/.test(src),
+ok(/power: strikingPower\(strikeWith\.power\)/.test(src) && /launch\(scenarioRef\.current, a\.dir, a\.power, contact, launchWith, rngRef\.current\)/.test(src),
   "the ball is struck with the curve's number");
 ok(/skills: launchWith,/.test(src), "a goal's replay keeps the numbers it was struck with (so it replays at the same pace)");
 for (const p of [40, 80, 99]) console.log(`  power ${p}: full power at ${(dragForFullPower(p) * 100).toFixed(2)}% of the screen, before and after`);
