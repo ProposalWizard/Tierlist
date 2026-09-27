@@ -132,12 +132,13 @@ export const KEEPER_BRAIN = {
    *  it buys him nothing but the side he has chosen. */
   hopM: 0.18,
   /**
-   * How often he hops during a run-up (v0.15, Harry: not every time): this
-   * share for a 40-rated keeper up to the second for a 95, straight between
-   * — about half of kicks for a typical keeper (0.48 at 62). Measured in
-   * tests/star/penaltyRunup.mts.
+   * How often he hops during a run-up: OFF (0, 0). Harry, 27 Sep 2026: the
+   * "hop" he asked for was the TAKER's run-up style (a Bruno Fernandes skip),
+   * not the keeper hopping — "you've mistaken that one". The machinery stays
+   * (share for a 40-rated keeper up to a 95, straight between) so a keeper
+   * feint can be turned back on here if it's ever wanted.
    */
-  hopShare: [0.4, 0.6] as [number, number],
+  hopShare: [0, 0] as [number, number],
   /** When in the run-up he hops, seconds after you let go (a random point in
    *  this window) — early enough to be seen, late enough to be a read. */
   hopAt: [1.0, 1.8] as [number, number],

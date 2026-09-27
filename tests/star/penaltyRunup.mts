@@ -142,8 +142,9 @@ console.log(`  corners: no run-up ${pct(cornersBefore)}  run-up ${pct(corners)}`
 ok(ignores >= 0.74 && ignores <= 0.81, `overall still ~75-80 % with the run-up (${pct(ignores)})`);
 ok(corners > 0.71 && corners < 0.79, `a corner still scores about 75 % (${pct(corners)})`);
 ok(Math.abs(ignores - before) <= 0.025, `ignoring the keeper scores what it did without a run-up (${pct(ignores)} vs ${pct(before)})`);
-ok(away > ignores && away < 0.95, `swinging away from his hop is worth something, never a sure goal (${pct(away)})`);
-ok(toward < ignores, `swinging toward it costs (${pct(toward)} vs ${pct(ignores)})`);
+// The keeper no longer hops (Harry, 27 Sep), so there is nothing to read:
+// watching him and swinging the aim changes nothing.
+ok(away === ignores && toward === ignores, `with no hop there is nothing to read (away ${pct(away)}, toward ${pct(toward)}, ignoring ${pct(ignores)})`);
 ok(scuff < ignores - 0.2, `a scuff is a clearly worse kick (${pct(scuff)} vs ${pct(ignores)})`);
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -162,11 +163,9 @@ console.log("\nTHE KEEPER'S HOP — the brain's, one decision");
     void far;
     const share = hops / n, want = hopChance(ks);
     console.log(`  keeper ${ks}: hopped on ${pct(share)} of run-ups (asked ${pct(want)})`);
-    ok(Math.abs(share - want) < 0.04, `keeper ${ks} hops on about ${pct(want)} of kicks (${pct(share)})`);
-    ok(sideOk === sideN, `keeper ${ks}: every keeper who hopped and dived, dived the way he hopped (${sideOk}/${sideN})`);
+    ok(share === 0 && want === 0, `keeper ${ks} never hops (${pct(share)})`);
+    void sideOk; void sideN;
   }
-  ok(hopChance(40) < hopChance(62) && hopChance(62) < hopChance(85), `a better keeper hops a little more (${pct(hopChance(40))} < ${pct(hopChance(62))} < ${pct(hopChance(85))})`);
-  ok(hopChance(62) > 0.4 && hopChance(62) < 0.6, "…about half the time for a typical keeper");
   // Small: he ends the run-up no more than a hop from the middle.
   let maxOff = 0;
   for (let i = 0; i < 300; i++) {

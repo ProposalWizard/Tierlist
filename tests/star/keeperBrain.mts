@@ -143,7 +143,7 @@ console.log("\nA FREE KICK KEEPS ITS OWN RULES (kindRules/freeKick.ts): NO BRAIN
   ok(kept === 60, `…so its keeper stays at the rule set's far-post cheat while you aim (${kept} of 60)`);
 }
 
-console.log("\nA PENALTY RUN-UP HOP IS SMALL, AND HE DIVES THE WAY HE HOPPED");
+console.log("\nTHE KEEPER DOES NOT HOP IN A PENALTY RUN-UP (Harry, 27 Sep: the hop was the taker's, not the keeper's)");
 {
   let hopped = 0, small = 0, sameWay = 0, dived = 0;
   for (let s = 1; s <= 120; s++) {
@@ -163,9 +163,8 @@ console.log("\nA PENALTY RUN-UP HOP IS SMALL, AND HE DIVES THE WAY HE HOPPED");
     const st = B.brainStateOf(sc)!;
     if (st.diveAtT !== null) { dived++; if (st.dir === Math.sign(hop)) sameWay++; }
   }
-  ok(hopped > 60, `an 88 keeper hops during the run-up (${hopped} of 120)`);
-  ok(small === hopped, `…a small hop, never more than ${B.KEEPER_BRAIN.hopM} m (${small} of ${hopped})`);
-  ok(dived > 0 && sameWay === dived, `…and every dive after it goes the way he hopped (${sameWay} of ${dived})`);
+  ok(hopped === 0, `an 88 keeper never hops during the run-up (${hopped} of 120)`);
+  void small; void sameWay; void dived;
 }
 
 console.log("\nTHE SAME PICTURE, PLAYED AGAIN, IS NOT THE SAME KICK (final playtest: 11 of 11 dived one way, none hopped)");
@@ -195,7 +194,7 @@ console.log("\nTHE SAME PICTURE, PLAYED AGAIN, IS NOT THE SAME KICK (final playt
   ok(B.keeperSaltFor(false) === 0, "the real match's keeper keeps its seeded, replayable stream (salt 0)");
   ok(game.hops === 0 || game.hops === 200, `without the salt one picture is one kick, every time (dived low ${game.low} / high ${game.high}, hopped ${game.hops} of 200)`);
   ok(feature.low >= 60 && feature.high >= 60, `with it he dives both ways (low ${feature.low} / high ${feature.high} of 200)`);
-  ok(feature.hops >= 70 && feature.hops <= 130, `…and hops on about half of the run-ups (${feature.hops} of 200)`);
+  ok(feature.hops === 0, `…and never hops (${feature.hops} of 200)`);
 }
 
 console.log("\nA BETTER KEEPER CONCEDES FEWER (item 10) — 200 each");
