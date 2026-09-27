@@ -499,6 +499,19 @@ const MISS_OPP = [
   "Your keeper gets down well to smother their effort.",
 ];
 
+/**
+ * Read-only views for the Match Radar (/star-radar-dev), which draws this
+ * simulation minute by minute. Additive: nothing in the match reads these.
+ *
+ * CHANCE_LINES tells a near-miss line from a quiet-minute line in `tick`'s
+ * events (both carry `isOpponent`). `benchConversion` is the rate `advanceTo`
+ * uses for a chance that came to you while you weren't on the pitch.
+ */
+export const CHANCE_LINES: ReadonlySet<string> = new Set([...MISS_USER, ...MISS_OPP]);
+export function benchConversion(zone: Zone): number {
+  return zone === "box" ? CONVERT_BOX : CONVERT_DEEP;
+}
+
 export function newMatch(rng: () => number = Math.random): HiddenMatchState {
   return {
     minute: 0,

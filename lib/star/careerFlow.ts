@@ -82,11 +82,19 @@ export const INJURY_RISK_BASE = 0.015;
 export const INJURY_FATIGUE_FLOOR = getTuning("energy.injuryFloor");
 export const INJURY_RISK_FATIGUE_EXTRA = 0.085;
 
+/** The chance of picking up an injury in a match you finish on this much
+ *  energy — the one full-time roll creditMatchResult makes. Also read by the
+ *  Match Radar (/star-radar-dev) so its full-time injury check is this one. */
+export function injuryRiskFor(energyAtFullTime: number): number {
+  return INJURY_RISK_BASE
+    + Math.max(0, (INJURY_FATIGUE_FLOOR - energyAtFullTime) / INJURY_FATIGUE_FLOOR) * INJURY_RISK_FATIGUE_EXTRA;
+}
+
 /**
  * How long it keeps you out. Weighted toward a knock rather than a
  * lay-off — most injuries in a real season are the former.
  */
-function rollInjury(rng: () => number): { weeksRemaining: number; note: string } {
+export function rollInjury(rng: () => number): { weeksRemaining: number; note: string } {
   const r = rng();
   if (r < 0.6) {
     const weeks = 1 + Math.floor(rng() * 2); // 1-2
@@ -786,8 +794,7 @@ export function creditMatchResult(
   //    outcome on a replay regardless, but the energy it is weighed against
   //    must not have silently drifted from the double-drain above.
   const fatigueAtFullTime = stats.endEnergy ?? career.energy;
-  const injuryRisk = INJURY_RISK_BASE
-    + Math.max(0, (INJURY_FATIGUE_FLOOR - fatigueAtFullTime) / INJURY_FATIGUE_FLOOR) * INJURY_RISK_FATIGUE_EXTRA;
+  const injuryRisk = injuryRiskFor(fatigueAtFullTime);
   const injuryRng = mulberry32(career.season * 8191 + fixture.week * 97 + fixture.opponent.length * 3);
   const nextInjury = !alreadyPlayed && !career.injury && injuryRng() < injuryRisk
     ? rollInjury(injuryRng)

@@ -11,7 +11,7 @@ import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
 import { playerMarketValue } from "@/lib/star/marketValue";
 import { formatMoney } from "@/lib/star/money";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ClubBadge from "./ClubBadge";
 
@@ -662,13 +662,12 @@ export default function LeagueScreen({ career }: Props) {
                     {career.squadNumber ?? "★"}
                   </div>
                 ) : (
-                  // A real team-mate has a face. Nobody gets a stock photo of
-                  // somebody else — the one without an image gets the same
-                  // silhouette the Draft uses, not different placeholders
-                  // per screen.
+                  // A real team-mate has a face; one without a photo gets his
+                  // own fake face (the one the match draws), never a
+                  // silhouette — Harry, v0.15 item 37.
                   <ImageWithFallback
-                    src={p.imageUrl || SILHOUETTE_SRC}
-                    fallbackSrc={SILHOUETTE_SRC}
+                    src={faceOrFake(p.imageUrl, p.id)}
+                    fallbackSrc={faceOrFake(null, p.id)}
                     alt=""
                     className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
                   />

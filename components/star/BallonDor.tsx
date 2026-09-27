@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { computeBallonDorShortlist, type BallonDorEntry } from "@/lib/star/ballonDor";
 import { shortClub } from "@/lib/star/media/grammar";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ClubBadge from "@/components/star/ClubBadge";
 
@@ -66,13 +66,13 @@ function keyStat(e: BallonDorEntry): string {
   return `${e.goals}G ${e.assists}A`;
 }
 
-/** A real face when the database has one, the shared silhouette otherwise —
- *  never a fabricated player. */
-function Face({ image, size, ring }: { image?: string; size: number; ring: string }) {
+/** A real face when the database has one, otherwise that player's own fake
+ *  face — never a silhouette (Harry, v0.15 item 37). */
+function Face({ image, name, size, ring }: { image?: string; name: string; size: number; ring: string }) {
   return (
     <ImageWithFallback
-      src={image || SILHOUETTE_SRC}
-      fallbackSrc={SILHOUETTE_SRC}
+      src={faceOrFake(image, name)}
+      fallbackSrc={faceOrFake(null, name)}
       alt=""
       className={`shrink-0 rounded-full border bg-white/10 object-cover ${ring}`}
       style={{ width: size, height: size }}
@@ -331,7 +331,7 @@ export default function BallonDor({ career, onContinue }: Props) {
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/70">Winner</p>
             <div className="flex items-center gap-3">
-              <Face image={winner.image} size={36} ring="border-amber-400/40" />
+              <Face image={winner.image} name={winner.name} size={36} ring="border-amber-400/40" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black text-white">{winner.name}</p>
                 <div className="mt-0.5 flex items-center gap-1">
@@ -350,7 +350,7 @@ export default function BallonDor({ career, onContinue }: Props) {
             {entries.map(e => (
               <div key={e.rank} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 ${e.isPlayer ? "bg-amber-400/10" : ""}`}>
                 <span className={`w-5 shrink-0 text-center text-[11px] font-black ${e.rank <= 3 ? "text-amber-400" : "text-white/70"}`}>{e.rank}</span>
-                <Face image={e.image} size={22} ring="border-white/15" />
+                <Face image={e.image} name={e.name} size={22} ring="border-white/15" />
                 <span className={`min-w-0 flex-1 truncate text-[12px] font-bold ${e.isPlayer ? "text-amber-300" : "text-white"}`}>{e.name}</span>
                 <span className="shrink-0 text-[10px] text-white/70">{keyStat(e)}</span>
               </div>
@@ -425,7 +425,7 @@ function CountdownCard({ entry }: { entry: BallonDorEntry }) {
       style={{ animation: "bdSlideUp 0.45s ease-out" }}
     >
       <span className={`w-7 shrink-0 text-center text-sm font-black ${entry.rank <= 3 ? "text-amber-400" : "text-white/70"}`}>#{entry.rank}</span>
-      <Face image={entry.image} size={34} ring={entry.isPlayer ? "border-amber-400/50" : "border-white/15"} />
+      <Face image={entry.image} name={entry.name} size={34} ring={entry.isPlayer ? "border-amber-400/50" : "border-white/15"} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <p className={`truncate text-sm font-black ${entry.isPlayer ? "text-amber-300" : "text-white"}`}>{entry.name}</p>
@@ -480,7 +480,7 @@ function WinnerCard({ entry }: { entry: BallonDorEntry }) {
         entry.isPlayer ? "border-amber-400 bg-amber-400/[0.12]" : "border-amber-500/60 bg-amber-500/[0.08]"}`}
       style={{ animation: "bdDropIn 0.7s ease-out", boxShadow: "0 0 50px rgba(251,191,36,0.3)" }}
     >
-      <Face image={entry.image} size={84} ring={entry.isPlayer ? "border-amber-300" : "border-amber-400/60"} />
+      <Face image={entry.image} name={entry.name} size={84} ring={entry.isPlayer ? "border-amber-300" : "border-amber-400/60"} />
       <div className="mx-auto mt-3 w-fit">
         <span className="text-3xl">🏅</span>
       </div>
@@ -514,7 +514,7 @@ function RunnerUpCard({ entry }: { entry: BallonDorEntry }) {
       style={{ animation: "bdSlideUp 0.5s ease-out" }}
     >
       <span className="shrink-0 text-lg">🥈</span>
-      <Face image={entry.image} size={38} ring="border-white/25" />
+      <Face image={entry.image} name={entry.name} size={38} ring="border-white/25" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-black text-white">
           {entry.name}{entry.isPlayer ? " (You)" : ""} <span className="font-bold text-white/70">has come second</span>

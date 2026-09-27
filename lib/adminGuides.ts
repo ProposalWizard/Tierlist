@@ -466,6 +466,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["Infinite Highlights →", "Opens Infinite Highlights."],
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
+          ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Weather: Real / Clear", "Real (the default) is the game's own weather — windy or wet in about 4 matches in 10, named above the pitch when it happens. Clear is still air on a perfect pitch."],
@@ -504,6 +505,31 @@ export const ADMIN_GUIDES = {
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
     dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts",
+  },
+
+  "/star-radar-dev": {
+    title: "Match Radar",
+    what: "Watch the match that runs behind your highlights — all ninety minutes, minute by minute: who has the ball, where it is, the momentum, and the moments that would be yours. It is the real unseen match, not a copy.",
+    buttons: [
+      {
+        items: [
+          ["▶ / ❚❚", "Starts and pauses the clock. At full time it becomes ↻ and plays the same match again."],
+          ["1× 2× 5× 10× 20×", "Match minutes per second. 20× plays a whole match in about 4½ seconds."],
+          ["↻ (right of the speeds)", "A new match — a different roll of the same fixture."],
+          ["The pitch", "Your goal on the left, theirs on the right. The dot is the ball, ringed in the colour of whoever has it; the arrow is the way they're attacking; the lit box is the area of the pitch it's in."],
+          ["⭐", "A chance the match would hand to YOU — in a career, the highlight you play."],
+          ["⚽ You score / ✕ You miss / Bench odds", "Only with \"Stop and ask me\" on: decides how your highlight went. Bench odds is the rate the game uses when you're not on the pitch."],
+          ["Momentum strip", "A bar a minute: up is you on top, down is them. ⚽ marks goals, ⭐ your highlights, 🚑 an injury."],
+          ["🚑 Injury", "The unseen match doesn't injure anyone minute by minute. A career checks once, at full time, from the energy you finish on — the radar does the same check and shows it at 90' and on the full-time card."],
+          ["Change", "Opens the settings: both clubs and how strong they are, home or away, your position, your energy at kick-off (for the injury check), and whether your highlights stop the clock."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. Changing a setting starts the match again; leaving the page forgets it."],
+    inGame: [
+      "Nowhere — it's a window onto the match the career already runs. Every minute is the real match's own function; your highlights are the moments a career would stop and let you play.",
+    ],
+    dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts)",
   },
 
   "/star-scenario-dev": {

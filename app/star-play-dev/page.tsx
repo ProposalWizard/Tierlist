@@ -132,6 +132,14 @@ export default function PlayAreaPage() {
           </div>
         </button>
 
+        <Link href="/star-radar-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>Match Radar &#8594;</div>
+          <div style={tileSub}>
+            Watch the match that runs behind your highlights — all ninety minutes,
+            up to 20× speed, with every moment that would have been yours.
+          </div>
+        </Link>
+
         {/* ── THE DIALS ── */}
         <section style={{ ...tile, cursor: "default" }}>
           <div style={tileTitle}>Tuning</div>
