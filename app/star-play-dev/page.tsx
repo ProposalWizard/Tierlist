@@ -154,6 +154,14 @@ export default function PlayAreaPage() {
           </div>
         </Link>
 
+        <Link href="/star-store-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>Store (test) &#8594;</div>
+          <div style={tileSub}>
+            Daily specials, run-ups, accessories, boosts and Coins — a test store with
+            its own wallet. Nothing reaches a career and no real money is taken.
+          </div>
+        </Link>
+
         {/* ── THE DIALS ── */}
         <section style={{ ...tile, cursor: "default" }}>
           <div style={tileTitle}>Tuning</div>
