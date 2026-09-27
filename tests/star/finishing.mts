@@ -266,7 +266,11 @@ for (const kind of KINDS) {
   // its own old 8-32% band just reflected how toothless the old
   // always-a-touch-first cross genuinely was.
   const bounds: [ScenarioKind, number, number][] = [
-    ["cutback", 0.22, 0.48],
+    // v0.15 A2 (items 14 and 15: a defender blocks only with his body, and a
+    // team-mate with a man in front curls it round him): measured 44.9% →
+    // 52.1% on these seeds — the prototype measured cutback finishes 39% →
+    // 52%. Band widened to take it.
+    ["cutback", 0.22, 0.56],
     ["byline_cross", 0.28, 0.62],
     ["through_ball", 0.22, 0.48],
     ["corner", 0.28, 0.58],
@@ -472,7 +476,11 @@ for (const kind of KINDS) {
     const elite = sampleWithWall(kind, 400, 92);
     const noIdRate = noId.blocked / Math.max(1, noId.total);
     const eliteRate = elite.blocked / Math.max(1, elite.total);
-    check(eliteRate < noIdRate - 0.03,
+    // v0.15 A2 re-pin: with the 0.7 m body block (item 14) a planted man
+    // blocks everybody less, so the gap narrowed — one_on_one measured 6.7%
+    // vs 11.1% before, 7.3% vs 9.1% now (cutback 20.4 vs 28.3 → 12.8 vs 26.0).
+    // The finisher still gets it past him more often; the margin is 1 point.
+    check(eliteRate < noIdRate - 0.01,
       `${kind}: a real finisher genuinely gets the ball PAST a defender planted directly in his path more often (blocked ${pct(elite.blocked, elite.total)} vs no-identity ${pct(noId.blocked, noId.total)})`);
   }
 }

@@ -1,5 +1,6 @@
 import { SCENARIO_KINDS, type ScenarioKind } from "../../lib/star/canvasEngine";
 import { mulberry32 } from "../../lib/star/season";
+import { simIsMadeHere } from "../../lib/star/chanceMaker";
 import {
   nextSim, newSimMemory, buildSimScenario, simFaults, pictureKey,
   zonesForKind, lanesForKind, formulaCoversKind,
@@ -113,7 +114,11 @@ for (const kind of SCENARIO_KINDS as readonly ScenarioKind[]) {
   const mem = newSimMemory();
   let planned = 0;
   for (let i = 0; i < 40; i++) if (nextSim(kind, rng, mem).planId) planned++;
-  check(`${kind}: ${planned}/40 presses used a real chance plan`, planned >= 36);
+  // v0.15 A2 (Harry picked "your drawings": one drawing, nothing laid under
+  // it): a kind with 5+ drawings is made by the chance maker from a drawing
+  // and never gets a formula plan; the formula still makes every other kind.
+  if (simIsMadeHere(kind)) check(`${kind}: ${planned}/40 presses used a plan — a drawn kind is served from its drawings, with nothing under them`, planned === 0);
+  else check(`${kind}: ${planned}/40 presses used a real chance plan`, planned >= 36);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);

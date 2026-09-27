@@ -20,6 +20,8 @@
  */
 
 import { goalInView, type Scenario, type Vec2, type Viewport } from "./canvasEngine";
+import { penaltyFrame } from "./kindRules/penalty";
+import { enforceHardRules } from "./kindRules";
 import type { FigureLook } from "./fiveASide/render";
 import { CX, PITCH_W } from "./pitch";
 import type {
@@ -196,7 +198,10 @@ export function applyOverride(frame: Frame, ov: PosOverride | undefined): Frame 
   }
   const ball = ov!.ball ? { ...ov!.ball } : frame.ball;
   const out: Frame = ov!.camera ? { ...frame, items, ball, camera: { ...ov!.camera } } : { ...frame, items, ball };
-  return ov!.facing ? { ...out, facing: ov!.facing } : out;
+  // A penalty's hard rules have the last word over any edit or saved drawing:
+  // keeper centred on his line, ball on the spot, everyone else on the edge
+  // of the box, the one camera (lib/star/kindRules/penalty.ts).
+  return penaltyFrame(ov!.facing ? { ...out, facing: ov!.facing } : out);
 }
 
 /**
@@ -283,6 +288,9 @@ export function applyOverrideToScenario(sc: Scenario, ov: PosOverride | undefine
       });
     }
   }
+  // The kind's hard rules, last — the same last word `applyOverride` gives
+  // the picture, so Play and the fault rings see what the picture shows.
+  enforceHardRules(sc);
 }
 
 /**

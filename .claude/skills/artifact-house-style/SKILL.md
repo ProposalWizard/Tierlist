@@ -148,6 +148,37 @@ copying the newest one and condensing the version it replaces.
 `references/patch-notes-v0.1.html`. It shows the next build exactly where the
 history goes.
 
+## Stack, don't squeeze
+
+Asked for directly (Harry, 27 Sep 2026), about a plan page whose five-step
+flow and "You said / Why / Plan" rows were laid out side by side: *"I don't
+like the way that you're formatting this. The way the text is so squeezed, it
+doesn't look good. Just put stuff clearly, one above each other, and let you
+read the full thing."*
+
+- **One column of text, full width.** Every paragraph gets the whole width of
+  the page, on a phone and on a laptop.
+- **Labels go above their text, never beside it.** "You said", "Why", "Plan"
+  are small headings on their own line, with the paragraph underneath. No
+  label column squeezing the text into the right-hand two thirds.
+- **A sequence is a vertical list**, one step per row, top to bottom. Never a
+  row of boxes with arrows between them.
+- **No grids of text cards.** Cards side by side are for pictures (a
+  before/after pair) or big numbers, never for sentences.
+- **Tables only for numbers**, three columns at most. Anything with a sentence
+  in it is stacked instead.
+- Check it on a laptop width too: if any sentence wraps after a few words
+  because its box is narrow, it's squeezed. Stack it.
+
+## Naming the match files
+
+Harry, 27 Sep 2026: *"let's also just stop calling the match file 'mikey's
+area' and start calling it sensitive."* On any page: `components/star/CanvasMatch.tsx`
+is **the match file (sensitive)** and `lib/star/canvasEngine.ts` is **the core
+engine file (sensitive)**. Never "Mikey's area" or "Mikey's lane". Where a
+change needs Mikey's go-ahead, say that as a fact on the item ("Mikey said
+yes"), not as a file's name.
+
 ## Mechanics
 
 - Author as `.html`, phone-first, 16px side gutter, no horizontal scroll.

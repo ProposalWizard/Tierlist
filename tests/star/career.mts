@@ -58,7 +58,13 @@ function playWholeSeason(start: CareerState): CareerState {
   while (guard++ < 200) {
     const next = c.fixtures.find(f => !f.played);
     if (!next) break;
-    c = creditMatchResult(c, next, stats(guard % 3 === 0 ? 1 : 0, 0)).career;
+    // Win every other game (was every third). v0.15 item 35 plays the rest of
+    // the division on its own random stream, which reshuffled this toy
+    // ten-club table: on every third the club now finishes 6th instead of 4th,
+    // misses Europe, and — because this made-up division drops the club from
+    // the real ladder at the rollover (a known quirk of the toy club list,
+    // unchanged here) — the new season had no fixtures to point at.
+    c = creditMatchResult(c, next, stats(guard % 2 === 0 ? 1 : 0, 0)).career;
   }
   check(guard < 200, "a season terminates");
   return c;

@@ -147,7 +147,16 @@ export function playLeagueWeek(
   /** Phase 4 of STAR_POWER_POLITICS.md — absent means the classic rules,
    *  byte-identical to every call site that predates this parameter. */
   rules: RuleBook = DEFAULT_RULE_BOOK,
+  /**
+   * The other games' own random stream (v0.15 plan item 35 — see
+   * liveScores.ts). Given, every game but yours is played off it and nothing
+   * else, so the week's other results do not depend on your result and can
+   * be played — and shown — before yours kicks off. Absent: everything runs
+   * off `rng`, exactly as before.
+   */
+  othersRng?: () => number,
 ): { league: LeagueTeam[]; results: LeagueResult[] } {
+  const orng = othersRng ?? rng;
   const clubs = league.map(t => t.name);
   const strength = new Map(league.map(t => [t.name, t.strength]));
   const squadOf = new Map((squads ?? []).map(s => [s.club, s]));
@@ -183,11 +192,11 @@ export function playLeagueWeek(
   const play = (home: string, away: string) => {
     const hs = strength.get(home) ?? 65;
     const as = strength.get(away) ?? 65;
-    const sc = simulateFixtureScore(hs, as, rng);
+    const sc = simulateFixtureScore(hs, as, orng);
     // Every goal in the division belongs to somebody. This is what turns the
     // Golden Boot from a formula run over team strength into a count.
-    const hg = nameGoals(squadOf.get(home), sc.home, rng);
-    const ag = nameGoals(squadOf.get(away), sc.away, rng);
+    const hg = nameGoals(squadOf.get(home), sc.home, orng);
+    const ag = nameGoals(squadOf.get(away), sc.away, orng);
     results.push({
       week, home, away, hs: sc.home, as: sc.away,
       ...(hg.length ? { hg } : {}), ...(ag.length ? { ag } : {}),
@@ -197,7 +206,7 @@ export function playLeagueWeek(
     if (!H || !A) return;
     H.goalsFor += sc.home; H.goalsAgainst += sc.away;
     A.goalsFor += sc.away; A.goalsAgainst += sc.home;
-    const outcome = applyResult(rules, H, A, sc.home, sc.away, hs, as, rng);
+    const outcome = applyResult(rules, H, A, sc.home, sc.away, hs, as, orng);
     H.played = outcome.home.played; H.won = outcome.home.won; H.drawn = outcome.home.drawn; H.lost = outcome.home.lost; H.points = outcome.home.points;
     A.played = outcome.away.played; A.won = outcome.away.won; A.drawn = outcome.away.drawn; A.lost = outcome.away.lost; A.points = outcome.away.points;
     used.add(home); used.add(away);

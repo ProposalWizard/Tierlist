@@ -5,7 +5,7 @@ import { trophyWinners, type AwardWinner } from "@/lib/star/seasonAwards";
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
 import { formationOf } from "@/lib/star/formations";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 
 /**
@@ -30,13 +30,13 @@ interface Props {
   onContinue: () => void;
 }
 
-/** A real face when the database has one, the shared silhouette otherwise —
- *  never a fabricated player. */
-function Face({ image, size }: { image?: string; size: number }) {
+/** A real face when the database has one, otherwise that player's own fake
+ *  face — never a silhouette (Harry, v0.15 item 37). */
+function Face({ image, name, size }: { image?: string; name: string; size: number }) {
   return (
     <ImageWithFallback
-      src={image || SILHOUETTE_SRC}
-      fallbackSrc={SILHOUETTE_SRC}
+      src={faceOrFake(image, name)}
+      fallbackSrc={faceOrFake(null, name)}
       alt=""
       className="shrink-0 rounded-full border border-white/20 bg-white/10 object-cover"
       style={{ width: size, height: size }}
@@ -103,7 +103,7 @@ function AwardCard({ id, winner }: { id: keyof typeof AWARD_META; winner: AwardW
       </div>
       {winner ? (
         <div className="mt-1.5 flex items-center gap-2">
-          <Face image={winner.image} size={34} />
+          <Face image={winner.image} name={winner.name} size={34} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-black text-white">
               {winner.name}{winner.isYou ? " (You)" : ""}
@@ -158,8 +158,8 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
           >
             <div className="relative">
               <ImageWithFallback
-                src={m.image || SILHOUETTE_SRC}
-                fallbackSrc={SILHOUETTE_SRC}
+                src={faceOrFake(m.image, m.name)}
+                fallbackSrc={faceOrFake(null, m.name)}
                 alt=""
                 className={`h-9 w-9 rounded-full border-2 bg-black/40 object-cover shadow-md ${
                   m.isYou ? "border-amber-300" : "border-white/80"}`}

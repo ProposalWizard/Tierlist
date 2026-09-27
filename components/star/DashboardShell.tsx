@@ -26,11 +26,17 @@ interface Props {
    * leave by instead.
    */
   fullBleed?: boolean;
+  /**
+   * The swipe home screens (Settings → Home screens) carry their own rating,
+   * cash, energy and next match, so the strips that normally repeat them
+   * above and below are left off. Header and bottom nav stay.
+   */
+  compact?: boolean;
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play";
 
-export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false }: Props) {
+export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -74,6 +80,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
             </div>
 
             {/* Star + Energy bars */}
+            {!compact && (<>
             <div className="grid grid-cols-2 gap-2 px-3 pt-2">
               <div className="flex items-center gap-2 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-lg px-2 py-1.5 shadow border border-yellow-400">
                 <StarIcon />
@@ -100,6 +107,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
                 {formatMoney(career.money)}
               </div>
             </div>
+            </>)}
           </>
         )}
 
@@ -123,7 +131,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
         </div>
 
         {/* Next match banner */}
-        {!fullBleed && nextMatchLabel && (
+        {!fullBleed && !compact && nextMatchLabel && (
           <div className="mx-3 mb-1 bg-gradient-to-r from-gray-700 to-gray-600 border border-gray-500 rounded-lg px-3 py-1.5 flex items-center justify-between">
             {/* The date, not just the week. This banner is the most-looked-at
                 strip in the game and it read "Week 25", which is a row number.

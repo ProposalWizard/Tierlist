@@ -42,14 +42,26 @@ interface Props {
    *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
    *  a real match leaves it off, having already taught this once. */
   tutorial?: boolean;
+  /**
+   * The penalty run-up's countdown (lib/star/penaltyRunup.ts): seconds to tap
+   * before the kick happens without you. A ring round the ball and a bar
+   * under the heading drain over exactly this long. Absent — every screen
+   * but a run-up penalty — there is no time limit, exactly as before.
+   */
+  timeLimitS?: number;
+  /** Called once if the countdown runs out before a tap (the kick is scuffed). */
+  onTimeout?: () => void;
   /** How the ball moves on this screen; still when not given. */
   motion?: BallMotion;
   /** Your technique, 0-100. Higher = the ball moves slower. */
   technique?: number;
 }
 
+/** How long "TOO SLOW" shows before the scuffed kick is taken. */
+const TOO_SLOW_MS = 350;
+
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, motion = "still", technique = 50 }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50 }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -71,7 +83,42 @@ export default function ContactBall({ power, onContact, tutorial, motion = "stil
     return () => cancelAnimationFrame(raf);
   }, [motion, period]);
   const [spark, setSpark] = useState<{ left: number; top: number } | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const locked = useRef(false);
+  const onTimeoutRef = useRef(onTimeout);
+  onTimeoutRef.current = onTimeout;
+
+  const timed = !!timeLimitS && timeLimitS > 0;
+
+  // The clock starts on the second frame after this screen appears — i.e.
+  // once it has actually been drawn — not the instant it mounts. A slow
+  // frame here (a recording caught a 0.27 s one) would otherwise come out of
+  // your second, with the ring already part-drained the first time you see it.
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    if (!timed) return;
+    let r2 = 0;
+    const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setStarted(true)); });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+  }, [timed]);
+
+  // The deadline. A tap locks the screen (below) and a locked screen never
+  // times out.
+  useEffect(() => {
+    if (!started || !timeLimitS || !(timeLimitS > 0)) return;
+    let fire = 0;
+    const id = window.setTimeout(() => {
+      if (locked.current) return;
+      locked.current = true;
+      setTimedOut(true);
+      fire = window.setTimeout(() => onTimeoutRef.current?.(), TOO_SLOW_MS);
+    }, timeLimitS * 1000);
+    return () => { window.clearTimeout(id); window.clearTimeout(fire); };
+  }, [started, timeLimitS]);
+
+  // The ring and bar sit full until the clock starts, and stop where they
+  // are the moment you tap (or run out).
+  const countdownState = started && !spark && !timedOut ? "running" : "paused";
 
   const handleTap = (e: React.PointerEvent) => {
     if (locked.current || !ballRef.current) return;
@@ -108,6 +155,12 @@ export default function ContactBall({ power, onContact, tutorial, motion = "stil
         touchAction: "none",
       }}
     >
+      {timed && (
+        <style>{`
+          @keyframes kibCountRing { from { stroke-dashoffset: 0; stroke: #fde047; } 60% { stroke: #fb923c; } to { stroke-dashoffset: 100; stroke: #ef4444; } }
+          @keyframes kibCountBar { from { transform: scaleX(1); background: #fde047; } 60% { background: #fb923c; } to { transform: scaleX(0); background: #ef4444; } }
+        `}</style>
+      )}
       {/* Grass strip */}
       <div
         className="absolute bottom-0 left-0 right-0"
@@ -153,7 +206,30 @@ export default function ContactBall({ power, onContact, tutorial, motion = "stil
             {badge("↓", "Top = low drive")}
           </div>
         )}
+
+        {/* The run-up's countdown, as a bar that drains — see `timeLimitS`. */}
+        {timed && (
+          <div className="mx-auto mt-2 h-2 w-3/5 overflow-hidden rounded-full bg-black/40 border border-white/15">
+            <div
+              className="h-full w-full rounded-full"
+              style={{
+                transformOrigin: "left center",
+                animation: `kibCountBar ${timeLimitS}s linear forwards`,
+                animationPlayState: countdownState,
+              }}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Ran out: the kick happens without you, and it is a scuff. */}
+      {timedOut && (
+        <div className="absolute inset-x-0 top-[34%] z-50 flex justify-center pointer-events-none">
+          <div className="kib-pop rounded-xl bg-black/70 px-4 py-2 text-3xl font-black italic tracking-wider text-red-300 drop-shadow-[0_3px_10px_rgba(0,0,0,0.9)]">
+            TOO SLOW!
+          </div>
+        </div>
+      )}
 
       {/* A second tip, in the real gap this layout already leaves between
           the badges above and the ball below — not overlapping the ball's
@@ -222,6 +298,28 @@ export default function ContactBall({ power, onContact, tutorial, motion = "stil
             draggable={false}
             className="w-full h-full object-cover rounded-full select-none pointer-events-none drop-shadow-[0_10px_14px_rgba(0,0,0,0.55)]"
           />
+
+          {/* The countdown again, as a ring round the ball itself — where
+              your eyes (and thumb) already are. Drains clockwise from the top. */}
+          {timed && (
+            <svg
+              className="absolute pointer-events-none"
+              style={{ left: "-7%", top: "-7%", width: "114%", height: "114%" }}
+              viewBox="0 0 100 100"
+              aria-hidden="true"
+            >
+              <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="4" />
+              <circle
+                cx="50" cy="50" r="47" fill="none" strokeWidth="4.5" strokeLinecap="round"
+                pathLength={100} strokeDasharray="100"
+                style={{
+                  transform: "rotate(-90deg)", transformOrigin: "50% 50%",
+                  animation: `kibCountRing ${timeLimitS}s linear forwards`,
+                  animationPlayState: countdownState,
+                }}
+              />
+            </svg>
+          )}
 
           {spark && (
             <div

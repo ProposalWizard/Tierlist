@@ -26,6 +26,7 @@
 import { buildScenario, type Scenario, type ScenarioKind, type Vec2 } from "./canvasEngine";
 import { mulberry32 } from "./season";
 import { fixBaseScenario } from "./baseScenario";
+import { enforceHardRules } from "./kindRules";
 import { frameFromScenario, type Frame, type Item } from "./scenarioFrame";
 import { applyOverride, frameToMatchScenario, type PosOverride, type SaveTarget } from "./scenarioEdit";
 import type { MatchScenario } from "./scenarios";
@@ -44,6 +45,8 @@ const groupOf = (it: Item): Group =>
 export function baseFor(kind: ScenarioKind, seed: number): Scenario {
   const sc = buildScenario(kind, mulberry32(seed));
   fixBaseScenario(sc);
+  // The gallery's rebuild ends with the kind's hard rules (a penalty's).
+  enforceHardRules(sc);
   return sc;
 }
 

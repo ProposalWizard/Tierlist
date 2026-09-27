@@ -322,7 +322,8 @@ export const ADMIN_GUIDES = {
       {
         group: "A card",
         items: [
-          ["The picture", "Drawn exactly as Play will show it: same size, same club kits (the real ones Play plays in), and corners and byline crosses turned sideways, goal on the right or left, the way the real game films them. Bigger on a laptop (up to 520 wide), full width on a phone."],
+          ["The picture", "Drawn exactly as Play will show it: same size, same club kits (the real ones Play plays in), the goal standing on the goal line as in the match, and corners and byline crosses turned sideways, goal on the right or left, the way the real game films them. Bigger on a laptop (up to 520 wide), full width on a phone."],
+          ["A penalty card", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed (the camera button reads \"Camera: fixed for penalties\") — none of them drag. Anyone else only slides along the edge of the box, never into it or the D. A new penalty picture stands a few of them a step back or shoulder to shoulder, so no two look the same."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for the next card. On a sideways corner the player follows your finger just the same."],
           ["‹ ›  and the dots", "Previous / next version (arrow keys work too)."],
           ["+ Mate", "Adds a team-mate who makes a real supporting run."],
@@ -415,17 +416,21 @@ export const ADMIN_GUIDES = {
         items: [
           ["‹", "Back to the Scenario Gallery."],
           ["N/13", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
+          ["▦ 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
+          ["⚽ Play a penalty shootout", "On the chance-types screen. A whole shootout on the real match, with the Play Area's test sides: every kick live — team-mates at their keeper, their takers at yours (from the same end), yours to take when your turn comes. Nothing is saved; \"Another shootout\" starts again."],
           ["⚑ N", "Your flagged list. Tap one to jump back to it; Clear empties the list."],
         ],
       },
       {
         group: "The picture",
         items: [
-          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, and corners and byline crosses turned sideways like the real game."],
+          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game."],
+          ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
           ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included, at the picture's size — a drag still hits exactly as hard as in a career. Real squads and faces, the real weather, and the Play Area's dials."],
+          ["Run-up", "A penalty or a direct free kick: you let go of your aim, your player jogs to the ball, then the strike screen gives you 1 second. On a penalty you can drag sideways during the jog to swing your aim, and the keeper may hop."],
           ["PNG", "Downloads the picture (without the fault rings)."],
           ["Delete", "Only for a saved chance: deletes it from the shared list AND the code."],
           ["Tune", "Only after a drag: records what was wrong as a correction. Not a save."],
@@ -450,11 +455,11 @@ export const ADMIN_GUIDES = {
       "Delete also removes a saved chance from the code. Commit and Delete both need an admin sign-in and GITHUB_TOKEN in Vercel.",
     ],
     inGame: [
-      "The chances are generated exactly as in a real /star-dev match, so what you see here is what players get.",
+      "The chances are made by the same function as in a real /star-dev match (lib/star/chanceMaker.ts): one of your drawings, nudged, mirrored half the time, the drawing's own players and nobody else, never one of the last five pictures of its type. The Play Area's Chances dial can switch this page (and the gallery's Sim) to the generator; a career always plays the drawings.",
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
     needs: [SCENARIO_TABLE_NEEDED],
-    dev: "app/star-highlights-dev/page.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit}.ts · /api/star/scenarios, /api/star/scenarios/commit",
+    dev: "app/star-highlights-dev/page.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit}.ts · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
   "/star-play-dev": {
@@ -466,12 +471,17 @@ export const ADMIN_GUIDES = {
         items: [
           ["Infinite Highlights →", "Opens Infinite Highlights."],
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
+          ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
+          ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
           ["Weather: Real / Clear", "Real (the default) is the game's own weather — windy or wet in about 4 matches in 10, named above the pitch when it happens. Clear is still air on a perfect pitch."],
+          ["Chances: Drawings / Generator", "Drawings (the default, and the game): each chance is one of your drawings, nudged and mirrored. Generator: every player is built from the spread of all the drawings of that type, so no drawing is ever replayed. Reaches Infinite Match, Infinite Highlights and the gallery's Sim — never a career."],
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
-          ["Back to the defaults", "Resets every dial."],
+          ["Pressure: Real (by division) / Off / Light / Premier League", "How hard the nearest opponent closes you down while you pull the ball back (he tackles you, or fouls you about 1 time in 3: a free kick, or a penalty inside the box). Real follows the Division above: Premier League full (a through ball is lost after about 2.6 s), Championship light, lower none. Test screens only — a career match always uses its own division."],
+          ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
+          ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
           ["Scenario Gallery →", "Opens the gallery."],
         ],
       },
@@ -481,7 +491,7 @@ export const ADMIN_GUIDES = {
           ["‹ Back", "Back to the Play Area."],
           ["What it served", "Live count of each chance type the match has given you, with shares and a per-90."],
           ["This chance: …", "The bar pinned to the top of the screen for the whole match: which chance you are on and the minute."],
-          ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove."],
+          ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove. On a penalty only the other players move, along the edge of the box."],
           ["Save", "Saves the chance exactly as it stands into that chance type in the gallery, for the whole team. No editing needed."],
           ["Commit", "Saves it AND commits it into the game's code, as it stands."],
           ["Save as a scenario / Commit to the game", "The same two, inside the editor — they save your edited version."],
@@ -491,6 +501,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "The dials save the moment you change them, on this device only. There's no Save button.",
+      "The Compare old and new switches and the keeper dial save the same way, instantly, on this device only, and stay until you set them back (\"Back to the defaults\" resets them too).",
       "Save as a scenario: " + SCENARIO_SAVE_SHARED,
     ],
     commit: [
@@ -498,12 +509,37 @@ export const ADMIN_GUIDES = {
       ...COMMIT_HOW.slice(1),
     ],
     inGame: [
-      "The dials only affect the test screens (Infinite Highlights, Infinite Match, the gallery's Play) — never a real career.",
+      "The dials, the Compare old and new switches and the keeper dial only affect the test screens (Infinite Highlights, Infinite Match, the gallery and its Play) — never a real career, its trial or its shootouts, which always play the new penalty rules, the new shot power and the Middle keeper.",
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts",
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure}.ts",
+  },
+
+  "/star-radar-dev": {
+    title: "Match Radar",
+    what: "Watch the match that runs behind your highlights — all ninety minutes, minute by minute: who has the ball, where it is, the momentum, and the moments that would be yours. It is the real unseen match, not a copy.",
+    buttons: [
+      {
+        items: [
+          ["▶ / ❚❚", "Starts and pauses the clock. At full time it becomes ↻ and plays the same match again."],
+          ["1× 2× 5× 10× 20×", "Match minutes per second. 20× plays a whole match in about 4½ seconds."],
+          ["↻ (right of the speeds)", "A new match — a different roll of the same fixture."],
+          ["The pitch", "Your goal on the left, theirs on the right. The dot is the ball, ringed in the colour of whoever has it; the arrow is the way they're attacking; the lit box is the area of the pitch it's in."],
+          ["⭐", "A chance the match would hand to YOU — in a career, the highlight you play."],
+          ["⚽ You score / ✕ You miss / Bench odds", "Only with \"Stop and ask me\" on: decides how your highlight went. Bench odds is the rate the game uses when you're not on the pitch."],
+          ["Momentum strip", "A bar a minute: up is you on top, down is them. ⚽ marks goals, ⭐ your highlights, 🚑 an injury."],
+          ["🚑 Injury", "The unseen match doesn't injure anyone minute by minute. A career checks once, at full time, from the energy you finish on — the radar does the same check and shows it at 90' and on the full-time card."],
+          ["Change", "Opens the settings: both clubs and how strong they are, home or away, your position, your energy at kick-off (for the injury check), and whether your highlights stop the clock."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. Changing a setting starts the match again; leaving the page forgets it."],
+    inGame: [
+      "Nowhere — it's a window onto the match the career already runs. Every minute is the real match's own function; your highlights are the moments a career would stop and let you play.",
+    ],
+    dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts)",
   },
 
   "/star-scenario-dev": {

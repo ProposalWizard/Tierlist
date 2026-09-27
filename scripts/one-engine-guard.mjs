@@ -118,6 +118,7 @@ export const CAREER_ONLY = {
 /** Dials a test screen passes that the real match never does. */
 export const TEST_ONLY = {
   forceKeeperStrength: "Play Area: Keeper → Set.",
+  chanceMaker: "Play Area: Chances → Generator. A career always plays the drawings (Harry, v0.15: the generator 'stays behind a Play Area switch only').",
   fatigueResetEvery: "Fresh legs every 90 in a thousands-of-minutes match.",
   neverHooked: "A test match never substitutes you off.",
   openOn: "Play this exact picture (gallery / highlights).",

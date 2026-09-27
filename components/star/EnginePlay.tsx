@@ -39,6 +39,7 @@ import {
 } from "@/lib/star/engineProfile";
 import type { FrameKits } from "@/lib/star/scenarioFrame";
 import { loadPlaySettings, sanitizePlaySettings, type PlaySettings } from "@/lib/star/playArea";
+import { pressureFromDial } from "@/lib/star/pressure";
 import type { CareerState, MatchStats } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
@@ -50,7 +51,7 @@ import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
  */
 const REAL_SQUADS = new Map<string, Promise<Pick<CareerState, "squad" | "leagueSquads" | "league">>>();
 
-function realSquadsFor(career: CareerState, key: string) {
+export function realSquadsFor(career: CareerState, key: string) {
   let p = REAL_SQUADS.get(key);
   if (!p) {
     p = withRealSquads(career).then((c) => ({ squad: c.squad, leagueSquads: c.leagueSquads, league: c.league }));
@@ -259,6 +260,7 @@ export default function EnginePlay({
         oppStrength={s.oppStrength}
         keeperStrength={s.keeperStrength}
         forceKeeperStrength={!s.realKeeper}
+        chanceMaker={s.chanceMaker}
         conditions={conditions}
         fatigueResetEvery={FATIGUE_RESET_MINUTES}
         neverHooked
@@ -268,6 +270,7 @@ export default function EnginePlay({
         onChanceResolved={onChanceResolved}
         onComplete={onComplete}
         dragReferenceHeightPx={dragReferenceHeightPx}
+        pressure={pressureFromDial(s.pressure, s.division)}
       />
     </div>
   );

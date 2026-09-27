@@ -56,6 +56,10 @@ export interface GoalReplay {
   /** The chance kind's strike-time rule decision (lib/star/kindRules) — e.g.
    *  who won the first contact at a corner — so the replay plays the same. */
   kindStrike?: { kind: string; data: Record<string, number | string | boolean | null> };
+  /** The keeper brain as he stood at the strike, and his strike stream's seed
+   *  (lib/star/keeperBrain.ts), so the replay throws the same dive. Absent on
+   *  a goal saved before the brain, which replays exactly as it always did. */
+  keeperBrain?: import("./keeperBrain").KeeperBrainSnapshot;
 }
 
 export interface StarPlayer {
@@ -500,6 +504,23 @@ export interface MatchStats {
    *  — `home`/`away` mirror the match's own home/away sides, same as
    *  `homeScore`/`awayScore`. Absent when the tie never needed one. */
   shootout?: { home: number; away: number };
+  /** Your "cheeky" kicks that didn't go in — a penalty down the middle, or a
+   *  chip — see lib/star/penaltyRunup.ts. Each costs a little reputation
+   *  (reputation.ts, `cheekyMiss`). Absent when there were none. */
+  cheekyMisses?: { kind: "penalty-middle" | "chip"; minute: number }[];
+  /** Item 24 (v0.15): the rating before a cameo is pulled toward 6.5 — what
+   *  the shirt is judged on. Equal to `rating` for a full ninety. */
+  rawRating?: number;
+  /** Item 24: you came on as a substitute this match, at this minute. */
+  cameo?: boolean;
+  enteredAt?: number;
+  /** Item 26: every chance that came to you — the minute, what kind of
+   *  chance it was (a ScenarioKind, or "dribble") and how it went (a
+   *  ChanceOutcome, lib/star/chanceLog.ts). Tapping the post-match rating
+   *  opens this list. Absent on a match played before it existed. */
+  chanceLog?: { minute: number; kind: string; outcome: string }[];
+  /** Item 36: the match was simmed, not played. */
+  simmed?: boolean;
 }
 
 export interface Boot {
@@ -831,6 +852,10 @@ export interface CareerState {
   sponsors: SponsorDeal[];
   trophies: Trophy[];
   form: number[];
+  /** Item 24 (v0.15): your last five REAL ratings (never pulled toward 6.5
+   *  for a cameo) — what winning the shirt is judged on. Absent on older
+   *  saves, which fall back to `form`. */
+  rawForm?: number[];
   kitPrimary: string;
   kitSecondary: string;
   homeCity: string;

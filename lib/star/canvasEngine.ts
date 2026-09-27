@@ -205,6 +205,18 @@ export interface Keeper {
    */
   pendingDone: boolean;
   /**
+   * ONE DIVE (v0.15 items 3 and 8 — the one shared hook). The side a
+   * committed keeper has thrown himself (-1 | 1): set at the strike by a
+   * penalty keeper's read (lib/star/penaltyKeeper.ts) and, in open play, by
+   * the keeper brain as he leaves his feet (lib/star/keeperBrain.ts). When
+   * the ball reaches his line he is NOT re-aimed at it: no second dive back
+   * the other way, his lunge is not restarted, and if his dive is finished he
+   * stays down. A ball on the side he went is judged as before, from where
+   * his dive has taken him; one behind his dive, clear of his body, beats
+   * him. Absent (every scenario this file builds) = exactly today's keeper.
+   */
+  committedDir?: number;
+  /**
    * The real opposing goalkeeper, when there is one to name — see Identity.
    * Purely who to draw and who a face comes from; `keeperStrength` (Scenario)
    * is still the one number that decides how well he actually keeps.
@@ -289,6 +301,8 @@ export interface Follower {
    * missing feature it was.
    */
   commandedTo?: Vec2;
+  /** v0.15 item 17: he is the one team-mate going for a loose ball. */
+  chasing?: boolean;
 }
 
 // The team-mate a pass is aimed at. They are a real moving entity: the renderer
@@ -329,6 +343,8 @@ export interface Runner {
    * Cleared when he arrives, and he goes back to reacting like everybody else.
    */
   commandedTo?: Vec2;
+  /** v0.15 item 17: he is the one team-mate going for a loose ball. */
+  chasing?: boolean;
 }
 
 // The kind of match situation the player has been put in. Shooting kinds
@@ -403,6 +419,8 @@ export interface Defender extends Vec2 {
    * to draw a face for, same spirit as Keeper.who.
    */
   who?: Identity;
+  /** v0.15 item 17: he is the one defender going for a loose ball. */
+  chasing?: boolean;
 }
 
 export interface Scenario {
@@ -876,6 +894,17 @@ const KEEPER_CENTRE_Z = 0.95;      // metres — roughly his chest, the centre o
                                    // save volume
 
 const DEF_BLOCK_R = 0.95;      // metres — body + outstretched leg
+/**
+ * v0.15 item 14 — how far from a defender's middle a SHOT is blocked (a pass
+ * is still cut out at DEF_BLOCK_R). Measured with the old 0.95: when a block
+ * fired the ball was typically 1.09 m from his middle — visibly past his body
+ * — and a gap had to be almost 2 m wide to shoot through. Harry picked 0.7 m
+ * (his body and the ball, plus a stretch) over the prototype's 0.5 m, which
+ * made long shots too easy (44% → 54% scored). A slow ball gets the same 0.7:
+ * the prototype's slow-ball reach, and never smaller than the fast one.
+ */
+const BODY_BLOCK_R = 0.7;
+const BODY_BLOCK_SLOW_R = 0.7;
 const DEF_BLOCK_H = 1.9;       // defenders can only block below head height — chip over them
 const WALL_TOP = 2.05;         // …but a wall keeps its arms down, so leaping does not raise the
                                // ceiling one-for-one. It lifts their feet instead, which is what
@@ -1211,6 +1240,32 @@ function crossViewport(side: number, across = CROSS_VIEW_X): Viewport {
   const h = across;
   const w = h * VIEW_ASPECT;          // metres up the pitch, filling the width
   const x1 = side > 0 ? far : far - h;
+  return { x1, x2: x1 + h, y1: -4.5, y2: -4.5 + w };
+}
+
+/**
+ * v0.15 item 19 — a byline cross is filmed like a corner: anchored on the BALL, not on the far touchline.
+ *
+ * Harry: "I'm at the top of the screen dragging down. It should be like
+ * corners: me at the bottom, dragging up." The side view used to be hung from
+ * the far touchline, and the builder puts the ball 9.7 m off centre, so you
+ * always stood 35% of the way down the screen. A corner's ball sits at 79-81%
+ * (the flag, with CORNER_VIEW_X's room below it to pull back); this puts a
+ * byline cross's ball at the same 80%, with the far post kept in view.
+ *
+ * Same rectangle size as today's cross view (42 m across the pitch), same
+ * depth band, same turn — only where it is hung from changes.
+ */
+export const BYLINE_BALL_DOWN = 0.8;
+export function crossViewportOnBall(ball: Vec2, side: number, across = CROSS_VIEW_X): Viewport {
+  const h = across;
+  const w = h * VIEW_ASPECT;
+  // Facing "right" (side > 0) puts pitch x down the screen; facing "left"
+  // runs it the other way. Either way the ball lands BYLINE_BALL_DOWN down.
+  let x1 = side > 0 ? ball.x - BYLINE_BALL_DOWN * h : ball.x - (1 - BYLINE_BALL_DOWN) * h;
+  // The far post stays on the screen, a metre and a half in.
+  if (side > 0) x1 = Math.min(x1, POST_L - 1.5);
+  else x1 = Math.max(x1, POST_R + 1.5 - h);
   return { x1, x2: x1 + h, y1: -4.5, y2: -4.5 + w };
 }
 
@@ -2762,7 +2817,9 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
     // Watched from the side, then cut to the ordinary view when it arrives.
     const side = sc.ball.x >= CX ? 1 : -1;
     sc.facing = side > 0 ? "right" : "left";
-    sc.viewport = crossViewport(side, kind === "corner" ? CORNER_VIEW_X : CROSS_VIEW_X);
+    sc.viewport = kind === "byline_cross"
+      ? crossViewportOnBall(sc.ball, side)
+      : crossViewport(side, kind === "corner" ? CORNER_VIEW_X : CROSS_VIEW_X);
     sc.crossSwitchY = CROSS_SWITCH_Y;
     sc.crossSwitchView = WIDE_DELIVERY_VIEW;
   }
@@ -3862,15 +3919,25 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // the real issue is which situations this mechanic even makes sense for,
   // not how strong it is within them.
   let blockerSide: -1 | 0 | 1 = 0;
+  // v0.15 item 15: who it was, and where the line was at his depth.
+  let blocker: Defender | null = null;
+  let blockerProjX = 0;
   if (control >= 0.5) {
     const laneDX = aimX - ball.pos.x, laneDY = -ball.pos.y; // aimX crosses at y = 0
     const laneLen2 = laneDX * laneDX + laneDY * laneDY;
     if (laneLen2 > 1) {
       for (const d of scenario.defenders) {
-        const t = clamp(((d.x - ball.pos.x) * laneDX + (d.y - ball.pos.y) * laneDY) / laneLen2, 0, 1);
-        if (t < 0.12 || t > 0.92) continue; // too close to either end to actually be screening it
+        const tRaw = ((d.x - ball.pos.x) * laneDX + (d.y - ball.pos.y) * laneDY) / laneLen2;
+        const t = clamp(tRaw, 0, 1);
+        // The first 12% of the lane used to be ignored — the man RIGHT in
+        // front of him, the one most likely to block it (measured: team-mates'
+        // cutback finishes blocked 25%, usually within 0.2 s of the strike).
+        // v0.15 item 15 counts him: anybody genuinely in front of the ball.
+        if (tRaw <= 0.02 || t > 0.92) continue;
         const projX = ball.pos.x + laneDX * t, projY = ball.pos.y + laneDY * t;
         if (Math.hypot(d.x - projX, d.y - projY) < 1.4) {
+          blocker = d;
+          blockerProjX = projX;
           // Positive spin curves the ball toward SMALLER x (see
           // stepBallRaw's own "positive spin curves LEFT of travel"
           // comment, and CURVE_SPIN_STEP's note on getting this exact
@@ -4090,6 +4157,66 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
     const preAngleDeg = clamp(spin * CURL_K * flightT * (90 / Math.PI) * curlDistScale, -40, 40);
     launchDir = rotateDeg(baseDir, preAngleDeg);
   }
+  // ── v0.15 item 15: round the man in front, not into him ──
+  //
+  // A finisher with a body in front of him does two things: he picks the side
+  // of the goal away from that body, and if the straight line still goes
+  // through him he sets it off past him and bends it back in. So: aim for the
+  // far side from him; if the ball would still pass within ROUND_CLEAR of his
+  // middle, launch it just clear of him and put exactly the curl on it that
+  // brings it back to that spot (a circular arc turns through twice the angle
+  // it set off at), capped at what his technique can put on a ball.
+  // No new random draws — every draw above is where it always was. A real
+  // player only (curlTech — every man cast from a squad has one): a nameless
+  // receiver keeps today's shot, the same rule as every other skill here.
+  let roundSpin: number | null = null;
+  if (blocker && curlTech !== undefined && !isHeader && !isChip) {
+    // How close to his middle the ball may pass: the block reach in force,
+    // plus a margin for the noise his execution adds.
+    const blockR = BODY_BLOCK_R;
+    const ROUND_CLEAR = blockR + 0.3;
+    const MIN_CLEAR = blockR + 0.12;
+    const away = blocker.x < blockerProjX ? 1 : -1;
+    // …a little less fine than usual: going round a man and into the inside
+    // of the post at once is two risks, and nobody takes both. Capped, not
+    // just scaled: an elite finisher's placement runs past 1 (right on the
+    // post), and a bent ball aimed there went wide — measured, elite 88.6% on
+    // target against a poor finisher's 97.0% on cutbacks (finishing.mts).
+    const aim2 = clamp(goalCx + away * Math.min(placement * 0.85, 0.7) * (halfMouth - BALL_R * 2), POST_L + BALL_R * 2, POST_R - BALL_R * 2);
+    const chord = normalize({ x: aim2 - ball.pos.x, y: -Math.max(ball.pos.y, 0.5) });
+    const rx = blocker.x - ball.pos.x, ry = blocker.y - ball.pos.y;
+    const rho = Math.hypot(rx, ry);
+    const along = rx * chord.x + ry * chord.y;
+    const cross = chord.x * ry - chord.y * rx;
+    // The far side from him is usually enough on its own: struck clean at it,
+    // with only a touch of swerve.
+    let dirR = chord;
+    let spinR = spin * 0.15;
+    if (along > 0 && rho > MIN_CLEAR + 0.1) {
+      const phi = Math.atan2(cross, along);                     // his bearing off that line
+      const psi = Math.asin(Math.min(1, ROUND_CLEAR / rho));    // the bearing that clears him
+      if (Math.abs(phi) < psi) {
+        // Flight time: the ball slows in the air, so it averages a little
+        // under its launch pace (and turns for longer than a straight sum).
+        const T = Math.hypot(aim2 - ball.pos.x, ball.pos.y) / Math.max(Sh * 0.88, 1);
+        const spinMax = curlRange(curlTech) * 1.9;
+        // Set off past him (delta), then bend back (a circular arc turns
+        // through twice the angle it set off at). If his technique cannot
+        // bend it that much, set off only as wide as he CAN bring back — so
+        // long as that still clears the man. Otherwise he just hits it.
+        let delta = phi - Math.sign(phi || 1) * psi;
+        const deltaMax = (spinMax * CURL_K * T) / 2;
+        if (Math.abs(delta) > deltaMax) delta = Math.sign(delta) * deltaMax;
+        const clearance = rho * Math.abs(Math.sin(phi - delta));
+        if (clearance >= MIN_CLEAR) {
+          dirR = rotateDeg(chord, (delta * 180) / Math.PI);
+          spinR = clamp((2 * delta) / (CURL_K * T), -spinMax, spinMax);
+        }
+      }
+    }
+    launchDir = dirR;
+    roundSpin = spinR;
+  }
   const dir = rotateDeg(launchDir, noiseDeg);
 
   ball.vel = { x: dir.x * chipSh, y: dir.y * chipSh };
@@ -4101,7 +4228,7 @@ function launchReceiverShot(ball: Ball, scenario: Scenario, rng: () => number, c
   // small residual carries over anyway, the same honest "some spin on
   // everything" a real strike has, rather than a hard, suspiciously exact
   // zero.
-  ball.spin = isChip ? spin * 0.15 : spin;
+  ball.spin = isChip ? spin * 0.15 : roundSpin ?? spin;
   // A header/volley is struck from wherever it actually reached him, not
   // swept down to his feet first — that real height is the entire point,
   // see HEADER_MIN_Z's own doc. Everything else (the ordinary grounded
@@ -4438,8 +4565,14 @@ export function applyCurveSwipe(ball: Ball, dir: CurveDir): boolean {
  * accepted cost, same shape as before: the same range of power lives in a bit
  * less travel, a slightly finer movement than 0.18 asked for.
  */
+/** v0.15 item 21: the full-power drag is 25% shorter than it was (Harry's
+ *  pick (b), measured from where the thumb lands — CanvasMatch). */
+export const DRAG_LENGTH_SCALE = 0.75;
 export function dragForFullPower(power: number): number {
-  return 0.14 - clamp(power, 0, 100) / 100 * 0.025;
+  // v0.15 item 21: "Yep, drag is too long. Definitely just needs to be a
+  // shorter drag." One multiplier on the whole curve (DRAG_LENGTH_SCALE), so
+  // a stronger player still reaches full power with less.
+  return (0.14 - clamp(power, 0, 100) / 100 * 0.025) * DRAG_LENGTH_SCALE;
 }
 
 /**
@@ -5024,12 +5157,38 @@ export function markLanding(ball: Ball, scenario: Scenario) {
   ball.landAt = firstBounceAt(ball, scenario.conditions) ?? undefined;
 }
 
+// ── v0.15 — WHAT HAPPENS AROUND A SHOT (plan items 13, 14, 15, 17) ──
+// Approved for this file by Mikey (items 13, 14, 15, 17) and decided by
+// Harry: 13 as built (a team-mate right on your shot's line still takes it),
+// 14 a 0.7 m body, 15 as built, 17 as built.
+
+/** 13: how near a team-mate must be to the line of a ball heading inside the
+ *  posts for it to be a ball TO him — about the width of his body plus the
+ *  ball. Any further off and he was not the target, the goal was. */
+export const ON_LINE_R = 0.6;
+/** 13: the posts, plus a little for the curl a straight projection ignores. */
+const ON_TARGET_PAD = 0.25;
+
+/** 13: would this ball, left alone, cross the line inside the posts and under
+ *  the bar? The same projection isDriveAtGoal already makes. */
+export function headingInsidePosts(ball: Ball, scenario: Scenario): boolean {
+  if (ball.vel.y >= -1) return false;
+  const t = ball.pos.y / -ball.vel.y;
+  const b = predictBall(ball, Math.min(t, 3));
+  return b.pos.x > scenario.goal.x1 - ON_TARGET_PAD
+    && b.pos.x < scenario.goal.x2 + ON_TARGET_PAD
+    && b.z < scenario.crossbar + 0.3;
+}
+
 export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
   // A rebound belongs to the poacher, never to a support player.
   if (ball.loose) return true;
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
   if (speed < LAYOFF_MAX_SPEED) return false;
   if (ball.vel.y >= -1) return false;                 // not going that way at all
+  // v0.15 item 13 — a ball heading INSIDE THE POSTS is a shot unless a man is
+  // standing right on its line. Off target, today's rule is untouched.
+  const onTarget = headingInsidePosts(ball, scenario);
 
   // ── A man standing on the line is a man you were passing to ──
   //
@@ -5069,7 +5228,7 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
     //
     // A rolled ball near a man is a pass. A ball struck at twenty-five metres a
     // second is a shot he would have to step INTO, and it is not his.
-    const lane = PASS_CONTROL_R * 1.2 * clamp(1.35 - speed / 34, 0.35, 1.2);
+    const lane = onTarget ? ON_LINE_R : PASS_CONTROL_R * 1.2 * clamp(1.35 - speed / 34, 0.35, 1.2);
     if (Math.hypot(offX, offY) < lane) return false;
   }
 
@@ -5108,6 +5267,205 @@ const FETCH_FAR = 12;      // metres — beyond this, fetching it is worth runni
 const DEAD_BALL_SPEED = 4; // m/s — below this the ball is going nowhere
 const CONTROL_R = 1.15;    // metres — close enough to take it
 
+// ── v0.15 item 13: stepping out of a real shot ──
+//
+// Everyone in your shirt used to walk AT any ball that came within nine metres
+// of him, a shot included, so a man a metre off its line walked into it and
+// "had" it. A real team-mate does the opposite: he gets out of the way.
+const SIDESTEP_CLEAR = 1.4;   // metres off the line he wants to be
+const SIDESTEP_SPEED = 3.4;   // m/s — a quick step, not a sprint
+
+/**
+ * A team-mate while your shot (or his mate's) is on its way in. Returns false
+ * once the ball has gone past him, and he reacts as normal again (following
+ * in for a rebound). Until then he steps off its line, or stands still.
+ */
+function sidestepShot(p: { x: number; y: number }, ball: Ball, dt: number): boolean {
+  const sp = Math.hypot(ball.vel.x, ball.vel.y) || 1;
+  const ux = ball.vel.x / sp, uy = ball.vel.y / sp;
+  const rx = p.x - ball.pos.x, ry = p.y - ball.pos.y;
+  const along = rx * ux + ry * uy;
+  if (along <= 0) return false;              // it has gone past him
+  let px = rx - along * ux, py = ry - along * uy;
+  const off = Math.hypot(px, py);
+  if (off >= SIDESTEP_CLEAR) return true;    // clear of it: he stays put
+  // Dead on the line: step away from the middle of the goal, which is as
+  // good a choice as any and never across the keeper's view.
+  if (off < 0.05) { px = -uy; py = ux; if (px * (p.x - CX) < 0) { px = -px; py = -py; } }
+  const n = Math.hypot(px, py) || 1;
+  const step = Math.min(SIDESTEP_CLEAR - off, SIDESTEP_SPEED * dt);
+  p.x += (px / n) * step;
+  p.y += (py / n) * step;
+  return true;
+}
+
+// ── v0.15 item 17: the shape round a loose ball ──
+//
+// Harry, 27 Sep 2026: "maybe only one of their defenders would go directly for
+// the ball, but … his other centre back is not going to just leave the other
+// centre back … they kind of stay in line, but they don't run to the ball …
+// Your team would maybe move up with wherever you're pressing the ball, but they
+// don't all chase the ball … all anchored on the ball position, but only the
+// closest teammate and defender actually go towards the ball."
+//
+// So, while the ball is loose or has stopped:
+//   · the nearest team-mate and the nearest defender go for it (one each);
+//   · the rest of their defence moves as ONE line — the same step for every
+//     man, so the gaps between them never change — across toward the ball's
+//     side and back to stay goal-side of it;
+//   · your other attackers push up with it, again as one group, and stop short
+//     of it; anybody well behind the ball (a midfielder) holds;
+//   · nobody else goes near it.
+// Everybody at today's reaction pace (REACT_SPEED): this changes WHO moves, not
+// how fast anybody gets there. Measured with the two chasers at a 4.6 m/s run
+// instead: your side won 40.5% of loose balls (29.0% today) and a saved or
+// missed penalty was turned in 6.6% of the time (1.3% today) — the sprinting
+// poacher this file deliberately slowed down. That is a choice for Harry.
+const SHAPE_CHASE_SPEED = REACT_SPEED; // m/s — both chasers, the same pace
+const SHAPE_LINE_SPEED = REACT_SPEED;  // m/s — the back line sliding and dropping
+const SHAPE_PUSH_SPEED = REACT_SPEED;  // m/s — your attackers moving up with it
+const SHAPE_LINE_GOALSIDE = 1.5;  // metres the line stays goal-side of the ball
+const SHAPE_LINE_SHIFT = 0.5;     // share of the ball's lateral move the line follows
+const SHAPE_PUSH_SHARE = 0.5;     // …and your attackers
+const SHAPE_PUSH_STOP = 3;        // metres short of the ball an attacker stops
+const SHAPE_MIDFIELD_BEHIND = 8;  // metres behind the ball = a midfielder: he holds
+const SHAPE_SWITCH_BY = 1.2;      // a new man takes over the chase only if this much nearer
+const SHAPE_READ_AHEAD = 0.35;    // seconds — chasers go where the ball is going
+
+type ShapeMate = Runner | "follower";
+interface ShapeState {
+  mate: ShapeMate | null;
+  def: Defender | null;
+  start: Map<object, Vec2>;
+  /** Where the ball was when it came loose — your attackers move with it from there. */
+  ball0: Vec2;
+}
+const SHAPE_STATE = new WeakMap<Scenario, ShapeState>();
+
+function shapeMatePos(sc: Scenario, m: ShapeMate): { x: number; y: number } {
+  return m === "follower" ? sc.follower : m.pos;
+}
+
+function stepShape(sc: Scenario, ball: Ball, dt: number, dead: boolean, fetch: (d: number) => number) {
+  const speed = Math.hypot(ball.vel.x, ball.vel.y);
+  const anchor = dead || speed < 0.5 ? { x: ball.pos.x, y: ball.pos.y } : predictBall(ball, SHAPE_READ_AHEAD).pos;
+  const runners = [...(sc.runner ? [sc.runner] : []), ...sc.secondaryRunners];
+  const mates: ShapeMate[] = runners.filter(r => !(r.commandedTo && !dead));
+  if (!sc.follower.shot || dead) mates.push("follower");
+  const defs = sc.defenders.filter(d => !(d.baseRole === "hold" && !dead));
+
+  let st = SHAPE_STATE.get(sc);
+  if (!st) {
+    st = { mate: null, def: null, start: new Map(), ball0: { x: ball.pos.x, y: ball.pos.y } };
+    SHAPE_STATE.set(sc, st);
+  }
+  // Where everybody was when the ball came loose — the shape the line and the
+  // attackers keep. Taken once per loose ball.
+  if (st.start.size === 0) {
+    st.ball0 = { x: ball.pos.x, y: ball.pos.y };
+    for (const r of runners) st.start.set(r, { x: r.pos.x, y: r.pos.y });
+    st.start.set(sc.follower, { x: sc.follower.x, y: sc.follower.y });
+    for (const d of sc.defenders) st.start.set(d, { x: d.x, y: d.y });
+  }
+
+  // ── One of each goes for it ──
+  // Sticky: a new man only takes over once he is clearly nearer, so two men
+  // the same distance away do not take it in turns.
+  function nearest<T>(xs: T[], pos: (t: T) => { x: number; y: number }, cur: T | null): T | null {
+    let best: T | null = null, bd = Infinity;
+    for (const t of xs) { const p = pos(t); const d = Math.hypot(p.x - anchor.x, p.y - anchor.y); if (d < bd) { bd = d; best = t; } }
+    if (cur !== null && xs.includes(cur) && best !== cur) {
+      const p = pos(cur);
+      if (Math.hypot(p.x - anchor.x, p.y - anchor.y) - bd < SHAPE_SWITCH_BY) return cur;
+    }
+    return best;
+  }
+  st.mate = nearest(mates, (m) => shapeMatePos(sc, m), st.mate);
+  st.def = nearest(defs, (d) => d, st.def);
+  const chaserDef = st.def, chaserMate = st.mate;
+
+  const go = (p: { x: number; y: number }, to: { x: number; y: number }, pace: number) => {
+    const dx = to.x - p.x, dy = to.y - p.y, d = Math.hypot(dx, dy);
+    if (d < 0.01) return 0;
+    const step = Math.min(d, pace * dt);
+    p.x += (dx / d) * step; p.y += (dy / d) * step;
+    return step;
+  };
+  const chasePace = (p: { x: number; y: number }) => dead
+    ? fetch(Math.hypot(ball.pos.x - p.x, ball.pos.y - p.y))
+    : SHAPE_CHASE_SPEED;
+
+  // ── Their line: one shift for all of them, so the gaps stay the gaps ──
+  // Every man's spot is where he stood when the ball came loose, moved by the
+  // SAME amount: across toward the ball's side, and back to stay goal-side of
+  // it. A man who stops chasing goes back to his spot in that line.
+  const line = defs.filter(d => d !== chaserDef);
+  for (const d of sc.defenders) d.chasing = d === chaserDef;
+  if (line.length) {
+    let sx = 0, sy = 0;
+    for (const d of line) { const s0 = st.start.get(d) ?? d; sx += s0.x; sy += s0.y; }
+    sx /= line.length; sy /= line.length;
+    const shiftX = clamp((anchor.x - sx) * SHAPE_LINE_SHIFT, -5, 5);
+    const shiftY = Math.max(1.5, Math.min(sy, anchor.y - SHAPE_LINE_GOALSIDE)) - sy;
+    for (const d of line) {
+      const s0 = st.start.get(d) ?? { x: d.x, y: d.y };
+      go(d, { x: s0.x + shiftX, y: s0.y + shiftY }, SHAPE_LINE_SPEED);
+    }
+  }
+  if (chaserDef) go(chaserDef, anchor, chasePace(chaserDef));
+
+  // ── Your side: attackers move up with it, midfielders hold ──
+  const attackers: ShapeMate[] = [];
+  for (const m of [...runners, "follower" as const]) {
+    if (m === chaserMate) continue;
+    if (m !== "follower" && m.commandedTo && !dead) continue;  // still running the captain's orders
+    const p = shapeMatePos(sc, m);
+    if (p.y > anchor.y + SHAPE_MIDFIELD_BEHIND) continue;       // a midfielder: he holds
+    attackers.push(m);
+  }
+  for (const r of runners) r.chasing = r === chaserMate;
+  sc.follower.chasing = chaserMate === "follower";
+  if (attackers.length) {
+    // They move WITH the ball — a share of however far it has gone since it
+    // came loose — rather than towards it, so they keep their shape round it.
+    const shift = {
+      x: clamp((anchor.x - st.ball0.x) * SHAPE_PUSH_SHARE, -6, 6),
+      y: clamp((anchor.y - st.ball0.y) * SHAPE_PUSH_SHARE, -6, 6),
+    };
+    for (const m of attackers) {
+      const key: object = m === "follower" ? sc.follower : m;
+      const s0 = st.start.get(key) ?? shapeMatePos(sc, m);
+      const p = shapeMatePos(sc, m);
+      const to = { x: s0.x + shift.x, y: s0.y + shift.y };
+      // …but never into the ball: that is the chaser's job.
+      const toBall = Math.hypot(to.x - anchor.x, to.y - anchor.y);
+      if (toBall < SHAPE_PUSH_STOP) {
+        const k2 = SHAPE_PUSH_STOP / Math.max(toBall, 0.01);
+        to.x = anchor.x + (to.x - anchor.x) * k2; to.y = anchor.y + (to.y - anchor.y) * k2;
+      }
+      const moved = go(p, to, SHAPE_PUSH_SPEED);
+      if (m === "follower") sc.follower.active = sc.follower.active || moved > 0;
+      else { m.moving = moved > 0; m.sprint = false; }
+    }
+  }
+  if (chaserMate) {
+    const p = shapeMatePos(sc, chaserMate);
+    go(p, anchor, chasePace(p));
+    if (chaserMate === "follower") sc.follower.active = true;
+    else { chaserMate.moving = true; chaserMate.sprint = !dead; }
+  }
+}
+
+/** Forget the shape once the ball is not loose any more (a fresh strike). */
+function endShape(sc: Scenario) {
+  const st = SHAPE_STATE.get(sc);
+  if (st && st.start.size) { st.start.clear(); st.mate = null; st.def = null; }
+  if (sc.runner) sc.runner.chasing = false;
+  for (const r of sc.secondaryRunners) r.chasing = false;
+  sc.follower.chasing = false;
+  for (const d of sc.defenders) d.chasing = false;
+}
+
 export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: () => number = Math.random) {
   const speed = Math.hypot(ball.vel.x, ball.vel.y);
   const dead = ball.resting || (speed < DEAD_BALL_SPEED && ball.z < 0.4);
@@ -5138,7 +5496,16 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
   // thirty metres before the move can end.
   const fetch = (dist: number) => (dist > FETCH_FAR ? FETCH_SPEED : WALK_SPEED);
 
-  for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
+  // v0.15 item 17 — a loose or stopped ball: one man each goes for it and the
+  // rest keep their shape (stepShape). Then the poacher's poke-in, below, as
+  // before. Otherwise everything here is exactly as it was.
+  const shape = ball.loose || dead;
+  if (shape) stepShape(scenario, ball, dt, dead, fetch);
+  else endShape(scenario);
+  // v0.15 item 13 — your (or his) shot on its way in: step out of it.
+  const shotLive = ball.shot === true && !ball.loose && !dead && speed >= DEAD_BALL_SPEED;
+
+  for (const r of shape ? [] : [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
     const dist = Math.hypot(ball.pos.x - r.pos.x, ball.pos.y - r.pos.y);
 
     // ── A man running to the captain's orders ──
@@ -5168,6 +5535,7 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     }
 
     if (dead) { move(r.pos, fetch(dist)); r.moving = true; continue; }
+    if (shotLive && sidestepShot(r.pos, ball, dt)) { r.moving = true; r.sprint = false; continue; }
     if (dist > REACT_R) { r.moving = false; continue; }
     move(r.pos, REACT_SPEED);
     r.moving = true;
@@ -5183,7 +5551,11 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     // A man running to the captain's orders — his own version of the Runner
     // block above, same rule: a ball that has stopped still outranks it, so
     // he does not jog past a loose ball to finish a commanded run either.
-    if (f.commandedTo && !dead) {
+    if (shape) {
+      // moved by stepShape (v0.15 item 17); only the poke-in below applies
+    } else if (shotLive && !f.commandedTo && sidestepShot(f, ball, dt)) {
+      // v0.15 item 13: out of the way until it has gone past him
+    } else if (f.commandedTo && !dead) {
       const dx = f.commandedTo.x - f.x, dy = f.commandedTo.y - f.y;
       const togo = Math.hypot(dx, dy);
       if (togo < 0.6) {
@@ -5246,7 +5618,7 @@ export function stepReactions(scenario: Scenario, ball: Ball, dt: number, rng: (
     }
   }
 
-  for (const d of scenario.defenders) {
+  for (const d of shape ? [] : scenario.defenders) {
     // A wall stays a wall while the free kick is live. Once the ball has stopped
     // there is no wall any more, only somebody who ought to go and get it.
     if (d.baseRole === "hold" && !dead) continue;
@@ -5941,6 +6313,11 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // This replaced a damped deflection that left the ball live, which turned
   // every block into a scramble the attack usually still won.
   if (ball.contactCd <= 0) {
+    // v0.15 item 14: a SHOT is blocked by his body, not a metre round it (see
+    // BODY_BLOCK_R). A pass is still cut out exactly as today — measured: with
+    // the body reach on passes too, an under-hit pass got through 99% of the
+    // time (tests/star/support.mts wants under 70%).
+    const bodyOnly = ball.shot === true || headedForGoal(ball, scenario);
     for (const d of scenario.defenders) {
       const foot = d.z ?? 0;
       const top = d.baseRole === "hold"
@@ -5948,7 +6325,9 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
         : foot + DEF_BLOCK_H;
       if (ball.z < foot || ball.z > top) continue;
       // Right on top of a ball travelling at pace; merely near a slow one.
-      const reach = (speed > 12 ? DEF_BLOCK_R : CONTROL_R) * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
+      const reach = (bodyOnly
+        ? (speed > 12 ? BODY_BLOCK_R : BODY_BLOCK_SLOW_R)
+        : (speed > 12 ? DEF_BLOCK_R : CONTROL_R)) * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < reach) {
         // A defender in the way of a ball going in has BLOCKED it; a defender
         // in the way of anything else has cut it out. Both cost you the ball and
@@ -6012,7 +6391,12 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.1) {
     const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
     if (dist < KEEPER_BODY_R) {
+      // One dive (v0.15 item 3) — see THE KEEPER'S OWN LINE below: a keeper
+      // committed to a side is not sent back after the ball he has blocked.
+      const oneDive = !!k.committedDir;
+      const diveTo = k.targetX;
       const res = resolveKeeper(ball, scenario, dist, KEEPER_BODY_R, speed, rng);
+      if (oneDive) k.targetX = res === "caught" ? k.x : diveTo;
       if (res) return res; // a genuine catch — a push-away, tipped or parried, returns null and stays live
       // parried — ball is loose, keep simulating this tick
     }
@@ -6107,7 +6491,9 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       // only out of the way. He does not become intangible: a ball that would
       // pass through his body is a ball he has, whatever it was aimed at. "If
       // the ball goes anywhere within my player, he should have the ball."
-      if (shotAtGoal && r.role === "support" && swept > BODY_R) continue;
+      // v0.15 item 13: the man a chance was built around steps out of a real
+      // shot too — it was not played to him, or it would not be a shot.
+      if (shotAtGoal && swept > BODY_R) continue;
 
       if (swept < PASS_CONTROL_R) {
         // Position plus involvement. He was beyond the second-last opponent
@@ -6323,17 +6709,47 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     // straight to the save point in the same tick the outcome was decided,
     // which is the "teleport" this whole rework exists to remove. He starts
     // from wherever he actually is and travels; see stepKeeper.
-    k.saveDir = Math.sign(xAt - k.x) || 0;
-    k.saveLunge = 0.001;
+    // ── One dive (v0.15 item 3) ──
+    //
+    // Harry: "In the trial the keeper dives, then turns and goes back once
+    // the ball crosses the line. He only needs one dive; if there's time left
+    // he just stays where he is." A keeper who has already committed to a
+    // side (`committedDir` — a penalty keeper's read, or the keeper brain's
+    // one dive) is NOT re-aimed at the ball: his dive direction, his lunge
+    // and where he is travelling to all stay his own. Measured before this: the real match's keeper turned round on 190
+    // of 200 kicks down the middle (tests/star/keeperOneDive.mts).
+    const oneDive = !!k.committedDir;
+    // ...and once he has gone, a ball that passes BEHIND his dive — the side
+    // he threw himself away from, clear of his body — is beyond him. The save
+    // test is the same all the way round wherever the dive has carried him,
+    // so without this he still "saved" balls up to 1.9 m back the other way,
+    // and with no second dive to fetch them the ball stopped in mid-air
+    // beside a keeper lying on the far side of the goal (filmed: trial,
+    // middle kick, v0.15). A ball that runs into him is still stopped by the
+    // body check above; a ball on the side he went is judged as before.
+    const behindHim = oneDive && (xAt - k.x) * k.committedDir! < -KEEPER_BODY_R;
+    if (!oneDive) {
+      k.saveDir = Math.sign(xAt - k.x) || 0;
+      k.saveLunge = 0.001;
+    }
     k.scrambling = true;
-    if (attempt.reaches) {
-      k.targetX = xAt;
+    if (attempt.reaches && !behindHim) {
+      const diveTo = k.targetX;
+      if (!oneDive) k.targetX = xAt;
       ball.pos.x = xAt;
       ball.pos.y = Math.max(k.y, 0.02);
       ball.z = Math.max(0, zAt);
       const outcome = resolveKeeper(ball, scenario, attempt.dist, attempt.reach, speed, rng);
       k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, outcome);
+      // One dive, after a save too: resolveKeeper sends a keeper who has
+      // parried it back after the spill — a second movement, back the way he
+      // came. Committed, he finishes the dive he chose instead; and a ball he
+      // holds, he lands with where he caught it.
+      if (oneDive) k.targetX = outcome === "caught" ? k.x : diveTo;
       if (outcome) return outcome;
+    } else if (oneDive) {
+      // Beaten while committed: nothing changes. He finishes the dive he
+      // chose, or, if it is already finished, stays down.
     } else {
       // ── Beaten, but not stood there watching it happen ──
       //

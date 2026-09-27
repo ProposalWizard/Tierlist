@@ -41,6 +41,57 @@ export function liveRating(
 }
 
 /**
+ * FAIR RATINGS (item 26, v0.15).
+ *
+ * liveRating counts every chance that was not a goal or an assist as wasted —
+ * including a pass that found its man and a dribble past your defender, so a
+ * good pass cost 0.35 and earned 0.05. Measured: a starter averaged 5.14
+ * (5.98 with that fixed). Here only a REAL miss costs you — a shot that did
+ * not go in, or the ball lost (tackled, cut out, run out of play) — and a
+ * completed pass or a dribble won is a plus. Same 6.0 start, same goal /
+ * assist / result values, same waste penalty and cap.
+ *
+ * `parts` lists every thing that moved it off 6.0 (kept for tests and tools;
+ * the post-match screen shows the list of your chances instead).
+ */
+export interface FairTally {
+  goals: number;
+  assists: number;
+  /** Passes that reached a team-mate (including ones he then scored or missed from). */
+  passes: number;
+  /** Runs where you beat your man and got through. */
+  dribbles: number;
+  /** Your own shots that did not go in. */
+  misses: number;
+  /** Balls you lost: tackled, a pass cut out, a run that ended in a tackle. */
+  lost: number;
+}
+export interface RatingPart { label: string; value: number }
+
+export const DRIBBLE_RATING = 0.15;
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+export function fairRating(t: FairTally, userScore: number, oppScore: number): { rating: number; parts: RatingPart[] } {
+  const parts: RatingPart[] = [];
+  const add = (label: string, value: number) => { if (Math.abs(value) > 1e-9) parts.push({ label, value }); };
+  add(plural(t.goals, "goal"), t.goals * 1.2);
+  add(plural(t.assists, "assist"), t.assists * 0.8);
+  add(plural(t.passes, "pass", "passes"), t.passes * 0.05);
+  add(plural(t.dribbles, "dribble won", "dribbles won"), t.dribbles * DRIBBLE_RATING);
+  add(userScore > oppScore ? "win" : userScore < oppScore ? "defeat" : "draw",
+    userScore > oppScore ? 0.4 : userScore < oppScore ? -0.3 : 0.1);
+  const perWaste = getTuning("rating.wastePenaltyPerChance");
+  const cap = getTuning("rating.maxWastePenalty");
+  const missCost = Math.min(cap, t.misses * perWaste);
+  const lostCost = Math.min(cap - missCost, t.lost * perWaste);
+  add(plural(t.misses, "missed shot"), -missCost);
+  add(plural(t.lost, "ball lost", "balls lost"), -lostCost);
+  const rating = Math.max(1, Math.min(10, 6.0 + parts.reduce((a, p) => a + p.value, 0)));
+  return { rating, parts };
+}
+
+/**
  * A cameo is judged on less evidence. A substitute who came on for twenty
  * minutes shouldn't be rated as though he'd played the ninety — this
  * regresses `rating` toward a neutral 6.5 in proportion to the minutes NOT
@@ -87,8 +138,16 @@ export function finaliseMatch(
    * real season, so neither has a week to share with.
    */
   fixture?: Fixture,
+  /**
+   * Item 26: the real misses and dribbles CanvasMatch counted. When given,
+   * the rating is the fair one; absent, exactly the old formula.
+   */
+  tally?: { misses: number; lost: number; dribbles: number },
 ): MatchStats {
-  const raw = liveRating(chances, goals, assists, passes, userScore, oppScore);
+  const fair = tally
+    ? fairRating({ goals, assists, passes, dribbles: tally.dribbles, misses: tally.misses, lost: tally.lost }, userScore, oppScore)
+    : null;
+  const raw = fair ? fair.rating : liveRating(chances, goals, assists, passes, userScore, oppScore);
   const rating = regressForMinutes(raw, minutes);
 
   const starMan = rating >= 8.5 || goals >= 2;
@@ -128,6 +187,7 @@ export function finaliseMatch(
     minutes,
     hooked,
     rating: Math.round(rating * 10) / 10,
+    rawRating: Math.round(raw * 10) / 10,
     starMan,
     bossChange: boss,
     teamChange: team,

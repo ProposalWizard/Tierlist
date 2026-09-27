@@ -264,7 +264,11 @@ function strikeAtGoal(kind: Parameters<typeof buildScenario>[0], seed: number, p
     hist[n] = (hist[n] ?? 0) + 1;
   }
   const one = hist[1] ?? 0, many = (hist[3] ?? 0) + (hist[4] ?? 0);
-  check(one > N * 0.1, `a rebound is often followed in once (${one}/${N})`);
+  // v0.15 A2 re-pin (item 17, Harry: "only the closest teammate and defender
+  // actually go towards the ball"): one team-mate goes for a loose ball
+  // instead of everyone within 9 m, so fewer rebounds are followed in —
+  // measured 216/1200 before, 117/1200 now. Still never the runaway below.
+  check(one > N * 0.08, `a rebound is often followed in once (${one}/${N})`);
   check(many < N * 0.02, `and hardly ever more than twice (${many}/${N} went three or four)`);
 }
 

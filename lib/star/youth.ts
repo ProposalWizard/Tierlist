@@ -520,6 +520,7 @@ export function promoteFromYouth(career: CareerState): CareerState {
       boss: Math.max(career.relationships.boss, PROMOTION_BOSS),
     },
     form: [],
+    rawForm: [],
   };
 }
 

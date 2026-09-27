@@ -37,6 +37,8 @@ import { attackingShape, ATTACK_ROLES } from "@/lib/star/fiveASide/attack";
 import { buildPassage, type FiveWorld } from "@/lib/star/fiveASide/passage";
 import { FIVE_KEEPER_STRENGTH } from "@/lib/star/fiveASide/geometry";
 import { fixBaseScenario, scenarioFaults } from "@/lib/star/baseScenario";
+import { enforceHardRules } from "@/lib/star/kindRules";
+import { switchOn } from "@/lib/star/compareSwitches";
 import { castDefence, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { formationOf } from "@/lib/star/formations";
 import { applyFormationShape, defensiveLineOf } from "@/lib/star/formationShape";
@@ -198,6 +200,10 @@ function rebuildScenario(cell: Cell): Scenario {
   if (cell.sim) return buildSimScenario(cell.sim);
   const sc = buildScenario(cell.kind as ScenarioKind, mulberry32(cell.seed ?? 0));
   fixBaseScenario(sc);
+  // A kind's hard rules (a penalty's: keeper centred on his line, ball on the
+  // spot, everyone on the edge of the box, one camera) — the same last word
+  // the match gives every picture of it.
+  enforceHardRules(sc);
   return sc;
 }
 
@@ -939,6 +945,11 @@ export default function StarGalleryDevPage() {
    * card so moving to another picture closes it.
    */
   const [pickCameraKey, setPickCameraKey] = useState<string | null>(null);
+  /** A penalty's camera is fixed (lib/star/kindRules/penalty.ts) unless the
+   *  Play Area's compare switch has the old rules back on this device. Read
+   *  after mount — it lives in this browser. */
+  const [penaltyRulesOn, setPenaltyRulesOn] = useState(true);
+  useEffect(() => { setPenaltyRulesOn(switchOn("penaltyRules")); }, []);
   const pictureRef = useRef<HTMLDivElement>(null);
   const togglePlay = () => setPlaying((v) => !v);
   /** The kits Play's match will wear (same seed and Play Area dials as
@@ -1869,6 +1880,13 @@ export default function StarGalleryDevPage() {
             let go, and Done. Saved with the scenario, and the game frames the
             chance from there. The camera slides; it never zooms. */}
         <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+          {cell.kind === "penalty" && penaltyRulesOn ? (
+            // Harry: "The camera angle should be the same every single time.
+            // It should never change for a penalty." So there is nothing to pick.
+            <button style={editBtn(true)} disabled title="A penalty is always filmed from the same camera">
+              Camera: fixed for penalties
+            </button>
+          ) : (
           <button
             style={{ ...editBtn(false), ...(pickCameraKey === cell.key ? { background: "#fbbf24", color: "#451a03" } : {}) }}
             disabled={playing}
@@ -1876,6 +1894,7 @@ export default function StarGalleryDevPage() {
           >
             {pickCameraKey === cell.key ? "Done — back to editing" : "Camera: pick on the whole pitch"}
           </button>
+          )}
           {/* ── SWAP FLAG ── a corner (or byline cross) taken from the other
               side: the whole picture mirrored across the pitch, turn and
               all. Asked for directly (Harry, 26 Sep 2026). The game plays

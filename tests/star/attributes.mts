@@ -283,7 +283,9 @@ function runDribble(pace: number, oppStrength: number, seed: number, chasers = 3
 // unchanged, which is what this block is about.
 {
   check(dragForFullPower(0) > dragForFullPower(100), "a stronger player reaches full power with a shorter pull");
-  check(dragForFullPower(100) > 0.10, "but still has to ask for it");
+  // v0.15 item 21: 25% shorter all through — measured 8.6% of the screen at
+  // power 100 (was 11.5%, pinned above 10%).
+  check(dragForFullPower(100) > 0.085, "but still has to ask for it");
   check(dragForFullPower(0) <= 0.20, "and a weak one is not dragging off the screen");
 
   // The same gesture, two players: the stronger one gets more of a shot. The

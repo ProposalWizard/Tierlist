@@ -11,12 +11,17 @@ import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines } from "@/lib/star/media/grammar";
 import { playerMarketValue } from "@/lib/star/marketValue";
 import { formatMoney } from "@/lib/star/money";
-import { SILHOUETTE_SRC } from "@/lib/silhouette";
+import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ClubBadge from "./ClubBadge";
 
 interface Props {
   career: CareerState;
+}
+
+/** A cup round's name as a heading over its ties: "Quarter-Final" → "Quarter-Finals". */
+export function roundListLabel(name: string): string {
+  return /-Final$/.test(name) ? `${name}s` : name;
 }
 
 export default function LeagueScreen({ career }: Props) {
@@ -141,12 +146,12 @@ export default function LeagueScreen({ career }: Props) {
                     <div className="col-span-3 mt-0.5 grid grid-cols-2 gap-2 text-[9px] font-bold leading-tight text-white">
                       <div className="space-y-0.5 text-right">
                         {groupedGoalLines(r.hg ?? [], g => g.s, g => g.m).map(({ scorer, minutes }) => (
-                          <div key={scorer}>{scorer} {minutes.map(m => `${m}'`).join(", ")}</div>
+                          <div key={scorer}>{scorer} {minutes.map(m => (m > 90 ? `90+${m - 90}'` : `${m}'`)).join(", ")}</div>
                         ))}
                       </div>
                       <div className="space-y-0.5 text-left">
                         {groupedGoalLines(r.ag ?? [], g => g.s, g => g.m).map(({ scorer, minutes }) => (
-                          <div key={scorer}>{scorer} {minutes.map(m => `${m}'`).join(", ")}</div>
+                          <div key={scorer}>{scorer} {minutes.map(m => (m > 90 ? `90+${m - 90}'` : `${m}'`)).join(", ")}</div>
                         ))}
                       </div>
                     </div>
@@ -243,12 +248,19 @@ export default function LeagueScreen({ career }: Props) {
                     <span className="text-[10px] font-bold text-white">
                       {cup.winner === you ? "WON IT"
                         : cup.winner ? `${cup.winner} won it`
-                        : out ? `Out — ${out}`
+                        : out ? `Out in the ${out}`
                         : round?.name}
                     </span>
                   </div>
                   {round && (
                     <div className="mt-1.5 space-y-0.5">
+                      {/* v0.15 item 31: the list is always the LATEST round,
+                          which once you're out is not the one in the heading
+                          ("Out in the Round of 16" above the four
+                          quarter-final ties) — so it carries its own name. */}
+                      <div className="px-1.5 pb-0.5 text-[9px] font-black uppercase tracking-widest text-white/70">
+                        {roundListLabel(round.name)}
+                      </div>
                       {round.ties.map((t) => {
                         const yours = t.home === you || t.away === you;
                         const done = t.hs !== undefined;
@@ -650,13 +662,12 @@ export default function LeagueScreen({ career }: Props) {
                     {career.squadNumber ?? "★"}
                   </div>
                 ) : (
-                  // A real team-mate has a face. Nobody gets a stock photo of
-                  // somebody else — the one without an image gets the same
-                  // silhouette the Draft uses, not different placeholders
-                  // per screen.
+                  // A real team-mate has a face; one without a photo gets his
+                  // own fake face (the one the match draws), never a
+                  // silhouette — Harry, v0.15 item 37.
                   <ImageWithFallback
-                    src={p.imageUrl || SILHOUETTE_SRC}
-                    fallbackSrc={SILHOUETTE_SRC}
+                    src={faceOrFake(p.imageUrl, p.id)}
+                    fallbackSrc={faceOrFake(null, p.id)}
                     alt=""
                     className="h-[22px] w-[22px] rounded-full bg-white/10 object-cover"
                   />

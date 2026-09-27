@@ -24,6 +24,24 @@
  * movement (`scrambling`/`targetX`, public fields; canvasEngine.ts is not
  * touched). A shot aimed at him gets a coin-flip side if he goes.
  *
+ * ── One dive (v0.15, item 3) ──
+ *
+ * Harry: "In the trial the keeper dives, then turns and goes back once the
+ * ball crosses the line. He only needs one dive; if there's time left he just
+ * stays where he is." A keeper who has gone is marked `committed`, and the
+ * engine's save test (canvasEngine.ts's keeper line) no longer sends him back
+ * towards the ball: a ball on the side he went is judged as before, from where
+ * his dive took him; a ball behind his dive, clear of his body, beats him; a
+ * ball that beats him leaves him where he landed. Measured: turns round on
+ * 190 of 200 middle kicks → 0 (tests/star/keeperOneDive.mts). Permanent
+ * (Harry, v0.15): the old keeper who turned back is gone.
+ *
+ * ── He can read a kick down the middle (v0.15, Harry's option (b)) ──
+ *
+ * With one dive, a kick down the middle beat almost every keeper who went.
+ * So a kick aimed at him (within half a metre) is sometimes READ: he stays
+ * where he is (`middleRead`). The whole game — real match, trial, shootout.
+ *
  * ── The real match's keeper: the Premier League ruleset (26 Sep 2026) ──
  *
  * Harry's research: Premier League keepers save 17.7 % of penalties all-time
@@ -77,6 +95,12 @@ export interface PenaltyReadSettings {
    * (`Scenario.keeperReach`). Absent = 1, the old keeper.
    */
   reach?: number;
+  /**
+   * A kick aimed at him (within half a metre of where he stands): the chance
+   * he READS it and stays put instead of diving (v0.15, Harry's option (b)).
+   * Absent = 0, a keeper who always guesses a side.
+   */
+  middleRead?: number;
 }
 
 /**
@@ -87,8 +111,9 @@ export const PENALTY_READ_DEFAULT: PenaltyReadSettings = {
   commitChance: 0.96,
   readChance: 0.5,
   shortest: 1.0,
-  metres: 2.5,
-  reach: 0.35,
+  metres: 3.4,
+  reach: 0.3,
+  middleRead: 0.06,
 };
 
 /**
@@ -122,8 +147,9 @@ export function penaltyReadFor(keeperStrength: number, override?: Partial<Penalt
       commitChance: d.commitChance,
       readChance: Math.max(0.5, Math.min(0.65, d.readChance + (k - 62) / 250)),
       shortest: d.shortest,
-      metres: Math.max(2.0, Math.min(3.0, d.metres + (k - 62) * 0.015)),
+      metres: Math.max(3.0, Math.min(3.7, d.metres + (k - 62) * 0.015)),
       reach: d.reach,
+      middleRead: Math.max(0.03, Math.min(0.15, d.middleRead! + (k - 62) * 0.003)),
     };
   }
   const base: PenaltyReadSettings = {
@@ -137,6 +163,9 @@ export function penaltyReadFor(keeperStrength: number, override?: Partial<Penalt
   };
   if (override.shortest !== undefined) s.shortest = Math.max(0, Math.min(s.metres, override.shortest));
   if (override.reach !== undefined) s.reach = Math.max(0.1, Math.min(1, override.reach));
+  // The trial keeper reads a kick down the middle as well as he reads a side
+  // (Harry's option (b), v0.15) unless the override says otherwise.
+  s.middleRead = clamp01(override.middleRead ?? s.readChance);
   return s;
 }
 
@@ -161,7 +190,8 @@ export interface PenaltyReadDecision {
 /**
  * Decide, at the strike. `roll` is two uniform draws in [0,1): whether he
  * goes, and whether he reads you. A shot aimed within half a metre of him has
- * no side to read, so the second draw picks one at random.
+ * no side to read: the second draw says whether he reads it and stays
+ * (`middleRead`), otherwise it picks a side at random.
  *
  * How far this dive goes reuses the first draw: given he went (roll[0] <
  * commitChance), roll[0] / commitChance is itself uniform and independent of
@@ -176,7 +206,11 @@ export function decidePenaltyRead(sc: Scenario, ball: Ball, s: PenaltyReadSettin
   let side: number;
   let correct: boolean;
   if (aimedSide === 0) {
-    side = roll[1] < 0.5 ? -1 : 1;
+    // Down the middle: sometimes he reads it and stays (v0.15). The same
+    // draw, rescaled, picks his side otherwise — still two draws in all.
+    const mr = clamp01(s.middleRead ?? 0);
+    if (roll[1] < mr) return { went: false, side: 0, correct: true, metres: 0 };
+    side = (roll[1] - mr) / Math.max(1e-9, 1 - mr) < 0.5 ? -1 : 1;
     correct = false;
   } else {
     correct = roll[1] < s.readChance;
@@ -197,6 +231,9 @@ export function applyPenaltyRead(sc: Scenario, d: PenaltyReadDecision): void {
   k.scrambling = true;
   k.saveDir = d.side;
   if (k.saveLunge <= 0) k.saveLunge = 0.001;
+  // One dive: when the ball reaches his line he is judged as before but not
+  // sent back the other way (canvasEngine's keeper line, v0.15 item 3).
+  k.committedDir = d.side;
   // Committed one way, he can't stretch back the other. Only set while he is
   // actually diving: a keeper who stays keeps his full reach.
   if (d.reach !== undefined && Number.isFinite(d.reach) && d.reach > 0) sc.keeperReach = d.reach;

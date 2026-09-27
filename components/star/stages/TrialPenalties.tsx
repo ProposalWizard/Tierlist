@@ -4,7 +4,7 @@ import type { Outcome, Scenario } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import { CX } from "@/lib/star/pitch";
 import {
-  REPS, penaltySetup, penaltyReadForTrial, trialInvisibleStats,
+  REPS, penaltySetup, penaltyRampFor, trialInvisibleStats,
   strikeQuality, weightedQuality, teachSeen, markTeachSeen, type TeachableDrill,
 } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
@@ -117,6 +117,8 @@ export interface StrikeStageProps {
   /** The trial's one dial inside the engine: how well its keeper reads a
    *  penalty. Absent: the real match's own keeper. */
   penaltyRead?: Partial<PenaltyReadSettings>;
+  /** The same dial, rep by rep (the v0.15 ramp) — wins over `penaltyRead`. */
+  penaltyReadFor?: (rep: number) => Partial<PenaltyReadSettings>;
   onDone: (quality: number) => void;
   /** Force the one-row teaching card (a drill where the ball sits low). */
   forceCompactTeach?: boolean;
@@ -423,7 +425,7 @@ const LAST_RESULT_HOLD_MS = 1700;
 
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, keeperStrengthFor,
-  penaltyRead, onDone, forceCompactTeach = false,
+  penaltyRead, penaltyReadFor, onDone, forceCompactTeach = false,
 }: StrikeStageProps) {
   const [rep, setRep] = useState(0);
   const repRef = useRef(0);
@@ -499,7 +501,7 @@ export function StrikeStage({
           skills={skills}
           setPieceSkill={trial.setPieceSkill}
           keeperStrength={keeperStrengthFor?.(rep) ?? 62}
-          penaltyRead={penaltyRead}
+          penaltyRead={penaltyReadFor ? penaltyReadFor(rep) : penaltyRead}
           seed={seed}
           // A trial is you against the keeper (and the wall): no team-mate
           // following in to tidy up a rebound. Harry, 24 Sep 2026.
@@ -552,22 +554,32 @@ export interface TrialPenaltiesProps {
  * he reads your kick at the strike, like a match keeper (penaltyKeeper.ts).
  * Exported so a test can drive the real thing through the engine.
  */
-export function buildPenaltyScenario(trial: TrialProgress, rep: number, rng: () => number): Scenario {
+export function buildPenaltyScenario(trial: TrialProgress, rep: number, rng: () => number, keeperStrength?: number): Scenario {
   const setup = penaltySetup(trial, rep);
-  const sc = buildScenario("penalty", rng, setup.keeperStrength, 60, 55);
+  const sc = buildScenario("penalty", rng, keeperStrength ?? setup.keeperStrength, 60, 55);
   initDefenders(sc, rng);
   sc.ball = { ...setup.ball, x: setup.ball.x ?? CX };
   return sc;
 }
 
+/** What the ramp's keeper is like on this kick, said plainly (v0.15 item 7b). */
+function rampLine(rep: number): string {
+  const words = rep === 0 ? "A fair keeper — he's guessing."
+    : rep >= REPS.penalties - 1 ? "His best: he reads you and goes almost every time."
+      : "Sharper now — he's reading you better.";
+  return `Kick ${rep + 1}: ${words}`;
+}
+
 export default function TrialPenalties({
   trial, onDone, skills = { power: 55, technique: 55 },
 }: TrialPenaltiesProps) {
+  // v0.15 item 7b: the keeper ramps kick by kick (trialStages.ts's
+  // penaltyRampFor), the random day switched off for him.
   const build = useCallback(
-    (rep: number, rng: () => number) => buildPenaltyScenario(trial, rep, rng),
+    (rep: number, rng: () => number) =>
+      buildPenaltyScenario(trial, rep, rng, penaltyRampFor(rep, REPS.penalties).keeperStrength),
     [trial],
   );
-  const read = penaltyReadForTrial(trial);
   return (
     <StrikeStage
       reps={REPS.penalties}
@@ -575,8 +587,8 @@ export default function TrialPenalties({
       skills={skills}
       seed={trial.seed}
       drill="penalties"
-      keeperStrengthFor={(rep) => penaltySetup(trial, rep).keeperStrength}
-      penaltyRead={read}
+      keeperStrengthFor={(rep) => penaltyRampFor(rep, REPS.penalties).keeperStrength}
+      penaltyReadFor={(rep) => penaltyRampFor(rep, REPS.penalties).read}
       title="Penalties"
       hint="Drag back from the ball to aim, and pull further for more power."
       teach={{
@@ -584,11 +596,11 @@ export default function TrialPenalties({
         short: "Drag back, then let go.",
         lines: [
           "Pull further for more power. The arrow is where it is going.",
-          "He waits for your kick, then guesses. Don't make it easy for him.",
+          "Then you run up. He may hop — drag sideways to change your aim.",
+          "Tap the ball before the ring runs out.",
         ],
       }}
-      subtitle={() => read.readChance > 0.66 ? "A sharp keeper. He reads kickers well."
-        : read.readChance > 0.6 ? "He'll try to read you." : "He's guessing more than reading."}
+      subtitle={rampLine}
       onDone={onDone}
     />
   );

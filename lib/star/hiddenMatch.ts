@@ -1,6 +1,7 @@
 import { pickFresh, EXTRA_QUIET_USER, EXTRA_QUIET_OPP, EXTRA_MISS_USER, EXTRA_MISS_OPP } from "./commentaryExtra";
 import { pickScenarioKindFrom, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { getTuning } from "@/lib/star/tuningStore";
+import { OFF_PITCH_PEN_CONVERT } from "@/lib/star/penaltyTaking";
 
 const HIGH_MODE_CHANCES = getTuning("energy.highModeChances");
 const LOW_MODE_CHANCES = getTuning("energy.lowModeChances");
@@ -17,6 +18,57 @@ const HIGH_MODE_EXTRA = getTuning("energy.highModeExtraChances");
  * involvement, exactly like everyone else's Low.
  */
 const TALISMAN_CHANCES = 2.2;
+
+// ── LATE SUBS (item 24, v0.15) ──────────────────────────────────────────────
+//
+// Harry: "if you're coming on at any point after 80, you should be guaranteed
+// 1 to 2 highlights, 100% ... the later you come on, the chances per minute
+// just go up." And, deciding the plan: guaranteed from 70', and a sub's
+// chances are squeezed into the minutes he has left, allowing for his
+// fitness — on at 80' he still gets about two.
+// Measured before any of this (1,000 cameos per minute, 99-rated Chelsea
+// striker): on at 80', 0.75 chances and none at all 46% of the time. The
+// numbers after are in tests/star/lateSubs.mts. Everything here acts only
+// through HiddenMatchInputs.lateSub, which CanvasMatch and the Sim button set
+// once the sub is actually on — absent, nothing changes.
+
+/** A substitute who is on: the minute he came on, how many guaranteed
+ *  chances he is still owed, and his energy (0-100) when he came on. */
+export interface LateSub { enteredAt: number; owed: number; fitness?: number }
+
+/** From this minute on, a sub is guaranteed a chance. */
+export const LATE_SUB_GUARANTEE_FROM = 70;
+/** Chances a sub is guaranteed: one, if he is on at 70' or later. (Two made
+ *  an 80' cameo worth more than a 75' one, which punished climbing the ladder;
+ *  the squeeze below gets 80' to about two on average instead.) */
+export function lateSubQuota(enteredAt: number): number {
+  return enteredAt >= LATE_SUB_GUARANTEE_FROM ? 1 : 0;
+}
+/** 0 for a sub on at 55' or earlier, rising to 1 for one on at 80' or later. */
+function lateness(enteredAt: number): number {
+  return Math.max(0, Math.min(1, (enteredAt - 55) / 25));
+}
+/** Fresh legs squeeze in more: full effect at 100% energy, 60% of it when empty. */
+function fitnessScale(sub: LateSub): number {
+  const f = Math.max(0, Math.min(100, sub.fitness ?? 100));
+  return 0.6 + 0.4 * (f / 100);
+}
+/** How much likelier the ball is to find him per move: the old flat ×1.5 on
+ *  at 55', rising to ×3.1 for a fresh sub on at 80'+. */
+export const LATE_SUB_INVOLVEMENT = 1.6;
+/** Extra chances his fresh legs make, as a share of his side's own chance
+ *  rate while it has the ball in the final third: +250% for a fresh sub on
+ *  at 80'+. */
+export const LATE_SUB_EXTRA = 2.5;
+export function lateSubInvolvement(sub: LateSub): number {
+  return 1.5 + LATE_SUB_INVOLVEMENT * lateness(sub.enteredAt) * fitnessScale(sub);
+}
+export function lateSubExtra(sub: LateSub): number {
+  return LATE_SUB_EXTRA * lateness(sub.enteredAt) * fitnessScale(sub);
+}
+/** A guaranteed chance is made to happen once fewer than this many minutes
+ *  are left per chance still owed (owed 1 → in the last two minutes). */
+export const LATE_SUB_FORCE_GAP = 2;
 
 /**
  * HIDDEN MATCH SIMULATION
@@ -82,6 +134,8 @@ export interface HiddenMatchState {
   sinceTurnover?: number;
   /** The zone when possession last flipped to you. */
   turnoverZone?: Zone;
+  /** Added time, chasing: the "everyone forward" line has been read out. */
+  chargeAnnounced?: boolean;
 }
 
 /** The channel the ball is in. See HiddenMatchState.lane. */
@@ -145,6 +199,30 @@ export interface HiddenMatchInputs {
    */
   talisman?: boolean;
   /**
+   * PENALTIES WON IN ANY MOVE (v0.15 plan, item 6).
+   *
+   * Harry: "A top team should get one every 6–7 games", won "whether or not
+   * you're in the move". Today a penalty only exists inside a move that has
+   * already come to you (buildRequest's 8.5 %), and for a striker 1 in 3 of
+   * those quietly turn into an ordinary team-mate chance. With this on, every
+   * chance your side works in the box has its own `PENALTY_WON_IN_BOX` roll,
+   * BEFORE anyone asks whether it is yours, and the request carries
+   * `penaltyWon` — CanvasMatch decides who takes it (you, if you are on the
+   * pitch and on penalties; otherwise the team's taker, live). The real
+   * match (CanvasMatch) always sets it. Absent — the unit tests and the
+   * gallery's simulations — every roll is exactly as before.
+   */
+  livePenalties?: boolean;
+  /**
+   * Item 24 (v0.15, Harry): a substitute who has come on. The later he came
+   * on, the more often the ball finds him per minute (lateSubInvolvement /
+   * lateSubExtra, scaled by his fitness), and from 70' he is owed a chance:
+   * `owed` is how many guaranteed chances (lateSubQuota) he has not had yet —
+   * advanceUntilInvolved makes sure they arrive before the whistle. Absent:
+   * exactly the old game.
+   */
+  lateSub?: LateSub;
+  /**
    * MATCH CONTEXT (specification §2.9).
    *
    * "The Hidden Match Simulation must also understand the broader match
@@ -158,6 +236,14 @@ export interface HiddenMatchInputs {
    * goalless friendly.
    */
   home?: boolean;
+  /**
+   * ADDED TIME (v0.15 plan item 30). Minutes after `from` up to and including
+   * `to` are the added time the fourth official's board showed (see
+   * addedTime.ts). Your side throws men forward in them when it is chasing —
+   * "Fergie time", see the FERGIE_* constants below. Absent: no added time,
+   * and the match is exactly what it always was.
+   */
+  fergie?: { from: number; to: number };
 }
 
 export interface HiddenMatchEvent {
@@ -193,7 +279,23 @@ export interface ScenarioRequest {
   lane?: Lane;
   /** How the chance came about. Absent reads as "settled". */
   pattern?: ChancePattern;
+  /**
+   * A penalty your SIDE has won — not necessarily in a move that involved you
+   * (see HiddenMatchInputs.livePenalties). Who takes it is the match's call.
+   */
+  penaltyWon?: boolean;
+  /** Added time, you're behind, everyone's forward — see FERGIE_*. */
+  lateCharge?: boolean;
 }
+
+/**
+ * How often a chance your side works in the penalty area is a penalty, when
+ * penalties are won in any move (`livePenalties`). Set so a top side (85
+ * against a league spread) wins one about every 6–7 games — measured with the
+ * unseen match itself, `teamStrength` = the club's league strength
+ * (tests/star/penaltyTaking.mts).
+ */
+export const PENALTY_WON_IN_BOX = 0.029;
 
 /**
  * What the player did with the chance, fed back so the match reacts to it.
@@ -229,6 +331,44 @@ const HOME_EDGE = 0.16;
  */
 const LATE_FROM = 62;
 const CHASE_EDGE = 0.3;
+
+/**
+ * FERGIE TIME (v0.15 plan item 30).
+ *
+ * Harry: "crazy late moments: more attacking highlights" — and, this review,
+ * "if for Fergie time, you're also probably more vulnerable in those
+ * moments." In added time, your side commits men forward when it is chasing:
+ * one or two goals down, or level at home when you are the bigger side
+ * (Harry's call: a big side at home goes for the win).
+ *
+ *   FERGIE_EDGE      more of the ball;
+ *   FERGIE_PUSH      and with it, the whole side pushes up — forward faster,
+ *                    hardly ever back;
+ *   FERGIE_CHANCES   more of your side's moves become chances;
+ *   FERGIE_BOX       and more of those are balls into the box rather than a
+ *                    pass from midfield (the chance you get is a box chance);
+ *   FERGIE_COUNTER   but lose it and they break into the space you left —
+ *                    the ball goes two zones towards your goal, not one;
+ *   FERGIE_EXPOSED   and a break against a stretched side is likelier to
+ *                    end in a chance for them.
+ *
+ * Only in the added minutes, only when chasing (three down is over), and
+ * only through rolls that never happen outside those minutes — so every
+ * minute up to 90' plays exactly as it did before.
+ */
+const FERGIE_EDGE = 0.25;
+const FERGIE_PUSH = 1.6;
+const FERGIE_CHANCES = 1.7;
+const FERGIE_BOX = 0.6;
+const FERGIE_COUNTER = 0.6;
+const FERGIE_EXPOSED = 1.8;
+
+/** Commentary when a late charge is caught out. */
+const COUNTER_OPP = [
+  "They break — too many men caught up the pitch!",
+  "A counter! Three on two, and nobody back.",
+  "Caught with everyone forward — they're away.",
+];
 
 /** Chance per minute that the ball changes hands. */
 const TURNOVER = 0.55;
@@ -403,6 +543,18 @@ function freshLine(state: HiddenMatchState, bank: string[], rng: () => number): 
   if (!state.usedLines) state.usedLines = [];
   return pickFresh(bank, rng, state.usedLines);
 }
+/**
+ * Read-only views for the Match Radar (/star-radar-dev), which draws this
+ * simulation minute by minute. Additive: nothing in the match reads these.
+ *
+ * CHANCE_LINES tells a near-miss line from a quiet-minute line in `tick`'s
+ * events (both carry `isOpponent`). `benchConversion` is the rate `advanceTo`
+ * uses for a chance that came to you while you weren't on the pitch.
+ */
+export const CHANCE_LINES: ReadonlySet<string> = new Set([...MISS_USER_ALL, ...MISS_OPP_ALL]);
+export function benchConversion(zone: Zone): number {
+  return zone === "box" ? CONVERT_BOX : CONVERT_DEEP;
+}
 
 export function newMatch(rng: () => number = Math.random): HiddenMatchState {
   return {
@@ -514,8 +666,16 @@ export function tick(
     : Math.min(1, (state.minute - LATE_FROM) / (90 - LATE_FROM));
   const behindBy = state.oppScore - state.userScore;
   const chase = urgency * clamp1(behindBy / 2) * CHASE_EDGE;
+  // Added time and chasing: everyone forward. See FERGIE_*.
+  const lateCharge = !!inputs.fergie && state.minute > inputs.fergie.from && state.minute <= inputs.fergie.to
+    && ((behindBy >= 1 && behindBy <= 2)
+      || (behindBy === 0 && !!inputs.home && inputs.teamStrength > inputs.oppStrength));
 
-  const edge = clamp1(quality + home + chase);
+  const edge = clamp1(quality + home + chase + (lateCharge ? FERGIE_EDGE : 0));
+  if (lateCharge && !state.chargeAnnounced) {
+    state.chargeAnnounced = true;
+    events.push({ minute: state.minute, text: "{club} throw everyone forward — even the keeper wants to go up.", isOpponent: false });
+  }
 
   // ── Possession ──
   if (rng() < TURNOVER) {
@@ -524,9 +684,15 @@ export function tick(
     if (next !== state.possession) {
       state.possession = next;
       if (next === "user") { state.sinceTurnover = 0; state.turnoverZone = state.zone; }
-      // Half of turnovers are a clearance or a counter, which moves the ball;
-      // the rest are won on the spot and leave it where it was.
-      if (rng() < 0.5) state.zone = shift(state.zone, next === "user" ? 1 : -1);
+      if (lateCharge && next === "opponent" && rng() < FERGIE_COUNTER) {
+        // Caught with men forward: they break into the space you left.
+        state.zone = shift(state.zone, -2);
+        if (rng() < 0.5) events.push({ minute: state.minute, text: COUNTER_OPP[Math.floor(rng() * COUNTER_OPP.length)], isOpponent: true });
+      } else if (rng() < 0.5) {
+        // Half of turnovers are a clearance or a counter, which moves the ball;
+        // the rest are won on the spot and leave it where it was.
+        state.zone = shift(state.zone, next === "user" ? 1 : -1);
+      }
     }
   }
 
@@ -538,8 +704,9 @@ export function tick(
   const drive = (DRIVE + (userHasIt ? edge : -edge) * 0.03
     + (userHasIt ? state.momentum : -state.momentum) * 0.06) * ENTRY[shift(state.zone, dir)];
 
-  if (rng() < drive) state.zone = shift(state.zone, dir);
-  else if (rng() < RETREAT) state.zone = shift(state.zone, -dir);
+  const pushing = lateCharge && userHasIt;
+  if (rng() < drive * (pushing ? FERGIE_PUSH : 1)) state.zone = shift(state.zone, dir);
+  else if (rng() < RETREAT * (pushing ? 0.35 : 1)) state.zone = shift(state.zone, -dir);
 
   // ── Momentum ──
   // Builds for whoever is camped in a dangerous area, and always decays toward
@@ -556,21 +723,37 @@ export function tick(
   if (danger) {
     const rate = (inBox ? CHANCE_BOX : CHANCE_DEEP)
       * (1 + (userHasIt ? edge : -edge) * 0.1)
-      * (1 + Math.max(0, userHasIt ? state.momentum : -state.momentum) * 0.2);
+      * (1 + Math.max(0, userHasIt ? state.momentum : -state.momentum) * 0.2)
+      * (lateCharge ? (userHasIt ? FERGIE_CHANCES : FERGIE_EXPOSED) : 1);
 
     // One roll decides both, so Medium and Low use the random stream exactly
     // as before; only High has the extra slice above the normal rate.
     const chanceRoll = rng();
     const highExtra = userHasIt && modeAt(inputs, state.minute) === "high"
       ? rate * (HIGH_MODE_EXTRA - 1) : 0;
-    if (chanceRoll >= rate && chanceRoll < rate + highExtra) {
-      const req = buildRequest(state, rng, inputs);
+    // A late sub's fresh legs make extra chances of their own (item 24).
+    const subExtra = userHasIt && inputs.lateSub ? rate * lateSubExtra(inputs.lateSub) : 0;
+    if (chanceRoll >= rate && chanceRoll < rate + highExtra + subExtra) {
+      const req = buildRequest(state, rng, inputs, lateCharge);
       if (req) {
         state.sinceInvolved = 0;
         return { events, request: req };
       }
     }
     if (chanceRoll < rate) {
+      // ── A penalty, won in the move itself (v0.15 item 6) ──
+      // Before anyone asks whether the chance is yours: a foul in the box is a
+      // foul in the box, whoever was on the ball. Only with `livePenalties`,
+      // so the roll — and every roll after it — is exactly as before without.
+      if (userHasIt && inputs.livePenalties && state.zone === "box" && rng() < PENALTY_WON_IN_BOX) {
+        return {
+          events,
+          request: {
+            zone: "box", kinds: ["penalty"], lane: "centre", pattern: "set_piece",
+            reason: "Penalty! Brought down in the box", penaltyWon: true,
+          },
+        };
+      }
       if (userHasIt) {
         // Your team has worked one. Are you the one on the end of it?
         // Skill raises how often the move finds you.
@@ -598,10 +781,13 @@ export function tick(
         const pulled = baseInvolvement
           * positionPull(inputs.position, state.zone)
           * lanePull(inputs.position, state.lane);
-        const involvement = inputs.impactSub ? Math.min(0.92, pulled * 1.5) : Math.min(0.95, pulled);
+        // Item 24: once a sub is actually on, the later he came on, the likelier
+        // the ball finds him (his chances squeezed into the minutes left).
+        const involvement = inputs.lateSub ? Math.min(0.95, pulled * lateSubInvolvement(inputs.lateSub))
+          : inputs.impactSub ? Math.min(0.92, pulled * 1.5) : Math.min(0.95, pulled);
 
         if (rng() < involvement) {
-          const req = buildRequest(state, rng, inputs);
+          const req = buildRequest(state, rng, inputs, lateCharge);
           if (req) {
             state.sinceInvolved = 0;
             return { events, request: req };
@@ -689,7 +875,7 @@ function endOfMove(state: HiddenMatchState, scored: boolean, attacker: Side) {
  * it wasn't yours (a corner you don't take; see the participation gate). The
  * caller resolves a null through the ordinary team-mate path.
  */
-function buildRequest(state: HiddenMatchState, rng: () => number, inputs: HiddenMatchInputs): ScenarioRequest | null {
+function buildRequest(state: HiddenMatchState, rng: () => number, inputs: HiddenMatchInputs, lateCharge = false): ScenarioRequest | null {
   // Sometimes the ball simply arrives at your feet with grass in front of you.
   // Only from the middle and the final third, because a run at goal has to have
   // somewhere to run TO, and likelier for a quick player — the space is the
@@ -774,7 +960,9 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   };
   const lane = state.lane ?? "centre";
   // A penalty keeps its own rate and its own gate (the duty is the taker's).
-  if (state.zone === "box" && rng() < 0.085) {
+  // With `livePenalties` they are won in tick() instead, in any move, and
+  // this roll is not made at all (so they are never counted twice).
+  if (!inputs.livePenalties && state.zone === "box" && rng() < 0.085) {
     return takesIt("penalty")
       ? { zone: state.zone, kinds: ["penalty"], lane: "centre", pattern: "set_piece", reason: "You are brought down in the box — penalty" }
       : null;
@@ -808,7 +996,10 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   // backwards from real football. Doubling its weight where the zone already
   // offers it takes a CAM chasing from 60' from 11.9% to 18.0% of his
   // chances, and adds only 0.5-1 point overall.
-  const kinds = kindsForZone(state.zone, lane);
+  // Added time and chasing: more often than not it's launched into the box —
+  // the chance is the one a zone further up would give. See FERGIE_BOX.
+  const launched = lateCharge && state.zone !== "box" && rng() < FERGIE_BOX;
+  const kinds = kindsForZone(launched ? shift(state.zone, 1) : state.zone, lane);
   const chasing = state.minute >= 60 && state.userScore < state.oppScore;
   const lowBlock = inputs.teamStrength - inputs.oppStrength >= 15;
   if ((chasing || lowBlock) && kinds.includes("long_range")) kinds.push("long_range");
@@ -818,7 +1009,10 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
     kinds,
     lane,
     pattern,
-    reason: pattern === "transition"
+    ...(lateCharge ? { lateCharge: true } : {}),
+    reason: lateCharge
+      ? "Everyone forward — it's launched into the box"
+      : pattern === "transition"
       ? "They lose it — you break on them"
       : state.momentum > 0.35
       ? "Sustained pressure — you find space"
@@ -871,6 +1065,16 @@ export function advanceTo(
     const step = tick(state, inputs, rng);
     events.push(...step.events);
     if (step.request) {
+      // A penalty won while you are off the pitch (v0.15 item 6): taken
+      // by the team's taker, at the rate his live kick converts at.
+      if (step.request.penaltyWon) {
+        const scored = rng() < OFF_PITCH_PEN_CONVERT;
+        events.push(scored
+          ? { minute: state.minute, text: "⚽ Your side score the penalty!", isGoal: true, teammateGoal: true }
+          : { minute: state.minute, text: "A penalty for your side — saved!", isOpponent: false });
+        resolveScenario(state, scored ? "goal" : "saved");
+        continue;
+      }
       // It went to somebody else. Resolved at the rate a team-mate converts,
       // and reported, so watching from the bench is still watching a match.
       const inBox = step.request.zone === "box";
@@ -906,6 +1110,28 @@ export function advanceUntilInvolved(
     const step = tick(state, inputs, rng);
     events.push(...step.events);
     if (step.request) return { events, request: step.request, fullTime: false };
+    // Item 24: a late sub's guaranteed chances arrive before the whistle.
+    const owed = inputs.lateSub?.owed ?? 0;
+    if (owed > 0 && fullTime - state.minute < owed * LATE_SUB_FORCE_GAP) {
+      return { events, request: lateSubChance(state, rng), fullTime: false };
+    }
   }
   return { events, request: null, fullTime: true };
+}
+
+/**
+ * Item 24: the chance a late sub is owed. Always open play in the final third
+ * (never a set piece somebody else might take, so it can't fall through), and
+ * the ball genuinely is yours — the match carries on from it like any other.
+ */
+function lateSubChance(state: HiddenMatchState, rng: () => number): ScenarioRequest {
+  state.possession = "user";
+  const zone: Zone = rng() < 0.6 ? "box" : "attacking";
+  state.zone = zone;
+  state.sinceInvolved = 0;
+  const lane = state.lane ?? "centre";
+  return {
+    zone, kinds: kindsForZone(zone, lane), lane, pattern: "transition",
+    reason: "Fresh legs — the sub finds space late on",
+  };
 }

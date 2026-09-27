@@ -58,3 +58,7 @@ scripts/tmp/
 # poking at a running dev server — same reasoning as every rule above, just
 # a location none of them happened to cover yet.
 /_pw_scratch_*
+
+# Playtest screen recordings and their breakdowns (scripts/playtest-video).
+# Videos are hundreds of MB; the frames and sheets are rebuilt from them.
+.playtests/

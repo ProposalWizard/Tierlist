@@ -268,8 +268,11 @@ const stats = (rating: number): MatchStats => ({
     `the same player takes free kicks sooner at a smaller club (${a.freeKickNeeded} vs ${b.freeKickNeeded})`);
   check(a.penaltyNeeded < a.freeKickNeeded, "penalties come before free kicks");
 
-  // A beginner takes neither; training it takes them over.
-  const rookie = { ...weakClub, skills: { ...weakClub.skills, freeKick: 30 }, starRating: 1 };
+  // A beginner takes neither; training it takes them over. (v0.15 item 6:
+  // each star now counts 8 towards penalties, not 4 — so the beginner is a
+  // half-star player; at 1★ he would already be on penalties at a club of 58,
+  // 30 + 8 = 38 ≥ 38.)
+  const rookie = { ...weakClub, skills: { ...weakClub.skills, freeKick: 30 }, starRating: 0.5 };
   check(!setPieceDuties(rookie).freeKicks && !setPieceDuties(rookie).penalties, "a beginner takes neither");
 
   const trained = { ...weakClub, skills: { ...weakClub.skills, freeKick: 85 }, starRating: 4 };

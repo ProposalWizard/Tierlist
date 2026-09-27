@@ -61,6 +61,8 @@ import {
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import ChanceSheet from "@/components/star/ChanceSheet";
+import ShootoutPlay from "@/components/star/ShootoutPlay";
 import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
 import { revealOnScreen } from "@/lib/revealOnScreen";
 import {
@@ -282,7 +284,7 @@ function FlagRow({
 //  THE PAGE
 // ─────────────────────────────────────────────────────────────────────────
 
-type Screen = "run" | "kinds" | "flags";
+type Screen = "run" | "kinds" | "flags" | "sheet" | "shootout";
 
 export default function HighlightsPage() {
   const [screen, setScreen] = useState<Screen>("run");
@@ -714,6 +716,16 @@ export default function HighlightsPage() {
     return shell(
       <>
         {bar("Which highlights", () => setScreen("run"))}
+        {/* v0.15 item 7: a whole penalty shootout on the real match — every
+            kick live, yours to take when your turn comes. */}
+        <div style={{ padding: "12px 14px 2px" }}>
+          <button
+            onClick={() => setScreen("shootout")}
+            style={{ ...bigBtn, height: 52, fontSize: 16, background: "rgba(245,158,11,0.16)", border: "1px solid rgba(245,158,11,0.55)", color: "#fde68a" }}
+          >
+            ⚽ Play a penalty shootout
+          </button>
+        </div>
         <div style={{ display: "flex", gap: 8, padding: "12px 14px 4px" }}>
           <button style={smallBtn} onClick={() => setKindsAnd(allKinds())}>All</button>
           <button style={smallBtn} onClick={() => setKindsAnd([])}>None</button>
@@ -750,6 +762,29 @@ export default function HighlightsPage() {
           >
             Watch these
           </button>
+        </div>
+      </>,
+    );
+  }
+
+  // ── SHEET OF 24 ── (components/star/ChanceSheet.tsx) — every generated
+  // picture is checked by eye; this puts 24 of one kind on one screen.
+  if (screen === "sheet") {
+    return shell(
+      <>
+        {bar("Sheet of 24", () => setScreen("run"))}
+        <ChanceSheet kinds={kinds.length ? kinds : allKinds()} kits={kits} onBack={() => setScreen("run")} />
+      </>,
+    );
+  }
+
+  // ── SHOOTOUT (v0.15 item 7) ──
+  if (screen === "shootout") {
+    return shell(
+      <>
+        {bar("Penalty shootout", () => setScreen("kinds"))}
+        <div style={{ padding: "10px 12px 24px", display: "grid", justifyItems: "center" }}>
+          <ShootoutPlay width={pictureW} onExit={() => setScreen("run")} />
         </div>
       </>,
     );
@@ -808,6 +843,9 @@ export default function HighlightsPage() {
         <div style={{ display: "flex", gap: 8 }}>
           <button style={smallBtn} aria-label="Choose highlights" onClick={() => setScreen("kinds")}>
             {kinds.length}/{allKinds().length}
+          </button>
+          <button style={smallBtn} aria-label="Sheet of 24" title="Sheet of 24: 24 of one kind on one screen" onClick={() => setScreen("sheet")}>
+            &#9638; 24
           </button>
           <button
             aria-label="Flagged list"

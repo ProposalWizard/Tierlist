@@ -45,3 +45,16 @@ function hashKey(key: string): number {
 export function fakeFaceFor(key: string): string {
   return FAKE_FACES[hashKey(key) % FAKE_FACES.length];
 }
+
+/**
+ * A player's picture for any screen: his real photo when the database has
+ * one, otherwise his own stable fake face — never the silhouette.
+ *
+ * Harry, 27 Sep 2026 (v0.15 item 37, option b): the League One and Two
+ * players have no hosted photos yet, and a team sheet of silhouettes read as
+ * "nobody's there". Every star-career screen that shows a player's face uses
+ * this for both the picture and the fallback if a real URL has gone dead.
+ */
+export function faceOrFake(url: string | null | undefined, key: string): string {
+  return url || fakeFaceFor(key);
+}

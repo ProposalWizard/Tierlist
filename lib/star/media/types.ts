@@ -159,6 +159,12 @@ export interface MatchRecord {
     careerAssists: number;
     careerAppearances: number;
     clubAppearances: number;
+    /** Your "cheeky" kicks that didn't go in (a penalty down the middle, a
+     *  chip) — see MatchStats.cheekyMisses. Absent/0 when there were none. */
+    cheekyMisses?: number;
+    /** What the first of them was, and when. */
+    cheekyKind?: "penalty-middle" | "chip";
+    cheekyMinute?: number;
   };
 
   goals: GoalRecord[];

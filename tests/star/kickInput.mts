@@ -132,7 +132,10 @@ const REF = {
   const W = 390, H = 468;
   const cam = cameraFor(FIVE_A_SIDE, { x: 34, y: 20 }, W, H);
   const skill = 70;
-  const px = 40;                         // the same thumb movement, in pixels
+  // The same thumb movement, in pixels. 30, not 40: with the v0.15 drag
+  // (25% shorter, item 21) a 40 px sideways pull already reaches full power
+  // on the old sum, which hid the 1.2× it measures.
+  const px = 30;
   const full = dragForFullPower(skill);
 
   // BEFORE — FiveASide.tsx's old pointerMove: hypot(Δx/W, Δy/H).

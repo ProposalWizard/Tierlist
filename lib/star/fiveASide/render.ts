@@ -895,6 +895,38 @@ export const MATCH_FIGURE_R_MULT = 1.15;
 export const MATCH_SCALE = (MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R) / (FIGURE_R * FIGURE_HEIGHT_R);
 
 /**
+ * The match draws its keeper a little smaller than an outfielder (CanvasMatch:
+ * "smaller than an outfielder" — he stands in the mouth of the goal and must
+ * not hide your shot). One number for every renderer, so a picture's keeper
+ * is the match's size: pass `MATCH_KEEPER_SCALE` as `drawKeeper`'s scale.
+ * Before v0.15 the gallery and highlights drew him at the outfielders'
+ * `MATCH_SCALE`, about 22 % bigger than the match (1 / 0.82).
+ */
+export const MATCH_KEEPER_R_SHARE = 0.82;
+export const MATCH_KEEPER_SCALE = MATCH_SCALE * MATCH_KEEPER_R_SHARE;
+
+/**
+ * THE SAME PLAYER SIZE ON EVERY SCREEN (v0.15 follow-up C).
+ *
+ * `MATCH_SCALE` makes a figure the match's size PER METRE — so on a picture
+ * that shows more pitch than the match's frame (42 m tall, 26.25 m across),
+ * everybody is drawn smaller. Measured on a 390 px phone: the vision trial
+ * (35 m across) drew a player 29.5 px tall and training's vision drill (34 m)
+ * about 30, against the match's 40.2. A picture you read in one look keeps its
+ * wider field; only the players are drawn at the match's own size on screen.
+ *
+ * Pass the picture's `unit` (px per metre) and its width in the same pixels;
+ * returns the `scale` to hand `drawFigure`/`drawBall` (times
+ * MATCH_KEEPER_R_SHARE for `drawKeeper`). On the match's own frame this is
+ * exactly `MATCH_SCALE`; it never draws a player SMALLER than per-metre.
+ */
+export const MATCH_FRAME_W_M = 42 * (5 / 8);
+export function sameSizeScale(unit: number, widthPx: number): number {
+  if (!(unit > 0) || !(widthPx > 0)) return MATCH_SCALE;
+  return MATCH_SCALE * Math.max(1, (widthPx / MATCH_FRAME_W_M) / unit);
+}
+
+/**
  * Radians. A keeper at full stretch is horizontal. He is not upside down.
  *
  * The match's own dive commitment runs to 2.15 on a fingertip save, which

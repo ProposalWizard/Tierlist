@@ -41,7 +41,20 @@ export const REPUTATION_EVENTS = {
   caughtCheating: -15,
   mergedClubs: -20,
   transferRequest: -2,
+  /**
+   * A missed "cheeky" kick — a penalty down the middle, or a chip (penalty or
+   * open play) — that didn't go in (Harry, 27 Sep 2026: "a small reputation
+   * hit"). The smallest step the bar has; at most two a match (see
+   * `cheekyMissReputation`). See lib/star/penaltyRunup.ts's `cheekyStrike`.
+   */
+  cheekyMiss: -1,
 } as const;
+
+/** What `misses` cheeky misses in one match cost: 1 each, never more than 2. */
+export function cheekyMissReputation(misses: number): number {
+  const n = Math.max(0, Math.floor(Number.isFinite(misses) ? misses : 0));
+  return Math.max(2 * REPUTATION_EVENTS.cheekyMiss, n * REPUTATION_EVENTS.cheekyMiss);
+}
 
 export function clampReputation(n: number): number {
   return Math.max(0, Math.min(100, Math.round(Number.isFinite(n) ? n : 0)));

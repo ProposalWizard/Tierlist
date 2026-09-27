@@ -23,7 +23,7 @@ import {
   buildScenario, initDefenders, stepDefenders, stepKeeper, stepReactions, stepBall,
   launch, keeperSaveRadius, type Outcome, type Scenario, type Ball,
 } from "../../lib/star/canvasEngine";
-import { nextAuthoredShape, applyAuthoredShape } from "../../lib/star/authoredChance";
+import { makeChance } from "../../lib/star/chanceMaker";
 import { setupKind, strikeKind, stepKind, replayStrike, type StrikeDecision } from "../../lib/star/kindRules";
 import { FREE_KICK, wallSizeFor } from "../../lib/star/kindRules/freeKick";
 import { CX, POST_L, POST_R, GOAL_W, GOAL_H } from "../../lib/star/pitch";
@@ -42,17 +42,21 @@ function mulberry32(a: number) {
 const SUB = 1 / 180;
 const pct = (n: number, d: number) => `${((100 * n) / Math.max(1, d)).toFixed(1)}%`;
 
-/** The free kick as CanvasMatch.loadScenario serves it (request path, no squad). */
+/** The free kick as CanvasMatch.loadScenario serves it (request path, no
+ *  squad) — since v0.15 A2 every chance is made by chanceMaker's makeChance. */
 function served(seed: number, ks = 62): Scenario {
   const rng = mulberry32(seed);
-  const sc = buildScenario("free_kick", rng, ks, 60, 55);
-  const shape = nextAuthoredShape("free_kick", rng, []);
-  if (shape) applyAuthoredShape(sc, shape);
-  setupKind(sc, rng, { appliedAuthored: !!shape, appliedPlan: false, keeperStrength: ks });
+  const sc = makeChance({ source: { from: "kind", kind: "free_kick" }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null }).sc;
   initDefenders(sc, rng);
   return sc;
 }
-const wallOf = (sc: Scenario) => sc.defenders.filter((d) => d.baseRole === "hold");
+/** Taken off the picture on purpose (the drawing has no spot for him). */
+const offPicture = (p: { x: number; y: number }) => p.x < -100 || p.y > 200;
+// The wall is the men the rule stood by the ball (setupFreeKick's own 12.5 m
+// "holders"). At a dead ball every defender holds his ground, so baseRole
+// alone also counts a marker drawn on the edge of the box — since v0.15 A2
+// the drawing is the team, so those markers are now always there.
+const wallOf = (sc: Scenario) => sc.defenders.filter((d) => d.baseRole === "hold" && Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y) < 12.5);
 
 // ── 1. Where it is taken, the wall, the keeper, the man over the ball ───────
 {
@@ -91,12 +95,16 @@ const wallOf = (sc: Scenario) => sc.defenders.filter((d) => d.baseRole === "hold
     // Keeper on his line, inside his posts.
     if (sc.keeper.y > 0.8 || sc.keeper.x < POST_L + 0.5 || sc.keeper.x > POST_R - 0.5) { bad++; problems.push(`${where}: keeper at ${sc.keeper.x.toFixed(1)},${sc.keeper.y.toFixed(1)}`); }
     if (Math.abs(sc.keeper.x - CX) < FREE_KICK.keeperCheat[0] - 0.01) { bad++; problems.push(`${where}: keeper not cheated (${(sc.keeper.x - CX).toFixed(2)})`); }
-    // The team-mate over the ball: behind it (never offside), clear of it.
+    // Your team-mate. There used to be a rule here standing him over the ball
+    // 3.7 m behind it; Harry deleted it in v0.15 (rules audit R7: it was not
+    // one of his five points) — he stays where he is drawn. What still holds:
+    // he never stands on the ball.
     const f = sc.follower;
-    if (f.y < b.y || Math.hypot(f.x - b.x, f.y - b.y) < 3) { bad++; problems.push(`${where}: team-mate at ${f.x.toFixed(1)},${f.y.toFixed(1)}`); }
-    // Everybody inside the frame the chance is shown in.
+    if (!offPicture(f) && Math.hypot(f.x - b.x, f.y - b.y) < 1.2) { bad++; problems.push(`${where}: team-mate on the ball at ${f.x.toFixed(1)},${f.y.toFixed(1)}`); }
+    // Everybody inside the frame the chance is shown in (a team-mate the
+    // drawing has no spot for is taken off the picture on purpose).
     const vp = sc.viewport;
-    for (const p of [b, sc.player, f, ...wall, sc.keeper]) {
+    for (const p of [b, sc.player, ...(offPicture(f) ? [] : [f]), ...wall, sc.keeper]) {
       if (p.x < vp.x1 || p.x > vp.x2 || p.y < vp.y1 || p.y > vp.y2) { bad++; problems.push(`${where}: someone off screen at ${p.x.toFixed(1)},${p.y.toFixed(1)}`); break; }
     }
     if (bad > 12) break;
@@ -109,7 +117,9 @@ const wallOf = (sc: Scenario) => sc.defenders.filter((d) => d.baseRole === "hold
   const sorted = dists.slice().sort((a, b) => a - b);
   const med = sorted[sorted.length >> 1];
   check(med > 22.5 && med < 26, `median distance is in the real range (${med.toFixed(1)} m)`);
-  check(sorted[sorted.length - 1] > 27, `some are taken from 27 m+ (${sorted[sorted.length - 1].toFixed(1)} m)`);
+  // v0.15 A2 (rules audit R3): a free kick is served exactly where it is
+  // drawn — no nudge — so the longest one is the longest drawing, 26.8 m.
+  check(sorted[sorted.length - 1] > 26.5, `some are taken from 26.5 m+ (${sorted[sorted.length - 1].toFixed(1)} m)`);
   check(wallSizeFor(0, 0) === 5 && wallSizeFor(0, 0.99) === 4 && wallSizeFor(25, 0) === 3 && wallSizeFor(25, 0.99) === 2, "wall size table");
 }
 
@@ -139,8 +149,12 @@ function fly(sc: Scenario, ball: Ball, rng: () => number, kd: StrikeDecision | n
     if (out === "blocked" || out === "tackled") blocked++;
     if (out === "goal" || out === "rebound") goals++;
   }
-  check(blocked / N > 0.85, `a plain drive at the middle of the goal hits the wall (${pct(blocked, N)} blocked)`);
-  check(goals / N < 0.03, `…and almost never goes in (${pct(goals, N)})`);
+  // v0.15 A2 re-pin (item 14, Harry chose a 0.7 m body): a ball has to
+  // reach a wall man's body to be blocked, not pass within 0.95 m of him, so
+  // a drive at the middle of the goal now skims past the wall's inside man
+  // more often — measured 76.7% blocked, 10.0% in (before: over 85%, under 3%).
+  check(blocked / N > 0.7, `a plain drive at the middle of the goal hits the wall (${pct(blocked, N)} blocked)`);
+  check(goals / N < 0.12, `…and rarely goes in (${pct(goals, N)})`);
 }
 
 // ── 3. The wall jumps — or is told to stay down ─────────────────────────────
@@ -186,7 +200,11 @@ function fly(sc: Scenario, ball: Ball, rng: () => number, kd: StrikeDecision | n
     let early = false, maxMove = 0, cleared = false;
     fly(sc, ball, rng, kd, () => {
       const travelled = Math.hypot(ball.pos.x - sc.ball.x, ball.pos.y - sc.ball.y);
-      if (travelled < wallD && Math.abs(sc.keeper.x - start) > 0.01 && sc.keeper.saves === 0) early = true;
+      // (A team-mate standing on the ball's line takes it — Harry's item 13
+      // (a) — and the keeper rightly shuffles for that; it is not seeing
+      // through his wall. Since v0.15 A2 every drawn team-mate is on the
+      // pitch, so it happens: measured 12 of 160.)
+      if (travelled < wallD && Math.abs(sc.keeper.x - start) > 0.01 && sc.keeper.saves === 0 && !sc.receiverReached) early = true;
       if (travelled > wallD + 3 && ball.lastTouch === "attack") cleared = true;
       if (sc.keeper.saves === 0) maxMove = Math.max(maxMove, Math.abs(sc.keeper.x - start));
     });
