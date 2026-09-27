@@ -1,6 +1,6 @@
 import type { Scenario, Vec2, Contact, KickSkills } from "./canvasEngine";
 import type { PenaltyReadDecision } from "./penaltyKeeper";
-import type { RunupStyleId } from "./runupStyles";
+import type { PenaltyRunupId, FreeKickRunupId } from "./runupStyles";
 
 /**
  * Everything needed to watch a goal you scored happen again, exactly as it
@@ -849,12 +849,19 @@ export interface CareerState {
    */
   kibAbility?: { curve?: boolean; extraTouch?: boolean };
   /**
-   * The penalty/free-kick run-up you take (lib/star/runupStyles.ts) — looks
-   * only, never who scores. Absent on older saves: Standard.
+   * The run-ups you take (lib/star/runupStyles.ts) — two separate sets, one
+   * for penalties and one for direct free kicks. Looks only, never who
+   * scores. Absent on older saves: each set's Standard. Read them through
+   * careerPenaltyRunup / careerFreeKickRunup.
    */
-  runupStyle?: RunupStyleId;
-  /** Animation ids you own (the shop's Animations). "standard" always counts
-   *  as owned, listed or not. Absent on older saves: none bought yet. */
+  penaltyRunup?: PenaltyRunupId;
+  freeKickRunup?: FreeKickRunupId;
+  /** @deprecated the first build's penalty run-up field — read as
+   *  `penaltyRunup` when that isn't set (storage.ts moves it across). */
+  runupStyle?: PenaltyRunupId;
+  /** Animation ids you own (the shop's Animations), from both sets — the ids
+   *  are unique across them. Each set's Standard always counts as owned,
+   *  listed or not. Absent on older saves: none bought yet. */
   ownedAnimations?: string[];
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;

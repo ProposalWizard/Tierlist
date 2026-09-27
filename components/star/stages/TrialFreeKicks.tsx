@@ -8,7 +8,7 @@ import { CX, POST_L, POST_R, NET_DEPTH, PITCH_W, HALF_LEN } from "@/lib/star/pit
 import { REPS, freeKickSetup, type FreeKickSetup } from "@/lib/star/trialStages";
 import type { TrialProgress } from "@/lib/star/trial";
 import { StrikeStage } from "./TrialPenalties";
-import type { RunupStyleId } from "@/lib/star/runupStyles";
+import type { FreeKickRunupId } from "@/lib/star/runupStyles";
 
 /**
  * THE FREE KICKS STAGE.
@@ -139,12 +139,12 @@ export interface TrialFreeKicksProps {
   trial: TrialProgress;
   onDone: (quality: number) => void;
   skills?: { power: number; technique: number };
-  /** Your run-up style (lib/star/runupStyles.ts) — looks only. */
-  runupStyle?: RunupStyleId;
+  /** Your free-kick run-up (lib/star/runupStyles.ts) — looks only. */
+  freeKickRunup?: FreeKickRunupId;
 }
 
 export default function TrialFreeKicks({
-  trial, onDone, skills = { power: 55, technique: 55 }, runupStyle,
+  trial, onDone, skills = { power: 55, technique: 55 }, freeKickRunup,
 }: TrialFreeKicksProps) {
   const build = useCallback(
     (rep: number, rng: () => number) => buildFreeKickScenario(trial, rep, rng),
@@ -158,7 +158,7 @@ export default function TrialFreeKicks({
       skills={skills}
       seed={(trial.seed ^ 0x5f5e) >>> 0}
       drill="freeKicks"
-      runupStyle={runupStyle}
+      freeKickRunup={freeKickRunup}
       keeperStrengthFor={(rep) => freeKickSetup(trial, rep).keeperStrength}
       title="Free kicks"
       hint="Bend it round the wall or lift it over — sides of the ball curl it, the bottom lifts it."

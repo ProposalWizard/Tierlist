@@ -22,7 +22,10 @@
 
 import type { CareerDivision } from "./calendar";
 import type { PressureDial } from "./pressure";
-import { runupStyleOf, DEFAULT_RUNUP_STYLE, type RunupStyleId } from "./runupStyles";
+import {
+  penaltyRunupOf, freeKickRunupOf, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP,
+  type PenaltyRunupId, type FreeKickRunupId,
+} from "./runupStyles";
 
 export interface PlaySettings {
   /** `CanvasMatch`'s `skills.power` — how hard the same drag hits. */
@@ -75,11 +78,12 @@ export interface PlaySettings {
    */
   pressure: PressureDial;
   /**
-   * Your penalty and free-kick run-up style (lib/star/runupStyles.ts), to see
-   * each one on the real pitch. Looks only. Test screens only: a career uses
-   * the style it has equipped (Settings → Penalty run-up).
+   * Your penalty run-up and your free-kick run-up (lib/star/runupStyles.ts —
+   * two separate sets), to see each one on the real pitch. Looks only. Test
+   * screens only: a career uses the ones it has equipped in Settings.
    */
-  runupStyle: RunupStyleId;
+  penaltyRunup: PenaltyRunupId;
+  freeKickRunup: FreeKickRunupId;
 }
 
 export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
@@ -96,7 +100,8 @@ export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
   realKeeper: true,
   chanceMaker: "drawings",
   pressure: "real",
-  runupStyle: DEFAULT_RUNUP_STYLE,
+  penaltyRunup: DEFAULT_PENALTY_RUNUP,
+  freeKickRunup: DEFAULT_FREE_KICK_RUNUP,
 };
 
 /** Every dial's real range, exported so the sliders and the clamp read the
@@ -161,7 +166,9 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
     chanceMaker: o.chanceMaker === "generator" ? "generator" : d.chanceMaker,
     pressure: o.pressure === "off" || o.pressure === "light" || o.pressure === "full" || o.pressure === "real"
       ? o.pressure : d.pressure,
-    runupStyle: runupStyleOf(o.runupStyle),
+    // `runupStyle` was this dial's name before the two sets were split.
+    penaltyRunup: penaltyRunupOf(o.penaltyRunup ?? (o as Record<string, unknown>).runupStyle),
+    freeKickRunup: freeKickRunupOf(o.freeKickRunup),
   };
 }
 

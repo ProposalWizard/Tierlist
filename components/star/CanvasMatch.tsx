@@ -86,8 +86,8 @@ import {
   runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose, FIGURE_HEIGHT_R,
 } from "@/lib/star/fiveASide/render";
 import {
-  runupStyleOf, takerRunupStyle, standBackFor, planRunup, runupPositionAt, runupPoseAt,
-  RUNUP_MOTION, type RunupStyleId, type StyledRunup, type RunupPose,
+  penaltyRunupOf, freeKickRunupOf, takerRunupFor, yourRunupFor, standBackFor, planRunup, runupPositionAt, runupPoseAt,
+  RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
@@ -362,12 +362,14 @@ interface Props {
    */
   pressure?: number;
   /**
-   * How YOU run up to a penalty or a direct free kick (lib/star/runupStyles.ts)
-   * — the career's equipped style, or the Play Area's dial. Looks only: the
-   * kick is the same. A team-mate's or an opponent's penalty uses his own
-   * style (takerRunupStyle). Absent: Standard.
+   * How YOU run up to a penalty, and to a direct free kick — two separate sets
+   * (lib/star/runupStyles.ts): the career's equipped ones, or the Play Area's
+   * dials. Looks only: the kick is the same. A team-mate's or an opponent's
+   * kick uses his own style from the right set (takerRunupFor). Absent: each
+   * set's Standard.
    */
-  runupStyle?: RunupStyleId;
+  penaltyRunup?: PenaltyRunupId;
+  freeKickRunup?: FreeKickRunupId;
 }
 
 
@@ -531,7 +533,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, runupStyle }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1445,17 +1447,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   } | null>(null);
   /** A sideways drag during the run-up: where it started, and the swing then. */
   const nudgeDragRef = useRef<{ x0: number; base: number } | null>(null);
-  /** Your run-up style, read live (a prop can change between chances). */
-  const runupStyleRef = useRef<RunupStyleId>(runupStyleOf(runupStyle));
-  runupStyleRef.current = runupStyleOf(runupStyle);
+  /** Your two run-up styles, read live (a prop can change between chances). */
+  const runupStyleRef = useRef({ pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) });
+  runupStyleRef.current = { pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) };
   /**
-   * Whose run-up this picture's kick is: yours, or — on a kick the match
-   * takes for somebody else (items 6/7) — that taker's own, picked from his
-   * id so the same player always runs up the same way.
+   * Whose run-up this picture's kick is, from the set for this kind of kick
+   * (a penalty's or a free kick's): yours, or — on a kick the match takes for
+   * somebody else (items 6/7) — that taker's own, picked from his id so the
+   * same player always runs up the same way.
    */
-  const runupStyleFor = (sc: Scenario): RunupStyleId => {
+  const runupStyleFor = (sc: Scenario): RunupId => {
     const auto = autoKickOf(sc);
-    return auto ? takerRunupStyle(auto.taker.id || auto.taker.name) : runupStyleRef.current;
+    return auto
+      ? takerRunupFor(sc.kind, auto.taker.id || auto.taker.name)
+      : yourRunupFor(sc.kind, runupStyleRef.current.pen, runupStyleRef.current.fk);
   };
   /** The strike screen's countdown for this kick, seconds — null = no limit (every kick but a run-up). */
   const [contactTimerS, setContactTimerS] = useState<number | null>(null);

@@ -13,7 +13,10 @@ import PortraitPicker from "./PortraitPicker";
 import GoalReplaysPanel from "./GoalReplaysPanel";
 import SaveSlotsPanel from "./SaveSlotsPanel";
 import RefreshPhotosPanel from "./RefreshPhotosPanel";
-import { ownedRunupStyles, runupStyleOf, type RunupStyleId } from "@/lib/star/runupStyles";
+import {
+  ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup,
+  type PenaltyRunupId, type FreeKickRunupId, type RunupId, type RunupStyle,
+} from "@/lib/star/runupStyles";
 
 interface Props {
   career: CareerState;
@@ -46,8 +49,9 @@ interface Props {
    *  navigating away from Settings, this screen just reads/flips it. */
   immersiveActive: boolean;
   onToggleImmersive: () => void;
-  /** Equip a penalty/free-kick run-up style you own (lib/star/runupStyles.ts). */
-  onSetRunupStyle?: (id: RunupStyleId) => void;
+  /** Equip a penalty run-up / a free-kick run-up you own (lib/star/runupStyles.ts). */
+  onSetPenaltyRunup?: (id: PenaltyRunupId) => void;
+  onSetFreeKickRunup?: (id: FreeKickRunupId) => void;
 }
 
 export default function SettingsScreen({
@@ -55,7 +59,7 @@ export default function SettingsScreen({
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive, onSetRunupStyle,
+  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup,
 }: Props) {
   const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
 
@@ -223,27 +227,28 @@ export default function SettingsScreen({
 
         <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
 
-        {onSetRunupStyle && (
+        {(onSetPenaltyRunup || onSetFreeKickRunup) && (
           <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Penalty run-up</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Run-ups</div>
             <p className="mt-1 text-[11px] font-semibold text-white/90">
-              How you run up to penalties and free kicks. Looks only — the kick is the same.
+              How you run up to the ball. Looks only — the kick is the same.
             </p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {ownedRunupStyles(career.ownedAnimations).map((r) => {
-                const on = runupStyleOf(career.runupStyle) === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => onSetRunupStyle(r.id)}
-                    title={r.blurb}
-                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black ${on ? "bg-emerald-600 text-white" : "bg-gray-700 text-white/80 hover:bg-gray-600"}`}
-                  >
-                    {r.name}
-                  </button>
-                );
-              })}
-            </div>
+            {onSetPenaltyRunup && (
+              <RunupPicker
+                title="Penalty run-up"
+                styles={ownedPenaltyRunups(career.ownedAnimations)}
+                current={careerPenaltyRunup(career)}
+                onPick={onSetPenaltyRunup}
+              />
+            )}
+            {onSetFreeKickRunup && (
+              <RunupPicker
+                title="Free-kick run-up"
+                styles={ownedFreeKickRunups(career.ownedAnimations)}
+                current={careerFreeKickRunup(career)}
+                onPick={onSetFreeKickRunup}
+              />
+            )}
           </div>
         )}
 
@@ -297,6 +302,32 @@ export default function SettingsScreen({
           onSaveReplay={onSaveReplay}
           onDeleteSavedReplay={onDeleteSavedReplay}
         />
+      </div>
+    </div>
+  );
+}
+
+/** One set of run-ups (penalties, or free kicks): the ones you own, the equipped one lit. */
+function RunupPicker<Id extends RunupId>({ title, styles, current, onPick }: {
+  title: string;
+  styles: RunupStyle<Id>[];
+  current: Id;
+  onPick: (id: Id) => void;
+}) {
+  return (
+    <div className="mt-2.5">
+      <div className="text-[11px] font-black text-white/90">{title}</div>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {styles.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => onPick(r.id)}
+            title={r.blurb}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black ${current === r.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white/80 hover:bg-gray-600"}`}
+          >
+            {r.name}
+          </button>
+        ))}
       </div>
     </div>
   );

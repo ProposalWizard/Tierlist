@@ -327,6 +327,10 @@ function backfill(c: CareerState): CareerState {
   // been buying — zero, not the two-basic starter grant a brand new career
   // gets, since this career is well past its trial.
   if (!out.kibCans) out.kibCans = { basic: 0, premium: 0, elite: 0 };
+  // The first run-up build saved the penalty style as `runupStyle`, before
+  // penalties and free kicks became two separate sets (runupStyles.ts).
+  if (out.penaltyRunup === undefined && out.runupStyle !== undefined) out.penaltyRunup = out.runupStyle;
+  delete out.runupStyle;
   // A career saved before KIB Stat Cans existed has none on the shelf and
   // no boost running — both fields simply didn't exist to have a value.
   // ── …and the squad, which is the third of exactly the same kind ──
