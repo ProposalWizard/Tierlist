@@ -3,7 +3,7 @@ import {
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R,
 } from "./pitch";
 import {
-  drawFigure, drawKeeper, drawBall as drawSharedBall, drawAim, ROLE_KIT, MATCH_SCALE, type Projection,
+  drawFigure, drawKeeper, drawBall as drawSharedBall, drawAim, ROLE_KIT, MATCH_SCALE, MATCH_KEEPER_SCALE, type Projection,
   type BodyPose,
 } from "./fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "./faceStyle";
@@ -358,7 +358,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     }, {
       dive: Math.max(-1, Math.min(1, k.dive ?? 0)),
       lunge: Math.max(0, Math.min(1, k.lunge ?? 0)),
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { scale: MATCH_SCALE });
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { scale: MATCH_KEEPER_SCALE });
   }
 
   if (opts.you) {

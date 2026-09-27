@@ -895,6 +895,17 @@ export const MATCH_FIGURE_R_MULT = 1.15;
 export const MATCH_SCALE = (MATCH_FIGURE_R_MULT * MATCH_FIGURE_HEIGHT_R) / (FIGURE_R * FIGURE_HEIGHT_R);
 
 /**
+ * The match draws its keeper a little smaller than an outfielder (CanvasMatch:
+ * "smaller than an outfielder" — he stands in the mouth of the goal and must
+ * not hide your shot). One number for every renderer, so a picture's keeper
+ * is the match's size: pass `MATCH_KEEPER_SCALE` as `drawKeeper`'s scale.
+ * Before v0.15 the gallery and highlights drew him at the outfielders'
+ * `MATCH_SCALE`, about 22 % bigger than the match (1 / 0.82).
+ */
+export const MATCH_KEEPER_R_SHARE = 0.82;
+export const MATCH_KEEPER_SCALE = MATCH_SCALE * MATCH_KEEPER_R_SHARE;
+
+/**
  * Radians. A keeper at full stretch is horizontal. He is not upside down.
  *
  * The match's own dive commitment runs to 2.15 on a fingertip save, which

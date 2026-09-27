@@ -28,10 +28,12 @@ import {
   drawKeeper,
   drawBall,
   MATCH_SCALE,
+  MATCH_KEEPER_SCALE,
   type Projection,
   type FigureLook,
 } from "./fiveASide/render";
 import { offsideLineOf } from "./baseScenario";
+import { drawMatchGoal } from "./matchGoal";
 import { DEFAULT_FACE_STYLE } from "./faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "./fakeFaceStyle";
 import type { ScenarioSide } from "./scenarios";
@@ -91,6 +93,12 @@ export interface Frame {
   offsideFrom: { defenderIdx: number[]; keeperIdx: number } | null;
   items: Item[];
   ball: Vec2;
+  /**
+   * Which chance this is (the scenario's `kind`). Absent on a five-a-side
+   * frame. The editor reads it: a penalty's keeper, ball and camera are
+   * fixed (lib/star/kindRules/penalty.ts).
+   */
+  kind?: string;
   /**
    * Which way the real match turns this chance on screen — the scenario's own
    * `facing`. A corner and a byline cross are watched from the SIDE in the
@@ -158,6 +166,7 @@ export function frameFromScenario(sc: Scenario): Frame {
     items: withIds,
     ball: { ...sc.ball },
     facing: sc.facing,
+    kind: sc.kind,
   };
 }
 
@@ -322,24 +331,58 @@ export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing
   const scr = frameScreen(frame, cssW, cssH);
   const offY = computeOffside(frame);
 
+  // ── The goal, the way the MATCH draws it (v0.15, item 1) ──
+  //
+  // Harry: the gallery "puts the goal a little bit more forward than it
+  // should be". The flat small-sided goal (render.ts's drawGoal) draws its
+  // posts 1.2 m FORWARD onto the pitch from the line, so he placed keepers
+  // where the posts end. An eleven-a-side picture now draws the match's own
+  // goal (lib/star/matchGoal.ts — the same function CanvasMatch calls):
+  // standing up from the line, net behind it. Drawn in screen space after the
+  // grass, so a turned corner picture gets the match's goal too. A five-a-side
+  // frame keeps its own small goal. Permanent (Harry, v0.15).
+  const matchGoal = frame.goalAtY === 0 && frame.rules === ELEVEN_A_SIDE_ATTACK;
+  const drawTheMatchGoal = () => {
+    const spanX = frame.camera.x2 - frame.camera.x1, spanY = frame.camera.y2 - frame.camera.y1;
+    const turned = scr.facing !== "up";
+    // CanvasMatch's own `unit` and `uy`: pixels per metre across the pitch
+    // and up it, whichever way the screen has the pitch turned.
+    const unit = turned ? cssH / spanX : cssW / spanX;
+    const heightScale = turned ? cssW / spanY : cssH / spanY;
+    drawMatchGoal(ctx, (x, y) => { const s = scr.toScreen({ x, y }); return { px: s.x, py: s.y }; }, unit, heightScale);
+  };
+
   if (scr.facing === "up") {
     const p: Projection = projectionFor(frame.rules, cssW, cssH, frame.camera);
     drawPitch(ctx, frame.rules, p);
-    if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, p, frame.goalAtY);
+    if (matchGoal) drawTheMatchGoal();
+    else if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, p, frame.goalAtY);
     if (offY !== null) drawOffsideLine(ctx, p, cssW, offY);
   } else {
-    // The grass, the lines, the goal and the offside line are drawn on the
-    // ordinary flat plan and turned a quarter turn as a whole: exactly the
-    // turn CanvasMatch's `toPx` makes (right: x' = W - v, y' = u; left:
-    // x' = v, y' = H - u, where u,v are the unturned plan's own pixels).
-    ctx.save();
-    if (scr.facing === "right") ctx.transform(0, 1, -1, 0, cssW, 0);
-    else ctx.transform(0, -1, 1, 0, 0, cssH);
+    // The grass, the lines and the offside line are drawn on the ordinary
+    // flat plan and turned a quarter turn as a whole: exactly the turn
+    // CanvasMatch's `toPx` makes (right: x' = W - v, y' = u; left: x' = v,
+    // y' = H - u, where u,v are the unturned plan's own pixels).
+    const turn = () => {
+      if (scr.facing === "right") ctx.transform(0, 1, -1, 0, cssW, 0);
+      else ctx.transform(0, -1, 1, 0, 0, cssH);
+    };
     const plan: Projection = projectionFor(frame.rules, cssH, cssW, frame.camera);
+    ctx.save();
+    turn();
     drawPitch(ctx, frame.rules, plan);
-    if (frame.goalAtY !== null) drawGoal(ctx, frame.rules, plan, frame.goalAtY);
-    if (offY !== null) drawOffsideLine(ctx, plan, cssH, offY);
+    if (!matchGoal && frame.goalAtY !== null) drawGoal(ctx, frame.rules, plan, frame.goalAtY);
     ctx.restore();
+    // The match's goal stands straight UP the screen even on a turned pitch
+    // (CanvasMatch draws its height in screen pixels), so it is drawn outside
+    // the turn.
+    if (matchGoal) drawTheMatchGoal();
+    if (offY !== null) {
+      ctx.save();
+      turn();
+      drawOffsideLine(ctx, plan, cssH, offY);
+      ctx.restore();
+    }
   }
 
   // Drawn at the REAL match's own size. The picture used to use the trial's
@@ -358,7 +401,7 @@ export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing
     y: scr.toScreen(it.at).y,
     draw: () => {
       const look = lookInKit(it, kits);
-      if (it.keeper) drawKeeper(ctx, at(it.at), it.at, look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_SCALE });
+      if (it.keeper) drawKeeper(ctx, at(it.at), it.at, look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_KEEPER_SCALE });
       else drawFigure(ctx, at(it.at), it.at, look, FACE, FAKE, { scale: PICTURE_SCALE });
     },
   }));
@@ -390,6 +433,9 @@ export function drawOffsideLine(ctx: CanvasRenderingContext2D, p: Projection, w:
  *  match's own size (see `paint`). Hit-testing and rings use it too, so a
  *  grab or a ring still lands on the figure you see. */
 export const PICTURE_SCALE = MATCH_SCALE;
+/** The keeper at the match's own keeper size (v0.15: he was drawn at the
+ *  outfielders' scale, ~22 % taller than in the match). */
+export const PICTURE_KEEPER_SCALE = MATCH_KEEPER_SCALE;
 export const HIT_FIGURE_R = 1.05 * PICTURE_SCALE; // render.ts FIGURE_R, at the picture's scale
 export const HIT_BODY_UP = 0.67; // ~mid-torso, in units of r, above the feet anchor
 

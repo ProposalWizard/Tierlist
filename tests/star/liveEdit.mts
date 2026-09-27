@@ -10,6 +10,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { frameFromScenario, type Frame } from "@/lib/star/scenarioFrame";
 import { applyOverride, overrideFromMatchScenario } from "@/lib/star/scenarioEdit";
 import { cardForLive, baseFor, liveMatchScenario, LIVE_SEED_BASE } from "@/lib/star/liveEdit";
+import { enforceHardRules } from "@/lib/star/kindRules";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
@@ -27,6 +28,9 @@ for (const kind of kinds) {
     // overlay would, so it is not simply one of the base pictures.
     const live = buildScenario(kind, mulberry32(50_000 + s * 17 + kind.length));
     live.defenders.forEach((d, i) => { d.x += (i % 3) - 1; d.y += 0.5; });
+    // The match never serves a chance without its kind's hard rules (a
+    // penalty: keeper centred on his line, everyone on the box edge — v0.15).
+    enforceHardRules(live);
     const card = cardForLive(live);
     n++;
     const shown = applyOverride(card.base, card.override);
@@ -59,6 +63,7 @@ for (const kind of SCENARIO_KINDS as readonly ScenarioKind[]) {
   for (let s = 1; s <= 12; s++) {
     trips++;
     const live = buildScenario(kind, mulberry32(s * 7919 + 13));
+    enforceHardRules(live); // as the match serves it
     const ms = JSON.parse(JSON.stringify(liveMatchScenario(live, 10)));
     const nums = [ms.ball.x, ms.ball.y, ms.camera.centerX, ms.camera.centerY, ms.camera.viewHeight,
       ...ms.players.flatMap((p: { x: number; y: number }) => [p.x, p.y])];

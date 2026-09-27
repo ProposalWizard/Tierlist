@@ -205,6 +205,18 @@ export interface Keeper {
    */
   pendingDone: boolean;
   /**
+   * ONE DIVE (v0.15 items 3 and 8 — the one shared hook). The side a
+   * committed keeper has thrown himself (-1 | 1): set at the strike by a
+   * penalty keeper's read (lib/star/penaltyKeeper.ts) and, in open play, by
+   * the keeper brain as he leaves his feet (lib/star/keeperBrain.ts). When
+   * the ball reaches his line he is NOT re-aimed at it: no second dive back
+   * the other way, his lunge is not restarted, and if his dive is finished he
+   * stays down. A ball on the side he went is judged as before, from where
+   * his dive has taken him; one behind his dive, clear of his body, beats
+   * him. Absent (every scenario this file builds) = exactly today's keeper.
+   */
+  committedDir?: number;
+  /**
    * The real opposing goalkeeper, when there is one to name — see Identity.
    * Purely who to draw and who a face comes from; `keeperStrength` (Scenario)
    * is still the one number that decides how well he actually keeps.
@@ -6012,7 +6024,12 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.1) {
     const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
     if (dist < KEEPER_BODY_R) {
+      // One dive (v0.15 item 3) — see THE KEEPER'S OWN LINE below: a keeper
+      // committed to a side is not sent back after the ball he has blocked.
+      const oneDive = !!k.committedDir;
+      const diveTo = k.targetX;
       const res = resolveKeeper(ball, scenario, dist, KEEPER_BODY_R, speed, rng);
+      if (oneDive) k.targetX = res === "caught" ? k.x : diveTo;
       if (res) return res; // a genuine catch — a push-away, tipped or parried, returns null and stays live
       // parried — ball is loose, keep simulating this tick
     }
@@ -6323,17 +6340,47 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     // straight to the save point in the same tick the outcome was decided,
     // which is the "teleport" this whole rework exists to remove. He starts
     // from wherever he actually is and travels; see stepKeeper.
-    k.saveDir = Math.sign(xAt - k.x) || 0;
-    k.saveLunge = 0.001;
+    // ── One dive (v0.15 item 3) ──
+    //
+    // Harry: "In the trial the keeper dives, then turns and goes back once
+    // the ball crosses the line. He only needs one dive; if there's time left
+    // he just stays where he is." A keeper who has already committed to a
+    // side (`committedDir` — a penalty keeper's read, or the keeper brain's
+    // one dive) is NOT re-aimed at the ball: his dive direction, his lunge
+    // and where he is travelling to all stay his own. Measured before this: the real match's keeper turned round on 190
+    // of 200 kicks down the middle (tests/star/keeperOneDive.mts).
+    const oneDive = !!k.committedDir;
+    // ...and once he has gone, a ball that passes BEHIND his dive — the side
+    // he threw himself away from, clear of his body — is beyond him. The save
+    // test is the same all the way round wherever the dive has carried him,
+    // so without this he still "saved" balls up to 1.9 m back the other way,
+    // and with no second dive to fetch them the ball stopped in mid-air
+    // beside a keeper lying on the far side of the goal (filmed: trial,
+    // middle kick, v0.15). A ball that runs into him is still stopped by the
+    // body check above; a ball on the side he went is judged as before.
+    const behindHim = oneDive && (xAt - k.x) * k.committedDir! < -KEEPER_BODY_R;
+    if (!oneDive) {
+      k.saveDir = Math.sign(xAt - k.x) || 0;
+      k.saveLunge = 0.001;
+    }
     k.scrambling = true;
-    if (attempt.reaches) {
-      k.targetX = xAt;
+    if (attempt.reaches && !behindHim) {
+      const diveTo = k.targetX;
+      if (!oneDive) k.targetX = xAt;
       ball.pos.x = xAt;
       ball.pos.y = Math.max(k.y, 0.02);
       ball.z = Math.max(0, zAt);
       const outcome = resolveKeeper(ball, scenario, attempt.dist, attempt.reach, speed, rng);
       k.saveKind = classifySave(xAt, zAt, k.x, attempt.margin, outcome);
+      // One dive, after a save too: resolveKeeper sends a keeper who has
+      // parried it back after the spill — a second movement, back the way he
+      // came. Committed, he finishes the dive he chose instead; and a ball he
+      // holds, he lands with where he caught it.
+      if (oneDive) k.targetX = outcome === "caught" ? k.x : diveTo;
       if (outcome) return outcome;
+    } else if (oneDive) {
+      // Beaten while committed: nothing changes. He finishes the dive he
+      // chose, or, if it is already finished, stays down.
     } else {
       // ── Beaten, but not stood there watching it happen ──
       //

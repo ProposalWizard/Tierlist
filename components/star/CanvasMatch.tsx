@@ -32,7 +32,7 @@ import { pickWaveSizes } from "@/lib/star/firstPersonDribble";
 import FirstPersonDribble from "./FirstPersonDribble";
 import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
-  PITCH_W, HALF_LEN, CX, POST_L, POST_R, NET_DEPTH, GOAL_H,
+  PITCH_W, HALF_LEN, CX,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH,
   PEN_SPOT_Y, ARC_R, CENTRE_R, CORNER_R,
 } from "@/lib/star/pitch";
@@ -53,7 +53,7 @@ import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
 import {
-  drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT,
+  drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT, MATCH_KEEPER_R_SHARE,
   MAX_KEEPER_LEAN, ROLE_KIT,
   runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose,
 } from "@/lib/star/fiveASide/render";
@@ -72,7 +72,13 @@ import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "
 import { getTuning } from "@/lib/star/tuningStore";
 import ShootoutOverlay from "./ShootoutOverlay";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
-import { setupKind, strikeKind, replayStrike, stepKind, type StrikeDecision } from "@/lib/star/kindRules";
+import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
+import { drawMatchGoal } from "@/lib/star/matchGoal";
+import { switchOn } from "@/lib/star/compareSwitches";
+import { strikingPower } from "@/lib/star/strikePower";
+import {
+  brainOptionsHere, hasBrain, brainSetup, brainAim, brainStrike, brainStep, brainSnapshot, brainRestore,
+} from "@/lib/star/keeperBrain";
 import { hasExtraTime, extraTimeScore, type ExtraTimeCompetition } from "@/lib/star/shootout";
 import { currentTie as euroCurrentTie, currentLeg as euroCurrentLeg } from "@/lib/star/euro";
 import {
@@ -931,6 +937,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   onChanceResolvedRef.current = onChanceResolved;
   const penaltyReadRef = useRef(penaltyRead);
   penaltyReadRef.current = penaltyRead;
+  /**
+   * THE KEEPER BRAIN (lib/star/keeperBrain.ts, v0.15) — one goalkeeper on
+   * top of the per-kind rules: he sets himself while you aim, reacts a human
+   * beat after the strike, steps while he reads it and throws ONE dive, all
+   * by his rating. Set up once a chance is fully placed (after the kind's
+   * rules and the defence's roles), from the chance's own seed — never the
+   * match's stream. His rating is the one the engine judges his reach with
+   * (`keeperStrength`). A penalty's dive is the penalty rule set's decision
+   * (with a trial's harder keeper riding through as its override); a free
+   * kick keeps its own rules and gets no brain. On everywhere, at the
+   * "Middle" dial; only the Play Area can pick another, on a test screen.
+   */
+  const setUpKeeper = (sc: Scenario, seed: number) => {
+    const opts = brainOptionsHere();
+    opts.penalty = penaltyReadFor(strengthRef.current, penaltyReadRef.current);
+    brainSetup(sc, seed, sc.keeperStrength, opts);
+  };
   /** The strike rule in play for this ball (lib/star/kindRules), if any. */
   const strikeRuleRef = useRef<StrikeDecision | null>(null);
   const setPieceSkillRef = useRef(setPieceSkill);
@@ -1193,6 +1216,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // so the match's opening draws are exactly what they were. A feature's
     // own picture (openOn) is played as given.
     if (!openOn) setupKind(scenarioRef.current, mulberry32(seed ^ 0x7e11), { appliedAuthored: false, appliedPlan: false, keeperStrength: strengthRef.current });
+    // A kind's hard rules hold for a feature's own picture too (a penalty in
+    // the trial, the gallery's Play) — see enforceHardRules.
+    enforceHardRules(scenarioRef.current);
     stageScene(scenarioRef.current, scene);
   }
   const ballRef = useRef<Ball | null>(null);
@@ -1659,7 +1685,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       for (let i = 0; i < r.callsBeforeStrike; i++) replayRng();
       rngRef.current = replayRng;
       ballRef.current = launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
-      if (r.penaltyRead) applyPenaltyRead(scenarioRef.current, r.penaltyRead);
+      // The keeper brain, put back exactly as he was at the strike, then the
+      // same strike stream — so the replay throws the same dive.
+      if (r.keeperBrain) {
+        brainRestore(scenarioRef.current, r.keeperBrain);
+        brainStrike(scenarioRef.current, ballRef.current, r.keeperBrain.strikeSeed);
+      } else if (r.penaltyRead) applyPenaltyRead(scenarioRef.current, r.penaltyRead);
       strikeRuleRef.current = r.kindStrike ?? null;
       if (r.kindStrike) replayStrike(scenarioRef.current, ballRef.current, r.kindStrike);
       // Draw the flight's substep sizes from the recorded queue instead of
@@ -1682,6 +1713,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     initDefenders(scenarioRef.current, rngRef.current);
     castDefence(scenarioRef.current, oppXIForCast);
+    setUpKeeper(scenarioRef.current, (seed ^ 0x4b7e) >>> 0);
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
     baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -2086,90 +2118,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // --- The goal ---
     //
-    // The pitch is a flat plan and the goal is the one thing on it drawn with
-    // HEIGHT: posts standing on the goal line, a crossbar across their tops, the
-    // netting stretched back behind them and a second frame at the back. That is
-    // not a departure from the overhead camera — it is the same trick the ball
-    // already uses, being lifted off its own shadow — and it is drawn at exactly
-    // that scale, so a ball over the bar is visibly over the bar.
-    //
-    // Built as five surfaces, drawn back to front, because that is what a goal
-    // is. What it replaced was a single flat panel with an even mesh over it,
-    // and rendering the two side by side at matched width said why that read as
-    // a window rather than a goal: **no tonal separation**. A goal's roof
-    // catches the light and its mouth is in shadow, and with both the same
-    // brightness there is nothing to tell you which way is in.
-    if (sceneRef.current?.goal !== false) {
-      const hpx = GOAL_H * heightScale;
-      const bl = P(POST_L, 0), br = P(POST_R, 0);                 // feet of the posts
-      const tl = { px: bl.px, py: bl.py - hpx };                  // top of the near post
-      const tr = { px: br.px, py: br.py - hpx };
-      const rl = P(POST_L, -NET_DEPTH), rr = P(POST_R, -NET_DEPTH); // feet at the back
-      const ul = { px: rl.px, py: rl.py - hpx };                  // and the back frame
-      const ur = { px: rr.px, py: rr.py - hpx };
-
-      type Pt = { px: number; py: number };
-      const path = (q: Pt[]) => {
-        ctx.beginPath();
-        ctx.moveTo(q[0].px, q[0].py);
-        for (let i = 1; i < q.length; i++) ctx.lineTo(q[i].px, q[i].py);
-        ctx.closePath();
-      };
-      const quad = (q: Pt[], fill: string) => { path(q); ctx.fillStyle = fill; ctx.fill(); };
-      const seg = (a2: Pt, b2: Pt) => { ctx.beginPath(); ctx.moveTo(a2.px, a2.py); ctx.lineTo(b2.px, b2.py); ctx.stroke(); };
-      const lerp = (a2: Pt, b2: Pt, f: number) => ({ px: a2.px + (b2.px - a2.px) * f, py: a2.py + (b2.py - a2.py) * f });
-      // Netting over a surface: strands both ways, clipped to it.
-      const netting = (q: Pt[], cols: number, rows: number, alpha: number) => {
-        ctx.save();
-        path(q); ctx.clip();
-        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-        ctx.lineWidth = Math.max(0.7, unit * 0.028);
-        for (let i = 0; i <= cols; i++) { const f = i / cols; seg(lerp(q[0], q[1], f), lerp(q[3], q[2], f)); }
-        for (let j = 0; j <= rows; j++) { const f = j / rows; seg(lerp(q[0], q[3], f), lerp(q[1], q[2], f)); }
-        ctx.restore();
-      };
-
-      // Its shadow on the grass.
-      const sh = unit * 0.5;
-      quad([rl, rr, br, bl].map(q => ({ px: q.px + sh, py: q.py + sh * 0.3 })), "rgba(0,0,0,0.09)");
-      // The floor inside — barely shaded, because it is grass and you are
-      // looking straight at it through an open mouth.
-      quad([bl, br, rr, rl], "rgba(20,50,32,0.05)");
-      // The back of the net: the deepest surface, and the one you see through
-      // the mouth. Dimmer than the roof, which is what separates the two — in a
-      // straight-down view a horizontal roof and a vertical back wall both come
-      // out as flat bands, so shading is the only thing that can tell them apart.
-      quad([rl, rr, ur, ul], "rgba(22,52,34,0.16)");
-      netting([rl, rr, ur, ul], 34, 10, 0.42);
-      ctx.strokeStyle = "#0f1a14";
-      ctx.lineWidth = Math.max(1.8, unit * 0.15);
-      seg(rl, ul); seg(rr, ur); seg(ul, ur);
-      // The roof, catching the light — brighter than the back, deliberately.
-      quad([tl, tr, ur, ul], "rgba(236,245,239,0.30)");
-      netting([tl, tr, ur, ul], 34, 5, 0.8);
-      // ── Nothing is drawn across the mouth ──
-      //
-      // The mouth is a hole. The net hangs BEHIND the posts and across the back,
-      // and what you see through the opening is that back net in the upper part
-      // and plain grass below it — which is exactly what the geometry gives you
-      // once you stop drawing a second net across the front. Meshing the front
-      // face too put netting on both sides of the frame: "it's everywhere, it's
-      // at the front of the goal as well."
-
-      // The frame at the front. The two objects a shot can actually hit.
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#f6faf7";
-      ctx.lineWidth = Math.max(1.8, unit * 0.12);
-      seg(bl, tl); seg(br, tr);
-      ctx.lineWidth = Math.max(2, unit * 0.16);
-      seg(tl, tr);
-      ctx.lineCap = "butt";
-
-      // The goal line on the ground, thin — the frame above it is the loud part.
-      ctx.strokeStyle = "rgba(255,255,255,0.9)";
-      ctx.lineWidth = Math.max(1.5, unit * 0.11);
-      pLine(POST_L, 0, POST_R, 0);
-    }
+    // Drawn by lib/star/matchGoal.ts — moved there unchanged so the gallery,
+    // its editor and Infinite Highlights draw exactly this goal too (v0.15).
+    if (sceneRef.current?.goal !== false) drawMatchGoal(ctx, P, unit, heightScale);
 
     // ── What you can SEE ──
     //
@@ -2653,7 +2604,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a save is being played.
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * 0.82 * kScale;   // smaller than an outfielder, smaller again far away
+      const KR = R * MATCH_KEEPER_R_SHARE * kScale;   // smaller than an outfielder, smaller again far away
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
       const lean = clamp(sign * diveN * (K ? K.lean : 0.9), -MAX_KEEPER_LEAN, MAX_KEEPER_LEAN);
@@ -3055,6 +3006,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // is standing is the thing you are reading. He only breathes.
       if (phaseRef.current === "aim") {
         stepKeeper(scenarioRef.current, dt);
+        // …with the keeper brain he also gets set while you aim: a walk from
+        // where he was put toward his spot for this ball. No-op when it's off.
+        brainAim(scenarioRef.current, dt);
       }
 
       // ── The cut, on a cross ──
@@ -3128,6 +3082,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           stepKeeper(scenarioRef.current, h);
           stepReactions(scenarioRef.current, ballRef.current, h, rngRef.current);
           stepKind(scenarioRef.current, ballRef.current, h, strikeRuleRef.current);
+          // The keeper brain, in the same slot: wait, step, dive. No-op when off.
+          brainStep(scenarioRef.current, ballRef.current, h);
           // ── Touch Mode (Boot.extraTouch) ──
           //
           // Reported back live after the first version shipped: "my player
@@ -3226,6 +3182,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // calling it here is exactly as safe as it was from "flight".
       if (phaseRef.current === "result" && !scenarioRef.current.keeper.done) {
         stepKeeper(scenarioRef.current, dt);
+        // A dive still in the air lands, and a beaten keeper stays committed.
+        brainStep(scenarioRef.current, ballRef.current, dt);
       }
 
       // Cosmetic FX advance (pausing the rAF pauses everything together)
@@ -4119,10 +4077,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     fpDribbleRef.current = null;
 
     scenarioRef.current = buildScenario("penalty", rng, oppSkill, teamRef.current, visionRef.current);
+    // Harry's penalty rules hold in a shootout too: the keeper was standing up
+    // to 0.6 m off centre here ("one step to the left or right").
+    enforceHardRules(scenarioRef.current);
     scenarioRef.current.conditions = conditionsRef.current;
     castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     initDefenders(scenarioRef.current, rng);
     castDefence(scenarioRef.current, oppXIForCast);
+    setUpKeeper(scenarioRef.current, (seedRef.current ^ 0x4b7e) >>> 0);
 
     facingRef.current = scenarioRef.current.facing ?? "up";
     viewportRef.current = { ...scenarioRef.current.viewport };
@@ -4184,11 +4146,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       chainRef.current = null;
       pendingRequestRef.current = null;
       scenarioRef.current = openOnRef.current();
+      // The picture is played as given — except for a kind's hard rules
+      // (a penalty: keeper centred on his line, ball on the spot…).
+      enforceHardRules(scenarioRef.current);
       scenarioRef.current.conditions = conditionsRef.current;
       castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
       initDefenders(scenarioRef.current, rng);
       castDefence(scenarioRef.current, oppXIForCast);
       stageScene(scenarioRef.current, sceneRef.current);
+      setUpKeeper(scenarioRef.current, (seedRef.current ^ 0x4b7e) >>> 0);
       facingRef.current = scenarioRef.current.facing ?? "up";
       viewportRef.current = { ...scenarioRef.current.viewport };
       baseViewportRef.current = { ...scenarioRef.current.viewport };
@@ -4426,6 +4392,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // ── And put real faces on the shirts marking you, where there's a real
     // sheet to draw them from ── see castDefence's own doc, lib/star/lineup.ts.
     castDefence(scenarioRef.current, oppXIForCast);
+
+    // The keeper brain: everyone is in place, so he can plan where to get set.
+    setUpKeeper(scenarioRef.current, (seedRef.current ^ 0x4b7e) >>> 0);
 
     // You are RECEIVING this one, not starting with it at your feet, so the
     // defence gets the time your first touch cost them. A heavy touch and they
@@ -4727,10 +4696,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       careerRef.current?.skills.freeKick ?? setPieceSkillRef.current ?? tired.technique,
       scenarioRef.current.kind,
     );
+    // ── Shot power: the top is flattened (v0.15, item 11b) ── the ball is
+    // struck with the curve's power (lib/star/strikePower.ts): the same number
+    // up to 80, much less added above it. The drag was already read off your
+    // real power (powerFromDrag), so it feels exactly the same. The Play
+    // Area's compare switch "Shot power" puts the old straight line back on
+    // one device's test screens (never the real game).
+    const launchWith = switchOn("powerCurve")
+      ? { ...strikeWith, power: strikingPower(strikeWith.power) }
+      : strikeWith;
     // Snapshot everything a replay would need to reproduce this exact strike
     // — see GoalReplay and rngCallCountRef. Cheap and thrown away unless the
     // ball actually ends up in the net (resolveOutcome), so this costs
     // nothing on the far more common outcome of a shot that doesn't score.
+    // `skills` is what the ball was struck WITH, so a goal replays at the
+    // pace it was scored at.
     pendingReplayRef.current = {
       seed: seedRef.current,
       callsBeforeStrike: rngCallCountRef.current,
@@ -4738,14 +4718,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       dir: aim.dir,
       power: aim.power,
       contact,
-      skills: strikeWith,
+      skills: launchWith,
     };
     // Starts recording this strike's own substep sizes — see
     // GoalReplay.flightDtLog. Reset here, alongside pendingReplayRef, so a
     // follow-up strike on a loose ball starts its own log rather than
     // carrying over the shot that came before it.
     flightDtLogRef.current = [];
-    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, strikeWith, rngRef.current);
+    ballRef.current = launch(scenarioRef.current, aim.dir, aim.power, contact, launchWith, rngRef.current);
+    // ── The keeper brain sees you strike it ── its own seeded stream (built
+    // the way the penalty read's is), and a snapshot of him as he stands, so
+    // a goal replay throws exactly the same dive. For a penalty the brain
+    // throws the dive the penalty rule set decides (penaltyKeeper.ts), so the
+    // plain read below is only for a chance with no brain.
+    if (hasBrain(scenarioRef.current)) {
+      const bs = ((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0xc2b2ae35)) ^ 0x4b7f) >>> 0;
+      if (pendingReplayRef.current) pendingReplayRef.current.keeperBrain = brainSnapshot(scenarioRef.current, bs);
+      brainStrike(scenarioRef.current, ballRef.current, bs);
+    } else
     // ── A penalty keeper reads your kick (Harry, 24 Sep 2026) ──
     // He stood still until now; at the strike he decides whether to go and
     // which way, from where you aimed. Its own seeded draw — not rngRef — so

@@ -14,6 +14,10 @@
  *            is saved with a goal replay, so the replay plays the same way.
  *   step   — optional, every flight substep, for a rule that has to act
  *            while the ball is travelling.
+ *   enforce — optional, LAST, on every picture of the kind whoever built it
+ *            (the match, the trial, a shootout, the gallery and its editor,
+ *            Infinite Highlights): rules that must always hold. Penalties
+ *            only, today — Harry's hard rules, ./penalty.ts (v0.15).
  *
  * All of this is ADDED around the engine. lib/star/canvasEngine.ts is never
  * touched (Mikey's rule): a rule moves people and sets the public fields the
@@ -23,6 +27,7 @@
  */
 import type { Ball, Scenario } from "../canvasEngine";
 import { freeKickRules } from "./freeKick";
+import { penaltyRules } from "./penalty";
 
 export interface SetupContext {
   /** The chance was laid over a hand-made drawing (authoredChance.ts). */
@@ -49,6 +54,13 @@ export interface StrikeDecision {
 
 export interface KindRule {
   setup?(sc: Scenario, rng: () => number, ctx: SetupContext): void;
+  /**
+   * Rules that hold for EVERY picture of this kind, whoever built it — a
+   * feature's own picture (the trial, the gallery's Play), a shootout kick,
+   * an edited card. Run last, after everything else has placed people.
+   * Idempotent. See `enforceHardRules`.
+   */
+  enforce?(sc: Scenario): void;
   /** How many uniform random numbers `decide` wants. */
   draws?: number;
   decide?(sc: Scenario, ball: Ball, draws: number[], ctx: StrikeContext): StrikeDecision | null;
@@ -63,6 +75,8 @@ export interface KindRule {
 // lib/star/authoredChance.ts), nothing added on top.
 const RULES: Partial<Record<string, KindRule>> = {
   free_kick: freeKickRules,
+  // Harry's hard penalty rules (playtest, 26 Sep 2026) — see ./penalty.ts.
+  penalty: penaltyRules,
 };
 
 export function ruleFor(kind: string | undefined): KindRule | undefined {
@@ -72,6 +86,17 @@ export function ruleFor(kind: string | undefined): KindRule | undefined {
 /** Setup-time rules for this chance's kind. A no-op for any other kind. */
 export function setupKind(sc: Scenario, rng: () => number, ctx: SetupContext): void {
   ruleFor(sc.kind)?.setup?.(sc, rng, ctx);
+}
+
+/**
+ * The kind's hard rules, on ANY picture of it — including the ones `setupKind`
+ * never sees: a feature's own picture (openOn: the trial, the gallery and
+ * highlights' Play), a shootout kick, a gallery card, an edited card. A no-op
+ * for a kind with no `enforce`, so free kicks and everything else are exactly
+ * as they were.
+ */
+export function enforceHardRules(sc: Scenario): void {
+  ruleFor(sc.kind)?.enforce?.(sc);
 }
 
 /** Strike-time rules: decide and apply. Returns the decision to save with a replay. */

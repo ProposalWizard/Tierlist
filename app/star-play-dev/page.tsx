@@ -33,6 +33,8 @@ import {
   type PlaySettings,
 } from "@/lib/star/playArea";
 import { usePinnedTop } from "@/lib/pinnedTop";
+import { COMPARE_SWITCHES, switchOn, setSwitch, resetSwitches, type CompareSwitch } from "@/lib/star/compareSwitches";
+import { BRAIN_DIAL_FLAG, type OpenPlayDial } from "@/lib/star/keeperBrain";
 
 const BG = "#05070d";
 const INK = "#f2f5f9";
@@ -50,6 +52,16 @@ export default function PlayAreaPage() {
   const [settings, setSettings] = useState<PlaySettings>(DEFAULT_PLAY_SETTINGS);
   const [ready, setReady] = useState(false);
   useEffect(() => { setSettings(loadPlaySettings()); setReady(true); }, []);
+  // v0.15's compare switches (lib/star/compareSwitches.ts): this device's
+  // test screens only — never the real game.
+  const [compare, setCompare] = useState<Record<CompareSwitch, boolean> | null>(null);
+  useEffect(() => {
+    setCompare(Object.fromEntries(COMPARE_SWITCHES.map((c) => [c.id, switchOn(c.id)])) as Record<CompareSwitch, boolean>);
+  }, []);
+  const flip = (id: CompareSwitch, on: boolean) => {
+    setSwitch(id, on);
+    setCompare((c) => (c ? { ...c, [id]: on } : c));
+  };
 
   // A full-screen dev tool: the site's own nav and footer get out of the way,
   // exactly as /star-gallery-dev and /star-highlights-dev do it.
@@ -156,6 +168,7 @@ export default function PlayAreaPage() {
             <Slider label="Keeper rating" hint="The one number his reach scales off."
               value={settings.keeperStrength} range={PLAY_RANGES.keeperStrength} onChange={(v) => set("keeperStrength", v)} />
           )}
+          <KeeperBrainRows />
           <Row label="Weather" hint="Real: the game's own weather, windy or wet about 4 matches in 10. Clear: still air, perfect pitch.">
             <Toggle on={settings.weather === "real"} onClick={() => set("weather", "real")}>Real</Toggle>
             <Toggle on={settings.weather === "clear"} onClick={() => set("weather", "clear")}>Clear</Toggle>
@@ -183,7 +196,13 @@ export default function PlayAreaPage() {
           </Row>
 
           <button
-            onClick={() => setSettings(savePlaySettings({ ...DEFAULT_PLAY_SETTINGS }))}
+            onClick={() => {
+              setSettings(savePlaySettings({ ...DEFAULT_PLAY_SETTINGS }));
+              try { localStorage.removeItem(BRAIN_DIAL_FLAG); } catch { /* private mode */ }
+              resetSwitches();
+              setCompare(Object.fromEntries(COMPARE_SWITCHES.map((c) => [c.id, true])) as Record<CompareSwitch, boolean>);
+              window.dispatchEvent(new Event("keeper-brain-reset"));
+            }}
             style={{
               marginTop: 12, width: "100%", height: 38, borderRadius: 11, cursor: "pointer",
               border: "1px solid rgba(255,255,255,0.09)", background: "transparent",
@@ -194,6 +213,22 @@ export default function PlayAreaPage() {
           </button>
         </section>
 
+        {/* ── COMPARE OLD AND NEW (v0.15) ── */}
+        {compare && (
+          <section style={{ ...tile, cursor: "default" }}>
+            <div style={tileTitle}>Compare old and new</div>
+            <div style={{ ...tileSub, marginBottom: 12 }}>
+              This device's test screens only (the gallery, highlights, Infinite Match) — never a real career match or the trial. Each starts on New.
+            </div>
+            {COMPARE_SWITCHES.map((c) => (
+              <Row key={c.id} label={c.label} hint={c.hint}>
+                <Toggle on={compare[c.id]} onClick={() => flip(c.id, true)}>New</Toggle>
+                <Toggle on={!compare[c.id]} onClick={() => flip(c.id, false)}>Old</Toggle>
+              </Row>
+            ))}
+          </section>
+        )}
+
         <Link href="/star-gallery-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
           <div style={tileTitle}>Scenario Gallery &#8594;</div>
           <div style={tileSub}>
@@ -203,6 +238,40 @@ export default function PlayAreaPage() {
         </Link>
       </div>
     </>,
+  );
+}
+
+/* ── The keeper brain's one dial ─────────────────────────────────────────
+ * The keeper brain (lib/star/keeperBrain.ts) is on everywhere, at Middle.
+ * This row picks Hard or Easier on this device's test screens only — the
+ * brain reads it itself (openPlayDialHere), and never in the real game. */
+function KeeperBrainRows() {
+  const [dial, setDial] = useState<OpenPlayDial>("middle");
+  useEffect(() => {
+    const read = () => {
+      try {
+        const d = localStorage.getItem(BRAIN_DIAL_FLAG);
+        setDial(d === "hard" || d === "easier" ? d : "middle");
+      } catch { /* private mode */ }
+    };
+    read();
+    window.addEventListener("keeper-brain-reset", read);
+    return () => window.removeEventListener("keeper-brain-reset", read);
+  }, []);
+  const put = (v: OpenPlayDial) => {
+    try {
+      if (v === "middle") localStorage.removeItem(BRAIN_DIAL_FLAG);
+      else localStorage.setItem(BRAIN_DIAL_FLAG, v);
+    } catch { /* private mode */ }
+  };
+  return (
+    <Row label="Keeper: long shots & through balls" hint="How well the keeper reads a shot from distance. Middle is the game (an 88 keeper lets in about 8% of long shots, a 45 about 24%). Hard: fewer go in. Easier: more. Test screens only.">
+      {(["hard", "middle", "easier"] as OpenPlayDial[]).map((d) => (
+        <Toggle key={d} on={dial === d} onClick={() => { setDial(d); put(d); }}>
+          {d === "hard" ? "Hard" : d === "middle" ? "Middle" : "Easier"}
+        </Toggle>
+      ))}
+    </Row>
   );
 }
 

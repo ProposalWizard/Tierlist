@@ -56,6 +56,10 @@ export interface GoalReplay {
   /** The chance kind's strike-time rule decision (lib/star/kindRules) — e.g.
    *  who won the first contact at a corner — so the replay plays the same. */
   kindStrike?: { kind: string; data: Record<string, number | string | boolean | null> };
+  /** The keeper brain as he stood at the strike, and his strike stream's seed
+   *  (lib/star/keeperBrain.ts), so the replay throws the same dive. Absent on
+   *  a goal saved before the brain, which replays exactly as it always did. */
+  keeperBrain?: import("./keeperBrain").KeeperBrainSnapshot;
 }
 
 export interface StarPlayer {

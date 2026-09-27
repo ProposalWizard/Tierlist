@@ -33,6 +33,8 @@ import {
   type Mark,
 } from "@/lib/star/scenarioFrame";
 import { applyOverride, cloneOverride, type PosOverride } from "@/lib/star/scenarioEdit";
+import { penaltyDragSpot } from "@/lib/star/kindRules/penalty";
+import { switchOn } from "@/lib/star/compareSwitches";
 
 export default function EditableFrame({
   editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit, size, kits,
@@ -106,6 +108,14 @@ export default function EditableFrame({
     return frameScreen(currentFrame(), cssW, cssH).toWorld(cx, cy);
   }
 
+  /**
+   * A penalty's hard rules (lib/star/kindRules/penalty.ts): the keeper, the
+   * ball and you are fixed, and everybody else can only be slid along the
+   * edge of the box. Harry: the ball "shouldn't be able to move". Off when the
+   * Play Area's compare switch has the old rules back on this device.
+   */
+  const penaltyLocked = (frame: Frame): boolean => frame.kind === "penalty" && switchOn("penaltyRules");
+
   /** Nearest grabbable to a world point, or null. Figures are grabbed by their
    *  mid-body (drawn above the feet anchor); the ball by its centre. */
   function grabTargetAt(world: Vec2): "ball" | string | null {
@@ -113,9 +123,11 @@ export default function EditableFrame({
     const scr = frameScreen(frame, cssW, cssH);
     const r = Math.max(7, scr.unit * HIT_FIGURE_R);
     const w = scr.toScreen(world);
+    const locked = penaltyLocked(frame);
     let best: "ball" | string | null = null;
     let bestD = Infinity;
     frame.items.forEach((it) => {
+      if (locked && (it.keeper || it.side === "you")) return;
       const s = scr.toScreen(it.at);
       // Figures stand upright on screen even on a turned pitch, so the body
       // is always up the SCREEN from the feet.
@@ -124,7 +136,7 @@ export default function EditableFrame({
     });
     const b = scr.toScreen(frame.ball);
     const bd = Math.hypot(b.x - w.x, b.y - w.y);
-    if (bd < Math.max(14, r * 0.6) && bd < bestD) { best = "ball"; }
+    if (!locked && bd < Math.max(14, r * 0.6) && bd < bestD) { best = "ball"; }
     return best;
   }
 
@@ -168,7 +180,11 @@ export default function EditableFrame({
       return;
     }
     const world = pointerToWorld(e);
-    const next = clampToView({ x: world.x + drag.offX, y: world.y + drag.offY });
+    const frameNow = currentFrame();
+    const next = penaltyLocked(frameNow)
+      // Along the edge of the box only: out of the D, never inside the line.
+      ? penaltyDragSpot(world.x + drag.offX, frameNow.camera)
+      : clampToView({ x: world.x + drag.offX, y: world.y + drag.offY });
     const wk = workingRef.current ?? { items: {} };
     if (drag.target === "ball") wk.ball = next;
     else wk.items[drag.target] = next;

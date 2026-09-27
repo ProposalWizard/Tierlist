@@ -322,7 +322,8 @@ export const ADMIN_GUIDES = {
       {
         group: "A card",
         items: [
-          ["The picture", "Drawn exactly as Play will show it: same size, same club kits (the real ones Play plays in), and corners and byline crosses turned sideways, goal on the right or left, the way the real game films them. Bigger on a laptop (up to 520 wide), full width on a phone."],
+          ["The picture", "Drawn exactly as Play will show it: same size, same club kits (the real ones Play plays in), the goal standing on the goal line as in the match, and corners and byline crosses turned sideways, goal on the right or left, the way the real game films them. Bigger on a laptop (up to 520 wide), full width on a phone."],
+          ["A penalty card", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed (the camera button reads \"Camera: fixed for penalties\") — none of them drag. Anyone else only slides along the edge of the box, never into it or the D. A new penalty picture stands a few of them a step back or shoulder to shoulder, so no two look the same."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for the next card. On a sideways corner the player follows your finger just the same."],
           ["‹ ›  and the dots", "Previous / next version (arrow keys work too)."],
           ["+ Mate", "Adds a team-mate who makes a real supporting run."],
@@ -421,7 +422,8 @@ export const ADMIN_GUIDES = {
       {
         group: "The picture",
         items: [
-          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, and corners and byline crosses turned sideways like the real game."],
+          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game."],
+          ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
@@ -468,10 +470,12 @@ export const ADMIN_GUIDES = {
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
+          ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
           ["Weather: Real / Clear", "Real (the default) is the game's own weather — windy or wet in about 4 matches in 10, named above the pitch when it happens. Clear is still air on a perfect pitch."],
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
-          ["Back to the defaults", "Resets every dial."],
+          ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
+          ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
           ["Scenario Gallery →", "Opens the gallery."],
         ],
       },
@@ -481,7 +485,7 @@ export const ADMIN_GUIDES = {
           ["‹ Back", "Back to the Play Area."],
           ["What it served", "Live count of each chance type the match has given you, with shares and a per-90."],
           ["This chance: …", "The bar pinned to the top of the screen for the whole match: which chance you are on and the minute."],
-          ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove."],
+          ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove. On a penalty only the other players move, along the edge of the box."],
           ["Save", "Saves the chance exactly as it stands into that chance type in the gallery, for the whole team. No editing needed."],
           ["Commit", "Saves it AND commits it into the game's code, as it stands."],
           ["Save as a scenario / Commit to the game", "The same two, inside the editor — they save your edited version."],
@@ -491,6 +495,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "The dials save the moment you change them, on this device only. There's no Save button.",
+      "The Compare old and new switches and the keeper dial save the same way, instantly, on this device only, and stay until you set them back (\"Back to the defaults\" resets them too).",
       "Save as a scenario: " + SCENARIO_SAVE_SHARED,
     ],
     commit: [
@@ -498,7 +503,7 @@ export const ADMIN_GUIDES = {
       ...COMMIT_HOW.slice(1),
     ],
     inGame: [
-      "The dials only affect the test screens (Infinite Highlights, Infinite Match, the gallery's Play) — never a real career.",
+      "The dials, the Compare old and new switches and the keeper dial only affect the test screens (Infinite Highlights, Infinite Match, the gallery and its Play) — never a real career, its trial or its shootouts, which always play the new penalty rules, the new shot power and the Middle keeper.",
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],

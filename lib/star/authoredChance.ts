@@ -282,8 +282,15 @@ export function keeperTuningFor(kind: string | undefined): KeeperTuning {
 /** Below this the ball is central and there is no near post to cover, so a
  *  share of its width is meaningless (and dividing by it is noise). */
 const CENTRAL_BALL_M = 1.5;
-/** He never stands on the line itself, and never further out than the ball. */
-const GK_MIN_Y = 1.6;
+/**
+ * He never stands BEHIND his line (the engine judges a save where he stands,
+ * so a keeper behind the goal line would be beaten before he is tested), and
+ * never further out than the ball. This was 1.6 m — a floor that pushed every
+ * drawn penalty keeper 1.6 m off his line before the kick (against the law)
+ * and moved every drawn keeper who was standing on it. 0.3 m is the engine's
+ * own "on his line" (makeKeeper), so a keeper drawn on his line stays there.
+ */
+const GK_MIN_Y = 0.3;
 
 /** The two shares a drawing holds about its own keeper. */
 export function keeperSharesOf(s: ShapeSample): { nearPost: number | null; advance: number | null } {
@@ -656,6 +663,10 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   sc.ball.x = shape.ball.x; sc.ball.y = shape.ball.y;
   sc.player.x = shape.you.x; sc.player.y = shape.you.y;
   sc.keeper.x = shape.keeper.x; sc.keeper.y = shape.keeper.y;
+  // His lean and his scramble are measured from startX: left at the builder's
+  // spot, up to 4 m away, a drawn keeper's dive "turned round" (20-25% of
+  // drawn tight angles, measured).
+  sc.keeper.startX = sc.keeper.targetX = shape.keeper.x;
 
   // Nearest-first, so the man the engine already had closest to a drawn spot
   // is the one who takes it. Assigning by array order instead would routinely
