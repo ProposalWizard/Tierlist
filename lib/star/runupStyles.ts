@@ -363,12 +363,14 @@ export function runupPoseAt(r: StyledRunup, t: number): RunupPose | null {
       // A walk: short, slow steps, arms hanging, upright. Settles at the ball.
       const settle = 1 - smooth(span(t, T - 0.3, T));
       // …and the small rise and fall of a man walking, twice a stride.
-      return { ...base, legSwing: run(5.2, 0.35) * settle, armLift: -1, lift: 0.014 * Math.abs(Math.sin(t * 5.2)) * settle };
+      // A walker's sway, too: his weight rolls from foot to foot.
+      return { ...base, legSwing: run(5.2, 0.35) * settle, armLift: -1, lift: 0.014 * Math.abs(Math.sin(t * 5.2)) * settle, lean: 0.07 * Math.sin(t * 5.2) * settle };
     }
     case "sprint": {
       // Long, fast strides, low and driving, arms pumping — off the ground
       // between strides, like a real sprinter.
-      return { ...base, legSwing: run(16, 1.6), crouch: 0.22, armSpread: 0.3, armLift: -0.05, lift: 0.03 * Math.abs(Math.sin(t * 16)) };
+      // (Arms low: held up at the shoulder they read as a man with his arms out.)
+      return { ...base, legSwing: run(16, 1.6), crouch: 0.22, armSpread: 0.12, armLift: -0.45, lift: 0.03 * Math.abs(Math.sin(t * 16)) };
     }
     case "skip": {
       if (t < 1.45) return { ...base, legSwing: run(9, 1) };
@@ -415,7 +417,7 @@ export function runupPoseAt(r: StyledRunup, t: number): RunupPose | null {
     }
     case "fk_stance_sprint": {
       if (t < 0.8) return stance(0.05, 0.75);
-      return { ...base, legSwing: run(16, 1.5), crouch: 0.2, armSpread: 0.3, armLift: -0.05, lift: 0.025 * Math.abs(Math.sin(t * 16)) };
+      return { ...base, legSwing: run(16, 1.5), crouch: 0.2, armSpread: 0.12, armLift: -0.45, lift: 0.025 * Math.abs(Math.sin(t * 16)) };
     }
     case "fk_calm_curl": {
       // Unhurried: short steps, arms low, upright.
