@@ -67,8 +67,11 @@ export const RUNUP = {
    */
   nudgeFingerRatio: 1.5,
 
-  /** The strike screen's countdown, seconds — the same everywhere. */
+  /** The strike screen's countdown for a penalty, seconds — the same everywhere. */
   timerS: 1.0,
+  /** A free kick's countdown, seconds (Harry, 27 Sep 2026: "increase the
+   *  timer on free kicks to around 3 seconds"). */
+  freeKickTimerS: 3.0,
 
   /**
    * A scuff (the countdown ran out): this share of the power you set…
@@ -244,4 +247,9 @@ export function isCheekyMiss(outcome: string): boolean {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, Number.isFinite(v) ? v : 0));
+}
+
+/** How long the strike screen gives you after a run-up, for this kind of kick. */
+export function strikeTimerFor(kind: string | undefined): number {
+  return kind === "free_kick" ? RUNUP.freeKickTimerS : RUNUP.timerS;
 }

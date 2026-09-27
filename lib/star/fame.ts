@@ -66,8 +66,9 @@ const ITEM_LIFE_BY_ID: Record<string, number | null> = {
   classic: null,
 };
 
-export function itemLifeSeasons(item: Pick<OwnedItem, "id" | "category">): number | null {
-  if (item.id in ITEM_LIFE_BY_ID) return ITEM_LIFE_BY_ID[item.id];
+export function itemLifeSeasons(item: Pick<OwnedItem, "id" | "category" | "baseId">): number | null {
+  const id = item.baseId ?? item.id;
+  if (id in ITEM_LIFE_BY_ID) return ITEM_LIFE_BY_ID[id];
   if (item.category === "property") return null;
   if (item.category === "vehicle") return 5;
   return 3;
@@ -106,7 +107,9 @@ export function ownedFame(items: OwnedItem[] | undefined): number {
  *  have). */
 export function fameGainFromBuying(items: OwnedItem[] | undefined, item: OwnedItem): number {
   const before = ownedFame(items);
-  const after = ownedFame([...(items ?? []).filter(i => i.id !== item.id || !isWornOut(i)), { ...item, seasonsLeft: undefined }]);
+  // Buying a level replaces any other level of the same item you own.
+  const base = item.baseId ?? item.id;
+  const after = ownedFame([...(items ?? []).filter(i => (i.baseId ?? i.id) !== base), { ...item, seasonsLeft: undefined }]);
   return Math.max(0, after - before);
 }
 

@@ -1,5 +1,8 @@
 "use client";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
+import Shop from "@/components/star/Shop";
+import ContactBall, { type BallMotion } from "@/components/star/ContactBall";
+import { makeInitialCareer } from "@/lib/star/careerFlow";
 import type { Skills } from "@/lib/star/types";
 import { useCallback, useEffect, useState } from "react";
 import TransferHereWeGo01 from "@/components/star/media/templates/TransferHereWeGo01";
@@ -48,11 +51,22 @@ export default function MediaLab() {
   const [trophiesOnly, setTrophiesOnly] = useState(false);
   // `?training=vision&level=1` plays one training level with every skill at
   // 40, for judging the level-1 how-it-works card and the vision countdown.
+  // `?shop=boots` / `?shop=lifestyle` shows the shop with a sample
+  // National League career and ★1,000,000 to spend, for judging the levels.
+  // `?contact=float` (or bounce / bobble / still) shows the strike screen with
+  // the ball moving that way, for judging the movement. A tap resets it.
+  const [contactPreview, setContactPreview] = useState<BallMotion | null>(null);
+  const [contactRun, setContactRun] = useState(0);
+  const [shopPreview, setShopPreview] = useState<"boots" | "lifestyle" | null>(null);
   const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     setFeedOnly(q.has("feed"));
     setTrophiesOnly(q.has("trophies"));
+    const cm = q.get("contact");
+    if (cm === "still" || cm === "float" || cm === "bounce" || cm === "bobble") setContactPreview(cm);
+    const sk = q.get("shop");
+    if (sk === "boots" || sk === "lifestyle") setShopPreview(sk);
     const t = q.get("training") as keyof Skills | null;
     if (t && ["pace", "power", "technique", "vision", "freeKick"].includes(t)) {
       setTrainingPreview({ skill: t, level: Math.max(1, Math.min(30, Number(q.get("level") ?? 1) || 1)) });
@@ -89,6 +103,33 @@ export default function MediaLab() {
   const c = CLUBS[club];
 
   if (feedOnly) return <><FeedPreview /><PageGuide page="/star-dev/media-lab" /></>;
+  if (contactPreview) {
+    return <>
+      <div className="relative mx-auto w-full max-w-sm overflow-hidden" style={{ aspectRatio: "5 / 8" }}>
+        <ContactBall key={contactRun} power={0.6} motion={contactPreview} technique={40}
+          onContact={() => window.setTimeout(() => setContactRun(r => r + 1), 900)} />
+      </div>
+      <PageGuide page="/star-dev/media-lab" />
+    </>;
+  }
+  if (shopPreview) {
+    const sample = { ...makeInitialCareer({
+      firstName: "Sample", lastName: "Player", age: 18, skinTone: "light",
+      club: "Barnet", clubBadge: null, position: "ST", nationality: "England", startYear: 2027,
+    } as never, ["Barnet", "Yeovil Town"], "national_league"), money: 1_000_000 };
+    return <>
+      <Shop
+        career={sample}
+        kind={shopPreview}
+        onBack={() => setShopPreview(null)}
+        onBuyKib={() => {}}
+        onBuyBoot={() => {}}
+        onBuyItem={() => {}}
+        onBuyFromBlackMarket={() => ({ ok: false, reason: "Preview only" })}
+      />
+      <PageGuide page="/star-dev/media-lab" />
+    </>;
+  }
   if (trainingPreview) {
     return <>
       <TrainingMinigame

@@ -46,9 +46,34 @@ import {
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
 } from "@/lib/star/matchSound";
-import { finaliseMatch, regressForMinutes, fairRating } from "@/lib/star/matchStats";
+import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type HookReason } from "@/lib/star/selection";
 import type { ChanceEntry, ChanceOutcome } from "@/lib/star/chanceLog";
+import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
+
+/**
+ * How the ball moves on the contact screen for this chance (Mikey, 27 Sep
+ * 2026): a header floats across in the air, a volley bounces across, and a
+ * ball at your feet bobbles about a third of the time. Dead balls — penalties,
+ * free kicks, corners — and passes you play from your feet stay still.
+ * Picked from the chance's seed, so it never draws a random number.
+ */
+function contactMotion(kind: string, seed: number): BallMotion {
+  if (kind === "header") return "float";
+  if (kind === "volley") return "bounce";
+  if (kind === "one_on_one" || kind === "tight_angle" || kind === "long_range") {
+    return ((Math.imul(seed, 2654435761) >>> 0) % 100) < 35 ? "bobble" : "still";
+  }
+  return "still";
+}
+
+/** A goal or assist line that varies without drawing a random number (so
+ *  nothing else in a seeded match moves): picked by the minute and the name. */
+function variedLine(pool: string[], name: string, minute: number): string {
+  let h = minute;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return pool[h % pool.length].replace("{name}", name);
+}
 import { pickSquadScorer, pickSquadAssist } from "@/lib/star/squadData";
 import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSheetPlayer } from "@/lib/star/lineup";
 import { formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
@@ -75,7 +100,7 @@ import LiveShootout, { type LiveKick } from "./LiveShootout";
 import { shortClub } from "@/lib/star/media/grammar";
 import { divisionOf } from "@/lib/star/calendar";
 import type { CareerState, MatchStats, Fixture, GoalEvent, OppGoalEvent, SquadPlayer, GoalReplay } from "@/lib/star/types";
-import ContactBall from "./ContactBall";
+import ContactBall, { type BallMotion } from "./ContactBall";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import { energyFactorFor, energyPerMinute, clampEnergy, type EnergyMode } from "@/lib/star/energy";
@@ -89,7 +114,7 @@ import {
   brainOptionsHere, hasBrain, brainSetup, keeperSaltFor, brainAim, brainRunUp, brainStrike, brainStep, brainSnapshot, brainRestore,
 } from "@/lib/star/keeperBrain";
 import {
-  RUNUP, hasRunup, canNudge, standBack, plantBeside, playerAt, goalLineX, nudgedDir, nudgeFromDrag,
+  RUNUP, strikeTimerFor, hasRunup, canNudge, standBack, plantBeside, playerAt, goalLineX, nudgedDir, nudgeFromDrag,
   scuffStrike, cheekyStrike, isCheekyMiss,
   type RunupPath, type CheekyKind,
 } from "@/lib/star/penaltyRunup";
@@ -640,12 +665,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           assistId: oppAssister?.id, assist: oppAssister?.name,
         });
 
-        const oppGoalLine = `⚽ ${oppScorer.shortName} scores!`;
+        const oppGoalLine = variedLine(GOAL_LINES, oppScorer.shortName, e.minute);
         if (announce) pushLine(`${e.minute}' ${oppGoalLine}${oppAssister ? ` (${oppAssister.shortName})` : ""}`);
         return oppAssister
           ? [
               { minute: e.minute, text: oppGoalLine, isGoal: true, isOpponent: true },
-              { minute: e.minute, text: `🎯 ${oppAssister.shortName} assists!`, tone: "assist", isOpponent: true },
+              { minute: e.minute, text: variedLine(ASSIST_LINES, oppAssister.shortName, e.minute), tone: "assist", isOpponent: true },
             ]
           : [{ minute: e.minute, text: oppGoalLine, isGoal: true, isOpponent: true }];
       }
@@ -659,7 +684,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         minute: e.minute, scorer: scorer.name, assist: assister?.name, isUserGoal: false,
       });
 
-      const goalLine = `⚽ ${scorer.shortName} scores!`;
+      const goalLine = variedLine(GOAL_LINES, scorer.shortName, e.minute);
       if (announce) pushLine(`${e.minute}' ${goalLine}${assister ? ` (${assister.shortName})` : ""}`);
       // The assist is its own line, not a parenthetical on the goal's — "A:
       // Cucurella" reads as a fact about the goal rather than as trivia tucked
@@ -667,7 +692,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return assister
         ? [
             { minute: e.minute, text: goalLine, isGoal: true },
-            { minute: e.minute, text: `🎯 ${assister.shortName} assists!`, tone: "assist" },
+            { minute: e.minute, text: variedLine(ASSIST_LINES, assister.shortName, e.minute), tone: "assist" },
           ]
         : [{ minute: e.minute, text: goalLine, isGoal: true }];
     });
@@ -3444,7 +3469,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             ru.arrived = true;
             nudgeDragRef.current = null;
             setAim({ dir: dirNow, power: ru.power });
-            setContactTimerS(RUNUP.timerS);
+            setContactTimerS(strikeTimerFor(sc.kind));
             setPhase("contact");
             // The page was scrolled to show the strike screen when the jog
             // began (startRunup). Only if it has moved since — the one cheap
@@ -5911,6 +5936,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <ContactBall
             power={aim.power}
             onContact={(c) => handleContact(c)}
+            motion={contactMotion(scenarioRef.current.kind, seedRef.current)}
+            technique={skills.technique}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
           />

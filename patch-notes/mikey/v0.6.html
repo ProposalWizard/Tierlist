@@ -1,0 +1,217 @@
+<title>Knowitball Patch Notes Mikey v0.6</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+
+<style>
+  .check{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:6px 14px;margin:0 0 8px}
+  .check li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+  .check li:last-child{border-bottom:0}
+  .check li span{color:var(--ink2)}
+  .pw{margin:8px 0 0;font-size:14px;color:var(--ink2)}
+  .pw b{color:var(--ink)}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 2px}
+  .ba figure{margin:0}
+  .ba img{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block}
+  .ba figcaption{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-top:5px;color:var(--ink3)}
+  .ba figure.after figcaption{color:var(--green)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.6</span>
+  <h1>Knowitball Patch Notes Mikey v0.6</h1>
+  <p class="sub">27 September 2026 · branch Mikey · 1 change · tests: all passing except the 2 that also fail on main</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>5 levels</b><span>of every boot and lifestyle item (70 boots, 155 items)</span></div>
+  <div class="s"><b>★30 → ★920</b><span>a Phone, level 1 to level 5</span></div>
+  <div class="s"><b>8.3 → 0.1</b><span>repeated commentary lines per match</span></div>
+  <div class="s"><b>3</b><span>ways the ball moves on the strike screen: float, bounce, bobble</span></div>
+</div>
+
+<h2 class="nxt"><i></i>Check these</h2>
+<ul class="check n">
+  <li>Every boot has L1–L5 buttons with a price <span>· Shop → Boots</span></li>
+  <li>Every lifestyle item has L1–L5 buttons; a higher level replaces the one you own <span>· Shop → Lifestyle</span></li>
+  <li>The shop opens on your league's level <span>· a National League career opens on L1</span></li>
+  <li>A ball at your feet sometimes bobbles on the strike screen <span>· one-on-ones, tight angles, long shots</span></li>
+  <li>Headers float across ("Head it?"), volleys bounce across <span>· once headers and volleys are switched back on; /star-dev/media-lab?contact=float</span></li>
+  <li>Commentary barely repeats <span>· watch a full match's commentary</span></li>
+  <li>New chants for Ronaldo, Messi, Saka, Pogba and more <span>· the feed after a named player scores</span></li>
+</ul>
+
+<h2 class="fix"><i></i>The headline: five levels of everything in the shop</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Every boot and lifestyle item comes in 5 levels, each priced for its league</div>
+    <p class="pw"><b>Problem:</b> each item had one price. The shop had five money levels (Starter to World Class), but each item sat in just one of them, so a Phone was only ever a Starter item and a Private Jet only a World Class one.</p>
+    <p class="pw"><b>Why:</b> the pricing was built as five tiers with items spread across them, not five versions of each item.</p>
+    <p class="pw"><b>Fix:</b> every item now has 5 levels. Level 1 is priced for National League money, level 5 for the Premier League. A higher level is better: boots get about <b>25% more power and technique</b> per level, lifestyle items about <b>40% more fame</b>. You own one level of each item, and buying a higher one replaces it. Every level of a boot lasts as long as the original. Old saves keep what they own. <span class="tag seen">seen</span></p>
+    <div class="ba">
+      <figure><img src="v0.6/boots.webp" alt="The boots shop with L1 to L5 buttons for each boot"><figcaption>Boots</figcaption></figure>
+      <figure class="after"><img src="v0.6/lifestyle.webp" alt="The lifestyle shop with L1 to L5 buttons for each item"><figcaption>Lifestyle</figcaption></figure>
+    </div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Phone L1</span><span class="track"><span class="fill was" style="width:4%"></span></span><span class="vv">★30</span></div>
+      <div class="bar"><span class="lb">Phone L5</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv">★920</span></div>
+    </div>
+    <details><summary>More prices</summary><ul>
+      <li>NS-Galaxy boots: ★1,100 (L1) up to ★32,000 (L5)</li>
+      <li>Sports Car: ★5,400 up to ★151,000</li>
+      <li>Private Island: ★47,000 up to ★1,330,000</li>
+    </ul></details>
+  </li>
+</ul>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">The ball moves on the strike screen</div>
+    <p class="pw"><b>Problem:</b> the "where do you strike it" ball was always sitting still on the grass, whatever the chance. <b>Fix:</b> a header floats slowly across the sky in an arc (and the screen says "Head it?"), a volley bounces across at half height, and a ball at your feet bobbles on the grass about a third of the time on one-on-ones, tight angles and long shots. Penalties, free kicks and corners stay still. Only where you tap counts, not when. Higher technique makes it move slower. <span class="tag seen">seen</span></p>
+    <div class="ba" style="grid-template-columns:1fr">
+      <figure class="after"><img src="v0.6/contact.webp" alt="Four moments each of the header float, the volley bounce and the bobbling ball"><figcaption>Header · volley · bobble, four moments each</figcaption></figure>
+    </div>
+  </li>
+  <li>
+    <div class="hd">New chants</div>
+    <div class="dt">Cristiano Ronaldo (11 lines), Lionel Messi (6), plus Aaron Wan-Bissaka, Morgan Rogers, João Pedro, Brian Brobbey, Dominic Calvert-Lewin and Romelu Lukaku, and extra lines for Saka and Pogba. Names now match even when the database spells them with accents or hyphens. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Commentary barely repeats</div>
+    <p class="pw"><b>Problem:</b> the same lines kept coming back. <b>Why:</b> each moment had about 8 lines, picked at random with no memory. <b>Fix:</b> about 300 new lines across quiet spells, misses, build-ups, strikes, results, goals and assists, and a line isn't reused while unused ones remain. <span class="tag">measured</span> (200 simulated matches)</p>
+    <div class="bars">
+      <div class="bar"><span class="lb">Repeats before</span><span class="track"><span class="fill was" style="width:100%"></span></span><span class="vv"><s>8.3</s></span></div>
+      <div class="bar"><span class="lb">Repeats now</span><span class="track"><span class="fill now" style="width:2%"></span></span><span class="vv">0.1</span></div>
+    </div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">NS-Swerve and NS-Maestro abilities come with every level <span class="pill p-amb">Low</span></div>
+    <div class="dt">So a National League player can buy Touch Mode for about ★1,200. Waiting on a decision: every level, or level 5 only.</div>
+  </li>
+  <li>
+    <div class="hd">Floating and bouncing balls don't appear in matches yet <span class="pill p-amb">Low</span></div>
+    <div class="dt">Headers and volleys are switched off in matches (Harry). They show up once those are back on. The bobble does show.</div>
+  </li>
+  <li>
+    <div class="hd">Selection changes (v0.5) not seen in a real career yet <span class="pill p-amb">Low</span></div>
+    <div class="dt">Needs real squads.</div>
+  </li>
+  <li>
+    <div class="hd">Two drawing tests fail on main <span class="pill p-amb">Low</span></div>
+    <div class="dt">authoredChance and longRangeRules.</div>
+  </li>
+  <li>
+    <div class="hd">Google Analytics counts our own test browsers as new UK users <span class="pill p-red">High</span></div>
+    <div class="dt">Fix ready, waiting on a yes.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Decide: Swerve and Maestro abilities at every level, or level 5 only</div><div class="dt">Waiting on: a decision.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 26 September 2026 · How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation</li>
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 25 September 2026 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 25 September 2026 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 22 September 2026 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 21 September 2026 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>

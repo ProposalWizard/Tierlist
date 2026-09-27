@@ -326,7 +326,7 @@ function HorseRacingGame(props: HorseRacingProps) {
   const [result, setResult] = useState<{ finish: number; payout: number; winnerName: string } | null>(null);
   const [isMyHorseRace, setIsMyHorseRace] = useState(false);
 
-  const ownsStable = props.career.ownedItems.some((i) => i.id === "stable");
+  const ownsStable = props.career.ownedItems.some((i) => (i.baseId ?? i.id) === "stable");
   const myHorse = props.career.horse;
 
   // Start CSS transition one tick after lanes mount

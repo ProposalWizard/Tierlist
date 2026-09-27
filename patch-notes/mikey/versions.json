@@ -35,8 +35,16 @@
     "version": "0.5",
     "date": "2026-09-26",
     "fromCommit": "d7e8cd1",
-    "toCommit": "HEAD",
+    "toCommit": "210ad41",
     "url": "https://claude.ai/artifact/Q681hvwMs83X9895Aevav7",
     "headline": "How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation"
+  },
+  {
+    "version": "0.6",
+    "date": "2026-09-27",
+    "fromCommit": "210ad41",
+    "toCommit": "HEAD",
+    "url": "https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue",
+    "headline": "Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants"
   }
 ]
