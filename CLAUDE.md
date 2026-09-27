@@ -334,14 +334,16 @@ just agreeing with us… I want to know for sure if that is a good idea."*
 Before agreeing with a design call, go and find what argues against it. If
 nothing does, say what you checked.
 
-**In plan mode, every change is prototyped and filmed before it's built.**
-Harry, 27 Sep 2026: *"film and show images of every change done in the plan
-mode (so that I can tell you if it's good now before you go ahead and then
-actually make it happen) … Film it all. Make sure you check it right."* Build
-each item as a throwaway prototype (a worktree, never pushed), film it at
-phone size in the real game, and put before/after pictures and short clips
-under the item on the plan page. Only a picture Harry has approved gets built
-for real. How the filming works: "Checking what a frame can't show" in
+**Build straight onto the branch, then film it (Harry, 27 Sep 2026).** Building
+every change twice — a throwaway prototype first, then the real thing — took
+about half of the v0.16 round, so it stops: approved changes are built on
+`Harry` directly, filmed at phone size in the real game, and kept or undone
+from the film. **The prototype-first rule survives only for things Harry has
+to judge by eye** — a size, a camera, how a figure or keeper looks, a layout:
+those are still prototyped in a throwaway worktree and shown before/after
+before they're built for real (Harry, 27 Sep: *"film and show images of every
+change … so that I can tell you if it's good now before you go ahead"*). How
+the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
 **The change list goes out before the push, every time** — written so it
@@ -483,7 +485,8 @@ Three people are building this. To avoid two sessions editing the same files:
   reach `/star-dev` until manually ported to the production files.
 - `tests/star/*.mts` — 36 suites. **Run them before changing match behaviour**;
   `tests/star/README.md` records the tuned distributions and the mistakes the
-  measurements caught. `for f in tests/star/*.mts; do npx tsx "$f"; done`
+  measurements caught. `npm run test:star` runs them 4 at a time
+  (`scripts/run-star-tests.mjs`; add words to run only matching files, `-j N` for N at once).
 
 ---
 
