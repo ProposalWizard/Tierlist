@@ -472,6 +472,7 @@ export const ADMIN_GUIDES = {
           ["Infinite Highlights →", "Opens Infinite Highlights."],
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
+          ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -515,6 +516,75 @@ export const ADMIN_GUIDES = {
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
     dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure}.ts",
+  },
+
+  "/star-store-dev": {
+    title: "Store (test)",
+    what: "A test version of an in-game store: daily specials, penalty run-ups, accessories, boosts that help you win, and Coins bought with real money. Nothing here reaches a career, and no real money is ever taken.",
+    buttons: [
+      {
+        group: "Top of the page",
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["★ (wallet)", "Your test stars — the money you earn by playing."],
+          ["Coins +", "Your test Coins — the money you would buy with real money. Tapping it opens the Coins tab."],
+          ["⚙ Test controls", "Opens and closes the test panel below."],
+          ["Your level", "National League … Premier League. Sets which level of boots you see and puts in a typical wage for that league."],
+          ["Weekly wage ★", "Type any wage. Every scaled price, and what a Coin is worth, follows it."],
+          ["Wallet ★ / Wallet Coins", "Set either balance to anything."],
+          ["Skip a day ›", "Shows tomorrow's daily specials (press again for the day after)."],
+          ["Back to today", "Returns the specials to today."],
+          ["Reset purchases", "Empties the locker and puts the wallet back to ★5,000 and 300 Coins."],
+          ["Daily / Animations / Accessories / Boosts / Coins", "The five sections of the store."],
+        ],
+      },
+      {
+        group: "Daily",
+        items: [
+          ["Today's pick", "The headline special — always a Rare-or-better look item (a run-up or an accessory), with its discount."],
+          ["⏱ New in …", "Time until the specials change (midnight UK winter time / 1am summer time). Everyone sees the same specials on the same day."],
+          ["−N%", "Today's discount. Each special can be bought at that price once a day."],
+        ],
+      },
+      {
+        group: "Animations and Accessories",
+        items: [
+          ["Penalty run-ups / Free-kick run-ups", "Two separate sets. You use one of each: one run-up for penalties, one for free kicks. Standard of each is free."],
+          ["A card", "Opens the item: a bigger preview, both prices, and Wear / Use for penalties / Use for free kicks once you own it."],
+          ["Your player", "What you are wearing now. Tap a name (✕) to take it off."],
+          ["★ price / Coins price", "Buy with stars you earned, or with Coins. Both prices are the same number of weeks of your wages."],
+          ["Wear / Take off", "Puts an accessory on (one per slot) or takes it off."],
+          ["Use for penalties / Use for free kicks", "Picks that run-up for its own set only — changing your free-kick run-up leaves your penalty one alone."],
+        ],
+      },
+      {
+        group: "Boosts",
+        items: [
+          ["KIB cans", "The real shop's cans at the real shop's prices (a slice of your wage)."],
+          ["Training Boost / Stat Can (NEW)", "Ideas that aren't in the game yet — here to price and judge."],
+          ["Boots · level N", "The real shop's boots at your level and their real ★ prices; the Coins price is worked out from your wage."],
+          ["Use one (test)", "Takes one boost out of your locker, as if the career had used it."],
+        ],
+      },
+      {
+        group: "Coins",
+        items: [
+          ["Test mode — no payment is taken", "There is no payment code on this page. Tapping a pack just adds the Coins."],
+          ["100 Coins = about 2 weeks' wages …", "What a Coin is worth to you: 50 Coins are always one week of your wage, at any level."],
+          ["A pack (£0.99 … £49.99)", "Adds that many Coins. Bigger packs give a bigger bonus; one is Best value; the £4.99 Bag is doubled if it is the first pack you ever buy."],
+          ["Swap Coins for ★", "Turns 100 / 500 / 1,000 Coins into stars at your wage."],
+          ["Receipts", "Your last few test purchases."],
+        ],
+      },
+    ],
+    saving: [
+      "This browser only. The wallet, what you own, what you're wearing and the test controls are kept on this device and survive a refresh.",
+      "It never touches a career save, and nobody else sees it.",
+    ],
+    inGame: [
+      "Nowhere yet — a test area for the store's look, prices and rules before any of it is wired into the career.",
+    ],
+    dev: "app/star-store-dev/page.tsx · components/star/store/{RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase}.mts",
   },
 
   "/star-radar-dev": {
