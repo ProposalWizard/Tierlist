@@ -22,6 +22,8 @@ import {
 import { makeChance, pictureMemory, DEFAULT_CHANCE_MAKER, type ChanceMakerMode } from "@/lib/star/chanceMaker";
 import { separateBodies } from "@/lib/star/spacing";
 import { newSelectionMemory } from "@/lib/star/scenarioSelect";
+import { finishServedFrame } from "@/lib/star/goalFrame";
+import { pressSpeedFor, PRESS_REACT_S, PRESS_WIN_R, FOUL_SHARE } from "@/lib/star/pressure";
 import { setPieceSkills, type SetPieceDuties } from "@/lib/star/setPieces";
 import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weather";
 import {
@@ -300,6 +302,12 @@ interface Props {
    * defaults to on, and the real career match never passes it.
    */
   scene?: ScenePicture;
+  /**
+   * v0.15 item 22: how hard the nearest opponent closes you down
+   * while you pull back, 0 (never) to 1 (Premier League). The real match
+   * passes its division (lib/star/pressure.ts); the Play Area passes its dial.
+   */
+  pressure?: number;
 }
 
 
@@ -460,7 +468,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0 }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -865,6 +873,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     /** How many lines the stretch queued, so the ones already read out can
      *  be told apart from the ones still to come. */
     queued: number;
+    /** A foul's set piece handed over at the start of the stretch (item 22). */
+    handover?: ScenarioKind | null;
   } | null>(null);
 
   // The match going on around you. It owns possession, territory and momentum;
@@ -1225,6 +1235,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // A kind's hard rules hold for a feature's own picture too (a penalty in
     // the trial, the gallery's Play) — see enforceHardRules.
     enforceHardRules(scenarioRef.current);
+    // v0.15 items 12 + 20 — the same last word makeChance gives every later
+    // chance (the whole goal, room to pull back). A feature's own picture
+    // (openOn) arrives finished.
+    if (!openOn) finishServedFrame(scenarioRef.current);
     stageScene(scenarioRef.current, scene);
   }
   const ballRef = useRef<Ball | null>(null);
@@ -1280,6 +1294,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const shootoutKickRef = useRef<{ resolve: (scored: boolean) => void } | null>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const draggingRef = useRef(false);
+  // ── v0.15 items 21 + 22 ──
+  /** Where the thumb landed, in pitch metres. The pull is measured from HERE,
+   *  not from the ball's centre: a thumb that lands on the goal side of the
+   *  ball no longer has to drag back across it before any power starts (the
+   *  ball can be grabbed from up to 28% of the frame away). */
+  const thumbOriginRef = useRef<{ x: number; y: number } | null>(null);
+  /** When the drag passed the dead zone (performance.now()). From then on an
+   *  ordered run is under way, the nearest opponent closes you down, and the
+   *  chance can no longer be taken back. */
+  const aimCommitRef = useRef<number | null>(null);
+  /** The defender closing you down this chance, if anyone is. */
+  const presserRef = useRef<Scenario["defenders"][number] | null>(null);
+  const pressureRef = useRef(pressure);
+  pressureRef.current = pressure;
+  /** A foul while you pulled back: the set piece the next chance is. */
+  const setPieceNextRef = useRef<ScenarioKind | null>(null);
+  /** …or, when it is not yours to take, the one handed over at the next run-on. */
+  const handoverRef = useRef<ScenarioKind | null>(null);
+  /** The power stat as it is NOW — it used to be read once, at the first
+   *  render, so a boot or a Play Area dial changed mid-match never reached the
+   *  drag. */
+  const skillsRef = useRef(skills);
+  skillsRef.current = skills;
 
   // ── THE ARMBAND ────────────────────────────────────────────────────────────
   //
@@ -1894,7 +1931,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   }, []);
 
   const powerFromDrag = useCallback((drag: { x: number; y: number }, ball: { x: number; y: number }) => {
-    return clamp(screenPull(drag, ball) / dragForFullPower(skills.power), 0, 1);
+    return clamp(screenPull(drag, ball) / dragForFullPower(skillsRef.current.power), 0, 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1931,6 +1968,128 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (d < bestD) { bestD = d; best = "follower"; }
     }
     return best;
+  };
+
+  // ── v0.15 item 22: runs start as you pull back, and you are closed down ──
+  //
+  // Harry: "As captain, the run I order should start as soon as I pull back,
+  // so I have to time the pass to stay onside." No taking it back once the
+  // drag has passed the dead zone — "the chance just goes" — and in the
+  // Premier League "the closest opponent closing down the ball as soon as
+  // you're dragging back", ordered run or not. He comes at the lighter pace
+  // Harry picked (lib/star/pressure.ts), and when he gets there you are
+  // either tackled or, about 1 time in 3, fouled: a free kick outside the
+  // box, a penalty inside it.
+  //
+  // All of it happens here, in the aim phase. An ordered run moves by the
+  // same rule the engine uses for a man running to orders (stepReactions'
+  // commanded-run block: his own speed, arrives within 0.6 m). It is mirrored
+  // in stepCommitted below, not called, because stepReactions also moves
+  // everybody else, who must stay still until the kick. Offside is still
+  // judged by the engine at the strike, off wherever he has got to — a run
+  // held too long goes offside. Letting go FREEZES the moment: the "where do
+  // you strike it" screen is a menu, not match time, so the release is what
+  // has to be in time.
+  /** The engine's RUNNER_SPEED — what the follower's own ordered run uses. */
+  const FOLLOWER_RUN_SPEED = 7.0;
+  const resetCommitted = () => {
+    aimCommitRef.current = null;
+    presserRef.current = null;
+    thumbOriginRef.current = null;
+  };
+  const hasOrderedRun = (sc: Scenario) =>
+    orderableRunners(sc).some((r) => !!r.commandedTo) || !!sc.follower.commandedTo;
+  const commitAim = () => {
+    aimCommitRef.current = performance.now();
+    const sc = scenarioRef.current;
+    presserRef.current = null;
+    if (pressureRef.current > 0) {
+      let best: Scenario["defenders"][number] | null = null;
+      let bestD = Infinity;
+      for (const d of sc.defenders) {
+        const dist = Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y);
+        if (dist < bestD) { bestD = dist; best = d; }
+      }
+      presserRef.current = best;
+    }
+    if (isCaptainRef.current && hasOrderedRun(sc)) pushLine("He's off — play it before he's past the last man.");
+  };
+  /** The chance is gone without a kick: you let go, or you were closed down. */
+  const loseChance = (why: "letgo" | "pressed") => {
+    if (phaseRef.current !== "aim" && phaseRef.current !== "contact") return;
+    aimCommitRef.current = null;
+    presserRef.current = null;
+    draggingRef.current = false;
+    dragRef.current = null;
+    thumbOriginRef.current = null;
+    setAim(null);
+    // Tackled, or fouled about 1 time in 3. Its own seeded draw, so the
+    // chance's counted stream (goal replays read it) is untouched.
+    if (why === "pressed" && mulberry32((seedRef.current ^ 0x0f0c1a5) >>> 0)() < FOUL_SHARE) {
+      fouled();
+      return;
+    }
+    resolveOutcome("tackled");
+    showAction(why === "letgo" ? "CHANCE GONE" : "CLOSED DOWN");
+    pushLine(why === "letgo" ? "Hesitates, lets it go — and the chance is gone." : "Closed down before he could play it!");
+  };
+  /**
+   * The presser brought you down. Your side keeps the ball and the next
+   * chance is a set piece — the game's own free-kick chance outside the box,
+   * its own penalty inside it — taken by you if it is yours to take, and by
+   * whoever's on them if not (the same hand-over the match already does).
+   */
+  const fouled = () => {
+    const sc = scenarioRef.current;
+    const b = sc.ball;
+    const inBox = b.y <= BOX_DEPTH && b.x >= BOX_L && b.x <= BOX_R;
+    const kind: ScenarioKind = inBox ? "penalty" : "free_kick";
+    setOutcome(null);
+    setPhase("result");
+    showAction(inBox ? "PENALTY" : "FOUL");
+    pushLine(inBox ? "Brought down in the box — penalty!" : "Chopped down as he pulls back — free kick.");
+    nudge(0.18, 0.14);
+    playWhistle();
+    const gen = sceneGenRef.current;
+    if (mayTake(kind)) {
+      setPieceNextRef.current = kind;
+      // Possession stays yours, like a dribble that got through.
+      if (matchModeRef.current) resolveScenario(matchStateRef.current, "delivered");
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1600);
+    } else if (matchModeRef.current) {
+      handoverRef.current = kind;
+      window.setTimeout(() => { if (sceneGenRef.current === gen) startSimulation(); }, 1800);
+    } else {
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(false); }, 1600);
+    }
+  };
+  /** One frame of the committed aim: ordered runs, and the presser. */
+  const stepCommitted = (dt: number) => {
+    const sc = scenarioRef.current;
+    const since = (performance.now() - (aimCommitRef.current ?? performance.now())) / 1000;
+    for (const r of orderableRunners(sc)) {
+      const to = r.commandedTo;
+      if (!to) continue;
+      const dx = to.x - r.pos.x, dy = to.y - r.pos.y, togo = Math.hypot(dx, dy);
+      if (togo < 0.6) { r.commandedTo = undefined; r.moving = false; continue; }
+      const step = Math.min(togo, r.speed * dt);
+      r.pos.x += (dx / togo) * step; r.pos.y += (dy / togo) * step;
+      r.moving = true; r.sprint = true;
+    }
+    const f = sc.follower;
+    if (f.commandedTo) {
+      const dx = f.commandedTo.x - f.x, dy = f.commandedTo.y - f.y, togo = Math.hypot(dx, dy);
+      if (togo < 0.6) { f.commandedTo = undefined; f.active = false; }
+      else { const step = Math.min(togo, FOLLOWER_RUN_SPEED * dt); f.x += (dx / togo) * step; f.y += (dy / togo) * step; f.active = true; }
+    }
+    const d = presserRef.current;
+    if (d && since > PRESS_REACT_S) {
+      const b = sc.ball;
+      const dx = b.x - d.x, dy = b.y - d.y, dist = Math.hypot(dx, dy);
+      if (dist <= PRESS_WIN_R) { loseChance("pressed"); return; }
+      const step = Math.min(dist - PRESS_WIN_R * 0.5, pressSpeedFor(pressureRef.current) * dt);
+      d.x += (dx / dist) * step; d.y += (dy / dist) * step;
+    }
   };
 
   /**
@@ -3016,6 +3175,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // where he was put toward his spot for this ball. No-op when it's off.
         brainAim(scenarioRef.current, dt);
       }
+      // v0.15 item 22: once the drag is committed, ordered runs
+      // are under way and the presser is coming — until you let go. See
+      // stepCommitted.
+      if (phaseRef.current === "aim" && aimCommitRef.current !== null) {
+        stepCommitted(dt);
+      }
 
       // ── The cut, on a cross ──
       //
@@ -3799,8 +3964,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Dead balls you are not the taker for go to whoever is. Keep advancing
     // until the match hands you something that is actually yours — bounded,
     // because every pass moves the clock and the clock ends the match.
-    let step = advanceUntilInvolved(st, baseInputs, rng, matchCeilingRef.current);
     const handedOver: HiddenMatchEvent[] = [];
+    // A foul on you while you pulled back (v0.15 item 22) whose set piece is
+    // somebody else's: handed over exactly like the ones below, before the
+    // match runs on. Consumed on the first run of the stretch; a re-run
+    // replays it from the stretch's own record.
+    const handover = prior ? prior.handover : handoverRef.current;
+    handoverRef.current = null;
+    if (!prior && stretchRef.current) stretchRef.current.handover = handover;
+    if (handover) {
+      const label = handover === "penalty" ? "penalty" : "free kick";
+      const scored = rng() < (handover === "penalty" ? 0.76 : 0.09);
+      handedOver.push(scored
+        ? { minute: st.minute, text: `⚽ Your side score the ${label}!`, isGoal: true, teammateGoal: true }
+        : { minute: st.minute, text: `A ${label} — someone else steps up, and it comes to nothing.` });
+      resolveScenario(st, scored ? "goal" : "saved");
+    }
+    let step = advanceUntilInvolved(st, baseInputs, rng, matchCeilingRef.current);
     for (let guard = 0; guard < 20; guard++) {
       const kind = step.request?.kinds.length === 1 ? step.request.kinds[0] : null;
       if (!kind || mayTake(kind) || (kind !== "free_kick" && kind !== "penalty")) break;
@@ -4121,6 +4301,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     draggingRef.current = false;
     curveSwipeStartRef.current = null;
     captainDragRef.current = null;
+    resetCommitted();
     bumpOrders();
     trailRef.current = [];
     particlesRef.current = [];
@@ -4190,6 +4371,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       draggingRef.current = false;
       curveSwipeStartRef.current = null;
       captainDragRef.current = null;
+      resetCommitted();
       bumpOrders();
       trailRef.current = [];
       particlesRef.current = [];
@@ -4208,6 +4390,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     const chain = chainRef.current;
     chainRef.current = null;
+
+    // A foul on you while you pulled back (v0.15 item 22): the next chance is
+    // the game's own free kick or penalty.
+    const setPiece = chain ? null : setPieceNextRef.current;
+    setPieceNextRef.current = null;
 
     // A finished run is kept around deliberately through its own "result"
     // phase (see the draw function's note above the dribble branch) so a
@@ -4287,7 +4474,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Highlights use, so a chance served here is made the way it is made
     // there: one of your drawings (the drawing is the team), remembered
     // across matches so the last five pictures of a kind are not served
-    // again, a one-on-one only on a break. It places everybody, the kind's
+    // again, a one-on-one mostly on a break. It places everybody, the kind's
     // own rules (the free-kick wall) included; faces, roles and the camera
     // are done below. A touch-mode re-touch is the SAME move carrying on, so
     // it is repositioned, never remade.
@@ -4296,6 +4483,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else {
       const made = makeChance({
         source: chain ? { from: "chain", pos: chain.pos, ambition: chain.ambition, position: positionRef.current }
+          : setPiece ? { from: "kind", kind: setPiece }
           : attacking ? { from: "attacking" }
           : request ? { from: "request", request, position: positionRef.current }
           : { from: "weighted", position: positionRef.current },
@@ -4336,6 +4524,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
 
     strikeRuleRef.current = null;
+
+    // (The served frame's last word — the whole goal on screen and room to
+    // pull back, v0.15 items 12 + 20 — is makeChance's own last step.)
 
     // Give the defence its shape: who presses, who covers a lane, who holds.
     initDefenders(scenarioRef.current, rng);
@@ -4387,6 +4578,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // about the last one is meaningless — and carrying a stale Runner reference
     // across would point at a man who is no longer on the pitch.
     captainDragRef.current = null;
+    resetCommitted();
     bumpOrders();
     trailRef.current = [];
     particlesRef.current = [];
@@ -4536,7 +4728,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     draggingRef.current = true;
-    dragRef.current = p;
+    // v0.15 item 21: measured from where the thumb landed, so the pull starts
+    // at nothing wherever on the ball's grab zone it lands.
+    thumbOriginRef.current = p;
+    dragRef.current = { x: b.x, y: b.y };
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -4550,7 +4745,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     if (!draggingRef.current) return;
-    dragRef.current = pitchFromPointer(e.clientX, e.clientY);
+    const pp = pitchFromPointer(e.clientX, e.clientY);
+    const o = thumbOriginRef.current, bb = scenarioRef.current.ball;
+    dragRef.current = o ? { x: bb.x + (pp.x - o.x), y: bb.y + (pp.y - o.y) } : pp;
+    // v0.15 item 22: past the dead zone, the aim is committed.
+    if (aimCommitRef.current === null && phaseRef.current === "aim"
+        && acceptsCaptainOrders(scenarioRef.current.kind) && screenPull(dragRef.current, bb) >= MIN_PULL) {
+      commitAim();
+    }
   };
   const onPointerUp = (e: React.PointerEvent) => {
     // A flick is a direction and nothing else. Short taps are ignored so a
@@ -4633,9 +4835,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
     const d = dragRef.current;
     dragRef.current = null;
+    thumbOriginRef.current = null;
     if (!d) return;
     const b = scenarioRef.current.ball;
     const power = powerFromDrag(d, b);
+    // v0.15 item 22: once committed there is no taking it back —
+    // letting go without a kick, even back on the ball, loses the chance.
+    if (aimCommitRef.current !== null && (screenPull(d, b) < MIN_PULL || power < 0.02)) {
+      loseChance("letgo");
+      return;
+    }
     // ── Two floors, and the second one is not redundant ──
     //
     // A shot has to be worth taking, AND the gesture has to have been a gesture.

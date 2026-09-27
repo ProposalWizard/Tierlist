@@ -16,6 +16,7 @@ import {
   type ChancePlan,
 } from "./chanceFormula";
 import { selectChance, newSelectionMemory, type SelectionMemory } from "./scenarioSelect";
+import { finishServedFrame } from "./goalFrame";
 import {
   simIsMadeHere, buildDrawnSim, nextDrawnSeed, PictureMemory, servedFaults,
 } from "./chanceMaker";
@@ -243,6 +244,9 @@ export function buildSimScenario(spec: SimSpec): Scenario {
   // The kind's hard ruleset, exactly as the match applies it (CanvasMatch's
   // loadScenario), so Simulate shows what the game actually serves.
   setupKind(sc, mulberry32(spec.seed ^ 0x7e11), { appliedAuthored: !!shape, appliedPlan: !!plan, keeperStrength: 62 });
+  // The served frame's last word (v0.15 items 12 and 20) — the same call
+  // makeChance makes for the match, so the picture is what is played.
+  finishServedFrame(sc);
   return sc;
 }
 

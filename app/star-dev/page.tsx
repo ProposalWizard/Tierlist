@@ -87,6 +87,7 @@ import TrainingMinigame from "@/components/star/TrainingMinigame";
 import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
+import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
@@ -2843,6 +2844,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
             onGoalScored={handleGoalScored}
+            pressure={pressureForDivision(career.division)}
           />
         </div>
       </div>

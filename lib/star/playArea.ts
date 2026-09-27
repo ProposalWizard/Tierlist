@@ -21,6 +21,7 @@
  */
 
 import type { CareerDivision } from "./calendar";
+import type { PressureDial } from "./pressure";
 
 export interface PlaySettings {
   /** `CanvasMatch`'s `skills.power` — how hard the same drag hits. */
@@ -66,6 +67,12 @@ export interface PlaySettings {
    * switch only").
    */
   chanceMaker: "drawings" | "generator";
+  /**
+   * v0.15 item 22: how hard the nearest opponent closes you down while you
+   * pull back. "real" follows the division (Premier League full, Championship
+   * light, below that none) — lib/star/pressure.ts. Test screens only.
+   */
+  pressure: PressureDial;
 }
 
 export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
@@ -81,6 +88,7 @@ export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
   weather: "real",
   realKeeper: true,
   chanceMaker: "drawings",
+  pressure: "real",
 };
 
 /** Every dial's real range, exported so the sliders and the clamp read the
@@ -143,6 +151,8 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
     // Absent on a save from before this existed: the real game.
     realKeeper: typeof o.realKeeper === "boolean" ? o.realKeeper : d.realKeeper,
     chanceMaker: o.chanceMaker === "generator" ? "generator" : d.chanceMaker,
+    pressure: o.pressure === "off" || o.pressure === "light" || o.pressure === "full" || o.pressure === "real"
+      ? o.pressure : d.pressure,
   };
 }
 

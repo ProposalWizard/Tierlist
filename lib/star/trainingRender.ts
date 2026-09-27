@@ -2,8 +2,9 @@ import {
   PITCH_W, CX, POST_L, POST_R, NET_DEPTH, GOAL_H,
   SIX_L, SIX_R, SIX_DEPTH, BOX_L, BOX_R, BOX_DEPTH, PEN_SPOT_Y, ARC_R,
 } from "./pitch";
+import { FRAME_TOP_FOR_GOAL, roomShare } from "./goalFrame";
 import {
-  drawFigure, drawKeeper, drawBall as drawSharedBall, drawAim, ROLE_KIT, MATCH_SCALE, MATCH_KEEPER_SCALE, type Projection,
+  drawFigure, drawKeeper, drawBall as drawSharedBall, drawAim, ROLE_KIT, MATCH_KEEPER_R_SHARE, sameSizeScale, type Projection,
   type BodyPose,
 } from "./fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "./faceStyle";
@@ -272,6 +273,9 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
   // file's `Projection` is exactly the `{px, py, unit, W, H}` this renderer
   // already computes, which is why this is a call and not another copy.
   const proj: Projection = { px, py, unit, W, H };
+  // Players at the match's size on screen, however much pitch this picture
+  // shows (the vision drill's is 34 m across) — sameSizeScale's own note.
+  const FIG = sameSizeScale(unit, W);
   const footballer = (
     x: number, y: number, shirt: string, rim: string,
     o: { star?: boolean; z?: number; dim?: boolean; ring?: string; pose?: BodyPose; face?: HTMLImageElement } = {},
@@ -279,7 +283,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     ctx.save();
     if (o.dim) ctx.globalAlpha = 0.55;
     if (o.ring) {
-      const r = Math.max(5, unit * 1.0 * MATCH_SCALE);
+      const r = Math.max(5, unit * 1.0 * FIG);
       ctx.beginPath();
       ctx.arc(px(x), py(y), r * 1.5, 0, Math.PI * 2);
       ctx.strokeStyle = o.ring;
@@ -289,7 +293,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     drawFigure(ctx, proj, { x, y }, {
       shirt, shorts: rim, trim: rim, skin: C.skin,
       star: o.star, lift: o.z, face: o.face,
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { pose: o.pose, scale: MATCH_SCALE });
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { pose: o.pose, scale: FIG });
     ctx.restore();
   };
 
@@ -358,7 +362,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
     }, {
       dive: Math.max(-1, Math.min(1, k.dive ?? 0)),
       lunge: Math.max(0, Math.min(1, k.lunge ?? 0)),
-    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { scale: MATCH_KEEPER_SCALE });
+    }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { scale: FIG * MATCH_KEEPER_R_SHARE });
   }
 
   if (opts.you) {
@@ -402,7 +406,7 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
       ctx.fill();
       ctx.drawImage(img, bx - br, by - lift * unit * 0.5 - br, br * 2, br * 2);
     } else {
-      drawSharedBall(ctx, proj, { x: b.x, y: b.y }, Math.max(0, b.z), MATCH_SCALE);
+      drawSharedBall(ctx, proj, { x: b.x, y: b.y }, Math.max(0, b.z), FIG);
     }
   }
 
@@ -418,18 +422,33 @@ export function renderTrainingScene(canvas: HTMLCanvasElement, opts: TrainingSce
   }
 }
 
+/**
+ * The match's own frame height, in metres. A player is drawn at a fixed size
+ * per metre, so a frame shorter than this draws him bigger than in a match:
+ * measured on a 390 px phone before v0.15, a Power drill's player was 47 px
+ * tall against the match's 40 (up to 59 px on the nearest drills). Players
+ * must be the same size everywhere (Harry, v0.15), so a drill is watched in
+ * at least the match's frame, as the trial's free kicks already are.
+ */
+export const MATCH_FRAME_H = 42;
+
 /** The frame a striking drill is watched in: the goal at the top, the ball
- *  near the bottom, and enough room either side that a wide angle still fits. */
+ *  near the bottom, and enough room either side that a wide angle still fits.
+ *  Never shorter than the match's own frame (players the same size). */
 export function strikeViewport(ball: { x: number; y: number }): TrainingViewport {
-  const depth = Math.max(18, ball.y + 6);
-  const height = depth + NET_DEPTH + 2;
+  // The match's own rule (goalFrame.ts): the top edge holds the whole goal,
+  // and the frame is only taller than the match's when a full pull below the
+  // ball (and you, standing behind it) would not otherwise fit.
+  const y1 = FRAME_TOP_FOR_GOAL;
+  const height = Math.max(MATCH_FRAME_H, (ball.y - y1) / (1 - roomShare()), ball.y + 0.8 + 1.4 - y1);
   const width = height * (5 / 8);
   const cx = clamp((ball.x + CX) / 2, width / 2, PITCH_W - width / 2);
-  return { x1: cx - width / 2, x2: cx + width / 2, y1: -NET_DEPTH - 2, y2: depth };
+  return { x1: cx - width / 2, x2: cx + width / 2, y1, y2: y1 + height };
 }
 
-/** The frame a gate drill is watched in — ball at the bottom, gate at the
- *  top, both comfortably inside it however far off-line the gate sits. */
+/** The frame a gate drill is watched in — ball near the bottom, gate towards
+ *  the top, both comfortably inside it however far off-line the gate sits,
+ *  and never shorter than the match's frame. */
 export function gateViewport(
   ball: { x: number; y: number },
   gate: { left: { x: number; y: number }; right: { x: number; y: number } },
@@ -440,7 +459,8 @@ export function gateViewport(
   const width = height * (5 / 8);
   const spanCx = (ball.x + (gate.left.x + gate.right.x) / 2) / 2;
   const needed = Math.abs(gate.right.x - ball.x) + Math.abs(gate.left.x - ball.x) + 6;
-  const w = Math.max(width, needed);
+  // Never shorter than the match's frame, so a player is the match's size.
+  const w = Math.max(width, needed, MATCH_FRAME_H * (5 / 8));
   const h = w / (5 / 8);
   const cy = (y1 + y2) / 2;
   return {

@@ -37,13 +37,17 @@
  *
  *   Nobody stacked on anybody (lib/star/spacing.ts), on every chance.
  *
- * ── Which kind (one-on-ones "only on a break") ──
+ *   The camera's last word (lib/star/goalFrame.ts): the whole goal in frame
+ *   and room below the ball for a full pull — by sliding the camera, or
+ *   zooming it out, never by moving the chance.
+ *
+ * ── Which kind (one-on-ones mostly on a break) ──
  *
  *   Harry: "a one-on-one is once a match, maybe … maybe one every three
  *   games". The kind is rolled once with the realism table (rollKind), and a
- *   one-on-one is only offered when the match says the move is a break ("They
- *   lose it — you break on them"); in settled play the middle of the box is a
- *   tight angle. A pass that comes back to you can still put you through.
+ *   one-on-one is offered when the match says the move is a break ("They
+ *   lose it — you break on them"), and in settled play only 1 time in 10
+ *   (SETTLED_ONE_ON_ONE); otherwise the middle of the box is a tight angle. A pass that comes back to you can still put you through.
  *   Volleys and headers stay switched off (switchedOffKinds.ts).
  *
  * canvasEngine.ts is not touched. Kinds with fewer than 5 drawings are made
@@ -71,6 +75,7 @@ import {
   type ShapeSample, type RuleSet,
 } from "./scenarioRules";
 import { separateBodies } from "./spacing";
+import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
 import { mulberry32 } from "./season";
 import { loadPlaySettings } from "./playArea";
@@ -508,19 +513,30 @@ export function generatorShape(
 
 /**
  * The kinds a request offers. Volleys and headers stay switched off, and a
- * one-on-one is only on offer when the move is a break (the hidden match's
- * "transition" pattern). A dribble's own request is separate: it becomes the
- * first-person run, not a picture. Where a one-on-one was the only thing on
- * offer, it stays.
+ * one-on-one is on offer when the move is a break (the hidden match's
+ * "transition" pattern) — and, in settled play, only SETTLED_ONE_ON_ONE of
+ * the time. A dribble's own request is separate: it becomes the first-person
+ * run, not a picture. Where a one-on-one was the only thing on offer, it
+ * stays.
  */
-function offeredKinds(kinds: ScenarioKind[], req?: ScenarioRequest): ScenarioKind[] {
+function offeredKinds(kinds: ScenarioKind[], req: ScenarioRequest | undefined, rng: () => number): ScenarioKind[] {
   let out = withoutSwitchedOff(kinds);
-  if (req && req.pattern !== "transition" && !req.dribble) {
-    const kept = out.filter((k) => k !== "one_on_one");
-    if (kept.length) out = kept;
+  if (req && req.pattern !== "transition" && !req.dribble && out.includes("one_on_one")) {
+    // Its own draw, only when there is a one-on-one to keep or drop.
+    if (rng() >= SETTLED_ONE_ON_ONE) {
+      const kept = out.filter((k) => k !== "one_on_one");
+      if (kept.length) out = kept;
+    }
   }
   return out;
 }
+
+/**
+ * How often settled play may still offer a one-on-one. Harry, v0.15: about
+ * one every 3 games for a striker — "only on a break" alone gave one every
+ * 5.6, so settled play keeps it on offer this share of the time.
+ */
+export const SETTLED_ONE_ON_ONE = 0.1;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  makeChance
@@ -592,7 +608,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   let first: Scenario | null = null;
   const src = o.source;
   if (src.from === "request") {
-    const offered = offeredKinds(src.request.kinds, src.request);
+    const offered = offeredKinds(src.request.kinds, src.request, rng);
     const req = { ...src.request, kinds: offered };
     kind = rollKind(req, src.position, rng);
     if (!servesDrawings(kind)) {
@@ -634,6 +650,7 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     if (!appliedPlan) applyFormationShape(sc, o.formation ?? null);
     setupKind(sc, rng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
     const separated = separateBodies(sc);
+    finishServedFrame(sc);
     return {
       sc, shape: null, how: appliedPlan ? "plan" : "builder", appliedPlan, appliedAuthored: false, sourceId: null,
       faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated, mode,
@@ -681,8 +698,12 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     applyFormationShape(sc, o.formation ?? null);
     setupKind(sc, rng, { appliedAuthored: false, appliedPlan: false, keeperStrength: ks });
     const separated = separateBodies(sc);
+    finishServedFrame(sc);
     return { sc, shape: null, how: "builder", appliedPlan: false, appliedAuthored: false, sourceId: null, faultRebuilds, memoryRebuilds, faults: [], nearestRecent: Infinity, separated, mode };
   }
+  // The camera's last word (v0.15 items 12 and 20): the whole goal, and room
+  // to pull back — the camera moves, never the chance (lib/star/goalFrame.ts).
+  finishServedFrame(best.sc);
   o.memory?.remember(pictureOf(best.sc));
   return {
     sc: best.sc, shape: best.shape, how: best.how, appliedPlan: false, appliedAuthored: true, sourceId: best.shape.sourceId,

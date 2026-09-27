@@ -39,6 +39,7 @@ import {
 } from "@/lib/star/engineProfile";
 import type { FrameKits } from "@/lib/star/scenarioFrame";
 import { loadPlaySettings, sanitizePlaySettings, type PlaySettings } from "@/lib/star/playArea";
+import { pressureFromDial } from "@/lib/star/pressure";
 import type { CareerState, MatchStats } from "@/lib/star/types";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
@@ -269,6 +270,7 @@ export default function EnginePlay({
         onChanceResolved={onChanceResolved}
         onComplete={onComplete}
         dragReferenceHeightPx={dragReferenceHeightPx}
+        pressure={pressureFromDial(s.pressure, s.division)}
       />
     </div>
   );

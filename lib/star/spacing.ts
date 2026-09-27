@@ -12,7 +12,11 @@
  *
  * So, once a chance has been placed, every figure on both sides — you, the
  * keeper, the pass target, the poacher, support runners, team-mates and
- * defenders — is at least MIN_GAP from every other. Where two are closer, the
+ * defenders — is at least MIN_GAP from every other on his own side, and from
+ * you and the keeper. An attacker and the man marking him (opposite sides)
+ * may stand as close as MARKING_GAP: Harry draws his corners with the markers
+ * tight on their men (median 0.2 m apart), and pulling them to 1.2 m undid his
+ * drawing on 184 corners in 400 (v0.15 follow-up). Where two are closer, the
  * LESS important of the two moves, by the shortest distance that makes room
  * without making the picture illegal: no new offside, no new fault of the
  * kind's own (scenarioFaults), no new break of the laws scanned off its
@@ -27,6 +31,8 @@ import { PITCH_W } from "./pitch";
 
 /** How close two figures may start: two bodies plus a little air. */
 export const MIN_GAP = 1.2;
+/** An attacker and a defender marking him: tight, but not one body. */
+export const MARKING_GAP = 0.6;
 /** How far a figure may be moved to make room before we give up on him. */
 const MAX_MOVE = 5;
 const RING_STEP = 0.2;
@@ -85,6 +91,17 @@ function exempt(sc: Scenario, a: Fig, b: Fig): boolean {
   return sc.kind === "free_kick" && a.side === "def" && b.side === "def";
 }
 
+/** An attacker and a defender — a man and his marker. */
+const marking = (a: Fig, b: Fig) =>
+  (a.side === "att" && b.side === "def") || (a.side === "def" && b.side === "att");
+
+/** How close this pair may stand: MIN_GAP (or the `gap` asked for) for two
+ *  of one side and for you or the keeper; MARKING_GAP for a man and his
+ *  marker (never more than the pair gap asked for). */
+function pairGap(a: Fig, b: Fig, gap: number): number {
+  return marking(a, b) ? Math.min(MARKING_GAP, gap) : gap;
+}
+
 const dist = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
 
 /** What is wrong with the picture now: its faults plus its drawn laws. */
@@ -122,7 +139,7 @@ export function separateBodies(sc: Scenario, gap = MIN_GAP): number {
         const c = { x: home.x + Math.cos(ang) * r, y: home.y + Math.sin(ang) * r };
         if (c.x < 0.5 || c.x > PITCH_W - 0.5 || c.y < 0.2) continue;
         if (vp && (c.x < vp.x1 + 0.5 || c.x > vp.x2 - 0.5 || c.y < vp.y1 + 0.2 || c.y > vp.y2 - 0.5)) continue;
-        if (others.some((f) => !exempt(sc, f, mover) && dist(f.p, c) < gap)) continue;
+        if (others.some((f) => !exempt(sc, f, mover) && dist(f.p, c) < pairGap(f, mover, gap))) continue;
         if (dist(c, sc.ball) < 0.8) continue;
         mover.p.x = c.x; mover.p.y = c.y;
         const after = legalityOf(sc);
@@ -145,7 +162,9 @@ export function separateBodies(sc: Scenario, gap = MIN_GAP): number {
       for (let j = i + 1; j < figs.length; j++) {
         if (exempt(sc, figs[i], figs[j]) || givenUp.has(`${i}|${j}`)) continue;
         const d = dist(figs[i].p, figs[j].p);
-        if (d < gap && d < worstD) { worstD = d; worst = [i, j]; }
+        const need = pairGap(figs[i], figs[j], gap);
+        // The worst offender is the one furthest inside its own allowance.
+        if (d < need && d - need < worstD) { worstD = d - need; worst = [i, j]; }
       }
     }
     if (!worst) break;
@@ -164,13 +183,25 @@ export function separateBodies(sc: Scenario, gap = MIN_GAP): number {
   return moved;
 }
 
-/** The smallest gap between any two figures (both sides), for tests. */
+/** The smallest gap between two figures that must keep MIN_GAP — two of one
+ *  side, or anybody and you or the keeper — for tests. */
 export function closestFigures(sc: Scenario): number {
   const figs = figuresOf(sc);
   let best = Infinity;
   for (let i = 0; i < figs.length; i++) for (let j = i + 1; j < figs.length; j++) {
-    if (exempt(sc, figs[i], figs[j])) continue;
+    if (exempt(sc, figs[i], figs[j]) || marking(figs[i], figs[j])) continue;
     best = Math.min(best, dist(figs[i].p, figs[j].p));
+  }
+  return best;
+}
+
+/** The smallest gap between an attacker and a defender (a man and his
+ *  marker, who may stand MARKING_GAP apart), for tests. */
+export function closestMarking(sc: Scenario): number {
+  const figs = figuresOf(sc);
+  let best = Infinity;
+  for (let i = 0; i < figs.length; i++) for (let j = i + 1; j < figs.length; j++) {
+    if (marking(figs[i], figs[j])) best = Math.min(best, dist(figs[i].p, figs[j].p));
   }
   return best;
 }

@@ -35,6 +35,7 @@ import {
 import { usePinnedTop } from "@/lib/pinnedTop";
 import { COMPARE_SWITCHES, switchOn, setSwitch, resetSwitches, type CompareSwitch } from "@/lib/star/compareSwitches";
 import { BRAIN_DIAL_FLAG, type OpenPlayDial } from "@/lib/star/keeperBrain";
+import { PRESSURE_DIALS } from "@/lib/star/pressure";
 
 const BG = "#05070d";
 const INK = "#f2f5f9";
@@ -194,6 +195,14 @@ export default function PlayAreaPage() {
           <Row label="Division" hint="The standard of club around you, and so how strong your own side is.">
             {PLAY_DIVISIONS.map((d) => (
               <Toggle key={d.id} on={settings.division === d.id} onClick={() => set("division", d.id)}>
+                {d.label}
+              </Toggle>
+            ))}
+          </Row>
+
+          <Row label="Pressure" hint="While you pull back, the nearest opponent closes you down; if he gets there you're tackled, or fouled about 1 time in 3 (a free kick, or a penalty in the box). Real: Premier League full, Championship light, lower none.">
+            {PRESSURE_DIALS.map((d) => (
+              <Toggle key={d.id} on={settings.pressure === d.id} onClick={() => set("pressure", d.id)}>
                 {d.label}
               </Toggle>
             ))}

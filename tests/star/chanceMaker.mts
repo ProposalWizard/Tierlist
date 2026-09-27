@@ -9,10 +9,13 @@
  *     floor and no "1.5 m goal-side of the ball" cap.
  *  3. A penalty and a free kick are served exactly as drawn (no open-play
  *     nudge). Before: the ball moved off the spot on 100% of penalties.
- *  4. Nobody starts on top of anybody: every two figures, either side, at
- *     least 1.2 m apart (a free kick's wall excepted). Before, 400 a kind:
- *     through balls had two of your men within 0.6 m 75 times.
- *  5. A one-on-one is only offered on a break.
+ *  4. Nobody starts on top of anybody: two figures of one side, or anybody
+ *     and you or the keeper, at least 1.2 m apart (a free kick's wall
+ *     excepted); a man and his marker at least 0.6 m (v0.15 A3: Harry's
+ *     tight corner marking is kept). Before, 400 a kind: through balls had two
+ *     of your men within 0.6 m 75 times.
+ *  5. A one-on-one mostly on a break: settled play offers one only
+ *     SETTLED_ONE_ON_ONE of the time (v0.15 A3).
  *  6. Extra drawn team-mates are real support runners you can pass to.
  *  7. The free-kick rules leave your team-mate where he was drawn.
  */
@@ -23,7 +26,7 @@ import {
 } from "@/lib/star/chanceMaker";
 import { authoredPool, applyAuthoredShape, keeperSharesOf, mateBodiesOf } from "@/lib/star/authoredChance";
 import { sampleFromAuthored } from "@/lib/star/scenarioRules";
-import { closestFigures, MIN_GAP } from "@/lib/star/spacing";
+import { closestFigures, closestMarking, MIN_GAP, MARKING_GAP } from "@/lib/star/spacing";
 import { setupKind } from "@/lib/star/kindRules";
 import { isSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { PITCH_W } from "@/lib/star/pitch";
@@ -91,16 +94,18 @@ for (const kind of ["penalty", "free_kick"] as ScenarioKind[]) {
 
 console.log("\n4. NOBODY STARTS ON TOP OF ANYBODY");
 for (const kind of SCENARIO_KINDS as ScenarioKind[]) {
-  let worst = Infinity, n = 0;
+  let worst = Infinity, worstMark = Infinity, n = 0;
   for (let i = 0; i < 150; i++) {
     const made = makeChance({ source: { from: "kind", kind }, rng: mulberry32(400 + i * 7919), memory: null });
     n++;
     worst = Math.min(worst, closestFigures(made.sc));
+    worstMark = Math.min(worstMark, closestMarking(made.sc));
   }
-  ok(worst >= MIN_GAP - 1e-6, `${kind}: closest two figures ${worst.toFixed(2)} m over ${n} chances (at least ${MIN_GAP})`);
+  ok(worst >= MIN_GAP - 1e-6, `${kind}: closest two of one side (or to you/keeper) ${worst.toFixed(2)} m over ${n} chances (at least ${MIN_GAP})`);
+  ok(worstMark >= MARKING_GAP - 1e-6, `${kind}: closest man and marker ${worstMark.toFixed(2)} m (at least ${MARKING_GAP})`);
 }
 
-console.log("\n5. A ONE-ON-ONE ONLY ON A BREAK");
+console.log("\n5. A ONE-ON-ONE MOSTLY ON A BREAK");
 {
   const base: ScenarioRequest = { zone: "box", lane: "centre", kinds: ["one_on_one", "tight_angle"], pattern: "settled", reason: "t" } as ScenarioRequest;
   let settled = 0, breaks = 0;
@@ -110,7 +115,9 @@ console.log("\n5. A ONE-ON-ONE ONLY ON A BREAK");
     const b = makeChance({ source: { from: "request", request: { ...base, pattern: "transition" }, position: "ST" }, rng: mulberry32(500 + i), memory: null });
     if (b.sc.kind === "one_on_one") breaks++;
   }
-  ok(settled === 0, `settled play never offers one (${settled}/200)`);
+  // Settled play keeps a one-on-one on offer SETTLED_ONE_ON_ONE (10%) of the
+  // time, so it is served a few times in 200 — far fewer than on a break.
+  ok(settled > 0 && settled * 4 < breaks, `settled play rarely offers one (${settled}/200, against ${breaks}/200 on a break)`);
   ok(breaks > 20, `a break still does (${breaks}/200)`);
   const only = makeChance({ source: { from: "request", request: { ...base, kinds: ["one_on_one"] }, position: "ST" }, rng: mulberry32(9), memory: null });
   ok(only.sc.kind === "one_on_one", "when a one-on-one is the only thing on offer, it stays");

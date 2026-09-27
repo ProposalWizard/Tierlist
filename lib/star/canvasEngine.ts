@@ -1243,6 +1243,32 @@ function crossViewport(side: number, across = CROSS_VIEW_X): Viewport {
   return { x1, x2: x1 + h, y1: -4.5, y2: -4.5 + w };
 }
 
+/**
+ * v0.15 item 19 — a byline cross is filmed like a corner: anchored on the BALL, not on the far touchline.
+ *
+ * Harry: "I'm at the top of the screen dragging down. It should be like
+ * corners: me at the bottom, dragging up." The side view used to be hung from
+ * the far touchline, and the builder puts the ball 9.7 m off centre, so you
+ * always stood 35% of the way down the screen. A corner's ball sits at 79-81%
+ * (the flag, with CORNER_VIEW_X's room below it to pull back); this puts a
+ * byline cross's ball at the same 80%, with the far post kept in view.
+ *
+ * Same rectangle size as today's cross view (42 m across the pitch), same
+ * depth band, same turn — only where it is hung from changes.
+ */
+export const BYLINE_BALL_DOWN = 0.8;
+export function crossViewportOnBall(ball: Vec2, side: number, across = CROSS_VIEW_X): Viewport {
+  const h = across;
+  const w = h * VIEW_ASPECT;
+  // Facing "right" (side > 0) puts pitch x down the screen; facing "left"
+  // runs it the other way. Either way the ball lands BYLINE_BALL_DOWN down.
+  let x1 = side > 0 ? ball.x - BYLINE_BALL_DOWN * h : ball.x - (1 - BYLINE_BALL_DOWN) * h;
+  // The far post stays on the screen, a metre and a half in.
+  if (side > 0) x1 = Math.min(x1, POST_L - 1.5);
+  else x1 = Math.max(x1, POST_R + 1.5 - h);
+  return { x1, x2: x1 + h, y1: -4.5, y2: -4.5 + w };
+}
+
 function autoViewport(points: Vec2[], includeGoal: boolean, pad = 4): Viewport {
   const all = [...points];
   if (includeGoal) {
@@ -2791,7 +2817,9 @@ export function buildScenario(kind: ScenarioKind, rng: () => number, keeperStren
     // Watched from the side, then cut to the ordinary view when it arrives.
     const side = sc.ball.x >= CX ? 1 : -1;
     sc.facing = side > 0 ? "right" : "left";
-    sc.viewport = crossViewport(side, kind === "corner" ? CORNER_VIEW_X : CROSS_VIEW_X);
+    sc.viewport = kind === "byline_cross"
+      ? crossViewportOnBall(sc.ball, side)
+      : crossViewport(side, kind === "corner" ? CORNER_VIEW_X : CROSS_VIEW_X);
     sc.crossSwitchY = CROSS_SWITCH_Y;
     sc.crossSwitchView = WIDE_DELIVERY_VIEW;
   }
@@ -4537,8 +4565,14 @@ export function applyCurveSwipe(ball: Ball, dir: CurveDir): boolean {
  * accepted cost, same shape as before: the same range of power lives in a bit
  * less travel, a slightly finer movement than 0.18 asked for.
  */
+/** v0.15 item 21: the full-power drag is 25% shorter than it was (Harry's
+ *  pick (b), measured from where the thumb lands — CanvasMatch). */
+export const DRAG_LENGTH_SCALE = 0.75;
 export function dragForFullPower(power: number): number {
-  return 0.14 - clamp(power, 0, 100) / 100 * 0.025;
+  // v0.15 item 21: "Yep, drag is too long. Definitely just needs to be a
+  // shorter drag." One multiplier on the whole curve (DRAG_LENGTH_SCALE), so
+  // a stronger player still reaches full power with less.
+  return (0.14 - clamp(power, 0, 100) / 100 * 0.025) * DRAG_LENGTH_SCALE;
 }
 
 /**

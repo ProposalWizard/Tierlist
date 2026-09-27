@@ -99,7 +99,10 @@ function toScreen(sc: Scenario, p: { x: number; y: number }) {
 {
   for (const power of [0, 55, 100]) {
     const full = dragForFullPower(power);
-    check(full >= 0.11, `power ${power}: full power is still a deliberate pull (${(full * 100).toFixed(1)}% of the screen)`);
+    // v0.15 item 21: the whole curve is 25% shorter (Harry: "drag is too
+    // long"). Measured: 10.5% / 9.5% / 8.6% of the screen at power 0 / 55 /
+    // 100 (was 14.0% / 12.6% / 11.5%, pinned at 11%).
+    check(full >= 0.085, `power ${power}: full power is still a deliberate pull (${(full * 100).toFixed(1)}% of the screen)`);
     check(full <= 0.20, `power ${power}: …and still fits inside the frame (${(full * 100).toFixed(1)}%)`);
   }
   check(dragForFullPower(0) > dragForFullPower(100), "a stronger player reaches everything he has with less pull");

@@ -33,7 +33,7 @@
  * fully reversible by deleting rows.
  */
 
-import { goalInView, type Scenario, type Vec2, type Viewport } from "./canvasEngine";
+import { goalInView, crossViewportOnBall, type Scenario, type Vec2, type Viewport } from "./canvasEngine";
 import { CX, GOAL_W, PITCH_W } from "./pitch";
 import { AUTHORED_SCENARIOS } from "./authoredScenarios";
 import type { MatchScenario } from "./scenarios";
@@ -625,9 +625,15 @@ function drawnHeadcount(
   return { defendersPlaced: placedD, matesPlaced: placedM, removed };
 }
 
-/** A corner, watched from the side (the builder's crossViewport turn). */
+/** A corner or a byline cross, watched from the side (the builder's
+ *  crossViewport turn). */
 function isTurnedDeadBall(sc: Scenario): boolean {
-  return sc.kind === "corner" && (sc.facing === "left" || sc.facing === "right");
+  // v0.15 item 19: a byline cross's drawings are treated like a corner's —
+  // mirrored onto the builder's flag and filmed from it — instead of being
+  // laid over whichever side the builder happened to turn to (measured: 104
+  // of 200 served crosses had you in the top half of the screen).
+  const turnedKind = sc.kind === "corner" || sc.kind === "byline_cross";
+  return turnedKind && (sc.facing === "left" || sc.facing === "right");
 }
 
 /** The same drawing taken from the other flag: every x reflected across the
@@ -763,6 +769,10 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   // camera; it gets the standard frame for its kind, fitted to what is on it.
   // A corner keeps the builder's frame exactly (his pick: today's framing).
   if (!isTurnedDeadBall(sc)) sc.viewport = standardFrame(sc, built, builtBall);
+  // v0.15 item 19: the drawn ball is somewhere else from the
+  // builder's, so the side view is re-hung on IT — you at the bottom, like a
+  // corner. (A corner's builder already hangs its frame on the flag.)
+  else if (sc.kind === "byline_cross") sc.viewport = crossViewportOnBall(sc.ball, sc.ball.x >= CX ? 1 : -1);
 
   return { defendersPlaced, matesPlaced, removed };
 }
