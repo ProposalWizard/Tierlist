@@ -8,6 +8,7 @@ import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar"
 import PostCard, { FEED_LIST_CLASS } from "./media/PostCard";
 import TransfersPanel from "./TransfersPanel";
 import PhoneFrame from "./PhoneFrame";
+import { KitStyles, PressButton, ClubCard, RiseIn, useClubTheme, rgba } from "./ui";
 
 /**
  * THE FEED — ON YOUR PHONE.
@@ -75,6 +76,7 @@ const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
 ];
 
 export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPhone = false }: Props) {
+  const { glow } = useClubTheme(career);
   const [filter, setFilter] = useState("all");
   // Feed vs Transfers — two tabs of the one app on the phone, not two
   // separate screens. Dashboard only (mode === "browse"); the post-match
@@ -118,7 +120,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
           actually is. */}
       <div className="flex shrink-0 items-center gap-1.5 border-b border-white/10 px-3 pb-2 pt-1">
         <AppMark />
-        <span className="flex-1 text-[13px] font-black tracking-tight text-white">
+        <span className="flex-1 text-[14px] font-black tracking-tight text-white">
           {mode === "moment" ? "Post Match Reactions" : "Matchday"}
         </span>
         {/* Requested directly: having to scroll all the way down just to
@@ -130,15 +132,18 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
             still opens the feed as its own first post below (see `shown`)
             for anyone who scrolls normally instead. */}
         {mode === "moment" && onContinue && (
-          <button
+          <PressButton
+            variant="primary"
+            size="none"
+            pulse
             onClick={onContinue}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-black text-black transition hover:bg-emerald-400"
+            className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black"
           >
             Continue
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
               <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
+          </PressButton>
         )}
       </div>
 
@@ -157,10 +162,10 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
                   <button
                     key={f.id}
                     onClick={() => setFilter(f.id)}
-                    className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wide transition ${
+                    className={`kib-press shrink-0 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wide transition ${
                       filter === f.id
-                        ? "bg-emerald-500 text-black"
-                        : "bg-white/10 text-white/75 hover:bg-white/20"
+                        ? "bg-gradient-to-b from-emerald-300 to-emerald-600 text-emerald-950 shadow-lg shadow-emerald-900/50"
+                        : "bg-white/[0.08] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.14]"
                     }`}
                   >
                     {f.label}
@@ -176,26 +181,31 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
                   away like any other post, for anyone reading the feed
                   normally rather than reaching for the app-bar one above. */}
               {mode === "moment" && onContinue && (
-                <button
+                <PressButton
+                  variant="primary"
+                  size="none"
                   onClick={onContinue}
-                  className="mx-3 mt-3 flex w-[calc(100%-1.5rem)] items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-2 text-[12px] font-black text-black transition hover:bg-emerald-400"
+                  className="mx-3 mt-3 flex w-[calc(100%-1.5rem)] items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-black"
                 >
                   Continue
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                     <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                </button>
+                </PressButton>
               )}
-              {shown.map(p => <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} />)}
+              {shown.map((p, i) => i < 8
+                ? <RiseIn key={p.id} index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} /></RiseIn>
+                : <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} />)}
               {shown.length === 0 && (
-                <div className="mx-3 mt-3 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-8 text-center">
-                  <div className="text-sm font-black text-white">Quiet out there.</div>
+                <ClubCard glow={glow} className="kit-rise mx-3 mt-3 rounded-2xl px-3 py-8 text-center">
+                  <div className="text-[30px] leading-none">📭</div>
+                  <div className="mt-1 text-sm font-black text-white">Quiet out there.</div>
                   <p className="mt-1 text-[11px] font-bold text-white/60">
                     {posts.length === 0
                       ? "Play a match and the world will have something to say about it."
                       : "Nothing under this filter."}
                   </p>
-                </div>
+                </ClubCard>
               )}
               {/* The end of the list — without it there is nothing to tell
                   a reader they have actually reached the bottom rather than
@@ -217,7 +227,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
           the post-match reaction is a single-purpose read, not something
           to navigate around in. */}
       {mode === "browse" && (
-        <div className="grid shrink-0 grid-cols-2 border-t border-white/10 bg-black/40 px-2 pb-1 pt-1.5">
+        <div className="grid shrink-0 grid-cols-2 gap-1 border-t border-white/10 px-2 pb-1 pt-1.5" style={{ background: "rgba(0,0,0,.35)", backdropFilter: "blur(8px)" }}>
           <TabButton active={tab === "feed"} label="Feed" onClick={() => setTab("feed")}>
             <FeedIcon />
           </TabButton>
@@ -231,7 +241,8 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
   // PROTOTYPE (home-screen proto): the feed as one app on the phone's home
   // screen (PhoneHome.tsx), which draws the phone itself.
   if (inPhone) return app;
-  const phone = <PhoneFrame statusLabel={dateLabel}>{app}</PhoneFrame>;
+  const lit = { background: `radial-gradient(110% 38% at 50% 0%, ${rgba(glow, 0.24)} 0%, transparent 70%), linear-gradient(180deg, #0b1220, #05080f)` };
+  const phone = <PhoneFrame statusLabel={dateLabel} wallpaper={lit} rim={glow}>{app}</PhoneFrame>;
 
   // Reached from the bottom nav: full-bleed inside DashboardShell already —
   // just fill whatever room it gave us, no screen of our own to build. No
@@ -257,6 +268,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
     // the exact stretched/squashed bug that formula was written to fix.
     return (
       <div className="flex h-full w-full items-center justify-center overflow-hidden p-2">
+        <KitStyles />
         <div className="h-full overflow-hidden" style={{ aspectRatio: PHONE_ASPECT, maxWidth: "min(28rem, 100%)" }}>{phone}</div>
       </div>
     );
@@ -266,7 +278,11 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
   // always was — a real moment with a Continue, not a place to navigate
   // around in.
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[radial-gradient(120%_80%_at_50%_-10%,#1f2937_0%,#0b0f14_55%,#05070a_100%)] px-3 py-4 text-white">
+    <div
+      className="flex min-h-screen flex-col items-center px-3 py-4 text-white"
+      style={{ background: `radial-gradient(90% 50% at 50% -8%, ${rgba(glow, 0.45)} 0%, transparent 70%), radial-gradient(120% 80% at 50% -10%, #1f2937 0%, #0b0f14 55%, #05070a 100%)` }}
+    >
+      <KitStyles />
       {/* No header of its own any more — reported directly: the phone's own
           app bar now says "Post Match Reactions" (see `phone` above),
           which was exactly what this "Full-time reaction / What they made
@@ -289,7 +305,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
  *  "nothing here is fetched" rule the avatars follow. */
 function AppMark() {
   return (
-    <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-gradient-to-br from-emerald-400 to-emerald-600">
+    <div className="grid h-7 w-7 shrink-0 place-items-center rounded-[9px] bg-gradient-to-br from-emerald-300 to-emerald-600" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.5), 0 4px 8px -3px rgba(0,0,0,.7)" }}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#052e1a" strokeWidth="2">
         <circle cx="12" cy="12" r="9" />
         <path d="M12 7l3.5 2.5-1.3 4.1H9.8L8.5 9.5z" fill="#052e1a" stroke="none" />
@@ -328,7 +344,7 @@ function TrendTicker({ trends }: { trends: Trend[] }) {
         {loop.map((t, i) => (
           <div
             key={`${t.label}-${i}`}
-            className="flex shrink-0 items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1"
+            className="flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-b from-white/[0.12] to-white/[0.04] px-2.5 py-1 ring-1 ring-white/10"
           >
             <span className="whitespace-nowrap text-[10.5px] font-black text-white">
               {t.label}{t.hot && " 🔥"}
@@ -349,8 +365,8 @@ function TabButton({ active, label, onClick, children }: {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 rounded-lg py-1 transition ${
-        active ? "text-white" : "text-white/45 hover:text-white/70"
+      className={`kib-press flex flex-col items-center gap-0.5 rounded-xl py-1 transition ${
+        active ? "bg-white/[0.1] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.12)]" : "text-white/45 hover:text-white/70"
       }`}
     >
       {children}

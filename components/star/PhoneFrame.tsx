@@ -19,8 +19,15 @@
 export default function PhoneFrame({
   children,
   statusLabel = "9:41",
+  wallpaper,
+  rim,
 }: {
   children: React.ReactNode;
+  /** The screen's background (the phone home screen's club wallpaper).
+   *  Plain black without it. */
+  wallpaper?: React.CSSProperties;
+  /** A colour the bezel is edge-lit with (your club's), like the home cards. */
+  rim?: string;
   /** The status-bar clock — a fixed, recognisable time rather than a real
    *  ticking one, so the screen never has to reconcile a live clock with
    *  server-rendered markup. */
@@ -34,6 +41,7 @@ export default function PhoneFrame({
         // "titanium" edge the reference photo's own frame has, not a flat
         // black slab.
         backgroundImage: "linear-gradient(155deg, #232327 0%, #131316 40%, #0a0a0c 100%)",
+        ...(rim ? { boxShadow: `0 30px 70px -20px rgba(0,0,0,0.75), 0 0 34px -6px ${rim}66, inset 0 0 0 1.5px rgba(255,255,255,0.08)` } : {}),
       }}
     >
       {/* Scrollbars off, everywhere inside the phone — reported directly:
@@ -47,7 +55,7 @@ export default function PhoneFrame({
       `}</style>
       {/* The screen — a hair inset from the outer bezel, everything else
           (status bar, app chrome, content) lives inside this. */}
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.3rem] bg-black">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.3rem] bg-black" style={wallpaper}>
         {/* Status bar */}
         <div className="relative z-20 flex shrink-0 items-center justify-between px-6 pb-1 pt-2.5 text-white">
           {/* ── Kept clear of the notch ──
