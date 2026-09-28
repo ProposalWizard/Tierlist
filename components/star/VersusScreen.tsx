@@ -10,6 +10,8 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 import { place, across } from "@/lib/star/pitchLayout";
 import ClubCrest from "./ClubCrest";
 import { loadLineup } from "@/lib/star/lineupStore";
+import { PressButton, Shine, duelStyle, glowOf } from "./ui";
+import { Screen } from "./ui/Screen";
 
 /**
  * THE TEAM SHEETS.
@@ -149,14 +151,16 @@ export default function VersusScreen({ matchday, date, competition, results, clu
   const compTail = compTailParts.join(" · ");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 px-3 py-3 text-white">
-      <div className="mx-auto w-full max-w-md">
-        <button
+    <Screen glow={glowOf(kits.home.shirt, kits.home.trim)} tone={glowOf(kits.away.shirt, kits.away.trim)} className="max-w-md px-3 py-3">
+      <div className="w-full">
+        <PressButton
+          variant="secondary"
+          size="sm"
           onClick={onBack}
-          className="mb-1.5 rounded-lg bg-white/10 px-3 py-1 text-[11px] font-black text-white/85 transition hover:bg-white/20"
+          className="mb-1.5 normal-case tracking-normal"
         >
           ← Back
-        </button>
+        </PressButton>
 
         {/* ── The header ──
             Plain gradient panel, deliberately no glow/beam effects at all.
@@ -171,9 +175,12 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             stray shape. Each team's own formation still sits directly
             under its own crest so the two can never drift out of line
             with each other. */}
+        {/* The home screen's next-match card look: each side's colour
+            washing in from its own edge (never a shape behind a crest — see
+            the note above). */}
         <div
-          className="relative overflow-hidden rounded-t-xl border border-white/15 px-3 py-3"
-          style={{ background: "linear-gradient(115deg, #051025 0%, #0b1530 32%, #1a0a12 68%, #2a0a10 100%)" }}
+          className="kit-rise relative overflow-hidden rounded-t-2xl px-3 py-3"
+          style={duelStyle(glowOf(kits.home.shirt, kits.home.trim), glowOf(kits.away.shirt, kits.away.trim))}
         >
           <div className="relative mx-auto flex w-fit items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.08] px-3 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
             <BallIcon />
@@ -187,7 +194,12 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
               form={recentForm(home.club, results ?? [])} scouted={homeScouted} />
             <div className="flex flex-col items-center gap-1 pt-3">
-              <div className="text-2xl font-black italic text-white" style={TEXT_OUTLINE}>VS</div>
+              <div
+                className="kit-slam bg-gradient-to-b from-white to-white/50 bg-clip-text pr-0.5 text-[28px] font-black italic leading-none tracking-tighter text-transparent"
+                style={{ animationDelay: "250ms", filter: "drop-shadow(0 2px 3px rgba(0,0,0,.8))" }}
+              >
+                VS
+              </div>
               {date && (
                 <div className="flex items-center gap-1 whitespace-nowrap text-[10px] font-bold text-white/75">
                   <CalendarIcon />
@@ -237,7 +249,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             substitutes bar and Kick Off's own margins are still trimmed
             from the earlier pass too. */}
         <div className="relative">
-          <div className="relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-emerald-800 to-emerald-900">
+          <div className="relative aspect-[3/4.9] overflow-hidden rounded-b-xl border-x border-b border-white/15 bg-gradient-to-b from-[#1f7a3a] to-[#14552a]" style={{ boxShadow: "inset 0 0 50px rgba(0,0,0,.45)" }}>
             {/* Mown stripes as real alternating bands (not a near-invisible
                 0.025-opacity tint) plus a soft center-lit vignette, so the
                 grass itself reads as turf under floodlights rather than a
@@ -256,10 +268,10 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             <PitchMarkings />
 
             {homeScouted
-              ? home.xi.map(p => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} />)
+              ? home.xi.map((p, i) => <Man key={`h-${p.id}`} p={p} kit={kits.home} keeper={kits.keeper} bottom={false} index={i} />)
               : <UnscoutedHalf bottom={false} />}
             {awayScouted
-              ? away.xi.map(p => <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom />)
+              ? away.xi.map((p, i) => <Man key={`a-${p.id}`} p={p} kit={kits.away} keeper={kits.keeper} bottom index={i + 11} />)
               : <UnscoutedHalf bottom />}
           </div>
 
@@ -304,14 +316,18 @@ export default function VersusScreen({ matchday, date, competition, results, clu
             need the whole kick off button available to click with nothing
             on top of it." `mt-6` clears the tab's actual bottom edge with a
             few pixels to spare and nothing more. */}
-        <button
+        <PressButton
+          variant="primary"
+          size="none"
+          pulse
           onClick={onKickOff}
-          className="mt-6 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-2.5 text-base font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
+          className="relative mt-6 w-full overflow-hidden rounded-xl py-2.5 text-base font-black uppercase tracking-widest"
         >
+          <Shine loop every={3.5} />
           Kick Off
-        </button>
+        </PressButton>
       </div>
-    </div>
+    </Screen>
   );
 }
 
@@ -476,8 +492,8 @@ function YouStar() {
   );
 }
 
-function Man({ p, kit, keeper, bottom }: {
-  p: SheetPlayer; kit: Kit; keeper: Kit; bottom: boolean;
+function Man({ p, kit, keeper, bottom, index = 0 }: {
+  p: SheetPlayer; kit: Kit; keeper: Kit; bottom: boolean; index?: number;
 }) {
   const worn = p.role === "GK" ? keeper : kit;
   const flag = getFlagUrl(p.nation);
@@ -487,6 +503,9 @@ function Man({ p, kit, keeper, bottom }: {
       style={{ left: `${across(p.x, bottom) * 100}%`, top: `${place(p.y, bottom) * 100}%`, width: "22%" }}
       title={`${p.name} — ${p.slot}`}
     >
+      {/* Each man walks out a beat after the last. The rise sits on an inner
+          box so it never fights the outer box's centring transform. */}
+      <div className="kit-rise flex w-full flex-col items-center" style={{ animationDelay: `${300 + index * 45}ms` }}>
       {/* The star has to live OUTSIDE the circle's own overflow-hidden — that
           clip exists to keep a face photo inside a round frame, and it was
           clipping the star along with everything else that strayed past its
@@ -531,6 +550,7 @@ function Man({ p, kit, keeper, bottom }: {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={flag} alt="" className="h-[7px] w-[10px] shrink-0 rounded-[1px] object-cover shadow-[0_0_0_1px_rgba(0,0,0,0.6)]" />
         )}
+      </div>
       </div>
     </div>
   );

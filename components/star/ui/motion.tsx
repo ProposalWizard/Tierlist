@@ -99,6 +99,43 @@ export const KIT_CSS = `
   .kit-deal { animation: kit-deal 420ms cubic-bezier(.2,.8,.3,1) 1 both; }
   @keyframes kit-reel-spin { 0% { transform: translateY(-40%); filter: blur(3px); opacity: .6; } 100% { transform: translateY(40%); filter: blur(3px); opacity: .6; } }
   .kit-reel-spin { display: inline-block; animation: kit-reel-spin 90ms linear infinite; }
+  /* ── Wave 2 (C): the moments on the after-match, transfer, ownership and
+     build-up screens. A result slams in, a loss shakes, a trophy rises into
+     light rays, a vote bar grows, a cup-draw ball drops out of the pot. ── */
+  @keyframes kit-slam { 0% { opacity: 0; transform: scale(1.9); filter: blur(4px); } 55% { opacity: 1; transform: scale(.92); filter: blur(0); } 75% { transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
+  .kit-slam { animation: kit-slam 620ms cubic-bezier(.2,.9,.25,1) 1 both; }
+  @keyframes kit-trophy-in { 0% { opacity: 0; transform: translateY(26px) scale(.6); } 60% { opacity: 1; transform: translateY(-6px) scale(1.08); } 80% { transform: translateY(0) scale(.98); } 100% { opacity: 1; transform: none; } }
+  .kit-trophy-in { animation: kit-trophy-in 900ms cubic-bezier(.2,.9,.25,1) 1 both; }
+  @keyframes kit-rays-c { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .kit-rays-c { animation: kit-rays-c 22s linear infinite; }
+  @keyframes kit-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .kit-grow-x { animation: kit-grow-x 900ms cubic-bezier(.2,.8,.2,1) 1 both; transform-origin: 0 50%; }
+  @keyframes kit-ball-drop { 0% { opacity: 0; transform: translateY(-34px) scale(.5) rotate(-120deg); } 55% { opacity: 1; transform: translateY(3px) scale(1.05) rotate(10deg); } 75% { transform: translateY(-3px) scale(.98) rotate(0); } 100% { opacity: 1; transform: none; } }
+  .kit-ball-drop { animation: kit-ball-drop 520ms cubic-bezier(.3,.7,.4,1) 1 both; }
+  @keyframes kit-unfold { 0% { opacity: 0; clip-path: inset(0 100% 0 0); } 100% { opacity: 1; clip-path: inset(0 0 0 0); } }
+  .kit-unfold { animation: kit-unfold 420ms cubic-bezier(.3,.7,.3,1) 1 both; }
+  @keyframes kit-pot-jiggle { 0%,100% { transform: translate(0,0) rotate(0); } 25% { transform: translate(-2px,-3px) rotate(-12deg); } 50% { transform: translate(2px,1px) rotate(8deg); } 75% { transform: translate(-1px,2px) rotate(-6deg); } }
+  .kit-pot-jiggle { animation: kit-pot-jiggle 520ms ease-in-out infinite; }
+  @keyframes kit-camera-flash { 0%, 90%, 100% { opacity: .15; } 94% { opacity: 1; } }
+  .kit-camera-flash { animation: kit-camera-flash 2.4s linear infinite; }
+  @keyframes kit-write { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(8deg); } }
+  .kit-write { animation: kit-write 1.4s ease-in-out infinite; }
+  @keyframes kit-stamp { 0% { opacity: 0; transform: scale(2.3) rotate(-14deg); } 60% { opacity: 1; transform: scale(.94) rotate(-6deg); } 100% { opacity: 1; transform: scale(1) rotate(-6deg); } }
+  .kit-stamp { animation: kit-stamp 560ms cubic-bezier(.2,.9,.25,1) 1 both; }
+  @keyframes kit-ring { 0% { opacity: .7; transform: translate(-50%,-50%) scale(.4); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(2.2); } }
+  .kit-ring { animation: kit-ring 1.1s ease-out 1 both; }
+  @keyframes kit-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .kit-marquee { animation: kit-marquee 18s linear infinite; }
+  @keyframes kit-flip-in { 0% { opacity: 0; transform: perspective(500px) rotateY(90deg); } 100% { opacity: 1; transform: perspective(500px) rotateY(0); } }
+  .kit-flip-in { animation: kit-flip-in 420ms cubic-bezier(.2,.8,.3,1) 1 both; }
+  @keyframes kit-dots { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
+  .kit-dots > span { animation: kit-dots 1.1s ease-in-out infinite; display: inline-block; }
+  .kit-dots > span:nth-child(2) { animation-delay: 160ms; } .kit-dots > span:nth-child(3) { animation-delay: 320ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .kit-slam, .kit-trophy-in, .kit-rays-c, .kit-grow-x, .kit-ball-drop, .kit-unfold, .kit-pot-jiggle,
+    .kit-camera-flash, .kit-write, .kit-stamp, .kit-marquee, .kit-flip-in, .kit-dots > span { animation: none !important; }
+    .kit-ring { animation: none !important; opacity: 0 !important; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .kit-shake-x, .kit-badge-pop, .kit-app-open, .kit-app-close, .kit-icon-in, .kit-win-pop, .kit-deal, .kit-reel-spin { animation: none !important; }

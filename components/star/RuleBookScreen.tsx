@@ -10,6 +10,8 @@ import { replaceableClubsIn } from "@/lib/star/euro";
 import { fetchCustomClubs, buildCustomClubEntry, type CustomClub } from "@/lib/star/customClubs";
 import type { NewCompetitionState } from "@/lib/star/newCompetition";
 import { isBodyPresident, canStandForBodyPresidency } from "@/lib/star/leadership";
+import { StatBar, FloatText, useTrigger } from "./ui";
+import { Screen, ScreenHeader } from "./ui/Screen";
 
 /**
  * THE RULE BOOK — PHASE 4 OF STAR_POWER_POLITICS.MD, PLUS PHASE 5's BRIBERY.
@@ -67,7 +69,14 @@ export default function RuleBookScreen({
   const canForceMovement = influenceIn(career, "FA") >= RULE_OVERRULE_INFLUENCE_THRESHOLD;
   const latestCompetition: NewCompetitionState | undefined = (career.newCompetitions ?? [])[(career.newCompetitions ?? []).length - 1];
 
-  const run = (result: ActionResult) => setMessage(result.ok ? null : (result.reason ?? "That didn't go through."));
+  // A bad answer shakes its banner; a good investment floats the influence it bought.
+  const [failAt, fireFail] = useTrigger();
+  const [investAt, fireInvest] = useTrigger();
+  const run = (result: ActionResult) => {
+    setMessage(result.ok ? null : (result.reason ?? "That didn't go through."));
+    if (!result.ok) fireFail();
+    return result;
+  };
   const bribe = bribeAmount > 0 ? { amount: bribeAmount, useLawyers } : undefined;
 
   // Requested directly: vote a custom club (app/admin/custom-clubs) into
@@ -86,50 +95,45 @@ export default function RuleBookScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col py-3 px-3">
-      <div className="w-full max-w-sm mx-auto flex-1">
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
-          <div className="font-black text-white text-lg">Rule Book</div>
-          <div />
-        </div>
+    <Screen glow="#6366f1">
+      <div className="w-full flex-1">
+        <ScreenHeader title="Rule Book" kicker="Governing bodies" kickerColor="#a5b4fc" onBack={onBack} />
 
-        <div className="grid grid-cols-4 gap-1 mb-3">
+        <div className="kit-tabs mb-3">
           {GOVERNING_BODIES.map(b => (
             <button
               key={b}
               onClick={() => { setBody(b); setMessage(null); }}
-              className={`py-1.5 rounded-lg font-black text-[10px] uppercase transition ${
-                body === b ? "bg-emerald-600" : "bg-gray-700 text-white"
-              }`}
+              className={`kit-tab text-[10px] ${body === b ? "kit-tab-on" : ""}`}
             >
               {b}
             </button>
           ))}
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-3">
+        <div className="kit-card p-3 mb-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1">Controls</div>
           <div className="text-[11px] text-white font-semibold">{GOVERNING_BODY_COMPETITIONS[body].join(", ")}</div>
         </div>
 
-        <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-3 mb-3">
+        <div className="kit-card ring-1 ring-emerald-500/40 p-3 mb-3">
           <div className="flex items-center justify-between mb-2">
             <span className="font-black text-white text-sm">Your influence</span>
             <span className="font-black text-emerald-300 text-sm">{influence.toFixed(1)} / 100</span>
           </div>
-          <div className="h-2 rounded-full bg-black/40 overflow-hidden mb-2">
-            <div className="h-full bg-emerald-400" style={{ width: `${influence}%` }} />
+          <div className="relative mb-2">
+            <StatBar value={influence} colors={["#10b981", "#6ee7b7"]} className="h-3" />
+            <FloatText trigger={investAt} text="Influence up" color="#6ee7b7" className="left-1/2 -top-3" size={12} />
           </div>
           <div className="flex items-center gap-2">
             <input
               type="number" min={0} value={investAmount} onChange={e => setInvestAmount(Math.max(0, Number(e.target.value)))}
-              className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+              className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
             />
             <button
-              onClick={() => run(onInvest(body, investAmount))}
+              onClick={() => { if (run(onInvest(body, investAmount)).ok) fireInvest(); }}
               disabled={investAmount <= 0 || investAmount > career.money}
-              className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 font-black text-xs whitespace-nowrap"
             >
               Invest
             </button>
@@ -137,7 +141,7 @@ export default function RuleBookScreen({
           {!canPropose && <div className="mt-1.5 text-[9px] text-white font-semibold">Needs real influence before you can propose a rule change.</div>}
         </div>
 
-        <div className="bg-amber-950/40 border border-amber-700 rounded-lg p-3 mb-3">
+        <div className="kit-card ring-1 ring-amber-500/40 p-3 mb-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-1.5">President / King (§5)</div>
           {isBodyPresident(career, body) ? (
             <div className="text-[11px] text-amber-200 font-bold">
@@ -151,7 +155,7 @@ export default function RuleBookScreen({
               <button
                 disabled={!canStandForBodyPresidency(career, body)}
                 onClick={() => run(onStandForBodyPresidency(body))}
-                className="w-full py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-[10px] font-black"
+                className="w-full py-1.5 rounded-lg kit-btn kit-btn-amber disabled:opacity-40 text-[10px] font-black"
               >
                 Stand for president of {body}
               </button>
@@ -160,12 +164,12 @@ export default function RuleBookScreen({
         </div>
 
         {message && (
-          <div className="mb-3 rounded-lg bg-red-900/60 border border-red-500/60 px-3 py-2 text-center text-[11px] font-bold text-red-200">
+          <div key={failAt} className={`${failAt ? "kit-shake-x " : ""}mb-3 rounded-xl bg-red-900/60 ring-1 ring-red-500/60 px-3 py-2 text-center text-[11px] font-bold text-red-200`}>
             {message}
           </div>
         )}
 
-        <div className="bg-purple-950/40 border border-purple-700 rounded-lg p-3 mb-3">
+        <div className="kit-card ring-1 ring-purple-500/40 p-3 mb-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-purple-300 mb-1.5">
             Corruption (optional, Phase 5)
           </div>
@@ -173,7 +177,7 @@ export default function RuleBookScreen({
             <input
               type="number" min={0} value={bribeAmount} onChange={e => setBribeAmount(Math.max(0, Number(e.target.value)))}
               placeholder="Bribe amount"
-              className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+              className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
             />
           </div>
           <label className="flex items-center gap-2 text-[10px] text-white">
@@ -185,58 +189,58 @@ export default function RuleBookScreen({
           </div>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
+        <div className="kit-card p-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Points per result</div>
           <div className="text-[11px] text-white font-semibold mb-2">Win {rules.points.win} · Draw {rules.points.draw} · Loss {rules.points.loss}</div>
           <button
             disabled={!canPropose}
             onClick={() => run(onProposeChange(body, { points: { win: 2, draw: 1, loss: 0 } }, bribe))}
-            className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+            className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
           >
             Propose: 2 points for a win
           </button>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
+        <div className="kit-card p-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Draws</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.noDraws ? "Every draw goes to penalties" : "Draws stand, as normal"}</div>
           <button
             disabled={!canPropose}
             onClick={() => run(onProposeChange(body, { noDraws: !rules.noDraws }, bribe))}
-            className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+            className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
           >
             Propose: {rules.noDraws ? "Bring back draws" : "Abolish draws — penalties every time"}
           </button>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mb-2">
+        <div className="kit-card p-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Match length</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.matchLengthMinutes} minutes</div>
           <div className="flex gap-1">
             <button
               disabled={!canPropose}
               onClick={() => run(onProposeChange(body, { matchLengthMinutes: 60 }, bribe))}
-              className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+              className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
             >
               Propose: 60 minutes
             </button>
             <button
               disabled={!canPropose}
               onClick={() => run(onProposeChange(body, { matchLengthMinutes: 120 }, bribe))}
-              className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+              className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
             >
               Propose: 120 minutes
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="kit-card p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Banned equipment</div>
           <div className="text-[11px] text-white font-semibold mb-2">
             {rules.bannedItems.length > 0 ? `Banned: ${rules.bannedItems.join(", ")}` : "Nothing currently banned"}
           </div>
           <div className="flex items-center gap-2">
-            <select value={banBoot} onChange={e => setBanBoot(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white">
+            <select value={banBoot} onChange={e => setBanBoot(e.target.value)} className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white">
               {BOOTS_CATALOGUE.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
             <button
@@ -246,51 +250,51 @@ export default function RuleBookScreen({
                 const next = already ? rules.bannedItems.filter(id => id !== banBoot) : [...rules.bannedItems, banBoot];
                 run(onProposeChange(body, { bannedItems: next }, bribe));
               }}
-              className="px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 font-black text-xs whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 font-black text-xs whitespace-nowrap"
             >
               {rules.bannedItems.includes(banBoot) ? "Unban" : "Ban"}
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
+        <div className="kit-card p-3 mt-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Offside</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.offsideAbolished ? "Abolished — nobody is ever offside" : "The law applies, as normal"}</div>
           <button
             disabled={!canPropose}
             onClick={() => run(onProposeChange(body, { offsideAbolished: !rules.offsideAbolished }, bribe))}
-            className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+            className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
           >
             Propose: {rules.offsideAbolished ? "Bring back offside" : "Abolish offside entirely"}
           </button>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
+        <div className="kit-card p-3 mt-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Squad size per side</div>
           <div className="text-[11px] text-white font-semibold mb-2">{rules.squadSize} a side</div>
           <div className="flex gap-1">
-            <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { squadSize: 9 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">Propose: 9 a side</button>
-            <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { squadSize: 20 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">Propose: 20 a side</button>
+            <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { squadSize: 9 }, bribe))} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black">Propose: 9 a side</button>
+            <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { squadSize: 20 }, bribe))} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black">Propose: 20 a side</button>
           </div>
           <div className="mt-1.5 text-[9px] text-white font-semibold">Real, votable data — the match/team-sheet engine still assumes 11 a side, so this doesn&apos;t change anything on the pitch yet.</div>
         </div>
 
         {body === "UEFA" && (
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
+          <div className="kit-card p-3 mt-2">
             <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">European slots for England</div>
             <div className="text-[11px] text-white font-semibold mb-2">
               +{rules.extraChampionsLeagueSlots} Champions League · +{rules.extraEuropaLeagueSlots} Europa League
             </div>
             <div className="flex gap-1 mb-1.5">
-              <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { extraChampionsLeagueSlots: rules.extraChampionsLeagueSlots + 1 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">+1 Champions League</button>
-              <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { extraEuropaLeagueSlots: rules.extraEuropaLeagueSlots + 1 }, bribe))} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black">+1 Europa League</button>
+              <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { extraChampionsLeagueSlots: rules.extraChampionsLeagueSlots + 1 }, bribe))} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black">+1 Champions League</button>
+              <button disabled={!canPropose} onClick={() => run(onProposeChange(body, { extraEuropaLeagueSlots: rules.extraEuropaLeagueSlots + 1 }, bribe))} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black">+1 Europa League</button>
             </div>
             <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5 mt-2">Champions League format</div>
             <div className="text-[11px] text-white font-semibold mb-2">{rules.championsLeagueFormat === "groups" ? "Groups of 4, then knockout" : "Single league-table phase"}</div>
             <button
               disabled={!canPropose}
               onClick={() => run(onProposeChange(body, { championsLeagueFormat: rules.championsLeagueFormat === "groups" ? "league" : "groups" }, bribe))}
-              className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+              className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
             >
               Propose: {rules.championsLeagueFormat === "groups" ? "Revert to the league phase" : "Groups of 4, then knockout"}
             </button>
@@ -305,7 +309,7 @@ export default function RuleBookScreen({
             <button
               disabled={!canPropose}
               onClick={() => run(onProposeChange(body, { saudiClubsInEurope: !rules.saudiClubsInEurope }, bribe))}
-              className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+              className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
             >
               Propose: {rules.saudiClubsInEurope ? "Remove Saudi clubs from Europe" : "Let Saudi clubs into Europe"}
             </button>
@@ -326,24 +330,24 @@ export default function RuleBookScreen({
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-1.5 mb-1.5">
-                  <select value={customClubName} onChange={e => setCustomClubName(e.target.value)} className="rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white">
+                  <select value={customClubName} onChange={e => setCustomClubName(e.target.value)} className="rounded-lg kit-input px-2 py-1.5 text-[11px] text-white">
                     {customClubs.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                   </select>
-                  <select value={customCompetition} onChange={e => setCustomCompetition(e.target.value as "champions" | "europa")} className="rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white">
+                  <select value={customCompetition} onChange={e => setCustomCompetition(e.target.value as "champions" | "europa")} className="rounded-lg kit-input px-2 py-1.5 text-[11px] text-white">
                     <option value="champions">Champions League</option>
                     <option value="europa">Europa League</option>
                   </select>
                 </div>
                 <div className="mb-1.5">
                   <div className="text-[9px] text-white mb-1">Replaces (weakest eligible clubs first)</div>
-                  <select value={customReplaces} onChange={e => setCustomReplaces(e.target.value)} className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white">
+                  <select value={customReplaces} onChange={e => setCustomReplaces(e.target.value)} className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white">
                     {replaceableClubsIn(customCompetition === "champions" ? "Champions League" : "Europa League", career).map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <button
                   disabled={!canPropose || proposingCustom || !customClubName || !customReplaces}
                   onClick={proposeCustomClub}
-                  className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 text-[10px] font-black"
+                  className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 text-[10px] font-black"
                 >
                   {proposingCustom ? "Working out its real strength…" : `Propose: ${customClubName} into the ${customCompetition === "champions" ? "Champions" : "Europa"} League`}
                 </button>
@@ -355,13 +359,13 @@ export default function RuleBookScreen({
           </div>
         )}
 
-        <div className="bg-red-950/40 border border-red-800 rounded-xl p-3 mt-2">
+        <div className="kit-card ring-1 ring-red-500/40 p-3 mt-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-red-300 mb-1.5">Force a club into the Premier League</div>
           <div className="text-[11px] text-white font-semibold mb-2">
             Needs {RULE_OVERRULE_INFLUENCE_THRESHOLD}+ FA influence — the same bar as overruling a vote outright.
           </div>
           <div className="flex items-center gap-2">
-            <select value={incomingClub} onChange={e => setIncomingClub(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white">
+            <select value={incomingClub} onChange={e => setIncomingClub(e.target.value)} className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white">
               {/* Custom clubs (app/admin/custom-clubs) work here with no
                   special-casing at all — forceClubIntoPremierLeague just
                   inserts whatever name it's given into career.divisions,
@@ -379,21 +383,21 @@ export default function RuleBookScreen({
             <button
               disabled={!canForceMovement || !incomingClub}
               onClick={() => run(onForceClubIntoPremierLeague(incomingClub))}
-              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-40 font-black text-xs whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg kit-btn kit-btn-red disabled:opacity-40 font-black text-xs whitespace-nowrap"
             >
               Force it in
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 mt-2">
+        <div className="kit-card p-3 mt-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white mb-1.5">Create a new competition</div>
           <div className="flex items-center gap-2 mb-2">
-            <input value={newCompName} onChange={e => setNewCompName(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white" />
+            <input value={newCompName} onChange={e => setNewCompName(e.target.value)} className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white" />
             <button
               disabled={!canPropose || !newCompName}
               onClick={() => run(onCreateCompetition(newCompName, [...PREMIER_LEAGUE_CLUBS]))}
-              className="px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-500 disabled:opacity-40 font-black text-xs whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg kit-btn kit-btn-blue disabled:opacity-40 font-black text-xs whitespace-nowrap"
             >
               Create
             </button>
@@ -409,6 +413,6 @@ export default function RuleBookScreen({
           Only the FA&apos;s rule book actually reaches your own league and matches right now — the other bodies are real, but nothing they govern is simulated deeply enough yet to feel it.
         </div>
       </div>
-    </div>
+    </Screen>
   );
 }

@@ -6,6 +6,9 @@ import { MAJORITY_THRESHOLD, clubValuation } from "@/lib/star/investments";
 import { GOVERNING_BODIES, influenceIn, canProposeRuleChange } from "@/lib/star/governingBodies";
 import { isBodyPresident } from "@/lib/star/leadership";
 import { formatMoney } from "@/lib/star/money";
+import ClubBadge from "./ClubBadge";
+import { CountUp, Glow, PressButton, Shine, StatBar, clubTheme } from "./ui";
+import { Screen, ScreenHeader, SectionLabel, useLater } from "./ui/Screen";
 
 /**
  * OWNERSHIP — THE ONE HOME FOR EVERYTHING STAR POWER & POLITICS BUILT.
@@ -26,16 +29,14 @@ function money(n: number): string {
 }
 
 function RepBar({ label, value }: { label: string; value: number }) {
-  const color = value >= 70 ? "bg-emerald-500" : value >= 40 ? "bg-yellow-500" : "bg-red-500";
+  const on = useLater(250);
   return (
     <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between text-[9px] font-black text-white mb-0.5">
         <span className="truncate">{label}</span>
         <span className="tabular-nums">{value}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-black/40 overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
-      </div>
+      <StatBar value={on ? value : 0} className="h-2" />
     </div>
   );
 }
@@ -54,20 +55,19 @@ export default function OwnershipScreen({
   const owned = (career.investments ?? []).filter(i => i.percent > 0).sort((a, b) => b.percent - a.percent);
   const anyPresidency = GOVERNING_BODIES.some(b => isBodyPresident(career, b));
   const anyCanPropose = GOVERNING_BODIES.some(b => canProposeRuleChange(career, b));
+  const theme = clubTheme(career.player.club, career);
+  const countIn = useLater(400);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
-          <div className="font-black text-white text-lg">Ownership</div>
-          <div />
-        </div>
+    <Screen glow={theme.glow}>
+      <div className="w-full">
+        <ScreenHeader title="Ownership" kicker="Your empire" onBack={onBack} />
 
         {/* ── Reputation strip ── */}
         <button
           onClick={onReputation}
-          className="w-full text-left bg-emerald-900/30 border border-emerald-700 rounded-xl p-3 mb-2.5 hover:bg-emerald-900/45 transition"
+          className="kit-card kit-rise kib-press w-full text-left p-3 mb-2.5"
+          style={{ ["--kit-glow" as string]: "#10b981" } as React.CSSProperties}
         >
           <div className="flex items-center justify-between mb-2">
             <div className="text-[10px] font-black uppercase tracking-widest text-white/90">🌍 Reputation</div>
@@ -82,7 +82,8 @@ export default function OwnershipScreen({
         {/* ── Governing bodies / Rule Book ── */}
         <button
           onClick={onRuleBook}
-          className="w-full text-left bg-indigo-900/30 border border-indigo-700 rounded-xl p-3 mb-2.5 hover:bg-indigo-900/45 transition"
+          className="kit-card kit-rise kib-press w-full text-left p-3 mb-2.5"
+          style={{ ["--kit-glow" as string]: "#6366f1", animationDelay: "80ms" } as React.CSSProperties}
         >
           <div className="flex items-center justify-between mb-2">
             <div className="text-[10px] font-black uppercase tracking-widest text-white/90">⚖️ Rule Book &amp; Governing Bodies</div>
@@ -96,7 +97,7 @@ export default function OwnershipScreen({
                 <div
                   key={b}
                   className={`flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black ${
-                    president ? "bg-amber-400 text-black" : "bg-black/30 text-white"
+                    president ? "bg-gradient-to-b from-yellow-300 to-amber-500 text-black" : "kit-row text-white"
                   }`}
                 >
                   {president && "👑"}{b} {inf}
@@ -114,26 +115,30 @@ export default function OwnershipScreen({
         </button>
 
         {/* ── Your clubs ── */}
-        <div className="text-[10px] font-black uppercase tracking-widest text-white/90 mb-1.5 mt-1">
+        <SectionLabel className="mb-1.5 mt-1">
           Your Clubs {owned.length > 0 && `(${owned.length})`}
-        </div>
+        </SectionLabel>
         {owned.length === 0 ? (
-          <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-6 text-center text-sm font-semibold text-white/90">
+          <div className="kit-card px-4 py-6 text-center text-sm font-semibold text-white/90">
             You don&apos;t hold a stake in any club yet.
           </div>
         ) : (
           <div className="space-y-2 mb-2.5">
-            {owned.map(stake => {
+            {owned.map((stake, i) => {
               const majority = stake.percent >= MAJORITY_THRESHOLD;
               const valuation = clubValuation(stake.club, career);
               const holdingValue = Math.round(valuation * (stake.percent / 100));
+              const glow = clubTheme(stake.club, career).glow;
               return (
                 <button
                   key={stake.club}
                   onClick={() => (majority ? onOpenBoardroom(stake.club) : onOpenMarket())}
-                  className="w-full text-left bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 hover:bg-gray-700 transition flex items-center justify-between gap-2"
+                  className="kit-card kit-rise kib-press relative w-full overflow-hidden text-left px-3 py-2.5 flex items-center justify-between gap-2"
+                  style={{ ["--kit-glow" as string]: glow, animationDelay: `${160 + i * 80}ms`, ...(majority ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.5), 0 10px 24px -12px rgba(0,0,0,.8)" } : {}) } as React.CSSProperties}
                 >
-                  <div className="min-w-0">
+                  {majority && <Shine loop every={6} />}
+                  <span className="relative shrink-0"><Glow color={glow} alpha={0.45} className="inset-0 blur-md" /><span className="relative block"><ClubBadge club={stake.club} size={34} /></span></span>
+                  <div className="min-w-0 flex-1">
                     <div className="font-black text-white text-sm truncate">{stake.club}</div>
                     <div className="text-[10px] font-bold text-white/90">
                       {stake.percent.toFixed(stake.percent < 1 ? 3 : 1)}% owned
@@ -141,7 +146,7 @@ export default function OwnershipScreen({
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-[10px] font-black text-yellow-300 tabular-nums">★{money(holdingValue)}</div>
+                    <div className="text-[12px] font-black text-yellow-300 tabular-nums">★<CountUp value={countIn ? holdingValue : 0} ms={800} format={(n) => money(Math.round(n))} /></div>
                     <div className="text-[9px] font-bold text-white/80">{majority ? "Boardroom →" : "Portfolio →"}</div>
                   </div>
                 </button>
@@ -150,13 +155,16 @@ export default function OwnershipScreen({
           </div>
         )}
 
-        <button
+        <PressButton
+          variant="primary"
+          pulse
           onClick={onOpenMarket}
-          className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 font-black text-sm text-black"
+          className="relative w-full overflow-hidden"
         >
+          <Shine loop every={5} />
           Browse Clubs to Invest In
-        </button>
+        </PressButton>
       </div>
-    </div>
+    </Screen>
   );
 }

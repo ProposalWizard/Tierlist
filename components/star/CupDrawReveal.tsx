@@ -2,6 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { kitsFor, type Kit } from "@/lib/star/kits";
 import ClubBadge from "./ClubBadge";
+import { Burst, PressButton, Shine } from "./ui";
+import { Screen, Dots } from "./ui/Screen";
+import { prefersReducedMotion } from "./ui/motion";
+
+/** The wait between the home ball and the away ball: a real draw pauses
+ *  between the two names. None for a phone set to reduce motion. */
+const AWAY_BALL_MS = 700;
 
 /**
  * Deliberately just strings, not CupRound/CupTie from lib/star/cups.ts —
@@ -98,7 +105,7 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
     // Home name is already visible the instant this tie becomes current (see
     // render below); this just times the away name's pop-in, then the pause
     // before moving on to the next tie.
-    timer.current = setTimeout(() => setHomeShown(true), 60);
+    timer.current = setTimeout(() => setHomeShown(true), prefersReducedMotion() ? 60 : AWAY_BALL_MS);
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [started, revealed, done]);
 
@@ -129,11 +136,11 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] to-black text-white flex items-center justify-center px-3 py-4">
-      <div className="w-full max-w-sm">
+    <Screen glow="#2563eb" center className="max-w-sm px-3 py-4">
+      <div className="w-full">
         <div
-          className="relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]"
-          style={{ background: "linear-gradient(180deg, #131b2e 0%, #0a0f1c 55%, #070a12 100%)" }}
+          className="kit-card relative overflow-hidden"
+          style={{ ["--kit-glow" as string]: "#3b82f6" } as React.CSSProperties}
         >
           <StadiumGlow />
           {started && <ConfettiOverlay opacity={0.5} />}
@@ -145,7 +152,7 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
             </div>
             <div className="mt-1.5 flex items-center justify-center gap-3">
               <span className="h-px flex-1 max-w-10 bg-gradient-to-r from-transparent to-white/25" />
-              <h2 className="text-xl font-black tracking-tight text-white">{round.name}</h2>
+              <h2 className="text-xl font-black uppercase tracking-tight text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>{round.name}</h2>
               <span className="h-px flex-1 max-w-10 bg-gradient-to-l from-transparent to-white/25" />
             </div>
           </div>
@@ -183,12 +190,10 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
 
                 <div className="relative flex items-center gap-2">
                   <Bolt />
-                  <button
-                    onClick={run}
-                    className="px-7 py-3 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 text-emerald-950 font-black text-sm uppercase tracking-wide transition shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                  >
+                  <PressButton variant="primary" pulse onClick={run} className="relative overflow-hidden px-7 py-3">
+                    <Shine loop every={3} />
                     Run the Draw
-                  </button>
+                  </PressButton>
                   <Bolt flip />
                 </div>
               </div>
@@ -196,6 +201,9 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
 
             {started && (
               <div className="space-y-2 pt-2">
+                {/* The pot: the balls still in it jiggle while the draw runs,
+                    one fewer for every name that comes out. */}
+                {!done && <Pot left={Math.max(0, total * 2 - revealed * 2 - (homeShown ? 2 : 1))} />}
                 {round.ties.slice(0, done ? total : revealed + 1).map((tie, i) => {
                   const isCurrent = !done && i === revealed;
                   const isYours = tie.home === yourClub || tie.away === yourClub;
@@ -215,18 +223,21 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
                       // unchanged — it just no longer depends on however
                       // bright the photo behind it happens to be at that
                       // exact spot on the card.
-                      className={`relative flex items-center gap-1.5 rounded-xl border px-2.5 py-2 transition-colors ${
+                      className={`relative flex items-center gap-1.5 overflow-visible rounded-xl border px-2.5 py-2 transition-colors ${
                         isYours
                           ? "border-amber-400/70 bg-amber-950/70 bg-gradient-to-r from-amber-400/[0.16] via-amber-400/[0.08] to-amber-400/[0.16] shadow-[0_0_16px_rgba(251,191,36,0.28)]"
                           : "border-white/10 bg-black/55"
                       }`}
                     >
+                      {isYours && isCurrent && homeShown && <Burst colors={["#fde047", "#fbbf24", "#ffffff"]} count={22} className="left-1/2 top-1/2" />}
+                      {isYours && showAway && <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl"><Shine trigger={1} /></span>}
                       <div className="flex flex-1 min-w-0 items-center gap-2">
-                        <TeamBadge club={tie.home} kit={kits.home} />
+                        <span className={isCurrent ? "kit-ball-drop" : ""}><TeamBadge club={tie.home} kit={kits.home} /></span>
                         <span
                           className={`truncate text-sm font-bold ${isYours ? "text-amber-300" : "text-white"} ${
-                            isCurrent ? "animate-[draw-pop_0.35s_ease-out]" : ""
+                            isCurrent ? "kit-unfold" : ""
                           }`}
+                          style={isCurrent ? { animationDelay: "300ms" } : undefined}
                         >
                           {tie.home}
                         </span>
@@ -239,15 +250,16 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
                           <>
                             <span
                               className={`truncate text-right text-sm font-bold ${isYours ? "text-amber-300" : "text-white"} ${
-                                isCurrent ? "animate-[draw-pop_0.35s_ease-out]" : ""
+                                isCurrent ? "kit-unfold" : ""
                               }`}
+                              style={isCurrent ? { animationDelay: "300ms" } : undefined}
                             >
                               {tie.away}
                             </span>
-                            <TeamBadge club={tie.away} kit={kits.away} />
+                            <span className={isCurrent ? "kit-ball-drop" : ""}><TeamBadge club={tie.away} kit={kits.away} /></span>
                           </>
                         ) : (
-                          <span className="text-right text-white/25 text-xs shrink-0 pr-1">drawing…</span>
+                          <span className="text-right text-white/50 text-xs shrink-0 pr-1">drawing <Dots /></span>
                         )}
                       </div>
                     </div>
@@ -270,13 +282,16 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
 
           {/* ── Footer ── */}
           <div className="relative z-10 border-t border-white/10 p-3">
-            <button
+            {done && <div className="kit-slam mb-2 text-center text-[10px] font-black uppercase tracking-[0.3em] text-sky-300">Draw complete</div>}
+            <PressButton
+              variant="primary"
+              pulse={done}
               onClick={onContinue}
               disabled={!done}
-              className="w-full py-3 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-emerald-950 font-black text-sm uppercase tracking-wide transition"
+              className="w-full py-3"
             >
               Continue
-            </button>
+            </PressButton>
           </div>
         </div>
       </div>
@@ -299,6 +314,35 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
           .cup-confetti-pulse { animation: none; }
         }
       `}</style>
+    </Screen>
+  );
+}
+
+/** The pot the balls come out of: a glass bowl of little numbered balls that
+ *  jiggle while the draw runs. CSS only; still for reduced motion. */
+function Pot({ left }: { left: number }) {
+  const n = Math.min(14, left);
+  return (
+    <div className="relative mx-auto mb-1 h-16 w-40">
+      <div
+        className="absolute inset-x-0 bottom-0 h-14 overflow-hidden rounded-b-[48%] rounded-t-lg"
+        style={{ background: "radial-gradient(120% 90% at 50% 10%, rgba(255,255,255,.14), rgba(147,197,253,.05) 60%, rgba(0,0,0,.25))", boxShadow: "inset 0 0 0 1.5px rgba(191,219,254,.35), inset 0 -8px 16px rgba(0,0,0,.35), 0 8px 18px -8px rgba(0,0,0,.8)" }}
+      >
+        {Array.from({ length: n }, (_, i) => (
+          <span
+            key={i}
+            className="kit-pot-jiggle absolute block h-4 w-4 rounded-full"
+            style={{
+              left: `${10 + ((i * 37) % 76)}%`,
+              bottom: `${6 + ((i * 53) % 34)}%`,
+              background: "radial-gradient(circle at 35% 30%, #ffffff, #cbd5e1 55%, #64748b)",
+              boxShadow: "0 1px 2px rgba(0,0,0,.5)",
+              animationDelay: `${(i % 5) * 90}ms`,
+            }}
+          />
+        ))}
+      </div>
+      <div className="absolute inset-x-3 top-0 h-2 rounded-full bg-gradient-to-b from-sky-200/40 to-sky-300/10" />
     </div>
   );
 }
