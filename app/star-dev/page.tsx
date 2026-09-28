@@ -54,7 +54,8 @@ import { generateForMatch, generateForCareer, generateForLeagueWeek, generateFor
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, shouldUpgradeExternalSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch } from "@/lib/star/leagueSquads";
+import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
@@ -1797,32 +1798,54 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         setCareer(c => (c && !(c.leagueSquads ?? []).length
           ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
       });
-    } else if (shouldUpgradeLeagueSquads(saved.leagueSquads!)) {
-      // A division fetched before faces and flags existed. Re-fetched once, in
-      // the background, and merged rather than replaced — this season's goals
-      // and assists were real and stay real; only the missing fields fill in.
+    } else {
+      // ── The rest of the division, refetched on every load ──
+      //
+      // The save only keeps what this career did to these squads (see
+      // lib/star/squadSaveCodec.ts) — photos, flags and attributes come back
+      // from this fetch. `hydrateSquads` only ever fills a field a player is
+      // missing, so this season's goals and anything the career changed stay
+      // exactly as saved.
+      //
+      // A division fetched before faces and flags existed is still merged the
+      // old way — judged AFTER filling in, and only when the fetch actually
+      // reached the database: judged before, a thin save (no flags yet) would
+      // look pre-flags and a failed fetch would merge invented players over
+      // the real division.
       fetchLeagueSquads(saved.league.map(t => t.name)).then((fresh) => {
         setCareer(c => {
-          if (!c) return c;
-          const leagueSquads = mergeLeagueSquadStats(fresh, c.leagueSquads ?? []);
-          return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+          if (!c || !(c.leagueSquads ?? []).length) return c;
+          const filled = hydrateSquads(c.leagueSquads ?? []);
+          if (isRealFetch(fresh) && shouldUpgradeLeagueSquads(filled)) {
+            const leagueSquads = mergeLeagueSquadStats(fresh, filled);
+            return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+          }
+          return filled === c.leagueSquads ? c : { ...c, leagueSquads: filled };
         });
       });
     }
 
-    // ── …and the wider world, for an existing career that predates it ──
+    // ── …and the wider world ──
     if (!(saved.externalSquads ?? []).length) {
       fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
         setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
       });
-    } else if (shouldUpgradeExternalSquads(saved.externalSquads!, externalClubsFor(saved.league.map(t => t.name)))) {
-      // A career that first fetched the wider world while most of those
-      // clubs still had zero real rows, OR whose snapshot simply predates a
-      // club the CURRENT code expects to find (see shouldUpgradeExternalSquads'
-      // own comment) — re-fetched and merged, same as the domestic re-fetch
-      // just above, rather than staying stuck with a stale snapshot forever.
+    } else {
+      // Refetched on every load, like the division above: the save keeps only
+      // what the career changed, and this fills the rest back in. Clubs the
+      // save is missing or only has invented players for are brought up to
+      // date by reconcileExternalSquads — which, unlike the plain merge that
+      // used to run here on (as it turned out) every single load, never
+      // throws away a transfer, a grown rating or a signing at a club you own.
       fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((fresh) => {
-        setCareer(c => (c ? { ...c, externalSquads: mergeLeagueSquadStats(fresh, c.externalSquads ?? []) } : c));
+        setCareer(c => {
+          if (!c || !(c.externalSquads ?? []).length) return c;
+          const externalSquads = reconcileExternalSquads(
+            hydrateSquads(c.externalSquads ?? []), fresh,
+            club => !!c.ownedClubs?.[club]?.dissolvedInto,
+          );
+          return { ...c, externalSquads };
+        });
       });
     }
 

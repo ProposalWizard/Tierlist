@@ -7,6 +7,7 @@ import { allPoolManagers } from "./managerPool";
 import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { catchUpAwards } from "./potm";
+import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
 
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
@@ -284,7 +285,8 @@ function isSignedInScope(scope: string): boolean {
  */
 export function saveCareer(state: CareerState, scope: string): boolean {
   try {
-    localStorage.setItem(scoped(KEY, scope), JSON.stringify(state));
+    // The other clubs' squads go in thin — see lib/star/squadSaveCodec.ts.
+    localStorage.setItem(scoped(KEY, scope), JSON.stringify(toSavedForm(state)));
     localStorage.setItem(scoped(SAVED_AT_KEY, scope), String(Date.now()));
     if (saveFailure) setSaveFailure(null);
     return true;
@@ -341,7 +343,7 @@ function loadCareerRaw(scope: string): CareerState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CareerState;
     if (parsed.version !== 2) return null;
-    return backfill(parsed);
+    return backfill(fromSavedForm(parsed));
   } catch {
     return null;
   }
@@ -604,7 +606,7 @@ export async function saveCareerToCloud(
   state: CareerState, slot: number = 1, opts: { leavingPage?: boolean } = {},
 ): Promise<void> {
   try {
-    const body = JSON.stringify(state);
+    const body = JSON.stringify(toSavedForm(state));
     await fetch(`/api/star/career?slot=${slot}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -639,7 +641,7 @@ export async function loadCareerFromCloud(slot: number = 1): Promise<{ career: C
     if (!res.ok) return null;
     const data = await res.json() as { career: CareerState; updatedAt: string } | null;
     if (!data?.career || data.career.version !== 2) return null;
-    return { career: backfill(data.career), savedAt: new Date(data.updatedAt).getTime() };
+    return { career: backfill(fromSavedForm(data.career)), savedAt: new Date(data.updatedAt).getTime() };
   } catch {
     return null;
   }
