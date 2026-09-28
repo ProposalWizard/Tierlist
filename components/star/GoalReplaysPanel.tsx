@@ -60,9 +60,9 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
       </SetNote>
 
       <div className="mt-2.5">
-        <div className="text-[9px] font-black uppercase tracking-widest text-white/60">Saved ({saved.length}/{SAVED_REPLAYS_MAX})</div>
+        <div className="text-[9px] font-black uppercase tracking-widest text-white">Saved ({saved.length}/{SAVED_REPLAYS_MAX})</div>
         {saved.length === 0 ? (
-          <div className="mt-1 text-[10px] text-white/50">Nothing kept yet.</div>
+          <div className="mt-1 text-[10px] text-white">Nothing kept yet.</div>
         ) : (
           <div className="mt-1 space-y-1">
             {saved.map(r => (
@@ -81,9 +81,9 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
       </div>
 
       <div className="mt-2.5">
-        <div className="text-[9px] font-black uppercase tracking-widest text-white/60">Recent goals</div>
+        <div className="text-[9px] font-black uppercase tracking-widest text-white">Recent goals</div>
         {recent.length === 0 ? (
-          <div className="mt-1 text-[10px] text-white/50">Score one in a real match to see it here.</div>
+          <div className="mt-1 text-[10px] text-white">Score one in a real match to see it here.</div>
         ) : (
           <div className="mt-1 space-y-1">
             {recent.map(r => (
@@ -117,7 +117,7 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
           </div>
           <button
             onClick={() => setOverwriting(null)}
-            className="mt-1.5 text-[10px] font-bold text-white/60 hover:text-white/85"
+            className="mt-1.5 text-[10px] font-bold text-white hover:text-white/85"
           >
             Cancel
           </button>

@@ -263,3 +263,35 @@ export function assignSquadNumber(career: CareerState, club: string): number {
   if (career.starRating < 2.5 && rng() < 0.45) return 20 + Math.floor(rng() * 20);
   return first;
 }
+
+// ── Your preferred number, earned (Mikey, 28 Sep 2026) ───────────────────────
+//
+// "You can earn your number but it only happens at the start of a new
+// season. If you end the season with a high relationship with your manager
+// and your teammates, then you get your preferred number. And if you sign for
+// a new club after your first club, you likely get it, because they obviously
+// want you."
+
+/** Manager and team-mates both at or above this at the end of a season. */
+export const EARN_NUMBER_RELATIONSHIP = 70;
+/** How often a club signing you (not your first club) hands you your number. */
+export const NEW_CLUB_GIVES_NUMBER = 0.8;
+
+/** The number for next season: your preferred one once you've earned it. */
+export function numberAtSeasonStart(career: CareerState): number | undefined {
+  const want = career.player.preferredNumber;
+  if (!want || career.squadNumber === want) return career.squadNumber;
+  const r = career.relationships;
+  if (r && r.boss >= EARN_NUMBER_RELATIONSHIP && r.team >= EARN_NUMBER_RELATIONSHIP) return want;
+  return career.squadNumber;
+}
+
+/** The number a club gives you on signing. Your first club: whatever is free. */
+export function numberOnSigning(career: CareerState, club: string, firstClub: boolean): number {
+  const want = career.player.preferredNumber;
+  if (!firstClub && want) {
+    const rng = mulberry32(clubNameSeed(club) + career.season * 97 + want);
+    if (rng() < NEW_CLUB_GIVES_NUMBER) return want;
+  }
+  return assignSquadNumber(career, club);
+}

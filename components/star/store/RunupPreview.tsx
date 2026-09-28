@@ -13,7 +13,7 @@
  */
 import { useMemo } from "react";
 import { ROLE_KIT } from "@/lib/star/fiveASide/render";
-import { runupPose, hasWall, BALL_X, WALL_X, LOOP_SECONDS } from "@/lib/star/store/runupPreview";
+import { runupPose, BALL_X, LOOP_SECONDS } from "@/lib/star/store/runupPreview";
 import type { AnimationId } from "@/lib/star/store/catalogue";
 
 const SAMPLES = 60;
@@ -78,19 +78,10 @@ export default function RunupPreview({ style, className = "", paused = false }: 
       {[0, 1, 2, 3].map((i) => (
         <rect key={i} x={i * 30} y="36" width="15" height="44" fill="rgba(255,255,255,0.035)" />
       ))}
-      {/* Goal, off to the right, so the strike has somewhere to go. */}
-      <path d="M104 30 V58 M104 30 H120" stroke="#f8fafc" strokeWidth="1.4" fill="none" opacity="0.85" />
-      {/* The penalty spot. */}
-      {!hasWall(style) && <ellipse cx={BALL_X} cy={GROUND} rx="2.2" ry="0.8" fill="rgba(255,255,255,0.7)" />}
-      {/* A free kick's wall: three men, shoulder to shoulder, stepped back into the grass. */}
-      {hasWall(style) && [0, 1, 2].map((i) => (
-        <g key={i} transform={`translate(${WALL_X + i * 1.6},${GROUND - 12 - i * 2.2})`} opacity={1 - i * 0.12}>
-          <rect x="-2.6" y="0" width="5.2" height="8" rx="1.8" fill="#dc2626" stroke="#7f1d1d" strokeWidth="0.5" />
-          <rect x="-2.3" y="7.5" width="1.5" height="4.5" fill={SKIN} />
-          <rect x="0.8" y="7.5" width="1.5" height="4.5" fill={SKIN} />
-          <circle cx="0" cy="-2.6" r="2.7" fill={SKIN} />
-        </g>
-      ))}
+      {/* Just the run-up: no goal and no wall (Mikey, 28 Sep 2026: the
+          wall came out tiny next to you — "it doesn't even need the players
+          in the wall shown or the goal. It just shows the run up"). */}
+      <ellipse cx={BALL_X} cy={GROUND} rx="2.2" ry="0.8" fill="rgba(255,255,255,0.7)" />
 
       <g className="whole">
         <g className="fig">

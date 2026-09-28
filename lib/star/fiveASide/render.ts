@@ -475,10 +475,14 @@ export function drawGoal(
   ctx.lineWidth = Math.max(2, unit * 0.16);
   ctx.lineCap = "round";
   ctx.beginPath();
+  // The side frame runs BACK from the line into the net (behind × depth). It
+  // used to run the other way, into the field, so the goal looked like it
+  // stood inside the pitch (Mikey, 28 Sep 2026: "the goal currently looks
+  // like it's inside the pitch… instead of on the line and then behind").
   ctx.moveTo(px(goal.x1), py(atY));
-  ctx.lineTo(px(goal.x1), py(atY + behind * -depth));
+  ctx.lineTo(px(goal.x1), py(atY + behind * depth));
   ctx.moveTo(px(goal.x2), py(atY));
-  ctx.lineTo(px(goal.x2), py(atY + behind * -depth));
+  ctx.lineTo(px(goal.x2), py(atY + behind * depth));
   ctx.moveTo(px(goal.x1), py(atY));
   ctx.lineTo(px(goal.x2), py(atY));
   ctx.stroke();

@@ -70,6 +70,7 @@ import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialSequence from "@/components/star/TrialSequence";
 import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
+import { POSITION_NAMES } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
@@ -250,7 +251,14 @@ function offersWithAgreedTerms(career: CareerState, offers: ScoutOffer[]): Scout
  *  mechanism, which is why this wrapper still exists at all. */
 export default function StarDevPage() {
   const immersive = useImmersiveMode();
-  return <StarDevInner immersive={immersive} />;
+  // No text highlighting while you drag and tap (Mikey, 28 Sep 2026: on PC
+  // "the dragging feature does also do the same thing as highlighting
+  // words"). Typing in a box still works — inputs keep their own selection.
+  return (
+    <div className="select-none [&_input]:select-text [&_textarea]:select-text">
+      <StarDevInner immersive={immersive} />
+    </div>
+  );
 }
 
 function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersiveMode> }) {
@@ -1894,8 +1902,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * deleting any other slot simply removes it from the list. See
    * SaveSlotsPanel in Settings.
    */
+  // No browser confirm() box: it throws the player out of full screen
+  // (Mikey, 28 Sep 2026). The Delete buttons ask "Sure?" on the screen
+  // themselves before calling this.
   const handleDeleteSave = useCallback((slot: number) => {
-    if (!confirm("Delete this save? This cannot be undone.")) return;
     clearCareer(slotScope(scopeRef.current, slot));
     clearCareerFromCloud(slot);
     if (slot === activeSlotRef.current) {
@@ -2565,6 +2575,60 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    * comes from — `offerWageFor`/`offerStanding`, the same curve as every
    * other wage in the game, with the trial score driving both halves of it.
    */
+  /** Sign for a club from the trial's offers (was inline in ScoutOffers'
+   *  onAccept; now also used by the manager's "Accept & sign"). */
+  const signTrialOffer = (offer: ReturnType<typeof offersForTrial>[number]) => {
+    if (!career) return;
+          // ── The wildcard: they sign you and send you out to play ──
+          //
+          // Occasionally a big club's interest is real but its first team is
+          // not somewhere you are getting into, so it signs you and loans
+          // you two rungs down with a number on it. See `rollLoanWildcard`.
+          const loan = rollLoanWildcard(
+            offer.club, offer.division, offer.seasons,
+            mulberry32((career.trial?.seed ?? 1) ^ 0x70a2 ^ offer.club.length),
+          );
+          // THE SIGNING. Everything a club brings — the league, the fixture
+          // list, the squad, the manager, your number, the cups — arrives now,
+          // in one call, onto the person the trial just built. On a loan that
+          // is the club you are going TO play for, not the one that owns you.
+          const homeClub = loan ? loan.hostClub : offer.club;
+          const homeDivision = loan ? loan.hostDivision : offer.division;
+          const wage = loan ? loan.wage : offer.wage;
+          const clubs = loan ? loan.hostClubs : clubsForDivision(offer.division);
+          // The agreed wage is passed through so the signing-on fee is a
+          // multiple of the deal actually being signed rather than of the
+          // fallback starter terms — see `signingOnFee` (economy.ts).
+          const signed = attachClub(career, homeClub, clubs, homeDivision, wage);
+          const withDeal: CareerState = {
+            ...signed,
+            contract: {
+              club: loan ? loan.parentClub : offer.club,
+              wage,
+              goalBonus: loan ? goalBonusFor(wage) : offer.goalBonus,
+              assistBonus: loan ? assistBonusFor(wage) : offer.assistBonus,
+              seasonsRemaining: offer.seasons,
+            },
+            // The handshake is spent — it belongs to this signing and must
+            // never follow the career into a later negotiation.
+            agreedTerms: undefined,
+            ...(loan ? { placement: startLoanSpell(loan, signed.seasonStats.goals) } : null),
+          };
+          setCareer(withDeal);
+          setActiveNav("home");
+          setPhase("trial-reward");
+          // The real dressing room, now that there is one to fetch.
+          fetchRealSquad(homeClub).then(squad => {
+            setCareer(c => (c && c.player.club === homeClub ? { ...c, squad } : c));
+          });
+          fetchLeagueSquads(clubs).then(leagueSquads => {
+            setCareer(c => (c ? {
+              ...c, leagueSquads,
+              league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+            } : c));
+          });
+  };
+
   if (phase === "manager-talk" && career?.trial) {
     const offers = offersForTrial(career);
     const talking = talkingClubFor(career, offers);
@@ -2585,10 +2649,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         talk={talk}
         managerName={loadLineup(talking.club)?.manager || "The manager"}
         onNegotiate={() => setPhase("wage-talk")}
+        // Mikey, 28 Sep 2026: three clear choices — sign now at his first
+        // number, negotiate, or look at the other clubs that came in.
         onAccept={() => {
-          setCareer({ ...career, agreedTerms: { club: talking.club, wage: talk.openingWeekly } });
-          setPhase("scout-offers");
+          const agreed = { ...career, agreedTerms: { club: talking.club, wage: talk.openingWeekly } };
+          const offer = offersWithAgreedTerms(agreed, offersForTrial(agreed)).find(o => o.club === talking.club);
+          if (offer) signTrialOffer(offer);
+          else { setCareer(agreed); setPhase("scout-offers"); }
         }}
+        onSeeOthers={() => setPhase("scout-offers")}
       />
     );
   }
@@ -2664,56 +2733,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // where you go, unchanged.
         youthClub={youthTaker?.club ?? null}
         onNoOffers={() => setPhase(youthOrFreeAgent())}
-        onAccept={offer => {
-          // ── The wildcard: they sign you and send you out to play ──
-          //
-          // Occasionally a big club's interest is real but its first team is
-          // not somewhere you are getting into, so it signs you and loans
-          // you two rungs down with a number on it. See `rollLoanWildcard`.
-          const loan = rollLoanWildcard(
-            offer.club, offer.division, offer.seasons,
-            mulberry32((career.trial?.seed ?? 1) ^ 0x70a2 ^ offer.club.length),
-          );
-          // THE SIGNING. Everything a club brings — the league, the fixture
-          // list, the squad, the manager, your number, the cups — arrives now,
-          // in one call, onto the person the trial just built. On a loan that
-          // is the club you are going TO play for, not the one that owns you.
-          const homeClub = loan ? loan.hostClub : offer.club;
-          const homeDivision = loan ? loan.hostDivision : offer.division;
-          const wage = loan ? loan.wage : offer.wage;
-          const clubs = loan ? loan.hostClubs : clubsForDivision(offer.division);
-          // The agreed wage is passed through so the signing-on fee is a
-          // multiple of the deal actually being signed rather than of the
-          // fallback starter terms — see `signingOnFee` (economy.ts).
-          const signed = attachClub(career, homeClub, clubs, homeDivision, wage);
-          const withDeal: CareerState = {
-            ...signed,
-            contract: {
-              club: loan ? loan.parentClub : offer.club,
-              wage,
-              goalBonus: loan ? goalBonusFor(wage) : offer.goalBonus,
-              assistBonus: loan ? assistBonusFor(wage) : offer.assistBonus,
-              seasonsRemaining: offer.seasons,
-            },
-            // The handshake is spent — it belongs to this signing and must
-            // never follow the career into a later negotiation.
-            agreedTerms: undefined,
-            ...(loan ? { placement: startLoanSpell(loan, signed.seasonStats.goals) } : null),
-          };
-          setCareer(withDeal);
-          setActiveNav("home");
-          setPhase("trial-reward");
-          // The real dressing room, now that there is one to fetch.
-          fetchRealSquad(homeClub).then(squad => {
-            setCareer(c => (c && c.player.club === homeClub ? { ...c, squad } : c));
-          });
-          fetchLeagueSquads(clubs).then(leagueSquads => {
-            setCareer(c => (c ? {
-              ...c, leagueSquads,
-              league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
-            } : c));
-          });
-        }}
+        onAccept={offer => signTrialOffer(offer)}
       />
     );
   }
@@ -2861,6 +2881,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         playerName={`${career.player.firstName} ${career.player.lastName}`}
         surname={career.player.lastName}
         club={career.contract?.club ?? career.player.club}
+        terms={career.contract ? {
+          wage: career.contract.wage, seasons: career.contract.seasonsRemaining,
+          goalBonus: career.contract.goalBonus, assistBonus: career.contract.assistBonus,
+          appearanceFee: career.contract.appearanceFee, loyaltyBonus: career.contract.loyaltyBonus,
+          squadNumber: career.squadNumber,
+          position: (POSITION_NAMES as Record<string, string>)[career.player.position] ?? career.player.position,
+        } : undefined}
         onDone={() => {
           setActiveNav("home");
           setPhase(onLoan ? "loan-brief" : "dashboard");
@@ -2889,7 +2916,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "loan-brief") { setPhase("dashboard"); return null; }
 
   if (phase === "profile-setup" || !career) {
-    return <ProfileSetup onComplete={handleProfileComplete} />;
+    return <ProfileSetup onComplete={handleProfileComplete} onMainMenu={() => setTitleOpen(true)} />;
   }
 
   if (phase === "season-awards" && career?.lastSeasonAwardStats) {
@@ -3078,6 +3105,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <TransferSigning
         playerName={`${career.player.firstName} ${career.player.lastName}`}
         club={pendingSignOffer.offer.club}
+        terms={{
+          wage: pendingSignOffer.offer.wage, seasons: pendingSignOffer.offer.seasons,
+          goalBonus: pendingSignOffer.offer.goalBonus, assistBonus: pendingSignOffer.offer.assistBonus,
+          appearanceFee: pendingSignOffer.offer.clauses.appearanceFee,
+          loyaltyBonus: pendingSignOffer.offer.clauses.loyaltyBonus,
+          signingFee: pendingSignOffer.offer.signingFee,
+          position: (POSITION_NAMES as Record<string, string>)[career.player.position] ?? career.player.position,
+        }}
         onDone={handleSigningDone}
       />
     );
@@ -3369,7 +3404,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
       compact={swipeActive || phase === "skills"}
-      onHome={() => handleNavigate("home")}
+      // The home button top-left opens the main menu (Mikey, 28 Sep 2026:
+      // "this home button should take you back to the main menu").
+      onHome={() => setTitleOpen(true)}
       atHome={swipeActive}
     >
       {unlockedAchievements.length > 0 && (
@@ -3447,7 +3484,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               myTeam={nextFixture ? myTeam(nextFixture) : career.player.club}
               onUseCan={handleUseCan}
               onBuyCan={handleBuyKib}
-              onOpen={(ph) => setPhase(ph)}
+                onOpen={(ph) => setPhase(ph)}
             />,
             <ShopPage key="shop" career={career} onOpen={(ph) => setPhase(ph)} />,
           ]}

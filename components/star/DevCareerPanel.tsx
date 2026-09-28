@@ -33,7 +33,7 @@ function Tile({ label, value, children }: { label: string; value: React.ReactNod
   return (
     <div className="kit-row rounded-xl p-2">
       <div className="flex items-baseline justify-between gap-1">
-        <span className="text-[10px] font-bold text-white/70">{label}</span>
+        <span className="text-[10px] font-bold text-white">{label}</span>
         <span className="text-[13px] font-black tabular-nums text-white">{value}</span>
       </div>
       {children}
@@ -64,7 +64,7 @@ export default function DevCareerPanel({
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-[11px] font-bold text-white/85">
-          Captain: <span className={career.captain ? "text-emerald-400" : "text-white/50"}>
+          Captain: <span className={career.captain ? "text-emerald-400" : "text-white"}>
             {career.captain ? "Yes" : "No"}
           </span>
         </span>
@@ -98,7 +98,7 @@ export default function DevCareerPanel({
           </div>
         </Tile>
         <div className="kit-row rounded-xl p-2">
-          <div className="text-[10px] font-bold text-white/70">
+          <div className="text-[10px] font-bold text-white">
             Skills (<Pop value={skills} className="inline-block font-black tabular-nums text-white">{skills}</Pop>)
           </div>
           <PressButton
@@ -125,7 +125,7 @@ export default function DevCareerPanel({
 
       {clubOptions.length > 0 && (
         <div className="kit-row mt-2 rounded-xl p-2">
-          <div className="text-[10px] font-bold text-white/70">
+          <div className="text-[10px] font-bold text-white">
             Club: <span className="font-black text-white">{career.player.club}</span> — instantly attach elsewhere in this division
           </div>
           <select

@@ -1,4 +1,5 @@
 "use client";
+import OwnPortraitImg from "../OwnPortraitImg";
 import TrophyImage from "../TrophyImage";
 import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
@@ -536,25 +537,16 @@ function Face({ src, own, kit }: { src: string; own?: boolean; kit: { shirt: str
   }
   const c = paletteFor(kit.shirt, kit.trim);
   return (
-    <div className="absolute inset-0 isolate">
-      <img
-        src={src}
-        alt=""
-        loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover"
-        // Harder than the transfer graphic's treatment, and it has to be. That
-        // one runs at 340px with a figure filling it; this is a tile the size of
-        // a stamp, and a duotone is only as strong as the tonal range it is
-        // given — at the transfer card's brightness the small version came out
-        // as pale mush with no club colour in it at all.
-        style={{ filter: `grayscale(1) contrast(${1 + TREATMENT * 0.65}) brightness(0.96)` }}
-      />
-      <div className="absolute inset-0" style={{ background: c.duoDark, mixBlendMode: "screen", opacity: TREATMENT }} />
-      <div className="absolute inset-0" style={{ background: c.duoLight, mixBlendMode: "multiply", opacity: TREATMENT }} />
-      {/* And the club's own colour forced over the top, because the duotone ends
-          are derived from the kit rather than being it — this is what makes a
-          Liverpool tile read as red rather than as warm grey. */}
-      <div className="absolute inset-0" style={{ background: kit.shirt, mixBlendMode: "color", opacity: 0.7 }} />
+    <div className="absolute inset-0 isolate overflow-hidden">
+      {/* Harder than the transfer graphic's treatment, and it has to be: this
+          is a tile the size of a stamp, and a duotone is only as strong as the
+          tonal range it is given. A scanned face skips it and fills the tile
+          (OwnPortraitImg). */}
+      <OwnPortraitImg src={src} duotone={`grayscale(1) contrast(${1 + TREATMENT * 0.65}) brightness(0.96)`}>
+        <div className="absolute inset-0" style={{ background: c.duoDark, mixBlendMode: "screen", opacity: TREATMENT }} />
+        <div className="absolute inset-0" style={{ background: c.duoLight, mixBlendMode: "multiply", opacity: TREATMENT }} />
+        <div className="absolute inset-0" style={{ background: kit.shirt, mixBlendMode: "color", opacity: 0.7 }} />
+      </OwnPortraitImg>
     </div>
   );
 }

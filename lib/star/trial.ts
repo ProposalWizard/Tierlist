@@ -677,7 +677,9 @@ export function recordStage(
         // deliberately does not carry. This is the label's number, not the
         // score's — see `scoringDifficultyFor` for that one.
         difficulty: clamp01(difficultyFor(trial, stage) + adversityWeightFor(trial, stage)),
-        score: stageScore(played, scoringDifficultyFor(trial, stage)),
+        // Penalties score what you scored: 1 of 3 is 33 (Mikey, 28 Sep 2026:
+        // "surely it should be one third of 100"). See PenaltyStage's onDone.
+        score: stage === "penalties" || stage === "freeKicks" ? Math.round(100 * played) : stageScore(played, scoringDifficultyFor(trial, stage)),
         decidedAt: Date.now(),
       },
     },

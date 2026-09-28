@@ -6,6 +6,7 @@ import {
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { paletteFor } from "@/lib/star/media/graphics/palette";
 import { FAKE_FACES } from "@/lib/star/fakeFaces";
+import OwnPortraitImg from "./OwnPortraitImg";
 import { loadFaceScan, scanFace, type Pt, type ScanFail } from "@/lib/star/faceScan";
 import { ScanningPhoto, ScanReveal, usePrefersReducedMotion } from "./FaceScanAnim";
 import PressButton from "./ui/PressButton";
@@ -241,7 +242,7 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
     <div className="rounded-xl p-3" style={{ background: "linear-gradient(180deg, rgba(3,7,18,.55), rgba(3,7,18,.35))", boxShadow: "inset 0 1px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(110,231,183,.22)" }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Your photo</span>
-        <span className="text-[10px] font-bold text-white/70">Optional</span>
+        <span className="text-[10px] font-bold text-white">Optional</span>
       </div>
 
       {stage === "camera" ? (
@@ -319,7 +320,7 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             className="mt-2 w-full accent-emerald-500"
             aria-label="Zoom"
           />
-          <p className="text-center text-[10px] font-bold text-white/70">Drag to move, slide to zoom</p>
+          <p className="text-center text-[10px] font-bold text-white">Drag to move, slide to zoom</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <PressButton variant="secondary" size="none" onClick={reset} className={btn}>Cancel</PressButton>
             <PressButton variant="primary" size="none" onClick={useCrop} className={btn}>Use this</PressButton>
@@ -393,7 +394,7 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             {value ? "Use my shirt" : "✓ Using your shirt"}
           </button>
           {value && !FAKE_FACES.includes(value) && (
-            <p className="mt-1.5 text-center text-[10px] font-bold text-white/60">
+            <p className="mt-1.5 text-center text-[10px] font-bold text-white">
               Stored on this device only — about {Math.round(portraitBytes(value) / 1024)} KB.
             </p>
           )}
@@ -446,15 +447,10 @@ function TilePreview({ portrait, club, number }: { portrait?: string; club: stri
       <div className="absolute inset-y-0 left-1 w-5 -skew-x-[14deg]" style={{ backgroundColor: kit.trim }} />
       {portrait ? (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={portrait}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ filter: "grayscale(0.85) contrast(1.2) brightness(1.05)" }}
-          />
-          <div className="absolute inset-0" style={{ background: c.duoDark, mixBlendMode: "screen", opacity: 0.85 }} />
-          <div className="absolute inset-0" style={{ background: c.duoLight, mixBlendMode: "multiply", opacity: 0.85 }} />
+          <OwnPortraitImg src={portrait} duotone="grayscale(0.85) contrast(1.2) brightness(1.05)">
+            <div className="absolute inset-0" style={{ background: c.duoDark, mixBlendMode: "screen", opacity: 0.85 }} />
+            <div className="absolute inset-0" style={{ background: c.duoLight, mixBlendMode: "multiply", opacity: 0.85 }} />
+          </OwnPortraitImg>
         </>
       ) : (
         <div

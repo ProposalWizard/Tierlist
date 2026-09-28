@@ -22,7 +22,10 @@ export function SetCard({ tone, strength = 0.28, className = "p-3", children, ..
   return <ClubCard glow={tone} strength={strength} className={className} {...rest}>{children}</ClubCard>;
 }
 
-/** The small caps heading at the top of a card, in the card's own colour. */
+/** The heading at the top of a card — big, bold and white, so it is the
+ *  first thing you read (Mikey, 28 Sep 2026: "the headlines should be bold
+ *  … the main thing you should focus on instantly"). The card's colour is a
+ *  small bar beside it rather than the text colour. */
 export function SetHead({ tone, children, right, className = "" }: {
   tone?: string;
   children: React.ReactNode;
@@ -31,7 +34,10 @@ export function SetHead({ tone, children, right, className = "" }: {
 }) {
   return (
     <div className={`flex items-center justify-between gap-2 ${className}`}>
-      <div className="min-w-0 text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: tone ? tintText(tone) : "rgba(255,255,255,.85)" }}>{children}</div>
+      <div className="flex min-w-0 items-center gap-2 text-[15px] font-black leading-tight text-white">
+        <span aria-hidden className="h-4 w-1 shrink-0 rounded-full" style={{ background: tone ? tintText(tone) : "#34d399" }} />
+        <span className="min-w-0">{children}</span>
+      </div>
       {right}
     </div>
   );
@@ -39,7 +45,9 @@ export function SetHead({ tone, children, right, className = "" }: {
 
 /** One line of explanation under a heading. */
 export function SetNote({ children, className = "mt-1", dim = false }: { children: React.ReactNode; className?: string; dim?: boolean }) {
-  return <p className={`text-[11px] font-semibold leading-snug ${dim ? "text-white/55" : "text-white/85"} ${className}`}>{children}</p>;
+  // White, never grey (standing rule): the heading does the standing out,
+  // the note is just smaller.
+  return <p className={`text-[11px] font-semibold leading-snug text-white ${dim ? "opacity-90" : ""} ${className}`}>{children}</p>;
 }
 
 /** A thin rule between rows inside one card. */
@@ -51,7 +59,7 @@ export function SetDivider({ className = "my-2.5" }: { className?: string }) {
 export function SetSection({ children, tone, className = "mb-1.5 mt-4" }: { children: React.ReactNode; tone?: string; className?: string }) {
   return (
     <div className={`flex items-center gap-2 px-0.5 ${className}`}>
-      <span className="text-[10px] font-black uppercase tracking-[0.22em]" style={{ color: tone ?? "rgba(255,255,255,.6)" }}>{children}</span>
+      <span className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: tone ?? "#ffffff" }}>{children}</span>
       <span aria-hidden className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${rgba(tone ?? "#ffffff", 0.35)}, transparent)` }} />
     </div>
   );

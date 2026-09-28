@@ -22,7 +22,9 @@ export default function TrialReward({
   surname,
   club,
   onDone,
+  terms,
 }: {
+  terms?: ContractTerms;
   playerName: string;
   /** Just the surname — the newspaper headline reads "SURNAME WINS...", not the full name. */
   surname: string;
@@ -49,7 +51,7 @@ export default function TrialReward({
       <div className="w-full max-w-sm text-center">
         <CongratulationsBanner />
 
-        <SignaturePad name={playerName} club={club} signing={signing} onFinished={onDone} />
+        <SignaturePad name={playerName} club={club} signing={signing} onFinished={onDone} terms={terms} />
 
         <button
           onClick={() => setSigning(true)}
@@ -161,13 +163,84 @@ const CONTRACT_SRC = "/star/contract.png";
 // screenshot: the club name and signature sat almost touching the "CLUB
 // NAME"/"PLAYER SIGNATURE" pills above them, when a real signature sits
 // down on the ruled line below it, not centred in the whole gap.
+/**
+ * What goes in the contract picture's blurred lines (Mikey, 28 Sep 2026:
+ * "above that, in the image, there's something which says contract terms,
+ * with some blanked out areas. I was saying to add it to that"). Every field
+ * is optional: a line with nothing to say stays blank paper.
+ */
+export interface ContractTerms {
+  wage?: number;
+  seasons?: number;
+  goalBonus?: number;
+  assistBonus?: number;
+  appearanceFee?: number;
+  loyaltyBonus?: number;
+  signingFee?: number;
+  squadNumber?: number;
+  position?: string;
+  season?: string;
+}
+
+const starMoney = (n: number) => `★${Math.round(n).toLocaleString("en-GB")}`;
+const seasonsText = (n: number) => `${n} season${n === 1 ? "" : "s"}`;
+
+/** Laid over public/star/contract.png (1024x1536), in % measured off the file. */
+function TermsOverlay({ name, club, terms }: { name: string; club: string; terms: ContractTerms }) {
+  const box = (top: number, left: number, width: number, height: number, bg: string): React.CSSProperties =>
+    ({ position: "absolute", top: `${top}%`, left: `${left}%`, width: `${width}%`, height: `${height}%`, background: bg });
+  const paper = "#f4f2ec", termsBg = "#e8e6e1";
+  const small = "min(2.5vw, 10px)";
+  const info: [number, number, string | undefined][] = [
+    [45.8, 21.5, club],
+    [50.0, 21.5, terms.seasons ? seasonsText(terms.seasons) : undefined],
+    [54.1, 21.5, terms.season ? `From ${terms.season}` : "Starts today"],
+    [45.8, 61.2, terms.squadNumber ? `Shirt #${terms.squadNumber}` : undefined],
+    [50.0, 61.2, terms.position],
+    [54.1, 61.2, terms.wage ? `${starMoney(terms.wage)} a week` : undefined],
+  ];
+  const lines = [
+    terms.wage ? `Weekly wage: ${starMoney(terms.wage)}` : undefined,
+    terms.seasons ? `Length: ${seasonsText(terms.seasons)}` : undefined,
+    terms.goalBonus ? `Goal bonus: ${starMoney(terms.goalBonus)} a goal` : undefined,
+    terms.assistBonus ? `Assist bonus: ${starMoney(terms.assistBonus)} an assist` : undefined,
+    terms.appearanceFee ? `Appearance fee: ${starMoney(terms.appearanceFee)} a match` : undefined,
+    terms.loyaltyBonus ? `Loyalty bonus: ${starMoney(terms.loyaltyBonus)} a season` : undefined,
+    terms.signingFee ? `Signing-on fee: ${starMoney(terms.signingFee)}` : undefined,
+  ];
+  return (
+    <div className="pointer-events-none absolute inset-0 font-serif text-[#1c150a]">
+      <div style={{ ...box(33.0, 18, 64, 6.0, "linear-gradient(180deg,#e2c46e,#c9a24a 55%,#dcbd67)"), borderRadius: 4 }}
+        className="flex items-center justify-center">
+        <span className="whitespace-nowrap font-bold italic"
+          style={{ fontSize: `calc(min(5vw, 21px) * ${Math.min(1, 18 / Math.max(1, name.length)).toFixed(3)})` }}>{name}</span>
+      </div>
+      <div style={box(40.2, 25, 50, 2.6, paper)} className="flex items-center justify-center">
+        <span className="whitespace-nowrap uppercase tracking-[0.12em]" style={{ fontSize: "min(2.2vw, 9px)" }}>Professional player</span>
+      </div>
+      {info.map(([top, left, text], i) => (
+        <div key={i} style={box(top - 0.3, left, 25.5, 4.2, paper)} className="flex items-center">
+          <span className="truncate font-bold" style={{ fontSize: small }}>{text ?? ""}</span>
+        </div>
+      ))}
+      {lines.map((text, i) => (
+        <div key={i} style={box(62.3 + i * 2.0, 17, 69.8, 2.05, termsBg)} className="flex items-center">
+          <span className="truncate font-semibold" style={{ fontSize: small }}>{text ?? ""}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const CLUB_NAME_BOX = { top: 83, left: 13.7, right: 55, bottom: 13.4 };
 const SIGNATURE_BOX = { top: 83, left: 55.2, right: 13.1, bottom: 13.4 };
 
 export function SignaturePad({
-  name, club, signing, onFinished,
+  name, club, signing, onFinished, terms,
 }: {
   name: string; club: string; signing: boolean; onFinished: () => void;
+  /** What the contract says, written into the picture's blurred lines. */
+  terms?: ContractTerms;
 }) {
   const pathRef = useRef<SVGPathElement>(null);
   const [len, setLen] = useState(0);
@@ -218,6 +291,7 @@ export function SignaturePad({
       <div className="relative mx-auto mt-6 w-full max-w-sm">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={CONTRACT_SRC} alt="" className="block w-full" onError={() => setImgOk(false)} />
+        {terms && <TermsOverlay name={name} club={club} terms={terms} />}
         <div
           className="absolute flex items-center justify-center overflow-hidden px-1"
           style={{
@@ -225,7 +299,12 @@ export function SignaturePad({
             left: `${CLUB_NAME_BOX.left}%`, right: `${CLUB_NAME_BOX.right}%`,
           }}
         >
-          <span className="truncate font-serif text-[3.2vw] italic text-[#151008] sm:text-[13px]">
+          {/* A long club name gets smaller until it fits, rather than being cut
+              off with "…" (Mikey, 28 Sep 2026: "that looks a bit unprofessional"). */}
+          <span
+            className="whitespace-nowrap font-serif italic text-[#151008]"
+            style={{ fontSize: `calc(min(3.2vw, 13px) * ${Math.min(1, 15 / Math.max(1, club.length)).toFixed(3)})` }}
+          >
             {club}
           </span>
         </div>
