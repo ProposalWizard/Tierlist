@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { CareerState, Horse } from "@/lib/star/types";
 import { shuffle } from "@/lib/shuffle";
 import {
@@ -9,6 +9,26 @@ import { getTuning } from "@/lib/star/tuningStore";
 import { formatMoney } from "@/lib/star/money";
 import { horseRacePrize, horseUpkeep } from "@/lib/star/horse";
 import GoalieMode from "./GoalieMode";
+import {
+  ScreenShell, WalletPill, PressButton, RiseIn, Glow, Shine, Pop, Burst, FloatText,
+  ShakeX, LossFlash, WinCelebration, useTrigger, useCountUp, useClubTheme, rgba, tint,
+} from "./ui";
+
+/** The casino's own colours: green baize and gold, on the home screen's night. */
+const FELT = "#10b981";
+const GOLD = "#f59e0b";
+const WIN_COLORS = ["#fde047", "#f59e0b", "#34d399", "#ffffff"];
+const winText = (n: number) => `+★${formatMoney(n)}`;
+
+/** The juice every game fires: a big win, or a loss (a shudder and a red flash). */
+function useCasinoFx() {
+  const [won, fireWon] = useTrigger();
+  const [lost, fireLost] = useTrigger();
+  const [amount, setAmount] = useState(0);
+  const win = useCallback((n: number) => { setAmount(n); fireWon(); }, [fireWon]);
+  return { won, lost, amount, win, lose: fireLost };
+}
+type CasinoFx = ReturnType<typeof useCasinoFx>;
 
 interface Props {
   bankStart: number;
@@ -158,69 +178,54 @@ export default function CasinoMenu({ bankStart, career, onExit, onHorseRace, onB
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <button onClick={() => onExit(bank)} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
-          <div className="flex-1 bg-gray-700 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-600">
-            <span className="font-black text-white text-sm">Bank</span>
-            <span className="flex items-center gap-1 font-black text-yellow-300"><StarIcon />{formatMoney(bank)}</span>
-          </div>
-        </div>
+  return <Menu bank={bank} career={career} onExit={() => onExit(bank)} onPick={setGame} />;
+}
 
-        <div className="space-y-3">
-          <button
-            disabled={bank < 1}
-            onClick={() => setGame("blackjack")}
-            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
-          >
-            <div className="text-3xl">🃏</div>
-            <div className="text-emerald-400">BLACK JACK</div>
-          </button>
-          <button
-            disabled={bank < 1}
-            onClick={() => setGame("roulette")}
-            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
-          >
-            <div className="text-3xl">🎡</div>
-            <div className="text-emerald-400">ROULETTE</div>
-          </button>
-          <button
-            disabled={bank < 1}
-            onClick={() => setGame("slots")}
-            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
-          >
-            <div className="text-3xl">🎰</div>
-            <div className="text-emerald-400">SLOTS</div>
-          </button>
-          <button
-            disabled={bank < 1}
-            onClick={() => setGame("horses")}
-            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
-          >
-            <div className="text-3xl">🐎</div>
-            <div className="text-emerald-400">HORSE RACING</div>
-          </button>
-          <button
-            disabled={bank < 1}
-            onClick={() => setGame("bets")}
-            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
-          >
-            <div className="text-3xl">🏆</div>
-            <div className="text-emerald-400">COMPETITION BETS</div>
-          </button>
-          <button
-            disabled={bank < 1}
-            onClick={() => setGame("goalie")}
-            className="w-full py-6 bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 rounded-2xl font-black text-2xl flex items-center gap-4 px-6 transition disabled:opacity-40"
-          >
-            <div className="text-3xl">🧤</div>
-            <div className="text-emerald-400">GOALIE MODE</div>
-          </button>
-        </div>
+const GAMES: { id: "blackjack" | "roulette" | "slots" | "horses" | "bets" | "goalie"; icon: string; label: string; sub: string; color: string }[] = [
+  { id: "blackjack", icon: "🃏", label: "BLACK JACK", sub: "Beat the dealer to 21 · pays 2×", color: "#10b981" },
+  { id: "roulette", icon: "🎡", label: "ROULETTE", sub: "Red, black, odd, even or one number", color: "#ef4444" },
+  { id: "slots", icon: "🎰", label: "SLOTS", sub: "Three sevens pays 20×", color: "#f59e0b" },
+  { id: "horses", icon: "🐎", label: "HORSE RACING", sub: "Back a horse, or race your own", color: "#a16207" },
+  { id: "bets", icon: "🏆", label: "COMPETITION BETS", sub: "Who wins the league and the cups", color: "#6366f1" },
+  { id: "goalie", icon: "🧤", label: "GOALIE MODE", sub: "Save shots, stack the multiplier", color: "#0ea5e9" },
+];
+
+function Menu({ bank, career, onExit, onPick }: { bank: number; career: CareerState; onExit: () => void; onPick: (g: (typeof GAMES)[number]["id"]) => void }) {
+  const { glow } = useClubTheme(career);
+  return (
+    <ScreenShell glow={glow} accent={GOLD} title="Casino" icon="🎰" onBack={onExit} right={<WalletPill value={bank} format={formatMoney} />}>
+      <div className="space-y-2.5">
+        {GAMES.map((g, i) => (
+          <RiseIn key={g.id} index={i} step={60}>
+            <PressButton
+              disabled={bank < 1}
+              onClick={() => onPick(g.id)}
+              className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl px-4 py-4 text-left disabled:opacity-40"
+              style={{
+                background: `radial-gradient(80% 140% at 0% 50%, ${rgba(g.color, 0.4)} 0%, transparent 62%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(12,17,28,.97))`,
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(g.color, 0.35)}, 0 12px 24px -14px ${rgba(g.color, 0.75)}`,
+              }}
+            >
+              {i === 0 && <Shine loop every={6} />}
+              <span className="relative grid h-14 w-14 shrink-0 place-items-center">
+                <Glow color={g.color} alpha={0.5} className="inset-0 blur-lg" />
+                <span
+                  className="relative grid h-12 w-12 place-items-center rounded-2xl text-[28px]"
+                  style={{ background: `linear-gradient(160deg, ${tint(g.color, 0.25)}, ${tint(g.color, -0.4)})`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.45), 0 6px 12px -4px ${rgba(g.color, 0.8)}` }}
+                >
+                  {g.icon}
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[19px] font-black tracking-wide text-white" style={{ textShadow: `0 2px 10px ${rgba(g.color, 0.6)}` }}>{g.label}</span>
+                <span className="block text-[11px] font-bold text-white/65">{g.sub}</span>
+              </span>
+              <span className="text-[20px] text-white/40">›</span>
+            </PressButton>
+          </RiseIn>
+        ))}
       </div>
-    </div>
+    </ScreenShell>
   );
 }
 
@@ -233,23 +238,54 @@ interface CasinoGameProps {
   onChangeBet: (direction: 1 | -1) => void;
 }
 
-function TopBar({ bank, bet, onExit, onChangeBet }: CasinoGameProps) {
+/**
+ * EVERY GAME'S FRAME: the night backdrop lit green and gold, a header with
+ * Menu, the game's name and your bank (which counts, and floats each win or
+ * stake off it), the bet stepper, and the win/loss juice.
+ */
+function CasinoFrame({ bank, bet, onExit, onChangeBet, title, icon, fx, children }: CasinoGameProps & {
+  title: string; icon: string; fx?: CasinoFx; children?: React.ReactNode;
+}) {
+  // Float every change of the bank off it: "−★2k" as a stake goes down,
+  // "+★4k" as winnings come in.
+  const prev = useRef(bank);
+  const [delta, setDelta] = useState({ n: 0, text: "", up: false });
+  useEffect(() => {
+    const d = bank - prev.current;
+    prev.current = bank;
+    if (d !== 0) setDelta((x) => ({ n: x.n + 1, text: `${d > 0 ? "+" : "−"}★${formatMoney(Math.abs(d))}`, up: d > 0 }));
+  }, [bank]);
   return (
-    <div className="flex items-center gap-1 mb-3">
-      <button onClick={onExit} className="px-2 py-2 bg-gray-700 rounded font-black text-xs">← Menu</button>
-      <div className="flex-1 grid grid-cols-2 gap-1">
-        <div className="bg-gray-700 rounded px-2 py-1.5 flex items-center justify-between border border-gray-600">
-          <span className="font-black text-[10px] text-white">Bank</span>
-          <span className="flex items-center gap-0.5 font-black text-yellow-300 text-xs"><StarIcon />{formatMoney(bank)}</span>
-        </div>
-        <div className="bg-gray-700 rounded px-2 py-1.5 flex items-center justify-between border border-gray-600">
-          <span className="font-black text-[10px] text-white">Bet</span>
-          <div className="flex items-center gap-1">
-            <button onClick={() => onChangeBet(-1)} className="text-red-400 font-black text-sm">▼</button>
-            <span className="flex items-center gap-0.5 font-black text-yellow-300 text-xs"><StarIcon />{formatMoney(bet)}</span>
-            <button onClick={() => onChangeBet(1)} className="text-emerald-400 font-black text-sm">▲</button>
-          </div>
-        </div>
+    <ScreenShell
+      glow={FELT}
+      accent={GOLD}
+      title={title}
+      icon={icon}
+      onBack={onExit}
+      backLabel="Menu"
+      right={<WalletPill value={bank} format={formatMoney} spent={delta.n} spentText={delta.text} spentColor={delta.up ? "#6ee7b7" : "#fca5a5"} />}
+    >
+      <BetBar bet={bet} bank={bank} onChangeBet={onChangeBet} />
+      {children}
+      {fx && <LossFlash trigger={fx.lost} />}
+      {fx && <WinCelebration trigger={fx.won} amount={fx.amount} format={winText} colors={WIN_COLORS} />}
+    </ScreenShell>
+  );
+}
+
+function BetBar({ bet, bank, onChangeBet }: { bet: number; bank: number; onChangeBet: (d: 1 | -1) => void }) {
+  return (
+    <div
+      className="mb-3 flex items-center gap-2 rounded-2xl px-3 py-2"
+      style={{ background: `radial-gradient(80% 140% at 50% 0%, ${rgba(GOLD, 0.22)} 0%, transparent 70%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(GOLD, 0.3)}` }}
+    >
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/80">Your bet</span>
+      <div className="ml-auto flex items-center gap-2">
+        <PressButton variant="secondary" size="none" aria-label="Lower bet" onClick={() => onChangeBet(-1)} className="grid h-8 w-8 place-items-center rounded-full text-[13px] font-black text-red-300">▼</PressButton>
+        <span className="min-w-[78px] text-center text-[17px] font-black tabular-nums text-yellow-200" style={{ textShadow: "0 0 12px rgba(253,224,71,.4)" }}>
+          <Pop value={bet}>★{formatMoney(bet)}</Pop>
+        </span>
+        <PressButton variant="secondary" size="none" aria-label="Raise bet" disabled={bet >= bank} onClick={() => onChangeBet(1)} className="grid h-8 w-8 place-items-center rounded-full text-[13px] font-black text-emerald-300">▲</PressButton>
       </div>
     </div>
   );
@@ -316,6 +352,7 @@ interface HorseRacingProps extends CasinoGameProps {
 }
 
 function HorseRacingGame(props: HorseRacingProps) {
+  const fx = useCasinoFx();
   const [tab, setTab] = useState<"bet" | "my-horses">("bet");
   const [horses, setHorses] = useState<RaceHorse[]>(() => generateRaceHorses());
   const [selectedHorse, setSelectedHorse] = useState<number | null>(null);
@@ -350,16 +387,19 @@ function HorseRacingGame(props: HorseRacingProps) {
           const finish = ordered.findIndex((r) => r.isUser) + 1;
           const prize = myHorse ? horseRacePrize(finish, myHorse) : 0;
           setResult({ finish, payout: prize, winnerName });
+          if (prize > 0) fx.win(prize);
         } else {
           // Betting race — did our pick win?
           const betHorse = horses[selectedHorse!];
           const finish = ordered.findIndex((r) => r.name === betHorse.name) + 1;
           const payout = finish === 1 ? Math.round(props.bet * betHorse.odds) : 0;
           setResult({ finish, payout, winnerName });
+          if (payout > 0) fx.win(payout - props.bet); else fx.lose();
         }
       }, maxDur * 1000 + 250);
       return () => clearTimeout(t);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runners, go, result, isMyHorseRace, horses, selectedHorse, myHorse]);
 
   const placeBet = () => {
@@ -441,10 +481,9 @@ function HorseRacingGame(props: HorseRacingProps) {
   // Race animation view (shared by both bet and my-horse races)
   if (runners) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
-        <div className="w-full max-w-sm">
-          <TopBar {...props} />
-          <div className="bg-gradient-to-b from-emerald-700 to-emerald-900 border-2 border-emerald-600 rounded-xl p-3 overflow-hidden">
+      <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx}>
+          <ShakeX trigger={fx.lost}>
+          <div className="overflow-hidden rounded-2xl p-3" style={{ background: "repeating-linear-gradient(180deg, rgba(255,255,255,.04) 0 34px, transparent 34px 68px), linear-gradient(180deg, #15803d, #064e3b)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 2px ${rgba(GOLD, 0.45)}, 0 16px 30px -16px rgba(0,0,0,.9)` }}>
             <div className="space-y-2 relative">
               {/* Finish line */}
               <div className="absolute right-1 top-0 bottom-0 w-1 bg-white/70" style={{ backgroundImage: "repeating-linear-gradient(0deg,#fff 0 6px,#111 6px 12px)" }} />
@@ -459,7 +498,7 @@ function HorseRacingGame(props: HorseRacingProps) {
                         transition: `left ${r.duration}s cubic-bezier(0.4,0.1,0.7,1)`,
                       }}
                     >
-                      <span className="drop-shadow">🐎</span>
+                      <span className="inline-block -scale-x-100 drop-shadow-[0_3px_3px_rgba(0,0,0,.6)]">🐎</span>
                     </div>
                     <div className={`absolute left-1 top-1/2 -translate-y-1/2 text-[9px] font-black ${isPickedOrUser ? "text-yellow-300" : "text-white/70"}`}>
                       {isMyHorseRace && r.isUser ? "YOU" : r.name}
@@ -488,35 +527,34 @@ function HorseRacingGame(props: HorseRacingProps) {
                     <div className="text-sm text-white/85 mt-1">Winner: {result.winnerName}</div>
                   </>
                 )}
-                <button onClick={collectResult} className="mt-3 w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">
+                <PressButton variant={result.payout > 0 ? "gold" : "primary"} size="none" pulse={result.payout > 0} onClick={collectResult} className="relative mt-3 w-full overflow-hidden rounded-xl py-2.5 font-black">
+                  {result.payout > 0 && <Shine loop every={3} />}
                   {result.payout > 0 ? "Collect Winnings" : "Next Race"}
-                </button>
+                </PressButton>
               </div>
             )}
             {!result && (
               <div className="mt-3 text-center text-xs font-black text-white/80 animate-pulse">And they&apos;re off!</div>
             )}
           </div>
-        </div>
-      </div>
+          </ShakeX>
+      </CasinoFrame>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
-        <TopBar {...props} />
+    <CasinoFrame {...props} title="Horse Racing" icon="🐎" fx={fx}>
 
         {/* Tabs */}
         {ownsStable && (
           <div className="flex gap-1 mb-3">
             <button
               onClick={() => setTab("bet")}
-              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "bet" ? "bg-emerald-600" : "bg-gray-700 text-white/75"}`}
+              className={`kib-press flex-1 rounded-xl py-2 text-sm font-black transition ${tab === "bet" ? "bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-900/50" : "bg-white/[0.07] text-white/75 ring-1 ring-white/10"}`}
             >Bet on Races</button>
             <button
               onClick={() => setTab("my-horses")}
-              className={`flex-1 py-2 rounded-lg font-black text-sm transition ${tab === "my-horses" ? "bg-emerald-600" : "bg-gray-700 text-white/75"}`}
+              className={`kib-press flex-1 rounded-xl py-2 text-sm font-black transition ${tab === "my-horses" ? "bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-900/50" : "bg-white/[0.07] text-white/75 ring-1 ring-white/10"}`}
             >My Horses</button>
           </div>
         )}
@@ -530,13 +568,13 @@ function HorseRacingGame(props: HorseRacingProps) {
                 <button
                   key={i}
                   onClick={() => setSelectedHorse(i)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition ${
+                  className={`kib-press flex w-full items-center gap-3 rounded-2xl p-3 transition ${
                     selectedHorse === i
-                      ? "bg-emerald-900/60 border-emerald-400"
-                      : "bg-gray-800 border-gray-700 hover:border-gray-500"
+                      ? "bg-gradient-to-r from-emerald-500/30 to-emerald-900/40 ring-2 ring-emerald-300"
+                      : "bg-gradient-to-b from-white/[0.09] to-white/[0.03] ring-1 ring-white/10"
                   }`}
                 >
-                  <div className="text-2xl">🐎</div>
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-b from-amber-600/50 to-amber-900/40 text-2xl ring-1 ring-amber-300/30">🐎</div>
                   <div className="flex-1 text-left">
                     <div className="font-black text-white text-sm">{h.name}</div>
                     <div className="text-[10px] text-white/75">Rating: {h.rating}</div>
@@ -548,13 +586,16 @@ function HorseRacingGame(props: HorseRacingProps) {
                 </button>
               ))}
             </div>
-            <button
+            <PressButton
+              variant="primary"
+              size="none"
+              pulse={selectedHorse !== null && props.bank >= props.bet}
               disabled={selectedHorse === null || props.bank < props.bet}
               onClick={placeBet}
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
+              className="w-full rounded-2xl py-3 font-black"
             >
               Place Bet — ★{formatMoney(props.bet)}
-            </button>
+            </PressButton>
           </>
         )}
 
@@ -563,20 +604,22 @@ function HorseRacingGame(props: HorseRacingProps) {
           <>
             {!myHorse ? (
               <>
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3 text-[11px] text-white/85 leading-snug text-center">
+                <div className="mb-3 rounded-2xl bg-white/[0.06] p-3 text-center text-[11px] font-bold leading-snug text-white/85 ring-1 ring-white/10">
                   Buy a racehorse and enter it in races to win a real prize for finishing 1st, 2nd or 3rd — no betting involved. Racing tires your horse (energy comes back as the season plays out), and owning one costs real weekly upkeep whether it races or not.
                 </div>
                 <div className="space-y-2">
                   {PURCHASABLE_HORSES.map((s) => {
                     const canAfford = props.bank >= s.price;
                     return (
-                      <div key={s.horse.name} className="bg-gray-800 border border-gray-700 rounded-xl p-3 flex items-center gap-3">
+                      <div key={s.horse.name} className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-3 ring-1 ring-white/10">
                         <div className="text-3xl">🐎</div>
                         <div className="flex-1">
                           <div className="font-black text-white text-sm">{s.horse.name}</div>
                           <div className="text-[10px] text-white/75">{s.horse.breed} - SPD {s.horse.speed} - STA {s.horse.stamina}</div>
                         </div>
-                        <button
+                        <PressButton
+                          variant="primary"
+                          size="none"
                           onClick={() => {
                             if (canAfford) {
                               props.onBuyHorse({ ...s.horse, energy: 100, racesRun: 0, racesWon: 0, earnings: 0 }, s.price);
@@ -584,10 +627,10 @@ function HorseRacingGame(props: HorseRacingProps) {
                             }
                           }}
                           disabled={!canAfford}
-                          className={`px-3 py-2 rounded-lg font-black text-xs flex items-center gap-1 ${canAfford ? "bg-emerald-500 hover:bg-emerald-400" : "bg-gray-700 text-white/65"}`}
+                          className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-black"
                         >
                           <StarIcon />{formatMoney(s.price)}
-                        </button>
+                        </PressButton>
                       </div>
                     );
                   })}
@@ -595,7 +638,7 @@ function HorseRacingGame(props: HorseRacingProps) {
               </>
             ) : (
               <>
-                <div className="bg-gradient-to-b from-emerald-800/40 to-gray-800 border border-emerald-700/50 rounded-xl p-4 mb-3">
+                <div className="mb-3 rounded-2xl p-4" style={{ background: `radial-gradient(90% 80% at 0% 0%, ${rgba(FELT, 0.35)} 0%, transparent 65%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(FELT, 0.3)}` }}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="text-5xl">🐎</div>
                     <div className="flex-1 min-w-0">
@@ -667,13 +710,16 @@ function HorseRacingGame(props: HorseRacingProps) {
                   Prize — 1st: ★{formatMoney(horseRacePrize(1, myHorse))} · 2nd: ★{formatMoney(horseRacePrize(2, myHorse))} · 3rd: ★{formatMoney(horseRacePrize(3, myHorse))}
                 </div>
 
-                <button
+                <PressButton
+                  variant="primary"
+                  size="none"
+                  pulse={myHorse.energy >= MY_HORSE_RACE_COST}
                   onClick={startMyHorseRace}
                   disabled={myHorse.energy < MY_HORSE_RACE_COST}
-                  className={`w-full py-3 rounded-xl font-black text-lg ${myHorse.energy >= MY_HORSE_RACE_COST ? "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400" : "bg-gray-700 text-white/65"}`}
+                  className="w-full rounded-2xl py-3 text-lg font-black"
                 >
                   {myHorse.energy >= MY_HORSE_RACE_COST ? `Enter Race (-${MY_HORSE_RACE_COST} energy)` : "Too tired — rest needed"}
-                </button>
+                </PressButton>
                 {myHorse.energy < MY_HORSE_RACE_COST && (
                   <div className="mt-2 text-[10px] text-center text-white/75">Your horse regains 20 energy after each match you play.</div>
                 )}
@@ -681,8 +727,7 @@ function HorseRacingGame(props: HorseRacingProps) {
             )}
           </>
         )}
-      </div>
-    </div>
+    </CasinoFrame>
   );
 }
 
@@ -724,17 +769,15 @@ function CompetitionBetting(props: CompetitionBettingProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
-        <TopBar {...props} />
+    <CasinoFrame {...props} title="Bets" icon="🏆">
 
         <div className="grid grid-cols-5 gap-1 mb-3">
           {BET_COMPETITIONS.map(c => (
             <button
               key={c.id}
               onClick={() => setTab(c.id)}
-              className={`py-2 rounded-lg font-black text-[9px] uppercase leading-tight transition ${
-                tab === c.id ? "bg-emerald-600" : "bg-gray-700 text-white/70"
+              className={`kib-press rounded-xl py-2 text-[9px] font-black uppercase leading-tight transition ${
+                tab === c.id ? "bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-900/50" : "bg-white/[0.07] text-white/70 ring-1 ring-white/10"
               }`}
             >
               {c.label}
@@ -743,7 +786,8 @@ function CompetitionBetting(props: CompetitionBettingProps) {
         </div>
 
         {placed && (
-          <div className="mb-2 rounded-lg bg-emerald-600/80 border border-emerald-300 px-3 py-2 text-center text-xs font-black">
+          <div className="kit-pop relative mb-2 block rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 px-3 py-2 text-center text-xs font-black text-emerald-950 shadow-lg shadow-emerald-900/60">
+            <Burst colors={WIN_COLORS} count={16} spread={0.8} round />
             Bet placed: {placed.club} @ {placed.odds.toFixed(2)}
           </div>
         )}
@@ -754,16 +798,16 @@ function CompetitionBetting(props: CompetitionBettingProps) {
           </div>
         )}
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
+        <div className="max-h-80 overflow-y-auto rounded-2xl ring-1 ring-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: "linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.1), 0 10px 24px -12px rgba(0,0,0,.8)" }}>
           {book.map(entry => (
             <button
               key={entry.name}
               onClick={() => place(entry)}
               disabled={!bettingOpen || props.bank < props.bet}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 border-b border-black/20 last:border-b-0 hover:bg-gray-700 disabled:opacity-40 text-left"
+              className="kib-press flex w-full items-center justify-between gap-2 border-b border-white/[0.06] px-3 py-2.5 text-left last:border-b-0 hover:bg-white/[0.05] disabled:opacity-40"
             >
               <span className="font-bold text-white text-sm truncate">{entry.name}</span>
-              <span className="shrink-0 font-black text-yellow-300 text-sm tabular-nums">{entry.odds.toFixed(2)}</span>
+              <span className="shrink-0 rounded-lg bg-gradient-to-b from-yellow-300/25 to-amber-600/20 px-2 py-0.5 text-sm font-black tabular-nums text-yellow-200 ring-1 ring-yellow-300/30">{entry.odds.toFixed(2)}</span>
             </button>
           ))}
         </div>
@@ -780,7 +824,7 @@ function CompetitionBetting(props: CompetitionBettingProps) {
               {pending.map((b, i) => {
                 const label = BET_COMPETITIONS.find(c => c.id === b.competition)?.label ?? b.competition;
                 return (
-                  <div key={i} className="bg-gray-800/70 border border-gray-700 rounded-lg px-3 py-2 flex items-center justify-between text-[11px]">
+                  <div key={i} className="flex items-center justify-between rounded-xl bg-white/[0.06] px-3 py-2 text-[11px] ring-1 ring-white/10">
                     <div>
                       <span className="font-bold text-white">{b.club}</span>
                       <span className="text-white/55"> — {label}</span>
@@ -797,12 +841,16 @@ function CompetitionBetting(props: CompetitionBettingProps) {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </CasinoFrame>
   );
 }
 
 // ---------- BLACKJACK ----------
+/** Green baize under a lamp, with a gold rail. */
+const FELT_TABLE: React.CSSProperties = {
+  background: "radial-gradient(75% 55% at 50% 45%, #16a34a 0%, #15803d 45%, #064e3b 100%)",
+  boxShadow: `inset 0 0 0 4px ${rgba(GOLD, 0.7)}, inset 0 0 0 7px rgba(0,0,0,.35), inset 0 10px 30px rgba(0,0,0,.45), 0 18px 34px -16px rgba(0,0,0,.9)`,
+};
 type Card = { rank: string; value: number; suit: "♥" | "♠" | "♦" | "♣" };
 const DECK: string[] = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const SUITS: Array<"♥" | "♠" | "♦" | "♣"> = ["♥", "♠", "♦", "♣"];
@@ -822,10 +870,11 @@ function handValue(cards: Card[]): number {
 }
 
 function Blackjack(props: CasinoGameProps) {
+  const fx = useCasinoFx();
   // Requested directly: pressing Black Jack used to deal both hands
   // instantly, before the bet was even decided — "it's a bit misconstruing
   // the way that does it." A real "bet" phase now sits in front of every
-  // hand (the first one included): the table is empty, the TopBar's own
+  // hand (the first one included): the table is empty, the bet bar's own
   // bet +/- is right there to adjust, and nothing is drawn or staked until
   // you press Deal yourself.
   const [player, setPlayer] = useState<Card[]>([]);
@@ -864,6 +913,7 @@ function Blackjack(props: CasinoGameProps) {
       setRevealedDealerCount(dealer.length);
       setMessage("BUST!");
       setPhase("done");
+      fx.lose();
     }
   };
 
@@ -891,14 +941,17 @@ function Blackjack(props: CasinoGameProps) {
     if (dv > 21) {
       setMessage("DEALER BUSTS — YOU WIN!");
       props.onSetBank(props.bank + props.bet * 2);
+      fx.win(props.bet);
     } else if (p > dv) {
       setMessage("YOU WIN!");
       props.onSetBank(props.bank + props.bet * 2);
+      fx.win(props.bet);
     } else if (p === dv) {
       setMessage("PUSH");
       props.onSetBank(props.bank + props.bet);
     } else {
       setMessage("DEALER WINS");
+      fx.lose();
     }
     setPhase("done");
   };
@@ -908,15 +961,14 @@ function Blackjack(props: CasinoGameProps) {
   const showingSecondCard = revealedDealerCount >= 2;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
-        <TopBar {...props} />
-        <div className="relative aspect-[3/4] bg-green-700 rounded-2xl border-4 border-yellow-700 p-4 flex flex-col justify-between overflow-hidden">
+    <CasinoFrame {...props} title="Blackjack" icon="🃏" fx={fx}>
+        <ShakeX trigger={fx.lost}>
+        <div className="relative flex aspect-[4/5] flex-col justify-between overflow-hidden rounded-[26px] p-4" style={FELT_TABLE}>
           <div>
-            <div className="text-[10px] font-black uppercase text-yellow-200 mb-2">Dealer</div>
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-yellow-200/90">Dealer</div>
             <div className="flex gap-2">
               {dealer.map((c, i) => (
-                <div key={i} className={`transition-all duration-500 ${i === 1 && !showingSecondCard ? "" : "animate-[dealCard_500ms_ease-out]"}`}>
+                <div key={i} className="kit-deal" style={{ animationDelay: `${i * 90}ms` }}>
                   <CardView card={c} hidden={i >= revealedDealerCount} />
                 </div>
               ))}
@@ -938,7 +990,7 @@ function Blackjack(props: CasinoGameProps) {
 
           {message && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className={`text-3xl font-black text-yellow-300 bg-black/70 px-4 py-2 rounded-lg text-center ${message.includes("WIN") ? "text-emerald-300" : message.includes("BUST") || message.includes("DEALER WINS") ? "text-red-400" : ""}`}>
+              <div className={`kit-win-pop rounded-2xl bg-black/75 px-4 py-2 text-center text-3xl font-black text-yellow-300 ring-1 ring-white/15 ${message.includes("WIN") ? "text-emerald-300" : message.includes("BUST") || message.includes("DEALER WINS") ? "text-red-400" : ""}`}>
                 {message}
               </div>
             </div>
@@ -948,55 +1000,57 @@ function Blackjack(props: CasinoGameProps) {
             {dealt && <div className="text-white font-black mb-1">{handValue(player)}</div>}
             <div className="flex gap-2">
               {player.map((c, i) => (
-                <CardView key={i} card={c} />
+                <div key={i} className="kit-deal" style={{ animationDelay: `${i * 90}ms` }}>
+                  <CardView card={c} />
+                </div>
               ))}
             </div>
-            <div className="text-[10px] font-black uppercase text-yellow-200 mt-2">Player</div>
+            <div className="mt-2 text-[10px] font-black uppercase tracking-[0.25em] text-yellow-200/90">Player</div>
           </div>
         </div>
+        </ShakeX>
 
         {phase === "bet" && (
-          <button
+          <PressButton
+            variant="primary"
+            size="none"
+            pulse={props.bank >= props.bet}
             disabled={props.bank < props.bet}
             onClick={deal}
-            className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
+            className="mt-3 w-full rounded-2xl py-3 font-black"
           >
             Deal — ★{formatMoney(props.bet)}
-          </button>
+          </PressButton>
         )}
         {phase === "play" && (
           <div className="grid grid-cols-2 gap-2 mt-3">
-            <button onClick={hold} className="py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black">✕ Hold</button>
-            <button onClick={hit} className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black">✓ Hit</button>
+            <PressButton variant="danger" size="none" onClick={hold} className="rounded-2xl py-3 font-black">✕ Hold</PressButton>
+            <PressButton variant="primary" size="none" onClick={hit} className="rounded-2xl py-3 font-black">✓ Hit</PressButton>
           </div>
         )}
         {phase === "dealer-turn" && (
           <div className="mt-3 py-3 text-center text-yellow-200 font-black animate-pulse">Dealer drawing...</div>
         )}
         {done && (
-          <button
-            onClick={startRound}
-            className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black"
-          >
+          <PressButton variant="primary" size="none" onClick={startRound} className="mt-3 w-full rounded-2xl py-3 font-black">
             New Hand
-          </button>
+          </PressButton>
         )}
-      </div>
-    </div>
+    </CasinoFrame>
   );
 }
 
 function CardView({ card, hidden }: { card: Card; hidden?: boolean }) {
   if (hidden) {
     return (
-      <div className="w-14 h-20 rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 border-2 border-white flex items-center justify-center shadow-lg">
+      <div className="flex h-20 w-14 items-center justify-center rounded-lg border-2 border-white bg-gradient-to-br from-blue-700 to-blue-900 shadow-[0_6px_12px_-4px_rgba(0,0,0,.7)]" style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 4px, transparent 4px 8px), linear-gradient(135deg, #1d4ed8, #1e3a8a)" }}>
         <div className="w-8 h-14 border-2 border-white/30 rounded" />
       </div>
     );
   }
   const red = card.suit === "♥" || card.suit === "♦";
   return (
-    <div className="w-14 h-20 rounded-lg bg-white border-2 border-gray-300 flex flex-col items-center justify-center shadow-lg relative">
+    <div className="relative flex h-20 w-14 flex-col items-center justify-center rounded-lg border border-gray-300 bg-gradient-to-b from-white to-gray-100 shadow-[0_6px_12px_-4px_rgba(0,0,0,.7)]">
       <div className={`text-2xl font-black ${red ? "text-red-600" : "text-black"}`}>{card.rank}</div>
       <div className={`text-lg ${red ? "text-red-600" : "text-black"}`}>{card.suit}</div>
     </div>
@@ -1018,6 +1072,7 @@ function pocketColor(n: number) {
 }
 
 function Roulette(props: CasinoGameProps) {
+  const fx = useCasinoFx();
   const [choice, setChoice] = useState<"red" | "black" | "even" | "odd" | number | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
@@ -1056,19 +1111,20 @@ function Roulette(props: CasinoGameProps) {
       if (win > 0) {
         setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
         props.onSetBank(props.bank - props.bet + win);
+        fx.win(win - props.bet);
       } else {
         setMessage("Lost!");
+        fx.lose();
       }
     }, 4500);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
-        <TopBar {...props} />
+    <CasinoFrame {...props} title="Roulette" icon="🎡" fx={fx}>
 
         {/* Wheel */}
-        <div className="bg-gradient-to-b from-yellow-900 to-yellow-950 border-4 border-yellow-600 rounded-2xl p-4 shadow-2xl">
+        <ShakeX trigger={fx.lost}>
+        <div className="rounded-[26px] p-4" style={{ background: "radial-gradient(70% 60% at 50% 40%, rgba(245,158,11,.25), transparent 70%), linear-gradient(180deg, #3b2106, #1c1003)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 3px ${rgba(GOLD, 0.6)}, 0 18px 34px -16px rgba(0,0,0,.9)` }}>
           <div className="relative aspect-square">
             {/* Pointer at top */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
@@ -1118,9 +1174,10 @@ function Roulette(props: CasinoGameProps) {
           </div>
 
           {message && (
-            <div className={`mt-3 text-center text-xl font-black ${message.includes("WIN") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
+            <div className={`kit-win-pop mt-3 text-center text-xl font-black ${message.includes("WIN") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
           )}
         </div>
+        </ShakeX>
 
         {/* Bet choices */}
         <div className="mt-3 grid grid-cols-4 gap-1.5">
@@ -1129,8 +1186,8 @@ function Roulette(props: CasinoGameProps) {
               key={c}
               disabled={spinning}
               onClick={() => setChoice(c)}
-              className={`py-3 rounded font-black text-xs uppercase transition ${
-                choice === c ? (c === "red" ? "bg-red-600" : c === "black" ? "bg-black text-white ring-2 ring-white" : "bg-emerald-500") : "bg-gray-700"
+              className={`kib-press rounded-xl py-3 text-xs font-black uppercase transition ${
+                choice === c ? (c === "red" ? "bg-gradient-to-b from-red-400 to-red-700 ring-2 ring-white/80" : c === "black" ? "bg-black text-white ring-2 ring-white" : "bg-gradient-to-b from-emerald-400 to-emerald-700 ring-2 ring-white/80") : "bg-white/[0.08] ring-1 ring-white/10"
               }`}
             >{c}</button>
           ))}
@@ -1147,27 +1204,30 @@ function Roulette(props: CasinoGameProps) {
                 key={i}
                 disabled={spinning}
                 onClick={() => setChoice(i)}
-                className={`py-1.5 rounded text-[11px] font-black text-white ${choice === i ? "ring-2 ring-yellow-400" : ""} ${bg}`}
+                className={`kib-press rounded-lg py-1.5 text-[11px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18)] ${choice === i ? "ring-2 ring-yellow-300" : ""} ${bg}`}
               >{i}</button>
             );
           })}
         </div>
 
-        <button
+        <PressButton
+          variant="primary"
+          size="none"
+          pulse={!spinning && choice !== null && props.bank >= props.bet}
           disabled={spinning || choice === null || props.bank < props.bet}
           onClick={spin}
-          className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
+          className="mt-3 w-full rounded-2xl py-3 font-black"
         >
           {spinning ? "Spinning..." : `Spin — ★${formatMoney(props.bet)}`}
-        </button>
-      </div>
-    </div>
+        </PressButton>
+    </CasinoFrame>
   );
 }
 
 // ---------- SLOTS ----------
 const SLOTS_SYMBOLS = ["🍒", "🍋", "🍊", "🔔", "⭐", "7️⃣"];
 function Slots(props: CasinoGameProps) {
+  const fx = useCasinoFx();
   const [reels, setReels] = useState<string[]>(["🍒", "🍋", "🍊"]);
   const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState("");
@@ -1198,42 +1258,49 @@ function Slots(props: CasinoGameProps) {
         if (win > 0) {
           setMessage(`WIN! +★${formatMoney(win - props.bet)}`);
           props.onSetBank(props.bank - props.bet + win);
+          if (win > props.bet) fx.win(win - props.bet);
         } else {
           setMessage("No luck");
+          fx.lose();
         }
       }
     }, 90);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 to-green-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
-        <TopBar {...props} />
-        <div className="bg-yellow-800 border-4 border-yellow-500 rounded-2xl p-4">
-          <div className="grid grid-cols-3 gap-2 bg-black rounded-xl p-3">
+    <CasinoFrame {...props} title="Slots" icon="🎰" fx={fx}>
+        <ShakeX trigger={fx.lost}>
+        <div className="relative overflow-hidden rounded-[26px] p-4" style={{ background: "radial-gradient(70% 60% at 50% 30%, rgba(250,204,21,.3), transparent 70%), linear-gradient(180deg, #7c2d12, #3b0a06)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 3px ${rgba(GOLD, 0.7)}, 0 18px 34px -16px rgba(0,0,0,.9)` }}>
+          {/* Marquee lights round the machine. */}
+          <div aria-hidden className="kib-flood pointer-events-none absolute inset-1.5 rounded-[21px] border-[3px] border-dotted border-yellow-200/90" style={{ filter: "drop-shadow(0 0 4px rgba(254,240,138,.9))" }} />
+          <div className="relative grid grid-cols-3 gap-2 rounded-xl bg-black p-3 shadow-[inset_0_4px_12px_rgba(0,0,0,.9)]">
             {reels.map((r, i) => (
-              <div key={i} className="aspect-square bg-white rounded-lg flex items-center justify-center text-6xl border-4 border-yellow-600">
-                {r}
+              <div key={i} className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border-4 border-yellow-600 bg-gradient-to-b from-gray-200 via-white to-gray-300 text-6xl">
+                <span key={spinning ? `s${r}${i}` : `f${r}${i}`} className={spinning ? "kit-reel-spin" : "kit-pop"}>{r}</span>
               </div>
             ))}
           </div>
           {message && (
-            <div className={`mt-3 text-center text-xl font-black ${message.includes("WIN") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
+            <div className={`kit-win-pop relative mt-3 text-center text-xl font-black ${message.includes("WIN") ? "text-emerald-300" : "text-red-400"}`}>{message}</div>
           )}
-          <div className="mt-3 text-[10px] text-center text-yellow-200">
+          <div className="relative mt-3 text-center text-[10px] font-bold text-yellow-200">
             777 = 20x • ⭐⭐⭐ = 10x • Any triple = 5x • Any pair = 1x
           </div>
         </div>
+        </ShakeX>
 
-        <button
+        <PressButton
+          variant="gold"
+          size="none"
+          pulse={!spinning && props.bank >= props.bet}
           disabled={spinning || props.bank < props.bet}
           onClick={spin}
-          className="mt-3 w-full py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black disabled:opacity-40"
+          className="relative mt-3 w-full overflow-hidden rounded-2xl py-3 text-[15px] font-black"
         >
+          {!spinning && <Shine loop every={3.5} />}
           {spinning ? "Spinning..." : `Pull the Lever — ★${formatMoney(props.bet)}`}
-        </button>
-      </div>
-    </div>
+        </PressButton>
+    </CasinoFrame>
   );
 }
 

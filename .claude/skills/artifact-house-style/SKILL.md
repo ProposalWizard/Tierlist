@@ -117,8 +117,15 @@ the main headline."*
 Asked for directly: *"specifically for patch notes, if it could toggle to see
 the previous version — i.e. v0.2 has a drop down for 0.1, that would be great."*
 
-So a patch notes page is **one link, forever**. v0.2 contains v0.1, v0.3
+So each patch notes page carries its own history: v0.2 contains v0.1, v0.3
 contains both. Nobody hunts for an old link and nobody has a version go missing.
+
+**Every new version number is a NEW link** (Harry, 28 Sep 2026: *"when I say
+new patch notes why is it going on the same link - isn't that updating v0.16?
+Make a NEW one with new changes"*). Publish v0.17 as a fresh artifact; never
+republish over the previous version's page, which stays as that version's
+frozen record. Republishing the same link is only for fixing or adding to the
+SAME version number before it's superseded.
 
 **Where:** a final section, `PREVIOUS VERSIONS`, below NEXT. Same dot-heading
 style, using the muted colour.

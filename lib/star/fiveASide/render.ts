@@ -8,6 +8,8 @@ import type { FaceStyle } from "../faceStyle";
 import type { FakeFaceStyle } from "../fakeFaceStyle";
 import type { MatchRules } from "./rules";
 import { FIVE_HALFWAY_Y } from "./geometry";
+import { figureSkin, type FigureSkin } from "../figureSkin";
+import { paintBody3d, drawSoftShadow } from "../figure3d";
 
 /**
  * DRAWING A SMALL-SIDED MATCH.
@@ -492,6 +494,9 @@ export interface FigureLook {
   /** Drawn above the head when there is a real person here. */
   label?: string;
   face?: HTMLImageElement;
+  /** Who this is — only the "3d" look reads it, to give a man with no photo
+   *  his own drawn hair (figure3d.ts). */
+  id?: string;
   /** A marker over your own figure, so you can always find yourself. */
   star?: boolean;
   /**
@@ -551,6 +556,9 @@ const SHOULDER_Y = -1.00;
 const NECK_Y = -1.10;
 const HEAD_BASE_R = 0.114;
 const HEAD_ANCHOR = -1.184;
+/** The same skeleton handed to the "3d" skin (figure3d.ts), so both looks
+ *  stand, stride and dive in exactly one shape. */
+const ANATOMY = { FEET_Y, HIP_Y, SHOULDER_Y, NECK_Y, HEAD_BASE_R, HEAD_ANCHOR };
 
 /** How tall the drawn figure is, in units of `r` — feet to crown, at the
  *  default face scale. Exported so a test can check the proportion rather
@@ -958,6 +966,12 @@ export interface FigureDrawOpts {
    * star on a bright shirt or against a floodlit sky dissolves without one.
    */
   starRim?: string;
+  /**
+   * Draw this one man in a given look, whatever figureSkin() says — for a
+   * side-by-side comparison. Omitted (every real call site): the one shared
+   * setting in lib/star/figureSkin.ts decides.
+   */
+  skin?: FigureSkin;
 }
 
 /**
@@ -978,17 +992,25 @@ export function drawFigureAt(
   opts: FigureDrawOpts = {},
 ): void {
   const up = opts.liftPx ?? 0;
+  // "classic" or "3d" (lib/star/figureSkin.ts) — a look only; the skeleton,
+  // the size and where he stands are the same either way.
+  const is3d = (opts.skin ?? figureSkin()) === "3d";
 
   // Shadow first, and on the GRASS — a man in the air leaves his behind.
-  ctx.fillStyle = TC.shadow;
-  ctx.beginPath();
-  ctx.ellipse(x, groundY, opts.shadowR ?? r * 0.34, r * 0.13, 0, 0, Math.PI * 2);
-  ctx.fill();
+  if (is3d) {
+    drawSoftShadow(ctx, x, groundY, opts.shadowR ?? r * 0.34, r * 0.13);
+  } else {
+    ctx.fillStyle = TC.shadow;
+    ctx.beginPath();
+    ctx.ellipse(x, groundY, opts.shadowR ?? r * 0.34, r * 0.13, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   ctx.save();
   ctx.translate(x, groundY - r * FEET_Y - up);
   if (opts.facing) ctx.rotate(opts.facing);
-  paintBody(ctx, r, look, faceStyle, fakeFaceStyle, opts.pose);
+  if (is3d) paintBody3d(ctx, r, look, faceStyle, fakeFaceStyle, opts.pose, ANATOMY, TC.skin);
+  else paintBody(ctx, r, look, faceStyle, fakeFaceStyle, opts.pose);
   ctx.restore();
 
   // Both markers are drawn upright in screen space, outside the rotation —

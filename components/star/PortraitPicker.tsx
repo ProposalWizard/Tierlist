@@ -6,6 +6,9 @@ import {
 import { kitsOf, labelInk } from "@/lib/star/kits";
 import { paletteFor } from "@/lib/star/media/graphics/palette";
 import { FAKE_FACES } from "@/lib/star/fakeFaces";
+import { loadFaceScan, scanFace, type Pt, type ScanFail } from "@/lib/star/faceScan";
+import { ScanningPhoto, ScanReveal, usePrefersReducedMotion } from "./FaceScanAnim";
+import PressButton from "./ui/PressButton";
 
 /**
  * TAKE A PICTURE, OR DON'T.
@@ -14,47 +17,42 @@ import { FAKE_FACES } from "@/lib/star/fakeFaces";
  * placeholder waiting to be filled, and most people will never open this. So the
  * control opens showing what the cards will use if you walk away from it.
  *
- * ── TWO BUTTONS, BECAUSE `capture` IS A REPLACEMENT AND NOT AN ADDITION ──
+ * ── THE FACE SCAN (28 Sep 2026) ──
  *
- * This has now been reported from both directions, and the two reports are
- * both correct — they are about different buttons:
+ * Harry uploaded his own photo and the home avatar showed his room behind
+ * him as an oval: "maybe we need to do some sort of face scan technique".
+ * Now a picked or taken photo goes straight into a scan (lib/star/faceScan.ts):
+ * the face is found, straightened and sized, the head and hair are cut out
+ * from whatever is behind them, missing hair is drawn back on, and the
+ * result — a small transparent head — is what gets stored. The screen shows
+ * it happening (a sweep, the face points lighting up) and then the head on
+ * your player (FaceScanAnim.tsx). No face found → it says so, and offers the
+ * old drag-and-zoom crop instead.
  *
- *   "on a phone this let you take a new photo but never pick one you
- *    already had"
- *   "'Add a photo' still doesn't work in terms of using your camera, so
- *    maybe it should say 'Take a photo' — 'Add a photo' and 'Take a photo',
- *    and 'Take a photo' would use the camera"
+ * ── TAKE A PHOTO ──
  *
- * The mechanism behind both: `capture` does not ADD a camera option to the
- * native chooser, it REPLACES the chooser — a mobile browser that honours it
- * opens the camera app directly, with no way through to the library. So one
- * input cannot be both, and the fix is the one the report describes: two
- * inputs, each honest about which it is.
- *
- *   ADD A PHOTO   — bare `accept="image/*"`, no `capture`. The phone's own
- *                   chooser, which on iOS and Android already offers Camera
- *                   alongside Photo Library. Unchanged from before.
- *   TAKE A PHOTO  — see startTakePhoto. On a touch device it clicks a second
- *                   input carrying `capture="user"`, which asks for the FRONT
- *                   camera (`"environment"` would be the rear one, and this
- *                   is a portrait of your own face).
- *
- * ── And on a desktop ──
- *
- * `capture` is only a hint, and every desktop browser ignores it — so on a
- * laptop that input alone would just open the ordinary file picker, making
- * "Take a photo" indistinguishable from "Add a photo". A computer therefore
- * takes the other path: `getUserMedia`, a live mirrored `<video>` preview with
- * Cancel/Capture, and a `<canvas>` grab that flows into the same crop stage as
- * an uploaded file. (An earlier version of this note said that was
- * deliberately not built; it has since been asked for directly and built.)
- * Both paths depend on the site's Permissions-Policy allowing the camera —
- * see next.config.mjs.
+ * A live camera view with an oval to put your face in (getUserMedia, the
+ * front camera), on phones and computers alike, so the photo comes in lined
+ * up. If the browser refuses the camera, a phone falls back to its own
+ * camera app (a second input carrying `capture="user"` — kept off "Add a
+ * photo" on purpose: `capture` REPLACES the phone's chooser rather than
+ * adding to it, which once locked people out of their photo library), and a
+ * computer says to use Add a photo. Both need the site's Permissions-Policy
+ * to allow the camera — see next.config.mjs.
  *
  * Nothing here uploads. See lib/star/portrait.ts.
+ *
+ * Reskinned 28 Sep 2026 to the home screen's look (dark glass, kit buttons
+ * that press in, the chosen face lit green). Same stages, same handlers —
+ * and it still sits happily inside the new-career screen's green card.
  */
 
+/** The kit's green button, for the one control that has to be a <label>. */
+const GREEN_STYLE: React.CSSProperties = { background: "linear-gradient(180deg, #4ade80, #10b981 55%, #047857)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.18), 0 8px 18px -6px rgba(16,185,129,.75)" };
+
 const VIEWPORT = 224;
+
+type Stage = "idle" | "camera" | "scanning" | "result" | "failed" | "crop";
 
 interface Props {
   value?: string;
@@ -65,17 +63,50 @@ interface Props {
 }
 
 export default function PortraitPicker({ value, onChange, club, number }: Props) {
+  const [stage, setStage] = useState<Stage>("idle");
   const [raw, setRaw] = useState<string | null>(null);
   const [view, setView] = useState<CropView>({ zoom: 1, x: 0, y: 0 });
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [points, setPoints] = useState<Pt[] | null>(null);
+  const [scanned, setScanned] = useState<string | null>(null);
+  const [hairNote, setHairNote] = useState<string | null>(null);
+  const [fail, setFail] = useState<ScanFail | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+  const runId = useRef(0);
+  const reduced = usePrefersReducedMotion();
 
   const kit = kitsOf(club).home;
 
-  // Open the crop centred on a loaded picture — shared by every way of
-  // getting one in (a chosen file, the phone's camera app, the webcam).
+  // ── The scan ──
+  const runScan = useCallback(async (img: HTMLImageElement) => {
+    const id = ++runId.current;
+    setPoints(null); setScanned(null); setFail(null); setHairNote(null);
+    setStage("scanning");
+    const started = performance.now();
+    let pointsAt = 0;
+    const r = await scanFace(img, { onPoints: (p) => { if (runId.current === id) { pointsAt = performance.now(); setPoints(p); } } });
+    // Let the sweep be seen (it is the feedback that something is happening),
+    // and the face points for at least a second once found (the first scan
+    // spends most of its time loading the models, so they arrive late) —
+    // but never hold a reduced-motion user.
+    const now = performance.now();
+    const wait = reduced ? 0 : Math.max(0, 1900 - (now - started), pointsAt ? 1100 - (now - pointsAt) : 0);
+    if (wait) await new Promise((res) => setTimeout(res, wait));
+    if (runId.current !== id) return;
+    if (r.ok) {
+      setScanned(r.dataUrl);
+      setHairNote(r.hair.style ? `Your photo cut off the top of your head, so we drew the rest of your hair in (${HAIR_WORDS[r.hair.style]}).` : null);
+      setStage("result");
+    } else {
+      setFail(r);
+      setStage("failed");
+    }
+  }, [reduced]);
+
+  // Open a loaded picture — shared by every way of getting one in (a chosen
+  // file, the phone's camera app, the live camera).
   const takeSrc = useCallback((src: string) => {
     setError(null);
     const img = new Image();
@@ -85,9 +116,10 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
       setSize({ w: img.naturalWidth, h: img.naturalHeight });
       setView(initialView(img.naturalWidth, img.naturalHeight, VIEWPORT));
       setRaw(src);
+      void runScan(img);
     };
     img.src = src;
-  }, []);
+  }, [runScan]);
 
   const take = useCallback((file: File) => {
     setError(null);
@@ -97,39 +129,31 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
     reader.readAsDataURL(file);
   }, [takeSrc]);
 
-  // ── Take a photo ──
-  //
-  // Two genuinely different things behind one button, because a phone and a
-  // computer do this completely differently. A phone (coarse pointer) hands
-  // off to its own camera app via a SEPARATE input carrying `capture="user"`
-  // (the front camera) — kept off the "Add a photo" input on purpose, see the
-  // header note, since `capture` on that one would lock the library out. A
-  // computer has no camera app to hand off to, so it gets a live webcam
-  // preview (getUserMedia) with a Capture button instead; the captured frame
-  // then flows into the exact same crop stage as an uploaded file.
+  // ── Take a photo: a live camera with an oval guide ──
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [cam, setCam] = useState(false);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
-    setCam(false);
   }, []);
 
   const startTakePhoto = async () => {
     setError(null);
     const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
-    if (coarse) { cameraInputRef.current?.click(); return; }
     if (!navigator.mediaDevices?.getUserMedia) {
+      if (coarse) { cameraInputRef.current?.click(); return; }
       setError("This browser can't open a camera here. Use Add a photo instead.");
       return;
     }
     try {
-      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-      setCam(true);
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+      setStage("camera");
+      void loadFaceScan().catch(() => { /* the scan will say so */ });
     } catch {
+      // Refused or no camera: a phone still has its own camera app.
+      if (coarse) { cameraInputRef.current?.click(); return; }
       setError("Couldn't open the camera — check the browser's camera permission, or use Add a photo instead.");
     }
   };
@@ -137,11 +161,11 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
   // Attach the stream once the <video> actually exists in the DOM.
   useEffect(() => {
     const v = videoRef.current;
-    if (cam && v && streamRef.current) {
+    if (stage === "camera" && v && streamRef.current) {
       v.srcObject = streamRef.current;
       void v.play().catch(() => { /* autoplay refusal — the user can still hit Capture */ });
     }
-  }, [cam]);
+  }, [stage]);
 
   // Never leave the camera light on behind a closed panel.
   useEffect(() => () => { streamRef.current?.getTracks().forEach(t => t.stop()); }, []);
@@ -161,6 +185,9 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
     takeSrc(src);
   };
 
+  const reset = () => { runId.current++; stopCamera(); setStage("idle"); setRaw(null); setScanned(null); setFail(null); setPoints(null); };
+
+  // ── The hand crop (only when the scan can't find a face) ──
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     drag.current = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y };
@@ -189,54 +216,85 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
     });
   };
 
-  const use = () => {
+  const useCrop = () => {
     const img = imgRef.current;
     if (!img) return;
     const out = encodePortrait(img, sourceRect(view, size.w, size.h, VIEWPORT));
     if (!out) { setError("This browser could not process that picture."); return; }
     onChange(out);
-    setRaw(null);
+    reset();
+  };
+
+  const useScan = () => {
+    if (!scanned) return;
+    onChange(scanned);
+    reset();
   };
 
   // Release the object the crop stage is holding when it closes.
   useEffect(() => () => { imgRef.current = null; }, []);
 
   const scale = raw ? Math.max(VIEWPORT / (size.w || 1), VIEWPORT / (size.h || 1)) * view.zoom : 1;
+  const btn = "rounded-xl py-2 text-[12px] font-black";
 
   return (
-    <div className="rounded-lg border border-emerald-700 bg-emerald-900/30 p-3">
+    <div className="rounded-xl p-3" style={{ background: "linear-gradient(180deg, rgba(3,7,18,.55), rgba(3,7,18,.35))", boxShadow: "inset 0 1px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(110,231,183,.22)" }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Your photo</span>
         <span className="text-[10px] font-bold text-white/70">Optional</span>
       </div>
 
-      {cam ? (
+      {stage === "camera" ? (
         <>
           <div className="relative mx-auto mt-3 overflow-hidden rounded-lg border border-white/20 bg-black" style={{ width: VIEWPORT, height: VIEWPORT }}>
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              className="h-full w-full -scale-x-100 object-cover"
-            />
+            <video ref={videoRef} playsInline muted className="h-full w-full -scale-x-100 object-cover" />
+            {/* The oval: your face goes in here. Outside it is dimmed. */}
+            <svg className="pointer-events-none absolute inset-0" width={VIEWPORT} height={VIEWPORT}>
+              <defs>
+                <mask id="kib-oval-mask">
+                  <rect width="100%" height="100%" fill="white" />
+                  <ellipse cx={VIEWPORT / 2} cy={VIEWPORT * 0.46} rx={VIEWPORT * 0.27} ry={VIEWPORT * 0.35} fill="black" />
+                </mask>
+              </defs>
+              <rect width="100%" height="100%" fill="rgba(0,0,0,.55)" mask="url(#kib-oval-mask)" />
+              <ellipse cx={VIEWPORT / 2} cy={VIEWPORT * 0.46} rx={VIEWPORT * 0.27} ry={VIEWPORT * 0.35} fill="none" stroke="#6ee7b7" strokeWidth="2.5" strokeDasharray="7 5" />
+            </svg>
           </div>
-          <p className="mt-2 text-center text-[10px] font-bold text-white/70">Line yourself up, then take it</p>
+          <p className="mt-2 text-center text-[11px] font-bold text-white">Face in the oval · look straight on · good light</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button
-              onClick={stopCamera}
-              className="rounded-lg bg-gray-700 py-2 text-[12px] font-black text-white transition hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={snap}
-              className="rounded-lg bg-emerald-600 py-2 text-[12px] font-black text-white transition hover:bg-emerald-500"
-            >
-              Capture
-            </button>
+            <PressButton variant="secondary" size="none" onClick={reset} className={btn}>Cancel</PressButton>
+            <PressButton variant="primary" size="none" onClick={snap} className={btn}>Capture</PressButton>
           </div>
         </>
-      ) : raw ? (
+      ) : stage === "scanning" && raw ? (
+        <div className="mt-3">
+          <ScanningPhoto src={raw} size={size} box={VIEWPORT} points={points} reduced={reduced} />
+          <p className="mt-2 text-center text-[11px] font-bold text-white">Scanning your face…</p>
+        </div>
+      ) : stage === "result" && scanned ? (
+        <>
+          <div className="mt-3">
+            <ScanReveal portrait={scanned} club={club} number={number} reduced={reduced} />
+          </div>
+          <p className="mt-2 text-center text-[11px] font-bold text-white">That&apos;s you.</p>
+          {hairNote && <p className="mt-1 text-center text-[10px] font-bold text-emerald-200">{hairNote}</p>}
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <PressButton variant="secondary" size="none" onClick={reset} className={btn}>Try another</PressButton>
+            <PressButton variant="primary" size="none" onClick={useScan} className={btn}>Use this</PressButton>
+          </div>
+        </>
+      ) : stage === "failed" && raw ? (
+        <>
+          <div className="mt-3">
+            <ScanningPhoto src={raw} size={size} box={VIEWPORT} points={null} reduced />
+          </div>
+          <p className="mt-2 text-center text-[12px] font-black text-amber-200">{fail?.message}</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <PressButton variant="primary" size="none" onClick={reset} className={btn}>Try another</PressButton>
+            <PressButton variant="secondary" size="none" onClick={() => setStage("crop")} className={btn}>Crop it by hand</PressButton>
+          </div>
+        </>
+      ) : stage === "crop" && raw ? (
         <>
           <div
             className="relative mx-auto mt-3 cursor-grab touch-none overflow-hidden rounded-lg border border-white/20 active:cursor-grabbing"
@@ -263,18 +321,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           />
           <p className="text-center text-[10px] font-bold text-white/70">Drag to move, slide to zoom</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setRaw(null)}
-              className="rounded-lg bg-gray-700 py-2 text-[12px] font-black text-white transition hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={use}
-              className="rounded-lg bg-emerald-600 py-2 text-[12px] font-black text-white transition hover:bg-emerald-500"
-            >
-              Use this
-            </button>
+            <PressButton variant="secondary" size="none" onClick={reset} className={btn}>Cancel</PressButton>
+            <PressButton variant="primary" size="none" onClick={useCrop} className={btn}>Use this</PressButton>
           </div>
         </>
       ) : (
@@ -291,7 +339,14 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           {/* Picking and taking are a pair and sit on one row; the shirt is
               the third, different answer and gets its own — see below. */}
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <label className="cursor-pointer rounded-lg bg-emerald-600 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-500">
+            {/* Start fetching the scan's models the moment this is tapped:
+                the phone's photo chooser takes a few seconds anyway, and the
+                first scan otherwise spends most of its time loading them. */}
+            <label
+              onClick={() => { void loadFaceScan().catch(() => { /* the scan will say so */ }); }}
+              className="kib-press cursor-pointer rounded-xl py-2 text-center text-[12px] font-black text-white"
+              style={GREEN_STYLE}
+            >
               {value ? "Change photo" : "Add a photo"}
               <input
                 type="file"
@@ -300,17 +355,17 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
               />
             </label>
-            <button
+            <PressButton
+              variant="secondary"
+              size="none"
               onClick={startTakePhoto}
-              className="rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600"
+              className="rounded-xl py-2 text-center text-[12px] font-black text-white"
             >
               Take a photo
-            </button>
-            {/* Phone path for Take a photo: the FRONT camera via the device's
-                own camera app — "user" because this is a portrait of your own
-                face. A separate input from Add a photo's on purpose (see the
-                header note on `capture`); on a desktop startTakePhoto skips
-                it and opens the webcam instead. */}
+            </PressButton>
+            {/* Fallback for Take a photo when the live camera is refused: the
+                phone's own camera app, FRONT camera ("user"). A separate input
+                from Add a photo's on purpose (see the header note). */}
             <input
               ref={cameraInputRef}
               type="file"
@@ -322,25 +377,18 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           </div>
 
           {/* ── THE SHIRT IS AN ANSWER, NOT A GREYED-OUT ACTION ──
-              Reported as "doesn't even pop up anymore". It was never removed
-              — it has always rendered right here — but it is only ever an
-              ACTION when there is a photo to clear, so on a fresh career it
-              was a dark grey slab with dimmed text sitting in the corner of a
-              two-button row, which is exactly what a missing button looks
-              like.
-              It now says what it means. With no photo set the shirt is
-              already what you will be shown as, so this reads as the SELECTED
-              state (ringed, ticked, "Using your shirt") rather than as a
-              button somebody has switched off; with a photo set it is a live
-              button that clears it. Same single call to `onChange(undefined)`
-              either way. */}
+              With no photo set the shirt is already what you will be shown
+              as, so this reads as the SELECTED state (ringed, ticked, "Using
+              your shirt") rather than as a button somebody has switched off;
+              with a photo set it is a live button that clears it. */}
           <button
             onClick={() => onChange(undefined)}
             disabled={!value}
-            className={`mt-2 w-full rounded-lg py-2 text-[12px] font-black transition ${
-              value
-                ? "bg-gray-700 text-white hover:bg-gray-600"
-                : "border border-emerald-400/70 bg-emerald-500/15 text-emerald-200"}`}
+            className={`mt-2 w-full rounded-xl py-2 text-[12px] font-black transition ${
+              value ? "kib-press text-white" : "text-emerald-200"}`}
+            style={value
+              ? { background: "linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px rgba(255,255,255,.12)" }
+              : { background: "linear-gradient(180deg, rgba(16,185,129,.22), rgba(16,185,129,.08))", boxShadow: "inset 0 0 0 1px rgba(52,211,153,.7), 0 0 14px -4px rgba(16,185,129,.7)" }}
           >
             {value ? "Use my shirt" : "✓ Using your shirt"}
           </button>
@@ -350,7 +398,7 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             </p>
           )}
 
-          <div className="mt-3 border-t border-emerald-800/60 pt-3">
+          <div className="mt-3 border-t border-white/10 pt-3">
             <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
               Or pick a face
             </span>
@@ -359,10 +407,10 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
                 <button
                   key={src}
                   onClick={() => onChange(src)}
-                  className={`relative aspect-square overflow-hidden rounded-md border-2 transition ${
+                  className={`kib-press relative aspect-square overflow-hidden rounded-lg border-2 transition ${
                     value === src ? "border-emerald-400" : "border-white/15 hover:border-white/50"
                   }`}
-                  style={{ backgroundColor: kit.shirt }}
+                  style={{ backgroundColor: kit.shirt, ...(value === src ? { boxShadow: "0 0 12px -2px rgba(52,211,153,.9)" } : {}) }}
                   aria-label={`Fake face ${i + 1}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -378,6 +426,10 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
     </div>
   );
 }
+
+const HAIR_WORDS: Record<string, string> = {
+  buzz: "a close crop", crop: "a short cut", curly: "curls", swept: "swept over", long: "long",
+};
 
 /**
  * The tile as the graphics will draw it.

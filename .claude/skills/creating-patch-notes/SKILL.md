@@ -40,7 +40,7 @@ session.
 
 That skill is the actual page recipe — five rules, the mechanics, what goes
 in and what never does, and the full "patch notes carry their own history"
-system (one link forever, `PREVIOUS VERSIONS` condensing every old one).
+system (`PREVIOUS VERSIONS` condensing every old one; a new link per version).
 This skill does not repeat any of it. It only adds what's specific to
 running this as an ongoing, named, versioned series:
 
@@ -109,18 +109,20 @@ Both destinations carry the same real material every round — the site
 archive is not a lesser copy, and the claude.ai artifact is not the
 "real" one. Ship both, every time, from Process below.
 
-### The claude.ai artifact: one link, forever
+### The claude.ai artifact: a new link per version
 
-Per the house style: republish the SAME artifact in place every time, never
-a fresh URL each round. That means this file has to carry the real URL
-between sessions, or a future round guesses wrong and creates a second page.
+Harry, 28 Sep 2026: *"when I say new patch notes why is it going on the same
+link - isn't that updating v0.16? Make a NEW one with new changes."* So every
+new version number is published as a FRESH artifact (no `url`), with the
+older versions condensed into its `PREVIOUS VERSIONS` section as before. The
+old version's link is left alone as its own frozen record. Republish in place
+(same `url`) only to correct the version you are currently on.
 
-**Current link:** https://claude.ai/artifact/YEuw3iut76VY2dZiQVarZd (v0.5,
-updated 23 Sep 2026)
+Record each new link here so the next round can find the latest one:
 
-When you ship a new version: read the URL above, `Artifact.publish` with
-that exact `url` so it updates in place, then edit this line with the
-(unchanged) URL and the new version number so the next round stays current.
+- v0.16: https://claude.ai/artifact/A9gwVhtt8dAVBwddYgrh7A
+- v0.17: https://claude.ai/artifact/45LCtddFQZAvSQsc2JWk6S
+- v0.18: (next, new link)
 
 ### The site archive: `lib/patchNotesData.ts`
 

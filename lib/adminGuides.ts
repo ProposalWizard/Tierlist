@@ -473,6 +473,7 @@ export const ADMIN_GUIDES = {
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
           ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
+          ["Blender 3D →", "Opens the Blender 3D footballer test page: any club's kit on the 3D player, stills, hair, animations and the home-screen mock-up."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -589,6 +590,76 @@ export const ADMIN_GUIDES = {
       "In the career, Training Boost and Stat Can are hidden (not in the game yet), and Coin packs read \"Coming soon\" in the live game.",
     ],
     dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
+  },
+
+  "/star-blender-dev": {
+    title: "Blender 3D",
+    what: "The 3D footballer built in Blender, to judge by eye. He was rendered once with a grey kit; this page recolours that render into any club's kit, in your browser, when you pick the club. Nothing here reaches a career.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["Club", "Every club the game has kit colours for. Pick one and the hero and all five stills are recoloured into its kit, with its crest on the chest and 19 on the shorts."],
+          ["Home / Away", "Switches to that club's change strip."],
+          ["The coloured square", "The two kit colours the game uses: shirt, and trim (the trim is also the shorts)."],
+          ["Home screen: A2 vs 3D", "Left is the real A2 avatar from the home screen; right is the 3D player, both in the kit you picked."],
+          ["Stills", "Idle, arms up, knee slide, pointing at the badge, hands on hips."],
+          ["Hair: style and colour chips", "Show that hair render. Only the crop was rendered in every colour; the other styles are brown only, and the box says so."],
+          ["Animations", "Three short loops (idle, jump, knee slide). These are videos, so they stay in Chelsea's kit."],
+          ["In the home screen", "The 3D hero pasted into the home screen (Chelsea, made offline) next to the live A2."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. The club you pick is forgotten when you leave.",
+    ],
+    commit: [
+      "Nothing commits from this page. The renders are files in public/star/blender/, and the Blender scripts that made them are in tools/blender-footballer/.",
+    ],
+    inGame: [
+      "Not in the game yet. This page is here so the look can be judged; the notes at the bottom list what is left and the two ways it could go in.",
+      "The crest is the club's real badge when it loads here, otherwise the same initials disc the game uses; the line under the hero says which.",
+    ],
+    dev: "app/star-blender-dev/page.tsx · lib/star/blenderRecolour.ts · tests/star/blenderRecolour.mts · public/star/blender/ · tools/blender-footballer/ (NOTES.md, scripts, footballer.blend)",
+  },
+
+  "/star-3d-dev": {
+    title: "3D",
+    what: "One of every mode in the game, with the players drawn in the new \"3D\" look (shaded kit, folds, socks and boots, a soft shadow, the fitted face) — and a switch to see the same moment in today's look.",
+    buttons: [
+      {
+        group: "Top of the page",
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["Classic / 3D", "Which look the players are drawn in, on this page only. The mode below restarts in that look."],
+          ["Match chance … Home avatar", "The ten modes: a real match chance, a penalty shootout, trial penalties, trial free kicks, a training strike drill, the training gauntlet, five-a-side, the first-person dribble, Goalie Mode and the home-screen avatar."],
+        ],
+      },
+      {
+        group: "Match chance",
+        items: [
+          ["Cutback / One-on-one / Corner", "Which kind of chance to play. It is the real match, at the real size."],
+          ["Next chance ›", "A different chance of the same kind."],
+        ],
+      },
+      {
+        group: "Everything else",
+        items: [
+          ["(the mode itself)", "Plays exactly as it does in the game — same controls, same rules. Finishing one starts it again."],
+          ["Home avatar", "3D shows the home screen's avatar (A2). Classic shows the game's own figure, lit (A1)."],
+          ["Today / C1 Skill cam / C2 Broadcast / C3 Dynamic (Dribble)", "Which camera the dribble is seen through. Today is the game's camera. C1 is low over the shoulder, C2 is high behind, C3 closes in when a defender is near. The run itself — defenders, timing, controls — is identical in all four; switching takes effect straight away."],
+          ["Defenders: real / easy (Dribble)", "Real is the game's defenders. Easy makes them slow so a run lasts long enough to watch the camera — this page only."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. No career is touched, Goalie Mode's bank here is pretend, and the Classic / 3D switch is forgotten when you leave.",
+    ],
+    inGame: [
+      "Nowhere yet — the real game still draws everyone in the Classic look.",
+      "To try 3D in a real career on one phone: Settings → Player Graphics → Player look → 3D (that phone only). Harry decides when it becomes everyone's look.",
+    ],
+    dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
   },
 
   "/star-radar-dev": {

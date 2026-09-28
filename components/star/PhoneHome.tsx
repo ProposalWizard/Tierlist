@@ -13,53 +13,101 @@
  * Garden, Sponsors and Settings open their real screens. The bar at the
  * bottom of the phone takes you back to the grid.
  *
+ * Reskinned in the home screen's look (28 Sep 2026, Harry: "all the pages
+ * should just be reskinned to fit the new home screen vibe"): a wallpaper
+ * lit in your club's colours, glossy app icons that press in, the four apps
+ * you use most in a dock, notification badges that pop, and an app that
+ * zooms out of its icon when it opens (and back into it when it closes).
+ *
  * Kickabout is the real match (one engine): EnginePlay, playing random
  * highlights one after another the way Infinite Highlights does, drawn
  * small enough to fit the phone's screen.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { divisionOf, fixtureDate, formatDateNumeric, fixtureDateLabel } from "@/lib/star/calendar";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
+import { kitsOf } from "@/lib/star/kits";
 import { SCENARIO_KINDS, type Scenario } from "@/lib/star/canvasEngine";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { nextHighlight, newSimMemory, buildSimScenario, pictureKey } from "@/lib/star/gallerySim";
 import { mulberry32 } from "@/lib/star/season";
 import { formatMoney } from "@/lib/star/money";
+import { hasFreshMedia, unreadCount } from "@/lib/star/media/feed";
 import PhoneFrame from "./PhoneFrame";
 import MediaFeed from "./MediaFeed";
 import LeagueScreen from "./LeagueScreen";
 import EnginePlay from "./EnginePlay";
+import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
+import { ClubCard, CountUp, PressButton, RiseIn, Glow, Badge, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
 
 type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages";
 type Leave = HubPhase | "settings";
+interface App { id: AppId | Leave; label: string; icon: string; bg: [string, string] }
 
-const APPS: { id: AppId | Leave; label: string; icon: string; bg: string }[] = [
-  { id: "social", label: "Social", icon: "💬", bg: "from-emerald-400 to-emerald-600" },
-  { id: "kickabout", label: "Kickabout", icon: "⚽", bg: "from-lime-400 to-green-700" },
-  { id: "league", label: "League", icon: "🏆", bg: "from-amber-300 to-amber-600" },
-  { id: "fixtures", label: "Fixtures", icon: "📅", bg: "from-sky-400 to-sky-700" },
-  { id: "messages", label: "Messages", icon: "💌", bg: "from-pink-400 to-rose-600" },
-  { id: "shop-kib", label: "Shop", icon: "🛍️", bg: "from-orange-400 to-orange-600" },
-  { id: "store", label: "Store", icon: "🛒", bg: "from-amber-300 to-violet-600" },
-  { id: "casino-menu", label: "Casino", icon: "🎰", bg: "from-yellow-400 to-red-600" },
-  { id: "sponsors", label: "Sponsors", icon: "🤝", bg: "from-teal-400 to-teal-700" },
-  { id: "ownership", label: "Owner", icon: "🏛️", bg: "from-indigo-400 to-indigo-700" },
-  { id: "garden", label: "Garden", icon: "🌳", bg: "from-green-500 to-green-800" },
-  { id: "achievements", label: "Awards", icon: "⭐", bg: "from-violet-400 to-violet-700" },
-  { id: "settings", label: "Settings", icon: "⚙️", bg: "from-gray-400 to-gray-600" },
+const APPS: App[] = [
+  { id: "social", label: "Social", icon: "💬", bg: ["#34d399", "#047857"] },
+  { id: "kickabout", label: "Kickabout", icon: "⚽", bg: ["#a3e635", "#15803d"] },
+  { id: "league", label: "League", icon: "🏆", bg: ["#fcd34d", "#d97706"] },
+  { id: "fixtures", label: "Fixtures", icon: "📅", bg: ["#38bdf8", "#0369a1"] },
+  { id: "messages", label: "Messages", icon: "💌", bg: ["#f472b6", "#e11d48"] },
+  { id: "shop-kib", label: "Shop", icon: "🛍️", bg: ["#fb923c", "#ea580c"] },
+  { id: "store", label: "Store", icon: "🛒", bg: ["#fcd34d", "#7c3aed"] },
+  { id: "casino-menu", label: "Casino", icon: "🎰", bg: ["#facc15", "#dc2626"] },
+  { id: "sponsors", label: "Sponsors", icon: "🤝", bg: ["#2dd4bf", "#0f766e"] },
+  { id: "ownership", label: "Owner", icon: "🏛️", bg: ["#818cf8", "#4338ca"] },
+  { id: "garden", label: "Garden", icon: "🌳", bg: ["#22c55e", "#166534"] },
+  { id: "achievements", label: "Awards", icon: "⭐", bg: ["#a78bfa", "#6d28d9"] },
+  { id: "settings", label: "Settings", icon: "⚙️", bg: ["#9ca3af", "#4b5563"] },
 ];
+/** The dock: the four apps that open inside the phone and get used most. */
+const DOCK = new Set<string>(["social", "messages", "fixtures", "kickabout"]);
 const INSIDE = new Set<string>(["social", "kickabout", "league", "fixtures", "messages"]);
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
+const appOf = (id: AppId) => APPS.find((a) => a.id === id)!;
+
+// ── What is unread (per phone, in this browser — a convenience, not state) ──
+const SOCIAL_SEEN = "star-phone-social-seen";
+const MSGS_SEEN = "star-phone-msgs-seen";
+function readLS(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function writeLS(key: string, v: string) {
+  try { localStorage.setItem(key, v); } catch { /* private window */ }
+}
+
+interface Msg { from: string; icon: string; text: string; tone: [string, string] }
+/** Messages — a sketch of what the phone could tell you. Built from real
+ *  career facts; the wording is placeholder. */
+function buildMessages(career: CareerState): Msg[] {
+  const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+  const msgs: Msg[] = [];
+  if (career.managerNews) msgs.push({ from: "The club", icon: "🏟️", text: career.managerNews, tone: ["#60a5fa", "#1d4ed8"] });
+  if (next) msgs.push({ from: career.manager?.name ? `Gaffer (${career.manager.name})` : "Gaffer", icon: "🧢", text: `${short(next.opponent)} next. Be ready.`, tone: ["#34d399", "#047857"] });
+  msgs.push({ from: "Agent", icon: "💼", text: `${career.contract.seasonsRemaining} season${career.contract.seasonsRemaining === 1 ? "" : "s"} left on your deal at ★${formatMoney(career.contract.wage)} a week.`, tone: ["#fbbf24", "#b45309"] });
+  if (career.energy < 60) msgs.push({ from: "Physio", icon: "🩺", text: `Energy's at ${Math.round(career.energy)}%. Rest up or drink a can.`, tone: ["#f87171", "#b91c1c"] });
+  msgs.push({ from: "Mum", icon: "❤️", text: "Proud of you. Eat something green.", tone: ["#f472b6", "#be185d"] });
+  return msgs;
+}
+const msgKey = (m: Msg) => `${m.from}|${m.text}`;
 
 export default function PhoneHome({ career, onToggleLike, onLeave }: {
   career: CareerState;
   onToggleLike?: (postId: string) => void;
   onLeave: (ph: Leave) => void;
 }) {
+  const theme = useClubTheme(career);
   const [app, setApp] = useState<AppId | null>(null);
+  const [closing, setClosing] = useState(false);
+  /** The app has finished zooming open. The real match sizes its canvas
+   *  once, when it mounts, so Kickabout waits for this (mid-zoom it would
+   *  measure a pitch a seventh of the size). */
+  const [settled, setSettled] = useState(true);
+  /** Where the app zooms out of: the tapped icon's centre, in the screen. */
+  const [origin, setOrigin] = useState("50% 50%");
+  const screenRef = useRef<HTMLDivElement>(null);
   const dateLabel = formatDateNumeric(
     fixtureDate(career.player.startYear, career.season, career.week, "saturday", divisionOf(career)),
   ).replace(/\/\d{2}$/, "");
@@ -81,32 +129,88 @@ export default function PhoneHome({ career, onToggleLike, onLeave }: {
     return () => window.removeEventListener("resize", on);
   }, []);
 
-  const open = (id: AppId | Leave) => (INSIDE.has(id) ? setApp(id as AppId) : onLeave(id as Leave));
+  // Badges. Read once the page is in the browser (localStorage), then kept
+  // in state so opening an app clears its badge straight away.
+  const msgs = useMemo(() => buildMessages(career), [career]);
+  const [seenMsgs, setSeenMsgs] = useState<Set<string> | null>(null);
+  const [socialSeen, setSocialSeen] = useState<number | null>(null);
+  useEffect(() => {
+    try { setSeenMsgs(new Set(JSON.parse(readLS(MSGS_SEEN) ?? "[]") as string[])); } catch { setSeenMsgs(new Set()); }
+    const s = Number(readLS(SOCIAL_SEEN));
+    setSocialSeen(Number.isFinite(s) && s > 0 ? s : -1);
+  }, []);
+  const lastPostAt = useMemo(() => Math.max(0, ...(career.media?.posts ?? []).map((p) => p.at)), [career.media]);
+  const badges: Partial<Record<AppId, number>> = {
+    messages: seenMsgs ? msgs.filter((m) => !seenMsgs.has(msgKey(m))).length : 0,
+    // Never opened here before: only what the last match stirred up counts,
+    // not a whole season of history.
+    social: socialSeen === null ? 0 : socialSeen === -1 ? (hasFreshMedia(career) ? 1 : 0) : unreadCount(career, socialSeen),
+  };
+  const markSeen = (id: AppId) => {
+    if (id === "messages") {
+      const all = new Set(Array.from(seenMsgs ?? []).concat(msgs.map(msgKey)));
+      setSeenMsgs(all);
+      writeLS(MSGS_SEEN, JSON.stringify(Array.from(all).slice(-40)));
+    }
+    if (id === "social") {
+      setSocialSeen(lastPostAt || 1);
+      writeLS(SOCIAL_SEEN, String(lastPostAt || 1));
+    }
+  };
+
+  const open = (id: AppId | Leave, from?: HTMLElement | null) => {
+    if (!INSIDE.has(id)) return onLeave(id as Leave);
+    const box = screenRef.current?.getBoundingClientRect();
+    const r = from?.getBoundingClientRect();
+    if (box && r) setOrigin(`${Math.round(r.left + r.width / 2 - box.left)}px ${Math.round(r.top + r.height / 2 - box.top)}px`);
+    setClosing(false);
+    markSeen(id as AppId);
+    setSettled(false);
+    setApp(id as AppId);
+    setTimeout(() => setSettled(true), prefersReducedMotion() ? 0 : 420);
+  };
+  const goHome = () => {
+    if (prefersReducedMotion()) { setApp(null); return; }
+    setClosing(true);
+    setTimeout(() => { setApp(null); setClosing(false); }, 230);
+  };
 
   return (
     <div ref={boxRef} className="flex h-full w-full items-center justify-center overflow-hidden">
       {size && (
         <div style={{ width: size.w, height: size.h }}>
-          <PhoneFrame statusLabel={dateLabel}>
-            {app === null && <Grid career={career} onOpen={open} />}
-            {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} inPhone />}
-            {app === "kickabout" && <Kickabout />}
-            {app === "league" && (
-              <AppShell title="League" icon="🏆">
-                <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><LeagueScreen career={career} compact /></div>
-              </AppShell>
-            )}
-            {app === "fixtures" && <Fixtures career={career} />}
-            {app === "messages" && <Messages career={career} />}
-            {app !== null && (
-              <button
-                onClick={() => setApp(null)}
-                aria-label="Home"
-                className="mx-auto mt-1 shrink-0 rounded-full bg-white/10 px-4 py-1 text-[10px] font-black uppercase tracking-widest text-white/80 active:bg-white/20"
-              >
-                ◀ Home
-              </button>
-            )}
+          <PhoneFrame statusLabel={dateLabel} wallpaper={wallpaper(theme.glow, theme.trim)} rim={theme.glow}>
+            <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
+              {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} />}
+              {app !== null && (
+                <div
+                  key={app}
+                  className={`${closing ? "kit-app-close" : "kit-app-open"} flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[22px]`}
+                  style={{ transformOrigin: origin, background: `radial-gradient(110% 38% at 50% 0%, ${rgba(theme.glow, 0.24)} 0%, transparent 70%), linear-gradient(180deg, #0b1220, #05080f)` }}
+                >
+                  {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} inPhone />}
+                  {app === "kickabout" && <Kickabout ready={settled} />}
+                  {app === "league" && (
+                    <AppShell app={appOf("league")}>
+                      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><LeagueScreen career={career} compact /></div>
+                    </AppShell>
+                  )}
+                  {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
+                  {app === "messages" && <Messages msgs={msgs} />}
+                  <div className="flex shrink-0 justify-center pb-0.5 pt-1">
+                    <PressButton
+                      variant="secondary"
+                      size="none"
+                      onClick={goHome}
+                      aria-label="Home"
+                      className="rounded-full px-4 py-1 text-[10px] font-black uppercase tracking-widest text-white/85"
+                    >
+                      ◀ Home
+                    </PressButton>
+                  </div>
+                </div>
+              )}
+            </div>
           </PhoneFrame>
         </div>
       )}
@@ -114,42 +218,126 @@ export default function PhoneHome({ career, onToggleLike, onLeave }: {
   );
 }
 
-function Grid({ career, onOpen }: { career: CareerState; onOpen: (id: AppId | Leave) => void }) {
+/** The home screen's wallpaper: your club's colours glowing out of the dark. */
+function wallpaper(glow: string, trim: string): React.CSSProperties {
+  const second = glowOf(trim, glow);
+  return {
+    background: `radial-gradient(120% 55% at 15% 0%, ${rgba(glow, 0.62)} 0%, transparent 62%), radial-gradient(100% 50% at 100% 100%, ${rgba(second, 0.38)} 0%, transparent 60%), linear-gradient(165deg, #0c1629 0%, #05080f 70%)`,
+  };
+}
+
+function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true }: {
+  app: App; size?: number; badge?: number; index?: number; label?: boolean;
+  onOpen: (id: AppId | Leave, from?: HTMLElement | null) => void;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  return (
+    <button onClick={() => onOpen(app.id, ref.current)} className="kib-press flex min-w-0 flex-col items-center gap-1">
+      <span
+        ref={ref}
+        className="kit-icon-in relative grid aspect-square place-items-center rounded-[28%]"
+        style={{
+          width: size,
+          animationDelay: `${index * 26}ms`,
+          fontSize: size * 0.48,
+          background: `linear-gradient(160deg, ${app.bg[0]}, ${app.bg[1]})`,
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,.5), inset 0 -3px 6px rgba(0,0,0,.25), 0 7px 14px -6px rgba(0,0,0,.8)",
+        }}
+      >
+        <span aria-hidden className="pointer-events-none absolute inset-x-[6%] top-[4%] h-[46%] rounded-t-[40%] bg-gradient-to-b from-white/35 to-transparent" />
+        <span className="relative" style={{ filter: "drop-shadow(0 2px 2px rgba(0,0,0,.35))" }}>{app.icon}</span>
+        <Badge count={badge} delay={380 + index * 26} />
+      </span>
+      {label && <span className="w-full truncate text-center text-[9.5px] font-bold text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.9)" }}>{app.label}</span>}
+    </button>
+  );
+}
+
+function Grid({ career, glow, badges, onOpen }: {
+  career: CareerState; glow: string; badges: Partial<Record<AppId, number>>;
+  onOpen: (id: AppId | Leave, from?: HTMLElement | null) => void;
+}) {
   const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+  const grid = APPS.filter((a) => !DOCK.has(a.id));
+  const dock = APPS.filter((a) => DOCK.has(a.id));
   return (
     <div className="flex min-h-0 flex-1 flex-col px-3 pt-2">
       {/* A widget, the way a phone's home screen has one. */}
-      {next && (
-        <div className="rounded-2xl bg-white/10 px-3 py-2 backdrop-blur">
-          <div className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">Next match</div>
-          <div className="truncate text-[13px] font-black text-white">
-            {next.home ? `${short(career.player.club)} v ${short(next.opponent)}` : `${short(next.opponent)} v ${short(career.player.club)}`}
-          </div>
-          <div className="text-[10px] font-bold text-white/60">
-            {fixtureDateLabel(career.player.startYear, career.season, next.week, next.kind, divisionOf(career))} · ★ {formatMoney(career.money)} in the bank
-          </div>
-        </div>
+      {next ? <NextMatchWidget career={career} next={next} /> : (
+        <ClubCard glow={glow} className="rounded-[20px] px-3 py-2">
+          <div className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-200">Season complete</div>
+          <div className="text-[11px] font-bold text-white/75">★ {formatMoney(career.money)} in the bank</div>
+        </ClubCard>
       )}
-      <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3">
-        {APPS.map((a) => (
-          <button key={a.id} onClick={() => onOpen(a.id)} className="flex flex-col items-center gap-1 active:scale-90">
-            <span className={`grid aspect-square w-full max-w-[52px] place-items-center rounded-[14px] bg-gradient-to-br ${a.bg} text-[24px] shadow-lg shadow-black/40`}>
-              {a.icon}
-            </span>
-            <span className="w-full truncate text-center text-[9.5px] font-bold text-white/90">{a.label}</span>
-          </button>
+      <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-2.5">
+        {grid.map((a, i) => (
+          <AppIcon key={a.id} app={a} index={i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} />
+        ))}
+      </div>
+      <div className="min-h-0 flex-1" />
+      {/* The dock. */}
+      <div
+        className="mb-1 grid grid-cols-4 gap-2 rounded-[22px] px-2.5 pb-2 pt-2"
+        style={{ background: "rgba(255,255,255,.11)", backdropFilter: "blur(10px)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), 0 8px 20px -10px rgba(0,0,0,.8)" }}
+      >
+        {dock.map((a, i) => (
+          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} />
         ))}
       </div>
     </div>
   );
 }
 
-function AppShell({ title, icon, children, right }: { title: string; icon: string; children: React.ReactNode; right?: React.ReactNode }) {
+function NextMatchWidget({ career, next }: { career: CareerState; next: CareerState["fixtures"][number] }) {
+  const me = career.player.club;
+  const home = next.home ? me : next.opponent;
+  const away = next.home ? next.opponent : me;
+  const hk = kitsOf(home, career.clubKits?.[home]).home;
+  const ak = kitsOf(away, career.clubKits?.[away]).home;
+  return (
+    <ClubCard duel={[glowOf(hk.shirt, hk.trim), glowOf(ak.shirt, ak.trim)]} className="kit-rise relative overflow-hidden rounded-[20px] px-3 pb-2 pt-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[8.5px] font-black uppercase tracking-[0.2em] text-emerald-300">Next match</span>
+        <span className="truncate pl-2 text-[9.5px] font-black text-white/70">
+          {fixtureDateLabel(career.player.startYear, career.season, next.week, next.kind, divisionOf(career))}
+        </span>
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <Crest club={home} kit={hk} />
+        <div className="min-w-0 flex-1 truncate text-center text-[13px] font-black text-white">
+          {short(home)} <span className="text-white/45">v</span> {short(away)}
+        </div>
+        <Crest club={away} kit={ak} />
+      </div>
+      <div className="mt-1 text-center text-[10px] font-bold text-white/65">
+        ★ <CountUp value={career.money} format={(n) => formatMoney(Math.round(n))} className="font-black text-yellow-200" /> in the bank
+      </div>
+    </ClubCard>
+  );
+}
+
+function Crest({ club, kit }: { club: string; kit: { shirt: string; trim: string } }) {
+  return (
+    <div className="relative grid h-8 w-8 shrink-0 place-items-center">
+      <Glow color={glowOf(kit.shirt, kit.trim)} alpha={0.5} className="inset-0 blur-md" />
+      <div className="relative" style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.6))" }}>
+        <ClubBadge club={club} kit={kit} size={28} />
+      </div>
+    </div>
+  );
+}
+
+function AppShell({ app, children, right }: { app: App; children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-1.5 border-b border-white/10 px-3 pb-1.5 pt-0.5">
-        <span className="text-[15px]">{icon}</span>
-        <span className="flex-1 text-[13px] font-black text-white">{title}</span>
+      <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 pb-2 pt-1.5">
+        <span
+          className="relative grid h-7 w-7 shrink-0 place-items-center rounded-[9px] text-[15px]"
+          style={{ background: `linear-gradient(160deg, ${app.bg[0]}, ${app.bg[1]})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.45), 0 4px 8px -3px rgba(0,0,0,.7)" }}
+        >
+          {app.icon}
+        </span>
+        <span className="flex-1 text-[14px] font-black tracking-tight text-white">{app.label}</span>
         {right}
       </div>
       {children}
@@ -161,7 +349,7 @@ function AppShell({ title, icon, children, right }: { title: string; icon: strin
  * KICKABOUT — Infinite Highlights on your phone. The real match through
  * EnginePlay, one random chance after another, with a running score.
  */
-function Kickabout() {
+function Kickabout({ ready }: { ready: boolean }) {
   const stream = useRef<{ rng: () => number; mem: ReturnType<typeof newSimMemory>; last?: string } | null>(null);
   if (!stream.current) stream.current = { rng: mulberry32((Date.now() & 0xffff) + 7), mem: newSimMemory() };
   const kinds = withoutSwitchedOff(SCENARIO_KINDS);
@@ -182,18 +370,22 @@ function Kickabout() {
   const areaRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
   useEffect(() => {
-    const r = areaRef.current?.getBoundingClientRect();
-    if (r) setW(Math.floor(Math.min(r.width - 8, (r.height - 4) * (5 / 8))));
-  }, []);
+    // Layout size, not the on-screen box: the app may still be zooming in.
+    const el = areaRef.current;
+    if (ready && el) setW(Math.floor(Math.min(el.clientWidth - 8, (el.clientHeight - 4) * (5 / 8))));
+  }, [ready]);
   return (
     <AppShell
-      title="Kickabout"
-      icon="⚽"
-      right={<span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black tabular-nums text-emerald-200">{score.goals} / {score.chances}</span>}
+      app={appOf("kickabout")}
+      right={
+        <span className="rounded-full bg-gradient-to-b from-emerald-400/30 to-emerald-600/20 px-2.5 py-0.5 text-[11px] font-black tabular-nums text-emerald-100 ring-1 ring-emerald-300/30">
+          ⚽ {score.goals} / {score.chances}
+        </span>
+      }
     >
       <div ref={areaRef} className="flex min-h-0 flex-1 items-start justify-center overflow-hidden pt-1">
         {w > 0 && (
-          <div style={{ width: w }}>
+          <div style={{ width: w }} className="overflow-hidden rounded-xl" >
             <EnginePlay openOn={openOn} bare fitParent onChanceResolved={onResolved} />
           </div>
         )}
@@ -202,55 +394,78 @@ function Kickabout() {
   );
 }
 
-function Fixtures({ career }: { career: CareerState }) {
+function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
   const list = [...career.fixtures].sort((a, b) => a.week - b.week);
   const upcoming = list.filter((f) => !f.played).slice(0, 12);
   const played = list.filter((f) => f.played).slice(-4).reverse();
-  const row = (f: (typeof list)[number]) => {
+  const row = (f: (typeof list)[number], i: number, next = false) => {
     const date = fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career));
     const us = f.home ? f.homeScore : f.awayScore, them = f.home ? f.awayScore : f.homeScore;
-    return (
-      <div key={`${f.week}-${f.opponent}-${f.kind}`} className="flex items-center gap-2 border-b border-white/5 px-3 py-1.5">
-        <span className="w-16 shrink-0 text-[10px] font-bold text-white/55">{date}</span>
+    const res = f.played && us !== undefined && them !== undefined ? (us > them ? "W" : us === them ? "D" : "L") : null;
+    const tone = res === "W" ? "from-emerald-400 to-emerald-600" : res === "L" ? "from-red-500 to-red-700" : "from-gray-400 to-gray-600";
+    const body = (
+      <div className="flex items-center gap-2 px-2.5 py-1.5">
+        <span className="w-[44px] shrink-0 text-[9px] font-bold leading-tight text-white/60">{date}</span>
+        <ClubBadge club={f.opponent} kit={kitsOf(f.opponent, career.clubKits?.[f.opponent]).home} size={20} />
         <span className="min-w-0 flex-1 truncate text-[12px] font-black text-white">{f.home ? "v" : "@"} {short(f.opponent)}</span>
-        <span className="shrink-0 text-[10px] font-bold text-white/50">{f.competition ?? "League"}</span>
-        {f.played && <span className="shrink-0 text-[11px] font-black tabular-nums text-amber-200">{us}-{them}</span>}
+        <span className="max-w-[58px] shrink-0 truncate rounded-full bg-white/[0.08] px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white/60">{f.competition ?? "League"}</span>
+        {f.played && (
+          <span className={`flex shrink-0 items-center gap-1 rounded-md bg-gradient-to-b ${tone} px-1.5 py-[1px] text-[11px] font-black tabular-nums text-white shadow`}>
+            {us}-{them}
+          </span>
+        )}
       </div>
+    );
+    return (
+      <RiseIn key={`${f.week}-${f.opponent}-${f.kind}`} index={i} step={35}>
+        {next ? (
+          <ClubCard glow={glow} className="relative mx-2 mb-1 rounded-xl">
+            <span className="absolute -top-1.5 right-2 rounded-full bg-emerald-400 px-1.5 text-[8px] font-black uppercase tracking-widest text-gray-950">Next</span>
+            {body}
+          </ClubCard>
+        ) : (
+          <div className="mx-2 mb-1 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.06]">{body}</div>
+        )}
+      </RiseIn>
     );
   };
   return (
-    <AppShell title="Fixtures" icon="📅">
-      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto">
-        {played.length > 0 && <div className="px-3 pt-2 text-[9px] font-black uppercase tracking-widest text-white/50">Results</div>}
-        {played.map(row)}
-        <div className="px-3 pt-2 text-[9px] font-black uppercase tracking-widest text-white/50">Coming up</div>
-        {upcoming.map(row)}
+    <AppShell app={appOf("fixtures")}>
+      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto pb-1">
+        {played.length > 0 && <div className="px-3 pb-1 pt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Results</div>}
+        {played.map((f, i) => row(f, i))}
+        <div className="px-3 pb-1 pt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Coming up</div>
+        {upcoming.map((f, i) => row(f, played.length + i, i === 0))}
       </div>
     </AppShell>
   );
 }
 
-/** Messages — a sketch of what the phone could tell you. Built from real
- *  career facts; the wording is placeholder. */
-function Messages({ career }: { career: CareerState }) {
-  const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
-  const msgs: { from: string; icon: string; text: string }[] = [];
-  if (career.managerNews) msgs.push({ from: "The club", icon: "🏟️", text: career.managerNews });
-  if (next) msgs.push({ from: career.manager?.name ? `Gaffer (${career.manager.name})` : "Gaffer", icon: "🧢", text: `${short(next.opponent)} next. Be ready.` });
-  msgs.push({ from: "Agent", icon: "💼", text: `${career.contract.seasonsRemaining} season${career.contract.seasonsRemaining === 1 ? "" : "s"} left on your deal at ★${formatMoney(career.contract.wage)} a week.` });
-  if (career.energy < 60) msgs.push({ from: "Physio", icon: "🩺", text: `Energy's at ${Math.round(career.energy)}%. Rest up or drink a can.` });
-  msgs.push({ from: "Mum", icon: "❤️", text: "Proud of you. Eat something green." });
+function Messages({ msgs }: { msgs: Msg[] }) {
   return (
-    <AppShell title="Messages" icon="💌">
-      <div className="kib-noscroll min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pt-2">
+    <AppShell app={appOf("messages")}>
+      <div className="kib-noscroll min-h-0 flex-1 space-y-2 overflow-y-auto px-2.5 pt-2.5">
+        <div className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Today</div>
         {msgs.map((m, i) => (
-          <div key={i} className="flex items-start gap-2 rounded-xl bg-white/[0.06] p-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-[16px]">{m.icon}</span>
-            <div className="min-w-0">
-              <div className="text-[11px] font-black text-white">{m.from}</div>
-              <div className="text-[11px] font-bold text-white/70">{m.text}</div>
+          <RiseIn key={i} index={i} step={70}>
+            <div className="flex items-end gap-2">
+              <span
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[15px]"
+                style={{ background: `linear-gradient(160deg, ${m.tone[0]}, ${m.tone[1]})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.4), 0 4px 8px -3px rgba(0,0,0,.7)" }}
+              >
+                {m.icon}
+              </span>
+              <div className="min-w-0 max-w-[82%]">
+                <div className="mb-0.5 pl-1 text-[9.5px] font-black text-white/60">{m.from}</div>
+                <div
+                  className="rounded-2xl rounded-bl-md px-3 py-1.5 text-[11.5px] font-bold leading-snug text-white"
+                  style={{ background: "linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.07))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12)" }}
+                >
+                  {m.text}
+                </div>
+              </div>
             </div>
-          </div>
+          </RiseIn>
         ))}
       </div>
     </AppShell>

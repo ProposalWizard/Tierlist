@@ -18,6 +18,8 @@ import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
 import NegotiationScreen from "./NegotiationScreen";
 import OwnedLineupEditor from "./OwnedLineupEditor";
 import type { NegotiationState } from "@/lib/star/negotiation";
+import { Burst, CountUp, FloatText, PressButton, clubTheme, useTrigger } from "./ui";
+import { Screen } from "./ui/Screen";
 
 /**
  * INVESTMENTS — BUY A STAKE, AND, PAST 50.1%, RUN THE BOARDROOM.
@@ -127,26 +129,26 @@ export default function Investments(props: Props) {
 
   const owned = (career.investments ?? []).filter(i => i.percent > 0);
   const majorityClubs = owned.filter(i => isMajorityOwner(career, i.club));
+  const theme = clubTheme(boardroomClub ?? career.player.club, career);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col items-center py-3 px-3">
-      <div className="w-full max-w-sm">
+    <Screen glow={theme.glow}>
+      <div className="w-full">
         <div className="flex items-center gap-2 mb-3">
-          <button onClick={props.onBack} className="px-3 py-2 bg-gray-700 rounded-lg font-black text-sm">← Back</button>
-          <div className="flex-1 bg-gray-700 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-600">
-            <span className="font-black text-white text-sm">Balance</span>
-            <span className="flex items-center gap-1 font-black text-yellow-300"><StarIcon />{money(career.money)}</span>
+          <PressButton variant="secondary" size="sm" onClick={props.onBack} className="normal-case tracking-normal">← Back</PressButton>
+          <div className="flex-1 kit-card rounded-xl px-3 py-2 flex items-center justify-between" style={{ ["--kit-glow" as string]: "#f59e0b" } as React.CSSProperties}>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Balance</span>
+            {/* The balance counts to its new value after a buy or a sale. */}
+            <span className="flex items-center gap-1 font-black text-yellow-300"><StarIcon /><CountUp value={career.money} format={(n) => money(Math.round(n))} /></span>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-1 mb-3">
+        <div className="kit-tabs mb-3">
           {(["market", "portfolio", "boardroom"] as const).map(t => (
             <button
               key={t}
               onClick={() => { setTab(t); setBoardroomClub(null); }}
-              className={`py-2 rounded-lg font-black text-[11px] uppercase transition ${
-                tab === t ? "bg-emerald-600" : "bg-gray-700 text-white font-semibold"
-              }`}
+              className={`kit-tab text-[10.5px] ${tab === t ? "kit-tab-on" : ""}`} style={{ letterSpacing: ".05em" }}
             >
               {t === "boardroom" ? `Boardroom${majorityClubs.length ? ` (${majorityClubs.length})` : ""}` : t}
             </button>
@@ -190,7 +192,7 @@ export default function Investments(props: Props) {
             : <BoardroomList clubs={majorityClubs.map(i => i.club)} career={career} onOpen={setBoardroomClub} />
         )}
       </div>
-    </div>
+    </Screen>
   );
 }
 
@@ -224,7 +226,7 @@ function Market({
           value={search}
           onChange={e => onSearch(e.target.value)}
           placeholder="Search clubs…"
-          className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-white placeholder:text-white/40"
+          className="flex-1 rounded-lg kit-input px-3 py-2 text-sm text-white placeholder:text-white/40"
         />
         <div className="flex rounded-lg overflow-hidden border border-gray-700 shrink-0">
           <button
@@ -241,13 +243,13 @@ function Market({
           </button>
         </div>
       </div>
-      <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[60vh] overflow-y-auto">
+      <div className="kit-card overflow-hidden max-h-[60vh] overflow-y-auto">
         {sortedClubs.map(club => {
           const valuation = valuations.get(club) ?? clubValuation(club, career);
           const stake = stakeIn(career, club);
           const isOpen = expanded === club;
           return (
-            <div key={club} className="border-b border-black/20 last:border-b-0">
+            <div key={club} className="border-b border-white/[0.06] last:border-b-0">
               <button
                 onClick={() => onExpand(isOpen ? null : club)}
                 className="w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-gray-700 text-left"
@@ -330,9 +332,14 @@ function StakeControls({
   const sellAmount = Math.round(valuation * (sellPct / 100));
 
   const profit = stake ? Math.round((valuation - stake.avgBuyValuation) * (stakePct / 100)) : 0;
+  // A confirmed buy bursts and floats the stake it bought; a sale floats down.
+  const [dealAt, fireDeal] = useTrigger();
+  const [lastDeal, setLastDeal] = useState<{ kind: "buy" | "sell"; pct: number } | null>(null);
 
   return (
-    <div className="bg-gray-900/60 px-3 py-3 space-y-3">
+    <div className="relative bg-black/30 px-3 py-3 space-y-3">
+      {lastDeal?.kind === "buy" && <Burst trigger={dealAt} colors={["#34d399", "#fde047", "#ffffff"]} count={20} spread={0.8} className="left-1/2 top-6" />}
+      {lastDeal && <FloatText trigger={dealAt} text={`${lastDeal.kind === "buy" ? "+" : "−"}${lastDeal.pct.toFixed(lastDeal.pct < 1 ? 3 : 1)}%`} color={lastDeal.kind === "buy" ? "#34d399" : "#f87171"} className="left-1/2 top-2" size={16} />}
       {stake && (
         <div className="text-[11px] text-white font-semibold">
           You own <span className="text-white font-bold">{stakePct.toFixed(stakePct < 1 ? 3 : 1)}%</span>, bought in at{" "}
@@ -345,7 +352,7 @@ function StakeControls({
       )}
 
       {pending && (
-        <div className="rounded-lg border-2 border-amber-400 bg-amber-950/60 p-3 space-y-2">
+        <div className="kit-slam rounded-xl bg-amber-950/70 p-3 space-y-2" style={{ boxShadow: "inset 0 0 0 2px rgba(251,191,36,.8), 0 0 22px rgba(251,191,36,.25)" }}>
           <div className="text-sm font-black text-white text-center">
             {pending.kind === "buy" ? "Buy" : "Sell"} {pending.pct.toFixed(pending.pct < 1 ? 3 : 1)}% of {club} for ★{money(pending.amount)}?
           </div>
@@ -357,12 +364,12 @@ function StakeControls({
           )}
           <div className="flex gap-2">
             <button
-              onClick={() => { (pending.kind === "buy" ? onBuy : onSell)(pending.pct); setPending(null); }}
-              className={`flex-1 py-2 rounded-lg font-black text-xs text-white ${pending.kind === "buy" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-red-600 hover:bg-red-500"}`}
+              onClick={() => { (pending.kind === "buy" ? onBuy : onSell)(pending.pct); setLastDeal({ kind: pending.kind, pct: pending.pct }); fireDeal(); setPending(null); }}
+              className={`kit-btn flex-1 py-2 rounded-lg text-xs ${pending.kind === "buy" ? "kit-btn-green" : "kit-btn-red"}`}
             >
               Confirm
             </button>
-            <button onClick={() => setPending(null)} className="flex-1 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 font-black text-xs text-white">
+            <button onClick={() => setPending(null)} className="flex-1 py-2 rounded-lg kit-btn kit-btn-glass font-black text-xs text-white">
               Cancel
             </button>
           </div>
@@ -389,7 +396,7 @@ function StakeControls({
             type="text" inputMode="numeric"
             value={clampedBuy.toLocaleString()}
             onChange={e => setBuyAmount(Math.max(0, Math.min(maxBuySpend, Math.round(Number(e.target.value.replace(/[^\d]/g, "")) || 0))))}
-            className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-2 py-1.5 text-sm text-white tabular-nums"
+            className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white tabular-nums"
           />
           <span className="w-16 text-right text-xs font-black text-white font-semibold tabular-nums">
             = {buyPct.toFixed(buyPct < 1 ? 3 : 1)}%
@@ -416,7 +423,7 @@ function StakeControls({
         <button
           disabled={!canAfford}
           onClick={() => setPending({ kind: "buy", pct: buyPct, amount: clampedBuy })}
-          className="mt-2 w-full py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs"
+          className="mt-2 w-full py-2 rounded-lg kit-btn kit-btn-green disabled:opacity-40 font-black text-xs"
         >
           Buy ★{money(clampedBuy)} ({buyPct.toFixed(buyPct < 1 ? 3 : 1)}%)
         </button>
@@ -455,7 +462,7 @@ function StakeControls({
           </div>
           <button
             onClick={() => setPending({ kind: "sell", pct: sellPct, amount: sellAmount })}
-            className="mt-2 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 font-black text-xs"
+            className="mt-2 w-full py-2 rounded-lg kit-btn kit-btn-red font-black text-xs"
           >
             Sell {Math.round(sellFraction * 100)}% of your stake ({sellPct.toFixed(sellPct < 1 ? 3 : 1)}% of the club) for ★{money(sellAmount)}
           </button>
@@ -488,7 +495,7 @@ function Portfolio({
 
   if (owned.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-8 text-center text-sm text-white/90">
+      <div className="kit-card px-4 py-8 text-center text-sm text-white/90">
         No stakes yet — buy into a club from the Market tab.
       </div>
     );
@@ -496,7 +503,7 @@ function Portfolio({
 
   return (
     <>
-      <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2 flex items-center justify-between">
+      <div className="kit-card px-3 py-3 mb-2 flex items-center justify-between">
         <div>
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60">Portfolio value</div>
           <div className="text-lg font-black text-yellow-300 flex items-center gap-1"><StarIcon />{money(totalValue)}</div>
@@ -510,7 +517,7 @@ function Portfolio({
           const value = clubValuation(i.club, career);
           const profit = (value - i.avgBuyValuation) * (i.percent / 100);
           return (
-            <div key={i.club} className="bg-gray-800/70 border border-gray-700 rounded-lg px-3 py-2">
+            <div key={i.club} className="kit-card rounded-xl px-3 py-2">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-bold text-white text-sm">{i.club}</div>
@@ -530,7 +537,7 @@ function Portfolio({
                 {i.percent < 100 ? (
                   <button
                     onClick={() => setTrade(trade?.club === i.club && trade.mode === "buy" ? null : { club: i.club, mode: "buy" })}
-                    className="py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black text-white"
+                    className="py-1.5 rounded-lg kit-btn kit-btn-green text-[10px] font-black text-white"
                   >
                     Buy more
                   </button>
@@ -539,7 +546,7 @@ function Portfolio({
                 )}
                 <button
                   onClick={() => setTrade(trade?.club === i.club && trade.mode === "sell" ? null : { club: i.club, mode: "sell" })}
-                  className="py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-[10px] font-black text-white"
+                  className="py-1.5 rounded-lg kit-btn kit-btn-red text-[10px] font-black text-white"
                 >
                   Sell some
                 </button>
@@ -563,7 +570,7 @@ function Portfolio({
                       <select
                         value={recommendKind}
                         onChange={e => setRecommendKind(e.target.value as RecommendationKind)}
-                        className="w-full rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-[10px] text-white"
+                        className="w-full rounded-md kit-input px-2 py-1 text-[10px] text-white"
                       >
                         <option value="sign">Sign a player</option>
                         <option value="formation">Change formation</option>
@@ -573,7 +580,7 @@ function Portfolio({
                       <input
                         value={recommendDetail} onChange={e => setRecommendDetail(e.target.value)}
                         placeholder="What would you suggest?"
-                        className="w-full rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-[10px] text-white"
+                        className="w-full rounded-md kit-input px-2 py-1 text-[10px] text-white"
                       />
                       <div className="flex gap-1">
                         <button
@@ -582,13 +589,13 @@ function Portfolio({
                             setRecommendMessage(result.ok ? "Recommendation filed — the board will consider it." : (result.reason ?? "Failed"));
                             if (result.ok) { setRecommendClub(null); setRecommendDetail(""); }
                           }}
-                          className="flex-1 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black"
+                          className="flex-1 py-1 rounded-lg kit-btn kit-btn-green text-[10px] font-black"
                         >
                           Submit
                         </button>
                         <button
                           onClick={() => setRecommendClub(null)}
-                          className="px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black"
+                          className="px-2 py-1 rounded-lg kit-btn kit-btn-glass text-[10px] font-black"
                         >
                           Cancel
                         </button>
@@ -597,7 +604,7 @@ function Portfolio({
                   ) : (
                     <button
                       onClick={() => { setRecommendClub(i.club); setRecommendMessage(null); }}
-                      className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black"
+                      className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black"
                     >
                       Recommend to the board
                     </button>
@@ -609,13 +616,13 @@ function Portfolio({
         })}
       </div>
       {recommendMessage && (
-        <div className="mt-2 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-center text-[11px] font-bold text-white/80">
+        <div className="mt-2 rounded-lg kit-input px-3 py-2 text-center text-[11px] font-bold text-white/80">
           {recommendMessage}
         </div>
       )}
       {(career.recommendations ?? []).length > 0 && (
-        <div className="mt-3 bg-gray-800/70 border border-gray-700 rounded-lg overflow-hidden">
-          <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/60 border-b border-black/20">
+        <div className="mt-3 kit-card rounded-xl overflow-hidden">
+          <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/60 border-b border-white/[0.06]">
             Your recommendations
           </div>
           {[...(career.recommendations ?? [])].reverse().slice(0, 8).map(r => (
@@ -637,7 +644,7 @@ function Portfolio({
 function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: CareerState; onOpen: (c: string) => void }) {
   if (clubs.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-8 text-center text-sm text-white/90">
+      <div className="kit-card px-4 py-8 text-center text-sm text-white/90">
         Own {MAJORITY_THRESHOLD}% or more of a club to take a seat on its board.
       </div>
     );
@@ -648,7 +655,7 @@ function BoardroomList({ clubs, career, onOpen }: { clubs: string[]; career: Car
         <button
           key={club}
           onClick={() => onOpen(club)}
-          className="w-full flex items-center justify-between gap-2 px-3 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 text-left"
+          className="w-full flex items-center justify-between gap-2 px-3 py-3 kit-card kib-press text-left"
         >
           <div>
             <div className="font-black text-white text-sm">{club}</div>
@@ -760,7 +767,7 @@ function Boardroom({
   if (pendingSale) {
     return (
       <div>
-        <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-4 mb-2 text-center">
+        <div className="kit-card px-3 py-4 mb-2 text-center">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">Confirm sale</div>
           <div className="font-black text-white text-lg">{pendingSale.playerName}</div>
           <div className="text-[10px] font-bold text-white/70 mt-1">to {pendingSale.buyerClub}</div>
@@ -768,13 +775,13 @@ function Boardroom({
         </div>
         <button
           onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onSellPlayer(club, sale.playerId, sale.fee, sale.buyerClub)); }}
-          className="w-full mb-2 px-3 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-black text-sm"
+          className="w-full mb-2 px-3 py-2.5 rounded-lg kit-btn kit-btn-green text-emerald-950 font-black text-sm"
         >
           Confirm Sale
         </button>
         <button
           onClick={() => { const sale = pendingSale; setPendingSale(null); runAction(onProposeSellVote(club, sale.playerId, sale.fee, sale.buyerClub)); }}
-          className="w-full mb-2 px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-xs"
+          className="w-full mb-2 px-3 py-2 rounded-lg kit-btn kit-btn-glass text-white font-bold text-xs"
         >
           Put It To A Shareholder Vote First
         </button>
@@ -825,18 +832,18 @@ function Boardroom({
     return (
       <div>
         <button onClick={() => { setInterestList(null); setSavedNegotiations({}); }} className="mb-2 text-xs font-black text-white/90 hover:text-white">← Back</button>
-        <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
+        <div className="kit-card px-3 py-3 mb-2">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/80">Selling</div>
           <div className="font-black text-white">{interestList.playerName}</div>
         </div>
         {interestList.interests.length === 0 && (
           <div className="text-center text-xs font-bold text-white/70 py-6">No club is genuinely interested right now.</div>
         )}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+        <div className="kit-card overflow-hidden">
           {interestList.interests.map(i => {
             const inTalks = savedNegotiations[i.club];
             return (
-              <div key={i.club} className="flex items-center justify-between px-3 py-2.5 border-b border-black/20 last:border-b-0">
+              <div key={i.club} className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06] last:border-b-0">
                 <div>
                   <div className="text-sm font-bold text-white">{i.club}</div>
                   <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">
@@ -875,7 +882,7 @@ function Boardroom({
   return (
     <div>
       <button onClick={onBack} className="mb-2 text-xs font-black text-white/90 hover:text-white">← All boards</button>
-      <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 mb-2">
+      <div className="kit-card px-3 py-3 mb-2">
         <div className="flex items-center gap-2">
           {clubKitFor(career, club) && <KitSwatch kit={clubKitFor(career, club)!.home} size={32} />}
           <div>
@@ -886,7 +893,7 @@ function Boardroom({
           </div>
         </div>
         <div className="mt-2 flex items-center gap-2">
-          <div className="flex-1 bg-gray-900 rounded-lg px-2 py-1.5 flex items-center justify-between">
+          <div className="flex-1 kit-input rounded-lg px-2 py-1.5 flex items-center justify-between">
             <span className="text-[10px] font-bold text-white font-semibold">Budget</span>
             <span className="font-black text-yellow-300 text-sm">★{money(state.budget)}</span>
           </div>
@@ -895,12 +902,12 @@ function Boardroom({
           <input
             type="text" inputMode="numeric" value={topUp.toLocaleString()}
             onChange={e => setTopUp(Math.max(0, Number(e.target.value.replace(/[^\d]/g, "")) || 0))}
-            className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+            className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
           />
           <button
             disabled={topUp <= 0 || topUp > career.money}
             onClick={() => onTopUpBudget(club, topUp)}
-            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs whitespace-nowrap"
+            className="px-3 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 font-black text-xs whitespace-nowrap"
           >
             Fund club
           </button>
@@ -913,7 +920,7 @@ function Boardroom({
             key={s}
             onClick={() => { setSection(s); setMessage(null); }}
             className={`py-1.5 rounded-lg font-black text-[10px] uppercase transition ${
-              section === s ? "bg-emerald-600" : "bg-gray-700 text-white font-semibold"
+              section === s ? "kit-btn kit-btn-green" : "kit-row text-white/70 font-semibold"
             }`}
           >
             {s === "sign" ? "Sign a player" : s}
@@ -928,9 +935,9 @@ function Boardroom({
       )}
 
       {section === "squad" && (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+        <div className="kit-card overflow-hidden max-h-[50vh] overflow-y-auto">
           {(squad?.players ?? []).map(p => (
-            <div key={p.id} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
+            <div key={p.id} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
               <div>
                 <div className="text-sm font-bold text-white">{p.name}</div>
                 <div className="text-[10px] text-white font-semibold">{p.position} · OVR {p.overall}</div>
@@ -990,9 +997,9 @@ function Boardroom({
       )}
 
       {section === "history" && (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+        <div className="kit-card overflow-hidden max-h-[50vh] overflow-y-auto">
           {(career.clubTransferHistory?.[club] ?? []).map((t, i) => (
-            <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 border-b border-black/20 last:border-b-0">
+            <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.06] last:border-b-0">
               <div className="min-w-0">
                 <div className="text-sm font-bold text-white truncate">{t.playerName}</div>
                 <div className="text-[10px] text-white font-semibold">
@@ -1045,7 +1052,7 @@ function LineupPreview({
   const [editing, setEditing] = useState(false);
   if (!squad || squad.players.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+      <div className="kit-card p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Lineup</div>
         <div className="text-[11px] text-white/70 font-semibold">No squad data on file yet to build a lineup preview from.</div>
       </div>
@@ -1068,7 +1075,7 @@ function LineupPreview({
   const isOwnedOverride = !!ownedOverride && ownedOverride === saved;
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+    <div className="kit-card p-3">
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60">
           Lineup {isOwnedOverride
@@ -1184,21 +1191,21 @@ function PowersPanel({
             ONLY real because it's also your own club: none of it exists for a club you don't play for.
           </p>
 
-          <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-gray-900/60 p-2">
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-lg kit-row p-2">
             <span className="text-[11px] font-bold text-white/90">
               Captain: {career.captain ? "You" : "Someone else"}
             </span>
             {!career.captain && (
               <button
                 onClick={() => onAppointSelfCaptain(club)}
-                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 font-black text-xs text-black whitespace-nowrap"
+                className="px-3 py-1.5 rounded-lg kit-btn kit-btn-gold font-black text-xs text-black whitespace-nowrap"
               >
                 Appoint yourself
               </button>
             )}
           </div>
 
-          <div className="mb-2 rounded-lg bg-gray-900/60 p-2">
+          <div className="mb-2 rounded-lg kit-row p-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-bold text-white/90">
                 Talisman tactic: {state.talisman ? "On" : "Off"}
@@ -1219,18 +1226,18 @@ function PowersPanel({
           </div>
 
           {leagueClubs.length > 0 && (
-            <div className="rounded-lg bg-gray-900/60 p-2">
+            <div className="rounded-lg kit-row p-2">
               <div className="text-[11px] font-bold text-white/90 mb-1">Sell yourself to a club of your choice</div>
               <div className="flex items-center gap-2">
                 <select
                   value={transferTarget} onChange={e => setTransferTarget(e.target.value)}
-                  className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-xs text-white"
+                  className="flex-1 rounded-lg kit-input px-2 py-1.5 text-xs text-white"
                 >
                   {leagueClubs.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <button
                   onClick={() => onTransferSelfTo(transferTarget)}
-                  className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 font-black text-xs text-white whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-lg kit-btn kit-btn-red font-black text-xs text-white whitespace-nowrap"
                 >
                   Transfer
                 </button>
@@ -1239,18 +1246,18 @@ function PowersPanel({
           )}
         </div>
       ) : (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+        <div className="kit-card p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Formation (manager's tactics)</div>
           <div className="flex items-center gap-2">
             <select
               value={formationId} onChange={e => setFormationId(e.target.value)}
-              className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+              className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
             >
               {FORMATIONS.map(f => <option key={f.id} value={f.id}>{f.name ?? f.id}</option>)}
             </select>
             <button
               onClick={() => onSetFormation(club, formationId)}
-              className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 font-black text-xs whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg kit-btn kit-btn-green font-black text-xs whitespace-nowrap"
             >
               Set
             </button>
@@ -1266,7 +1273,7 @@ function PowersPanel({
         />
       )}
 
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+      <div className="kit-card p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Kit</div>
         <div className="mb-2 text-[9px] text-white/70 leading-snug">
           A real home AND away kit, exactly like a real match — clash rules still apply. Design A and B below are two full candidates you can put to a real fan vote (or set directly); whichever wins genuinely becomes this club's kit in real matches, not just here.
@@ -1307,10 +1314,10 @@ function PowersPanel({
           ))}
         </div>
         <div className="mt-2 flex gap-1">
-          <button onClick={() => onSetKit(club, kitA)} className="flex-1 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">
+          <button onClick={() => onSetKit(club, kitA)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black">
             Set Design A directly
           </button>
-          <button onClick={() => onSetKit(club, kitB)} className="flex-1 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">
+          <button onClick={() => onSetKit(club, kitB)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black">
             Set Design B directly
           </button>
         </div>
@@ -1319,43 +1326,43 @@ function PowersPanel({
             legitimate Design B win read as the vote "failing" on the
             ceremony screen even though it won fairly. Two real options now. */}
         <div className="mt-1.5 flex gap-1">
-          <button onClick={() => onProposeKitVote(club, kitA, kitB, "a")} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+          <button onClick={() => onProposeKitVote(club, kitA, kitB, "a")} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
             Vote — favour A
           </button>
-          <button onClick={() => onProposeKitVote(club, kitA, kitB, "b")} className="flex-1 py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+          <button onClick={() => onProposeKitVote(club, kitA, kitB, "b")} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
             Vote — favour B
           </button>
         </div>
-        <button onClick={() => onProposeKitVote(club, kitA, kitB, undefined)} className="mt-1.5 w-full py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black text-white/90">
+        <button onClick={() => onProposeKitVote(club, kitA, kitB, undefined)} className="mt-1.5 w-full py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black text-white/90">
           Vote — no favourite, let the fans decide
         </button>
       </div>
 
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+      <div className="kit-card p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Presidency</div>
         {state.isPresident ? (
           <div className="flex items-center gap-2">
             <input
               type="text" inputMode="numeric" value={wage.toLocaleString()}
               onChange={e => setWage(Math.max(0, Number(e.target.value.replace(/[^\d]/g, "")) || 0))}
-              className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white"
+              className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white"
             />
-            <button onClick={() => onSetPresidentWage(club, wage)} className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 font-black text-xs whitespace-nowrap">
+            <button onClick={() => onSetPresidentWage(club, wage)} className="px-3 py-1.5 rounded-lg kit-btn kit-btn-green font-black text-xs whitespace-nowrap">
               Set wage
             </button>
           </div>
         ) : (
-          <button onClick={() => onStandForPresident(club)} className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+          <button onClick={() => onStandForPresident(club)} className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
             Stand for president (shareholder vote)
           </button>
         )}
       </div>
 
       {!isOwnClub && otherOwnedClubs.length > 0 && (
-        <div className="bg-gray-800 border border-red-900/60 rounded-xl p-3">
+        <div className="kit-card ring-1 ring-red-500/40 p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-red-300 mb-1.5">Merge/takeover (100% ownership of both required)</div>
           <div className="flex items-center gap-2">
-            <select value={mergeTarget} onChange={e => setMergeTarget(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white">
+            <select value={mergeTarget} onChange={e => setMergeTarget(e.target.value)} className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white">
               {otherOwnedClubs.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <button onClick={() => onMergeClubs(club, mergeTarget)} className="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 font-black text-xs whitespace-nowrap">
@@ -1365,10 +1372,10 @@ function PowersPanel({
         </div>
       )}
 
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+      <div className="kit-card p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Son</div>
         {!son ? (
-          <button onClick={onHaveASon} className="w-full py-1.5 rounded-md bg-blue-600/80 hover:bg-blue-500 text-[10px] font-black">
+          <button onClick={onHaveASon} className="w-full py-1.5 rounded-lg kit-btn kit-btn-blue text-[10px] font-black">
             Have a son
           </button>
         ) : (
@@ -1385,11 +1392,11 @@ function PowersPanel({
                   Getting him into YOUR squad isn't wired up here yet — see the transfer market instead.
                 </div>
               ) : !son.club ? (
-                <button onClick={() => onPromoteSon(club)} className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black">
+                <button onClick={() => onPromoteSon(club)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green text-[10px] font-black">
                   Promote to first team
                 </button>
               ) : (
-                <button onClick={() => onTransferSon(club)} className="flex-1 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black">
+                <button onClick={() => onTransferSon(club)} className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black">
                   Transfer here
                 </button>
               )}
@@ -1398,11 +1405,11 @@ function PowersPanel({
         )}
       </div>
 
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-3">
+      <div className="kit-card p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1.5">Facilities</div>
         <div className="flex items-center gap-2 mb-1.5">
-          <input value={stadiumName} onChange={e => setStadiumName(e.target.value)} className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white" />
-          <button onClick={() => onRenameStadium(club, stadiumName)} className="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 font-black text-xs whitespace-nowrap">
+          <input value={stadiumName} onChange={e => setStadiumName(e.target.value)} className="flex-1 rounded-lg kit-input px-2 py-1.5 text-sm text-white" />
+          <button onClick={() => onRenameStadium(club, stadiumName)} className="px-3 py-1.5 rounded-lg kit-btn kit-btn-glass font-black text-xs whitespace-nowrap">
             Rename
           </button>
         </div>
@@ -1418,21 +1425,21 @@ function PowersPanel({
           <button
             disabled={!!facilities.stadiumBuild}
             onClick={() => onUpgradeStadiumCapacity(club)}
-            className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-[10px] font-black"
+            className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 text-[10px] font-black"
           >
             {facilities.stadiumBuild ? "Expansion under way" : "+5,000 seats (real build time)"}
           </button>
           <button
             disabled={facilities.trainingGroundTier >= 3}
             onClick={() => onUpgradeTrainingGround(club)}
-            className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-[10px] font-black"
+            className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 text-[10px] font-black"
           >
             Upgrade training
           </button>
           <button
             disabled={facilities.youthAcademyTier >= 3}
             onClick={() => onUpgradeYouthAcademy(club)}
-            className="flex-1 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-[10px] font-black"
+            className="flex-1 py-1.5 rounded-lg kit-btn kit-btn-green disabled:opacity-40 text-[10px] font-black"
           >
             Upgrade academy
           </button>
@@ -1581,7 +1588,7 @@ function SignPlayerPanel({
       <div className="flex gap-2 mb-2">
         <input
           value={search} onChange={e => setSearch(e.target.value)} placeholder="Search players…"
-          className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-white placeholder:text-white/40"
+          className="flex-1 rounded-lg kit-input px-3 py-2 text-sm text-white placeholder:text-white/40"
         />
         <button
           onClick={() => setShowFilters(v => !v)}
@@ -1592,7 +1599,7 @@ function SignPlayerPanel({
       </div>
 
       {showFilters && (
-        <div className="mb-2 bg-gray-800 border border-gray-700 rounded-xl p-2.5 space-y-2">
+        <div className="mb-2 kit-card p-2.5 space-y-2">
           <div>
             <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Position</div>
             <div className="flex flex-wrap gap-1">
@@ -1613,7 +1620,7 @@ function SignPlayerPanel({
               <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Nationality</div>
               <select
                 value={nationFilter} onChange={e => setNationFilter(e.target.value)}
-                className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
               >
                 <option value="">Any</option>
                 {allNations.map(n => <option key={n} value={n}>{n}</option>)}
@@ -1623,7 +1630,7 @@ function SignPlayerPanel({
               <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Club</div>
               <select
                 value={clubFilter} onChange={e => setClubFilter(e.target.value)}
-                className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
               >
                 <option value="">Any</option>
                 {allClubs.map(c => <option key={c} value={c}>{c === FREE_AGENTS_CLUB ? "Free agent" : c}</option>)}
@@ -1636,12 +1643,12 @@ function SignPlayerPanel({
             <div className="flex items-center gap-2">
               <input
                 type="number" placeholder="Min" value={minRating} onChange={e => setMinRating(e.target.value)}
-                className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
               />
               <span className="text-white/50 text-[10px]">to</span>
               <input
                 type="number" placeholder="Max" value={maxRating} onChange={e => setMaxRating(e.target.value)}
-                className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
               />
             </div>
           </div>
@@ -1652,12 +1659,12 @@ function SignPlayerPanel({
               <div className="flex items-center gap-2">
                 <input
                   type="number" placeholder="Min" value={minAge} onChange={e => setMinAge(e.target.value)}
-                  className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                  className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
                 />
                 <span className="text-white/50 text-[10px]">to</span>
                 <input
                   type="number" placeholder="Max" value={maxAge} onChange={e => setMaxAge(e.target.value)}
-                  className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+                  className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white"
                 />
               </div>
             </div>
@@ -1678,7 +1685,7 @@ function SignPlayerPanel({
                     const digits = e.target.value.replace(/[^\d]/g, "");
                     setMaxValue(digits);
                   }}
-                  className="w-full rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white tabular-nums"
+                  className="w-full rounded-lg kit-input px-2 py-1.5 text-[11px] text-white tabular-nums"
                 />
               </div>
             </div>
@@ -1708,7 +1715,7 @@ function SignPlayerPanel({
           {activeFilterCount > 0 && (
             <button
               onClick={() => { setPositionFilter(new Set()); setNationFilter(""); setClubFilter(""); setMinRating(""); setMaxRating(""); setMinAge(""); setMaxAge(""); setMaxValue(""); }}
-              className="w-full py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-[10px] font-black text-white/80"
+              className="w-full py-1.5 rounded-lg kit-btn kit-btn-glass text-[10px] font-black text-white/80"
             >
               Clear filters
             </button>
@@ -1716,9 +1723,9 @@ function SignPlayerPanel({
         </div>
       )}
 
-      <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[45vh] overflow-y-auto">
+      <div className="kit-card overflow-hidden max-h-[45vh] overflow-y-auto">
         {pool.map(p => (
-          <div key={`${p.fromClub}:${p.id}`} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
+          <div key={`${p.fromClub}:${p.id}`} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
             <div>
               <div className="text-sm font-bold text-white">{p.name}</div>
               <div className="text-[10px] text-white font-semibold">
@@ -1765,11 +1772,11 @@ function ManagerPanel({
   // him — nothing new needed there, it just was never reflected here.
   const marketPool = career.availableManagers ?? allPoolManagers();
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
+    <div className="kit-card overflow-hidden max-h-[50vh] overflow-y-auto">
       {allPoolManagers().map(name => {
         if (name === current) {
           return (
-            <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
+            <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
               <span className="text-sm font-bold text-emerald-300">{name} (current)</span>
             </div>
           );
@@ -1777,7 +1784,7 @@ function ManagerPanel({
         if (!marketPool.includes(name)) return null;
         const interest = managerInterest(career, name, club);
         return (
-          <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-black/20 last:border-b-0">
+          <div key={name} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-b-0">
             <div className="min-w-0">
               <div className="text-sm font-bold text-white truncate">{name}</div>
               {!interest.willing && (

@@ -14,27 +14,34 @@
  *   3. energy and the KIB cans — the real can pictures, lit in their own
  *      colours, with Use and Buy;
  *   4. your shop items.
- * Every card is themed in your club's colours. Motion (HomeFx.tsx): cards
- * rise in when Home opens, numbers count, a used can shakes and empties into
- * the energy bar, and the avatar breathes and celebrates a win. All of it
- * stops for a phone set to reduce motion.
+ * Every card is themed in your club's colours. Motion: cards rise in when
+ * Home opens, numbers count, a used can shakes and empties into the energy
+ * bar, and the avatar breathes and celebrates a win. All of it stops for a
+ * phone set to reduce motion.
+ *
+ * Built from the design kit (components/star/ui) — ClubCard, Pill, StatBar,
+ * PressButton, RiseIn, Glow, Stadium and the juice (Burst, Shake, Drips,
+ * FloatText) — so any other screen can take the same look in one line.
  *
  * The stats/contract card lives on the screen to the left, the shop on the
  * one to the right (SwipePages, page.tsx).
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
 import { kitsOf } from "@/lib/star/kits";
 import { formatMoney } from "@/lib/star/money";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { divisionOf, leagueNameFor, fixtureTimestamp } from "@/lib/star/calendar";
-import { rgba, tint, luminance } from "@/lib/star/heroFigure";
 import ClubBadge from "./ClubBadge";
 import KibCanIcon from "./KibCanIcon";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import ShopItemsCard from "./ShopItemsCard";
-import { useCountUp, prefersReducedMotion } from "./HomeFx";
+import {
+  ClubCard, Pill, StatBar, levelColors, PressButton, RiseIn, Glow, Stadium,
+  Burst, Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
+  glowOf, rgba, tint, useClubTheme,
+} from "./ui";
 
 const ACCENT: Record<KibCan["id"], string> = { basic: "#fb923c", premium: "#60a5fa", elite: "#c084fc" };
 const POS_NAME: Record<string, string> = { ST: "Striker", CAM: "Attacking Mid", LW: "Left Wing", RW: "Right Wing", CM: "Central Mid" };
@@ -53,13 +60,9 @@ interface Props {
   onOpen: (phase: HubPhase) => void;
 }
 
-const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
-/** A shirt colour that can light a dark card: very dark kits (black, navy)
- *  are lifted so the glow still shows; white kits fall back to their trim. */
-function glowOf(shirt: string, trim: string): string {
-  const base = luminance(shirt) > 0.85 ? trim : shirt;
-  return luminance(base) < 0.12 ? tint(base, 0.35) : base;
-}
+export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
+/** Re-exported for the match-day screen, which imports them from here. */
+export { glowOf, cardStyle } from "./ui";
 
 interface FormResult { res: "W" | "D" | "L"; us: number; them: number; opp: string; rating?: number; week: number }
 export function lastFive(career: CareerState): FormResult[] {
@@ -76,7 +79,7 @@ export function lastFive(career: CareerState): FormResult[] {
 /** Days from "today" to the next match. The game has no clock of its own, so
  *  today is the day after your last match (or five days out before the
  *  first one) — which is what the week in between actually is. */
-function daysToNext(career: CareerState, next: Fixture): number {
+export function daysToNext(career: CareerState, next: Fixture): number {
   const div = divisionOf(career);
   const ts = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, div);
   const played = career.fixtures.filter((f) => f.played);
@@ -86,28 +89,17 @@ function daysToNext(career: CareerState, next: Fixture): number {
   return Math.max(0, Math.round((nextTs - today) / 86400000));
 }
 
-/** The card look every home card shares: club-tinted glass, layered shadow,
- *  a soft highlight along the top edge. */
-function cardStyle(glow: string, strength = 0.28): React.CSSProperties {
-  return {
-    background: `radial-gradient(120% 140% at 0% 0%, ${rgba(glow, strength)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`,
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px ${rgba(glow, 0.22)}, 0 10px 24px -12px rgba(0,0,0,.8), 0 2px 6px rgba(0,0,0,.35)`,
-  };
-}
-
 export default function HomeHub(p: Props) {
   const { career } = p;
-  const kit = kitsOf(career.player.club, career.clubKits?.[career.player.club]).home;
-  const glow = glowOf(kit.shirt, kit.trim);
-  const rise = (i: number): React.CSSProperties => ({ animationDelay: `${i * 80}ms` });
+  const { shirt, trim, glow } = useClubTheme(career);
   return (
     <div className="space-y-2.5 pb-3">
-      <div className="kib-rise" style={rise(0)}><Hero {...p} glow={glow} kitShirt={kit.shirt} kitTrim={kit.trim} /></div>
-      <div className="kib-rise" style={rise(1)}><NextMatchCard {...p} glow={glow} /></div>
-      <div className="kib-rise" style={rise(2)}><Energy {...p} glow={glow} /></div>
-      <div className="kib-rise" style={rise(3)}>
+      <RiseIn onPageActive index={0}><Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} /></RiseIn>
+      <RiseIn onPageActive index={1}><NextMatchCard {...p} glow={glow} /></RiseIn>
+      <RiseIn onPageActive index={2}><Energy {...p} glow={glow} /></RiseIn>
+      <RiseIn onPageActive index={3}>
         <ShopItemsCard career={career} onOpenShop={() => p.onOpen("shop-kib")} showCans={false} glow={glow} />
-      </div>
+      </RiseIn>
     </div>
   );
 }
@@ -118,11 +110,11 @@ function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Pro
   const five = lastFive(career);
   if (!nextFixture) {
     return (
-      <div className="rounded-2xl p-3 text-center" style={cardStyle(glow)}>
+      <ClubCard glow={glow} className="rounded-2xl p-3 text-center">
         <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">Season complete</div>
         <div className="mt-0.5 text-[12px] font-bold text-white/80">Every fixture is played — the awards are next.</div>
         <LastFive five={five} />
-      </div>
+      </ClubCard>
     );
   }
   const home = nextFixture.home ? myTeam : nextFixture.opponent;
@@ -134,13 +126,7 @@ function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Pro
   const when = days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`;
   const hg = glowOf(homeKit.shirt, homeKit.trim), ag = glowOf(awayKit.shirt, awayKit.trim);
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl"
-      style={{
-        background: `radial-gradient(90% 120% at 0% 50%, ${rgba(hg, 0.42)} 0%, transparent 58%), radial-gradient(90% 120% at 100% 50%, ${rgba(ag, 0.42)} 0%, transparent 58%), linear-gradient(180deg, #172033, #0a0f1a)`,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(255,255,255,.08), 0 12px 26px -14px rgba(0,0,0,.9), 0 2px 6px rgba(0,0,0,.35)`,
-      }}
-    >
+    <ClubCard duel={[hg, ag]} className="relative overflow-hidden rounded-2xl">
       <div className="flex items-center justify-between px-3 pt-2">
         <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-300/30">Next match</span>
         <span className="truncate pl-2 text-[10px] font-black uppercase tracking-wider text-white/60">{comp}</span>
@@ -162,7 +148,7 @@ function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Pro
       <div className="border-t border-white/10 bg-black/25 px-2.5 pb-2 pt-1.5">
         <LastFive five={five} />
       </div>
-    </div>
+    </ClubCard>
   );
 }
 
@@ -170,7 +156,7 @@ function TeamSide({ club, kitShirt, kitTrim, you }: { club: string; kitShirt: st
   return (
     <div className="flex min-w-0 flex-col items-center">
       <div className="relative grid h-[50px] w-[50px] place-items-center">
-        <div className="absolute inset-1 rounded-full blur-md" style={{ background: rgba(glowOf(kitShirt, kitTrim), 0.55) }} />
+        <Glow color={glowOf(kitShirt, kitTrim)} alpha={0.55} className="inset-1 blur-md" />
         <div className="relative" style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,.55))" }}>
           <ClubBadge club={club} kit={{ shirt: kitShirt, trim: kitTrim }} size={44} />
         </div>
@@ -250,7 +236,7 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   }, [career.season, last?.week, last?.res]);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl" style={cardStyle(glow, 0.2)}>
+    <ClubCard glow={glow} strength={0.2} className="relative overflow-hidden rounded-2xl">
       <Stadium glow={glow} />
       <div className="relative flex justify-center pt-1.5">
         {/* 204 tall (was 236) so that on an iPhone 13 the next-match card
@@ -259,14 +245,16 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
         <div className={celebrate ? "kib-hop" : "kib-breathe"}>
           <PlayerAvatar career={career} width={172} height={204} look={look} celebrate={celebrate} />
         </div>
-        {celebrate && <Confetti colors={[kitShirt, kitTrim, "#fde047", "#ffffff"]} />}
+        {celebrate && <Burst colors={[kitShirt, kitTrim, "#fde047", "#ffffff"]} className="left-1/2 top-[38%]" />}
       </div>
       <div className="relative -mt-4 bg-gradient-to-b from-transparent via-black/45 to-black/70 px-3 pb-2.5 pt-3 text-center">
         <div className="flex items-center justify-center gap-2">
           <div style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.6))" }}>
             <ClubBadge club={career.player.club} kit={{ shirt: kitShirt, trim: kitTrim }} size={28} />
           </div>
-          <div className="min-w-0 truncate text-[21px] font-black leading-tight text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
+          {/* A dark plate behind the name: on the club-colour glow a bare
+              white name washed out (Harry's Plymouth screenshot, 28 Sep). */}
+          <div className="min-w-0 truncate rounded-lg bg-black/60 px-2.5 py-0.5 text-[21px] font-black leading-tight text-white" style={{ textShadow: "0 1px 0 rgba(0,0,0,.9), 0 2px 8px rgba(0,0,0,.8)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.08)" }}>
             {career.player.firstName} {career.player.lastName}
           </div>
         </div>
@@ -279,94 +267,7 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
           <Pill label="Age" value={String(career.player.age)} />
         </div>
       </div>
-    </div>
-  );
-}
-
-function Pill({ label, value, gold = false, valueClass = "text-white" }: { label: string; value: string; gold?: boolean; valueClass?: string }) {
-  return (
-    <div
-      className={`min-w-0 flex-1 rounded-full px-2.5 py-1 ${gold ? "bg-gradient-to-b from-yellow-300 to-amber-500" : "bg-gradient-to-b from-white/[0.16] to-white/[0.05]"}`}
-      style={{ boxShadow: gold ? "inset 0 1px 0 rgba(255,255,255,.55), 0 4px 12px -4px rgba(245,158,11,.7)" : "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.10), 0 4px 10px -6px rgba(0,0,0,.8)" }}
-    >
-      <div className={`truncate text-[15px] font-black leading-tight tabular-nums ${gold ? "text-gray-950" : valueClass}`}>{value}</div>
-      <div className={`text-[8px] font-black uppercase tracking-[0.2em] ${gold ? "text-gray-900/70" : "text-white/50"}`}>{label}</div>
-    </div>
-  );
-}
-
-/** Floodlights, the stand and the pitch, in the club's colour. */
-function Stadium({ glow }: { glow: string }) {
-  return (
-    <div className="pointer-events-none absolute inset-0">
-      {/* Night sky warming into the club colour at the bottom. */}
-      <div className="absolute inset-0" style={{ background: `radial-gradient(80% 60% at 50% 78%, ${rgba(glow, 0.55)} 0%, transparent 70%), linear-gradient(180deg, #060a14 0%, #0b1322 55%, #0b1322 100%)` }} />
-      {/* The stand: a crowd of tiny lit faces, fading into the dark. */}
-      <div
-        className="absolute inset-x-0 top-[9%] h-[48%]"
-        style={{
-          backgroundImage: `radial-gradient(circle, rgba(255,255,255,.28) 0.9px, transparent 1.4px), radial-gradient(circle, ${rgba(glow, 0.6)} 0.9px, transparent 1.4px)`,
-          backgroundSize: "7px 6px, 11px 9px",
-          backgroundPosition: "0 0, 3px 2px",
-          maskImage: "linear-gradient(180deg, transparent, #000 25%, #000 55%, transparent)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent, #000 25%, #000 55%, transparent)",
-          opacity: 0.5,
-        }}
-      />
-      {/* The stand's roof line. */}
-      <div className="absolute inset-x-0 top-[8%] h-[2px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-      {/* Two floodlight banks: a grid of lamps, a soft halo, and a faint
-          blurred beam falling towards him. */}
-      {[{ side: "left", x: "10%", rot: -26 }, { side: "right", x: "90%", rot: 26 }].map((f) => (
-        <div key={f.side} className="kib-flood absolute top-[3%]" style={{ left: f.x }}>
-          <div className="absolute -left-16 -top-14 h-32 w-32 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(220,235,255,.40), rgba(220,235,255,0))" }} />
-          <div
-            className="absolute -left-[60px] top-1 h-[230px] w-[120px] origin-top"
-            style={{
-              transform: `rotate(${f.rot}deg)`,
-              background: "linear-gradient(180deg, rgba(220,235,255,.15), rgba(220,235,255,0) 80%)",
-              clipPath: "polygon(42% 0, 58% 0, 100% 100%, 0 100%)",
-              filter: "blur(6px)",
-            }}
-          />
-          <div className="relative -left-[14px] h-[12px] w-[28px] rounded-[3px] bg-slate-800 p-[2px]" style={{ boxShadow: "0 0 10px 3px rgba(235,245,255,.55)" }}>
-            <div className="h-full w-full rounded-[2px]" style={{ backgroundImage: "radial-gradient(circle, #fff 1.2px, rgba(255,255,255,.35) 1.7px, transparent 2.2px)", backgroundSize: "6px 4px" }} />
-          </div>
-        </div>
-      ))}
-      {/* Spotlight on him. */}
-      <div className="kib-glow-pulse absolute left-1/2 top-[8%] h-[70%] w-[70%] -translate-x-1/2 rounded-full" style={{ background: "radial-gradient(closest-side, rgba(255,255,255,.16), transparent)" }} />
-      {/* The pitch he stands on, with mowing stripes. */}
-      <div
-        className="absolute inset-x-[-10%] bottom-[22%] h-[24%] rounded-[50%]"
-        style={{
-          background: "repeating-linear-gradient(90deg, #1f7a3a 0 22px, #1a6d33 22px 44px)",
-          boxShadow: "inset 0 10px 24px rgba(0,0,0,.55), inset 0 -2px 12px rgba(0,0,0,.4)",
-          maskImage: "radial-gradient(closest-side, #000 55%, transparent)",
-          WebkitMaskImage: "radial-gradient(closest-side, #000 55%, transparent)",
-          opacity: 0.85,
-        }}
-      />
-    </div>
-  );
-}
-
-function Confetti({ colors }: { colors: string[] }) {
-  const bits = Array.from({ length: 22 }, (_, i) => {
-    const a = (i / 22) * Math.PI * 2 + (i % 3) * 0.3;
-    const d = 70 + (i * 37) % 60;
-    return { dx: Math.cos(a) * d, dy: Math.sin(a) * d * 0.8 + 40, c: colors[i % colors.length], w: 4 + (i % 3) * 2, delay: (i % 5) * 40 };
-  });
-  return (
-    <div className="pointer-events-none absolute left-1/2 top-[38%]">
-      {bits.map((b, i) => (
-        <span
-          key={i}
-          className="kib-confetti absolute block rounded-[1px]"
-          style={{ width: b.w, height: b.w * 0.5, background: b.c, animationDelay: `${b.delay}ms`, ["--dx" as string]: `${b.dx}px`, ["--dy" as string]: `${b.dy}px` } as React.CSSProperties}
-        />
-      ))}
-    </div>
+    </ClubCard>
   );
 }
 
@@ -375,34 +276,20 @@ function Confetti({ colors }: { colors: string[] }) {
 function Energy({ career, onUseCan, onBuyCan, glow }: Props & { glow: string }) {
   const e = Math.max(0, Math.min(100, Math.round(career.energy)));
   const shown = useCountUp(e, 900);
-  // A sheen races along the bar the moment energy goes UP (a can was drunk).
-  const prev = useRef(e);
-  const [boost, setBoost] = useState(0);
-  useEffect(() => {
-    if (e > prev.current) setBoost((b) => b + 1);
-    prev.current = e;
-  }, [e]);
-  const fill = e >= 60 ? ["#34d399", "#a3e635"] : e >= 35 ? ["#f59e0b", "#fde047"] : ["#dc2626", "#fb7185"];
+  const fill = levelColors(e);
   return (
-    <div className="rounded-2xl p-3" style={cardStyle(glow)}>
+    <ClubCard glow={glow} className="rounded-2xl p-3">
       <div className="flex items-baseline justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">⚡ Energy</span>
         <span className="text-[20px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 12px ${rgba(fill[0], 0.6)}` }}>{Math.round(shown)}%</span>
       </div>
-      <div className="relative mt-1.5 h-4 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }}>
-        <div
-          className="relative h-full overflow-hidden rounded-full"
-          style={{ width: `${e}%`, background: `linear-gradient(90deg, ${fill[0]}, ${fill[1]})`, boxShadow: `0 0 14px ${rgba(fill[0], 0.7)}`, transition: prefersReducedMotionSafe() ? "none" : "width 900ms cubic-bezier(.2,.8,.2,1)" }}
-        >
-          <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-full bg-white/35" />
-          <div key={boost} className={`absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/70 to-transparent ${boost ? "kib-sheen-fast" : "kib-sheen"}`} />
-        </div>
-      </div>
+      {/* A sheen races along the bar the moment energy goes UP (a can was drunk). */}
+      <StatBar value={e} colors={fill} className="mt-1.5 h-4" />
       <div className="mt-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/55">KIB cans</div>
       <div className="mt-1 grid grid-cols-3 gap-2">
         {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={onUseCan} onBuy={onBuyCan} />)}
       </div>
-    </div>
+    </ClubCard>
   );
 }
 
@@ -410,7 +297,8 @@ function prefersReducedMotionSafe(): boolean {
   return typeof window !== "undefined" && prefersReducedMotion();
 }
 
-function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void }) {
+/** `compact`: a shorter can picture, for the match-day screen (MatchdayScreen.tsx). */
+export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean }) {
   const accent = ACCENT[c.id];
   const count = career.kibCans[c.id];
   const shownCount = useCountUp(count, 500);
@@ -441,41 +329,38 @@ function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; career: Car
       >
         ×{Math.round(shownCount)}
       </span>
-      <div className="relative h-[68px] w-full">
+      <div className={`relative w-full ${compact ? "h-[44px]" : "h-[68px]"}`}>
         <div className="absolute bottom-0 left-1/2 h-2 w-12 -translate-x-1/2 rounded-[50%] bg-black/60 blur-[3px]" />
-        <div className="absolute bottom-0 left-1/2 h-10 w-12 -translate-x-1/2 rounded-full blur-lg" style={{ background: rgba(accent, 0.55) }} />
-        <div key={drinking} className={`absolute inset-x-0 bottom-1 flex justify-center ${drinking ? "kib-shake" : ""}`} style={{ filter: `drop-shadow(0 4px 8px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
-          <KibCanIcon can={c} className="h-[64px] w-[38px]" />
-        </div>
+        <Glow color={accent} alpha={0.55} className="bottom-0 left-1/2 h-10 w-12 -translate-x-1/2 blur-lg" />
+        <Shake trigger={drinking} className="absolute inset-x-0 bottom-1 flex justify-center" style={{ filter: `drop-shadow(0 4px 8px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
+          <KibCanIcon can={c} className={compact ? "h-[42px] w-[25px]" : "h-[64px] w-[38px]"} />
+        </Shake>
         {drinking > 0 && (
           <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">
-            {[-10, -3, 4].map((dx, i) => (
-              <span key={i} className="kib-drop absolute left-[38%] top-[10%] block h-2 w-1.5 rounded-full" style={{ background: accent, animationDelay: `${250 + i * 90}ms`, ["--dx" as string]: `${dx}px` } as React.CSSProperties} />
-            ))}
-            <span className="kib-minus absolute left-1 top-0 text-[12px] font-black text-white" style={{ textShadow: `0 0 6px ${accent}` }}>−1</span>
+            <Drips trigger={drinking} color={accent} />
+            <FloatText trigger={drinking} motion="tick" text="−1" className="left-1 top-0 text-[12px] text-white" style={{ textShadow: `0 0 6px ${accent}` }} />
           </div>
         )}
       </div>
       <div className="mt-1 text-[12px] font-black leading-tight text-white">{c.name.replace(" KIB Can", "")}</div>
       <div className="h-3.5 truncate text-[9.5px] font-bold text-white/65">{effect}</div>
-      <button
+      <PressButton
+        variant="accent"
+        accent={accent}
         disabled={!canUse}
         onClick={use}
-        className="kib-press mt-1.5 w-full rounded-lg py-1.5 text-[11px] font-black uppercase tracking-wide text-gray-950 disabled:text-white/45"
-        style={canUse
-          ? { background: `linear-gradient(180deg, ${tint(accent, 0.3)}, ${accent} 55%, ${tint(accent, -0.15)})`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.5), 0 4px 10px -3px ${rgba(accent, 0.8)}` }
-          : { background: "rgba(55,65,81,.8)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.06)" }}
+        className="mt-1.5 w-full rounded-lg py-1.5 text-[11px] font-black uppercase tracking-wide"
       >
         {ready ? "Ready ✓" : full ? "Full" : "Use"}
-      </button>
-      <button
+      </PressButton>
+      <PressButton
         disabled={!canBuy}
         onClick={() => onBuy(c)}
         aria-label={`Buy a ${c.name} for ${formatMoney(price)}`}
-        className="kib-press mt-1 w-full rounded-lg bg-black/35 py-1 text-[10.5px] font-black text-yellow-200 ring-1 ring-yellow-300/30 disabled:opacity-40"
+        className="mt-1 w-full rounded-lg bg-black/35 py-1 text-[10.5px] font-black text-yellow-200 ring-1 ring-yellow-300/30 disabled:opacity-40"
       >
         Buy ★{formatMoney(price)}
-      </button>
+      </PressButton>
     </div>
   );
 }

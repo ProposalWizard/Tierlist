@@ -1,5 +1,7 @@
 "use client";
 import type { SaveSlotSummary } from "@/lib/star/storage";
+import { PressButton, rgba } from "./ui";
+import { SetCard, SetHead, SetNote } from "./settingsKit";
 
 /**
  * SAVES — switch between careers, or start a fresh one, without losing any
@@ -12,6 +14,10 @@ import type { SaveSlotSummary } from "@/lib/star/storage";
  * very first load of the game always has); picking an empty slot starts a
  * brand new career there, exactly like the very first time this game was
  * ever played, and leaves every other slot untouched.
+ *
+ * Reskinned 28 Sep 2026 to the home screen's look: a club-lit card, the
+ * save you are playing lit in your colour, kit buttons. The club, season
+ * and star rating now wrap onto their own line instead of being cut off.
  */
 
 interface Props {
@@ -20,15 +26,17 @@ interface Props {
   onSwitch: (slot: number) => void;
   onStartNew: (slot: number) => void;
   onDelete: (slot: number) => void;
+  /** Your club's colour, to light the card and the save you're playing. */
+  glow?: string;
 }
 
-export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew, onDelete }: Props) {
+export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew, onDelete, glow = "#10b981" }: Props) {
   return (
-    <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-      <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Saves</div>
-      <p className="mt-1 text-[11px] text-gray-300">
+    <SetCard tone={glow}>
+      <SetHead>Saves</SetHead>
+      <SetNote>
         Keep up to {saves.length} careers going and switch between them, or start a brand new one without losing the others.
-      </p>
+      </SetNote>
 
       <div className="mt-2 space-y-1.5">
         {saves.map((save) => {
@@ -36,14 +44,25 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
           return (
             <div
               key={save.slot}
-              className={`rounded-lg border p-2 ${isActive ? "border-emerald-500/60 bg-emerald-500/10" : "border-gray-700 bg-gray-900/40"}`}
+              className="rounded-xl p-2"
+              style={isActive
+                ? { background: `linear-gradient(90deg, ${rgba(glow, 0.32)}, ${rgba(glow, 0.1)})`, boxShadow: `inset 0 0 0 1px ${rgba(glow, 0.7)}, inset 0 1px 0 rgba(255,255,255,.12), 0 0 16px -6px ${rgba(glow, 0.9)}` }
+                : { background: "linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(255,255,255,.06)" }}
             >
               <div className="flex items-center gap-2">
+                <div
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[14px] font-black tabular-nums"
+                  style={isActive
+                    ? { background: `linear-gradient(180deg, ${rgba(glow, 0.95)}, ${rgba(glow, 0.6)})`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.35)" }
+                    : { background: "rgba(3,7,18,.6)", boxShadow: "inset 0 1px 3px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.08)", color: "rgba(255,255,255,.6)" }}
+                >
+                  {save.slot}
+                </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Save {save.slot}</span>
                     {isActive && (
-                      <span className="rounded-full bg-emerald-500/25 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-emerald-200">
+                      <span className="rounded-full bg-emerald-400/25 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-emerald-200" style={{ boxShadow: "inset 0 0 0 1px rgba(52,211,153,.45)" }}>
                         Playing
                       </span>
                     )}
@@ -56,46 +75,42 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
                   {save.empty ? (
                     <div className="mt-0.5 text-[11px] text-white/50">Empty</div>
                   ) : (
-                    <div className="mt-0.5 truncate text-[12px] font-bold text-white">
-                      {save.playerName}{" "}
-                      <span className="font-normal text-white/60">
+                    <>
+                      <div className="mt-0.5 truncate text-[12px] font-black text-white">{save.playerName}</div>
+                      <div className="text-[10.5px] font-bold leading-snug text-white/70">
                         {/* A save with no club is a trial in progress — a real
                             career nobody has signed yet (see hasClub,
                             calendar.ts). Naming it rather than printing an
                             empty club keeps it from reading as a broken or
                             spare slot to start over on. */}
                         {save.signed
-                          ? <>· {save.club} · Season {save.season} · {save.starRating?.toFixed(1)}★</>
-                          : <>· No club yet · {save.starRating?.toFixed(1)}★</>}
-                      </span>
-                    </div>
+                          ? <>{save.club} · Season {save.season} · <span className="text-yellow-200">{save.starRating?.toFixed(1)}★</span></>
+                          : <>No club yet · <span className="text-yellow-200">{save.starRating?.toFixed(1)}★</span></>}
+                      </div>
+                    </>
                   )}
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1.5">
+                <div className="flex shrink-0 flex-col items-stretch gap-1 min-[380px]:flex-row min-[380px]:items-center">
                   {save.empty ? (
-                    <button
-                      onClick={() => onStartNew(save.slot)}
-                      className="rounded bg-emerald-600 px-2.5 py-1.5 text-[10px] font-black text-white hover:bg-emerald-500"
-                    >
+                    <PressButton variant="primary" size="none" onClick={() => onStartNew(save.slot)} className="rounded-lg px-2.5 py-1.5 text-[10px] font-black">
                       Start career
-                    </button>
+                    </PressButton>
                   ) : (
                     <>
                       {!isActive && (
-                        <button
-                          onClick={() => onSwitch(save.slot)}
-                          className="rounded bg-gray-700 px-2.5 py-1.5 text-[10px] font-black text-white hover:bg-gray-600"
-                        >
+                        <PressButton variant="secondary" size="none" onClick={() => onSwitch(save.slot)} className="rounded-lg px-2.5 py-1.5 text-[10px] font-black">
                           Switch
-                        </button>
+                        </PressButton>
                       )}
-                      <button
+                      <PressButton
+                        size="none"
                         onClick={() => onDelete(save.slot)}
-                        className="rounded border border-red-500/60 bg-red-500/15 px-2.5 py-1.5 text-[10px] font-black text-red-200 hover:bg-red-500/25"
+                        className="rounded-lg px-2.5 py-1.5 text-[10px] font-black text-red-100"
+                        style={{ background: "linear-gradient(180deg, rgba(248,113,113,.28), rgba(220,38,38,.14))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(248,113,113,.55)" }}
                       >
                         {isActive ? "Delete & start over" : "Delete"}
-                      </button>
+                      </PressButton>
                     </>
                   )}
                 </div>
@@ -104,6 +119,6 @@ export default function SaveSlotsPanel({ saves, activeSlot, onSwitch, onStartNew
           );
         })}
       </div>
-    </div>
+    </SetCard>
   );
 }

@@ -11,8 +11,8 @@
  */
 import type { CareerState } from "@/lib/star/types";
 import { KIB_CANS } from "@/lib/star/shopData";
-import { rgba } from "@/lib/star/heroFigure";
 import KibCanIcon from "./KibCanIcon";
+import { ClubCard, Pop } from "./ui";
 
 export default function ShopItemsCard({ career, onOpenShop, showCans = true, glow = "#fb923c" }: {
   career: CareerState; onOpenShop: () => void;
@@ -23,13 +23,7 @@ export default function ShopItemsCard({ career, onOpenShop, showCans = true, glo
   const boot = career.currentBoot;
   const worn = boot.matches > 0;
   return (
-    <div
-      className="mt-2 rounded-2xl p-3"
-      style={{
-        background: `radial-gradient(120% 140% at 0% 0%, ${rgba(glow, 0.22)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px ${rgba(glow, 0.2)}, 0 10px 24px -12px rgba(0,0,0,.8)`,
-      }}
-    >
+    <ClubCard glow={glow} strength={0.22} className="mt-2 rounded-2xl p-3">
       <div className="flex items-center justify-between">
         <div className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300">🛍️ Your shop items</div>
         <button onClick={onOpenShop} className="kib-press rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/80 hover:text-white">
@@ -45,7 +39,7 @@ export default function ShopItemsCard({ career, onOpenShop, showCans = true, glo
             {boot.extraTouch && worn && <span className="rounded bg-fuchsia-500/30 px-1 text-[8.5px] font-black text-fuchsia-200">TOUCH</span>}
           </div>
           <div className="text-[10.5px] font-bold text-white/70">
-            {worn ? `${boot.matches} match${boot.matches === 1 ? "" : "es"} left · Pow +${boot.power} · Tec +${boot.technique}` : "Worn out — no boost"}
+            {worn ? <><Pop value={boot.matches}>{boot.matches}</Pop> match{boot.matches === 1 ? "" : "es"} left · Pow +{boot.power} · Tec +{boot.technique}</> : "Worn out — no boost"}
           </div>
         </div>
       </div>
@@ -58,7 +52,7 @@ export default function ShopItemsCard({ career, onOpenShop, showCans = true, glo
                 <KibCanIcon can={c} className="h-8 w-5 shrink-0" />
                 <div className="min-w-0">
                   <div className="truncate text-[10px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
-                  <div className="text-[12px] font-black tabular-nums text-white">×{career.kibCans[c.id]}</div>
+                  <div className="text-[12px] font-black tabular-nums text-white"><Pop value={career.kibCans[c.id]}>×{career.kibCans[c.id]}</Pop></div>
                   {ready && <div className="text-[8.5px] font-black uppercase text-emerald-300">Ready ✓</div>}
                 </div>
               </div>
@@ -66,6 +60,6 @@ export default function ShopItemsCard({ career, onOpenShop, showCans = true, glo
           })}
         </div>
       )}
-    </div>
+    </ClubCard>
   );
 }

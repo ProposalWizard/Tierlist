@@ -162,6 +162,22 @@ export default function PlayAreaPage() {
           </div>
         </Link>
 
+        <Link href="/star-blender-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>Blender 3D &#8594;</div>
+          <div style={tileSub}>
+            The 3D footballer rendered in Blender: pick any club and he is recoloured
+            into its kit, plus the stills, hair, animations and the home-screen mock-up.
+          </div>
+        </Link>
+
+        <Link href="/star-3d-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>3D &#8594;</div>
+          <div style={tileSub}>
+            One of every mode with the players in the new 3D look, and a Classic / 3D
+            switch to compare the same moment. The real game stays Classic.
+          </div>
+        </Link>
+
         {/* ── THE DIALS ── */}
         <section style={{ ...tile, cursor: "default" }}>
           <div style={tileTitle}>Tuning</div>

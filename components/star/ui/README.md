@@ -1,0 +1,79 @@
+# The design kit — the home screen's look, anywhere
+
+Harry, 28 Sep 2026: *"that can animation is elite, we need stuff like that all
+over … all the pages should just be reskinned to fit the new home screen vibe."*
+
+Everything the home screen (`HomeHub.tsx`) and the title screen
+(`TitleScreen.tsx`) are built from. Import from `components/star/ui`:
+
+```tsx
+import { KitStyles, useClubTheme, ClubCard, Pill, StatBar, PressButton, CountUp,
+  RiseIn, Glow, Stadium, Burst, FloatText, Shake, Pop, Shine, Drips, useTrigger } from "@/components/star/ui";
+```
+
+**Render `<KitStyles />` once** on any screen that is not inside the dashboard
+(the dashboard shell already renders it as `HomeFxStyles`). Every animation
+stops for a phone set to reduce motion.
+
+## Colours
+
+```tsx
+const theme = useClubTheme(career);   // { club, shirt, trim, glow }
+clubTheme("Arsenal", career);         // any other club (the other side of a fixture)
+```
+
+`glow` is the colour to light things with: very dark kits are lifted, white
+kits fall back to their trim.
+
+## Pieces
+
+| Piece | One line | What it is |
+|---|---|---|
+| `ClubCard` | `<ClubCard glow={theme.glow} className="p-3">…</ClubCard>` | Club-colour glass card, layered shadow, top highlight. `strength` = how much colour (0.28). `duel={[a, b]}` for two clubs meeting. |
+| `Pill` | `<Pill gold label="Rating" value="★ 7.2" />` | A value over a small caps label. Sits in a flex row. |
+| `StatBar` | `<StatBar value={energy} className="mt-1.5 h-4" />` | Glossy bar: gradient fill, sheen, glides to new values, races a sheen when it goes up. `colors={[a, b]}`, or green/amber/red by level. |
+| `PressButton` | `<PressButton variant="primary" pulse>Continue</PressButton>` | Presses in under the finger. `primary` / `secondary` / `danger` / `gold` / `accent` (`accent="#60a5fa"`) / `plain`. `size` sm/md/lg/none. `pulse` = the Play button's pulse. |
+| `CountUp` | `<CountUp value={money} format={(n) => formatMoney(Math.round(n))} />` | A number that counts to its new value. `useCountUp(value)` for the raw number. |
+| `RiseIn` | `<RiseIn index={i}>…</RiseIn>` | Staggered entrance, 80 ms apart. `delay` to wait first. `onPageActive` inside the swipe pages. |
+| `Glow` | `<Glow color={theme.glow} className="inset-1 blur-md" />` | A soft coloured glow behind something (put it first in a `relative` box). `pulse` to breathe. |
+| `Stadium` | `<Stadium glow={theme.glow} />` | The night stadium behind the home hero. `intro` flickers the lights on; `big` for full screen. |
+
+## Juice — reward animations
+
+Fire each one by bumping a counter; `0` shows nothing.
+
+```tsx
+const [won, fireWon] = useTrigger();
+<div className="relative">
+  <Burst trigger={won} colors={[theme.shirt, theme.trim, "#fde047"]} />   {/* confetti; round for sparks */}
+  <FloatText trigger={won} text="+★500" color="#fde047" />               {/* floats up and fades */}
+</div>
+<Shake trigger={used}><KibCanIcon can={can} /></Shake>                    {/* the can's wobble-and-tip */}
+<Drips trigger={used} color="#fb923c" />                                  {/* the can emptying */}
+<Pop value={count}>×{count}</Pop>                                        {/* bounces when count changes */}
+<button className="relative overflow-hidden"><Shine loop />Play</button> {/* a bright sweep; trigger= for once */}
+```
+
+`FloatText motion="tick"` is the can's small "−1".
+
+## Money screens — the shop, the store, the casino
+
+```tsx
+<ScreenShell glow={theme.glow} title="Boots" icon="👟" onBack={back}
+  right={<WalletPill value={career.money} format={formatMoney} spent={n} spentText="−★12k" />}>…</ScreenShell>
+const [layer, fly] = useFly();  fly(fromEl, toEl, <KibCanIcon …/>, onLand)   {/* render {layer} once */}
+<WinCelebration trigger={won} amount={500} format={(n) => `+★${formatMoney(n)}`} colors={[…]} />
+<ShakeX trigger={lost}>…the table…</ShakeX>  <LossFlash trigger={lost} />
+<Badge count={3} />                                                        {/* a notification that pops in */}
+```
+
+`ScreenShell` is a whole screen outside the dashboard (it renders KitStyles).
+`WalletPill` counts to its new value and floats `spentText` up off it.
+`useFly` sends a copy of what you bought along an arc into where it now lives.
+
+## Rules
+
+- No animation loops on a canvas: the one-engine guard fails the build on
+  them. Everything here is CSS.
+- Anything that has to be read must not depend on motion.
+- Add new keyframes to `motion.tsx` (with a reduced-motion line), never inline.

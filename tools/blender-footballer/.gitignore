@@ -1,0 +1,11 @@
+# Rebuilt or downloaded, never committed
+assets/
+layers/
+frames/
+work/
+venv/
+ref/
+__pycache__/
+*.mp4
+*.jpg
+*.png

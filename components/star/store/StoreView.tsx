@@ -16,11 +16,13 @@
  *
  * Every rule lives in lib/star/store/*.ts.
  */
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import RunupPreview from "@/components/star/store/RunupPreview";
 import AccessoryFigure from "@/components/star/store/AccessoryFigure";
 import KibCanIcon from "@/components/star/KibCanIcon";
+import { KitStyles, WalletPill, PressButton, RiseIn, Shine, Glow, Burst, useTrigger, rgba } from "@/components/star/ui";
 import {
   ANIMATIONS, ACCESSORIES, BOOSTS, bootsAtLevel, findItem, itemName, isPayToWin, isConsumable,
   RARITY_LABEL, SLOT_LABEL, ANIMATION_SET_LABEL,
@@ -74,6 +76,9 @@ export interface StoreViewProps {
   onSwap: (coins: number) => StoreActionResult;
   /** Opens on this tab. */
   initialTab?: StoreTab;
+  /** The colour the store is lit with — your club's in the career
+   *  (useClubTheme), the store's own violet in the test area. */
+  glow?: string;
   children?: ReactNode;
 }
 const RARITY_STYLE: Record<Rarity, { ring: string; chip: string; glow: string }> = {
@@ -93,6 +98,28 @@ function CoinIcon({ className = "h-4 w-4" }: { className?: string }) {
       <path d="M8 6.5 V13.5 M8 10 L12 6.5 M8 10 L12 13.5" stroke="#92400e" strokeWidth="1.7" strokeLinecap="round" fill="none" />
     </svg>
   );
+}
+
+/** The store's card look: glass lit from one corner, a highlight along the
+ *  top, a soft drop — the home cards' look in the store's colours. */
+function cardLook(color: string, strength = 0.26): React.CSSProperties {
+  return {
+    background: `radial-gradient(110% 90% at 0% 0%, ${rgba(color, strength)} 0%, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.9), rgba(12,17,28,.96))`,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 1px ${rgba(color, 0.28)}, 0 10px 22px -12px rgba(0,0,0,.85)`,
+  };
+}
+const RARITY_COLOR: Record<Rarity, string> = { common: "#94a3b8", rare: "#38bdf8", epic: "#a78bfa", legendary: "#fbbf24" };
+
+/** A number that floats off the wallet whenever it drops or rises. */
+function useDelta(v: number): { n: number; text: string; up: boolean } {
+  const prev = useRef(v);
+  const [d, setD] = useState({ n: 0, text: "", up: false });
+  useEffect(() => {
+    const diff = v - prev.current;
+    prev.current = v;
+    if (diff !== 0) setD((x) => ({ n: x.n + 1, text: `${diff > 0 ? "+" : "−"}${n(Math.abs(diff))}`, up: diff > 0 }));
+  }, [v]);
+  return d;
 }
 
 function Stars({ v, className = "" }: { v: number; className?: string }) {
@@ -171,7 +198,9 @@ function ItemArt({ item, size, equippedWear }: { item: StoreItem; size: number; 
 }
 
 export default function StoreView(p: StoreViewProps) {
-  const { state, ctx, dateKey, now, dayOffset = 0, testArea = false, hide } = p;
+  const { state, ctx, dateKey, now, dayOffset = 0, testArea = false, hide, glow = "#8b5cf6" } = p;
+  const starsDelta = useDelta(state.stars);
+  const coinsDelta = useDelta(state.coins);
   const [tab, setTab] = useState<StoreTab>(p.initialTab ?? "daily");
   const [openId, setOpenId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
@@ -195,9 +224,11 @@ export default function StoreView(p: StoreViewProps) {
   const boots = useMemo(() => bootsAtLevel(ctx.level).filter((b) => !hide?.(b)), [ctx.level, hide]);
   const value = coinValueLine(ctx.weeklyWage);
 
+  const [bought, fireBought] = useTrigger();
   const doBuy = (id: string, cur: Currency) => {
     const r = p.onBuy(id, cur);
     const it = findItem(id);
+    if (r.ok) fireBought();
     setToast(r.ok ? { text: `${it ? itemName(it) : id} bought`, ok: true } : { text: r.reason ?? "Couldn't buy", ok: false });
   };
   const doEquip = (id: string) => {
@@ -208,21 +239,29 @@ export default function StoreView(p: StoreViewProps) {
   const open = openId ? findItem(openId) : undefined;
 
   return (
-    <div className="min-h-[100dvh] bg-[#05070d] text-slate-100">
-      <div className="mx-auto max-w-[900px] pb-24">
+    <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#05080f] text-slate-100">
+      <KitStyles />
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ background: `radial-gradient(90% 40% at 50% -6%, ${rgba(glow, 0.45)} 0%, transparent 70%), radial-gradient(70% 35% at 50% 106%, ${rgba("#f59e0b", 0.18)} 0%, transparent 70%), linear-gradient(180deg, #0a1120 0%, #05080f 60%)` }} />
+      <div className="relative mx-auto max-w-[900px] pb-24">
         {/* ── Header: title + wallet ── */}
-        <div className="sticky top-0 z-20 bg-[#05070d]/95 backdrop-blur">
+        <div className="sticky top-0 z-20" style={{ background: "linear-gradient(180deg, rgba(5,8,15,.95) 70%, rgba(5,8,15,.8))", backdropFilter: "blur(6px)" }}>
           <div className="flex items-center gap-2 px-4 pt-3 pb-2">
             {"href" in p.back
-              ? <Link href={p.back.href} aria-label="Back" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg font-black">‹</Link>
-              : <button onClick={p.back.onClick} aria-label="Back" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg font-black">‹</button>}
-            <h1 className="text-[19px] font-black tracking-tight">Store</h1>
+              ? <Link href={p.back.href} aria-label="Back" className="kib-press flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-b from-white/[0.16] to-white/[0.05] text-lg font-black ring-1 ring-white/10">‹</Link>
+              : <PressButton variant="secondary" size="none" onClick={p.back.onClick} aria-label="Back" className="flex h-9 w-9 items-center justify-center rounded-full text-lg font-black">‹</PressButton>}
+            <h1 className="text-[20px] font-black uppercase tracking-wide" style={{ textShadow: `0 2px 10px rgba(0,0,0,.7), 0 0 18px ${rgba(glow, 0.5)}` }}>Store</h1>
             {testArea && <span className="rounded-md bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-200">Test</span>}
             <div className="ml-auto flex items-center gap-1.5">
-              <div className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[13px] font-black"><Stars v={state.stars} /></div>
-              <button onClick={() => setTab("coins")} className="flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-400/10 px-2.5 py-1 text-[13px] font-black text-amber-100">
-                <Coins v={state.coins} /><span className="text-amber-300">+</span>
-              </button>
+              <WalletPill value={state.stars} format={n} spent={starsDelta.n} spentText={`${starsDelta.text.slice(0, 1)}★${starsDelta.text.slice(1)}`} spentColor={starsDelta.up ? "#6ee7b7" : "#fca5a5"} />
+              <WalletPill
+                value={state.coins}
+                format={(v) => `${n(v)} +`}
+                icon={<CoinIcon className="h-4 w-4" />}
+                spent={coinsDelta.n}
+                spentText={coinsDelta.text}
+                spentColor={coinsDelta.up ? "#6ee7b7" : "#fcd34d"}
+                onClick={() => setTab("coins")}
+              />
             </div>
           </div>
 
@@ -232,7 +271,8 @@ export default function StoreView(p: StoreViewProps) {
           <div className="flex gap-1 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
             {TABS.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-black transition ${tab === t.id ? "bg-white text-slate-900" : "bg-white/[0.06] text-slate-300"}`}
+                className={`kib-press shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-black transition ${tab === t.id ? "bg-gradient-to-b from-white to-slate-200 text-slate-900" : "bg-white/[0.07] text-slate-300 ring-1 ring-white/10"}`}
+                style={tab === t.id ? { boxShadow: `inset 0 1px 0 #fff, 0 4px 14px -4px ${rgba(glow, 0.9)}` } : undefined}
               >{t.label}</button>
             ))}
           </div>
@@ -241,7 +281,7 @@ export default function StoreView(p: StoreViewProps) {
         <div className="px-4">
           {tab === "daily" && (
             <DailyTab specials={specials} state={state} ctx={ctx} dateKey={dateKey} now={now}
-              dayOffset={dayOffset} equippedWear={equippedWear} onOpen={setOpenId} />
+              dayOffset={dayOffset} equippedWear={equippedWear} onOpen={setOpenId} glow={glow} />
           )}
 
           {tab === "animations" && (
@@ -250,9 +290,11 @@ export default function StoreView(p: StoreViewProps) {
                 <div key={set} className="mb-5">
                   <SectionNote left={ANIMATION_SET_LABEL[set]} right="Looks only" />
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {ANIMATIONS.filter((a) => a.set === set && shown(a)).map((a) => (
-                      <ItemCard key={a.id} item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
-                        equipped={inUse(a, state)} equippedWear={equippedWear} />
+                    {ANIMATIONS.filter((a) => a.set === set && shown(a)).map((a, i) => (
+                      <RiseIn key={a.id} index={i} step={50}>
+                        <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
+                          equipped={inUse(a, state)} equippedWear={equippedWear} />
+                      </RiseIn>
                     ))}
                   </div>
                 </div>
@@ -262,7 +304,7 @@ export default function StoreView(p: StoreViewProps) {
 
           {tab === "accessories" && (
             <>
-              <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-br from-[#11233a] to-[#0a1510] p-3">
+              <div className="mb-4 flex items-center gap-3 rounded-2xl p-3" style={cardLook(glow, 0.3)}>
                 <AccessoryFigure wear={equippedWear} width={140} height={150} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[15px] font-black">Your player</div>
@@ -277,9 +319,11 @@ export default function StoreView(p: StoreViewProps) {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {ACCESSORIES.filter(shown).map((a) => (
-                  <ItemCard key={a.id} item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
-                    equipped={inUse(a, state)} equippedWear={equippedWear} />
+                {ACCESSORIES.filter(shown).map((a, i) => (
+                  <RiseIn key={a.id} index={i} step={50}>
+                    <ItemCard item={a} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId}
+                      equipped={inUse(a, state)} equippedWear={equippedWear} />
+                  </RiseIn>
                 ))}
               </div>
             </>
@@ -289,14 +333,14 @@ export default function StoreView(p: StoreViewProps) {
             <>
               <SectionNote left="Boosts" right="These help you win" warn />
               <div className="grid gap-2.5">
-                {BOOSTS.filter(shown).map((b) => <BoostRow key={b.id} item={b} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId} />)}
+                {BOOSTS.filter(shown).map((b, i) => <RiseIn key={b.id} index={i} step={50}><BoostRow item={b} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId} /></RiseIn>)}
               </div>
               <div className="mt-5 mb-2 flex items-baseline justify-between">
                 <div className="text-[12px] font-black uppercase tracking-wider text-slate-400">Boots · level {ctx.level}</div>
                 <div className="text-[11px] font-semibold text-slate-500">the real shop&apos;s boots and prices</div>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {boots.map((b) => <ItemCard key={b.id} item={b} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId} bootStatus={p.bootStatus} />)}
+                {boots.map((b, i) => <RiseIn key={b.id} index={i} step={50}><ItemCard item={b} state={state} ctx={ctx} dateKey={dateKey} onOpen={setOpenId} bootStatus={p.bootStatus} /></RiseIn>)}
               </div>
             </>
           )}
@@ -311,7 +355,7 @@ export default function StoreView(p: StoreViewProps) {
       </div>
 
       {open && (
-        <DetailSheet item={open} state={state} ctx={ctx} dateKey={dateKey} equippedWear={equippedWear}
+        <DetailSheet item={open} state={state} ctx={ctx} dateKey={dateKey} equippedWear={equippedWear} bought={bought}
           accessoriesNote={p.accessoriesNote} bootStatus={p.bootStatus}
           onClose={() => setOpenId(null)} onBuy={doBuy} onEquip={doEquip}
           onUnequip={p.onUnequip}
@@ -319,8 +363,10 @@ export default function StoreView(p: StoreViewProps) {
       )}
 
       {toast && (
-        <div className={`pointer-events-none fixed left-1/2 top-[calc(0.75rem+env(safe-area-inset-top))] z-50 -translate-x-1/2 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-black shadow-xl ${toast.ok ? "bg-emerald-500 text-emerald-950" : "bg-rose-500 text-white"}`}>
-          {toast.text}
+        <div className="pointer-events-none fixed left-1/2 top-[calc(0.75rem+env(safe-area-inset-top))] z-50 -translate-x-1/2">
+          <div key={toast.text} className={`kit-pop whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-black ${toast.ok ? "bg-gradient-to-b from-emerald-300 to-emerald-500 text-emerald-950" : "bg-gradient-to-b from-rose-400 to-rose-600 text-white"}`} style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.5), 0 10px 24px -8px rgba(0,0,0,.8)" }}>
+            {toast.ok ? "✓ " : ""}{toast.text}
+          </div>
         </div>
       )}
 
@@ -375,8 +421,10 @@ function ItemCard({ item, state, ctx, dateKey, onOpen, equipped, equippedWear, b
     : item.kind === "boost" ? item.effect : SLOT_LABEL[item.slot];
   return (
     <button onClick={() => onOpen(item.id)}
-      className={`relative flex flex-col overflow-hidden rounded-2xl border bg-gradient-to-b to-transparent p-2 text-left ${rar ? `${RARITY_STYLE[rar].ring} ${RARITY_STYLE[rar].glow}` : "border-white/10 from-white/[0.04]"}`}
+      className="kib-press relative flex w-full flex-col overflow-hidden rounded-2xl p-2 text-left"
+      style={cardLook(rar ? RARITY_COLOR[rar] : "#64748b", rar === "legendary" ? 0.36 : 0.26)}
     >
+      {rar === "legendary" && <Shine loop every={5} />}
       {percentOff > 0 && <span className="absolute right-3 top-3 z-10 rounded-md bg-rose-500 px-1.5 py-0.5 text-[10px] font-black text-white">−{percentOff}%</span>}
       {rar && <span className="absolute left-3 top-3 z-10"><RarityChip r={rar} /></span>}
       <ItemArt item={item} size={150} equippedWear={item.kind === "accessory" ? [] : equippedWear} />
@@ -394,7 +442,7 @@ function BoostRow({ item, state, ctx, dateKey, onOpen }: { item: StoreItem; stat
   if (item.kind !== "boost") return null;
   const { percentOff } = priceNow(item, ctx, state, dateKey);
   return (
-    <button onClick={() => onOpen(item.id)} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-2.5 text-left">
+    <button onClick={() => onOpen(item.id)} className="kib-press flex w-full items-center gap-3 rounded-2xl p-2.5 text-left" style={cardLook(item.image ? item.color : "#10b981")}>
       <div className="w-16 shrink-0"><ItemArt item={item} size={80} /></div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -409,9 +457,9 @@ function BoostRow({ item, state, ctx, dateKey, onOpen }: { item: StoreItem; stat
   );
 }
 
-function DailyTab({ specials, state, ctx, dateKey, now, dayOffset, equippedWear, onOpen }: {
+function DailyTab({ specials, state, ctx, dateKey, now, dayOffset, equippedWear, onOpen, glow }: {
   specials: ReturnType<typeof dailySpecials>; state: StoreState; ctx: PriceContext; dateKey: string; now: number;
-  dayOffset: number; equippedWear: AccessoryItem[]; onOpen: (id: string) => void;
+  dayOffset: number; equippedWear: AccessoryItem[]; onOpen: (id: string) => void; glow: string;
 }) {
   const [head, ...rest] = specials;
   const headItem = findItem(head.itemId);
@@ -425,16 +473,22 @@ function DailyTab({ specials, state, ctx, dateKey, now, dayOffset, equippedWear,
             {dayOffset > 0 ? `Showing ${dateKey} (+${dayOffset} day${dayOffset > 1 ? "s" : ""})` : "Same for everyone today"}
           </div>
         </div>
-        <div className="shrink-0 whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] font-black tabular-nums">
+        <div className="shrink-0 whitespace-nowrap rounded-full bg-gradient-to-b from-white/[0.16] to-white/[0.05] px-2.5 py-1 text-[12px] font-black tabular-nums text-amber-100 ring-1 ring-amber-300/25" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.18)" }}>
           ⏱ New in {formatCountdown(msUntilReset(now))}
         </div>
       </div>
 
       {headItem && (
         <button onClick={() => onOpen(headItem.id)}
-          className={`relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl border-2 bg-gradient-to-br to-[#0a1020] p-3 text-left ${RARITY_STYLE[rarityOf(headItem) ?? "rare"].ring} ${RARITY_STYLE[rarityOf(headItem) ?? "rare"].glow}`}>
-          <span className="absolute left-3 top-3 z-10 rounded-md bg-amber-400 px-1.5 py-0.5 text-[10px] font-black uppercase text-amber-950">Today&apos;s pick</span>
-          <span className="absolute right-3 top-3 z-10 rounded-md bg-rose-500 px-2 py-0.5 text-[13px] font-black text-white">−{head.percentOff}%</span>
+          className="kib-press relative mb-3 flex w-full items-center gap-3 overflow-hidden rounded-3xl p-3 text-left"
+          style={{
+            ...cardLook(RARITY_COLOR[rarityOf(headItem) ?? "rare"], 0.42),
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 2px ${rgba(RARITY_COLOR[rarityOf(headItem) ?? "rare"], 0.7)}, 0 16px 30px -14px ${rgba(RARITY_COLOR[rarityOf(headItem) ?? "rare"], 0.7)}`,
+          }}>
+          <Shine loop every={4.5} />
+          <Glow color={glow} alpha={0.35} pulse className="-left-6 top-6 h-40 w-40 blur-2xl" />
+          <span className="absolute left-3 top-3 z-10 rounded-md bg-gradient-to-b from-amber-300 to-amber-500 px-1.5 py-0.5 text-[10px] font-black uppercase text-amber-950 shadow">Today&apos;s pick</span>
+          <span className="kit-badge-pop absolute right-3 top-3 z-10 rounded-md bg-gradient-to-b from-rose-400 to-rose-600 px-2 py-0.5 text-[13px] font-black text-white shadow-lg shadow-rose-900/60" style={{ animationDelay: "400ms" }}>−{head.percentOff}%</span>
           <div className="w-[46%] max-w-[260px] shrink-0 pt-6"><ItemArt item={headItem} size={150} equippedWear={headItem.kind === "accessory" ? [] : equippedWear} /></div>
           <div className="min-w-0 flex-1 pt-6">
             <div className="text-[18px] font-black leading-tight">{itemName(headItem)}</div>
@@ -449,12 +503,14 @@ function DailyTab({ specials, state, ctx, dateKey, now, dayOffset, equippedWear,
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {rest.map((s) => {
+        {rest.map((s, i) => {
           const it = findItem(s.itemId);
           return it ? (
-            <ItemCard key={s.itemId} item={it} state={state} ctx={ctx} dateKey={dateKey} onOpen={onOpen}
-              equipped={inUse(it, state)}
-              equippedWear={equippedWear} />
+            <RiseIn key={s.itemId} index={i} step={60}>
+              <ItemCard item={it} state={state} ctx={ctx} dateKey={dateKey} onOpen={onOpen}
+                equipped={inUse(it, state)}
+                equippedWear={equippedWear} />
+            </RiseIn>
           ) : null;
         })}
       </div>
@@ -477,7 +533,7 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
           Buying Coins is coming soon.
         </div>
       )}
-      <div className="mb-3 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-3 py-2.5 text-[13px] font-black text-amber-50">
+      <div className="mb-3 rounded-2xl px-3 py-2.5 text-[13px] font-black text-amber-50" style={cardLook("#f59e0b", 0.3)}>
         100 Coins = about {value.weeks} weeks&apos; wages at your level: <Stars v={value.stars} />
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -487,7 +543,9 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
           const bonus = packBonusPercent(p);
           return (
             <button key={p.id} onClick={() => { if (packs === "test") onPack(p.id); }} disabled={packs !== "test"}
-              className={`relative flex flex-col items-center overflow-hidden rounded-2xl border p-3 pt-5 text-center ${p.bestValue ? "border-amber-300 bg-gradient-to-b from-amber-400/25 to-transparent" : doubled ? "border-emerald-400 bg-gradient-to-b from-emerald-400/20 to-transparent" : "border-white/10 bg-white/[0.035]"}`}>
+              className="kib-press relative flex flex-col items-center overflow-hidden rounded-2xl p-3 pt-5 text-center"
+              style={cardLook(p.bestValue ? "#fbbf24" : doubled ? "#34d399" : "#f59e0b", p.bestValue ? 0.42 : 0.24)}>
+              {p.bestValue && <Shine loop every={4} />}
               {p.bestValue && <span className="absolute inset-x-0 top-0 bg-amber-400 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950">Best value</span>}
               {doubled && <span className="absolute inset-x-0 top-0 bg-emerald-400 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-950">First purchase ×2</span>}
               <div className="mt-1 flex items-center">
@@ -502,23 +560,23 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
               </div>
               <div className="mt-1 text-[10.5px] font-semibold text-slate-400">≈ {n(now / COINS_PER_WAGE_WEEK)} weeks&apos; wages</div>
               {packs === "test"
-                ? <div className="mt-2 w-full rounded-xl bg-white py-1.5 text-[14px] font-black text-slate-900">{formatPounds(p.pounds)}</div>
+                ? <div className="mt-2 w-full rounded-xl bg-gradient-to-b from-white to-slate-200 py-1.5 text-[14px] font-black text-slate-900" style={{ boxShadow: "inset 0 1px 0 #fff, 0 4px 10px -4px rgba(0,0,0,.7)" }}>{formatPounds(p.pounds)}</div>
                 : <div className="mt-2 w-full rounded-xl bg-white/15 py-1.5 text-[13px] font-black text-slate-200">Coming soon</div>}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+      <div className="mt-5 rounded-2xl p-3" style={cardLook("#fbbf24", 0.2)}>
         <div className="text-[14px] font-black">Swap Coins for ★</div>
         <div className="mb-2 text-[11.5px] font-semibold text-slate-400">At your wage of <Stars v={wage} /> a week.</div>
         <div className="grid grid-cols-3 gap-2">
           {[100, 500, 1000].map((c) => (
-            <button key={c} onClick={() => onSwap(c)} disabled={state.coins < c}
-              className="rounded-xl border border-white/10 bg-white/[0.05] py-2 text-[12px] font-black disabled:opacity-35">
+            <PressButton key={c} variant="secondary" size="none" onClick={() => onSwap(c)} disabled={state.coins < c}
+              className="rounded-xl py-2 text-[12px] font-black disabled:opacity-35">
               <Coins v={c} className="justify-center" />
               <div className="mt-0.5 text-slate-300">→ <Stars v={coinsToStars(c, wage)} /></div>
-            </button>
+            </PressButton>
           ))}
         </div>
       </div>
@@ -537,8 +595,8 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
   );
 }
 
-function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote, bootStatus, onClose, onBuy, onEquip, onUnequip, onUse }: {
-  item: StoreItem; state: StoreState; ctx: PriceContext; dateKey: string; equippedWear: AccessoryItem[];
+function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote, bootStatus, onClose, onBuy, onEquip, onUnequip, onUse, bought }: {
+  item: StoreItem; state: StoreState; ctx: PriceContext; dateKey: string; equippedWear: AccessoryItem[]; bought: number;
   accessoriesNote?: string; bootStatus?: (bootId: string) => string | null;
   onClose: () => void; onBuy: (id: string, c: Currency) => void; onEquip: (id: string) => void;
   onUnequip: (slot: AccessorySlot) => void; onUse?: (id: string) => void;
@@ -557,18 +615,24 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
         : `+${item.boot.power} power · +${item.boot.technique} technique · ${item.boot.matches} matches${item.boot.curve ? " · curves the ball" : ""}${item.boot.extraTouch ? " · extra touch" : ""}`;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
-        className="max-h-[92dvh] w-full max-w-[420px] overflow-y-auto rounded-t-3xl border border-white/10 bg-[#0b1220] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:rounded-3xl">
+        className="kit-rise relative max-h-[92dvh] w-full max-w-[420px] overflow-y-auto rounded-t-3xl border-t border-white/10 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:rounded-3xl"
+        style={{ background: `radial-gradient(100% 45% at 50% 0%, ${rgba(rar ? RARITY_COLOR[rar] : "#8b5cf6", 0.28)} 0%, transparent 70%), linear-gradient(180deg, #0f172a, #070b14)`, boxShadow: "0 -20px 50px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.1)" }}>
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {rar && <RarityChip r={rar} />}
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${p2w ? "bg-amber-400/20 text-amber-200" : "bg-white/10 text-slate-300"}`}>{p2w ? "Helps you win" : "Cosmetic"}</span>
           </div>
-          <button onClick={onClose} aria-label="Close" className="h-8 w-8 rounded-full bg-white/10 text-[15px] font-black">✕</button>
+          <PressButton variant="secondary" size="none" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full text-[15px] font-black">✕</PressButton>
         </div>
-        <div className="mx-auto max-w-[300px]">
-          <ItemArt item={item} size={260} equippedWear={item.kind === "accessory" ? equippedWear : undefined} />
+        <div className="relative mx-auto max-w-[300px]">
+          <Glow color={rar ? RARITY_COLOR[rar] : "#8b5cf6"} alpha={0.35} className="inset-6 blur-2xl" />
+          <div key={bought} className={`relative ${bought ? "kit-pop block" : ""}`}>
+            <ItemArt item={item} size={260} equippedWear={item.kind === "accessory" ? equippedWear : undefined} />
+          </div>
+          <Burst trigger={bought} colors={[rar ? RARITY_COLOR[rar] : "#fde047", "#fde047", "#ffffff", "#34d399"]} count={30} spread={1.2} />
         </div>
         <div className="mt-3 flex items-center gap-2">
           <div className="text-[20px] font-black">{itemName(item)}</div>
@@ -587,16 +651,17 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
           {(!owned || consumable) && price.stars > 0 && (
             <>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => onBuy(item.id, "stars")} disabled={state.stars < price.stars}
-                  className="rounded-2xl bg-yellow-300 py-3 text-[15px] font-black text-slate-900 disabled:opacity-35">
+                <PressButton variant="gold" size="none" onClick={() => onBuy(item.id, "stars")} disabled={state.stars < price.stars}
+                  className="relative overflow-hidden rounded-2xl py-3 text-[15px] font-black text-slate-900 disabled:opacity-35">
+                  {state.stars >= price.stars && <Shine loop every={3.5} />}
                   <Stars v={price.stars} className="[&>span]:text-slate-900" />
                   {percentOff > 0 && <div className="text-[10px] font-bold line-through opacity-60">★{n(full.stars)}</div>}
-                </button>
-                <button onClick={() => onBuy(item.id, "coins")} disabled={state.coins < price.coins}
-                  className="rounded-2xl bg-amber-500 py-3 text-[15px] font-black text-amber-950 disabled:opacity-35">
+                </PressButton>
+                <PressButton variant="accent" accent="#f59e0b" size="none" onClick={() => onBuy(item.id, "coins")} disabled={state.coins < price.coins}
+                  className="rounded-2xl py-3 text-[15px] font-black text-amber-950 disabled:opacity-35">
                   <span className="inline-flex items-center justify-center gap-1"><CoinIcon className="h-4 w-4" />{n(price.coins)}</span>
                   {percentOff > 0 && <div className="text-[10px] font-bold line-through opacity-60">{n(full.coins)}</div>}
-                </button>
+                </PressButton>
               </div>
               <div className="text-center text-[11px] font-semibold text-slate-500">
                 About {price.weeks < 1 ? price.weeks.toFixed(1) : Math.round(price.weeks * 10) / 10} week{price.weeks === 1 ? "" : "s"} of your wages either way
@@ -606,13 +671,13 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
           {owned && !consumable && (item.kind === "animation" || item.kind === "accessory") && (
             wearing
               ? item.kind === "accessory"
-                ? <button onClick={() => onUnequip(item.slot)} className="rounded-2xl bg-white/10 py-3 text-[15px] font-black">Take off</button>
+                ? <PressButton variant="secondary" size="none" onClick={() => onUnequip(item.slot)} className="rounded-2xl py-3 text-[15px] font-black">Take off</PressButton>
                 : <div className="rounded-2xl bg-emerald-500/20 py-3 text-center text-[15px] font-black text-emerald-200">✓ Your {setWord} run-up</div>
-              : <button onClick={() => onEquip(item.id)} className="rounded-2xl bg-emerald-400 py-3 text-[15px] font-black text-emerald-950">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : "Wear"}</button>
+              : <PressButton variant="primary" size="none" pulse onClick={() => onEquip(item.id)} className="rounded-2xl py-3 text-[15px] font-black">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : "Wear"}</PressButton>
           )}
           {owned && item.kind === "boot" && <div className="rounded-2xl bg-sky-500/15 py-3 text-center text-[14px] font-black text-sky-200">Owned</div>}
           {onUse && consumable && (state.inventory[item.id] ?? 0) > 0 && (
-            <button onClick={() => onUse(item.id)} className="rounded-2xl bg-white/10 py-2.5 text-[13px] font-black">Use one (test) · ×{state.inventory[item.id]} held</button>
+            <PressButton variant="secondary" size="none" onClick={() => onUse(item.id)} className="rounded-2xl py-2.5 text-[13px] font-black">Use one (test) · ×{state.inventory[item.id]} held</PressButton>
           )}
         </div>
       </div>

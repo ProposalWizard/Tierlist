@@ -4,8 +4,9 @@ import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
-import { followedTeams, toggleFollowedTeam, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
+import { followedClubs, toggleFollowedClub, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
+import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import DevCareerPanel from "./DevCareerPanel";
@@ -17,10 +18,25 @@ import {
   ownedPenaltyRunups, ownedFreeKickRunups, careerPenaltyRunup, careerFreeKickRunup,
   type PenaltyRunupId, type FreeKickRunupId, type RunupId, type RunupStyle,
 } from "@/lib/star/runupStyles";
+import { PressButton, RiseIn, Pop, tint, useClubTheme } from "./ui";
+import { Screen, ScreenHeader } from "./ui/Screen";
+import { SegTabs } from "./screenKit";
+import { SetCard, SetHead, SetNote, SetDivider, SetSection, Switch, CheckSwitch } from "./settingsKit";
+
+/**
+ * SETTINGS — reskinned 28 Sep 2026 to the home screen's look (Harry: "all
+ * the pages should just be reskinned to fit the new home screen vibe"):
+ * the night-stadium backdrop lit in your club's colour, club-lit glass
+ * cards grouped under small caps headers, lit switches, buttons that press
+ * in, and each block rising in on open. Visual only — every handler, save
+ * path, switch and dev tool is exactly the one it was before.
+ */
 
 interface Props {
   career: CareerState;
   onBack: () => void;
+  /** Back to the title screen (Continue / New Game / Load Game). */
+  onExitToTitle?: () => void;
   onSkip: (target: SkipTarget) => void;
   onAddMoney: (amount: number) => void;
   /** Dev: top up the Store's Coins (lib/star/store/career.ts). */
@@ -54,16 +70,28 @@ interface Props {
   /** Equip a penalty run-up / a free-kick run-up you own (lib/star/runupStyles.ts). */
   onSetPenaltyRunup?: (id: PenaltyRunupId) => void;
   onSetFreeKickRunup?: (id: FreeKickRunupId) => void;
+  /** Leave the career for the rest of Knowitball — the old red ✕ from the
+   *  header (Harry, 28 Sep 2026: "a back out completely should be in
+   *  settings"). The same handler, so it asks first and the save stays. */
+  onExitCareer?: () => void;
 }
 
+/** Dev tools' colours: one per card, so the block reads as its own zone. */
+const DEV = "#f59e0b";
+
 export default function SettingsScreen({
-  career, onBack, onSkip, onAddMoney, onAddCoins,
+  career, onBack, onExitToTitle, onSkip, onAddMoney, onAddCoins,
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup,
+  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer,
 }: Props) {
+  const { glow } = useClubTheme(career);
   const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
+  // The player look (lib/star/figureSkin.ts): Classic for everyone until
+  // Harry says otherwise; this switch is for trying 3D on this device.
+  const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
+  const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
 
   const togglePostMatchReactions = () => {
     const next = !postMatchReactions;
@@ -74,7 +102,7 @@ export default function SettingsScreen({
   // Live-score alerts (v0.15 item 35): the clubs whose goals pop up during
   // your match. None ticked by default; the bell in the in-match Scores
   // panel writes the same list.
-  const [following, setFollowing] = useState<string[]>(() => followedTeams());
+  const [following, setFollowing] = useState<string[]>(() => followedClubs());
   const divisionClubs = career.league.map((t) => t.name).filter((n) => n !== career.player.club).sort();
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
@@ -91,74 +119,65 @@ export default function SettingsScreen({
     saveFaceStyle(next);
   };
 
+  let rise = 0;
+  const next = () => rise++;
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto max-w-md px-3 py-3">
-        <button
-          onClick={onBack}
-          className="mb-3 flex items-center gap-1 px-3 py-1.5 bg-gray-700 rounded-lg text-xs font-black text-white hover:bg-gray-600"
-        >
-          ← Home
-        </button>
-        <h1 className="text-lg font-black">Settings</h1>
+    <Screen glow={glow} className="max-w-md px-3 pb-10 pt-3">
+      <ScreenHeader
+        title="Settings"
+        kicker={career.player.club || undefined}
+        kickerColor={tint(glow, 0.55)}
+        onBack={onBack}
+        backLabel="← Home"
+        right={onExitToTitle && (
+          <PressButton variant="secondary" size="sm" onClick={onExitToTitle} className="normal-case tracking-normal">
+            ⌂ Main menu
+          </PressButton>
+        )}
+      />
 
-        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+      {/* ── GAME ── */}
+      <RiseIn index={next()}><SetSection className="mb-1.5 mt-1">Game</SetSection></RiseIn>
+      <RiseIn index={next()}>
+        <SetCard tone={glow}>
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-white">Full Screen</div>
-              <p className="mt-1 text-[11px] text-white">
-                Hide the site's top bar and footer, and go full screen where your browser supports it.
-              </p>
+            <div className="min-w-0">
+              <SetHead>Full Screen</SetHead>
+              <SetNote>Hide the site&apos;s top bar and footer, and go full screen where your browser supports it.</SetNote>
             </div>
-            <button
-              onClick={onToggleImmersive}
-              role="switch"
-              aria-checked={immersiveActive}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${immersiveActive ? "bg-emerald-500" : "bg-gray-600"}`}
-            >
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${immersiveActive ? "translate-x-5" : "translate-x-0.5"}`}
-              />
-            </button>
+            <Switch on={immersiveActive} onClick={onToggleImmersive} />
           </div>
-        </div>
-
-        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+          <SetDivider />
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-white">Post-Match Reactions</div>
-              <p className="mt-1 text-[11px] text-white">
-                After your rating and match money, skip the phone screen and go straight back to the dashboard.
-              </p>
+            <div className="min-w-0">
+              <SetHead>Post-Match Reactions</SetHead>
+              <SetNote>After your rating and match money, skip the phone screen and go straight back to the dashboard.</SetNote>
             </div>
-            <button
-              onClick={togglePostMatchReactions}
-              role="switch"
-              aria-checked={postMatchReactions}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${postMatchReactions ? "bg-emerald-500" : "bg-gray-600"}`}
-            >
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${postMatchReactions ? "translate-x-5" : "translate-x-0.5"}`}
-              />
-            </button>
+            <Switch on={postMatchReactions} onClick={togglePostMatchReactions} />
           </div>
-        </div>
+        </SetCard>
+      </RiseIn>
 
-        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white">Live scores</div>
-          <p className="mt-1 text-[11px] text-white">
-            Tick a club to see its goals pop up during your match. The Scores button under the match clock shows every game.
-          </p>
+      <RiseIn index={next()} className="mt-2.5">
+        <SetCard tone={glow}>
+          <SetHead right={<span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black tabular-nums text-amber-200"><Pop value={following.length}>🔔 {following.length}</Pop></span>}>
+            Live scores
+          </SetHead>
+          <SetNote>Tick a club to see its goals pop up during your match. The Scores button under the match clock shows every game.</SetNote>
           <div className="mt-2 grid grid-cols-2 gap-1.5">
             {divisionClubs.map((club) => {
               const on = following.includes(club);
               return (
                 <button
                   key={club}
-                  onClick={() => setFollowing(toggleFollowedTeam(club))}
+                  onClick={() => setFollowing(toggleFollowedClub(club))}
                   role="checkbox"
                   aria-checked={on}
-                  className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] font-black ${on ? "bg-amber-400 text-gray-950" : "bg-black/25 text-white"}`}
+                  className={`kib-press flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] font-black ${on ? "text-gray-950" : "text-white"}`}
+                  style={on
+                    ? { background: "linear-gradient(180deg, #fde68a, #fbbf24 55%, #d97706)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.55), 0 4px 12px -5px rgba(245,158,11,.8)" }
+                    : { background: "linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.025))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.07)" }}
                 >
                   <span aria-hidden>{on ? "🔔" : "○"}</span>
                   <span className="truncate">{club}</span>
@@ -166,13 +185,15 @@ export default function SettingsScreen({
               );
             })}
           </div>
-        </div>
+        </SetCard>
+      </RiseIn>
 
-        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Photo</div>
-          <p className="mt-1 text-[11px] text-gray-300">
-            Change the photograph on your graphics, or take it back off.
-          </p>
+      {/* ── YOU ── */}
+      <RiseIn index={next()}><SetSection>You</SetSection></RiseIn>
+      <RiseIn index={next()}>
+        <SetCard tone={glow}>
+          <SetHead>Photo</SetHead>
+          <SetNote>Change the photograph on your graphics, or take it back off.</SetNote>
           <div className="mt-2">
             <PortraitPicker
               value={career.player.portrait}
@@ -181,60 +202,14 @@ export default function SettingsScreen({
               number={career.squadNumber}
             />
           </div>
-        </div>
+        </SetCard>
+      </RiseIn>
 
-        <SaveSlotsPanel
-          saves={saves}
-          activeSlot={activeSlot}
-          onSwitch={onSwitchSave}
-          onStartNew={onStartNewInSlot}
-          onDelete={onDeleteSave}
-        />
-
-        <div className="mt-6 mb-1 border-t border-gray-700 pt-3">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300/90">Developer tools</div>
-          <p className="text-[10px] font-semibold text-white/50">Testing and tuning options — not needed for normal play.</p>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-          <div>
-            <div className="text-[11px] font-black text-white">Show developer info</div>
-            <p className="text-[11px] text-white">On the match-day card: the minute a sub is planned to come on, and his ladder.</p>
-          </div>
-          <button
-            onClick={flipDevInfo}
-            role="switch"
-            aria-checked={devInfo}
-            aria-label="Show developer info"
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${devInfo ? "bg-emerald-500" : "bg-gray-600"}`}
-          >
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${devInfo ? "translate-x-5" : "translate-x-0.5"}`} />
-          </button>
-        </div>
-
-        <DevSkipPanel career={career} onSkip={onSkip} />
-
-        <DevMoneyPanel career={career} onAddMoney={onAddMoney} onAddCoins={onAddCoins} />
-
-        <DevCareerPanel
-          career={career}
-          onSetCaptain={onSetCaptain}
-          onSetReputation={onSetReputation}
-          onSetFame={onSetFame}
-          onMaxSkills={onMaxSkills}
-          onUnlockTraining={onUnlockTraining}
-          onSetHappiness={onSetHappiness}
-          onSwitchClub={onSwitchClub}
-        />
-
-        <RefreshPhotosPanel onRefresh={onRefreshPhotos} />
-
-        {(onSetPenaltyRunup || onSetFreeKickRunup) && (
-          <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-            <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Run-ups</div>
-            <p className="mt-1 text-[11px] font-semibold text-white/90">
-              How you run up to the ball. Looks only — the kick is the same.
-            </p>
+      {(onSetPenaltyRunup || onSetFreeKickRunup) && (
+        <RiseIn index={next()} className="mt-2.5">
+          <SetCard tone={glow}>
+            <SetHead>Run-ups</SetHead>
+            <SetNote>How you run up to the ball. Looks only — the kick is the same.</SetNote>
             {onSetPenaltyRunup && (
               <RunupPicker
                 title="Penalty run-up"
@@ -251,61 +226,137 @@ export default function SettingsScreen({
                 onPick={onSetFreeKickRunup}
               />
             )}
-          </div>
-        )}
+          </SetCard>
+        </RiseIn>
+      )}
 
-        <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Player Graphics</div>
-          <p className="mt-1 text-[11px] font-semibold text-white/90">
+      {/* ── PLAYER GRAPHICS ── */}
+      <RiseIn index={next()}><SetSection>Player graphics</SetSection></RiseIn>
+      <RiseIn index={next()}>
+        <SetCard tone={glow}>
+          <SetHead>Face editors</SetHead>
+          <SetNote>
             Size, position, backing circle and outline for every face on the pitch — two full editors with a live preview, not just a slider.
-          </p>
+          </SetNote>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button
-              onClick={onOpenFaceEditor}
-              className="py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-[11px] font-black text-white"
-            >
+            <PressButton variant="primary" size="none" onClick={onOpenFaceEditor} className="rounded-xl py-2 text-[11px] font-black">
               Real Photos →
-            </button>
-            <button
-              onClick={onOpenFakeFaceEditor}
-              className="py-1.5 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-[11px] font-black text-white"
-            >
+            </PressButton>
+            <PressButton variant="accent" accent="#d946ef" size="none" onClick={onOpenFakeFaceEditor} className="rounded-xl py-2 text-[11px] font-black text-white">
               Fake Faces →
-            </button>
+            </PressButton>
           </div>
-          <p className="mt-1.5 text-[10px] font-semibold text-white/55">
+          <SetNote dim className="mt-1.5 text-[10px]">
             Real photos and the seven fake faces are different images with different framing, so each gets its own size/position/crop — pick the one you want to tune.
-          </p>
+          </SetNote>
 
-          <label className="mt-3 flex items-center justify-between gap-2">
+          <SetDivider />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-black text-white/90">Player look (test)</span>
+            <SegTabs
+              className="w-[150px] shrink-0"
+              value={look}
+              onChange={pickLook}
+              tabs={[["classic", "Classic"], ["3d", "3D"]] as const}
+            />
+          </div>
+          <SetNote dim className="mt-1 text-[10px]">
+            3D draws every player with shading, kit folds, boots and a fitted face. This phone only.
+          </SetNote>
+
+          <SetDivider />
+          <label className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-black text-white/90">Player faces</span>
-            <input type="checkbox" checked={faceStyle.facesEnabled}
-              onChange={e => toggleFaceStyle("facesEnabled", e.target.checked)}
-              className="h-4 w-4 accent-emerald-500" />
+            <CheckSwitch checked={faceStyle.facesEnabled} onChange={(v) => toggleFaceStyle("facesEnabled", v)} />
           </label>
-          <p className="text-[10px] font-semibold text-white/55">
+          <SetNote dim className="mt-1 text-[10px]">
             Off shows the plain shirt-coloured circle every figure already falls back to when it has no photo.
-          </p>
+          </SetNote>
 
           <label className="mt-3 flex items-center justify-between gap-2">
             <span className="text-[11px] font-black text-white/90">Player names</span>
-            <input type="checkbox" checked={faceStyle.namesEnabled}
-              onChange={e => toggleFaceStyle("namesEnabled", e.target.checked)}
-              className="h-4 w-4 accent-emerald-500" />
+            <CheckSwitch checked={faceStyle.namesEnabled} onChange={(v) => toggleFaceStyle("namesEnabled", v)} />
           </label>
-          <p className="text-[10px] font-semibold text-white/55">
+          <SetNote dim className="mt-1 text-[10px]">
             Shows each player&apos;s name in clear text above their head — works alongside faces, not instead of them, unless you turn faces off too.
-          </p>
-        </div>
+          </SetNote>
+        </SetCard>
+      </RiseIn>
 
-        <GoalReplaysPanel
-          career={career}
-          onWatchReplay={onWatchReplay}
-          onSaveReplay={onSaveReplay}
-          onDeleteSavedReplay={onDeleteSavedReplay}
+      {/* ── SAVES ── */}
+      <RiseIn index={next()}><SetSection>Saves</SetSection></RiseIn>
+      <RiseIn index={next()}>
+        <SaveSlotsPanel
+          saves={saves}
+          activeSlot={activeSlot}
+          onSwitch={onSwitchSave}
+          onStartNew={onStartNewInSlot}
+          onDelete={onDeleteSave}
+          glow={glow}
         />
-      </div>
-    </div>
+      </RiseIn>
+
+      {/* ── DEVELOPER TOOLS ── */}
+      <RiseIn index={next()}>
+        <SetSection tone={DEV} className="mb-0.5 mt-6">Developer tools</SetSection>
+        <p className="px-0.5 text-[10px] font-semibold text-white/50">Testing and tuning options — not needed for normal play.</p>
+      </RiseIn>
+
+      <RiseIn index={next()} className="mt-2">
+        <SetCard tone={DEV} strength={0.18}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] font-black text-white">Show developer info</div>
+              <SetNote className="mt-0.5">On the match-day card: the minute a sub is planned to come on, and his ladder.</SetNote>
+            </div>
+            <Switch on={devInfo} onClick={flipDevInfo} label="Show developer info" />
+          </div>
+        </SetCard>
+      </RiseIn>
+
+      <RiseIn index={next()}><DevSkipPanel career={career} onSkip={onSkip} /></RiseIn>
+
+      <RiseIn index={next()}><DevMoneyPanel career={career} onAddMoney={onAddMoney} onAddCoins={onAddCoins} /></RiseIn>
+
+      <RiseIn index={next()}>
+        <DevCareerPanel
+          career={career}
+          onSetCaptain={onSetCaptain}
+          onSetReputation={onSetReputation}
+          onSetFame={onSetFame}
+          onMaxSkills={onMaxSkills}
+          onUnlockTraining={onUnlockTraining}
+          onSetHappiness={onSetHappiness}
+          onSwitchClub={onSwitchClub}
+        />
+      </RiseIn>
+
+      <RiseIn index={next()}><RefreshPhotosPanel onRefresh={onRefreshPhotos} /></RiseIn>
+
+      <GoalReplaysPanel
+        career={career}
+        onWatchReplay={onWatchReplay}
+        onSaveReplay={onSaveReplay}
+        onDeleteSavedReplay={onDeleteSavedReplay}
+      />
+
+      {onExitCareer && (
+        <RiseIn index={next()} className="mb-2 mt-6">
+          <PressButton
+            data-exit-career
+            variant="danger"
+            size="none"
+            onClick={onExitCareer}
+            className="w-full rounded-xl py-3 text-sm font-black"
+          >
+            Exit career — back to Knowitball
+          </PressButton>
+          <p className="mt-1.5 text-center text-[10px] font-semibold text-white/60">
+            Your career stays saved. You come back to exactly this.
+          </p>
+        </RiseIn>
+      )}
+    </Screen>
   );
 }
 
@@ -318,18 +369,24 @@ function RunupPicker<Id extends RunupId>({ title, styles, current, onPick }: {
 }) {
   return (
     <div className="mt-2.5">
-      <div className="text-[11px] font-black text-white/90">{title}</div>
+      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/70">{title}</div>
       <div className="mt-1 flex flex-wrap gap-1.5">
-        {styles.map((r) => (
-          <button
-            key={r.id}
-            onClick={() => onPick(r.id)}
-            title={r.blurb}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-black ${current === r.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-white/80 hover:bg-gray-600"}`}
-          >
-            {r.name}
-          </button>
-        ))}
+        {styles.map((r) => {
+          const on = current === r.id;
+          return (
+            <button
+              key={r.id}
+              onClick={() => onPick(r.id)}
+              title={r.blurb}
+              className={`kib-press rounded-lg px-2.5 py-1.5 text-[11px] font-black ${on ? "text-white" : "text-white/80"}`}
+              style={on
+                ? { background: "linear-gradient(180deg, #4ade80, #10b981 55%, #047857)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.45), 0 4px 12px -5px rgba(16,185,129,.8)" }
+                : { background: "linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px rgba(255,255,255,.08)" }}
+            >
+              {on && "✓ "}{r.name}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

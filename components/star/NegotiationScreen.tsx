@@ -5,6 +5,8 @@ import {
   startNegotiation, makeOffer, moodToFace,
   type NegotiationMode, type NegotiationState, type CounterpartMood,
 } from "@/lib/star/negotiation";
+import { Burst, Glow, Pop, Shine, clubTheme } from "./ui";
+import { Screen } from "./ui/Screen";
 
 /**
  * THE NEGOTIATION — FACE TO FACE ACROSS TWO DESKS.
@@ -224,6 +226,8 @@ export default function NegotiationScreen({
   const counterpartName = counterpartLabel ?? (mode === "buying" ? "Their Agent" : "Interested Buyer");
 
   const finished = state.status !== "negotiating";
+  const theme = clubTheme(counterpartLabel ?? "");
+  const moodColor = mood === "happy" ? "#34d399" : mood === "angry" ? "#ef4444" : "#64748b";
 
   function propose(value: number) {
     if (finished) return;
@@ -233,27 +237,13 @@ export default function NegotiationScreen({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-white flex flex-col items-center justify-center px-4 py-6">
-      {/* A dark, layered stadium glow behind everything — floodlight-style
-          radial washes in the corners over a near-black base, rather than a
-          flat gradient, matching the given concept's own richer backdrop. */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(60% 40% at 15% 0%, rgba(56,189,248,0.16), transparent 60%)," +
-            "radial-gradient(60% 40% at 85% 0%, rgba(16,185,129,0.14), transparent 60%)," +
-            "radial-gradient(80% 60% at 50% 110%, rgba(30,41,59,0.9), transparent 60%)," +
-            "linear-gradient(to bottom, #0b1120, #05070d)",
-        }}
-      />
-
-      <div className="relative w-full max-w-sm">
+    <Screen glow={theme.glow} tone={moodColor} center className="max-w-sm px-4 py-6">
+      <div className="relative w-full">
         <div className="text-center mb-4">
           <div className="text-[10px] font-black uppercase tracking-[0.25em] text-sky-300/90">
             {mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale"}
           </div>
-          <div className="mt-1 font-black text-white text-2xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{playerName}</div>
+          <div className="mt-1 font-black uppercase text-white text-2xl leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{playerName}</div>
           <div className="text-[11px] font-bold text-white/70">Estimated value: <span className="text-amber-300">★{money(marketValue)}</span></div>
         </div>
 
@@ -261,10 +251,14 @@ export default function NegotiationScreen({
             actually changes, with a short line naming the mood outright,
             plus their opening ask carried straight into the card the way
             the concept's own "here are their demands" framing does. ── */}
-        <div className={`rounded-2xl border-2 bg-gradient-to-br from-slate-900/90 to-slate-950/90 p-3 mb-3 transition-all ${FACE_RING[mood]}`}>
+        <div className={`kit-card kit-rise mb-3 border-2 p-3 transition-all ${FACE_RING[mood]}`}>
           <div className="flex items-center gap-3">
-            <div className={`h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 ${FACE_RING[mood]}`}>
-              <AgentPortrait mood={mood} />
+            {/* His face pops every time his mood changes. */}
+            <div className="relative h-16 w-16 shrink-0">
+              <Glow color={moodColor} alpha={0.45} pulse className="-inset-1 blur-md" />
+              <div key={mood} className={`kit-pop relative h-16 w-16 overflow-hidden rounded-full border-2 ${FACE_RING[mood]}`}>
+                <AgentPortrait mood={mood} />
+              </div>
             </div>
             <div className="min-w-0">
               <div className="text-[9px] font-black uppercase tracking-widest text-white/50">
@@ -283,19 +277,19 @@ export default function NegotiationScreen({
             small uppercase label above the value, the value itself large
             and bold. Your side in blue, theirs in amber, matching this
             screen's own established colour convention from before. ── */}
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-950/80 p-3 mb-2.5 space-y-2 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)]">
+        <div className="kit-card kit-rise p-3 mb-2.5 space-y-2" style={{ animationDelay: "80ms" }}>
           <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-sky-950/70 to-sky-900/30 border border-sky-500/30 px-3 py-2.5">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sky-500/20 text-lg">🤝</div>
             <div className="min-w-0 flex-1">
               <div className="text-[9px] font-black uppercase tracking-widest text-sky-300/80">{verb}</div>
-              <div className="tabular-nums text-white font-black text-lg leading-tight">★{money(state.yourPosition)}</div>
+              <div className="tabular-nums text-white font-black text-lg leading-tight"><Pop value={state.yourPosition}>★{money(state.yourPosition)}</Pop></div>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-amber-950/70 to-amber-900/30 border border-amber-500/30 px-3 py-2.5">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-500/20 text-lg">💬</div>
             <div className="min-w-0 flex-1">
               <div className="text-[9px] font-black uppercase tracking-widest text-amber-300/80">{theirVerb}</div>
-              <div className="tabular-nums text-white font-black text-lg leading-tight">★{money(state.theirPosition)}</div>
+              <div className="tabular-nums text-white font-black text-lg leading-tight"><Pop value={state.theirPosition}>★{money(state.theirPosition)}</Pop></div>
             </div>
             <div className="shrink-0 rounded-full bg-black/30 px-2 py-0.5 text-[9px] font-bold text-white/60">
               Round {state.round + (finished ? 0 : 1)}
@@ -305,9 +299,9 @@ export default function NegotiationScreen({
 
         {/* ── Log — colour-coded per side (see logSide) so the back-and-forth
             reads at a glance instead of needing the sentence read out. ── */}
-        <div className="bg-black/30 border border-white/10 rounded-xl p-2.5 mb-3 max-h-32 overflow-y-auto space-y-1">
+        <div className="kit-row rounded-xl p-2.5 mb-3 max-h-32 overflow-y-auto space-y-1">
           {state.log.map((line, i) => (
-            <div key={i} className={`text-[10px] font-bold ${LOG_STYLE[logSide(line)]}`}>{line}</div>
+            <div key={i} className={`kit-rise text-[10px] font-bold ${LOG_STYLE[logSide(line)]}`}>{line}</div>
           ))}
         </div>
 
@@ -315,7 +309,7 @@ export default function NegotiationScreen({
           <>
             <div className="mb-1.5 text-[9px] font-black uppercase tracking-widest text-white/50">Your Offer</div>
             <div className="flex items-center gap-1.5 mb-2">
-              <div className="flex flex-1 min-w-0 items-center gap-1.5 rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 border border-white/10 px-2.5 py-2 shadow-inner">
+              <div className="kit-input flex flex-1 min-w-0 items-center gap-1.5 rounded-xl px-2.5 py-2">
                 <span className="text-amber-300 font-black text-sm">★</span>
                 <input
                   type="text" inputMode="numeric"
@@ -327,14 +321,14 @@ export default function NegotiationScreen({
               <button
                 onMouseDown={() => startHold(-1)} onMouseUp={stopHold} onMouseLeave={stopHold}
                 onTouchStart={() => startHold(-1)} onTouchEnd={stopHold}
-                className="shrink-0 w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-500 font-black text-white text-lg select-none shadow"
+                className="kit-btn kit-btn-glass shrink-0 w-9 h-9 rounded-xl text-lg select-none"
               >
                 −
               </button>
               <button
                 onMouseDown={() => startHold(1)} onMouseUp={stopHold} onMouseLeave={stopHold}
                 onTouchStart={() => startHold(1)} onTouchEnd={stopHold}
-                className="shrink-0 w-9 h-9 rounded-xl bg-slate-700 hover:bg-slate-600 active:bg-slate-500 font-black text-white text-lg select-none shadow"
+                className="kit-btn kit-btn-glass shrink-0 w-9 h-9 rounded-xl text-lg select-none"
               >
                 +
               </button>
@@ -351,13 +345,13 @@ export default function NegotiationScreen({
             <div className="grid grid-cols-2 gap-2 mb-2">
               <button
                 onClick={() => propose(amount)}
-                className="flex items-center justify-center gap-1.5 py-3 rounded-xl font-black text-sm text-white bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 active:scale-[0.98] transition shadow-[0_6px_16px_-4px_rgba(16,185,129,0.6)]"
+                className="kit-btn kit-btn-green flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm"
               >
                 <span>🤝</span>{mode === "buying" ? "Make Offer" : "Set Asking Price"}
               </button>
               <button
                 onClick={() => propose(state.theirPosition)}
-                className="flex items-center justify-center gap-1.5 py-3 rounded-xl font-black text-sm text-white bg-gradient-to-b from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 active:scale-[0.98] transition shadow-[0_6px_16px_-4px_rgba(245,158,11,0.6)]"
+                className="kit-btn kit-btn-amber flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm"
               >
                 <span>📄</span>Accept Offer
               </button>
@@ -365,7 +359,7 @@ export default function NegotiationScreen({
             {onStepAway && (
               <button
                 onClick={() => onStepAway(state)}
-                className="w-full mt-1 py-2 rounded-xl font-bold text-xs text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10"
+                className="kit-btn kit-btn-glass w-full mt-1 py-2 rounded-xl text-xs"
               >
                 Step Away (check other interested clubs)
               </button>
@@ -380,7 +374,7 @@ export default function NegotiationScreen({
                 the concept. */}
             <button
               onClick={() => onDone(null)}
-              className="flex w-full items-center justify-center gap-1.5 mt-2 py-2.5 rounded-xl font-bold text-xs text-red-300 hover:text-red-200 bg-red-950/40 hover:bg-red-900/40 border border-red-500/20"
+              className="kit-btn flex w-full items-center justify-center gap-1.5 mt-2 py-2.5 rounded-xl text-xs text-red-200 bg-red-950/50 ring-1 ring-red-500/30"
             >
               <span>🚪</span>Walk Away
             </button>
@@ -394,11 +388,19 @@ export default function NegotiationScreen({
                 flat box — so the deal-agreed/no-deal screen reads as the
                 same designed place the negotiation itself just happened in,
                 not a different, plainer screen tacked on the end. */}
-            <div className={`flex items-center justify-center gap-2 rounded-xl p-4 text-center mb-3 font-black border shadow-lg ${
+            {/* The handshake: a DEAL stamp and confetti; talks breaking down
+                shake the box. */}
+            {state.status === "accepted" && (
+              <div className="pointer-events-none relative h-0">
+                <Burst colors={[theme.shirt, theme.trim, "#fde047", "#34d399", "#ffffff"]} count={30} spread={1.3} className="left-1/2 top-6" />
+              </div>
+            )}
+            <div className={`relative overflow-hidden flex items-center justify-center gap-2 rounded-xl p-4 text-center mb-3 font-black border shadow-lg ${state.status === "accepted" ? "kit-stamp" : "kit-shake-x"} ${
               state.status === "accepted"
                 ? "bg-gradient-to-b from-emerald-600/40 to-emerald-900/50 text-emerald-300 border-emerald-500/40 shadow-emerald-900/40"
                 : "bg-gradient-to-b from-red-800/40 to-red-950/50 text-red-300 border-red-500/40 shadow-red-950/40"
             }`}>
+              {state.status === "accepted" && <Shine trigger={1} />}
               <span className="text-lg">{state.status === "accepted" ? "🤝" : "🚪"}</span>
               <span>
                 {state.status === "accepted" && `Deal agreed — ★${money(state.finalPrice ?? 0)}`}
@@ -408,17 +410,13 @@ export default function NegotiationScreen({
             </div>
             <button
               onClick={() => onDone(state.status === "accepted" ? (state.finalPrice ?? null) : null)}
-              className={`w-full py-3 rounded-xl font-black text-sm text-white active:scale-[0.98] transition shadow ${
-                state.status === "accepted"
-                  ? "bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 shadow-[0_6px_16px_-4px_rgba(16,185,129,0.6)]"
-                  : "bg-gradient-to-b from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700"
-              }`}
+              className={`kit-btn w-full py-3 rounded-xl text-sm ${state.status === "accepted" ? "kit-btn-green kib-play-pulse" : "kit-btn-glass"}`}
             >
               Continue
             </button>
           </>
         )}
       </div>
-    </div>
+    </Screen>
   );
 }

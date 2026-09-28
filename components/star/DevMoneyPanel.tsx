@@ -2,6 +2,8 @@
 import { useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { formatMoney } from "@/lib/star/money";
+import { CountUp, FloatText, PressButton, useTrigger } from "./ui";
+import { SetCard, SetHead, SetNote, SetDivider } from "./settingsKit";
 
 /**
  * DEV MONEY — A TESTING TOOL, NOT A GAMEPLAY MECHANIC.
@@ -12,11 +14,16 @@ import { formatMoney } from "@/lib/star/money";
  * spirit as `DevSkipPanel` right above it on this same screen — no login
  * role or feature flag gates either one, both just live in Settings for
  * whoever is using this dev build.
+ *
+ * Reskinned 28 Sep 2026 (the home screen's look): a gold-lit card, the
+ * balance and Coins count up to their new value, and the amount floats up
+ * off them. Same handlers, same amounts.
  */
 
 const PRESETS = [10_000, 100_000, 1_000_000, 10_000_000];
 /** Store Coins top-ups (50 Coins = one week of your wage). */
 const COIN_PRESETS = [100, 500, 1_000, 5_000];
+const TONE = "#f59e0b";
 
 function money(n: number): string {
   return formatMoney(n);
@@ -31,60 +38,80 @@ export default function DevMoneyPanel({
   onAddCoins?: (amount: number) => void;
 }) {
   const [amount, setAmount] = useState(100_000);
+  const [added, fireAdded] = useTrigger();
+  const [addedText, setAddedText] = useState("");
+  const [coined, fireCoined] = useTrigger();
+  const [coinText, setCoinText] = useState("");
+
+  const add = (n: number) => { onAddMoney(n); setAddedText(`+★${money(n)}`); fireAdded(); };
+  const addCoins = (n: number) => { onAddCoins?.(n); setCoinText(`+${n.toLocaleString("en-GB")}`); fireCoined(); };
 
   return (
-    <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-      <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Dev — Add Money</div>
-      <p className="mt-1 text-[11px] font-semibold text-white/90">
-        For testing Investments/Boardroom without grinding for it. Current balance: ★{formatMoney(career.money)}
-      </p>
+    <SetCard tone={TONE} strength={0.22} className="mt-2.5 p-3">
+      <SetHead tone={TONE}>Dev — Add Money</SetHead>
+      <SetNote>For testing Investments/Boardroom without grinding for it.</SetNote>
+      <div className="relative mt-2 flex items-center justify-between rounded-xl bg-black/30 px-3 py-2" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(253,224,71,.18)" }}>
+        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Current balance</span>
+        <span className="text-[16px] font-black tabular-nums text-yellow-200">★<CountUp value={career.money} ms={800} format={(n) => formatMoney(Math.round(n))} /></span>
+        <FloatText trigger={added} text={addedText} color="#fde047" className="right-6 top-0" size={14} />
+      </div>
 
       <div className="mt-2 grid grid-cols-4 gap-1.5">
         {PRESETS.map(p => (
-          <button
+          <PressButton
             key={p}
-            onClick={() => onAddMoney(p)}
-            className="py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black text-white"
+            variant="primary"
+            size="none"
+            onClick={() => add(p)}
+            className="rounded-lg py-1.5 text-[10px] font-black"
           >
             +★{money(p)}
-          </button>
+          </PressButton>
         ))}
       </div>
 
       <div className="mt-2 flex items-center gap-2">
-        <span className="text-yellow-300 font-black text-sm">★</span>
+        <span className="text-sm font-black text-yellow-300">★</span>
         <input
           type="number" min={0} step={1000}
           value={amount}
           onChange={e => setAmount(Math.max(0, Math.round(Number(e.target.value) || 0)))}
-          className="flex-1 rounded-lg bg-gray-900 border border-gray-700 px-2 py-1.5 text-sm text-white tabular-nums"
+          className="kit-input min-w-0 flex-1 rounded-lg px-2 py-1.5 text-sm tabular-nums text-white"
         />
-        <button
+        <PressButton
+          variant="primary"
+          size="none"
           disabled={amount <= 0}
-          onClick={() => onAddMoney(amount)}
-          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 font-black text-xs whitespace-nowrap"
+          onClick={() => add(amount)}
+          className="whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-black"
         >
           Add
-        </button>
+        </PressButton>
       </div>
 
       {onAddCoins && (
-        <div className="mt-3 border-t border-gray-700 pt-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-amber-200">+ Coins (Store)</div>
-          <p className="mt-0.5 text-[11px] font-semibold text-white/90">Current: {(career.coins ?? 0).toLocaleString("en-GB")} Coins</p>
+        <>
+          <SetDivider />
+          <SetHead tone="#fbbf24">+ Coins (Store)</SetHead>
+          <div className="relative mt-1 text-[11px] font-semibold text-white/90">
+            Current: <span className="font-black tabular-nums text-amber-200"><CountUp value={career.coins ?? 0} ms={700} format={(n) => Math.round(n).toLocaleString("en-GB")} /></span> Coins
+            <FloatText trigger={coined} text={coinText} color="#fbbf24" className="left-24 top-0" size={13} />
+          </div>
           <div className="mt-1.5 grid grid-cols-4 gap-1.5">
             {COIN_PRESETS.map(p => (
-              <button
+              <PressButton
                 key={p}
-                onClick={() => onAddCoins(p)}
-                className="py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-[10px] font-black text-amber-950"
+                variant="gold"
+                size="none"
+                onClick={() => addCoins(p)}
+                className="rounded-lg py-1.5 text-[10px] font-black"
               >
                 +{p.toLocaleString("en-GB")}
-              </button>
+              </PressButton>
             ))}
           </div>
-        </div>
+        </>
       )}
-    </div>
+    </SetCard>
   );
 }
