@@ -6,7 +6,7 @@ import { makeManager } from "./manager";
 import { allPoolManagers } from "./managerPool";
 import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { catchUpAwards } from "./potm";
+import { catchUpAwards, compactPotmHistory } from "./potm";
 import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
 
 const KEY = "star-career-v2";
@@ -483,6 +483,10 @@ function backfill(c: CareerState): CareerState {
     }));
     if (won.length) out.awards = [...(out.awards ?? []), ...won];
   }
+  // A save from before Player of the Month history was trimmed at each
+  // rollover gets the same trim now (see compactPotmHistory): last season
+  // and this one whole, older seasons only the months you won.
+  out.potm = compactPotmHistory(out.potm, out.season - 1);
   return out;
 }
 
