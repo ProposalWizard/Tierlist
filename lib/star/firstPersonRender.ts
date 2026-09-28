@@ -876,6 +876,27 @@ function drawBall(
   const ground = project(cam, ball.x, ball.y, 0);
   if (!proj || !ground) return;
   const r = Math.max(3, 0.11 * proj.scale);
+  if (SKIN3D) {
+    // 3d: a soft shadow, the ball rolling with the distance it has covered,
+    // and lit from the left like everything else (a shine and a shaded side).
+    drawSoftShadow(ctx, ground.px, ground.py, r * 1.1, r * 0.4);
+    ctx.save();
+    ctx.translate(proj.px, proj.py);
+    ctx.save();
+    ctx.rotate(-ball.y / 0.11);
+    if (ballImage && ballImage.complete && ballImage.naturalWidth > 0) ctx.drawImage(ballImage, -r, -r, r * 2, r * 2);
+    else { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#fefefe"; ctx.fill(); }
+    ctx.restore();
+    const g = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.05, 0, 0, r * 1.02);
+    g.addColorStop(0, "rgba(255,255,255,0.55)");
+    g.addColorStop(0.35, "rgba(255,255,255,0)");
+    g.addColorStop(0.75, "rgba(0,0,0,0.12)");
+    g.addColorStop(1, "rgba(0,0,0,0.42)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    return;
+  }
   ctx.beginPath();
   ctx.ellipse(ground.px, ground.py, r * 1.1, r * 0.4, 0, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(0,0,0,0.35)";

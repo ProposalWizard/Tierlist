@@ -615,6 +615,8 @@ export const ADMIN_GUIDES = {
         items: [
           ["(the mode itself)", "Plays exactly as it does in the game — same controls, same rules. Finishing one starts it again."],
           ["Home avatar", "3D shows the home screen's avatar (A2). Classic shows the game's own figure, lit (A1)."],
+          ["Today / C1 Skill cam / C2 Broadcast / C3 Dynamic (Dribble)", "Which camera the dribble is seen through. Today is the game's camera. C1 is low over the shoulder, C2 is high behind, C3 closes in when a defender is near. The run itself — defenders, timing, controls — is identical in all four; switching takes effect straight away."],
+          ["Defenders: real / easy (Dribble)", "Real is the game's defenders. Easy makes them slow so a run lasts long enough to watch the camera — this page only."],
         ],
       },
     ],

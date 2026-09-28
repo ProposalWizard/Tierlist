@@ -33,6 +33,7 @@ import { buildScenario, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { startTrial } from "@/lib/star/trial";
 import { FAKE_FACES } from "@/lib/star/fakeFaces";
 import { setFigureSkinOverride, type FigureSkin } from "@/lib/star/figureSkin";
+import { DRIBBLE_CAMERAS, type DribbleCamera } from "@/lib/star/dribbleCamera";
 import type { CareerState } from "@/lib/star/types";
 
 const BG = "#05070d";
@@ -92,6 +93,10 @@ export default function ThreeDDevPage() {
   const [seed, setSeed] = useState(7);
   const [bank, setBank] = useState(1000);
   const [bet, setBet] = useState(10);
+  const [cam, setCam] = useState<DribbleCamera>("today");
+  // Dribble only: the real defenders, or slow ones so a run lasts long enough
+  // to watch the camera (a dial on this page, never the game).
+  const [easy, setEasy] = useState(false);
   const width = usePlayWidth();
   const trial = useMemo(() => startTrial(20260928), []);
 
@@ -103,6 +108,9 @@ export default function ThreeDDevPage() {
       if (m && MODES.some((x) => x.id === m)) setMode(m as Mode);
       const s = q.get("skin");
       if (s === "classic" || s === "3d") setSkin(s);
+      const c = q.get("cam");
+      if (c && DRIBBLE_CAMERAS.some((x) => x.id === c)) setCam(c as DribbleCamera);
+      if (q.get("opp") === "easy") setEasy(true);
     } catch { /* no query: the defaults stand */ }
     document.body.classList.add("knowitball-immersive");
     return () => document.body.classList.remove("knowitball-immersive");
@@ -111,7 +119,7 @@ export default function ThreeDDevPage() {
   // The look, forced for this page only; handed back when it closes.
   useEffect(() => setFigureSkinOverride(skin), [skin]);
 
-  const key = `${mode}-${skin}-${run}-${chance}-${seed}`;
+  const key = `${mode}-${skin}-${run}-${chance}-${seed}-${easy}`;
   const again = () => setRun((r) => r + 1);
 
   const body = (() => {
@@ -143,11 +151,27 @@ export default function ThreeDDevPage() {
       case "dribble":
         // The production values the real match plays with (CLAUDE.md).
         return (
-          <FirstPersonDribble
-            key={key}
-            pace={100} oppStrength={100} chaseEye={5} chasePitchDeg={5} chaseOffset={4} cameraFollowRate={10}
-            roster={DRIBBLE_ROSTER} seed={seed}
-          />
+          <>
+            {/* The camera options (lib/star/dribbleCamera.ts) — the run is the
+                same whichever is picked; only where the camera sits changes. */}
+            <Row>
+              {DRIBBLE_CAMERAS.map((c) => (
+                <Pill key={c.id} on={cam === c.id} onClick={() => setCam(c.id)}>{c.label}</Pill>
+              ))}
+            </Row>
+            <div style={{ color: MUTED, fontSize: 12, fontWeight: 700, margin: "6px 2px 8px" }}>
+              {DRIBBLE_CAMERAS.find((c) => c.id === cam)?.blurb}
+            </div>
+            <Row>
+              <Pill on={!easy} onClick={() => setEasy(false)}>Defenders: real</Pill>
+              <Pill on={easy} onClick={() => setEasy(true)}>Defenders: easy</Pill>
+            </Row>
+            <FirstPersonDribble
+              key={key}
+              pace={100} oppStrength={easy ? 20 : 100} chaseEye={5} chasePitchDeg={5} chaseOffset={4} cameraFollowRate={10}
+              roster={DRIBBLE_ROSTER} seed={seed} camera={cam}
+            />
+          </>
         );
       case "goalie":
         return (
@@ -173,7 +197,9 @@ export default function ThreeDDevPage() {
   return (
     <div style={{ minHeight: "100dvh", background: BG, color: INK }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        <div style={{ position: "sticky", top: 0, zIndex: 20, background: BG, padding: "12px 12px 8px" }}>
+        {/* Not sticky: the match scrolls itself into view, and a pinned bar
+            would sit over the goal end of the pitch. */}
+        <div style={{ background: BG, padding: "10px 12px 6px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Link href="/star-play-dev" aria-label="Back" style={{
               width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center",
@@ -190,9 +216,10 @@ export default function ThreeDDevPage() {
               ))}
             </div>
           </div>
-          <Row>
+          {/* One swipeable row, so the mode itself gets the screen. */}
+          <div style={{ display: "flex", gap: 6, marginTop: 8, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" }}>
             {MODES.map((m) => <Pill key={m.id} on={mode === m.id} onClick={() => setMode(m.id)}>{m.label}</Pill>)}
-          </Row>
+          </div>
         </div>
         <div style={{ padding: "0 8px 40px" }}>{body}</div>
       </div>
@@ -208,7 +235,7 @@ function Row({ children }: { children: React.ReactNode }) {
 function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick} style={{
-      padding: "7px 11px", borderRadius: 999, cursor: "pointer", fontSize: 12.5, fontWeight: 800,
+      padding: "7px 11px", borderRadius: 999, cursor: "pointer", fontSize: 12.5, fontWeight: 800, flex: "none",
       border: `1px solid ${on ? "rgba(52,211,153,0.7)" : "rgba(255,255,255,0.1)"}`,
       background: on ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.04)", color: on ? "#d1fae5" : MUTED,
     }}>{children}</button>
