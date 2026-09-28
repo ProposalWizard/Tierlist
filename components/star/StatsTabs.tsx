@@ -22,6 +22,8 @@ import DashboardStats from "./DashboardStats";
 import ClubBadge from "./ClubBadge";
 import { sortLeague } from "@/lib/star/season";
 import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
+import { ClubCard, StatBar, PressButton, RiseIn, useCountUp, rgba, useClubTheme } from "./ui";
+import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
 
 type Tab = "season" | "all" | "records";
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -32,31 +34,22 @@ const seasonLabel = (c: CareerState, s: number) => {
 
 export default function StatsTabs({ career, onRenew, onOpen, onLeague }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void; onLeague?: () => void }) {
   const [tab, setTab] = useState<Tab>("season");
+  const { glow } = useClubTheme(career);
   return (
     <div className="pb-2">
-      <div className="grid grid-cols-3 gap-1 rounded-xl bg-black/30 p-1">
-        {([["season", "Season"], ["all", "All seasons"], ["records", "Records"]] as [Tab, string][]).map(([t, l]) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`rounded-lg py-1.5 text-[11px] font-black transition ${tab === t ? "bg-yellow-500 text-gray-950" : "text-white/75"}`}
-          >
-            {l}
-          </button>
-        ))}
-      </div>
+      <SegTabs value={tab} onChange={setTab} tabs={[["season", "Season"], ["all", "All seasons"], ["records", "Records"]] as const} />
       {tab === "season" && (
         <div className="space-y-2">
-          <LeagueCard career={career} onLeague={onLeague} />
-          <DashboardStats career={career} onRenew={onRenew} />
+          <RiseIn onPageActive index={0}><LeagueCard career={career} onLeague={onLeague} glow={glow} /></RiseIn>
+          <RiseIn onPageActive index={1}><DashboardStats career={career} onRenew={onRenew} /></RiseIn>
         </div>
       )}
-      {tab === "all" && <AllSeasons career={career} />}
-      {tab === "records" && <Records career={career} />}
+      {tab === "all" && <RiseIn key="all"><AllSeasons career={career} glow={glow} /></RiseIn>}
+      {tab === "records" && <RiseIn key="records"><Records career={career} glow={glow} /></RiseIn>}
       {tab === "records" && onOpen && (
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <button onClick={() => onOpen("achievements")} className="rounded-xl border border-white/10 bg-gray-800/80 py-2 text-[11px] font-black text-white">⭐ Achievements →</button>
-          <button onClick={() => onOpen("trophies")} className="rounded-xl border border-white/10 bg-gray-800/80 py-2 text-[11px] font-black text-white">🏆 Trophy cabinet →</button>
+          <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
+          <PressButton variant="secondary" size="none" onClick={() => onOpen("trophies")} className="rounded-xl py-2.5 text-[11px] font-black">🏆 Trophy cabinet →</PressButton>
         </div>
       )}
     </div>
@@ -69,7 +62,7 @@ export default function StatsTabs({ career, onRenew, onOpen, onLeague }: { caree
  * points and the clubs either side of you, with the full table one tap away.
  * (Last 5 moved back to Home, under the next match.)
  */
-function LeagueCard({ career, onLeague }: { career: CareerState; onLeague?: () => void }) {
+function LeagueCard({ career, onLeague, glow }: { career: CareerState; onLeague?: () => void; glow: string }) {
   const table = sortLeague(career.league);
   const me = table.findIndex((t) => t.name === career.player.club);
   if (me < 0) return null;
@@ -78,23 +71,30 @@ function LeagueCard({ career, onLeague }: { career: CareerState; onLeague?: () =
   const pos = me + 1;
   const suffix = pos % 10 === 1 && pos !== 11 ? "st" : pos % 10 === 2 && pos !== 12 ? "nd" : pos % 10 === 3 && pos !== 13 ? "rd" : "th";
   return (
-    <div className="mt-2 rounded-2xl border border-white/10 bg-gray-800/80 p-2.5">
+    <ClubCard glow={glow} className="mt-2 p-2.5">
       <div className="flex items-center justify-between">
-        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">{leagueNameFor(divisionOf(career))}</div>
+        <CardTitle>🏆 {leagueNameFor(divisionOf(career))}</CardTitle>
         {onLeague && (
-          <button onClick={onLeague} className="kib-press rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/85">Full table →</button>
+          <PressButton variant="secondary" size="none" onClick={onLeague} className="rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">Full table →</PressButton>
         )}
       </div>
       <div className="mt-1.5 flex items-center gap-3">
-        <div className="shrink-0 text-center">
-          <div className="text-[30px] font-black leading-none tabular-nums text-yellow-300">{pos}<span className="text-[14px]">{suffix}</span></div>
-          <div className="mt-0.5 text-[10px] font-black tabular-nums text-white/70">{table[me].points} pts</div>
+        <div className="relative shrink-0 px-1 text-center">
+          <div aria-hidden className="kib-glow-pulse absolute inset-0 rounded-full blur-lg" style={{ background: rgba(glow, 0.45) }} />
+          <div className="relative bg-gradient-to-b from-yellow-200 to-amber-500 bg-clip-text text-[34px] font-black leading-none tabular-nums text-transparent" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.6))" }}>
+            <PosCount value={pos} /><span className="text-[15px]">{suffix}</span>
+          </div>
+          <div className="relative mt-0.5 text-[10px] font-black tabular-nums text-white/80">{table[me].points} pts</div>
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 space-y-[2px]">
           {rows.map((t, i) => {
             const n = from + i + 1, you = t.name === career.player.club;
             return (
-              <div key={t.name} className={`flex items-center gap-1.5 rounded-md px-1.5 py-[3px] text-[11px] font-bold ${you ? "bg-yellow-500/20 text-white ring-1 ring-yellow-400/40" : "text-white/80"}`}>
+              <div
+                key={t.name}
+                className={`flex items-center gap-1.5 rounded-md px-1.5 py-[3px] text-[11px] font-bold ${you ? "text-white" : "text-white/80"}`}
+                style={you ? youRowStyle(glow) : undefined}
+              >
                 <span className="w-4 text-right tabular-nums text-white/55">{n}</span>
                 <ClubBadge club={t.name} kit={kitsOf(t.name).home} size={14} />
                 <span className="min-w-0 flex-1 truncate">{short(t.name)}</span>
@@ -105,30 +105,35 @@ function LeagueCard({ career, onLeague }: { career: CareerState; onLeague?: () =
           })}
         </div>
       </div>
-    </div>
+    </ClubCard>
   );
 }
 
-function Card({ title, children, note }: { title: string; children: React.ReactNode; note?: string }) {
+/** The league position counting to its new value. */
+function PosCount({ value }: { value: number }) {
+  return <>{Math.round(useCountUp(value, 700))}</>;
+}
+
+function Card({ title, children, note, glow }: { title: string; children: React.ReactNode; note?: string; glow: string }) {
   return (
-    <div className="mt-2 rounded-2xl border border-white/10 bg-gray-800/80 p-2.5">
-      <div className="mb-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">{title}</div>
+    <ClubCard glow={glow} className="mt-2 p-2.5">
+      <CardTitle className="mb-1.5">{title}</CardTitle>
       {children}
-      {note && <div className="mt-1.5 text-[10px] font-bold text-white/45">{note}</div>}
-    </div>
+      {note && <div className="mt-1.5 text-[10px] font-bold text-white/55">{note}</div>}
+    </ClubCard>
   );
 }
 
 function Big({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl bg-black/25 px-1 py-1.5 text-center">
+    <div className="rounded-xl bg-gradient-to-b from-white/[0.14] to-white/[0.04] px-1 py-1.5 text-center" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.08)" }}>
       <div className="text-[18px] font-black leading-tight tabular-nums text-white">{value}</div>
-      <div className="text-[9px] font-black uppercase tracking-wider text-white/60">{label}</div>
+      <div className="text-[8.5px] font-black uppercase tracking-wider text-white/60">{label}</div>
     </div>
   );
 }
 
-function AllSeasons({ career }: { career: CareerState }) {
+function AllSeasons({ career, glow }: { career: CareerState; glow: string }) {
   const c = career.careerStats;
   const avg = c.ratingCount > 0 ? (c.totalRating / c.ratingCount).toFixed(2) : "—";
   const clubs = perClubTotals(career);
@@ -136,7 +141,7 @@ function AllSeasons({ career }: { career: CareerState }) {
   const noHistory = !(career.seasonArchive?.length);
   return (
     <>
-      <Card title="Career totals">
+      <Card glow={glow} title="Career totals">
         <div className="grid grid-cols-5 gap-1">
           <Big label="Apps" value={c.appearances} />
           <Big label="Goals" value={c.goals} />
@@ -145,7 +150,7 @@ function AllSeasons({ career }: { career: CareerState }) {
           <Big label="MOTM" value={c.starMan} />
         </div>
       </Card>
-      <Card title="Per club" note={noHistory ? "Club and season history starts counting from this season." : undefined}>
+      <Card glow={glow} title="Per club" note={noHistory ? "Club and season history starts counting from this season." : undefined}>
         {clubs.length === 0 ? (
           <div className="text-[11px] font-bold text-white/50">No appearances yet.</div>
         ) : (
@@ -174,7 +179,7 @@ function AllSeasons({ career }: { career: CareerState }) {
           </table>
         )}
       </Card>
-      <Card title="Season by season">
+      <Card glow={glow} title="Season by season">
         {seasons.length === 0 ? (
           <div className="text-[11px] font-bold text-white/50">No seasons played yet.</div>
         ) : (
@@ -206,7 +211,7 @@ function AllSeasons({ career }: { career: CareerState }) {
 function Row({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
     <div className="flex items-center gap-2 border-t border-white/5 py-1.5 first:border-t-0">
-      <span className="w-6 text-center text-[16px]">{icon}</span>
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-b from-white/[0.16] to-white/[0.04] text-[15px] ring-1 ring-white/10">{icon}</span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[12px] font-black text-white">{label}</div>
         {sub && <div className="truncate text-[10px] font-bold text-white/50">{sub}</div>}
@@ -216,7 +221,7 @@ function Row({ icon, label, value, sub }: { icon: string; label: string; value: 
   );
 }
 
-function Records({ career }: { career: CareerState }) {
+function Records({ career, glow }: { career: CareerState; glow: string }) {
   const b = career.careerBests ?? {};
   const s = (n: number) => `Season ${seasonLabel(career, n)}`;
   const potmWon = (career.potm ?? []).filter((m) => m.isYou);
@@ -224,26 +229,26 @@ function Records({ career }: { career: CareerState }) {
   const fresh = !career.careerBests;
   return (
     <>
-      <Card title="Your bests" note={fresh ? "Furthest goal/assist and match bests start counting from now on this save." : undefined}>
+      <Card glow={glow} title="Your bests" note={fresh ? "Furthest goal/assist and match bests start counting from now on this save." : undefined}>
         <Row icon="🚀" label="Furthest goal" value={b.furthestGoal ? `${b.furthestGoal.metres} m` : "—"} sub={b.furthestGoal ? `v ${short(b.furthestGoal.opponent)} · ${s(b.furthestGoal.season)}` : undefined} />
         <Row icon="🎯" label="Furthest assist (your pass)" value={b.furthestAssist ? `${b.furthestAssist.metres} m` : "—"} sub={b.furthestAssist ? `v ${short(b.furthestAssist.opponent)} · ${s(b.furthestAssist.season)}` : undefined} />
         <Row icon="⚽" label="Most goals in a game" value={b.mostGoalsMatch ? String(b.mostGoalsMatch.goals) : "—"} sub={b.mostGoalsMatch ? `v ${short(b.mostGoalsMatch.opponent)} · ${s(b.mostGoalsMatch.season)}` : undefined} />
         <Row icon="📈" label="Most goals in a season" value={b.mostGoalsSeason ? String(b.mostGoalsSeason.goals) : "—"} sub={b.mostGoalsSeason ? s(b.mostGoalsSeason.season) : undefined} />
         <Row icon="🅰️" label="Most assists in a season" value={b.mostAssistsSeason ? String(b.mostAssistsSeason.assists) : "—"} sub={b.mostAssistsSeason ? s(b.mostAssistsSeason.season) : undefined} />
       </Card>
-      <Card title="Awards">
+      <Card glow={glow} title="Awards">
         <Row icon="⭐" label="Man of the match" value={String(career.careerStats.starMan)} sub="Star Man — rating 8.5+ or two goals" />
         <Row icon="📅" label="Player of the Month" value={String(potmWon.length)} sub={potmWon.slice(-2).map((m) => `${m.monthName} ${seasonLabel(career, m.season)}`).join(" · ") || undefined} />
         <Row icon="🏅" label="Ballon d'Or" value={String(career.ballonDorWins)} />
       </Card>
-      <Card title={`Trophies · ${career.trophies.length}`}>
+      <Card glow={glow} title={`Trophies · ${career.trophies.length}`}>
         {troph.length === 0 ? (
           <div className="text-[11px] font-bold text-white/50">None yet.</div>
         ) : troph.map((t) => (
           <Row key={t.competition} icon="🏆" label={t.competition} value={`×${t.seasons.length}`} sub={t.seasons.map((n) => seasonLabel(career, n)).join(" · ")} />
         ))}
       </Card>
-      <Card title="Premier League records">
+      <Card glow={glow} title="Premier League records">
         {RECORDS.map((r) => {
           const p = r.progress(career);
           const pct = Math.min(100, Math.round((p / r.value) * 100));
@@ -253,9 +258,7 @@ function Records({ career }: { career: CareerState }) {
                 <span className="truncate text-[11px] font-black text-white">{r.label.replace("Premier League", "PL")}</span>
                 <span className="shrink-0 text-[11px] font-black tabular-nums text-white/80">{p} / {r.value}</span>
               </div>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/40">
-                <div className={`h-full rounded-full ${p >= r.value ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${Math.max(3, pct)}%` }} />
-              </div>
+              <StatBar value={Math.max(3, pct)} colors={p >= r.value ? ["#34d399", "#a3e635"] : ["#f59e0b", "#fde047"]} className="mt-1 h-2" sheen={false} />
             </div>
           );
         })}
