@@ -517,15 +517,28 @@ export function saveActiveSlot(accountScope: string, slot: number): void {
  * route it applies to. A slot other than 1 simply stays local-only, exactly
  * as fire-and-forget as a network hiccup, until it has.
  */
-export async function saveCareerToCloud(state: CareerState, slot: number = 1): Promise<void> {
+export async function saveCareerToCloud(
+  state: CareerState, slot: number = 1, opts: { leavingPage?: boolean } = {},
+): Promise<void> {
   try {
+    const body = JSON.stringify(state);
     await fetch(`/api/star/career?slot=${slot}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(state),
+      body,
+      // Leaving the page (tab hidden, app backgrounded, tab closed): a
+      // keepalive request survives the page being torn down, but browsers
+      // refuse one whose body is over ~64 KB outright — the whole request
+      // fails, not just the keepalive part. So it is only asked for when the
+      // body fits; a bigger save goes as an ordinary request, which on a
+      // phone that is merely backgrounded (the common case) still finishes.
+      keepalive: !!opts.leavingPage && body.length < KEEPALIVE_BODY_LIMIT,
     });
   } catch {}
 }
+
+/** Just under the ~64 KB cap browsers put on keepalive/sendBeacon bodies. */
+export const KEEPALIVE_BODY_LIMIT = 60_000;
 
 /**
  * Fetch one save slot from Supabase, with when it was saved.

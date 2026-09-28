@@ -319,6 +319,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   const [signedIn, setSignedIn] = useState(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The cloud save the 3 s timer is still holding, if any — see the
+   *  flush-on-hide effect below the save effect. */
+  const pendingCloudSave = useRef<{ career: CareerState; slot: number } | null>(null);
   /**
    * WHICH ACCOUNT — always the signed-in user's id (see the sign-in gate:
    * nothing past it runs without one). Resolved once, here, before anything
@@ -429,8 +432,39 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // not whichever slot happens to be active three seconds from now.
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     const slotAtSaveTime = activeSlotRef.current;
-    cloudSaveTimer.current = setTimeout(() => { saveCareerToCloud(career, slotAtSaveTime); }, 3000);
+    pendingCloudSave.current = { career, slot: slotAtSaveTime };
+    cloudSaveTimer.current = setTimeout(() => {
+      pendingCloudSave.current = null;
+      saveCareerToCloud(career, slotAtSaveTime);
+    }, 3000);
   }, [career]);
+
+  // ── Leaving the page must not lose the last few seconds ──
+  //
+  // The cloud save above waits 3 s for things to settle. Switching app,
+  // locking the phone or closing the tab inside those 3 s used to leave the
+  // cloud one step behind: the timer never fired, and the next device (or a
+  // wiped browser) loaded the older save. When the page is hidden, the
+  // pending save goes NOW instead — and the local copy is written again too,
+  // belt and braces, since it is the one thing guaranteed to be there on
+  // return. Nothing is sent when nothing is pending.
+  useEffect(() => {
+    const flushOnHide = () => {
+      const pending = pendingCloudSave.current;
+      if (!pending) return;
+      pendingCloudSave.current = null;
+      if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
+      saveCareer(pending.career, slotScope(scopeRef.current, pending.slot));
+      saveCareerToCloud(pending.career, pending.slot, { leavingPage: true });
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") flushOnHide(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", flushOnHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", flushOnHide);
+    };
+  }, []);
 
   /**
    * EVERY NEW SCREEN STARTS AT THE TOP OF ITSELF.
@@ -1858,6 +1892,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // let expire everywhere else; switching away is the one moment guaranteed
   // to leave it no chance to.
   const flushCloudSave = useCallback(() => {
+    pendingCloudSave.current = null;
     if (cloudSaveTimer.current) {
       clearTimeout(cloudSaveTimer.current);
       cloudSaveTimer.current = null;
