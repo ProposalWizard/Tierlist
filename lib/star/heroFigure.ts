@@ -28,6 +28,9 @@ export type AvatarStyle = "A1" | "A2";
 // ── Colour helpers ──────────────────────────────────────────────────────────
 
 function rgbOf(c: string): [number, number, number] | null {
+  // tint() hands back "rgb(r,g,b)", so a tinted colour can be tinted again.
+  const f = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i.exec(c.trim());
+  if (f) return [Number(f[1]), Number(f[2]), Number(f[3])];
   const m = /^#?([0-9a-f]{6})$/i.exec(c.trim());
   if (!m) return null;
   const n = parseInt(m[1], 16);
@@ -140,12 +143,13 @@ export const HERO_TOP = 12;
 export const HERO_FACE_H = 29, HERO_CHIN_Y = 80;
 export const HERO_CREST = { x: 119 / HERO_W, y: 112 / HERO_H, size: 17 / HERO_W };
 
-type P = [number, number];
+export type P = [number, number];
 /** The point a fraction t of the way from a to b. */
-const along = (a: P, b: P, t: number): P => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+export const along = (a: P, b: P, t: number): P => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
-/** A limb from a to b, tapering w0 → w1, lit across its width. */
-function limb(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number, color: string) {
+/** A limb from a to b, tapering w0 → w1, lit across its width. Shared with
+ *  the in-match "3d" figure (figure3d.ts), which draws every player with it. */
+export function limb(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number, color: string) {
   const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
   const nx = -dy / L, ny = dx / L;
   const g = ctx.createLinearGradient(a[0] + nx * w0 / 2, a[1] + ny * w0 / 2, a[0] - nx * w0 / 2, a[1] - ny * w0 / 2);
@@ -170,8 +174,12 @@ function limb(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number,
  * `b`: it covers the first 70% of the upper arm, whatever angle the arm is
  * at, so a raised arm raises its sleeve too. A round cap at the shoulder
  * joins it to the body; the cuff is flat, in the trim colour.
+ *
+ * `u` scales the fold and cuff line widths: 1 in this file's design space;
+ * the in-match "3d" figure (figure3d.ts) passes its own pixels-per-design-unit
+ * so a sleeve 20 px long does not get a 3 px cuff.
  */
-function sleeve(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number, color: string, trim: string) {
+export function sleeve(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number, color: string, trim: string, u = 1) {
   const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
   const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
   const e: P = [a[0] + dx * 0.7, a[1] + dy * 0.7];
@@ -188,13 +196,13 @@ function sleeve(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: numbe
   ctx.closePath();
   ctx.fill();
   // A fold across the sleeve, and the cuff.
-  ctx.strokeStyle = rgba(tint(color, -0.55), 0.3); ctx.lineWidth = 1.2; ctx.lineCap = "round";
+  ctx.strokeStyle = rgba(tint(color, -0.55), 0.3); ctx.lineWidth = 1.2 * u; ctx.lineCap = "round";
   const f: P = [a[0] + dx * 0.42, a[1] + dy * 0.42];
-  ctx.beginPath(); ctx.moveTo(f[0] + nx * w1 * 0.3, f[1] + ny * w1 * 0.3); ctx.quadraticCurveTo(f[0] + ux * 2, f[1] + uy * 2, f[0] - nx * w1 * 0.25, f[1] - ny * w1 * 0.25); ctx.stroke();
-  ctx.strokeStyle = trim; ctx.lineWidth = 3; ctx.lineCap = "butt";
+  ctx.beginPath(); ctx.moveTo(f[0] + nx * w1 * 0.3, f[1] + ny * w1 * 0.3); ctx.quadraticCurveTo(f[0] + ux * 2 * u, f[1] + uy * 2 * u, f[0] - nx * w1 * 0.25, f[1] - ny * w1 * 0.25); ctx.stroke();
+  ctx.strokeStyle = trim; ctx.lineWidth = 3 * u; ctx.lineCap = "butt";
   ctx.beginPath();
-  ctx.moveTo(e[0] + nx * w1 / 2 - ux * 1.4, e[1] + ny * w1 / 2 - uy * 1.4);
-  ctx.lineTo(e[0] - nx * w1 / 2 - ux * 1.4, e[1] - ny * w1 / 2 - uy * 1.4);
+  ctx.moveTo(e[0] + nx * w1 / 2 - ux * 1.4 * u, e[1] + ny * w1 / 2 - uy * 1.4 * u);
+  ctx.lineTo(e[0] - nx * w1 / 2 - ux * 1.4 * u, e[1] - ny * w1 / 2 - uy * 1.4 * u);
   ctx.stroke();
 }
 

@@ -231,14 +231,24 @@ function smoothRGB(d: Uint8ClampedArray, w: number, h: number, rad: number): voi
  * canvas throws on getImageData, and this returns null so the caller can
  * fall back to the plain pasted head.
  */
-export function fitFace(img: HTMLImageElement): FittedHead | null {
-  if (typeof document === "undefined" || !img.complete || !img.naturalWidth) return null;
-  const W = img.naturalWidth, H = img.naturalHeight;
+export function fitFace(img: HTMLImageElement | ImageBitmap, maxSide?: number, srcHint?: string): FittedHead | null {
+  if (typeof document === "undefined") return null;
+  // An ImageBitmap (figure3d.ts decodes and shrinks the photo off the main
+  // thread first) or a loaded <img>, as the home avatar passes.
+  const w0 = "naturalWidth" in img ? (img.complete ? img.naturalWidth : 0) : img.width;
+  const h0 = "naturalHeight" in img ? img.naturalHeight : img.height;
+  if (!w0 || !h0) return null;
+  // `maxSide`: work on a smaller copy. The in-match heads (figure3d.ts) are
+  // a few dozen pixels tall, so a 1,400-pixel photo is shrunk first — the
+  // pixel passes below then cost a sixteenth as much. The home avatar leaves
+  // it out and works at full size, exactly as before.
+  const k0 = maxSide ? Math.min(1, maxSide / Math.max(w0, h0)) : 1;
+  const W = Math.max(1, Math.round(w0 * k0)), H = Math.max(1, Math.round(h0 * k0));
   const src = document.createElement("canvas");
   src.width = W; src.height = H;
   const sx = src.getContext("2d", { willReadFrequently: true });
   if (!sx) return null;
-  sx.drawImage(img, 0, 0);
+  sx.drawImage(img, 0, 0, W, H);
   let full: ImageData;
   try { full = sx.getImageData(0, 0, W, H); } catch { return null; }
   // A photo with a background (a phone upload): flood the background away
@@ -250,7 +260,9 @@ export function fitFace(img: HTMLImageElement): FittedHead | null {
   // placed, so the face box is known rather than guessed, and the whole
   // square is kept (it is framed already, hair and all).
   const px = (x: number, y: number) => full.data[(y * W + x) * 4 + 3];
-  const scanned = looksScanned(img.src, W, H, [px(0, 0), px(W - 1, 0), px(0, H - 1), px(W - 1, H - 1)]);
+  // An ImageBitmap has no src, so figure3d.ts passes the photo's url as `srcHint`.
+  const srcUrl = "src" in img ? img.src : (srcHint ?? "");
+  const scanned = looksScanned(srcUrl, W, H, [px(0, 0), px(W - 1, 0), px(0, H - 1), px(W - 1, H - 1)]);
   if (!cutout && !scanned) {
     const keepMid = (x: number, y: number) => ((x - W * 0.5) / (W * 0.22)) ** 2 + ((y - H * 0.45) / (H * 0.3)) ** 2 < 1;
     const bg = backgroundMask(full.data, W, H, keepMid);

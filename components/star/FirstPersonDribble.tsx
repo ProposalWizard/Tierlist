@@ -5,6 +5,7 @@ import {
   type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor } from "@/lib/star/firstPersonView";
+import { poseFor, closeness, type DribbleCamera } from "@/lib/star/dribbleCamera";
 import { renderFirstPerson, type DuelPip } from "@/lib/star/firstPersonRender";
 import { mulberry32 } from "@/lib/star/season";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
@@ -266,11 +267,17 @@ export interface FirstPersonDribbleProps {
    * this goes false; then a tap starts it — never the card's own dismissal.
    */
   hold?: boolean;
+  /**
+   * Which camera (lib/star/dribbleCamera.ts): "today" (the default — the
+   * chase* props above, exactly as before) or one of the C1-C3 reframes.
+   * A picture choice only: the run itself never reads it.
+   */
+  camera?: DribbleCamera;
 }
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
-  hideHint = false, hold = false,
+  hideHint = false, hold = false, camera = "today",
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -302,6 +309,14 @@ export default function FirstPersonDribble({
   const camXRef = useRef(0);
   const ballXRef = useRef(0);
   const ballVXRef = useRef(0);
+  // The camera options (C1-C3): read live, so switching needs no restart.
+  const cameraRef = useRef<DribbleCamera>(camera);
+  cameraRef.current = camera;
+  /** Which side the camera leans to (+1 right, -1 left) and how far it is
+   *  now, eased; and C3's closeness (1 = in close, 0 = pulled back). */
+  const sideDirRef = useRef(1);
+  const sideRef = useRef(0);
+  const closeRef = useRef(0);
 
   const phaseRef = useRef<Phase>("ready");
   const [phase, setPhaseState] = useState<Phase>("ready");
@@ -550,8 +565,29 @@ export default function FirstPersonDribble({
       // Forward push-glide — a small ripple on the lead distance keyed to
       // stride (never wall-clock), plus the existing burst lunge further
       // out ahead.
+      // ── The camera options (lib/star/dribbleCamera.ts) — a picture only. ──
+      let camEye = chaseEye, camPitchDeg = chasePitchDeg, camOffset = chaseOffset, restLead = BALL_BASE_LEAD, camLook = 0;
+      if (cameraRef.current !== "today") {
+        // C3 closes in on the nearest defender still to beat, ahead of you.
+        let near = Infinity;
+        for (const d of run.defenders) {
+          if (d.phase === "beaten" || d.phase === "won") continue;
+          if (d.y < run.y + 0.5) near = Math.min(near, run.y - d.y);
+        }
+        closeRef.current += (closeness(near) - closeRef.current) * (1 - Math.exp(-2.5 * dt));
+        const pose = poseFor(cameraRef.current, closeRef.current);
+        // Lean towards the side the ball is on, so it is never behind your legs.
+        const off = ballXRef.current - run.x;
+        if (off > 0.15) sideDirRef.current = 1;
+        else if (off < -0.15) sideDirRef.current = -1;
+        sideRef.current += (sideDirRef.current * pose.side - sideRef.current) * (1 - Math.exp(-3 * dt));
+        camEye = pose.eye; camPitchDeg = pose.pitchDeg; camOffset = pose.offset; restLead = pose.lead; camLook = pose.look;
+      } else {
+        sideRef.current = 0;
+      }
+
       const burstLead = run.burst ? Math.min(1, run.burst.t / BURST_T) : 0;
-      const baseLead = BALL_BASE_LEAD + (BALL_BURST_LEAD - BALL_BASE_LEAD) * burstLead;
+      const baseLead = restLead + (BALL_BURST_LEAD - BALL_BASE_LEAD) * burstLead;
       const wave = Math.sin((run.stride / TOUCH_WAVE_LEN) * Math.PI * 2) * TOUCH_WAVE_AMP;
       const leadDepth = Math.max(0.3, baseLead + wave);
 
@@ -561,8 +597,16 @@ export default function FirstPersonDribble({
       // sitting exactly at your own eyes, and why it no longer locks
       // exactly to your x either.
       const cam = cameraFor(
-        { x: camXRef.current, y: run.y + chaseOffset }, c.width, c.height,
-        { eye: chaseEye, pitch: (chasePitchDeg * Math.PI) / 180 },
+        { x: camXRef.current + sideRef.current, y: run.y + camOffset }, c.width, c.height,
+        {
+          eye: camEye, pitch: (camPitchDeg * Math.PI) / 180,
+          // Aim at a point `look` m ahead of you (a leaning camera keeps you
+          // in frame); 0 = straight down the pitch, as today.
+          forward: camLook > 0 ? (() => {
+            const fx = -sideRef.current, fy = -(camLook + camOffset), L = Math.hypot(fx, fy) || 1;
+            return { x: fx / L, y: fy / L };
+          })() : undefined,
+        },
       );
       // One pip per WAVE, not per man — a wave is "beaten" only once every
       // man in it is, "won" if it beat you, "active" if it's the one
