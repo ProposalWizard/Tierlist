@@ -16,6 +16,7 @@
 import { useEffect, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import StoreView from "./StoreView";
+import { useClubTheme } from "../ui";
 import { dateKeyFor } from "@/lib/star/store/daily";
 import {
   careerStoreState, careerPriceContext, careerStoreBuy, careerStoreEquip, careerStoreUnequip,
@@ -36,6 +37,7 @@ export default function CareerStore({ career, onChange, onBack }: {
   }, []);
 
   const dateKey = dateKeyFor(now);
+  const { glow } = useClubTheme(career);
   const run = (r: CareerStoreResult) => {
     if (r.ok) onChange(r.career);
     return { ok: r.ok, reason: r.reason };
@@ -47,6 +49,7 @@ export default function CareerStore({ career, onChange, onBack }: {
       ctx={careerPriceContext(career)}
       dateKey={dateKey}
       now={now}
+      glow={glow}
       back={{ onClick: onBack }}
       hide={(item) => !shownInCareer(item, career)}
       packs={coinPacksAreTestMode() ? "test" : "soon"}
