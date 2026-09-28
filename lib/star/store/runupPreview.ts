@@ -2,10 +2,9 @@
  * THE LITTLE LOOPING PREVIEW ON EACH ANIMATION CARD — where the figure is at
  * each moment of one run-up.
  *
- * TODO wire preview to lib/star/runupStyles.ts — this is a stand-in drawing
- * for the store's test area only, a side-on sketch of each style so the cards
- * are not blank. When the animations build lands, the card should play the
- * real run-up instead.
+ * A side-on sketch of each style for the store's cards (ids, names and
+ * descriptions come from lib/star/runupStyles.ts). The match itself plays the
+ * real run-up, drawn by CanvasMatch — this is only the shop-window picture.
  *
  * Pure: `runupPose(style, t)` for t in [0, 1) gives the figure's position,
  * how far into its stride it is and whether it is striking. The page samples
@@ -90,11 +89,11 @@ export const RUNUP_PREVIEW: Record<AnimationId, Style> = {
   fk_standard: { startX: 58, begin: 0.2, cycles: 2, stride: 0.6, power: 1, ease: linear, wall: true, loft: 2 },
   // Stands in the stance for most of the loop, then a few big strides.
   fk_power_stance: { startX: 56, begin: 0.55, cycles: 1.5, stride: 0.9, power: 1.6, ease: easeIn, wall: true, loft: 1.8, knuckle: true },
-  fk_bale: { startX: 46, begin: 0.35, cycles: 2.5, stride: 0.9, power: 1.5, ease: easeIn, wall: true, loft: 1.8, knuckle: true },
-  fk_messi: { startX: 66, begin: 0.45, cycles: 1.2, stride: 0.4, power: 0.9, ease: easeOut, wall: true, loft: 2.6 },
-  fk_neymar: { startX: 58, begin: 0.15, cycles: 2, stride: 0.55, power: 1, ease: linear, pause: [0.4, 0.7], wall: true, loft: 2.3 },
-  fk_maddison: { startX: 50, begin: 0.2, cycles: 2.5, stride: 0.65, power: 1.1, ease: linear, arc: true, wall: true, loft: 2.2 },
-  fk_trent: { startX: 22, begin: 0.05, cycles: 4, stride: 0.7, power: 1.2, ease: linear, arc: true, wall: true, loft: 2.4 },
+  fk_stance_sprint: { startX: 46, begin: 0.35, cycles: 2.5, stride: 0.9, power: 1.5, ease: easeIn, wall: true, loft: 1.8, knuckle: true },
+  fk_calm_curl: { startX: 66, begin: 0.45, cycles: 1.2, stride: 0.4, power: 0.9, ease: easeOut, wall: true, loft: 2.6 },
+  fk_stutter_curl: { startX: 58, begin: 0.15, cycles: 2, stride: 0.55, power: 1, ease: linear, pause: [0.4, 0.7], wall: true, loft: 2.3 },
+  fk_angled_whip: { startX: 50, begin: 0.2, cycles: 2.5, stride: 0.65, power: 1.1, ease: linear, arc: true, wall: true, loft: 2.2 },
+  fk_long_diagonal: { startX: 22, begin: 0.05, cycles: 4, stride: 0.7, power: 1.2, ease: linear, arc: true, wall: true, loft: 2.4 },
 };
 
 /** Does this style's preview stand a wall in front of the ball? */

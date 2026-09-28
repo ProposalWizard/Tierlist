@@ -4,9 +4,9 @@
  * A small looping drawing of one penalty run-up, for the store's Animations
  * cards (/star-store-dev).
  *
- * TODO wire preview to lib/star/runupStyles.ts — this is a side-on sketch
- * driven by lib/star/store/runupPreview.ts, not the real run-up the match
- * plays. Swap it for the real animation once the animations build lands.
+ * A side-on shop-window sketch driven by lib/star/store/runupPreview.ts. The
+ * styles themselves (ids, names, descriptions) are the real ones from
+ * lib/star/runupStyles.ts; the match draws the real run-up in CanvasMatch.
  *
  * Pure SVG + CSS keyframes, sampled once from `runupPose`. No canvas and no
  * animation loop of its own: the browser plays the keyframes.

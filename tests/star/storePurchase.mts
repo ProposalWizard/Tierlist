@@ -21,7 +21,7 @@ const rich: StoreState = { ...START_STATE, stars: 1_000_000, coins: 100_000 };
 const pens = ANIMATIONS.filter((a) => a.set === "penalty").map((a) => a.id).join();
 const fks = ANIMATIONS.filter((a) => a.set === "free_kick").map((a) => a.id).join();
 check(pens === "standard,stroll,skip,sprint,stutter,two_step,arc", `the 7 penalty run-ups, in the contract's order (${pens})`);
-check(fks === "fk_standard,fk_power_stance,fk_bale,fk_messi,fk_neymar,fk_maddison,fk_trent", `the 7 free-kick run-ups (${fks})`);
+check(fks === "fk_standard,fk_power_stance,fk_stance_sprint,fk_calm_curl,fk_stutter_curl,fk_angled_whip,fk_long_diagonal", `the 7 free-kick run-ups (${fks})`);
 check(ANIMATIONS.filter((a) => a.free).map((a) => a.id).join() === "standard,fk_standard", "only the two Standards are free");
 check(owns(START_STATE, "standard") && owns(START_STATE, "fk_standard"), "everyone owns both Standards");
 check(basePrice(findItem("fk_standard")!, ctx).stars === 0, "free-kick Standard costs nothing");
@@ -72,11 +72,11 @@ check(unequip(s, "boots").equipped.boots === undefined, "take it off");
 const sprint = buy(rich, "sprint", "coins", ctx, DAY).state;
 const eqs = equip(sprint, "sprint").state;
 check(eqs.penaltyRunup === "sprint" && eqs.freeKickRunup === "fk_standard", "a penalty run-up goes in the penalty slot only");
-const trent = buy(eqs, "fk_trent", "coins", ctx, "2099-01-01").state;
-const eqt = equip(trent, "fk_trent").state;
-check(eqt.freeKickRunup === "fk_trent" && eqt.penaltyRunup === "sprint", "a free-kick run-up goes in its own slot, penalty kept");
+const trent = buy(eqs, "fk_long_diagonal", "coins", ctx, "2099-01-01").state;
+const eqt = equip(trent, "fk_long_diagonal").state;
+check(eqt.freeKickRunup === "fk_long_diagonal" && eqt.penaltyRunup === "sprint", "a free-kick run-up goes in its own slot, penalty kept");
 check(equip(START_STATE, "standard").ok && equip(START_STATE, "fk_standard").ok, "both Standards can always be picked");
-check(!equip(START_STATE, "fk_messi").ok, "can't pick a free-kick run-up you don't own");
+check(!equip(START_STATE, "fk_calm_curl").ok, "can't pick a free-kick run-up you don't own");
 
 // Boosts stack in the locker and get used up.
 let bs = buy(rich, "kib-basic", "stars", ctx, DAY).state;
@@ -115,8 +115,8 @@ check(junk.stars === START_STATE.stars && junk.coins === 0 && junk.owned.join() 
 check(junk.equipped.head === "headband-white" && junk.equipped.boots === undefined && junk.penaltyRunup === "standard" && junk.freeKickRunup === "fk_standard", "wrong-slot and unknown ids dropped");
 const oldShape = sanitizeStoreState({ runup: "arc", owned: ["arc"] });
 check(oldShape.penaltyRunup === "arc", "the page's first one-slot save carries over as the penalty run-up");
-check(sanitizeStoreState({ penaltyRunup: "fk_trent", freeKickRunup: "arc" }).penaltyRunup === "standard"
-  && sanitizeStoreState({ penaltyRunup: "fk_trent", freeKickRunup: "arc" }).freeKickRunup === "fk_standard", "a run-up in the wrong set's slot is dropped");
+check(sanitizeStoreState({ penaltyRunup: "fk_long_diagonal", freeKickRunup: "arc" }).penaltyRunup === "standard"
+  && sanitizeStoreState({ penaltyRunup: "fk_long_diagonal", freeKickRunup: "arc" }).freeKickRunup === "fk_standard", "a run-up in the wrong set's slot is dropped");
 
 if (problems.length) { console.error("storePurchase FAILED:\n  " + problems.join("\n  ")); process.exit(1); }
 console.log("storePurchase: all passed");

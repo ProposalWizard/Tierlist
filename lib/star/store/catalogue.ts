@@ -25,6 +25,7 @@
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS, baseIdOf } from "../shopData";
 import type { Boot } from "../types";
 import { coinPriceForStars, coinPriceForWeeks, starPriceForWeeks } from "./coins";
+import { PENALTY_RUNUPS, FREE_KICK_RUNUPS, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP, type PenaltyRunupId, type FreeKickRunupId } from "../runupStyles";
 
 export type Rarity = "common" | "rare" | "epic" | "legendary";
 
@@ -42,13 +43,12 @@ export const RARITY_LABEL: Record<Rarity, string> = {
 
 // ── Animations ─────────────────────────────────────────────────────────────
 
-// TODO wire preview to lib/star/runupStyles.ts — the animations build owns the
-// real lists (ANIM-CONTRACT.md). Until that file exists here, these are copies
-// of its ids, in its order. Two sets (Harry, 27 Sep 2026): penalty run-ups and
-// free-kick run-ups, each with its own equipped slot.
-export type RunupStyleId = "standard" | "stroll" | "skip" | "sprint" | "stutter" | "two_step" | "arc";
-export type FreeKickStyleId =
-  | "fk_standard" | "fk_power_stance" | "fk_bale" | "fk_messi" | "fk_neymar" | "fk_maddison" | "fk_trent";
+// The real run-up lists (lib/star/runupStyles.ts) — the same ids, names and
+// descriptions the game uses. Two sets (Harry, 27 Sep 2026): penalty run-ups
+// and free-kick run-ups, each with its own equipped slot. The store only adds
+// a rarity (its price band) to each.
+export type RunupStyleId = PenaltyRunupId;
+export type FreeKickStyleId = FreeKickRunupId;
 export type AnimationId = RunupStyleId | FreeKickStyleId;
 export type AnimationSet = "penalty" | "free_kick";
 
@@ -68,26 +68,25 @@ export const ANIMATION_SET_LABEL: Record<AnimationSet, string> = {
   free_kick: "Free-kick run-ups",
 };
 
-export const ANIMATIONS: AnimationItem[] = [
-  { kind: "animation", set: "penalty", id: "standard", name: "Standard", blurb: "The usual jog up to the ball.", rarity: "common", free: true },
-  { kind: "animation", set: "penalty", id: "stroll", name: "The Stroll", blurb: "Walks up slowly, then strikes.", rarity: "rare" },
-  { kind: "animation", set: "penalty", id: "skip", name: "The Skip", blurb: "A little hop into the kick.", rarity: "epic" },
-  { kind: "animation", set: "penalty", id: "sprint", name: "The Sprint", blurb: "Full speed from further back. Smashes it.", rarity: "epic" },
-  { kind: "animation", set: "penalty", id: "stutter", name: "Stutter Step", blurb: "Stop-start, a pause just before the ball.", rarity: "rare" },
-  { kind: "animation", set: "penalty", id: "two_step", name: "Two Steps", blurb: "Two steps and strike.", rarity: "common" },
-  { kind: "animation", set: "penalty", id: "arc", name: "The Arc", blurb: "A wide curved run from the side.", rarity: "legendary" },
+const ANIMATION_RARITY: Record<AnimationId, Rarity> = {
+  standard: "common", stroll: "rare", skip: "epic", sprint: "epic", stutter: "rare", two_step: "common", arc: "legendary",
+  fk_standard: "common", fk_power_stance: "legendary", fk_stance_sprint: "epic", fk_calm_curl: "legendary",
+  fk_stutter_curl: "epic", fk_angled_whip: "rare", fk_long_diagonal: "epic",
+};
 
-  { kind: "animation", set: "free_kick", id: "fk_standard", name: "Standard", blurb: "A few steps up and strike.", rarity: "common", free: true },
-  { kind: "animation", set: "free_kick", id: "fk_power_stance", name: "Power Stance", blurb: "Ronaldo: legs apart, a big breath, knuckleball.", rarity: "legendary" },
-  { kind: "animation", set: "free_kick", id: "fk_bale", name: "Stance & Sprint", blurb: "Bale: the stance, a short sprint, knuckleball.", rarity: "epic" },
-  { kind: "animation", set: "free_kick", id: "fk_messi", name: "The Calm Curl", blurb: "Messi: a short calm run, curled over the wall.", rarity: "legendary" },
-  { kind: "animation", set: "free_kick", id: "fk_neymar", name: "Stutter Curl", blurb: "Neymar: a short stutter, then the curl.", rarity: "epic" },
-  { kind: "animation", set: "free_kick", id: "fk_maddison", name: "Angled Whip", blurb: "Maddison: an angled approach, a whipped curl.", rarity: "rare" },
-  { kind: "animation", set: "free_kick", id: "fk_trent", name: "The Long Diagonal", blurb: "Trent: a long diagonal run, a dipping whip.", rarity: "epic" },
+export const ANIMATIONS: AnimationItem[] = [
+  ...PENALTY_RUNUPS.map((r): AnimationItem => ({
+    kind: "animation", set: "penalty", id: r.id, name: r.name, blurb: r.blurb,
+    rarity: ANIMATION_RARITY[r.id], free: r.id === DEFAULT_PENALTY_RUNUP || undefined,
+  })),
+  ...FREE_KICK_RUNUPS.map((r): AnimationItem => ({
+    kind: "animation", set: "free_kick", id: r.id, name: r.name, blurb: r.blurb,
+    rarity: ANIMATION_RARITY[r.id], free: r.id === DEFAULT_FREE_KICK_RUNUP || undefined,
+  })),
 ];
 
-export const DEFAULT_RUNUP: RunupStyleId = "standard";
-export const DEFAULT_FREE_KICK: FreeKickStyleId = "fk_standard";
+export const DEFAULT_RUNUP: RunupStyleId = DEFAULT_PENALTY_RUNUP;
+export const DEFAULT_FREE_KICK: FreeKickStyleId = DEFAULT_FREE_KICK_RUNUP;
 
 /** The free one of each set — owned by everyone. */
 export const FREE_ANIMATIONS: AnimationId[] = ANIMATIONS.filter((a) => a.free).map((a) => a.id);
