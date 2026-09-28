@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getSaveFailure, onSaveFailureChange, type SaveFailure } from "@/lib/star/storage";
 
 /**
- * "Couldn't save on this device" — a small bar pinned to the bottom of the
+ * "Couldn't save on this device" — a small bar pinned to the top of the
  * screen, on every Star Career screen, the moment writing the save to this
  * device fails (see SaveFailure in lib/star/storage.ts). Non-blocking: the
  * game carries on underneath it. It clears itself as soon as a save works
@@ -33,7 +33,7 @@ export default function SaveFailedBanner() {
       role="status"
       aria-live="polite"
       data-testid="save-failed-banner"
-      className="fixed inset-x-0 bottom-0 z-[100] flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pointer-events-none"
+      className="fixed inset-x-0 top-0 z-[100] flex justify-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pointer-events-none"
     >
       <div className={`pointer-events-auto flex w-full max-w-md items-start gap-2 rounded-xl border p-3 shadow-lg ${tone}`}>
         <p className="flex-1 text-xs font-bold leading-snug">{failure.message}</p>
