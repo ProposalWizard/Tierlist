@@ -9,6 +9,11 @@ Works with:
   - Dropbox        https://www.dropbox.com/...?dl=0                 (rewritten to dl=1)
   - a bare Drive file id (what the Drive connector's search returns)
   - any direct https link to an .mp4
+  - YouTube, TikTok, Instagram, X and ~1,000 other sites, via yt-dlp
+    (installed by setup.sh). YouTube refuses cloud servers ("sign in to
+    confirm you're not a bot"): run it from Claude Code on your own computer
+    (the desktop app or the terminal, in a LOCAL session), or download the
+    video yourself and use the Drive/Dropbox route.
 
 The file has to be shared as "Anyone with the link". If it isn't, Drive hands
 back a sign-in page instead of the video, and this says so rather than saving
@@ -38,6 +43,36 @@ def direct_url(link: str) -> str:
     return link
 
 
+VIDEO_SITES = re.compile(r"(youtube\.com|youtu\.be|tiktok\.com|instagram\.com|x\.com|twitter\.com|vimeo\.com|twitch\.tv|facebook\.com|fb\.watch|reddit\.com)", re.I)
+
+
+def fetch_with_ytdlp(link: str, dest: str) -> None:
+    """A page on a video site, not a file: let yt-dlp find the video.
+    At most 1080p (breakdown.py doesn't need more). YouTube serves picture and
+    sound as separate streams, so they are joined with the ffmpeg that the
+    imageio-ffmpeg package bundles (no system install needed)."""
+    cmd = [sys.executable, "-m", "yt_dlp", "--no-playlist", "--force-overwrites",
+           "-f", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/b",
+           "--merge-output-format", "mp4", "-o", dest, link]
+    try:
+        import imageio_ffmpeg
+        cmd[3:3] = ["--ffmpeg-location", imageio_ffmpeg.get_ffmpeg_exe()]
+    except ImportError:
+        pass
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    out = (r.stdout or "") + (r.stderr or "")
+    if r.returncode != 0 or not os.path.exists(dest):
+        if "No module named yt_dlp" in out:
+            sys.exit("yt-dlp is missing. Run setup.sh first.")
+        if "not a bot" in out or "Sign in to confirm" in out or ("youtu" in link and "403" in out):
+            sys.exit("YouTube refused this computer (it blocks cloud servers). Run this from Claude Code on "
+                     "your own computer (a LOCAL session in the desktop app or terminal), or download the "
+                     "video yourself and share it via Drive/Dropbox.")
+        if "Private video" in out or "login" in out.lower():
+            sys.exit("That video needs a login (private or age-restricted). Use a public video, or download it yourself.")
+        sys.exit("Couldn't get the video:\n" + out.strip()[-600:])
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("link")
@@ -47,11 +82,14 @@ def main() -> None:
     out_dir = os.path.join(ROOT, ".playtests", a.name)
     os.makedirs(out_dir, exist_ok=True)
     dest = os.path.join(out_dir, "video.mp4")
-    url = direct_url(a.link)
     print(f"Downloading to {dest}")
-    r = subprocess.run(["curl", "-L", "--fail", "--retry", "3", "-o", dest, url])
-    if r.returncode != 0:
-        sys.exit("Download failed. Is the link shared as 'Anyone with the link'?")
+    if VIDEO_SITES.search(a.link):
+        fetch_with_ytdlp(a.link, dest)
+    else:
+        url = direct_url(a.link)
+        r = subprocess.run(["curl", "-L", "--fail", "--retry", "3", "-o", dest, url])
+        if r.returncode != 0:
+            sys.exit("Download failed. Is the link shared as 'Anyone with the link'?")
 
     with open(dest, "rb") as f:
         head = f.read(512)

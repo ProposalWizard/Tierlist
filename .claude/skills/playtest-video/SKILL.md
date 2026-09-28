@@ -29,6 +29,8 @@ bash scripts/playtest-video/setup.sh                       # once per container
 python3 scripts/playtest-video/fetch.py "<link or file id>" --name harry-0927
 ```
 
+YouTube / TikTok / Instagram / X links work too (yt-dlp, installed by setup.sh). TikTok works from a cloud session; YouTube blocks cloud servers, so a YouTube link only works in a LOCAL Claude Code session on someone's own computer (desktop app or terminal). From the cloud, ask them to download it and drop it in the Drive folder.
+
 A link that isn't public comes back as "Got a web page, not a video" — ask
 them to change the sharing, don't guess. The Google Drive connector can FIND a
 file (`search_files`, mimeType video) but can't carry a video this size: the
