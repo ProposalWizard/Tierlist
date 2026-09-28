@@ -4,7 +4,7 @@ import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
-import { followedTeams, toggleFollowedTeam, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
+import { followedClubs, toggleFollowedClub, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
@@ -76,7 +76,7 @@ export default function SettingsScreen({
   // Live-score alerts (v0.15 item 35): the clubs whose goals pop up during
   // your match. None ticked by default; the bell in the in-match Scores
   // panel writes the same list.
-  const [following, setFollowing] = useState<string[]>(() => followedTeams());
+  const [following, setFollowing] = useState<string[]>(() => followedClubs());
   const divisionClubs = career.league.map((t) => t.name).filter((n) => n !== career.player.club).sort();
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
@@ -167,7 +167,7 @@ export default function SettingsScreen({
               return (
                 <button
                   key={club}
-                  onClick={() => setFollowing(toggleFollowedTeam(club))}
+                  onClick={() => setFollowing(toggleFollowedClub(club))}
                   role="checkbox"
                   aria-checked={on}
                   className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] font-black ${on ? "bg-amber-400 text-gray-950" : "bg-black/25 text-white"}`}

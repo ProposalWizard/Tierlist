@@ -60,7 +60,9 @@ interface Props {
   onOpen: (phase: HubPhase) => void;
 }
 
-const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
+export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
+/** Re-exported for the match-day screen, which imports them from here. */
+export { glowOf, cardStyle } from "./ui";
 
 interface FormResult { res: "W" | "D" | "L"; us: number; them: number; opp: string; rating?: number; week: number }
 export function lastFive(career: CareerState): FormResult[] {
@@ -77,7 +79,7 @@ export function lastFive(career: CareerState): FormResult[] {
 /** Days from "today" to the next match. The game has no clock of its own, so
  *  today is the day after your last match (or five days out before the
  *  first one) — which is what the week in between actually is. */
-function daysToNext(career: CareerState, next: Fixture): number {
+export function daysToNext(career: CareerState, next: Fixture): number {
   const div = divisionOf(career);
   const ts = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, div);
   const played = career.fixtures.filter((f) => f.played);
@@ -293,7 +295,8 @@ function prefersReducedMotionSafe(): boolean {
   return typeof window !== "undefined" && prefersReducedMotion();
 }
 
-function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void }) {
+/** `compact`: a shorter can picture, for the match-day screen (MatchdayScreen.tsx). */
+export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean }) {
   const accent = ACCENT[c.id];
   const count = career.kibCans[c.id];
   const shownCount = useCountUp(count, 500);
@@ -324,11 +327,11 @@ function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; career: Car
       >
         ×{Math.round(shownCount)}
       </span>
-      <div className="relative h-[68px] w-full">
+      <div className={`relative w-full ${compact ? "h-[44px]" : "h-[68px]"}`}>
         <div className="absolute bottom-0 left-1/2 h-2 w-12 -translate-x-1/2 rounded-[50%] bg-black/60 blur-[3px]" />
         <Glow color={accent} alpha={0.55} className="bottom-0 left-1/2 h-10 w-12 -translate-x-1/2 blur-lg" />
         <Shake trigger={drinking} className="absolute inset-x-0 bottom-1 flex justify-center" style={{ filter: `drop-shadow(0 4px 8px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
-          <KibCanIcon can={c} className="h-[64px] w-[38px]" />
+          <KibCanIcon can={c} className={compact ? "h-[42px] w-[25px]" : "h-[64px] w-[38px]"} />
         </Shake>
         {drinking > 0 && (
           <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">

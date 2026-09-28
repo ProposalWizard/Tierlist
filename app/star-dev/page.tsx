@@ -33,20 +33,18 @@ import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult
 import { signSponsor } from "@/lib/star/sponsors";
 import { renameHorse } from "@/lib/star/horse";
 import { getPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
-import { selectionFor, MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, SUB_LADDER } from "@/lib/star/selection";
+import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
-import PenaltyDutyLine from "@/components/star/PenaltyDutyLine";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
-import { fixtureDateLabel, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { fixtureDateLabel, divisionOf, type CareerDivision } from "@/lib/star/calendar";
 import { sortLeague } from "@/lib/star/season";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
-import { matchdayFor } from "@/lib/star/teamsheet";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
-import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
+import { DEFAULT_FORMATION, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
@@ -58,7 +56,7 @@ import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, shouldUpgradeExternalSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
 import { externalClubsFor } from "@/lib/star/clubs";
-import { conditionsFor, conditionsLine } from "@/lib/star/weather";
+import { conditionsFor } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
 import TransferWindow from "@/components/star/TransferWindow";
 import RelegationMove from "@/components/star/RelegationMove";
@@ -86,13 +84,7 @@ import LadderScreen from "@/components/star/LadderScreen";
 import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
 import LifeScreen from "@/components/star/LifeScreen";
 import PotmWinModal from "@/components/star/PotmWinModal";
-import VersusScreen from "@/components/star/VersusScreen";
-import PositionPicker from "@/components/star/PositionPicker";
-import ScoutReportCard from "@/components/star/ScoutReport";
-import { scoutReportFor } from "@/lib/star/scoutReport";
-import ClubCrest from "@/components/star/ClubCrest";
-import { kitsFor } from "@/lib/star/kits";
-import { groundFor, crowdFor } from "@/lib/star/stadiums";
+import MatchdayScreen from "@/components/star/MatchdayScreen";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import TrainingLevelSelect from "@/components/star/TrainingLevelSelect";
@@ -123,7 +115,6 @@ const KIB_ACCENT: Record<KibCan["id"], { hex: string }> = {
   elite: { hex: "#c084fc" },
 };
 
-import KibCanIcon from "@/components/star/KibCanIcon";
 import Casino from "@/components/star/Casino";
 import Investments from "@/components/star/Investments";
 import OwnershipScreen from "@/components/star/OwnershipScreen";
@@ -3296,278 +3287,27 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     );
   }
 
-  // Pre-match confirmation
+  // Pre-match confirmation — the match-day screen (components/star/MatchdayScreen.tsx),
+  // including the team-sheet step before kick-off.
   if (phase === "pre-match" && nextFixture) {
-    // ── The team sheets ──
-    //
-    // Between the pre-match screen and kick-off, because the eleven you are
-    // about to play against is the last thing worth knowing and the game has
-    // never once said it. Only for club football: an international squad is not
-    // in `leagueSquads` and there is nothing honest to draw.
-    // Decided BEFORE the branch, never inside it: falling back by calling a
-    // state setter mid-render is a React error, and "can we draw this?" is a
-    // question about data that render is entitled to ask.
-    // The side you actually picked, shape and all — not just its bench, which
-    // is all this used to read. See teamsheet.ts's SavedXI.
-    const saved = loadLineup(career.player.club);
-    const savedXI = saved && saved.xi.some(Boolean)
-      ? { formation: formationOf(saved.formation), xi: saved.xi }
-      : undefined;
-    const matchday = nextFixture.kind === "international"
-      ? null
-      : matchdayFor(career, nextFixture, preMatchSelection?.status === "1st Team", playAs ?? undefined, saved?.bench, savedXI, preMatchSelection?.status === "Substitute");
-    // Whether YOUR side is drawable — the bar the button decides on now. An
-    // under-scouted OPPONENT no longer holds the screen back at all: it gets
-    // its own "Unable to scout" half instead (see VersusScreen). Only an
-    // international fixture (no matchday at all) or your own squad falling
-    // short — practically never, but the same honest fallback either way —
-    // sends the button straight past the team sheets.
-    const teamsReady = !!matchday && (matchday.home.yours ? matchday.home : matchday.away).xi.length >= 9;
-
-    if (showTeams && matchday && teamsReady) {
-      return (
-        <VersusScreen
-          matchday={matchday}
-          date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
-          results={career.results}
-          clubKits={career.clubKits}
-          competition={
-            !nextFixture.kind || nextFixture.kind === "league"
-              ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`
-              : `${nextFixture.competition}${nextFixture.round ? ` · ${nextFixture.round}` : ""}`
-          }
-          onKickOff={() => { setShowTeams(false); handlePlayMatch(); }}
-          onBack={() => setShowTeams(false)}
-        />
-      );
-    }
-
-    const mine = nextFixture.kind === "international" ? nationOf(career) : career.player.club;
-    const home = nextFixture.home ? mine : nextFixture.opponent;
-    const away = nextFixture.home ? nextFixture.opponent : mine;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-950 text-white flex items-center justify-center px-3 py-4">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-4">
-            <div className={`inline-block px-4 py-1 rounded-full border text-[10px] font-black tracking-widest uppercase ${
-              !nextFixture.kind || nextFixture.kind === "league"
-                ? "bg-yellow-500/20 border-yellow-400/40 text-yellow-300"
-                : nextFixture.kind === "international"
-                  ? "bg-sky-500/20 border-sky-400/40 text-sky-200"
-                  : "bg-violet-500/20 border-violet-400/40 text-violet-200"}`}
-            >
-              Week {nextFixture.week} · {fixtureLabel(nextFixture)}
-            </div>
-            <h1 className="mt-2 text-2xl font-black">
-              {nextFixture.derby ? "Derby Day" : nextFixture.kind && nextFixture.kind !== "league" ? nextFixture.round : "Match Day"}
-            </h1>
-            {nextFixture.derby && (
-              <p className="mt-1 text-[11px] font-bold text-red-300">
-                The one that counts. Everything is worth more today.
-              </p>
-            )}
-          </div>
-          {(() => {
-            const kits = kitsFor(home, away);
-            // Whoever is HOME hosts it — `home` is already the real home
-            // side of this fixture, not necessarily you.
-            const ground = groundFor(home);
-            const crowd = crowdFor(home, nextFixture.week);
-            // The real stadium photo the gradient was always built to sit
-            // underneath — supplied directly. Europe's own three nights
-            // (Champions League, Europa League, and the Super Cup, which is
-            // contested BETWEEN two European winners) get the UEFA-branded
-            // shot; everything else — league, FA Cup, League Cup, Community
-            // Shield, internationals — gets the ordinary floodlit ground.
-            //
-            // Both source files arrived with a black letterboxed/rounded
-            // frame baked into the PNG itself (a screenshot of a generated
-            // image, corners and all) — `cover` was scaling that black
-            // padding right along with the real photo, so depending on this
-            // box's own aspect ratio the actual stadium could be cropped
-            // strangely or shrunk to leave black bars showing. Cropped out
-            // at the source now (see git history for the originals) so
-            // `cover` has nothing but real photo to work with. The gradient
-            // itself was also darker than intended, worst right at the
-            // bottom — reported directly, twice: "doesn't fit the entire
-            // box... quite odd" and "a lot darker and shadier than I
-            // imagined... like an effect." Lightened across the board.
-            const isEuropeanNight = nextFixture.competition === "Champions League"
-              || nextFixture.competition === "Europa League"
-              || nextFixture.competition === "Super Cup";
-            const stadiumPhoto = isEuropeanNight ? "/star/stadium-europe.png" : "/star/stadium-domestic.png";
-            return (
-              <div
-                className="relative overflow-hidden rounded-xl border border-emerald-800/60 shadow-lg"
-                style={{
-                  backgroundImage: `linear-gradient(180deg, rgba(11,42,31,0.25) 0%, rgba(10,31,39,0.35) 55%, rgba(7,19,24,0.5) 100%), url(${stadiumPhoto})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }}
-              >
-                <div
-                  className="pointer-events-none absolute inset-0"
-                  style={{ background: "radial-gradient(120% 55% at 50% -10%, rgba(16,185,129,0.30), transparent 60%)" }}
-                />
-                <div className="relative z-10 p-5">
-                  <div className="flex items-start justify-between gap-2">
-                    <ClubCrest club={home} kit={kits.home} size={56} />
-                    <div className="flex flex-col items-center gap-1 px-1 pt-3">
-                      <div className="text-xs font-black text-white/60 tracking-widest">VS</div>
-                    </div>
-                    <ClubCrest club={away} kit={kits.away} size={56} />
-                  </div>
-                  <div className="mt-3 text-center text-[10px] text-white/70">
-                    🏟️ {ground.name} · Crowd: {crowd.toLocaleString()}
-                  </div>
-                  {!career.injury && preMatchEnergy < MIN_ENERGY_TO_START && (
-                    <div className="mt-3 text-center text-amber-300 text-[10px] font-bold">⚠ Too fatigued to start — the manager will only risk you off the bench</div>
-                  )}
-                  {career.injury && (
-                    <div className="mt-3 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-2 text-left">
-                      <div className="text-red-300 text-[10px] font-black uppercase tracking-wide">🩹 {career.injury.note}</div>
-                      <div className="mt-0.5 text-[10px] text-white/80">
-                        Out for {career.injury.weeksRemaining} more week{career.injury.weeksRemaining === 1 ? "" : "s"} — you cannot be selected until you are fit.
-                      </div>
-                    </div>
-                  )}
-                  <div className="mt-3 rounded-lg bg-black/25 px-2 py-1.5 text-[10px] text-white text-center">
-                    {conditionsLine(conditionsFor(career.season, nextFixture.week, career.homeCity))}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Who you're actually about to play — requested directly, with a
-              real scouting-app screenshot as the reference. Club opponents
-              only: an international opponent is a nation, not a squad to
-              scout the way this reads. */}
-          {nextFixture.kind !== "international" && (
-            <ScoutReportCard report={scoutReportFor(career, nextFixture.opponent, nextFixture.week, nextFixture)} />
-          )}
-
-          {/* The manager's team sheet. Boss, form, reputation and sharpness used
-              to move every week and decide nothing at all. Which position you
-              play this match lives here too now — it was its own box above
-              this one, but it's a decision that belongs with the rest of
-              "your role this match", not a separate stop on the page. */}
-          {preMatchSelection && (
-            <div className={`mt-3 rounded-xl border p-3 ${
-              preMatchSelection.status === "1st Team" ? "border-emerald-500/50 bg-emerald-500/10"
-                : preMatchSelection.status === "Substitute" ? "border-amber-400/50 bg-amber-400/10"
-                  : "border-red-500/50 bg-red-500/10"}`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Your role</span>
-                <style>{`@keyframes kibRoleFlip { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } } .kib-role-flip { display: inline-block; animation: kibRoleFlip 0.45s cubic-bezier(0.2,0.9,0.3,1.35) both; }`}</style>
-                <span key={preMatchSelection.status} className={`kib-role-flip text-xs font-black ${
-                  preMatchSelection.status === "1st Team" ? "text-emerald-300"
-                    : preMatchSelection.status === "Substitute" ? "text-amber-200" : "text-red-300"}`}
-                >
-                  {preMatchSelection.status === "1st Team" ? "Starting Eleven"
-                    : preMatchSelection.status === "Substitute"
-                      // Item 24: the planned minute is developer info only
-                      // (Settings → Developer tools → Show developer info).
-                      ? (showDevInfo ? `Bench — on around ${preMatchSelection.onAt}'` : "Bench (on when the game needs you)")
-                      : preMatchSelection.status === "Injured" ? "Injured"
-                        : "Out of Squad"}
-                </span>
-              </div>
-
-              {/* Item 24: the substitute's ladder — earn earlier minutes.
-                  Developer info only, like the minute above. */}
-              {showDevInfo && preMatchSelection.status === "Substitute" && (
-                <div className="mt-2">
-                  <div className="flex gap-1">
-                    {[...SUB_LADDER.map((m) => `${m}'`), "Start"].map((rung, i) => {
-                      const here = i < SUB_LADDER.length && SUB_LADDER[i] === preMatchSelection.onAt;
-                      return (
-                        <div key={rung} className={`flex-1 rounded-md py-1 text-center text-[11px] font-black ${
-                          here ? "bg-amber-400 text-gray-950" : "bg-black/30 text-white/70"}`}
-                        >{rung}</div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-1 text-[10px] font-bold text-white/80">
-                    Goals and good ratings off the bench move you up. On from 70&apos;, you&apos;re guaranteed a chance.
-                  </div>
-                </div>
-              )}
-
-              {nextFixture.kind !== "international" && (
-                <PositionPicker
-                  club={career.player.club}
-                  realPosition={career.player.position}
-                  playAs={playAs}
-                  onChange={setPlayAs}
-                  embedded
-                />
-              )}
-
-              <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-black/20 rounded-lg py-2 text-center">
-                  <div className="text-white/75 text-[10px] font-bold">Match Fitness</div>
-                  <div className="font-black text-emerald-300 text-base">{Math.round(career.matchFitness)}%</div>
-                </div>
-                <div className="bg-black/20 rounded-lg py-2 text-center">
-                  <div className="text-white/75 text-[10px] font-bold">Energy</div>
-                  <div className={`font-black text-base ${
-                    // Green starts, amber is the bench, red is left out — the real selection lines.
-                    preMatchEnergy >= MIN_ENERGY_TO_START ? "text-emerald-300" : preMatchEnergy >= MIN_ENERGY_TO_SUB ? "text-amber-300" : "text-red-400"}`}
-                  >
-                    {Math.round(preMatchEnergy)}%
-                  </div>
-                </div>
-              </div>
-              <PenaltyDutyLine career={career} fixture={nextFixture} status={preMatchSelection.status} />
-              {/* v0.15 item 28: drink a Basic can before kick-off, on its own
-                  full-width row. Enough to clear the starting line and
-                  "Bench" flips to "Starting Eleven" above, on the spot. Off
-                  at full energy. */}
-              <button
-                onClick={() => handleUseCan("basic")}
-                disabled={career.kibCans.basic <= 0 || preMatchEnergy >= 100}
-                aria-label={`Use a Basic KIB can, ${career.kibCans.basic} left`}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-1.5 text-gray-950 transition hover:bg-orange-400 active:scale-[0.99] disabled:bg-gray-700 disabled:text-white"
-              >
-                <KibCanIcon can={{ color: "bg-orange-400", image: "/star/kib-basic.png" }} className="h-7 w-4 shrink-0" />
-                <span className="text-[11px] font-black uppercase tracking-wide">
-                  {preMatchEnergy >= 100 ? "Energy full" : "Use a Basic can"}
-                </span>
-                <span className="text-xs font-black tabular-nums">&times;{career.kibCans.basic}</span>
-              </button>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <button onClick={handleBackToDashboard} className="py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-black">← Back</button>
-            {preMatchSelection?.status === "Squad" || preMatchSelection?.status === "Injured" ? (
-              <button onClick={handleWatchFromStands} className="py-3 bg-gray-600 hover:bg-gray-500 rounded-xl font-black">Watch from the stands</button>
-            ) : (
-              <button
-                onClick={() => (teamsReady ? setShowTeams(true) : handlePlayMatch())}
-                className="py-3 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-black"
-              >
-                {/* Gated on YOUR side only now — an under-scouted opponent
-                    still gets a team-sheet screen, just with "Unable to
-                    scout opponent's team" on their half (see VersusScreen).
-                    Only an international fixture, or your own squad falling
-                    short, skips the screen entirely. */}
-                {teamsReady
-                  ? "Team sheets →"
-                  : preMatchSelection?.status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
-              </button>
-            )}
-          </div>
-          {/* Item 36: sim it instead of playing it — starter or sub. */}
-          {(preMatchSelection?.status === "1st Team" || preMatchSelection?.status === "Substitute") && (
-            <button onClick={handleSimMatch} className="mt-2 w-full py-3 bg-sky-700 hover:bg-sky-600 rounded-xl font-black">
-              ⏩ Sim this match
-            </button>
-          )}
-        </div>
-      </div>
+      <MatchdayScreen
+        career={career}
+        nextFixture={nextFixture}
+        preMatchEnergy={preMatchEnergy}
+        preMatchSelection={preMatchSelection}
+        showDevInfo={showDevInfo}
+        playAs={playAs}
+        onPlayAs={setPlayAs}
+        showTeams={showTeams}
+        onShowTeams={setShowTeams}
+        onBack={handleBackToDashboard}
+        onPlayMatch={handlePlayMatch}
+        onWatchFromStands={handleWatchFromStands}
+        onSimMatch={handleSimMatch}
+        onUseCan={handleUseCan}
+        onBuyCan={handleBuyKib}
+      />
     );
   }
 
