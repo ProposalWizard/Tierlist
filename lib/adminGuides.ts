@@ -473,6 +473,7 @@ export const ADMIN_GUIDES = {
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
           ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
+          ["Blender 3D →", "Opens the Blender 3D footballer test page: any club's kit on the 3D player, stills, hair, animations and the home-screen mock-up."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -589,6 +590,37 @@ export const ADMIN_GUIDES = {
       "In the career, Training Boost and Stat Can are hidden (not in the game yet), and Coin packs read \"Coming soon\" in the live game.",
     ],
     dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
+  },
+
+  "/star-blender-dev": {
+    title: "Blender 3D",
+    what: "The 3D footballer built in Blender, to judge by eye. He was rendered once with a grey kit; this page recolours that render into any club's kit, in your browser, when you pick the club. Nothing here reaches a career.",
+    buttons: [
+      {
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["Club", "Every club the game has kit colours for. Pick one and the hero and all five stills are recoloured into its kit, with its crest on the chest and 19 on the shorts."],
+          ["Home / Away", "Switches to that club's change strip."],
+          ["The coloured square", "The two kit colours the game uses: shirt, and trim (the trim is also the shorts)."],
+          ["Home screen: A2 vs 3D", "Left is the real A2 avatar from the home screen; right is the 3D player, both in the kit you picked."],
+          ["Stills", "Idle, arms up, knee slide, pointing at the badge, hands on hips."],
+          ["Hair: style and colour chips", "Show that hair render. Only the crop was rendered in every colour; the other styles are brown only, and the box says so."],
+          ["Animations", "Three short loops (idle, jump, knee slide). These are videos, so they stay in Chelsea's kit."],
+          ["In the home screen", "The 3D hero pasted into the home screen (Chelsea, made offline) next to the live A2."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. The club you pick is forgotten when you leave.",
+    ],
+    commit: [
+      "Nothing commits from this page. The renders are files in public/star/blender/, and the Blender scripts that made them are in tools/blender-footballer/.",
+    ],
+    inGame: [
+      "Not in the game yet. This page is here so the look can be judged; the notes at the bottom list what is left and the two ways it could go in.",
+      "The crest is the club's real badge when it loads here, otherwise the same initials disc the game uses; the line under the hero says which.",
+    ],
+    dev: "app/star-blender-dev/page.tsx · lib/star/blenderRecolour.ts · tests/star/blenderRecolour.mts · public/star/blender/ · tools/blender-footballer/ (NOTES.md, scripts, footballer.blend)",
   },
 
   "/star-radar-dev": {
