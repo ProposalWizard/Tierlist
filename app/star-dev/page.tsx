@@ -77,7 +77,10 @@ import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub from "@/components/star/HomeHub";
-import ShopItemsCard from "@/components/star/ShopItemsCard";
+import StatsTabs from "@/components/star/StatsTabs";
+import ShopPage from "@/components/star/ShopPage";
+import PhoneHome from "@/components/star/PhoneHome";
+import RelationsPage from "@/components/star/RelationsPage";
 import LeagueScreen from "@/components/star/LeagueScreen";
 import LadderScreen from "@/components/star/LadderScreen";
 import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
@@ -263,7 +266,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [trainingTab, setTrainingTab] = useState<"training" | "life">("training");
   /** Swipe home screens: Stats (0) or Home (1); Training is the "skills"
    *  phase, see SwipePages below. */
-  const [homePage, setHomePage] = useState<0 | 1>(1);
+  const [homePage, setHomePage] = useState<0 | 1 | 2>(1);
   const [trainingSkill, setTrainingSkill] = useState<keyof Skills | null>(null);
   /** Which of the 30 levels is being played; null while picking one. */
   const [trainingLevel, setTrainingLevel] = useState<number | null>(null);
@@ -597,6 +600,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setActiveNav(tab);
     if (tab === "league") setPhase("league");
     else if (tab === "skills") { setTrainingTab("training"); setPhase("skills"); }
+    // PROTOTYPE (home-screen proto): Relationships is its own button now.
+    else if (tab === "life") { setTrainingTab("life"); setPhase("skills"); }
     else if (tab === "home") { setHomePage(1); setPhase("dashboard"); }
     else if (tab === "media") setPhase("media");
     else if (tab === "play") setPhase("pre-match");
@@ -3514,20 +3519,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   // Swipe home screens: only ever the dashboard and the training phase, which
   // are its middle/left and right screens.
-  const swipeActive = phase === "dashboard" || phase === "skills";
+  // PROTOTYPE (home-screen proto): the swipe pages are Stats · Home · Shop,
+  // and Training / Relationships are their own bottom-bar screens.
+  const swipeActive = phase === "dashboard";
   const trainingBody = (
         <div>
-          <div className="mb-2 grid grid-cols-2 gap-1.5">
-            <TrainingTabBtn label="Training" active={trainingTab === "training"} onClick={() => setTrainingTab("training")} />
-            <TrainingTabBtn label="Life" active={trainingTab === "life"} onClick={() => setTrainingTab("life")} />
-          </div>
           {trainingTab === "training" ? (
             <SkillsScreen career={career} onTrain={handleTrain} />
           ) : (
-            <LifeScreen
+            <RelationsPage
               career={career}
               onPlayRelationshipGame={handleOpenRelationshipGame}
               onRest={handleRest}
+              onOpen={(ph) => setPhase(ph)}
             />
           )}
         </div>
@@ -3539,12 +3543,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       onExit={handleExit}
       onNavigate={handleNavigate}
       onSettings={() => setPhase("settings")}
-      activeNav={activeNav}
+      activeNav={phase === "skills" ? (trainingTab === "life" ? "life" : "skills") : activeNav}
       mediaUnread={hasFreshMedia(career) && activeNav !== "media"}
       nextMatchLabel={nextMatchLabel}
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
-      compact={swipeActive}
+      compact={swipeActive || phase === "skills"}
     >
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
@@ -3593,31 +3597,29 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <LeagueScreen career={career} />
       )}
       {phase === "media" && activeNav === "media" && (
-        <MediaFeed career={career} mode="browse" onToggleLike={handleToggleLike} />
+        <PhoneHome career={career} onToggleLike={handleToggleLike} onLeave={(ph) => setPhase(ph)} />
       )}
       {/* ── The swipe home screens: Stats · Home · Training ──
           Harry, 27 Sep 2026: stats on the left, training on the right, the
           next game, form, energy and you in your kit in the middle. The
           right-hand screen IS the "skills" phase, so the Training button,
           every Back-to-Life path and a swipe all land in the same place. */}
+      {phase === "skills" && trainingBody}
       {swipeActive && (
         <SwipePages
-          index={phase === "skills" ? 2 : homePage}
+          index={homePage}
           onIndex={(i) => {
-            if (i === 2) { handleNavigate("skills"); return; }
-            setHomePage(i === 0 ? 0 : 1);
+            setHomePage(i as 0 | 1 | 2);
             setActiveNav("home");
             setPhase("dashboard");
           }}
-          labels={["Stats", "Home", "Training"]}
+          labels={["Stats", "Home", "Shop"]}
         >
           {[
-            <div key="stats">
-              <DashboardStats career={career} onRenew={() => setPhase("contract-renewal")} />
-              <ShopItemsCard career={career} onOpenShop={() => setPhase("shop-kib")} />
-            </div>,
+            <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} />,
             <HomeHub
               key="home"
+              slim
               career={career}
               nextFixture={nextFixture}
               nextMatchDate={nextMatchDate ?? undefined}
@@ -3626,7 +3628,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               onBuyCan={handleBuyKib}
               onOpen={(ph) => setPhase(ph)}
             />,
-            <div key="training">{trainingBody}</div>,
+            <ShopPage key="shop" career={career} onOpen={(ph) => setPhase(ph)} />,
           ]}
         </SwipePages>
       )}

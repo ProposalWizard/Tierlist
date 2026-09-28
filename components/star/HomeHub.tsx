@@ -39,6 +39,9 @@ interface Props {
   onUseCan: (id: KibCan["id"]) => void;
   onBuyCan: (can: KibCan) => void;
   onOpen: (phase: HubPhase) => void;
+  /** PROTOTYPE (home-screen proto): just you, the next match and the cans —
+   *  last 5 moves to the Stats page, the shortcut row to the Shop page/phone. */
+  slim?: boolean;
 }
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -64,7 +67,7 @@ export default function HomeHub(p: Props) {
         className="relative overflow-hidden rounded-2xl border border-white/10"
         style={{ background: `radial-gradient(120% 90% at 30% 100%, ${kit.shirt}55 0%, #0b1220 62%), linear-gradient(180deg, #111827, #0b1220)` }}
       >
-        <PitchLines />
+        {!p.slim && <PitchLines />}
         <NextMatchTag {...p} />
         <div className="relative flex items-end">
           <div className="-mb-1 shrink-0 pl-1">
@@ -81,18 +84,27 @@ export default function HomeHub(p: Props) {
             <div className="mt-1.5 truncate text-[20px] font-black leading-tight text-white">
               {career.player.firstName} {career.player.lastName}
             </div>
+            {/* PROTOTYPE (slim): the three numbers as small chips under your
+                name, so the cans fit on the same screen. */}
+            {p.slim && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                <span className="rounded-md bg-yellow-500 px-1.5 py-0.5 text-[11px] font-black text-gray-950">★ {career.starRating.toFixed(1)}</span>
+                <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-black text-yellow-200">★ {formatMoney(career.money)}</span>
+                <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-black text-white">Age {career.player.age}</span>
+              </div>
+            )}
           </div>
         </div>
         {/* The three headline numbers, big — star rating, money, age. */}
-        <div className="relative grid grid-cols-3 gap-1.5 border-t border-white/10 bg-black/25 p-2">
+        {!p.slim && <div className="relative grid grid-cols-3 gap-1.5 border-t border-white/10 bg-black/25 p-2">
           <Headline label="Star rating" value={`★ ${career.starRating.toFixed(1)}`} gold />
           <Headline label="Money" value={`★ ${formatMoney(career.money)}`} />
           <Headline label="Age" value={String(career.player.age)} />
-        </div>
+        </div>}
       </div>
-      <Form career={career} />
+      {!p.slim && <Form career={career} />}
       <Energy {...p} />
-      <More onOpen={p.onOpen} />
+      {!p.slim && <More onOpen={p.onOpen} />}
     </div>
   );
 }
@@ -128,7 +140,7 @@ function NextMatchTag({ career, nextFixture, nextMatchDate, myTeam }: Props) {
   );
 }
 
-function Form({ career }: { career: CareerState }) {
+export function Form({ career }: { career: CareerState }) {
   const five = lastFive(career);
   const tone = { W: "bg-emerald-500 text-white", D: "bg-gray-500 text-white", L: "bg-red-600 text-white" } as const;
   const rated = five.filter((f) => f.rating !== undefined);
@@ -167,18 +179,20 @@ function Form({ career }: { career: CareerState }) {
  * The Basic can (energy) first and biggest; Premium/Elite give a boot ability
  * for your next match instead.
  */
-function Energy({ career, onUseCan, onBuyCan }: Props) {
+function Energy(p: Props) {
+  const { career, onUseCan, onBuyCan } = p;
   const e = Math.max(0, Math.min(100, Math.round(career.energy)));
   const bar = e >= 60 ? "from-emerald-500 to-emerald-400" : e >= 35 ? "from-amber-500 to-amber-400" : "from-red-600 to-red-500";
   return (
     <div className="rounded-2xl border border-white/10 bg-gray-800/80 p-2.5">
       <div className="flex items-baseline justify-between">
-        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Energy</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">Energy{p.slim ? " · KIB cans" : ""}</span>
         <span className="text-[15px] font-black tabular-nums text-white">{e}%</span>
       </div>
       <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-black/40">
         <div className={`h-full rounded-full bg-gradient-to-r ${bar}`} style={{ width: `${e}%` }} />
       </div>
+      {p.slim ? <CansCompact {...p} e={e} /> : (
       <div className="mt-2 space-y-1.5">
         {KIB_CANS.map((c) => {
           const count = career.kibCans[c.id];
@@ -223,6 +237,52 @@ function Energy({ career, onUseCan, onBuyCan }: Props) {
           );
         })}
       </div>
+      )}
+    </div>
+  );
+}
+
+/** PROTOTYPE (home-screen proto): the three cans side by side, so you, the
+ *  next match and the cans all fit on one phone screen without scrolling. */
+function CansCompact({ career, onUseCan, onBuyCan, e }: Props & { e: number }) {
+  const shortEffect: Record<KibCan["id"], string> = { basic: "", premium: "Curve", elite: "Extra touch" };
+  return (
+    <div className="mt-2 grid grid-cols-3 gap-1.5">
+      {KIB_CANS.map((c) => {
+        const count = career.kibCans[c.id];
+        const price = kibCanPrice(c, career.contract.wage);
+        const ready = !!(c.effect && career.kibAbility?.[c.effect]);
+        const full = !c.effect && e >= 100;
+        const canUse = count > 0 && !ready && !full;
+        const canBuy = career.money >= price;
+        return (
+          <div key={c.id} className="flex flex-col items-center rounded-xl bg-black/25 p-1.5" style={{ boxShadow: `inset 0 0 0 1px ${ACCENT[c.id]}40` }}>
+            <div className="flex items-center gap-1">
+              <KibCanIcon can={c} className="h-8 w-5 shrink-0" />
+              <div className="leading-tight">
+                <div className="text-[11px] font-black text-white">{c.name.replace(" KIB Can", "")}</div>
+                <div className="text-[10px] font-black tabular-nums text-white/70">×{count}</div>
+              </div>
+            </div>
+            <div className="mt-0.5 h-3 truncate text-[9px] font-bold text-white/60">{c.effect ? shortEffect[c.id] : `+${c.restore} energy`}</div>
+            <button
+              disabled={!canUse}
+              onClick={() => onUseCan(c.id)}
+              className="mt-1 w-full rounded-lg py-1 text-[10px] font-black uppercase text-gray-950 disabled:bg-gray-700 disabled:text-white/50"
+              style={canUse ? { backgroundColor: ACCENT[c.id] } : undefined}
+            >
+              {ready ? "Ready ✓" : full ? "Full" : "Use"}
+            </button>
+            <button
+              disabled={!canBuy}
+              onClick={() => onBuyCan(c)}
+              className="mt-1 w-full rounded-lg border border-white/20 bg-white/5 py-0.5 text-[10px] font-black text-yellow-200 disabled:opacity-40"
+            >
+              Buy ★{formatMoney(price)}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

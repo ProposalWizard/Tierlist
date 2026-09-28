@@ -34,7 +34,7 @@ interface Props {
   compact?: boolean;
 }
 
-export type NavTab = "league" | "skills" | "home" | "media" | "play";
+export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
 export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
@@ -145,12 +145,16 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
         )}
 
         {/* Bottom nav */}
-        <div className="grid grid-cols-5 gap-1 p-2 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50">
+        <div className="grid grid-cols-6 gap-0.5 p-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50">
+          {/* PROTOTYPE (home-screen proto): Harry's bar — League · Training ·
+              Home · Play · Relations · Phone. Six buttons; they shrink to fit
+              a 360 px phone rather than drop one. */}
           <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => onNavigate("league")} />
           <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
           <NavBtn label="Home" icon="🏠" active={activeNav === "home"} onClick={() => onNavigate("home")} />
-          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
           <NavBtn label="Play" icon="▶" active={activeNav === "play"} onClick={() => onNavigate("play")} highlight />
+          <NavBtn label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => onNavigate("life")} />
+          <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
         </div>
       </div>
     </div>
@@ -161,7 +165,7 @@ function NavBtn({ label, icon, active, onClick, highlight, dot }: { label: strin
   return (
     <button
       onClick={onClick}
-      className={`relative py-2 rounded-lg font-black text-xs flex flex-col items-center gap-0.5 transition ${
+      className={`relative min-w-0 py-1.5 rounded-lg font-black text-[9.5px] min-[380px]:text-[10.5px] tracking-tight leading-tight flex flex-col items-center gap-0.5 transition ${
         highlight
           ? "bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-900/50"
           : active
@@ -169,8 +173,8 @@ function NavBtn({ label, icon, active, onClick, highlight, dot }: { label: strin
           : "bg-gray-600 text-gray-200 hover:bg-gray-500"
       }`}
     >
-      <span className="text-lg">{icon}</span>
-      <span>{label}</span>
+      <span className="text-base leading-none">{icon}</span>
+      <span className="max-w-full truncate">{label}</span>
       {dot && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-gray-700" />}
     </button>
   );

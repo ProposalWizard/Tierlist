@@ -443,6 +443,9 @@ export interface GoalEvent {
   how?: string;
   /** Metres from the centre of the goal at the strike. */
   distance?: number;
+  /** Your assist only: how far YOUR pass travelled, from where you played it
+   *  to where the scorer took it (metres). Absent on older saves. */
+  passLength?: number;
 }
 
 /**
@@ -614,6 +617,27 @@ export interface SponsorDeal {
    *  (fame level + the brand's own requirement). One season, two for the
    *  top three brands. Absent on a deal signed before terms existed. */
   termLeft?: number;
+}
+
+export interface SeasonArchiveRow {
+  season: number;
+  club: string;
+  apps: number;
+  goals: number;
+  assists: number;
+  /** 0 when no rated appearance. */
+  avgRating: number;
+  /** Star Man awards — the game's man of the match. */
+  motm: number;
+}
+
+export interface CareerBests {
+  /** Metres, and when. */
+  furthestGoal?: { metres: number; season: number; opponent: string };
+  furthestAssist?: { metres: number; season: number; opponent: string };
+  mostGoalsMatch?: { goals: number; season: number; opponent: string };
+  mostGoalsSeason?: { goals: number; season: number };
+  mostAssistsSeason?: { assists: number; season: number };
 }
 
 export interface Trophy {
@@ -1038,6 +1062,17 @@ export interface CareerState {
    * you did not win.
    */
   potm?: import("./potm").MonthAward[];
+  /**
+   * PROTOTYPE (home-screen proto, 27 Sep 2026) — the Stats page's "All seasons"
+   * and "Records" tabs. One row per finished season, pushed by advanceSeason.
+   * Absent on a save from before it: history starts counting from then.
+   */
+  seasonArchive?: SeasonArchiveRow[];
+  /** Your own personal bests across every match, updated by creditMatchResult. */
+  careerBests?: CareerBests;
+  /** The club this season's club appearances were made for — so a summer
+   *  transfer at the rollover still files the season under the right club. */
+  thisSeasonClub?: string;
   /** Individual honours. The Ballon d'Or was the only one that existed. */
   awards?: { season: number; kind: string; week?: number; detail: string }[];
   /** Wearing the armband at your current club. */
