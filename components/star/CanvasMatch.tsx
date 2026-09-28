@@ -79,7 +79,7 @@ import { castScenario, castDefence, creatorOf, orderDefensively, type OpponentSh
 import { formationShapeInput, type ShapeInput } from "@/lib/star/formationShape";
 import { loadFaceStyle, DEFAULT_FACE_STYLE } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle, DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
-import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
+import { DEFAULT_FAKE_FACE, FAKE_FACES, fakeFaceFor } from "@/lib/star/fakeFaces";
 import {
   drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT, MATCH_KEEPER_R_SHARE,
   MAX_KEEPER_LEAN, ROLE_KIT,
@@ -89,7 +89,8 @@ import {
   penaltyRunupOf, freeKickRunupOf, takerRunupFor, yourRunupFor, standBackFor, planRunup, runupPositionAt, runupPoseAt,
   RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
 } from "@/lib/star/runupStyles";
-import { createFaceImageCache } from "@/lib/star/faceImageCache";
+import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
+import { useFitWidth } from "./useFitWidth";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
 import { matchTeamStrength } from "@/lib/star/matchday";
@@ -1817,6 +1818,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const kickPoseRef = useRef(0);
   // Action banner ("PASS" / "GOAL") and how long it stays up.
   const [actionBanner, setActionBanner] = useState<string | null>(null);
+  const actionBannerTextRef = useRef<HTMLDivElement>(null);
+  const offsideBannerTextRef = useRef<HTMLDivElement>(null);
   const bannerTimerRef = useRef<number | null>(null);
   const showAction = useCallback((text: string) => {
     if (sceneRef.current?.banners === false) return;
@@ -1906,6 +1909,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const faceImageCacheRef = useRef(createFaceImageCache());
   const getFaceImage = (url: string | undefined): HTMLImageElement | undefined =>
     faceImageCacheRef.current.get(url);
+  /**
+   * A face that is on screen THIS frame. A shootout brings on a new taker every
+   * kick and the kick is struck ~0.7 s later (AUTO_STAND_MS), so his photo is
+   * still loading — or failing, and its fake-face fallback only lands after a
+   * retry — for the whole kick: a plain circle head (Kluivert in the filmed
+   * shootout). Until the real photo has actually loaded he wears the fake face
+   * the cache would fall back to for that photo anyway (fallbackFaceFor), so a
+   * photo that never loads keeps the SAME fake face throughout; the real photo
+   * takes over the frame it arrives. No photo at all: the fake face for `key`.
+   */
+  const readyFaceOr = (url: string | undefined, key: string): HTMLImageElement | undefined => {
+    const img = getFaceImage(url);
+    if (img && url && ((img.complete && img.naturalWidth > 0) || FAKE_FACES.includes(url))) return img;
+    return getFaceImage(fallbackFaceFor(url || key));
+  };
 
   // Respect prefers-reduced-motion: no shake, no confetti, only a faint brief flash.
   useEffect(() => {
@@ -2967,7 +2985,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
         phase: runPhase(sc.player.x),
         body: runBody,
-        face: getFaceImage(auto.taker.face),
+        face: readyFaceOr(auto.taker.face, auto.taker.id || auto.taker.name),
         label: auto.taker.shortName,
       });
     } else
@@ -3077,7 +3095,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           shorts: gkKit.trim,
           trim: gkKit.trim,
           skin: SKIN,
-          face: getFaceImage(kk.who?.face ?? fakeFaceFor("keeper")),
+          // A kick the match takes for someone (a shootout): his keeper may be
+          // new this picture too, so never a blank head while his photo loads.
+          face: autoKickOf(sc)
+            ? readyFaceOr(kk.who?.face, kk.who?.id ?? "keeper")
+            : getFaceImage(kk.who?.face ?? fakeFaceFor("keeper")),
         },
         // The lean below is this screen's own, per-save-kind one rather than
         // the shared renderer's generic one, so every save still pitches over
@@ -4798,6 +4820,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       strength: strengthRef.current,
       id: them.keeper?.id, name: them.keeper?.name, shortName: them.keeper?.shortName, face: them.keeper?.face,
     };
+    // Start every taker's and keeper's photo loading now, so each is ready by
+    // his turn rather than requested the moment he steps up.
+    for (const t of [...ourOrder, ...theirOrder]) getFaceImage(t.face);
+    getFaceImage(ourKeeper.face); getFaceImage(theirKeeper.face);
     const home = yourSide === "home";
     setLiveShootout({
       homeClub, awayClub, yourSide,
@@ -5821,6 +5847,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     textShadow: "-1px -1px 1.5px #000, 1px -1px 1.5px #000, -1px 1px 1.5px #000, 1px 1px 1.5px #000",
   };
 
+  // The big banner words fit the pitch they are on: on the phone's Kickabout
+  // pitch (~226 px) a 48 px "DEFLECTED" ran off both edges. Only ever shrinks —
+  // a word that already fits keeps its size (useFitWidth.ts).
+  useFitWidth(actionBannerTextRef, actionBanner);
+  useFitWidth(offsideBannerTextRef, phase === "result" && outcome === "offside");
+
   return (
     <div className="w-full max-w-sm mx-auto">
       {/* Local keyframes; disabled wholesale under prefers-reduced-motion */}
@@ -6028,6 +6060,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {actionBanner && (
           <div className="absolute inset-x-0 top-[18%] flex items-center justify-center pointer-events-none z-20">
             <div
+              ref={actionBannerTextRef}
               className={`kib-pop text-5xl font-black italic tracking-wider drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)] ${
                 actionBanner === "GOAL" ? "text-emerald-300" : "text-cyan-200"
               }`}
@@ -6042,7 +6075,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             hands. The only banner is the referee's call, which has no visual. */}
         {phase === "result" && outcome === "offside" && scene?.banners !== false && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl text-yellow-200 bg-gray-950/70 ring-1 ring-yellow-400/50">
+            <div ref={offsideBannerTextRef} className="kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl text-yellow-200 bg-gray-950/70 ring-1 ring-yellow-400/50">
               OFFSIDE
             </div>
           </div>

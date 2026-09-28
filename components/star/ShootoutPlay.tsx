@@ -119,6 +119,16 @@ export default function ShootoutPlay({ seed = 1, width, onExit }: {
     return () => { live = false; clearTimeout(fallback); };
   }, [built, s]);
 
+  // Start every taker's and keeper's photo loading as soon as the orders are
+  // known, so the browser has it by his turn (the match still shows a fake
+  // face until it has — never a blank head).
+  useEffect(() => {
+    if (!sides) return;
+    const faces = [...sides.home, ...sides.away].map((t) => t.face)
+      .concat(sides.homeKeeper.face, sides.awayKeeper.face);
+    for (const f of faces) if (f) { const img = new Image(); img.src = f; }
+  }, [sides]);
+
   const sidesRef = useRef(sides);
   sidesRef.current = sides;
 

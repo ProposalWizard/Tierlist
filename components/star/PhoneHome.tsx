@@ -92,7 +92,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave }: {
             {app === "kickabout" && <Kickabout />}
             {app === "league" && (
               <AppShell title="League" icon="🏆">
-                <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><LeagueScreen career={career} /></div>
+                <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><LeagueScreen career={career} compact /></div>
               </AppShell>
             )}
             {app === "fixtures" && <Fixtures career={career} />}
