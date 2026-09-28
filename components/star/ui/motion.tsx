@@ -69,6 +69,8 @@ export const KIT_CSS = `
   .kit-drift { animation: kit-drift 16s ease-in-out infinite alternate; }
   @keyframes kit-mote { 0% { opacity: 0; transform: translate(0, 0); } 20% { opacity: .9; } 100% { opacity: 0; transform: translate(var(--dx), -90px); } }
   .kit-mote { animation: kit-mote var(--dur, 6s) linear infinite; animation-delay: var(--delay, 0s); }
+  @keyframes kit-gain { 0% { opacity: 0; transform: scaleY(.6); } 20% { opacity: 1; transform: scaleY(1.9); } 45% { transform: scaleY(1); } 100% { opacity: 0; transform: scaleY(1); } }
+  .kit-gain { animation: kit-gain 1.3s cubic-bezier(.2,.8,.3,1) 1 both; transform-origin: 50% 50%; }
 
   /* ── Money screens (shop, store, casino) and the phone — added with the reskin (28 Sep 2026) ── */
   @keyframes kit-shake-x { 0%,100% { transform: translateX(0); } 12% { transform: translateX(-10px) rotate(-1deg); } 26% { transform: translateX(9px) rotate(1deg); } 40% { transform: translateX(-7px); } 54% { transform: translateX(5px); } 68% { transform: translateX(-3px); } 82% { transform: translateX(2px); } }
@@ -143,7 +145,7 @@ export const KIT_CSS = `
     [data-page-active="true"] .kib-rise, .kit-rise, .kib-breathe, .kib-hop, .kib-confetti, .kib-play-pulse, .kib-shake,
     .kib-drop, .kib-minus, .kib-sheen, .kib-sheen-fast, .kib-glow-pulse, .kib-flood,
     .kit-pop, .kit-text-shine, .kit-flicker, .kit-fade, .kit-drop-in, .kit-drift { animation: none !important; }
-    .kit-float, .kit-shine, .kit-shine-loop, .kit-mote { animation: none !important; opacity: 0 !important; }
+    .kit-float, .kit-shine, .kit-shine-loop, .kit-mote, .kit-gain { animation: none !important; opacity: 0 !important; }
     .kib-press:active { transform: none; }
   }
 `;
