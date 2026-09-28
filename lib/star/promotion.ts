@@ -223,10 +223,13 @@ function twoLeggedWinner(
  */
 export function resolvePlayOffs(
   table: LeagueTeam[], strength: Map<string, number>, rng: () => number,
+  /** How many went up automatically; the play-offs are the next four
+   *  (League Two: 3, so 4th-7th). */
+  auto = 2,
 ): PlayOffResult | null {
   const sorted = sortLeague(table);
-  if (sorted.length < 6) return null;
-  const [third, fourth, fifth, sixth] = [sorted[2].name, sorted[3].name, sorted[4].name, sorted[5].name];
+  if (sorted.length < auto + 4) return null;
+  const [third, fourth, fifth, sixth] = [sorted[auto].name, sorted[auto + 1].name, sorted[auto + 2].name, sorted[auto + 3].name];
 
   const semiFinals = [
     twoLeggedWinner(third, sixth, strength, rng),
@@ -492,7 +495,7 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
       // result is the truth and must not be re-rolled here. Everybody
       // else's is simulated as normal.
       const played = career.playOffState?.promoted;
-      playOffs = played ? null : resolvePlayOffs(career.league, strength, rng);
+      playOffs = played ? null : resolvePlayOffs(career.league, strength, rng, count - 1);
       const auto = names.slice(0, count - 1);
       const last = played ?? playOffs?.promoted;
       promoted = last ? [...auto, last] : auto;

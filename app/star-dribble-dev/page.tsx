@@ -108,6 +108,8 @@ export default function StarDribbleDevPage() {
               chaseOffset={chaseOffset}
               cameraFollowRate={cameraFollowRate}
               ballTouchReach={ballTouchReach}
+              // The chase dials above tune the old camera, so this page keeps it.
+              camera="today"
             />
           ) : (
             <FirstPersonRoam

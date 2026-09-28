@@ -268,8 +268,9 @@ export interface FirstPersonDribbleProps {
    */
   hold?: boolean;
   /**
-   * Which camera (lib/star/dribbleCamera.ts): "today" (the default — the
-   * chase* props above, exactly as before) or one of the C1-C3 reframes.
+   * Which camera (lib/star/dribbleCamera.ts): "C1" (the default since Harry
+   * picked it, 28 Sep 2026: low over the shoulder, the ball never drawn over
+   * your body), "today" (the chase* props above, the old view) or C2/C3.
    * A picture choice only: the run itself never reads it.
    */
   camera?: DribbleCamera;
@@ -277,7 +278,7 @@ export interface FirstPersonDribbleProps {
 
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
-  hideHint = false, hold = false, camera = "today",
+  hideHint = false, hold = false, camera = "C1",
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
