@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Burst, PressButton, useTrigger } from "./ui";
+import { SetCard, SetHead, SetNote } from "./settingsKit";
 
 /**
  * Reported directly: an old save's faces are mostly blank while a brand new
@@ -13,9 +15,16 @@ import { useState } from "react";
  * merge (mergeSquadStats / mergeLeagueSquadStats) the automatic path uses,
  * so this season's goals and assists are exactly as untouched as they'd be
  * on a normal background refresh.
+ *
+ * Reskinned 28 Sep 2026 (the home screen's look): a lit card, a kit button,
+ * and a spark burst on "Done!". Same handler, same states.
  */
+const TONE = "#10b981";
+
 export default function RefreshPhotosPanel({ onRefresh }: { onRefresh: () => Promise<void> }) {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [done, fireDone] = useTrigger();
+  useEffect(() => { if (state === "done") fireDone(); }, [state, fireDone]);
 
   const run = async () => {
     setState("loading");
@@ -30,18 +39,23 @@ export default function RefreshPhotosPanel({ onRefresh }: { onRefresh: () => Pro
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-      <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Refresh Player Photos</div>
-      <p className="mt-1 text-[11px] font-semibold text-white/90">
+    <SetCard tone={TONE} strength={0.18} className="mt-2.5 p-3">
+      <SetHead tone={TONE}>Refresh Player Photos</SetHead>
+      <SetNote>
         Pulls the latest names, ratings and photos for your squad and every other club — useful if faces on the pitch are missing on an older save. Your goals and assists this save are untouched.
-      </p>
-      <button
-        onClick={run}
-        disabled={state === "loading"}
-        className="mt-2 w-full py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-[11px] font-black text-white"
-      >
-        {state === "loading" ? "Refreshing…" : state === "done" ? "Done!" : state === "error" ? "Couldn't refresh — try again" : "Refresh Photos"}
-      </button>
-    </div>
+      </SetNote>
+      <div className="relative mt-2">
+        <Burst trigger={done} round colors={["#6ee7b7", "#fde047", "#ffffff"]} count={16} />
+        <PressButton
+          variant={state === "error" ? "danger" : "primary"}
+          size="none"
+          onClick={run}
+          disabled={state === "loading"}
+          className="w-full rounded-xl py-2 text-[11px] font-black"
+        >
+          {state === "loading" ? "Refreshing…" : state === "done" ? "Done!" : state === "error" ? "Couldn't refresh — try again" : "Refresh Photos"}
+        </PressButton>
+      </div>
+    </SetCard>
   );
 }

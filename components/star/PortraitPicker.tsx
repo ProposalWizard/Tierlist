@@ -8,6 +8,7 @@ import { paletteFor } from "@/lib/star/media/graphics/palette";
 import { FAKE_FACES } from "@/lib/star/fakeFaces";
 import { loadFaceScan, scanFace, type Pt, type ScanFail } from "@/lib/star/faceScan";
 import { ScanningPhoto, ScanReveal, usePrefersReducedMotion } from "./FaceScanAnim";
+import PressButton from "./ui/PressButton";
 
 /**
  * TAKE A PICTURE, OR DON'T.
@@ -40,7 +41,14 @@ import { ScanningPhoto, ScanReveal, usePrefersReducedMotion } from "./FaceScanAn
  * to allow the camera — see next.config.mjs.
  *
  * Nothing here uploads. See lib/star/portrait.ts.
+ *
+ * Reskinned 28 Sep 2026 to the home screen's look (dark glass, kit buttons
+ * that press in, the chosen face lit green). Same stages, same handlers —
+ * and it still sits happily inside the new-career screen's green card.
  */
+
+/** The kit's green button, for the one control that has to be a <label>. */
+const GREEN_STYLE: React.CSSProperties = { background: "linear-gradient(180deg, #4ade80, #10b981 55%, #047857)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.18), 0 8px 18px -6px rgba(16,185,129,.75)" };
 
 const VIEWPORT = 224;
 
@@ -227,10 +235,10 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
   useEffect(() => () => { imgRef.current = null; }, []);
 
   const scale = raw ? Math.max(VIEWPORT / (size.w || 1), VIEWPORT / (size.h || 1)) * view.zoom : 1;
-  const btn = "rounded-lg py-2 text-[12px] font-black text-white transition";
+  const btn = "rounded-xl py-2 text-[12px] font-black";
 
   return (
-    <div className="rounded-lg border border-emerald-700 bg-emerald-900/30 p-3">
+    <div className="rounded-xl p-3" style={{ background: "linear-gradient(180deg, rgba(3,7,18,.55), rgba(3,7,18,.35))", boxShadow: "inset 0 1px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(110,231,183,.22)" }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Your photo</span>
         <span className="text-[10px] font-bold text-white/70">Optional</span>
@@ -254,8 +262,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           </div>
           <p className="mt-2 text-center text-[11px] font-bold text-white">Face in the oval · look straight on · good light</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button onClick={reset} className={`${btn} bg-gray-700 hover:bg-gray-600`}>Cancel</button>
-            <button onClick={snap} className={`${btn} bg-emerald-600 hover:bg-emerald-500`}>Capture</button>
+            <PressButton variant="secondary" size="none" onClick={reset} className={btn}>Cancel</PressButton>
+            <PressButton variant="primary" size="none" onClick={snap} className={btn}>Capture</PressButton>
           </div>
         </>
       ) : stage === "scanning" && raw ? (
@@ -271,8 +279,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           <p className="mt-2 text-center text-[11px] font-bold text-white">That&apos;s you.</p>
           {hairNote && <p className="mt-1 text-center text-[10px] font-bold text-emerald-200">{hairNote}</p>}
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button onClick={reset} className={`${btn} bg-gray-700 hover:bg-gray-600`}>Try another</button>
-            <button onClick={useScan} className={`${btn} bg-emerald-600 hover:bg-emerald-500`}>Use this</button>
+            <PressButton variant="secondary" size="none" onClick={reset} className={btn}>Try another</PressButton>
+            <PressButton variant="primary" size="none" onClick={useScan} className={btn}>Use this</PressButton>
           </div>
         </>
       ) : stage === "failed" && raw ? (
@@ -282,8 +290,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           </div>
           <p className="mt-2 text-center text-[12px] font-black text-amber-200">{fail?.message}</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button onClick={reset} className={`${btn} bg-emerald-600 hover:bg-emerald-500`}>Try another</button>
-            <button onClick={() => setStage("crop")} className={`${btn} bg-gray-700 hover:bg-gray-600`}>Crop it by hand</button>
+            <PressButton variant="primary" size="none" onClick={reset} className={btn}>Try another</PressButton>
+            <PressButton variant="secondary" size="none" onClick={() => setStage("crop")} className={btn}>Crop it by hand</PressButton>
           </div>
         </>
       ) : stage === "crop" && raw ? (
@@ -313,8 +321,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           />
           <p className="text-center text-[10px] font-bold text-white/70">Drag to move, slide to zoom</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <button onClick={reset} className={`${btn} bg-gray-700 hover:bg-gray-600`}>Cancel</button>
-            <button onClick={useCrop} className={`${btn} bg-emerald-600 hover:bg-emerald-500`}>Use this</button>
+            <PressButton variant="secondary" size="none" onClick={reset} className={btn}>Cancel</PressButton>
+            <PressButton variant="primary" size="none" onClick={useCrop} className={btn}>Use this</PressButton>
           </div>
         </>
       ) : (
@@ -336,7 +344,8 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
                 first scan otherwise spends most of its time loading them. */}
             <label
               onClick={() => { void loadFaceScan().catch(() => { /* the scan will say so */ }); }}
-              className="cursor-pointer rounded-lg bg-emerald-600 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-500"
+              className="kib-press cursor-pointer rounded-xl py-2 text-center text-[12px] font-black text-white"
+              style={GREEN_STYLE}
             >
               {value ? "Change photo" : "Add a photo"}
               <input
@@ -346,12 +355,14 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) take(f); e.target.value = ""; }}
               />
             </label>
-            <button
+            <PressButton
+              variant="secondary"
+              size="none"
               onClick={startTakePhoto}
-              className="rounded-lg bg-emerald-700 py-2 text-center text-[12px] font-black text-white transition hover:bg-emerald-600"
+              className="rounded-xl py-2 text-center text-[12px] font-black text-white"
             >
               Take a photo
-            </button>
+            </PressButton>
             {/* Fallback for Take a photo when the live camera is refused: the
                 phone's own camera app, FRONT camera ("user"). A separate input
                 from Add a photo's on purpose (see the header note). */}
@@ -373,10 +384,11 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
           <button
             onClick={() => onChange(undefined)}
             disabled={!value}
-            className={`mt-2 w-full rounded-lg py-2 text-[12px] font-black transition ${
-              value
-                ? "bg-gray-700 text-white hover:bg-gray-600"
-                : "border border-emerald-400/70 bg-emerald-500/15 text-emerald-200"}`}
+            className={`mt-2 w-full rounded-xl py-2 text-[12px] font-black transition ${
+              value ? "kib-press text-white" : "text-emerald-200"}`}
+            style={value
+              ? { background: "linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px rgba(255,255,255,.12)" }
+              : { background: "linear-gradient(180deg, rgba(16,185,129,.22), rgba(16,185,129,.08))", boxShadow: "inset 0 0 0 1px rgba(52,211,153,.7), 0 0 14px -4px rgba(16,185,129,.7)" }}
           >
             {value ? "Use my shirt" : "✓ Using your shirt"}
           </button>
@@ -386,7 +398,7 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
             </p>
           )}
 
-          <div className="mt-3 border-t border-emerald-800/60 pt-3">
+          <div className="mt-3 border-t border-white/10 pt-3">
             <span className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
               Or pick a face
             </span>
@@ -395,10 +407,10 @@ export default function PortraitPicker({ value, onChange, club, number }: Props)
                 <button
                   key={src}
                   onClick={() => onChange(src)}
-                  className={`relative aspect-square overflow-hidden rounded-md border-2 transition ${
+                  className={`kib-press relative aspect-square overflow-hidden rounded-lg border-2 transition ${
                     value === src ? "border-emerald-400" : "border-white/15 hover:border-white/50"
                   }`}
-                  style={{ backgroundColor: kit.shirt }}
+                  style={{ backgroundColor: kit.shirt, ...(value === src ? { boxShadow: "0 0 12px -2px rgba(52,211,153,.9)" } : {}) }}
                   aria-label={`Fake face ${i + 1}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,5 +1,8 @@
 "use client";
+import type React from "react";
 import type { CareerState } from "@/lib/star/types";
+import { PressButton, Pop } from "./ui";
+import { SetCard, SetHead, SetNote } from "./settingsKit";
 
 /**
  * DEV CAREER — a testing tool, not a gameplay mechanic.
@@ -17,9 +20,26 @@ import type { CareerState } from "@/lib/star/types";
  * contract, the first-signing achievement and the garden-weeks bookkeeping,
  * so a dev-cheated club change leaves the save in exactly the shape a real
  * transfer would.
+ *
+ * Reskinned 28 Sep 2026 (the home screen's look): a violet-lit card, each
+ * stat in its own glass tile with its number popping when it changes, kit
+ * buttons. Every handler and every number is unchanged.
  */
 
 const SKILL_KEYS = ["pace", "power", "technique", "vision", "freeKick"] as const;
+const TONE = "#a78bfa";
+
+function Tile({ label, value, children }: { label: string; value: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="kit-row rounded-xl p-2">
+      <div className="flex items-baseline justify-between gap-1">
+        <span className="text-[10px] font-bold text-white/70">{label}</span>
+        <span className="text-[13px] font-black tabular-nums text-white">{value}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function DevCareerPanel({
   career, onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
@@ -35,13 +55,12 @@ export default function DevCareerPanel({
   onSwitchClub: (club: string) => void;
 }) {
   const clubOptions = career.league.map(t => t.name).filter(n => n !== career.player.club);
+  const skills = SKILL_KEYS.map(k => career.skills[k]).join("/");
 
   return (
-    <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
-      <div className="text-[10px] font-black uppercase tracking-widest text-white/85">Dev — Career</div>
-      <p className="mt-1 text-[11px] font-semibold text-white/90">
-        Skip the grind for testing captaincy, boardroom powers, training gains or a club move.
-      </p>
+    <SetCard tone={TONE} strength={0.22} className="mt-2.5 p-3">
+      <SetHead tone={TONE}>Dev — Career</SetHead>
+      <SetNote>Skip the grind for testing captaincy, boardroom powers, training gains or a club move.</SetNote>
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-[11px] font-bold text-white/85">
@@ -49,72 +68,76 @@ export default function DevCareerPanel({
             {career.captain ? "Yes" : "No"}
           </span>
         </span>
-        <button
+        <PressButton
+          variant="gold"
+          size="none"
           onClick={() => onSetCaptain(!career.captain)}
-          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 font-black text-xs text-black whitespace-nowrap"
+          className="whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-black"
         >
           {career.captain ? "Remove captaincy" : "Make captain"}
-        </button>
+        </PressButton>
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-1.5">
-        <div className="rounded-lg bg-gray-900/60 p-2">
-          <div className="text-[10px] font-bold text-white/70">Reputation ({career.reputation})</div>
+        <Tile label="Reputation" value={<Pop value={career.reputation}>{career.reputation}</Pop>}>
           <div className="mt-1 flex gap-1">
-            <button onClick={() => onSetReputation(25)} className="flex-1 py-1 rounded bg-sky-600 hover:bg-sky-500 text-[10px] font-black text-white">+25</button>
-            <button onClick={() => onSetReputation(100)} className="flex-1 py-1 rounded bg-sky-600 hover:bg-sky-500 text-[10px] font-black text-white">Max</button>
+            <PressButton variant="accent" accent="#38bdf8" size="none" onClick={() => onSetReputation(25)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">+25</PressButton>
+            <PressButton variant="accent" accent="#38bdf8" size="none" onClick={() => onSetReputation(100)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">Max</PressButton>
           </div>
-        </div>
-        <div className="rounded-lg bg-gray-900/60 p-2">
-          <div className="text-[10px] font-bold text-white/70">Fame ({career.fame})</div>
+        </Tile>
+        <Tile label="Fame" value={<Pop value={career.fame}>{career.fame}</Pop>}>
           <div className="mt-1 flex gap-1">
-            <button onClick={() => onSetFame(10)} className="flex-1 py-1 rounded bg-fuchsia-600 hover:bg-fuchsia-500 text-[10px] font-black text-white">+10</button>
-            <button onClick={() => onSetFame(100)} className="flex-1 py-1 rounded bg-fuchsia-600 hover:bg-fuchsia-500 text-[10px] font-black text-white">Max</button>
+            <PressButton variant="accent" accent="#d946ef" size="none" onClick={() => onSetFame(10)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">+10</PressButton>
+            <PressButton variant="accent" accent="#d946ef" size="none" onClick={() => onSetFame(100)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">Max</PressButton>
           </div>
-        </div>
-        <div className="rounded-lg bg-gray-900/60 p-2">
-          <div className="text-[10px] font-bold text-white/70">Happiness ({career.happiness})</div>
+        </Tile>
+        <Tile label="Happiness" value={<Pop value={career.happiness}>{career.happiness}</Pop>}>
           <div className="mt-1 flex gap-1">
-            <button onClick={() => onSetHappiness(25)} className="flex-1 py-1 rounded bg-rose-600 hover:bg-rose-500 text-[10px] font-black text-white">+25</button>
-            <button onClick={() => onSetHappiness(100)} className="flex-1 py-1 rounded bg-rose-600 hover:bg-rose-500 text-[10px] font-black text-white">Max</button>
+            <PressButton variant="accent" accent="#f43f5e" size="none" onClick={() => onSetHappiness(25)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">+25</PressButton>
+            <PressButton variant="accent" accent="#f43f5e" size="none" onClick={() => onSetHappiness(100)} className="flex-1 rounded-md py-1 text-[10px] font-black text-white">Max</PressButton>
           </div>
-        </div>
-        <div className="rounded-lg bg-gray-900/60 p-2">
+        </Tile>
+        <div className="kit-row rounded-xl p-2">
           <div className="text-[10px] font-bold text-white/70">
-            Skills ({SKILL_KEYS.map(k => career.skills[k]).join("/")})
+            Skills (<Pop value={skills} className="inline-block font-black tabular-nums text-white">{skills}</Pop>)
           </div>
-          <button
+          <PressButton
+            variant="primary"
+            size="none"
             onClick={onMaxSkills}
-            className="mt-1 w-full py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-[10px] font-black text-white"
+            className="mt-1 w-full rounded-md py-1 text-[10px] font-black"
           >
             Max all to 99
-          </button>
+          </PressButton>
           {onUnlockTraining && (
-            <button
+            <PressButton
+              variant="accent"
+              accent="#d97706"
+              size="none"
               onClick={onUnlockTraining}
-              className="mt-1 w-full py-1 rounded bg-amber-600 hover:bg-amber-500 text-[10px] font-black text-white"
+              className="mt-1 w-full rounded-md py-1 text-[10px] font-black text-white"
             >
               Unlock all 30 training levels (1★ each)
-            </button>
+            </PressButton>
           )}
         </div>
       </div>
 
       {clubOptions.length > 0 && (
-        <div className="mt-2 rounded-lg bg-gray-900/60 p-2">
+        <div className="kit-row mt-2 rounded-xl p-2">
           <div className="text-[10px] font-bold text-white/70">
-            Club: {career.player.club} — instantly attach elsewhere in this division
+            Club: <span className="font-black text-white">{career.player.club}</span> — instantly attach elsewhere in this division
           </div>
           <select
             defaultValue=""
             onChange={e => { if (e.target.value) { onSwitchClub(e.target.value); e.target.value = ""; } }}
-            className="mt-1 w-full rounded-md bg-gray-900 border border-gray-700 px-2 py-1.5 text-[11px] text-white"
+            className="kit-input mt-1 w-full rounded-lg px-2 py-1.5 text-[11px] text-white"
           >
             <option value="" disabled>Move to…</option>
             {clubOptions.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       )}
-    </div>
+    </SetCard>
   );
 }

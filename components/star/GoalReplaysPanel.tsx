@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import { SAVED_REPLAYS_MAX, firstEmptySlot } from "@/lib/star/goalReplays";
+import { PressButton } from "./ui";
+import { SetCard, SetNote } from "./settingsKit";
 
 /**
  * GOAL REPLAYS — admin-only, for testing.
@@ -11,6 +13,9 @@ import { SAVED_REPLAYS_MAX, firstEmptySlot } from "@/lib/star/goalReplays";
  * goals are captured automatically as you play; keeping one of them is a
  * deliberate choice, capped at three, same as the feature this is testing
  * ahead of a real release.
+ *
+ * Reskinned 28 Sep 2026 (the home screen's look): an amber-lit card, glass
+ * rows and kit buttons. Every handler is unchanged.
  */
 
 interface Props {
@@ -45,14 +50,14 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3">
+    <SetCard tone="#f59e0b" strength={0.22} className="mt-2.5 p-3">
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">Goal Replays</span>
         <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-200">Admin · Test</span>
       </div>
-      <p className="mt-1 text-[11px] text-gray-300">
+      <SetNote>
         Watch a goal happen again, exactly as it did. Save up to {SAVED_REPLAYS_MAX} from the ones you've scored recently.
-      </p>
+      </SetNote>
 
       <div className="mt-2.5">
         <div className="text-[9px] font-black uppercase tracking-widest text-white/60">Saved ({saved.length}/{SAVED_REPLAYS_MAX})</div>
@@ -61,20 +66,14 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
         ) : (
           <div className="mt-1 space-y-1">
             {saved.map(r => (
-              <div key={r.id} className="flex items-center gap-2 rounded-lg bg-gray-800/70 px-2 py-1.5">
+              <div key={r.id} className="flex items-center gap-2 kit-row rounded-lg px-2 py-1.5">
                 <span className="flex-1 truncate text-[11px] font-bold text-white">{r.label}</span>
-                <button
-                  onClick={() => onWatchReplay(r)}
-                  className="rounded bg-emerald-600 px-2 py-1 text-[10px] font-black text-white hover:bg-emerald-500"
-                >
+                <PressButton variant="primary" size="none" onClick={() => onWatchReplay(r)} className="rounded-md px-2 py-1 text-[10px] font-black">
                   Watch
-                </button>
-                <button
-                  onClick={() => onDeleteSavedReplay(r.id)}
-                  className="rounded bg-red-600/70 px-2 py-1 text-[10px] font-black text-white hover:bg-red-500/70"
-                >
+                </PressButton>
+                <PressButton variant="danger" size="none" onClick={() => onDeleteSavedReplay(r.id)} className="rounded-md px-2 py-1 text-[10px] font-black">
                   Remove
-                </button>
+                </PressButton>
               </div>
             ))}
           </div>
@@ -88,21 +87,14 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
         ) : (
           <div className="mt-1 space-y-1">
             {recent.map(r => (
-              <div key={r.id} className="flex items-center gap-2 rounded-lg bg-gray-800/40 px-2 py-1.5">
+              <div key={r.id} className="flex items-center gap-2 kit-row rounded-lg px-2 py-1.5">
                 <span className="flex-1 truncate text-[11px] text-white/90">{r.label}</span>
-                <button
-                  onClick={() => onWatchReplay(r)}
-                  className="rounded bg-gray-700 px-2 py-1 text-[10px] font-black text-white hover:bg-gray-600"
-                >
+                <PressButton variant="secondary" size="none" onClick={() => onWatchReplay(r)} className="rounded-md px-2 py-1 text-[10px] font-black">
                   Watch
-                </button>
-                <button
-                  onClick={() => handleSaveClick(r)}
-                  disabled={alreadySaved(r.id)}
-                  className="rounded bg-amber-500 px-2 py-1 text-[10px] font-black text-gray-950 hover:bg-amber-400 disabled:opacity-40"
-                >
+                </PressButton>
+                <PressButton variant="gold" size="none" onClick={() => handleSaveClick(r)} disabled={alreadySaved(r.id)} className="rounded-md px-2 py-1 text-[10px] font-black">
                   {alreadySaved(r.id) ? "Saved" : "Save"}
-                </button>
+                </PressButton>
               </div>
             ))}
           </div>
@@ -110,14 +102,14 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
       </div>
 
       {overwriting && (
-        <div className="mt-2.5 rounded-lg border border-amber-400/50 bg-gray-900 p-2">
+        <div className="mt-2.5 kit-row rounded-xl p-2">
           <div className="text-[10px] font-bold text-amber-200">All {SAVED_REPLAYS_MAX} slots are full — replace one:</div>
           <div className="mt-1.5 space-y-1">
             {saved.map((r, i) => (
               <button
                 key={r.id}
                 onClick={() => { onSaveReplay(i, overwriting); setOverwriting(null); }}
-                className="block w-full rounded bg-gray-800 px-2 py-1.5 text-left text-[10px] font-bold text-white hover:bg-gray-700"
+                className="kib-press kit-row block w-full rounded-lg px-2 py-1.5 text-left text-[10px] font-bold text-white"
               >
                 Replace: {r.label}
               </button>
@@ -131,6 +123,6 @@ export default function GoalReplaysPanel({ career, onWatchReplay, onSaveReplay, 
           </button>
         </div>
       )}
-    </div>
+    </SetCard>
   );
 }
