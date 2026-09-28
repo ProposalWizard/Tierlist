@@ -160,7 +160,7 @@ const SQUAD_WAIT_MS = 4000;
 
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
-  onChanceServed, onChanceResolved, onComplete,
+  onChanceServed, onChanceResolved, onComplete, fitParent = false,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -183,6 +183,13 @@ export default function EnginePlay({
   onChanceResolved?: (info: ChanceResolved) => void;
   /** Given: a full match (Infinite Match). Absent: one chance at a time. */
   onComplete?: (stats: MatchStats) => void;
+  /**
+   * PROTOTYPE (home-screen proto): play SMALLER than the real match, filling
+   * whatever box it is put in (the phone's Kickabout app). The drag is then
+   * read against the real match's canvas, so a flick kicks exactly as hard
+   * as in a career — the pitch is just drawn smaller.
+   */
+  fitParent?: boolean;
 }) {
   // Cleaned even when handed in, so no caller can push a dial outside the
   // Play Area's own guardrails (a keeper of 0, a NaN power…).
@@ -217,7 +224,7 @@ export default function EnginePlay({
   }, []);
   const maxW = vpW > 0 ? Math.min(TEST_PLAY_MAX_W, Math.max(realW, vpW - 24)) : realW;
   const w = width && width > 0 ? Math.round(Math.max(realW, Math.min(maxW, width))) : realW;
-  const dragReferenceHeightPx = w !== realW ? realMatchHeight(vpW) : undefined;
+  const dragReferenceHeightPx = w !== realW || fitParent ? realMatchHeight(vpW) : undefined;
   const { boxRef, served } = useRevealPitch(onChanceServed);
 
   if (!built) {

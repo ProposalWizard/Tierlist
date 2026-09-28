@@ -4008,6 +4008,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           scorer: scorer?.name ?? sc.receiver.roleLabel ?? "Team-mate",
           assist: playerName,
           isUserGoal: false, how, distance: Math.round(distance),
+          // PROTOTYPE (home-screen proto): how far YOUR pass went — from where
+          // you played it to where he took it. Feeds "furthest assist".
+          ...(sc.receivedAt ? { passLength: Math.round(Math.hypot(sc.receivedAt.x - sc.ball.x, sc.receivedAt.y - sc.ball.y)) } : {}),
         });
         logMoment(`⚽ ${scorerLabel} scores!`, "goal");
         logMoment(`🎯 ${playerLabel()} assists!`, "assist");

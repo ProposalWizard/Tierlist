@@ -4,6 +4,7 @@
 // the next CareerState, never mutating the input's nested objects. The page owns
 // phase routing and toasts; this owns the numbers.
 
+import { bestsAfterMatch, archiveRowFor } from "./careerRecords";
 import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy } from "./types";
 import {
   buildLeague, buildFixtures, playLeagueWeek, updateLeagueWithUserResult, sortLeague, mulberry32,
@@ -1082,6 +1083,13 @@ export function creditMatchResult(
       : career.awards,
     seasonStats: isInternational ? career.seasonStats : accrue(career.seasonStats),
     careerStats: isInternational ? career.careerStats : accrue(career.careerStats),
+    // PROTOTYPE (home-screen proto): your own bests, and which club this
+    // season's appearances are for. See lib/star/careerRecords.ts.
+    careerBests: alreadyPlayed ? career.careerBests : (() => {
+      const s = isInternational ? career.seasonStats : accrue(career.seasonStats);
+      return bestsAfterMatch(career, fixture, stats, s.goals, s.assists);
+    })(),
+    thisSeasonClub: isInternational ? career.thisSeasonClub : career.player.club,
     leagueSeasonStats,
     careerLeagueStats,
     // Guarded on `alreadyPlayed`, same as every other tally in this
@@ -1572,6 +1580,11 @@ export function advanceSeason(
     // Read off `career` (this season's numbers, not yet wiped) before the
     // reset above takes them away — see updatePersonalBests.
     personalBests: updatePersonalBests(career),
+    // PROTOTYPE (home-screen proto): the season just finished, as one row.
+    seasonArchive: career.seasonStats.appearances > 0
+      ? [...(career.seasonArchive ?? []).filter(r => r.season !== career.season), archiveRowFor(career)]
+      : career.seasonArchive,
+    thisSeasonClub: undefined,
     // Only the clubs you are actually playing next season. Going up or down
     // replaces most of the division, and a squad for a club that is no longer
     // in it is dead weight the team sheet would never read; the ones now
