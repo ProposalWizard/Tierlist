@@ -17,15 +17,22 @@
  *      warning pills, the KIB cans (Use / Buy) right under energy, and who is
  *      on penalties;
  *   3. the opposition: their last five, where they sit, their key man, your
- *      head-to-head, and the full scout report one tap away;
+ *      head-to-head, and the full scout report;
  *   4. the action — Team sheets / Play / Watch from the stands, and Sim —
  *      PINNED to the bottom of the screen, so it is always there without
  *      scrolling. Everything else scrolls behind it.
  *
+ * Harry, 28 Sep 2026 ("this is cool"), round 2: three swipe pages like the
+ * home screens (SwipePages.tsx) — Fixtures · Match · Scout — opening on
+ * Match, with the pinned bar under all three. Fixtures carries a bell on
+ * every other game in your division, for live-score pop-ups from that one
+ * game (matchDayPrefs.ts's followed fixtures, the same pop-ups Settings →
+ * Live scores ticks drive).
+ *
  * The team sheets (VersusScreen) still come between this and kick-off
  * whenever your XI can be drawn — see `teamsReady`.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import type { SelectionVerdict } from "@/lib/star/selection";
 import { MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, SUB_LADDER } from "@/lib/star/selection";
@@ -35,9 +42,11 @@ import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
 import { kitsFor, kitsOf } from "@/lib/star/kits";
 import { groundFor, crowdFor } from "@/lib/star/stadiums";
 import { conditionsFor, type Conditions } from "@/lib/star/weather";
-import { fixtureLabel, nationOf } from "@/lib/star/competitions";
-import { fixtureDateLabel, divisionOf, leagueNameFor } from "@/lib/star/calendar";
-import { matchdayFor } from "@/lib/star/teamsheet";
+import { fixtureLabel, nationOf, competitionAbbrev } from "@/lib/star/competitions";
+import { fixtureDateLabel, divisionOf, leagueNameFor, fixtureTimestamp } from "@/lib/star/calendar";
+import { matchdayFor, offeredPositions, POSITION_NAMES, formationForClub } from "@/lib/star/teamsheet";
+import { liveWeekFor } from "@/lib/star/liveScores";
+import { followedClubs, isFixtureFollowed, toggleFollowedFixture, setLiveScoreWeek } from "@/lib/star/matchDayPrefs";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { scoutReportFor, type ScoutReport } from "@/lib/star/scoutReport";
 import { faceOrFake } from "@/lib/star/fakeFaces";
@@ -45,11 +54,11 @@ import { shortNameOf } from "@/lib/star/realSquad";
 import { rgba } from "@/lib/star/heroFigure";
 import ClubBadge from "./ClubBadge";
 import ImageWithFallback from "@/components/ImageWithFallback";
-import PositionPicker from "./PositionPicker";
+import SwipePages from "./SwipePages";
 import PenaltyDutyLine from "./PenaltyDutyLine";
 import ScoutReportCard from "./ScoutReport";
 import VersusScreen from "./VersusScreen";
-import { CanTile, cardStyle, glowOf, short, daysToNext } from "./HomeHub";
+import { CanTile, cardStyle, glowOf, short } from "./HomeHub";
 import { HomeFxStyles, useCountUp } from "./HomeFx";
 
 interface Props {
@@ -79,6 +88,11 @@ const ordinal = (n: number) => (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "
 
 export default function MatchdayScreen(p: Props) {
   const { career, nextFixture, preMatchEnergy, preMatchSelection, showTeams } = p;
+  // Fixtures · Match · Scout — always opens on Match.
+  const [page, setPage] = useState(1);
+  // Tell the live-score pop-ups which week is being played, so a bell rung
+  // on the Fixtures page for one of this week's other games reaches the match.
+  useEffect(() => { setLiveScoreWeek(career.season, nextFixture.week); }, [career.season, nextFixture.week]);
 
   // ── The team sheets ── (moved as-is from page.tsx)
   // Between this screen and kick-off, because the eleven you are about to play
@@ -129,29 +143,42 @@ export default function MatchdayScreen(p: Props) {
     <FullHeight>
       <HomeFxStyles />
       <style>{`
-        .kib-md-noscroll::-webkit-scrollbar { display: none; }
-        .kib-md-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+        .kib-shell-noscroll::-webkit-scrollbar, .kib-md-noscroll::-webkit-scrollbar { display: none; }
+        .kib-shell-noscroll, .kib-md-noscroll { scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior: contain; }
         .kib-bar-fill { transition: width 1000ms cubic-bezier(.2,.8,.2,1); }
         @keyframes kibRoleFlip { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
         .kib-role-flip { display: inline-block; animation: kibRoleFlip 0.45s cubic-bezier(0.2,0.9,0.3,1.35) both; }
         @media (prefers-reduced-motion: reduce) { .kib-bar-fill { transition: none; } .kib-role-flip { animation: none; } }
       `}</style>
-      <div data-page-active="true" className="kib-md-noscroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div className="mx-auto w-full max-w-md space-y-2.5 px-3 pb-4 pt-2.5">
-          <div className="kib-rise" style={rise(0)}>
-            <Hero career={career} fixture={nextFixture} mine={mine} />
-          </div>
-          {preMatchSelection && (
-            <div className="kib-rise" style={rise(1)}>
-              <StatusCard {...p} preMatchSelection={preMatchSelection} glow={glow} intl={intl} />
-            </div>
-          )}
-          {!intl && (
-            <div className="kib-rise" style={rise(2)}>
-              <Opposition career={career} fixture={nextFixture} glow={glow} />
-            </div>
-          )}
-        </div>
+      <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col px-3 pt-2">
+        <SwipePages index={page} onIndex={setPage} labels={["Fixtures", "Match", "Scout"]}>
+          {[
+            <div key="fixtures" className="space-y-2.5 pb-4">
+              <div className="kib-rise" style={rise(0)}><FixturesPage career={career} next={nextFixture} /></div>
+            </div>,
+            <div key="match" className="space-y-2.5 pb-4">
+              <div className="kib-rise" style={rise(0)}>
+                <Hero career={career} fixture={nextFixture} mine={mine} />
+              </div>
+              {preMatchSelection && (
+                <div className="kib-rise" style={rise(1)}>
+                  <StatusCard {...p} preMatchSelection={preMatchSelection} glow={glow} intl={intl} />
+                </div>
+              )}
+            </div>,
+            <div key="scout" className="space-y-2.5 pb-4">
+              <div className="kib-rise" style={rise(0)}>
+                {intl ? (
+                  <div className="rounded-2xl p-4 text-center text-[12px] font-bold text-white/70" style={cardStyle(glow)}>
+                    No scout report for an international — {short(nextFixture.opponent)} are a nation, not a squad on file.
+                  </div>
+                ) : (
+                  <Opposition career={career} fixture={nextFixture} />
+                )}
+              </div>
+            </div>,
+          ]}
+        </SwipePages>
       </div>
 
       {/* ── The action, pinned ── */}
@@ -254,8 +281,6 @@ function Hero({ career, fixture, mine }: { career: CareerState; fixture: Fixture
   const europe = fixture.competition === "Champions League" || fixture.competition === "Europa League" || fixture.competition === "Super Cup";
   const photo = europe ? "/star/stadium-europe.png" : "/star/stadium-domestic.png";
   const date = fixtureDateLabel(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
-  const days = daysToNext(career, fixture);
-  const when = days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
   const league = !fixture.kind || fixture.kind === "league";
   const comp = league ? `${leagueNameFor(divisionOf(career))} · Week ${fixture.week}`
     : fixture.round && fixture.kind !== "international" ? `${fixture.competition ?? "Cup"} · Week ${fixture.week}` : fixtureLabel(fixture);
@@ -278,7 +303,9 @@ function Hero({ career, fixture, mine }: { career: CareerState; fixture: Fixture
       <div className="relative px-3 pb-2.5 pt-2.5">
         <div className="flex items-center justify-between gap-2">
           <span className={`truncate rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] ring-1 ${pill}`}>{comp}</span>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${days <= 1 ? "bg-amber-400 text-gray-950" : "bg-black/40 text-amber-200 ring-1 ring-white/15"}`}>⏱ {when}</span>
+          {/* The game has no kick-off times, so no time is shown — only that
+              this is the one you are about to play. */}
+          <span className="shrink-0 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-950" style={{ boxShadow: "0 0 10px rgba(251,191,36,.55)" }}>⚽ Kick-off</span>
         </div>
         <div className="mt-1.5 text-center text-[22px] font-black uppercase italic leading-none tracking-tight text-white" style={{ textShadow: "0 2px 10px rgba(0,0,0,.7)" }}>
           {title}
@@ -352,7 +379,7 @@ function Floodlights() {
 // ── 2. Your status ──────────────────────────────────────────────────────────
 
 function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: string; intl: boolean }) {
-  const { career, nextFixture, preMatchEnergy, preMatchSelection: sel, showDevInfo, glow } = p;
+  const { career, nextFixture, preMatchEnergy, preMatchSelection: sel, showDevInfo } = p;
   const e = Math.max(0, Math.min(100, Math.round(preMatchEnergy)));
   const fit = Math.max(0, Math.min(100, Math.round(career.matchFitness)));
   const tone = sel.status === "1st Team"
@@ -362,34 +389,33 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
       : sel.status === "Injured"
         ? { label: "Injured", cls: "from-red-400 to-red-600 text-white", glow: "#dc2626" }
         : { label: "Out of squad", cls: "from-red-400 to-red-600 text-white", glow: "#dc2626" };
-  // Item 24: the substitute's planned minute is developer info only.
-  const subLine = sel.status === "Substitute"
-    ? (showDevInfo ? `Coming on around ${sel.onAt}'` : "On when the game needs you")
-    : null;
+  // Harry, 28 Sep 2026: "definitely don't hide all numbers like that" — the
+  // bench minute always shows. Only the sub LADDER stays developer info.
+  const subLine = sel.status === "Substitute" ? `Coming on around ${sel.onAt}'` : null;
 
   const boot = career.currentBoot;
   const pills: { text: string; tone: "warn" | "bad" | "ok" | "info" }[] = [];
   if (!career.injury && preMatchEnergy < MIN_ENERGY_TO_SUB) pills.push({ text: "⚠ Too tired for the squad", tone: "bad" });
   else if (!career.injury && preMatchEnergy < MIN_ENERGY_TO_START) pills.push({ text: "⚠ Too tired to start", tone: "warn" });
   if (boot.matches <= 0) pills.push({ text: "🥾 Boots worn out", tone: "bad" });
-  else if (boot.matches <= 2) pills.push({ text: `🥾 Boots: ${boot.matches} left`, tone: "warn" });
-  else pills.push({ text: `🥾 ${boot.name} · ${boot.matches} left`, tone: "info" });
+  else pills.push({ text: `🥾 ${boot.matches} match${boot.matches === 1 ? "" : "es"} left`, tone: boot.matches <= 2 ? "warn" : "info" });
   if (career.kibAbility?.curve) pills.push({ text: "🌀 Curve ready", tone: "ok" });
-  if (career.kibAbility?.extraTouch) pills.push({ text: "👟 Extra touch ready", tone: "ok" });
+  if (career.kibAbility?.extraTouch) pills.push({ text: "👟 Touch ready", tone: "ok" });
 
   return (
     <div className="rounded-2xl p-3" style={cardStyle(tone.glow, 0.26)}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Your role</span>
+      {/* One row: who you are today, and where you play. */}
+      <div className="flex items-center gap-2">
         <span
           key={sel.status}
-          className={`kib-role-flip rounded-full bg-gradient-to-b px-3 py-1 text-[13px] font-black uppercase tracking-wide ${tone.cls}`}
+          className={`kib-role-flip shrink-0 rounded-full bg-gradient-to-b px-3 py-1.5 text-[12.5px] font-black uppercase tracking-wide ${tone.cls}`}
           style={{ boxShadow: `inset 0 1px 0 rgba(255,255,255,.5), 0 4px 12px -4px ${rgba(tone.glow, 0.8)}` }}
         >
           {tone.label}
         </span>
+        <PositionSelect career={career} playAs={p.playAs} onChange={p.onPlayAs} fixed={p.intl} />
       </div>
-      {subLine && <div className="mt-1 text-right text-[11px] font-bold text-amber-200">{subLine}</div>}
+      {subLine && <div className="mt-1.5 text-[11.5px] font-black text-amber-200">⏱ {subLine}</div>}
 
       {career.injury && (
         <div className="mt-2 flex items-center gap-2 rounded-xl bg-red-500/15 px-2.5 py-1.5 ring-1 ring-red-400/40">
@@ -420,28 +446,25 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
         </div>
       )}
 
-      {!p.intl && (
-        <div className="mt-2.5">
-          <div className="text-[9.5px] font-black uppercase tracking-[0.2em] text-white/55">Position</div>
-          <PositionPicker club={career.player.club} realPosition={career.player.position} playAs={p.playAs} onChange={p.onPlayAs} embedded />
-        </div>
-      )}
-
-      <div className="mt-3 space-y-2">
+      {/* The two bars share one grid, so the labels, bars and numbers line up. */}
+      <div className="mt-3 grid grid-cols-[78px_1fr_40px] items-center gap-x-2 gap-y-2">
         <Bar
           label="⚡ Energy"
           value={e}
           fill={e >= MIN_ENERGY_TO_START ? ["#34d399", "#a3e635"] : e >= MIN_ENERGY_TO_SUB ? ["#f59e0b", "#fde047"] : ["#dc2626", "#fb7185"]}
           marks={[MIN_ENERGY_TO_SUB, MIN_ENERGY_TO_START]}
         />
-        <Bar label="💪 Match fitness" value={fit} fill={["#38bdf8", "#818cf8"]} />
+        <Bar label="💪 Fitness" value={fit} fill={["#38bdf8", "#818cf8"]} />
+      </div>
+      <div className="mt-1 pl-[86px] text-[9px] font-bold text-white/45">
+        Lines: bench {MIN_ENERGY_TO_SUB}% · start {MIN_ENERGY_TO_START}%
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="kib-md-noscroll -mx-3 mt-2 flex gap-1.5 overflow-x-auto px-3">
         {pills.map((pl) => (
           <span
             key={pl.text}
-            className={`rounded-full px-2 py-0.5 text-[10.5px] font-black ring-1 ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-black ring-1 ${
               pl.tone === "bad" ? "bg-red-500/15 text-red-200 ring-red-400/40"
                 : pl.tone === "warn" ? "bg-amber-400/15 text-amber-200 ring-amber-300/40"
                   : pl.tone === "ok" ? "bg-emerald-400/15 text-emerald-200 ring-emerald-300/40"
@@ -467,6 +490,58 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
   );
 }
 
+/**
+ * Where you play, as one compact control: "Striker ▾" opens the positions
+ * this club's real shape can seat (the same list PositionPicker.tsx offers,
+ * read the same way — the saved lineup's formation first).
+ */
+function PositionSelect({ career, playAs, onChange, fixed }: { career: CareerState; playAs: Role | null; onChange: (r: Role | null) => void; fixed: boolean }) {
+  const [open, setOpen] = useState(false);
+  const real = career.player.position;
+  const saved = loadLineup(career.player.club)?.formation;
+  const formation = saved ? formationOf(saved) : formationForClub(career.player.club);
+  const alternates = fixed ? [] : offeredPositions(real, formation);
+  const name = (r: string) => POSITION_NAMES[r as Role] ?? r;
+  const current = playAs ?? real;
+  const options: { role: Role | null; label: string }[] = [{ role: null, label: name(real) }, ...alternates.map((a) => ({ role: a.role, label: a.label }))];
+  const canPick = options.length > 1;
+  return (
+    <div className="relative min-w-0 flex-1">
+      <button
+        onClick={() => canPick && setOpen((o) => !o)}
+        disabled={!canPick}
+        aria-expanded={open}
+        className="kib-press flex h-[34px] w-full items-center justify-between gap-1 rounded-full bg-white/[0.08] pl-3 pr-2 text-left ring-1 ring-white/15 disabled:opacity-100"
+      >
+        <span className="min-w-0 truncate text-[12.5px] font-black text-white">
+          <span className="mr-1 text-[9px] uppercase tracking-[0.18em] text-white/50">Pos</span>
+          {name(current)}
+          {playAs && <span className="ml-1 text-[9px] font-black uppercase text-amber-300">asked</span>}
+        </span>
+        {canPick && <span className={`shrink-0 text-[11px] text-white/70 transition-transform ${open ? "rotate-180" : ""}`}>▾</span>}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-[38px] z-30 w-full min-w-[170px] overflow-hidden rounded-xl bg-gray-900 p-1 ring-1 ring-white/15" style={{ boxShadow: "0 14px 28px -10px rgba(0,0,0,.9)" }}>
+          {options.map((o) => {
+            const on = (o.role ?? null) === (playAs ?? null);
+            return (
+              <button
+                key={o.label}
+                onClick={() => { onChange(o.role); setOpen(false); }}
+                className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[12.5px] font-black ${on ? "bg-emerald-500/20 text-emerald-200" : "text-white hover:bg-white/10"}`}
+              >
+                <span>{o.label}{o.role === null && <span className="ml-1 text-[9px] uppercase text-white/45">your position</span>}</span>
+                {on && <span>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** One bar row in a 3-column grid (label · bar · number). */
 function Bar({ label, value, fill, marks = [] }: { label: string; value: number; fill: [string, string]; marks?: number[] }) {
   const shown = useCountUp(value, 900);
   // Fill from empty on first paint (and to the new value after a can).
@@ -476,12 +551,9 @@ function Bar({ label, value, fill, marks = [] }: { label: string; value: number;
     return () => cancelAnimationFrame(id);
   }, [value]);
   return (
-    <div>
-      <div className="flex items-baseline justify-between">
-        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">{label}</span>
-        <span className="text-[17px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 10px ${rgba(fill[0], 0.6)}` }}>{Math.round(shown)}%</span>
-      </div>
-      <div className="relative mt-1 h-3.5 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }}>
+    <>
+      <span className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-white/70">{label}</span>
+      <div className="relative h-3.5 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }}>
         <div
           className="kib-bar-fill relative h-full overflow-hidden rounded-full"
           style={{ width: `${w}%`, background: `linear-gradient(90deg, ${fill[0]}, ${fill[1]})`, boxShadow: `0 0 12px ${rgba(fill[0], 0.7)}` }}
@@ -491,23 +563,17 @@ function Bar({ label, value, fill, marks = [] }: { label: string; value: number;
         </div>
         {/* The real selection lines: bench and starting. */}
         {marks.map((m) => (
-          <div key={m} className="absolute inset-y-0 w-[2px] bg-white/45" style={{ left: `${m}%` }} />
+          <div key={m} className="absolute inset-y-0 w-[2px] bg-white/55" style={{ left: `${m}%` }} />
         ))}
       </div>
-      {marks.length > 0 && (
-        <div className="relative mt-0.5 h-3 text-[8.5px] font-black uppercase tracking-wider text-white/45">
-          <span className="absolute -translate-x-1/2" style={{ left: `${marks[0]}%` }}>Bench</span>
-          {marks[1] !== undefined && <span className="absolute -translate-x-1/2" style={{ left: `${marks[1]}%` }}>Start</span>}
-        </div>
-      )}
-    </div>
+      <span className="text-right text-[15px] font-black leading-none tabular-nums text-white" style={{ textShadow: `0 0 10px ${rgba(fill[0], 0.6)}` }}>{Math.round(shown)}%</span>
+    </>
   );
 }
 
 // ── 3. The opposition ───────────────────────────────────────────────────────
 
-function Opposition({ career, fixture, glow }: { career: CareerState; fixture: Fixture; glow: string }) {
-  const [open, setOpen] = useState(false);
+function Opposition({ career, fixture }: { career: CareerState; fixture: Fixture }) {
   const report: ScoutReport = scoutReportFor(career, fixture.opponent, fixture.week, fixture);
   const kit = kitsOf(fixture.opponent, career.clubKits?.[fixture.opponent]).home;
   const oppGlow = glowOf(kit.shirt, kit.trim);
@@ -519,6 +585,7 @@ function Opposition({ career, fixture, glow }: { career: CareerState; fixture: F
   const tone = { W: "from-emerald-400 to-emerald-600", D: "from-gray-400 to-gray-600", L: "from-red-500 to-red-700" } as const;
 
   return (
+    <>
     <div className="rounded-2xl p-3" style={cardStyle(oppGlow, 0.3)}>
       <div className="flex items-center gap-2.5">
         <div className="relative grid h-11 w-11 shrink-0 place-items-center">
@@ -585,14 +652,151 @@ function Opposition({ career, fixture, glow }: { career: CareerState; fixture: F
         </div>
       )}
 
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="kib-press mt-2.5 w-full rounded-xl bg-white/[0.06] py-2 text-[12px] font-black text-white/85 ring-1 ring-white/[.12]"
-        style={{ boxShadow: `0 4px 10px -8px ${rgba(glow, 0.8)}` }}
-      >
-        {open ? "Hide full scout report ▴" : "Full scout report ▾"}
-      </button>
-      {open && <ScoutReportCard report={report} />}
+    </div>
+    {/* The full report, opened out, under the summary. */}
+    <ScoutReportCard report={report} />
+    </>
+  );
+}
+
+// ── 4. Fixtures (left page) ─────────────────────────────────────────────────
+
+/**
+ * Your upcoming fixtures (league and cup together, each with its competition
+ * badge), your recent results, and the rest of the division's games for each
+ * upcoming league week — each with a bell for live-score pop-ups from that
+ * one game during your match (matchDayPrefs.ts's followed fixtures).
+ */
+function FixturesPage({ career, next }: { career: CareerState; next: Fixture }) {
+  const div = divisionOf(career);
+  const ts = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, div);
+  const upcoming = career.fixtures.filter((f) => !f.played).sort((a, b) => ts(a) - ts(b)).slice(0, 8);
+  const recent = career.fixtures.filter((f) => f.played && f.homeScore !== undefined).sort((a, b) => ts(b) - ts(a)).slice(0, 5);
+  const leagueWeeks = upcoming.filter((f) => (f.kind ?? "league") === "league").slice(0, 5);
+  const [weekIdx, setWeekIdx] = useState(0);
+  const pick = leagueWeeks[Math.min(weekIdx, Math.max(0, leagueWeeks.length - 1))];
+  const [, bump] = useState(0);
+  const others = useMemo(() => {
+    if (!pick) return [];
+    try { return liveWeekFor(career, pick).fixtures; } catch { return []; }
+    // The pairings only depend on the week and the division.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pick?.week, career.season, career.player.club]);
+  const clubTicks = followedClubs();
+
+  return (
+    <div className="space-y-2.5">
+      <div className="rounded-2xl p-3" style={cardStyle("#34d399", 0.16)}>
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Upcoming</div>
+        <div className="mt-1.5 space-y-1">
+          {upcoming.map((f) => (
+            <FixtureRow key={`${f.kind ?? "l"}-${f.week}-${f.opponent}`} career={career} f={f} next={f === next} />
+          ))}
+        </div>
+      </div>
+
+      {recent.length > 0 && (
+        <div className="rounded-2xl p-3" style={cardStyle("#60a5fa", 0.14)}>
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Recent results</div>
+          <div className="mt-1.5 space-y-1">
+            {recent.map((f) => <FixtureRow key={`r-${f.kind ?? "l"}-${f.week}-${f.opponent}`} career={career} f={f} next={false} />)}
+          </div>
+        </div>
+      )}
+
+      {pick && (
+        <div className="rounded-2xl p-3" style={cardStyle("#fbbf24", 0.14)}>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Other games</span>
+            <span className="text-[10px] font-bold text-white/45">🔔 = live score in your match</span>
+          </div>
+          <div className="kib-md-noscroll -mx-3 mt-1.5 flex gap-1.5 overflow-x-auto px-3">
+            {leagueWeeks.map((f, i) => (
+              <button
+                key={f.week}
+                onClick={() => setWeekIdx(i)}
+                className={`kib-press shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${
+                  f === pick ? "bg-amber-400 text-gray-950 ring-amber-300" : "bg-white/[0.06] text-white/75 ring-white/15"}`}
+              >
+                Week {f.week}{f === next ? " · today" : ""}
+              </button>
+            ))}
+          </div>
+          {others.length === 0 ? (
+            <div className="mt-2 text-[11px] font-bold text-white/50">No other games to show.</div>
+          ) : (
+            <div className="mt-2 space-y-1">
+              {others.map((g) => {
+                const key = { season: career.season, week: pick.week, home: g.home, away: g.away };
+                const on = isFixtureFollowed(key);
+                const ticked = clubTicks.includes(g.home) || clubTicks.includes(g.away);
+                return (
+                  <div key={`${g.home}-${g.away}`} className="flex items-center gap-2 rounded-xl bg-black/25 px-2 py-1.5 ring-1 ring-white/[.06]">
+                    <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+                      <div className="flex min-w-0 items-center justify-end gap-1.5">
+                        <span className="truncate text-[12px] font-black text-white">{short(g.home)}</span>
+                        <ClubBadge club={g.home} kit={kitsOf(g.home, career.clubKits?.[g.home]).home} size={20} />
+                      </div>
+                      <span className="text-[9px] font-black text-white/40">v</span>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <ClubBadge club={g.away} kit={kitsOf(g.away, career.clubKits?.[g.away]).home} size={20} />
+                        <span className="truncate text-[12px] font-black text-white">{short(g.away)}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { toggleFollowedFixture(key); bump((n) => n + 1); }}
+                      aria-pressed={on}
+                      aria-label={`${on ? "Stop" : "Get"} live scores for ${g.home} v ${g.away}`}
+                      title={ticked && !on ? "A club in this game is already ticked in Settings → Live scores" : undefined}
+                      className={`kib-press grid h-8 w-8 shrink-0 place-items-center rounded-full text-[15px] ring-1 ${
+                        on ? "bg-amber-400 text-gray-950 ring-amber-300 shadow-[0_0_12px_rgba(251,191,36,.6)]"
+                          : ticked ? "bg-white/[0.08] text-amber-200 ring-amber-300/40" : "bg-white/[0.06] text-white/55 ring-white/15"}`}
+                    >
+                      <span className={on ? "" : "opacity-40 grayscale"}>🔔</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="mt-2 text-[10px] font-bold leading-snug text-white/50">
+            Clubs ticked in Settings → Live scores still pop up every week. A bell here is for that one game.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FixtureRow({ career, f, next }: { career: CareerState; f: Fixture; next: boolean }) {
+  const div = divisionOf(career);
+  const league = (f.kind ?? "league") === "league";
+  const badge = competitionAbbrev(f, div);
+  const badgeCls = league ? "bg-yellow-400/15 text-yellow-200 ring-yellow-300/35"
+    : f.kind === "international" ? "bg-sky-400/15 text-sky-200 ring-sky-300/35" : "bg-violet-400/15 text-violet-200 ring-violet-300/35";
+  const date = fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, div);
+  const played = f.played && f.homeScore !== undefined && f.awayScore !== undefined;
+  const us = played ? (f.home ? f.homeScore! : f.awayScore!) : 0, them = played ? (f.home ? f.awayScore! : f.homeScore!) : 0;
+  const res = us > them ? "W" : us === them ? "D" : "L";
+  const resCls = { W: "from-emerald-400 to-emerald-600", D: "from-gray-400 to-gray-600", L: "from-red-500 to-red-700" }[res];
+  return (
+    <div className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ring-1 ${next ? "bg-emerald-400/10 ring-emerald-300/40" : "bg-black/25 ring-white/[.06]"}`}>
+      <span className={`w-[50px] shrink-0 truncate rounded-md px-1 py-0.5 text-center text-[9px] font-black uppercase ring-1 ${badgeCls}`}>{badge}</span>
+      <span className="w-[66px] shrink-0 whitespace-nowrap text-[10px] font-bold text-white/70">{date}</span>
+      <ClubBadge club={f.opponent} kit={kitsOf(f.opponent, career.clubKits?.[f.opponent]).home} size={20} />
+      <span className="min-w-0 flex-1 truncate text-[12.5px] font-black text-white">
+        {short(f.opponent)} <span className="text-[9.5px] font-black text-white/45">{f.home ? "H" : "A"}</span>
+      </span>
+      {played ? (
+        <span className="flex shrink-0 items-center gap-1">
+          <span className="text-[12px] font-black tabular-nums text-white">{us}-{them}</span>
+          <span className={`grid h-[17px] w-[17px] place-items-center rounded-md bg-gradient-to-b text-[10px] font-black text-white ${resCls}`}>{res}</span>
+        </span>
+      ) : next ? (
+        <span className="shrink-0 rounded-full bg-amber-400 px-1.5 py-[1px] text-[9px] font-black uppercase text-gray-950">Next</span>
+      ) : f.round ? (
+        <span className="max-w-[70px] shrink-0 truncate text-[9.5px] font-bold text-white/50">{f.round}</span>
+      ) : null}
     </div>
   );
 }
