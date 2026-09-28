@@ -1958,7 +1958,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const wrap = wrapRef.current;
       if (!canvas || !wrap) return;
       const rect = wrap.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      // Capped at 2, like every other canvas in the game (FiveASide,
+      // FirstPersonDribble, TrainingMinigame…). Most phones report 3 (some
+      // Androids 3.5); drawing the match at 3× paints 9 pixels for every 4
+      // at 2×, 2.25× the work every frame, for a difference nobody can see
+      // at arm's length. Everything here is drawn in proportion to
+      // canvas.width, so only sharpness changes, never size or position.
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
       canvas.style.width = `${rect.width}px`;

@@ -48,6 +48,18 @@ function strengthOf(league: LeagueTeam[], club: string): number {
   return league.find(t => t.name === club)?.strength ?? 70;
 }
 
+/**
+ * How many go up automatically before the play-offs start; the play-offs are
+ * the next four. League Two promotes its top three and plays off 4th-7th, as
+ * in real life (Harry, 28 Sep 2026: "real"). Before, every division played
+ * off 3rd-6th, so League Two's 3rd was promoted AND in the play-offs.
+ * Matches promotion.ts BOUNDARIES (count − 1) and the League table's zones
+ * (LeagueScreen LADDER).
+ */
+export function autoPromotionPlaces(division: ReturnType<typeof divisionOf>): number {
+  return division === "league_two" ? 3 : division === "national_league" ? 1 : 2;
+}
+
 /** Higher seed at home in the second leg, which is what finishing above
  *  somebody is worth. */
 function legFixtures(you: string, opponent: string, youAreHigherSeed: boolean): Fixture[] {
@@ -71,6 +83,8 @@ function legFixtures(you: string, opponent: string, youAreHigherSeed: boolean): 
  * already-seeded run.
  */
 export function seedPlayOffs(career: CareerState): { state: PlayOffState; fixtures: Fixture[] } | null {
+  // League Two now plays off 4th-7th, as in real life (autoPromotionPlaces
+  // below); the others keep 3rd-6th.
   // Every division except the Premier League ends in real play-offs —
   // 3rd-to-6th, the exact same shape the Championship always had. League
   // One/Two and the National League have their own real play-off brackets
@@ -82,8 +96,9 @@ export function seedPlayOffs(career: CareerState): { state: PlayOffState; fixtur
   if (career.playOffState) return null;
 
   const table = sortLeague(career.league);
-  if (table.length < 6) return null;
-  const contenders = table.slice(2, 6).map(t => t.name);
+  const first = autoPromotionPlaces(divisionOf(career));
+  if (table.length < first + 4) return null;
+  const contenders = table.slice(first, first + 4).map(t => t.name);
   const you = career.player.club;
   const at = contenders.indexOf(you);
   if (at < 0) return null;

@@ -376,7 +376,11 @@ export function paintBody3d(
   const q = (v: number | undefined, d: number, st: number) => Math.round((v ?? d) / st) * st;
   const qp: Pose3d = {
     armSpread: q(pose?.armSpread, 0, 0.05), armLift: q(pose?.armLift, -0.55, 0.05),
-    crouch: q(pose?.crouch, 0, 0.05), legSwing: q(pose?.legSwing, 0, 0.125), kick: q(pose?.kick, 0, 0.25),
+    crouch: q(pose?.crouch, 0, 0.05), legSwing: q(pose?.legSwing, 0, 0.125),
+    // Kick in sixteenths (was quarters: about 5 positions read as steppy —
+    // Harry, 28 Sep 2026, "yes" to smoothing it). Only the man striking the
+    // ball is mid-kick, so this adds a handful of pictures, not hundreds.
+    kick: q(pose?.kick, 0, 0.0625),
     armLead: Math.sign(pose?.armLead ?? 0), gloves: !!pose?.gloves,
   };
   const t = ctx.getTransform();
