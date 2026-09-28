@@ -1749,11 +1749,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const mine = goalsForFollowed(due, followingRef.current);
     if (!mine.length) return;
-    setLog(l => [...l, ...mine.map(g => logLine(
-      `📻 ${shortClub(g.home)} ${g.hs}-${g.as} ${shortClub(g.away)}${g.scorer ? ` · ${g.scorer}` : ""}`,
-      "elsewhere", g.minute,
-    ))]);
-    // A jump in the clock (coming off the bench) logs the older goals quietly;
+    // The card only, no 📻 line in the commentary: Harry, 28 Sep 2026, "I
+    // prefered the old score notification to the in chat one, fit the
+    // aesthetic more". Every score is still in the Scores panel.
+    // A jump in the clock (coming off the bench) skips the older goals;
     // only one from the last few minutes pops up.
     const latest = mine.filter(g => matchMinute - g.minute <= 3).pop();
     if (latest) setLivePop({ ...latest, id: ++livePopIdRef.current });

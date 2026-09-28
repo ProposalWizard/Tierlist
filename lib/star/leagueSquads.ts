@@ -392,15 +392,39 @@ export async function fetchLeagueSquads(
   year = STAR_FIFA_YEAR,
   keepAll = false,
 ): Promise<LeagueSquad[]> {
-  try {
-    const res = await fetch(`/api/star/league-squads?clubs=${encodeURIComponent(clubs.join("|"))}&year=${year}`, SQUAD_FETCH_INIT);
-    if (!res.ok) return clubs.map(c => generatedSquad(c, avgOverallFor(c)));
-    const data = await res.json() as { squads?: Record<string, RosterRow[]> };
-    return clubs.map(c => buildLeagueSquad(c, data.squads?.[c] ?? [], keepAll));
-  } catch {
-    return clubs.map(c => generatedSquad(c, avgOverallFor(c)));
+  // Shared per club for a few seconds, so the several parts of the career
+  // that ask for the same clubs at start-up make ONE request between them.
+  // Measured 28 Sep 2026: the same 163 KB division was downloaded twice and
+  // a near-copy a third time on the first screen (~480 KB of repeats).
+  const now = Date.now();
+  const missing = clubs.filter(c => {
+    const hit = squadRowCache.get(`${year}|${c}`);
+    return !hit || now - hit.at > SQUAD_SHARE_MS;
+  });
+  if (missing.length) {
+    const req = fetch(`/api/star/league-squads?clubs=${encodeURIComponent(missing.join("|"))}&year=${year}`, SQUAD_FETCH_INIT)
+      .then(async (res) => (res.ok ? ((await res.json()) as { squads?: Record<string, RosterRow[]> }).squads ?? {} : null))
+      .catch(() => null);
+    for (const c of missing) {
+      const key = `${year}|${c}`;
+      const rows = req.then((squads) => {
+        // A failed request is not remembered, so the next ask tries again.
+        if (!squads) { squadRowCache.delete(key); return null; }
+        return squads[c] ?? [];
+      });
+      squadRowCache.set(key, { at: now, rows });
+    }
   }
+  const rows = await Promise.all(clubs.map(c => squadRowCache.get(`${year}|${c}`)!.rows));
+  return clubs.map((c, i) => {
+    const r = rows[i];
+    return r ? buildLeagueSquad(c, r, keepAll) : generatedSquad(c, avgOverallFor(c));
+  });
 }
+
+/** How long a club's downloaded rows are shared between callers. */
+const SQUAD_SHARE_MS = 30_000;
+const squadRowCache = new Map<string, { at: number; rows: Promise<RosterRow[] | null> }>();
 
 /**
  * A reserved club name, never a real one, that tells `/api/star/league-squads`
