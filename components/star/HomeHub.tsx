@@ -53,10 +53,10 @@ interface Props {
   onOpen: (phase: HubPhase) => void;
 }
 
-const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
+export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 /** A shirt colour that can light a dark card: very dark kits (black, navy)
  *  are lifted so the glow still shows; white kits fall back to their trim. */
-function glowOf(shirt: string, trim: string): string {
+export function glowOf(shirt: string, trim: string): string {
   const base = luminance(shirt) > 0.85 ? trim : shirt;
   return luminance(base) < 0.12 ? tint(base, 0.35) : base;
 }
@@ -76,7 +76,7 @@ export function lastFive(career: CareerState): FormResult[] {
 /** Days from "today" to the next match. The game has no clock of its own, so
  *  today is the day after your last match (or five days out before the
  *  first one) — which is what the week in between actually is. */
-function daysToNext(career: CareerState, next: Fixture): number {
+export function daysToNext(career: CareerState, next: Fixture): number {
   const div = divisionOf(career);
   const ts = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, div);
   const played = career.fixtures.filter((f) => f.played);
@@ -88,7 +88,7 @@ function daysToNext(career: CareerState, next: Fixture): number {
 
 /** The card look every home card shares: club-tinted glass, layered shadow,
  *  a soft highlight along the top edge. */
-function cardStyle(glow: string, strength = 0.28): React.CSSProperties {
+export function cardStyle(glow: string, strength = 0.28): React.CSSProperties {
   return {
     background: `radial-gradient(120% 140% at 0% 0%, ${rgba(glow, strength)} 0%, transparent 55%), linear-gradient(180deg, rgba(31,41,55,.92), rgba(12,17,28,.96))`,
     boxShadow: `inset 0 1px 0 rgba(255,255,255,.10), inset 0 0 0 1px ${rgba(glow, 0.22)}, 0 10px 24px -12px rgba(0,0,0,.8), 0 2px 6px rgba(0,0,0,.35)`,
@@ -410,7 +410,7 @@ function prefersReducedMotionSafe(): boolean {
   return typeof window !== "undefined" && prefersReducedMotion();
 }
 
-function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void }) {
+export function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void }) {
   const accent = ACCENT[c.id];
   const count = career.kibCans[c.id];
   const shownCount = useCountUp(count, 500);
