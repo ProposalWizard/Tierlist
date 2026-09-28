@@ -584,9 +584,11 @@ export const ADMIN_GUIDES = {
       "It never touches a career save, and nobody else sees it.",
     ],
     inGame: [
-      "Nowhere yet — a test area for the store's look, prices and rules before any of it is wired into the career.",
+      "The same store is in the career (28 Sep 2026): the big Store tile on the Shop page and the Store app on the phone. There it spends your real ★ and Coins, a run-up you buy shows in Settings → Run-ups and plays in matches, and cans and boots land where the real shop puts them.",
+      "This page's test wallet is separate — buying here never touches a career.",
+      "In the career, Training Boost and Stat Can are hidden (not in the game yet), and Coin packs read \"Coming soon\" in the live game.",
     ],
-    dev: "app/star-store-dev/page.tsx · components/star/store/{RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase}.mts",
+    dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
   },
 
   "/star-radar-dev": {

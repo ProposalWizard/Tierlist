@@ -331,6 +331,9 @@ function backfill(c: CareerState): CareerState {
   // penalties and free kicks became two separate sets (runupStyles.ts).
   if (out.penaltyRunup === undefined && out.runupStyle !== undefined) out.penaltyRunup = out.runupStyle;
   delete out.runupStyle;
+  // A career saved before the Store came to the career (28 Sep 2026) has no
+  // Coins — zero, the same as a new career.
+  if (typeof out.coins !== "number" || !Number.isFinite(out.coins)) out.coins = 0;
   // A career saved before KIB Stat Cans existed has none on the shelf and
   // no boost running — both fields simply didn't exist to have a value.
   // ── …and the squad, which is the third of exactly the same kind ──

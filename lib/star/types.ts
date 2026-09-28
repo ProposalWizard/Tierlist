@@ -887,6 +887,22 @@ export interface CareerState {
    *  are unique across them. Each set's Standard always counts as owned,
    *  listed or not. Absent on older saves: none bought yet. */
   ownedAnimations?: string[];
+  // ── The Store (lib/star/store/career.ts, 28 Sep 2026). All optional:
+  //    an older save reads as none of each (storage.ts backfills coins). ──
+  /** Coins — the store's second currency. 50 Coins = one week of your wage.
+   *  Only ever added by a test-mode pack or a dev top-up; no payment code. */
+  coins?: number;
+  /** Store accessory ids you own (headband, sleeves, boots colour, …). */
+  ownedAccessories?: string[];
+  /** Accessory slot → the accessory id worn there. On the store's figure
+   *  only for now, not yet on the match figure. */
+  equippedAccessories?: Record<string, string>;
+  /** Date key → daily-special ids already bought at the discount that day. */
+  storeSpecialsBought?: Record<string, string[]>;
+  /** The store's "first Coin pack: double" offer has been used. */
+  storeFirstPackBought?: boolean;
+  /** The store's receipts, newest first (kept to 30). */
+  storeLog?: { at: number; what: string }[];
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];
@@ -1320,6 +1336,9 @@ export type StarPhase =
   | "shop-kib"
   | "shop-boots"
   | "shop-lifestyle"
+  /** The Store (daily specials, run-ups, accessories, boosts, Coins) — the
+   *  test area's screen on the real career. See components/star/store/CareerStore. */
+  | "store"
   | "casino-menu"
   | "casino-blackjack"
   | "casino-roulette"

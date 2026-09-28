@@ -9,7 +9,7 @@
  * football game on ur phone / like infinite highlights is just in the phone".
  *
  * A grid of apps inside the same drawn phone (PhoneFrame). Social, Kickabout,
- * League, Fixtures and Messages open INSIDE the phone; Shop, Casino, Owner,
+ * League, Fixtures and Messages open INSIDE the phone; Shop, Store, Casino, Owner,
  * Garden, Sponsors and Settings open their real screens. The bar at the
  * bottom of the phone takes you back to the grid.
  *
@@ -43,6 +43,7 @@ const APPS: { id: AppId | Leave; label: string; icon: string; bg: string }[] = [
   { id: "fixtures", label: "Fixtures", icon: "📅", bg: "from-sky-400 to-sky-700" },
   { id: "messages", label: "Messages", icon: "💌", bg: "from-pink-400 to-rose-600" },
   { id: "shop-kib", label: "Shop", icon: "🛍️", bg: "from-orange-400 to-orange-600" },
+  { id: "store", label: "Store", icon: "🛒", bg: "from-amber-300 to-violet-600" },
   { id: "casino-menu", label: "Casino", icon: "🎰", bg: "from-yellow-400 to-red-600" },
   { id: "sponsors", label: "Sponsors", icon: "🤝", bg: "from-teal-400 to-teal-700" },
   { id: "ownership", label: "Owner", icon: "🏛️", bg: "from-indigo-400 to-indigo-700" },

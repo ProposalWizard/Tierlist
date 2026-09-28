@@ -27,6 +27,17 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
         <span className="text-[18px] font-black tabular-nums text-yellow-200">★ {formatMoney(career.money)}</span>
       </div>
       <button
+        onClick={() => onOpen("store")}
+        className="relative block w-full overflow-hidden rounded-2xl border border-amber-300/60 bg-gradient-to-br from-amber-400/40 via-violet-600/25 to-sky-700/30 p-4 text-left active:scale-[0.99]"
+      >
+        <div className="text-[34px] leading-none">🛒</div>
+        <div className="mt-1 text-[20px] font-black text-white">Store</div>
+        <div className="text-[11px] font-bold text-white/70">Daily specials, run-ups, accessories, boosts, Coins</div>
+        <div className="absolute right-3 top-3 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-black text-amber-200">
+          {(career.coins ?? 0).toLocaleString("en-GB")} Coins · Open →
+        </div>
+      </button>
+      <button
         onClick={() => onOpen("casino-menu")}
         className="relative block w-full overflow-hidden rounded-2xl border border-yellow-400/50 bg-gradient-to-br from-yellow-500/35 via-red-600/25 to-purple-800/30 p-4 text-left active:scale-[0.99]"
       >

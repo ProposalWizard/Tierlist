@@ -23,6 +23,8 @@ interface Props {
   onBack: () => void;
   onSkip: (target: SkipTarget) => void;
   onAddMoney: (amount: number) => void;
+  /** Dev: top up the Store's Coins (lib/star/store/career.ts). */
+  onAddCoins?: (amount: number) => void;
   onSetCaptain: (captain: boolean) => void;
   onSetReputation: (delta: number) => void;
   onSetFame: (delta: number) => void;
@@ -55,7 +57,7 @@ interface Props {
 }
 
 export default function SettingsScreen({
-  career, onBack, onSkip, onAddMoney,
+  career, onBack, onSkip, onAddMoney, onAddCoins,
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
@@ -212,7 +214,7 @@ export default function SettingsScreen({
 
         <DevSkipPanel career={career} onSkip={onSkip} />
 
-        <DevMoneyPanel career={career} onAddMoney={onAddMoney} />
+        <DevMoneyPanel career={career} onAddMoney={onAddMoney} onAddCoins={onAddCoins} />
 
         <DevCareerPanel
           career={career}

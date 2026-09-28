@@ -108,6 +108,8 @@ import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
 import BallonDor from "@/components/star/BallonDor";
 import Shop from "@/components/star/Shop";
+import CareerStore from "@/components/star/store/CareerStore";
+import { addCoins } from "@/lib/star/store/career";
 import { LIFESTYLE_ALL_LEVELS, KIB_CANS, kibCanPrice, kibCanEffectLabel, type KibCan } from "@/lib/star/shopData";
 
 /** The dashboard KIB Cans card's own accent per tier — the same colour as
@@ -1517,6 +1519,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!career || amount <= 0) return;
     setCareer({ ...career, money: career.money + amount });
   }, [career]);
+  // Settings → Dev: top up the Store's Coins for testing (lib/star/store/career.ts).
+  const handleAddCoins = useCallback((amount: number) => {
+    setCareer(c => (c ? addCoins(c, amount) : c));
+  }, []);
 
   // ── Dev — Career shortcuts ──
   //
@@ -3058,6 +3064,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return <ContractRenewal career={career} offerReason={contractOfferReason ?? undefined} onComplete={handleContractComplete} />;
   }
 
+  // The Store (Shop page's big tile, the phone's Store app) — the test area's
+  // screen on this career. See components/star/store/CareerStore.tsx.
+  if (phase === "store") {
+    return <CareerStore career={career} onChange={setCareer} onBack={handleBackToDashboard} />;
+  }
+
   if (phase === "shop-kib" || phase === "shop-boots" || phase === "shop-lifestyle") {
     const kind = phase === "shop-kib" ? "kib" : phase === "shop-boots" ? "boots" : "lifestyle";
     return (
@@ -3171,6 +3183,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onBack={handleBackFromSettings}
         onSkip={handleDevSkip}
         onAddMoney={handleAddMoney}
+        onAddCoins={handleAddCoins}
         onSetCaptain={handleSetCaptain}
         onSetReputation={handleSetReputation}
         onSetFame={handleSetFame}
