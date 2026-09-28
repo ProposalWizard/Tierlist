@@ -56,6 +56,21 @@ const [won, fireWon] = useTrigger();
 
 `FloatText motion="tick"` is the can's small "−1".
 
+## Money screens — the shop, the store, the casino
+
+```tsx
+<ScreenShell glow={theme.glow} title="Boots" icon="👟" onBack={back}
+  right={<WalletPill value={career.money} format={formatMoney} spent={n} spentText="−★12k" />}>…</ScreenShell>
+const [layer, fly] = useFly();  fly(fromEl, toEl, <KibCanIcon …/>, onLand)   {/* render {layer} once */}
+<WinCelebration trigger={won} amount={500} format={(n) => `+★${formatMoney(n)}`} colors={[…]} />
+<ShakeX trigger={lost}>…the table…</ShakeX>  <LossFlash trigger={lost} />
+<Badge count={3} />                                                        {/* a notification that pops in */}
+```
+
+`ScreenShell` is a whole screen outside the dashboard (it renders KitStyles).
+`WalletPill` counts to its new value and floats `spentText` up off it.
+`useFly` sends a copy of what you bought along an arc into where it now lives.
+
 ## Rules
 
 - No animation loops on a canvas: the one-engine guard fails the build on
