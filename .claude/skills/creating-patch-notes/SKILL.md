@@ -121,7 +121,8 @@ old version's link is left alone as its own frozen record. Republish in place
 Record each new link here so the next round can find the latest one:
 
 - v0.16: https://claude.ai/artifact/A9gwVhtt8dAVBwddYgrh7A
-- v0.17: (next, new link)
+- v0.17: https://claude.ai/artifact/45LCtddFQZAvSQsc2JWk6S
+- v0.18: (next, new link)
 
 ### The site archive: `lib/patchNotesData.ts`
 
