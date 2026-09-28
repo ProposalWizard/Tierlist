@@ -19,6 +19,7 @@
  * hop are CSS on the element (see components/star/HomeFx.tsx).
  */
 import { drawPlayerHead } from "./drawPlayerHead";
+import type { FittedHead } from "./faceFit";
 import type { FaceStyle } from "./faceStyle";
 import type { FakeFaceStyle } from "./fakeFaceStyle";
 
@@ -126,14 +127,22 @@ export interface HeroLook {
   skin: string;
   face?: HTMLImageElement;
   number?: number | null;
+  /** The face-fit head (faceFit.ts). When set it replaces the pasted photo. */
+  fitted?: FittedHead | null;
 }
 
 /** Design space: 200 wide, 300 tall, boots on y = 290. */
 export const HERO_W = 200, HERO_H = 300;
 /** Where the crest sits on the chest, as fractions of the design box. */
+/** The empty strip above the raised hands, cropped off by the avatar box. */
+export const HERO_TOP = 12;
+/** Face fit placement: eyebrows-to-chin height, and where the chin sits. */
+export const HERO_FACE_H = 29, HERO_CHIN_Y = 80;
 export const HERO_CREST = { x: 119 / HERO_W, y: 112 / HERO_H, size: 17 / HERO_W };
 
 type P = [number, number];
+/** The point a fraction t of the way from a to b. */
+const along = (a: P, b: P, t: number): P => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
 /** A limb from a to b, tapering w0 → w1, lit across its width. */
 function limb(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number, color: string) {
@@ -149,11 +158,44 @@ function limb(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number,
   ctx.beginPath();
   ctx.moveTo(a[0] + nx * w0 / 2, a[1] + ny * w0 / 2);
   ctx.lineTo(b[0] + nx * w1 / 2, b[1] + ny * w1 / 2);
-  ctx.arc(b[0], b[1], w1 / 2, Math.atan2(ny, nx), Math.atan2(ny, nx) + Math.PI);
+  ctx.arc(b[0], b[1], w1 / 2, Math.atan2(ny, nx), Math.atan2(ny, nx) + Math.PI, true);
   ctx.lineTo(a[0] - nx * w0 / 2, a[1] - ny * w0 / 2);
-  ctx.arc(a[0], a[1], w0 / 2, Math.atan2(-ny, -nx), Math.atan2(-ny, -nx) + Math.PI);
+  ctx.arc(a[0], a[1], w0 / 2, Math.atan2(-ny, -nx), Math.atan2(-ny, -nx) + Math.PI, true);
   ctx.closePath();
   ctx.fill();
+}
+
+/**
+ * A short sleeve on the upper arm from the shoulder `a` towards the elbow
+ * `b`: it covers the first 70% of the upper arm, whatever angle the arm is
+ * at, so a raised arm raises its sleeve too. A round cap at the shoulder
+ * joins it to the body; the cuff is flat, in the trim colour.
+ */
+function sleeve(ctx: CanvasRenderingContext2D, a: P, b: P, w0: number, w1: number, color: string, trim: string) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+  const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+  const e: P = [a[0] + dx * 0.7, a[1] + dy * 0.7];
+  const g = ctx.createLinearGradient(a[0] + nx * w0 / 2, a[1] + ny * w0 / 2, a[0] - nx * w0 / 2, a[1] - ny * w0 / 2);
+  const litFirst = nx < 0;
+  g.addColorStop(0, litFirst ? tint(color, 0.26) : tint(color, -0.3));
+  g.addColorStop(0.45, color);
+  g.addColorStop(1, litFirst ? tint(color, -0.3) : tint(color, 0.26));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(a[0], a[1], w0 / 2, Math.atan2(-ny, -nx), Math.atan2(-ny, -nx) - Math.PI, true);
+  ctx.lineTo(e[0] + nx * w1 / 2, e[1] + ny * w1 / 2);
+  ctx.lineTo(e[0] - nx * w1 / 2, e[1] - ny * w1 / 2);
+  ctx.closePath();
+  ctx.fill();
+  // A fold across the sleeve, and the cuff.
+  ctx.strokeStyle = rgba(tint(color, -0.55), 0.3); ctx.lineWidth = 1.2; ctx.lineCap = "round";
+  const f: P = [a[0] + dx * 0.42, a[1] + dy * 0.42];
+  ctx.beginPath(); ctx.moveTo(f[0] + nx * w1 * 0.3, f[1] + ny * w1 * 0.3); ctx.quadraticCurveTo(f[0] + ux * 2, f[1] + uy * 2, f[0] - nx * w1 * 0.25, f[1] - ny * w1 * 0.25); ctx.stroke();
+  ctx.strokeStyle = trim; ctx.lineWidth = 3; ctx.lineCap = "butt";
+  ctx.beginPath();
+  ctx.moveTo(e[0] + nx * w1 / 2 - ux * 1.4, e[1] + ny * w1 / 2 - uy * 1.4);
+  ctx.lineTo(e[0] - nx * w1 / 2 - ux * 1.4, e[1] - ny * w1 / 2 - uy * 1.4);
+  ctx.stroke();
 }
 
 function boot(ctx: CanvasRenderingContext2D, x: number, y: number, dir: number, s: number, stripe: string) {
@@ -218,15 +260,33 @@ export function paintHeroFigure(
   ctx.fillStyle = "rgba(255,255,255,0.18)";
   ctx.beginPath(); ctx.ellipse(77, 240, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
 
-  // ── Arms behind the body when down: far arm ──
+  // ── Arms. One skeleton for every pose (shoulder → elbow → hand), so the
+  // sleeve always follows the upper arm (Harry, 28 Sep: "the sleeves dont
+  // match the avatar" — in the win pose the arms went up and the sleeves
+  // stayed pointing down at the shoulders).
   const farSh: P = [140, 96], nearSh: P = [60, 97];
-  const farElbow: P = armsUp ? [158, 64] : [147, 140];
-  const farHand: P = armsUp ? [170, 28] : [150, 184];
-  if (!armsUp) {
-    limb(ctx, farElbow, farHand, 12, 10, skin);
+  const farElbow: P = armsUp ? [161, 60] : [147, 140];
+  const farHand: P = armsUp ? [171, 25] : [150, 184];
+  const nearElbow: P = armsUp ? [39, 60] : [52, 140];
+  const nearHand: P = armsUp ? [29, 25] : [49, 184];
+  const farArm = () => {
+    limb(ctx, along(farSh, farElbow, 0.35), farElbow, 16, 14, skin); // starts under the sleeve
+    limb(ctx, farElbow, farHand, 14, 11, skin);
     ctx.fillStyle = tint(skin, -0.12);
-    ctx.beginPath(); ctx.arc(farHand[0], farHand[1] + 2, 6.5, 0, Math.PI * 2); ctx.fill();
-  }
+    ctx.beginPath(); ctx.arc(farHand[0], farHand[1] + (armsUp ? -2 : 2), 6.5, 0, Math.PI * 2); ctx.fill();
+  };
+  const nearArm = () => {
+    limb(ctx, along(nearSh, nearElbow, 0.35), nearElbow, 17, 15, skin);
+    limb(ctx, nearElbow, nearHand, 15, 11.5, skin);
+    ctx.fillStyle = skin;
+    ctx.beginPath(); ctx.arc(nearHand[0], nearHand[1] + (armsUp ? -2 : 2), 7.2, 0, Math.PI * 2); ctx.fill();
+    if (!armsUp) {
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.beginPath(); ctx.ellipse(46.5, 160, 2, 9, 0.05, 0, Math.PI * 2); ctx.fill();
+    }
+  };
+  // Down, the far arm hangs behind the body.
+  if (!armsUp) farArm();
 
   // ── Shorts ──
   {
@@ -259,21 +319,18 @@ export function paintHeroFigure(
   }
 
   // ── Shirt ──
+  // The body of the shirt; the sleeves are drawn along the arms (sleeve()).
   const torso = () => {
     ctx.beginPath();
     ctx.moveTo(88, 82);
-    ctx.lineTo(66, 87);
-    ctx.quadraticCurveTo(52, 91, 48, 106);
-    ctx.lineTo(43, 128);
-    ctx.lineTo(62, 134);
-    ctx.lineTo(67, 118);
+    ctx.lineTo(68, 86);
+    ctx.quadraticCurveTo(57, 89, 55, 100);
+    ctx.lineTo(66, 118);
     ctx.lineTo(70, 168);
     ctx.quadraticCurveTo(101, 176, 132, 168);
-    ctx.lineTo(133, 118);
-    ctx.lineTo(138, 131);
-    ctx.lineTo(154, 125);
-    ctx.lineTo(149, 102);
-    ctx.quadraticCurveTo(145, 89, 134, 86);
+    ctx.lineTo(134, 118);
+    ctx.lineTo(145, 99);
+    ctx.quadraticCurveTo(143, 89, 133, 86);
     ctx.lineTo(113, 82);
     ctx.quadraticCurveTo(101, 90, 88, 82);
     ctx.closePath();
@@ -301,42 +358,47 @@ export function paintHeroFigure(
     ctx.fillStyle = "rgba(255,255,255,0.10)";
     ctx.beginPath(); ctx.ellipse(86, 112, 13, 18, -0.3, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
-    // Sleeve cuffs and the hem in the trim colour.
-    ctx.strokeStyle = trim; ctx.lineWidth = 3; ctx.lineCap = "butt";
-    ctx.beginPath(); ctx.moveTo(43.5, 127); ctx.lineTo(61.5, 133); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(138.5, 130); ctx.lineTo(153.5, 124.5); ctx.stroke();
   }
 
-  // ── Neck and collar ──
-  limb(ctx, [101, 70], [101, 88], 17, 17, skin);
-  ctx.fillStyle = "rgba(0,0,0,0.28)";
-  ctx.beginPath(); ctx.ellipse(101, 76, 8.5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  // ── Arms first, then the sleeves over the top of the upper arms, in
+  // every pose. (Down, the far arm already went on behind the body.)
+  if (armsUp) farArm();
+  nearArm();
+  sleeve(ctx, farSh, farElbow, 21, 16.5, tint(shirt, -0.22), trim);
+  sleeve(ctx, nearSh, nearElbow, 23, 19, shirt, trim);
+
+  // ── Neck, head and collar ──
+  const fit = look.fitted;
+  if (fit) {
+    // FACE FIT (faceFit.ts): the photo's head, cut, lit and graded to this
+    // body, placed so every photo's chin and face size land in the same spot.
+    const k = HERO_FACE_H / fit.faceH;
+    const dx = 101 - fit.chinX * k, dy = HERO_CHIN_Y - fit.chinY * k;
+    // The back of the collar behind the neck, then the neck in the matched
+    // skin, up under the jaw.
+    ctx.strokeStyle = tint(trim, -0.25); ctx.lineWidth = 3.5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(90, 83); ctx.quadraticCurveTo(101, 77, 112, 83); ctx.stroke();
+    limb(ctx, [101, HERO_CHIN_Y - 8], [101, 88], 16, 17, tint(skin, -0.2));
+    ctx.drawImage(fit.canvas, dx, dy, fit.canvas.width * k, fit.canvas.height * k);
+    // The head's shadow on the top of the neck, then the collar over it.
+    const js = ctx.createRadialGradient(101, HERO_CHIN_Y + 1, 1, 101, HERO_CHIN_Y + 1, 10);
+    js.addColorStop(0, "rgba(0,0,0,0.30)"); js.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = js;
+    ctx.beginPath(); ctx.ellipse(101, HERO_CHIN_Y + 2, 9, 4, 0, 0, Math.PI * 2); ctx.fill();
+  } else {
+    limb(ctx, [101, 70], [101, 88], 17, 17, skin);
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath(); ctx.ellipse(101, 76, 8.5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  // The collar's V, over the neck.
   ctx.strokeStyle = trim; ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.lineCap = "round";
   ctx.beginPath(); ctx.moveTo(89, 82); ctx.lineTo(102, 97); ctx.lineTo(113, 82); ctx.stroke();
 
-  // ── Near arm (in front of the body) and the far arm when raised ──
-  const nearElbow: P = armsUp ? [42, 62] : [52, 140];
-  const nearHand: P = armsUp ? [30, 26] : [49, 184];
-  if (armsUp) {
-    limb(ctx, farSh, farElbow, 20, 16, shirt);
-    limb(ctx, [farElbow[0] - 1, farElbow[1] + 5], farHand, 12, 10, skin);
-    ctx.fillStyle = tint(skin, -0.08);
-    ctx.beginPath(); ctx.arc(farHand[0], farHand[1] - 2, 7, 0, Math.PI * 2); ctx.fill();
-    limb(ctx, nearSh, nearElbow, 22, 17, shirt);
-    limb(ctx, [nearElbow[0] + 1, nearElbow[1] + 5], nearHand, 13, 10.5, skin);
-    ctx.fillStyle = skin;
-    ctx.beginPath(); ctx.arc(nearHand[0], nearHand[1] - 2, 7.5, 0, Math.PI * 2); ctx.fill();
-  } else {
-    limb(ctx, [53, 131], nearHand, 13.5, 10.5, skin);
-    ctx.fillStyle = skin;
-    ctx.beginPath(); ctx.arc(nearHand[0], nearHand[1] + 2, 7.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.18)";
-    ctx.beginPath(); ctx.ellipse(46.5, 160, 2, 9, 0.05, 0, Math.PI * 2); ctx.fill();
+  if (!fit) {
+    // The game's own head, so the face crop matches every other screen.
+    // The figure unit r puts the head where render.ts puts it relative to
+    // the shoulders (HEAD_ANCHOR − SHOULDER_Y = −0.184 r, base radius 0.114 r).
+    const r = 104;
+    drawPlayerHead(ctx, 101, 86 - 0.184 * r, 0.114 * r, r, look.face, faceStyle, fakeFaceStyle);
   }
-
-  // ── Head: the game's own head, so the face crop matches every other screen.
-  // The figure unit r puts the head where render.ts puts it relative to the
-  // shoulders (HEAD_ANCHOR − SHOULDER_Y = −0.184 r, base radius 0.114 r).
-  const r = 104;
-  drawPlayerHead(ctx, 101, 86 - 0.184 * r, 0.114 * r, r, look.face, faceStyle, fakeFaceStyle);
 }

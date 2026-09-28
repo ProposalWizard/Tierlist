@@ -4,12 +4,13 @@
  * THE MIDDLE HOME SCREEN — the best-looking screen in the game.
  *
  * Harry, 28 Sep 2026: "The home screen should look the best, and right now it
- * doesn't." Top to bottom, as he laid it out:
- *   1. the next match — both crests big, a styled "vs", the date and how many
- *      days away — with your last five results underneath it;
- *   2. you, centred and big, in the club kit, under floodlights, with your
+ * doesn't." Top to bottom (28 Sep, later: "put [the next match] under the
+ * avatar right before cans"):
+ *   1. you, centred and big, in the club kit, under floodlights, with your
  *      name, crest, number, position and three polished pills (rating,
  *      money, age);
+ *   2. the next match — both crests big, a styled "vs", the date and how many
+ *      days away — with your last five results underneath it;
  *   3. energy and the KIB cans — the real can pictures, lit in their own
  *      colours, with Use and Buy;
  *   4. your shop items.
@@ -101,8 +102,8 @@ export default function HomeHub(p: Props) {
   const rise = (i: number): React.CSSProperties => ({ animationDelay: `${i * 80}ms` });
   return (
     <div className="space-y-2.5 pb-3">
-      <div className="kib-rise" style={rise(0)}><NextMatchCard {...p} glow={glow} /></div>
-      <div className="kib-rise" style={rise(1)}><Hero {...p} glow={glow} kitShirt={kit.shirt} kitTrim={kit.trim} /></div>
+      <div className="kib-rise" style={rise(0)}><Hero {...p} glow={glow} kitShirt={kit.shirt} kitTrim={kit.trim} /></div>
+      <div className="kib-rise" style={rise(1)}><NextMatchCard {...p} glow={glow} /></div>
       <div className="kib-rise" style={rise(2)}><Energy {...p} glow={glow} /></div>
       <div className="kib-rise" style={rise(3)}>
         <ShopItemsCard career={career} onOpenShop={() => p.onOpen("shop-kib")} showCans={false} glow={glow} />
@@ -111,7 +112,7 @@ export default function HomeHub(p: Props) {
   );
 }
 
-// ── 1. Next match + last five ───────────────────────────────────────────────
+// ── 2. Next match + last five ───────────────────────────────────────────────
 
 function NextMatchCard({ career, nextFixture, nextMatchDate, myTeam, glow }: Props & { glow: string }) {
   const five = lastFive(career);
@@ -222,7 +223,7 @@ function LastFive({ five }: { five: FormResult[] }) {
   );
 }
 
-// ── 2. You ──────────────────────────────────────────────────────────────────
+// ── 1. You ──────────────────────────────────────────────────────────────────
 
 function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitShirt: string; kitTrim: string }) {
   const look = useAvatarStyle();
@@ -251,13 +252,16 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   return (
     <div className="relative overflow-hidden rounded-2xl" style={cardStyle(glow, 0.2)}>
       <Stadium glow={glow} />
-      <div className="relative flex justify-center pt-3">
+      <div className="relative flex justify-center pt-1.5">
+        {/* 204 tall (was 236) so that on an iPhone 13 the next-match card
+            under this hero shows its crests above the bottom bar, not just
+            its label. The figure crops its empty top strip to stay big. */}
         <div className={celebrate ? "kib-hop" : "kib-breathe"}>
-          <PlayerAvatar career={career} width={172} height={236} look={look} celebrate={celebrate} />
+          <PlayerAvatar career={career} width={172} height={204} look={look} celebrate={celebrate} />
         </div>
         {celebrate && <Confetti colors={[kitShirt, kitTrim, "#fde047", "#ffffff"]} />}
       </div>
-      <div className="relative -mt-4 bg-gradient-to-b from-transparent via-black/45 to-black/70 px-3 pb-3 pt-4 text-center">
+      <div className="relative -mt-4 bg-gradient-to-b from-transparent via-black/45 to-black/70 px-3 pb-2.5 pt-3 text-center">
         <div className="flex items-center justify-center gap-2">
           <div style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.6))" }}>
             <ClubBadge club={career.player.club} kit={{ shirt: kitShirt, trim: kitTrim }} size={28} />
@@ -269,7 +273,7 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
         <div className="mt-0.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/65">
           {short(career.player.club)} · #{career.squadNumber ?? "—"} · {POS_NAME[career.player.position] ?? career.player.position}{career.captain ? " · 🅲 Captain" : ""}
         </div>
-        <div className="mt-2 flex justify-center gap-1.5">
+        <div className="mt-1.5 flex justify-center gap-1.5">
           <Pill gold label="Rating" value={`★ ${rating.toFixed(1)}`} />
           <Pill label="Money" value={`★ ${formatMoney(Math.round(money))}`} valueClass="text-yellow-200" />
           <Pill label="Age" value={String(career.player.age)} />

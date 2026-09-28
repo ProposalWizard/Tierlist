@@ -32,7 +32,8 @@ import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
-import { compositeLit, paintHeroFigure, paintHeroShadow, HERO_W, HERO_H, HERO_CREST, type AvatarStyle } from "@/lib/star/heroFigure";
+import { compositeLit, paintHeroFigure, paintHeroShadow, HERO_W, HERO_H, HERO_TOP, HERO_CREST, type AvatarStyle } from "@/lib/star/heroFigure";
+import { fitImage, getFittedHead } from "@/lib/star/faceFit";
 import ClubBadge from "./ClubBadge";
 
 /** The colour of the rim light on the far side: the shirt, or the trim when
@@ -42,7 +43,7 @@ function rimOf(kit: { shirt: string; trim: string }): string {
 }
 
 /** THE ONE LINE: which avatar the home screen shows. */
-export const AVATAR_STYLE: AvatarStyle = "A1";
+export const AVATAR_STYLE: AvatarStyle = "A2";
 
 /** AVATAR_STYLE, unless this browser has asked for the other one (for
  *  filming both side by side). Read after mount so the server render and the
@@ -58,6 +59,22 @@ export function useAvatarStyle(): AvatarStyle {
   return s;
 }
 
+/** Face fit on (the default) or off — localStorage "star-avatar-facefit" =
+ *  "0" turns it off in this browser, for filming before and after. */
+export function useFaceFit(): boolean {
+  const [on, setOn] = useState(true);
+  useEffect(() => {
+    try { if (localStorage.getItem("star-avatar-facefit") === "0") setOn(false); } catch { /* the default stands */ }
+  }, []);
+  return on;
+}
+
+/** The A2 figure's scale in a box: the empty strip above the raised hands
+ *  (HERO_TOP) is cropped off so he is as big as the box allows. */
+function heroScale(width: number, height: number): number {
+  return Math.min(width / HERO_W, height / (HERO_H - HERO_TOP));
+}
+
 export default function PlayerAvatar({ career, width, height, ball = true, className, look = AVATAR_STYLE, celebrate = false }: {
   career: CareerState; width: number; height: number; ball?: boolean; className?: string;
   look?: AvatarStyle;
@@ -71,6 +88,19 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
   const skin = skinToneHex(career.player.skinTone);
   const faceUrl = career.player.portrait ?? DEFAULT_FAKE_FACE;
   const number = career.squadNumber ?? null;
+  const fitOn = useFaceFit() && look === "A2";
+  // Bumped when the readable copy of the face has loaded, so the fitted
+  // head is built and drawn.
+  const [fitTick, setFitTick] = useState(0);
+  useEffect(() => {
+    if (!fitOn) return;
+    const img = fitImage(faceUrl);
+    let alive = true;
+    const ready = () => { if (alive) setFitTick((t) => t + 1); };
+    if (img.complete && img.naturalWidth) ready();
+    else img.addEventListener("load", ready, { once: true });
+    return () => { alive = false; img.removeEventListener("load", ready); };
+  }, [faceUrl, fitOn]);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -123,9 +153,13 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
       layer.width = canvas.width; layer.height = canvas.height;
       const lx = layer.getContext("2d");
       if (!lx) return;
-      const s = Math.min(width / HERO_W, height / HERO_H);
+      const s = heroScale(width, height);
+      // FACE FIT: the head built from the photo for this body, and the
+      // body's skin taken from the face (faceFit.ts). Until the photo has
+      // loaded readably this is null and the plain pasted head is drawn.
+      const fitted = fitOn ? getFittedHead(faceUrl) : null;
       lx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (width - HERO_W * s) / 2, dpr * (height - HERO_H * s));
-      paintHeroFigure(lx, { shirt: kit.shirt, shorts: kit.trim, trim: kit.trim, skin, face, number }, faceStyle, fakeFaceStyle, { armsUp: celebrate, shadow: false });
+      paintHeroFigure(lx, { shirt: kit.shirt, shorts: kit.trim, trim: kit.trim, skin: fitted?.skin ?? skin, face, number, fitted }, faceStyle, fakeFaceStyle, { armsUp: celebrate, shadow: false });
       ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * (width - HERO_W * s) / 2, dpr * (height - HERO_H * s));
       paintHeroShadow(ctx);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -144,11 +178,11 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
       face.addEventListener("load", draw, { once: true });
       return () => face.removeEventListener("load", draw);
     }
-  }, [width, height, kit.shirt, kit.trim, skin, faceUrl, ball, look, celebrate, number]);
+  }, [width, height, kit.shirt, kit.trim, skin, faceUrl, ball, look, celebrate, number, fitOn, fitTick]);
 
   // A2's crest sits on the chest as a real badge (the game's ClubBadge), not
   // a drawing of one. Hidden while the arms are up — it would float.
-  const s = Math.min(width / HERO_W, height / HERO_H);
+  const s = heroScale(width, height);
   const crest = look === "A2" && !celebrate ? {
     left: (width - HERO_W * s) / 2 + HERO_CREST.x * HERO_W * s,
     top: (height - HERO_H * s) + HERO_CREST.y * HERO_H * s,
