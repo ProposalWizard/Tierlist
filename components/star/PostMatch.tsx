@@ -315,7 +315,7 @@ function StarBar({ before, after, on }: { before?: number; after?: number; on: b
         <div className="flex-1 text-sm font-black text-white">Star Rating</div>
         <div className="relative text-sm font-black tabular-nums text-amber-300">
           {up ? `${(tenth(from) / 10).toFixed(1)} → ` : ""}{(tenth(after) / 10).toFixed(1)}
-          {up && <FloatText trigger={on ? 1 : 0} text="+0.1 ★" color="#fde047" className="left-1/2 -top-2" size={13} />}
+          {up && <FloatText trigger={on ? 1 : 0} text={`+${((tenth(after) - tenth(from)) / 10).toFixed(1)} ★`} color="#fde047" className="left-1/2 -top-2" size={13} />}
         </div>
       </div>
       <div className="relative mt-1.5 h-3 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }} role="meter" aria-label="Progress to the next star rating" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(endPct)}>

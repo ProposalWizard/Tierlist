@@ -46,6 +46,7 @@ export default function TransferSigning({
   // The celebration holds for a beat, then the move goes through — once,
   // whether the timer or the Continue button gets there first.
   const doneRef = useRef(false);
+  const celebrateRef = useRef<HTMLDivElement>(null);
   const finish = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
@@ -53,6 +54,9 @@ export default function TransferSigning({
   }, [onDone]);
   useEffect(() => {
     if (!signed) return;
+    // Bring the moment into view: on a short phone the Sign button sits
+    // below the contract, so the page is scrolled past the crest.
+    celebrateRef.current?.scrollIntoView({ block: "center", behavior: prefersReducedMotion() ? "auto" : "smooth" });
     const t = setTimeout(finish, prefersReducedMotion() ? 0 : 2600);
     return () => clearTimeout(t);
   }, [signed, finish]);
@@ -70,7 +74,7 @@ export default function TransferSigning({
           <SignaturePad name={playerName} club={club} signing={signing} onFinished={() => setSigned(true)} />
 
           {signed && (
-            <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl" style={{ background: "radial-gradient(closest-side, rgba(5,7,13,.72), rgba(5,7,13,.35))" }}>
+            <div ref={celebrateRef} className="absolute inset-0 z-10 grid place-items-center rounded-2xl" style={{ background: "radial-gradient(closest-side, rgba(5,7,13,.72), rgba(5,7,13,.35))" }}>
               <Rays color={theme.glow} size={340} />
               <Burst colors={[theme.shirt, theme.trim, "#fde047", "#ffffff"]} count={34} spread={1.5} />
               <div className="relative flex flex-col items-center">
