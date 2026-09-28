@@ -252,7 +252,9 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
           <div style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,.6))" }}>
             <ClubBadge club={career.player.club} kit={{ shirt: kitShirt, trim: kitTrim }} size={28} />
           </div>
-          <div className="min-w-0 truncate text-[21px] font-black leading-tight text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
+          {/* A dark plate behind the name: on the club-colour glow a bare
+              white name washed out (Harry's Plymouth screenshot, 28 Sep). */}
+          <div className="min-w-0 truncate rounded-lg bg-black/60 px-2.5 py-0.5 text-[21px] font-black leading-tight text-white" style={{ textShadow: "0 1px 0 rgba(0,0,0,.9), 0 2px 8px rgba(0,0,0,.8)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.08)" }}>
             {career.player.firstName} {career.player.lastName}
           </div>
         </div>

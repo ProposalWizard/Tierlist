@@ -33,6 +33,8 @@
  * its chin is, and paintHeroFigure (heroFigure.ts) places it.
  */
 
+import { SCAN_LAYOUT, SCAN_EYE_TO_CHIN, looksScanned } from "./faceScanLayout";
+
 export interface FaceBox { x: number; y: number; width: number; height: number }
 
 export interface FittedHead {
@@ -62,6 +64,12 @@ export const FACE_FIT = {
   smooth: 2,
   saturation: 1.1,
   contrast: 1.06,
+  /** A scanned portrait (faceScan.ts) puts the face in a known spot. Its
+   *  face box, in eye-to-chin lengths, sized so a scanned head comes out
+   *  the same size on the body as a fake face (set by eye on 3 fake faces
+   *  drawn both ways side by side on the A2 body). */
+  scanBoxH: 1.17,
+  scanBoxW: 1.12,
   // A cel-shade (luminance snapped to 6 bands, 45% mix) was tried and
   // dropped: at avatar size it only showed as orange blotches on darker
   // skin (Lavia) and did nothing visible on lighter skin.
@@ -238,22 +246,36 @@ export function fitFace(img: HTMLImageElement): FittedHead | null {
   // the same shape reading finds its head. A busy background that barely
   // floods keeps the photo whole and falls back to a centred face.
   let cutout = hasCutout(full.data, W, H);
-  if (!cutout) {
+  // A scanned portrait (faceScan.ts): already cut out, straightened and
+  // placed, so the face box is known rather than guessed, and the whole
+  // square is kept (it is framed already, hair and all).
+  const px = (x: number, y: number) => full.data[(y * W + x) * 4 + 3];
+  const scanned = looksScanned(img.src, W, H, [px(0, 0), px(W - 1, 0), px(0, H - 1), px(W - 1, H - 1)]);
+  if (!cutout && !scanned) {
     const keepMid = (x: number, y: number) => ((x - W * 0.5) / (W * 0.22)) ** 2 + ((y - H * 0.45) / (H * 0.3)) ** 2 < 1;
     const bg = backgroundMask(full.data, W, H, keepMid);
     let n = 0;
     for (let i = 0; i < bg.length; i++) if (bg[i]) { full.data[i * 4 + 3] = 0; n++; }
     if (n > bg.length * 0.12) { sx.putImageData(full, 0, 0); cutout = true; }
   }
-  const box = cutout ? guessFaceBox(full.data, W, H) : centredFaceBox(W, H);
+  const scanD = SCAN_EYE_TO_CHIN * W;
+  const box = scanned
+    ? {
+      x: SCAN_LAYOUT.cx * W - (FACE_FIT.scanBoxW * scanD) / 2,
+      y: SCAN_LAYOUT.chinY * H - FACE_FIT.scanBoxH * scanD,
+      width: FACE_FIT.scanBoxW * scanD,
+      height: FACE_FIT.scanBoxH * scanD,
+    }
+    : cutout ? guessFaceBox(full.data, W, H) : centredFaceBox(W, H);
+  if (scanned) cutout = true;
   const skinRGB = sampleSkin(full.data, W, H, box) ?? [198, 150, 118];
 
   // The crop: a head-and-a-bit around the face box.
   const chinY = box.y + box.height;
   const cx = box.x + box.width / 2;
-  const cropTop = Math.max(0, box.y - box.height * 0.95);
+  const cropTop = scanned ? 0 : Math.max(0, box.y - box.height * 0.95);
   const cropBot = Math.min(H, chinY + box.height * (FACE_FIT.neckKeep + 0.02));
-  const cropHalfW = box.width * 0.95;
+  const cropHalfW = scanned ? W / 2 : box.width * 0.95;
   const cropL = Math.max(0, cx - cropHalfW), cropR = Math.min(W, cx + cropHalfW);
   const k = FACE_FIT.workH / Math.max(1, cropBot - cropTop);
   const ow = Math.max(8, Math.round((cropR - cropL) * k)), oh = Math.max(8, Math.round((cropBot - cropTop) * k));
