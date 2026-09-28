@@ -162,6 +162,14 @@ export default function PlayAreaPage() {
           </div>
         </Link>
 
+        <Link href="/star-3d-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>3D &#8594;</div>
+          <div style={tileSub}>
+            One of every mode with the players in the new 3D look, and a Classic / 3D
+            switch to compare the same moment. The real game stays Classic.
+          </div>
+        </Link>
+
         {/* ── THE DIALS ── */}
         <section style={{ ...tile, cursor: "default" }}>
           <div style={tileTitle}>Tuning</div>

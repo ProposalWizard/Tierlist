@@ -3,6 +3,19 @@ import type { FpDefender, DefenderPhase } from "./firstPersonDribble";
 import { drawPlayerHead } from "./drawPlayerHead";
 import { DEFAULT_FACE_STYLE, type FaceStyle } from "./faceStyle";
 import type { FakeFaceStyle } from "./fakeFaceStyle";
+import { figureSkin } from "./figureSkin";
+import { fittedHeadFor, drawSoftShadow, mipFor, drawStyledHead } from "./figure3d";
+import { limb as litLimb, tint, rgba } from "./heroFigure";
+
+/**
+ * The "3d" skin (lib/star/figureSkin.ts), read once per frame by the two
+ * render entry points below. Every figure helper in this file checks it: a
+ * limb is lit across its width, the shirt and shorts get a light and a dark
+ * side, folds and a rim light, the shadow is soft, boots shine, and a
+ * defender with a readable photo gets the face-fit head. A look only — no
+ * position, size or timing changes.
+ */
+let SKIN3D = false;
 
 /**
  * DRAWING THE FIRST-PERSON MODES.
@@ -155,6 +168,11 @@ function limb(
   const len = Math.hypot(dx, dy) || 1;
   const nx = -dy / len, ny = dx / len;
   const wa = widthA * pa.scale, wb = widthB * pb.scale;
+  if (SKIN3D) {
+    // Lit across its width (heroFigure's own limb, full widths not halves).
+    litLimb(ctx, [pa.px, pa.py], [pb.px, pb.py], wa * 2, wb * 2, fill);
+    return;
+  }
   quad(ctx, [
     { px: pa.px + nx * wa, py: pa.py + ny * wa },
     { px: pb.px + nx * wb, py: pb.py + ny * wb },
@@ -519,6 +537,7 @@ function drawShadow(ctx: CanvasRenderingContext2D, cam: FpCamera, pos: { x: numb
   const feet = project(cam, pos.x, pos.y, 0);
   if (!feet) return;
   const sc = feet.scale;
+  if (SKIN3D) { drawSoftShadow(ctx, feet.px, feet.py, 0.36 * sc, 0.13 * sc); return; }
   ctx.beginPath();
   ctx.ellipse(feet.px, feet.py, 0.36 * sc, 0.13 * sc, 0, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(0,0,0,0.38)";
@@ -543,6 +562,10 @@ function drawUpperBody(
     face?: HTMLImageElement;
     faceStyle?: FaceStyle;
     fakeFaceStyle?: FakeFaceStyle;
+    /** 3d only: who this is, for his drawn hair when there is no photo, and
+     *  whether the camera sees the back of his head (you, in the chase cam). */
+    headKey?: string;
+    back?: boolean;
   },
 ) {
   const feet = project(cam, pos.x, pos.y, 0);
@@ -560,7 +583,13 @@ function drawUpperBody(
   const shortsBR = project(cam, pos.x + HEM_HALF + shear, pos.y, SHORTS_BOT_Z + bounce);
   const shortsBL = project(cam, pos.x - HEM_HALF + shear, pos.y, SHORTS_BOT_Z + bounce);
   if (shortsTL && shortsTR && shortsBR && shortsBL) {
-    quad(ctx, [shortsTL, shortsTR, shortsBR, shortsBL], colors.rim);
+    if (SKIN3D) {
+      const g = ctx.createLinearGradient(shortsTL.px, 0, shortsTR.px, 0);
+      g.addColorStop(0, tint(colors.rim, 0.22)); g.addColorStop(0.5, colors.rim); g.addColorStop(1, tint(colors.rim, -0.3));
+      quad(ctx, [shortsTL, shortsTR, shortsBR, shortsBL], g);
+    } else {
+      quad(ctx, [shortsTL, shortsTR, shortsBR, shortsBL], colors.rim);
+    }
   }
 
   // Torso — tapered (shoulders genuinely wider than the waist) and shaded
@@ -575,19 +604,49 @@ function drawUpperBody(
   const waistL = project(cam, pos.x - WAIST_HALF + shear, pos.y, WAIST_Z + bounce);
   if (shoulderL && shoulderR && capL && capR && waistR && waistL) {
     const grad = ctx.createLinearGradient(shoulderL.px, 0, shoulderR.px, 0);
-    grad.addColorStop(0, colors.shirt);
-    grad.addColorStop(0.55, colors.shirt);
-    grad.addColorStop(1, colors.rim);
-    ctx.beginPath();
-    ctx.moveTo(waistL.px, waistL.py);
-    ctx.lineTo(shoulderL.px, shoulderL.py);
-    ctx.quadraticCurveTo(shoulderL.px, capL.py, capL.px, capL.py);
-    ctx.lineTo(capR.px, capR.py);
-    ctx.quadraticCurveTo(shoulderR.px, capR.py, shoulderR.px, shoulderR.py);
-    ctx.lineTo(waistR.px, waistR.py);
-    ctx.closePath();
+    if (SKIN3D) {
+      grad.addColorStop(0, tint(colors.shirt, 0.3));
+      grad.addColorStop(0.45, colors.shirt);
+      grad.addColorStop(1, tint(colors.shirt, -0.42));
+    } else {
+      grad.addColorStop(0, colors.shirt);
+      grad.addColorStop(0.55, colors.shirt);
+      grad.addColorStop(1, colors.rim);
+    }
+    const torso = () => {
+      ctx.beginPath();
+      ctx.moveTo(waistL.px, waistL.py);
+      ctx.lineTo(shoulderL.px, shoulderL.py);
+      ctx.quadraticCurveTo(shoulderL.px, capL.py, capL.px, capL.py);
+      ctx.lineTo(capR.px, capR.py);
+      ctx.quadraticCurveTo(shoulderR.px, capR.py, shoulderR.px, shoulderR.py);
+      ctx.lineTo(waistR.px, waistR.py);
+      ctx.closePath();
+    };
+    torso();
     ctx.fillStyle = grad;
     ctx.fill();
+    if (SKIN3D) {
+      // Shading down the body, two folds, a shoulder highlight and a rim of
+      // light down the right edge — the in-match 3d figure's shirt.
+      const w = shoulderR.px - shoulderL.px, h = waistL.py - capL.py;
+      ctx.save(); torso(); ctx.clip();
+      const v = ctx.createLinearGradient(0, capL.py, 0, waistL.py);
+      v.addColorStop(0, "rgba(255,255,255,0.10)"); v.addColorStop(0.5, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.26)");
+      ctx.fillStyle = v; ctx.fillRect(shoulderL.px, capL.py, w, h);
+      ctx.strokeStyle = rgba(tint(colors.shirt, -0.55), 0.42); ctx.lineCap = "round";
+      ctx.lineWidth = Math.max(0.8, w * 0.03);
+      const fx = (f: number) => shoulderL.px + w * f, fy = (f: number) => capL.py + h * f;
+      ctx.beginPath(); ctx.moveTo(fx(0.3), fy(0.25)); ctx.quadraticCurveTo(fx(0.38), fy(0.55), fx(0.33), fy(0.97)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx(0.72), fy(0.28)); ctx.quadraticCurveTo(fx(0.63), fy(0.58), fx(0.68), fy(0.97)); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,0.32)"; ctx.lineWidth = Math.max(1, w * 0.045);
+      ctx.beginPath(); ctx.moveTo(fx(0.03), fy(0.2)); ctx.quadraticCurveTo(fx(0.08), fy(0.02), fx(0.33), fy(0.01)); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,240,205,0.7)"; ctx.lineWidth = Math.max(1, w * 0.05);
+      ctx.beginPath(); ctx.moveTo(shoulderR.px - w * 0.01, shoulderR.py); ctx.lineTo(waistR.px - w * 0.01, waistR.py); ctx.stroke();
+      ctx.restore();
+      ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = Math.max(0.8, w * 0.025); ctx.lineJoin = "round";
+      torso(); ctx.stroke();
+    }
   }
 
   // Neck — the head used to sit floating directly on the shoulders with no
@@ -647,13 +706,27 @@ function drawUpperBody(
   // See the anatomy block at the top of this file.
   const geo = headGeometry(opts.faceStyle);
   const head = project(cam, pos.x + shear, pos.y, geo.anchorZ + bounce);
-  if (head) {
+  // 3d: the face-fit head (faceFit.ts) — cut out, skin matched, lit like the
+  // body — with its chin on the neck. Falls through to the ordinary head
+  // while the photo loads or if it cannot be read.
+  const fit = SKIN3D && (opts.faceStyle ?? DEFAULT_FACE_STYLE).facesEnabled && opts.face && opts.face.complete && opts.face.naturalWidth > 0
+    ? fittedHeadFor(opts.face) : null;
+  const chin = fit ? project(cam, pos.x + shear, pos.y, NECK_Z + 0.02 + bounce) : null;
+  if (fit && chin) {
+    const k = (0.27 * FIGURE_R * chin.scale) / fit.fit.faceH;
+    const img = mipFor(fit, fit.fit.canvas.height * k);
+    ctx.drawImage(img, chin.px - fit.fit.chinX * k, chin.py - fit.fit.chinY * k, fit.fit.canvas.width * k, fit.fit.canvas.height * k);
+  } else if (head) {
     if (opts.face && opts.face.complete && opts.face.naturalWidth > 0) {
       drawPlayerHead(
         ctx, head.px, head.py,
         Math.max(1, HEAD_BASE_R * sc), Math.max(1, FIGURE_R * sc),
         opts.face, opts.faceStyle, opts.fakeFaceStyle,
       );
+    } else if (SKIN3D) {
+      // 3d, no photo: a drawn head with this man's own hair (never bald).
+      const chinAt = project(cam, pos.x + shear, pos.y, NECK_Z + 0.02 + bounce) ?? head;
+      drawStyledHead(ctx, chinAt.px, chinAt.py, 0.27 * FIGURE_R * chinAt.scale, C.skin, opts.headKey ?? "fp", !!opts.back);
     } else {
       // No photo: the same circle, at the same drawn size, in the same place
       // — plus the dark hair cap, which is the one thing this branch has that
@@ -711,6 +784,7 @@ function drawFigure(
   opts: LegOpts & {
     armFlungSide?: -1 | 1 | 0; armFlungAmount?: number;
     face?: HTMLImageElement; faceStyle?: FaceStyle; fakeFaceStyle?: FakeFaceStyle;
+    headKey?: string; back?: boolean;
   } = {},
 ) {
   drawShadow(ctx, cam, pos);
@@ -780,15 +854,16 @@ function drawDefender(
     face: getFace?.(def.who?.face),
     faceStyle,
     fakeFaceStyle,
+    headKey: def.who?.id ?? def.who?.face ?? `def-${Math.round(def.x * 10)}`,
   });
 }
 
 /** A roam-mode chaser — no telegraph, no lean, just a man either standing
  *  off (dimmed, not yet a threat) or fully awake and coming for the ball. */
-function drawChaser(ctx: CanvasRenderingContext2D, cam: FpCamera, chaser: { x: number; y: number; awake: boolean }) {
+function drawChaser(ctx: CanvasRenderingContext2D, cam: FpCamera, chaser: { x: number; y: number; awake: boolean }, index = 0) {
   const colors = chaser.awake ? { shirt: C.opp, rim: C.oppRim } : { shirt: C.oppAsleep, rim: C.oppAsleepRim };
   const runPhase = (-chaser.y / 1.5) * Math.PI * 2;
-  drawFigure(ctx, cam, chaser, 0, colors, { runPhase });
+  drawFigure(ctx, cam, chaser, 0, colors, { runPhase, headKey: `chaser-${index}` });
 }
 
 // ── Ball, hands, HUD ─────────────────────────────────────────────────────
@@ -914,6 +989,7 @@ export interface RenderFirstPersonOptions {
 export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPersonOptions): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
+  SKIN3D = figureSkin() === "3d";
   const W = canvas.width, H = canvas.height;
   const cam = opts.cam;
 
@@ -953,7 +1029,7 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
     drawShadow(ctx, cam, opts.own);
     const { bounce, legs } = computeLegs(opts.own, lean, { runPhase: ownRunPhase, reachSide, reachAmount });
     drawThighs(ctx, cam, legs);
-    drawUpperBody(ctx, cam, opts.own, lean, colors, { runPhase: ownRunPhase, bounce });
+    drawUpperBody(ctx, cam, opts.own, lean, colors, { runPhase: ownRunPhase, bounce, headKey: "you", back: true });
     if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
     drawShins(ctx, cam, legs, colors);
   } else {
@@ -983,6 +1059,7 @@ export interface RenderRoamOptions {
 export function renderFirstPersonRoam(canvas: HTMLCanvasElement, opts: RenderRoamOptions): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
+  SKIN3D = figureSkin() === "3d";
   const W = canvas.width, H = canvas.height;
   const cam = opts.cam;
 
@@ -990,7 +1067,7 @@ export function renderFirstPersonRoam(canvas: HTMLCanvasElement, opts: RenderRoa
   drawGround(ctx, W, H, cam, opts.reducedMotion ? 0 : opts.stride, opts.minX, opts.maxX);
   drawCorridorGuides(ctx, cam, opts.minX, opts.maxX);
 
-  for (const chaser of opts.chasers) drawChaser(ctx, cam, chaser);
+  opts.chasers.forEach((chaser, i) => drawChaser(ctx, cam, chaser, i));
   if (opts.ball) drawBall(ctx, cam, opts.ball, opts.ballImage);
 
   const bob = opts.reducedMotion ? 0 : Math.sin(opts.stride * 1.9);

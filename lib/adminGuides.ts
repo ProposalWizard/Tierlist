@@ -591,6 +591,43 @@ export const ADMIN_GUIDES = {
     dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
   },
 
+  "/star-3d-dev": {
+    title: "3D",
+    what: "One of every mode in the game, with the players drawn in the new \"3D\" look (shaded kit, folds, socks and boots, a soft shadow, the fitted face) — and a switch to see the same moment in today's look.",
+    buttons: [
+      {
+        group: "Top of the page",
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["Classic / 3D", "Which look the players are drawn in, on this page only. The mode below restarts in that look."],
+          ["Match chance … Home avatar", "The ten modes: a real match chance, a penalty shootout, trial penalties, trial free kicks, a training strike drill, the training gauntlet, five-a-side, the first-person dribble, Goalie Mode and the home-screen avatar."],
+        ],
+      },
+      {
+        group: "Match chance",
+        items: [
+          ["Cutback / One-on-one / Corner", "Which kind of chance to play. It is the real match, at the real size."],
+          ["Next chance ›", "A different chance of the same kind."],
+        ],
+      },
+      {
+        group: "Everything else",
+        items: [
+          ["(the mode itself)", "Plays exactly as it does in the game — same controls, same rules. Finishing one starts it again."],
+          ["Home avatar", "3D shows the home screen's avatar (A2). Classic shows the game's own figure, lit (A1)."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. No career is touched, Goalie Mode's bank here is pretend, and the Classic / 3D switch is forgotten when you leave.",
+    ],
+    inGame: [
+      "Nowhere yet — the real game still draws everyone in the Classic look.",
+      "To try 3D in a real career on one phone: Settings → Player Graphics → Player look → 3D (that phone only). Harry decides when it becomes everyone's look.",
+    ],
+    dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
+  },
+
   "/star-radar-dev": {
     title: "Match Radar",
     what: "Watch the match that runs behind your highlights — all ninety minutes, minute by minute: who has the ball, where it is, the momentum, and the moments that would be yours. It is the real unseen match, not a copy.",

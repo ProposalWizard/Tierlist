@@ -3207,6 +3207,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onToggleImmersive={immersive.toggle}
         onSetPenaltyRunup={handleSetPenaltyRunup}
         onSetFreeKickRunup={handleSetFreeKickRunup}
+        onExitCareer={handleExit}
       />
     );
   }

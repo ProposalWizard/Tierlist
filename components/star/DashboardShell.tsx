@@ -6,7 +6,12 @@ import { HomeFxStyles } from "./HomeFx";
 
 interface Props {
   career: CareerState;
-  onExit: () => void;
+  /** Leave the career for the rest of Knowitball. No longer on the header
+   *  (Harry, 28 Sep 2026: "the X in the top left should be replaced with a
+   *  home button and a back out completely should be in settings") — it is
+   *  the "Exit career" button at the bottom of Settings now. Kept on the
+   *  props so a caller that still passes it compiles. */
+  onExit?: () => void;
   children: React.ReactNode;
   onNavigate: (tab: NavTab) => void;
   onSettings: () => void;
@@ -33,17 +38,17 @@ interface Props {
    * above and below are left off. Header and bottom nav stay.
    */
   compact?: boolean;
-  /** Back to the Home swipe screen — the name pill in the header. There is no
+  /** Back to the Home swipe screen — the house button, top left. There is no
    *  Home button on the bottom bar (Harry, 28 Sep 2026: "remove Home"). */
   onHome?: () => void;
-  /** On one of the three swipe screens already. Off them, the name pill turns
-   *  green with a 🏠 so the way back is obvious. */
+  /** On one of the three swipe screens already. Off them, the house button
+   *  lights up green so the way back is obvious. */
   atHome?: boolean;
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false, onHome, atHome = false }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false, onHome, atHome = false }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -77,20 +82,24 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
           <>
             {/* Top header */}
             <div className="bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
-              <button onClick={onExit} className="w-8 h-8 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-lg">✕</button>
+              {/* Home, top left (was a red ✕ that left the career — that is
+                  "Exit career" at the bottom of Settings now). Lit green when
+                  you are off the home screens, so the way back is obvious. */}
               <button
-                data-home-pill
+                data-home-button
                 onClick={onHome ?? (() => onNavigate("home"))}
-                aria-label={atHome ? fullName : `Home — ${fullName}`}
-                className={`kib-press flex-1 mx-3 min-w-0 rounded-full py-1 px-3 font-black text-sm truncate border transition-colors ${
+                aria-label="Home"
+                className={`kib-press w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
                   atHome
-                    ? "bg-white/10 text-white border-white/20"
-                    : "bg-gradient-to-b from-emerald-400 to-emerald-600 text-white border-emerald-300/70 shadow-[0_0_14px_rgba(16,185,129,.55)]"
+                    ? "bg-gray-600 hover:bg-gray-500 border-transparent"
+                    : "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300/70 shadow-[0_0_12px_rgba(16,185,129,.55)]"
                 }`}
               >
-                {!atHome && <span className="mr-1.5">🏠</span>}
-                {fullName}
+                <HouseIcon />
               </button>
+              <div className="flex-1 mx-3 min-w-0 rounded-full py-1 px-3 font-black text-sm truncate border bg-white/10 text-white border-white/20 text-center">
+                {fullName}
+              </div>
               <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
                 <GearIcon />
               </button>
@@ -230,6 +239,16 @@ function HeartIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="#dc2626">
       <path d="M12 21s-7-4.5-9.5-9.5C.5 7 4 3 8 3c2 0 3.5 1 4 2 .5-1 2-2 4-2 4 0 7.5 4 5.5 8.5C19 16.5 12 21 12 21z" />
+    </svg>
+  );
+}
+
+function HouseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5.5 9v11h13V9" />
+      <path d="M10 20v-5.5h4V20" />
     </svg>
   );
 }

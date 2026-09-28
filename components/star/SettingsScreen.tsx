@@ -6,6 +6,7 @@ import type { SaveSlotSummary } from "@/lib/star/storage";
 import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { followedTeams, toggleFollowedTeam, devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
+import { storedFigureSkin, setStoredFigureSkin, type FigureSkin } from "@/lib/star/figureSkin";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
 import DevCareerPanel from "./DevCareerPanel";
@@ -54,6 +55,10 @@ interface Props {
   /** Equip a penalty run-up / a free-kick run-up you own (lib/star/runupStyles.ts). */
   onSetPenaltyRunup?: (id: PenaltyRunupId) => void;
   onSetFreeKickRunup?: (id: FreeKickRunupId) => void;
+  /** Leave the career for the rest of Knowitball — the old red ✕ from the
+   *  header (Harry, 28 Sep 2026: "a back out completely should be in
+   *  settings"). The same handler, so it asks first and the save stays. */
+  onExitCareer?: () => void;
 }
 
 export default function SettingsScreen({
@@ -61,9 +66,13 @@ export default function SettingsScreen({
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
-  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup,
+  immersiveActive, onToggleImmersive, onSetPenaltyRunup, onSetFreeKickRunup, onExitCareer,
 }: Props) {
   const [postMatchReactions, setPostMatchReactions] = useState(() => getPostMatchReactionsEnabled());
+  // The player look (lib/star/figureSkin.ts): Classic for everyone until
+  // Harry says otherwise; this switch is for trying 3D on this device.
+  const [look, setLook] = useState<FigureSkin>(() => storedFigureSkin());
+  const pickLook = (s: FigureSkin) => { setLook(s); setStoredFigureSkin(s); };
 
   const togglePostMatchReactions = () => {
     const next = !postMatchReactions;
@@ -277,6 +286,21 @@ export default function SettingsScreen({
             Real photos and the seven fake faces are different images with different framing, so each gets its own size/position/crop — pick the one you want to tune.
           </p>
 
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-black text-white/90">Player look (test)</span>
+            <div className="flex overflow-hidden rounded-full border border-gray-600">
+              {(["classic", "3d"] as const).map((s) => (
+                <button key={s} onClick={() => pickLook(s)}
+                  className={`px-3 py-1 text-[11px] font-black ${look === s ? "bg-emerald-500 text-emerald-950" : "text-white/80"}`}>
+                  {s === "3d" ? "3D" : "Classic"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-[10px] font-semibold text-white/55">
+            3D draws every player with shading, kit folds, boots and a fitted face. This phone only.
+          </p>
+
           <label className="mt-3 flex items-center justify-between gap-2">
             <span className="text-[11px] font-black text-white/90">Player faces</span>
             <input type="checkbox" checked={faceStyle.facesEnabled}
@@ -304,6 +328,21 @@ export default function SettingsScreen({
           onSaveReplay={onSaveReplay}
           onDeleteSavedReplay={onDeleteSavedReplay}
         />
+
+        {onExitCareer && (
+          <div className="mt-5 mb-2">
+            <button
+              data-exit-career
+              onClick={onExitCareer}
+              className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-black text-white shadow"
+            >
+              Exit career — back to Knowitball
+            </button>
+            <p className="mt-1.5 text-center text-[10px] font-semibold text-white/60">
+              Your career stays saved. You come back to exactly this.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
