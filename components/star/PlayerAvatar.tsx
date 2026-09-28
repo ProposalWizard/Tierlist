@@ -35,6 +35,7 @@ import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { compositeLit, paintHeroFigure, paintHeroShadow, HERO_W, HERO_H, HERO_TOP, HERO_CREST, type AvatarStyle } from "@/lib/star/heroFigure";
 import { fitImage, getFittedHead } from "@/lib/star/faceFit";
 import ClubBadge from "./ClubBadge";
+import { useScannedPortrait } from "./useScannedPortrait";
 
 /** The colour of the rim light on the far side: the shirt, or the trim when
  *  the shirt is white (a white rim on a white shirt is invisible). */
@@ -86,7 +87,10 @@ export default function PlayerAvatar({ career, width, height, ball = true, class
   const club = career.player.club;
   const kit = kitsOf(club, career.clubKits?.[club]).home;
   const skin = skinToneHex(career.player.skinTone);
-  const faceUrl = career.player.portrait ?? DEFAULT_FAKE_FACE;
+  // An old save's photo is face-scanned once, the first time it is shown
+  // (useScannedPortrait); until then the old photo is used as before.
+  const scanned = useScannedPortrait(career.player.portrait);
+  const faceUrl = scanned ?? career.player.portrait ?? DEFAULT_FAKE_FACE;
   const number = career.squadNumber ?? null;
   const fitOn = useFaceFit() && look === "A2";
   // Bumped when the readable copy of the face has loaded, so the fitted
