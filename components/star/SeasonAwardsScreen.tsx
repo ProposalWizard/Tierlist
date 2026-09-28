@@ -7,6 +7,8 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { formationOf } from "@/lib/star/formations";
 import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { Burst, PressButton, Shine, clubTheme } from "./ui";
+import { Screen, Rays, Kicker, SectionLabel } from "./ui/Screen";
 
 /**
  * WHAT THE SEASON HANDED OUT.
@@ -64,13 +66,17 @@ const TROPHY_ICON: Record<string, string> = {
   "Community Shield": "🛡️", "Super Cup": "🛡️",
 };
 
-function TrophyCard({ competition, club, isYou }: {
-  competition: string; club: string | null; isYou: boolean;
+function TrophyCard({ competition, club, isYou, index }: {
+  competition: string; club: string | null; isYou: boolean; index: number;
 }) {
   return (
-    <div className={`rounded-xl border p-2.5 ${isYou ? "border-amber-400/50 bg-amber-500/10" : "border-white/12 bg-white/[0.04]"}`}>
+    <div
+      className="kit-card kit-rise relative overflow-hidden p-2.5"
+      style={{ animationDelay: `${150 + index * 90}ms`, ...(isYou ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6), 0 0 22px rgba(251,191,36,.25)" } : {}) }}
+    >
+      {isYou && <Shine trigger={1} />}
       <div className="text-[9px] font-black uppercase tracking-widest text-amber-300/90">
-        <span className="mr-1 inline-flex align-middle"><TrophyImage name={competition} height={22} fallback={TROPHY_ICON[competition] ?? "🏆"} /></span>{competition}
+        <span className="kit-trophy-in mr-1 inline-flex align-middle" style={{ animationDelay: `${220 + index * 90}ms` }}><TrophyImage name={competition} height={22} fallback={TROPHY_ICON[competition] ?? "🏆"} /></span>{competition}
       </div>
       {club ? (
         <div className="mt-1.5 flex items-center gap-1.5">
@@ -94,12 +100,16 @@ const AWARD_META: Record<string, { label: string; icon: string; unit: string }> 
   youngPlayerOfSeason: { label: "Young Player of the Season", icon: "💎", unit: "votes" },
 };
 
-function AwardCard({ id, winner }: { id: keyof typeof AWARD_META; winner: AwardWinner | null }) {
+function AwardCard({ id, winner, index }: { id: keyof typeof AWARD_META; winner: AwardWinner | null; index: number }) {
   const meta = AWARD_META[id];
   return (
-    <div className={`rounded-xl border p-3 ${winner?.isYou ? "border-amber-400/50 bg-amber-500/10" : "border-white/12 bg-white/[0.04]"}`}>
+    <div
+      className="kit-card kit-rise relative overflow-hidden p-3"
+      style={{ animationDelay: `${700 + index * 110}ms`, ...(winner?.isYou ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6), 0 0 22px rgba(251,191,36,.25)" } : {}) }}
+    >
+      {winner?.isYou && <Shine trigger={1} />}
       <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300/90">
-        <TrophyImage name={meta.label} height={22} fallback={meta.icon} /> {meta.label}
+        <span className="kit-trophy-in inline-flex" style={{ animationDelay: `${780 + index * 110}ms` }}><TrophyImage name={meta.label} height={22} fallback={meta.icon} /></span> {meta.label}
       </div>
       {winner ? (
         <div className="mt-1.5 flex items-center gap-2">
@@ -136,8 +146,8 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
         <div className="text-[9px] font-bold text-white">{formation.name}</div>
       </div>
       <div
-        className="relative aspect-[3/4] overflow-hidden rounded-xl border-2 border-emerald-900/70"
-        style={{ background: "linear-gradient(#1f9006,#187406)" }}
+        className="relative aspect-[3/4] overflow-hidden rounded-2xl"
+        style={{ background: "repeating-linear-gradient(180deg, #1f7a3a 0 9%, #1a6d33 9% 18%)", boxShadow: "inset 0 0 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12), 0 12px 26px -12px rgba(0,0,0,.9)" }}
       >
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-x-0 top-1/2 h-px bg-white/30" />
@@ -156,6 +166,7 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
             style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%`, width: "26%" }}
             title={`${m.name} — ${shortClub(m.club)}`}
           >
+            <div className="kit-rise flex w-full flex-col items-center" style={{ animationDelay: `${1300 + i * 70}ms` }}>
             <div className="relative">
               <ImageWithFallback
                 src={faceOrFake(m.image, m.name)}
@@ -178,6 +189,7 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
                 {shortClub(m.club)}
               </span>
             </div>
+            </div>
           </div>
         ))}
       </div>
@@ -189,46 +201,52 @@ export default function SeasonAwardsScreen({ career, onContinue }: Props) {
   const stats = career.lastSeasonAwardStats;
   if (!stats) return null;
   const trophies = trophyWinners(career, stats);
+  const theme = clubTheme(career.player.club, career);
+  const youWon = trophies.some(t => t.isYou)
+    || [stats.goldenBoot, stats.assistKing, stats.goldenGlove, stats.playerOfSeason, stats.youngPlayerOfSeason].some(w => w?.isYou);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-950 via-gray-950 to-gray-950 px-3 py-5 text-white">
-      <div className="mx-auto w-full max-w-md">
-        <div className="text-center">
-          <div className="inline-block rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-300">
-            Season {stats.season}
-          </div>
-          <h1 className="mt-2 text-2xl font-black">Season Awards</h1>
+    <Screen glow="#d4a017" tone={theme.glow} className="max-w-md px-3 py-5">
+      <div className="relative w-full">
+        <div className="relative text-center">
+          <Rays color="#fde68a" size={260} className="top-[55%]" />
+          {youWon && <Burst colors={[theme.shirt, theme.trim, "#fde047", "#ffffff"]} count={26} className="left-1/2 top-[60%]" />}
+          <div className="relative"><Kicker color="#fcd34d">Season {stats.season}</Kicker></div>
+          <h1
+            className="kit-drop-in kit-text-shine relative mt-2 pr-1 text-[30px] font-black italic uppercase leading-none"
+            style={{ backgroundImage: "linear-gradient(100deg,#fde68a 20%,#ffffff 45%,#fbbf24 60%,#fde68a 80%)", filter: "drop-shadow(0 3px 0 rgba(0,0,0,.5))" }}
+          >
+            Season Awards
+          </h1>
         </div>
 
         <div className="mt-4">
-          <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300/90">Trophies</div>
+          <SectionLabel className="mb-1.5 text-amber-300/90">Trophies</SectionLabel>
           <div className="grid grid-cols-2 gap-2">
-            {trophies.map(t => (
-              <TrophyCard key={t.competition} competition={t.competition} club={t.club} isYou={t.isYou} />
+            {trophies.map((t, i) => (
+              <TrophyCard key={t.competition} competition={t.competition} club={t.club} isYou={t.isYou} index={i} />
             ))}
           </div>
         </div>
 
         <div className="mt-4 space-y-2">
-          <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300/90">{stats.leagueName} Awards</div>
-          <AwardCard id="goldenBoot" winner={stats.goldenBoot} />
-          <AwardCard id="assistKing" winner={stats.assistKing} />
-          <AwardCard id="goldenGlove" winner={stats.goldenGlove} />
-          <AwardCard id="playerOfSeason" winner={stats.playerOfSeason} />
-          <AwardCard id="youngPlayerOfSeason" winner={stats.youngPlayerOfSeason} />
+          <SectionLabel className="mb-1.5 text-amber-300/90">{stats.leagueName} Awards</SectionLabel>
+          <AwardCard id="goldenBoot" winner={stats.goldenBoot} index={0} />
+          <AwardCard id="assistKing" winner={stats.assistKing} index={1} />
+          <AwardCard id="goldenGlove" winner={stats.goldenGlove} index={2} />
+          <AwardCard id="playerOfSeason" winner={stats.playerOfSeason} index={3} />
+          <AwardCard id="youngPlayerOfSeason" winner={stats.youngPlayerOfSeason} index={4} />
         </div>
 
         <div className="mt-4">
           <TeamOfSeasonPitch career={career} />
         </div>
 
-        <button
-          onClick={onContinue}
-          className="mt-4 w-full rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 py-3 text-sm font-black uppercase tracking-widest text-emerald-950 shadow-[0_6px_16px_-2px_rgba(16,185,129,0.5)] transition hover:brightness-105 active:scale-[0.99]"
-        >
+        <PressButton variant="primary" size="lg" pulse onClick={onContinue} className="relative mt-4 w-full overflow-hidden">
+          <Shine loop every={5} />
           Continue
-        </button>
+        </PressButton>
       </div>
-    </div>
+    </Screen>
   );
 }
