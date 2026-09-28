@@ -20,7 +20,8 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import DashboardStats from "./DashboardStats";
 import ClubBadge from "./ClubBadge";
-import { Form } from "./HomeHub";
+import { sortLeague } from "@/lib/star/season";
+import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
 
 type Tab = "season" | "all" | "records";
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -29,7 +30,7 @@ const seasonLabel = (c: CareerState, s: number) => {
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 };
 
-export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void }) {
+export default function StatsTabs({ career, onRenew, onOpen, onLeague }: { career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void; onLeague?: () => void }) {
   const [tab, setTab] = useState<Tab>("season");
   return (
     <div className="pb-2">
@@ -46,8 +47,8 @@ export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerS
       </div>
       {tab === "season" && (
         <div className="space-y-2">
+          <LeagueCard career={career} onLeague={onLeague} />
           <DashboardStats career={career} onRenew={onRenew} />
-          <Form career={career} />
         </div>
       )}
       {tab === "all" && <AllSeasons career={career} />}
@@ -58,6 +59,52 @@ export default function StatsTabs({ career, onRenew, onOpen }: { career: CareerS
           <button onClick={() => onOpen("trophies")} className="rounded-xl border border-white/10 bg-gray-800/80 py-2 text-[11px] font-black text-white">🏆 Trophy cabinet →</button>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * WHERE YOU ARE IN THE LEAGUE — Harry, 28 Sep 2026: League moves to the bottom
+ * bar, "and then in the stats section keep league there". Your position and
+ * points and the clubs either side of you, with the full table one tap away.
+ * (Last 5 moved back to Home, under the next match.)
+ */
+function LeagueCard({ career, onLeague }: { career: CareerState; onLeague?: () => void }) {
+  const table = sortLeague(career.league);
+  const me = table.findIndex((t) => t.name === career.player.club);
+  if (me < 0) return null;
+  const from = Math.max(0, Math.min(me - 2, table.length - 5));
+  const rows = table.slice(from, from + 5);
+  const pos = me + 1;
+  const suffix = pos % 10 === 1 && pos !== 11 ? "st" : pos % 10 === 2 && pos !== 12 ? "nd" : pos % 10 === 3 && pos !== 13 ? "rd" : "th";
+  return (
+    <div className="mt-2 rounded-2xl border border-white/10 bg-gray-800/80 p-2.5">
+      <div className="flex items-center justify-between">
+        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">{leagueNameFor(divisionOf(career))}</div>
+        {onLeague && (
+          <button onClick={onLeague} className="kib-press rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white/85">Full table →</button>
+        )}
+      </div>
+      <div className="mt-1.5 flex items-center gap-3">
+        <div className="shrink-0 text-center">
+          <div className="text-[30px] font-black leading-none tabular-nums text-yellow-300">{pos}<span className="text-[14px]">{suffix}</span></div>
+          <div className="mt-0.5 text-[10px] font-black tabular-nums text-white/70">{table[me].points} pts</div>
+        </div>
+        <div className="min-w-0 flex-1">
+          {rows.map((t, i) => {
+            const n = from + i + 1, you = t.name === career.player.club;
+            return (
+              <div key={t.name} className={`flex items-center gap-1.5 rounded-md px-1.5 py-[3px] text-[11px] font-bold ${you ? "bg-yellow-500/20 text-white ring-1 ring-yellow-400/40" : "text-white/80"}`}>
+                <span className="w-4 text-right tabular-nums text-white/55">{n}</span>
+                <ClubBadge club={t.name} kit={kitsOf(t.name).home} size={14} />
+                <span className="min-w-0 flex-1 truncate">{short(t.name)}</span>
+                <span className="w-5 text-right tabular-nums text-white/55">{t.played}</span>
+                <span className={`w-6 text-right font-black tabular-nums ${you ? "text-yellow-200" : "text-white"}`}>{t.points}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
