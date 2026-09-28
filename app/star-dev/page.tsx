@@ -103,6 +103,7 @@ import PostMatch from "@/components/star/PostMatch";
 import CupDrawReveal, { type DrawRound } from "@/components/star/CupDrawReveal";
 import DeadlineDayRoundup from "@/components/star/DeadlineDayRoundup";
 import SettingsScreen from "@/components/star/SettingsScreen";
+import TitleScreen, { titleScreenSkipped } from "@/components/star/TitleScreen";
 import FaceEditorScreen from "@/components/star/FaceEditorScreen";
 import FakeFaceEditorScreen from "@/components/star/FakeFaceEditorScreen";
 import MediaFeed from "@/components/star/MediaFeed";
@@ -360,6 +361,25 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // doesn't already change career/phase/activeSlot on its own — deleting a
   // save that ISN'T the one on screen. See handleDeleteSave.
   const [, bumpSaves] = useState(0);
+  /**
+   * THE TITLE SCREEN (TitleScreen.tsx) — shown in front of whatever the
+   * load decided, every time the game opens, and again from Settings'
+   * "Main menu". Held as its own flag rather than a StarPhase on purpose:
+   * the phase is what a refresh resumes (saveStarPhase), and writing
+   * "title" into it would wipe a pending Ballon d'Or or contract. Continue
+   * just lowers the flag, so the game carries on exactly as today's load
+   * left it.
+   */
+  const [titleOpen, setTitleOpen] = useState(true);
+  /** Settings opened FROM the title: its back button returns there, to the
+   *  phase the game was on underneath. */
+  const [settingsFromTitle, setSettingsFromTitle] = useState<StarPhase | null>(null);
+  useEffect(() => { if (titleScreenSkipped()) setTitleOpen(false); }, []);
+  // Left Settings some other way (switched save, a face editor's own exit):
+  // its back button goes home again, not to the title.
+  useEffect(() => {
+    if (settingsFromTitle && phase !== "settings" && phase !== "face-editor" && phase !== "fake-face-editor") setSettingsFromTitle(null);
+  }, [phase, settingsFromTitle]);
 
   useEffect(() => {
     const init = async () => {
@@ -1900,6 +1920,35 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     }
   }, [resetTransientState]);
 
+  // ── The title screen's choices ── each one is an existing handler; the
+  // title only decides where to go.
+  const handleTitleNewGame = useCallback((slot: number) => {
+    setTitleOpen(false);
+    if (slot === activeSlotRef.current && !career) { setPhase("profile-setup"); return; }
+    handleStartNewInSlot(slot);
+  }, [career, handleStartNewInSlot]);
+  const handleTitleLoad = useCallback((slot: number) => {
+    setTitleOpen(false);
+    if (slot !== activeSlotRef.current) handleSwitchSave(slot);
+  }, [handleSwitchSave]);
+  const handleTitleSettings = useCallback(() => {
+    setSettingsFromTitle(phase === "settings" ? "dashboard" : phase);
+    setTitleOpen(false);
+    setPhase("settings");
+  }, [phase]);
+  const handleExitToTitle = useCallback(() => {
+    if (settingsFromTitle) {
+      setPhase(settingsFromTitle);
+      setSettingsFromTitle(null);
+    } else if (career && !hasClub(career)) {
+      setPhase(clublessPhaseFor(career));
+    } else {
+      setActiveNav("home");
+      setPhase("dashboard");
+    }
+    setTitleOpen(true);
+  }, [settingsFromTitle, career]);
+
   const handleFullReset = useCallback(() => {
     if (career?.retired || confirm("Delete this career and start over?")) {
       clearCareer(slotScope(scopeRef.current, activeSlotRef.current));
@@ -2475,6 +2524,22 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </a>
         </div>
       </div>
+    );
+  }
+
+  if (titleOpen) {
+    return (
+      <TitleScreen
+        career={career}
+        saves={listSaveSlots(scopeRef.current)}
+        activeSlot={activeSlot}
+        onContinue={() => setTitleOpen(false)}
+        onNewGameInSlot={handleTitleNewGame}
+        onLoadSlot={handleTitleLoad}
+        onDeleteSlot={handleDeleteSave}
+        onSettings={career ? handleTitleSettings : undefined}
+        showPlayArea={offlineDevPlayEnabled()}
+      />
     );
   }
 
@@ -3180,7 +3245,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <SettingsScreen
         career={career}
-        onBack={handleBackFromSettings}
+        onBack={settingsFromTitle ? handleExitToTitle : handleBackFromSettings}
+        onExitToTitle={handleExitToTitle}
         onSkip={handleDevSkip}
         onAddMoney={handleAddMoney}
         onAddCoins={handleAddCoins}

@@ -21,6 +21,8 @@ import {
 interface Props {
   career: CareerState;
   onBack: () => void;
+  /** Back to the title screen (Continue / New Game / Load Game). */
+  onExitToTitle?: () => void;
   onSkip: (target: SkipTarget) => void;
   onAddMoney: (amount: number) => void;
   /** Dev: top up the Store's Coins (lib/star/store/career.ts). */
@@ -57,7 +59,7 @@ interface Props {
 }
 
 export default function SettingsScreen({
-  career, onBack, onSkip, onAddMoney, onAddCoins,
+  career, onBack, onExitToTitle, onSkip, onAddMoney, onAddCoins,
   onSetCaptain, onSetReputation, onSetFame, onMaxSkills, onUnlockTraining, onSetHappiness, onSwitchClub,
   onSetPortrait, onWatchReplay, onSaveReplay, onDeleteSavedReplay,
   onRefreshPhotos, onOpenFaceEditor, onOpenFakeFaceEditor, saves, activeSlot, onSwitchSave, onStartNewInSlot, onDeleteSave,
@@ -94,12 +96,22 @@ export default function SettingsScreen({
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="mx-auto max-w-md px-3 py-3">
-        <button
-          onClick={onBack}
-          className="mb-3 flex items-center gap-1 px-3 py-1.5 bg-gray-700 rounded-lg text-xs font-black text-white hover:bg-gray-600"
-        >
-          ← Home
-        </button>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 rounded-lg text-xs font-black text-white hover:bg-gray-600"
+          >
+            ← Home
+          </button>
+          {onExitToTitle && (
+            <button
+              onClick={onExitToTitle}
+              className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-black text-white hover:bg-white/10"
+            >
+              ⌂ Main menu
+            </button>
+          )}
+        </div>
         <h1 className="text-lg font-black">Settings</h1>
 
         <div className="mt-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
