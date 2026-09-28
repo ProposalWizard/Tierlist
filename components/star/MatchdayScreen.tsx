@@ -13,7 +13,7 @@
  *   1. the match-day hero: both crests big, competition and round, the date
  *      and how far away, home/away, the ground, the crowd and the weather,
  *      under floodlights in both clubs' colours;
- *   2. your status: selection, position, energy and fitness as bars, small
+ *   2. your status: selection, position, energy and sharpness as bars, small
  *      warning pills, the KIB cans (Use / Buy) right under energy, and who is
  *      on penalties;
  *   3. the opposition: their last five, where they sit, their key man, your
@@ -167,7 +167,8 @@ export default function MatchdayScreen(p: Props) {
               )}
             </div>,
             <div key="scout" className="space-y-2.5 pb-4">
-              <div className="kib-rise" style={rise(0)}>
+              <div className="kib-rise" style={rise(0)}><Conditions career={career} fixture={nextFixture} /></div>
+              <div className="kib-rise" style={rise(1)}>
                 {intl ? (
                   <div className="rounded-2xl p-4 text-center text-[12px] font-bold text-white/70" style={cardStyle(glow)}>
                     No scout report for an international — {short(nextFixture.opponent)} are a nation, not a squad on file.
@@ -218,18 +219,19 @@ export default function MatchdayScreen(p: Props) {
                 : status === "Substitute" ? "Take your place on the bench ⚽" : "Play Match ⚽"}
             </button>
           )}
-        </div>
-        {/* Item 36: sim it instead of playing it — starter or sub. */}
-        {(status === "1st Team" || status === "Substitute") && (
-          <div className="mx-auto mt-2 w-full max-w-md">
+          {/* Item 36: sim it instead of playing it — starter or sub. One row
+              with the main button, so the screen above it gets the height. */}
+          {(status === "1st Team" || status === "Substitute") && (
             <button
               onClick={p.onSimMatch}
-              className="kib-press h-10 w-full rounded-xl bg-sky-500/10 text-[13px] font-black text-sky-200 ring-1 ring-sky-300/35"
+              aria-label="Sim this match"
+              className="kib-press flex w-[74px] shrink-0 flex-col items-center justify-center rounded-2xl bg-sky-500/10 leading-tight text-sky-200 ring-1 ring-sky-300/35"
             >
-              ⏩ Sim this match
+              <span className="text-[13px] font-black">⏩ Sim</span>
+              <span className="text-[9.5px] font-bold text-sky-200/75">this match</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </FullHeight>
   );
@@ -268,98 +270,93 @@ function FullHeight({ children }: { children: React.ReactNode }) {
 // ── 1. The match-day hero ───────────────────────────────────────────────────
 
 function Hero({ career, fixture, mine }: { career: CareerState; fixture: Fixture; mine: string }) {
+  // Harry, 28 Sep 2026: "doesnt need to be nearly as big because its also in
+  // the home screen" — one compact band, so the role card, energy and the
+  // cans all show above the pinned bar. The ground, crowd and weather live on
+  // the Scout page now (Conditions).
   const home = fixture.home ? mine : fixture.opponent;
   const away = fixture.home ? fixture.opponent : mine;
   const kits = kitsFor(home, away);
   const hg = glowOf(kits.home.shirt, kits.home.trim), ag = glowOf(kits.away.shirt, kits.away.trim);
-  // Whoever is HOME hosts it.
-  const ground = groundFor(home);
-  const crowd = crowdFor(home, fixture.week);
-  const wx = conditionsFor(career.season, fixture.week, career.homeCity);
   // Europe's three nights get the UEFA-branded photo; everything else the
-  // ordinary floodlit ground (see git history for why both were re-cropped).
+  // ordinary floodlit ground.
   const europe = fixture.competition === "Champions League" || fixture.competition === "Europa League" || fixture.competition === "Super Cup";
   const photo = europe ? "/star/stadium-europe.png" : "/star/stadium-domestic.png";
   const date = fixtureDateLabel(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
   const league = !fixture.kind || fixture.kind === "league";
-  const comp = league ? `${leagueNameFor(divisionOf(career))} · Week ${fixture.week}`
-    : fixture.round && fixture.kind !== "international" ? `${fixture.competition ?? "Cup"} · Week ${fixture.week}` : fixtureLabel(fixture);
+  const comp = league ? `${leagueNameFor(divisionOf(career))} · Wk ${fixture.week}`
+    : fixture.round && fixture.kind !== "international" ? `${fixture.competition ?? "Cup"}` : fixtureLabel(fixture);
   const pill = league
     ? "bg-yellow-400/15 text-yellow-200 ring-yellow-300/35"
     : fixture.kind === "international" ? "bg-sky-400/15 text-sky-200 ring-sky-300/35" : "bg-violet-400/15 text-violet-200 ring-violet-300/35";
-  const title = fixture.derby ? "Derby Day" : !league && fixture.kind !== "international" && fixture.round ? fixture.round : "Match Day";
+  // The derby or the round is a small tag now, not a headline.
+  const tag = fixture.derby ? "Derby" : !league && fixture.kind !== "international" && fixture.round ? fixture.round : null;
 
   return (
     <div
       className="relative overflow-hidden rounded-2xl"
+      title={fixture.derby ? "The one that counts. Everything is worth more today." : undefined}
       style={{
-        backgroundImage: `radial-gradient(80% 90% at 0% 60%, ${rgba(hg, 0.5)} 0%, transparent 60%), radial-gradient(80% 90% at 100% 60%, ${rgba(ag, 0.5)} 0%, transparent 60%), linear-gradient(180deg, rgba(6,10,20,.55) 0%, rgba(6,10,20,.25) 40%, rgba(6,10,20,.85) 100%), url(${photo})`,
+        backgroundImage: `radial-gradient(70% 120% at 0% 60%, ${rgba(hg, 0.5)} 0%, transparent 62%), radial-gradient(70% 120% at 100% 60%, ${rgba(ag, 0.5)} 0%, transparent 62%), linear-gradient(180deg, rgba(6,10,20,.55), rgba(6,10,20,.8)), url(${photo})`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(255,255,255,.08), 0 12px 26px -14px rgba(0,0,0,.9), 0 2px 6px rgba(0,0,0,.35)",
+        backgroundPosition: "center 35%",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(255,255,255,.08), 0 10px 22px -14px rgba(0,0,0,.9)",
       }}
     >
       <Floodlights />
-      <div className="relative px-3 pb-2.5 pt-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className={`truncate rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] ring-1 ${pill}`}>{comp}</span>
+      <div className="relative px-2.5 pb-2 pt-2">
+        <div className="flex items-center gap-1.5">
+          <span className={`min-w-0 truncate rounded-full px-2 py-[1px] text-[9.5px] font-black uppercase tracking-[0.12em] ring-1 ${pill}`}>
+            {/* A narrow phone gets the short name, so the tags still fit. */}
+            {league ? <><span className="min-[380px]:hidden">{competitionAbbrev(fixture, divisionOf(career))} · Wk {fixture.week}</span><span className="hidden min-[380px]:inline">{comp}</span></> : comp}
+          </span>
+          {tag && (
+            <span className={`shrink-0 truncate rounded-full px-2 py-[1px] text-[9.5px] font-black uppercase tracking-wider ${fixture.derby ? "bg-red-500/25 text-red-200 ring-1 ring-red-400/40" : "bg-white/10 text-white/85 ring-1 ring-white/15"}`}>
+              {fixture.derby ? "🔥 " : ""}{tag}
+            </span>
+          )}
           {/* The game has no kick-off times, so no time is shown — only that
               this is the one you are about to play. */}
-          <span className="shrink-0 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-950" style={{ boxShadow: "0 0 10px rgba(251,191,36,.55)" }}>⚽ Kick-off</span>
+          <span className="ml-auto shrink-0 rounded-full bg-amber-400 px-2 py-[1px] text-[9.5px] font-black uppercase tracking-wider text-gray-950" style={{ boxShadow: "0 0 10px rgba(251,191,36,.5)" }}>⚽ Kick-off</span>
         </div>
-        <div className="mt-1.5 text-center text-[22px] font-black uppercase italic leading-none tracking-tight text-white" style={{ textShadow: "0 2px 10px rgba(0,0,0,.7)" }}>
-          {title}
-        </div>
-        {fixture.derby && (
-          <div className="mt-0.5 text-center text-[11px] font-bold text-red-300">The one that counts. Everything is worth more today.</div>
-        )}
-        <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1">
-          <HeroSide club={home} kit={kits.home} tag="Home" you={home === mine} />
-          <div className="flex flex-col items-center px-1">
+        <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+          <HeroSide club={home} kit={kits.home} side="left" you={home === mine} />
+          <div className="flex flex-col items-center">
             <span
-              className="bg-gradient-to-b from-white to-white/55 bg-clip-text text-[30px] font-black italic leading-none tracking-tighter text-transparent"
-              style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.7))" }}
+              className="bg-gradient-to-b from-white to-white/55 bg-clip-text text-[20px] font-black italic leading-none tracking-tighter text-transparent"
+              style={{ filter: "drop-shadow(0 2px 5px rgba(0,0,0,.7))" }}
             >VS</span>
-            <span className="mt-1 whitespace-nowrap text-[12px] font-black text-white" style={{ textShadow: "0 1px 4px rgba(0,0,0,.8)" }}>{date}</span>
+            <span className="mt-0.5 whitespace-nowrap text-[10px] font-black text-white/85">{date}</span>
           </div>
-          <HeroSide club={away} kit={kits.away} tag="Away" you={away === mine} />
+          <HeroSide club={away} kit={kits.away} side="right" you={away === mine} />
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
-          <Chip>🏟️ {ground.name}</Chip>
-          <Chip>👥 {crowd.toLocaleString()}</Chip>
-          <Chip>{WEATHER_ICON[wx.weather]} {wx.label}</Chip>
-        </div>
-        {wx.weather !== "clear" && (
-          <div className="mt-1 text-center text-[10px] font-bold leading-snug text-white/70">{wx.note}</div>
-        )}
       </div>
     </div>
   );
 }
 
-function HeroSide({ club, kit, tag, you }: { club: string; kit: { shirt: string; trim: string }; tag: string; you: boolean }) {
-  return (
-    <div className="flex min-w-0 flex-col items-center">
-      <div className="relative grid h-[68px] w-[68px] place-items-center">
-        <div className="absolute inset-1 rounded-full blur-md" style={{ background: rgba(glowOf(kit.shirt, kit.trim), 0.6) }} />
-        <div className="relative" style={{ filter: "drop-shadow(0 4px 6px rgba(0,0,0,.6))" }}>
-          <ClubBadge club={club} kit={kit} size={60} />
-        </div>
-      </div>
-      <div className="mt-0.5 w-full truncate text-center text-[14px] font-black text-white" style={{ textShadow: "0 1px 4px rgba(0,0,0,.8)" }}>{short(club)}</div>
-      <div className="flex items-center gap-1">
-        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">{tag}</span>
-        {you && <span className="rounded-full bg-emerald-400/20 px-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-300">You</span>}
+function HeroSide({ club, kit, side, you }: { club: string; kit: { shirt: string; trim: string }; side: "left" | "right"; you: boolean }) {
+  const crest = (
+    <div className="relative grid h-[42px] w-[42px] shrink-0 place-items-center">
+      <div className="absolute inset-1 rounded-full blur-md" style={{ background: rgba(glowOf(kit.shirt, kit.trim), 0.6) }} />
+      <div className="relative" style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,.6))" }}>
+        <ClubBadge club={club} kit={kit} size={40} />
       </div>
     </div>
   );
-}
-
-function Chip({ children }: { children: React.ReactNode }) {
+  const name = (
+    <div className={`min-w-0 ${side === "right" ? "text-right" : ""}`}>
+      <div className="truncate text-[13px] font-black leading-tight text-white" style={{ textShadow: "0 1px 4px rgba(0,0,0,.8)" }}>{short(club)}</div>
+      <div className={`flex items-center gap-1 ${side === "right" ? "justify-end" : ""}`}>
+        <span className="text-[8.5px] font-black uppercase tracking-widest text-white/55">{side === "left" ? "Home" : "Away"}</span>
+        {you && <span className="rounded-full bg-emerald-400/20 px-1 text-[8.5px] font-black uppercase tracking-widest text-emerald-300">You</span>}
+      </div>
+    </div>
+  );
   return (
-    <span className="max-w-full truncate rounded-full bg-black/45 px-2 py-0.5 text-[10.5px] font-bold text-white ring-1 ring-white/[.12] backdrop-blur-[2px]">
-      {children}
-    </span>
+    <div className={`flex min-w-0 items-center gap-1.5 ${side === "right" ? "justify-end" : ""}`}>
+      {side === "left" ? <>{crest}{name}</> : <>{name}{crest}</>}
+    </div>
   );
 }
 
@@ -389,16 +386,15 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
       : sel.status === "Injured"
         ? { label: "Injured", cls: "from-red-400 to-red-600 text-white", glow: "#dc2626" }
         : { label: "Out of squad", cls: "from-red-400 to-red-600 text-white", glow: "#dc2626" };
-  // Harry, 28 Sep 2026: "definitely don't hide all numbers like that" — the
-  // bench minute always shows. Only the sub LADDER stays developer info.
-  const subLine = sel.status === "Substitute" ? `Coming on around ${sel.onAt}'` : null;
+  // The bench minute is not shown (Harry, 28 Sep 2026: the badge alone is
+  // enough). The sub ladder below stays developer info.
 
   const boot = career.currentBoot;
   const pills: { text: string; tone: "warn" | "bad" | "ok" | "info" }[] = [];
-  if (!career.injury && preMatchEnergy < MIN_ENERGY_TO_SUB) pills.push({ text: "⚠ Too tired for the squad", tone: "bad" });
+  if (!career.injury && preMatchEnergy < MIN_ENERGY_TO_SUB) pills.push({ text: "⚠ Too tired for squad", tone: "bad" });
   else if (!career.injury && preMatchEnergy < MIN_ENERGY_TO_START) pills.push({ text: "⚠ Too tired to start", tone: "warn" });
   if (boot.matches <= 0) pills.push({ text: "🥾 Boots worn out", tone: "bad" });
-  else pills.push({ text: `🥾 ${boot.matches} match${boot.matches === 1 ? "" : "es"} left`, tone: boot.matches <= 2 ? "warn" : "info" });
+  else pills.push({ text: `🥾 ${boot.matches} left`, tone: boot.matches <= 2 ? "warn" : "info" });
   if (career.kibAbility?.curve) pills.push({ text: "🌀 Curve ready", tone: "ok" });
   if (career.kibAbility?.extraTouch) pills.push({ text: "👟 Touch ready", tone: "ok" });
 
@@ -415,7 +411,6 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
         </span>
         <PositionSelect career={career} playAs={p.playAs} onChange={p.onPlayAs} fixed={p.intl} />
       </div>
-      {subLine && <div className="mt-1.5 text-[11.5px] font-black text-amber-200">⏱ {subLine}</div>}
 
       {career.injury && (
         <div className="mt-2 flex items-center gap-2 rounded-xl bg-red-500/15 px-2.5 py-1.5 ring-1 ring-red-400/40">
@@ -447,42 +442,48 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
       )}
 
       {/* The two bars share one grid, so the labels, bars and numbers line up. */}
-      <div className="mt-3 grid grid-cols-[78px_1fr_40px] items-center gap-x-2 gap-y-2">
+      <div className="mt-2.5 grid grid-cols-[82px_1fr_40px] items-center gap-x-2">
         <Bar
-          label="⚡ Energy"
+          label="Energy"
           value={e}
           fill={e >= MIN_ENERGY_TO_START ? ["#34d399", "#a3e635"] : e >= MIN_ENERGY_TO_SUB ? ["#f59e0b", "#fde047"] : ["#dc2626", "#fb7185"]}
           marks={[MIN_ENERGY_TO_SUB, MIN_ENERGY_TO_START]}
         />
-        <Bar label="💪 Fitness" value={fit} fill={["#38bdf8", "#818cf8"]} />
-      </div>
-      <div className="mt-1 pl-[86px] text-[9px] font-bold text-white/45">
-        Lines: bench {MIN_ENERGY_TO_SUB}% · start {MIN_ENERGY_TO_START}%
-      </div>
-
-      <div className="kib-md-noscroll -mx-3 mt-2 flex gap-1.5 overflow-x-auto px-3">
-        {pills.map((pl) => (
-          <span
-            key={pl.text}
-            className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-black ring-1 ${
-              pl.tone === "bad" ? "bg-red-500/15 text-red-200 ring-red-400/40"
-                : pl.tone === "warn" ? "bg-amber-400/15 text-amber-200 ring-amber-300/40"
-                  : pl.tone === "ok" ? "bg-emerald-400/15 text-emerald-200 ring-emerald-300/40"
-                    : "bg-white/[0.07] text-white/80 ring-white/15"}`}
-          >
-            {pl.text}
-          </span>
-        ))}
+        <div className="col-span-2 col-start-2 mb-1.5 mt-0.5 text-[9px] font-bold text-white/45">
+          Lines: bench {MIN_ENERGY_TO_SUB}% · start {MIN_ENERGY_TO_START}%
+        </div>
+        {/* Harry, 28 Sep 2026: "fitness probably should be sharpness". The
+            label only — the field is still `matchFitness` (+3 a full match
+            played, −7 a week missed; careerFlow.ts / selection.ts). */}
+        <Bar label="Sharpness" value={fit} fill={["#38bdf8", "#818cf8"]} />
+        <div className="col-span-2 col-start-2 mt-0.5 text-[8.5px] font-bold leading-tight text-white/45">
+          Goes up by playing, drops each week you don&apos;t
+        </div>
       </div>
 
       {/* v0.15 item 28: a can before kick-off. Enough to clear the starting
           line and "On the bench" flips to "Starting XI" above, on the spot. */}
-      <div className="mt-3 flex items-baseline justify-between">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/55">KIB cans</span>
-        <span className="text-[10px] font-bold text-white/45">Drink one before kick-off</span>
+      {/* The warnings share the cans' header row: a can is what fixes the
+          first one. */}
+      <div className="mt-2.5 flex items-center gap-2">
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.2em] text-white/55">KIB cans</span>
+        <div className="kib-md-noscroll flex min-w-0 flex-1 justify-end gap-1.5 overflow-x-auto">
+          {pills.map((pl) => (
+            <span
+              key={pl.text}
+              className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-black ring-1 ${
+                pl.tone === "bad" ? "bg-red-500/15 text-red-200 ring-red-400/40"
+                  : pl.tone === "warn" ? "bg-amber-400/15 text-amber-200 ring-amber-300/40"
+                    : pl.tone === "ok" ? "bg-emerald-400/15 text-emerald-200 ring-emerald-300/40"
+                      : "bg-white/[0.07] text-white/80 ring-white/15"}`}
+            >
+              {pl.text}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="mt-1 grid grid-cols-3 gap-2">
-        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={p.onUseCan} onBuy={p.onBuyCan} />)}
+        {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={e} onUse={p.onUseCan} onBuy={p.onBuyCan} compact />)}
       </div>
 
       <PenaltyDutyLine career={career} fixture={nextFixture} status={sel.status} />
@@ -552,7 +553,7 @@ function Bar({ label, value, fill, marks = [] }: { label: string; value: number;
   }, [value]);
   return (
     <>
-      <span className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-white/70">{label}</span>
+      <span className="truncate text-[10px] font-black uppercase tracking-[0.05em] text-white/70">{label}</span>
       <div className="relative h-3.5 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06)" }}>
         <div
           className="kib-bar-fill relative h-full overflow-hidden rounded-full"
@@ -797,6 +798,24 @@ function FixtureRow({ career, f, next }: { career: CareerState; f: Fixture; next
       ) : f.round ? (
         <span className="max-w-[70px] shrink-0 truncate text-[9.5px] font-bold text-white/50">{f.round}</span>
       ) : null}
+    </div>
+  );
+}
+
+/** The ground, the crowd and the weather in full — the hero only has room
+ *  for one line of it. */
+function Conditions({ career, fixture }: { career: CareerState; fixture: Fixture }) {
+  const home = fixture.home ? (fixture.kind === "international" ? nationOf(career) : career.player.club) : fixture.opponent;
+  const ground = groundFor(home);
+  const crowd = crowdFor(home, fixture.week);
+  const wx = conditionsFor(career.season, fixture.week, career.homeCity);
+  return (
+    <div className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5" style={cardStyle("#38bdf8", 0.16)}>
+      <span className="text-[22px] leading-none">{WEATHER_ICON[wx.weather]}</span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[9.5px] font-black uppercase tracking-[0.16em] text-white/55">🏟️ {ground.name} · 👥 {crowd.toLocaleString()}</div>
+        <div className="text-[12px] font-black text-white">{wx.label}<span className="font-bold text-white/70"> — {wx.note}</span></div>
+      </div>
     </div>
   );
 }

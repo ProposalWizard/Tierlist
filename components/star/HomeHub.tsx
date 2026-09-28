@@ -410,7 +410,8 @@ function prefersReducedMotionSafe(): boolean {
   return typeof window !== "undefined" && prefersReducedMotion();
 }
 
-export function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void }) {
+/** `compact`: a shorter can picture, for the match-day screen (MatchdayScreen.tsx). */
+export function CanTile({ can: c, career, e, onUse, onBuy, compact = false }: { can: KibCan; career: CareerState; e: number; onUse: (id: KibCan["id"]) => void; onBuy: (can: KibCan) => void; compact?: boolean }) {
   const accent = ACCENT[c.id];
   const count = career.kibCans[c.id];
   const shownCount = useCountUp(count, 500);
@@ -441,11 +442,11 @@ export function CanTile({ can: c, career, e, onUse, onBuy }: { can: KibCan; care
       >
         ×{Math.round(shownCount)}
       </span>
-      <div className="relative h-[68px] w-full">
+      <div className={`relative w-full ${compact ? "h-[44px]" : "h-[68px]"}`}>
         <div className="absolute bottom-0 left-1/2 h-2 w-12 -translate-x-1/2 rounded-[50%] bg-black/60 blur-[3px]" />
         <div className="absolute bottom-0 left-1/2 h-10 w-12 -translate-x-1/2 rounded-full blur-lg" style={{ background: rgba(accent, 0.55) }} />
         <div key={drinking} className={`absolute inset-x-0 bottom-1 flex justify-center ${drinking ? "kib-shake" : ""}`} style={{ filter: `drop-shadow(0 4px 8px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
-          <KibCanIcon can={c} className="h-[64px] w-[38px]" />
+          <KibCanIcon can={c} className={compact ? "h-[42px] w-[25px]" : "h-[64px] w-[38px]"} />
         </div>
         {drinking > 0 && (
           <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">
