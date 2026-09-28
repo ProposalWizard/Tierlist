@@ -6,6 +6,8 @@ import { seasonStartYear } from "@/lib/star/calendar";
 import { FREE_AGENTS_CLUB } from "@/lib/star/leagueSquads";
 import { shortClub } from "@/lib/star/media/grammar";
 import { formatMoneyPrecise } from "@/lib/star/money";
+import { KitStyles, PressButton, Shine, CountUp } from "./ui";
+import { useLater } from "./ui/Screen";
 
 /**
  * DEADLINE DAY.
@@ -132,9 +134,11 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
   const totalSpend = Math.round((career.leagueTransferNews ?? []).reduce((sum, m) => sum + m.fee, 0) * 10) / 10;
   const windowKind = (career.lastTransferWindowKey ?? "").split("-")[1];
   const windowLabel = WINDOW_LABEL[windowKind] ?? "Transfer Window";
+  const countIn = useLater(500);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-[#0a0a0d]">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#070b16]">
+      <KitStyles />
       {/*
         Everything below lives inside this one narrow column — the same
         max-w-md rectangle every other screen in this game mode runs in
@@ -154,13 +158,18 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
             gold cut across it at an angle, arrow shapes reinforcing the
             same diagonal. ── */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* The night sky and crowd of the home screen, under the gold. */}
+          <div className="absolute inset-0" style={{ background: "radial-gradient(90% 50% at 30% -5%, rgba(245,197,24,.22), transparent 70%), linear-gradient(180deg,#070b16,#0a1020 60%,#05070d)" }} />
+          <div className="absolute inset-x-0 top-[4%] h-[30%] opacity-30" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,.3) 0.9px, transparent 1.4px)", backgroundSize: "7px 6px", maskImage: "linear-gradient(180deg, transparent, #000 30%, #000 50%, transparent)", WebkitMaskImage: "linear-gradient(180deg, transparent, #000 30%, #000 50%, transparent)" }} />
           <div
-            className="absolute inset-y-0 right-0 w-[52%]"
+            className="kit-fade absolute inset-y-0 right-0 w-[52%] overflow-hidden"
             style={{
               background: "linear-gradient(115deg, #d99a00 0%, #f5c518 38%, #ffe066 62%, #f0b400 100%)",
               clipPath: "polygon(22% 0, 100% 0, 100% 100%, 0% 100%)",
             }}
-          />
+          >
+            <Shine loop every={6} className="w-1/2" />
+          </div>
           <div
             className="absolute inset-y-0 right-0 w-[52%] opacity-40"
             style={{
@@ -186,7 +195,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
 
         {/* ── Header ── */}
         <div className="relative z-10 flex flex-col items-start px-3 pb-2 pt-9 pl-9">
-          <span className="rounded-full border border-amber-400/50 bg-black/40 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
+          <span className="kit-rise rounded-full border border-amber-400/50 bg-black/50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
             Season {career.season} · {windowLabel} Closed
           </span>
           {/*
@@ -200,13 +209,13 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
             given screen, rather than needing the two to line up by luck.
           */}
           <h1
-            className="mt-2 whitespace-nowrap text-[2.15rem] font-black italic leading-[0.85] tracking-tight text-[#ffd23f]"
-            style={{ textShadow: TITLE_OUTLINE }}
+            className="kit-drop-in mt-2 whitespace-nowrap text-[2.15rem] font-black italic leading-[0.85] tracking-tight text-[#ffd23f]"
+            style={{ textShadow: TITLE_OUTLINE, animationDelay: "150ms" }}
           >
             DEADLINE DAY
           </h1>
-          <p className="mt-1.5 text-[11px] font-bold text-white/70">
-            {totalDeals} deal{totalDeals === 1 ? "" : "s"} done across the division
+          <p className="mt-1.5 text-[11px] font-bold text-white/80" style={{ textShadow: NAME_OUTLINE }}>
+            <span className="font-black text-amber-300"><CountUp value={countIn ? totalDeals : 0} ms={700} /></span> deal{totalDeals === 1 ? "" : "s"} done across the division
             {totalSpend > 0 ? ` · £${totalSpend}m changed hands` : ""}.
           </p>
         </div>
@@ -229,9 +238,9 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
               <button
                 key={b.club}
                 onClick={() => setSelected(b.club)}
-                className={`flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide transition ${
+                className={`kib-press flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide transition ${
                   isActive
-                    ? "border-black bg-black text-amber-300"
+                    ? "border-amber-300/60 bg-black text-amber-300 shadow-[0_0_12px_rgba(251,191,36,.45)]"
                     : count > 0
                       ? "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
                       : "border-white/10 bg-white/[0.02] text-white/45 hover:bg-white/10"
@@ -263,7 +272,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
             width column has no room for the two side by side. ── */}
         <div className="relative z-10 flex-1 overflow-y-auto px-3 pb-28 pt-2 pl-9">
           {active && (
-            <div className="flex flex-col gap-4">
+            <div key={active.club} className="flex flex-col gap-4">
               <div>
                 <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-400">
                   <span className="inline-block h-2 w-2 rounded-sm bg-emerald-400" /> In — {active.in.length}
@@ -271,10 +280,10 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                 <div className="space-y-1.5">
                   {active.in.length === 0 && <div className="text-xs font-bold text-white/40">No incomings.</div>}
                   {active.in.map((d, i) => (
-                    <div key={`in-${i}`} className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2">
+                    <div key={`in-${i}`} className="kit-rise rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${i * 60}ms`, background: "linear-gradient(180deg, rgba(6,78,59,.85), rgba(4,47,36,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(52,211,153,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
-                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-black">{d.detail}</span>
+                        <span className="whitespace-nowrap rounded-full bg-emerald-300 px-1.5 text-[10px] font-black tabular-nums text-emerald-950">{d.detail}</span>
                       </div>
                       <div className="text-[10px] font-bold text-white">
                         from <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
@@ -290,10 +299,10 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                 <div className="space-y-1.5">
                   {active.out.length === 0 && <div className="text-xs font-bold text-white/40">No outgoings.</div>}
                   {active.out.map((d, i) => (
-                    <div key={`out-${i}`} className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2">
+                    <div key={`out-${i}`} className="kit-rise rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${120 + i * 60}ms`, background: "linear-gradient(180deg, rgba(136,19,55,.85), rgba(76,5,25,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(251,113,133,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
-                        <span className="whitespace-nowrap text-[10px] font-black tabular-nums text-black">{d.detail}</span>
+                        <span className="whitespace-nowrap rounded-full bg-rose-300 px-1.5 text-[10px] font-black tabular-nums text-rose-950">{d.detail}</span>
                       </div>
                       <div className="text-[10px] font-bold text-white">
                         to <span style={{ textShadow: NAME_OUTLINE }}>{d.counterpart}</span> · {d.overall} OVR
@@ -308,16 +317,27 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
 
         {/* ── Ticker + Continue ── */}
         <div className="relative z-10 border-t border-white/10 bg-black/70 px-3 py-3 pl-9">
-          <div className="mb-2 overflow-hidden whitespace-nowrap text-[9px] font-black uppercase tracking-widest text-amber-300/70">
-            Transfer Centre · {totalDeals} Deals This Window · {WINDOW_LABEL[windowKind] ?? "Transfer Window"} ·
-            Transfer Centre · {totalDeals} Deals This Window ·
+          {/* The ticker scrolls, like the real transfer-centre banner; the
+              same text twice so the loop is seamless. Still for reduced motion. */}
+          <div className="mb-2 overflow-hidden whitespace-nowrap text-[9px] font-black uppercase tracking-widest text-amber-300/80">
+            <div className="kit-marquee inline-block">
+              {[0, 1].map(k => (
+                <span key={k} className="pr-6">
+                  Transfer Centre · {totalDeals} Deals This Window · {WINDOW_LABEL[windowKind] ?? "Transfer Window"} ·
+                  Transfer Centre · {totalDeals} Deals This Window ·{" "}
+                </span>
+              ))}
+            </div>
           </div>
-          <button
+          <PressButton
+            variant="gold"
+            pulse
             onClick={onContinue}
-            className="rounded-lg bg-gradient-to-b from-[#ffe066] to-[#d99a00] px-6 py-2.5 text-sm font-black uppercase tracking-wide text-[#151008] shadow-lg transition hover:brightness-110"
+            className="relative overflow-hidden px-6"
           >
+            <Shine loop every={4} />
             Continue →
-          </button>
+          </PressButton>
         </div>
       </div>
     </div>

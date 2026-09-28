@@ -6,6 +6,10 @@ import { formatMoney } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import type { TrialProgress } from "@/lib/star/trial";
 import { TRIAL_STAGES, STAGE_LABEL, trialScore, adversityFor } from "@/lib/star/trial";
+import { CountUp, Glow, PressButton, clubTheme } from "./ui";
+import { Screen, Kicker, useLater } from "./ui/Screen";
+
+const PITCH_GREEN = "#2F6F4E";
 
 /**
  * WHAT THE TRIAL WAS FOR.
@@ -57,6 +61,7 @@ export default function ScoutOffers({
 }: ScoutOffersProps) {
   const [open, setOpen] = useState(false);
   const score = trialScore(trial);
+  const scoreIn = useLater(250);
 
   const breakdown = (
     <div className="mt-3 space-y-1.5">
@@ -67,10 +72,10 @@ export default function ScoutOffers({
             <span className="w-28 shrink-0 text-[10px] font-black uppercase tracking-widest text-white/50">
               {STAGE_LABEL[s]}
             </span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/55" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.7)" }}>
               <div
-                className="h-full rounded-full bg-emerald-400"
-                style={{ width: `${r?.score ?? 0}%` }}
+                className="kit-grow-x h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-300"
+                style={{ width: `${r?.score ?? 0}%`, boxShadow: "0 0 8px rgba(52,211,153,.6)" }}
               />
             </div>
             <span className="w-7 shrink-0 text-right text-[11px] font-black tabular-nums">
@@ -112,15 +117,13 @@ export default function ScoutOffers({
   // ── Nobody came ────────────────────────────────────────────────────────
   if (!offers.length) {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-8 text-white">
+      <Screen glow={PITCH_GREEN} className="max-w-md px-4 py-8">
         <div className="text-center">
-          <div className="text-[11px] font-black uppercase tracking-widest text-white/50">
-            Your trial
-          </div>
-          <div className="mt-1 text-6xl font-black tabular-nums">{score}</div>
+          <Kicker color="#fcd34d">Your trial</Kicker>
+          <div className="kit-slam mt-1 text-6xl font-black tabular-nums" style={{ textShadow: "0 0 24px rgba(255,255,255,.25)" }}><CountUp value={scoreIn ? score : 0} ms={900} /></div>
         </div>
         {breakdown}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="kit-card mt-6 p-5">
           <div className="text-sm font-black uppercase tracking-widest text-amber-300">
             No contract
           </div>
@@ -139,24 +142,24 @@ export default function ScoutOffers({
             </p>
           )}
         </div>
-        <button
+        <PressButton
+          variant="secondary"
+          size="lg"
           onClick={onNoOffers}
-          className="mt-5 w-full rounded-xl bg-white/10 py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-white/20"
+          className="mt-5 w-full text-sm tracking-widest"
         >
           {youthClub ? `Report to ${youthClub} →` : "Go home →"}
-        </button>
-      </div>
+        </PressButton>
+      </Screen>
     );
   }
 
   // ── Somebody did ───────────────────────────────────────────────────────
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-6 text-white">
+    <Screen glow={PITCH_GREEN} className="max-w-md px-4 py-6">
       <div className="text-center">
-        <div className="text-[11px] font-black uppercase tracking-widest text-white/50">
-          Your trial
-        </div>
-        <div className="mt-1 text-6xl font-black tabular-nums">{score}</div>
+        <Kicker color="#fcd34d">Your trial</Kicker>
+        <div className="kit-slam mt-1 text-6xl font-black tabular-nums" style={{ textShadow: "0 0 24px rgba(255,255,255,.25)" }}><CountUp value={scoreIn ? score : 0} ms={900} /></div>
         <button
           onClick={() => setOpen(o => !o)}
           className="mt-1 text-[11px] font-bold text-white/50 underline"
@@ -166,15 +169,18 @@ export default function ScoutOffers({
       </div>
       {open && breakdown}
 
-      <div className="mt-6 text-[11px] font-black uppercase tracking-widest text-white/60">
+      <div className="mt-6 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-300">
         {offers.length === 1 ? "One club came in" : `${offers.length} clubs came in`}
       </div>
 
       <div className="mt-2 space-y-3">
-        {offers.map(o => (
-          <div key={o.club} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        {offers.map((o, i) => (
+          <div key={o.club} className="kit-card kit-rise p-4" style={{ ["--kit-glow" as string]: clubTheme(o.club).glow, animationDelay: `${300 + i * 110}ms` } as React.CSSProperties}>
             <div className="flex items-center gap-3">
-              <ClubBadge club={o.club} size={40} />
+              <div className="relative">
+                <Glow color={clubTheme(o.club).glow} alpha={0.5} className="inset-0 blur-md" />
+                <div className="relative"><ClubBadge club={o.club} size={40} /></div>
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-black">{o.club}</div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-white/50">
@@ -188,22 +194,23 @@ export default function ScoutOffers({
               <Term label="Per goal" value={formatMoney(o.goalBonus)} />
               <Term label="Years" value={`${o.seasons}`} />
             </div>
-            <button
+            <PressButton
+              variant="primary"
               onClick={() => onAccept(o)}
-              className="mt-3 w-full rounded-xl bg-emerald-500 py-3 text-sm font-black uppercase tracking-widest text-white hover:bg-emerald-400"
+              className="mt-3 w-full py-3 text-sm tracking-widest"
             >
               Sign for {o.club}
-            </button>
+            </PressButton>
           </div>
         ))}
       </div>
-    </div>
+    </Screen>
   );
 }
 
 function Term({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex-1 rounded-lg bg-black/30 px-2 py-2">
+    <div className="kit-row flex-1 rounded-lg px-2 py-2">
       <div className="text-[9px] font-black uppercase tracking-widest text-white/45">{label}</div>
       <div className="text-[12px] font-black tabular-nums">{value}</div>
     </div>

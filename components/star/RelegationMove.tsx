@@ -4,6 +4,9 @@ import type { TransferOffer } from "@/lib/star/transfers";
 import { reputation, MOVE_RESET } from "@/lib/star/transfers";
 import { clauseSummary } from "@/lib/star/contracts";
 import { divisionOf, divisionRank, leagueNameFor } from "@/lib/star/calendar";
+import ClubBadge from "./ClubBadge";
+import { Glow, clubTheme } from "./ui";
+import { Screen, Kicker } from "./ui/Screen";
 
 /**
  * THE OLD CLUB IS GONE. WHO NEXT?
@@ -27,13 +30,11 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
   const rep = Math.round(reputation(career));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-950 to-gray-950 px-3 py-5 text-white">
-      <div className="mx-auto w-full max-w-sm">
+    <Screen glow="#dc2626" className="max-w-sm px-3 py-5">
+      <div className="w-full">
         <div className="text-center">
-          <div className="inline-block rounded-full border border-red-400/40 bg-red-500/20 px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-red-200">
-            Relegated
-          </div>
-          <h1 className="mt-2 text-2xl font-black leading-tight">
+          <Kicker color="#fca5a5">Relegated</Kicker>
+          <h1 className="kit-shake-x mt-2 text-2xl font-black uppercase leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
             {career.player.club} are down. You need a new club.
           </h1>
           <p className="mt-1 text-xs text-gray-200">
@@ -43,13 +44,17 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
         </div>
 
         <div className="mt-4 space-y-3">
-          {offers.map((o) => {
+          {offers.map((o, i) => {
             const offerDivision = o.division ?? divisionOf(career);
             const stepUp = divisionRank(offerDivision) < divisionRank(divisionOf(career));
+            const glow = clubTheme(o.club).glow;
             return (
-              <div key={o.club} className="rounded-xl border border-gray-700 bg-gray-800 p-4">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-lg font-black text-white">{o.club}</span>
+              <div key={o.club} className="kit-card kit-rise p-4" style={{ ["--kit-glow" as string]: glow, animationDelay: `${300 + i * 110}ms` } as React.CSSProperties}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="relative shrink-0"><Glow color={glow} alpha={0.5} className="inset-0 blur-md" /><span className="relative block"><ClubBadge club={o.club} size={32} /></span></span>
+                    <span className="truncate text-lg font-black text-white">{o.club}</span>
+                  </span>
                   <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest ${
                     stepUp ? "text-emerald-300" : "text-gray-200"}`}
                   >
@@ -80,7 +85,7 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
 
                 <button
                   onClick={() => onAccept(o)}
-                  className="mt-3 w-full rounded-lg bg-red-500 py-2.5 font-black text-white transition hover:bg-red-400 active:scale-[0.98]"
+                  className="kit-btn kit-btn-green mt-3 w-full rounded-xl py-2.5"
                 >
                   Sign for {o.club}
                 </button>
@@ -89,7 +94,7 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
           })}
         </div>
 
-        <div className="mt-4 rounded-xl border border-gray-700 bg-gray-800/60 p-3">
+        <div className="kit-card mt-4 p-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-gray-200">What a move costs</div>
           <p className="mt-1 text-[11px] text-gray-200">
             A new dressing room does not know you and a new manager has not picked you before.
@@ -98,13 +103,13 @@ export default function RelegationMove({ career, offers, onAccept }: Props) {
           </p>
         </div>
       </div>
-    </div>
+    </Screen>
   );
 }
 
 function Cell({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-lg bg-gray-700 py-1.5">
+    <div className="kit-row rounded-lg py-1.5">
       <div className="text-[9px] font-bold uppercase tracking-wider text-white/85">{label}</div>
       <div className={`text-sm font-black ${highlight ? "text-emerald-300" : "text-white"}`}>{value}</div>
     </div>
