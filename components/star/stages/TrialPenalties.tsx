@@ -12,6 +12,7 @@ import { buildScenario, initDefenders } from "@/lib/star/canvasEngine";
 import { EngineFeature } from "@/components/star/EnginePlay";
 import type { ChanceResolved } from "@/components/star/CanvasMatch";
 import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
+import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 
 /**
  * THE PENALTIES STAGE — and the striking stage the FREE KICKS stage runs on.
@@ -122,6 +123,9 @@ export interface StrikeStageProps {
   onDone: (quality: number) => void;
   /** Force the one-row teaching card (a drill where the ball sits low). */
   forceCompactTeach?: boolean;
+  /** Your penalty and free-kick run-ups (lib/star/runupStyles.ts) — looks only. */
+  penaltyRunup?: PenaltyRunupId;
+  freeKickRunup?: FreeKickRunupId;
 }
 
 
@@ -425,7 +429,7 @@ const LAST_RESULT_HOLD_MS = 1700;
 
 export function StrikeStage({
   reps, build, skills, seed, title, hint, subtitle, teach, drill, keeperStrengthFor,
-  penaltyRead, penaltyReadFor, onDone, forceCompactTeach = false,
+  penaltyRead, penaltyReadFor, onDone, forceCompactTeach = false, penaltyRunup, freeKickRunup,
 }: StrikeStageProps) {
   const [rep, setRep] = useState(0);
   const repRef = useRef(0);
@@ -506,6 +510,8 @@ export function StrikeStage({
           // A trial is you against the keeper (and the wall): no team-mate
           // following in to tidy up a rebound. Harry, 24 Sep 2026.
           scene={{ teammates: false }}
+          penaltyRunup={penaltyRunup}
+          freeKickRunup={freeKickRunup}
         />
         {showTeach && teach && (
           <TeachCard
@@ -546,6 +552,8 @@ export interface TrialPenaltiesProps {
   trial: TrialProgress;
   onDone: (quality: number) => void;
   skills?: { power: number; technique: number };
+  /** Your penalty run-up (lib/star/runupStyles.ts) — looks only. */
+  penaltyRunup?: PenaltyRunupId;
 }
 
 /**
@@ -571,7 +579,7 @@ function rampLine(rep: number): string {
 }
 
 export default function TrialPenalties({
-  trial, onDone, skills = { power: 55, technique: 55 },
+  trial, onDone, skills = { power: 55, technique: 55 }, penaltyRunup,
 }: TrialPenaltiesProps) {
   // v0.15 item 7b: the keeper ramps kick by kick (trialStages.ts's
   // penaltyRampFor), the random day switched off for him.
@@ -586,6 +594,7 @@ export default function TrialPenalties({
       build={build}
       skills={skills}
       seed={trial.seed}
+      penaltyRunup={penaltyRunup}
       drill="penalties"
       keeperStrengthFor={(rep) => penaltyRampFor(rep, REPS.penalties).keeperStrength}
       penaltyReadFor={(rep) => penaltyRampFor(rep, REPS.penalties).read}

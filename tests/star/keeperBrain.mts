@@ -143,9 +143,9 @@ console.log("\nA FREE KICK KEEPS ITS OWN RULES (kindRules/freeKick.ts): NO BRAIN
   ok(kept === 60, `…so its keeper stays at the rule set's far-post cheat while you aim (${kept} of 60)`);
 }
 
-console.log("\nTHE KEEPER DOES NOT HOP IN A PENALTY RUN-UP (Harry, 27 Sep: the hop was the taker's, not the keeper's)");
+console.log("\nTHE KEEPER DOES NOT HOP IN A PENALTY RUN-UP (Harry, 27 Sep: the hop was the taker's, not the keeper's) — HE SOMETIMES LEANS");
 {
-  let hopped = 0, small = 0, sameWay = 0, dived = 0;
+  let hopped = 0, small = 0, sameWay = 0, dived = 0, leaned = 0, leanRight = 0, leanOk = 0;
   for (let s = 1; s <= 120; s++) {
     const seed = s * 7919 + 21;
     const { sc, rng } = serve("penalty", seed, 88);
@@ -153,8 +153,16 @@ console.log("\nTHE KEEPER DOES NOT HOP IN A PENALTY RUN-UP (Harry, 27 Sep: the h
     const x0 = sc.keeper.x;
     const aimX = CX + (s % 2 ? 2.8 : -2.8);
     for (let t = 0; t < 2; t += 1 / 60) { E.stepKeeper(sc, 1 / 60); B.brainRunUp(sc, 1 / 60, t, aimX); }
-    const hop = sc.keeper.x - x0;
-    if (Math.abs(hop) < 1e-6) continue;
+    // The lean (KEEPER_BRAIN.leanChance): about a third of kicks, half a
+    // metre to a random side — whichever corner you aimed at.
+    const lean = B.brainStateOf(sc)!.leanSide;
+    if (lean !== 0) {
+      leaned++;
+      if (lean > 0) leanRight++;
+      if (Math.abs(sc.keeper.x - x0 - lean * B.KEEPER_BRAIN.leanDistM) < 0.05) leanOk++;
+    } else if (Math.abs(sc.keeper.x - x0) < 1e-6) leanOk++;
+    const hop = B.brainStateOf(sc)!.hopSide;
+    if (hop === 0) continue;
     hopped++;
     if (Math.abs(hop) <= B.KEEPER_BRAIN.hopM + 1e-6) small++;
     const ball = E.launch(sc, { x: aimX - sc.ball.x, y: -sc.ball.y }, 0.8, { cx: 0, cy: -0.4 }, { power: 60, technique: 60 }, rng);
@@ -164,6 +172,9 @@ console.log("\nTHE KEEPER DOES NOT HOP IN A PENALTY RUN-UP (Harry, 27 Sep: the h
     if (st.diveAtT !== null) { dived++; if (st.dir === Math.sign(hop)) sameWay++; }
   }
   ok(hopped === 0, `an 88 keeper never hops during the run-up (${hopped} of 120)`);
+  ok(leaned >= 28 && leaned <= 56, `…but leans on about a third of run-ups (${leaned} of 120; asked ${B.KEEPER_BRAIN.leanChance * 100}%)`);
+  ok(leanRight >= leaned * 0.3 && leanRight <= leaned * 0.7, `…to a random side (${leanRight} right, ${leaned - leanRight} left)`);
+  ok(leanOk === 120, `…and moves exactly ${B.KEEPER_BRAIN.leanDistM} m when he leans, not at all when he doesn't (${leanOk} of 120)`);
   void small; void sameWay; void dived;
 }
 
@@ -182,7 +193,8 @@ console.log("\nTHE SAME PICTURE, PLAYED AGAIN, IS NOT THE SAME KICK (final playt
       const aimX = POST_L + 0.7; // the same corner every kick
       const x0 = sc.keeper.x;
       for (let t = 0; t < 2; t += 1 / 60) { E.stepKeeper(sc, 1 / 60); B.brainRunUp(sc, 1 / 60, t, aimX); }
-      if (Math.abs(sc.keeper.x - x0) > 1e-6) hops++;
+      if (B.brainStateOf(sc)!.hopSide !== 0) hops++;
+      void x0;
       const ball = E.launch(sc, { x: aimX - sc.ball.x, y: -sc.ball.y }, 0.8, { cx: 0, cy: -0.4 }, { power: 60, technique: 60 }, mulberry32(5));
       B.brainStrike(sc, ball, ((2 ^ Math.imul(37, 0xc2b2ae35)) ^ 0x4b7f ^ salt) >>> 0);
       const d = B.brainStateOf(sc)!.dir;

@@ -93,7 +93,11 @@ export default function SwipePages({ index, onIndex, labels, children }: {
           }}
         >
           {children.map((c, i) => (
-            <div key={i} data-scroll-root className="kib-shell-noscroll h-full overflow-y-auto" style={{ width: "33.3333%" }}>
+            // Each page scrolls on its own, and a scroll box starts a fresh
+            // touch-action: without pan-y here too, a finger's sideways drag
+            // was taken by the phone as a scroll (pointercancel) and the page
+            // never turned. Mouse drags were unaffected, which hid it.
+            <div key={i} data-scroll-root className="kib-shell-noscroll h-full overflow-y-auto" style={{ width: "33.3333%", touchAction: "pan-y" }}>
               {c}
             </div>
           ))}

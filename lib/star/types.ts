@@ -1,5 +1,6 @@
 import type { Scenario, Vec2, Contact, KickSkills } from "./canvasEngine";
 import type { PenaltyReadDecision } from "./penaltyKeeper";
+import type { PenaltyRunupId, FreeKickRunupId } from "./runupStyles";
 
 /**
  * Everything needed to watch a goal you scored happen again, exactly as it
@@ -847,6 +848,21 @@ export interface CareerState {
    * Optional: absent on every older save, which reads as nothing active.
    */
   kibAbility?: { curve?: boolean; extraTouch?: boolean };
+  /**
+   * The run-ups you take (lib/star/runupStyles.ts) — two separate sets, one
+   * for penalties and one for direct free kicks. Looks only, never who
+   * scores. Absent on older saves: each set's Standard. Read them through
+   * careerPenaltyRunup / careerFreeKickRunup.
+   */
+  penaltyRunup?: PenaltyRunupId;
+  freeKickRunup?: FreeKickRunupId;
+  /** @deprecated the first build's penalty run-up field — read as
+   *  `penaltyRunup` when that isn't set (storage.ts moves it across). */
+  runupStyle?: PenaltyRunupId;
+  /** Animation ids you own (the shop's Animations), from both sets — the ids
+   *  are unique across them. Each set's Standard always counts as owned,
+   *  listed or not. Absent on older saves: none bought yet. */
+  ownedAnimations?: string[];
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];

@@ -472,6 +472,7 @@ export const ADMIN_GUIDES = {
           ["Infinite Highlights →", "Opens Infinite Highlights."],
           ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
+          ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -480,6 +481,8 @@ export const ADMIN_GUIDES = {
           ["Curve / Extra touch", "Pretend you own curving boots or touch boots."],
           ["Position / Division", "Which position you play and what standard of club you're at."],
           ["Pressure: Real (by division) / Off / Light / Premier League", "How hard the nearest opponent closes you down while you pull the ball back (he tackles you, or fouls you about 1 time in 3: a free kick, or a penalty inside the box). Real follows the Division above: Premier League full (a through ball is lost after about 2.6 s), Championship light, lower none. Test screens only — a career match always uses its own division."],
+          ["Penalty run-up", "How you run up to a penalty: Standard, The Stroll, The Skip, The Sprint, Stutter Step, Two Steps or The Arc — every style, owned or not, so each can be seen on the real pitch (open a penalty card in Infinite Highlights or the gallery and press Play, or play a shootout). Looks only: who scores is the same with every style. Test screens only — a career uses the one it has equipped in Settings → Run-ups."],
+          ["Free-kick run-up", "A separate set for direct free kicks, each modelled on an elite taker: Standard, Power Stance (Ronaldo), Stance and Sprint (Bale), The Calm Curl (Messi), Stutter Curl (Neymar), The Whip (Maddison), Long Diagonal (Trent). Looks only — the strike is still yours. Test screens only."],
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
           ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
           ["Scenario Gallery →", "Opens the gallery."],
@@ -514,7 +517,76 @@ export const ADMIN_GUIDES = {
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure}.ts",
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
+  },
+
+  "/star-store-dev": {
+    title: "Store (test)",
+    what: "A test version of an in-game store: daily specials, penalty run-ups, accessories, boosts that help you win, and Coins bought with real money. Nothing here reaches a career, and no real money is ever taken.",
+    buttons: [
+      {
+        group: "Top of the page",
+        items: [
+          ["‹", "Back to the Play Area."],
+          ["★ (wallet)", "Your test stars — the money you earn by playing."],
+          ["Coins +", "Your test Coins — the money you would buy with real money. Tapping it opens the Coins tab."],
+          ["⚙ Test controls", "Opens and closes the test panel below."],
+          ["Your level", "National League … Premier League. Sets which level of boots you see and puts in a typical wage for that league."],
+          ["Weekly wage ★", "Type any wage. Every scaled price, and what a Coin is worth, follows it."],
+          ["Wallet ★ / Wallet Coins", "Set either balance to anything."],
+          ["Skip a day ›", "Shows tomorrow's daily specials (press again for the day after)."],
+          ["Back to today", "Returns the specials to today."],
+          ["Reset purchases", "Empties the locker and puts the wallet back to ★5,000 and 300 Coins."],
+          ["Daily / Animations / Accessories / Boosts / Coins", "The five sections of the store."],
+        ],
+      },
+      {
+        group: "Daily",
+        items: [
+          ["Today's pick", "The headline special — always a Rare-or-better look item (a run-up or an accessory), with its discount."],
+          ["⏱ New in …", "Time until the specials change (midnight UK winter time / 1am summer time). Everyone sees the same specials on the same day."],
+          ["−N%", "Today's discount. Each special can be bought at that price once a day."],
+        ],
+      },
+      {
+        group: "Animations and Accessories",
+        items: [
+          ["Penalty run-ups / Free-kick run-ups", "Two separate sets. You use one of each: one run-up for penalties, one for free kicks. Standard of each is free."],
+          ["A card", "Opens the item: a bigger preview, both prices, and Wear / Use for penalties / Use for free kicks once you own it."],
+          ["Your player", "What you are wearing now. Tap a name (✕) to take it off."],
+          ["★ price / Coins price", "Buy with stars you earned, or with Coins. Both prices are the same number of weeks of your wages."],
+          ["Wear / Take off", "Puts an accessory on (one per slot) or takes it off."],
+          ["Use for penalties / Use for free kicks", "Picks that run-up for its own set only — changing your free-kick run-up leaves your penalty one alone."],
+        ],
+      },
+      {
+        group: "Boosts",
+        items: [
+          ["KIB cans", "The real shop's cans at the real shop's prices (a slice of your wage)."],
+          ["Training Boost / Stat Can (NEW)", "Ideas that aren't in the game yet — here to price and judge."],
+          ["Boots · level N", "The real shop's boots at your level and their real ★ prices; the Coins price is worked out from your wage."],
+          ["Use one (test)", "Takes one boost out of your locker, as if the career had used it."],
+        ],
+      },
+      {
+        group: "Coins",
+        items: [
+          ["Test mode — no payment is taken", "There is no payment code on this page. Tapping a pack just adds the Coins."],
+          ["100 Coins = about 2 weeks' wages …", "What a Coin is worth to you: 50 Coins are always one week of your wage, at any level."],
+          ["A pack (£0.99 … £49.99)", "Adds that many Coins. Bigger packs give a bigger bonus; one is Best value; the £4.99 Bag is doubled if it is the first pack you ever buy."],
+          ["Swap Coins for ★", "Turns 100 / 500 / 1,000 Coins into stars at your wage."],
+          ["Receipts", "Your last few test purchases."],
+        ],
+      },
+    ],
+    saving: [
+      "This browser only. The wallet, what you own, what you're wearing and the test controls are kept on this device and survive a refresh.",
+      "It never touches a career save, and nobody else sees it.",
+    ],
+    inGame: [
+      "Nowhere yet — a test area for the store's look, prices and rules before any of it is wired into the career.",
+    ],
+    dev: "app/star-store-dev/page.tsx · components/star/store/{RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase}.mts",
   },
 
   "/star-radar-dev": {

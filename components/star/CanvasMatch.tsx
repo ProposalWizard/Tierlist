@@ -83,8 +83,12 @@ import { DEFAULT_FAKE_FACE, fakeFaceFor } from "@/lib/star/fakeFaces";
 import {
   drawFigureAt, drawKeeperAt, figureRForHeight, MATCH_FIGURE_HEIGHT_R, MATCH_FIGURE_R_MULT, MATCH_KEEPER_R_SHARE,
   MAX_KEEPER_LEAN, ROLE_KIT,
-  runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose,
+  runPhase as sharedRunPhase, poseFor as sharedPoseFor, bodyPoseFor, type FigurePose, FIGURE_HEIGHT_R,
 } from "@/lib/star/fiveASide/render";
+import {
+  penaltyRunupOf, freeKickRunupOf, takerRunupFor, yourRunupFor, standBackFor, planRunup, runupPositionAt, runupPoseAt,
+  RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
+} from "@/lib/star/runupStyles";
 import { createFaceImageCache } from "@/lib/star/faceImageCache";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, type CreditDelta } from "@/lib/star/credit";
@@ -114,7 +118,7 @@ import {
   brainOptionsHere, hasBrain, brainSetup, keeperSaltFor, brainAim, brainRunUp, brainStrike, brainStep, brainSnapshot, brainRestore,
 } from "@/lib/star/keeperBrain";
 import {
-  RUNUP, strikeTimerFor, hasRunup, canNudge, standBack, plantBeside, playerAt, goalLineX, nudgedDir, nudgeFromDrag,
+  RUNUP, strikeTimerFor, hasRunup, canNudge, plantBeside, goalLineX, nudgedDir, nudgeFromDrag,
   scuffStrike, cheekyStrike, isCheekyMiss,
   type RunupPath, type CheekyKind,
 } from "@/lib/star/penaltyRunup";
@@ -357,6 +361,15 @@ interface Props {
    * passes its division (lib/star/pressure.ts); the Play Area passes its dial.
    */
   pressure?: number;
+  /**
+   * How YOU run up to a penalty, and to a direct free kick — two separate sets
+   * (lib/star/runupStyles.ts): the career's equipped ones, or the Play Area's
+   * dials. Looks only: the kick is the same. A team-mate's or an opponent's
+   * kick uses his own style from the right set (takerRunupFor). Absent: each
+   * set's Standard.
+   */
+  penaltyRunup?: PenaltyRunupId;
+  freeKickRunup?: FreeKickRunupId;
 }
 
 
@@ -520,7 +533,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
   try { return structuredClone(sc); } catch { return undefined; }
 }
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0 }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, chanceMaker = DEFAULT_CHANCE_MAKER, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1426,11 +1439,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const runupRef = useRef<{
     t: number; dir0: Vec2; power: number; nudgeM: number; path: RunupPath;
     nudge: boolean; arrived: boolean;
+    /** The taker's run-up style (lib/star/runupStyles.ts): the path, how
+     *  long it takes (`runS`) and how his body moves. Looks only. */
+    styled: StyledRunup; runS: number;
     /** Somebody else's penalty (v0.15 items 6/7): struck for him on arrival, no strike screen. */
     auto?: { contact: { cx: number; cy: number }; skills: KickSkills };
   } | null>(null);
   /** A sideways drag during the run-up: where it started, and the swing then. */
   const nudgeDragRef = useRef<{ x0: number; base: number } | null>(null);
+  /** Your two run-up styles, read live (a prop can change between chances). */
+  const runupStyleRef = useRef({ pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) });
+  runupStyleRef.current = { pen: penaltyRunupOf(penaltyRunup), fk: freeKickRunupOf(freeKickRunup) };
+  /**
+   * Whose run-up this picture's kick is, from the set for this kind of kick
+   * (a penalty's or a free kick's): yours, or — on a kick the match takes for
+   * somebody else (items 6/7) — that taker's own, picked from his id so the
+   * same player always runs up the same way.
+   */
+  const runupStyleFor = (sc: Scenario): RunupId => {
+    const auto = autoKickOf(sc);
+    return auto
+      ? takerRunupFor(sc.kind, auto.taker.id || auto.taker.name)
+      : yourRunupFor(sc.kind, runupStyleRef.current.pen, runupStyleRef.current.fk);
+  };
   /** The strike screen's countdown for this kick, seconds — null = no limit (every kick but a run-up). */
   const [contactTimerS, setContactTimerS] = useState<number | null>(null);
   // Item 5r — a "cheeky" kick (a penalty chipped or down the middle, or an
@@ -2531,7 +2562,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const SKIN = "#c68642";
     type Pose = FigurePose;
 
-    type FigureOpts = { pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement };
+    type FigureOpts = {
+      pose?: Pose; phase?: number; facing?: number; label?: string; labelColor?: string; shorts?: string; star?: boolean; face?: HTMLImageElement;
+      /** A run-up style's own body (runupStyles.ts): stride, arms, crouch, a skip off the ground, a lean. Replaces `pose`. */
+      body?: RunupPose | null;
+    };
 
     // ── Nearer men in front of further ones ──
     //
@@ -2588,7 +2623,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // bodyPoseFor), not a second local copy of it. Running scissors the
       // legs and counter-swings the arms; a kick throws one leg through and
       // the arms wide for balance; a man waiting for the ball opens his arms.
-      const limbs = bodyPoseFor(pose, phase);
+      const body = opts.body;
+      const limbs = body
+        ? { legSwing: body.legSwing, kick: 0, armSpread: body.armSpread, armLift: body.armLift, crouch: body.crouch }
+        : bodyPoseFor(pose, phase);
 
       // ── Anchored at the FEET ──
       //
@@ -2604,7 +2642,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         { shirt, shorts, trim: rim, skin: SKIN, face: opts.face },
         faceStyleRef.current, fakeFaceStyleRef.current,
         {
-          facing: opts.facing,
+          facing: opts.facing ?? (body?.lean || undefined),
+          liftPx: body ? body.lift * r * FIGURE_HEIGHT_R : undefined,
           shadowR: r * 0.42,
           pose: limbs,
           label: opts.label,
@@ -2920,10 +2959,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // a team-mate in your shirt, or one of theirs in theirs — named, no star.
     const auto = autoKickOf(sc);
     const takerKit = auto?.side === "them" ? theirKit() : ourKit();
+    // During a run-up the taker moves the way his style does (runupStyles.ts).
+    const ruNow = phaseRef.current === "runup" ? runupRef.current : null;
+    const runBody = ruNow && !ruNow.arrived && kickPoseRef.current <= 0 ? runupPoseAt(ruNow.styled, ruNow.t) : null;
     if (auto) {
       footballer(sc.player.x, sc.player.y, R, takerKit.shirt, takerKit.trim, {
         pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
         phase: runPhase(sc.player.x),
+        body: runBody,
         face: getFaceImage(auto.taker.face),
         label: auto.taker.shortName,
       });
@@ -2936,6 +2979,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // happening entirely between two frames.
       pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", sc.player.x, sc.player.y),
       phase: runPhase(sc.player.x),
+      body: runBody,
       star: true,
       // Your own photo (Settings → Photo, PortraitPicker) — every OTHER
       // figure already gets one when there's a real identity to draw from;
@@ -3460,12 +3504,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           ru.t += dt;
           const dirNow = ru.nudge ? nudgedDir(sc.ball, ru.dir0, ru.nudgeM) : ru.dir0;
           brainRunUp(sc, dt, ru.t, goalLineX(sc.ball, dirNow));
-          sc.player = playerAt(ru.path, ru.t / RUNUP.runupS);
-          if (ru.t >= RUNUP.runupS && ru.auto) {
+          sc.player = runupPositionAt(ru.styled, ru.t);
+          if (ru.t >= ru.runS && ru.auto) {
             // Somebody else's penalty: struck for him the moment he gets there.
             ru.arrived = true;
             handleContactRef.current?.(ru.auto.contact, { dir: dirNow, power: ru.power, skills: ru.auto.skills });
-          } else if (ru.t >= RUNUP.runupS) {
+          } else if (ru.t >= ru.runS) {
             ru.arrived = true;
             nudgeDragRef.current = null;
             setAim({ dir: dirNow, power: ru.power });
@@ -4676,7 +4720,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * so the mount effect above can reach it.
    */
   function standBackForRunup(sc: Scenario) {
-    if (hasRunup(sc.kind)) sc.player = standBack(sc.ball, sc.player);
+    // How far back and how wide depends on the taker's run-up style
+    // (runupStyles.ts); Standard is exactly penaltyRunup.ts's standBack.
+    if (hasRunup(sc.kind)) sc.player = standBackFor(runupStyleFor(sc), sc.ball, sc.player, sc.viewport);
   }
 
   // ── v0.15: the kicks you WATCH (items 6 and 7) ────────────────────────────
@@ -5550,10 +5596,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const sc = scenarioRef.current;
     const L = Math.hypot(rawDir.x, rawDir.y) || 1;
     const dir0 = { x: rawDir.x / L, y: rawDir.y / L };
+    const styleId = runupStyleFor(sc);
+    const styled = planRunup(styleId, sc.ball, sc.player);
     runupRef.current = {
       t: 0, dir0, power, nudgeM: 0,
       path: { from: { x: sc.player.x, y: sc.player.y }, to: plantBeside(sc.ball, sc.player) },
       nudge: !auto && canNudge(sc.kind), arrived: false,
+      styled, runS: RUNUP_MOTION[styleId].runS,
       ...(auto ? { auto } : {}),
     };
     if (auto) { setPhase("runup"); return; }
