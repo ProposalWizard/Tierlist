@@ -70,7 +70,39 @@ export const KIT_CSS = `
   @keyframes kit-mote { 0% { opacity: 0; transform: translate(0, 0); } 20% { opacity: .9; } 100% { opacity: 0; transform: translate(var(--dx), -90px); } }
   .kit-mote { animation: kit-mote var(--dur, 6s) linear infinite; animation-delay: var(--delay, 0s); }
 
+  /* ── Money screens (shop, store, casino) and the phone — added with the reskin (28 Sep 2026) ── */
+  @keyframes kit-shake-x { 0%,100% { transform: translateX(0); } 12% { transform: translateX(-10px) rotate(-1deg); } 26% { transform: translateX(9px) rotate(1deg); } 40% { transform: translateX(-7px); } 54% { transform: translateX(5px); } 68% { transform: translateX(-3px); } 82% { transform: translateX(2px); } }
+  .kit-shake-x { animation: kit-shake-x 560ms cubic-bezier(.36,.07,.19,.97) 1 both; }
+  @keyframes kit-loss-flash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+  .kit-loss-flash { animation: kit-loss-flash 700ms ease-out 1 both; }
+  @keyframes kit-badge-pop { 0% { opacity: 0; transform: scale(0); } 55% { opacity: 1; transform: scale(1.35); } 75% { transform: scale(.88); } 100% { opacity: 1; transform: scale(1); } }
+  .kit-badge-pop { animation: kit-badge-pop 520ms cubic-bezier(.3,.7,.4,1.4) 1 both; }
+  @keyframes kit-app-open { 0% { opacity: 0; transform: scale(.14); border-radius: 40%; } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+  .kit-app-open { animation: kit-app-open 380ms cubic-bezier(.2,.9,.25,1) 1 both; }
+  @keyframes kit-app-close { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scale(.14); } }
+  .kit-app-close { animation: kit-app-close 230ms cubic-bezier(.5,0,.75,.2) 1 both; }
+  @keyframes kit-icon-in { 0% { opacity: 0; transform: scale(.55) translateY(8px); } 70% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
+  .kit-icon-in { animation: kit-icon-in 420ms cubic-bezier(.3,.8,.35,1.2) 1 both; }
+  @keyframes kit-fly-x { from { transform: translateX(0); } to { transform: translateX(var(--tx)); } }
+  .kit-fly-x { animation: kit-fly-x 780ms cubic-bezier(.35,0,.65,1) 1 both; }
+  @keyframes kit-fly-y { from { transform: translateY(0); } to { transform: translateY(var(--ty)); } }
+  .kit-fly-y { animation: kit-fly-y 780ms cubic-bezier(.4,-.9,.7,1) 1 both; }
+  @keyframes kit-fly-s { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.6); } 14% { opacity: 1; transform: translate(-50%,-50%) scale(1.25); } 80% { opacity: 1; } 100% { opacity: .2; transform: translate(-50%,-50%) scale(.42); } }
+  .kit-fly-s { animation: kit-fly-s 780ms cubic-bezier(.3,.6,.4,1) 1 both; }
+  @keyframes kit-win-overlay { 0% { opacity: 0; } 8% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; } }
+  .kit-win-overlay { animation: kit-win-overlay 2.6s ease-out 1 both; }
+  @keyframes kit-win-pop { 0% { opacity: 0; transform: scale(.3); } 55% { opacity: 1; transform: scale(1.14); } 75% { transform: scale(.96); } 100% { opacity: 1; transform: scale(1); } }
+  .kit-win-pop { animation: kit-win-pop 560ms cubic-bezier(.3,.7,.4,1.3) 1 both; }
+  @keyframes kit-rays { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .kit-rays { animation: kit-rays 9s linear infinite; }
+  @keyframes kit-deal { 0% { opacity: 0; transform: translate(40px,-60px) rotate(18deg) scale(.8); } 100% { opacity: 1; transform: none; } }
+  .kit-deal { animation: kit-deal 420ms cubic-bezier(.2,.8,.3,1) 1 both; }
+  @keyframes kit-reel-spin { 0% { transform: translateY(-40%); filter: blur(3px); opacity: .6; } 100% { transform: translateY(40%); filter: blur(3px); opacity: .6; } }
+  .kit-reel-spin { display: inline-block; animation: kit-reel-spin 90ms linear infinite; }
+
   @media (prefers-reduced-motion: reduce) {
+    .kit-shake-x, .kit-badge-pop, .kit-app-open, .kit-app-close, .kit-icon-in, .kit-win-pop, .kit-deal, .kit-reel-spin { animation: none !important; }
+    .kit-loss-flash, .kit-win-overlay, .kit-fly-x, .kit-fly-y, .kit-fly-s, .kit-rays { animation: none !important; display: none !important; }
     [data-page-active="true"] .kib-rise, .kit-rise, .kib-breathe, .kib-hop, .kib-confetti, .kib-play-pulse, .kib-shake,
     .kib-drop, .kib-minus, .kib-sheen, .kib-sheen-fast, .kib-glow-pulse, .kib-flood,
     .kit-pop, .kit-text-shine, .kit-flicker, .kit-fade, .kit-drop-in, .kit-drift { animation: none !important; }
