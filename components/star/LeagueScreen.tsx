@@ -8,7 +8,7 @@ import { nationOf, nextFixtureFor } from "@/lib/star/competitions";
 import { exitRound } from "@/lib/star/cups";
 import { sortEuro, knockoutSlots } from "@/lib/star/euro";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
-import { groupedGoalLines } from "@/lib/star/media/grammar";
+import { groupedGoalLines, shortClub } from "@/lib/star/media/grammar";
 import { playerMarketValue } from "@/lib/star/marketValue";
 import { formatMoney } from "@/lib/star/money";
 import { faceOrFake } from "@/lib/star/fakeFaces";
@@ -17,6 +17,13 @@ import ClubBadge from "./ClubBadge";
 
 interface Props {
   career: CareerState;
+  /**
+   * The phone's League app (PhoneHome): a ~230 px wide screen, where the full
+   * table's columns left the name ~20 px ("Ars…"). Short club names
+   * (CLUB_SHORT_NAMES via shortClub) and tighter number columns. The dashboard
+   * leaves it off and looks exactly as before.
+   */
+  compact?: boolean;
 }
 
 /** A cup round's name as a heading over its ties: "Quarter-Final" → "Quarter-Finals". */
@@ -24,7 +31,14 @@ export function roundListLabel(name: string): string {
   return /-Final$/.test(name) ? `${name}s` : name;
 }
 
-export default function LeagueScreen({ career }: Props) {
+export default function LeagueScreen({ career, compact = false }: Props) {
+  // The league tables' columns and club names (see `compact`).
+  const tableCols = compact
+    ? "grid-cols-[14px_1fr_16px_16px_16px_16px_22px] px-1 gap-0.5"
+    : "grid-cols-[24px_1fr_28px_28px_28px_28px_32px] px-2 gap-1";
+  const tableName = (club: string) => (compact ? shortClub(club) : club);
+  const tableBadge = compact ? 14 : 16;
+  const tableNameGap = compact ? "gap-1" : "gap-1.5";
   /** Whose fixture this is — your club, or your country. */
   const sideFor = (f: { kind?: string }) =>
     f.kind === "international" ? nationOf(career) : career.player.club;
@@ -183,7 +197,7 @@ export default function LeagueScreen({ career }: Props) {
             label: leagueNameFor(divisionOf(career)),
             content: (
               <div className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600 shadow-md">
-                <div className="grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] border-l-2 border-l-transparent text-[10px] font-black text-white bg-gray-800 py-1.5 px-2 border-b border-black/50 gap-1">
+                <div className={`grid ${tableCols} border-l-2 border-l-transparent text-[10px] font-black text-white bg-gray-800 py-1.5 border-b border-black/50`}>
                   <div className="text-center">#</div>
                   <div>Name</div>
                   <div className="text-center">P</div>
@@ -209,14 +223,14 @@ export default function LeagueScreen({ career }: Props) {
                     return (
                     <div
                       key={t.name}
-                      className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] text-[10px] font-bold py-1.5 px-2 gap-1 items-center border-b border-black/20 ${euroClass(pos, isPlayer)} ${
+                      className={`grid ${tableCols} text-[10px] font-bold py-1.5 items-center border-b border-black/20 ${euroClass(pos, isPlayer)} ${
                         isPlayer ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
                       }`}
                     >
                       <div className="text-center font-black">{i + 1}</div>
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <ClubBadge club={t.name} size={16} />
-                        <span className="truncate">{t.name}</span>
+                      <div className={`flex min-w-0 items-center ${tableNameGap}`}>
+                        <ClubBadge club={t.name} size={tableBadge} />
+                        <span className="truncate">{tableName(t.name)}</span>
                       </div>
                       <div className="text-center">{t.played}</div>
                       <div className="text-center">{t.won}</div>
@@ -340,7 +354,7 @@ export default function LeagueScreen({ career }: Props) {
                     : euro.eliminated ? "border-gray-600 bg-gray-800" : "border-emerald-600 bg-emerald-600/15"}`}
                 >
                   <div className="mb-3 overflow-hidden rounded-lg border border-gray-600 bg-gray-700 shadow-md">
-                    <div className="grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] border-l-2 border-l-transparent gap-1 border-b border-black/50 bg-gray-800 px-2 py-1.5 text-[10px] font-black text-white">
+                    <div className={`grid ${tableCols} border-l-2 border-l-transparent border-b border-black/50 bg-gray-800 py-1.5 text-[10px] font-black text-white`}>
                       <div className="text-center">#</div>
                       <div>Name</div>
                       <div className="text-center">P</div>
@@ -355,13 +369,13 @@ export default function LeagueScreen({ career }: Props) {
                         return (
                           <div
                             key={t.name}
-                            className={`grid grid-cols-[24px_1fr_28px_28px_28px_28px_32px] items-center gap-1 border-b border-black/20 px-2 py-1.5 text-[10px] font-bold ${euroZone(pos)} ${
+                            className={`grid ${tableCols} items-center border-b border-black/20 py-1.5 text-[10px] font-bold ${euroZone(pos)} ${
                               t.isYou ? "bg-emerald-600 text-white" : i % 2 === 0 ? "bg-gray-700 text-white" : "bg-gray-800 text-white"}`}
                           >
                             <div className="text-center font-black">{pos}</div>
-                            <div className="flex min-w-0 items-center gap-1.5">
-                              <ClubBadge club={t.name} size={16} />
-                              <span className="truncate">{t.name}</span>
+                            <div className={`flex min-w-0 items-center ${tableNameGap}`}>
+                              <ClubBadge club={t.name} size={tableBadge} />
+                              <span className="truncate">{tableName(t.name)}</span>
                             </div>
                             <div className="text-center">{t.played}</div>
                             <div className="text-center">{t.won}</div>

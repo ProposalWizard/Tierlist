@@ -56,6 +56,8 @@ interface Props {
   onContinue?: () => void;
   /** Tapping a post's heart. Absent: the heart is not tappable. */
   onToggleLike?: (postId: string) => void;
+  /** PROTOTYPE: render just the app, inside someone else's PhoneFrame. */
+  inPhone?: boolean;
 }
 
 /**
@@ -72,7 +74,7 @@ const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
   { id: "club", label: "Club", scope: "club" },
 ];
 
-export default function MediaFeed({ career, mode, onContinue, onToggleLike }: Props) {
+export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPhone = false }: Props) {
   const [filter, setFilter] = useState("all");
   // Feed vs Transfers — two tabs of the one app on the phone, not two
   // separate screens. Dashboard only (mode === "browse"); the post-match
@@ -106,8 +108,8 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike }: Pr
     fixtureDate(career.player.startYear, career.season, career.week, "saturday", divisionOf(career)),
   ).replace(/\/\d{2}$/, "");
 
-  const phone = (
-    <PhoneFrame statusLabel={dateLabel}>
+  const app = (
+    <>
       {/* App bar — the one constant across both tabs. Reads "Post Match
           Reactions" for the standalone full-time screen (mode === "moment")
           instead of the ordinary "Matchday" — requested directly, once the
@@ -224,8 +226,12 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike }: Pr
           </TabButton>
         </div>
       )}
-    </PhoneFrame>
+    </>
   );
+  // PROTOTYPE (home-screen proto): the feed as one app on the phone's home
+  // screen (PhoneHome.tsx), which draws the phone itself.
+  if (inPhone) return app;
+  const phone = <PhoneFrame statusLabel={dateLabel}>{app}</PhoneFrame>;
 
   // Reached from the bottom nav: full-bleed inside DashboardShell already —
   // just fill whatever room it gave us, no screen of our own to build. No

@@ -15,16 +15,20 @@ import { formatMoney } from "@/lib/star/money";
  */
 
 const PRESETS = [10_000, 100_000, 1_000_000, 10_000_000];
+/** Store Coins top-ups (50 Coins = one week of your wage). */
+const COIN_PRESETS = [100, 500, 1_000, 5_000];
 
 function money(n: number): string {
   return formatMoney(n);
 }
 
 export default function DevMoneyPanel({
-  career, onAddMoney,
+  career, onAddMoney, onAddCoins,
 }: {
   career: CareerState;
   onAddMoney: (amount: number) => void;
+  /** Dev: + Coins for testing the Store. */
+  onAddCoins?: (amount: number) => void;
 }) {
   const [amount, setAmount] = useState(100_000);
 
@@ -63,6 +67,24 @@ export default function DevMoneyPanel({
           Add
         </button>
       </div>
+
+      {onAddCoins && (
+        <div className="mt-3 border-t border-gray-700 pt-2">
+          <div className="text-[10px] font-black uppercase tracking-widest text-amber-200">+ Coins (Store)</div>
+          <p className="mt-0.5 text-[11px] font-semibold text-white/90">Current: {(career.coins ?? 0).toLocaleString("en-GB")} Coins</p>
+          <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+            {COIN_PRESETS.map(p => (
+              <button
+                key={p}
+                onClick={() => onAddCoins(p)}
+                className="py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-[10px] font-black text-amber-950"
+              >
+                +{p.toLocaleString("en-GB")}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -443,6 +443,9 @@ export interface GoalEvent {
   how?: string;
   /** Metres from the centre of the goal at the strike. */
   distance?: number;
+  /** Your assist only: how far YOUR pass travelled, from where you played it
+   *  to where the scorer took it (metres). Absent on older saves. */
+  passLength?: number;
 }
 
 /**
@@ -614,6 +617,27 @@ export interface SponsorDeal {
    *  (fame level + the brand's own requirement). One season, two for the
    *  top three brands. Absent on a deal signed before terms existed. */
   termLeft?: number;
+}
+
+export interface SeasonArchiveRow {
+  season: number;
+  club: string;
+  apps: number;
+  goals: number;
+  assists: number;
+  /** 0 when no rated appearance. */
+  avgRating: number;
+  /** Star Man awards — the game's man of the match. */
+  motm: number;
+}
+
+export interface CareerBests {
+  /** Metres, and when. */
+  furthestGoal?: { metres: number; season: number; opponent: string };
+  furthestAssist?: { metres: number; season: number; opponent: string };
+  mostGoalsMatch?: { goals: number; season: number; opponent: string };
+  mostGoalsSeason?: { goals: number; season: number };
+  mostAssistsSeason?: { assists: number; season: number };
 }
 
 export interface Trophy {
@@ -863,6 +887,22 @@ export interface CareerState {
    *  are unique across them. Each set's Standard always counts as owned,
    *  listed or not. Absent on older saves: none bought yet. */
   ownedAnimations?: string[];
+  // ── The Store (lib/star/store/career.ts, 28 Sep 2026). All optional:
+  //    an older save reads as none of each (storage.ts backfills coins). ──
+  /** Coins — the store's second currency. 50 Coins = one week of your wage.
+   *  Only ever added by a test-mode pack or a dev top-up; no payment code. */
+  coins?: number;
+  /** Store accessory ids you own (headband, sleeves, boots colour, …). */
+  ownedAccessories?: string[];
+  /** Accessory slot → the accessory id worn there. On the store's figure
+   *  only for now, not yet on the match figure. */
+  equippedAccessories?: Record<string, string>;
+  /** Date key → daily-special ids already bought at the discount that day. */
+  storeSpecialsBought?: Record<string, string[]>;
+  /** The store's "first Coin pack: double" offer has been used. */
+  storeFirstPackBought?: boolean;
+  /** The store's receipts, newest first (kept to 30). */
+  storeLog?: { at: number; what: string }[];
   ownedItems: OwnedItem[];
   girlfriend: Girlfriend | null;
   sponsors: SponsorDeal[];
@@ -1038,6 +1078,17 @@ export interface CareerState {
    * you did not win.
    */
   potm?: import("./potm").MonthAward[];
+  /**
+   * PROTOTYPE (home-screen proto, 27 Sep 2026) — the Stats page's "All seasons"
+   * and "Records" tabs. One row per finished season, pushed by advanceSeason.
+   * Absent on a save from before it: history starts counting from then.
+   */
+  seasonArchive?: SeasonArchiveRow[];
+  /** Your own personal bests across every match, updated by creditMatchResult. */
+  careerBests?: CareerBests;
+  /** The club this season's club appearances were made for — so a summer
+   *  transfer at the rollover still files the season under the right club. */
+  thisSeasonClub?: string;
   /** Individual honours. The Ballon d'Or was the only one that existed. */
   awards?: { season: number; kind: string; week?: number; detail: string }[];
   /** Wearing the armband at your current club. */
@@ -1285,6 +1336,9 @@ export type StarPhase =
   | "shop-kib"
   | "shop-boots"
   | "shop-lifestyle"
+  /** The Store (daily specials, run-ups, accessories, boosts, Coins) — the
+   *  test area's screen on the real career. See components/star/store/CareerStore. */
+  | "store"
   | "casino-menu"
   | "casino-blackjack"
   | "casino-roulette"
