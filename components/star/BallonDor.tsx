@@ -6,6 +6,12 @@ import { shortClub } from "@/lib/star/media/grammar";
 import { faceOrFake } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import ClubBadge from "@/components/star/ClubBadge";
+import TrophyImage from "./TrophyImage";
+import { Burst, PressButton, Shine, KitStyles } from "./ui";
+import { Screen, Rays, Dots as KitDots } from "./ui/Screen";
+
+/** The ceremony's light: gold, whatever club you play for. */
+const GOLD = "#d4a017";
 
 /**
  * THE CEREMONY.
@@ -50,6 +56,9 @@ const BD_KEYFRAMES = (
     @keyframes bdSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes bdDropIn { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes bdPulse { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+    @media (prefers-reduced-motion: reduce) {
+      [style*="bdFadeIn"], [style*="bdSlideUp"], [style*="bdDropIn"], [style*="bdPulse"] { animation: none !important; }
+    }
   `}</style>
 );
 
@@ -151,9 +160,14 @@ export default function BallonDor({ career, onContinue }: Props) {
     return (
       <Backdrop>
         <div className="text-center" style={{ animation: "bdFadeIn 1s ease-out" }}>
-          <div className="mb-6 text-7xl" style={{ filter: "drop-shadow(0 0 40px rgba(251,191,36,0.5))" }}>🏅</div>
+          <div className="relative mx-auto mb-5 grid h-40 w-40 place-items-center">
+            <Rays color="#fde68a" size={300} />
+            <div className="kit-trophy-in relative" style={{ filter: "drop-shadow(0 0 30px rgba(251,191,36,0.55))" }}>
+              <TrophyImage name="Ballon d'Or" height={130} fallback="🏅" />
+            </div>
+          </div>
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/80">Ceremony</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-white">Ballon d&apos;Or</h1>
+          <h1 className="kit-text-shine mt-2 pr-1 text-[42px] font-black italic tracking-tight" style={{ backgroundImage: "linear-gradient(100deg,#fde68a 20%,#ffffff 45%,#fbbf24 60%,#fde68a 80%)", filter: "drop-shadow(0 3px 0 rgba(0,0,0,.5))" }}>Ballon d&apos;Or</h1>
           <p className="mt-2 text-sm font-bold text-amber-300">Season {career.season}</p>
         </div>
       </Backdrop>
@@ -167,13 +181,14 @@ export default function BallonDor({ career, onContinue }: Props) {
         <div className="w-full max-w-sm text-center" style={{ animation: "bdFadeIn 0.7s ease-out" }}>
           <p className="mb-6 text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/70">The Nominations</p>
           {playerNominated ? (
-            <div className="rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] px-6 py-8">
+            <div className="kit-card kit-slam relative overflow-hidden px-6 py-8" style={{ boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45), 0 0 34px rgba(251,191,36,.25)" }}>
+              <Shine trigger={1} />
               <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">Nominated</p>
               <p className="mt-2 text-2xl font-black text-white">{career.player.firstName} {career.player.lastName}</p>
               <p className="mt-1 text-xs font-bold text-amber-300">Ballon d&apos;Or Season {career.season}</p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-8">
+            <div className="kit-card kit-slam px-6 py-8">
               <p className="text-2xl">😔</p>
               <p className="mt-2 text-xl font-black text-white">{career.player.firstName} {career.player.lastName}</p>
               <p className="mt-1 text-xs font-bold text-white">was not nominated this year.</p>
@@ -191,14 +206,14 @@ export default function BallonDor({ career, onContinue }: Props) {
   if (phase === "countdown") {
     const shown = entries.slice(10 - countRevealed, 10).slice().reverse(); // rank 10 first
     return (
-      <div className="min-h-screen bg-black pb-10">
+      <Screen glow={GOLD} className="max-w-sm px-3 pb-10">
         <Header season={career.season} title="Positions 10 – 3" />
-        <div className="mx-auto max-w-sm space-y-2.5 px-3 pt-5">
+        <div className="space-y-2.5 pt-5">
           {shown.map(e => <CountdownCard key={e.rank} entry={e} />)}
           {countRevealed < 8 && <Dots />}
         </div>
         {BD_KEYFRAMES}
-      </div>
+      </Screen>
     );
   }
 
@@ -219,7 +234,7 @@ export default function BallonDor({ career, onContinue }: Props) {
   // ── finalists: both mystery cards ──
   if (phase === "finalists" && winner && runnerUp) {
     return (
-      <div className="flex min-h-screen flex-col bg-black px-3">
+      <Screen glow={GOLD} className="flex min-h-screen max-w-sm flex-col px-3">
         <Header season={career.season} title="The Final Two" />
         <div className="flex flex-1 flex-col items-center justify-center gap-6 py-8">
           <p className="max-w-xs text-center text-sm text-white/80" style={{ animation: "bdFadeIn 0.8s ease-out" }}>
@@ -235,16 +250,16 @@ export default function BallonDor({ career, onContinue }: Props) {
           </p>
         </div>
         {BD_KEYFRAMES}
-      </div>
+      </Screen>
     );
   }
 
   // ── the reveal itself: winner first, then the runner-up underneath ──
   if (phase === "finalist_reveal" && winner && runnerUp) {
     return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black px-3">
+      <Screen glow={GOLD} center className="max-w-sm px-3">
         {revealStep >= 1 && winner.isPlayer && <Confetti />}
-        <div className="relative z-10 w-full max-w-sm space-y-5">
+        <div className="relative z-10 w-full space-y-5">
           <div className="mb-1 text-center">
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/70">Ballon d&apos;Or {career.season}</p>
             <h2 className="mt-1 text-lg font-black text-white">
@@ -257,40 +272,39 @@ export default function BallonDor({ career, onContinue }: Props) {
           {revealStep >= 2 && <RunnerUpCard entry={runnerUp} />}
 
           {showResultButton && (
-            <button
+            <PressButton
+              variant="secondary"
+              size="md"
               onClick={() => setPhase("result")}
-              className="w-full rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-black text-white transition hover:bg-white/10"
-              style={{ animation: "bdFadeIn 0.5s ease-out" }}
+              className="kit-rise w-full"
             >
               Continue →
-            </button>
+            </PressButton>
           )}
         </div>
         {BD_KEYFRAMES}
-      </div>
+      </Screen>
     );
   }
 
   // ── result ──
   const playerEntry = entries.find(e => e.isPlayer);
   return (
-    <div className="min-h-screen bg-black pb-10">
-      <div className="mx-auto max-w-sm space-y-4 px-3 pt-8">
-        <div className={`rounded-2xl border p-6 text-center ${
-          playerWon ? "border-amber-400/60 bg-amber-400/[0.08]"
-            : playerNominated ? "border-white/15 bg-white/[0.04]"
-              : "border-white/10 bg-white/[0.02]"}`}
-        >
+    <Screen glow={GOLD} className="max-w-sm px-3 pb-10 pt-6">
+      <div className="space-y-4">
+        <div className="kit-card kit-rise relative overflow-hidden p-6 text-center" style={playerWon ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6), 0 0 40px rgba(251,191,36,.25)" } : undefined}>
           {playerWon ? (
             <>
-              <div className="text-5xl">🏅</div>
-              <h2 className="mt-2 text-xl font-black text-amber-300">Ballon d&apos;Or Winner</h2>
-              <p className="mt-2 text-xs text-white/80">History will remember this season.</p>
+              <Rays color="#fde68a" size={280} className="top-[38%]" />
+              <Burst colors={["#fde047", "#fbbf24", "#ffffff", "#f59e0b"]} count={26} className="left-1/2 top-[35%]" />
+              <div className="kit-trophy-in relative mx-auto w-fit"><TrophyImage name="Ballon d'Or" height={96} fallback="🏅" /></div>
+              <h2 className="relative mt-2 text-xl font-black text-amber-300">Ballon d&apos;Or Winner</h2>
+              <p className="relative mt-2 text-xs text-white/80">History will remember this season.</p>
             </>
           ) : playerNominated ? (
             <>
               <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Your Finish</p>
-              <p className="mt-1 text-4xl font-black text-white">
+              <p className="kit-slam mt-1 text-5xl font-black text-white" style={{ textShadow: "0 0 20px rgba(255,255,255,.3)" }}>
                 {playerRank === 2 ? "🥈" : playerRank === 3 ? "🥉" : `#${playerRank}`}
               </p>
               <p className="mt-2 text-xs text-white/80">
@@ -310,7 +324,7 @@ export default function BallonDor({ career, onContinue }: Props) {
         </div>
 
         {playerEntry && (
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="kit-card kit-rise p-4" style={{ animationDelay: "120ms" }}>
             <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-white/70">Your Season</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <Stat label="Goals" value={playerEntry.goals} />
@@ -328,7 +342,7 @@ export default function BallonDor({ career, onContinue }: Props) {
         )}
 
         {!playerWon && winner && (
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="kit-card kit-rise p-4" style={{ animationDelay: "200ms" }}>
             <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/70">Winner</p>
             <div className="flex items-center gap-3">
               <Face image={winner.image} name={winner.name} size={36} ring="border-amber-400/40" />
@@ -344,7 +358,7 @@ export default function BallonDor({ career, onContinue }: Props) {
           </div>
         )}
 
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="kit-card kit-rise p-4" style={{ animationDelay: "280ms" }}>
           <p className="mb-2.5 text-[10px] font-black uppercase tracking-widest text-white/70">Final Top 10</p>
           <div className="space-y-1.5">
             {entries.map(e => (
@@ -359,17 +373,21 @@ export default function BallonDor({ career, onContinue }: Props) {
         </div>
       </div>
 
-      <div className="mx-auto mt-4 max-w-sm px-3">
-        <button
+      <div className="mt-4">
+        <PressButton
+          variant="gold"
+          size="lg"
+          pulse
           onClick={() => onContinue(playerWon)}
-          className="w-full rounded-xl bg-gradient-to-b from-amber-400 to-amber-600 py-3.5 text-sm font-black uppercase tracking-wide text-black transition hover:brightness-105"
+          className="relative w-full overflow-hidden text-[14px]"
         >
+          <Shine loop every={5} />
           Continue to Next Season →
-        </button>
+        </PressButton>
       </div>
 
       {BD_KEYFRAMES}
-    </div>
+    </Screen>
   );
 }
 
@@ -377,18 +395,18 @@ export default function BallonDor({ career, onContinue }: Props) {
 
 function Backdrop({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black px-3">
+    <Screen glow={GOLD} center className="flex max-w-sm flex-col items-center px-3">
       {children}
       {BD_KEYFRAMES}
-    </div>
+    </Screen>
   );
 }
 
 function Header({ season, title }: { season: number; title: string }) {
   return (
-    <div className="sticky top-0 z-10 border-b border-white/10 bg-black/95 px-3 py-3.5 text-center backdrop-blur">
+    <div className="sticky top-0 z-10 -mx-3 border-b border-amber-300/15 bg-[#070b16]/85 px-3 py-3.5 text-center backdrop-blur">
       <p className="text-[9px] font-black uppercase tracking-[0.4em] text-amber-400/70">Ballon d&apos;Or Season {season}</p>
-      <h2 className="mt-0.5 text-sm font-black text-white">{title}</h2>
+      <h2 className="mt-0.5 text-[15px] font-black uppercase tracking-wide text-white">{title}</h2>
     </div>
   );
 }
@@ -398,12 +416,9 @@ function Rule() {
 }
 
 function Dots({ big = false }: { big?: boolean }) {
-  const size = big ? "h-2 w-2" : "h-1 w-1";
   return (
-    <div className="mt-4 flex justify-center gap-1.5">
-      {[0, 160, 320].map(d => (
-        <div key={d} className={`${size} animate-bounce rounded-full bg-amber-400/60`} style={{ animationDelay: `${d}ms` }} />
-      ))}
+    <div className={`mt-4 flex justify-center text-amber-300/80 ${big ? "text-2xl" : "text-lg"}`}>
+      <KitDots />
     </div>
   );
 }
@@ -420,9 +435,8 @@ function Stat({ label, value, accent }: { label: string; value: number | string;
 function CountdownCard({ entry }: { entry: BallonDorEntry }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 ${
-        entry.isPlayer ? "border-amber-400/50 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}
-      style={{ animation: "bdSlideUp 0.45s ease-out" }}
+      className="kit-card flex items-center gap-3 px-3.5 py-3"
+      style={{ animation: "bdSlideUp 0.45s ease-out", ...(entry.isPlayer ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55), 0 0 22px rgba(251,191,36,.22)" } : {}) }}
     >
       <span className={`w-7 shrink-0 text-center text-sm font-black ${entry.rank <= 3 ? "text-amber-400" : "text-white/70"}`}>#{entry.rank}</span>
       <Face image={entry.image} name={entry.name} size={34} ring={entry.isPlayer ? "border-amber-400/50" : "border-white/15"} />
@@ -446,9 +460,10 @@ function CountdownCard({ entry }: { entry: BallonDorEntry }) {
 
 function MysteryCard({ entry }: { entry: BallonDorEntry }) {
   return (
-    <div className={`rounded-2xl border p-4 text-center ${entry.isPlayer ? "border-amber-400/50 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
+    <div className="kit-card relative overflow-hidden p-4 text-center" style={entry.isPlayer ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55)" } : undefined}>
+      <Shine loop every={3.5} />
       <div className="mx-auto mb-2.5 flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-amber-400/40 bg-white/5">
-        <span className="text-base text-amber-400/80">?</span>
+        <span className="kib-glow-pulse text-base text-amber-400/80">?</span>
       </div>
       <p className={`text-sm font-black leading-tight ${entry.isPlayer ? "text-amber-300" : "text-white"}`}>{entry.name}</p>
       <div className="mt-0.5 flex items-center justify-center gap-1">
@@ -465,7 +480,7 @@ function MysteryCard({ entry }: { entry: BallonDorEntry }) {
  *  the wait. */
 function EnvelopeSuspense() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] py-10">
+    <div className="kit-card flex flex-col items-center justify-center py-10">
       <p className="text-4xl" style={{ animation: "bdPulse 1.4s ease-in-out infinite" }}>✉️</p>
       <p className="mt-3 text-[11px] font-bold uppercase tracking-widest text-white/70">The room falls silent…</p>
     </div>
@@ -476,15 +491,16 @@ function EnvelopeSuspense() {
 function WinnerCard({ entry }: { entry: BallonDorEntry }) {
   return (
     <div
-      className={`rounded-2xl border-2 p-6 text-center ${
-        entry.isPlayer ? "border-amber-400 bg-amber-400/[0.12]" : "border-amber-500/60 bg-amber-500/[0.08]"}`}
-      style={{ animation: "bdDropIn 0.7s ease-out", boxShadow: "0 0 50px rgba(251,191,36,0.3)" }}
+      className="kit-card kit-trophy-in relative overflow-hidden p-6 text-center"
+      style={{ boxShadow: `inset 0 0 0 2px ${entry.isPlayer ? "rgba(251,191,36,.9)" : "rgba(245,158,11,.55)"}, 0 0 50px rgba(251,191,36,0.3)` }}
     >
-      <Face image={entry.image} name={entry.name} size={84} ring={entry.isPlayer ? "border-amber-300" : "border-amber-400/60"} />
-      <div className="mx-auto mt-3 w-fit">
-        <span className="text-3xl">🏅</span>
+      <Rays color="#fde68a" size={320} className="top-[30%]" />
+      <Shine trigger={1} />
+      <div className="relative mx-auto w-fit"><Face image={entry.image} name={entry.name} size={84} ring={entry.isPlayer ? "border-amber-300" : "border-amber-400/60"} /></div>
+      <div className="relative mx-auto mt-3 w-fit">
+        <TrophyImage name="Ballon d'Or" height={46} fallback="🏅" />
       </div>
-      <p className="mt-1 text-2xl font-black leading-tight text-amber-300">{entry.name}</p>
+      <p className="relative mt-1 text-2xl font-black leading-tight text-amber-300" style={{ textShadow: "0 0 16px rgba(251,191,36,.45)" }}>{entry.name}</p>
       <p className="mt-1 text-sm font-bold text-white/90">has won the Ballon d&apos;Or</p>
       <div className="mt-2 flex items-center justify-center gap-1.5">
         <ClubBadge club={entry.club} size={16} />
@@ -510,7 +526,7 @@ function WinnerCard({ entry }: { entry: BallonDorEntry }) {
 function RunnerUpCard({ entry }: { entry: BallonDorEntry }) {
   return (
     <div
-      className="flex items-center gap-3 rounded-xl border border-white/12 bg-white/[0.04] p-3"
+      className="kit-card flex items-center gap-3 p-3"
       style={{ animation: "bdSlideUp 0.5s ease-out" }}
     >
       <span className="shrink-0 text-lg">🥈</span>
@@ -529,30 +545,15 @@ function RunnerUpCard({ entry }: { entry: BallonDorEntry }) {
   );
 }
 
+/** Your win: two bursts of gold and confetti from the middle of the screen
+ *  (the kit's Burst — CSS, still for reduced motion). */
 function Confetti() {
-  const pieces = Array.from({ length: 60 }, (_, i) => ({
-    left: `${(i * 13.7 + 4) % 100}%`,
-    color: ["#F0C040", "#FF6B35", "#4ADE80", "#60A5FA", "#F472B6", "#A78BFA", "#FBBF24"][i % 7],
-    width: `${6 + (i % 4) * 2}px`,
-    height: `${10 + (i % 5) * 3}px`,
-    delay: `${((i * 0.11) % 2.2).toFixed(2)}s`,
-    duration: `${(2 + (i % 6) * 0.3).toFixed(2)}s`,
-    rotate: `${(i * 47) % 360}deg`,
-  }));
+  const colors = ["#F0C040", "#FF6B35", "#4ADE80", "#60A5FA", "#F472B6", "#A78BFA", "#FBBF24"];
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
-      {pieces.map((p, i) => (
-        <div
-          key={i}
-          className="absolute animate-bounce rounded-sm"
-          style={{
-            left: p.left, top: `${-5 - (i * 6) % 15}%`,
-            width: p.width, height: p.height, background: p.color,
-            animationDelay: p.delay, animationDuration: p.duration,
-            transform: `rotate(${p.rotate})`, opacity: 0.88,
-          }}
-        />
-      ))}
+      <KitStyles />
+      <Burst colors={colors} count={40} spread={2.2} className="left-1/2 top-[38%]" />
+      <Burst colors={colors} count={30} spread={1.5} round className="left-1/2 top-[30%]" />
     </div>
   );
 }
