@@ -12,6 +12,15 @@
  */
 import { useRef, useState } from "react";
 
+/** A settle with a little overshoot, so a page lands rather than stops. The
+ *  reduced-motion rule in HomeFx.tsx does not reach inline transitions, so a
+ *  phone set to reduce motion gets the plain curve (see `settle`). */
+const SPRING = "420ms cubic-bezier(.3,1.35,.45,1)";
+let SETTLE = SPRING;
+if (typeof window !== "undefined") {
+  try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) SETTLE = "1ms linear"; } catch { /* keep the spring */ }
+}
+
 export default function SwipePages({ index, onIndex, labels, children }: {
   index: number;
   onIndex: (i: number) => void;
@@ -60,10 +69,18 @@ export default function SwipePages({ index, onIndex, labels, children }: {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="relative mb-2 grid shrink-0 grid-cols-3 rounded-xl bg-black/25 p-1">
+        {/* The highlight and its underline follow the finger while you
+            drag, then spring onto the tab you land on. */}
         <div
-          className="absolute bottom-1 top-1 rounded-lg bg-white/15 shadow transition-transform duration-300 ease-out"
-          style={{ width: "calc((100% - 0.5rem) / 3)", left: "0.25rem", transform: `translateX(${index * 100}%)` }}
-        />
+          className="absolute bottom-1 top-1 rounded-lg bg-white/15 shadow"
+          style={{
+            width: "calc((100% - 0.5rem) / 3)", left: "0.25rem",
+            transform: `translateX(${(index - dx / width) * 100}%)`,
+            transition: dx === 0 ? `transform ${SETTLE}` : "none",
+          }}
+        >
+          <div className="absolute inset-x-5 -bottom-[3px] h-[3px] rounded-full bg-emerald-400" style={{ boxShadow: "0 0 8px rgba(52,211,153,.8)" }} />
+        </div>
         {labels.map((l, i) => (
           <button
             key={l}
@@ -89,7 +106,7 @@ export default function SwipePages({ index, onIndex, labels, children }: {
           style={{
             width: "300%",
             transform: `translateX(calc(${-index * (100 / 3)}% + ${dx}px))`,
-            transition: dx === 0 ? "transform 320ms cubic-bezier(.2,.8,.2,1)" : "none",
+            transition: dx === 0 ? `transform ${SETTLE}` : "none",
           }}
         >
           {children.map((c, i) => (
@@ -97,7 +114,9 @@ export default function SwipePages({ index, onIndex, labels, children }: {
             // touch-action: without pan-y here too, a finger's sideways drag
             // was taken by the phone as a scroll (pointercancel) and the page
             // never turned. Mouse drags were unaffected, which hid it.
-            <div key={i} data-scroll-root className="kib-shell-noscroll h-full overflow-y-auto" style={{ width: "33.3333%", touchAction: "pan-y" }}>
+            // data-page-active: the page on screen, so its cards can play
+            // their rise-in each time it is opened (HomeFx.tsx).
+            <div key={i} data-scroll-root data-page-active={i === index} className="kib-shell-noscroll h-full overflow-y-auto" style={{ width: "33.3333%", touchAction: "pan-y" }}>
               {c}
             </div>
           ))}

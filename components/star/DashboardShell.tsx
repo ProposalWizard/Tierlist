@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { formatMoney } from "@/lib/star/money";
+import { HomeFxStyles } from "./HomeFx";
 
 interface Props {
   career: CareerState;
@@ -32,11 +33,17 @@ interface Props {
    * above and below are left off. Header and bottom nav stay.
    */
   compact?: boolean;
+  /** Back to the Home swipe screen — the name pill in the header. There is no
+   *  Home button on the bottom bar (Harry, 28 Sep 2026: "remove Home"). */
+  onHome?: () => void;
+  /** On one of the three swipe screens already. Off them, the name pill turns
+   *  green with a 🏠 so the way back is obvious. */
+  atHome?: boolean;
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false }: Props) {
+export default function DashboardShell({ career, onExit, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, mediaUnread, fullBleed = false, compact = false, onHome, atHome = false }: Props) {
   const fullName = `${career.player.firstName} ${career.player.lastName}`;
   const energyPct = Math.max(0, Math.min(100, career.energy));
 
@@ -71,9 +78,19 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
             {/* Top header */}
             <div className="bg-gradient-to-b from-gray-700 to-gray-800 border-b border-black/50 px-3 py-2 flex items-center justify-between shadow-md">
               <button onClick={onExit} className="w-8 h-8 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-lg">✕</button>
-              <div className="flex-1 mx-3 text-center bg-white/10 rounded-full py-1 text-white font-black text-sm truncate border border-white/20">
+              <button
+                data-home-pill
+                onClick={onHome ?? (() => onNavigate("home"))}
+                aria-label={atHome ? fullName : `Home — ${fullName}`}
+                className={`kib-press flex-1 mx-3 min-w-0 rounded-full py-1 px-3 font-black text-sm truncate border transition-colors ${
+                  atHome
+                    ? "bg-white/10 text-white border-white/20"
+                    : "bg-gradient-to-b from-emerald-400 to-emerald-600 text-white border-emerald-300/70 shadow-[0_0_14px_rgba(16,185,129,.55)]"
+                }`}
+              >
+                {!atHome && <span className="mr-1.5">🏠</span>}
                 {fullName}
-              </div>
+              </button>
               <button onClick={onSettings} aria-label="Settings" className="w-8 h-8 rounded-lg bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center">
                 <GearIcon />
               </button>
@@ -122,6 +139,7 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
             all of them). Only now visibly overflowing because the KIB
             Cans card grew taller in its own redesign — the content itself
             still scrolls, only the track/thumb chrome is hidden. */}
+        <HomeFxStyles />
         <style>{`
           .kib-shell-noscroll::-webkit-scrollbar { display: none; }
           .kib-shell-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
@@ -144,15 +162,14 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
           </div>
         )}
 
-        {/* Bottom nav */}
-        <div className="grid grid-cols-6 gap-0.5 p-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50">
-          {/* PROTOTYPE (home-screen proto): Harry's bar — League · Training ·
-              Home · Play · Relations · Phone. Six buttons; they shrink to fit
-              a 360 px phone rather than drop one. */}
+        {/* Bottom nav — Harry, 28 Sep 2026: "League · Training · Play in the
+            middle · Relationships · Phone", no Home button (the swipe tabs
+            and the name pill up top take you home). Play is the biggest
+            thing on the bar: raised, green, with a slow pulse. */}
+        <div className="relative grid grid-cols-5 items-end gap-1 px-1.5 pb-1.5 pt-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50 shadow-[0_-6px_16px_-8px_rgba(0,0,0,.7)]">
           <NavBtn label="League" icon="🏆" active={activeNav === "league"} onClick={() => onNavigate("league")} />
           <NavBtn label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => onNavigate("skills")} />
-          <NavBtn label="Home" icon="🏠" active={activeNav === "home"} onClick={() => onNavigate("home")} />
-          <NavBtn label="Play" icon="▶" active={activeNav === "play"} onClick={() => onNavigate("play")} highlight />
+          <PlayBtn active={activeNav === "play"} onClick={() => onNavigate("play")} />
           <NavBtn label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => onNavigate("life")} />
           <NavBtn label="Phone" icon="📱" active={activeNav === "media"} onClick={() => onNavigate("media")} dot={mediaUnread} />
         </div>
@@ -161,22 +178,42 @@ export default function DashboardShell({ career, onExit, children, onNavigate, o
   );
 }
 
-function NavBtn({ label, icon, active, onClick, highlight, dot }: { label: string; icon: string; active: boolean; onClick: () => void; highlight?: boolean; dot?: boolean }) {
+function NavBtn({ label, icon, active, onClick, dot }: { label: string; icon: string; active: boolean; onClick: () => void; dot?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className={`relative min-w-0 py-1.5 rounded-lg font-black text-[9.5px] min-[380px]:text-[10.5px] tracking-tight leading-tight flex flex-col items-center gap-0.5 transition ${
-        highlight
-          ? "bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-900/50"
-          : active
-          ? "bg-gray-500 text-white"
-          : "bg-gray-600 text-gray-200 hover:bg-gray-500"
+      className={`kib-press relative min-w-0 h-[50px] rounded-xl font-black text-[11px] min-[380px]:text-[12px] leading-tight flex flex-col items-center justify-center gap-0.5 ${
+        active
+          ? "bg-gradient-to-b from-gray-400/70 to-gray-500/70 text-white shadow-inner"
+          : "bg-gradient-to-b from-gray-600 to-gray-700 text-gray-100 hover:from-gray-500"
       }`}
+      style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.10), 0 2px 4px rgba(0,0,0,.35)" }}
     >
-      <span className="text-base leading-none">{icon}</span>
+      <span className="text-[18px] leading-none">{icon}</span>
       <span className="max-w-full truncate">{label}</span>
-      {dot && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-gray-700" />}
+      {active && <span className="absolute bottom-1 h-[3px] w-5 rounded-full bg-emerald-400" />}
+      {dot && <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-gray-700" />}
     </button>
+  );
+}
+
+/** The centre button: bigger than the rest, raised above the bar, green, and
+ *  breathing slowly so the eye goes to it. */
+function PlayBtn({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <div className="relative flex justify-center">
+      <button
+        onClick={onClick}
+        aria-label="Play"
+        className={`kib-press kib-play-pulse -mt-5 flex h-[66px] w-[66px] flex-col items-center justify-center rounded-full border-[3px] font-black text-white ${
+          active ? "border-white/80" : "border-gray-800"
+        }`}
+        style={{ background: "radial-gradient(circle at 35% 28%, #6ee7b7 0%, #10b981 45%, #047857 100%)" }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" className="ml-0.5 drop-shadow"><path d="M7 4.5v15l13-7.5z" fill="#fff" /></svg>
+        <span className="text-[11px] uppercase tracking-wider leading-none">Play</span>
+      </button>
+    </div>
   );
 }
 

@@ -3562,6 +3562,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
       compact={swipeActive || phase === "skills"}
+      onHome={() => handleNavigate("home")}
+      atHome={swipeActive}
     >
       {unlockedAchievements.length > 0 && (
         <div className="mb-2 bg-yellow-500 border border-yellow-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">
@@ -3629,10 +3631,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           labels={["Stats", "Home", "Shop"]}
         >
           {[
-            <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} />,
+            <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => setPhase(ph)} onLeague={() => handleNavigate("league")} />,
             <HomeHub
               key="home"
-              slim
               career={career}
               nextFixture={nextFixture}
               nextMatchDate={nextMatchDate ?? undefined}
