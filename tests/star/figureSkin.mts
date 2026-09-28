@@ -21,21 +21,21 @@ const { figureSkin, setStoredFigureSkin, storedFigureSkin, setFigureSkinOverride
   await import("../../lib/star/figureSkin");
 const { hairFor, skinFor } = await import("../../lib/star/figure3d");
 
-// ── The real game stays Classic until Harry says so ────────────────────────
-check(FIGURE_SKIN_DEFAULT === "classic", "the default look is Classic");
-check(figureSkin() === "classic", "nothing chosen → Classic");
+// ── 3D is the base (Harry, 28 Sep 2026) ────────────────────────────────────
+check(FIGURE_SKIN_DEFAULT === "3d", "the default look is 3D");
+check(figureSkin() === "3d", "nothing chosen → 3D");
 
 // ── This device's choice, then a page's override on top ────────────────────
-setStoredFigureSkin("3d");
-check(store.get(FIGURE_SKIN_KEY) === "3d", "Settings' choice is kept on this device");
-check(figureSkin() === "3d", "a stored 3D choice is used");
-const undo = setFigureSkinOverride("classic");
-check(figureSkin() === "classic", "the test screen's override wins while it is open");
-check(storedFigureSkin() === "3d", "an override never rewrites the stored choice");
+setStoredFigureSkin("classic");
+check(store.get(FIGURE_SKIN_KEY) === "classic", "Settings' choice is kept on this device");
+check(figureSkin() === "classic", "a stored Classic choice is used");
+const undo = setFigureSkinOverride("3d");
+check(figureSkin() === "3d", "the test screen's override wins while it is open");
+check(storedFigureSkin() === "classic", "an override never rewrites the stored choice");
 undo();
-check(figureSkin() === "3d", "closing the test screen hands the look back");
+check(figureSkin() === "classic", "closing the test screen hands the look back");
 setStoredFigureSkin(null);
-check(figureSkin() === "classic" && !store.has(FIGURE_SKIN_KEY), "clearing the choice goes back to Classic");
+check(figureSkin() === "3d" && !store.has(FIGURE_SKIN_KEY), "clearing the choice goes back to 3D");
 
 // ── Hair: never bald, the same every frame, and genuinely varied ────────────
 const keys = Array.from({ length: 200 }, (_, i) => `sp_${i}`);
@@ -52,4 +52,4 @@ if (problems.length) {
   for (const p of problems) console.error("  ✗ " + p);
   process.exit(1);
 }
-console.log("PASS — Classic by default, Settings then the test screen decide the look, and every drawn head has its own stable hair");
+console.log("PASS — 3D by default, Settings then the test screen decide the look, and every drawn head has its own stable hair");

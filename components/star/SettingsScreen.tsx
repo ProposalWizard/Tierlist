@@ -252,7 +252,7 @@ export default function SettingsScreen({
 
           <SetDivider />
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-black text-white/90">Player look (test)</span>
+            <span className="text-[11px] font-black text-white/90">Player look</span>
             <SegTabs
               className="w-[150px] shrink-0"
               value={look}
@@ -261,7 +261,7 @@ export default function SettingsScreen({
             />
           </div>
           <SetNote dim className="mt-1 text-[10px]">
-            3D draws every player with shading, kit folds, boots and a fitted face. This phone only.
+            3D (the default) draws every player with shading, kit folds, boots and a fitted face. Also on the home screen and in the match bar. This phone only.
           </SetNote>
 
           <SetDivider />

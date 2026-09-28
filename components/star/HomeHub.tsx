@@ -37,6 +37,7 @@ import ClubBadge from "./ClubBadge";
 import KibCanIcon from "./KibCanIcon";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import ShopItemsCard from "./ShopItemsCard";
+import FigureSkinToggle from "./FigureSkinToggle";
 import {
   ClubCard, Pill, StatBar, levelColors, PressButton, RiseIn, Glow, Stadium,
   Burst, Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
@@ -238,6 +239,8 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   return (
     <ClubCard glow={glow} strength={0.2} className="relative overflow-hidden rounded-2xl">
       <Stadium glow={glow} />
+      {/* Players' look, 3D (the default) or Classic — Harry, 28 Sep 2026. */}
+      <FigureSkinToggle className="absolute right-2 top-2 z-10" />
       <div className="relative flex justify-center pt-1.5">
         {/* 204 tall (was 236) so that on an iPhone 13 the next-match card
             under this hero shows its crests above the bottom bar, not just

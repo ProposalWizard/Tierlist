@@ -135,6 +135,7 @@ import { liveWeekFor, goalsForFollowed, scoresAt, type LiveGoal } from "@/lib/st
 import { followedTeams, toggleFollowedTeam } from "@/lib/star/matchDayPrefs";
 import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
+import FigureSkinToggle from "./FigureSkinToggle";
 
 /**
  * `feed` is the commentary screen, and it is where a match LIVES — see
@@ -5916,6 +5917,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               // same formula, so the number at full time IS the number on
               // the stats screen, not a preview that gets recalculated.
             ).toFixed(1), "text-sky-300")}
+          </div>
+          {/* Players' look, 3D or Classic, flipped mid-match. */}
+          <div className="flex items-center border-l border-white/10 px-1.5">
+            <FigureSkinToggle compact />
           </div>
           <button
             onClick={toggleMuted}
