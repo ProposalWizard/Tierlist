@@ -354,6 +354,25 @@ named explicitly.
 **Two hard rules on the match engine, from Mikey:** only ever ADD to gameplay,
 never change it; and never modify `lib/star/canvasEngine.ts`.
 
+### Which model for what (Harry, 29 Sep 2026 — standing)
+
+Said directly when the everyday model's new version came out. Worded by role,
+not by version number, so it doesn't go stale at the next release.
+
+- **The everyday model, at medium or high effort, for common tasks:**
+  reviewing for bugs, writing long artifacts and patch notes, breaking down
+  playtest videos, running playtests and measurements, data pulls, merges and
+  routine fixes. "Run of the mill stuff."
+- **The top model for making things:** building new features, solving hard
+  problems, and UI/design work.
+- **Subagents follow the same split.** Pass the model when launching one:
+  the everyday model for `star-playtest`, video breakdowns, reviews and
+  research; the top model for a build agent doing a new feature or a UI
+  rebuild. Harry's own words on heavy playing: "waste of tokens" on the
+  expensive model.
+- If a task straddles both, do the building on the top model and hand the
+  checking and writing-up to the everyday one.
+
 ### The agent skills, and when each fires
 
 | Agent | Use it when |

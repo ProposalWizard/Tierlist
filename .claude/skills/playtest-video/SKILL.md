@@ -36,6 +36,17 @@ them to change the sharing, don't guess. The Google Drive connector can FIND a
 file (`search_files`, mimeType video) but can't carry a video this size: the
 download itself has to come through `fetch.py`.
 
+### Big videos: break them down on the Mac instead
+
+A long or big recording is slow to upload and slow to chop up in the cloud.
+`scripts/playtest-video/Breakdown-on-Mac.command` is ONE file for Harry's Mac
+(built by `build-mac-button.sh`, with `breakdown.py` folded inside, so no git
+is needed on his side). It does the breakdown on the Mac and drops a small
+zip in the same Drive folder. When they say "new breakdown's in", find the
+newest `.zip` there and pass its file id to `fetch.py`: it sees the zip and
+unpacks it into `.playtests/<name>/`, ready to read (skip step 2). Under about
+20 minutes, the normal route below is fine.
+
 ## 2. Break it down
 
 ```bash
