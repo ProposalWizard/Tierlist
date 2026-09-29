@@ -35,6 +35,7 @@ import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { divisionOf, leagueNameFor, fixtureTimestamp } from "@/lib/star/calendar";
 import ClubBadge from "./ClubBadge";
 import KibCanIcon from "./KibCanIcon";
+import { setPieceDuties } from "@/lib/star/setPieces";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
 import {
   ClubCard, Pill, StatBar, levelColors, PressButton, RiseIn, Glow, Stadium,
@@ -225,6 +226,7 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   const last = lastFive(career).at(-1);
   const [celebrate, setCelebrate] = useState(false);
   const [starPass, setStarPass] = useState(false);
+  const duties = setPieceDuties(career);
   useEffect(() => {
     if (!last || last.res !== "W") return;
     const key = `kib-celebrated-${career.season}-${last.week}`;
@@ -278,6 +280,14 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
         {/* The club · number · position line is gone (Mikey: the badge, the
             shirt number and the club are already on screen). Rating sits
             under the name and opens the Star Pass. */}
+        {/* Set-piece tags you've earned: PK = penalty taker, FK = free-kick
+            taker (Mikey, 29 Sep 2026: "like a tag that you've earned"). */}
+        {(duties.penalties || duties.freeKicks) && (
+          <div className="mt-1 flex justify-center gap-1.5">
+            {duties.penalties && <DutyTag code="PK" label="Penalty taker" />}
+            {duties.freeKicks && <DutyTag code="FK" label="Free-kick taker" />}
+          </div>
+        )}
         <button
           onClick={() => setStarPass(true)}
           className="kib-press mt-1.5 inline-flex"
@@ -420,5 +430,15 @@ function StarPassSoon({ onClose, rating }: { onClose: () => void; rating: number
         <button onClick={onClose} className="mt-3 w-full rounded-xl bg-white/15 py-2 text-sm font-black text-white">Close</button>
       </div>
     </div>
+  );
+}
+
+/** A set-piece duty you've earned: just the short code, a small gold tag
+ *  (Mikey, 29 Sep 2026: "it should just say PK and it should just say FK"). */
+function DutyTag({ code, label }: { code: string; label: string }) {
+  return (
+    <span className="rounded-md border border-amber-200 bg-amber-400 px-1.5 py-[1px] text-[11px] font-black leading-tight text-gray-950 shadow-[0_0_10px_rgba(251,191,36,.45)]" title={label} aria-label={label}>
+      {code}
+    </span>
   );
 }

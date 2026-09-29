@@ -45,7 +45,7 @@ import { sortLeague } from "@/lib/star/season";
 import { generateRelegationOffers } from "@/lib/star/relegationOffers";
 import { loadLineup, saveLineup, fetchSharedLineups, type SavedLineup } from "@/lib/star/lineupStore";
 import { DEFAULT_FORMATION, type Role } from "@/lib/star/formations";
-import { spendAction, rest, canAct, projectedEnergy, startNewWeek } from "@/lib/star/week";
+import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { generateOffers, acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
@@ -70,6 +70,7 @@ import ProfileSetup from "@/components/star/ProfileSetup";
 import TrialSequence from "@/components/star/TrialSequence";
 import FreeAgentShell from "@/components/star/FreeAgentShell";
 import TrialReward from "@/components/star/TrialReward";
+import { clubTheme } from "@/components/star/ui";
 import { POSITION_NAMES } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
@@ -679,7 +680,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, []);
 
   const handleTrain = useCallback((skill: keyof Skills) => {
-    if (!career || !canAct(career)) return;
+    if (!career || trainingLeft(career) <= 0) return;
     setTrainingSkill(skill);
     setTrainingLevel(null);
     setPhase("training");
@@ -750,7 +751,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     checkAndSetAchievements(updated);
     updated.starRating = computeStarRating(updated);
     toastRatingChange(career.starRating, updated.starRating);
-    setCareer(spendAction(updated));
+    // A training session, not one of the week's actions (week.ts).
+    setCareer(spendTrainingSession(updated));
     setTrainingSkill(null);
     setTrainingLevel(null);
     // A youth-team player's week is lived on his own screen, so training
@@ -2956,6 +2958,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         skill={trainingSkill}
         trainingLevel={trainingLevel}
         skills={career.skills}
+        glow={clubTheme(career.player.club, career).glow}
         onComplete={handleTrainingComplete}
       />
     );
@@ -3406,7 +3409,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       compact={swipeActive || phase === "skills"}
       // The home button top-left opens the main menu (Mikey, 28 Sep 2026:
       // "this home button should take you back to the main menu").
-      onHome={() => setTitleOpen(true)}
+      // On Home it opens the main menu; anywhere else it takes you back to
+      // Home (Mikey, 29 Sep 2026: "there's no simple way to get back").
+      onHome={() => (swipeActive ? setTitleOpen(true) : handleNavigate("home"))}
       atHome={swipeActive}
     >
       {unlockedAchievements.length > 0 && (

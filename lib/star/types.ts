@@ -1023,6 +1023,12 @@ export interface CareerState {
   /** Things you can still do before the next match. Refills every week. */
   weekActions?: number;
   /**
+   * Training sessions left this week (absent = the full 2). Refilled only
+   * after a SATURDAY match, so a Saturday-Wednesday-Saturday week still has
+   * just 2 between them (Mikey, 29 Sep 2026). See week.ts.
+   */
+  trainingSessions?: number;
+  /**
    * Asked to play somewhere other than your real position — set on the
    * matchday screen (`PositionPicker.tsx`) and applies to every match from
    * then on, not just the next one, until you change it again or pick your

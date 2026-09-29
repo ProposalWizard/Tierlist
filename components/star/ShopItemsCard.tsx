@@ -38,11 +38,30 @@ export default function ShopItemsCard({ career, onOpenShop, showCans = true, glo
             {boot.curve && worn && <span className="rounded bg-sky-500/30 px-1 text-[8.5px] font-black text-sky-200">CURVE</span>}
             {boot.extraTouch && worn && <span className="rounded bg-fuchsia-500/30 px-1 text-[8.5px] font-black text-fuchsia-200">TOUCH</span>}
           </div>
-          <div className="text-[10.5px] font-bold text-white/70">
+          <div className="text-[10.5px] font-bold text-white">
             {worn ? <><Pop value={boot.matches}>{boot.matches}</Pop> match{boot.matches === 1 ? "" : "es"} left · Pow +{boot.power} · Tec +{boot.technique}</> : "Worn out — no boost"}
           </div>
         </div>
       </div>
+      {/* Everything else you own — items, cars, houses (Mikey, 29 Sep 2026:
+          "it's just showing KIB cans instead of the items you actually own"). */}
+      {career.ownedItems.length > 0 ? (
+        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+          {career.ownedItems.map((it) => (
+            <div key={it.id} className="flex items-center gap-2 rounded-lg bg-black/25 p-1.5">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-fuchsia-500/20 text-[17px]">
+                {it.category === "vehicle" ? "🚗" : it.category === "property" ? "🏠" : "💎"}
+              </span>
+              <div className="min-w-0">
+                <div className="truncate text-[11px] font-black text-white">{it.name}</div>
+                <div className="text-[10px] font-bold text-white">{it.level ? `Level ${it.level} · ` : ""}+{it.lifestyleValue} fame</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-1.5 rounded-lg bg-black/25 p-2 text-[11px] font-bold text-white">No items, cars or houses yet — Shop → Style.</div>
+      )}
       {showCans && (
         <div className="mt-1.5 grid grid-cols-3 gap-1.5">
           {KIB_CANS.map((c) => {

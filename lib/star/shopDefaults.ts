@@ -131,28 +131,20 @@ interface BootSpec {
   priceFactor?: number;
 }
 
+// Seven boots, each with one clear job (Mikey, 29 Sep 2026: "remove about
+// four to seven of these… we need the Swerve, the Maestro, and then the basic
+// ones"). The biggest number on each is its job; every one still comes in 5
+// levels. Gone: NS-Blast, Pro, Legend, Meteor, Vapor, Phantom, Galaxy — a
+// pair already owned is kept until it wears out.
 const BOOT_SPECS: BootSpec[] = [
-  // ── Starter: non-league money. One pair, saved for, worn for two seasons.
+  // ── Starter: a little of everything, and it lasts.
   { id: "starter", name: "NS-Pure", pace: 5, power: 5, technique: 5, tier: "starter", at: 0.15, priceFactor: 0.5, matches: 35 },
-  { id: "control", name: "NS-Control", pace: 5, power: 5, technique: 10, tier: "starter", at: 0.55, matches: 30 },
-  { id: "attacker", name: "NS-Blast", pace: 10, power: 10, technique: 5, tier: "starter", at: 1, matches: 30 },
-
-  // ── Semi-Pro: League Two money.
-  { id: "speed", name: "NS-Flash", pace: 10, power: 5, technique: 10, tier: "semi_pro", at: 0.45, matches: 25 },
-  { id: "power", name: "NS-Thunder", pace: 5, power: 10, technique: 10, tier: "semi_pro", at: 0.7, matches: 30 },
-
-  // ── Pro: League One money.
-  { id: "elite", name: "NS-Elite", pace: 10, power: 10, technique: 10, tier: "pro", at: 0.45, matches: 14 },
-  { id: "pro", name: "NS-Pro", pace: 15, power: 15, technique: 10, tier: "pro", at: 0.7, matches: 17 },
-  { id: "legend", name: "NS-Legend", pace: 15, power: 15, technique: 15, tier: "pro", at: 1, matches: 20 },
-
-  // ── Elite: Championship money.
-  { id: "meteor", name: "NS-Meteor", pace: 20, power: 15, technique: 15, tier: "elite", at: 0.55 },
-  { id: "vapor", name: "NS-Vapor", pace: 15, power: 20, technique: 20, tier: "elite", at: 1 },
-
-  // ── World Class: top-flight money.
-  { id: "phantom", name: "NS-Phantom", pace: 20, power: 20, technique: 20, tier: "world_class", at: 0.55 },
-  { id: "galaxy", name: "NS-Galaxy", pace: 25, power: 25, technique: 25, tier: "world_class", at: 0.8 },
+  // ── The three specialists: one stat big, the others small.
+  { id: "speed", name: "NS-Flash", pace: 11, power: 3, technique: 5, tier: "semi_pro", at: 0.45, matches: 25 },
+  { id: "power", name: "NS-Thunder", pace: 3, power: 11, technique: 5, tier: "semi_pro", at: 0.55, matches: 25 },
+  { id: "control", name: "NS-Control", pace: 3, power: 5, technique: 11, tier: "pro", at: 0.2, matches: 25 },
+  // ── The all-rounder: everything, dearer, wears out fastest.
+  { id: "elite", name: "NS-Elite", pace: 8, power: 8, technique: 8, tier: "elite", at: 0.4, matches: 14 },
   // Both of these are a whole extra ability rather than a stat boost (curve
   // for NS-Swerve, Touch Mode for NS-Maestro — see Boot.curve/extraTouch and
   // CanvasMatch.tsx), so both sit at the top of world_class's own band
@@ -362,6 +354,23 @@ export const BOOT_LEVELS: Boot[] = BOOT_SPECS.flatMap((spec) => {
   });
 });
 
+/**
+ * The top levels of Style cost far more (Mikey, 29 Sep 2026: "the level five
+ * should be an incredible amount … something you try to earn throughout the
+ * game"). Level 5 is multiplied so the Private Island costs exactly ★10m, and
+ * every other level-5 item by the same factor; level 4 so the island is
+ * about ★5m; level 3 a bit, so the steps between levels stay even-ish.
+ * Levels 1-2 unchanged. A Premier League earner on ★40k a week (wage +
+ * bonuses + sponsors) takes about 5 seasons to afford the island.
+ */
+const ISLAND_L5_TARGET = 10_000_000;
+const ISLAND_L5_BAND = bandPrice("world_class", "endgame", 1); // the island's level-5 price before the multiplier
+export const LIFESTYLE_LEVEL_PRICE_MULT: Record<number, number> = {
+  3: 4,
+  4: 12,
+  5: ISLAND_L5_TARGET / ISLAND_L5_BAND,
+};
+
 export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
   const out: OwnedItem[] = LIFESTYLE_SPECS.flatMap((spec) => {
     const own = levelOfTier(spec.tier);
@@ -373,7 +382,7 @@ export const LIFESTYLE_LEVELS: OwnedItem[] = (() => {
         category: spec.category,
         level,
         baseId: spec.id,
-        price: bandPrice(tierOfLevel(level), spec.band, spec.at),
+        price: Math.round((bandPrice(tierOfLevel(level), spec.band, spec.at) * (LIFESTYLE_LEVEL_PRICE_MULT[level] ?? 1)) / 5) * 5,
         lifestyleValue: Math.max(1, Math.round(spec.lifestyleValue * Math.pow(LIFESTYLE_VALUE_STEP, level - own))),
       };
     });

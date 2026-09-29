@@ -47,9 +47,10 @@ export default function SwipePages({ index, onIndex, labels, children }: {
       dragged.current = true;
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     }
-    // Resist at the two ends rather than sliding off into nothing.
+    // No dragging past the two ends: there is nothing there (Mikey, 29 Sep
+    // 2026: "I don't think I should let you drag to the left like that").
     const atEdge = (index === 0 && mx > 0) || (index === 2 && mx < 0);
-    setDx(atEdge ? mx * 0.25 : mx);
+    setDx(atEdge ? 0 : mx);
   };
   const onUp = (e: React.PointerEvent) => {
     const s = start.current;
