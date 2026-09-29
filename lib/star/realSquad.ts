@@ -266,6 +266,21 @@ export async function fetchRealSquad(club: string, year = STAR_FIFA_YEAR): Promi
  * yet fixed, and worth flagging rather than silently accepting a different
  * broken behaviour in its place.
  */
+/**
+ * Settings → "Refresh Player Photos" for YOUR OWN club: only the photo
+ * changes, matched by sofifaId (or id). Everyone else in your dressing room
+ * — signings, departures, their goals — stays exactly as the career has it.
+ */
+export function refreshSquadPhotos(fresh: SquadPlayer[], current: SquadPlayer[]): SquadPlayer[] {
+  const photo = new Map<string, string>();
+  for (const p of fresh) if (p.imageUrl) photo.set(p.sofifaId ?? p.id, p.imageUrl);
+  if (!current.length) return fresh;
+  return current.map(p => {
+    const img = photo.get(p.sofifaId ?? p.id);
+    return img && img !== p.imageUrl ? { ...p, imageUrl: img } : p;
+  });
+}
+
 export function mergeSquadStats(fresh: SquadPlayer[], previous: SquadPlayer[]): SquadPlayer[] {
   const before = new Map(previous.map(p => [p.sofifaId ?? p.id, p]));
   return fresh.map((p) => {

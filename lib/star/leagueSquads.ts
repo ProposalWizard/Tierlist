@@ -883,6 +883,37 @@ export function reconcileExternalSquads(
   return out;
 }
 
+/**
+ * Settings → "Refresh Player Photos": bring every player's PHOTO up to date
+ * from a fresh fetch, and nothing else.
+ *
+ * It used to run `mergeLeagueSquadStats(fresh, saved)`, which replaces each
+ * club with the database's copy and keeps only goals and assists — so
+ * pressing the button undid transfers, wonderkid growth, signings and sales
+ * at clubs you own, exactly like the old reload did (see
+ * reconcileExternalSquads). Now a player keeps everything the career gave
+ * him and only his `image` changes, matched by id; a club the career has
+ * nothing real for still comes in whole, the same way a load does.
+ */
+export function refreshLeagueSquadPhotos(
+  current: LeagueSquad[], fresh: LeagueSquad[],
+  emptiedOnPurpose: (club: string) => boolean = () => false,
+): LeagueSquad[] {
+  const photo = new Map<string, string>();
+  for (const s of fresh) for (const p of s.players) if (p.image) photo.set(p.id, p.image);
+  const withPhotos = current.map(s => {
+    let changed = false;
+    const players = s.players.map(p => {
+      const img = photo.get(p.id);
+      if (!img || img === p.image) return p;
+      changed = true;
+      return { ...p, image: img };
+    });
+    return changed ? { ...s, players } : s;
+  });
+  return reconcileExternalSquads(withPhotos, fresh, emptiedOnPurpose);
+}
+
 /** Did this fetch actually reach the database? A failed one comes back as
  *  nothing but invented (`gen:`) players. */
 export function isRealFetch(squads: LeagueSquad[]): boolean {

@@ -53,8 +53,8 @@ import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
-import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch } from "@/lib/star/leagueSquads";
+import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos } from "@/lib/star/realSquad";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos } from "@/lib/star/leagueSquads";
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
@@ -1644,9 +1644,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     ]);
     setCareer(c => {
       if (!c) return c;
-      const squad = mergeSquadStats(freshSquad, c.squad ?? []);
-      const leagueSquads = mergeLeagueSquadStats(freshLeague, c.leagueSquads ?? []);
-      const externalSquads = mergeLeagueSquadStats(freshExternal, c.externalSquads ?? []);
+      // Photos only: a refresh must never undo a transfer, a grown rating or
+      // a signing (see refreshLeagueSquadPhotos). A failed fetch changes nothing.
+      const dissolved = (club: string) => !!c.ownedClubs?.[club]?.dissolvedInto;
+      const squad = shouldUpgradeSquad(c.squad ?? []) ? mergeSquadStats(freshSquad, c.squad ?? []) : refreshSquadPhotos(freshSquad, c.squad ?? []);
+      const leagueSquads = isRealFetch(freshLeague) ? refreshLeagueSquadPhotos(c.leagueSquads ?? [], freshLeague, dissolved) : (c.leagueSquads ?? []);
+      const externalSquads = isRealFetch(freshExternal) ? refreshLeagueSquadPhotos(c.externalSquads ?? [], freshExternal, dissolved) : (c.externalSquads ?? []);
       return { ...c, squad, leagueSquads, externalSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
     });
   }, [career]);
