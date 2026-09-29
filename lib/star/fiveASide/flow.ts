@@ -358,6 +358,11 @@ const WATCHABLE_RANGE = 13;
  * drawing from it twice would be two different chances.
  */
 const CHANCE_CACHE = new WeakMap<FiveWorld, FiveWorld>();
+/** Their long shots are played out through the real engine, where your keeper
+ *  saves some, so more of them are played out than the old roll scored — sized so
+ *  their goals a match stay where they were (no input 1.20). */
+const THEM_PLAYOUT_MULT = 4;
+
 function chance(rules: MatchRules, w: FiveWorld, flow: FiveFlowState, rng: () => number): FiveWorld {
   const had = CHANCE_CACHE.get(w);
   if (had) return had;
@@ -1060,12 +1065,16 @@ export function playOn(
           beats.push(snapshot(w, flow));
           return { flow, world: w, beats, events, stop: "them", beatsPlayed: n + 1, scored };
         } else {
-          const goal = rng() < convertRate(MATE_CONVERT_DEEP, rng);
+          const goal = rng() < Math.min(1, THEM_PLAYOUT_MULT * convertRate(MATE_CONVERT_DEEP, rng));
           if (goal) {
-            scored[1] += 1;
-            flow.momentum = clamp1(flow.momentum - 0.3);
-            events.push({ text: "They score from distance.", goal: "them" });
-            kickOffBand(flow, "you");
+            // A shot that would go in is PLAYED OUT, not counted in silence
+            // (Mikey, 28 Sep 2026: "their goals should be played out. But
+            // just keep the game quick"). Only the ones heading in stop the
+            // game, so it is at most a stop or two a match; the real engine
+            // and your keeper decide it from there.
+            w = chance(rules, w, flow, rng);
+            beats.push(snapshot(w, flow));
+            return { flow, world: w, beats, events, stop: "them", beatsPlayed: n + 1, scored };
           } else {
             events.push({ text: THEM_MISS[Math.floor(rng() * THEM_MISS.length)] });
             endOfMove(flow, "them");

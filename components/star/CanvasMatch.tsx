@@ -51,6 +51,10 @@ import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type HookReason } from "@/lib
 import type { ChanceEntry, ChanceOutcome } from "@/lib/star/chanceLog";
 import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
 
+/** How close to the ball a drag has to start, as a fraction of the framed
+ *  height (see onPointerDown). */
+const BALL_GRAB_FRACTION = 0.10;
+
 /**
  * How the ball moves on the contact screen for this chance (Mikey, 27 Sep
  * 2026): a header floats across in the air, a volley bounces across, and a
@@ -5453,7 +5457,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // even when it missed every hit-circle — better a missed order than an
     // accidental, badly-aimed kick.
     if (ballD >= nearestCaptainCandidateDist(p)) return;
-    if (ballD > (vp.y2 - vp.y1) * 0.28) {
+    // The grab zone round the ball: 10% of the framed height (was 28%, which
+    // let a drag start from a third of the screen away — Mikey, 28 Sep 2026:
+    // "you're supposed to be able to start dragging only from the ball").
+    // Still roughly a thumb's width either side of the ball on a phone.
+    if (ballD > (vp.y2 - vp.y1) * BALL_GRAB_FRACTION) {
       // Missed both a player and the ball — nothing happens, exactly as
       // before the armband existed.
       return;

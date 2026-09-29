@@ -283,6 +283,10 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
    */
   const [teachDone, setTeachDone] = useState(false);
   useEffect(() => { if (teachSeen("vision")) setTeachDone(true); }, []);
+  /** The first rep waits for a Start press (Mikey, 28 Sep 2026: "I didn't
+   *  even get to read the tutorial… there should be a button saying start,
+   *  and then it goes to the countdown"). */
+  const [go, setGo] = useState(false);
   const dismissTeach = useCallback(() => {
     markTeachSeen("vision");
     setTeachDone(true);
@@ -371,6 +375,10 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
     setVerdict("");
     setPhase("ready");
     const timers: number[] = [];
+    if (rep === 0 && !go) {
+      setCount(null);
+      return;
+    }
     if (rep === 0) {
       setCount(TEACH_COUNT_FROM);
       for (let n = TEACH_COUNT_FROM - 1; n >= 1; n--) {
@@ -391,7 +399,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
       }, 650));
     }
     return () => { for (const t of timers) window.clearTimeout(t); };
-  }, [rep]);
+  }, [rep, go]);
 
   const tap = (e: React.PointerEvent) => {
     if (phaseRef.current !== "live") return;
@@ -576,7 +584,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                 And, as asked, it stays until it is tapped rather than until
                 the rep counter moves: `rep === 0` no longer gates it. */}
             <div className="w-full max-w-xs text-center">
-              {(TEACH_PERSISTS || rep === 0) && !teachDone && (
+              {(TEACH_PERSISTS || rep === 0) && (!teachDone || (rep === 0 && !go)) && (
                 <TeachCard
                   inline
                   gesture="tap"
@@ -591,7 +599,14 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                 />
               )}
 
-              {rep === 0 && count !== null ? (
+              {rep === 0 && !go ? (
+                <button
+                  onClick={() => setGo(true)}
+                  className="mt-4 w-full rounded-xl bg-emerald-500 py-3 text-base font-black text-emerald-950 active:scale-[0.98]"
+                >
+                  Start
+                </button>
+              ) : rep === 0 && count !== null ? (
                 /* ── The numeral cannot be dismissed, and never could ──
                    A stage that starts on its own needs to say so BEFORE it
                    starts, and this is the only thing telling you when a clock
@@ -607,7 +622,7 @@ export default function TrialVision({ trial, onDone }: TrialVisionProps) {
                 </div>
               ) : (
                 <div className="mt-3">
-                  <div className="text-sm font-black uppercase tracking-widest text-white/70">Heads up</div>
+                  <div className="text-sm font-black uppercase tracking-widest text-white">Heads up</div>
                   <div className="mt-1 text-2xl font-black text-white">Who&apos;s free?</div>
                 </div>
               )}

@@ -14,7 +14,7 @@ import { recordAppearance, selectionFor, MISSED_WEEK } from "./selection";
 import { startNewWeek, WEEK_ACTIONS, actionsLeft, REST_ENERGY } from "./week";
 import { judgeSeason } from "./expectations";
 import {
-  seasonAwards, captaincyEarned, assignSquadNumber, CAPTAIN_TEAM_BONUS,
+  seasonAwards, captaincyEarned, numberOnSigning, numberAtSeasonStart, CAPTAIN_TEAM_BONUS,
 } from "./recognition";
 import { makeManager, sackCheck, bossOnArrival, hireReplacementManager } from "./manager";
 import { allPoolManagers } from "./managerPool";
@@ -454,7 +454,7 @@ export function attachClub(
     squad: generateSquad(clubNameSeed(club)),
     europeanQualification: STARTING_EUROPEAN_QUALIFICATION[club] ?? null,
   };
-  state.squadNumber = assignSquadNumber(state, club);
+  state.squadNumber = numberOnSigning(state, club, firstSigning);
   state.manager = makeManager(state, club, state.season);
   // The starting roster for the sacking carousel below — every real name in
   // managerPool.ts, since nobody has been hired at YOUR club yet (the only
@@ -1554,6 +1554,9 @@ export function advanceSeason(
     player: { ...career.player, age: newAge },
     skills: agedSkills,
     season: career.season + 1,
+    // Your preferred number, if the manager and dressing room have given it
+    // you over the season just gone (recognition.ts).
+    squadNumber: numberAtSeasonStart(career),
     division: nextDivision,
     divisions: ladder.divisions,
     limboClubs: ladder.limbo,

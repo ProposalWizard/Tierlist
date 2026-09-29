@@ -212,11 +212,13 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           <div className="mx-auto mt-2 h-2 w-3/5 overflow-hidden rounded-full bg-black/40 border border-white/15">
             <div
               className="h-full w-full rounded-full"
-              style={{
-                transformOrigin: "left center",
-                animation: `kibCountBar ${timeLimitS}s linear forwards`,
-                animationPlayState: countdownState,
-              }}
+              style={timedOut
+                ? { transformOrigin: "left center", transform: "scaleX(0)" }
+                : {
+                  transformOrigin: "left center",
+                  animation: `kibCountBar ${timeLimitS}s linear forwards`,
+                  animationPlayState: countdownState,
+                }}
             />
           </div>
         )}
@@ -312,11 +314,15 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
               <circle
                 cx="50" cy="50" r="47" fill="none" strokeWidth="4.5" strokeLinecap="round"
                 pathLength={100} strokeDasharray="100"
-                style={{
-                  transform: "rotate(-90deg)", transformOrigin: "50% 50%",
-                  animation: `kibCountRing ${timeLimitS}s linear forwards`,
-                  animationPlayState: countdownState,
-                }}
+                style={timedOut
+                  // Out of time: the ring shows fully empty, never a frozen
+                  // sliver left over (Mikey: "it needs to go all the way round").
+                  ? { transform: "rotate(-90deg)", transformOrigin: "50% 50%", strokeDashoffset: 100 }
+                  : {
+                    transform: "rotate(-90deg)", transformOrigin: "50% 50%",
+                    animation: `kibCountRing ${timeLimitS}s linear forwards`,
+                    animationPlayState: countdownState,
+                  }}
               />
             </svg>
           )}

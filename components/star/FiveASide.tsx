@@ -214,6 +214,7 @@ export default function FiveASide({
   const flowRef = useRef<{ beats: FlowBeat[]; at: number; t: number; perBeat: number } | null>(null);
   const shownRef = useRef<FiveWorld>(matchRef.current.world);
   const [banner, setBanner] = useState<string | null>(null);
+  const [goalTone, setGoalTone] = useState<"you" | "them" | null>(null);
   /** See `obey`. Assigned below, once it exists. */
   const obeyRef = useRef<() => void>(() => {});
 
@@ -424,12 +425,21 @@ export default function FiveASide({
         ? r.beats
         : Array.from({ length: FLOW_MAX_BEATS }, (_, i) =>
           r.beats[Math.round((i * (r.beats.length - 1)) / (FLOW_MAX_BEATS - 1))]);
+      // A goal scored in the flow (a long shot, a team-mate's finish the
+      // match rolled rather than showed) is played slower and named on
+      // screen. It used to change the score in silence (Mikey, 28 Sep 2026:
+      // "It didn't even show them scoring two goals").
+      const slow = r.events.some((e) => e.goal) ? 2.2 : 1;
       const per = Math.max(FLOW_BEAT_MIN_MS,
-        Math.min(FLOW_BEAT_MAX_MS, FLOW_PLAYBACK_MS / beats.length));
+        Math.min(FLOW_BEAT_MAX_MS * slow, (FLOW_PLAYBACK_MS * slow) / beats.length));
       flowRef.current = { beats, at: 0, t: 0, perBeat: per };
       shownRef.current = beats[0].world;
     }
-    setBanner(r.state.possession === "you" ? "Your side have it" : "They have it");
+    const goalEv = r.events.find((e) => e.goal);
+    setGoalTone(goalEv ? (goalEv.goal === "you" ? "you" : "them") : null);
+    setBanner(goalEv
+      ? `⚽ GOAL! ${goalEv.text} ${r.state.score[0]}–${r.state.score[1]}`
+      : r.state.possession === "you" ? "Your side have it" : "They have it");
     setPhase("flow");
   }, [difficulty, finish, onProgress, rng, skills.power, skills.technique]);
 
@@ -452,10 +462,15 @@ export default function FiveASide({
   }, [finish, loadPassage, runFlow, startTheirAttack, startMateAttack]);
   obeyRef.current = obey;
 
+  // Nothing happens until you kick off (Mikey, 28 Sep 2026: "I didn't even
+  // get to read the tutorial… maybe it should start from a kickoff instead,
+  // so that you can kick off when you're ready").
+  const [kickedOff, setKickedOff] = useState(false);
   useEffect(() => {
+    if (!kickedOff) return;
     obey();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [kickedOff]);
 
   // ── The thumb ──────────────────────────────────────────────────────────
 
@@ -1016,9 +1031,32 @@ export default function FiveASide({
       >
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
+        {!kickedOff && (
+          <div className="absolute inset-0 z-30 grid place-items-center bg-black/70 px-5">
+            <div className="w-full max-w-xs rounded-xl border border-amber-300/60 bg-gray-950/95 p-4 text-center">
+              <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">How to play</div>
+              <div className="mt-1 text-lg font-black text-white">Five-a-side</div>
+              <ul className="mt-2 space-y-1 text-left text-[12px] font-bold text-white">
+                <li>• <b>Your ball:</b> tap a team-mate to pass, or drag back from the ball to shoot.</li>
+                <li>• <b>Their ball:</b> tap a man to throw a body at the shot, or tap the goal to send your keeper.</li>
+                <li>• Score more than them before full time.</li>
+              </ul>
+              <button
+                onClick={() => setKickedOff(true)}
+                className="mt-4 w-full rounded-xl bg-emerald-500 py-3 text-base font-black text-emerald-950 active:scale-[0.98]"
+              >
+                Kick off
+              </button>
+            </div>
+          </div>
+        )}
+
         {banner && phase !== "aim" && (
           <div className="pointer-events-none absolute inset-x-0 top-1/3 text-center">
-            <span className="inline-block max-w-[92%] rounded-2xl bg-black/70 px-4 py-2 text-sm font-black leading-snug text-white">
+            <span className={`inline-block max-w-[92%] rounded-2xl px-4 py-2 font-black leading-snug text-white ${
+              phase === "flow" && goalTone
+                ? `text-lg ${goalTone === "you" ? "bg-emerald-600/90" : "bg-red-600/90"}`
+                : "bg-black/70 text-sm"}`}>
               {banner}
             </span>
           </div>

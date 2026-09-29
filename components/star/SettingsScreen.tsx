@@ -105,6 +105,7 @@ export default function SettingsScreen({
   const [following, setFollowing] = useState<string[]>(() => followedClubs());
   const divisionClubs = career.league.map((t) => t.name).filter((n) => n !== career.player.club).sort();
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
+  const [devOpen, setDevOpen] = useState(false);
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
 
@@ -296,11 +297,22 @@ export default function SettingsScreen({
         />
       </RiseIn>
 
-      {/* ── DEVELOPER TOOLS ── */}
-      <RiseIn index={next()}>
-        <SetSection tone={DEV} className="mb-0.5 mt-6">Developer tools</SetSection>
-        <p className="px-0.5 text-[10px] font-semibold text-white/50">Testing and tuning options — not needed for normal play.</p>
+      {/* ── DEVELOPER TOOLS ── hidden behind one button (Mikey, 28 Sep 2026:
+          "the developer tools should be almost hidden… click on it and it
+          shows you all of this stuff, click again to hide it"). */}
+      <RiseIn index={next()} className="mt-6">
+        <button
+          onClick={() => setDevOpen(o => !o)}
+          aria-expanded={devOpen}
+          className="kib-press flex w-full items-center justify-between rounded-xl border-2 border-dashed px-3 py-2.5 text-left"
+          style={{ borderColor: DEV, background: "rgba(0,0,0,.25)" }}
+        >
+          <span className="text-[13px] font-black text-white">🛠 Developer tools</span>
+          <span className="text-[11px] font-black text-white">{devOpen ? "Hide ▴" : "Show ▾"}</span>
+        </button>
       </RiseIn>
+      {devOpen && (<>
+      <p className="mt-2 px-0.5 text-[11px] font-semibold text-white">Testing and tuning options — not needed for normal play.</p>
 
       <RiseIn index={next()} className="mt-2">
         <SetCard tone={DEV} strength={0.18}>
@@ -340,6 +352,8 @@ export default function SettingsScreen({
         onDeleteSavedReplay={onDeleteSavedReplay}
       />
 
+      </>)}
+
       {onExitCareer && (
         <RiseIn index={next()} className="mb-2 mt-6">
           <PressButton
@@ -351,7 +365,7 @@ export default function SettingsScreen({
           >
             Exit career — back to Knowitball
           </PressButton>
-          <p className="mt-1.5 text-center text-[10px] font-semibold text-white/60">
+          <p className="mt-1.5 text-center text-[10px] font-semibold text-white">
             Your career stays saved. You come back to exactly this.
           </p>
         </RiseIn>
@@ -369,7 +383,7 @@ function RunupPicker<Id extends RunupId>({ title, styles, current, onPick }: {
 }) {
   return (
     <div className="mt-2.5">
-      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/70">{title}</div>
+      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white">{title}</div>
       <div className="mt-1 flex flex-wrap gap-1.5">
         {styles.map((r) => {
           const on = current === r.id;

@@ -13,9 +13,9 @@
  * presses in. Everything rises in each time the page is swiped to.
  */
 import type { CareerState } from "@/lib/star/types";
+import ShopItemsCard from "./ShopItemsCard";
 import { formatMoney } from "@/lib/star/money";
 import type { HubPhase } from "./HomeHub";
-import ShopItemsCard from "./ShopItemsCard";
 import { ClubCard, CountUp, RiseIn, Glow, Shine, useClubTheme, rgba, tint } from "./ui";
 
 const TILES: { ph: HubPhase; icon: string; label: string; sub: string; color: string }[] = [
@@ -86,6 +86,8 @@ export default function ShopPage({ career, onOpen }: { career: CareerState; onOp
           ))}
         </div>
       </RiseIn>
+      {/* "Your shop items" lives here only — it was on Home too (Mikey,
+          28 Sep 2026). */}
       <RiseIn onPageActive index={4}>
         <ShopItemsCard career={career} onOpenShop={() => onOpen("shop-kib")} glow={glow} />
       </RiseIn>

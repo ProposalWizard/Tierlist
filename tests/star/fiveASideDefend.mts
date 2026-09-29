@@ -502,7 +502,10 @@ function playMatch(seed: number, mode: Mode): Played {
   // reach. `none` is still printed above so a drift in the baseline is
   // visible rather than hidden inside a ratio.
   check(
-    perfect > 0.3,
+    // 0.2, was 0.3: since 28 Sep 2026 their long shots are played out on the
+    // pitch (Mikey: "their goals should be played out"), so a tap can reach
+    // them too. Before, perfect play conceded 0.52; now 0.25.
+    perfect > 0.2,
     `perfect play must not shut them out — ${perfect.toFixed(2)} a match against `
     + `${none.toFixed(2)} for doing nothing`,
   );

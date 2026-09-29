@@ -54,7 +54,7 @@ import type { ManagerTalk as Talk } from "@/lib/star/signingTalk";
  * skips the conversation and lands on the negotiation.
  */
 export default function ManagerTalk({
-  talk, managerName, onNegotiate, onAccept,
+  talk, managerName, onNegotiate, onAccept, onSeeOthers,
 }: {
   talk: Talk;
   /** The real manager's name when the club has one; a plain "The manager"
@@ -62,6 +62,8 @@ export default function ManagerTalk({
   managerName: string;
   onNegotiate: () => void;
   onAccept: () => void;
+  /** Go to the list of every club that came in for you. */
+  onSeeOthers?: () => void;
 }) {
   const [shown, setShown] = useState(1);
   const done = shown >= talk.lines.length;
@@ -103,9 +105,9 @@ export default function ManagerTalk({
           </div>
           <div className="text-2xl font-black tabular-nums">
             ★{formatMoney(talk.openingWeekly)}
-            <span className="ml-1 text-sm font-black text-white/50">a week</span>
+            <span className="ml-1 text-sm font-black text-white">a week</span>
           </div>
-          <p className="mt-1.5 text-[11.5px] font-bold leading-snug text-white/70">
+          <p className="mt-1.5 text-[11.5px] font-bold leading-snug text-white">
             {talk.club} are opening below what the deal is worth, the way anybody
             does. Take it, or sit down and argue about it.
           </p>
@@ -114,18 +116,29 @@ export default function ManagerTalk({
               the second one sat 52 px past the bottom edge. */}
           <div className="mt-2.5 grid grid-cols-2 gap-2">
             <button
-              onClick={onNegotiate}
+              onClick={onAccept}
               className="rounded-xl bg-emerald-500 py-2.5 text-[12px] font-black uppercase tracking-widest text-white hover:bg-emerald-400"
             >
-              Talk money →
+              Accept &amp; sign
             </button>
             <button
-              onClick={onAccept}
-              className="rounded-xl bg-white/10 py-2.5 text-[12px] font-black uppercase tracking-widest text-white/80 hover:bg-white/20"
+              onClick={onNegotiate}
+              className="rounded-xl bg-amber-400 py-2.5 text-[12px] font-black uppercase tracking-widest text-gray-950 hover:bg-amber-300"
             >
-              Take the offer
+              Negotiate
             </button>
           </div>
+          {onSeeOthers && (
+            <button
+              onClick={onSeeOthers}
+              className="mt-2 w-full rounded-xl bg-white/10 py-2 text-[12px] font-black uppercase tracking-widest text-white hover:bg-white/20"
+            >
+              See other clubs
+            </button>
+          )}
+          <p className="mt-1.5 text-center text-[10.5px] font-bold text-white">
+            Negotiate for more money — push too hard and he can walk away.
+          </p>
         </div>
       )}
     </div>
