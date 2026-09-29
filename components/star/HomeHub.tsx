@@ -256,7 +256,7 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
             under this hero shows its crests above the bottom bar, not just
             its label. The figure crops its empty top strip to stay big. */}
         <div className={celebrate ? "kib-hop" : "kib-breathe"}>
-          <PlayerAvatar career={career} width={155} height={184} look={look} celebrate={celebrate} />
+          <PlayerAvatar career={career} width={172} height={204} look={look} celebrate={celebrate} />
         </div>
         {celebrate && <Burst colors={[kitShirt, kitTrim, "#fde047", "#ffffff"]} className="left-1/2 top-[38%]" />}
       </div>
