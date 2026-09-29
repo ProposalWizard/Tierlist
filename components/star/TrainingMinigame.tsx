@@ -23,6 +23,8 @@ import { EngineFeature } from "./EnginePlay";
 import type { ScenePicture } from "@/lib/star/scenePicture";
 import type { ChanceResolved } from "./CanvasMatch";
 import { revealOnScreen } from "@/lib/revealOnScreen";
+import { createContext, useContext } from "react";
+import { Burst, Glow, KitStyles, Shine, rgba } from "./ui";
 
 /**
  * TRAINING, REBUILT.
@@ -71,6 +73,8 @@ import { revealOnScreen } from "@/lib/revealOnScreen";
 
 interface Props {
   skill: keyof Skills;
+  /** Your club's colour, to light the drill like the Home screens. */
+  glow?: string;
   /** Which of the 30 training levels is being played (lib/star/trainingLevels.ts). */
   trainingLevel: number;
   /**
@@ -129,6 +133,24 @@ function useTries(onFinish: (stars: number) => void) {
   return { tryIndex: results.length, results, attempt, done };
 }
 
+// ── The look (Mikey, 29 Sep 2026: the drills were "a very basic, null-effort
+//    thing" next to the glowing, club-coloured Home screens) ─────────────────
+//
+// Every drill shares this frame, the flash and the result card, so restyling
+// these three restyles all five. Your club's colour lights the card; each
+// skill has its own accent for the badge and the pips. The drills themselves
+// (what you do, how it's scored) are unchanged.
+
+const SKILL_LOOK: Record<keyof Skills, { icon: string; label: string; accent: string }> = {
+  pace: { icon: "⚡", label: "Pace", accent: "#22d3ee" },
+  power: { icon: "💥", label: "Power", accent: "#f97316" },
+  technique: { icon: "🎯", label: "Technique", accent: "#a78bfa" },
+  vision: { icon: "👁️", label: "Vision", accent: "#38bdf8" },
+  freeKick: { icon: "🌀", label: "Free kick", accent: "#fbbf24" },
+};
+
+const DrillLook = createContext<{ skill: keyof Skills; glow: string }>({ skill: "pace", glow: "#2F6F4E" });
+
 function Shell({
   title, instruction, results, trainingLevel, children,
 }: {
@@ -146,33 +168,61 @@ function Shell({
   useEffect(() => {
     revealOnScreen(pitchRef.current, { smooth: false });
   }, []);
+  const { skill, glow } = useContext(DrillLook);
+  const look = SKILL_LOOK[skill];
+  const onTry = Math.max(0, TRIES - results.length);
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 text-white flex flex-col items-center py-3 px-3">
+    <div className="min-h-screen text-white flex flex-col items-center py-3 px-3"
+      style={{ background: `radial-gradient(90% 50% at 50% 0%, ${rgba(glow, 0.35)}, transparent 70%), linear-gradient(180deg, #0b1220, #05070d)` }}>
       <div className="w-full max-w-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 bg-gray-800 rounded-lg px-3 py-1.5 border border-gray-600">
-            {Array.from({ length: TRIES }).map((_, i) => {
-              const r = results[i];
-              return (
-                <span
-                  key={i}
-                  className={`grid h-5 w-5 place-items-center rounded-full text-[11px] font-black ${
-                    r === true ? "bg-emerald-400 text-emerald-950" : r === false ? "bg-red-500 text-white" : i === results.length ? "border-2 border-amber-300 text-amber-200" : "border border-white/40 text-white"
-                  }`}
-                >
-                  {r === true ? "✓" : r === false ? "✗" : i + 1}
+        <div className="relative overflow-hidden rounded-2xl p-2.5"
+          style={{
+            background: `radial-gradient(120% 90% at 0% 0%, ${rgba(glow, 0.32)}, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,14,24,.97))`,
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px ${rgba(glow, 0.35)}, 0 0 26px -6px ${rgba(glow, 0.55)}, 0 10px 24px -12px rgba(0,0,0,.8)`,
+          }}>
+          <Shine loop every={6} />
+          <div className="relative flex items-center justify-between mb-2">
+            {/* The three tries, as glowing pips. */}
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: TRIES }).map((_, i) => {
+                const r = results[i];
+                const now = r === undefined && i === results.length;
+                return (
+                  <span key={i}
+                    className={`grid h-7 w-7 place-items-center rounded-full text-[12px] font-black ${now ? "animate-pulse" : ""}`}
+                    style={r === true
+                      ? { background: "#34d399", color: "#052e1b", boxShadow: "0 0 12px #34d399" }
+                      : r === false
+                        ? { background: "#ef4444", color: "#fff", boxShadow: "0 0 10px rgba(239,68,68,.7)" }
+                        : now
+                          ? { border: `2px solid ${look.accent}`, color: "#fff", boxShadow: `0 0 12px ${rgba(look.accent, 0.8)}` }
+                          : { border: "2px solid rgba(255,255,255,.25)", color: "#fff" }}>
+                    {r === true ? "✓" : r === false ? "✗" : i + 1}
+                  </span>
+                );
+              })}
+            </div>
+            {/* The skill and level badge. */}
+            <div className="text-right">
+              <div className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: look.accent, textShadow: `0 0 10px ${rgba(look.accent, 0.6)}` }}>
+                {look.icon} {look.label} · {title}
+              </div>
+              <div className="text-[16px] font-black leading-tight text-white">
+                LEVEL {trainingLevel}{" "}
+                <span className="text-amber-300" style={{ textShadow: "0 0 10px rgba(251,191,36,.6)" }}>
+                  {"★".repeat(onTry)}<span className="text-white/25">{"★".repeat(TRIES - onTry)}</span>
                 </span>
-              );
-            })}
+              </div>
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-[11px] font-black text-emerald-300 uppercase tracking-wide">{title}</div>
-            <div className="text-xs text-amber-300 font-black">Level {trainingLevel} · {"★".repeat(Math.max(0, TRIES - results.length))} on this try</div>
+          <div ref={pitchRef} className="relative overflow-hidden rounded-xl"
+            style={{ boxShadow: `0 0 0 1px ${rgba(glow, 0.45)}, 0 0 18px -4px ${rgba(glow, 0.6)}` }}>
+            {children}
           </div>
-        </div>
-        <div ref={pitchRef}>{children}</div>
-        <div className="mt-2 bg-gray-800/90 border border-gray-600 rounded-lg px-3 py-2">
-          <div className="text-xs font-bold text-gray-200 text-center">{instruction}</div>
+          <div className="relative mt-2 rounded-xl px-3 py-2 text-center text-[12px] font-black text-white"
+            style={{ background: "rgba(0,0,0,.35)", boxShadow: `inset 0 0 0 1px ${rgba(look.accent, 0.35)}` }}>
+            {instruction}
+          </div>
         </div>
       </div>
     </div>
@@ -182,9 +232,11 @@ function Shell({
 function Flash({ text, good }: { text: string; good: boolean }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-      <div className={`text-3xl font-black ${good ? "text-emerald-300" : "text-red-400"} drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]`}>
+      <div className={`kib-pop rounded-2xl px-5 py-2 text-3xl font-black italic tracking-tight text-white ${good ? "bg-emerald-500/85" : "bg-red-600/85"}`}
+        style={{ boxShadow: good ? "0 0 30px rgba(52,211,153,.8)" : "0 0 30px rgba(239,68,68,.7)", textShadow: "0 2px 6px rgba(0,0,0,.6)" }}>
         {text}
       </div>
+      {good && <Burst colors={["#34d399", "#fde047", "#ffffff"]} count={18} className="left-1/2 top-1/2" />}
     </div>
   );
 }
@@ -796,26 +848,53 @@ function VisionDrillView({ trainingLevel, onFinish }: { trainingLevel: number; o
 // ═══════════════════════════════════════════════════════════════════════════
 
 function CompleteScreen({ title, trainingLevel, stars }: { title: string; trainingLevel: number; stars: number }) {
+  const { skill, glow } = useContext(DrillLook);
+  const look = SKILL_LOOK[skill];
   const verdict = stars === 3 ? "First time!" : stars === 2 ? "Second try" : stars === 1 ? "Just made it" : "Not this time";
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-950 text-white flex flex-col items-center justify-center py-3 px-3">
-      <div className="w-full max-w-sm bg-gray-800 border border-gray-600 rounded-xl p-6 text-center shadow-2xl">
-        <div className="text-[11px] font-black text-emerald-300 uppercase tracking-widest">{title} · Level {trainingLevel}</div>
-        <div className="mt-3 text-5xl tracking-widest">
+    <div className="min-h-screen text-white flex flex-col items-center justify-center py-3 px-3"
+      style={{ background: `radial-gradient(80% 50% at 50% 30%, ${rgba(glow, 0.4)}, transparent 70%), linear-gradient(180deg, #0b1220, #05070d)` }}>
+      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl p-6 text-center"
+        style={{
+          background: `radial-gradient(120% 90% at 50% 0%, ${rgba(look.accent, 0.3)}, transparent 60%), linear-gradient(180deg, rgba(31,41,55,.95), rgba(10,14,24,.98))`,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px ${rgba(look.accent, 0.4)}, 0 0 40px -8px ${rgba(glow, 0.7)}`,
+        }}>
+        <Glow color={stars > 0 ? "#fbbf24" : look.accent} alpha={0.35} pulse className="inset-10 blur-2xl" />
+        <Shine trigger={stars > 0 ? 1 : 0} />
+        <div className="relative text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: look.accent }}>
+          {look.icon} {look.label} · {title} · Level {trainingLevel}
+        </div>
+        {/* The stars pop in one after another. */}
+        <div className="relative mt-4 flex justify-center gap-2 text-6xl leading-none">
           {[0, 1, 2].map(i => (
-            <span key={i} className={i < stars ? "text-amber-300" : "text-white/20"}>★</span>
+            <span key={i} className={i < stars ? "kib-pop" : ""}
+              style={i < stars
+                ? { color: "#fcd34d", textShadow: "0 0 18px rgba(251,191,36,.9), 0 3px 0 #92400e", animationDelay: `${i * 220}ms`, animationFillMode: "both" }
+                : { color: "rgba(255,255,255,.14)" }}>★</span>
           ))}
         </div>
-        <div className="mt-3 text-lg font-black text-white">{verdict}</div>
-        <div className="mt-1 text-sm font-bold text-white">
-          {stars > 0 ? (trainingLevel < 30 ? `Level ${trainingLevel + 1} unlocked` : "Top level done") : "Try it again next time"}
+        {stars > 0 && <Burst colors={["#fde047", "#ffffff", look.accent]} count={26} className="left-1/2 top-1/2" />}
+        <div className="relative mt-4 text-2xl font-black italic text-white">{verdict}</div>
+        <div className={`relative mx-auto mt-2 inline-block rounded-full px-3 py-1 text-[12px] font-black ${stars > 0 ? "bg-amber-400 text-gray-950" : "bg-white/15 text-white"}`}
+          style={stars > 0 ? { boxShadow: "0 0 16px rgba(251,191,36,.6)" } : undefined}>
+          {stars > 0 ? (trainingLevel < 30 ? `LEVEL ${trainingLevel + 1} UNLOCKED` : "TOP LEVEL DONE") : "Try it again next time"}
         </div>
       </div>
     </div>
   );
 }
 
-export default function TrainingMinigame({ skill, trainingLevel, skills, onComplete }: Props) {
+export default function TrainingMinigame(props: Props) {
+  return (
+    <DrillLook.Provider value={{ skill: props.skill, glow: props.glow ?? "#2F6F4E" }}>
+      <KitStyles />
+      <style>{`@keyframes kib-pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}.kib-pop{animation:kib-pop 420ms cubic-bezier(.2,.9,.25,1) both}`}</style>
+      <TrainingMinigameInner {...props} />
+    </DrillLook.Provider>
+  );
+}
+
+function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete }: Props) {
   const [result, setResult] = useState<number | null>(null);
   // Level 1 of every game opens on a short how-it-works card.
   const [introDone, setIntroDone] = useState(trainingLevel !== 1);

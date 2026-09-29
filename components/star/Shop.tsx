@@ -205,7 +205,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
           <div className="mb-2 text-[11px] font-bold text-white/85">
             Every boot comes in 5 levels. Level 1 is priced for National League money, level 5 for the Premier League. A higher level has better stats.
           </div>
-          <ClubCard glow={theme.glow} className="mb-3 max-h-[400px] overflow-y-auto rounded-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ClubCard glow={theme.glow} className="mb-3 rounded-2xl">
             {bootBases.map((base) => {
               const levels = BOOTS_ALL_LEVELS.filter((b) => baseIdOf(b) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
               const first = levels[0];
@@ -356,7 +356,7 @@ export default function Shop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyI
           <div className="mb-2 text-[11px] font-bold text-white/85">
             Every item comes in 5 levels. Level 1 is priced for National League money, level 5 for the Premier League. A higher level adds more fame, and replaces the one you own.
           </div>
-          <ClubCard glow="#d946ef" className="max-h-[380px] overflow-y-auto rounded-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ClubCard glow="#d946ef" className="rounded-2xl">
             {Array.from(new Set(LIFESTYLE_ALL_LEVELS.filter((i) => i.category === tab).map((i) => baseIdOf(i)))).map((base) => {
               const levels = LIFESTYLE_ALL_LEVELS.filter((i) => baseIdOf(i) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
               const first = levels[0];

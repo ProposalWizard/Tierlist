@@ -273,7 +273,7 @@ export function assignSquadNumber(career: CareerState, club: string): number {
 // want you."
 
 /** Manager and team-mates both at or above this at the end of a season. */
-export const EARN_NUMBER_RELATIONSHIP = 70;
+export const EARN_NUMBER_RELATIONSHIP = 90;
 /** How often a club signing you (not your first club) hands you your number. */
 export const NEW_CLUB_GIVES_NUMBER = 0.8;
 

@@ -39,9 +39,15 @@ function Panel({ tone, title, right, children }: { tone: string; title: React.Re
 
 const ord = (n: number) => (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th");
 
+type StatsTab = "stats" | "contract" | "status";
+let lastTab: StatsTab = "stats";
+
 export default function DashboardStats({ career, onRenew }: Props) {
   const { glow } = useClubTheme(career);
-  const [tab, setTab] = useState<"stats" | "contract" | "status">("stats");
+  // Remembered across screens, so coming back from a contract renewal lands
+  // on Contract, not Stats (Mikey, 29 Sep 2026).
+  const [tab, setTabState] = useState<StatsTab>(lastTab);
+  const setTab = (t: StatsTab) => { lastTab = t; setTabState(t); };
   const selection = selectionFor(career);
   const duties = setPieceDuties(career, selection.status);
   const { pos, exp, onTrack } = expectationStatus(career);

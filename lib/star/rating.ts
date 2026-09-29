@@ -125,7 +125,7 @@ function honourPoints(career: CareerState): number {
  * player", not a blank stat.
  */
 export function computeStarRating(career: CareerState): number {
-  const total = attributeOverall(career.skills) + honourPoints(career);
+  const total = attributeOverall(career.skills) + honourPoints(career) - getTuning("rating.offset");
   return Math.max(getTuning("rating.floor"), Math.min(5, total / getTuning("rating.divisor")));
 }
 

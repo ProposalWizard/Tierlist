@@ -41,7 +41,7 @@ for (const c of KIB_CANS) {
   check(basePrice(b, ctx).stars === kibCanPrice(c, 256), `${c.id} can: the real shop's price`);
 }
 for (const bi of bootsAtLevel(3)) check(basePrice(bi, ctx).stars === bi.boot.price, `${bi.boot.name}: the real shop's price`);
-check(bootsAtLevel(1).length === bootsAtLevel(5).length && bootsAtLevel(1).length >= 10, "every level sells the whole boot range");
+check(bootsAtLevel(1).length === bootsAtLevel(5).length && bootsAtLevel(1).length >= 7, "every level sells the whole boot range (7 boots since 29 Sep 2026)");
 // The stat can climbs in weeks with level (a rating converter).
 const statWeeks = [1, 2, 3, 4, 5].map((level) => basePrice(findItem("stat-can")!, { weeklyWage: 100, level }).weeks);
 for (let i = 1; i < 5; i++) check(statWeeks[i] > statWeeks[i - 1], `stat can costs more weeks at level ${i + 1} (${statWeeks.join("/")})`);

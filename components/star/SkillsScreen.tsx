@@ -2,7 +2,7 @@
 import type { CareerState, Skills } from "@/lib/star/types";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { starsOf, totalStars } from "@/lib/star/trainingLevels";
-import { actionsLeft, WEEK_ACTIONS } from "@/lib/star/week";
+import { trainingLeft, TRAINING_SESSIONS_PER_WEEK } from "@/lib/star/week";
 import { getTuning } from "@/lib/star/tuningStore";
 import { ClubCard, Glow, Pop, Shine, Shake, Burst, FloatText, rgba, tint, useClubTheme } from "./ui";
 import { CardTitle, DeltaBar, useSeen, seenScope } from "./screenKit";
@@ -47,16 +47,18 @@ const ENERGY_COST = getTuning("energy.trainingCost");
 
 export default function SkillsScreen({ career, onTrain }: Props) {
   const duties = setPieceDuties(career);
-  const left = actionsLeft(career);
+  const left = trainingLeft(career);
   const { glow } = useClubTheme(career);
   const scope = seenScope(career);
   return (
     <div className="mt-2 space-y-2">
       <ClubCard glow={glow} className="relative overflow-hidden p-3 text-center">
         <CardTitle tone="text-emerald-300">Training</CardTitle>
-        <div className="mt-0.5 text-sm font-bold text-white">Each level costs a day and {ENERGY_COST} energy. 3 tries, up to ★★★.</div>
+        {/* Sessions, not "days" (Mikey, 29 Sep 2026: "that feels like a very
+            hard system to understand"). 2 a week, back after Saturday. */}
+        <div className="mt-0.5 text-sm font-bold text-white">2 training sessions a week. Each level uses 1 session and {ENERGY_COST} energy — 3 tries, up to ★★★.</div>
         <div className="mt-2 flex items-center justify-center gap-1.5">
-          {Array.from({ length: WEEK_ACTIONS }, (_, i) => (
+          {Array.from({ length: TRAINING_SESSIONS_PER_WEEK }, (_, i) => (
             <span
               key={i}
               className={`h-3 w-9 rounded-full ${i < left ? "bg-gradient-to-b from-emerald-300 to-emerald-500" : "bg-black/45"}`}
@@ -64,8 +66,8 @@ export default function SkillsScreen({ career, onTrain }: Props) {
             />
           ))}
         </div>
-        <div className="mt-1 text-[10.5px] font-bold text-emerald-100/85">
-          <Pop value={left}>{left > 0 ? `${left} of ${WEEK_ACTIONS} days left this week` : "No days left — the next match is the next week"}</Pop>
+        <div className="mt-1 text-[11px] font-black text-white">
+          <Pop value={left}>{left > 0 ? `${left} of ${TRAINING_SESSIONS_PER_WEEK} sessions left · back to 2 after your Saturday match` : "No sessions left · back to 2 after your Saturday match"}</Pop>
         </div>
       </ClubCard>
 

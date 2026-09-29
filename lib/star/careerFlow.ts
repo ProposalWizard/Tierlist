@@ -11,7 +11,7 @@ import {
   simulateFixtureScore,
 } from "./season";
 import { recordAppearance, selectionFor, MISSED_WEEK } from "./selection";
-import { startNewWeek, WEEK_ACTIONS, actionsLeft, REST_ENERGY } from "./week";
+import { startNewWeek, WEEK_ACTIONS, actionsLeft, REST_ENERGY, sessionsAfterMatch } from "./week";
 import { judgeSeason } from "./expectations";
 import {
   seasonAwards, captaincyEarned, numberOnSigning, numberAtSeasonStart, CAPTAIN_TEAM_BONUS,
@@ -45,7 +45,7 @@ import { ruleBookFor } from "./ruleBook";
 import { otherGamesRng } from "./liveScores";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
+import { dayFor, transferWindowFor, divisionOf, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
@@ -1178,7 +1178,8 @@ export function creditMatchResult(
   // the next one — except on a replay, which already started that week the
   // first time this match was credited. Unguarded, a replay granted a free
   // set of weekly actions on top of whatever the player had already spent.
-  if (!alreadyPlayed) Object.assign(next, startNewWeek());
+  if (!alreadyPlayed) Object.assign(next, startNewWeek(),
+    sessionsAfterMatch(career, dayFor(fixture.kind, fixture.week, divisionOf(career))));
 
   // The armband, once the dressing room and the manager are both behind you and
   // you have actually been here a while. Once given it is not taken away for a
@@ -1926,6 +1927,7 @@ export function simulateMissedFixture(
     // same as it would have been had you played this one.
     money: career.money + wageForFixture(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
+    ...sessionsAfterMatch(career, dayFor(fixture.kind, fixture.week, divisionOf(career))),
     matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
     // Not playing costs nothing, and the rest days until the next fixture
     // give energy back like any other gap (energy.ts).

@@ -156,17 +156,18 @@ function def(key: string): number {
     `KIB_CANS basic ships at its derived price with nothing overridden `
     + `(got ★${kib?.price}/${kib?.restore}, expected ★${kibDefault?.price}/65)`,
   );
-  const boot = BOOTS_CATALOGUE.find((b) => b.id === "galaxy");
-  const bootSpec = PRICE_SPECS.boots.galaxy;
+  // NS-Maestro: Galaxy was cut when the boots went from 14 to 7 (29 Sep 2026).
+  const boot = BOOTS_CATALOGUE.find((b) => b.id === "maestro");
+  const bootSpec = PRICE_SPECS.boots.maestro;
   check(
     !!boot && !!bootSpec && boot.price === bandPrice(bootSpec.tier, bootSpec.band, bootSpec.at),
-    `BOOTS_CATALOGUE galaxy ships at the ${bootSpec?.band} band of the ${bootSpec?.tier} tier `
+    `BOOTS_CATALOGUE maestro ships at the ${bootSpec?.band} band of the ${bootSpec?.tier} tier `
     + `(got ★${boot?.price}, expected ★${bootSpec && bandPrice(bootSpec.tier, bootSpec.band, bootSpec.at)})`,
   );
   // …and its durability comes off that price rather than sitting beside it.
   check(
     !!boot && !!bootSpec && boot.matches === bootMatchesFor(boot.price, bootSpec.tier),
-    `BOOTS_CATALOGUE galaxy's ${boot?.matches} matches are derived from its price, not typed in`,
+    `BOOTS_CATALOGUE maestro's ${boot?.matches} matches are derived from its price, not typed in`,
   );
   const item = LIFESTYLE_ITEMS.find((i) => i.id === "island");
   const itemSpec = PRICE_SPECS.lifestyle.island;

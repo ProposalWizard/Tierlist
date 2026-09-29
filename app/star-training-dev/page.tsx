@@ -70,6 +70,7 @@ export default function TrainingDev() {
           key={`${skill}-${level}-${run}`}
           skill={skill}
           trainingLevel={level}
+          glow="#dc2626"
           skills={{ pace: you, power: you, technique: you, vision: you, freeKick: you }}
           onComplete={(stars) => {
             setLastStars(s => ({ ...s, [`${skill}-${level}`]: stars }));
