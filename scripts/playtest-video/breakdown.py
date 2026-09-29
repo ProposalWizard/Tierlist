@@ -58,7 +58,8 @@ def parse_ts(s: str) -> float:
 
 def font(size: int):
     for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-              "/System/Library/Fonts/Supplemental/Arial Bold.ttf"):
+              "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+              "C:/Windows/Fonts/arialbd.ttf"):
         if os.path.exists(p):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()

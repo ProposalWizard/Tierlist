@@ -39,7 +39,8 @@ download itself has to come through `fetch.py`.
 ### Big videos: break them down on the Mac instead
 
 A long or big recording is slow to upload and slow to chop up in the cloud.
-`scripts/playtest-video/Breakdown-on-Mac.command` is ONE file for Harry's Mac
+`scripts/playtest-video/Breakdown-on-Mac.command` (and `Breakdown-on-Windows.bat`
+for a PC) is ONE file per system
 (built by `build-mac-button.sh`, with `breakdown.py` folded inside, so no git
 is needed on his side). It does the breakdown on the Mac and drops a small
 zip in the same Drive folder. When they say "new breakdown's in", find the
