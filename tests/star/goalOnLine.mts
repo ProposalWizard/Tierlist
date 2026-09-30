@@ -21,6 +21,13 @@ import { mulberry32 } from "../../lib/star/season";
 import { frameFromScenario, frameScreen, frameCssSize, paint, type Frame } from "../../lib/star/scenarioFrame";
 import { POST_L, POST_R, GOAL_H } from "../../lib/star/pitch";
 
+// This checks where the goal is drawn, and its recording canvas only knows
+// line and fill calls, so the players are drawn in the Classic look (3D is
+// the game's default since 28 Sep 2026 and paints through cached pictures).
+// Set the way a phone stores the choice: the test and the game code can load
+// separate copies of figureSkin.ts, so an in-module override doesn't reach it.
+(globalThis as any).localStorage = { getItem: (k: string) => (k === "star-figure-skin" ? "classic" : null), setItem() {}, removeItem() {} };
+
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
 

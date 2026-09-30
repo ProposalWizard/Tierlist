@@ -19,6 +19,9 @@ The file has to be shared as "Anyone with the link". If it isn't, Drive hands
 back a sign-in page instead of the video, and this says so rather than saving
 a web page called video.mp4.
 
+A link to a .zip made by Breakdown-on-Mac.command is unpacked instead: it is
+already a finished breakdown.
+
 Uses curl, because curl is already set up for this container's network proxy.
 """
 import argparse
@@ -97,6 +100,16 @@ def main() -> None:
         os.remove(dest)
         sys.exit("Got a web page, not a video: the file is not shared publicly. "
                  "In Drive: Share -> General access -> Anyone with the link.")
+    if head[:4] == b"PK\x03\x04":
+        # A finished breakdown made on the Mac (Breakdown-on-Mac.command): a zip
+        # of index.md, sheets, frames and the transcript. Unpack it; there is
+        # nothing left to break down.
+        import zipfile
+        with zipfile.ZipFile(dest) as z:
+            z.extractall(out_dir)
+        os.remove(dest)
+        print(f"Unpacked the Mac breakdown into {os.path.relpath(out_dir, ROOT)}/ . Read index.md there.")
+        return
     size = os.path.getsize(dest) / 1e6
     print(f"OK, {size:.0f} MB. Next: python3 scripts/playtest-video/breakdown.py {os.path.relpath(dest, ROOT)}")
 

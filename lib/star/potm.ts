@@ -399,3 +399,32 @@ export function catchUpAwards(career: CareerState): MonthAward[] {
   }
   return out.sort((a, b) => a.month - b.month);
 }
+
+/**
+ * Player of the Month history, kept only as far as anything reads it.
+ *
+ * Every month adds a full award — winner, and a five-name shortlist — and
+ * nothing ever took one away: about 5 KB a season, every season, forever,
+ * in every save and every cloud upload.
+ *
+ * What is actually read: this season's awards in full (the Player of the
+ * Month card on the league screen, the catch-up and "already awarded"
+ * checks, the media feed's "a new award just landed" diff), and — from past
+ * seasons — only the months YOU won (the Records screen counts them and
+ * names the last two). So a past season keeps its wins, minus the
+ * shortlist, and drops the months somebody else took. The count, the names
+ * and the dates of every award you ever won are unchanged; your trophy
+ * cabinet (`awards`) is a separate list and is never touched.
+ */
+export function compactPotmHistory(potm: MonthAward[] | undefined, currentSeason: number): MonthAward[] | undefined {
+  if (!potm?.length) return potm;
+  let changed = false;
+  const out: MonthAward[] = [];
+  for (const a of potm) {
+    if (a.season >= currentSeason) { out.push(a); continue; }
+    if (!a.isYou) { changed = true; continue; }
+    if (a.nominees.length) { out.push({ ...a, nominees: [] }); changed = true; }
+    else out.push(a);
+  }
+  return changed ? out : potm;
+}

@@ -37,6 +37,7 @@ import ClubBadge from "./ClubBadge";
 import KibCanIcon from "./KibCanIcon";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import PlayerAvatar, { useAvatarStyle } from "./PlayerAvatar";
+import FigureSkinToggle from "./FigureSkinToggle";
 import {
   ClubCard, Pill, StatBar, levelColors, PressButton, RiseIn, Glow, Stadium,
   Burst, Shake, Drips, FloatText, useCountUp, prefersReducedMotion,
@@ -250,6 +251,10 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
       <div className="absolute left-3 top-[46px] z-10"><Pill label="Age" value={String(career.player.age)} /></div>
       <div className="absolute right-3 top-[46px] z-10"><Pill label="Money" value={`★ ${formatMoney(Math.round(money))}`} valueClass="text-yellow-200" /></div>
       {starPass && <StarPassSoon onClose={() => setStarPass(false)} rating={career.starRating} />}
+      {/* Players' look, 3D (the default) or Classic — Harry, 28 Sep 2026.
+          Under Mikey's money pill (it covered the right floodlight at top-2),
+          and 32px tall so a thumb can hit it. */}
+      <FigureSkinToggle className="absolute right-3 top-[90px] z-10 min-h-[32px]" />
       <div className="relative flex justify-center pt-1.5">
         {/* 184 tall (was 204, 236 before that), halfway to the 164 tried on
             28 Sep 2026 (Mikey: "go in between those two figures"). 204 tall (was 236) so that on an iPhone 13 the next-match card

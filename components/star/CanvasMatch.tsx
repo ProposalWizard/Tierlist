@@ -139,6 +139,7 @@ import { liveWeekFor, goalsForFollowed, scoresAt, type LiveGoal } from "@/lib/st
 import { followedTeams, toggleFollowedTeam } from "@/lib/star/matchDayPrefs";
 import LiveScorePop from "./LiveScorePop";
 import LiveScoresPanel from "./LiveScoresPanel";
+import FigureSkinToggle from "./FigureSkinToggle";
 
 /**
  * `feed` is the commentary screen, and it is where a match LIVES — see
@@ -1752,11 +1753,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const mine = goalsForFollowed(due, followingRef.current);
     if (!mine.length) return;
-    setLog(l => [...l, ...mine.map(g => logLine(
-      `📻 ${shortClub(g.home)} ${g.hs}-${g.as} ${shortClub(g.away)}${g.scorer ? ` · ${g.scorer}` : ""}`,
-      "elsewhere", g.minute,
-    ))]);
-    // A jump in the clock (coming off the bench) logs the older goals quietly;
+    // The card only, no 📻 line in the commentary: Harry, 28 Sep 2026, "I
+    // prefered the old score notification to the in chat one, fit the
+    // aesthetic more". Every score is still in the Scores panel.
+    // A jump in the clock (coming off the bench) skips the older goals;
     // only one from the last few minutes pops up.
     const latest = mine.filter(g => matchMinute - g.minute <= 3).pop();
     if (latest) setLivePop({ ...latest, id: ++livePopIdRef.current });
@@ -5845,9 +5845,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const homeScore = matchMode ? (fixture!.home ? displayScore.user : displayScore.opp) : 0;
   const awayScore = matchMode ? (fixture!.home ? displayScore.opp : displayScore.user) : 0;
 
+  // Labels drop to 9px under 390px wide: at 11px on a 360px phone
+  // "ASSISTS" ran into "PASS" and "AVG RAT" into the 3D/2D pill.
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="min-w-0 px-1 py-1 text-center">
-      <div className="whitespace-nowrap text-[11px] uppercase tracking-tight text-white font-bold leading-none">{label}</div>
+      <div className="whitespace-nowrap text-[11px] max-[389px]:text-[9px] uppercase tracking-tight text-white font-bold leading-none">{label}</div>
       <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
     </div>
   );
@@ -5924,6 +5926,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               // same formula, so the number at full time IS the number on
               // the stats screen, not a preview that gets recalculated.
             ).toFixed(1), "text-sky-300")}
+          </div>
+          {/* Players' look, 3D or Classic, flipped mid-match. */}
+          <div className="flex items-center border-l border-white/10 px-1.5">
+            <FigureSkinToggle compact />
           </div>
           <button
             onClick={toggleMuted}

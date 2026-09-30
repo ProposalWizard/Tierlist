@@ -54,7 +54,7 @@ import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./play
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids } from "./leagueSquads";
 import { advanceIncumbencyWeek } from "./incumbency";
 import {
-  monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, type MonthAward,
+  monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, compactPotmHistory, type MonthAward,
 } from "./potm";
 import { kitsOf } from "./kits";
 import { surname } from "./media/grammar";
@@ -1580,6 +1580,9 @@ export function advanceSeason(
     league: buildLeague(clubs, career.player.club),
     // Last season's results belong to last season.
     results: [],
+    // Player of the Month history: the season just finished stays whole;
+    // anything older keeps only the months you won (see compactPotmHistory).
+    potm: compactPotmHistory(career.potm, career.season),
     leagueSeasonStats: { goals: 0, assists: 0 },
     // Read off `career` (this season's numbers, not yet wiped) before the
     // reset above takes them away — see updatePersonalBests.

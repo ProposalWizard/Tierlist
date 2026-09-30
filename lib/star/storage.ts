@@ -6,7 +6,8 @@ import { makeManager } from "./manager";
 import { allPoolManagers } from "./managerPool";
 import { assignSquadNumber } from "./recognition";
 import { generateSquad, clubNameSeed } from "./squadData";
-import { catchUpAwards } from "./potm";
+import { catchUpAwards, compactPotmHistory } from "./potm";
+import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
 
 const KEY = "star-career-v2";
 const OLD_KEY = "star-career-v1";
@@ -216,11 +217,95 @@ export function loadStarPhase(scope: string): SavedPhase | null {
   }
 }
 
-export function saveCareer(state: CareerState, scope: string) {
+// ── When the device will not take the save ──────────────────────────────────
+
+/**
+ * Why the last attempt to write the save on THIS device failed, or null if
+ * the last attempt worked.
+ *
+ * This used to be swallowed outright: a full browser store (a save is well
+ * over a megabyte, and the browser allows about five) threw, `saveCareer`
+ * caught it and said nothing, and the player carried on believing the game
+ * was saving when on this device it had stopped. A signed-in player still
+ * had the cloud copy; a signed-out one (the dev sandbox) had nothing.
+ *
+ * `quota` is the browser saying it is full; `other` is anything else
+ * (storage blocked by the browser, a private window, …). `signedIn` is
+ * whether this save also goes to the cloud — which changes what the player
+ * should be told. `id` only moves when saving goes from working to failing,
+ * so a message the player has dismissed stays dismissed until saving has
+ * recovered and then failed again.
+ */
+export interface SaveFailure {
+  id: number;
+  reason: "quota" | "other";
+  signedIn: boolean;
+  message: string;
+}
+
+let saveFailure: SaveFailure | null = null;
+let failureCount = 0;
+const saveListeners = new Set<(f: SaveFailure | null) => void>();
+
+/** The current failure, if saving on this device is failing right now. */
+export function getSaveFailure(): SaveFailure | null {
+  return saveFailure;
+}
+
+/** Hear about saving starting or stopping to fail. Returns the unsubscribe. */
+export function onSaveFailureChange(fn: (f: SaveFailure | null) => void): () => void {
+  saveListeners.add(fn);
+  return () => { saveListeners.delete(fn); };
+}
+
+function setSaveFailure(next: SaveFailure | null) {
+  saveFailure = next;
+  saveListeners.forEach((fn) => { try { fn(next); } catch { /* a listener never breaks saving */ } });
+}
+
+/** The browser's "storage full" error — it has had several spellings over the years. */
+function isQuotaError(e: unknown): boolean {
+  if (!e || typeof e !== "object") return false;
+  const err = e as { name?: string; code?: number };
+  return err.name === "QuotaExceededError"
+    || err.name === "NS_ERROR_DOM_QUOTA_REACHED"
+    || err.code === 22 || err.code === 1014;
+}
+
+/** A signed-out save's scope is ANON_SCOPE, or one of its slots. */
+function isSignedInScope(scope: string): boolean {
+  return scope !== ANON_SCOPE && !scope.startsWith(`${ANON_SCOPE}#`);
+}
+
+/**
+ * Writes the save on this device. Returns false when it could not — and,
+ * unlike before, says so: see SaveFailure and SaveFailedBanner. The saved-at
+ * stamp is only moved on success, so a failed write can never make an old
+ * local copy look newer than the cloud.
+ */
+export function saveCareer(state: CareerState, scope: string): boolean {
   try {
-    localStorage.setItem(scoped(KEY, scope), JSON.stringify(state));
+    // The other clubs' squads go in thin — see lib/star/squadSaveCodec.ts.
+    localStorage.setItem(scoped(KEY, scope), JSON.stringify(toSavedForm(state)));
     localStorage.setItem(scoped(SAVED_AT_KEY, scope), String(Date.now()));
-  } catch {}
+    if (saveFailure) setSaveFailure(null);
+    return true;
+  } catch (e) {
+    const reason = isQuotaError(e) ? "quota" : "other";
+    const signedIn = isSignedInScope(scope);
+    if (!saveFailure) failureCount += 1;
+    setSaveFailure({
+      id: failureCount,
+      reason,
+      signedIn,
+      message: signedIn
+        ? "Couldn't save on this device — your cloud save is still safe."
+        : reason === "quota"
+          ? "Couldn't save on this device — it's out of space. Free up some space or your progress won't be kept."
+          : "Couldn't save on this device — this browser is blocking storage, so your progress won't be kept.",
+    });
+    return false;
+  }
 }
 
 /**
@@ -258,7 +343,7 @@ function loadCareerRaw(scope: string): CareerState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CareerState;
     if (parsed.version !== 2) return null;
-    return backfill(parsed);
+    return backfill(fromSavedForm(parsed));
   } catch {
     return null;
   }
@@ -398,6 +483,10 @@ function backfill(c: CareerState): CareerState {
     }));
     if (won.length) out.awards = [...(out.awards ?? []), ...won];
   }
+  // A save from before Player of the Month history was trimmed at each
+  // rollover gets the same trim now (see compactPotmHistory): last season
+  // and this one whole, older seasons only the months you won.
+  out.potm = compactPotmHistory(out.potm, out.season - 1);
   return out;
 }
 
@@ -517,15 +606,28 @@ export function saveActiveSlot(accountScope: string, slot: number): void {
  * route it applies to. A slot other than 1 simply stays local-only, exactly
  * as fire-and-forget as a network hiccup, until it has.
  */
-export async function saveCareerToCloud(state: CareerState, slot: number = 1): Promise<void> {
+export async function saveCareerToCloud(
+  state: CareerState, slot: number = 1, opts: { leavingPage?: boolean } = {},
+): Promise<void> {
   try {
+    const body = JSON.stringify(toSavedForm(state));
     await fetch(`/api/star/career?slot=${slot}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(state),
+      body,
+      // Leaving the page (tab hidden, app backgrounded, tab closed): a
+      // keepalive request survives the page being torn down, but browsers
+      // refuse one whose body is over ~64 KB outright — the whole request
+      // fails, not just the keepalive part. So it is only asked for when the
+      // body fits; a bigger save goes as an ordinary request, which on a
+      // phone that is merely backgrounded (the common case) still finishes.
+      keepalive: !!opts.leavingPage && body.length < KEEPALIVE_BODY_LIMIT,
     });
   } catch {}
 }
+
+/** Just under the ~64 KB cap browsers put on keepalive/sendBeacon bodies. */
+export const KEEPALIVE_BODY_LIMIT = 60_000;
 
 /**
  * Fetch one save slot from Supabase, with when it was saved.
@@ -543,7 +645,7 @@ export async function loadCareerFromCloud(slot: number = 1): Promise<{ career: C
     if (!res.ok) return null;
     const data = await res.json() as { career: CareerState; updatedAt: string } | null;
     if (!data?.career || data.career.version !== 2) return null;
-    return { career: backfill(data.career), savedAt: new Date(data.updatedAt).getTime() };
+    return { career: backfill(fromSavedForm(data.career)), savedAt: new Date(data.updatedAt).getTime() };
   } catch {
     return null;
   }

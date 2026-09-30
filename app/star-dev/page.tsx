@@ -53,8 +53,9 @@ import type { MonthAward } from "@/lib/star/potm";
 import { generateForMatch, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
-import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats } from "@/lib/star/realSquad";
-import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, shouldUpgradeExternalSquads, syncLeagueStrengthFromSquads, fetchFreeAgents } from "@/lib/star/leagueSquads";
+import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos } from "@/lib/star/realSquad";
+import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos } from "@/lib/star/leagueSquads";
+import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
 import PressConference from "@/components/star/PressConference";
@@ -328,6 +329,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   const [signedIn, setSignedIn] = useState(false);
   const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The cloud save the 3 s timer is still holding, if any — see the
+   *  flush-on-hide effect below the save effect. */
+  const pendingCloudSave = useRef<{ career: CareerState; slot: number } | null>(null);
   /**
    * WHICH ACCOUNT — always the signed-in user's id (see the sign-in gate:
    * nothing past it runs without one). Resolved once, here, before anything
@@ -438,8 +442,39 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // not whichever slot happens to be active three seconds from now.
     if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
     const slotAtSaveTime = activeSlotRef.current;
-    cloudSaveTimer.current = setTimeout(() => { saveCareerToCloud(career, slotAtSaveTime); }, 3000);
+    pendingCloudSave.current = { career, slot: slotAtSaveTime };
+    cloudSaveTimer.current = setTimeout(() => {
+      pendingCloudSave.current = null;
+      saveCareerToCloud(career, slotAtSaveTime);
+    }, 3000);
   }, [career]);
+
+  // ── Leaving the page must not lose the last few seconds ──
+  //
+  // The cloud save above waits 3 s for things to settle. Switching app,
+  // locking the phone or closing the tab inside those 3 s used to leave the
+  // cloud one step behind: the timer never fired, and the next device (or a
+  // wiped browser) loaded the older save. When the page is hidden, the
+  // pending save goes NOW instead — and the local copy is written again too,
+  // belt and braces, since it is the one thing guaranteed to be there on
+  // return. Nothing is sent when nothing is pending.
+  useEffect(() => {
+    const flushOnHide = () => {
+      const pending = pendingCloudSave.current;
+      if (!pending) return;
+      pendingCloudSave.current = null;
+      if (cloudSaveTimer.current) { clearTimeout(cloudSaveTimer.current); cloudSaveTimer.current = null; }
+      saveCareer(pending.career, slotScope(scopeRef.current, pending.slot));
+      saveCareerToCloud(pending.career, pending.slot, { leavingPage: true });
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") flushOnHide(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", flushOnHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", flushOnHide);
+    };
+  }, []);
 
   /**
    * EVERY NEW SCREEN STARTS AT THE TOP OF ITSELF.
@@ -1619,9 +1654,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     ]);
     setCareer(c => {
       if (!c) return c;
-      const squad = mergeSquadStats(freshSquad, c.squad ?? []);
-      const leagueSquads = mergeLeagueSquadStats(freshLeague, c.leagueSquads ?? []);
-      const externalSquads = mergeLeagueSquadStats(freshExternal, c.externalSquads ?? []);
+      // Photos only: a refresh must never undo a transfer, a grown rating or
+      // a signing (see refreshLeagueSquadPhotos). A failed fetch changes nothing.
+      const dissolved = (club: string) => !!c.ownedClubs?.[club]?.dissolvedInto;
+      const squad = shouldUpgradeSquad(c.squad ?? []) ? mergeSquadStats(freshSquad, c.squad ?? []) : refreshSquadPhotos(freshSquad, c.squad ?? []);
+      const leagueSquads = isRealFetch(freshLeague) ? refreshLeagueSquadPhotos(c.leagueSquads ?? [], freshLeague, dissolved) : (c.leagueSquads ?? []);
+      const externalSquads = isRealFetch(freshExternal) ? refreshLeagueSquadPhotos(c.externalSquads ?? [], freshExternal, dissolved) : (c.externalSquads ?? []);
       return { ...c, squad, leagueSquads, externalSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
     });
   }, [career]);
@@ -1773,32 +1811,54 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         setCareer(c => (c && !(c.leagueSquads ?? []).length
           ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
       });
-    } else if (shouldUpgradeLeagueSquads(saved.leagueSquads!)) {
-      // A division fetched before faces and flags existed. Re-fetched once, in
-      // the background, and merged rather than replaced — this season's goals
-      // and assists were real and stay real; only the missing fields fill in.
+    } else {
+      // ── The rest of the division, refetched on every load ──
+      //
+      // The save only keeps what this career did to these squads (see
+      // lib/star/squadSaveCodec.ts) — photos, flags and attributes come back
+      // from this fetch. `hydrateSquads` only ever fills a field a player is
+      // missing, so this season's goals and anything the career changed stay
+      // exactly as saved.
+      //
+      // A division fetched before faces and flags existed is still merged the
+      // old way — judged AFTER filling in, and only when the fetch actually
+      // reached the database: judged before, a thin save (no flags yet) would
+      // look pre-flags and a failed fetch would merge invented players over
+      // the real division.
       fetchLeagueSquads(saved.league.map(t => t.name)).then((fresh) => {
         setCareer(c => {
-          if (!c) return c;
-          const leagueSquads = mergeLeagueSquadStats(fresh, c.leagueSquads ?? []);
-          return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+          if (!c || !(c.leagueSquads ?? []).length) return c;
+          const filled = hydrateSquads(c.leagueSquads ?? []);
+          if (isRealFetch(fresh) && shouldUpgradeLeagueSquads(filled)) {
+            const leagueSquads = mergeLeagueSquadStats(fresh, filled);
+            return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+          }
+          return filled === c.leagueSquads ? c : { ...c, leagueSquads: filled };
         });
       });
     }
 
-    // ── …and the wider world, for an existing career that predates it ──
+    // ── …and the wider world ──
     if (!(saved.externalSquads ?? []).length) {
       fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((externalSquads) => {
         setCareer(c => (c && !(c.externalSquads ?? []).length ? { ...c, externalSquads } : c));
       });
-    } else if (shouldUpgradeExternalSquads(saved.externalSquads!, externalClubsFor(saved.league.map(t => t.name)))) {
-      // A career that first fetched the wider world while most of those
-      // clubs still had zero real rows, OR whose snapshot simply predates a
-      // club the CURRENT code expects to find (see shouldUpgradeExternalSquads'
-      // own comment) — re-fetched and merged, same as the domestic re-fetch
-      // just above, rather than staying stuck with a stale snapshot forever.
+    } else {
+      // Refetched on every load, like the division above: the save keeps only
+      // what the career changed, and this fills the rest back in. Clubs the
+      // save is missing or only has invented players for are brought up to
+      // date by reconcileExternalSquads — which, unlike the plain merge that
+      // used to run here on (as it turned out) every single load, never
+      // throws away a transfer, a grown rating or a signing at a club you own.
       fetchLeagueSquads(externalClubsFor(saved.league.map(t => t.name))).then((fresh) => {
-        setCareer(c => (c ? { ...c, externalSquads: mergeLeagueSquadStats(fresh, c.externalSquads ?? []) } : c));
+        setCareer(c => {
+          if (!c || !(c.externalSquads ?? []).length) return c;
+          const externalSquads = reconcileExternalSquads(
+            hydrateSquads(c.externalSquads ?? []), fresh,
+            club => !!c.ownedClubs?.[club]?.dissolvedInto,
+          );
+          return { ...c, externalSquads };
+        });
       });
     }
 
@@ -1868,6 +1928,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // let expire everywhere else; switching away is the one moment guaranteed
   // to leave it no chance to.
   const flushCloudSave = useCallback(() => {
+    pendingCloudSave.current = null;
     if (cloudSaveTimer.current) {
       clearTimeout(cloudSaveTimer.current);
       cloudSaveTimer.current = null;
