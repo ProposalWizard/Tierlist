@@ -4,6 +4,7 @@ import { shortNameOf } from "./realSquad";
 import { STAR_FIFA_YEAR, SQUAD_FETCH_INIT } from "./edition";
 import { getTuning } from "./tuningStore";
 import { divisionOf } from "./clubs";
+import { rememberFetchedSquads } from "./squadSaveCodec";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS.
@@ -392,15 +393,49 @@ export async function fetchLeagueSquads(
   year = STAR_FIFA_YEAR,
   keepAll = false,
 ): Promise<LeagueSquad[]> {
-  try {
-    const res = await fetch(`/api/star/league-squads?clubs=${encodeURIComponent(clubs.join("|"))}&year=${year}`, SQUAD_FETCH_INIT);
-    if (!res.ok) return clubs.map(c => generatedSquad(c, avgOverallFor(c)));
-    const data = await res.json() as { squads?: Record<string, RosterRow[]> };
-    return clubs.map(c => buildLeagueSquad(c, data.squads?.[c] ?? [], keepAll));
-  } catch {
-    return clubs.map(c => generatedSquad(c, avgOverallFor(c)));
+  // Shared per club for a few seconds, so the several parts of the career
+  // that ask for the same clubs at start-up make ONE request between them.
+  // Measured 28 Sep 2026: the same 163 KB division was downloaded twice and
+  // a near-copy a third time on the first screen (~480 KB of repeats).
+  const now = Date.now();
+  const missing = clubs.filter(c => {
+    const hit = squadRowCache.get(`${year}|${c}`);
+    return !hit || now - hit.at > SQUAD_SHARE_MS;
+  });
+  if (missing.length) {
+    const req = fetch(`/api/star/league-squads?clubs=${encodeURIComponent(missing.join("|"))}&year=${year}`, SQUAD_FETCH_INIT)
+      .then(async (res) => (res.ok ? ((await res.json()) as { squads?: Record<string, RosterRow[]> }).squads ?? {} : null))
+      .catch(() => null);
+    for (const c of missing) {
+      const key = `${year}|${c}`;
+      const rows = req.then((squads) => {
+        // A failed request is not remembered, so the next ask tries again.
+        if (!squads) { squadRowCache.delete(key); return null; }
+        return squads[c] ?? [];
+      });
+      squadRowCache.set(key, { at: now, rows });
+    }
   }
+  const rows = await Promise.all(clubs.map(c => squadRowCache.get(`${year}|${c}`)!.rows));
+  const fetched: LeagueSquad[] = [];
+  const squads = clubs.map((c, i) => {
+    const r = rows[i];
+    if (!r) return generatedSquad(c, avgOverallFor(c));
+    const sq = buildLeagueSquad(c, r, keepAll);
+    fetched.push(sq);
+    return sq;
+  });
+  // What the database says about each of these players, this session —
+  // the reference a save leaves out and later fills back in from. See
+  // lib/star/squadSaveCodec.ts. Only this season's edition, and only clubs
+  // whose download actually came back.
+  if (year === STAR_FIFA_YEAR && fetched.length) rememberFetchedSquads(fetched);
+  return squads;
 }
+
+/** How long a club's downloaded rows are shared between callers. */
+const SQUAD_SHARE_MS = 30_000;
+const squadRowCache = new Map<string, { at: number; rows: Promise<RosterRow[] | null> }>();
 
 /**
  * A reserved club name, never a real one, that tells `/api/star/league-squads`
@@ -794,4 +829,93 @@ export function mergeLeagueSquadStats(fresh: LeagueSquad[], previous: LeagueSqua
       return was ? { ...p, goals: was.goals, assists: was.assists } : p;
     }),
   }));
+}
+
+/**
+ * Bring a career's wider world up to date with a fresh fetch WITHOUT
+ * throwing away what the career did to it.
+ *
+ * The load path used to do `mergeLeagueSquadStats(fresh, saved)` whenever
+ * `shouldUpgradeExternalSquads` said the saved world looked stale — and,
+ * measured against the real database on 28 Sep 2026, that is EVERY load:
+ * 66 of the 172 clubs have no real players yet and are always generated,
+ * which trips the "whole roster is generated ids" check even on a perfectly
+ * fresh fetch. So every reload replaced the entire wider world with the
+ * database's copy and kept only goals and assists: players the
+ * international window had moved, wonderkid growth outside your division,
+ * signings and sales at a club you own outside it, your son's place in a
+ * squad there — all quietly undone on refresh.
+ *
+ * This keeps each club the career already has, and only takes the fetch's
+ * version of a club when the career has nothing real for it:
+ *  - a club the save doesn't have at all (the club lists have grown since),
+ *  - a club with nobody in it,
+ *  - a club whose whole roster is invented (`gen:` ids) when the database
+ *    now has real players for it — the upgrade that check exists for.
+ * Goals already scored carry over by player id, as before. Clubs the save
+ * has that the fetch didn't ask about (owned clubs filed here by setSquad)
+ * are kept. A failed fetch (everything generated) therefore never replaces
+ * a real roster with an invented one.
+ */
+export function reconcileExternalSquads(
+  current: LeagueSquad[], fresh: LeagueSquad[],
+  /** A club emptied on purpose — a merger's absorbed club (clubPowers.ts's
+   *  mergeClubs marks it `dissolvedInto`) — stays empty. */
+  emptiedOnPurpose: (club: string) => boolean = () => false,
+): LeagueSquad[] {
+  const have = new Map(current.map(s => [s.club, s]));
+  const isGen = (s: LeagueSquad) => s.players.length > 0 && s.players.every(p => p.id.startsWith("gen:"));
+  const out: LeagueSquad[] = [];
+  const seen = new Set<string>();
+  for (const f of fresh) {
+    seen.add(f.club);
+    const cur = have.get(f.club);
+    const freshIsReal = f.players.some(p => !p.id.startsWith("gen:"));
+    if (cur && cur.players.length === 0 && emptiedOnPurpose(f.club)) {
+      out.push(cur);
+    } else if (!cur || cur.players.length === 0 || (isGen(cur) && freshIsReal)) {
+      out.push(cur ? mergeLeagueSquadStats([f], [cur])[0] : f);
+    } else {
+      out.push(cur);
+    }
+  }
+  for (const s of current) if (!seen.has(s.club)) out.push(s);
+  return out;
+}
+
+/**
+ * Settings → "Refresh Player Photos": bring every player's PHOTO up to date
+ * from a fresh fetch, and nothing else.
+ *
+ * It used to run `mergeLeagueSquadStats(fresh, saved)`, which replaces each
+ * club with the database's copy and keeps only goals and assists — so
+ * pressing the button undid transfers, wonderkid growth, signings and sales
+ * at clubs you own, exactly like the old reload did (see
+ * reconcileExternalSquads). Now a player keeps everything the career gave
+ * him and only his `image` changes, matched by id; a club the career has
+ * nothing real for still comes in whole, the same way a load does.
+ */
+export function refreshLeagueSquadPhotos(
+  current: LeagueSquad[], fresh: LeagueSquad[],
+  emptiedOnPurpose: (club: string) => boolean = () => false,
+): LeagueSquad[] {
+  const photo = new Map<string, string>();
+  for (const s of fresh) for (const p of s.players) if (p.image) photo.set(p.id, p.image);
+  const withPhotos = current.map(s => {
+    let changed = false;
+    const players = s.players.map(p => {
+      const img = photo.get(p.id);
+      if (!img || img === p.image) return p;
+      changed = true;
+      return { ...p, image: img };
+    });
+    return changed ? { ...s, players } : s;
+  });
+  return reconcileExternalSquads(withPhotos, fresh, emptiedOnPurpose);
+}
+
+/** Did this fetch actually reach the database? A failed one comes back as
+ *  nothing but invented (`gen:`) players. */
+export function isRealFetch(squads: LeagueSquad[]): boolean {
+  return squads.some(s => s.players.some(p => !p.id.startsWith("gen:")));
 }

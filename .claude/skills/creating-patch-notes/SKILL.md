@@ -122,7 +122,8 @@ Record each new link here so the next round can find the latest one:
 
 - v0.16: https://claude.ai/artifact/A9gwVhtt8dAVBwddYgrh7A
 - v0.17: https://claude.ai/artifact/45LCtddFQZAvSQsc2JWk6S
-- v0.18: (next, new link)
+- v0.18: https://claude.ai/artifact/HvagWBceebfaR9KmxRKhgh
+- v0.19: (next, new link)
 
 ### The site archive: `lib/patchNotesData.ts`
 

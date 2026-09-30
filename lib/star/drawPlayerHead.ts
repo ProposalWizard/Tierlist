@@ -74,13 +74,22 @@ import { sourceRect } from "./portrait";
  * FakeFaceEditorScreen.tsx for the tool that tunes it.
  */
 export function isFakeFaceImage(face: HTMLImageElement): boolean {
+  // Remembered per image (and per src, in case one element is reused):
+  // this runs for every head, every frame, and parsing a URL each time
+  // showed up in the match's profile.
+  const known = fakeCheck.get(face);
+  if (known && known.src === face.src) return known.fake;
+  let fake = false;
   try {
     const path = decodeURIComponent(new URL(face.src).pathname);
-    return (FAKE_FACES as readonly string[]).includes(path);
+    fake = (FAKE_FACES as readonly string[]).includes(path);
   } catch {
-    return false;
+    fake = false;
   }
+  fakeCheck.set(face, { src: face.src, fake });
+  return fake;
 }
+const fakeCheck = new WeakMap<HTMLImageElement, { src: string; fake: boolean }>();
 
 export function drawPlayerHead(
   ctx: CanvasRenderingContext2D,
@@ -125,6 +134,38 @@ export function drawPlayerHead(
   const rect = hasPhoto
     ? sourceRect(effective.crop, face!.naturalWidth, face!.naturalHeight, CROP_VIEWPORT)
     : null;
+
+  // ── Drawn once, then reused ──
+  // The outlined photo head (12 stamped silhouettes + the photo, all
+  // shrunk from a full-size picture) cost 13 big image draws per player per
+  // frame: 55% of the match's aiming time on a slowed phone (profiled 28
+  // Sep 2026). It only changes with the photo, the crop, the outline and
+  // its size, so it is painted once into a small picture at the size it is
+  // shown (2-device-pixel steps) and stamped from then on. Same idea as the
+  // 3d bodies (figure3d.ts). Very large heads (the Face Editor's preview)
+  // still draw directly.
+  if (hasPhoto && rect && typeof document !== "undefined") {
+    const pad = effective.outlineEnabled ? Math.max(1, figureR * 0.10 * effective.outlineWidth) : 0;
+    const outer = r + pad;
+    const t = ctx.getTransform();
+    const k = Math.hypot(t.a, t.b) || 1;
+    const devSize = outer * 2 * k;
+    if (devSize <= 400) {
+      const px = Math.max(4, Math.round(devSize / 2) * 2);
+      const key = [rect.sx.toFixed(1), rect.sy.toFixed(1), rect.sw.toFixed(1), rect.sh.toFixed(1),
+        effective.outlineEnabled ? effective.outlineColor : "-", (pad / r).toFixed(3), px].join("|");
+      const sprite = headSpriteFor(face!, key, px, (g, scale) => {
+        g.setTransform(scale, 0, 0, scale, px / 2, px / 2);
+        g.imageSmoothingQuality = "high";
+        if (effective.outlineEnabled) stampOutline(g, face!, rect, -r, -r, r * 2, pad, effective.outlineColor);
+        g.drawImage(face!, rect.sx, rect.sy, rect.sw, rect.sh, -r, -r, r * 2, r * 2);
+      }, outer);
+      if (sprite) {
+        ctx.drawImage(sprite, cx - outer, cy - outer, outer * 2, outer * 2);
+        return;
+      }
+    }
+  }
 
   if (effective.outlineEnabled && hasPhoto && rect) {
     const dilate = Math.max(1, figureR * 0.10 * effective.outlineWidth);
@@ -185,6 +226,37 @@ function silhouetteFor(face: HTMLImageElement, color: string): HTMLCanvasElement
 
   byColor.set(color, canvas);
   return canvas;
+}
+
+/**
+ * The finished heads (outline + photo) per photo, keyed by crop, outline and
+ * pixel size. At most HEAD_SPRITE_LIMIT pictures in all; the least recently
+ * used goes first.
+ */
+const headSprites = new WeakMap<HTMLImageElement, Map<string, HTMLCanvasElement>>();
+const headOrder: { face: HTMLImageElement; key: string }[] = [];
+const HEAD_SPRITE_LIMIT = 600;
+
+function headSpriteFor(
+  face: HTMLImageElement, key: string, px: number,
+  paint: (g: CanvasRenderingContext2D, scale: number) => void, outer: number,
+): HTMLCanvasElement | null {
+  let byKey = headSprites.get(face);
+  if (!byKey) { byKey = new Map(); headSprites.set(face, byKey); }
+  const hit = byKey.get(key);
+  if (hit) return hit;
+  const c = document.createElement("canvas");
+  c.width = px; c.height = px;
+  const g = c.getContext("2d");
+  if (!g) return null;
+  paint(g, px / (outer * 2));
+  byKey.set(key, c);
+  headOrder.push({ face, key });
+  if (headOrder.length > HEAD_SPRITE_LIMIT) {
+    const old = headOrder.shift()!;
+    headSprites.get(old.face)?.delete(old.key);
+  }
+  return c;
 }
 
 const RING_POINTS = 12;

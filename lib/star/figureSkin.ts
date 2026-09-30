@@ -14,8 +14,10 @@
  *   1. an override set by a screen that wants a fixed look (the /star-3d-dev
  *      test screen forces "3d", or "classic" for its side-by-side), then
  *   2. this browser's choice, localStorage "star-figure-skin", then
- *   3. FIGURE_SKIN_DEFAULT — "classic", so the real game looks exactly as it
- *      did until Harry says otherwise.
+ *   3. FIGURE_SKIN_DEFAULT — "3d". Harry, 28 Sep 2026, after playing it:
+ *      "AMAZING - should be the base with a flip setting in the homescreen
+ *      and in match settings" (FigureSkinToggle: the home hero and the
+ *      match bar; Settings → Player look too).
  *
  * It is a module-level value rather than a prop threaded through every mount,
  * so no screen needs a new prop to follow it (and the one-engine guard's
@@ -27,7 +29,7 @@
 export type FigureSkin = "classic" | "3d";
 
 /** THE ONE LINE: the look everyone gets when nobody has chosen. */
-export const FIGURE_SKIN_DEFAULT: FigureSkin = "classic";
+export const FIGURE_SKIN_DEFAULT: FigureSkin = "3d";
 
 export const FIGURE_SKIN_KEY = "star-figure-skin";
 
