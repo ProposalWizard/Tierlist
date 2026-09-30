@@ -1,0 +1,422 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Knowitball App Plan</title><style>:root{
+  --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+  --ink:#0e1613;--ink2:#3d5249;--ink3:#667b71;
+  --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--teal:#00838f;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+  --ink:#f2f7f4;--ink2:#b3c7bc;--ink3:#7d9488;
+  --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;--teal:#4dd0e1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:700px;margin:0 auto;padding:0 16px 80px}
+p{margin:0 0 10px}
+header{padding:36px 0 8px}
+.ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+.status{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;margin-left:6px;background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);padding:4px 10px;border-radius:999px}
+h1{font-size:clamp(28px,7.5vw,38px);line-height:1.08;margin:12px 0 10px;letter-spacing:-.025em;text-wrap:balance}
+h3{font-size:17px;margin:22px 0 4px;letter-spacing:-.01em}
+.sub{color:var(--ink2);font-size:15px;margin:0 0 8px}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:46px 0 14px;display:flex;align-items:center;gap:9px;scroll-margin-top:12px}
+h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.c-g{color:var(--green)} .c-g i{background:var(--green)}
+.c-b{color:var(--blue)} .c-b i{background:var(--blue)}
+.c-v{color:var(--violet)} .c-v i{background:var(--violet)}
+.c-a{color:var(--amber)} .c-a i{background:var(--amber)}
+.c-t{color:var(--teal)} .c-t i{background:var(--teal)}
+.c-r{color:var(--red)} .c-r i{background:var(--red)}
+.c-m{color:var(--ink3)} .c-m i{background:var(--ink3)}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+.toc a{font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card2);color:var(--ink);text-decoration:none}
+/* stat strip */
+.strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 8px}
+@media (min-width:640px){.strip{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.strip div{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+.strip b{display:block;font-size:clamp(19px,5vw,24px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+.strip b.am{color:var(--amber)} .strip b.rd{color:var(--red)}
+.strip span{display:block;font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.35}
+/* status pills */
+.st{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;line-height:1.5;white-space:nowrap;vertical-align:1px;margin-left:4px}
+.st.c{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+.st.r{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue)}
+.st.n{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber)}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;line-height:1.4;white-space:nowrap}
+.p-ok{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+.p-wait{background:color-mix(in srgb,var(--amber) 20%,transparent);color:var(--amber)}
+.p-bad{background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red)}
+.p-plan{background:var(--card2);color:var(--ink3)}
+/* items */
+.short{list-style:none;padding:0;margin:10px 0}
+.short li{padding:9px 0;border-bottom:1px solid var(--line)}
+.short li:last-child{border-bottom:0}
+.short .t{font-weight:700;color:var(--ink);display:block}
+.short .w{color:var(--ink2);font-size:13.5px;display:block;margin-top:2px}
+.ans{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 14px;margin:12px 0}
+.ans .qq{font:700 11px/1.3 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.ans .aa{font-weight:700;font-size:16px;color:var(--ink);margin-top:4px}
+.ans .ww{color:var(--ink2);font-size:13.5px;margin-top:4px}
+.yes{color:var(--green)} .mostly{color:var(--amber)} .no{color:var(--red)}
+.lane{border:1px solid var(--line);border-left:3px solid var(--green);border-radius:12px;background:var(--card);padding:10px 14px;margin:10px 0}
+.lane.a{border-left-color:var(--amber)} .lane.r{border-left-color:var(--red)}
+.lane h4{margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+.lane.a h4{color:var(--amber)} .lane.r h4{color:var(--red)}
+.lane ul{margin:0;padding-left:18px;color:var(--ink2);font-size:13.5px}
+.lane li{margin:3px 0}
+.said{font-size:13px;color:var(--ink2);border-left:3px solid var(--violet);padding:2px 0 2px 10px;margin:14px 0 10px}
+.said .vid{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--violet);margin-right:5px;white-space:nowrap}
+.said i{color:var(--ink)}
+.opt{border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin:8px 0;background:var(--card)}
+.opt b.k{display:inline-block;min-width:22px;color:var(--amber)}
+.opt .w{display:block;color:var(--ink2);font-size:13.5px;margin-top:3px}
+.opt.pick{border-color:var(--green);box-shadow:inset 3px 0 0 var(--green)}
+.opt.lean{border-color:var(--violet);box-shadow:inset 3px 0 0 var(--violet)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:12px 0}
+.steps>li{counter-increment:s;position:relative;padding:0 0 14px 38px}
+.steps>li:before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--card2);color:var(--ink);font:700 12px/1 system-ui,sans-serif;border:1.5px solid var(--line)}
+.steps .t{display:block;font-weight:700;color:var(--ink)}
+.steps .w{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px}
+.steps .m{display:inline-block;margin-top:5px;font:700 11px/1 system-ui,sans-serif;letter-spacing:.03em;padding:4px 7px;border-radius:6px;background:var(--card2);color:var(--ink2)}
+/* bars */
+.bars{margin:8px 0 4px}
+.bar{display:grid;grid-template-columns:minmax(92px,128px) minmax(0,1fr) auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+.bar .lb{color:var(--ink2);line-height:1.25}
+.track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;min-width:3px}
+.fill.was{background:color-mix(in srgb,var(--ink3) 40%,transparent)}
+.fill.now{background:var(--green);opacity:.88}
+.fill.now.warn{background:var(--amber)} .fill.now.bad{background:var(--red)}
+.vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+.bcap{font-size:12.5px;color:var(--ink3);margin:2px 0 6px}
+/* tables: numbers only */
+.tbl{overflow-x:auto;margin:6px 0 8px}
+.tbl table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl th{color:var(--ink3);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+@media (max-width:480px){.tbl table{font-size:13px}.tbl th,.tbl td{padding:6px 5px}}
+details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+details[open]{padding-bottom:12px}
+summary{cursor:pointer;list-style:none;padding:12px 0;font-size:14px;font-weight:700;color:var(--ink2);display:flex;gap:8px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"\25B8";color:var(--ink3);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px} ul.plain li{margin:4px 0}
+code{font-size:12.5px;background:var(--card2);padding:1px 5px;border-radius:5px;word-break:break-word}
+/* open questions */
+ol.oq{list-style:none;margin:0;padding:0}
+article.q{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:var(--r);padding:14px 16px 12px;margin:14px 0}
+.q-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.q-top label{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:800;color:var(--ink3);letter-spacing:.06em;cursor:pointer}
+.q-top input{width:18px;height:18px;accent-color:var(--green)}
+article.q h3{font-size:18px;line-height:1.25;margin:8px 0 2px;text-wrap:balance}
+.q .lab{margin:12px 0 2px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.q .lab.rec{color:var(--green)}
+.q ul{margin:2px 0 0;padding-left:0;list-style:none;color:var(--ink2);font-size:14px}
+.q ul li{margin:5px 0;padding-left:26px;text-indent:-26px}
+.q ul li b.k{display:inline-block;width:26px;text-indent:0;color:var(--amber)}
+.q p{margin:2px 0 0;color:var(--ink2);font-size:14px}
+.q p.recp{color:var(--ink);font-weight:700}
+footer{margin-top:40px;font-size:13px;color:var(--ink3)}
+svg.dg{width:100%;height:auto;display:block;margin:14px 0 6px;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+
+svg.dg{width:100%;height:auto;display:block;margin:14px 0 6px;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.d-box{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.d-soft{fill:var(--card2);stroke:none}
+.d-g{fill:color-mix(in srgb,var(--green) 14%,var(--card));stroke:var(--green);stroke-width:1.5}
+.d-a{fill:color-mix(in srgb,var(--amber) 14%,var(--card));stroke:var(--amber);stroke-width:1.5}
+.d-b{fill:color-mix(in srgb,var(--blue) 14%,var(--card));stroke:var(--blue);stroke-width:1.5}
+.d-v{fill:color-mix(in srgb,var(--violet) 14%,var(--card));stroke:var(--violet);stroke-width:1.5}
+.d-t{fill:var(--ink);font-size:13px;font-weight:700}
+.d-s{fill:var(--ink2);font-size:11.5px}
+.d-k{fill:var(--ink3);font-size:10.5px;font-weight:700;letter-spacing:.06em}
+.d-line{stroke:var(--ink3);stroke-width:1.6;fill:none}
+.d-lg{stroke:var(--green);stroke-width:2.2;fill:none}
+.d-la{stroke:var(--amber);stroke-width:2.2;fill:none}
+.d-dash{stroke-dasharray:5 4}
+.d-fg{fill:var(--green)} .d-fa{fill:var(--amber)} .d-fi{fill:var(--ink3)}
+</style></head><body><div class="wrap"><header>
+<span class="ver">Plan · 30 Sep 2026</span><span class="status">Open questions inside</span>
+<h1>Knowitball App Plan</h1>
+<p class="sub">Everything about turning knowitball.co.uk into an iPhone and Android app, under headlines. Every open question is marked, and listed together in section 9 so Harry can answer them in one go.</p>
+<p class="sub">Each claim says how it is known:
+<span class="st c">checked</span> we looked at the code or measured it ·
+<span class="st r">from the rules</span> read on Apple’s, Google’s or PEGI’s own pages ·
+<span class="st n">not checked</span> reasoned or estimated, not tested.</p>
+</header>
+<nav class="toc"><a href="#where">1 Where we are</a><a href="#how">2 How it works</a><a href="#touch">3 Touch vs mouse</a><a href="#saves">4 Saves</a><a href="#offline">5 Offline</a><a href="#casino">6 Casino</a><a href="#company">7 Company</a><a href="#testers">8 Testers</a><a href="#open">9 Open questions</a><a href="#sources">10 Sources</a></nav>
+<h2 id="where" class="c-g"><i></i>1 · Where we are</h2>
+<div class="strip">
+<div><b>7</b><span>decided</span></div>
+<div><b>4</b><span>save fixes built and live</span></div>
+<div><b class="am">9</b><span>questions waiting on Harry</span></div>
+<div><b class="rd">0</b><span>app parts built (the frame isn’t started)</span></div>
+</div>
+<p class="bcap">The frame is the app shell around the game. Saves are built because they help the website too.</p>
+<p class="said"><span class="vid">Harry said · review video 4:53</span><i>“We’re gonna finalize decisions on an order, a plan of everything that we’re gonna do to get this actually to be an app.”</i></p>
+<details><summary>Decided (7)</summary><ul class="short"><li><span class="t">Start as an individual, upgrade the Apple account to a company later<span class="st r">from the rules</span></span><span class="w">Never transfer the app.</span></li><li><span class="t">Saves wording accepted “for now”</span><span class="w">Save on leave, upload when signal returns, and the “which progress?” prompt.</span></li><li><span class="t">The game detects finger or mouse by itself</span><span class="w">Phone-only features such as the ball bounce can stay in the one game.</span></li><li><span class="t">Switch to 2D automatically on slow phones</span><span class="w">Liked. Not built yet.</span></li><li><span class="t">Testers get a daily login reward, an in-game feedback button and a test link</span></li><li><span class="t">Codemagic starts after both store accounts exist and the frame is built</span><span class="w">And after the offline decision.</span></li><li><span class="t">In the app, Google sign-in uses the phone’s own sign-in<span class="st r">from the rules</span></span><span class="w">Google blocks its sign-in page inside an app.</span></li></ul></details>
+<details><summary>Built and live (saves only)</summary><ul class="short"><li><span class="t">Save the moment you leave the app<span class="st c">checked</span></span></li><li><span class="t">Upload the moment signal returns or the app reopens<span class="st c">checked</span></span><span class="w">Only when this device has progress the cloud hasn’t got. Tested both ways, not tried on a real phone going offline and back.</span></li><li><span class="t">The “Which progress do you want to keep?” prompt<span class="st c">checked</span></span><span class="w">The other copy moves to a spare save slot.</span></li><li><span class="t">PC warning when the phone is mid-session<span class="st c">checked</span></span><span class="w">“You’re mid-session on your phone. Carry on here anyway?”</span></li></ul></details>
+<details><summary>Not built yet</summary><ul class="short"><li><span class="t">The app frame</span><span class="w">Icon, name, sign-in, offline screen, back button.</span></li><li><span class="t">Auto-2D on slow phones</span><span class="w">Easy to add.</span></li><li><span class="t">Daily login reward and the in-game feedback button</span></li><li><span class="t">Real tests on two devices and the signed-in cloud</span><span class="w">Not seen yet.</span></li></ul></details>
+<h3>The order we would go in</h3><p class="bcap"><span class="pill p-plan">proposed</span> built from the decisions above, not checked with Harry.</p>
+<ol class="steps"><li><span class="t">Answer the open questions</span><span class="w">Mainly the casino and the offline route. They change what the frame is.</span><span class="m">section 9</span></li><li><span class="t">Create the two store accounts</span><span class="w">Apple as an individual, Google as a personal account.</span><span class="m">section 7</span></li><li><span class="t">Build the frame in the cloud</span><span class="w">Codemagic, no Mac needed.</span></li><li><span class="t">Test with 15–16 people for at least 14 days</span><span class="w">TestFlight on iPhone, a Google closed test on Android.</span><span class="m">section 8</span></li><li><span class="t">Fix what testers find, then submit to the stores</span><span class="w"></span></li><li><span class="t">Later: upgrade the Apple account to a company one</span><span class="w">Same app, same account, never a transfer.</span></li></ol>
+<h2 id="how" class="c-t"><i></i>2 · How the app works, and how updates work</h2>
+<p class="sub"><b>The app is a frame. The game inside it is the live website.</b> There is still only one game.</p>
+<svg class="dg" viewBox="0 0 360 300" role="img" aria-label="The app is a frame around the live website"><defs>
+<marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fg"/></marker>
+<marker id="aa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fa"/></marker>
+<marker id="ai" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fi"/></marker>
+</defs>
+<text x="8" y="16" class="d-k">ON YOUR PHONE</text>
+<rect x="8" y="26" width="150" height="262" rx="16" class="d-box"/><rect x="65.0" y="33" width="36" height="5" rx="2.5" class="d-soft"/>
+<rect x="18" y="48" width="130" height="36" rx="8" class="d-v"/>
+<text x="83" y="64" text-anchor="middle" class="d-t">The app frame</text>
+<text x="83" y="78" text-anchor="middle" class="d-s">icon · sign-in · saves</text>
+<rect x="18" y="92" width="130" height="150" rx="8" class="d-g"/>
+<text x="83" y="150" text-anchor="middle" class="d-t">The game</text>
+<text x="83" y="166" text-anchor="middle" class="d-s">exactly what's on</text>
+<text x="83" y="180" text-anchor="middle" class="d-s">knowitball.co.uk</text>
+<rect x="18" y="250" width="130" height="28" rx="8" class="d-v"/>
+<text x="83" y="268" text-anchor="middle" class="d-s">offline · back button</text>
+<text x="212" y="16" class="d-k">ON THE INTERNET</text>
+<rect x="206" y="118" width="146" height="64" rx="10" class="d-g"/>
+<text x="279" y="144" text-anchor="middle" class="d-t">knowitball.co.uk</text>
+<text x="279" y="160" text-anchor="middle" class="d-s">the one real game</text>
+<path d="M200 150 L154 150" class="d-lg" marker-end="url(#ag)"/>
+<text x="178" y="140" text-anchor="middle" class="d-s">loads</text>
+<rect x="206" y="210" width="146" height="44" rx="10" class="d-box"/>
+<text x="279" y="229" text-anchor="middle" class="d-t">Your PC browser</text>
+<text x="279" y="244" text-anchor="middle" class="d-s">the same game</text>
+<path d="M279 186 L279 206" class="d-lg" marker-end="url(#ag)"/>
+<rect x="206" y="40" width="146" height="50" rx="10" class="d-box"/>
+<text x="279" y="61" text-anchor="middle" class="d-t">Apple / Google</text>
+<text x="279" y="77" text-anchor="middle" class="d-s">only ever see the frame</text>
+<path d="M200 66 L154 66" class="d-line d-dash" marker-end="url(#ai)"/>
+</svg>
+<ul class="short"><li><span class="t">We build the frame once<span class="st r">from the rules</span></span><span class="w">App icon and name, sign-in, saves kept on the phone, an offline screen instead of a blank page, the back button, portrait lock. This is what Apple checks, because it rejects “a website in a box”.</span></li><li><span class="t">We don’t build a second game</span><span class="w">The match, career and every screen stay on the website. Nothing is copied, so nothing drifts out of step.</span></li><li><span class="t">Built in the cloud<span class="st n">not checked</span></span><span class="w">A service called Codemagic makes the iPhone and Android apps. About 500 free build-minutes a month.</span></li></ul>
+<p class="said"><span class="vid">Harry said · feedback video 0:45</span><i>“…if they sign in with Apple they still then get to sign in with Google and it’s the same account. Okay, cool.”</i></p>
+<h3>Updates: two lanes</h3>
+<svg class="dg" viewBox="0 0 360 250" role="img" aria-label="Two ways an update reaches players"><defs>
+<marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fg"/></marker>
+<marker id="aa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fa"/></marker>
+<marker id="ai" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fi"/></marker>
+</defs>
+<text x="4" y="16" class="d-k">A GAME CHANGE · almost everything</text>
+<rect x="4" y="26" width="104" height="52" rx="9" class="d-box"/><text x="56" y="48" text-anchor="middle" class="d-t">Built here</text><text x="56" y="65" text-anchor="middle" class="d-s">goes live</text>
+<rect x="128" y="26" width="104" height="52" rx="9" class="d-g"/><text x="180" y="48" text-anchor="middle" class="d-t">Website</text><text x="180" y="65" text-anchor="middle" class="d-s">live in minutes</text>
+<rect x="252" y="26" width="104" height="52" rx="9" class="d-g"/><text x="304" y="48" text-anchor="middle" class="d-t">Every app</text><text x="304" y="65" text-anchor="middle" class="d-s">on next open</text>
+<path d="M110 52 L124 52" class="d-lg" marker-end="url(#ag)"/><path d="M234 52 L248 52" class="d-lg" marker-end="url(#ag)"/>
+<text x="180" y="98" text-anchor="middle" class="d-s">no store, no review, no download</text>
+<text x="4" y="138" class="d-k">A FRAME CHANGE · a few times a year</text>
+<rect x="4" y="148" width="104" height="52" rx="9" class="d-box"/><text x="56" y="170" text-anchor="middle" class="d-t">Built here</text><text x="56" y="187" text-anchor="middle" class="d-s">new app version</text>
+<rect x="128" y="148" width="104" height="52" rx="9" class="d-a"/><text x="180" y="170" text-anchor="middle" class="d-t">Store review</text><text x="180" y="187" text-anchor="middle" class="d-s">Apple: days</text>
+<rect x="252" y="148" width="104" height="52" rx="9" class="d-a"/><text x="304" y="170" text-anchor="middle" class="d-t">Players</text><text x="304" y="187" text-anchor="middle" class="d-s">update in store</text>
+<path d="M110 174 L124 174" class="d-la" marker-end="url(#aa)"/><path d="M234 174 L248 174" class="d-la" marker-end="url(#aa)"/>
+<text x="180" y="222" text-anchor="middle" class="d-s">icon, name, sign-in, notifications, new phone permissions</text>
+<text x="180" y="238" text-anchor="middle" class="d-s">(builds in the cloud, so no Mac)</text>
+</svg>
+<div class="lane"><h4>Instant, no store</h4><ul><li>Matches, physics, keepers, scenarios</li><li>Every screen, menu and the look</li><li>New modes that only need the screen</li><li>Balance, prices, difficulty, player data</li><li>Bug fixes</li></ul></div>
+<div class="lane a"><h4>Needs a new store version</h4><ul><li>App icon, name, splash screen</li><li>Sign-in methods, push notifications</li><li>A new phone permission. The face scan uses the camera, so that permission goes in the first version</li><li>Vibration, in-app purchases, anything that talks to the phone directly</li></ul></div>
+<div class="lane r"><h4>The catches</h4><ul><li><b>Old frames:</b> a web change that needs a new frame feature must hide itself until players update. The game checks first.</li><li><b>Apple’s rules still cover what the website adds.</b> The app can’t turn into a different kind of app, and can’t sell coins around Apple’s payments.</li><li><b>If the website is down, the app is down.</b> An offline screen covers it (section 5).</li></ul></div>
+<p class="bcap">Rules: from Apple’s and Google’s pages. The face-scan camera use: checked in the code. No app exists yet, so none of this is tested.</p>
+<h3>Two corrections to the earlier guide</h3>
+<ul class="short"><li><span class="t">Apple no longer names Sign in with Apple as the only option<span class="st r">from the rules</span></span><span class="w">Rule 4.8 accepts any equivalent login that limits data to name and email, lets people hide their email, and doesn’t track them for ads.</span></li><li><span class="t">Google bans its sign-in page inside an app’s embedded web view<span class="st r">from the rules</span></span><span class="w">So the app must use the phone’s own Google sign-in. The current website sign-in would not work as it is.</span></li></ul>
+<details><summary>What Apple’s rules say about a website in an app</summary><ul class="plain">
+<li><b>4.2:</b> “Your app should include features, content, and UI that elevate it beyond a repackaged website.” This is why the frame needs real app parts.</li>
+<li><b>4.7:</b> apps may offer web mini apps and games not built in, but “you are responsible for all such software”. The website’s content must follow Apple’s rules too.</li>
+<li><b>2.3.1(a):</b> no “hidden, dormant, or undocumented features”. New features must be described in the review notes.</li>
+<li><b>3.1.1:</b> unlocking anything in the iPhone app must use Apple’s payments. Coins bought this way must not expire.</li>
+<li><b>2.5.2</b> bans downloading code that “introduces or changes features”. The licence agreement (3.3.1(B)) allows downloading interpreted code like web files if the app keeps its main purpose. Both count as a reading, not an Apple statement.</li></ul></details>
+<h2 id="touch" class="c-v"><i></i>3 · Touch vs mouse, and auto-2D</h2>
+<div class="ans"><div class="qq">Can the game play differently on a phone automatically?</div><div class="aa yes">Yes. It can tell finger from mouse.</div><div class="ww">A phone-only feature such as the ball bounce turns on for touch and stays off for mouse. No separate iPhone and Android versions needed.</div></div>
+<p class="bcap">Reasoned from how browsers report the input type; not built or tried on a phone. <span class="st n">not checked</span></p>
+<p class="said"><span class="vid">Harry said · review video 4:42</span><i>“That’s amazing. Okay, that’s a headline.”</i></p>
+<p class="said"><span class="vid">Harry said · feedback video 2:56</span><i>“If I’m on the phone I want the ball bouncing and that whole feature of where the ball’s coming from.”</i></p>
+<ul class="short"><li><span class="t">Gameplay always stays in the one game<span class="st n">not checked</span></span><span class="w">Never in the frame. A feature is turned on by touch vs mouse, or by screen size, not by the brand of phone.</span></li><li><span class="t">Auto-2D on slow phones<span class="st n">not checked</span></span><span class="w">Measure the frame rate in the first seconds of a match. If it’s low, switch to 2D and say so. The 3D/2D button already exists, so players can switch back. Not built.</span></li></ul>
+<p class="said"><span class="vid">Harry said · review video 5:22</span><i>“Okay, yeah, that’s cool.” (feedback video 3:22: “That’s an interesting idea.”)</i></p>
+<h3>One game, three doors</h3>
+<svg class="dg" viewBox="0 0 360 250" role="img" aria-label="One game, three versions"><defs>
+<marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fg"/></marker>
+<marker id="aa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fa"/></marker>
+<marker id="ai" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fi"/></marker>
+</defs>
+<rect x="100" y="14" width="160" height="56" rx="10" class="d-g"/>
+<text x="180" y="38" text-anchor="middle" class="d-t">One game</text>
+<text x="180" y="55" text-anchor="middle" class="d-s">it knows where it's running</text>
+<path d="M150 74 L60 120" class="d-lg" marker-end="url(#ag)"/>
+<path d="M180 74 L180 120" class="d-lg" marker-end="url(#ag)"/>
+<path d="M210 74 L300 120" class="d-lg" marker-end="url(#ag)"/>
+<rect x="4" y="126" width="108" height="106" rx="10" class="d-box"/><text x="58" y="148" text-anchor="middle" class="d-t">iPhone app</text><text x="58" y="176" text-anchor="middle" class="d-s">Sign in with Apple</text><text x="58" y="194" text-anchor="middle" class="d-s">Apple payments</text>
+<rect x="126" y="126" width="108" height="106" rx="10" class="d-box"/><text x="180" y="148" text-anchor="middle" class="d-t">Android app</text><text x="180" y="176" text-anchor="middle" class="d-s">Google sign-in</text><text x="180" y="194" text-anchor="middle" class="d-s">Google payments</text>
+<rect x="248" y="126" width="108" height="106" rx="10" class="d-box"/><text x="302" y="148" text-anchor="middle" class="d-t">PC website</text><text x="302" y="176" text-anchor="middle" class="d-s">Google sign-in</text><text x="302" y="194" text-anchor="middle" class="d-s">card payments</text>
+<text x="180" y="246" text-anchor="middle" class="d-s">what the stores force on us: sign-in and payments</text>
+</svg>
+<p class="bcap">A drawing, not a screenshot. Everything else stays identical on all three.</p>
+<h2 id="saves" class="c-b"><i></i>4 · Saves: how they work, sizes, and how far the database goes</h2>
+<svg class="dg" viewBox="0 0 360 254" role="img" aria-label="Saves on the phone and in the cloud"><defs>
+<marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fg"/></marker>
+<marker id="aa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fa"/></marker>
+<marker id="ai" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-fi"/></marker>
+</defs>
+<rect x="8" y="20" width="120" height="190" rx="16" class="d-box"/><rect x="50.0" y="27" width="36" height="5" rx="2.5" class="d-soft"/>
+<rect x="18" y="80" width="100" height="70" rx="9" class="d-g"/>
+<text x="68" y="106" text-anchor="middle" class="d-t">Phone copy</text>
+<text x="68" y="122" text-anchor="middle" class="d-s">instant</text>
+<text x="68" y="137" text-anchor="middle" class="d-s">works offline</text>
+<rect x="136" y="70" width="88" height="90" rx="10" class="d-b"/>
+<text x="180" y="104" text-anchor="middle" class="d-t">Cloud</text>
+<text x="180" y="121" text-anchor="middle" class="d-s">backup that</text>
+<text x="180" y="136" text-anchor="middle" class="d-s">follows you</text>
+<path d="M122 108 L132 108" class="d-lg" marker-end="url(#ag)"/><path d="M132 124 L122 124" class="d-lg" marker-end="url(#ag)"/>
+<rect x="240" y="60" width="112" height="110" rx="10" class="d-box"/>
+<rect x="252" y="72" width="88" height="56" rx="4" class="d-soft"/>
+<text x="296" y="148" text-anchor="middle" class="d-t">PC</text>
+<text x="296" y="162" text-anchor="middle" class="d-s">same career</text>
+<path d="M228 108 L236 108" class="d-lg" marker-end="url(#ag)"/><path d="M236 124 L228 124" class="d-lg" marker-end="url(#ag)"/>
+<text x="180" y="230" text-anchor="middle" class="d-s">Every save goes to the phone first,</text>
+<text x="180" y="246" text-anchor="middle" class="d-s">then up to the cloud when there's signal.</text>
+</svg>
+<p class="said"><span class="vid">Harry said · review video 1:03</span><i>“This is okay for now.” (Wondering aloud if the phone’s copy should just win.)</i></p>
+<h3>How it works now</h3>
+<ul class="short"><li><span class="t">Saves the moment you leave the app<span class="st c">checked</span></span><span class="w">No more waiting 3 seconds and losing the last actions.</span></li><li><span class="t">Uploads the moment signal returns, or the app reopens<span class="st c">checked</span></span><span class="w">Only when this device has progress the cloud doesn’t.</span></li><li><span class="t">Two different saves: “Which progress do you want to keep?”<span class="st c">checked</span></span><span class="w">You pick one. The other is kept in a spare save slot (each player has 3). Nothing is thrown away.</span></li><li><span class="t">All 3 slots full<span class="st c">checked</span></span><span class="w">It warns you and asks again before deleting anything. Or tap “Decide later”: it plays this device’s copy, uploads nothing, and asks again next time.</span></li><li><span class="t">Open on the phone while you use the PC<span class="st c">checked</span></span><span class="w">“You’re mid-session on your phone. Carry on here anyway?” with a Carry on here button. The wording avoids “you’ll lose progress” because nothing is lost.</span></li></ul>
+<svg class="dg" viewBox="0 0 300 200" role="img" aria-label="Pick which save to keep" style="max-width:320px;margin-inline:auto">
+<rect x="4" y="4" width="292" height="192" rx="14" class="d-box"/>
+<text x="150" y="30" text-anchor="middle" class="d-t">Two different saves</text>
+<text x="150" y="48" text-anchor="middle" class="d-s">Which one do you want to keep?</text>
+<rect x="18" y="62" width="126" height="84" rx="10" class="d-g"/>
+<text x="81" y="84" text-anchor="middle" class="d-t">This phone</text>
+<text x="81" y="102" text-anchor="middle" class="d-s">Season 2 · Week 14</text>
+<text x="81" y="118" text-anchor="middle" class="d-s">played 10 min ago</text>
+<rect x="156" y="62" width="126" height="84" rx="10" class="d-b"/>
+<text x="219" y="84" text-anchor="middle" class="d-t">Your PC</text>
+<text x="219" y="102" text-anchor="middle" class="d-s">Season 2 · Week 9</text>
+<text x="219" y="118" text-anchor="middle" class="d-s">played yesterday</text>
+<text x="150" y="174" text-anchor="middle" class="d-s">The other one is kept as a spare save slot.</text>
+</svg>
+<p class="bcap">What the prompt looks like, drawn. Seen working in a browser at phone width. Not seen: two real devices, the real signed-in cloud. <span class="st n">not checked</span></p>
+<p class="said"><span class="vid">Harry said · feedback video 4:06</span><i>“Your mid-session on your phone, carry on here anyway…”</i></p>
+<h3>How big is a save?</h3>
+<div class="bars"><div class="bar"><span class="lb">Real save today</span><span class="track"><div class="fill now " style="width:4.5%"></div></span><span class="vv">225 KB</span></div><div class="bar"><span class="lb">Season 1</span><span class="track"><div class="fill now " style="width:5.1%"></div></span><span class="vv">255 KB</span></div><div class="bar"><span class="lb">Season 20</span><span class="track"><div class="fill now " style="width:5.6%"></div></span><span class="vv">280 KB</span></div><div class="bar"><span class="lb">Phone limit</span><span class="track"><div class="fill now bad" style="width:100.0%"></div></span><span class="vv">~5,000 KB</span></div></div>
+<p class="bcap">Measured: 255 KB in season 1 to 280 KB in season 20, about 1.3 KB a season. The measuring runs 10–15% high: the real save is about 225 KB. All 3 slots together stay under 1 MB. <span class="st c">checked</span></p>
+<p class="said"><span class="vid">Harry said · review video 12:35</span><i>“Damn, that’s crazy. Okay, so it’s only a little bit more.”</i></p>
+<h3>How far the database goes</h3>
+<div class="bars"><div class="bar"><span class="lb">Free, left today</span><span class="track"><div class="fill now warn" style="width:1.5%"></div></span><span class="vv">~430</span></div><div class="bar"><span class="lb">Free, empty</span><span class="track"><div class="fill now warn" style="width:6.2%"></div></span><span class="vv">~1,800</span></div><div class="bar"><span class="lb">Pro plan</span><span class="track"><div class="fill now " style="width:100.0%"></div></span><span class="vv">~28,000</span></div></div>
+<p class="bcap">Saves that fit, at 280 KB each. The free database has about 120 MB left (a June figure, not re-checked). Pro includes 8 GB. Raw maths, so real room is lower. <span class="st c">checked</span><span class="st n">not checked</span></p>
+<p class="said"><span class="vid">Harry said · review video 13:02</span><i>“If we paid, how much could we do?”</i></p>
+<div class="tbl"><table><tr><th>Saves</th><th>Per month</th><th>Plan</th></tr><tr><td>about 430</td><td>$0</td><td>Free (what is left)</td></tr><tr><td>about 28,000</td><td>$25</td><td>Pro</td></tr><tr><td>100,000</td><td>about $27.50</td><td>Pro + 20 GB extra</td></tr><tr><td>1,000,000</td><td>$25 + about $34</td><td>Pro + bigger computer likely</td></tr></table></div>
+<p class="bcap">Extra disk is $0.125 per GB a month, about 3,570 saves per GB. From Supabase’s pricing page, 30 Sep. <span class="st r">from the rules</span></p>
+<details><summary>Caveats on the database numbers</summary><ul class="plain">
+<li>Each player can hold up to 3 saves, so 430 saves could be as few as about 140 players.</li>
+<li>The disk also holds indexes and logs. Plan on about 80% of the raw figure.</li>
+<li>The database may compress saves, so they could be smaller on disk. Not checked. Look at a real row size in the dashboard.</li>
+<li>Free projects pause after a week of no use and have no backups. A live app would want Pro anyway.</li></ul></details>
+<details><summary>Shrinking a save further, and why not now</summary><ul class="short"><li><span class="t">155 KB of each 225 KB save is a copy of other clubs’ squads<span class="st c">checked</span></span><span class="w">Downloading them again each time, instead of saving them, would roughly halve the save.</span></li><li><span class="t">It fights offline play</span><span class="w">With nothing saved, a career can’t start or rebuild without signal. So this waits for the offline decision (section 5).</span></li></ul></details>
+<p class="said"><span class="vid">Harry said · review video 13:07</span><i>“Is that telling the user to download that when they come in?”</i></p>
+<h2 id="offline" class="c-a"><i></i>5 · Offline app</h2>
+<p class="said"><span class="vid">Harry said · feedback video 2:13</span><i>“Number five is huge. Definitely do a full research on that… But how hard is it gonna be?”</i></p>
+<div class="ans"><div class="qq">If the website is down, the app is down. Is that normal?</div><div class="aa mostly">For the simple version, yes.</div><div class="ww">The simple app is a window onto the live website. With no signal, a player sees an offline screen, not the game.</div></div>
+<p class="said"><span class="vid">Harry said · review video 10:24</span><i>“What’s the difference between career game only inside the app fully offline and frame loading website plus offline screen?”</i></p>
+<h3>The difference, plainly</h3>
+<div class="opt pick"><b class="k">1</b><b>Frame + offline screen</b> <span class="pill p-ok">recommended first</span><span class="w">The game still lives on the internet. The app loads it like a browser would. No signal: a friendly “you’re offline” screen, and your save waits on the phone. Small to build.</span></div>
+<div class="opt "><b class="k">2</b><b>Career game fully offline</b> <span class="w">The career game’s files are packed inside the app, so a started career plays with no signal at all. It syncs when signal returns. Bigger to build: a second way of building the site, and login has to be reworked.</span></div>
+<div class="opt "><b class="k">3</b><b>Whole site inside the app</b> <span class="w">Every page in the app. Far too big: 124 server routes and 23 pages would need rewriting. Don’t.</span></div>
+<h3>Effort, in working sessions</h3>
+<div class="bars"><div class="bar"><span class="lb">Frame + offline</span><span class="track"><div class="fill was" style="width:15.0%"></div><div class="fill now " style="width:5.0%"></div></span><span class="vv">1–3</span></div><div class="bar"><span class="lb">Career offline</span><span class="track"><div class="fill was" style="width:50.0%"></div><div class="fill now warn" style="width:30.0%"></div></span><span class="vv">6–10</span></div><div class="bar"><span class="lb">Whole site</span><span class="track"><div class="fill was" style="width:100.0%"></div><div class="fill now bad" style="width:50.0%"></div></span><span class="vv">10–20</span></div></div>
+<p class="bcap">Solid bar = low end, pale = high end. These are estimates from reading the code, not measured. <span class="st n">not checked</span></p>
+<ul class="short"><li><span class="t">Even a fully offline app needs signal for<span class="st n">not checked</span></span><span class="w">Sign-in, cloud saves, a new career’s real squads, player photos, draft rooms and leaderboards. A career already started can probably be played offline (read from the code, not tested).</span></li><li><span class="t">Why the whole site is so big<span class="st c">checked</span></span><span class="w">124 server routes and 28 pages load their data on the server, and login is cookie-based. The career game alone is one client page, much closer to ready.</span></li><li><span class="t">Live updates are allowed<span class="st r">from the rules</span><span class="st n">not checked</span></span><span class="w">A tool can send new game files to an app without the store. Capawesome about $9 a month, Capgo $12–14, OtaKit free up to 5,000 updates a month. Apple’s licence allows interpreted code if the app keeps its main purpose; Google exempts web code. No Apple page says it plainly.</span></li><li><span class="t">The risk on option 1<span class="st r">from the rules</span></span><span class="w">The app builder’s own docs say loading a website is “not intended for use in production”. That’s their support stance, not a store rule, but it raises the chance Apple rejects the app as a website in a box (rule 4.2).</span></li></ul>
+<p class="bcap"><b>Recommendation:</b> launch with option 1. Keep option 2 as phase two, and build it if Apple rejects the frame. This is open: see question 2.</p>
+<p class="said"><span class="vid">Harry said · review video 10:51</span><i>“Okay, cool.” (No route picked.)</i></p>
+<h2 id="casino" class="c-r"><i></i>6 · Coins and casino</h2>
+<p class="said"><span class="vid">Harry said · review video 6:17</span><i>“As it stands the casino probably makes the app 18 plus. Headline, casino needs a whole headline.”</i></p>
+<div class="ans"><div class="qq">The biggest decision before the app</div><div class="aa no">As it stands, the casino probably makes the app 18+.</div><div class="ww">Six games: blackjack, roulette, slots, horse racing, competition bets and Goalie Mode. All use in-game coins earned by playing. Nothing costs real money today. <span class="st c">checked</span></div></div>
+<h3>What the ratings would be</h3>
+<div class="tbl"><table><tr><th>Case</th><th>Apple</th><th>PEGI</th></tr><tr><td>Casino kept as it is</td><td>18+ (13+ if “infrequent”)</td><td>18</td></tr><tr><td>No casino in the app</td><td>4+ to 13+</td><td>3 to 12</td></tr><tr><td>New Star Soccer today</td><td>13+</td><td>12 (Google UK)</td></tr><tr><td>Australia, any casino</td><td>R 18+</td><td>n/a</td></tr></table></div>
+<p class="bcap">“No casino” row is a guess until the real questionnaires are filled in. Apple publishes no line between “infrequent” and “frequent”. Google’s help pages still say 12 for simulated gambling, which conflicts with PEGI's own site (18); which one Google would issue today is unconfirmed. <span class="st r">from the rules</span><span class="st n">not checked</span></p>
+<details><summary>Why New Star Soccer is 13+ and we might not be</summary><ul class="short"><li><span class="t">Its PEGI 12 is old<span class="st r">from the rules</span></span><span class="w">PEGI changed the rule in 2020 and said it would not apply it to older games. A new game with casino-style games is PEGI 18 under today’s rules.</span></li><li><span class="t">Its Apple 13+ says “Infrequent Simulated Gambling”<span class="st r">from the rules</span><span class="st n">not checked</span></span><span class="w">It has one casino with a few games. Ours is six games in one menu, which reads as more prominent. How Apple’s reviewers would judge ours is unconfirmed.</span></li><li><span class="t">Fake chips don’t change the tier<span class="st r">from the rules</span></span><span class="w">The rules ignore what the chips are. Giving XP for wins makes it slightly worse, not better.</span></li></ul></details>
+<p class="said"><span class="vid">Harry said · review video 9:20</span><i>“Okay, interesting, interesting. So it could still be an option.”</i></p>
+<h3>The options for the casino</h3>
+<div class="opt "><b class="k">A</b><b>Remove it from the game entirely</b> <span class="pill p-plan">safest</span><span class="w">Lowest rating. Loses a feature Harry likes.</span></div>
+<div class="opt "><b class="k">B</b><b>Keep it and accept 18+</b> <span class="w">Nothing to hide. A big cost for a football game kids will play.</span></div>
+<div class="opt lean"><b class="k">C</b><b>Website only, not in the app</b> <span class="pill p-wait">Harry leans here</span><span class="w">Harry’s lean, “for now”. Fine if done properly (below). Earlier this was called the riskiest; newer research says hiding it is not the problem, a switched-off copy inside the app would be.</span></div>
+<div class="opt "><b class="k">D</b><b>The New Star Soccer route</b> <span class="w">Keep it in the app and answer “infrequent” for Apple 13+. Google and PEGI would probably still say 18 for a new game. Risky, and unconfirmed.</span></div>
+<p class="said"><span class="vid">Harry said · review video 8:14</span><i>“For now, I think we keep it on the website only.” Then 8:31: “It’s a tough one because we really like the casino.”</i></p>
+<h3>Website only: what must be true</h3>
+<ol class="steps"><li><span class="t">Block it on the server, not just hide the button</span><span class="w">The app adds a marker to the web view. The server then refuses the casino pages and casino calls. A hidden button alone leaves it reachable by address.</span><span class="m">rules + not checked</span></li><li><span class="t">Block all six games</span><span class="w">Including competition bets and the betting in Goalie Mode. Apple counts sports betting as gambling.</span><span class="m">from the rules</span></li><li><span class="t">No link from the app to the casino</span><span class="w">A link would advertise it inside a rated app. Whether Apple objects to a plain link is unconfirmed.</span><span class="m">not checked</span></li><li><span class="t">Say so in Apple’s review notes</span><span class="w">What the app loads, that the casino isn’t available in it, and that it won’t be turned on without a new submission.</span><span class="m">from the rules</span></li><li><span class="t">Answer the rating questions for what the app contains</span><span class="w">Re-answer if that ever changes. Australia: leave it out of the app’s countries, or accept R 18+ if the casino is in.</span><span class="m">from the rules</span></li></ol>
+<p class="said"><span class="vid">Harry said · review video 7:40</span><i>“Hiding casino in the app but keeping it on the website? Hmm, yeah, not worth it.” (He meant a hidden copy, which C isn’t.)</i></p>
+<h3>Real-money coins</h3>
+<ul class="short"><li><span class="t">Swap real money for casino coins: don’t<span class="st r">from the rules</span></span><span class="w">It can push the rating to 17+ or 18, and UK regulator research names in-game purchases as the strongest sign of kids moving to real gambling. It isn’t illegal if nothing can be cashed out or traded, but it is the riskiest idea.</span></li><li><span class="t">One item priced both ways (10M coins or £5): allowed<span class="st r">from the rules</span></span><span class="w">The £5 must go through Apple’s or Google’s payments. The catch: the two prices set a public exchange rate, so casino winnings start to look like real money. The safest version keeps store-bought money and casino coins as two separate wallets.</span></li><li><span class="t">What Apple and Google keep<span class="st r">from the rules</span><span class="st n">not checked</span></span><span class="w">About 15% with Apple’s Small Business Program (from Apple’s page). The website’s card payment costs about 1.5% + 20p, not checked for us.</span></li></ul>
+<p class="said"><span class="vid">Harry said · feedback video 1:40</span><i>“Let’s say Ronaldo free kick style costs 10 million in-game coins, but only costs… like say five pound. Would that be allowed if there’s casino in the game?”</i></p>
+<details><summary>The safety checklist, if coins ever cost money</summary><ul class="plain">
+<li>Nothing won in the casino can ever be cashed out, traded, gifted or sold.</li>
+<li>Store-bought currency can never be staked in the casino.</li>
+<li>No real-money purchase of casino chips or spins, and no “buy more chips” at a zero balance.</li>
+<li>No random paid items, or show the odds before purchase.</li>
+<li>Bought currency doesn’t expire and can be restored.</li>
+<li>Answer the rating questions honestly. Never add the casino to the app later through the website without telling the store.</li>
+<li>No ads or links to real-money casinos or betting sites.</li>
+<li>Not in Apple’s Kids Category or Google’s Families programme.</li></ul><p class="bcap">From Apple, Google and UK regulator pages. Not legal advice; a one-hour check with a games lawyer before selling anything is worth it.</p></details>
+<p class="bcap"><b>The next step that settles it:</b> once both accounts exist, fill in Apple’s and Google’s rating questionnaires twice, with the casino and without. Then we have real ratings, not guesses.</p>
+<h2 id="company" class="c-v"><i></i>7 · Company, accounts and email</h2>
+<p class="said"><span class="vid">Harry said · feedback video 5:52</span><i>“We’re not going to actually create a company. So for now… just do me being the person and then upgrade my Apple account to a company account.”</i></p>
+<div class="ans"><div class="qq">The plan</div><div class="aa yes">Start as an individual. Upgrade the Apple account later.</div><div class="ww">Upgrade the same account. Never transfer the app to a new company account: Apple gives each player a different sign-in ID under each account, so a transfer breaks Sign in with Apple. <span class="st n">not checked</span></div></div>
+<ul class="short"><li><span class="t">Apple, as an individual<span class="st r">from the rules</span><span class="st n">not checked</span></span><span class="w">Needs no company. The store shows Harry’s personal legal name as the seller until the upgrade. The upgrade took “1–3 weeks, low risk” in the earlier answer.</span></li><li><span class="t">Google, as a personal account<span class="st r">from the rules</span></span><span class="w">Means the 12-testers-for-14-days rule applies. Aim for 15–16 testers. A company account probably skips it, but some company accounts report being asked anyway.</span></li><li><span class="t">Write down, informally, that all three own it equally</span><span class="w">A message or note all three keep. It isn’t legal paperwork, just a record. A to-do, not done yet.</span></li></ul>
+<p class="said"><span class="vid">Harry said · feedback video 7:24</span><i>“All these automatic fines, all of this stuff is just too much hassle. But then we will do the upgrade eventually.”</i></p>
+<h3>Apple ID email</h3>
+<ul class="short"><li><span class="t">Use knowitballcontact@gmail.com now<span class="st n">not checked</span></span><span class="w">It is already the project’s contact address.</span></li><li><span class="t">At the upgrade, add an address on our own domain<span class="st n">not checked</span></span><span class="w">Apple wants a company-domain email for a company. For example name@knowitball.co.uk. Hostinger is where the domain is held, and it can also host mailboxes on it. Whether our Hostinger plan includes email is not checked.</span></li></ul>
+<p class="said"><span class="vid">Harry said · review video 5:45</span><i>“What do you mean through hosting for this? I don’t get that.”</i></p>
+<details><summary>When we do upgrade: the company steps</summary><ol class="steps"><li><span class="t">Everyone verifies identity</span><span class="w">GOV.UK One Login, passport. Required for every new director.</span><span class="m">Free</span></li><li><span class="t">Register the company</span><span class="w">Companies House online. A registered address (public), email, the three directors.</span><span class="m">£100 · about a day</span></li><li><span class="t">Business bank account</span><span class="w">Starling, Tide, Monzo Business or Mettle.</span><span class="m">Free</span></li><li><span class="t">A company email on our domain</span><span class="w">Apple rejects a Gmail address for a company.</span><span class="m">Check Hostinger</span></li><li><span class="t">A D-U-N-S number</span><span class="w">A free business ID that Apple and Google both need.</span><span class="m">Up to 7 working days, budget 2–4 weeks</span></li><li><span class="t">Upgrade Apple, then Google</span><span class="w">Apple $99 a year. Google $25 once. Apply for Apple’s Small Business Program (15% cut, not 30%).</span><span class="m">$99 + $25</span></li><li><span class="t">Tax</span><span class="w">Register for Corporation Tax within 3 months of first income. Each person pays tax on what they take out.</span><span class="m">Free</span></li></ol></details>
+<p class="bcap">Prices and times are from official pages on 28 Sep; check on the day. The yearly accountant bill is typically £500–£1,800. General information, not legal or tax advice. <span class="st r">from the rules</span><span class="st n">not checked</span></p>
+<h2 id="testers" class="c-a"><i></i>8 · Testers and checking it worked</h2>
+<p class="said"><span class="vid">Harry said · feedback video 5:17</span><i>“Let’s reward daily login on the testers, and maybe that’s something we do in the future anyway.” Then 5:30: “And in-game feedback button as well.”</i></p>
+<ul class="short"><li><span class="t">Aim for 15–16 testers, not 12<span class="st r">from the rules</span></span><span class="w">Google needs 12 opted in for 14 days in a row on a personal account. One person dropping out restarts the clock. Only Android counts. iPhone testing has no minimum.</span></li><li><span class="t">Where to find them<span class="st n">not checked</span></span><span class="w">Our own players (a “Test the app” banner) first, then each of the three of you bringing a friend with an Android phone. A paid service is a last resort: Google checks the app was really used.</span></li><li><span class="t">Daily login reward<span class="st n">not checked</span></span><span class="w">The stores can’t force anyone to log in daily. We track it ourselves with our own analytics and reward it.</span></li><li><span class="t">In-game feedback button</span><span class="w">Feedback from 100 people needs one place to land, not direct messages.</span></li><li><span class="t">Test links<span class="st n">not checked</span></span><span class="w">iPhone: a TestFlight public link, after a light Apple beta check of about 1–2 days (widely reported, not an Apple figure). Android: a Google closed-test link.</span></li></ul>
+<p class="said"><span class="vid">Harry said · review video 5:30</span><i>“Cool.” … “Cool.” (Reading the daily reward, feedback button and test-link lines.)</i></p>
+<h3>Checking the test worked</h3>
+<ul class="short"><li><span class="t">The stores report for us<span class="st r">from the rules</span></span><span class="w">TestFlight shows installs, sessions, crashes and feedback (up to 24 hours late). Google tests every build on about 10 real phones and reports crashes.</span></li><li><span class="t">Our own tools<span class="st c">checked</span></span><span class="w">PostHog is already on the site. Tag each visit as iPhone app, Android app or website. Sentry catches errors once its project exists (still pending).</span></li><li><span class="t">A checklist every tester works through</span><span class="w">“It worked” means every line ticked by at least 2 people on each phone type, with no crashes and no lost saves.</span></li></ul>
+<details><summary>The tester checklist</summary><ol class="steps"><li><span class="t">Install and sign in</span><span class="w">Apple on iPhone, Google on both.</span></li><li><span class="t">Start a career and play a full match</span><span class="w">Smooth, and the drag works with a finger.</span></li><li><span class="t">Close the app mid-match, then reopen</span><span class="w">Nothing lost.</span></li><li><span class="t">Airplane mode, then open the app</span><span class="w">The offline screen, not a blank page.</span></li><li><span class="t">Play on the phone, then the PC, then the phone again</span><span class="w">Same career, or the “which progress?” choice.</span></li><li><span class="t">Face scan with the camera</span><span class="w">The permission asks nicely and it works.</span></li><li><span class="t">Android back button</span><span class="w">Goes back a screen, never quits a match by accident.</span></li></ol></details>
+<p class="bcap">Daily rewards and ratings: from June 2026 PEGI adds a “pressure to play” label for daily-reward systems (rated 7), and 12 if players lose rewards for not coming back. See question 6. <span class="st r">from the rules</span></p>
+<h2 id="open" class="c-a"><i></i>9 · Open questions</h2>
+<p class="sub">Nine questions, each with options and a recommendation. Tick one when answered (ticks stay on this device only).</p>
+<ol class="oq"><li><article class="q" id="q1"><div class="q-top"><label><input type="checkbox" data-q="1">Q1</label><span class="pill p-wait">waiting on Harry</span></div><h3>The casino: A, B, C or the New Star Soccer route?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>Remove it from the game.</li><li><b class="k">B</b>Keep it, accept 18+.</li><li><b class="k">C</b>Website only, blocked properly inside the app.</li><li><b class="k">D</b>Keep it in the app and go for Apple 13+ like New Star Soccer.</li></ul><div class="lab rec">My recommendation</div><p class="recp">C, done properly, then fill in both rating questionnaires to check it.</p><p>It keeps the casino Harry likes without an 18+ app. Fall back to A if a store objects. D is the least safe: Google and PEGI would probably still say 18.</p><div class="lab">Harry’s last word</div><p>“For now, I think we keep it on the website only.” (Not a final pick. Fake chips don’t change the rating.)</p></article></li><li><article class="q" id="q2"><div class="q-top"><label><input type="checkbox" data-q="2">Q2</label><span class="pill p-wait">waiting on Harry</span></div><h3>Offline: which route?</h3><div class="lab">Options</div><ul><li><b class="k">1</b>Frame + offline screen at launch, career offline later.</li><li><b class="k">2</b>Build the career game fully offline first.</li><li><b class="k">3</b>Both together, one after the other with no gap.</li></ul><div class="lab rec">My recommendation</div><p class="recp">1, and switch to 2 if Apple rejects the frame.</p><p>It is 1–3 sessions against 6–10. The decision also fixes what the frame is, so Codemagic waits for it.</p><div class="lab">Harry’s last word</div><p>“Okay, cool.” (No route picked.)</p></article></li><li><article class="q" id="q3"><div class="q-top"><label><input type="checkbox" data-q="3">Q3</label><span class="pill p-wait">waiting on Harry</span></div><h3>Database: free or Pro at launch?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>Stay free. About 430 saves left, fine for about 100 testers.</li><li><b class="k">B</b>Pro at $25 a month before a public launch. About 28,000 saves.</li></ul><div class="lab rec">My recommendation</div><p class="recp">A for testing, B before the public launch.</p><p>Free pauses after a week of no use and has no backups. A live app needs Pro. Pro can start the day before launch.</p><div class="lab">Harry’s last word</div><p>Asked what paying would buy (“If we paid, how much could we do?”). No choice yet.</p></article></li><li><article class="q" id="q4"><div class="q-top"><label><input type="checkbox" data-q="4">Q4</label><span class="pill p-wait">waiting on Harry</span></div><h3>When two saves clash, what is the default?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>Ask “Which progress do you want to keep?” (built).</li><li><b class="k">B</b>The phone’s copy always wins.</li></ul><div class="lab rec">My recommendation</div><p class="recp">Keep the prompt (A).</p><p>B silently loses whatever was played on the PC. The prompt keeps both and loses nothing. “Decide later” already plays the phone’s copy when someone doesn’t want to choose.</p><div class="lab">Harry’s last word</div><p>“I think the best thing to do is just to play from the phone’s copy. I don’t know actually… This is okay for now.”</p></article></li><li><article class="q" id="q5"><div class="q-top"><label><input type="checkbox" data-q="5">Q5</label><span class="pill p-wait">waiting on Harry</span></div><h3>Which email for the Apple ID?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>knowitballcontact@gmail.com now, add a domain address at the upgrade.</li><li><b class="k">B</b>Create a domain address now (name@knowitball.co.uk) through Hostinger.</li><li><b class="k">C</b>A personal email.</li></ul><div class="lab rec">My recommendation</div><p class="recp">A.</p><p>It is already the project’s address and avoids a Hostinger email plan today. Not checked: whether Apple lets the account’s email change at the upgrade. C mixes business with personal, so no.</p><div class="lab">Harry’s last word</div><p>“What do you mean through hosting for this? I don’t get that.” (Hostinger is where the domain is held; it can also run mailboxes.)</p></article></li><li><article class="q" id="q6"><div class="q-top"><label><input type="checkbox" data-q="6">Q6</label><span class="pill p-wait">waiting on Harry</span></div><h3>Daily login reward: what design, given the PEGI label?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>A reward for coming back that never expires and is never lost.</li><li><b class="k">B</b>A streak that resets if you miss a day.</li></ul><div class="lab rec">My recommendation</div><p class="recp">A.</p><p>PEGI’s June 2026 “pressure to play” label rates daily rewards 7, and 12 if players lose rewards for not returning. The site already has login streaks, so the label likely applies anyway; A keeps it at the lower level.</p><div class="lab">Harry’s last word</div><p>“Let’s reward daily login on the testers, and maybe that’s something we do in the future anyway.”</p></article></li><li><article class="q" id="q7"><div class="q-top"><label><input type="checkbox" data-q="7">Q7</label><span class="pill p-wait">waiting on Harry</span></div><h3>Sell anything for real money at launch?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>Nothing. No real-money items in the first version.</li><li><b class="k">B</b>Cosmetics only, priced in coins or money through Apple and Google, never casino coins.</li><li><b class="k">C</b>A coin swap (real money into casino coins).</li></ul><div class="lab rec">My recommendation</div><p class="recp">A for launch, B later. Never C.</p><p>No payment code exists yet, and selling anything adds payments, tax forms and a bigger rating review. C is the riskiest thing on the table.</p><div class="lab">Harry’s last word</div><p>Asked about a coin swap (feedback video 1:29) and a £5 celebration (1:40). No choice yet.</p></article></li><li><article class="q" id="q8"><div class="q-top"><label><input type="checkbox" data-q="8">Q8</label><span class="pill p-wait">waiting on Harry</span></div><h3>Build auto-2D for slow phones?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>Yes, before the test builds.</li><li><b class="k">B</b>Later, if testers report lag.</li></ul><div class="lab rec">My recommendation</div><p class="recp">A.</p><p>It is small and helps every test phone. Testers on slow Android phones are the ones most likely to hit lag.</p><div class="lab">Harry’s last word</div><p>“Okay, yeah, that’s cool.” Liked, not yet told to build.</p></article></li><li><article class="q" id="q9"><div class="q-top"><label><input type="checkbox" data-q="9">Q9</label><span class="pill p-wait">waiting on Harry</span></div><h3>Make saves smaller by not storing other clubs’ squads?</h3><div class="lab">Options</div><ul><li><b class="k">A</b>Not now. Leave saves at about 225–280 KB.</li><li><b class="k">B</b>Do it: downloads squads each time, roughly halves the save.</li></ul><div class="lab rec">My recommendation</div><p class="recp">A.</p><p>The database already fits a launch on Pro, and B makes offline play harder. Revisit after the offline choice (Q2).</p><div class="lab">Harry’s last word</div><p>Asked how it works. No choice yet.</p></article></li></ol>
+<h2 id="sources" class="c-m"><i></i>10 · Sources</h2>
+<details><summary>Where every claim comes from</summary><ul class="plain">
+<li><b>Harry’s feedback video</b> (11:16) and <b>review video</b> (13:39): every “Harry said” line, with the time.</li>
+<li><b>Earlier App Launch Guide</b> (28 Sep): the diagrams, the company steps, tester and checking sections.</li>
+<li><b>Company and stores research</b> (28 Sep): Apple and Google accounts, D-U-N-S, the 12-tester rule, TestFlight, Companies House. Links to official pages are inside.</li>
+<li><b>Offline and casino research</b> (30 Sep): live-update tools and prices, what the game needs to work offline (counted in the code), Apple 5.3/3.1.1, Google payments, PEGI, UK Gambling Commission paper (2017), coin ideas.</li>
+<li><b>New Star Soccer, casino and database research</b> (30 Sep): its ratings on each store, fake chips, website-only, Supabase pricing.</li>
+<li>Save sizes and the save fixes: measured in the game and seen working in a browser at phone width.</li>
+<li>Main pages used: Apple’s App Review Guidelines and age-rating definitions, Apple’s developer licence agreement, Google Play policy and content-rating help, PEGI’s label explanations, Capacitor and Capawesome docs, Supabase pricing.</li></ul></details>
+<details><summary>What is not confirmed</summary><ul class="plain">
+<li>How Apple’s reviewers read “frequent” or “infrequent” for a six-game casino menu, and which rating Google would issue a new casino-style app.</li>
+<li>Whether Apple objects to a plain link from the app to a web casino.</li>
+<li>Whether a company Google account really skips the 12-tester rule.</li>
+<li>Whether live updates of new features are fine under Apple’s rule 2.5.2 (only the licence clause supports it).</li>
+<li>Whether the database compresses saves, and the real size of the current database.</li>
+<li>Whether our Hostinger plan includes email, and whether the Apple ID email can change at the upgrade.</li>
+<li>The session counts for offline are estimates; nothing was built to test them.</li>
+<li>Nothing has been tested on a real phone, because there is no app yet.</li></ul></details>
+<footer>30 Sep 2026 · a plan. Nothing here has been submitted to a store. Research is not legal advice. Costs and times are from official pages as of their dates; check on the day.</footer></div><script>
+(function(){
+  var K="knowitball-app-plan-ticks";
+  var data={};
+  try{data=JSON.parse(localStorage.getItem(K)||"{}")}catch(e){data={}}
+  document.querySelectorAll("input[data-q]").forEach(function(b){
+    var n=b.getAttribute("data-q");
+    if(data[n]) b.checked=true;
+    b.addEventListener("change",function(){
+      data[n]=b.checked;
+      try{localStorage.setItem(K,JSON.stringify(data))}catch(e){}
+    });
+  });
+})();
+</script></body></html>

@@ -197,7 +197,7 @@ function VersionView({ note }: { note: PatchNote }) {
         </div>
       )}
       {view === "notes" && review ? <ReviewView review={review} />
-        : view === "page" && hasPage ? <PageFrame note={note} />
+        : view === "page" && hasPage ? <PageFrame pageKey={note.version} artifactUrl={note.artifactUrl} />
         : <NoteBody note={note} />}
     </>
   );
@@ -237,7 +237,7 @@ function ReviewView({ review }: { review: PatchNoteReview }) {
  * X-Frame-Options: DENY on every response, so a frame pointed at a URL would
  * be blank (lib/patchNotePageServe.ts).
  */
-function PageFrame({ note }: { note: PatchNote }) {
+export function PageFrame({ pageKey, artifactUrl, label }: { pageKey: string; artifactUrl?: string | null; label?: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -245,7 +245,7 @@ function PageFrame({ note }: { note: PatchNote }) {
 
   useEffect(() => {
     let live = true;
-    fetch(patchNotePageUrl(note.version), { cache: "no-store" })
+    fetch(patchNotePageUrl(pageKey), { cache: "no-store" })
       .then(async (r) => {
         const body = await r.text();
         if (!live) return;
@@ -257,7 +257,7 @@ function PageFrame({ note }: { note: PatchNote }) {
       })
       .catch(() => { if (live) setError("Couldn't reach the server."); });
     return () => { live = false; };
-  }, [note.version]);
+  }, [pageKey]);
 
   // Follow the page's own height — its toggles open and close.
   const onLoad = () => {
@@ -278,20 +278,20 @@ function PageFrame({ note }: { note: PatchNote }) {
       </div>
     );
   }
-  if (html === null) return <div className={`p-6 text-[13px] ${INK3}`}>Loading v{note.version}…</div>;
+  if (html === null) return <div className={`p-6 text-[13px] ${INK3}`}>Loading {label ?? `v${pageKey}`}…</div>;
   return (
     <div>
       <iframe
         ref={ref}
-        title={`Patch notes v${note.version}`}
+        title={label ?? `Patch notes v${pageKey}`}
         srcDoc={html}
         onLoad={onLoad}
         style={{ height }}
         className="block w-full rounded-xl border-0 bg-white"
       />
-      {note.artifactUrl && (
+      {artifactUrl && (
         <p className={`mt-3 text-[12.5px] ${INK3}`}>
-          <a href={note.artifactUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#6fb8ff] underline underline-offset-2">
+          <a href={artifactUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#6fb8ff] underline underline-offset-2">
             Open the original artifact ↗
           </a>
         </p>

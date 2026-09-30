@@ -293,6 +293,23 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/",
   },
 
+  "/admin/app-plan": {
+    title: "App Plan",
+    what: "Everything about turning the site into iPhone and Android apps — how it works, saves, the offline app, coins and the casino, the company and testers — with the questions still waiting on Harry at the bottom.",
+    buttons: [
+      {
+        items: [
+          ["Toggles (▸)", "Open the detail under a section. Closed by default."],
+          ["Open questions tick boxes", "Tick one off as you decide it. The ticks are kept in this browser only — they don't reach anyone else or the database."],
+        ],
+      },
+    ],
+    saving: ["Nothing here saves to the site. Answers to the open questions go to Claude (in chat or a recording), and the page is updated in the code."],
+    commit: ["The page lives in the repo (patch-notes/pages/app-plan/) — changes appear after the next deploy."],
+    inGame: ["Admin only. Players never see this page."],
+    dev: "app/admin/app-plan/page.tsx · patch-notes/pages/app-plan/index.html · lib/patchNotePages.ts",
+  },
+
   // ════════════════════════════════════════════════════════════════════
   //  STAR CAREER TOOLS
   // ════════════════════════════════════════════════════════════════════

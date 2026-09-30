@@ -117,6 +117,7 @@ const GROUPS: AdminGroup[] = [
       { name: "Homepage", href: "/" },
       { name: "Profile", href: "/profile" },
       { name: "Patch Notes", href: "/admin/patch-notes" },
+      { name: "App Plan", href: "/admin/app-plan" },
     ],
   },
   {
