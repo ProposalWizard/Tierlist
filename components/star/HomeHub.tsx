@@ -239,8 +239,10 @@ function Hero({ career, glow, kitShirt, kitTrim }: Props & { glow: string; kitSh
   return (
     <ClubCard glow={glow} strength={0.2} className="relative overflow-hidden rounded-2xl">
       <Stadium glow={glow} />
-      {/* Players' look, 3D (the default) or Classic — Harry, 28 Sep 2026. */}
-      <FigureSkinToggle className="absolute right-2 top-2 z-10" />
+      {/* Players' look, 3D (the default) or Classic — Harry, 28 Sep 2026.
+          Sits below the right floodlight (at top-2 it covered the lamp), and
+          is 32px tall so a thumb can hit it. */}
+      <FigureSkinToggle className="absolute right-2 top-[30px] z-10 min-h-[32px]" />
       <div className="relative flex justify-center pt-1.5">
         {/* 204 tall (was 236) so that on an iPhone 13 the next-match card
             under this hero shows its crests above the bottom bar, not just

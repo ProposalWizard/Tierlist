@@ -5837,9 +5837,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const homeScore = matchMode ? (fixture!.home ? displayScore.user : displayScore.opp) : 0;
   const awayScore = matchMode ? (fixture!.home ? displayScore.opp : displayScore.user) : 0;
 
+  // Labels drop to 9px under 390px wide: at 11px on a 360px phone
+  // "ASSISTS" ran into "PASS" and "AVG RAT" into the 3D/2D pill.
   const statCell = (label: string, value: string, valueClass: string) => (
     <div className="min-w-0 px-1 py-1 text-center">
-      <div className="whitespace-nowrap text-[11px] uppercase tracking-tight text-white font-bold leading-none">{label}</div>
+      <div className="whitespace-nowrap text-[11px] max-[389px]:text-[9px] uppercase tracking-tight text-white font-bold leading-none">{label}</div>
       <div className={`text-xs font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
     </div>
   );
